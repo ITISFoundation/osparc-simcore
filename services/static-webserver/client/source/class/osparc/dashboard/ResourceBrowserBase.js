@@ -44,6 +44,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
   },
 
   statics: {
+    PAGINATED_STUDIES: 10,
+
     sortStudyList: function(studyList) {
       const sortByProperty = function(prop) {
         return function(a, b) {
@@ -91,9 +93,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         osparc.utils.Utils.addBorderRightRadius(rButton);
       }
       return rButton;
-    },
-
-    PAGINATED_STUDIES: 10
+    }
   },
 
   members: {
@@ -321,33 +321,36 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     _getMoreOptionsMenuButton: function(resourceData) {
       const moreOptsButton = new qx.ui.menu.Button(this.tr("More options..."));
       osparc.utils.Utils.setIdToWidget(moreOptsButton, "moreInfoBtn");
-      moreOptsButton.addListener("execute", () => {
-        const moreOpts = new osparc.dashboard.ResourceMoreOptions(resourceData);
-        const win = osparc.dashboard.ResourceMoreOptions.popUpInWindow(moreOpts);
-        moreOpts.addListener("updateStudy", e => this._updateStudyData(e.getData()));
-        moreOpts.addListener("updateTemplate", e => this._updateTemplateData(e.getData()));
-        moreOpts.addListener("updateService", e => this._updateServiceData(e.getData()));
-        moreOpts.addListener("publishTemplate", e => {
-          win.close();
-          this.fireDataEvent("publishTemplate", e.getData());
-        });
-        moreOpts.addListener("openStudy", e => {
-          win.close();
-          const openStudyData = e.getData();
-          this._startStudyById(openStudyData["uuid"]);
-        });
-        moreOpts.addListener("openTemplate", e => {
-          win.close();
-          const templateData = e.getData();
-          this._createStudyFromTemplate(templateData);
-        });
-        moreOpts.addListener("openService", e => {
-          win.close();
-          const openServiceData = e.getData();
-          this._createStudyFromService(openServiceData["key"], openServiceData["version"]);
-        });
-      }, this);
+      moreOptsButton.addListener("execute", () => this._openDetailsView(resourceData), this);
       return moreOptsButton;
+    },
+
+    _openDetailsView: function(resourceData) {
+      const moreOpts = new osparc.dashboard.ResourceMoreOptions(resourceData);
+      const win = osparc.dashboard.ResourceMoreOptions.popUpInWindow(moreOpts);
+      moreOpts.addListener("updateStudy", e => this._updateStudyData(e.getData()));
+      moreOpts.addListener("updateTemplate", e => this._updateTemplateData(e.getData()));
+      moreOpts.addListener("updateService", e => this._updateServiceData(e.getData()));
+      moreOpts.addListener("publishTemplate", e => {
+        win.close();
+        this.fireDataEvent("publishTemplate", e.getData());
+      });
+      moreOpts.addListener("openStudy", e => {
+        win.close();
+        const openStudyData = e.getData();
+        this._startStudyById(openStudyData["uuid"]);
+      });
+      moreOpts.addListener("openTemplate", e => {
+        win.close();
+        const templateData = e.getData();
+        this._createStudyFromTemplate(templateData);
+      });
+      moreOpts.addListener("openService", e => {
+        win.close();
+        const openServiceData = e.getData();
+        this._createStudyFromService(openServiceData["key"], openServiceData["version"]);
+      });
+      return moreOpts;
     },
 
     _getShareMenuButton: function(card) {

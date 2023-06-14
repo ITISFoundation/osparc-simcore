@@ -328,7 +328,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       if (!item.isMultiSelectionMode()) {
         const studyData = this.__getStudyData(item.getUuid(), false);
-        this._startStudyById(studyData["uuid"]);
+        // this._startStudyById(studyData["uuid"]);
+        this._openDetailsView(studyData);
+        this.resetSelection();
       }
     },
 
