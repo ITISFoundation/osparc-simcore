@@ -163,7 +163,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
     __openPage: function(page) {
       if (page) {
-        this.setSelection([page]);
+        this.__detailsView.setSelection([page]);
       }
     },
 
