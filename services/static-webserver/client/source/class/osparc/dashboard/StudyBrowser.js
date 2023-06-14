@@ -804,6 +804,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const writeAccess = osparc.data.model.Study.canIWrite(studyData["accessRights"]);
       const deleteAccess = osparc.data.model.Study.canIDelete(studyData["accessRights"]);
 
+      const openButton = this._getOpenMenuButton(studyData);
+      if (openButton) {
+        menu.add(openButton);
+      }
+
       if (writeAccess) {
         const renameStudyButton = this.__getRenameStudyMenuButton(studyData);
         menu.add(renameStudyButton);
@@ -829,9 +834,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       const exportButton = this.__getExportMenuButton(studyData);
       menu.add(exportButton);
-
-      const moreOptionsButton = this._getMoreOptionsMenuButton(studyData);
-      menu.add(moreOptionsButton);
 
       if (deleteAccess) {
         const deleteButton = this.__getDeleteStudyMenuButton(studyData, false);

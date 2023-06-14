@@ -318,11 +318,22 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
-    _getMoreOptionsMenuButton: function(resourceData) {
-      const moreOptsButton = new qx.ui.menu.Button(this.tr("More options..."));
-      osparc.utils.Utils.setIdToWidget(moreOptsButton, "moreInfoBtn");
-      moreOptsButton.addListener("execute", () => this._openDetailsView(resourceData), this);
-      return moreOptsButton;
+    _getOpenMenuButton: function(resourceData) {
+      const openButton = new qx.ui.menu.Button(this.tr("Open"));
+      openButton.addListener("execute", () => {
+        switch (resourceData["resourceType"]) {
+          case "study":
+            this._startStudyById(resourceData["uuid"]);
+            break;
+          case "template":
+            this._createStudyFromTemplate(resourceData);
+            break;
+          case "service":
+            this._createStudyFromService(resourceData["key"], resourceData["version"]);
+            break;
+        }
+      }, this);
+      return openButton;
     },
 
     _openDetailsView: function(resourceData) {

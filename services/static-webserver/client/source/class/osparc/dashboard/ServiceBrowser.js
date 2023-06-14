@@ -199,9 +199,9 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       const menu = card.getMenu();
       const serviceData = card.getResourceData();
 
-      const moreInfoButton = this._getMoreOptionsMenuButton(serviceData);
-      if (moreInfoButton) {
-        menu.add(moreInfoButton);
+      const openButton = this._getOpenMenuButton(serviceData);
+      if (openButton) {
+        menu.add(openButton);
       }
     },
 
