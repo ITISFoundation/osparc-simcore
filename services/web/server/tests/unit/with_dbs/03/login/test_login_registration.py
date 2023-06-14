@@ -18,6 +18,7 @@ from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import NewInvitation, NewUser, parse_link
 from servicelib.aiohttp.rest_responses import unwrap_envelope
 from simcore_postgres_database.models.users import users
+from simcore_service_webserver import login
 from simcore_service_webserver.db.models import ConfirmationAction, UserStatus
 from simcore_service_webserver.login._confirmation import _url_for_confirmation
 from simcore_service_webserver.login._constants import (
@@ -185,15 +186,22 @@ async def test_registration_with_expired_confirmation(
     await assert_error(response, web.HTTPConflict, MSG_EMAIL_EXISTS)
 
 
+@pytest.fixture
+def product_name() -> str:
+    return "osparc"
+
+
 async def test_registration_with_weak_password_fails(
     client: TestClient,
     mocker: MockerFixture,
     _clean_user_table: None,
+    product_name: str,
     fake_user_email: str,
     fake_weak_password: str,
 ):
     assert client.app
     url = client.app.router["auth_register"].url_for()
+    session_settings = login.settings.get_plugin_settings(client.app, product_name)
     response = await client.post(
         f"{url}",
         json={
@@ -206,7 +214,7 @@ async def test_registration_with_weak_password_fails(
         response,
         web.HTTPUnauthorized,
         MSG_WEAK_PASSWORD.format(
-            LOGIN_PASSWORD_MIN_LENGTH=LoginSettingsForProduct.LOGIN_PASSWORD_MIN_LENGTH
+            LOGIN_PASSWORD_MIN_LENGTH=session_settings.LOGIN_PASSWORD_MIN_LENGTH
         ),
     )
 
@@ -417,10 +425,13 @@ async def test_registration_with_weak_password_fails(
     client: TestClient,
     mocker: MockerFixture,
     _clean_user_table: None,
+    login_options: LoginOptions,
+    product_name: str,
     fake_user_email: str,
     fake_weak_password: str,
 ):
     assert client.app
+    session_settings = login.settings.get_plugin_settings(client.app, product_name)
     url = client.app.router["auth_register"].url_for()
     response = await client.post(
         f"{url}",
@@ -434,7 +445,7 @@ async def test_registration_with_weak_password_fails(
         response,
         web.HTTPUnauthorized,
         MSG_WEAK_PASSWORD.format(
-            LOGIN_PASSWORD_MIN_LENGTH=LoginSettingsForProduct.LOGIN_PASSWORD_MIN_LENGTH
+            LOGIN_PASSWORD_MIN_LENGTH=session_settings.LOGIN_PASSWORD_MIN_LENGTH
         ),
     )
 
@@ -466,6 +477,7 @@ async def test_registration_invitation_stays_valid_if_triad_with_weak_password(
     #
     # Front end then creates the following request
     #
+    session_settings = get_plugin_settings(client.app)
     async with NewInvitation(client) as f:
         confirmation = f.confirmation
         assert confirmation
@@ -487,7 +499,7 @@ async def test_registration_invitation_stays_valid_if_triad_with_weak_password(
             response,
             web.HTTPUnauthorized,
             MSG_WEAK_PASSWORD.format(
-                LOGIN_PASSWORD_MIN_LENGTH=LoginSettingsForProduct.LOGIN_PASSWORD_MIN_LENGTH
+                LOGIN_PASSWORD_MIN_LENGTH=session_settings.LOGIN_PASSWORD_MIN_LENGTH
             ),
         )
         response = await client.post(
