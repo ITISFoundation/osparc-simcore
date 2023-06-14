@@ -30,17 +30,29 @@ async def random_project(
 
 
 @pytest.fixture
+def projects_node_repo_of_invalid_project(faker: Faker) -> ProjectsNodesRepo:
+    invalid_project_uuid = faker.uuid4(cast_to=None)
+    repo = ProjectsNodesRepo(project_uuid=invalid_project_uuid)
+    assert repo
+    return repo
+
+
+@pytest.fixture
 def projects_node_repo(random_project: dict[str, Any]) -> ProjectsNodesRepo:
-    return ProjectsNodesRepo(project_uuid=random_project["uuid"])
+    repo = ProjectsNodesRepo(project_uuid=random_project["uuid"])
+    assert repo
+    return repo
 
 
 async def test_create_projects_nodes_raises_if_project_not_found(
-    connection: SAConnection, faker: Faker
+    connection: SAConnection,
+    faker: Faker,
+    projects_node_repo_of_invalid_project: ProjectsNodesRepo,
 ):
-    invalid_project_uuid = faker.uuid4(cast_to=None)
-    repo = ProjectsNodesRepo(project_uuid=invalid_project_uuid)
     with pytest.raises(ProjectsNodesProjectNotFound):
-        await repo.create(connection, node=ProjectsNodeCreate(node_id=faker.uuid4()))
+        await projects_node_repo_of_invalid_project.create(
+            connection, node=ProjectsNodeCreate(node_id=faker.uuid4())
+        )
 
 
 async def test_create_projects_nodes(
@@ -68,3 +80,11 @@ async def test_create_twice_same_projects_nodes_raises(
         await projects_node_repo.create(
             connection, node=ProjectsNodeCreate(node_id=new_node.node_id)
         )
+
+
+async def test_list_project_nodes_of_invalid_project_returns_nothing(
+    connection: SAConnection,
+    projects_node_repo_of_invalid_project: ProjectsNodesRepo,
+):
+    nodes = await projects_node_repo_of_invalid_project.list(connection)
+    assert nodes == []

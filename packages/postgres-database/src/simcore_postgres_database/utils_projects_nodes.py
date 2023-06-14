@@ -3,6 +3,7 @@ import uuid
 from dataclasses import asdict, dataclass, field
 
 import psycopg2
+import sqlalchemy
 from sqlalchemy import literal_column
 
 from ._protocols import DBConnection
@@ -75,7 +76,17 @@ class ProjectsNodesRepo:
                 ) from exc
 
     async def list(self, connection: DBConnection) -> list[ProjectsNode]:
-        ...
+        list_stmt = sqlalchemy.select(projects_nodes).select_from(
+            projects_to_projects_nodes.join(
+                projects_nodes,
+                projects_to_projects_nodes.c.project_uuid == f"{self.project_uuid}",
+            )
+        )
+        nodes = [
+            ProjectsNode(**dict(row.items()))
+            async for row in connection.execute(list_stmt)
+        ]
+        return nodes
 
     async def get(
         self, connection: DBConnection, *, node_id: uuid.UUID
