@@ -49,6 +49,9 @@ MSG_USER_EXPIRED: Final[
 ] = "This account has expired and does not have anymore access. Please contact support for further details: {support_email}"
 MSG_WRONG_2FA_CODE: Final[str] = "Invalid code (wrong or expired)"
 MSG_WRONG_PASSWORD: Final[str] = "Wrong password"
+MSG_WEAK_PASSWORD: Final[
+    str
+] = "Password must be at least {LOGIN_PASSWORD_MIN_LENGTH} characters long"
 
 MSG_INVITATIONS_CONTACT_SUFFIX: Final[
     str
