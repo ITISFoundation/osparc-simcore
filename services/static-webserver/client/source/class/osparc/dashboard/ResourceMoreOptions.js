@@ -97,9 +97,19 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     __servicesUpdatePage: null,
 
     __addToolbar: function() {
-      const toolbar = this.__toolbar = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+      const toolbar = this.__toolbar = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
 
       const resourceData = this.__resourceData;
+
+      const title = new qx.ui.basic.Label(resourceData.name).set({
+        font: "text-16",
+        alignY: "middle",
+        maxWidth: 300,
+        rich: true,
+        wrap: true
+      });
+      toolbar.add(title);
+
       if (osparc.utils.Resources.isService(resourceData)) {
         const serviceVersionSelector = this.__createServiceVersionSelector();
         toolbar.add(serviceVersionSelector);
@@ -178,11 +188,13 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __createServiceVersionSelector: function() {
-      const hBox = this.__serviceVersionLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+      const hBox = this.__serviceVersionLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
         alignY: "middle"
       }));
 
-      const versionLabel = new qx.ui.basic.Label(this.tr("Service Version"));
+      const versionLabel = new qx.ui.basic.Label(this.tr("Service Version")).set({
+        font: "text-14"
+      });
       hBox.add(versionLabel);
       const versionsBox = new osparc.ui.toolbar.SelectBox();
       hBox.add(versionsBox);
