@@ -307,7 +307,7 @@ def _assert_projects_to_product_db_row(
 ):
     with postgres_db.connect() as conn:
         rows = conn.execute(
-            sa.select([projects_to_products]).where(
+            sa.select(projects_to_products).where(
                 projects_to_products.c.project_uuid == f"{project['uuid']}"
             )
         ).fetchall()

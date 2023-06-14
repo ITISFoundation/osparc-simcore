@@ -20,8 +20,8 @@ from models_library.users import UserID
 from pydantic import ValidationError, parse_obj_as
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
-from simcore_service_director_v2.core.errors import ProjectNotFoundError
 
+from ..core.errors import ProjectNotFoundError
 from ..modules.db.repositories.projects import ProjectsRepository
 from ..modules.db.repositories.projects_networks import ProjectsNetworksRepository
 from ..modules.director_v0 import DirectorV0Client

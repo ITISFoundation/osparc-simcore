@@ -1,16 +1,15 @@
 import asyncio
 import logging
-import os
-import socket
 from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable, Final, Protocol
 
 import aio_pika
+import aiormq
 from aio_pika.exceptions import AMQPConnectionError, ChannelInvalidStateError
 from aio_pika.patterns import RPC
 from packaging.version import Version
 from pydantic import PositiveFloat
-from servicelib.logging_utils import log_context
+from servicelib.logging_utils import log_catch, log_context
 from settings_library.rabbit import RabbitSettings
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -19,43 +18,15 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random_exponential
 
 from .rabbitmq_errors import RemoteMethodNotRegisteredError, RPCNotInitializedError
-from .rabbitmq_utils import RPCMethodName, RPCNamespace, RPCNamespacedMethodName
+from .rabbitmq_utils import (
+    RPCMethodName,
+    RPCNamespace,
+    RPCNamespacedMethodName,
+    declare_queue,
+    get_rabbitmq_client_unique_name,
+)
 
 _logger = logging.getLogger(__name__)
-
-
-def _connection_close_callback(sender: Any, exc: BaseException | None) -> None:
-    if exc:
-        if isinstance(exc, asyncio.CancelledError):
-            _logger.info("Rabbit connection was cancelled")
-        else:
-            _logger.error(
-                "Rabbit connection closed with exception from %s:%s",
-                sender,
-                exc,
-            )
-
-
-def _channel_close_callback(_: Any, exc: BaseException | None) -> None:
-    if exc:
-        if isinstance(exc, asyncio.CancelledError):
-            _logger.info("Rabbit channel was cancelled")
-        else:
-            _logger.error("Rabbit channel closed with exception from %s", exc)
-
-
-async def _get_connection(
-    rabbit_broker: str, connection_name: str
-) -> aio_pika.abc.AbstractRobustConnection:
-    # NOTE: to show the connection name in the rabbitMQ UI see there
-    # https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url
-    #
-    url = f"{rabbit_broker}?name={connection_name}_{socket.gethostname()}_{os.getpid()}"
-    connection = await aio_pika.connect_robust(
-        url, client_properties={"connection_name": connection_name}
-    )
-    connection.close_callbacks.add(_connection_close_callback)
-    return connection
 
 
 MessageHandler = Callable[[Any], Awaitable[bool]]
@@ -71,14 +42,14 @@ class RabbitMessage(Protocol):
         ...
 
 
-_MINUTE: Final[int] = 60
-_RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_S: Final[int] = 15 * _MINUTE
+_DEFAULT_RABBITMQ_SERVER_HEARTBEAT_S = 60
 
 
 @dataclass
 class RabbitMQClient:
     client_name: str
     settings: RabbitSettings
+    heartbeat: int = _DEFAULT_RABBITMQ_SERVER_HEARTBEAT_S
     _connection_pool: aio_pika.pool.Pool | None = field(init=False, default=None)
     _channel_pool: aio_pika.pool.Pool | None = field(init=False, default=None)
 
@@ -86,19 +57,75 @@ class RabbitMQClient:
     _rpc_channel: aio_pika.abc.AbstractChannel | None = None
     _rpc: RPC | None = None
 
-    def __post_init__(self):
+    _healthy_state: bool = True
+
+    def __post_init__(self) -> None:
         # recommendations are 1 connection per process
         self._connection_pool = aio_pika.pool.Pool(
-            _get_connection, self.settings.dsn, self.client_name, max_size=1
+            self._get_connection, self.settings.dsn, self.client_name, max_size=1
         )
         # channels are not thread safe, what about python?
         self._channel_pool = aio_pika.pool.Pool(self._get_channel, max_size=10)
+
+    def _connection_close_callback(
+        self,
+        sender: Any,  # pylint: disable=unused-argument
+        exc: BaseException | None,
+    ) -> None:
+        if exc:
+            if isinstance(exc, asyncio.CancelledError):
+                _logger.info("Rabbit connection cancelled")
+            elif isinstance(exc, aiormq.exceptions.ConnectionClosed):
+                _logger.info("Rabbit connection closed: %s", exc)
+            else:
+                _logger.error(
+                    "Rabbit connection closed with exception from %s:%s",
+                    type(exc),
+                    exc,
+                )
+                self._healthy_state = False
+
+    def _channel_close_callback(
+        self,
+        sender: Any,  # pylint: disable=unused-argument
+        exc: BaseException | None,
+    ) -> None:
+        if exc:
+            if isinstance(exc, asyncio.CancelledError):
+                _logger.info("Rabbit channel cancelled")
+            elif isinstance(exc, aiormq.exceptions.ChannelClosed):
+                _logger.info("Rabbit channel closed")
+            else:
+                _logger.error(
+                    "Rabbit channel closed with exception from %s:%s",
+                    type(exc),
+                    exc,
+                )
+                self._healthy_state = False
+
+    async def _get_connection(
+        self, rabbit_broker: str, connection_name: str
+    ) -> aio_pika.abc.AbstractRobustConnection:
+        # NOTE: to show the connection name in the rabbitMQ UI see there
+        # https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url
+        #
+        url = f"{rabbit_broker}?name={get_rabbitmq_client_unique_name(connection_name)}&heartbeat={self.heartbeat}"
+        connection = await aio_pika.connect_robust(
+            url,
+            client_properties={"connection_name": connection_name},
+        )
+        connection.close_callbacks.add(self._connection_close_callback)
+        return connection
+
+    @property
+    def healthy(self) -> bool:
+        return self._healthy_state
 
     async def rpc_initialize(self) -> None:
         self._rpc_connection = await aio_pika.connect_robust(
             self.settings.dsn,
             client_properties={
-                "connection_name": f"{self.client_name}.rpc.{socket.gethostname()}"
+                "connection_name": f"{get_rabbitmq_client_unique_name(self.client_name)}.rpc"
             },
         )
         self._rpc_channel = await self._rpc_connection.channel()
@@ -118,6 +145,8 @@ class RabbitMQClient:
             logging.INFO,
             msg=f"{self.client_name} closing connection to RabbitMQ",
         ):
+            assert self._channel_pool  # nosec
+            await self._channel_pool.close()
             assert self._connection_pool  # nosec
             await self._connection_pool.close()
 
@@ -134,14 +163,15 @@ class RabbitMQClient:
         async with self._connection_pool.acquire() as connection:
             connection: aio_pika.RobustConnection
             channel = await connection.channel()
-            channel.close_callbacks.add(_channel_close_callback)
+            channel.close_callbacks.add(self._channel_close_callback)
             return channel
 
     async def ping(self) -> bool:
-        assert self._connection_pool  # nosec
-        async with self._connection_pool.acquire() as connection:
-            connection: aio_pika.RobustConnection
-            return connection.connected.is_set()
+        with log_catch(_logger, reraise=False):
+            async with await aio_pika.connect(self.settings.dsn, timeout=1):
+                ...
+            return True
+        return False
 
     async def subscribe(
         self,
@@ -184,15 +214,12 @@ class RabbitMQClient:
             # consumer/publisher must set the same configuration for same queue
             # exclusive means that the queue is only available for THIS very client
             # and will be deleted when the client disconnects
-            queue_parameters = {
-                "durable": True,
-                "exclusive": exclusive_queue,
-                "arguments": {"x-message-ttl": _RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_S},
-            }
-            if not exclusive_queue:
-                # NOTE: setting a name will ensure multiple instance will take their data here
-                queue_parameters |= {"name": exchange_name}
-            queue = await channel.declare_queue(**queue_parameters)
+            queue = await declare_queue(
+                channel,
+                self.client_name,
+                exchange_name,
+                exclusive_queue=exclusive_queue,
+            )
             if topics is None:
                 await queue.bind(exchange, routing_key="")
             else:
@@ -203,7 +230,7 @@ class RabbitMQClient:
             async def _on_message(
                 message: aio_pika.abc.AbstractIncomingMessage,
             ) -> None:
-                async with message.process(requeue=True):
+                async with message.process(requeue=True, ignore_processed=True):
                     try:
                         with log_context(
                             _logger, logging.DEBUG, msg=f"Message received {message}"
@@ -218,21 +245,27 @@ class RabbitMQClient:
                         )
                         await message.nack()
 
-            await queue.consume(_on_message)
+            await queue.consume(
+                _on_message,
+                exclusive=exclusive_queue,
+                consumer_tag=f"{get_rabbitmq_client_unique_name(self.client_name)}_{exchange_name}",
+            )
             return queue.name
 
     async def add_topics(
         self,
         exchange_name: str,
-        queue_name: str,
         *,
         topics: list[str],
     ) -> None:
         assert self._channel_pool  # nosec
+
         async with self._channel_pool.acquire() as channel:
             channel: aio_pika.RobustChannel
             exchange = await channel.get_exchange(exchange_name)
-            queue = await channel.get_queue(queue_name)
+            queue = await declare_queue(
+                channel, self.client_name, exchange_name, exclusive_queue=True
+            )
 
             await asyncio.gather(
                 *(queue.bind(exchange, routing_key=topic) for topic in topics)
@@ -241,7 +274,6 @@ class RabbitMQClient:
     async def remove_topics(
         self,
         exchange_name: str,
-        queue_name: str,
         *,
         topics: list[str],
     ) -> None:
@@ -249,10 +281,12 @@ class RabbitMQClient:
         async with self._channel_pool.acquire() as channel:
             channel: aio_pika.RobustChannel
             exchange = await channel.get_exchange(exchange_name)
-            queue = await channel.get_queue(queue_name)
+            queue = await declare_queue(
+                channel, self.client_name, exchange_name, exclusive_queue=True
+            )
 
             await asyncio.gather(
-                *(queue.unbind(exchange, routing_key=topic) for topic in topics)
+                *(queue.unbind(exchange, routing_key=topic) for topic in topics),
             )
 
     async def unsubscribe(

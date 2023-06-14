@@ -6,7 +6,7 @@ import sys
 from collections import Counter, defaultdict
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Literal, NamedTuple, Optional
+from typing import Literal, NamedTuple
 
 from packaging.version import Version
 
@@ -125,7 +125,7 @@ def format_reqs_paths(req_paths):
 
 def main_changes_stats() -> None:
 
-    filepath = Path("changes.ignore.keep.log")
+    filepath = Path("changes.ignore.log")
     if not filepath.exists():
         dump_changes(filepath)
 
@@ -201,9 +201,7 @@ class ReqFile(NamedTuple):
     dependencies: dict[str, Version]
 
 
-def parse_dependencies(
-    repodir: Path, *, exclude: Optional[set] = None
-) -> list[ReqFile]:
+def parse_dependencies(repodir: Path, *, exclude: set | None = None) -> list[ReqFile]:
     reqs = []
     exclude = exclude or set()
     for reqfile in repodir.rglob("**/requirements/_*.txt"):
@@ -229,7 +227,7 @@ def parse_dependencies(
     return reqs
 
 
-def repo_wide_changes(exclude: Optional[set] = None) -> None:
+def repo_wide_changes(exclude: set | None = None) -> None:
     reqs = parse_dependencies(REPODIR, exclude=exclude)
 
     # format

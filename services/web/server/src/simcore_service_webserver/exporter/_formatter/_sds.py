@@ -2,6 +2,7 @@ import asyncio
 import logging
 from collections import deque
 from pathlib import Path
+from typing import Any
 
 from aiohttp import web
 from servicelib.pools import non_blocking_process_pool_executor
@@ -68,9 +69,9 @@ async def create_sds_directory(
         name=project_data["name"], description=project_data["description"]
     )
 
-    params_code_description = {}
+    params_code_description: dict[str, Any] = {}
 
-    rrid_entires = deque()
+    rrid_entires: deque[RRIDEntry] = deque()
 
     repo = ResearchResourceRepository(app)
     classifiers = project_data["classifiers"]
@@ -116,8 +117,8 @@ async def create_sds_directory(
 
     workbench = project_data["workbench"]
 
-    inputs = deque()
-    outputs = deque()
+    inputs: deque[InputsEntryModel] = deque()
+    outputs: deque[OutputsEntryModel] = deque()
 
     for entry in workbench.values():
         service_key = entry["key"]

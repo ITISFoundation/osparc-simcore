@@ -1,12 +1,12 @@
 import io
 import logging
-from typing import Any, Callable, Generic, Literal, Optional, TypeVar
+from typing import Any, Callable, Generic, Literal, TypeAlias, TypeVar
 
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPError, HTTPException
 from aiohttp.web_routedef import RouteDef, RouteTableDef
 from models_library.generics import Envelope
-from pydantic import Field
+from pydantic import BaseModel, Field
 from pydantic.generics import GenericModel
 from servicelib.common_headers import X_FORWARDED_PROTO
 from servicelib.json_serialization import json_dumps
@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 
 def rename_routes_as_handler_function(routes: RouteTableDef, *, prefix: str):
     route: RouteDef
-    for route in routes:  # type: ignore
+    for route in routes:
         route.kwargs["name"] = f"{prefix}.{route.handler.__name__}"
 
 
@@ -36,13 +36,13 @@ def get_routes_view(routes: RouteTableDef) -> str:
 def create_url_for_function(request: web.Request) -> Callable:
     app = request.app
 
-    def url_for(route_name: str, **params: dict[str, Any]) -> str:
+    def _url_for(route_name: str, **params: dict[str, Any]) -> str:
         """Reverse URL constructing using named resources"""
         try:
             rel_url: URL = app.router[route_name].url_for(
                 **{k: f"{v}" for k, v in params.items()}
             )
-            url = (
+            url: URL = (
                 request.url.origin()
                 .with_scheme(
                     # Custom header by traefik. See labels in docker-compose as:
@@ -59,7 +59,7 @@ def create_url_for_function(request: web.Request) -> Callable:
                 "Check name spelling or whether the router was not registered"
             ) from err
 
-    return url_for
+    return _url_for
 
 
 def envelope_json_response(
@@ -82,9 +82,11 @@ def envelope_json_response(
 # Special models and responses for the front-end
 #
 
+PageStr: TypeAlias = Literal["view", "error"]
 
-def create_redirect_response(
-    app: web.Application, page: Literal["view", "error"], **parameters
+
+def create_redirect_to_page_response(
+    app: web.Application, page: PageStr, **parameters
 ) -> web.HTTPFound:
     """
     Returns a redirect response to the front-end with information on page
@@ -112,7 +114,7 @@ def create_redirect_response(
     return web.HTTPFound(location=redirect_url)
 
 
-PageParameters = TypeVar("PageParameters")
+PageParameters = TypeVar("PageParameters", bound=BaseModel)
 
 
 class NextPage(GenericModel, Generic[PageParameters]):
@@ -124,10 +126,7 @@ class NextPage(GenericModel, Generic[PageParameters]):
     using a path+query in the fragment of the URL
     """
 
-    name: str = Field(..., description="Code name to the front-end page")
-    parameters: Optional[PageParameters] = None
-
-    def as_redirect_response(self, app: web.Application) -> web.HTTPFound:
-        return create_redirect_response(
-            app=app, page=self.name, **self.parameters.dict()
-        )
+    name: str = Field(
+        ..., description="Code name to the front-end page. Ideally a PageStr"
+    )
+    parameters: PageParameters | None = None

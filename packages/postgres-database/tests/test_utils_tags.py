@@ -510,7 +510,7 @@ async def test_tags_repo_create(
     # assigned primary group
     assert (
         await conn.scalar(
-            sa.select([tags_to_groups.c.group_id]).where(
+            sa.select(tags_to_groups.c.group_id).where(
                 tags_to_groups.c.tag_id == tag_1["id"]
             )
         )

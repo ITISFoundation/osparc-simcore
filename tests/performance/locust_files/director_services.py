@@ -28,8 +28,8 @@ class WebApiUser(FastHttpUser):
             },
         )
 
-    def on_start(self):
+    def on_start(self):  # pylint: disable=no-self-use
         print("Created User ")
 
-    def on_stop(self):
+    def on_stop(self):  # pylint: disable=no-self-use
         print("Stopping")

@@ -27,13 +27,14 @@ from servicelib.common_headers import (
 )
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import api_version_prefix as VTAG
 from ..catalog.client import get_services_for_user_in_product
 from ..director_v2 import api
-from ..login.decorators import RQT_USERID_KEY, login_required
+from ..login.decorators import login_required
 from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
 from ..security.api import check_permission
 from ..security.decorators import permission_required
@@ -77,8 +78,8 @@ routes = web.RouteTableDef()
 
 
 class RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[pydantic-alias]
+    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[pydantic-alias]
 
 
 class ProjectPathParams(BaseModel):

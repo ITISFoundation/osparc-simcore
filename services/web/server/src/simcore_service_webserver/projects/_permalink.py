@@ -1,13 +1,13 @@
 import asyncio
 import logging
-from typing import Any, Callable, Coroutine
+from typing import Any, Callable, Coroutine, cast
 
 from aiohttp import web
 from models_library.projects import ProjectID
 from pydantic import BaseModel, HttpUrl
-from simcore_service_webserver.projects.models import ProjectDict
 
 from .exceptions import PermalinkFactoryError, PermalinkNotAllowedError
+from .models import ProjectDict
 
 _PROJECT_PERMALINK = f"{__name__}"
 _logger = logging.getLogger(__name__)
@@ -32,8 +32,9 @@ def register_factory(app: web.Application, factory_coro: _CreateLinkCallable):
 
 
 def _get_factory(app: web.Application) -> _CreateLinkCallable:
+
     if _create := app.get(_PROJECT_PERMALINK):
-        return _create
+        return cast(_CreateLinkCallable, _create)
 
     raise PermalinkFactoryError(
         "Undefined permalink factory. Check plugin initialization."

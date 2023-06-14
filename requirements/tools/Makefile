@@ -32,8 +32,10 @@ MAKE_C := $(MAKE) --directory
 .PHONY: touch reqs info
 
 # requirements in packages and services
-_compiled-all = $(shell find $(REPODIR) -path "*/requirements*.txt")
-_inputs-all = $(shell find $(REPODIR) -path "*/requirements*.in")
+_all-txt = $(shell find $(REPODIR) -path "*/requirements*.txt")
+_all-in := $(shell find ${REPODIR} -path "*/requirements*.in" | sort)
+_services-in := $(shell find ${SERVICES_DIR} -path "*/requirements*.in" | sort)
+
 
 # packages/
 _target-inputs = $(shell find ${PACKAGES_DIR} -type f -name _base.in)
@@ -60,8 +62,8 @@ info: ## displays some info
 
 touch: ## touches all package requirement inputs
 	# First aligns time-stamps: ensures compiled timestamp is older than target inputs
-	@$(foreach p,${_inputs-all},touch $(p);)
-	@$(foreach p,${_compiled-all},touch $(p);)
+	@$(foreach p,${_all-txt},touch $(p);)
+	@$(foreach p,${_all-in},touch $(p);)
 	# Touchs all target input requirements
 	@$(foreach p,${_target-inputs},touch $(p);)
 
@@ -72,19 +74,25 @@ reqs: ## updates test & tooling requirements
 
 reqs-all: guard-UPGRADE_OPTION ## updates a give package repository-wise (e.g. make reqs-all upgrade=foo==1.2.3 )
 	# Upgrading $(upgrade) ALL requirements
-	@$(foreach p,${_inputs-all},echo Touching $(p);touch $(p);$(MAKE_C) $(dir $(p)) reqs $(UPGRADE_OPTION);)
+	@$(foreach p,${_all-in},echo Touching $(p);touch $(p);$(MAKE_C) $(dir $(p)) reqs $(UPGRADE_OPTION);)
+
+reqs-services: guard-UPGRADE_OPTION ## updates a give package on a service (e.g. make reqs-services upgrade=foo==1.2.3 )
+	# Upgrading $(upgrade) in services
+	@$(foreach p,${_services-in},echo Touching $(p);touch $(p);$(MAKE_C) $(dir $(p)) reqs $(UPGRADE_OPTION);)
+
 
 reqs-ci: ## upgrades requirements for pylint recipe in CI
 	cd $(REPODIR)/ci/helpers \
 	&& rm requirements.txt \
-	&& pip-compile --output-file=requirements.txt requirements.in
+	&& pip-compile --resolver=backtracking --strip-extras requirements.in
 
 IMAGE_NAME:=local/python-devkit:${PYTHON_VERSION}
 
 # SEE https://medium.com/faun/set-current-host-user-for-docker-container-4e521cef9ffc
 .PHONY: build
 build build-nc: ## builds tooling image ${IMAGE_NAME}
-	docker build $(if $(findstring -nc,$@),--no-cache,) \
+	docker buildx build $(if $(findstring -nc,$@),--no-cache,) \
+		--load \
 		--build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
 		--tag ${IMAGE_NAME} .
 

@@ -36,7 +36,7 @@ from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.catalog.plugin import setup_catalog
-from simcore_service_webserver.db import setup_db
+from simcore_service_webserver.db.plugin import setup_db
 from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.garbage_collector import setup_garbage_collector
 from simcore_service_webserver.login.plugin import setup_login
@@ -44,7 +44,7 @@ from simcore_service_webserver.products.plugin import setup_products
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
-from simcore_service_webserver.rest import setup_rest
+from simcore_service_webserver.rest.plugin import setup_rest
 from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session.plugin import setup_session
 

@@ -79,6 +79,18 @@ We should avoid merging PRs with ``TODO:`` and ``FIXME:`` into master. One of ou
 When retrying an API call (or some sort of request) to an external system, consider that that system can have trouble replying.
 It is most effective to create a retry using `wait_random_exponential` from tenacity which implements what the article above describes.
 
+### CC2: No commented code
+
+Avoid commented code, but if you *really* want to keep it then add an explanatory `NOTE:`
+```python
+import os
+# import bar
+# x = "not very useful"
+
+# NOTE: I need to keep this becase ...
+# import foo
+# x = "ok"
+```
 
 
 

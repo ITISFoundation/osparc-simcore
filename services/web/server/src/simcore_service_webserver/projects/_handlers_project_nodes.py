@@ -5,6 +5,7 @@
 import asyncio
 import json
 import logging
+from typing import Any
 
 from aiohttp import web
 from models_library.api_schemas_catalog import ServiceAccessRightsGet
@@ -140,7 +141,7 @@ async def get_node(request: web.Request) -> web.Response:
             )
 
         # NOTE: for legacy services a redirect to director-v0 is made
-        service_data: dict | list = await api.get_dynamic_service(
+        service_data: dict[str, Any] = await api.get_dynamic_service(
             app=request.app, node_uuid=f"{path_params.node_id}"
         )
 

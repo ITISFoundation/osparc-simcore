@@ -23,10 +23,11 @@ class RabbitSettings(BaseCustomSettings):
 
     @cached_property
     def dsn(self) -> str:
-        return RabbitDsn.build(
+        rabbit_dsn: str = RabbitDsn.build(
             scheme="amqp",
             user=self.RABBIT_USER,
             password=self.RABBIT_PASSWORD.get_secret_value(),
             host=self.RABBIT_HOST,
             port=f"{self.RABBIT_PORT}",
         )
+        return rabbit_dsn

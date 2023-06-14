@@ -75,7 +75,7 @@ class DockerComposeOverwriteCfg(ComposeSpecification):
     def create_default(
         cls, service_name: str | None = None
     ) -> "DockerComposeOverwriteCfg":
-        return cls.parse_obj(
+        model: "DockerComposeOverwriteCfg" = cls.parse_obj(
             {
                 "services": {
                     service_name: {
@@ -86,12 +86,14 @@ class DockerComposeOverwriteCfg(ComposeSpecification):
                 }
             }
         )
+        return model
 
     @classmethod
     def from_yaml(cls, path: Path) -> "DockerComposeOverwriteCfg":
         with path.open() as fh:
             data = yaml_safe_load(fh)
-        return cls.parse_obj(data)
+        model: "DockerComposeOverwriteCfg" = cls.parse_obj(data)
+        return model
 
 
 class MetaConfig(ServiceDockerData):
@@ -113,14 +115,16 @@ class MetaConfig(ServiceDockerData):
     def from_yaml(cls, path: Path) -> "MetaConfig":
         with path.open() as fh:
             data = yaml_safe_load(fh)
-        return cls.parse_obj(data)
+        model: "MetaConfig" = cls.parse_obj(data)
+        return model
 
     @classmethod
     def from_labels_annotations(cls, labels: dict[str, str]) -> "MetaConfig":
         data = from_labels(
             labels, prefix_key=OSPARC_LABEL_PREFIXES[0], trim_key_head=False
         )
-        return cls.parse_obj(data)
+        model: "MetaConfig" = cls.parse_obj(data)
+        return model
 
     def to_labels_annotations(self) -> dict[str, str]:
         labels = to_labels(

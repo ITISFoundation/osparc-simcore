@@ -9,7 +9,8 @@ from typing import Any, cast
 
 import httpx
 import yarl
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, HTTPException, Request, Response, status
+from fastapi.datastructures import URL
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
@@ -21,10 +22,6 @@ from models_library.services import (
 )
 from models_library.users import UserID
 from servicelib.logging_utils import log_decorator
-
-# Module's business logic ---------------------------------------------
-from starlette import status
-from starlette.datastructures import URL
 
 from ..core.settings import DirectorV0Settings
 from ..models.schemas.dynamic_services import RunningDynamicServiceDetails
@@ -81,6 +78,9 @@ class DirectorV0Client:
         return await self.client.request(method, tail_path, **kwargs)
 
     async def forward(self, request: Request, response: Response) -> Response:
+        assert self.client.base_url.path.startswith("/v0")  # nosec
+        # SEE https://github.com/ITISFoundation/osparc-simcore/issues/4332
+        # WARNING: assert self.client.base_url.host != request.base_url.hostname  # nosec
         url_tail = URL(
             path=request.url.path.replace("/v0", ""),
             fragment=request.url.fragment,

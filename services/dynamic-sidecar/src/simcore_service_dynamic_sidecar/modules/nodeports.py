@@ -28,10 +28,8 @@ from simcore_sdk.node_ports_v2 import Nodeports, Port
 from simcore_sdk.node_ports_v2.links import ItemConcreteValue
 from simcore_sdk.node_ports_v2.port import SetKWargs
 from simcore_sdk.node_ports_v2.port_utils import is_file_type
-from simcore_service_dynamic_sidecar.core.settings import (
-    ApplicationSettings,
-    get_settings,
-)
+
+from ..core.settings import ApplicationSettings, get_settings
 
 
 class PortTypeName(str, Enum):
@@ -47,7 +45,7 @@ logger = logging.getLogger(__name__)
 # OUTPUTS section
 
 
-def _get_size_of_value(value: Optional[ItemConcreteValue]) -> int:
+def _get_size_of_value(value: ItemConcreteValue | None) -> int:
     if value is None:
         return 0
     if isinstance(value, Path):
@@ -73,7 +71,7 @@ _CONTROL_TESTMARK_DY_SIDECAR_NODEPORT_UPLOADED_MESSAGE = (
 async def upload_outputs(
     outputs_path: Path,
     port_keys: list[str],
-    io_log_redirect_cb: Optional[LogRedirectCB],
+    io_log_redirect_cb: LogRedirectCB | None,
     progress_bar: ProgressBarData,
 ) -> None:
     # pylint: disable=too-many-branches
@@ -90,9 +88,7 @@ async def upload_outputs(
     )
 
     # let's gather the tasks
-    ports_values: dict[
-        str, tuple[Optional[ItemConcreteValue], Optional[SetKWargs]]
-    ] = {}
+    ports_values: dict[str, tuple[ItemConcreteValue | None, SetKWargs | None]] = {}
     archiving_tasks: deque[Coroutine[None, None, None]] = deque()
     ports_to_set = [
         port_value
@@ -195,7 +191,7 @@ _shutil_move = aiofiles.os.wrap(shutil.move)  # type: ignore
 
 async def _get_data_from_port(
     port: Port, *, target_dir: Path, progress_bar: ProgressBarData
-) -> tuple[Port, Optional[ItemConcreteValue], ByteSize]:
+) -> tuple[Port, ItemConcreteValue | None, ByteSize]:
     async with progress_bar.sub_progress(
         steps=2 if is_file_type(port.property_type) else 1
     ) as sub_progress:
@@ -204,7 +200,7 @@ async def _get_data_from_port(
 
         if is_file_type(port.property_type):
             # if there are files, move them to the final destination
-            downloaded_file: Optional[Path] = cast(Optional[Path], port_data)
+            downloaded_file: Path | None = cast(Optional[Path], port_data)
             final_path: Path = target_dir / port.key
 
             if not downloaded_file or not downloaded_file.exists():

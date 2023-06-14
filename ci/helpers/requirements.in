@@ -3,6 +3,4 @@
 # Installing these void e.g. E0611: No name 'UploadFile' in module 'fastapi' (no-name-in-module)
 #
 aiohttp
-docker
 fastapi
-pyjwt

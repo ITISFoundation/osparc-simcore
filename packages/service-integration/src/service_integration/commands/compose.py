@@ -1,7 +1,6 @@
 import subprocess
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 import rich
 import typer
@@ -20,7 +19,7 @@ error_console = Console(stderr=True)
 
 def _run_git(*args) -> str:
     """:raises CalledProcessError"""
-    return subprocess.run(
+    return subprocess.run(  # nosec
         [
             "git",
         ]
@@ -53,8 +52,8 @@ def create_docker_compose_image_spec(
     settings: AppSettings,
     *,
     meta_config_path: Path,
-    docker_compose_overwrite_path: Optional[Path] = None,
-    service_config_path: Optional[Path] = None,
+    docker_compose_overwrite_path: Path | None = None,
+    service_config_path: Path | None = None,
 ) -> ComposeSpecification:
     """Creates image compose-spec"""
 
@@ -184,9 +183,13 @@ def main(
 
     # output
     compose_spec_dict = {}
+
+    assert ctx.parent  # nosec
+    settings: AppSettings = ctx.parent.settings
+
     for n, config_name in enumerate(configs_kwargs_map):
         nth_compose_spec = create_docker_compose_image_spec(
-            ctx.parent.settings, **configs_kwargs_map[config_name]
+            settings, **configs_kwargs_map[config_name]
         ).dict(exclude_unset=True)
 
         # FIXME: shaky! why first decides ??

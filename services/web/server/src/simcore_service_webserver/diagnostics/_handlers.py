@@ -11,9 +11,9 @@ from models_library.app_diagnostics import AppStatusCheck
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.utils import logged_gather
 
-from .. import db
 from .._meta import API_VERSION, APP_NAME, api_version_prefix
 from ..catalog.client import is_catalog_service_responsive
+from ..db import plugin
 from ..director_v2 import api as director_v2_api
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
@@ -90,8 +90,8 @@ async def get_app_status(request: web.Request):
 
     async def _check_pg():
         check.services["postgres"] = {
-            "healthy": await db.is_service_responsive(request.app),
-            "pool": db.get_engine_state(request.app),
+            "healthy": await plugin.is_service_responsive(request.app),
+            "pool": plugin.get_engine_state(request.app),
         }
 
     async def _check_storage():

@@ -13,8 +13,8 @@ from servicelib.aiohttp.aiopg_utils import PostgresRetryPolicyUponOperation
 from simcore_postgres_database.models.users import UserRole
 from tenacity import retry
 
-from ..db import get_database_engine
-from ..db_models import UserStatus, users
+from ..db.models import UserStatus, users
+from ..db.plugin import get_database_engine
 from ._access_model import ContextType, RoleBasedAccessModel, check_access
 
 _logger = logging.getLogger(__name__)
