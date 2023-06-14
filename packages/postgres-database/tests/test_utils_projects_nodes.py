@@ -6,9 +6,11 @@ from random import randint
 from typing import Any, Awaitable, Callable
 
 import pytest
+import sqlalchemy
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from faker import Faker
+from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectsNodeCreate,
     ProjectsNodesNodeNotFound,
@@ -185,6 +187,29 @@ async def test_delete_node(
     received_node = await projects_node_repo.get(connection, node_id=new_node.node_id)
     assert received_node == new_node
     await projects_node_repo.delete(connection, node_id=new_node.node_id)
+
+    with pytest.raises(ProjectsNodesNodeNotFound):
+        await projects_node_repo.get(connection, node_id=new_node.node_id)
+
+
+async def test_delete_project_delete_all_nodes(
+    connection: SAConnection,
+    projects_node_repo: ProjectsNodesRepo,
+    create_fake_projects_node: ProjectsNodeCreate,
+):
+    new_node = await projects_node_repo.create(
+        connection, node=create_fake_projects_node()
+    )
+
+    received_node = await projects_node_repo.get(connection, node_id=new_node.node_id)
+    assert received_node == new_node
+
+    # now delete the project
+    await connection.execute(
+        sqlalchemy.delete(projects).where(
+            projects.c.uuid == f"{projects_node_repo.project_uuid}"
+        )
+    )
 
     with pytest.raises(ProjectsNodesNodeNotFound):
         await projects_node_repo.get(connection, node_id=new_node.node_id)
