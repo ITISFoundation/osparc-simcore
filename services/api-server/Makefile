@@ -107,10 +107,10 @@ endef
 openapi-specs: openapi.json
 
 openapi.json: .env
-	@$(call create_and_validate_openapi,0,,false)
+	@$(call create_and_validate_openapi,0)
 
 openapi-dev.json: .env
-	@$(call create_and_validate_openapi,1,,false)
+	@$(call create_and_validate_openapi,1)
 
 # GENERATION python client ###########################################################################
 .PHONY: python-client generator-help python-client-openapi-branch
