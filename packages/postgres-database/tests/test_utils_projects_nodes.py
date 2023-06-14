@@ -29,6 +29,11 @@ async def random_project(
     return project
 
 
+@pytest.fixture
+def projects_node_repo(random_project: dict[str, Any]) -> ProjectsNodesRepo:
+    return ProjectsNodesRepo(project_uuid=random_project["uuid"])
+
+
 async def test_create_projects_nodes_raises_if_project_not_found(
     connection: SAConnection, faker: Faker
 ):
@@ -41,10 +46,9 @@ async def test_create_projects_nodes_raises_if_project_not_found(
 async def test_create_projects_nodes(
     connection: SAConnection,
     faker: Faker,
-    random_project: dict[str, Any],
+    projects_node_repo: ProjectsNodesRepo,
 ):
-    repo = ProjectsNodesRepo(project_uuid=random_project["uuid"])
-    new_node = await repo.create(
+    new_node = await projects_node_repo.create(
         connection, node=ProjectsNodeCreate(node_id=faker.uuid4(cast_to=None))
     )
     assert new_node
@@ -53,13 +57,14 @@ async def test_create_projects_nodes(
 async def test_create_twice_same_projects_nodes_raises(
     connection: SAConnection,
     faker: Faker,
-    random_project: dict[str, Any],
+    projects_node_repo: ProjectsNodesRepo,
 ):
-    repo = ProjectsNodesRepo(project_uuid=random_project["uuid"])
-    new_node = await repo.create(
+    new_node = await projects_node_repo.create(
         connection, node=ProjectsNodeCreate(node_id=faker.uuid4(cast_to=None))
     )
 
     assert new_node
     with pytest.raises(ProjectsNodesOperationNotAllowed):
-        await repo.create(connection, node=ProjectsNodeCreate(node_id=new_node.node_id))
+        await projects_node_repo.create(
+            connection, node=ProjectsNodeCreate(node_id=new_node.node_id)
+        )
