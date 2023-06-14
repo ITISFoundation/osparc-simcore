@@ -3,6 +3,7 @@
     "name": "GET /services/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/2.0.0",
     "description": "<Request('GET', 'http://catalog:8000/v0/services/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/2.0.0?user_id=1')>",
     "method": "GET",
+    "host": "catalog",
     "path": "/v0/services/simcore/services/comp/itis/sleeper/2.0.0",
     "query": "user_id=1",
     "request_payload": null,
@@ -84,6 +85,7 @@
     "name": "POST /projects",
     "description": "<Request('POST', 'http://webserver:8080/v0/projects?hidden=true')>",
     "method": "POST",
+    "host": "webserver",
     "path": "/v0/projects",
     "query": "hidden=true",
     "request_payload": {
@@ -158,6 +160,7 @@
     "name": "GET tasks/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dtrue.42a04ed5-c581-4a8d-b037-48deda49ef59",
     "description": "<Request('GET', 'http://webserver:8080/v0/tasks/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dtrue.42a04ed5-c581-4a8d-b037-48deda49ef59')>",
     "method": "GET",
+    "host": "webserver",
     "path": "/v0/tasks/POST%20%2Fv0%2Fprojects%3Fhidden%3Dtrue.42a04ed5-c581-4a8d-b037-48deda49ef59",
     "query": null,
     "request_payload": null,
@@ -177,6 +180,7 @@
     "name": "GET tasks/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dtrue.42a04ed5-c581-4a8d-b037-48deda49ef59",
     "description": "<Request('GET', 'http://webserver:8080/v0/tasks/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dtrue.42a04ed5-c581-4a8d-b037-48deda49ef59')>",
     "method": "GET",
+    "host": "webserver",
     "path": "/v0/tasks/POST%20%2Fv0%2Fprojects%3Fhidden%3Dtrue.42a04ed5-c581-4a8d-b037-48deda49ef59",
     "query": null,
     "request_payload": null,
@@ -196,6 +200,7 @@
     "name": "GET tasks/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dtrue.42a04ed5-c581-4a8d-b037-48deda49ef59",
     "description": "<Request('GET', 'http://webserver:8080/v0/tasks/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dtrue.42a04ed5-c581-4a8d-b037-48deda49ef59')>",
     "method": "GET",
+    "host": "webserver",
     "path": "/v0/tasks/POST%20%2Fv0%2Fprojects%3Fhidden%3Dtrue.42a04ed5-c581-4a8d-b037-48deda49ef59",
     "query": null,
     "request_payload": null,
@@ -215,6 +220,7 @@
     "name": "GET tasks/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dtrue.42a04ed5-c581-4a8d-b037-48deda49ef59/result",
     "description": "<Request('GET', 'http://webserver:8080/v0/tasks/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dtrue.42a04ed5-c581-4a8d-b037-48deda49ef59/result')>",
     "method": "GET",
+    "host": "webserver",
     "path": "/v0/tasks/POST%20%2Fv0%2Fprojects%3Fhidden%3Dtrue.42a04ed5-c581-4a8d-b037-48deda49ef59/result",
     "query": null,
     "request_payload": null,
@@ -289,10 +295,11 @@
     "name": "DELETE /projects/06325dd9-64af-4243-8011-efdf7fb588a4",
     "description": "<Request('DELETE', 'http://webserver:8080/v0/projects/06325dd9-64af-4243-8011-efdf7fb588a4')>",
     "method": "DELETE",
+    "host": "webserver",
     "path": "/v0/projects/06325dd9-64af-4243-8011-efdf7fb588a4",
     "query": null,
     "request_payload": null,
     "response_body": null,
     "status_code": 204
-   }
+  }
 ]
