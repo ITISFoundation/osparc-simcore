@@ -115,7 +115,7 @@ qx.Class.define("osparc.wrapper.Three", {
       this.render();
     },
 
-    importSceneFromBuffer: function(modelBuffer) {
+    importGLTFSceneFromBuffer: function(modelBuffer) {
       let scope = this;
 
       const onLoad = myScene => {
@@ -146,28 +146,6 @@ qx.Class.define("osparc.wrapper.Three", {
         onLoad,
         onError
       );
-    },
-
-    createSceneWithMeshes: function(meshIds) {
-      let options = {
-        binary: false
-      };
-
-      let myMeshes = [];
-      for (let i = 0; i < this.__scene.children.length; i++) {
-        if (meshIds.includes(this.__scene.children[i].uuid)) {
-          myMeshes.push(this.__scene.children[i]);
-        }
-      }
-
-      let scope = this;
-
-      const onCompleted = gltf => scope.fireDataEvent("sceneWithMeshesToBeExported", gltf);
-
-      let glTFExporter = new THREE.GLTFExporter();
-      glTFExporter.parse(myMeshes,
-        onCompleted,
-        options);
     },
 
     setBackgroundColor: function(backgroundColor) {

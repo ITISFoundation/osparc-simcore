@@ -74,52 +74,6 @@ qx.Class.define("osparc.component.widget.Three", {
       this.__threeWrapper.render();
     },
 
-    addEntityToScene: function(entity) {
-      console.log("addEntityToScene", entity);
-      this.__threeWrapper.addEntityToScene(entity);
-      this.__entities.push(entity);
-      this.fireDataEvent("entityAdded", entity);
-    },
-
-    addEntityToSceneFromS4L: function(entity) {
-      console.log("addEntityToSceneFromS4L", entity);
-      this.__threeWrapper.addEntityToScene(entity["entity"]);
-      this.__entities.push(entity["entity"]);
-      this.fireDataEvent("entityAdded", entity);
-    },
-
-    removeAll: function() {
-      for (let i = this.__entities.length-1; i >= 0; i--) {
-        this.removeEntity(this.__entities[i]);
-      }
-    },
-
-    removeEntity: function(entity) {
-      let uuid = null;
-      for (let i = 0; i < this.__entities.length; i++) {
-        if (this.__entities[i] === entity) {
-          uuid = this.__entities[i].uuid;
-          this.__entities.splice(i, 1);
-          break;
-        }
-      }
-
-      if (uuid) {
-        this.__threeWrapper.removeEntityFromSceneById(uuid);
-        this.fireDataEvent("entityRemoved", uuid);
-        this.__render();
-      }
-    },
-
-    removeEntityByID: function(uuid) {
-      for (let i = 0; i < this.__entities.length; i++) {
-        if (this.__entities[i].uuid === uuid) {
-          this.removeEntity(this.__entities[i]);
-          return;
-        }
-      }
-    },
-
     addSnappingPlane: function(fixedAxe = 2, fixedPosition = 0) {
       let instersectionPlane = this.__threeWrapper.createInvisiblePlane(fixedAxe, fixedPosition);
       instersectionPlane.name = "PlaneForSnapping";
@@ -159,18 +113,8 @@ qx.Class.define("osparc.component.widget.Three", {
       this.__threeWrapper.setOrbitPoint(center);
     },
 
-    createEntityFromResponse: function(response, name, uuid) {
-      let sphereGeometry = this.__threeWrapper.fromEntityMeshToEntity(response[0]);
-      // let sphereMaterial = this.__threeWrapper.CreateMeshNormalMaterial();
-      let color = response[0].material.diffuse;
-      let sphereMaterial = this.__threeWrapper.createNewMaterial(color.r, color.g, color.b);
-      let entity = this.__threeWrapper.createEntity(sphereGeometry, sphereMaterial);
-
-      this.__threeWrapper.applyTransformationMatrixToEntity(entity, response[0].transform4x4);
-
-      entity.name = name;
-      entity.uuid = uuid;
-      this.addEntityToScene(entity);
+    importGLTFSceneFromBuffer: function(modelBuffer) {
+      this.__threeWrapper.importGLTFSceneFromBuffer(modelBuffer);
     }
   }
 });
