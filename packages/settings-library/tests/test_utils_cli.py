@@ -24,7 +24,8 @@ from settings_library.utils_cli import (
 from typer.testing import CliRunner
 
 # unload rich for these tests
-sys.modules.pop("rich")
+import rich
+del rich
 reload(typer)
 
 
