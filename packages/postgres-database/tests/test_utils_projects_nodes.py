@@ -11,6 +11,7 @@ from aiopg.sa.result import RowProxy
 from faker import Faker
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectsNodeCreate,
+    ProjectsNodesNodeNotFound,
     ProjectsNodesOperationNotAllowed,
     ProjectsNodesProjectNotFound,
     ProjectsNodesRepo,
@@ -126,3 +127,38 @@ async def test_list_project_nodes(
     nodes = await projects_node_repo.list(connection)
     assert nodes
     assert len(nodes) == len(created_nodes)
+
+
+async def test_get_project_node_of_invalid_project_raises(
+    connection: SAConnection,
+    projects_node_repo_of_invalid_project: ProjectsNodesRepo,
+    faker: Faker,
+):
+    with pytest.raises(ProjectsNodesNodeNotFound):
+        await projects_node_repo_of_invalid_project.get(
+            connection, node_id=faker.uuid4(cast_to=None)
+        )
+
+
+async def test_get_project_node_of_empty_project_raises(
+    connection: SAConnection,
+    projects_node_repo: ProjectsNodesRepo,
+    faker: Faker,
+):
+    with pytest.raises(ProjectsNodesNodeNotFound):
+        await projects_node_repo.get(connection, node_id=faker.uuid4(cast_to=None))
+
+
+async def test_get_project_node(
+    connection: SAConnection,
+    projects_node_repo: ProjectsNodesRepo,
+    faker: Faker,
+    create_fake_projects_node: ProjectsNodeCreate,
+):
+    new_node = await projects_node_repo.create(
+        connection, node=create_fake_projects_node()
+    )
+
+    received_node = await projects_node_repo.get(connection, node_id=new_node.node_id)
+
+    assert received_node == new_node
