@@ -9,15 +9,16 @@ from servicelib.aiohttp.long_running_tasks._server import (
 )
 from servicelib.aiohttp.long_running_tasks.server import setup
 from servicelib.aiohttp.typing_extension import Handler
+from servicelib.request_keys import RQT_USERID_KEY
 
 from ._constants import RQ_PRODUCT_KEY
 from ._meta import API_VTAG
-from .login.decorators import RQT_USERID_KEY, login_required
+from .login.decorators import login_required
 
 
 class _RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[pydantic-alias]
+    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[pydantic-alias]
 
 
 def _webserver_request_context_decorator(handler: Handler):

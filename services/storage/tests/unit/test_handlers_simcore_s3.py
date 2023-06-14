@@ -1,7 +1,9 @@
-# pylint: disable=redefined-outer-name
-# pylint: disable=unused-argument
-# pylint: disable=unused-variable
-# pylint: disable=too-many-nested-blocks
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+# pylint:disable=too-many-arguments
+# pylint:disable=no-name-in-module
+# pylint:disable=too-many-nested-blocks
 
 import sys
 from collections import deque
@@ -9,7 +11,7 @@ from copy import deepcopy
 from pathlib import Path
 from random import randint
 from secrets import choice
-from typing import Any, Awaitable, Callable, Optional
+from typing import Any, Awaitable, Callable
 
 import pytest
 import sqlalchemy as sa
@@ -164,7 +166,7 @@ async def test_copy_folders_from_empty_project(
     # check there is nothing in the dst project
     async with aiopg_engine.acquire() as conn:
         num_entries = await conn.scalar(
-            sa.select([sa.func.count()])
+            sa.select(sa.func.count())
             .select_from(file_meta_data)
             .where(file_meta_data.c.project_id == dst_project["uuid"])
         )
@@ -174,7 +176,7 @@ async def test_copy_folders_from_empty_project(
 async def _get_updated_project(aiopg_engine: Engine, project_id: str) -> dict[str, Any]:
     async with aiopg_engine.acquire() as conn:
         result = await conn.execute(
-            sa.select([projects]).where(projects.c.uuid == project_id)
+            sa.select(projects).where(projects.c.uuid == project_id)
         )
         row = await result.fetchone()
         assert row
@@ -187,7 +189,7 @@ async def random_project_with_files(
     create_project: Callable[[], Awaitable[dict[str, Any]]],
     create_project_node: Callable[..., Awaitable[NodeID]],
     create_simcore_file_id: Callable[
-        [ProjectID, NodeID, str, Optional[Path]], SimcoreS3FileID
+        [ProjectID, NodeID, str, Path | None], SimcoreS3FileID
     ],
     upload_file: Callable[
         [ByteSize, str, str], Awaitable[tuple[Path, SimcoreS3FileID]]
@@ -502,7 +504,7 @@ async def test_search_files_starting_with(
     client: TestClient,
     user_id: UserID,
     upload_file: Callable[
-        [ByteSize, str, Optional[str]], Awaitable[tuple[Path, SimcoreS3FileID]]
+        [ByteSize, str, str | None], Awaitable[tuple[Path, SimcoreS3FileID]]
     ],
     faker: Faker,
 ):

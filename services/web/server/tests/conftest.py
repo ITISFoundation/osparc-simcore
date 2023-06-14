@@ -8,29 +8,27 @@ import logging
 import sys
 from copy import deepcopy
 from pathlib import Path
-from typing import AsyncIterator, Awaitable, Callable, Optional
-from uuid import UUID
+from typing import AsyncIterator, Awaitable, Callable
 
 import pytest
 import simcore_service_webserver
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from models_library.projects_networks import PROJECT_NETWORK_PREFIX
 from models_library.projects_state import ProjectState
 from pytest import MonkeyPatch
-from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
+from pytest_simcore.simcore_webserver_projects_rest_api import NEW_PROJECT
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
 from servicelib.json_serialization import json_dumps
 from simcore_service_webserver.application_settings_utils import convert_to_environ_vars
-from simcore_service_webserver.db_models import UserRole
-from simcore_service_webserver.projects.project_models import ProjectDict
-from simcore_service_webserver.projects.projects_handlers_crud import (
+from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.projects._crud_create_utils import (
     OVERRIDABLE_DOCUMENT_KEYS,
 )
-from simcore_service_webserver.utils import now_str, to_datetime
+from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.utils import to_datetime
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -50,6 +48,7 @@ logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
 # imports the fixtures for the integration tests
 pytest_plugins = [
     "pytest_simcore.cli_runner",
+    "pytest_simcore.db_entries_mocks",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
@@ -151,41 +150,12 @@ def monkeypatch_setenv_from_app_config(
             "  - convert_to_environ_vars(app_cfg)=\n",
             json_dumps(envs, indent=1, sort_keys=True),
         )
-
         for env_key, env_value in envs.items():
             monkeypatch.setenv(env_key, f"{env_value}")
 
         return envs
 
     return _patch
-
-
-@pytest.fixture
-def mock_projects_networks_network_name(mocker: MockerFixture) -> None:
-    remove_orphaned_services = mocker.patch(
-        "simcore_service_webserver.projects_networks._network_name",
-        return_value=f"{PROJECT_NETWORK_PREFIX}_{UUID(int=0)}_mocked",
-    )
-    return remove_orphaned_services
-
-
-def _minimal_project() -> ProjectDict:
-    return {
-        "uuid": "0000000-invalid-uuid",
-        "name": "Minimal name",
-        "description": "this description should not change",
-        "prjOwner": "me but I will be removed anyway",
-        "creationDate": now_str(),
-        "lastChangeDate": now_str(),
-        "thumbnail": "",
-        "accessRights": {},
-        "workbench": {},
-        "tags": [],
-        "classifiers": [],
-        "ui": {},
-        "dev": {},
-        "quality": {},
-    }
 
 
 @pytest.fixture
@@ -202,15 +172,30 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
     async def _setup(
         client: TestClient,
         *,
-        project: Optional[dict] = None,
-        from_study: Optional[dict] = None,
-        as_template: Optional[bool] = None,
-        copy_data: Optional[bool] = None,
+        project: dict | None = None,
+        from_study: dict | None = None,
+        as_template: bool | None = None,
+        copy_data: bool | None = None,
     ):
-
         # Pre-defined fields imposed by required properties in schema
-        project_data = {}
-        expected_data = {}
+        project_data: ProjectDict = {}
+        expected_data: ProjectDict = {
+            "classifiers": [],
+            "accessRights": [],
+            "tags": [],
+            "lastChangeDate": None,
+            "creationDate": None,
+            "quality": {},
+            "dev": {},
+            "ui": {},
+            "workbench": None,
+            "description": None,
+            "uuid": None,
+            "state": None,
+            "thumbnail": None,
+            "name": None,
+            "prjOwner": None,
+        }
         if from_study:
             # access rights are replaced
             expected_data = deepcopy(from_study)
@@ -219,7 +204,8 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
                 expected_data["name"] = f"{from_study['name']} (Copy)"
 
         if not from_study or project:
-            project_data = _minimal_project()
+            project_data = deepcopy(NEW_PROJECT.request_payload)
+
             if project:
                 project_data.update(project)
 
@@ -234,7 +220,7 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
 
         # POST /v0/projects -> returns 202 or denied access
         assert client.app
-        url: URL = client.app.router["create_projects"].url_for()
+        url: URL = client.app.router["create_project"].url_for()
 
         if from_study:
             url = url.update_query(from_study=from_study["uuid"])
@@ -252,12 +238,11 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
         logged_user: dict[str, str],
         primary_group: dict[str, str],
         *,
-        project: Optional[dict] = None,
-        from_study: Optional[dict] = None,
-        as_template: Optional[bool] = None,
-        copy_data: Optional[bool] = None,
+        project: dict | None = None,
+        from_study: dict | None = None,
+        as_template: bool | None = None,
+        copy_data: bool | None = None,
     ) -> ProjectDict:
-
         url, project_data, expected_data = await _setup(
             client,
             project=project,
@@ -344,8 +329,8 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
             )
             assert new_project["accessRights"] == expected_data["accessRights"]
 
-            # invariant fields
             modified_fields = [
+                # invariant fields
                 "uuid",
                 "prjOwner",
                 "creationDate",
@@ -353,7 +338,9 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
                 "accessRights",
                 "workbench" if from_study else None,
                 "ui" if from_study else None,
+                # dynamic
                 "state",
+                "permalink",
             ]
 
             for key in new_project.keys():

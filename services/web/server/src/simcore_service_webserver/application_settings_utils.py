@@ -12,7 +12,7 @@ from pydantic.types import SecretStr
 
 from .application_settings import ApplicationSettings
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
@@ -136,16 +136,15 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
         },
         "activity": {
             "enabled": app_settings.WEBSERVER_ACTIVITY is not None,
-            "prometheus_host": getattr(app_settings.WEBSERVER_ACTIVITY, "origin", None),
-            "prometheus_port": getattr(
-                app_settings.WEBSERVER_ACTIVITY, "PROMETHEUS_PORT", None
+            "prometheus_url": getattr(
+                app_settings.WEBSERVER_ACTIVITY, "PROMETHEUS_URL", None
             ),
             "prometheus_api_version": getattr(
                 app_settings.WEBSERVER_ACTIVITY, "PROMETHEUS_VTAG", None
             ),
         },
         "clusters": {"enabled": app_settings.WEBSERVER_CLUSTERS},
-        "computation": {"enabled": app_settings.is_enabled("WEBSERVER_COMPUTATION")},
+        "computation": {"enabled": app_settings.is_enabled("WEBSERVER_NOTIFICATIONS")},
         "diagnostics": {"enabled": app_settings.is_enabled("WEBSERVER_DIAGNOSTICS")},
         "director-v2": {"enabled": app_settings.is_enabled("WEBSERVER_DIRECTOR_V2")},
         "exporter": {"enabled": app_settings.WEBSERVER_EXPORTER is not None},
@@ -206,7 +205,6 @@ def convert_to_environ_vars(cfg: dict[str, Any]) -> dict[str, Any]:
 
     if db := cfg.get("db"):
         if section := db.get("postgres"):
-
             envs["POSTGRES_DB"] = section.get("database")
             envs["POSTGRES_HOST"] = section.get("host")
             envs["POSTGRES_MAXSIZE"] = section.get("maxsize")
@@ -216,6 +214,12 @@ def convert_to_environ_vars(cfg: dict[str, Any]) -> dict[str, Any]:
             envs["POSTGRES_USER"] = section.get("user")
 
         _set_if_disabled("WEBSERVER_DB", db)
+
+    if section := cfg.get("rabbitmq"):
+        envs["RABBIT_HOST"] = section.get("host")
+        envs["RABBIT_PORT"] = section.get("port")
+        envs["RABBIT_USER"] = section.get("user")
+        envs["RABBIT_PASSWORD"] = section.get("password")
 
     if section := cfg.get("resource_manager"):
         _set_if_disabled("WEBSERVER_RESOURCE_MANAGER", section)
@@ -270,12 +274,13 @@ def convert_to_environ_vars(cfg: dict[str, Any]) -> dict[str, Any]:
 
     if section := cfg.get("activity"):
         _set_if_disabled("WEBSERVER_ACTIVITY", section)
-
-        envs["PROMETHEUS_PORT"] = section.get("prometheus_port")
+        envs["PROMETHEUS_URL"] = section.get("prometheus_url")
+        envs["PROMETHEUS_USERNAME"] = section.get("prometheus_username")
+        envs["PROMETHEUS_PASSWORD"] = section.get("prometheus_password")
         envs["PROMETHEUS_VTAG"] = section.get("prometheus_api_version")
 
     if section := cfg.get("computation"):
-        _set_if_disabled("WEBSERVER_COMPUTATION", section)
+        _set_if_disabled("WEBSERVER_NOTIFICATIONS", section)
 
     if section := cfg.get("diagnostics"):
         _set_if_disabled("WEBSERVER_DIAGNOSTICS", section)

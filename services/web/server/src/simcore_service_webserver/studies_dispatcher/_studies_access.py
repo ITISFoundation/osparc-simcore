@@ -22,24 +22,23 @@ import redis.asyncio as aioredis
 from aiohttp import web
 from aiohttp_session import get_session
 from models_library.emails import LowerCaseEmailStr
+from models_library.projects import ProjectID
 from pydantic import parse_obj_as
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.error_codes import create_error_code
-from simcore_service_webserver.projects.project_models import ProjectDict
 
 from .._constants import INDEX_RESOURCE_NAME
+from ..director_v2._core_computations import create_or_update_pipeline
 from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
-from ..products import get_product_name
-from ..projects.projects_db import ANY_USER, ProjectDBAPI
-from ..projects.projects_exceptions import (
-    ProjectInvalidRightsError,
-    ProjectNotFoundError,
-)
+from ..products.plugin import get_current_product, get_product_name
+from ..projects.db import ANY_USER, ProjectDBAPI
+from ..projects.exceptions import ProjectInvalidRightsError, ProjectNotFoundError
+from ..projects.models import ProjectDict
 from ..redis import get_redis_lock_manager_client
-from ..security_api import is_anonymous, remember
-from ..storage_api import copy_data_folders_from_project
+from ..security.api import is_anonymous, remember
+from ..storage.api import copy_data_folders_from_project
 from ..utils import compose_support_error_msg
-from ..utils_aiohttp import create_redirect_response
+from ..utils_aiohttp import create_redirect_to_page_response
 from ._constants import (
     MSG_PROJECT_NOT_FOUND,
     MSG_PROJECT_NOT_PUBLISHED,
@@ -48,7 +47,7 @@ from ._constants import (
 )
 from .settings import StudiesDispatcherSettings, get_plugin_settings
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 _BASE_UUID = UUID("71e0eb5e-0797-4469-89ba-00a0df4d338a")
 
@@ -65,7 +64,7 @@ def _compose_uuid(template_uuid, user_id, query="") -> str:
 
 
 async def _get_published_template_project(
-    app: web.Application,
+    request: web.Request,
     project_uuid: str,
     *,
     is_user_authenticated: bool,
@@ -73,7 +72,7 @@ async def _get_published_template_project(
     """
     raises RedirectToFrontEndPageError
     """
-    db = ProjectDBAPI.get_from_app_context(app)
+    db = ProjectDBAPI.get_from_app_context(request.app)
 
     only_public_projects = not is_user_authenticated
 
@@ -96,18 +95,19 @@ async def _get_published_template_project(
         return prj
 
     except (ProjectNotFoundError, ProjectInvalidRightsError) as err:
-        log.debug(
+        _logger.debug(
             "Project with %s %s was not found. Reason: %s",
             f"{project_uuid=}",
             f"{only_public_projects=}",
             err.detailed_message(),
         )
 
+        support_email = get_current_product(request).support_email
         if only_public_projects:
             raise RedirectToFrontEndPageError(
-                MSG_PUBLIC_PROJECT_NOT_PUBLISHED.format(project_id=project_uuid),
+                MSG_PUBLIC_PROJECT_NOT_PUBLISHED.format(support_email=support_email),
                 error_code="PUBLIC_PROJECT_NOT_PUBLISHED",
-                status_code=web.HTTPNotFound.status_code,
+                status_code=web.HTTPUnauthorized.status_code,
             ) from err
 
         raise RedirectToFrontEndPageError(
@@ -120,7 +120,7 @@ async def _get_published_template_project(
 async def _create_temporary_user(request: web.Request):
     from ..login.storage import AsyncpgStorage, get_plugin_storage
     from ..login.utils import ACTIVE, GUEST, get_client_ip, get_random_string
-    from ..security_api import encrypt_password
+    from ..security.api import encrypt_password
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
     redis_locks_client: aioredis.Redis = get_redis_lock_manager_client(request.app)
@@ -185,11 +185,11 @@ async def _create_temporary_user(request: web.Request):
 
 async def get_authorized_user(request: web.Request) -> dict:
     from ..login.storage import AsyncpgStorage, get_plugin_storage
-    from ..security_api import authorized_userid
+    from ..security.api import authorized_userid
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
     userid = await authorized_userid(request)
-    user = await db.get_user({"id": userid})
+    user: dict = await db.get_user({"id": userid})
     return user
 
 
@@ -202,11 +202,8 @@ async def copy_study_to_account(
     - Replaces template parameters by values passed in query
     - Avoids multiple copies of the same template on each account
     """
-    from ..projects.projects_db import APP_PROJECT_DBAPI
-    from ..projects.projects_utils import (
-        clone_project_document,
-        substitute_parameterized_inputs,
-    )
+    from ..projects.db import APP_PROJECT_DBAPI
+    from ..projects.utils import clone_project_document, substitute_parameterized_inputs
 
     db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
     template_parameters = dict(request.query)
@@ -233,15 +230,18 @@ async def copy_study_to_account(
 
         # check project inputs and substitute template_parameters
         if template_parameters:
-            log.info("Substituting parameters '%s' in template", template_parameters)
+            _logger.info(
+                "Substituting parameters '%s' in template", template_parameters
+            )
             project = (
                 substitute_parameterized_inputs(project, template_parameters) or project
             )
         # add project model + copy data TODO: guarantee order and atomicity
+        product_name = get_product_name(request)
         await db.insert_project(
             project,
             user["id"],
-            product_name=get_product_name(request),
+            product_name=product_name,
             force_project_uuid=True,
         )
         async for lr_task in copy_data_folders_from_project(
@@ -251,7 +251,7 @@ async def copy_study_to_account(
             nodes_map,
             user["id"],
         ):
-            log.info(
+            _logger.info(
                 "copying %s into %s for %s: %s",
                 f"{template_project['uuid']=}",
                 f"{project['uuid']}",
@@ -260,6 +260,9 @@ async def copy_study_to_account(
             )
             if lr_task.done():
                 await lr_task.result()
+        await create_or_update_pipeline(
+            request.app, user["id"], project["uuid"], product_name
+        )
 
     return project_uuid
 
@@ -284,7 +287,7 @@ def _handle_errors_with_error_page(handler: Handler):
             return await handler(request)
 
         except ProjectNotFoundError as err:
-            raise create_redirect_response(
+            raise create_redirect_to_page_response(
                 request.app,
                 page="error",
                 message=compose_support_error_msg(
@@ -295,23 +298,21 @@ def _handle_errors_with_error_page(handler: Handler):
             ) from err
 
         except RedirectToFrontEndPageError as err:
-            raise create_redirect_response(
+            raise create_redirect_to_page_response(
                 request.app,
                 page="error",
-                message=compose_support_error_msg(
-                    msg=err.human_readable_message, error_code=err.error_code
-                ),
+                message=err.human_readable_message,
                 status_code=err.status_code,
             ) from err
 
         except Exception as err:
             error_code = create_error_code(err)
-            log.exception(
+            _logger.exception(
                 "Unexpected failure while dispatching study [%s]",
                 f"{error_code}",
                 extra={"error_code": error_code},
             )
-            raise create_redirect_response(
+            raise create_redirect_to_page_response(
                 request.app,
                 page="error",
                 message=compose_support_error_msg(
@@ -342,33 +343,45 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
         # NOTE: covers valid cookie with unauthorized user (e.g. expired guest/banned)
         user = await get_authorized_user(request)
 
+    # This was added so it fails right away if study doesn't exist.
+    # Work-around to check if there is a PROJECT with project_id: check the type of the project.
+    try:
+        db = ProjectDBAPI.get_from_app_context(request.app)
+        await db.get_project_type(project_uuid=ProjectID(project_id))
+    except ProjectNotFoundError as exc:
+        raise RedirectToFrontEndPageError(
+            MSG_PROJECT_NOT_FOUND.format(project_id=project_id),
+            error_code="PROJECT_NOT_FOUND",
+            status_code=web.HTTPNotFound.status_code,
+        ) from exc
+
     # Get published PROJECT referenced in link
     template_project = await _get_published_template_project(
-        request.app,
+        request,
         project_id,
         is_user_authenticated=bool(user),
     )
 
     # Get or create a valid USER
     if not user:
-        log.debug("Creating temporary user ...")
+        _logger.debug("Creating temporary user ...")
         user = await _create_temporary_user(request)
         is_anonymous_user = True
 
     # COPY
     try:
-        log.debug(
+        _logger.debug(
             "Granted access to study '%s' for user %s. Copying study over ...",
             template_project.get("name"),
             user.get("email"),
         )
         copied_project_id = await copy_study_to_account(request, template_project, user)
 
-        log.debug("Study %s copied", copied_project_id)
+        _logger.debug("Study %s copied", copied_project_id)
 
     except Exception as exc:  # pylint: disable=broad-except
         error_code = create_error_code(exc)
-        log.exception(
+        _logger.exception(
             "Failed while copying project '%s' to '%s' [%s]",
             template_project.get("name"),
             user.get("email"),
@@ -390,7 +403,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
 
     response = web.HTTPFound(location=redirect_url)
     if is_anonymous_user:
-        log.debug("Auto login for anonymous user %s", user["name"])
+        _logger.debug("Auto login for anonymous user %s", user["name"])
         identity = user["email"]
 
         await remember(request, response, identity)

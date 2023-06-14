@@ -22,8 +22,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
         monkeypatch,
         {
             "WEBSERVER_ACTIVITY": "null",
-            "WEBSERVER_CLUSTERS": "null",
-            "WEBSERVER_COMPUTATION": "0",
+            "WEBSERVER_NOTIFICATIONS": "0",
             "WEBSERVER_DIAGNOSTICS": "null",
             "WEBSERVER_DIRECTOR": "null",
             "WEBSERVER_EXPORTER": "null",
@@ -136,7 +135,7 @@ def mocked_email_core_remove_comments(mocker: MockerFixture):
         return html_string
 
     mocker.patch(
-        "simcore_service_webserver.email_core._remove_comments",
+        "simcore_service_webserver.email._core._remove_comments",
         autospec=True,
         side_effect=_do_not_remove_comments,
     )

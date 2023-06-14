@@ -169,6 +169,10 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             icon: "@FontAwesome5Solid/ellipsis-v/14",
             focusable: false
           });
+          // make it circular
+          control.getContentElement().setStyles({
+            "border-radius": parseInt(this.self().MENU_BTN_WIDTH/2) + "px"
+          });
           osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
           menuSelectionStack.addAt(control, 0);
           break;

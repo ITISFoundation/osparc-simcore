@@ -1,17 +1,22 @@
 # pylint: disable=unsubscriptable-object
 
 import json
+import re
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Final, Iterator, Literal, Optional, Union
+from typing import Any, Final, Iterator, Literal, TypeAlias
 
 from pydantic import (
     BaseModel,
+    ByteSize,
+    ConstrainedStr,
     Extra,
     Field,
     Json,
     PrivateAttr,
+    ValidationError,
+    parse_obj_as,
     root_validator,
     validator,
 )
@@ -19,10 +24,18 @@ from pydantic import (
 from .basic_types import PortInt
 from .generics import ListModel
 from .services_resources import DEFAULT_SINGLE_SERVICE_NAME
+from .utils.string_substitution import OSPARC_IDENTIFIER_PREFIX
 
 # Cloudflare DNS server address
 DEFAULT_DNS_SERVER_ADDRESS: Final[str] = "1.1.1.1"  # NOSONAR
-DEFAULT_DNS_SERVER_PORT: Final[PortInt] = 53
+DEFAULT_DNS_SERVER_PORT: Final[PortInt] = parse_obj_as(PortInt, 53)
+
+
+# NOTE: To allow parametrized value, set the type to Union[OEnvSubstitutionStr, ...]
+
+
+class OEnvSubstitutionStr(ConstrainedStr):
+    regex = re.compile(rf"^\${OSPARC_IDENTIFIER_PREFIX}\w+$")
 
 
 class _BaseConfig:
@@ -54,7 +67,9 @@ class ContainerSpec(BaseModel):
 
 
 class SimcoreServiceSettingLabelEntry(BaseModel):
-    """These values are used to build the request body of https://docs.docker.com/engine/api/v1.41/#operation/ServiceCreate
+    """Content of "simcore.service.settings" label
+
+    These values are used to build the request body of https://docs.docker.com/engine/api/v1.41/#operation/ServiceCreate
     Specifically the section under ``TaskTemplate``
     """
 
@@ -148,6 +163,8 @@ SimcoreServiceSettingsLabel = ListModel[SimcoreServiceSettingLabelEntry]
 
 
 class PathMappingsLabel(BaseModel):
+    """Content of "simcore.service.paths-mapping" label"""
+
     inputs_path: Path = Field(
         ..., description="folder path where the service expects all the inputs"
     )
@@ -160,26 +177,89 @@ class PathMappingsLabel(BaseModel):
         description="optional list of paths which contents need to be persisted",
     )
 
-    state_exclude: Optional[set[str]] = Field(
+    state_exclude: set[str] | None = Field(
         None,
         description="optional list unix shell rules used to exclude files from the state",
     )
 
+    volume_size_limits: dict[str, str] | None = Field(
+        None,
+        description=(
+            "Apply volume size limits to entries in: `inputs_path`, `outputs_path` "
+            "and `state_paths`. Limits must be parsable by Pydantic's ByteSize."
+        ),
+    )
+
+    @validator("volume_size_limits")
+    @classmethod
+    def validate_volume_limits(cls, v, values) -> str | None:
+        if v is None:
+            return v
+
+        for path_str, size_str in v.items():
+            # checks that format is correct
+            try:
+                parse_obj_as(ByteSize, size_str)
+            except ValidationError as e:
+                raise ValueError(
+                    f"Provided size='{size_str}' contains invalid charactes: {str(e)}"
+                ) from e
+
+            inputs_path: Path | None = values.get("inputs_path")
+            outputs_path: Path | None = values.get("outputs_path")
+            state_paths: list[Path] | None = values.get("state_paths")
+            path = Path(path_str)
+            if not (
+                path == inputs_path
+                or path == outputs_path
+                or (state_paths is not None and path in state_paths)
+            ):
+                raise ValueError(
+                    f"{path=} not found in {inputs_path=}, {outputs_path=}, {state_paths=}"
+                )
+
+        return v
+
     class Config(_BaseConfig):
         schema_extra = {
-            "example": {
-                "outputs_path": "/tmp/outputs",  # nosec
-                "inputs_path": "/tmp/inputs",  # nosec
-                "state_paths": ["/tmp/save_1", "/tmp_save_2"],  # nosec
-                "state_exclude": ["/tmp/strip_me/*", "*.py"],  # nosec
-            }
+            "examples": [
+                {
+                    "outputs_path": "/tmp/outputs",  # nosec
+                    "inputs_path": "/tmp/inputs",  # nosec
+                    "state_paths": ["/tmp/save_1", "/tmp_save_2"],  # nosec
+                    "state_exclude": ["/tmp/strip_me/*", "*.py"],  # nosec
+                },
+                {
+                    "outputs_path": "/t_out",
+                    "inputs_path": "/t_inp",
+                    "state_paths": [
+                        "/s",
+                        "/s0",
+                        "/s1",
+                        "/s2",
+                        "/s3",
+                        "/i_have_no_limit",
+                    ],
+                    "volume_size_limits": {
+                        "/s": "1",
+                        "/s0": "1m",
+                        "/s1": "1kib",
+                        "/s2": "1TIB",
+                        "/s3": "1G",
+                        "/t_out": "12",
+                        "/t_inp": "1EIB",
+                    },
+                },
+            ]
         }
 
 
-ComposeSpecLabel = dict[str, Any]
+ComposeSpecLabelDict: TypeAlias = dict[str, Any]
 
 
 class RestartPolicy(str, Enum):
+    """Content of "simcore.service.restart-policy" label"""
+
     NO_RESTART = "no-restart"
     ON_INPUTS_DOWNLOADED = "on-inputs-downloaded"
 
@@ -194,7 +274,7 @@ class _PortRange(BaseModel):
     @classmethod
     def lower_less_than_upper(cls, v, values) -> PortInt:
         upper = v
-        lower: Optional[PortInt] = values.get("lower")
+        lower: PortInt | None = values.get("lower")
         if lower is None or lower >= upper:
             raise ValueError(f"Condition not satisfied: {lower=} < {upper=}")
         return v
@@ -217,8 +297,10 @@ class DNSResolver(BaseModel):
 
 
 class NATRule(BaseModel):
+    """Content of "simcore.service.containers-allowed-outgoing-permit-list" label"""
+
     hostname: str
-    tcp_ports: list[Union[_PortRange, PortInt]]
+    tcp_ports: list[_PortRange | PortInt]
     dns_resolver: DNSResolver = Field(
         default_factory=lambda: DNSResolver(
             address=DEFAULT_DNS_SERVER_ADDRESS, port=DEFAULT_DNS_SERVER_PORT
@@ -235,7 +317,9 @@ class NATRule(BaseModel):
 
 
 class DynamicSidecarServiceLabels(BaseModel):
-    paths_mapping: Optional[Json[PathMappingsLabel]] = Field(
+    """All "simcore.service.*" labels including keys"""
+
+    paths_mapping: Json[PathMappingsLabel] | None = Field(
         None,
         alias="simcore.service.paths-mapping",
         description=(
@@ -244,7 +328,7 @@ class DynamicSidecarServiceLabels(BaseModel):
         ),
     )
 
-    compose_spec: Optional[Json[ComposeSpecLabel]] = Field(
+    compose_spec: Json[ComposeSpecLabelDict] | None = Field(
         None,
         alias="simcore.service.compose-spec",
         description=(
@@ -253,7 +337,7 @@ class DynamicSidecarServiceLabels(BaseModel):
             "only used by dynamic-sidecar."
         ),
     )
-    container_http_entry: Optional[str] = Field(
+    container_http_entry: str | None = Field(
         None,
         alias="simcore.service.container-http-entrypoint",
         description=(
@@ -275,15 +359,15 @@ class DynamicSidecarServiceLabels(BaseModel):
         ),
     )
 
-    containers_allowed_outgoing_permit_list: Optional[
+    containers_allowed_outgoing_permit_list: None | (
         Json[dict[str, list[NATRule]]]
-    ] = Field(
+    ) = Field(
         None,
         alias="simcore.service.containers-allowed-outgoing-permit-list",
         description="allow internet access to certain domain names and ports per container",
     )
 
-    containers_allowed_outgoing_internet: Optional[Json[set[str]]] = Field(
+    containers_allowed_outgoing_internet: Json[set[str]] | None = Field(
         None,
         alias="simcore.service.containers-allowed-outgoing-internet",
         description="allow complete internet access to containers in here",
@@ -296,7 +380,7 @@ class DynamicSidecarServiceLabels(BaseModel):
 
     @validator("container_http_entry", always=True)
     @classmethod
-    def compose_spec_requires_container_http_entry(cls, v, values) -> Optional[str]:
+    def compose_spec_requires_container_http_entry(cls, v, values) -> str | None:
         v = None if v == "" else v
         if v is None and values.get("compose_spec") is not None:
             raise ValueError(
@@ -314,7 +398,7 @@ class DynamicSidecarServiceLabels(BaseModel):
         if v is None:
             return v
 
-        compose_spec: Optional[dict] = values.get("compose_spec")
+        compose_spec: dict | None = values.get("compose_spec")
         if compose_spec is None:
             keys = set(v.keys())
             if len(keys) != 1 or DEFAULT_SINGLE_SERVICE_NAME not in keys:
@@ -337,7 +421,7 @@ class DynamicSidecarServiceLabels(BaseModel):
         if v is None:
             return v
 
-        compose_spec: Optional[dict] = values.get("compose_spec")
+        compose_spec: dict | None = values.get("compose_spec")
         if compose_spec is None:
             if {DEFAULT_SINGLE_SERVICE_NAME} != v:
                 raise ValueError(
@@ -433,7 +517,7 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                         SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
                     ),
                     "simcore.service.paths-mapping": json.dumps(
-                        PathMappingsLabel.Config.schema_extra["example"]
+                        PathMappingsLabel.Config.schema_extra["examples"][0]
                     ),
                     "simcore.service.restart-policy": RestartPolicy.NO_RESTART.value,
                 },
@@ -443,7 +527,7 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                         SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
                     ),
                     "simcore.service.paths-mapping": json.dumps(
-                        PathMappingsLabel.Config.schema_extra["example"]
+                        PathMappingsLabel.Config.schema_extra["examples"][0]
                     ),
                     "simcore.service.compose-spec": json.dumps(
                         {
@@ -453,10 +537,12 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                                     "image": "${SIMCORE_REGISTRY}/simcore/services/dynamic/sim4life:${SERVICE_VERSION}",
                                     "init": True,
                                     "depends_on": ["s4l-core"],
+                                    "storage_opt": {"size": "10M"},
                                 },
                                 "s4l-core": {
                                     "image": "${SIMCORE_REGISTRY}/simcore/services/dynamic/s4l-core:${SERVICE_VERSION}",
                                     "runtime": "nvidia",
+                                    "storage_opt": {"size": "5G"},
                                     "init": True,
                                     "environment": ["DISPLAY=${DISPLAY}"],
                                     "volumes": [

@@ -2,28 +2,20 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import AsyncIterator, Final, Iterator, TypedDict
+from typing import AsyncIterator, Final, Iterator
 
+import docker
 import pytest
 import sqlalchemy as sa
 import tenacity
 from servicelib.json_serialization import json_dumps
-from sqlalchemy.orm import sessionmaker
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from .helpers.utils_docker import get_localhost_ip, get_service_published_port
-from .helpers.utils_postgres import migrated_pg_tables_context
+from .helpers.utils_postgres import PostgresTestConfig, migrated_pg_tables_context
 
 TEMPLATE_DB_TO_RESTORE = "template_simcore_db"
-
-
-class PostgresTestConfig(TypedDict):
-    user: str
-    password: str
-    database: str
-    host: str
-    port: str
 
 
 def execute_queries(
@@ -35,7 +27,9 @@ def execute_queries(
     with postgres_engine.connect() as con:
         for statement in sql_statements:
             try:
-                con.execution_options(autocommit=True).execute(statement)
+                with con.begin():
+                    con.execute(statement)
+
             except Exception as e:  # pylint: disable=broad-except
                 # when running tests initially the TEMPLATE_DB_TO_RESTORE dose not exist and will cause an error
                 # which can safely be ignored. The debug message is here to catch future errors which and
@@ -188,6 +182,7 @@ def postgres_dsn_url(postgres_dsn: PostgresTestConfig) -> str:
 def postgres_db(
     postgres_dsn: PostgresTestConfig,
     postgres_engine: sa.engine.Engine,
+    docker_client: docker.DockerClient,
 ) -> Iterator[sa.engine.Engine]:
     """An postgres database init with empty tables and an sqlalchemy engine connected to it"""
 
@@ -229,7 +224,7 @@ async def sqlalchemy_async_engine(
 
 @pytest.fixture(scope="function")
 def postgres_host_config(
-    postgres_dsn: PostgresTestConfig, monkeypatch
+    postgres_dsn: PostgresTestConfig, monkeypatch: pytest.MonkeyPatch
 ) -> PostgresTestConfig:
     """sets postgres env vars and returns config"""
     monkeypatch.setenv("POSTGRES_USER", postgres_dsn["user"])
@@ -241,15 +236,3 @@ def postgres_host_config(
         "POSTGRES_ENDPOINT", f"{postgres_dsn['host']}:{postgres_dsn['port']}"
     )
     return postgres_dsn
-
-
-@pytest.fixture(scope="module")
-def postgres_session(postgres_db: sa.engine.Engine) -> Iterator[sa.orm.session.Session]:
-    from sqlalchemy.orm.session import Session
-
-    Session_cls = sessionmaker(postgres_db)
-    session: Session = Session_cls()
-
-    yield session
-
-    session.close()  # pylint: disable=no-member

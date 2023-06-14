@@ -25,13 +25,14 @@ from dask_gateway_server.app import DaskGateway
 from dask_gateway_server.backends.local import UnsafeLocalBackend
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
+from models_library.basic_types import PortInt
+from models_library.clusters import ClusterID
 from models_library.generated_models.docker_rest_api import (
     ServiceSpec as DockerServiceSpec,
 )
 from models_library.service_settings_labels import SimcoreServiceLabels
-from models_library.services import RunID, ServiceKeyVersion
+from models_library.services import RunID, ServiceKey, ServiceKeyVersion, ServiceVersion
 from pydantic import parse_obj_as
-from pydantic.types import NonNegativeInt
 from pytest import LogCaptureFixture, MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -50,6 +51,7 @@ from simcore_service_director_v2.models.schemas.dynamic_services import (
     ServiceState,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.volume_remover import (
+    DIND_VERSION,
     DockerVersion,
 )
 from yarl import URL
@@ -75,8 +77,8 @@ def dynamic_service_create() -> DynamicServiceCreate:
 
 
 @pytest.fixture
-def dynamic_sidecar_port() -> int:
-    return 1222
+def dynamic_sidecar_port() -> PortInt:
+    return PortInt(1222)
 
 
 @pytest.fixture
@@ -95,6 +97,11 @@ def request_scheme() -> str:
 
 
 @pytest.fixture
+def can_save() -> bool:
+    return True
+
+
+@pytest.fixture
 def request_simcore_user_agent() -> str:
     return "python/test"
 
@@ -103,10 +110,11 @@ def request_simcore_user_agent() -> str:
 def scheduler_data_from_http_request(
     dynamic_service_create: DynamicServiceCreate,
     simcore_service_labels: SimcoreServiceLabels,
-    dynamic_sidecar_port: int,
+    dynamic_sidecar_port: PortInt,
     request_dns: str,
     request_scheme: str,
     request_simcore_user_agent: str,
+    can_save: bool,
     run_id: RunID,
 ) -> SchedulerData:
     return SchedulerData.from_http_request(
@@ -116,6 +124,7 @@ def scheduler_data_from_http_request(
         request_dns=request_dns,
         request_scheme=request_scheme,
         request_simcore_user_agent=request_simcore_user_agent,
+        can_save=can_save,
         run_id=run_id,
     )
 
@@ -160,7 +169,7 @@ def scheduler_data(
 
 
 @pytest.fixture
-def cluster_id() -> NonNegativeInt:
+def cluster_id() -> ClusterID:
     return random.randint(0, 10)
 
 
@@ -224,21 +233,26 @@ def local_dask_gateway_server_config(
     unused_tcp_port_factory: Callable,
 ) -> traitlets.config.Config:
     c = traitlets.config.Config()
-    c.DaskGateway.backend_class = UnsafeLocalBackend  # type: ignore
-    c.DaskGateway.address = f"127.0.0.1:{unused_tcp_port_factory()}"  # type: ignore
-    c.Proxy.address = f"127.0.0.1:{unused_tcp_port_factory()}"  # type: ignore
-    c.DaskGateway.authenticator_class = "dask_gateway_server.auth.SimpleAuthenticator"  # type: ignore
-    c.SimpleAuthenticator.password = "qweqwe"  # type: ignore
-    c.ClusterConfig.worker_cmd = [  # type: ignore
+    assert isinstance(c.DaskGateway, traitlets.config.Config)
+    assert isinstance(c.ClusterConfig, traitlets.config.Config)
+    assert isinstance(c.Proxy, traitlets.config.Config)
+    assert isinstance(c.SimpleAuthenticator, traitlets.config.Config)
+    c.DaskGateway.backend_class = UnsafeLocalBackend
+    c.DaskGateway.address = f"127.0.0.1:{unused_tcp_port_factory()}"
+    c.Proxy.address = f"127.0.0.1:{unused_tcp_port_factory()}"
+    c.DaskGateway.authenticator_class = "dask_gateway_server.auth.SimpleAuthenticator"
+    c.SimpleAuthenticator.password = "qweqwe"
+    c.ClusterConfig.worker_cmd = [
         "dask-worker",
         "--resources",
         f"CPU=12,GPU=1,RAM={16e9}",
     ]
     # NOTE: This must be set such that the local unsafe backend creates a worker with enough cores/memory
-    c.ClusterConfig.worker_cores = 12  # type: ignore
-    c.ClusterConfig.worker_memory = "16G"  # type: ignore
+    c.ClusterConfig.worker_cores = 12
+    c.ClusterConfig.worker_memory = "16G"
+    c.ClusterConfig.cluster_max_workers = 3
 
-    c.DaskGateway.log_level = "DEBUG"  # type: ignore
+    c.DaskGateway.log_level = "DEBUG"
     return c
 
 
@@ -312,7 +326,10 @@ def mocked_storage_service_api(
 
 @pytest.fixture
 def mock_service_key_version() -> ServiceKeyVersion:
-    return ServiceKeyVersion(key="simcore/services/dynamic/myservice", version="1.4.5")
+    return ServiceKeyVersion(
+        key=parse_obj_as(ServiceKey, "simcore/services/dynamic/myservice"),
+        version=parse_obj_as(ServiceVersion, "1.4.5"),
+    )
 
 
 @pytest.fixture
@@ -413,7 +430,7 @@ def caplog_debug_level(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]
 def mock_docker_api(mocker: MockerFixture) -> None:
     module_base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler"
     mocker.patch(
-        f"{module_base}._core._scheduler.get_dynamic_sidecars_to_observe",
+        f"{module_base}._core._scheduler_utils.get_dynamic_sidecars_to_observe",
         autospec=True,
         return_value=[],
     )
@@ -423,7 +440,7 @@ def mock_docker_api(mocker: MockerFixture) -> None:
         return_value=True,
     )
     mocker.patch(
-        f"{module_base}._core._scheduler.get_dynamic_sidecar_state",
+        f"{module_base}._core._scheduler_utils.get_dynamic_sidecar_state",
         return_value=(ServiceState.PENDING, ""),
     )
 
@@ -435,10 +452,5 @@ async def async_docker_client() -> AsyncIterable[aiodocker.Docker]:
 
 
 @pytest.fixture
-async def docker_version(async_docker_client: aiodocker.Docker) -> DockerVersion:
-    version_request = (
-        await async_docker_client._query_json(  # pylint: disable=protected-access
-            "version", versioned_api=False
-        )
-    )
-    return parse_obj_as(DockerVersion, version_request["Version"])
+async def docker_version() -> DockerVersion:
+    return parse_obj_as(DockerVersion, DIND_VERSION)

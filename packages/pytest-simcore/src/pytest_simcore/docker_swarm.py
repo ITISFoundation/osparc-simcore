@@ -44,12 +44,12 @@ def _is_docker_swarm_init(docker_client: docker.client.DockerClient) -> bool:
 
 
 @retry(
-    wait=wait_fixed(5),
+    wait=wait_fixed(1),
     stop=stop_after_delay(8 * MINUTE),
     before_sleep=before_sleep_log(log, logging.WARNING),
     reraise=True,
 )
-def assert_service_is_running(service):
+def assert_service_is_running(service) -> None:
     """Checks that a number of tasks of this service are in running state"""
 
     def _get(obj: dict[str, Any], dotted_key: str, default=None) -> Any:
@@ -101,7 +101,6 @@ def _fetch_and_print_services(
     print(HEADER_STR.format(f"docker services running {extra_title}"))
 
     for service_obj in docker_client.services.list():
-
         tasks = {}
         service = {}
         with suppress(Exception):
@@ -147,13 +146,14 @@ def docker_client() -> Iterator[docker.client.DockerClient]:
 
 
 @pytest.fixture(scope="session")
-def keep_docker_up(request) -> bool:
-    return request.config.getoption("--keep-docker-up")
+def keep_docker_up(request: pytest.FixtureRequest) -> bool:
+    flag: bool = request.config.getoption(name="--keep-docker-up", default=False)
+    return flag
 
 
 @pytest.fixture(scope="module")
 def docker_swarm(
-    docker_client: docker.client.DockerClient, keep_docker_up: Iterator[bool]
+    docker_client: docker.client.DockerClient, keep_docker_up: bool
 ) -> Iterator[None]:
     """inits docker swarm"""
 
@@ -177,6 +177,70 @@ def docker_swarm(
         print("<-- docker swarm left.")
 
     assert _is_docker_swarm_init(docker_client) is keep_docker_up
+
+
+@retry(
+    wait=wait_fixed(0.3),
+    retry=retry_if_exception_type(AssertionError),
+    stop=stop_after_delay(30),
+)
+def _wait_for_migration_service_to_be_removed(
+    docker_client: docker.client.DockerClient,
+) -> None:
+    for service in docker_client.services.list():
+        if "migration" in service.name:  # type: ignore
+            raise TryAgain
+
+
+def _force_remove_migration_service(docker_client: docker.client.DockerClient) -> None:
+    for migration_service in (
+        service
+        for service in docker_client.services.list()
+        if "migration" in service.name  # type: ignore
+    ):
+        print(
+            "WARNING: migration service detected before updating stack, it will be force-removed now and re-deployed to ensure DB update"
+        )
+        migration_service.remove()  # type: ignore
+        _wait_for_migration_service_to_be_removed(docker_client)
+        print(f"forced updated {migration_service.name}.")  # type: ignore
+
+
+def _deploy_stack(compose_file: Path, stack_name: str) -> None:
+    for attempt in Retrying(
+        stop=stop_after_delay(60),
+        wait=wait_random_exponential(max=5),
+        retry=retry_if_exception_type(TryAgain),
+        reraise=True,
+    ):
+        with attempt:
+            try:
+                subprocess.run(
+                    [
+                        "docker",
+                        "stack",
+                        "deploy",
+                        "--with-registry-auth",
+                        "--compose-file",
+                        f"{compose_file.name}",
+                        f"{stack_name}",
+                    ],
+                    check=True,
+                    cwd=compose_file.parent,
+                    capture_output=True,
+                )
+            except subprocess.CalledProcessError as err:
+                if b"update out of sequence" in err.stderr:
+                    raise TryAgain from err
+                print(
+                    "docker_stack failed",
+                    f"{' '.join(err.cmd)}",
+                    f"returncode={err.returncode}",
+                    f"stdout={err.stdout}",
+                    f"stderr={err.stderr}",
+                    "\nTIP: frequent failure is due to a corrupt .env file: Delete .env and .env.bak",
+                )
+                raise
 
 
 @pytest.fixture(scope="module")
@@ -211,54 +275,12 @@ def docker_stack(
 
     # NOTE: if the migration service was already running prior to this call it must
     # be force updated so that it does its job. else it remains and tests will fail
-    for migration_service in (
-        service
-        for service in docker_client.services.list()
-        if "migration" in service.name  # type: ignore
-    ):
-        print(
-            "WARNING: migration service detected before updating stack, it will be force-updated"
-        )
-        migration_service.force_update()  # type: ignore
-        print(f"forced updated {migration_service.name}.")  # type: ignore
+    _force_remove_migration_service(docker_client)
 
     # make up-version
     stacks_deployed: dict[str, dict] = {}
     for key, stack_name, compose_file in stacks:
-        for attempt in Retrying(
-            stop=stop_after_delay(60),
-            wait=wait_random_exponential(max=5),
-            retry=retry_if_exception_type(TryAgain),
-            reraise=True,
-        ):
-            with attempt:
-                try:
-                    subprocess.run(
-                        [
-                            "docker",
-                            "stack",
-                            "deploy",
-                            "--with-registry-auth",
-                            "--compose-file",
-                            f"{compose_file.name}",
-                            f"{stack_name}",
-                        ],
-                        check=True,
-                        cwd=compose_file.parent,
-                        capture_output=True,
-                    )
-                except subprocess.CalledProcessError as err:
-                    if b"update out of sequence" in err.stderr:
-                        raise TryAgain from err
-                    print(
-                        "docker_stack failed",
-                        f"{' '.join(err.cmd)}",
-                        f"returncode={err.returncode}",
-                        f"stdout={err.stdout}",
-                        f"stderr={err.stderr}",
-                        "\nTIP: frequent failure is due to a corrupt .env file: Delete .env and .env.bak",
-                    )
-                    raise
+        _deploy_stack(compose_file, stack_name)
 
         stacks_deployed[key] = {
             "name": stack_name,
@@ -281,6 +303,11 @@ def docker_stack(
                 return_when=asyncio.FIRST_EXCEPTION,
             )
             assert done, f"no services ready, they all failed! [{pending}]"
+
+            for future in done:
+                if exc := future.exception():
+                    raise exc
+
             assert not pending, f"some service did not start correctly [{pending}]"
 
         asyncio.run(_check_all_services_are_running())
@@ -318,7 +345,6 @@ def docker_stack(
 
     stacks.reverse()
     for _, stack, _ in stacks:
-
         try:
             subprocess.run(
                 f"docker stack remove {stack}".split(" "),

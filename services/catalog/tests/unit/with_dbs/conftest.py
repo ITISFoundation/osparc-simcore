@@ -8,7 +8,7 @@ import random
 from copy import deepcopy
 from datetime import datetime
 from random import randint
-from typing import Any, AsyncIterator, Awaitable, Callable, Iterable, Iterator, Optional
+from typing import Any, AsyncIterator, Awaitable, Callable, Iterator
 
 import pytest
 import respx
@@ -19,6 +19,8 @@ from models_library.services import ServiceDockerData
 from models_library.users import UserID
 from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.utils_postgres import PostgresTestConfig
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
 from simcore_service_catalog.core.application import init_app
@@ -66,19 +68,24 @@ async def products_names(
 def app(
     monkeypatch: MonkeyPatch,
     mocker: MockerFixture,
-    service_test_environ: None,
+    service_test_environ: EnvVarsDict,
     postgres_db: sa.engine.Engine,
-    postgres_host_config: dict[str, str],
+    postgres_host_config: PostgresTestConfig,
     products_names: list[str],
-) -> Iterable[FastAPI]:
+) -> FastAPI:
     print("database started:", postgres_host_config)
     print("database w/products in table:", products_names)
 
-    monkeypatch.setenv("CATALOG_TRACING", "null")
+    # Ensures both postgres service and app environs are the same!
+    assert service_test_environ["POSTGRES_USER"] == postgres_host_config["user"]
+    assert service_test_environ["POSTGRES_DB"] == postgres_host_config["database"]
+    assert service_test_environ["POSTGRES_PASSWORD"] == postgres_host_config["password"]
+
     monkeypatch.setenv("SC_BOOT_MODE", "local-development")
     monkeypatch.setenv("POSTGRES_CLIENT_NAME", "pytest_client")
     app = init_app()
-    yield app
+
+    return app
 
 
 @pytest.fixture
@@ -144,7 +151,7 @@ def user_db(postgres_db: sa.engine.Engine, user_id: UserID) -> Iterator[dict]:
             .returning(sa.literal_column("*"))
         )
         # this is needed to get the primary_gid correctly
-        result = con.execute(sa.select([users]).where(users.c.id == user_id))
+        result = con.execute(sa.select(users).where(users.c.id == user_id))
         user = result.first()
         assert user
         yield dict(user)
@@ -167,7 +174,7 @@ async def user_groups_ids(
             "STANDARD",
             "http://mib.org",
             {"email": "@(foo|testers|mib)+.(org|com)$"},
-        ),
+        )
     ]
     # pylint: disable=no-value-for-parameter
     async with sqlalchemy_async_engine.begin() as conn:
@@ -400,9 +407,8 @@ async def service_catalog_faker(
         team_access=None,
         everyone_access=None,
         product=products_names[0],
-        deprecated: Optional[datetime] = None,
+        deprecated: datetime | None = None,
     ) -> tuple[dict[str, Any], ...]:
-
         service = _random_service(key=key, version=version, deprecated=deprecated)
 
         # owner always has full-access

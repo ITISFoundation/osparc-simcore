@@ -1,5 +1,5 @@
 import logging
-from typing import Final, Optional
+from typing import Final
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
@@ -7,14 +7,18 @@ from models_library.emails import LowerCaseEmailStr
 from pydantic import BaseModel, Field, PositiveInt, SecretStr
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.error_codes import create_error_code
-from servicelib.logging_utils import log_context
+from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.models.users import UserRole
 
 from .._meta import API_VTAG
-from ..products import Product, get_current_product
-from ..security_api import check_password, forget
-from ..session_access import on_success_grant_session_access_to, session_access_required
+from ..products.plugin import Product, get_current_product
+from ..security.api import check_password, forget
+from ..session.access_policies import (
+    on_success_grant_session_access_to,
+    session_access_required,
+)
 from ..utils_aiohttp import NextPage
 from ._2fa import (
     create_2fa_code,
@@ -38,7 +42,7 @@ from ._constants import (
 )
 from ._models import InputSchema
 from ._security import login_granted_response
-from .decorators import RQT_USERID_KEY, login_required
+from .decorators import login_required
 from .settings import LoginSettingsForProduct, get_plugin_settings
 from .storage import AsyncpgStorage, get_plugin_storage
 from .utils import (
@@ -62,8 +66,8 @@ class LoginBody(InputSchema):
 
 class CodePageParams(BaseModel):
     message: str
-    retry_2fa_after: Optional[PositiveInt] = None
-    next_url: Optional[str] = None
+    retry_2fa_after: PositiveInt | None = None
+    next_url: str | None = None
 
 
 class LoginNextPage(NextPage[CodePageParams]):
@@ -240,7 +244,7 @@ async def login_2fa(request: web.Request):
 
 
 class LogoutBody(InputSchema):
-    client_session_id: Optional[str] = Field(
+    client_session_id: str | None = Field(
         None, example="5ac57685-c40f-448f-8711-70be1936fd63"
     )
 
@@ -259,6 +263,7 @@ async def logout(request: web.Request) -> web.Response:
         "logout of %s for %s",
         f"{user_id=}",
         f"{logout_.client_session_id=}",
+        extra=get_log_record_extra(user_id=user_id),
     ):
         response = flash_response(MSG_LOGGED_OUT, "INFO")
         await notify_user_logout(request.app, user_id, logout_.client_session_id)

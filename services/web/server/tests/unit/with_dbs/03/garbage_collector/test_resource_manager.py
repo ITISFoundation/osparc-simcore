@@ -21,41 +21,45 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
-from pytest_mock.plugin import MockerFixture
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_projects import NewProject
 from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
 from redis.asyncio import Redis
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.application_setup import is_setup_completed
+from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver import garbage_collector_core
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.db import setup_db
-from simcore_service_webserver.director_v2 import setup_director_v2
+from simcore_service_webserver.db.plugin import setup_db
+from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.login.plugin import setup_login
-from simcore_service_webserver.products import setup_products
+from simcore_service_webserver.notifications.plugin import setup_notifications
+from simcore_service_webserver.products.plugin import setup_products
+from simcore_service_webserver.projects.exceptions import ProjectNotFoundError
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.projects.projects_api import (
     remove_project_dynamic_services,
     submit_delete_project_task,
 )
-from simcore_service_webserver.projects.projects_exceptions import ProjectNotFoundError
+from simcore_service_webserver.rabbitmq import setup_rabbitmq
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.resource_manager.registry import (
     RedisResourceRegistry,
     RegistryKeyPrefixDict,
     get_registry,
 )
-from simcore_service_webserver.rest import setup_rest
-from simcore_service_webserver.security import setup_security
-from simcore_service_webserver.security_roles import UserRole
-from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT
+from simcore_service_webserver.rest.plugin import setup_rest
+from simcore_service_webserver.security.plugin import setup_security
+from simcore_service_webserver.session.plugin import setup_session
+from simcore_service_webserver.socketio.messages import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.socketio.plugin import setup_socketio
-from simcore_service_webserver.users import setup_users
-from simcore_service_webserver.users_api import delete_user
-from simcore_service_webserver.users_exceptions import UserNotFoundError
+from simcore_service_webserver.users.api import delete_user_without_projects
+from simcore_service_webserver.users.exceptions import UserNotFoundError
+from simcore_service_webserver.users.plugin import setup_users
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -96,6 +100,20 @@ async def open_project() -> AsyncIterator[Callable[..., Awaitable[None]]]:
 
 
 @pytest.fixture
+def app_environment(
+    app_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch
+) -> dict[str, str]:
+    overrides = setenvs_from_dict(
+        monkeypatch,
+        {
+            "WEBSERVER_COMPUTATION": "1",
+            "WEBSERVER_NOTIFICATIONS": "1",
+        },
+    )
+    return app_environment | overrides
+
+
+@pytest.fixture
 def client(
     event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
@@ -107,7 +125,6 @@ def client(
     mock_rabbitmq: None,
     mock_progress_bar: Any,
 ) -> TestClient:
-
     cfg = deepcopy(app_cfg)
     assert cfg["rest"]["version"] == API_VTAG
     assert cfg["rest"]["enabled"]
@@ -136,6 +153,8 @@ def client(
     setup_projects(app)
     setup_director_v2(app)
     assert setup_resource_manager(app)
+    setup_rabbitmq(app)
+    setup_notifications(app)
     setup_products(app)
 
     assert is_setup_completed("simcore_service_webserver.resource_manager", app)
@@ -153,9 +172,9 @@ def client(
 
 
 @pytest.fixture
-def mock_storage_delete_data_folders(mocker) -> mock.Mock:
+def mock_storage_delete_data_folders(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
-        "simcore_service_webserver.projects._delete.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._crud_delete_utils.delete_data_folders_of_project",
         return_value=None,
     )
 
@@ -220,7 +239,6 @@ async def test_anonymous_websocket_connection(
     security_cookie_factory: Callable,
     mocker,
 ):
-
     sio = socketio.AsyncClient(
         ssl_verify=False
     )  # enginio 3.10.0 introduced ssl verification
@@ -284,7 +302,7 @@ async def test_websocket_resource_management(
         with attempt:
             # now the entries should be removed
             assert not await socket_registry.find_keys(("socket_id", sio.get_sid()))
-            assert not sid in await socket_registry.find_resources(
+            assert sid not in await socket_registry.find_resources(
                 resource_key, "socket_id"
             )
             assert not await socket_registry.find_resources(resource_key, "socket_id")
@@ -341,7 +359,7 @@ async def test_websocket_multiple_connections(
 
         assert not sio.sid
         assert not await socket_registry.find_keys(("socket_id", sio.get_sid()))
-        assert not sid in await socket_registry.find_resources(
+        assert sid not in await socket_registry.find_resources(
             resource_key, "socket_id"
         )
 
@@ -375,6 +393,7 @@ async def test_asyncio_task_pending_on_close(
     socketio_client_factory: Callable,
 ):
     sio = await socketio_client_factory()
+    assert sio
     # this test generates warnings on its own
 
 
@@ -398,6 +417,7 @@ async def test_websocket_disconnected_after_logout(
     assert client.app
     app = client.app
     socket_registry = get_registry(app)
+    assert socket_registry
 
     # connect first socket
     cur_client_session_id1 = client_session_id_factory()
@@ -463,6 +483,7 @@ async def test_interactive_services_removed_after_logout(
     expected_save_state: bool,
     open_project: Callable,
     mock_progress_bar: Any,
+    mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     assert client.app
 
@@ -475,6 +496,7 @@ async def test_interactive_services_removed_after_logout(
     # create websocket
     client_session_id1 = client_session_id_factory()
     sio = await socketio_client_factory(client_session_id1)
+    assert sio
     # open project in client 1
     await open_project(client, empty_user_project["uuid"], client_session_id1)
     # logout
@@ -496,10 +518,11 @@ async def test_interactive_services_removed_after_logout(
                 f"--> Waiting for stop_dynamic_service with: {service['service_uuid']}, {expected_save_state=}",
             )
             mocked_director_v2_api[
-                "director_v2_core_dynamic_services.stop_dynamic_service"
+                "director_v2._core_dynamic_services.stop_dynamic_service"
             ].assert_awaited_with(
                 app=client.app,
                 service_uuid=service["service_uuid"],
+                simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 save_state=expected_save_state,
                 progress=mock_progress_bar.sub_progress(1),
             )
@@ -526,8 +549,8 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     mocker: MockerFixture,
     open_project: Callable,
     mock_progress_bar: Any,
+    mocked_notifications_plugin: dict[str, mock.Mock],
 ):
-
     # login - logged_user fixture
     # create empty study - empty_user_project fixture
     # create dynamic service - create_dynamic_service_mock fixture
@@ -584,19 +607,19 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     await garbage_collector_core.collect_garbage(client.app)
 
     # assert dynamic service is still around
-    mocked_director_v2_api["director_v2_api.stop_dynamic_service"].assert_not_called()
+    mocked_director_v2_api["director_v2.api.stop_dynamic_service"].assert_not_called()
     # disconnect second websocket
     await sio2.disconnect()
     assert not sio2.sid
     # assert dynamic service is still around for now
-    mocked_director_v2_api["director_v2_api.stop_dynamic_service"].assert_not_called()
+    mocked_director_v2_api["director_v2.api.stop_dynamic_service"].assert_not_called()
     # reconnect websocket
     sio2 = await socketio_client_factory(client_session_id2)
     # it should still be there even after waiting for auto deletion from garbage collector
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await garbage_collector_core.collect_garbage(client.app)
 
-    mocked_director_v2_api["director_v2_api.stop_dynamic_service"].assert_not_called()
+    mocked_director_v2_api["director_v2.api.stop_dynamic_service"].assert_not_called()
     # now really disconnect
     await sio2.disconnect()
     await sio2.wait()
@@ -611,13 +634,14 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     calls = [
         call(
             app=client.server.app,
+            simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
             service_uuid=service["service_uuid"],
             progress=mock_progress_bar.sub_progress(1),
         )
     ]
     mocked_director_v2_api[
-        "director_v2_core_dynamic_services.stop_dynamic_service"
+        "director_v2._core_dynamic_services.stop_dynamic_service"
     ].assert_has_calls(calls)
 
 
@@ -636,17 +660,7 @@ async def mocked_notification_system(mocker):
 @pytest.mark.parametrize(
     "user_role, expected_save_state",
     [
-        pytest.param(
-            UserRole.GUEST,
-            False,
-            marks=pytest.mark.xfail(
-                reason=(
-                    "GC is wrongly assuming that only 1 tab can be opened for GUEST users. "
-                    "SEE: https://github.com/ITISFoundation/osparc-simcore/issues/3770"
-                )
-                #
-            ),
-        ),
+        (UserRole.GUEST, False),
         (UserRole.USER, True),
         (UserRole.TESTER, True),
     ],
@@ -666,6 +680,7 @@ async def test_interactive_services_removed_per_project(
     expected_save_state: bool,
     open_project: Callable,
     mock_progress_bar: Any,
+    mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     # create server with delay set to DELAY
     # login - logged_user fixture
@@ -695,7 +710,7 @@ async def test_interactive_services_removed_per_project(
     await sio1.disconnect()
     assert not sio1.sid
     # assert dynamic service is still around
-    mocked_director_v2_api["director_v2_api.stop_dynamic_service"].assert_not_called()
+    mocked_director_v2_api["director_v2.api.stop_dynamic_service"].assert_not_called()
     # wait the defined delay
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await garbage_collector_core.collect_garbage(client.app)
@@ -704,15 +719,16 @@ async def test_interactive_services_removed_per_project(
         call(
             app=client.server.app,
             service_uuid=service1["service_uuid"],
+            simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
             progress=mock_progress_bar.sub_progress(1),
         )
     ]
     mocked_director_v2_api[
-        "director_v2_core_dynamic_services.stop_dynamic_service"
+        "director_v2._core_dynamic_services.stop_dynamic_service"
     ].assert_has_calls(calls)
     mocked_director_v2_api[
-        "director_v2_core_dynamic_services.stop_dynamic_service"
+        "director_v2._core_dynamic_services.stop_dynamic_service"
     ].reset_mock()
 
     # disconnect websocket2
@@ -720,7 +736,7 @@ async def test_interactive_services_removed_per_project(
     assert not sio2.sid
     # assert dynamic services are still around
     mocked_director_v2_api[
-        "director_v2_core_dynamic_services.stop_dynamic_service"
+        "director_v2._core_dynamic_services.stop_dynamic_service"
     ].assert_not_called()
     # wait the defined delay
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
@@ -730,21 +746,23 @@ async def test_interactive_services_removed_per_project(
         call(
             app=client.server.app,
             service_uuid=service2["service_uuid"],
+            simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
             progress=mock_progress_bar.sub_progress(1),
         ),
         call(
             app=client.server.app,
             service_uuid=service3["service_uuid"],
+            simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
             progress=mock_progress_bar.sub_progress(1),
         ),
     ]
     mocked_director_v2_api[
-        "director_v2_core_dynamic_services.stop_dynamic_service"
+        "director_v2._core_dynamic_services.stop_dynamic_service"
     ].assert_has_calls(calls)
     mocked_director_v2_api[
-        "director_v2_core_dynamic_services.stop_dynamic_service"
+        "director_v2._core_dynamic_services.stop_dynamic_service"
     ].reset_mock()
 
 
@@ -782,10 +800,12 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(
     # open project in tab1
     client_session_id1 = client_session_id_factory()
     sio1 = await socketio_client_factory(client_session_id1)
+    assert sio1
     await open_project(client, empty_user_project["uuid"], client_session_id1)
     # open project in tab2
     client_session_id2 = client_session_id_factory()
     sio2 = await socketio_client_factory(client_session_id2)
+    assert sio2
     await open_project(client, empty_user_project["uuid"], client_session_id2)
     # close project in tab1
     await close_project(client, empty_user_project["uuid"], client_session_id1)
@@ -793,13 +813,13 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await garbage_collector_core.collect_garbage(client.app)
     # assert dynamic service is still around
-    mocked_director_v2_api["director_v2_api.stop_dynamic_service"].assert_not_called()
+    mocked_director_v2_api["director_v2.api.stop_dynamic_service"].assert_not_called()
     # close project in tab2
     await close_project(client, empty_user_project["uuid"], client_session_id2)
     # wait the defined delay
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await garbage_collector_core.collect_garbage(client.app)
-    mocked_director_v2_api["director_v2_api.stop_dynamic_service"].assert_has_calls(
+    mocked_director_v2_api["director_v2.api.stop_dynamic_service"].assert_has_calls(
         [call(client.server.app, service["service_uuid"], expected_save_state)]
     )
 
@@ -826,6 +846,7 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     expected_save_state: bool,
     open_project: Callable,
     mock_progress_bar: Any,
+    mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     # login - logged_user fixture
     # create empty study - empty_user_project fixture
@@ -836,6 +857,7 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     # create websocket
     client_session_id1 = client_session_id_factory()
     sio: socketio.AsyncClient = await socketio_client_factory(client_session_id1)
+    assert sio
     # open project in client 1
     await open_project(client, empty_user_project["uuid"], client_session_id1)
     # logout
@@ -852,13 +874,14 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     calls = [
         call(
             app=client.server.app,
+            simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
             service_uuid=service["service_uuid"],
             progress=mock_progress_bar.sub_progress(1),
         )
     ]
     mocked_director_v2_api[
-        "director_v2_core_dynamic_services.stop_dynamic_service"
+        "director_v2._core_dynamic_services.stop_dynamic_service"
     ].assert_has_calls(calls)
 
     # this call is done async, so wait a bit here to ensure it is correctly done
@@ -891,16 +914,18 @@ async def test_regression_removing_unexisting_user(
         app=client.app,
         project_uuid=empty_user_project["uuid"],
         user_id=logged_user["id"],
+        simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     )
     await delete_task
     # remove user
-    await delete_user(app=client.app, user_id=logged_user["id"])
+    await delete_user_without_projects(app=client.app, user_id=logged_user["id"])
 
     with pytest.raises(UserNotFoundError):
         await remove_project_dynamic_services(
             user_id=logged_user["id"],
             project_uuid=empty_user_project["uuid"],
             app=client.app,
+            simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
         )
     with pytest.raises(ProjectNotFoundError):
         await remove_project_dynamic_services(
@@ -908,6 +933,7 @@ async def test_regression_removing_unexisting_user(
             project_uuid=empty_user_project["uuid"],
             app=client.app,
             user_name={"first_name": "my name is", "last_name": "pytest"},
+            simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
         )
     # since the call to delete is happening as fire and forget task, let's wait until it is done
     async for attempt in AsyncRetrying(**_TENACITY_ASSERT_RETRY):

@@ -4,7 +4,7 @@ import logging
 from collections import deque
 from datetime import datetime
 from textwrap import dedent
-from typing import IO, Optional
+from typing import IO, Deque
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
@@ -22,7 +22,7 @@ from starlette.responses import RedirectResponse
 
 from ..._meta import API_VTAG
 from ...models.schemas.files import File
-from ...modules.storage import StorageApi, StorageFileMetaData, to_file_api_model
+from ...plugins.storage import StorageApi, StorageFileMetaData, to_file_api_model
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
 
@@ -53,7 +53,7 @@ async def list_files(
     stored_files: list[StorageFileMetaData] = await storage_client.list_files(user_id)
 
     # Adapts storage API model to API model
-    files_meta = deque()
+    files_meta: Deque = deque()
     for stored_file_meta in stored_files:
         try:
             assert stored_file_meta.file_id  # nosec
@@ -86,7 +86,7 @@ def _get_spooled_file_size(file_io: IO) -> int:
 async def upload_file(
     request: Request,
     file: UploadFile = FileParam(...),
-    content_length: Optional[str] = Header(None),
+    content_length: str | None = Header(None),
     user_id: int = Depends(get_current_user_id),
 ):
     """Uploads a single file to the system"""

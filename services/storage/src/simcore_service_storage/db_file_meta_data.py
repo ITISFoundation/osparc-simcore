@@ -1,5 +1,5 @@
 import datetime
-from typing import AsyncGenerator, Optional, Union
+from typing import AsyncGenerator
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -17,9 +17,9 @@ from .models import FileMetaData, FileMetaDataAtDB
 
 
 async def exists(conn: SAConnection, file_id: SimcoreS3FileID) -> bool:
-    return (
+    return bool(
         await conn.scalar(
-            sa.select([sa.func.count()])
+            sa.select(sa.func.count())
             .select_from(file_meta_data)
             .where(file_meta_data.c.file_id == file_id)
         )
@@ -28,7 +28,7 @@ async def exists(conn: SAConnection, file_id: SimcoreS3FileID) -> bool:
 
 
 async def upsert(
-    conn: SAConnection, fmd: Union[FileMetaData, FileMetaDataAtDB]
+    conn: SAConnection, fmd: FileMetaData | FileMetaDataAtDB
 ) -> FileMetaDataAtDB:
     # NOTE: upsert file_meta_data, if the file already exists, we update the whole row
     # so we get the correct time stamps
@@ -57,7 +57,7 @@ async def insert(conn: SAConnection, fmd: FileMetaData) -> FileMetaDataAtDB:
 
 async def get(conn: SAConnection, file_id: SimcoreS3FileID) -> FileMetaDataAtDB:
     result = await conn.execute(
-        query=sa.select([file_meta_data]).where(file_meta_data.c.file_id == file_id)
+        query=sa.select(file_meta_data).where(file_meta_data.c.file_id == file_id)
     )
     if row := await result.first():
         return FileMetaDataAtDB.from_orm(row)
@@ -69,10 +69,10 @@ async def list_filter_with_partial_file_id(
     *,
     user_id: UserID,
     project_ids: list[ProjectID],
-    file_id_prefix: Optional[str],
-    partial_file_id: Optional[str],
+    file_id_prefix: str | None,
+    partial_file_id: str | None,
 ) -> list[FileMetaDataAtDB]:
-    stmt = sa.select([file_meta_data]).where(
+    stmt = sa.select(file_meta_data).where(
         (
             (file_meta_data.c.user_id == f"{user_id}")
             | file_meta_data.c.project_id.in_(f"{pid}" for pid in project_ids)
@@ -94,13 +94,12 @@ async def list_filter_with_partial_file_id(
 async def list_fmds(
     conn: SAConnection,
     *,
-    user_id: Optional[UserID] = None,
-    project_ids: Optional[list[ProjectID]] = None,
-    file_ids: Optional[list[SimcoreS3FileID]] = None,
-    expired_after: Optional[datetime.datetime] = None,
+    user_id: UserID | None = None,
+    project_ids: list[ProjectID] | None = None,
+    file_ids: list[SimcoreS3FileID] | None = None,
+    expired_after: datetime.datetime | None = None,
 ) -> list[FileMetaDataAtDB]:
-
-    stmt = sa.select([file_meta_data]).where(
+    stmt = sa.select(file_meta_data).where(
         and_(
             (file_meta_data.c.user_id == f"{user_id}") if user_id else True,
             (file_meta_data.c.project_id.in_([f"{p}" for p in project_ids]))
@@ -119,7 +118,7 @@ async def list_fmds(
 async def total(conn: SAConnection) -> int:
     """returns the number of uploaded file entries"""
     return (
-        await conn.scalar(sa.select([sa.func.count()]).select_from(file_meta_data)) or 0
+        await conn.scalar(sa.select(sa.func.count()).select_from(file_meta_data)) or 0
     )
 
 
@@ -128,7 +127,7 @@ async def list_valid_uploads(
 ) -> AsyncGenerator[FileMetaDataAtDB, None]:
     """returns all the theoretically valid fmds (e.g. upload_expires_at column is null)"""
     async for row in conn.execute(
-        sa.select([file_meta_data]).where(
+        sa.select(file_meta_data).where(
             file_meta_data.c.upload_expires_at == None  # lgtm [py/test-equals-none]
         )
     ):

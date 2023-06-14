@@ -86,6 +86,11 @@ services:
       SC_BOOT_MODE: debug-ptvsd
       WEBSERVER_LOGLEVEL: ${LOG_LEVEL:-DEBUG}
 
+  wb-db-event-listener:
+    volumes: *webserver-volumes-dev
+    environment:
+      <<: *webserver-environment-dev
+
   wb-garbage-collector:
     volumes: *webserver-volumes-dev
     environment:
@@ -113,6 +118,15 @@ services:
     deploy:
       endpoint_mode: vip
       replicas: 1
+
+  resource-usage-tracker:
+    environment:
+      - SC_BOOT_MODE=debug-ptvsd
+      - RESOURCE_USAGE_TRACKER_LOGLEVEL=DEBUG
+      - DEBUG=true
+    volumes:
+      - ./resource-usage-tracker:/devel/services/resource-usage-tracker
+      - ../packages:/devel/packages
 
   storage:
     volumes:

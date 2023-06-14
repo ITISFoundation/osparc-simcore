@@ -52,8 +52,8 @@ class WebApiUser(FastHttpUser):
     def get_health(self):
         self.client.get("/v0/health", auth=self.auth)
 
-    def on_start(self):
+    def on_start(self):  # pylint: disable=no-self-use
         print("Created locust user")
 
-    def on_stop(self):
+    def on_stop(self):  # pylint: disable=no-self-use
         print("Stopping locust user")

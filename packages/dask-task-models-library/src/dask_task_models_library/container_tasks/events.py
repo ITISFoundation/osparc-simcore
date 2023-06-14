@@ -1,14 +1,14 @@
+import logging
 from abc import ABC, abstractmethod
-from typing import Optional, Union
+from typing import TypeAlias, Union
 
 from distributed.worker import get_worker
-from models_library.projects_state import RunningState
-from pydantic import BaseModel, Extra, NonNegativeFloat
+from pydantic import BaseModel, Extra, validator
 
 
 class BaseTaskEvent(BaseModel, ABC):
     job_id: str
-    msg: Optional[str] = None
+    msg: str | None = None
 
     @staticmethod
     @abstractmethod
@@ -19,37 +19,8 @@ class BaseTaskEvent(BaseModel, ABC):
         extra = Extra.forbid
 
 
-class TaskStateEvent(BaseTaskEvent):
-    state: RunningState
-
-    @staticmethod
-    def topic_name() -> str:
-        return "task_state"
-
-    @classmethod
-    def from_dask_worker(
-        cls, state: RunningState, msg: Optional[str] = None
-    ) -> "TaskStateEvent":
-        return cls(job_id=get_worker().get_current_task(), state=state, msg=msg)
-
-    class Config(BaseTaskEvent.Config):
-        schema_extra = {
-            "examples": [
-                {
-                    "job_id": "simcore/services/comp/sleeper:1.1.0:projectid_ec7e595a-63ee-46a1-a04a-901b11b649f8:nodeid_39467d89-b659-4914-9359-c40b1b6d1d6d:uuid_5ee5c655-450d-4711-a3ec-32ffe16bc580",
-                    "state": RunningState.STARTED.value,
-                },
-                {
-                    "job_id": "simcore/services/comp/sleeper:1.1.0:projectid_ec7e595a-63ee-46a1-a04a-901b11b649f8:nodeid_39467d89-b659-4914-9359-c40b1b6d1d6d:uuid_5ee5c655-450d-4711-a3ec-32ffe16bc580",
-                    "msg": "some unexpected error happened",
-                    "state": RunningState.FAILED.value,
-                },
-            ]
-        }
-
-
 class TaskProgressEvent(BaseTaskEvent):
-    progress: NonNegativeFloat
+    progress: float
 
     @staticmethod
     def topic_name() -> str:
@@ -73,17 +44,29 @@ class TaskProgressEvent(BaseTaskEvent):
             ]
         }
 
+    @validator("progress", always=True)
+    @classmethod
+    def ensure_between_0_1(cls, v):
+        if 0 <= v <= 1:
+            return v
+        return min(max(0, v), 1)
+
+
+LogMessageStr: TypeAlias = str
+LogLevelInt: TypeAlias = int
+
 
 class TaskLogEvent(BaseTaskEvent):
-    log: str
+    log: LogMessageStr
+    log_level: LogLevelInt
 
     @staticmethod
     def topic_name() -> str:
         return "task_logs"
 
     @classmethod
-    def from_dask_worker(cls, log: str) -> "TaskLogEvent":
-        return cls(job_id=get_worker().get_current_task(), log=log)
+    def from_dask_worker(cls, log: str, log_level: LogLevelInt) -> "TaskLogEvent":
+        return cls(job_id=get_worker().get_current_task(), log=log, log_level=log_level)
 
     class Config(BaseTaskEvent.Config):
         schema_extra = {
@@ -91,9 +74,10 @@ class TaskLogEvent(BaseTaskEvent):
                 {
                     "job_id": "simcore/services/comp/sleeper:1.1.0:projectid_ec7e595a-63ee-46a1-a04a-901b11b649f8:nodeid_39467d89-b659-4914-9359-c40b1b6d1d6d:uuid_5ee5c655-450d-4711-a3ec-32ffe16bc580",
                     "log": "some logs",
+                    "log_level": logging.INFO,
                 },
             ]
         }
 
 
-DaskTaskEvents = type[Union[TaskLogEvent, TaskProgressEvent, TaskStateEvent]]
+DaskTaskEvents = type[Union[TaskLogEvent, TaskProgressEvent]]

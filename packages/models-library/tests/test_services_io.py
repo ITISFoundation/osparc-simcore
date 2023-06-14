@@ -24,14 +24,14 @@ def test_service_port_units(project_tests_dir: Path):
         assert input_nameid
 
         # validation
-        valid_unit: Unit = ureg.parse_units(input_meta.unit)
+        # WARNING: pint>=0.21 parse_units(None) raises!!!
+        valid_unit: Unit = ureg.parse_units(input_meta.unit or "")
         assert isinstance(valid_unit, Unit)
 
         assert valid_unit.dimensionless
 
 
 def test_build_input_ports_from_json_schemas():
-
     # builds ServiceInput using json-schema
     port_meta = ServiceInput.from_json_schema(
         port_schema={

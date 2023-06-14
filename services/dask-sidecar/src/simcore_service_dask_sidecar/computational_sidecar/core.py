@@ -1,32 +1,34 @@
 import asyncio
 import json
+import logging
 import os
 import socket
 from dataclasses import dataclass
 from pathlib import Path
 from pprint import pformat
 from types import TracebackType
-from typing import Coroutine, Optional, cast
+from typing import Coroutine, cast
 from uuid import uuid4
 
 from aiodocker import Docker
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
-from dask_task_models_library.container_tasks.events import TaskLogEvent, TaskStateEvent
+from dask_task_models_library.container_tasks.errors import ServiceRuntimeError
+from dask_task_models_library.container_tasks.events import TaskLogEvent
 from dask_task_models_library.container_tasks.io import (
     FileUrl,
     TaskInputData,
     TaskOutputData,
     TaskOutputDataSchema,
 )
-from models_library.projects_state import RunningState
 from models_library.services_resources import BootMode
 from packaging import version
 from pydantic import ValidationError
 from pydantic.networks import AnyUrl
+from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from settings_library.s3 import S3Settings
 from yarl import URL
 
-from ..dask_utils import TaskPublisher, create_dask_worker_logger, publish_event
+from ..dask_utils import TaskPublisher, publish_event
 from ..file_utils import pull_file_from_remote, push_file_to_remote
 from ..settings import Settings
 from .docker_utils import (
@@ -37,11 +39,11 @@ from .docker_utils import (
     managed_monitor_container_log_task,
     pull_image,
 )
-from .errors import ServiceBadFormattedOutputError, ServiceRunError
+from .errors import ServiceBadFormattedOutputError
 from .models import LEGACY_INTEGRATION_VERSION
 from .task_shared_volume import TaskSharedVolumes
 
-logger = create_dask_worker_logger(__name__)
+logger = logging.getLogger(__name__)
 CONTAINER_WAIT_TIME_SECS = 2
 
 
@@ -56,7 +58,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
     boot_mode: BootMode
     task_max_resources: dict[str, float]
     task_publishers: TaskPublisher
-    s3_settings: Optional[S3Settings]
+    s3_settings: S3Settings | None
 
     async def _write_input_data(
         self,
@@ -155,33 +157,27 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                 exc=exc,
             ) from exc
 
-    async def _publish_sidecar_log(self, log: str) -> None:
-        publish_event(
-            self.task_publishers.logs,
-            TaskLogEvent.from_dask_worker(log=f"[sidecar] {log}"),
-        )
-        logger.info(log)
-
-    async def _publish_sidecar_state(
-        self, state: RunningState, msg: Optional[str] = None
+    async def _publish_sidecar_log(
+        self, log: LogMessageStr, log_level: LogLevelInt = logging.INFO
     ) -> None:
         publish_event(
-            self.task_publishers.state,
-            TaskStateEvent.from_dask_worker(state=state, msg=msg),
+            self.task_publishers.logs,
+            TaskLogEvent.from_dask_worker(log=f"[sidecar] {log}", log_level=log_level),
         )
+        logger.log(log_level, log)
 
     async def run(self, command: list[str]) -> TaskOutputData:
-        await self._publish_sidecar_state(RunningState.STARTED)
+        # ensure we pass the initial logs and progress
         await self._publish_sidecar_log(
             f"Starting task for {self.service_key}:{self.service_version} on {socket.gethostname()}..."
         )
+        self.task_publishers.publish_progress(0)
 
         settings = Settings.create_from_envs()
         run_id = f"{uuid4()}"
         async with Docker() as docker_client, TaskSharedVolumes(
             Path(f"{settings.SIDECAR_COMP_SERVICES_SHARED_FOLDER}/{run_id}")
         ) as task_volumes:
-            # PRE-PROCESSING
             await pull_image(
                 docker_client,
                 self.docker_auth,
@@ -208,13 +204,16 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
             await self._write_input_data(task_volumes, integration_version)
 
             # PROCESSING
-            async with managed_container(docker_client, config) as container:
+            async with managed_container(
+                docker_client,
+                config,
+                name=f"{self.service_key.split(sep='/')[-1]}_{run_id}",
+            ) as container:
                 async with managed_monitor_container_log_task(
                     container=container,
                     service_key=self.service_key,
                     service_version=self.service_version,
-                    progress_pub=self.task_publishers.progress,
-                    logs_pub=self.task_publishers.logs,
+                    task_publishers=self.task_publishers,
                     integration_version=integration_version,
                     task_volumes=task_volumes,
                     log_file_url=self.log_file_url,
@@ -231,12 +230,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                     ]:
                         await asyncio.sleep(CONTAINER_WAIT_TIME_SECS)
                     if container_data["State"]["ExitCode"] > os.EX_OK:
-                        await self._publish_sidecar_state(
-                            RunningState.FAILED,
-                            msg=f"error while running container '{container.id}' for '{self.service_key}:{self.service_version}'",
-                        )
-
-                        raise ServiceRunError(
+                        raise ServiceRuntimeError(
                             service_key=self.service_key,
                             service_version=self.service_version,
                             container_id=container.id,
@@ -262,12 +256,16 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
 
     async def __aexit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc: Optional[BaseException],
-        tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
     ) -> None:
         if exc:
-            await self._publish_sidecar_log(f"Task error:\n{exc}")
             await self._publish_sidecar_log(
-                "There might be more information in the service log file"
+                f"Task error:\n{exc}", log_level=logging.ERROR
             )
+            await self._publish_sidecar_log(
+                "TIP: There might be more information in the service log file in the service outputs",
+            )
+        # ensure we pass the final progress
+        self.task_publishers.publish_progress(1)

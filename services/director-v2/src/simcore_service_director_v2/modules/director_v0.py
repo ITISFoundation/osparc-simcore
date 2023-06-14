@@ -5,11 +5,12 @@
 import logging
 import urllib.parse
 from dataclasses import dataclass
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import httpx
 import yarl
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, HTTPException, Request, Response, status
+from fastapi.datastructures import URL
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
@@ -20,24 +21,20 @@ from models_library.services import (
     ServiceVersion,
 )
 from models_library.users import UserID
-
-# Module's business logic ---------------------------------------------
-from starlette import status
-from starlette.datastructures import URL
+from servicelib.logging_utils import log_decorator
 
 from ..core.settings import DirectorV0Settings
 from ..models.schemas.dynamic_services import RunningDynamicServiceDetails
 from ..models.schemas.services import ServiceExtras
 from ..utils.client_decorators import handle_errors, handle_retry
 from ..utils.clients import unenvelope_or_raise_error
-from ..utils.logging_utils import log_decorator
 
 logger = logging.getLogger(__name__)
 
 # Module's setup logic ---------------------------------------------
 
 
-def setup(app: FastAPI, settings: Optional[DirectorV0Settings]):
+def setup(app: FastAPI, settings: DirectorV0Settings | None):
     if not settings:
         settings = DirectorV0Settings()
 
@@ -66,13 +63,14 @@ class DirectorV0Client:
     client: httpx.AsyncClient
 
     @classmethod
-    def create(cls, app: FastAPI, **kwargs):
+    def create(cls, app: FastAPI, **kwargs) -> "DirectorV0Client":
         app.state.director_v0_client = cls(**kwargs)
         return cls.instance(app)
 
     @classmethod
-    def instance(cls, app: FastAPI):
-        return app.state.director_v0_client
+    def instance(cls, app: FastAPI) -> "DirectorV0Client":
+        client: DirectorV0Client = app.state.director_v0_client
+        return client
 
     @handle_errors("Director", logger)
     @handle_retry(logger)
@@ -80,6 +78,9 @@ class DirectorV0Client:
         return await self.client.request(method, tail_path, **kwargs)
 
     async def forward(self, request: Request, response: Response) -> Response:
+        assert self.client.base_url.path.startswith("/v0")  # nosec
+        # SEE https://github.com/ITISFoundation/osparc-simcore/issues/4332
+        # WARNING: assert self.client.base_url.host != request.base_url.hostname  # nosec
         url_tail = URL(
             path=request.url.path.replace("/v0", ""),
             fragment=request.url.fragment,
@@ -152,7 +153,7 @@ class DirectorV0Client:
 
     @log_decorator(logger=logger)
     async def get_running_services(
-        self, user_id: Optional[UserID] = None, project_id: Optional[ProjectID] = None
+        self, user_id: UserID | None = None, project_id: ProjectID | None = None
     ) -> list[RunningDynamicServiceDetails]:
         query_params = {}
         if user_id is not None:

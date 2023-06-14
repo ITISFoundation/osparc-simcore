@@ -16,11 +16,25 @@ MYPY_CONFIG=$(realpath "${2:-${DEFAULT_MYPY_CONFIG}}")
 build() {
   echo Building image "$IMAGE_NAME"
   #
-  docker build \
+  docker buildx build \
+    --load \
     --quiet \
     --tag "$IMAGE_NAME" \
     "$SCRIPT_DIR/mypy"
 }
+
+echo_requirements() {
+  echo "Installed :"
+  docker run \
+    --interactive \
+    --rm \
+    --user="$(id --user "$USER")":"$(id --group "$USER")" \
+    --entrypoint="pip" \
+    "$IMAGE_NAME" \
+     --no-cache-dir freeze
+}
+
+
 
 run() {
   echo Using "$(docker run --rm "$IMAGE_NAME" --version)"
@@ -45,6 +59,7 @@ run() {
 # USAGE
 #    ./scripts/mypy.bash --help
 build
+echo_requirements
 run "$@"
 echo "DONE"
 # ----------------------------------------------------------------------

@@ -3,11 +3,9 @@
 # pylint:disable=no-name-in-module
 
 import asyncio
-import json
+from typing import Callable
 from unittest.mock import MagicMock
 
-import jsonschema
-import jsonschema.validators
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
@@ -16,17 +14,16 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp.application import create_safe_application
-from simcore_service_webserver._resources import resources
 from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.rest import setup_rest
-from simcore_service_webserver.security import setup_security
+from simcore_service_webserver.rest.plugin import setup_rest
+from simcore_service_webserver.security.plugin import setup_security
 
 
 @pytest.fixture
 def client(
     event_loop: asyncio.AbstractEventLoop,
-    unused_tcp_port_factory,
-    aiohttp_client,
+    unused_tcp_port_factory: Callable,
+    aiohttp_client: Callable,
     api_version_prefix: str,
     mock_env_devel_environment: EnvVarsDict,
     mock_env_auto_deployer_agent: EnvVarsDict,
@@ -63,7 +60,7 @@ async def test_frontend_config(
     assert client.app
     # avoids having to start database etc...
     mocker.patch(
-        "simcore_service_webserver.rest_handlers.get_product_name",
+        "simcore_service_webserver.rest._handlers.get_product_name",
         spec=True,
         return_value="osparc",
     )
@@ -75,21 +72,6 @@ async def test_frontend_config(
 
     data, _ = await assert_status(response, web.HTTPOk)
     assert not data["invitation_required"]
-
-
-@pytest.mark.parametrize("resource_name", resources.listdir("api/v0/schemas"))
-def test_validate_component_schema(resource_name: str, api_version_prefix: str):
-    try:
-        with resources.stream(
-            f"api/{api_version_prefix}/schemas/{resource_name}"
-        ) as fh:
-            schema_under_test = json.load(fh)
-
-        validator = jsonschema.validators.validator_for(schema_under_test)
-        validator.check_schema(schema_under_test)
-
-    except jsonschema.SchemaError as err:
-        pytest.fail(msg=str(err))
 
 
 @pytest.fixture
@@ -115,7 +97,7 @@ async def mock_redis_client(
 
     # mocks redis response
     mock = mocker.patch(
-        "simcore_service_webserver.rest_handlers.get_redis_scheduled_maintenance_client",
+        "simcore_service_webserver.rest._handlers.get_redis_scheduled_maintenance_client",
         spec=True,
     )
     redis_client = mock.return_value

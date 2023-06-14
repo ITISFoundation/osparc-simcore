@@ -2,7 +2,6 @@ import logging
 import uuid as uuidlib
 from copy import deepcopy
 from datetime import timedelta
-from typing import Optional
 
 import simcore_postgres_database.webserver_models as orm
 import sqlalchemy as sa
@@ -14,12 +13,13 @@ from pydantic import BaseModel, Field
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.errors import DatabaseError
 from sqlalchemy.sql import func
 
-from ..security_api import check_permission
-from .decorators import RQT_USERID_KEY, login_required
+from ..security.api import check_permission
+from .decorators import login_required
 from .utils import get_random_string
 
 log = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ log = logging.getLogger(__name__)
 
 class ApiKeyCreate(BaseModel):
     display_name: str = Field(..., min_length=3)
-    expiration: Optional[timedelta] = Field(
+    expiration: timedelta | None = Field(
         None,
         description="Time delta from creation time to expiration. If None, then it does not expire.",
     )

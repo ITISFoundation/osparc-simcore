@@ -212,8 +212,9 @@ qx.Class.define("osparc.Error", {
         }
         case "log-in-button": {
           control = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/copy/14",
-            label: this.tr("Log in")
+            icon: "@FontAwesome5Solid/sign-in-alt/14",
+            label: this.tr("Log in"),
+            appearance: "strong-button"
           });
           control.addListener("execute", () => this.__logIn(), this);
           const actionsLayout = this.getChildControl("actions-layout");
@@ -247,16 +248,16 @@ qx.Class.define("osparc.Error", {
       const actionsLayout = this.getChildControl("actions-layout");
       messagesLayout.add(actionsLayout);
 
-      const copyToClipboard = this.getChildControl("copy-to-clipboard");
-      actionsLayout.add(copyToClipboard, {
+      const logIn = this.getChildControl("log-in-button");
+      actionsLayout.add(logIn, {
         flex: 1
       });
       const supportEmail = this.getChildControl("support-email");
       actionsLayout.add(supportEmail, {
         flex: 1
       });
-      const logIn = this.getChildControl("log-in-button");
-      actionsLayout.add(logIn, {
+      const copyToClipboard = this.getChildControl("copy-to-clipboard");
+      actionsLayout.add(copyToClipboard, {
         flex: 1
       });
     },

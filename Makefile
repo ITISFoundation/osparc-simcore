@@ -43,6 +43,7 @@ SERVICES_NAMES_TO_BUILD := \
 	invitations \
   migration \
 	osparc-gateway-server \
+	resource-usage-tracker \
   service-integration \
   static-webserver \
   storage \
@@ -88,8 +89,10 @@ endif
 get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
 
 # NOTE: this is only for WSL2 as the WSL2 subsystem IP is changing on each reboot
+ifeq ($(IS_WSL2),WSL2)
 S3_ENDPOINT := $(get_my_ip):9001
 export S3_ENDPOINT
+endif
 
 # Check that given variables are set and all have non-empty values,
 # die with an error otherwise.
@@ -264,16 +267,25 @@ CPU_COUNT = $(shell cat /proc/cpuinfo | grep processor | wc -l )
 	python3 scripts/filestash/create_config.py))
 	# Creating config for ops stack to $@
 	# -> filestash config at $(TMP_PATH_TO_FILESTASH_CONFIG)
+ifdef ops_ci
+	@$(shell \
+		export TMP_PATH_TO_FILESTASH_CONFIG="${TMP_PATH_TO_FILESTASH_CONFIG}" && \
+		scripts/docker/docker-compose-config.bash -e .env \
+		services/docker-compose-ops-ci.yml \
+		> $@ \
+	)
+else
 	@$(shell \
 		export TMP_PATH_TO_FILESTASH_CONFIG="${TMP_PATH_TO_FILESTASH_CONFIG}" && \
 		scripts/docker/docker-compose-config.bash -e .env \
 		services/docker-compose-ops.yml \
 		> $@ \
 	)
+endif
 
 
 
-.PHONY: up-devel up-prod up-version up-latest .deploy-ops
+.PHONY: up-devel up-prod up-prod-ci up-version up-latest .deploy-ops
 
 .deploy-ops: .stack-ops.yml
 	# Deploy stack 'ops'
@@ -327,7 +339,7 @@ up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Dep
 	@$(MAKE_C) services/static-webserver/client follow-dev-logs
 
 
-up-prod: .stack-simcore-production.yml .init-swarm ## Deploys local production stack and ops stack (pass 'make ops_disabled=1 up-...' to disable or target=<service-name> to deploy a single service)
+up-prod: .stack-simcore-production.yml .init-swarm ## Deploys local production stack and ops stack (pass 'make ops_disabled=1 ops_ci=1 up-...' to disable or target=<service-name> to deploy a single service)
 ifeq ($(target),)
 	# Deploy stack $(SWARM_STACK_NAME)
 	@docker stack deploy --with-registry-auth -c $< $(SWARM_STACK_NAME)
@@ -429,12 +441,12 @@ push-version: tag-version
 	python3 -m venv $@
 	## upgrading tools to latest version in $(shell python3 --version)
 	$@/bin/pip3 --quiet install --upgrade \
-		pip~=23.0 \
+		pip~=23.1 \
 		wheel \
 		setuptools
 	@$@/bin/pip3 list --verbose
 
-devenv: .venv ## create a python virtual environment with dev tools (e.g. linters, etc)
+devenv: .venv .vscode/settings.json .vscode/launch.json ## create a development environment (configs, virtual-env, hooks, ...)
 	$</bin/pip3 --quiet install -r requirements/devenv.txt
 	# Installing pre-commit hooks in current .git repo
 	@$</bin/pre-commit install
@@ -463,10 +475,16 @@ nodenv: node_modules ## builds node_modules local environ (TODO)
 	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
 
 
-.vscode/settings.json: .vscode-template/settings.json
-	$(info WARNING: #####  $< is newer than $@ ####)
-	@diff -uN $@ $<
-	@false
+.vscode/settings.json: .vscode/settings.template.json
+	$(if $(wildcard $@), \
+	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
+	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
+
+
+.vscode/launch.json: .vscode/launch.template.json
+	$(if $(wildcard $@), \
+	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
+	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
 
 
 
@@ -474,21 +492,21 @@ nodenv: node_modules ## builds node_modules local environ (TODO)
 
 .PHONY: pylint
 
-pylint: ## Runs python linter framework's wide
+
+pylint: ## python linting
 	# pylint version info
 	@/bin/bash -c "pylint --version"
-	# Running linter
-	@/bin/bash -c "pylint --jobs=0 --rcfile=.pylintrc $(strip $(shell find services packages -iname '*.py' \
-											-not -path "*ignore*" \
-											-not -path "*.venv*" \
-											-not -path "*/client/*" \
-											-not -path "*egg*" \
-											-not -path "*migration*" \
-											-not -path "*sandbox*" \
-											-not -path "*-sdk/python*" \
-											-not -path "*generated_code*" \
-											-not -path "*build*" \
-											-not -path "*/director/*"))"
+	# Running linter in packages and services (except director)
+	@folders=$$(find $(CURDIR)/services $(CURDIR)/packages  -type d -not -path "*/director/*" -name 'src' -exec dirname {} \; | sort -u); \
+	exit_status=0; \
+	for folder in $$folders; do \
+		pushd "$$folder"; \
+		make pylint || exit_status=1; \
+		popd; \
+	done;\
+	exit $$exit_status
+	# Running linter elsewhere
+	@pylint --rcfile=.pylintrc -v $(CURDIR)/tests --ignore=examples
 	# See exit codes and command line https://pylint.readthedocs.io/en/latest/user_guide/run.html#exit-codes
 
 
@@ -502,12 +520,15 @@ new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice an
 openapi-specs: ## bundles and validates openapi specifications and schemas of ALL service's API
 	@$(MAKE_C) services/web/server $@
 	@$(MAKE_C) services/storage $@
-	@$(MAKE_C) services/director $@
+
 
 .PHONY: settings-schema.json
 settings-schema.json: ## [container] dumps json-schema settings of all services
+	@$(MAKE_C) services/agent $@
 	@$(MAKE_C) services/api-server $@
 	@$(MAKE_C) services/autoscaling $@
+	@$(MAKE_C) services/catalog $@
+	@$(MAKE_C) services/datcore-adapter $@
 	@$(MAKE_C) services/director-v2 $@
 	@$(MAKE_C) services/invitations $@
 	@$(MAKE_C) services/storage $@
@@ -700,12 +721,12 @@ clean: .check-clean ## cleans all unversioned files in project and temp files cr
 	@$(MAKE_C) services/static-webserver/client clean-files
 
 clean-more: ## cleans containers and unused volumes
-	# stops and deletes running containers
-	@$(if $(_running_containers), docker rm --force $(_running_containers),)
 	# pruning unused volumes
 	-@docker volume prune --force
 	# pruning buildx cache
 	-@docker buildx prune --force
+	# stops and deletes running containers
+	@$(if $(_running_containers), docker rm --force $(_running_containers),)
 
 clean-images: ## removes all created images
 	# Cleaning all service images

@@ -1,7 +1,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=protected-access
 
-
+import json
 from copy import deepcopy
 from typing import Any
 from uuid import uuid4
@@ -10,6 +10,10 @@ import pytest
 import yaml
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.service_settings_labels import (
+    ComposeSpecLabelDict,
+    SimcoreServiceLabels,
+)
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     ResourcesDict,
@@ -144,6 +148,50 @@ async def test_inject_resource_limits_and_reservations(
                 in spec["environment"]
             )
             assert f"{MEM_RESOURCE_LIMIT_KEY}={memory.limit}" in spec["environment"]
+
+
+@pytest.mark.parametrize(
+    "compose_spec, storage_opt_count",
+    [
+        pytest.param(
+            json.loads(
+                SimcoreServiceLabels.Config.schema_extra["examples"][2][
+                    "simcore.service.compose-spec"
+                ]
+            ),
+            2,
+            id="two_storage_opt_entries",
+        ),
+        pytest.param(
+            {
+                "version": "2.3",
+                "services": {
+                    "rt-web": {"storage_opt": None},
+                    "s4l-core": {},
+                },
+            },
+            1,
+            id="one_storage_opt_entry",
+        ),
+        pytest.param(
+            {"version": "2.3", "services": {"rt-web": {}, "s4l-core": {}}},
+            0,
+            id="no_storage_opt_entry",
+        ),
+    ],
+)
+@pytest.mark.parametrize("has_quota_support", [True, False])
+def test_update_service_quotas_storage(
+    compose_spec: ComposeSpecLabelDict, storage_opt_count: int, has_quota_support: bool
+):
+    assert json.dumps(compose_spec).count("storage_opt") == storage_opt_count
+    if not has_quota_support:
+        docker_compose_specs._strip_service_quotas(service_spec=compose_spec)
+
+    if has_quota_support:
+        assert json.dumps(compose_spec).count("storage_opt") == storage_opt_count
+    else:
+        assert "storage_opt" not in json.dumps(compose_spec)
 
 
 def test_regression_service_has_no_reservations():

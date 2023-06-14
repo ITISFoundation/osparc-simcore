@@ -5,10 +5,11 @@
 # pylint:disable=too-many-arguments
 # pylint: disable=reimported
 import asyncio
+import datetime
 import functools
 import traceback
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Awaitable, Callable, Optional
+from typing import Any, AsyncIterator, Awaitable, Callable, Coroutine, NoReturn
 from unittest import mock
 from uuid import uuid4
 
@@ -22,7 +23,6 @@ from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import (
     TaskLogEvent,
     TaskProgressEvent,
-    TaskStateEvent,
 )
 from dask_task_models_library.container_tasks.io import (
     TaskCancelEventName,
@@ -34,6 +34,7 @@ from distributed import Event, Scheduler
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
 from fastapi.applications import FastAPI
+from models_library.api_schemas_storage import LinkType
 from models_library.clusters import ClusterID, NoAuthentication, SimpleAuthentication
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -45,6 +46,7 @@ from pydantic.tools import parse_obj_as
 from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.background_task import periodic_task
 from settings_library.s3 import S3Settings
 from simcore_sdk.node_ports_v2 import FileLinkType
 from simcore_service_director_v2.core.errors import (
@@ -66,7 +68,7 @@ from yarl import URL
 _ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS = 20
 
 
-async def _assert_wait_for_cb_call(mocked_fct, timeout: Optional[int] = None):
+async def _assert_wait_for_cb_call(mocked_fct, timeout: int | None = None):
     async for attempt in AsyncRetrying(
         stop=stop_after_delay(timeout or 10),
         wait=wait_random(0, 1),
@@ -86,7 +88,7 @@ async def _assert_wait_for_task_status(
     job_id: str,
     dask_client: DaskClient,
     expected_status: RunningState,
-    timeout: Optional[int] = None,
+    timeout: int | None = None,
 ):
     async for attempt in AsyncRetrying(
         reraise=True,
@@ -99,7 +101,7 @@ async def _assert_wait_for_task_status(
                 f"waiting for task to be {expected_status=}, "
                 f"Attempt={attempt.retry_state.attempt_number}"
             )
-            current_task_status = await dask_client.get_task_status(job_id)
+            current_task_status = (await dask_client.get_tasks_status([job_id]))[0]
             assert isinstance(current_task_status, RunningState)
             print(f"{current_task_status=} vs {expected_status=}")
             assert current_task_status == expected_status
@@ -200,7 +202,8 @@ async def create_dask_client_from_gateway(
         assert client.backend.gateway
         assert client.backend.gateway_cluster
 
-        scheduler_infos = client.backend.client.scheduler_info()  # type: ignore
+        scheduler_infos = client.backend.client.scheduler_info()
+        assert scheduler_infos
         print(f"--> Connected to gateway {client.backend.gateway=}")
         print(f"--> Cluster {client.backend.gateway_cluster=}")
         print(f"--> Client {client=}")
@@ -230,6 +233,22 @@ async def dask_client(
 
     try:
         assert client.app.state.engine is not None
+
+        # check we can run some simple python script
+        def _square(x):
+            return x**2
+
+        def neg(x):
+            return -x
+
+        a = client.backend.client.map(_square, range(10))
+        b = client.backend.client.map(neg, a)
+        total = client.backend.client.submit(sum, b)
+        future = total.result()
+        assert future
+        assert isinstance(future, Coroutine)
+        result = await future
+        assert result == -285
     except AttributeError:
         # enforces existance of 'app.state.engine' and sets to None
         client.app.state.engine = None
@@ -367,7 +386,7 @@ async def test_dask_cluster_executes_simple_functions(dask_client: DaskClient):
 async def test_dask_does_not_report_asyncio_cancelled_error_in_task(
     dask_client: DaskClient,
 ):
-    def fct_that_raise_cancellation_error():
+    def fct_that_raise_cancellation_error() -> NoReturn:
         import asyncio
 
         raise asyncio.CancelledError("task was cancelled, but dask does not care...")
@@ -390,7 +409,6 @@ async def test_dask_does_not_report_asyncio_cancelled_error_in_task(
 )
 async def test_dask_does_not_report_base_exception_in_task(dask_client: DaskClient):
     def fct_that_raise_base_exception():
-
         raise BaseException(  # pylint: disable=broad-exception-raised
             "task triggers a base exception, but dask does not care..."
         )
@@ -424,9 +442,7 @@ async def test_dask_does_report_any_non_base_exception_derived_error(
     assert isinstance(task_exception, exc)
     task_traceback = await future.traceback(timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS)  # type: ignore
     assert task_traceback
-    trace = traceback.format_exception(
-        type(task_exception), value=task_exception, tb=task_traceback
-    )
+    trace = traceback.format_exception(task_exception)
     assert trace
 
 
@@ -442,6 +458,7 @@ async def test_send_computation_task(
     faker: Faker,
 ):
     _DASK_EVENT_NAME = faker.pystr()
+
     # NOTE: this must be inlined so that the test works,
     # the dask-worker must be able to import the function
     def fake_sidecar_fct(
@@ -452,7 +469,7 @@ async def test_send_computation_task(
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
         command: list[str],
-        s3_settings: Optional[S3Settings],
+        s3_settings: S3Settings | None,
         boot_mode: BootMode,
         expected_annotations,
     ) -> TaskOutputData:
@@ -535,6 +552,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
 
     When submitting a computation task, the future corresponding to that task is "published" on the scheduler.
     """
+
     # NOTE: this must be inlined so that the test works,
     # the dask-worker must be able to import the function
     def fake_sidecar_fct(
@@ -545,7 +563,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
         command: list[str],
-        s3_settings: Optional[S3Settings],
+        s3_settings: S3Settings | None,
         boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
         # get the task data
@@ -614,6 +632,7 @@ async def test_abort_computation_tasks(
     faker: Faker,
 ):
     _DASK_EVENT_NAME = faker.pystr()
+
     # NOTE: this must be inlined so that the test works,
     # the dask-worker must be able to import the function
     def fake_remote_fct(
@@ -624,7 +643,7 @@ async def test_abort_computation_tasks(
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
         command: list[str],
-        s3_settings: Optional[S3Settings],
+        s3_settings: S3Settings | None,
         boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
         # get the task data
@@ -707,10 +726,9 @@ async def test_failed_task_returns_exceptions(
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
         command: list[str],
-        s3_settings: Optional[S3Settings],
+        s3_settings: S3Settings | None,
         boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
-
         raise ValueError(
             "sadly we are failing to execute anything cause we are dumb..."
         )
@@ -762,7 +780,6 @@ async def test_missing_resource_send_computation_task(
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
 ):
-
     # remove the workers that can handle gpu
     scheduler_info = dask_client.backend.client.scheduler_info()
     assert scheduler_info
@@ -930,7 +947,7 @@ async def test_get_tasks_status(
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
         command: list[str],
-        s3_settings: Optional[S3Settings],
+        s3_settings: S3Settings | None,
         boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
         # wait here until the client allows us to continue
@@ -985,7 +1002,9 @@ async def test_get_tasks_status(
 
 @pytest.fixture
 async def fake_task_handlers(mocker: MockerFixture) -> TaskHandlers:
-    return TaskHandlers(mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock())
+    return TaskHandlers(
+        task_progress_handler=mocker.MagicMock(), task_log_handler=mocker.MagicMock()
+    )
 
 
 async def test_dask_sub_handlers(
@@ -1010,14 +1029,11 @@ async def test_dask_sub_handlers(
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
         command: list[str],
-        s3_settings: Optional[S3Settings],
+        s3_settings: S3Settings | None,
         boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
-
-        state_pub = distributed.Pub(TaskStateEvent.topic_name())
         progress_pub = distributed.Pub(TaskProgressEvent.topic_name())
         logs_pub = distributed.Pub(TaskLogEvent.topic_name())
-        state_pub.put("my name is state")
         progress_pub.put("my name is progress")
         logs_pub.put("my name is logs")
         # tell the client we are done
@@ -1056,9 +1072,6 @@ async def test_dask_sub_handlers(
                 f"Attempt={attempt.retry_state.attempt_number}"
             )
             # we should have received data in our TaskHandlers
-            fake_task_handlers.task_change_handler.assert_called_with(
-                "my name is state"
-            )
             fake_task_handlers.task_progress_handler.assert_called_with(
                 "my name is progress"
             )
@@ -1081,6 +1094,7 @@ async def test_get_cluster_details(
     assert cluster_details
 
     _DASK_EVENT_NAME = faker.pystr()
+
     # send a fct that uses resources
     def fake_sidecar_fct(
         docker_auth: DockerBasicAuth,
@@ -1090,7 +1104,7 @@ async def test_get_cluster_details(
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
         command: list[str],
-        s3_settings: Optional[S3Settings],
+        s3_settings: S3Settings | None,
         boot_mode: BootMode,
         expected_annotations,
     ) -> TaskOutputData:
@@ -1128,7 +1142,7 @@ async def test_get_cluster_details(
 
     # check we have one worker using the resources
     # one of the workers should now get the job and use the resources
-    worker_with_the_task: Optional[AnyUrl] = None
+    worker_with_the_task: AnyUrl | None = None
     async for attempt in AsyncRetrying(reraise=True, stop=stop_after_delay(10)):
         with attempt:
             cluster_details = await dask_client.get_cluster_details()
@@ -1165,3 +1179,30 @@ async def test_get_cluster_details(
     ].used_resources
 
     assert all(res == 0.0 for res in currently_used_resources.values())
+
+
+@pytest.mark.skip(reason="manual testing")
+@pytest.mark.parametrize("tasks_file_link_type", [LinkType.S3], indirect=True)
+async def test_get_cluster_details_robust_to_worker_disappearing(
+    create_dask_client_from_gateway: Callable[[], Awaitable[DaskClient]]
+):
+    """When running a high number of comp. services in a gateway,
+    one could observe an issue where getting the cluster used resources
+    would fail sometimes and generate a big amount of errors in the logs
+    due to dask worker disappearing or not completely ready.
+    This test kind of simulates this."""
+    dask_client = await create_dask_client_from_gateway()
+    await dask_client.get_cluster_details()
+
+    async def _scale_up_and_down():
+        assert dask_client.backend.gateway_cluster
+        await dask_client.backend.gateway_cluster.scale(40)
+        await asyncio.sleep(1)
+        await dask_client.backend.gateway_cluster.scale(1)
+
+    async with periodic_task(
+        _scale_up_and_down, interval=datetime.timedelta(seconds=1), task_name="pytest"
+    ):
+        for n in range(900):
+            await dask_client.get_cluster_details()
+            await asyncio.sleep(0.1)

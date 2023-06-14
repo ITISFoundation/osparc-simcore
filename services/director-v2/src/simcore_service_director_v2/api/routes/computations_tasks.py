@@ -60,7 +60,7 @@ async def analyze_pipeline(
     pipeline_dag: nx.DiGraph = pipeline_at_db.get_graph()
 
     # get the project task states
-    all_tasks: list[CompTaskAtDB] = await comp_tasks_repo.get_all_tasks(project_id)
+    all_tasks: list[CompTaskAtDB] = await comp_tasks_repo.list_tasks(project_id)
 
     # filter the tasks by the effective pipeline
     filtered_tasks = [
@@ -81,7 +81,6 @@ async def _get_task_log_file(
     user_id: UserID, project_id: ProjectID, node_id: NodeID
 ) -> TaskLogFileGet:
     try:
-
         log_file_url = await get_service_log_file_download_link(
             user_id, project_id, node_id, file_link_type=FileLinkType.PRESIGNED
         )
@@ -126,7 +125,7 @@ async def get_all_tasks_log_files(
     info = await analyze_pipeline(project_id, comp_pipelines_repo, comp_tasks_repo)
     iter_task_ids = (t.node_id for t in info.filtered_tasks)
 
-    return await logged_gather(
+    tasks_logs_files: list[TaskLogFileGet] = await logged_gather(
         *[
             _get_task_log_file(user_id, project_id, node_id)
             for node_id in iter_task_ids
@@ -134,6 +133,7 @@ async def get_all_tasks_log_files(
         reraise=True,
         log=log,
     )
+    return tasks_logs_files
 
 
 @router.get(
@@ -151,7 +151,7 @@ async def get_task_log_file(
     The log is only available when the task is done
     """
 
-    if not await comp_tasks_repo.check_task_exists(project_id, node_uuid):
+    if not await comp_tasks_repo.task_exists(project_id, node_uuid):
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
             detail=[f"No task_id={node_uuid} found under computation {project_id}"],

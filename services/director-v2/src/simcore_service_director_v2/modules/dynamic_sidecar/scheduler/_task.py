@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 from fastapi import FastAPI
 from models_library.basic_types import PortInt
@@ -40,12 +39,12 @@ class DynamicSidecarsScheduler(SchedulerInternalsInterface, SchedulerPublicInter
         return self._scheduler.toggle_observation(node_uuid, disable)
 
     async def push_service_outputs(
-        self, node_uuid: NodeID, progress_callback: Optional[ProgressCallback] = None
+        self, node_uuid: NodeID, progress_callback: ProgressCallback | None = None
     ) -> None:
         return await self._scheduler.push_service_outputs(node_uuid, progress_callback)
 
     async def remove_service_containers(
-        self, node_uuid: NodeID, progress_callback: Optional[ProgressCallback] = None
+        self, node_uuid: NodeID, progress_callback: ProgressCallback | None = None
     ) -> None:
         return await self._scheduler.remove_service_containers(
             node_uuid, progress_callback
@@ -59,7 +58,7 @@ class DynamicSidecarsScheduler(SchedulerInternalsInterface, SchedulerPublicInter
         )
 
     async def save_service_state(
-        self, node_uuid: NodeID, progress_callback: Optional[ProgressCallback] = None
+        self, node_uuid: NodeID, progress_callback: ProgressCallback | None = None
     ) -> None:
         return await self._scheduler.save_service_state(node_uuid, progress_callback)
 
@@ -71,6 +70,7 @@ class DynamicSidecarsScheduler(SchedulerInternalsInterface, SchedulerPublicInter
         request_dns: str,
         request_scheme: str,
         request_simcore_user_agent: str,
+        can_save: bool,
     ) -> None:
         return await self._scheduler.add_service(
             service,
@@ -79,28 +79,29 @@ class DynamicSidecarsScheduler(SchedulerInternalsInterface, SchedulerPublicInter
             request_dns,
             request_scheme,
             request_simcore_user_agent,
+            can_save,
         )
 
     def is_service_tracked(self, node_uuid: NodeID) -> bool:
         return self._scheduler.is_service_tracked(node_uuid)
 
     def list_services(
-        self,
-        *,
-        user_id: Optional[UserID] = None,
-        project_id: Optional[ProjectID] = None
+        self, *, user_id: UserID | None = None, project_id: ProjectID | None = None
     ) -> list[NodeID]:
         return self._scheduler.list_services(user_id=user_id, project_id=project_id)
 
     async def mark_service_for_removal(
         self,
         node_uuid: NodeID,
-        can_save: Optional[bool],
+        can_save: bool | None,
         skip_observation_recreation: bool = False,
     ) -> None:
         return await self._scheduler.mark_service_for_removal(
             node_uuid, can_save, skip_observation_recreation
         )
+
+    async def is_service_awaiting_manual_intervention(self, node_uuid: NodeID) -> bool:
+        return await self._scheduler.is_service_awaiting_manual_intervention(node_uuid)
 
     async def get_stack_status(self, node_uuid: NodeID) -> RunningDynamicServiceDetails:
         return await self._scheduler.get_stack_status(node_uuid)
@@ -146,7 +147,7 @@ async def shutdown_scheduler(app: FastAPI):
         logger.warning("dynamic-sidecar scheduler not started, nothing to shutdown!!!")
         return
 
-    scheduler: Optional[DynamicSidecarsScheduler] = app.state.dynamic_sidecar_scheduler
+    scheduler: DynamicSidecarsScheduler | None = app.state.dynamic_sidecar_scheduler
     await scheduler.shutdown()
 
 

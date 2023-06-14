@@ -9,12 +9,12 @@ import logging
 from typing import Any, MutableMapping
 
 from aiohttp import ClientSession, client_exceptions
-from pydantic import ValidationError
+from pydantic import HttpUrl, ValidationError, parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
 from yarl import URL
 
 from ._resolver import ResolvedItem, resolve_rrid
-from ._rest import ResourceHit, autocomplete_by_name, get_resource_fields
+from ._rest import autocomplete_by_name, get_resource_fields
 from .errors import (
     InvalidRRID,
     ScicrunchAPIError,
@@ -22,7 +22,7 @@ from .errors import (
     ScicrunchServiceError,
     map_to_scicrunch_error,
 )
-from .models import ResearchResource, normalize_rrid_tags
+from .models import ResearchResource, ResourceHit, normalize_rrid_tags
 from .settings import SciCrunchSettings
 
 logger = logging.getLogger(__name__)
@@ -61,7 +61,7 @@ class SciCrunch:
         cls, app: MutableMapping[str, Any], settings: SciCrunchSettings
     ) -> "SciCrunch":
         """Returns single instance for the application and stores it"""
-        obj = app.get(f"{__name__}.{cls.__name__}")
+        obj: SciCrunch | None = app.get(f"{__name__}.{cls.__name__}")
         if obj is None:
             session = get_client_session(app)
             app[f"{__name__}.{cls.__name__}"] = obj = cls(session, settings)
@@ -69,7 +69,7 @@ class SciCrunch:
 
     @classmethod
     def get_instance(cls, app: MutableMapping[str, Any]) -> "SciCrunch":
-        obj = app.get(f"{__name__}.{cls.__name__}")
+        obj: SciCrunch | None = app.get(f"{__name__}.{cls.__name__}")
         if obj is None:
             raise ScicrunchConfigError(
                 reason="Services on scicrunch.org are currently disabled"
@@ -88,9 +88,12 @@ class SciCrunch:
             )
         )
 
-    def get_resolver_web_url(self, rrid: str) -> str:
+    def get_resolver_web_url(self, rrid: str) -> HttpUrl:
         # example https://scicrunch.org/resolver/RRID:AB_90755
-        return f"{self.settings.SCICRUNCH_RESOLVER_BASE_URL}/{rrid}"
+        output: HttpUrl = parse_obj_as(
+            HttpUrl, f"{self.settings.SCICRUNCH_RESOLVER_BASE_URL}/{rrid}"
+        )
+        return output
 
     @classmethod
     def validate_identifier(cls, rrid: str, *, for_api: bool = False) -> str:

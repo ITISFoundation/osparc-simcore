@@ -1,12 +1,12 @@
 from enum import Enum, unique
 from functools import cached_property, lru_cache, total_ordering
 from pathlib import Path
-from typing import Optional
+from typing import Any
 
 from models_library.basic_types import PortInt
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.services import DYNAMIC_SERVICE_KEY_RE, VERSION_RE
+from models_library.services import VERSION_RE, DynamicServiceKey
 from models_library.users import UserID
 from pydantic import BaseModel, Field
 
@@ -26,10 +26,9 @@ class ServiceType(Enum):
 
 
 class CommonServiceDetails(BaseModel):
-    key: str = Field(
+    key: DynamicServiceKey = Field(
         ...,
         description="distinctive name for the node based on the docker registry path",
-        regex=DYNAMIC_SERVICE_KEY_RE,
         examples=[
             "simcore/services/dynamic/3dviewer",
         ],
@@ -57,7 +56,7 @@ class ServiceDetails(CommonServiceDetails):
 
     class Config:
         allow_population_by_field_name = True
-        schema_extra = {
+        schema_extra: dict[str, Any] = {
             "example": {
                 "key": "simcore/services/dynamic/3dviewer",
                 "version": "2.4.5",
@@ -130,7 +129,7 @@ class RunningDynamicServiceDetails(ServiceDetails):
         deprecated=True,
     )
 
-    entry_point: Optional[str] = Field(
+    entry_point: str | None = Field(
         default=None,
         description="if empty the service entrypoint is on the root endpoint.",
         deprecated=True,
@@ -138,7 +137,7 @@ class RunningDynamicServiceDetails(ServiceDetails):
     state: ServiceState = Field(
         ..., description="service current state", alias="service_state"
     )
-    message: Optional[str] = Field(
+    message: str | None = Field(
         default=None,
         description="additional information related to service state",
         alias="service_message",
@@ -146,27 +145,29 @@ class RunningDynamicServiceDetails(ServiceDetails):
 
     @cached_property
     def legacy_service_url(self) -> str:
-        return f"http://{self.host}:{self.internal_port}{self.basepath}"
+        return f"http://{self.host}:{self.internal_port}{self.basepath}"  # NOSONAR
 
     @classmethod
     def from_scheduler_data(
         cls,
         node_uuid: NodeID,
-        scheduler_data: "SchedulerData",
+        scheduler_data: "SchedulerData",  # type: ignore
         service_state: ServiceState,
         service_message: str,
     ) -> "RunningDynamicServiceDetails":
-        return cls(
-            boot_type=ServiceBootType.V2,
-            user_id=scheduler_data.user_id,
-            project_id=scheduler_data.project_id,
-            service_uuid=node_uuid,
-            service_key=scheduler_data.key,
-            service_version=scheduler_data.version,
-            service_host=scheduler_data.service_name,
-            service_port=scheduler_data.service_port,
-            service_state=service_state.value,
-            service_message=service_message,
+        return cls.parse_obj(
+            {
+                "boot_type": ServiceBootType.V2,
+                "user_id": scheduler_data.user_id,
+                "project_id": scheduler_data.project_id,
+                "service_uuid": node_uuid,
+                "service_key": scheduler_data.key,
+                "service_version": scheduler_data.version,
+                "service_host": scheduler_data.service_name,
+                "service_port": scheduler_data.service_port,
+                "service_state": service_state.value,
+                "service_message": service_message,
+            }
         )
 
     class Config(ServiceDetails.Config):

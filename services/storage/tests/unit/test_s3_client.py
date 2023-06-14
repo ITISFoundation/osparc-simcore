@@ -1,6 +1,8 @@
-# pylint: disable=redefined-outer-name
-# pylint: disable=unused-argument
-# pylint: disable=unused-variable
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+# pylint:disable=too-many-arguments
+# pylint:disable=no-name-in-module
 
 
 import asyncio
@@ -8,7 +10,7 @@ import json
 from contextlib import AsyncExitStack
 from pathlib import Path
 from random import choice
-from typing import AsyncIterator, Awaitable, Callable, Final, Optional
+from typing import AsyncIterator, Awaitable, Callable, Final
 from uuid import uuid4
 
 import botocore.exceptions
@@ -405,7 +407,7 @@ def upload_file_single_presigned_link(
     storage_s3_bucket: S3BucketName,
     create_file_of_size: Callable[[ByteSize], Path],
 ) -> Callable[..., Awaitable[SimcoreS3FileID]]:
-    async def _uploader(file_id: Optional[SimcoreS3FileID] = None) -> SimcoreS3FileID:
+    async def _uploader(file_id: SimcoreS3FileID | None = None) -> SimcoreS3FileID:
         file = create_file_of_size(parse_obj_as(ByteSize, "1Mib"))
         if not file_id:
             file_id = SimcoreS3FileID(file.name)
@@ -444,7 +446,7 @@ def upload_file_multipart_presigned_link_without_completion(
 ]:
     async def _uploader(
         file_size: ByteSize,
-        file_id: Optional[SimcoreS3FileID] = None,
+        file_id: SimcoreS3FileID | None = None,
     ) -> tuple[SimcoreS3FileID, MultiPartUploadLinks, list[UploadedPart]]:
         file = create_file_of_size(file_size)
         if not file_id:
@@ -687,7 +689,7 @@ async def upload_file_with_aioboto3_managed_transfer(
     storage_s3_client: StorageS3Client,
     storage_s3_bucket: S3BucketName,
     faker: Faker,
-    create_file_of_size: Callable[[ByteSize, Optional[str]], Path],
+    create_file_of_size: Callable[[ByteSize, str | None], Path],
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
 ) -> Callable[[ByteSize], Awaitable[tuple[Path, SimcoreS3FileID]]]:
     async def _uploader(file_size: ByteSize) -> tuple[Path, SimcoreS3FileID]:
@@ -737,7 +739,7 @@ async def test_upload_file(
 
 async def test_upload_file_invalid_raises(
     storage_s3_client: StorageS3Client,
-    create_file_of_size: Callable[[ByteSize, Optional[str]], Path],
+    create_file_of_size: Callable[[ByteSize, str | None], Path],
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
     faker: Faker,
 ):

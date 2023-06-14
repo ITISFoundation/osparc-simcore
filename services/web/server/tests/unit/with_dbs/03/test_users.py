@@ -1,4 +1,6 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
@@ -9,10 +11,11 @@ from contextlib import asynccontextmanager
 from copy import deepcopy
 from datetime import datetime, timezone
 from itertools import repeat
-from typing import Any, AsyncIterable, Callable
+from typing import Any, AsyncIterable, AsyncIterator, Callable
 from unittest.mock import MagicMock, Mock
 
 import pytest
+import redis.asyncio as aioredis
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aiopg.sa.connection import SAConnection
@@ -30,30 +33,29 @@ from pytest_simcore.helpers.utils_tokens import (
 from redis import Redis
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
+from simcore_postgres_database.models.users import UserRole
+from simcore_service_webserver._meta import api_version_prefix as API_VERSION
 from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.db import APP_DB_ENGINE_KEY, setup_db
-from simcore_service_webserver.groups import setup_groups
+from simcore_service_webserver.db.plugin import APP_DB_ENGINE_KEY, setup_db
+from simcore_service_webserver.groups.plugin import setup_groups
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.redis import (
     get_redis_user_notifications_client,
     setup_redis,
 )
-from simcore_service_webserver.rest import setup_rest
-from simcore_service_webserver.security import setup_security
-from simcore_service_webserver.security_roles import UserRole
-from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.user_notifications import (
+from simcore_service_webserver.rest.plugin import setup_rest
+from simcore_service_webserver.security.plugin import setup_security
+from simcore_service_webserver.session.plugin import setup_session
+from simcore_service_webserver.users._handlers import _get_user_notifications
+from simcore_service_webserver.users._notifications import (
     MAX_NOTIFICATIONS_FOR_USER_TO_KEEP,
     MAX_NOTIFICATIONS_FOR_USER_TO_SHOW,
     NotificationCategory,
     UserNotification,
     get_notification_key,
 )
-from simcore_service_webserver.users import setup_users
-from simcore_service_webserver.users_handlers import _get_user_notifications
-from simcore_service_webserver.users_models import ProfileGet
-
-API_VERSION = "v0"
+from simcore_service_webserver.users.plugin import setup_users
+from simcore_service_webserver.users.schemas import ProfileGet
 
 
 @pytest.fixture
@@ -113,7 +115,7 @@ async def fake_tokens(logged_user: UserInfoDict, tokens_db, faker: Faker):
             "token_key": faker.md5(raw_output=False),
             "token_secret": faker.md5(raw_output=False),
         }
-        row = await create_token_in_db(
+        await create_token_in_db(
             tokens_db,
             user_id=logged_user["id"],
             token_service=data["service"],
@@ -239,10 +241,11 @@ async def test_create_token(
         "token_secret": "my secret",
     }
 
-    resp = await client.post(url, json=token)
+    resp = await client.post(f"{url}", json=token)
     data, error = await assert_status(resp, expected)
     if not error:
         db_token = await get_token_from_db(tokens_db, token_data=token)
+        assert db_token
         assert db_token["token_data"] == token
         assert db_token["user_id"] == logged_user["id"]
 
@@ -317,7 +320,7 @@ async def test_update_token(
     if not error:
         # check in db
         token_in_db = await get_token_from_db(tokens_db, token_service=sid)
-
+        assert token_in_db
         assert token_in_db["token_data"]["token_secret"] == "some completely new secret"
         assert token_in_db["token_data"]["token_secret"] != selected["token_secret"]
 
@@ -387,10 +390,11 @@ async def test_get_profile_with_failing_db_connection(
 
     ISSUES: #880, #1160
     """
+    assert client.app
     url = client.app.router["get_my_profile"].url_for()
     assert str(url) == "/v0/me"
 
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
 
     NUM_RETRY = 3
     assert (
@@ -401,7 +405,10 @@ async def test_get_profile_with_failing_db_connection(
 
 
 @pytest.fixture
-async def notification_redis_client(client: TestClient) -> AsyncIterable[Redis]:
+async def notification_redis_client(
+    client: TestClient,
+) -> AsyncIterable[aioredis.Redis]:
+    assert client.app
     redis_client = get_redis_user_notifications_client(client.app)
     yield redis_client
     await redis_client.flushall()
@@ -409,8 +416,8 @@ async def notification_redis_client(client: TestClient) -> AsyncIterable[Redis]:
 
 @asynccontextmanager
 async def _create_notifications(
-    redis_client: Redis, logged_user: UserInfoDict, count: int
-) -> AsyncIterable[list[UserNotification]]:
+    redis_client: aioredis.Redis, logged_user: UserInfoDict, count: int
+) -> AsyncIterator[list[UserNotification]]:
     user_id = logged_user["id"]
     notification_categories = tuple(NotificationCategory)
 
@@ -450,17 +457,18 @@ async def _create_notifications(
 )
 async def test_get_user_notifications(
     logged_user: UserInfoDict,
-    notification_redis_client: Redis,
+    notification_redis_client: aioredis.Redis,
     client: TestClient,
     notification_count: int,
 ):
+    assert client.app
     url = client.app.router["get_user_notifications"].url_for()
     assert str(url) == "/v0/me/notifications"
 
     async with _create_notifications(
         notification_redis_client, logged_user, notification_count
     ) as created_notifications:
-        response = await client.get(url)
+        response = await client.get(f"{url}")
         json_response = await response.json()
 
         result = parse_obj_as(list[UserNotification], json_response["data"])
@@ -502,13 +510,15 @@ async def test_get_user_notifications(
 )
 async def test_post_user_notification(
     logged_user: UserInfoDict,
-    notification_redis_client: Redis,
+    notification_redis_client: aioredis.Redis,
     client: TestClient,
     notification_dict: dict[str, Any],
 ):
+    assert client.app
     url = client.app.router["post_user_notification"].url_for()
     assert str(url) == "/v0/me/notifications"
-    resp = await client.post(url, json=notification_dict)
+    notification_dict["user_id"] = logged_user["id"]
+    resp = await client.post(f"{url}", json=notification_dict)
     assert resp.status == web.HTTPNoContent.status_code, await resp.text()
 
     user_id = logged_user["id"]
@@ -518,7 +528,7 @@ async def test_post_user_notification(
     assert len(user_notifications) == 1
     # these are always generated and overwritten, even if provided by the user, since
     # we do not want to overwrite existing ones
-    assert user_notifications[0].read == False
+    assert user_notifications[0].read is False
     assert user_notifications[0].id != notification_dict.get("id", None)
 
 
@@ -535,17 +545,18 @@ async def test_post_user_notification(
 )
 async def test_post_user_notification_capped_list_length(
     logged_user: UserInfoDict,
-    notification_redis_client: Redis,
+    notification_redis_client: aioredis.Redis,
     client: TestClient,
     notification_count: int,
 ):
+    assert client.app
     url = client.app.router["post_user_notification"].url_for()
     assert str(url) == "/v0/me/notifications"
 
     notifications_create_results = await asyncio.gather(
         *(
             client.post(
-                url,
+                f"{url}",
                 json={
                     "user_id": "1",
                     "category": NotificationCategory.NEW_ORGANIZATION,
@@ -580,10 +591,11 @@ async def test_post_user_notification_capped_list_length(
 )
 async def test_update_user_notification_at_correct_index(
     logged_user: UserInfoDict,
-    notification_redis_client: Redis,
+    notification_redis_client: aioredis.Redis,
     client: TestClient,
     notification_count: int,
 ):
+    assert client.app
     user_id = logged_user["id"]
 
     async def _get_stored_notifications() -> list[UserNotification]:
@@ -613,7 +625,7 @@ async def test_update_user_notification_at_correct_index(
             assert str(url) == f"/v0/me/notifications/{notification.id}"
             assert notification.read is False
 
-            resp = await client.patch(url, json={"read": True})
+            resp = await client.patch(f"{url}", json={"read": True})
             assert resp.status == web.HTTPNoContent.status_code
 
         notifications_after_update = await _get_stored_notifications()

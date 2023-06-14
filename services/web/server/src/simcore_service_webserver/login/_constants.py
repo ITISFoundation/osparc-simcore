@@ -57,17 +57,19 @@ MSG_INVITATIONS_CONTACT_SUFFIX: Final[
 # Login Accepted Response Codes:
 #  - These string codes are used to identify next step in the login (e.g. login_2fa or register_phone?)
 #  - The frontend uses them alwo to determine what page/form has to display to the user for next step
-CODE_PHONE_NUMBER_REQUIRED = "PHONE_NUMBER_REQUIRED"
-CODE_2FA_CODE_REQUIRED = "SMS_CODE_REQUIRED"
+CODE_PHONE_NUMBER_REQUIRED: Final[str] = "PHONE_NUMBER_REQUIRED"
+CODE_2FA_CODE_REQUIRED: Final[str] = "SMS_CODE_REQUIRED"
 
 
 # App keys for login plugin
 # Naming convention: APP_LOGIN_...KEY
-APP_LOGIN_SETTINGS_PER_PRODUCT_KEY = f"{__name__}.LOGIN_SETTINGS_PER_PRODUCT"
+APP_LOGIN_SETTINGS_PER_PRODUCT_KEY: Final[
+    str
+] = f"{__name__}.LOGIN_SETTINGS_PER_PRODUCT"
 
 
 # maximum amount the user can resend the code via email or phone
-MAX_2FA_CODE_RESEND = 5
+MAX_2FA_CODE_RESEND: Final[int] = 5
 
 # maximum number of trials to validate the passcode
-MAX_2FA_CODE_TRIALS = 5
+MAX_2FA_CODE_TRIALS: Final[int] = 5

@@ -172,7 +172,6 @@ async def test_expect_state_decorator(
     respx_mock: MockRouter,
     request_timeout: int,
 ) -> None:
-
     url_get_200_ok = f"{test_url}/ok"
     get_wrong_state = f"{test_url}/wrong-state"
     error_status = codes.NOT_FOUND

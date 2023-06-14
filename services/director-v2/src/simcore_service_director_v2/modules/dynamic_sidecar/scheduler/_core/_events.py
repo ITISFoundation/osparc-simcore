@@ -1,7 +1,7 @@
 # pylint: disable=relative-beyond-top-level
 
 import logging
-from typing import Any, Final, Optional, cast
+from typing import Any, Final
 from uuid import uuid4
 
 from fastapi import FastAPI
@@ -23,29 +23,30 @@ from models_library.services import ServiceKeyVersion
 from pydantic import PositiveFloat
 from servicelib.fastapi.long_running_tasks.client import TaskId
 from servicelib.json_serialization import json_dumps
+from servicelib.rabbitmq import RabbitMQClient
 from simcore_postgres_database.models.comp_tasks import NodeClass
-from simcore_service_director_v2.utils.dict_utils import nested_update
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-from .....core.settings import DynamicSidecarSettings
+from .....core.settings import DynamicSidecarProxySettings, DynamicSidecarSettings
 from .....models.schemas.dynamic_services import DynamicSidecarStatus, SchedulerData
 from .....models.schemas.dynamic_services.scheduler import (
     DockerContainerInspect,
     DockerStatus,
+    NetworkId,
 )
 from .....utils.db import get_repository
+from .....utils.dict_utils import nested_update
 from ....catalog import CatalogClient
 from ....db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ....db.repositories.projects import ProjectsRepository
 from ....director_v0 import DirectorV0Client
-from ....rabbitmq import RabbitMQClient
 from ...api_client import (
     BaseClientHTTPError,
-    get_dynamic_sidecar_client,
     get_dynamic_sidecar_service_health,
+    get_sidecars_client,
 )
 from ...docker_api import (
     constrain_service_to_node,
@@ -116,9 +117,10 @@ class CreateSidecars(DynamicSchedulerEvent):
             service_type=NodeClass.INTERACTIVE.value,
             service_key=scheduler_data.key,
             service_tag=scheduler_data.version,
+            simcore_user_agent=scheduler_data.request_simcore_user_agent,
         )
         rabbitmq_client: RabbitMQClient = app.state.rabbitmq_client
-        await rabbitmq_client.publish(message.channel_name, message.json())
+        await rabbitmq_client.publish(message.channel_name, message)
 
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
@@ -129,15 +131,14 @@ class CreateSidecars(DynamicSchedulerEvent):
         # also other encodes the env vars to target the proper container
         director_v0_client: DirectorV0Client = get_director_v0_client(app)
         # fetching project form DB and fetching user settings
-        projects_repository = cast(
-            ProjectsRepository, get_repository(app, ProjectsRepository)
-        )
+        projects_repository = get_repository(app, ProjectsRepository)
+
         project: ProjectAtDB = await projects_repository.get_project(
             project_id=scheduler_data.project_id
         )
 
         node_uuid_str = NodeIDStr(scheduler_data.node_uuid)
-        node: Optional[Node] = project.workbench.get(node_uuid_str)
+        node: Node | None = project.workbench.get(node_uuid_str)
         boot_options = (
             node.boot_options
             if node is not None and node.boot_options is not None
@@ -153,10 +154,8 @@ class CreateSidecars(DynamicSchedulerEvent):
             service_resources=scheduler_data.service_resources,
         )
 
-        groups_extra_properties = cast(
-            GroupsExtraPropertiesRepository,
-            get_repository(app, GroupsExtraPropertiesRepository),
-        )
+        groups_extra_properties = get_repository(app, GroupsExtraPropertiesRepository)
+
         assert scheduler_data.product_name is not None  # nosec
         allow_internet_access: bool = await groups_extra_properties.has_internet_access(
             user_id=scheduler_data.user_id, product_name=scheduler_data.product_name
@@ -179,7 +178,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         swarm_network: dict[str, Any] = await get_swarm_network(
             dynamic_sidecar_settings
         )
-        swarm_network_id: str = swarm_network["Id"]
+        swarm_network_id: NetworkId = swarm_network["Id"]
         swarm_network_name: str = swarm_network["Name"]
 
         # start dynamic-sidecar and run the proxy on the same node
@@ -190,15 +189,14 @@ class CreateSidecars(DynamicSchedulerEvent):
 
         # WARNING: do NOT log, this structure has secrets in the open
         # If you want to log, please use an obfuscator
-        dynamic_sidecar_service_spec_base: AioDockerServiceSpec = (
-            get_dynamic_sidecar_spec(
-                scheduler_data=scheduler_data,
-                dynamic_sidecar_settings=dynamic_sidecar_settings,
-                swarm_network_id=swarm_network_id,
-                settings=settings,
-                app_settings=app.state.settings,
-                allow_internet_access=allow_internet_access,
-            )
+        dynamic_sidecar_service_spec_base: AioDockerServiceSpec = get_dynamic_sidecar_spec(
+            scheduler_data=scheduler_data,
+            dynamic_sidecar_settings=dynamic_sidecar_settings,
+            swarm_network_id=swarm_network_id,
+            settings=settings,
+            app_settings=app.state.settings,
+            has_quota_support=dynamic_sidecar_settings.DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS,
+            allow_internet_access=allow_internet_access,
         )
 
         catalog_client = CatalogClient.instance(app)
@@ -219,16 +217,14 @@ class CreateSidecars(DynamicSchedulerEvent):
                 include=DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS,
             )
         )
-        await rabbitmq_client.publish(
-            ProgressRabbitMessageNode.get_channel_name(),
-            ProgressRabbitMessageNode(
-                user_id=scheduler_data.user_id,
-                project_id=scheduler_data.project_id,
-                node_id=scheduler_data.node_uuid,
-                progress_type=ProgressType.SIDECARS_PULLING,
-                progress=0,
-            ).json(),
+        rabbit_message = ProgressRabbitMessageNode(
+            user_id=scheduler_data.user_id,
+            project_id=scheduler_data.project_id,
+            node_id=scheduler_data.node_uuid,
+            progress_type=ProgressType.SIDECARS_PULLING,
+            progress=0,
         )
+        await rabbitmq_client.publish(rabbit_message.channel_name, rabbit_message)
         dynamic_sidecar_id = await create_service_and_get_id(
             dynamic_sidecar_service_final_spec
         )
@@ -238,16 +234,14 @@ class CreateSidecars(DynamicSchedulerEvent):
                 dynamic_sidecar_id, dynamic_sidecar_settings
             )
         )
-        await rabbitmq_client.publish(
-            ProgressRabbitMessageNode.get_channel_name(),
-            ProgressRabbitMessageNode(
-                user_id=scheduler_data.user_id,
-                project_id=scheduler_data.project_id,
-                node_id=scheduler_data.node_uuid,
-                progress_type=ProgressType.SIDECARS_PULLING,
-                progress=1,
-            ).json(),
+        rabbit_message = ProgressRabbitMessageNode(
+            user_id=scheduler_data.user_id,
+            project_id=scheduler_data.project_id,
+            node_id=scheduler_data.node_uuid,
+            progress_type=ProgressType.SIDECARS_PULLING,
+            progress=1,
         )
+        await rabbitmq_client.publish(rabbit_message.channel_name, rabbit_message)
 
         await constrain_service_to_node(
             service_name=scheduler_data.service_name,
@@ -259,6 +253,29 @@ class CreateSidecars(DynamicSchedulerEvent):
         scheduler_data.service_port = extract_service_port_from_compose_start_spec(
             dynamic_sidecar_service_final_spec
         )
+
+        proxy_settings: DynamicSidecarProxySettings = (
+            dynamic_sidecar_settings.DYNAMIC_SIDECAR_PROXY_SETTINGS
+        )
+        scheduler_data.proxy_admin_api_port = (
+            proxy_settings.DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT
+        )
+
+        dynamic_sidecar_proxy_create_service_params: dict[
+            str, Any
+        ] = get_dynamic_proxy_spec(
+            scheduler_data=scheduler_data,
+            dynamic_sidecar_settings=dynamic_sidecar_settings,
+            dynamic_sidecar_network_id=dynamic_sidecar_network_id,
+            swarm_network_id=swarm_network_id,
+            swarm_network_name=swarm_network_name,
+        )
+        logger.debug(
+            "dynamic-sidecar-proxy create_service_params %s",
+            json_dumps(dynamic_sidecar_proxy_create_service_params),
+        )
+
+        await create_service_and_get_id(dynamic_sidecar_proxy_create_service_params)
 
         # finally mark services created
         scheduler_data.dynamic_sidecar.dynamic_sidecar_id = dynamic_sidecar_id
@@ -320,7 +337,7 @@ class GetStatus(DynamicSchedulerEvent):
 
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
-        dynamic_sidecar_client = get_dynamic_sidecar_client(app)
+        sidecars_client = get_sidecars_client(app, scheduler_data.node_uuid)
         dynamic_sidecar_endpoint = scheduler_data.endpoint
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
@@ -332,9 +349,7 @@ class GetStatus(DynamicSchedulerEvent):
         try:
             containers_inspect: dict[
                 str, Any
-            ] = await dynamic_sidecar_client.containers_inspect(
-                dynamic_sidecar_endpoint
-            )
+            ] = await sidecars_client.containers_inspect(dynamic_sidecar_endpoint)
         except BaseClientHTTPError as e:
             were_service_containers_previously_present = (
                 len(scheduler_data.dynamic_sidecar.containers_inspect) > 0
@@ -348,14 +363,6 @@ class GetStatus(DynamicSchedulerEvent):
                 # Adding a delay between when the error is first seen and when the
                 # error is raised to avoid random shutdowns of dynamic-sidecar services.
                 scheduler_data.dynamic_sidecar.inspect_error_handler.try_to_raise(e)
-
-            # After the service creation it takes a bit of time for the container to start
-            # If the same message appears in the log multiple times in a row (for the same
-            # service) something might be wrong with the service.
-            logger.warning(
-                "No container present for %s. Please investigate.",
-                scheduler_data.service_name,
-            )
             return
 
         scheduler_data.dynamic_sidecar.inspect_error_handler.else_reset()
@@ -425,7 +432,7 @@ class CreateUserServices(DynamicSchedulerEvent):
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
-        dynamic_sidecar_client = get_dynamic_sidecar_client(app)
+        sidecars_client = get_sidecars_client(app, scheduler_data.node_uuid)
         dynamic_sidecar_endpoint = scheduler_data.endpoint
 
         # check values have been set by previous step
@@ -434,13 +441,15 @@ class CreateUserServices(DynamicSchedulerEvent):
             or scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id is None
             or scheduler_data.dynamic_sidecar.swarm_network_id is None
             or scheduler_data.dynamic_sidecar.swarm_network_name is None
+            or scheduler_data.proxy_admin_api_port is None
         ):
             raise ValueError(
-                "Expected a value for all the following values: "
+                "Did not expect None for any of the following: "
                 f"{scheduler_data.dynamic_sidecar.dynamic_sidecar_id=} "
                 f"{scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id=} "
                 f"{scheduler_data.dynamic_sidecar.swarm_network_id=} "
-                f"{scheduler_data.dynamic_sidecar.swarm_network_name=}"
+                f"{scheduler_data.dynamic_sidecar.swarm_network_name=} "
+                f"{scheduler_data.proxy_admin_api_port=}"
             )
 
         # Starts dynamic SIDECAR -------------------------------------
@@ -456,16 +465,13 @@ class CreateUserServices(DynamicSchedulerEvent):
             )
         )
 
-        groups_extra_properties = cast(
-            GroupsExtraPropertiesRepository,
-            get_repository(app, GroupsExtraPropertiesRepository),
-        )
+        groups_extra_properties = get_repository(app, GroupsExtraPropertiesRepository)
         assert scheduler_data.product_name is not None  # nosec
         allow_internet_access: bool = await groups_extra_properties.has_internet_access(
             user_id=scheduler_data.user_id, product_name=scheduler_data.product_name
         )
 
-        compose_spec = assemble_spec(
+        compose_spec: str = assemble_spec(
             app=app,
             service_key=scheduler_data.key,
             service_version=scheduler_data.version,
@@ -475,6 +481,7 @@ class CreateUserServices(DynamicSchedulerEvent):
             dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
             swarm_network_name=scheduler_data.dynamic_sidecar.swarm_network_name,
             service_resources=scheduler_data.service_resources,
+            has_quota_support=dynamic_sidecar_settings.DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS,
             simcore_service_labels=simcore_service_labels,
             allow_internet_access=allow_internet_access,
             product_name=scheduler_data.product_name,
@@ -497,13 +504,19 @@ class CreateUserServices(DynamicSchedulerEvent):
             # of the service to pulling
             logger.debug("%s: %.2f %s", task_id, percent, message)
 
-        await dynamic_sidecar_client.create_containers(
+        await sidecars_client.create_containers(
             dynamic_sidecar_endpoint, compose_spec, progress_create_containers
         )
 
-        await dynamic_sidecar_client.enable_service_outputs_watcher(
-            dynamic_sidecar_endpoint
-        )
+        # NOTE: when in READ ONLY mode disable the outputs watcher
+        if scheduler_data.dynamic_sidecar.service_removal_state.can_save:
+            await sidecars_client.enable_service_outputs_watcher(
+                dynamic_sidecar_endpoint
+            )
+        else:
+            await sidecars_client.disable_service_outputs_watcher(
+                dynamic_sidecar_endpoint
+            )
 
         # Starts PROXY -----------------------------------------------
         # The entrypoint container name was now computed
@@ -526,7 +539,7 @@ class CreateUserServices(DynamicSchedulerEvent):
                     )
                     return
 
-                entrypoint_container = await dynamic_sidecar_client.get_entrypoint_container_name(
+                entrypoint_container = await sidecars_client.get_entrypoint_container_name(
                     dynamic_sidecar_endpoint=dynamic_sidecar_endpoint,
                     dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
                 )
@@ -534,25 +547,12 @@ class CreateUserServices(DynamicSchedulerEvent):
                     "Fetched container entrypoint name %s", entrypoint_container
                 )
 
-        dynamic_sidecar_proxy_create_service_params: dict[
-            str, Any
-        ] = get_dynamic_proxy_spec(
-            scheduler_data=scheduler_data,
-            dynamic_sidecar_settings=dynamic_sidecar_settings,
-            dynamic_sidecar_network_id=scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id,
-            swarm_network_id=scheduler_data.dynamic_sidecar.swarm_network_id,
-            swarm_network_name=scheduler_data.dynamic_sidecar.swarm_network_name,
+        await sidecars_client.configure_proxy(
+            proxy_endpoint=scheduler_data.get_proxy_endpoint,
             entrypoint_container_name=entrypoint_container,
             service_port=scheduler_data.service_port,
         )
 
-        logger.debug(
-            "dynamic-sidecar-proxy create_service_params %s",
-            json_dumps(dynamic_sidecar_proxy_create_service_params),
-        )
-
-        # no need for the id any longer
-        await create_service_and_get_id(dynamic_sidecar_proxy_create_service_params)
         scheduler_data.dynamic_sidecar.were_containers_created = True
 
         scheduler_data.dynamic_sidecar.was_compose_spec_submitted = True

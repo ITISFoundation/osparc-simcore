@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # NOTE: This is a first step towards a devcontainer
 #       to perform operations like pip-compile or auto-formatting
 #       that preserves identical environment across developer machines
@@ -7,7 +8,7 @@
 #   - Can be installed with pyenv (SEE pyenv install --list )
 #
 #
-ARG PYTHON_VERSION="3.9.12"
+ARG PYTHON_VERSION="3.10.10"
 FROM python:${PYTHON_VERSION}-slim-buster as base
 
 
@@ -21,14 +22,16 @@ RUN apt-get update \
 
 
 # SEE bug with pip==22.1 https://github.com/jazzband/pip-tools/issues/1617
-RUN pip --no-cache-dir install --upgrade \
-  pip~=23.0  \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install --upgrade \
+  pip~=23.1  \
   wheel \
   setuptools
 
 
 # devenv
-RUN pip install \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install \
   pip-tools \
   pipreqs \
   pipdeptree && \

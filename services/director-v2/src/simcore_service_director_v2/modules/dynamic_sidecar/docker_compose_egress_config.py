@@ -6,11 +6,11 @@ from typing import Any, Final
 import yaml
 from models_library.basic_types import PortInt
 from models_library.service_settings_labels import (
-    ComposeSpecLabel,
+    ComposeSpecLabelDict,
     NATRule,
     SimcoreServiceLabels,
 )
-from orderedset import OrderedSet
+from ordered_set import OrderedSet
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 
 from ...core.settings import DynamicSidecarEgressSettings
@@ -161,7 +161,7 @@ def _get_egress_proxy_network_name(egress_proxy_name: str) -> str:
 
 
 def _add_egress_proxy_network(
-    service_spec: ComposeSpecLabel, egress_proxy_name: str
+    service_spec: ComposeSpecLabelDict, egress_proxy_name: str
 ) -> None:
     networks = service_spec.get("networks")
     networks[_get_egress_proxy_network_name(egress_proxy_name)] = {"internal": True}
@@ -243,7 +243,7 @@ def _get_egress_proxy_dns_port_rules(
 
 
 def _allow_outgoing_internet(
-    service_spec: ComposeSpecLabel, container_name: str
+    service_spec: ComposeSpecLabelDict, container_name: str
 ) -> None:
     # containers are allowed complete access to the internet by
     # connecting them to an isolated network (from the rest
@@ -255,7 +255,7 @@ def _allow_outgoing_internet(
 
 
 def add_egress_configuration(
-    service_spec: ComposeSpecLabel,
+    service_spec: ComposeSpecLabelDict,
     simcore_service_labels: SimcoreServiceLabels,
     egress_proxy_settings: DynamicSidecarEgressSettings,
 ) -> None:
@@ -293,7 +293,7 @@ def add_egress_configuration(
         all_host_permit_list_policies: list[NATRule] = []
 
         hostname_port_to_container_name: dict[tuple[str, PortInt], str] = {}
-        container_name_to_proxies_names: dict[str, set[set]] = {}
+        container_name_to_proxies_names: dict[str, set[str]] = {}
 
         for (
             container_name,

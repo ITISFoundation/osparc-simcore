@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-ARG PYTHON_VERSION="3.9.12"
+ARG PYTHON_VERSION="3.10.10"
 FROM --platform=${TARGETPLATFORM} python:${PYTHON_VERSION}-slim-buster as base
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
@@ -14,16 +14,18 @@ RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM" > /log
 
 LABEL maintainer=sanderegg
 
-RUN  --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=locked \
-  --mount=type=cache,id=baseapt,target=/var/lib/apt,mode=0755,sharing=locked \
+# for docker apt caching to work this needs to be added: [https://vsupalov.com/buildkit-cache-mount-dockerfile/]
+RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
+  echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
+RUN  --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
+  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
   set -eux \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
   iputils-ping \
   curl \
   gosu \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/* \
+  && apt-get clean -y \
   # verify that the binary works
   && gosu nobody true
 
@@ -67,29 +69,29 @@ FROM base as build
 
 ENV SC_BUILD_TARGET=build
 
-RUN  --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=locked \
-  --mount=type=cache,id=baseapt,target=/var/lib/apt,mode=0755,sharing=locked \
+RUN  --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
+  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
   set -eux \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
-  build-essential \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
+  build-essential
 
 
 # NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
 RUN python -m venv "${VIRTUAL_ENV}"
-RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
-  pip install --upgrade \
-  pip~=23.0  \
+
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install --upgrade  \
+  pip~=23.1  \
   wheel \
   setuptools
 
 WORKDIR /build
 
 # install base 3rd party dependencies (NOTE: this speeds up devel mode)
-COPY  --chown=scu:scu services/dask-sidecar/requirements/_base.txt .
-RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
+RUN \
+  --mount=type=bind,source=services/dask-sidecar/requirements/_base.txt,target=_base.txt \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip \
   pip install \
   --requirement _base.txt
 
@@ -103,14 +105,15 @@ FROM build as prod-only-deps
 
 ENV SC_BUILD_TARGET=prod-only-deps
 
-COPY --chown=scu:scu packages /build/packages
-COPY --chown=scu:scu services/dask-sidecar /build/services/dask-sidecar
-
 WORKDIR /build/services/dask-sidecar
 
-RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
+RUN \
+  --mount=type=bind,source=packages,target=/build/packages,rw \
+  --mount=type=bind,source=services/dask-sidecar,target=/build/services/dask-sidecar,rw \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip \
   pip install \
-  --requirement requirements/prod.txt
+  --requirement requirements/prod.txt \
+  && pip list -v
 
 # --------------------------Production stage -------------------
 # Final cleanup up to reduce image size and startup setup
@@ -128,10 +131,12 @@ ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu
 
+# ensure home folder is read/writable for user scu
+RUN chown -R scu /home/scu
 # bring installed package without build tools
 COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
-# copy docker entrypoint and boot scripts
 COPY --chown=scu:scu services/dask-sidecar/docker services/dask-sidecar/docker
+RUN chmod +x services/dask-sidecar/docker/*.sh
 
 
 # WARNING: This image is used for dask-scheduler and dask-worker.

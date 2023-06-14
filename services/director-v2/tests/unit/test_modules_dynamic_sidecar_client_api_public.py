@@ -2,12 +2,14 @@
 # pylint:disable=redefined-outer-name
 
 from contextlib import contextmanager
-from typing import Any, AsyncIterable, Callable, Iterator, Optional
+from typing import Any, AsyncIterable, Callable, Iterator
 from unittest.mock import AsyncMock
 
 import pytest
+from faker import Faker
 from fastapi import FastAPI, status
 from httpx import HTTPError, Response
+from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl, parse_obj_as
 from pytest import LogCaptureFixture, MonkeyPatch
 from pytest_mock import MockerFixture
@@ -18,8 +20,8 @@ from simcore_service_director_v2.modules.dynamic_sidecar.api_client._errors impo
     UnexpectedStatusError,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
-    DynamicSidecarClient,
-    get_dynamic_sidecar_client,
+    SidecarsClient,
+    get_sidecars_client,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
     setup as api_client_setup,
@@ -55,15 +57,15 @@ def mock_env(monkeypatch: MonkeyPatch, mock_env: EnvVarsDict) -> None:
 
 
 @pytest.fixture
-async def dynamic_sidecar_client(
-    mock_env: EnvVarsDict,
-) -> AsyncIterable[DynamicSidecarClient]:
+async def sidecars_client(
+    mock_env: EnvVarsDict, faker: Faker
+) -> AsyncIterable[SidecarsClient]:
     app = FastAPI()
     app.state.settings = AppSettings.create_from_envs()
 
     # WARNING: pytest gets confused with 'setup', use instead alias 'api_client_setup'
     await api_client_setup(app)
-    yield get_dynamic_sidecar_client(app)
+    yield get_sidecars_client(app, faker.uuid4())
     await shutdown(app)
 
 
@@ -82,20 +84,20 @@ def raise_request_timeout(
 
 @pytest.fixture
 def get_patched_client(
-    dynamic_sidecar_client: DynamicSidecarClient, mocker: MockerFixture
+    sidecars_client: SidecarsClient, mocker: MockerFixture
 ) -> Callable:
     @contextmanager
     def wrapper(
         method: str,
-        return_value: Optional[Any] = None,
-        side_effect: Optional[Callable] = None,
-    ) -> Iterator[DynamicSidecarClient]:
+        return_value: Any | None = None,
+        side_effect: Callable | None = None,
+    ) -> Iterator[SidecarsClient]:
         mocker.patch(
-            f"simcore_service_director_v2.modules.dynamic_sidecar.api_client._thin.ThinDynamicSidecarClient.{method}",
+            f"simcore_service_director_v2.modules.dynamic_sidecar.api_client._thin.ThinSidecarsClient.{method}",
             return_value=return_value,
             side_effect=side_effect,
         )
-        yield dynamic_sidecar_client
+        yield sidecars_client
 
     return wrapper
 
@@ -121,11 +123,11 @@ async def test_is_healthy(
 
 async def test_is_healthy_times_out(
     raise_request_timeout: None,
-    dynamic_sidecar_client: DynamicSidecarClient,
+    sidecars_client: SidecarsClient,
     dynamic_sidecar_endpoint: AnyHttpUrl,
     caplog_info_level: LogCaptureFixture,
 ) -> None:
-    assert await dynamic_sidecar_client.is_healthy(dynamic_sidecar_endpoint) is False
+    assert await sidecars_client.is_healthy(dynamic_sidecar_endpoint) is False
     # check if the right amount of messages was captured by the logs
     unexpected_counter = 1
     for log_message in caplog_info_level.messages:
@@ -327,6 +329,28 @@ async def test_detach_container_from_network(
                 dynamic_sidecar_endpoint,
                 container_id="container_id",
                 network_id="network_id",
+            )
+            is None
+        )
+
+
+@pytest.mark.parametrize("volume_category", VolumeCategory)
+@pytest.mark.parametrize("volume_status", VolumeStatus)
+async def test_update_volume_state(
+    get_patched_client: Callable,
+    dynamic_sidecar_endpoint: AnyHttpUrl,
+    volume_category: VolumeCategory,
+    volume_status: VolumeStatus,
+) -> None:
+    with get_patched_client(
+        "put_volumes",
+        return_value=Response(status_code=status.HTTP_204_NO_CONTENT),
+    ) as client:
+        assert (
+            await client.update_volume_state(
+                dynamic_sidecar_endpoint,
+                volume_category=volume_category,
+                volume_status=volume_status,
             )
             is None
         )

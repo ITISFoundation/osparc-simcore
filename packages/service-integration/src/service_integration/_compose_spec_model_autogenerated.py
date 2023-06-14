@@ -2,19 +2,15 @@
 #   filename:  https://raw.githubusercontent.com/compose-spec/compose-spec/master/schema/compose-spec.json
 #   timestamp: 2021-11-19T10:40:07+00:00
 
-# type: ignore
-
+# type:ignore
 
 from enum import Enum
-from typing import Any, Optional, Union
+from typing import Any
 
-from pydantic import BaseModel, Extra, Field, conint, constr
+from pydantic import BaseModel, ConstrainedInt, Extra, Field, conint, constr
 
 #  MODIFICATIONS -------------------------------------------------------------------------
 #
-SCHEMA_URL = "http://json-schema.org/draft/2019-09/schema#"
-SCHEMA_VERSION = SCHEMA_URL.split("/")[-2]
-
 #  "$schema": "http://json-schema.org/draft/2019-09/schema#",
 #
 # UserWarning: format of 'ports' not understood for 'number' - using default
@@ -22,7 +18,11 @@ SCHEMA_VERSION = SCHEMA_URL.split("/")[-2]
 # UserWarning: format of 'duration' not understood for 'string' - using default
 # UserWarning: format of 'subnet_ip_address' not understood for 'string' - using default
 
-PortInt = conint(gt=0, lt=65535)
+# port number range
+class PortInt(ConstrainedInt):
+    gt = 0
+    lt = 65535
+
 
 # ----------------------------------------------------------------------------------------
 
@@ -31,20 +31,20 @@ class Configuration(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    source: Optional[str] = None
-    target: Optional[str] = None
-    uid: Optional[str] = None
-    gid: Optional[str] = None
-    mode: Optional[float] = None
+    source: str | None = None
+    target: str | None = None
+    uid: str | None = None
+    gid: str | None = None
+    mode: float | None = None
 
 
 class CredentialSpec(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    config: Optional[str] = None
-    file: Optional[str] = None
-    registry: Optional[str] = None
+    config: str | None = None
+    file: str | None = None
+    registry: str | None = None
 
 
 class Condition(Enum):
@@ -65,26 +65,26 @@ class Extend(BaseModel):
         extra = Extra.forbid
 
     service: str
-    file: Optional[str] = None
+    file: str | None = None
 
 
 class Logging(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    driver: Optional[str] = None
-    options: Optional[dict[constr(regex=r"^.+$"), Optional[Union[str, float]]]] = None
+    driver: str | None = None
+    options: dict[constr(regex=r"^.+$"), str | float | None] | None = None
 
 
 class Port(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    mode: Optional[str] = None
-    host_ip: Optional[str] = None
-    target: Optional[int] = None
-    published: Optional[int] = None
-    protocol: Optional[str] = None
+    mode: str | None = None
+    host_ip: str | None = None
+    target: int | None = None
+    published: int | None = None
+    protocol: str | None = None
 
 
 class PullPolicy(Enum):
@@ -99,11 +99,11 @@ class Secret1(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    source: Optional[str] = None
-    target: Optional[str] = None
-    uid: Optional[str] = None
-    gid: Optional[str] = None
-    mode: Optional[float] = None
+    source: str | None = None
+    target: str | None = None
+    uid: str | None = None
+    gid: str | None = None
+    mode: float | None = None
 
 
 class Ulimit(BaseModel):
@@ -118,22 +118,22 @@ class Bind(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    propagation: Optional[str] = None
-    create_host_path: Optional[bool] = None
+    propagation: str | None = None
+    create_host_path: bool | None = None
 
 
 class Volume2(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    nocopy: Optional[bool] = None
+    nocopy: bool | None = None
 
 
 class Tmpfs(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    size: Optional[Union[conint(ge=0), str]] = None
+    size: conint(ge=0) | str | None = None
 
 
 class Volume1(BaseModel):
@@ -141,25 +141,25 @@ class Volume1(BaseModel):
         extra = Extra.forbid
 
     type: str
-    source: Optional[str] = None
-    target: Optional[str] = None
-    read_only: Optional[bool] = None
-    consistency: Optional[str] = None
-    bind: Optional[Bind] = None
-    volume: Optional[Volume2] = None
-    tmpfs: Optional[Tmpfs] = None
+    source: str | None = None
+    target: str | None = None
+    read_only: bool | None = None
+    consistency: str | None = None
+    bind: Bind | None = None
+    volume: Volume2 | None = None
+    tmpfs: Tmpfs | None = None
 
 
 class Healthcheck(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    disable: Optional[bool] = None
-    interval: Optional[str] = None
-    retries: Optional[float] = None
-    test: Optional[Union[str, list[str]]] = None
-    timeout: Optional[str] = None
-    start_period: Optional[str] = None
+    disable: bool | None = None
+    interval: str | None = None
+    retries: float | None = None
+    test: str | list[str] | None = None
+    timeout: str | None = None
+    start_period: str | None = None
 
 
 class Order(Enum):
@@ -171,12 +171,12 @@ class RollbackConfig(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    parallelism: Optional[int] = None
-    delay: Optional[str] = None
-    failure_action: Optional[str] = None
-    monitor: Optional[str] = None
-    max_failure_ratio: Optional[float] = None
-    order: Optional[Order] = None
+    parallelism: int | None = None
+    delay: str | None = None
+    failure_action: str | None = None
+    monitor: str | None = None
+    max_failure_ratio: float | None = None
+    order: Order | None = None
 
 
 class Order1(Enum):
@@ -188,61 +188,61 @@ class UpdateConfig(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    parallelism: Optional[int] = None
-    delay: Optional[str] = None
-    failure_action: Optional[str] = None
-    monitor: Optional[str] = None
-    max_failure_ratio: Optional[float] = None
-    order: Optional[Order1] = None
+    parallelism: int | None = None
+    delay: str | None = None
+    failure_action: str | None = None
+    monitor: str | None = None
+    max_failure_ratio: float | None = None
+    order: Order1 | None = None
 
 
 class Limits(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    cpus: Optional[Union[float, str]] = None
-    memory: Optional[str] = None
+    cpus: float | str | None = None
+    memory: str | None = None
 
 
 class RestartPolicy(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    condition: Optional[str] = None
-    delay: Optional[str] = None
-    max_attempts: Optional[int] = None
-    window: Optional[str] = None
+    condition: str | None = None
+    delay: str | None = None
+    max_attempts: int | None = None
+    window: str | None = None
 
 
 class Preference(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    spread: Optional[str] = None
+    spread: str | None = None
 
 
 class Placement(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    constraints: Optional[list[str]] = None
-    preferences: Optional[list[Preference]] = None
-    max_replicas_per_node: Optional[int] = None
+    constraints: list[str] | None = None
+    preferences: list[Preference] | None = None
+    max_replicas_per_node: int | None = None
 
 
 class DiscreteResourceSpec(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    kind: Optional[str] = None
-    value: Optional[float] = None
+    kind: str | None = None
+    value: float | None = None
 
 
 class GenericResource(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    discrete_resource_spec: Optional[DiscreteResourceSpec] = None
+    discrete_resource_spec: DiscreteResourceSpec | None = None
 
 
 class GenericResources(BaseModel):
@@ -253,41 +253,41 @@ class ConfigItem(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    subnet: Optional[str] = None
-    ip_range: Optional[str] = None
-    gateway: Optional[str] = None
-    aux_addresses: Optional[dict[constr(regex=r"^.+$"), str]] = None
+    subnet: str | None = None
+    ip_range: str | None = None
+    gateway: str | None = None
+    aux_addresses: dict[constr(regex=r"^.+$"), str] | None = None
 
 
 class Ipam(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    driver: Optional[str] = None
-    config: Optional[list[ConfigItem]] = None
-    options: Optional[dict[constr(regex=r"^.+$"), str]] = None
+    driver: str | None = None
+    config: list[ConfigItem] | None = None
+    options: dict[constr(regex=r"^.+$"), str] | None = None
 
 
 class External(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    name: Optional[str] = None
+    name: str | None = None
 
 
 class External1(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    name: Optional[str] = None
+    name: str | None = None
 
 
 class External2(BaseModel):
-    name: Optional[str] = None
+    name: str | None = None
 
 
 class External3(BaseModel):
-    name: Optional[str] = None
+    name: str | None = None
 
 
 class ListOfStrings(BaseModel):
@@ -295,25 +295,23 @@ class ListOfStrings(BaseModel):
 
 
 class ListOrDict(BaseModel):
-    __root__: Union[
-        dict[constr(regex=r".+"), Optional[Union[str, float, bool]]], list[str]
-    ]
+    __root__: (dict[constr(regex=r".+"), str | float | bool | None] | list[str])
 
 
 class BlkioLimit(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    path: Optional[str] = None
-    rate: Optional[Union[int, str]] = None
+    path: str | None = None
+    rate: int | str | None = None
 
 
 class BlkioWeight(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    path: Optional[str] = None
-    weight: Optional[int] = None
+    path: str | None = None
+    weight: int | None = None
 
 
 class Constraints(BaseModel):
@@ -324,50 +322,50 @@ class BuildItem(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    context: Optional[str] = None
-    dockerfile: Optional[str] = None
-    args: Optional[ListOrDict] = None
-    labels: Optional[ListOrDict] = None
-    cache_from: Optional[list[str]] = None
-    network: Optional[str] = None
-    target: Optional[str] = None
-    shm_size: Optional[Union[int, str]] = None
-    extra_hosts: Optional[ListOrDict] = None
-    isolation: Optional[str] = None
+    context: str | None = None
+    dockerfile: str | None = None
+    args: ListOrDict | None = None
+    labels: ListOrDict | None = None
+    cache_from: list[str] | None = None
+    network: str | None = None
+    target: str | None = None
+    shm_size: int | str | None = None
+    extra_hosts: ListOrDict | None = None
+    isolation: str | None = None
 
 
 class BlkioConfig(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    device_read_bps: Optional[list[BlkioLimit]] = None
-    device_read_iops: Optional[list[BlkioLimit]] = None
-    device_write_bps: Optional[list[BlkioLimit]] = None
-    device_write_iops: Optional[list[BlkioLimit]] = None
-    weight: Optional[int] = None
-    weight_device: Optional[list[BlkioWeight]] = None
+    device_read_bps: list[BlkioLimit] | None = None
+    device_read_iops: list[BlkioLimit] | None = None
+    device_write_bps: list[BlkioLimit] | None = None
+    device_write_iops: list[BlkioLimit] | None = None
+    weight: int | None = None
+    weight_device: list[BlkioWeight] | None = None
 
 
 class Network1(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    aliases: Optional[ListOfStrings] = None
-    ipv4_address: Optional[str] = None
-    ipv6_address: Optional[str] = None
-    link_local_ips: Optional[ListOfStrings] = None
-    priority: Optional[float] = None
+    aliases: ListOfStrings | None = None
+    ipv4_address: str | None = None
+    ipv6_address: str | None = None
+    link_local_ips: ListOfStrings | None = None
+    priority: float | None = None
 
 
 class Device(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    capabilities: Optional[ListOfStrings] = None
-    count: Optional[Union[str, int]] = None
-    device_ids: Optional[ListOfStrings] = None
-    driver: Optional[str] = None
-    options: Optional[ListOrDict] = None
+    capabilities: ListOfStrings | None = None
+    count: str | int | None = None
+    device_ids: ListOfStrings | None = None
+    driver: str | None = None
+    options: ListOrDict | None = None
 
 
 class Devices(BaseModel):
@@ -378,178 +376,176 @@ class Network(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    name: Optional[str] = None
-    driver: Optional[str] = None
-    driver_opts: Optional[dict[constr(regex=r"^.+$"), Union[str, float]]] = None
-    ipam: Optional[Ipam] = None
-    external: Optional[External] = None
-    internal: Optional[bool] = None
-    enable_ipv6: Optional[bool] = None
-    attachable: Optional[bool] = None
-    labels: Optional[ListOrDict] = None
+    name: str | None = None
+    driver: str | None = None
+    driver_opts: dict[constr(regex=r"^.+$"), str | float] | None = None
+    ipam: Ipam | None = None
+    external: External | None = None
+    internal: bool | None = None
+    enable_ipv6: bool | None = None
+    attachable: bool | None = None
+    labels: ListOrDict | None = None
 
 
 class Volume(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    name: Optional[str] = None
-    driver: Optional[str] = None
-    driver_opts: Optional[dict[constr(regex=r"^.+$"), Union[str, float]]] = None
-    external: Optional[External1] = None
-    labels: Optional[ListOrDict] = None
+    name: str | None = None
+    driver: str | None = None
+    driver_opts: dict[constr(regex=r"^.+$"), str | float] | None = None
+    external: External1 | None = None
+    labels: ListOrDict | None = None
 
 
 class Secret(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    name: Optional[str] = None
-    file: Optional[str] = None
-    external: Optional[External2] = None
-    labels: Optional[ListOrDict] = None
-    driver: Optional[str] = None
-    driver_opts: Optional[dict[constr(regex=r"^.+$"), Union[str, float]]] = None
-    template_driver: Optional[str] = None
+    name: str | None = None
+    file: str | None = None
+    external: External2 | None = None
+    labels: ListOrDict | None = None
+    driver: str | None = None
+    driver_opts: dict[constr(regex=r"^.+$"), str | float] | None = None
+    template_driver: str | None = None
 
 
 class ComposeSpecConfig(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    name: Optional[str] = None
-    file: Optional[str] = None
-    external: Optional[External3] = None
-    labels: Optional[ListOrDict] = None
-    template_driver: Optional[str] = None
+    name: str | None = None
+    file: str | None = None
+    external: External3 | None = None
+    labels: ListOrDict | None = None
+    template_driver: str | None = None
 
 
 class StringOrList(BaseModel):
-    __root__: Union[str, ListOfStrings]
+    __root__: str | ListOfStrings
 
 
 class Reservations(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    cpus: Optional[Union[float, str]] = None
-    memory: Optional[str] = None
-    generic_resources: Optional[GenericResources] = None
-    devices: Optional[Devices] = None
+    cpus: float | str | None = None
+    memory: str | None = None
+    generic_resources: GenericResources | None = None
+    devices: Devices | None = None
 
 
 class Resources(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    limits: Optional[Limits] = None
-    reservations: Optional[Reservations] = None
+    limits: Limits | None = None
+    reservations: Reservations | None = None
 
 
 class Deployment(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    mode: Optional[str] = None
-    endpoint_mode: Optional[str] = None
-    replicas: Optional[int] = None
-    labels: Optional[ListOrDict] = None
-    rollback_config: Optional[RollbackConfig] = None
-    update_config: Optional[UpdateConfig] = None
-    resources: Optional[Resources] = None
-    restart_policy: Optional[RestartPolicy] = None
-    placement: Optional[Placement] = None
+    mode: str | None = None
+    endpoint_mode: str | None = None
+    replicas: int | None = None
+    labels: ListOrDict | None = None
+    rollback_config: RollbackConfig | None = None
+    update_config: UpdateConfig | None = None
+    resources: Resources | None = None
+    restart_policy: RestartPolicy | None = None
+    placement: Placement | None = None
 
 
 class Service(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    deploy: Optional[Deployment] = None
-    build: Optional[Union[str, BuildItem]] = None
-    blkio_config: Optional[BlkioConfig] = None
-    cap_add: Optional[list[str]] = None
-    cap_drop: Optional[list[str]] = None
-    cgroup_parent: Optional[str] = None
-    command: Optional[Union[str, list[str]]] = None
-    configs: Optional[list[Union[str, Configuration]]] = None
-    container_name: Optional[str] = None
-    cpu_count: Optional[conint(ge=0)] = None
-    cpu_percent: Optional[conint(ge=0, le=100)] = None
-    cpu_shares: Optional[Union[float, str]] = None
-    cpu_quota: Optional[Union[float, str]] = None
-    cpu_period: Optional[Union[float, str]] = None
-    cpu_rt_period: Optional[Union[float, str]] = None
-    cpu_rt_runtime: Optional[Union[float, str]] = None
-    cpus: Optional[Union[float, str]] = None
-    cpuset: Optional[str] = None
-    credential_spec: Optional[CredentialSpec] = None
-    depends_on: Optional[
-        Union[ListOfStrings, dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), DependsOn]]
-    ] = None
-    device_cgroup_rules: Optional[ListOfStrings] = None
-    devices: Optional[list[str]] = None
-    dns: Optional[StringOrList] = None
-    dns_opt: Optional[list[str]] = None
-    dns_search: Optional[StringOrList] = None
-    domainname: Optional[str] = None
-    entrypoint: Optional[Union[str, list[str]]] = None
-    env_file: Optional[StringOrList] = None
-    environment: Optional[ListOrDict] = None
-    expose: Optional[list[Union[str, float]]] = None
-    extends: Optional[Union[str, Extend]] = None
-    external_links: Optional[list[str]] = None
-    extra_hosts: Optional[ListOrDict] = None
-    group_add: Optional[list[Union[str, float]]] = None
-    healthcheck: Optional[Healthcheck] = None
-    hostname: Optional[str] = None
-    image: Optional[str] = None
-    init: Optional[bool] = None
-    ipc: Optional[str] = None
-    isolation: Optional[str] = None
-    labels: Optional[ListOrDict] = None
-    links: Optional[list[str]] = None
-    logging: Optional[Logging] = None
-    mac_address: Optional[str] = None
-    mem_limit: Optional[Union[float, str]] = None
-    mem_reservation: Optional[Union[str, int]] = None
-    mem_swappiness: Optional[int] = None
-    memswap_limit: Optional[Union[float, str]] = None
-    network_mode: Optional[str] = None
-    networks: Optional[
-        Union[
-            ListOfStrings, dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Optional[Network1]]
-        ]
-    ] = None
-    oom_kill_disable: Optional[bool] = None
-    oom_score_adj: Optional[conint(ge=-1000, le=1000)] = None
-    pid: Optional[Optional[str]] = None
-    pids_limit: Optional[Union[float, str]] = None
-    platform: Optional[str] = None
-    ports: Optional[list[Union[PortInt, str, Port]]] = None
-    privileged: Optional[bool] = None
-    profiles: Optional[ListOfStrings] = None
-    pull_policy: Optional[PullPolicy] = None
-    read_only: Optional[bool] = None
-    restart: Optional[str] = None
-    runtime: Optional[str] = None
-    scale: Optional[int] = None
-    security_opt: Optional[list[str]] = None
-    shm_size: Optional[Union[float, str]] = None
-    secrets: Optional[list[Union[str, Secret1]]] = None
-    sysctls: Optional[ListOrDict] = None
-    stdin_open: Optional[bool] = None
-    stop_grace_period: Optional[str] = None
-    stop_signal: Optional[str] = None
-    storage_opt: Optional[dict[str, Any]] = None
-    tmpfs: Optional[StringOrList] = None
-    tty: Optional[bool] = None
-    ulimits: Optional[dict[constr(regex=r"^[a-z]+$"), Union[int, Ulimit]]] = None
-    user: Optional[str] = None
-    userns_mode: Optional[str] = None
-    volumes: Optional[list[Union[str, Volume1]]] = None
-    volumes_from: Optional[list[str]] = None
-    working_dir: Optional[str] = None
+    deploy: Deployment | None = None
+    build: str | BuildItem | None = None
+    blkio_config: BlkioConfig | None = None
+    cap_add: list[str] | None = None
+    cap_drop: list[str] | None = None
+    cgroup_parent: str | None = None
+    command: str | list[str] | None = None
+    configs: list[str | Configuration] | None = None
+    container_name: str | None = None
+    cpu_count: conint(ge=0) | None = None
+    cpu_percent: conint(ge=0, le=100) | None = None
+    cpu_shares: float | str | None = None
+    cpu_quota: float | str | None = None
+    cpu_period: float | str | None = None
+    cpu_rt_period: float | str | None = None
+    cpu_rt_runtime: float | str | None = None
+    cpus: float | str | None = None
+    cpuset: str | None = None
+    credential_spec: CredentialSpec | None = None
+    depends_on: None | (
+        ListOfStrings | dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), DependsOn]
+    ) = None
+    device_cgroup_rules: ListOfStrings | None = None
+    devices: list[str] | None = None
+    dns: StringOrList | None = None
+    dns_opt: list[str] | None = None
+    dns_search: StringOrList | None = None
+    domainname: str | None = None
+    entrypoint: str | list[str] | None = None
+    env_file: StringOrList | None = None
+    environment: ListOrDict | None = None
+    expose: list[str | float] | None = None
+    extends: str | Extend | None = None
+    external_links: list[str] | None = None
+    extra_hosts: ListOrDict | None = None
+    group_add: list[str | float] | None = None
+    healthcheck: Healthcheck | None = None
+    hostname: str | None = None
+    image: str | None = None
+    init: bool | None = None
+    ipc: str | None = None
+    isolation: str | None = None
+    labels: ListOrDict | None = None
+    links: list[str] | None = None
+    logging: Logging | None = None
+    mac_address: str | None = None
+    mem_limit: float | str | None = None
+    mem_reservation: str | int | None = None
+    mem_swappiness: int | None = None
+    memswap_limit: float | str | None = None
+    network_mode: str | None = None
+    networks: None | (
+        ListOfStrings | dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Network1 | None]
+    ) = None
+    oom_kill_disable: bool | None = None
+    oom_score_adj: conint(ge=-1000, le=1000) | None = None
+    pid: str | None | None = None
+    pids_limit: float | str | None = None
+    platform: str | None = None
+    ports: list[PortInt | str | Port] | None = None
+    privileged: bool | None = None
+    profiles: ListOfStrings | None = None
+    pull_policy: PullPolicy | None = None
+    read_only: bool | None = None
+    restart: str | None = None
+    runtime: str | None = None
+    scale: int | None = None
+    security_opt: list[str] | None = None
+    shm_size: float | str | None = None
+    secrets: list[str | Secret1] | None = None
+    sysctls: ListOrDict | None = None
+    stdin_open: bool | None = None
+    stop_grace_period: str | None = None
+    stop_signal: str | None = None
+    storage_opt: dict[str, Any] | None = None
+    tmpfs: StringOrList | None = None
+    tty: bool | None = None
+    ulimits: dict[constr(regex=r"^[a-z]+$"), int | Ulimit] | None = None
+    user: str | None = None
+    userns_mode: str | None = None
+    volumes: list[str | Volume1] | None = None
+    volumes_from: list[str] | None = None
+    working_dir: str | None = None
 
 
 class ComposeSpecification(BaseModel):
@@ -560,14 +556,12 @@ class ComposeSpecification(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    version: Optional[str] = Field(
+    version: str | None = Field(
         None,
         description="Version of the Compose specification used. Tools not implementing required version MUST reject the configuration file.",
     )
-    services: Optional[dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Service]] = None
-    networks: Optional[dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Network]] = None
-    volumes: Optional[dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Volume]] = None
-    secrets: Optional[dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Secret]] = None
-    configs: Optional[
-        dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), ComposeSpecConfig]
-    ] = None
+    services: dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Service] | None = None
+    networks: dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Network] | None = None
+    volumes: dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Volume] | None = None
+    secrets: dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Secret] | None = None
+    configs: None | (dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), ComposeSpecConfig]) = None

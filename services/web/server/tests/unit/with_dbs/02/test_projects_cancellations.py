@@ -2,13 +2,17 @@
 # pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+
 import asyncio
 from typing import Any, Awaitable, Callable
 
 import pytest
 from aiohttp.test_utils import TestClient
 from pydantic import ByteSize, parse_obj_as
+from pytest import MonkeyPatch
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     ExpectedResponse,
     MockedStorageSubsystem,
@@ -19,12 +23,23 @@ from servicelib.aiohttp.long_running_tasks.server import TaskGet, TaskProgress
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.application_settings import get_settings
-from simcore_service_webserver.projects.project_models import ProjectDict
+from simcore_service_webserver.projects.models import ProjectDict
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 API_PREFIX = "/" + api_version_prefix
+
+
+@pytest.fixture
+def app_environment(
+    app_environment: EnvVarsDict, monkeypatch: MonkeyPatch
+) -> EnvVarsDict:
+    envs_plugins = setenvs_from_dict(
+        monkeypatch,
+        {},
+    )
+    return app_environment | envs_plugins
 
 
 @pytest.fixture
@@ -47,9 +62,9 @@ async def slow_storage_subsystem_mock(
     return storage_subsystem_mock
 
 
-def standard_user_role_response() -> tuple[
-    str, list[tuple[UserRole, ExpectedResponse]]
-]:
+def _standard_user_role_response() -> (
+    tuple[str, list[tuple[UserRole, ExpectedResponse]]]
+):
     all_roles = standard_role_response()
     return (
         all_roles[0],
@@ -61,7 +76,7 @@ def standard_user_role_response() -> tuple[
     )
 
 
-@pytest.mark.parametrize(*standard_user_role_response())
+@pytest.mark.parametrize(*_standard_user_role_response())
 async def test_copying_large_project_and_aborting_correctly_removes_new_project(
     client: TestClient,
     logged_user: dict[str, Any],
@@ -77,7 +92,7 @@ async def test_copying_large_project_and_aborting_correctly_removes_new_project(
     catalog_subsystem_mock([user_project])
     # initiate a project copy that will last long (simulated by a long running storage)
     # POST /v0/projects
-    create_url = client.app.router["create_projects"].url_for()
+    create_url = client.app.router["create_project"].url_for()
     assert str(create_url) == f"{API_PREFIX}/projects"
     create_url = create_url.with_query(from_study=user_project["uuid"])
     resp = await client.post(f"{create_url}", json={})
@@ -113,7 +128,7 @@ async def test_copying_large_project_and_aborting_correctly_removes_new_project(
             slow_storage_subsystem_mock.delete_project.assert_called_once()
 
 
-@pytest.mark.parametrize(*standard_user_role_response())
+@pytest.mark.parametrize(*_standard_user_role_response())
 async def test_copying_large_project_and_retrieving_copy_task(
     client: TestClient,
     logged_user: dict[str, Any],
@@ -130,7 +145,7 @@ async def test_copying_large_project_and_retrieving_copy_task(
 
     # initiate a project copy that will last long (simulated by a long running storage)
     # POST /v0/projects
-    create_url = client.app.router["create_projects"].url_for()
+    create_url = client.app.router["create_project"].url_for()
     assert str(create_url) == f"{API_PREFIX}/projects"
     create_url = create_url.with_query(from_study=user_project["uuid"])
     resp = await client.post(f"{create_url}", json={})
@@ -159,7 +174,7 @@ async def test_copying_large_project_and_retrieving_copy_task(
             slow_storage_subsystem_mock.delete_project.assert_called_once()
 
 
-@pytest.mark.parametrize(*standard_user_role_response())
+@pytest.mark.parametrize(*_standard_user_role_response())
 async def test_creating_new_project_from_template_without_copying_data_creates_skeleton(
     client: TestClient,
     logged_user: dict[str, Any],
@@ -209,7 +224,7 @@ async def test_creating_new_project_from_template_without_copying_data_creates_s
             assert field not in node_data
 
 
-@pytest.mark.parametrize(*standard_user_role_response())
+@pytest.mark.parametrize(*_standard_user_role_response())
 async def test_creating_new_project_as_template_without_copying_data_creates_skeleton(
     client: TestClient,
     logged_user: dict[str, Any],
@@ -260,7 +275,7 @@ async def test_creating_new_project_as_template_without_copying_data_creates_ske
             assert field not in node_data
 
 
-@pytest.mark.parametrize(*standard_user_role_response())
+@pytest.mark.parametrize(*_standard_user_role_response())
 async def test_copying_too_large_project_returns_422(
     client: TestClient,
     logged_user: dict[str, Any],

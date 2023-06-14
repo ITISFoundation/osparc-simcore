@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from itertools import chain
-from typing import Any, Iterable, Optional, cast
+from typing import Any, Iterable, cast
 
 import packaging.version
 import sqlalchemy as sa
@@ -11,13 +11,7 @@ from models_library.users import GroupID
 from psycopg2.errors import ForeignKeyViolation
 from pydantic import ValidationError
 from simcore_postgres_database.models.groups import GroupType
-from simcore_postgres_database.models.services import services_latest
-from simcore_service_catalog.models.domain.service_specifications import (
-    ServiceSpecificationsAtDB,
-)
-from simcore_service_catalog.models.schemas.services_specifications import (
-    ServiceSpecifications,
-)
+from simcore_postgres_database.utils_services import create_select_latest_services_query
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import and_, or_
@@ -25,6 +19,8 @@ from sqlalchemy.sql.expression import tuple_
 from sqlalchemy.sql.selectable import Select
 
 from ...models.domain.group import GroupAtDB
+from ...models.domain.service_specifications import ServiceSpecificationsAtDB
+from ...models.schemas.services_specifications import ServiceSpecifications
 from ..tables import services_access_rights, services_meta_data, services_specifications
 from ._base import BaseRepository
 
@@ -32,13 +28,13 @@ logger = logging.getLogger(__name__)
 
 
 def _make_list_services_query(
-    gids: Optional[list[int]] = None,
-    execute_access: Optional[bool] = None,
-    write_access: Optional[bool] = None,
-    combine_access_with_and: Optional[bool] = True,
-    product_name: Optional[str] = None,
+    gids: list[int] | None = None,
+    execute_access: bool | None = None,
+    write_access: bool | None = None,
+    combine_access_with_and: bool | None = True,
+    product_name: str | None = None,
 ) -> Select:
-    query = sa.select([services_meta_data])
+    query = sa.select(services_meta_data)
     if gids or execute_access or write_access:
         logic_operator = and_ if combine_access_with_and else or_
         default = (
@@ -80,11 +76,11 @@ class ServicesRepository(BaseRepository):
     async def list_services(
         self,
         *,
-        gids: Optional[list[int]] = None,
-        execute_access: Optional[bool] = None,
-        write_access: Optional[bool] = None,
-        combine_access_with_and: Optional[bool] = True,
-        product_name: Optional[str] = None,
+        gids: list[int] | None = None,
+        execute_access: bool | None = None,
+        write_access: bool | None = None,
+        combine_access_with_and: bool | None = True,
+        product_name: str | None = None,
     ) -> list[ServiceMetaDataAtDB]:
         services_in_db = []
 
@@ -105,9 +101,9 @@ class ServicesRepository(BaseRepository):
         self,
         key: str,
         *,
-        major: Optional[int] = None,
-        minor: Optional[int] = None,
-        limit_count: Optional[int] = None,
+        major: int | None = None,
+        minor: int | None = None,
+        limit_count: int | None = None,
     ) -> list[ServiceMetaDataAtDB]:
         """Lists LAST n releases of a given service, sorted from latest first
 
@@ -129,7 +125,7 @@ class ServicesRepository(BaseRepository):
                 search_condition &= services_meta_data.c.version.like(f"{major}.%")
 
         query = (
-            sa.select([services_meta_data])
+            sa.select(services_meta_data)
             .where(search_condition)
             .order_by(sa.desc(services_meta_data.c.version))
         )
@@ -149,15 +145,17 @@ class ServicesRepository(BaseRepository):
         releases_sorted = sorted(releases, key=_by_version, reverse=True)
         return releases_sorted
 
-    async def get_latest_release(self, key: str) -> Optional[ServiceMetaDataAtDB]:
+    async def get_latest_release(self, key: str) -> ServiceMetaDataAtDB | None:
         """Returns last release or None if service was never released"""
+        services_latest = create_select_latest_services_query().alias("services_latest")
+
         query = (
             sa.select(services_meta_data)
             .select_from(
                 services_latest.join(
                     services_meta_data,
                     (services_meta_data.c.key == services_latest.c.key)
-                    & (services_meta_data.c.version == services_latest.c.version),
+                    & (services_meta_data.c.version == services_latest.c.latest),
                 )
             )
             .where(services_latest.c.key == key)
@@ -174,18 +172,18 @@ class ServicesRepository(BaseRepository):
         key: str,
         version: str,
         *,
-        gids: Optional[list[int]] = None,
-        execute_access: Optional[bool] = None,
-        write_access: Optional[bool] = None,
-        product_name: Optional[str] = None,
-    ) -> Optional[ServiceMetaDataAtDB]:
-        query = sa.select([services_meta_data]).where(
+        gids: list[int] | None = None,
+        execute_access: bool | None = None,
+        write_access: bool | None = None,
+        product_name: str | None = None,
+    ) -> ServiceMetaDataAtDB | None:
+        query = sa.select(services_meta_data).where(
             (services_meta_data.c.key == key)
             & (services_meta_data.c.version == version)
         )
         if gids or execute_access or write_access:
             query = (
-                sa.select([services_meta_data])
+                sa.select(services_meta_data)
                 .select_from(services_meta_data.join(services_access_rights))
                 .where(
                     and_(
@@ -267,7 +265,7 @@ class ServicesRepository(BaseRepository):
         self,
         key: str,
         version: str,
-        product_name: Optional[str] = None,
+        product_name: str | None = None,
     ) -> list[ServiceAccessRightsAtDB]:
         """
         - If product_name is not specificed, then all are considered in the query
@@ -279,7 +277,7 @@ class ServicesRepository(BaseRepository):
         if product_name:
             search_expression &= services_access_rights.c.product_name == product_name
 
-        query = sa.select([services_access_rights]).where(search_expression)
+        query = sa.select(services_access_rights).where(search_expression)
 
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(query):
@@ -289,12 +287,12 @@ class ServicesRepository(BaseRepository):
     async def list_services_access_rights(
         self,
         key_versions: Iterable[tuple[str, str]],
-        product_name: Optional[str] = None,
+        product_name: str | None = None,
     ) -> dict[tuple[str, str], list[ServiceAccessRightsAtDB]]:
         """Batch version of get_service_access_rights"""
         service_to_access_rights = defaultdict(list)
         query = (
-            sa.select([services_access_rights])
+            sa.select(services_access_rights)
             .select_from(services_access_rights)
             .where(
                 tuple_(
@@ -368,7 +366,7 @@ class ServicesRepository(BaseRepository):
         version: ServiceVersion,
         groups: tuple[GroupAtDB, ...],
         allow_use_latest_service_version: bool = False,
-    ) -> Optional[ServiceSpecifications]:
+    ) -> ServiceSpecifications | None:
         """returns the service specifications for service 'key:version' and for 'groups'
             returns None if nothing found
 
@@ -387,7 +385,7 @@ class ServicesRepository(BaseRepository):
         # we should instead use semver enabled postgres [https://pgxn.org/dist/semver/doc/semver.html]
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(
-                sa.select([services_specifications]).where(
+                sa.select(services_specifications).where(
                     (services_specifications.c.service_key == key)
                     & (
                         (services_specifications.c.service_version == version)
@@ -439,34 +437,9 @@ class ServicesRepository(BaseRepository):
             return ServiceSpecifications.parse_obj(merged_specifications)
         return None  # mypy
 
-    async def update_latest_versions_cache(self):
-        # Select query for latest
-        latest_select_subquery = sa.select(
-            services_meta_data.c.key,
-            sa.text(
-                "array_to_string(MAX(string_to_array(version, '.')::int[]), '.') AS version"
-            ),
-        ).group_by(services_meta_data.c.key)
-
-        insert_query = pg_insert(services_latest).from_select(
-            [services_latest.c.key, services_latest.c.version],
-            latest_select_subquery,
-        )
-        upsert_query = insert_query.on_conflict_do_update(
-            index_elements=[
-                services_latest.c.key,
-            ],
-            set_=dict(version=insert_query.excluded.version),
-        )
-
-        async with self.db_engine.begin() as conn:
-            result = await conn.execute(upsert_query)
-
-        assert result  # nosec
-
 
 def _is_newer(
-    old: Optional[ServiceSpecificationsAtDB],
+    old: ServiceSpecificationsAtDB | None,
     new: ServiceSpecificationsAtDB,
 ):
     return old is None or (
@@ -476,9 +449,9 @@ def _is_newer(
 
 
 def _merge_specs(
-    everyone_spec: Optional[ServiceSpecificationsAtDB],
+    everyone_spec: ServiceSpecificationsAtDB | None,
     team_specs: dict[GroupID, ServiceSpecificationsAtDB],
-    user_spec: Optional[ServiceSpecificationsAtDB],
+    user_spec: ServiceSpecificationsAtDB | None,
 ) -> dict[str, Any]:
     merged_spec = {}
     for spec in chain([everyone_spec], team_specs.values(), [user_spec]):

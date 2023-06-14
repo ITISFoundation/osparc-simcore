@@ -238,6 +238,9 @@ qx.Class.define("osparc.utils.Services", {
     },
 
     getLatestCompatible: function(services, srcKey, srcVersion) {
+      if (services === null) {
+        services = osparc.utils.Services.servicesCached;
+      }
       const srcNode = this.getFromObject(services, srcKey, srcVersion);
       let versions = this.getVersions(services, srcKey, false);
       // only allow patch versions
@@ -280,6 +283,13 @@ qx.Class.define("osparc.utils.Services", {
     RETIRED_SERVICE_TEXT: qx.locale.Manager.tr("Service retired"),
     RETIRED_DYNAMIC_INSTRUCTIONS: qx.locale.Manager.tr("Please download the Service data and upload it to an updated version"),
     RETIRED_COMPUTATIONAL_INSTRUCTIONS: qx.locale.Manager.tr("Please instantiate an updated version"),
+    DEPRECATED_AUTOUPDATABLE_INSTRUCTIONS: qx.locale.Manager.tr("Please Stop the Service and then Update it"),
+    RETIRED_AUTOUPDATABLE_INSTRUCTIONS: qx.locale.Manager.tr("Please Update the Service"),
+
+    isUpdatable: function(metadata) {
+      const latestCompatibleMetadata = this.getLatestCompatible(null, metadata["key"], metadata["version"]);
+      return latestCompatibleMetadata && metadata["version"] !== latestCompatibleMetadata["version"];
+    },
 
     isDeprecated: function(metadata) {
       if (metadata && "deprecated" in metadata && ![null, undefined].includes(metadata["deprecated"])) {

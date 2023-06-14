@@ -31,7 +31,7 @@ CONFIRMATIONS_FILENAME = "ignore-confirmations.csv"
 ISSUE = r"https://github.com/ITISFoundation/osparc-simcore/issues/"
 
 HOST_URLS_MAPS = [
-    ("localhost", r"http://127.0.0.1:9081"),
+    ("localhost", r"http://127.0.0.1:9081"), # NOSONAR
     ("master", r"https://master.osparc.io"),
     ("staging", r"https://staging.osparc.io"),
     ("production", r"https://osparc.io"),

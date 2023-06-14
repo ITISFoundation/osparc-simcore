@@ -46,9 +46,8 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
     updateService: function(studyData, nodeId, newVersion) {
       if (nodeId in studyData["workbench"]) {
         if (newVersion === undefined) {
-          const services = osparc.utils.Services.servicesCached;
           const node = studyData["workbench"][nodeId];
-          newVersion = osparc.utils.Services.getLatestCompatible(services, node["key"], node["version"]);
+          newVersion = osparc.utils.Services.getLatestCompatible(null, node["key"], node["version"]);
         }
         for (const id in studyData["workbench"]) {
           if (id === nodeId) {
@@ -64,9 +63,8 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
           continue;
         }
         const node = studyData["workbench"][nodeId];
-        const services = osparc.utils.Services.servicesCached;
-        const latestCompatibleMetadata = osparc.utils.Services.getLatestCompatible(services, node["key"], node["version"]);
-        if (latestCompatibleMetadata["version"] !== node["version"]) {
+        if (osparc.utils.Services.isUpdatable(node)) {
+          const latestCompatibleMetadata = osparc.utils.Services.getLatestCompatible(null, node["key"], node["version"]);
           this.self().updateService(studyData, nodeId, latestCompatibleMetadata["version"]);
         }
       }
@@ -184,13 +182,12 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
         const node = workbench[nodeId];
         const nodeMetadata = osparc.utils.Services.getMetaData(node["key"], node["version"]);
         const latestCompatibleMetadata = osparc.utils.Services.getLatestCompatible(this._services, node["key"], node["version"]);
-        const latestMetadata = osparc.utils.Services.getLatest(this._services, node["key"]);
         if (latestCompatibleMetadata === null) {
           osparc.component.message.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
           break;
         }
-        const autoUpdatable = node["version"] !== latestCompatibleMetadata["version"];
-        if (autoUpdatable) {
+        const isUpdatable = osparc.utils.Services.isUpdatable(node);
+        if (isUpdatable) {
           updatableServices.push(nodeId);
         }
         const currentVersionLabel = new qx.ui.basic.Label(node["version"]).set({
@@ -211,6 +208,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
           column: this.self().GRID_POS.COMPATIBLE_VERSION
         });
 
+        const latestMetadata = osparc.utils.Services.getLatest(this._services, node["key"]);
         const latestVersionLabel = new qx.ui.basic.Label(latestMetadata["version"]).set({
           font: "text-14"
         });
@@ -222,7 +220,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
         if (osparc.data.Permissions.getInstance().canDo("study.service.update") && canIWriteStudy) {
           const updateButton = new osparc.ui.form.FetchButton(null, "@MaterialIcons/update/14");
           updateButton.set({
-            enabled: autoUpdatable
+            enabled: isUpdatable
           });
           if (latestCompatibleMetadata["version"] === node["version"]) {
             updateButton.setLabel(this.tr("Up-to-date"));
@@ -230,7 +228,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
           if (latestCompatibleMetadata["version"] !== latestMetadata["version"]) {
             updateButton.setLabel(this.tr("Update manually"));
           }
-          if (autoUpdatable) {
+          if (isUpdatable) {
             updateButton.set({
               backgroundColor: "strong-main",
               label: this.tr("Update")
@@ -242,7 +240,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
             column: this.self().GRID_POS.UPDATE_BUTTON
           });
 
-          anyUpdatable |= autoUpdatable;
+          anyUpdatable |= isUpdatable;
         }
       }
 

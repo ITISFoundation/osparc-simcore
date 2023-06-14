@@ -1,4 +1,5 @@
-FROM python:3.9.12-buster
+# syntax=docker/dockerfile:1
+FROM python:3.10.10-buster
 
 RUN curl https://rclone.org/install.sh | bash && \
   rclone --version
@@ -6,12 +7,15 @@ RUN curl https://rclone.org/install.sh | bash && \
 WORKDIR /scripts
 
 COPY packages/postgres-database postgres-database
-RUN cd postgres-database && pip install .
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  cd postgres-database && pip install .
 
 COPY packages/settings-library settings-library
-RUN cd settings-library && pip install .
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  cd settings-library && pip install .
 
 COPY scripts/maintenance/migrate_project/requirements.txt /scripts/requirements.txt
-RUN pip install -r /scripts/requirements.txt
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install -r /scripts/requirements.txt
 
 COPY scripts/maintenance/migrate_project/src/*.py /scripts/

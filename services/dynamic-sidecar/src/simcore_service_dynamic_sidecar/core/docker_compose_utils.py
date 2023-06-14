@@ -7,18 +7,15 @@ run sequentially by this service
 """
 import logging
 from copy import deepcopy
-from typing import Optional
 
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import ProgressType
 from servicelib.async_utils import run_sequentially_in_context
+from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from settings_library.basic_types import LogLevel
-from simcore_service_dynamic_sidecar.core.rabbitmq import (
-    post_progress_message,
-    post_sidecar_log_message,
-)
 
 from .docker_utils import get_docker_service_images, pull_images
+from .rabbitmq import post_progress_message, post_sidecar_log_message
 from .settings import ApplicationSettings
 from .utils import CommandResult, async_command, write_to_tmp_file
 
@@ -32,7 +29,7 @@ def _docker_compose_options_from_settings(settings: ApplicationSettings) -> str:
     return " ".join(options)
 
 
-def _increase_timeout(docker_command_timeout: Optional[int]) -> Optional[int]:
+def _increase_timeout(docker_command_timeout: int | None) -> int | None:
     if docker_command_timeout is None:
         return None
     # NOTE: ensuring process has enough time to end
@@ -44,7 +41,7 @@ async def _write_file_and_spawn_process(
     yaml_content: str,
     *,
     command: str,
-    process_termination_timeout: Optional[int],
+    process_termination_timeout: int | None,
 ) -> CommandResult:
     """The command which accepts {file_path} as an argument for string formatting
 
@@ -110,8 +107,8 @@ async def docker_compose_pull(app: FastAPI, compose_spec_yaml: str) -> None:
             float(current / (total or 1)),
         )
 
-    async def _log_cb(msg: str) -> None:
-        await post_sidecar_log_message(app, msg)
+    async def _log_cb(msg: LogMessageStr, log_level: LogLevelInt) -> None:
+        await post_sidecar_log_message(app, msg, log_level=log_level)
 
     await pull_images(list_of_images, registry_settings, _progress_cb, _log_cb)
 

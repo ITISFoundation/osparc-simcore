@@ -1,9 +1,20 @@
 import asyncio
 import collections
 import logging
-from typing import Any, Awaitable, Callable, Final, Iterable, Optional, Union, get_args
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Coroutine,
+    Final,
+    Iterable,
+    NoReturn,
+    Optional,
+    get_args,
+)
 from uuid import uuid4
 
+import dask_gateway
 import distributed
 from aiopg.sa.engine import Engine
 from dask_task_models_library.container_tasks.io import (
@@ -17,10 +28,11 @@ from fastapi import FastAPI
 from models_library.clusters import ClusterID
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID
+from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, ValidationError
 from servicelib.json_serialization import json_dumps
+from servicelib.logging_utils import log_catch, log_context
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_common.exceptions import (
     S3InvalidPathError,
@@ -108,7 +120,7 @@ async def create_node_ports(
         return await node_ports_v2.ports(
             user_id=user_id,
             project_id=f"{project_id}",
-            node_uuid=f"{node_id}",
+            node_uuid=NodeIDStr(f"{node_id}"),
             db_manager=db_manager,
         )
     except ValidationError as err:
@@ -119,7 +131,7 @@ async def parse_output_data(
     db_engine: Engine,
     job_id: str,
     data: TaskOutputData,
-    ports: Optional[node_ports_v2.Nodeports] = None,
+    ports: node_ports_v2.Nodeports | None = None,
 ) -> None:
     """
 
@@ -152,7 +164,7 @@ async def parse_output_data(
 
     ports_errors = []
     for port_key, port_value in data.items():
-        value_to_transfer: Optional[links.ItemValue] = None
+        value_to_transfer: links.ItemValue | None = None
         if isinstance(port_value, FileUrl):
             value_to_transfer = port_value.url
         else:
@@ -173,7 +185,7 @@ async def compute_input_data(
     project_id: ProjectID,
     node_id: NodeID,
     file_link_type: FileLinkType,
-    ports: Optional[node_ports_v2.Nodeports] = None,
+    ports: node_ports_v2.Nodeports | None = None,
 ) -> TaskInputData:
     """Retrieves values registered to the inputs of project_id/node_id
 
@@ -228,7 +240,7 @@ async def compute_output_data_schema(
     project_id: ProjectID,
     node_id: NodeID,
     file_link_type: FileLinkType,
-    ports: Optional[node_ports_v2.Nodeports] = None,
+    ports: node_ports_v2.Nodeports | None = None,
 ) -> TaskOutputDataSchema:
     """
 
@@ -246,7 +258,7 @@ async def compute_output_data_schema(
             node_id=node_id,
         )
 
-    output_data_schema = {}
+    output_data_schema: dict[str, Any] = {}
     for port in (await ports.outputs).values():
         output_data_schema[port.key] = {"required": port.default_value is None}
 
@@ -292,7 +304,8 @@ async def compute_service_log_file_upload_link(
         link_type=file_link_type,
         file_size=ByteSize(0),  # will create a single presigned link
     )
-    return value_links.urls[0]
+    url: AnyUrl = value_links.urls[0]
+    return url
 
 
 async def get_service_log_file_download_link(
@@ -300,14 +313,14 @@ async def get_service_log_file_download_link(
     project_id: ProjectID,
     node_id: NodeID,
     file_link_type: FileLinkType,
-) -> Optional[AnyUrl]:
+) -> AnyUrl | None:
     """Returns None if log file is not available (e.g. when tasks is not done)
 
     : raises StorageServerIssue
     : raises NodeportsException
     """
     try:
-        value_link = await port_utils.get_download_link_from_storage_overload(
+        value_link: AnyUrl = await port_utils.get_download_link_from_storage_overload(
             user_id=user_id,
             project_id=f"{project_id}",
             node_id=f"{node_id}",
@@ -326,7 +339,7 @@ async def clean_task_output_and_log_files_if_invalid(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
-    ports: Optional[node_ports_v2.Nodeports] = None,
+    ports: node_ports_v2.Nodeports | None = None,
 ) -> None:
     """
 
@@ -363,10 +376,10 @@ async def clean_task_output_and_log_files_if_invalid(
         )
 
 
-async def dask_sub_consumer(
+async def _dask_sub_consumer(
     dask_sub: distributed.Sub,
     handler: Callable[[str], Awaitable[None]],
-):
+) -> None:
     async for dask_event in dask_sub:
         logger.debug(
             "received dask event '%s' of topic %s",
@@ -374,33 +387,27 @@ async def dask_sub_consumer(
             dask_sub.name,
         )
         await handler(dask_event)
-        await asyncio.sleep(0.010)
+
+
+_REST_TIMEOUT_S: Final[int] = 1
 
 
 async def dask_sub_consumer_task(
     dask_sub: distributed.Sub,
     handler: Callable[[str], Awaitable[None]],
-):
+) -> NoReturn:
     while True:
-        try:
-            logger.info("starting dask consumer task for topic '%s'", dask_sub.name)
-            await dask_sub_consumer(dask_sub, handler)
-        except asyncio.CancelledError:
-            logger.info("stopped dask consumer task for topic '%s'", dask_sub.name)
-            raise
-        except Exception:  # pylint: disable=broad-except
-            _REST_TIMEOUT_S: Final[int] = 1
-            logger.exception(
-                "unknown exception in dask consumer task for topic '%s', restarting task in %s sec...",
-                dask_sub.name,
-                _REST_TIMEOUT_S,
-            )
-            await asyncio.sleep(_REST_TIMEOUT_S)
+        with log_catch(logger, reraise=False), log_context(
+            logger, level=logging.DEBUG, msg=f"dask sub task for topic {dask_sub.name}"
+        ):
+            await _dask_sub_consumer(dask_sub, handler)
+        # we sleep a bit before restarting
+        await asyncio.sleep(_REST_TIMEOUT_S)
 
 
 def from_node_reqs_to_dask_resources(
     node_reqs: NodeRequirements,
-) -> dict[str, Union[int, float]]:
+) -> dict[str, int | float]:
     """Dask resources are set such as {"CPU": X.X, "GPU": Y.Y, "RAM": INT}"""
     dask_resources = node_reqs.dict(
         exclude_unset=True,
@@ -447,6 +454,14 @@ def check_scheduler_status(client: distributed.Client):
         raise ComputationalBackendNotConnectedError()
 
 
+_LARGE_NUMBER_OF_WORKERS: Final[int] = 10000
+
+
+async def check_maximize_workers(cluster: dask_gateway.GatewayCluster | None) -> None:
+    if cluster:
+        await cluster.scale(_LARGE_NUMBER_OF_WORKERS)
+
+
 def check_if_cluster_is_able_to_run_pipeline(
     project_id: ProjectID,
     node_id: NodeID,
@@ -479,7 +494,7 @@ def check_if_cluster_is_able_to_run_pipeline(
     ) -> list[str]:
         return [r for r in task_resources if r not in cluster_resources]
 
-    cluster_resources_counter = collections.Counter()
+    cluster_resources_counter: collections.Counter = collections.Counter()
     can_a_worker_run_task = False
     for worker in workers:
         worker_resources = workers[worker].get("resources", {})
@@ -525,3 +540,13 @@ def check_if_cluster_is_able_to_run_pipeline(
         f"cluster has '{all_available_resources_in_cluster}', cluster has no worker with the"
         " necessary computational resources for running the service! TIP: contact oSparc support",
     )
+
+
+async def wrap_client_async_routine(
+    client_coroutine: Coroutine[Any, Any, Any] | Any | None
+) -> Any:
+    """Dask async behavior does not go well with Pylance as it returns
+    a union of types. this wrapper makes both mypy and pylance happy"""
+    assert client_coroutine  # nosec
+    ret = await client_coroutine
+    return ret

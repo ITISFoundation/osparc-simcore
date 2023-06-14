@@ -1,16 +1,16 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
-from typing import Dict
 from unittest.mock import Mock
 
 import pytest
 from servicelib.aiohttp.application_setup import APP_SETUP_COMPLETED_KEY
-from simcore_service_webserver import diagnostics_handlers
 from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.diagnostics import setup_diagnostics
-from simcore_service_webserver.rest import api_version_prefix, setup_rest
+from simcore_service_webserver.diagnostics import _handlers
+from simcore_service_webserver.diagnostics.plugin import setup_diagnostics
+from simcore_service_webserver.rest.plugin import api_version_prefix, setup_rest
 
 
 class MockApp(dict):
@@ -46,7 +46,7 @@ def app_mock(openapi_specs):
 
 
 def test_unique_application_keys(
-    app_mock, openapi_specs, mock_env_devel_environment: Dict[str, str]
+    app_mock, openapi_specs, mock_env_devel_environment: dict[str, str]
 ):
     setup_settings(app_mock)
     setup_rest(app_mock)
@@ -61,9 +61,8 @@ def test_unique_application_keys(
     app_mock.assert_none_overriden()
 
 
-@pytest.mark.parametrize("route", diagnostics_handlers.routes, ids=lambda r: r.path)
+@pytest.mark.parametrize("route", _handlers.routes, ids=lambda r: r.path)
 def test_route_against_openapi_specs(route, openapi_specs):
-
     assert route.path.startswith(f"/{api_version_prefix}")
     path = route.path.replace(f"/{api_version_prefix}", "")
 

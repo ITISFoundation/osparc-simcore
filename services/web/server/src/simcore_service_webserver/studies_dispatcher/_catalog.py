@@ -1,28 +1,32 @@
+import logging
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import AsyncIterator, Optional
+from typing import AsyncIterator
 
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
+from models_library.groups import EVERYONE_GROUP_ID
 from models_library.services import ServiceKey, ServiceVersion
 from pydantic import HttpUrl, PositiveInt, ValidationError, parse_obj_as
+from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.models.services import (
     services_access_rights,
-    services_latest,
     services_meta_data,
 )
 from simcore_postgres_database.models.services_consume_filetypes import (
     services_consume_filetypes,
 )
+from simcore_postgres_database.utils_services import create_select_latest_services_query
 
-from ..db import get_database_engine
-from ._exceptions import StudyDispatcherError
+from ..db.plugin import get_database_engine
+from ._errors import ServiceNotFound
 from .settings import StudiesDispatcherSettings, get_plugin_settings
 
-_EVERYONE_GROUP_ID = 1
 LARGEST_PAGE_SIZE = 1000
+
+_logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -50,9 +54,10 @@ async def _get_service_filetypes(conn: SAConnection) -> dict[ServiceKey, list[st
     return {row.service_key: row.list_of_file_types for row in rows}
 
 
-async def iter_latest_osparc_services(
+async def iter_latest_product_services(
     app: web.Application,
     *,
+    product_name: str,
     page_number: PositiveInt = 1,  # 1-based
     page_size: PositiveInt = LARGEST_PAGE_SIZE,
 ) -> AsyncIterator[ServiceMetaData]:
@@ -62,21 +67,23 @@ async def iter_latest_osparc_services(
     engine: Engine = get_database_engine(app)
     settings: StudiesDispatcherSettings = get_plugin_settings(app)
 
+    # Select query for latest version of the service
+    latest_services = create_select_latest_services_query().alias("latest_services")
+
     query = (
         sa.select(
-            [
-                services_meta_data.c.key,
-                services_meta_data.c.version,
-                services_meta_data.c.name,
-                services_meta_data.c.description,
-                services_meta_data.c.thumbnail,
-            ]
+            services_meta_data.c.key,
+            services_meta_data.c.version,
+            services_meta_data.c.name,
+            services_meta_data.c.description,
+            services_meta_data.c.thumbnail,
+            services_meta_data.c.deprecated,
         )
         .select_from(
-            services_latest.join(
+            latest_services.join(
                 services_meta_data,
-                (services_meta_data.c.key == services_latest.c.key)
-                & (services_meta_data.c.version == services_latest.c.version),
+                (services_meta_data.c.key == latest_services.c.key)
+                & (services_meta_data.c.version == latest_services.c.latest),
             ).join(
                 services_access_rights,
                 (services_meta_data.c.key == services_access_rights.c.key)
@@ -85,12 +92,13 @@ async def iter_latest_osparc_services(
         )
         .where(
             (
-                services_latest.c.key.like("simcore/services/dynamic/%%")
-                | (services_latest.c.key.like("simcore/services/comp/%%"))
+                services_meta_data.c.key.like("simcore/services/dynamic/%%")
+                | (services_meta_data.c.key.like("simcore/services/comp/%%"))
             )
-            & (services_access_rights.c.gid == _EVERYONE_GROUP_ID)
+            & (services_meta_data.c.deprecated.is_(None))
+            & (services_access_rights.c.gid == EVERYONE_GROUP_ID)
             & (services_access_rights.c.execute_access == True)
-            & (services_access_rights.c.product_name == "osparc")
+            & (services_access_rights.c.product_name == product_name)
         )
     )
 
@@ -112,29 +120,28 @@ async def iter_latest_osparc_services(
 
 
 @dataclass
-class ServiceValidated:
+class ValidService:
     key: str
     version: str
     title: str
     is_public: bool
-    thumbnail: Optional[HttpUrl]  # nullable
+    thumbnail: HttpUrl | None  # nullable
 
 
+@log_decorator(_logger, level=logging.DEBUG)
 async def validate_requested_service(
     app: web.Application,
     *,
     service_key: ServiceKey,
     service_version: ServiceVersion,
-) -> ServiceValidated:
+) -> ValidService:
     engine: Engine = get_database_engine(app)
 
     async with engine.acquire() as conn:
         query = sa.select(
-            [
-                services_meta_data.c.name,
-                services_meta_data.c.key,
-                services_meta_data.c.thumbnail,
-            ]
+            services_meta_data.c.name,
+            services_meta_data.c.key,
+            services_meta_data.c.thumbnail,
         ).where(
             (services_meta_data.c.key == service_key)
             & (services_meta_data.c.version == service_version)
@@ -144,8 +151,8 @@ async def validate_requested_service(
         row = await result.fetchone()
 
         if row is None:
-            raise StudyDispatcherError(
-                f"Service {service_key}:{service_version} not found"
+            raise ServiceNotFound(
+                service_key=service_key, service_version=service_version
             )
 
         assert row.key == service_key  # nosec
@@ -166,7 +173,7 @@ async def validate_requested_service(
             with suppress(ValidationError):
                 thumbnail_or_none = parse_obj_as(HttpUrl, row.thumbnail)
 
-        return ServiceValidated(
+        return ValidService(
             key=service_key,
             version=service_version,
             is_public=bool(is_guest_allowed),

@@ -40,13 +40,14 @@ class ServicesClient:
     client: httpx.AsyncClient
 
     @classmethod
-    def create(cls, app: FastAPI, **kwargs):
+    def create(cls, app: FastAPI, **kwargs) -> "ServicesClient":
         app.state.dynamic_services_client = cls(**kwargs)
         return cls.instance(app)
 
     @classmethod
-    def instance(cls, app: FastAPI):
-        return app.state.dynamic_services_client
+    def instance(cls, app: FastAPI) -> "ServicesClient":
+        client: ServicesClient = app.state.dynamic_services_client
+        return client
 
     @handle_errors("DynamicService", logger)
     @handle_retry(logger)

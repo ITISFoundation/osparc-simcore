@@ -1,13 +1,13 @@
 import logging
-from typing import Optional
 
 from fastapi import FastAPI, HTTPException, status
 from fastapi.exceptions import RequestValidationError
+from models_library.basic_types import BootModeEnum
 from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
 )
-from servicelib.fastapi.tracing import setup_tracing
+from servicelib.logging_utils import config_all_loggers
 
 from ..api.entrypoints import api_router
 from ..api.errors.http_error import (
@@ -25,11 +25,11 @@ from ..modules import (
     dynamic_services,
     dynamic_sidecar,
     node_rights,
+    oenvs_substitutions,
     rabbitmq,
     remote_debug,
     storage,
 )
-from ..utils.logging_utils import config_all_loggers
 from .errors import (
     ClusterAccessForbiddenError,
     ClusterNotFoundError,
@@ -37,9 +37,9 @@ from .errors import (
     ProjectNotFoundError,
 )
 from .events import on_shutdown, on_startup
-from .settings import AppSettings, BootModeEnum
+from .settings import AppSettings
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def _set_exception_handlers(app: FastAPI):
@@ -86,28 +86,29 @@ def _set_exception_handlers(app: FastAPI):
     )
 
 
-LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
-NOISY_LOGGERS = (
+_LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
+_NOISY_LOGGERS = (
     "aio_pika",
     "aiormq",
 )
 
 
-def create_base_app(settings: Optional[AppSettings] = None) -> FastAPI:
+def create_base_app(settings: AppSettings | None = None) -> FastAPI:
     if settings is None:
         settings = AppSettings.create_from_envs()
     assert settings  # nosec
 
     logging.basicConfig(level=settings.LOG_LEVEL.value)
     logging.root.setLevel(settings.LOG_LEVEL.value)
-    logger.debug(settings.json(indent=2))
+    config_all_loggers(settings.DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED)
+    _logger.debug(settings.json(indent=2))
 
     # keep mostly quiet noisy loggers
     quiet_level: int = max(
-        min(logging.root.level + LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING
+        min(logging.root.level + _LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING
     )
 
-    for name in NOISY_LOGGERS:
+    for name in _NOISY_LOGGERS:
         logging.getLogger(name).setLevel(quiet_level)
 
     app = FastAPI(
@@ -125,11 +126,13 @@ def create_base_app(settings: Optional[AppSettings] = None) -> FastAPI:
     return app
 
 
-def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
+def init_app(settings: AppSettings | None = None) -> FastAPI:
     app = create_base_app(settings)
     if settings is None:
         settings = app.state.settings
     assert settings  # nosec
+
+    oenvs_substitutions.setup(app)
 
     if settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
         remote_debug.setup(app)
@@ -173,14 +176,9 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
 
     node_rights.setup(app)
 
-    if settings.DIRECTOR_V2_TRACING:
-        setup_tracing(app, settings.DIRECTOR_V2_TRACING)
-
     # setup app --
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
     _set_exception_handlers(app)
-
-    config_all_loggers()
 
     return app

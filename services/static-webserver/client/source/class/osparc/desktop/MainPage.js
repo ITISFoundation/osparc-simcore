@@ -97,7 +97,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         if (!isReadOnly && preferencesSettings.getConfirmBackToDashboard()) {
           const studyName = this.__studyEditor.getStudy().getName();
           const win = new osparc.ui.window.Confirmation();
-          if (osparc.product.Utils.isProduct("s4llite")) {
+          if (osparc.product.Utils.isProduct("s4l") || osparc.product.Utils.isProduct("s4llite")) {
             let msg = this.tr("Do you want to close ") + "<b>" + studyName + "</b>?";
             msg += "<br><br>";
             msg += this.tr("Make sure you saved your changes to:");
@@ -242,7 +242,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         },
         data: data["studyData"]
       };
-      const fetchPromise = osparc.data.Resources.fetch("studies", "postToTemplate", params);
+      const fetchPromise = osparc.data.Resources.fetch("studies", "postToTemplate", params, null, {"pollTask": true});
       const pollTasks = osparc.data.PollTasks.getInstance();
       const interval = 1000;
       pollTasks.createPollingTask(fetchPromise, interval)

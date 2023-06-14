@@ -5,9 +5,9 @@
 import pytest
 from models_library.projects import Project
 from models_library.projects_nodes import InputsDict, InputTypes, SimCoreFileLink
-from pydantic import create_model
+from pydantic import create_model, parse_obj_as
 from simcore_service_api_server.models.schemas.files import File
-from simcore_service_api_server.models.schemas.jobs import ArgumentType, Job, JobInputs
+from simcore_service_api_server.models.schemas.jobs import ArgumentTypes, Job, JobInputs
 from simcore_service_api_server.models.schemas.solvers import Solver
 from simcore_service_api_server.utils.solver_job_models_converters import (
     create_job_from_project,
@@ -15,7 +15,6 @@ from simcore_service_api_server.utils.solver_job_models_converters import (
     create_jobstatus_from_task,
     create_new_project_for_job,
     create_node_inputs_from_job_inputs,
-    get_types,
 )
 
 
@@ -68,6 +67,7 @@ def test_job_to_node_inputs_conversion():
             "n": 55,
             "title": "Temperature",
             "enabled": True,
+            "some_list": [1, 2, "foo"],
             "input_file": File(
                 filename="input.txt",
                 id="0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
@@ -76,13 +76,14 @@ def test_job_to_node_inputs_conversion():
         }
     )
     for name, value in job_inputs.values.items():
-        assert isinstance(value, get_types(ArgumentType)), f"Invalid type in {name}"
+        assert parse_obj_as(ArgumentTypes, value) == value
 
     node_inputs: InputsDict = {
         "x": 4.33,
         "n": 55,
         "title": "Temperature",
         "enabled": True,
+        "some_list": [1, 2, "foo"],
         "input_file": SimCoreFileLink(
             store=0,
             path="api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
@@ -92,8 +93,7 @@ def test_job_to_node_inputs_conversion():
     }
 
     for name, value in node_inputs.items():
-        # TODO: py3.8 use typings.get_args
-        assert isinstance(value, get_types(InputTypes)), f"Invalid type in {name}"
+        assert parse_obj_as(InputTypes, value) == value
 
     # test transformations in both directions
     got_node_inputs = create_node_inputs_from_job_inputs(inputs=job_inputs)
@@ -187,7 +187,7 @@ def test_create_job_from_project():
             "name": "simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/2.0.2/jobs/f925e30f-19de-42dc-acab-3ce93ea0a0a7",
             "created_at": "2021-03-26T10:43:27.867Z",
             "runner_name": "solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.2",
-            "inputs_checksum": "8f57551eb8c0798a7986b63face0eef8fed8da79dd66f871a73c27e64cd01c5f",
+            "inputs_checksum": "24700556239a25d0da46ccb7d863c10ec8c074d46c8c521742d52ba68a2c69ae",
             "url": None,
             "runner_url": None,
             "outputs_url": None,
@@ -212,7 +212,7 @@ def test_create_job_from_project():
 @pytest.mark.skip(reason="TODO: next PR")
 def test_create_jobstatus_from_task():
     from simcore_service_api_server.models.schemas.jobs import JobStatus
-    from simcore_service_api_server.modules.director_v2 import ComputationTaskGet
+    from simcore_service_api_server.plugins.director_v2 import ComputationTaskGet
 
     task = ComputationTaskGet.parse_obj({})  # TODO:
     job_status: JobStatus = create_jobstatus_from_task(task)

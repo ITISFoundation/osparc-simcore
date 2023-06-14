@@ -7,6 +7,5 @@
 
 
 fastapi
-fastapi_contrib[jaegertracing]
 httpx
 uvicorn

@@ -2,7 +2,7 @@ name: 🚀 Release to production (developers-only)
 description: Creates an issue to plan and log the release from staging to production
 title: "🚀 Release v<M.m.0>"
 labels: ["t:maintenance", "release"]
-assignees: ["pcrespov"]
+assignees: ["matusdrobuliak66"]
 body:
   - type: input
     id: version
@@ -17,7 +17,7 @@ body:
     attributes:
       label: Commit SHA
       description: |
-        Selets the commit from which the release takes placeholder. Check [commits](https://github.com/ITISFoundation/osparc-simcore/commits/master)
+        Selects the commit from which the release takes placeholder. Check [commits](https://github.com/ITISFoundation/osparc-simcore/commits/master)
         IMPORTANT: make sure t (i.e. tests passed and images were built and pushed)
       placeholder: 7d9dcc313f9ced0bd1e6508363148841683b6d7c
     validations:
@@ -27,7 +27,7 @@ body:
     attributes:
       label: "Previous pre-release"
       description: |
-        Link to pre-release to staging tha preceeds this release
+        Link to pre-release to staging that preceeds this release
       value: https://github.com/ITISFoundation/osparc-simcore/releases/tag/staging_<sprint_name><version>
     validations:
       required: true
@@ -58,7 +58,7 @@ body:
       description: |
         Changes introduced by this release.
         List links to the PRs associated to every commit in the release. This will automatically create references between PRs and this release that will be very valuable for traceability.
-        TIP: use the autogenerate changelog feature during the draft release.
+        TIP: use the autogenerate changelog feature during the draft release. (TIP: use regex replace for better visualization ``\*.+ by (@\w+) in (https:.*)`` -> ``* $2 by $1``)
     validations:
       required: false
   - type: textarea
@@ -70,7 +70,7 @@ body:
         Log below completed steps and issues
       value: |
         - [ ] Add changes (if any) and release tags in https://github.com/ITISFoundation/osparc-ops-environments/tags
-        - [ ] Add changes (if any) and release tags in osparc ops configurations
+        - [ ] Add changes (if any) and release tags in **osparc-ops-deployment-configuration** (osparc.io & osparc.speag.com & tip.itis.swiss)
         - [ ] ...
     validations:
       required: false
@@ -123,7 +123,7 @@ body:
             - [ ] aws
             - [ ] dalco
             - [ ] tip
-        - status page
+        - status page (https://manage.statuspage.io/)
             - [ ] osparc
             - [ ] s4l
         - mattermost channels
@@ -134,12 +134,19 @@ body:
       label: Releasing 🚀
       value: |
         - [ ] Maintenance page up.
+        ```cmd
+        cd /deployment/production/osparc-ops-environments
+        make up-maintenance
+        make down-maintenance
+        ```
+        - [ ] Check hanging sidecars. Helper command to run in director-v2 CLI `simcore-service-director-v2 close-and-save-service <uuid>`
         - [ ] Release by publishing [draft](https://github.com/ITISFoundation/osparc-simcore/releases)
         - [ ] Check release CI
         - [ ] Check deployed
           - [ ] aws deploy
           - [ ] dalco deploy
           - [ ] tip deploy
+        - [ ] Check testing endpoint ex. `https://testing.osparc.speag.com/`
         - [ ] Delete announcement
         - [ ] Check e2e runs
         - [ ] Announce

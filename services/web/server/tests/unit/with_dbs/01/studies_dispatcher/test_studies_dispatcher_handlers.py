@@ -1,35 +1,39 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import re
 import urllib.parse
-from typing import AsyncIterator
+from typing import Any, AsyncIterator
 
 import pytest
+import simcore_service_webserver.studies_dispatcher._redirects_handlers
 import sqlalchemy as sa
 from aiohttp import ClientResponse, ClientSession, web
 from aiohttp.test_utils import TestClient, TestServer
 from aioresponses import aioresponses
 from models_library.projects_state import ProjectLocked, ProjectStatus
-from pydantic import parse_obj_as
-from pytest import FixtureRequest, MonkeyPatch
+from pydantic import BaseModel, ByteSize, parse_obj_as
+from pytest import FixtureRequest
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserRole
+from pytest_simcore.pydantic_models import iter_model_examples_in_module
+from servicelib.json_serialization import json_dumps
 from settings_library.redis import RedisSettings
-from simcore_service_webserver import catalog
 from simcore_service_webserver.studies_dispatcher._core import ViewerInfo
-from simcore_service_webserver.studies_dispatcher.handlers_rest import ServiceGet
+from simcore_service_webserver.studies_dispatcher._rest_handlers import ServiceGet
 from sqlalchemy.sql import text
 from yarl import URL
 
 #
-# FIXTURES OVERRIDES -----------------------------------------------------------------------------------------------
+# FIXTURES OVERRIDES
 #
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def postgres_db(postgres_db: sa.engine.Engine) -> sa.engine.Engine:
     #
     # Extends postgres_db fixture (called with web_server) to inject tables and start redis
@@ -51,12 +55,6 @@ def postgres_db(postgres_db: sa.engine.Engine) -> sa.engine.Engine:
         "('simcore/services/dynamic/jupyter-octave-python-math',	'1.6.9',	'JupyterLab Math',	'input_1',	'PY',	0, '0'),"
         "('simcore/services/dynamic/jupyter-octave-python-math',	'1.6.9',	'JupyterLab Math',	'input_1',	'IPYNB',0, '0');"
     )
-    stmt_create_services_latest = text(
-        'INSERT INTO "services_latest" ("key", "version") VALUES'
-        "('simcore/services/dynamic/raw-graphs',	'2.11.1' ),"
-        "('simcore/services/dynamic/bio-formats-web',	'1.0.1'),"
-        "('simcore/services/dynamic/jupyter-octave-python-math',	'1.6.9');"
-    )
 
     # NOTE: users default osparc project and everyone group (which should be by default already in tables)
     stmt_create_services_access_rights = text(
@@ -66,7 +64,6 @@ def postgres_db(postgres_db: sa.engine.Engine) -> sa.engine.Engine:
     )
     with postgres_db.connect() as conn:
         conn.execute(stmt_create_services)
-        conn.execute(stmt_create_services_latest)
         conn.execute(stmt_create_services_consume_filetypes)
         conn.execute(stmt_create_services_access_rights)
 
@@ -149,7 +146,7 @@ FAKE_VIEWS_LIST = [
 ]
 
 
-# REST-API -----------------------------------------------------------------------------------------------
+# REST-API
 #  Samples taken from trials on http://127.0.0.1:9081/dev/doc#/viewer/get_viewer_for_file
 #
 
@@ -162,7 +159,6 @@ def _get_base_url(client: TestClient) -> str:
 
 
 async def test_api_get_viewer_for_file(client: TestClient):
-
     resp = await client.get("/v0/viewers/default?file_type=JPEG")
     data, _ = await assert_status(resp, web.HTTPOk)
 
@@ -184,7 +180,6 @@ async def test_api_get_viewer_for_unsupported_type(client: TestClient):
 
 
 async def test_api_list_supported_filetypes(client: TestClient):
-
     resp = await client.get("/v0/viewers/default")
     data, _ = await assert_status(resp, web.HTTPOk)
 
@@ -233,8 +228,21 @@ async def test_api_list_supported_filetypes(client: TestClient):
     ]
 
 
-@pytest.mark.testit
-async def test_api_get_services(client: TestClient):
+@pytest.mark.parametrize(
+    "model_cls, example_name, example_data",
+    iter_model_examples_in_module(
+        simcore_service_webserver.studies_dispatcher._redirects_handlers
+    ),
+)
+def test_model_examples(
+    model_cls: type[BaseModel], example_name: int, example_data: Any
+):
+    print(example_name, ":", json_dumps(example_data))
+    model = model_cls.parse_obj(example_data)
+    assert model
+
+
+async def test_api_list_services(client: TestClient):
     assert client.app
 
     url = client.app.router["list_services"].url_for()
@@ -245,6 +253,15 @@ async def test_api_get_services(client: TestClient):
     services = parse_obj_as(list[ServiceGet], data)
     assert services
 
+    # latest versions of services with everyone + ospar-product (see stmt_create_services_access_rights)
+    assert services[0].key == "simcore/services/dynamic/raw-graphs"
+    assert services[0].file_extensions == ["CSV", "JSON", "TSV", "XLSX"]
+    assert "2.11.1" in services[0].view_url.query
+
+    assert services[1].key == "simcore/services/dynamic/jupyter-octave-python-math"
+    assert services[1].file_extensions == ["IPYNB", "PY"]
+    assert "1.6.9" in services[1].view_url.query
+
     assert error is None
 
 
@@ -252,18 +269,23 @@ async def test_api_get_services(client: TestClient):
 
 
 @pytest.fixture
-async def catalog_subsystem_mock(monkeypatch: MonkeyPatch) -> None:
-
+def catalog_subsystem_mock(mocker: MockerFixture) -> None:
     services_in_project = [
         {"key": "simcore/services/frontend/file-picker", "version": "1.0.0"}
-    ] + [{"key": s.key, "version": s.version} for s in FAKE_VIEWS_LIST]
+    ]
+    services_in_project += [
+        {"key": s.key, "version": s.version} for s in FAKE_VIEWS_LIST
+    ]
 
-    async def mocked_get_services_for_user(*args, **kwargs):
+    mock = mocker.patch(
+        "simcore_service_webserver.projects._crud_read_utils.get_services_for_user_in_product",
+        autospec=True,
+    )
+
+    async def _mocked_get_services_for_user(*args, **kwargs):
         return services_in_project
 
-    monkeypatch.setattr(
-        catalog, "get_services_for_user_in_product", mocked_get_services_for_user
-    )
+    mock.side_effect = _mocked_get_services_for_user
 
 
 @pytest.fixture
@@ -314,18 +336,18 @@ async def assert_redirected_to_study(
     return redirected_project_id
 
 
-@pytest.fixture(params=["service_and_file", "service_only"])
+@pytest.fixture(params=["service_and_file", "service_only", "file_only"])
 def redirect_url(request: FixtureRequest, client: TestClient) -> URL:
     assert client.app
-    query = None
+    query: dict[str, Any] = {}
     if request.param == "service_and_file":
         query = dict(
             file_name="users.csv",
-            file_size=187,
+            file_size=parse_obj_as(ByteSize, "100KB"),
             file_type="CSV",
             viewer_key="simcore/services/dynamic/raw-graphs",
             viewer_version="2.11.1",
-            download_link=urllib.parse.quote(
+            download_link=URL(
                 "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/8987c95d0ca0090e14f3a5b52db724fa24114cf5/services/storage/tests/data/users.csv"
             ),
         )
@@ -334,9 +356,21 @@ def redirect_url(request: FixtureRequest, client: TestClient) -> URL:
             viewer_key="simcore/services/dynamic/raw-graphs",
             viewer_version="2.11.1",
         )
+    elif request.param == "file_only":
+        query = dict(
+            file_name="users.csv",
+            file_size=parse_obj_as(ByteSize, "1MiB"),
+            file_type="CSV",
+            download_link=URL(
+                "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/8987c95d0ca0090e14f3a5b52db724fa24114cf5/services/storage/tests/data/users.csv"
+            ),
+        )
 
-    assert query
-    url = client.app.router["get_redirection_to_viewer"].url_for().with_query(query)
+    url = (
+        client.app.router["get_redirection_to_viewer"]
+        .url_for()
+        .with_query({k: f"{v}" for k, v in query.items()})
+    )
     return url
 
 
@@ -350,13 +384,13 @@ async def test_dispatch_study_anonymously(
 ):
     assert client.app
     mock_client_director_v2_func = mocker.patch(
-        "simcore_service_webserver.director_v2_api.create_or_update_pipeline",
+        "simcore_service_webserver.director_v2.api.create_or_update_pipeline",
         return_value=None,
     )
 
     response = await client.get(f"{redirect_url}")
 
-    expected_prj_id = await assert_redirected_to_study(response, client.session)
+    expected_project_id = await assert_redirected_to_study(response, client.session)
 
     # has auto logged in as guest?
     me_url = client.app.router["get_my_profile"].url_for()
@@ -380,7 +414,7 @@ async def test_dispatch_study_anonymously(
     assert len(projects) == 1
     guest_project = projects[0]
 
-    assert expected_prj_id == guest_project["uuid"]
+    assert expected_project_id == guest_project["uuid"]
     assert guest_project["prjOwner"] == data["login"]
 
     assert mock_client_director_v2_func.called
@@ -439,13 +473,16 @@ async def test_viewer_redirect_with_client_errors(client: TestClient):
         .url_for()
         .with_query(
             file_name="users.csv",
-            file_size=-1,  # <<<<<---------
+            file_size=-1,  # <---------
             file_type="CSV",
             viewer_key="simcore/services/dynamic/raw-graphs",
             viewer_version="2.11.1",
-            download_link=urllib.parse.quote("httnot a link"),  # <<<<<---------
+            download_link="httnot a link",  # <---------
         )
     )
+
+    # NOTE: that it validates against: ServiceAndFileParams | FileQueryParams | ServiceQueryParams
+    # and the latter are strict i.e. Extra.forbid
 
     resp = await client.get(f"{redirect_url}")
     assert resp.status == 200

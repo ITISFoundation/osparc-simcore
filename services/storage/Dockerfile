@@ -1,4 +1,5 @@
-ARG PYTHON_VERSION="3.9.12"
+# syntax=docker/dockerfile:1
+ARG PYTHON_VERSION="3.10.10"
 FROM python:${PYTHON_VERSION}-slim-buster as base
 #
 #  USAGE:
@@ -10,12 +11,18 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 
 LABEL maintainer=mguidon
 
-RUN set -eux && \
+# for docker apt caching to work this needs to be added: [https://vsupalov.com/buildkit-cache-mount-dockerfile/]
+RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
+  echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
+RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
+  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
+  set -eux && \
   apt-get update && \
-  apt-get install -y gosu && \
-  rm -rf /var/lib/apt/lists/* && \
+  apt-get install -y --no-install-recommends \
+  gosu \
+  && apt-get clean -y \
   # verify that the binary works
-  gosu nobody true
+  && gosu nobody true
 
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
@@ -63,28 +70,34 @@ FROM base as build
 
 ENV SC_BUILD_TARGET build
 
-RUN apt-get update \
+RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
+  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
+  set -eux \
+  && apt-get update \
   && apt-get install -y --no-install-recommends \
   build-essential \
-  git \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
+  git
 
 
 # NOTE: python virtualenv is used here such that installed
 # packages may be moved to production image easily by copying the venv
 RUN python -m venv "${VIRTUAL_ENV}"
 
-RUN pip --no-cache-dir install --upgrade \
-  pip~=23.0  \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install --upgrade  \
+  pip~=23.1  \
   wheel \
   setuptools
 
 WORKDIR /build
 
 # install only base 3rd party dependencies
-COPY  --chown=scu:scu services/storage/requirements/_base.txt requirements_base.txt
-RUN pip --no-cache-dir --quiet install -r requirements_base.txt
+RUN \
+  --mount=type=bind,source=services/storage/requirements/_base.txt,target=_base.txt \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install \
+  --requirement _base.txt
+
 # -------------------------- -------------------------------
 
 
@@ -101,12 +114,15 @@ FROM build as prod-only-deps
 ENV SC_BUILD_TARGET prod-only-deps
 
 # 2nd party packages
-COPY --chown=scu:scu packages /build/packages
-COPY --chown=scu:scu services/storage /build/services/storage
-
 WORKDIR /build/services/storage
 
-RUN pip --no-cache-dir --quiet install -r requirements/prod.txt
+RUN \
+  --mount=type=bind,source=packages,target=/build/packages,rw \
+  --mount=type=bind,source=services/storage,target=/build/services/storage,rw \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install \
+  --requirement requirements/prod.txt \
+  && pip list -v
 # -------------------------- -------------------------------
 
 
@@ -125,6 +141,8 @@ ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu
 
+# ensure home folder is read/writable for user scu
+RUN chown -R scu /home/scu
 # bring installed package without build tools
 COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
@@ -132,10 +150,10 @@ COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY --chown=scu:scu services/storage/docker services/storage/docker
 RUN chmod +x services/storage/docker/*.sh
 
-HEALTHCHECK --interval=30s \
-  --timeout=120s \
-  --start-period=30s \
-  --retries=3 \
+HEALTHCHECK --interval=10s \
+  --timeout=15s \
+  --start-period=5s \
+  --retries=5 \
   CMD ["python3", "/home/scu/services/storage/docker/healthcheck.py", "http://localhost:8080/v0/"]
 
 

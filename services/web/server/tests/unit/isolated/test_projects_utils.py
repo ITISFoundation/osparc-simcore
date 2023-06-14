@@ -10,22 +10,14 @@ from typing import Any
 import jsonschema
 import pytest
 from jsonschema import ValidationError
-from simcore_service_webserver.projects.project_models import ProjectDict
-from simcore_service_webserver.projects.projects_nodes_utils import (
-    project_get_depending_nodes,
-)
-from simcore_service_webserver.projects.projects_utils import (
+from models_library.projects import Project
+from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.projects.nodes_utils import project_get_depending_nodes
+from simcore_service_webserver.projects.utils import (
     any_node_inputs_changed,
     clone_project_document,
     default_copy_project_name,
 )
-
-
-@pytest.fixture
-def project_schema(project_schema_file: Path) -> dict[str, Any]:
-    with open(project_schema_file) as fh:
-        schema = json.load(fh)
-    return schema
 
 
 @pytest.mark.parametrize(
@@ -42,7 +34,7 @@ def project_schema(project_schema_file: Path) -> dict[str, Any]:
 )
 def test_clone_project_document(
     test_data_file_name: str,
-    project_schema: dict[str, Any],
+    project_jsonschema: dict[str, Any],
     tests_data_dir: Path,
 ):
     original_project: ProjectDict = json.loads(
@@ -63,7 +55,7 @@ def test_clone_project_document(
         assert clone_node_id not in node_ids
 
     try:
-        jsonschema.validate(instance=clone, schema=project_schema)
+        jsonschema.validate(instance=clone, schema=project_jsonschema)
     except ValidationError as err:
         pytest.fail(f"Invalid clone of '{test_data_file_name}': {err.message}")
 
@@ -145,3 +137,12 @@ def test_any_node_inputs_changed(fake_project: ProjectDict):
 def test_default_copy_project_name(original_name: str, expected_copy_suffix: str):
     received_name = default_copy_project_name(original_name)
     assert received_name == expected_copy_suffix
+
+
+def test_validate_project_json_schema():
+    CURRENT_DIR = Path(__file__).resolve().parent
+
+    with open(CURRENT_DIR / "data/project-data.json") as f:
+        project: ProjectDict = json.load(f)
+
+    Project.parse_obj(project)

@@ -9,9 +9,10 @@
 import logging
 from asyncio import CancelledError, Task, create_task
 from contextlib import suppress
-from typing import Any, Callable, Coroutine, Optional, cast
+from typing import Any, AsyncGenerator, Callable, Coroutine, cast
 
 from fastapi import FastAPI
+from servicelib.logging_utils import guess_message_log_level
 
 from ..core.rabbitmq import post_log_message
 from .docker_utils import docker_client
@@ -34,7 +35,10 @@ async def _logs_fetcher_worker(
         image_name = container_inspect["Config"]["Image"].split("/")[-1]
 
         logger.debug("Streaming logs from %s, image %s", container_name, image_name)
-        async for line in container.log(stdout=True, stderr=True, follow=True):
+        async for line in cast(
+            AsyncGenerator[str, None],
+            container.log(stdout=True, stderr=True, follow=True),
+        ):
             await dispatch_log(image_name=image_name, message=line)
 
 
@@ -45,9 +49,11 @@ class BackgroundLogFetcher:
         self._log_processor_tasks: dict[str, Task[None]] = {}
 
     async def _dispatch_logs(self, image_name: str, message: str) -> None:
-        # sending the logs to the UI to facilitate the
-        # user debugging process
-        await post_log_message(self._app, f"[{image_name}] {message}")
+        await post_log_message(
+            self._app,
+            f"[{image_name}] {message}",
+            log_level=guess_message_log_level(message),
+        )
 
     async def start_log_feching(self, container_name: str) -> None:
         self._log_processor_tasks[container_name] = create_task(
@@ -62,7 +68,7 @@ class BackgroundLogFetcher:
     async def stop_log_fetching(self, container_name: str) -> None:
         logger.debug("Stopping logs fetching from container '%s'", container_name)
 
-        task: Optional[Task] = self._log_processor_tasks.pop(container_name, None)
+        task: Task | None = self._log_processor_tasks.pop(container_name, None)
         if task is None:
             logger.info(
                 "No log_processor task found for container: %s ", container_name
@@ -80,7 +86,7 @@ class BackgroundLogFetcher:
             await self.stop_log_fetching(container_name)
 
 
-def _get_background_log_fetcher(app: FastAPI) -> Optional[BackgroundLogFetcher]:
+def _get_background_log_fetcher(app: FastAPI) -> BackgroundLogFetcher | None:
     if hasattr(app.state, "background_log_fetcher"):
         return cast(BackgroundLogFetcher, app.state.background_log_fetcher)
     return None

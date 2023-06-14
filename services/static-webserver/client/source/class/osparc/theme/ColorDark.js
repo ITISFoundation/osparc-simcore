@@ -31,13 +31,13 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "background-main-5": "c06",
 
     // text
-    "text": "c12",
+    "text": "c13",
     "text-disabled": "c07",
     "text-selected": "c12",
     "text-placeholder": "c07",
     "text-darker": "c07",
     "contrasted-text-dark": "c01",
-    "contrasted-text-light": "c12",
+    "contrasted-text-light": "c13",
     "link": "c11",
 
     // shadows

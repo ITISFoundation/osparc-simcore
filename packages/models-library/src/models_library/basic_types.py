@@ -1,30 +1,53 @@
+import re
 from enum import Enum
+from typing import TypeAlias
 
-from pydantic import HttpUrl, PositiveInt, conint, constr
+from pydantic import ConstrainedInt, ConstrainedStr, HttpUrl, PositiveInt
 
 from .basic_regex import UUID_RE, VERSION_RE
 
+
 # port number range
-PortInt = conint(gt=0, lt=65535)
+class PortInt(ConstrainedInt):
+    gt = 0
+    lt = 65535
+
 
 # e.g. 'v5'
-VersionTag = constr(regex=r"^v\d$")
+class VersionTag(ConstrainedStr):
+    regex = re.compile(r"^v\d$")
+
 
 # e.g. '1.23.11' or '2.1.0-rc2'
-VersionStr = constr(regex=VERSION_RE)
+class VersionStr(ConstrainedStr):
+    regex = re.compile(VERSION_RE)
+
 
 # checksums
-SHA1Str = constr(regex=r"^[a-fA-F0-9]{40}$")
-MD5Str = constr(regex=r"^[a-fA-F0-9]{32}$")
+# sha1sum path/to/file
+class SHA1Str(ConstrainedStr):
+    regex = re.compile(r"^[a-fA-F0-9]{40}$")
+
+
+# md5sum path/to/file
+class MD5Str(ConstrainedStr):
+    regex = re.compile(r"^[a-fA-F0-9]{32}$")
+
 
 # env var
-EnvVarKey = constr(regex=r"[a-zA-Z][a-azA-Z0-9_]*")
+class EnvVarKey(ConstrainedStr):
+    regex = re.compile(r"[a-zA-Z]\w*")
+
 
 # e.g. '5c833a78-1af3-43a7-9ed7-6a63b188f4d8'
-UUIDStr = constr(regex=UUID_RE)
+class UUIDStr(ConstrainedStr):
+    regex = re.compile(UUID_RE)
+
 
 # auto-incremented primary-key IDs
-IdInt = PrimaryKeyInt = PositiveInt
+IdInt: TypeAlias = PositiveInt
+PrimaryKeyInt: TypeAlias = PositiveInt
+
 
 # https e.g. https://techterms.com/definition/https
 class HttpSecureUrl(HttpUrl):

@@ -212,8 +212,10 @@ async def ensure_services_stopped(
 
 
 @pytest.fixture
-def mock_dynamic_sidecar_client(mocker: MockerFixture) -> None:
-    class_path = "simcore_service_director_v2.modules.dynamic_sidecar.api_client.DynamicSidecarClient"
+def mock_sidecars_client(mocker: MockerFixture) -> None:
+    class_path = (
+        "simcore_service_director_v2.modules.dynamic_sidecar.api_client.SidecarsClient"
+    )
     for function_name, return_value in [
         ("pull_service_output_ports", None),
         ("restore_service_state", None),
@@ -243,11 +245,12 @@ async def test_legacy_and_dynamic_sidecar_run(
     user_dict: dict[str, Any],
     services_endpoint: dict[str, URL],
     director_v2_client: httpx.AsyncClient,
+    osparc_product_name: str,
     ensure_services_stopped: None,
     mock_projects_networks_repository: None,
-    mock_dynamic_sidecar_client: None,
+    mock_sidecars_client: None,
     service_resources: ServiceResourcesDict,
-    osparc_product_name: str,
+    mocked_service_awaits_manual_interventions: None,
 ):
     """
     The test will start 3 dynamic services in the same project and check

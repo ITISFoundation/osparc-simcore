@@ -1,7 +1,8 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-# pylint: disable=too-many-arguments
 
 
 import asyncio
@@ -27,12 +28,16 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSub
 from servicelib.aiohttp.long_running_tasks.client import LRTask
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.aiohttp.rest_responses import unwrap_envelope
-from simcore_service_webserver.projects.project_models import ProjectDict
+from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.projects_api import submit_delete_project_task
-from simcore_service_webserver.users_api import delete_user, get_user_role
+from simcore_service_webserver.users.api import (
+    delete_user_without_projects,
+    get_user_role,
+)
 
 
-async def _get_user_projects(client):
+async def _get_user_projects(client) -> list[ProjectDict]:
     url = client.app.router["list_projects"].url_for()
     resp = await client.get(url.with_query(type="user"))
 
@@ -71,7 +76,6 @@ async def published_project(
     tests_data_dir: Path,
     osparc_product_name: str,
 ) -> AsyncIterator[ProjectDict]:
-
     project_data = deepcopy(fake_project)
     project_data["name"] = "Published project"
     project_data["uuid"] = "e2e38eee-c569-4e55-b104-70d159e49c87"
@@ -99,7 +103,7 @@ async def unpublished_project(
     fake_project: ProjectDict,
     tests_data_dir: Path,
     osparc_product_name: str,
-) -> ProjectDict:
+) -> AsyncIterator[ProjectDict]:
     """An unpublished template"""
 
     project_data = deepcopy(fake_project)
@@ -189,7 +193,6 @@ def _assert_redirected_to_error_page(
 async def _assert_redirected_to_study(
     response: ClientResponse, session: ClientSession
 ) -> str:
-
     # https://docs.aiohttp.org/en/stable/client_advanced.html#redirection-history
     assert len(response.history) == 1, "Is a re-direction"
 
@@ -243,7 +246,7 @@ async def test_access_to_forbidden_study(
     _assert_redirected_to_error_page(
         response,
         expected_page="error",
-        expected_status_code=web.HTTPNotFound.status_code,
+        expected_status_code=web.HTTPUnauthorized.status_code,
     )
 
 
@@ -260,18 +263,18 @@ async def test_access_study_anonymously(
     catalog_subsystem_mock([published_project])
 
     assert not _is_user_authenticated(client.session), "Is anonymous"
-
+    assert client.app
     study_url = client.app.router["get_redirection_to_study_page"].url_for(
         id=published_project["uuid"]
     )
 
-    resp = await client.get(study_url)
+    resp = await client.get(f"{study_url}")
 
     expected_prj_id = await _assert_redirected_to_study(resp, client.session)
 
     # has auto logged in as guest?
     me_url = client.app.router["get_my_profile"].url_for()
-    resp = await client.get(me_url)
+    resp = await client.get(f"{me_url}")
 
     data, _ = await assert_status(resp, web.HTTPOk)
     assert data["login"].endswith("guest-at-osparc.io")
@@ -291,6 +294,7 @@ async def test_access_study_anonymously(
 
 @pytest.fixture
 async def auto_delete_projects(client: TestClient) -> AsyncIterator[None]:
+    assert client.app
     yield
     await delete_all_projects(client.app)
 
@@ -308,13 +312,14 @@ async def test_access_study_by_logged_user(
     # needed to cleanup the locks between parametrizations
     redis_locks_client: AsyncIterator[aioredis.Redis],
 ):
+    assert client.app
     catalog_subsystem_mock([published_project])
     assert _is_user_authenticated(client.session), "Is already logged-in"
 
     study_url = client.app.router["get_redirection_to_study_page"].url_for(
         id=published_project["uuid"]
     )
-    resp = await client.get(study_url)
+    resp = await client.get(f"{study_url}")
     await _assert_redirected_to_study(resp, client.session)
 
     # user has a copy of the template project
@@ -341,18 +346,19 @@ async def test_access_cookie_of_expired_user(
 ):
     catalog_subsystem_mock([published_project])
     # emulates issue #1570
+    assert client.app  # nosec
     app: web.Application = client.app
 
     study_url = app.router["get_redirection_to_study_page"].url_for(
         id=published_project["uuid"]
     )
-    resp = await client.get(study_url)
+    resp = await client.get(f"{study_url}")
 
     await _assert_redirected_to_study(resp, client.session)
 
     # Expects valid cookie and GUEST access
     me_url = app.router["get_my_profile"].url_for()
-    resp = await client.get(me_url)
+    resp = await client.get(f"{me_url}")
 
     data, _ = await assert_status(resp, web.HTTPOk)
     assert await get_user_role(app, data["id"]) == UserRole.GUEST
@@ -369,25 +375,27 @@ async def test_access_cookie_of_expired_user(
 
         prj_id = projects[0]["uuid"]
 
-        delete_task = await submit_delete_project_task(app, prj_id, uid)
+        delete_task = await submit_delete_project_task(
+            app, prj_id, uid, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+        )
         await delete_task
 
-        await delete_user(app, uid)
+        await delete_user_without_projects(app, uid)
         return uid
 
     user_id = await enforce_garbage_collect_guest(uid=data["id"])
     user_email = data["login"]
 
     # Now this should be non -authorized
-    resp = await client.get(me_url)
+    resp = await client.get(f"{me_url}")
     await assert_status(resp, web.HTTPUnauthorized)
 
     # But still can access as a new user
-    resp = await client.get(study_url)
+    resp = await client.get(f"{study_url}")
     await _assert_redirected_to_study(resp, client.session)
 
     # as a guest user
-    resp = await client.get(me_url)
+    resp = await client.get(f"{me_url}")
     data, _ = await assert_status(resp, web.HTTPOk)
     assert await get_user_role(app, data["id"]) == UserRole.GUEST
 

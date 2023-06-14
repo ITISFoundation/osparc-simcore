@@ -1,6 +1,6 @@
 import logging
 from copy import deepcopy
-from typing import Optional, Union
+from typing import Any, Optional
 
 from fastapi.applications import FastAPI
 from models_library.docker import SimcoreServiceDockerLabelKeys
@@ -8,7 +8,7 @@ from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import (
-    ComposeSpecLabel,
+    ComposeSpecLabelDict,
     PathMappingsLabel,
     SimcoreServiceLabels,
 )
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 
 def _update_networking_configuration(
-    service_spec: ComposeSpecLabel,
+    service_spec: ComposeSpecLabelDict,
     target_http_entrypoint_container: str,
     dynamic_sidecar_network_name: str,
     swarm_network_name: str,
@@ -77,14 +77,12 @@ class _environment_section:
     """
 
     @staticmethod
-    def parse(environment: Union[EnvVarsMap, EnvKeyEqValueList]) -> EnvVarsMap:
+    def parse(environment: EnvVarsMap | EnvKeyEqValueList) -> EnvVarsMap:
         envs = {}
         if isinstance(environment, list):
             for key_eq_value in environment:
                 assert isinstance(key_eq_value, str)  # nosec
-                key, value, *_ = key_eq_value.split("=", maxsplit=1) + [
-                    None,
-                ]  # type: ignore
+                key, value, *_ = key_eq_value.split("=", maxsplit=1) + [None]
                 envs[key] = value
         else:
             assert isinstance(environment, dict)  # nosec
@@ -103,7 +101,7 @@ class _environment_section:
 
 
 def _update_paths_mappings(
-    service_spec: ComposeSpecLabel, path_mappings: PathMappingsLabel
+    service_spec: ComposeSpecLabelDict, path_mappings: PathMappingsLabel
 ) -> None:
     for service_name in service_spec["services"]:
         service_content = service_spec["services"][service_name]
@@ -121,13 +119,14 @@ def _update_paths_mappings(
 
 
 def _update_resource_limits_and_reservations(
-    service_resources: ServiceResourcesDict, service_spec: ComposeSpecLabel
+    service_resources: ServiceResourcesDict, service_spec: ComposeSpecLabelDict
 ) -> None:
     # example: '2.3' -> 2 ; '3.7' -> 3
     docker_compose_major_version: int = int(service_spec["version"].split(".")[0])
     for spec_service_key, spec in service_spec["services"].items():
         if spec_service_key not in service_resources:
             continue
+
         resources: ResourcesDict = service_resources[spec_service_key].resources
         logger.debug("Resources for %s: %s", spec_service_key, f"{resources=}")
 
@@ -140,10 +139,10 @@ def _update_resource_limits_and_reservations(
 
         if docker_compose_major_version >= 3:
             # compos spec version 3 and beyond
-            deploy = spec.get("deploy", {})
-            resources = deploy.get("resources", {})
-            limits = resources.get("limits", {})
-            reservations = resources.get("reservations", {})
+            deploy: dict[str, Any] = spec.get("deploy", {})
+            resources_v3: dict[str, Any] = deploy.get("resources", {})
+            limits: dict[str, Any] = resources_v3.get("limits", {})
+            reservations: dict[str, Any] = resources_v3.get("reservations", {})
 
             # assign limits
             limits["cpus"] = float(cpu.limit)
@@ -152,9 +151,9 @@ def _update_resource_limits_and_reservations(
             reservations["cpus"] = float(cpu.reservation)
             reservations["memory"] = f"{memory.reservation}"
 
-            resources["reservations"] = reservations
-            resources["limits"] = limits
-            deploy["resources"] = resources
+            resources_v3["reservations"] = reservations
+            resources_v3["limits"] = limits
+            deploy["resources"] = resources_v3
             spec["deploy"] = deploy
 
             nano_cpu_limits = limits["cpus"]
@@ -188,8 +187,17 @@ def _update_resource_limits_and_reservations(
         spec["environment"] = environment
 
 
+def _strip_service_quotas(service_spec: ComposeSpecLabelDict):
+    """
+    When disk quotas are not supported by the node, it is required to remove
+    any reference from the docker-compose spec.
+    """
+    for spec in service_spec["services"].values():
+        spec.pop("storage_opt", None)
+
+
 def _update_container_labels(
-    service_spec: ComposeSpecLabel,
+    service_spec: ComposeSpecLabelDict,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
@@ -219,11 +227,12 @@ def assemble_spec(
     service_key: ServiceKey,
     service_version: ServiceVersion,
     paths_mapping: PathMappingsLabel,
-    compose_spec: Optional[ComposeSpecLabel],
-    container_http_entry: Optional[str],
+    compose_spec: ComposeSpecLabelDict | None,
+    container_http_entry: str | None,
     dynamic_sidecar_network_name: str,
     swarm_network_name: str,
     service_resources: ServiceResourcesDict,
+    has_quota_support: bool,
     simcore_service_labels: SimcoreServiceLabels,
     allow_internet_access: bool,
     product_name: ProductName,
@@ -251,7 +260,7 @@ def assemble_spec(
 
     # when no compose yaml file was provided
     if compose_spec is None:
-        service_spec: ComposeSpecLabel = {
+        service_spec: ComposeSpecLabelDict = {
             "version": docker_compose_version,
             "services": {
                 DEFAULT_SINGLE_SERVICE_NAME: {
@@ -280,6 +289,9 @@ def assemble_spec(
         service_resources=service_resources, service_spec=service_spec
     )
 
+    if not has_quota_support:
+        _strip_service_quotas(service_spec)
+
     if not allow_internet_access:
         # NOTE: when service has no access to the internet,
         # there could be some components that still require access
@@ -298,10 +310,7 @@ def assemble_spec(
         simcore_user_agent=simcore_user_agent,
     )
 
-    # TODO: will be used in next PR
-    assert product_name  # nosec
-
-    stringified_service_spec = replace_env_vars_in_compose_spec(
+    stringified_service_spec: str = replace_env_vars_in_compose_spec(
         service_spec=service_spec,
         replace_simcore_registry=docker_registry_settings.resolved_registry_url,
         replace_service_version=service_version,

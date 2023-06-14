@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 
 import asyncio
+from contextlib import AsyncExitStack
 from unittest.mock import Mock
 
 import pytest
@@ -11,14 +12,13 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient, make_mocked_request
 from faker import Faker
 from pytest import CaptureFixture, MonkeyPatch
-from pytest_simcore.helpers import utils_login
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.utils_login import parse_link, parse_test_marks
+from pytest_simcore.helpers.utils_login import NewUser, parse_link, parse_test_marks
 from servicelib.utils_secrets import generate_passcode
 from simcore_postgres_database.models.products import ProductLoginSettingsDict, products
 from simcore_service_webserver.application_settings import ApplicationSettings
-from simcore_service_webserver.db_models import UserStatus
+from simcore_service_webserver.db.models import UserStatus
 from simcore_service_webserver.login._2fa import (
     _do_create_2fa_code,
     create_2fa_code,
@@ -28,7 +28,7 @@ from simcore_service_webserver.login._2fa import (
     send_email_code,
 )
 from simcore_service_webserver.login.storage import AsyncpgStorage
-from simcore_service_webserver.products import get_current_product
+from simcore_service_webserver.products.plugin import get_current_product
 
 
 @pytest.fixture
@@ -59,7 +59,8 @@ def postgres_db(postgres_db: sa.engine.Engine):
         )
         .where(products.c.name == "osparc")
     )
-    postgres_db.execute(stmt)
+    with postgres_db.connect() as conn:
+        conn.execute(stmt)
     return postgres_db
 
 
@@ -234,10 +235,12 @@ async def test_workflow_register_and_login_with_2fa(
     assert user["phone"] == fake_user_phone_number
     assert user["status"] == UserStatus.ACTIVE.value
 
+    # cleanup
+    await db.delete_user(user)
+
 
 async def test_register_phone_fails_with_used_number(
     client: TestClient,
-    db: AsyncpgStorage,
     fake_user_email: str,
     fake_user_password: str,
     fake_user_phone_number: str,
@@ -247,37 +250,46 @@ async def test_register_phone_fails_with_used_number(
     """
     assert client.app
 
-    # some user ALREADY registered with the same phone
-    await utils_login.create_fake_user(db, data={"phone": fake_user_phone_number})
+    async with AsyncExitStack() as users_stack:
+        # some user ALREADY registered with the same phone
+        await users_stack.enter_async_context(
+            NewUser(params={"phone": fake_user_phone_number}, app=client.app)
+        )
 
-    # some registered user w/o phone
-    await utils_login.create_fake_user(
-        db,
-        data={"email": fake_user_email, "password": fake_user_password, "phone": None},
-    )
+        # some registered user w/o phone
+        await users_stack.enter_async_context(
+            NewUser(
+                params={
+                    "email": fake_user_email,
+                    "password": fake_user_password,
+                    "phone": None,
+                },
+                app=client.app,
+            )
+        )
 
-    # 1. login
-    url = client.app.router["auth_login"].url_for()
-    response = await client.post(
-        f"{url}",
-        json={
-            "email": fake_user_email,
-            "password": fake_user_password,
-        },
-    )
-    await assert_status(response, web.HTTPAccepted)
+        # 1. login
+        url = client.app.router["auth_login"].url_for()
+        response = await client.post(
+            f"{url}",
+            json={
+                "email": fake_user_email,
+                "password": fake_user_password,
+            },
+        )
+        await assert_status(response, web.HTTPAccepted)
 
-    # 2. register existing phone
-    url = client.app.router["auth_register_phone"].url_for()
-    response = await client.post(
-        f"{url}",
-        json={
-            "email": fake_user_email,
-            "phone": fake_user_phone_number,
-        },
-    )
-    _, error = await assert_status(response, web.HTTPUnauthorized)
-    assert "phone" in error["message"]
+        # 2. register existing phone
+        url = client.app.router["auth_register_phone"].url_for()
+        response = await client.post(
+            f"{url}",
+            json={
+                "email": fake_user_email,
+                "phone": fake_user_phone_number,
+            },
+        )
+        _, error = await assert_status(response, web.HTTPUnauthorized)
+        assert "phone" in error["message"]
 
 
 async def test_send_email_code(

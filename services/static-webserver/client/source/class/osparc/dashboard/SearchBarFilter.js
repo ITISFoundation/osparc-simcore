@@ -19,6 +19,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
   extend: osparc.component.filter.UIFilter,
 
   construct: function(resourceType) {
+    this.__resourceType = resourceType;
+
     this.base(arguments, "searchBarFilter-"+resourceType, "searchBarFilter");
 
     this._setLayout(new qx.ui.layout.HBox(5));
@@ -37,9 +39,36 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     this.__buildFiltersMenu();
 
     this.__attachEventHandlers();
+
+    this.__currentFilter = null;
+  },
+
+  statics: {
+    getSharedWithOptions: function(resourceType) {
+      return [{
+        id: "show-all",
+        label: qx.locale.Manager.tr("All ") + osparc.utils.Utils.resourceTypeToAlias(resourceType, {
+          plural: true
+        })
+      }, {
+        id: "my-studies",
+        label: qx.locale.Manager.tr("My ") + osparc.utils.Utils.resourceTypeToAlias(resourceType, {
+          plural: true
+        })
+      }, {
+        id: "shared-with-me",
+        label: qx.locale.Manager.tr("Shared with me")
+      }];
+    }
+  },
+
+  events: {
+    "filterChanged": "qx.event.type.Data"
   },
 
   members: {
+    __resourceType: null,
+    __currentFilter: null,
     __filtersMenu: null,
 
     _createChildControlImpl: function(id) {
@@ -49,6 +78,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           control = new qx.ui.basic.Image("@FontAwesome5Solid/search/16").set({
             backgroundColor: "transparent",
             alignY: "middle",
+            paddingLeft: 6,
             opacity: 0.5
           });
           this._add(control);
@@ -73,7 +103,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           control = new qx.ui.toolbar.Button(null, "@MaterialIcons/close/12").set({
             backgroundColor: "transparent",
             paddingLeft: 0,
-            paddingRight: 0,
+            paddingRight: 2,
             alignY: "middle",
             opacity: 0.7
           });
@@ -101,6 +131,10 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       this.__addTags(tagsButton);
       menu.add(tagsButton);
 
+      const sharedWithButton = new qx.ui.menu.Button(this.tr("Shared with"), "@FontAwesome5Solid/share-alt/12");
+      this.__addSharedWith(sharedWithButton);
+      menu.add(sharedWithButton);
+
       const classifiersButton = new qx.ui.menu.Button(this.tr("Classifiers"), "@FontAwesome5Solid/search/12");
       osparc.utils.Utils.setIdToWidget(classifiersButton, "searchBarFilter-classifiers");
       this.__addClassifiers(classifiersButton);
@@ -126,13 +160,16 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       osparc.store.Store.getInstance().addListener("changeTags", () => this.__buildFiltersMenu(), this);
     },
 
+    getTextFilterValue: function() {
+      return this.getChildControl("text-field").getValue();
+    },
+
     __showFilterMenu: function() {
-      const textField = this.getChildControl("text-field");
-      const textValue = textField.getValue();
-      if (textValue) {
+      if (this.getTextFilterValue()) {
         return;
       }
 
+      const textField = this.getChildControl("text-field");
       const element = textField.getContentElement().getDomElement();
       const {
         top,
@@ -166,6 +203,23 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       }
     },
 
+    __addSharedWith: function(menuButton) {
+      const options = this.self().getSharedWithOptions(this.__resourceType);
+      const sharedWithMenu = new qx.ui.menu.Menu();
+      const sharedWithRadioGroup = new qx.ui.form.RadioGroup();
+      options.forEach((option, idx) => {
+        const button = new qx.ui.menu.RadioButton(option.label);
+        sharedWithMenu.add(button);
+        button.addListener("execute", () => this.setSharedWithActiveFilter(option.id, option.label), this);
+        sharedWithRadioGroup.add(button);
+        // preselect show-all
+        if (idx === 0) {
+          sharedWithRadioGroup.setSelection([button]);
+        }
+      });
+      menuButton.setMenu(sharedWithMenu);
+    },
+
     __addClassifiers: function(menuButton) {
       const classifiers = osparc.store.Store.getInstance().getClassifiers();
       menuButton.setVisibility(classifiers.length ? "visible" : "excluded");
@@ -180,30 +234,17 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       }
     },
 
-    __createChip: function(chipType, chipId, chipLabel) {
-      const chipButton = new qx.ui.form.Button().set({
-        label: osparc.utils.Utils.capitalize(chipType) + " = '" + chipLabel + "'",
-        icon: "@MaterialIcons/close/12",
-        iconPosition: "right",
-        paddingRight: 6,
-        paddingLeft: 6,
-        alignY: "middle",
-        toolTipText: chipLabel,
-        maxHeight: 26,
-        maxWidth: 180,
-        backgroundColor: "background-main-1"
-      });
-      chipButton.type = chipType;
-      chipButton.id = chipId;
-      chipButton.getContentElement().setStyles({
-        "border-radius": "6px"
-      });
-      chipButton.addListener("execute", () => this.__removeChip(chipType, chipId), this);
-      return chipButton;
-    },
-
     addTagActiveFilter: function(tag) {
       this.__addChip("tag", tag.name, tag.name);
+    },
+
+    setSharedWithActiveFilter: function(optionId, optionLabel) {
+      this.__removeChips("shared-with");
+      if (optionId === "show-all") {
+        this.__filter();
+      } else {
+        this.__addChip("shared-with", optionId, optionLabel);
+      }
     },
 
     __addChip: function(type, id, label) {
@@ -217,6 +258,28 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       this.__filter();
     },
 
+    __createChip: function(chipType, chipId, chipLabel) {
+      const chipButton = new qx.ui.form.Button().set({
+        label: osparc.utils.Utils.capitalize(chipType) + " = '" + chipLabel + "'",
+        icon: "@MaterialIcons/close/12",
+        iconPosition: "right",
+        paddingRight: 6,
+        paddingLeft: 6,
+        alignY: "middle",
+        toolTipText: chipLabel,
+        maxHeight: 26,
+        maxWidth: 210,
+        backgroundColor: "background-main-1"
+      });
+      chipButton.type = chipType;
+      chipButton.id = chipId;
+      chipButton.getContentElement().setStyles({
+        "border-radius": "6px"
+      });
+      chipButton.addListener("execute", () => this.__removeChip(chipType, chipId), this);
+      return chipButton;
+    },
+
     __removeChip: function(type, id) {
       const activeFilter = this.getChildControl("active-filters");
       const chipFound = activeFilter.getChildren().find(chip => chip.type === type && chip.id === id);
@@ -226,18 +289,33 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       }
     },
 
+    __removeChips: function(type) {
+      const activeFilter = this.getChildControl("active-filters");
+      if (type) {
+        const chipsFounds = activeFilter.getChildren().filter(chip => chip.type === type);
+        for (let i=chipsFounds.length-1; i>=0; i--) {
+          activeFilter.remove(chipsFounds[i]);
+        }
+      } else {
+        activeFilter.removeAll();
+      }
+    },
+
     __resetFilters: function() {
-      this.getChildControl("active-filters").removeAll();
+      this.__removeChips();
       this.getChildControl("text-field").resetValue();
       this.__filter();
     },
 
-    __filter: function() {
+    getFilterData: function() {
       const filterData = {
         tags: [],
         classifiers: [],
-        text: this.getChildControl("text-field").getValue() ? this.getChildControl("text-field").getValue() : ""
+        sharedWith: null,
+        text: ""
       };
+      const textFilter = this.getTextFilterValue();
+      filterData["text"] = textFilter ? textFilter : "";
       this.getChildControl("active-filters").getChildren().forEach(chip => {
         switch (chip.type) {
           case "tag":
@@ -246,9 +324,21 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           case "classifier":
             filterData.classifiers.push(chip.id);
             break;
+          case "shared-with":
+            filterData.sharedWith = chip.id === "show-all" ? null : chip.id;
+            break;
         }
       });
-      this._filterChange(filterData);
+      return filterData;
+    },
+
+    __filter: function() {
+      const filterData = this.getFilterData();
+      if (JSON.stringify(this.__currentFilter) !== JSON.stringify(filterData)) {
+        this.__currentFilter = filterData;
+        this.fireDataEvent("filterChanged", filterData);
+        this._filterChange(filterData);
+      }
     }
   }
 });

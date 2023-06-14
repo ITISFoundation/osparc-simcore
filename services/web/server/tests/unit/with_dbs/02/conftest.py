@@ -8,7 +8,7 @@ import re
 from contextlib import AsyncExitStack
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncIterator, Awaitable, Callable
+from typing import Any, AsyncIterator, Awaitable, Callable, Final
 from unittest import mock
 
 import pytest
@@ -22,14 +22,17 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from pydantic import parse_obj_as
+from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from settings_library.catalog import CatalogSettings
 from simcore_service_webserver.application_settings import get_settings
-from simcore_service_webserver.catalog_settings import get_plugin_settings
-from simcore_service_webserver.projects.project_models import ProjectDict
+from simcore_service_webserver.catalog.settings import get_plugin_settings
+from simcore_service_webserver.projects.models import ProjectDict
 
 
 @pytest.fixture
@@ -257,6 +260,17 @@ def assert_get_same_project_caller() -> Callable:
 
 
 @pytest.fixture
+def app_environment(
+    app_environment: EnvVarsDict, monkeypatch: MonkeyPatch
+) -> EnvVarsDict:
+    envs_plugins = setenvs_from_dict(
+        monkeypatch,
+        {},
+    )
+    return app_environment | envs_plugins
+
+
+@pytest.fixture
 def disable_max_number_of_running_dynamic_nodes(
     app_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch
 ) -> dict[str, str]:
@@ -280,14 +294,13 @@ async def user_project_with_num_dynamic_services(
     osparc_product_name: str,
     faker: Faker,
 ) -> AsyncIterator[Callable[[int], Awaitable[ProjectDict]]]:
-
     async with AsyncExitStack() as stack:
 
         async def _creator(num_dyn_services: int) -> ProjectDict:
             project_data = {
                 "workbench": {
                     faker.uuid4(): {
-                        "key": f"simcore/services/dynamic/{faker.pystr()}",
+                        "key": f"simcore/services/dynamic/{faker.pystr().lower()}",
                         "version": faker.numerify("#.#.#"),
                         "label": faker.name(),
                     }
@@ -347,4 +360,16 @@ def mock_catalog_service_api_responses(client, aioresponses_mocker):
     aioresponses_mocker.delete(
         url_pattern,
         repeat=True,
+    )
+
+
+@pytest.fixture
+def mock_get_total_project_dynamic_nodes_creation_interval(
+    mocker: MockerFixture,
+) -> None:
+    _VERY_LONG_LOCK_TIMEOUT_S: Final[float] = 300
+    mocker.patch(
+        "simcore_service_webserver.projects.projects_api._nodes_utils"
+        ".get_total_project_dynamic_nodes_creation_interval",
+        return_value=_VERY_LONG_LOCK_TIMEOUT_S,
     )

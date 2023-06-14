@@ -3,16 +3,17 @@ from os.path import join
 from pathlib import Path
 
 from aiohttp import web
-from simcore_service_webserver.products import get_product_template_path
 
 from .._resources import resources
-from ..email_core import AttachmentTuple, send_email_from_template
+from ..email.utils import AttachmentTuple, send_email_from_template
+from ..products.plugin import get_product_template_path
 
 log = logging.getLogger(__name__)
 
 
 def themed(dirname: str, template: str) -> Path:
-    return resources.get_path(join(dirname, template))
+    path: Path = resources.get_path(join(dirname, template))
+    return path
 
 
 async def get_template_path(request: web.Request, filename: str) -> Path:

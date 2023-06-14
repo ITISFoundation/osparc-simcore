@@ -93,6 +93,112 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     __ctrlLinkMap: null,
     __linkUnlinkStackMap: null,
     __fieldOptsBtnMap: null,
+    __addInputPortButton: null,
+
+    /*
+     * <-- Dynamic inputs -->
+     */
+    __getEmptyDataLastPorts: function() {
+      let emptyDataPorts = [];
+      const minVisibleInputs = this.getNode().getMinVisibleInputs();
+      if (minVisibleInputs === null) {
+        return emptyDataPorts;
+      }
+      const portKeys = this.__getPortKeys();
+      // it will always show 1 more, so: -1
+      for (let i=minVisibleInputs-1; i<portKeys.length; i++) {
+        const portId = portKeys[i];
+        const ctrl = this._form.getControl(portId);
+        if (ctrl && ctrl.type.includes("data:") && !("link" in ctrl)) {
+          emptyDataPorts.push(portId);
+        } else {
+          emptyDataPorts = [];
+        }
+      }
+      return emptyDataPorts;
+    },
+
+    __getVisibleEmptyDataLastPort: function() {
+      let emptyDataPorts = null;
+      this.__getPortKeys().forEach(portId => {
+        const ctrl = this._form.getControl(portId);
+        const label = this._getLabelFieldChild(portId).child;
+        if (
+          ctrl && ctrl.type.includes("data:") && !("link" in ctrl) &&
+          label && label.isVisible()
+        ) {
+          emptyDataPorts = portId;
+        }
+      });
+      return emptyDataPorts;
+    },
+
+    __addInputPortButtonClicked: function() {
+      const emptyDataPorts = this.__getEmptyDataLastPorts();
+      const lastEmptyDataPort = this.__getVisibleEmptyDataLastPort();
+      if (emptyDataPorts.length>1 && lastEmptyDataPort) {
+        const idx = emptyDataPorts.indexOf(lastEmptyDataPort);
+        if (idx+1 < emptyDataPorts.length) {
+          this.__showPort(emptyDataPorts[idx+1]);
+        }
+        this.__addInputPortButton.setVisibility(this.__checkAddInputPortButtonVisibility());
+      }
+    },
+
+    __checkAddInputPortButtonVisibility: function() {
+      const emptyDataPorts = this.__getEmptyDataLastPorts();
+      const lastEmptyDataPort = this.__getVisibleEmptyDataLastPort();
+      const idx = emptyDataPorts.indexOf(lastEmptyDataPort);
+      if (idx < emptyDataPorts.length-1) {
+        return "visible";
+      }
+      return "excluded";
+    },
+
+    __showPort: function(portId) {
+      const entries = this.self().GRID_POS;
+      Object.values(entries).forEach(entryPos => {
+        const layoutElement = this._getLayoutChild(portId, entryPos);
+        if (layoutElement && layoutElement.child) {
+          const control = layoutElement.child;
+          if (control) {
+            control.show();
+            const row = control.getLayoutProperties().row;
+            this._getLayout().setRowHeight(row, osparc.component.form.renderer.PropFormBase.ROW_HEIGHT);
+          }
+        }
+      });
+    },
+
+    __excludePort: function(portId) {
+      const entries = this.self().GRID_POS;
+      Object.values(entries).forEach(entryPos => {
+        const layoutElement = this._getLayoutChild(portId, entryPos);
+        if (layoutElement && layoutElement.child) {
+          const control = layoutElement.child;
+          if (control) {
+            control.exclude();
+            const row = control.getLayoutProperties().row;
+            this._getLayout().setRowHeight(row, 0);
+          }
+        }
+      });
+    },
+
+    makeInputsDynamic: function() {
+      this.__getPortKeys().forEach(portId => this.__showPort(portId));
+
+      const emptyDataPorts = this.__getEmptyDataLastPorts();
+      for (let i=1; i<emptyDataPorts.length; i++) {
+        const hidePortId = emptyDataPorts[i];
+        this.__excludePort(hidePortId);
+      }
+
+      this.__addInputPortButton.setVisibility(this.__checkAddInputPortButtonVisibility());
+    },
+    /*
+     * <-- /Dynamic inputs -->
+     */
 
     __createLinkUnlinkStack: function(field) {
       const linkUnlinkStack = new qx.ui.container.Stack();
@@ -121,7 +227,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       const fieldOptsBtn = new qx.ui.form.MenuButton().set({
         menu: optionsMenu,
         icon: "@FontAwesome5Solid/link/12",
-        height: 23,
+        maxHeight: 23,
         focusable: false,
         allowGrowX: false,
         alignX: "center"
@@ -140,7 +246,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     __createUnlinkButton: function(field) {
       const unlinkBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/unlink/12").set({
         toolTipText: this.tr("Unlink"),
-        height: 23
+        maxHeight: 23
       });
       unlinkBtn.addListener("execute", () => this.removePortLink(field.key), this);
       return unlinkBtn;
@@ -240,7 +346,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
     __getSelectFileButton: function(portId) {
       const selectFileButton = new qx.ui.menu.Button(this.tr("Select File"));
-      // selectFileButton.addListener("execute", () => this.fireDataEvent("fileRequested", portId), this);
       selectFileButton.addListener("execute", () => this.fireDataEvent("filePickerRequested", {
         portId,
         file: null
@@ -343,6 +448,19 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
         row++;
       }
+
+      // add port button
+      const addPortButton = this.__addInputPortButton = new qx.ui.form.Button().set({
+        label: this.tr("Input"),
+        icon: "@FontAwesome5Solid/plus/14",
+        marginTop: 6,
+        allowGrowX: false
+      });
+      addPortButton.addListener("execute", () => this.__addInputPortButtonClicked());
+      this._add(addPortButton, {
+        row,
+        column: this.self().GRID_POS.LABEL
+      });
     },
 
     // overridden
@@ -418,7 +536,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         for (let i=0; i<children.length; i++) {
           let child = children[i];
           const layoutProps = child.getLayoutProperties();
-          if (layoutProps.column === this.self().GRID_POS.retrieveStatus) {
+          if (layoutProps.column === this.self().GRID_POS.RETRIEVE_STATUS) {
             this.__setRetrievingStatus(status, portId, i, layoutProps.row);
           }
         }
@@ -454,10 +572,14 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         }
       }
 
-      this._addAt(icon, idx, {
-        row: row,
-        column: this.self().GRID_POS.RETRIEVE_STATUS
-      });
+      const label = this._getLabelFieldChild(portId).child;
+      if (label && label.isVisible()) {
+        this._getLabelFieldChild(portId);
+        this._addAt(icon, idx, {
+          row,
+          column: this.self().GRID_POS.RETRIEVE_STATUS
+        });
+      }
     },
 
     __arePortsCompatible: function(node1Id, port1Id, node2Id, port2Id) {
@@ -636,7 +758,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         if (layoutProps.column === this.self().GRID_POS.CTRL_FIELD) {
           this._remove(child);
           const item = this._form.getControl(portId);
-
+          item.show();
           this._addAt(item, idx, {
             row: layoutProps.row,
             column: this.self().GRID_POS.CTRL_FIELD
@@ -764,6 +886,8 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       addToolTip();
 
       this.__portLinkAdded(toPortId, fromNodeId, fromPortId);
+
+      this.makeInputsDynamic();
 
       return true;
     },

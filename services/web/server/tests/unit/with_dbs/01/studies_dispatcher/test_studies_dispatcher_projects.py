@@ -1,7 +1,8 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-# pylint: disable=too-many-arguments
 
 
 from typing import Any, AsyncIterator
@@ -15,7 +16,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_login import NewUser
 from pytest_simcore.helpers.utils_projects import delete_all_projects
 from pytest_simcore.helpers.utils_services import list_fake_file_consumers
-from simcore_service_webserver.groups_api import auto_add_user_to_groups
+from simcore_service_webserver.groups.api import auto_add_user_to_groups
 from simcore_service_webserver.projects.projects_api import get_project_for_user
 from simcore_service_webserver.studies_dispatcher._models import ServiceInfo
 from simcore_service_webserver.studies_dispatcher._projects import (
@@ -25,7 +26,7 @@ from simcore_service_webserver.studies_dispatcher._projects import (
     _create_project_with_filepicker_and_service,
     _create_project_with_service,
 )
-from simcore_service_webserver.users_api import get_user
+from simcore_service_webserver.users.api import get_user
 
 FAKE_FILE_VIEWS = list_fake_file_consumers()
 
@@ -90,8 +91,10 @@ async def test_add_new_project_from_model_instance(
     file_picker_id: NodeID,
     viewer_id: NodeID,
 ):
+    assert client.app
+
     mock_directorv2_api = mocker.patch(
-        "simcore_service_webserver.director_v2_api.create_or_update_pipeline",
+        "simcore_service_webserver.director_v2.api.create_or_update_pipeline",
         return_value=None,
     )
 

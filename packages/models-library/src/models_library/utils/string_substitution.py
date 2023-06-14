@@ -7,7 +7,7 @@ from collections import UserDict
 from string import Template
 from typing import Any
 
-OSPARC_IDENTIFIER_PREFIX = "OSPARC_ENVIRONMENT"
+OSPARC_IDENTIFIER_PREFIX = "OSPARC_ENVIRONMENT_"
 
 
 def upgrade_identifier(identifier: str) -> str:
@@ -18,7 +18,8 @@ def upgrade_identifier(identifier: str) -> str:
     identifier = re.sub(r"[.-]", "_", identifier)
     identifier = identifier.upper()
     if not identifier.startswith(OSPARC_IDENTIFIER_PREFIX):
-        identifier = f"{OSPARC_IDENTIFIER_PREFIX}_{identifier}"
+        assert OSPARC_IDENTIFIER_PREFIX.endswith("_")  # nosec
+        identifier = OSPARC_IDENTIFIER_PREFIX + identifier
     return identifier
 
 
@@ -40,7 +41,7 @@ def substitute_all_legacy_identifiers(text: str) -> str:
     return re.sub(_LEGACY_IDENTIFIER_RE_PATTERN, _upgrade, text)
 
 
-class TemplateText(Template):
+class TextTemplate(Template):
     """Template strings support `$`-based substitutions, using the following rules:
 
     - `$$` is an escape; it is replaced with a single `$`.

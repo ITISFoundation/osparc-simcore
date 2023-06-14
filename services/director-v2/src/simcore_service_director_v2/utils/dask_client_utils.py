@@ -3,7 +3,7 @@ import os
 import socket
 from contextlib import suppress
 from dataclasses import dataclass, field
-from typing import Awaitable, Callable, Final, Optional, Union
+from typing import Awaitable, Callable, Final, Union
 
 import dask_gateway
 import distributed
@@ -12,7 +12,6 @@ from aiohttp import ClientConnectionError, ClientResponseError
 from dask_task_models_library.container_tasks.events import (
     TaskLogEvent,
     TaskProgressEvent,
-    TaskStateEvent,
 )
 from models_library.clusters import (
     ClusterAuthentication,
@@ -30,6 +29,7 @@ from ..core.errors import (
     DaskGatewayServerError,
     SchedulerError,
 )
+from .dask import check_maximize_workers, wrap_client_async_routine
 
 DaskGatewayAuths = Union[
     dask_gateway.BasicAuth, dask_gateway.KerberosAuth, dask_gateway.JupyterHubAuth
@@ -38,7 +38,6 @@ DaskGatewayAuths = Union[
 
 @dataclass
 class TaskHandlers:
-    task_change_handler: Callable[[str], Awaitable[None]]
     task_progress_handler: Callable[[str], Awaitable[None]]
     task_log_handler: Callable[[str], Awaitable[None]]
 
@@ -50,36 +49,32 @@ logger = logging.getLogger(__name__)
 class DaskSubSystem:
     client: distributed.Client
     scheduler_id: str
-    gateway: Optional[dask_gateway.Gateway]
-    gateway_cluster: Optional[dask_gateway.GatewayCluster]
-    state_sub: distributed.Sub = field(init=False)
+    gateway: dask_gateway.Gateway | None
+    gateway_cluster: dask_gateway.GatewayCluster | None
     progress_sub: distributed.Sub = field(init=False)
     logs_sub: distributed.Sub = field(init=False)
 
     def __post_init__(self) -> None:
-        self.state_sub = distributed.Sub(
-            TaskStateEvent.topic_name(), client=self.client
-        )
         self.progress_sub = distributed.Sub(
             TaskProgressEvent.topic_name(), client=self.client
         )
         self.logs_sub = distributed.Sub(TaskLogEvent.topic_name(), client=self.client)
 
-    async def close(self):
+    async def close(self) -> None:
         # NOTE: if the Sub are deleted before closing the connection,
         # then the dask-scheduler goes in a bad state [https://github.com/dask/distributed/issues/3276]
         # closing the client appears to fix the issue and the dask-scheduler remains happy
         if self.client:
-            await self.client.close()  # type: ignore
+            await wrap_client_async_routine(self.client.close())
         if self.gateway_cluster:
-            await self.gateway_cluster.close()  # type: ignore
+            await wrap_client_async_routine(self.gateway_cluster.close())
         if self.gateway:
-            await self.gateway.close()  # type: ignore
+            await wrap_client_async_routine(self.gateway.close())
 
 
 async def _connect_to_dask_scheduler(endpoint: AnyUrl) -> DaskSubSystem:
     try:
-        client = await distributed.Client(  # type: ignore
+        client = await distributed.Client(
             f"{endpoint}",
             asynchronous=True,
             name=f"director-v2_{socket.gethostname()}_{os.getpid()}",
@@ -90,7 +85,7 @@ async def _connect_to_dask_scheduler(endpoint: AnyUrl) -> DaskSubSystem:
             gateway=None,
             gateway_cluster=None,
         )
-    except (TypeError) as exc:
+    except TypeError as exc:
         raise ConfigurationError(
             f"Scheduler has invalid configuration: {endpoint=}"
         ) from exc
@@ -129,9 +124,8 @@ async def _connect_with_gateway_and_create_cluster(
                 logger.debug("created %s", f"{cluster=}")
             assert cluster  # nosec
             logger.info("Cluster dashboard available: %s", cluster.dashboard_link)
-            # NOTE: we scale to 1 worker as they are global
-            await cluster.adapt(active=True)
-            client = await cluster.get_client()  # type: ignore
+            await check_maximize_workers(cluster)
+            client = await cluster.get_client()
             assert client  # nosec
             return DaskSubSystem(
                 client=client,
@@ -142,20 +136,20 @@ async def _connect_with_gateway_and_create_cluster(
         except Exception as exc:
             # cleanup
             with suppress(Exception):
-                await gateway.close()  # type: ignore
+                await wrap_client_async_routine(gateway.close())
             raise exc
 
-    except (TypeError) as exc:
+    except TypeError as exc:
         raise ConfigurationError(
             f"Cluster has invalid configuration: {endpoint=}, {auth_params=}"
         ) from exc
-    except (ValueError) as exc:
+    except ValueError as exc:
         # this is when a 404=NotFound,422=MalformedData comes up
         raise DaskClientRequestError(endpoint=endpoint, error=exc) from exc
-    except (dask_gateway.GatewayClusterError) as exc:
+    except dask_gateway.GatewayClusterError as exc:
         # this is when a 409=Conflict/Cannot complete request comes up
         raise DaskClusterError(endpoint=endpoint, error=exc) from exc
-    except (dask_gateway.GatewayServerError) as exc:
+    except dask_gateway.GatewayServerError as exc:
         # this is when a 500 comes up
         raise DaskGatewayServerError(endpoint=endpoint, error=exc) from exc
 
@@ -209,7 +203,7 @@ async def test_scheduler_endpoint(
     try:
         if _is_internal_scheduler(authentication):
             async with distributed.Client(
-                address=endpoint, timeout=_PING_TIMEOUT_S, asynchronous=True
+                address=endpoint, timeout=f"{_PING_TIMEOUT_S}", asynchronous=True
             ) as dask_client:
                 if not dask_client.status == _DASK_SCHEDULER_RUNNING_STATE:
                     raise SchedulerError("internal scheduler is not running!")

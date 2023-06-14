@@ -1,4 +1,5 @@
-ARG PYTHON_VERSION="3.9.12"
+# syntax=docker/dockerfile:1
+ARG PYTHON_VERSION="3.10.10"
 FROM python:${PYTHON_VERSION}-slim-buster as base
 
 LABEL maintainer=pcrespov
@@ -51,8 +52,9 @@ RUN apt-get update \
 # packages may be moved to production image easily by copying the venv
 RUN python -m venv "${VIRTUAL_ENV}"
 
-RUN pip install --no-cache-dir --upgrade \
-  pip~=23.0  \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install --upgrade \
+  pip~=23.1  \
   wheel \
   setuptools
 
@@ -63,10 +65,11 @@ COPY --chown=scu:scu packages/service-integration packages/service-integration
 
 
 # WARNING: keep synced with `make install-prod` (did not use it directly because if would require copying scripts/common.Makefile and other parts of the repo)
-RUN cd packages/service-integration \
-  && pip install --no-cache-dir -r requirements/_base.txt \
-  && pip install --no-cache-dir ../models-library/ \
-  && pip install --no-cache-dir .
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  cd packages/service-integration \
+  && pip install -r requirements/_base.txt \
+  && pip install ../models-library/ \
+  && pip install .
 
 
 # -------------------------- Build stage -------------------

@@ -1,5 +1,5 @@
 from ipaddress import IPv4Address
-from typing import Any, Union
+from typing import Any, Mapping, Union
 
 from pydantic import BaseModel, ByteSize, Field, PositiveFloat, parse_obj_as
 
@@ -24,7 +24,7 @@ ClusterInformation = dict[Hostname, NodeInformation]
 
 
 def cluster_information_from_docker_nodes(
-    nodes_list: list[dict[str, Any]]
+    nodes_list: list[Mapping[str, Any]]
 ) -> ClusterInformation:
     return parse_obj_as(
         ClusterInformation,

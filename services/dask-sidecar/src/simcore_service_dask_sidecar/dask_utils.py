@@ -2,8 +2,7 @@ import asyncio
 import contextlib
 import logging
 from dataclasses import dataclass, field
-from enum import Enum
-from typing import AsyncIterator, Final, Optional
+from typing import AsyncIterator, Final
 
 import distributed
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
@@ -11,21 +10,16 @@ from dask_task_models_library.container_tasks.events import (
     BaseTaskEvent,
     TaskLogEvent,
     TaskProgressEvent,
-    TaskStateEvent,
 )
 from dask_task_models_library.container_tasks.io import TaskCancelEventName
 from distributed.worker import get_worker
 from distributed.worker_state_machine import TaskState
+from servicelib.logging_utils import LogLevelInt, LogMessageStr, log_catch
+
+logger = logging.getLogger(__name__)
 
 
-def create_dask_worker_logger(name: str) -> logging.Logger:
-    return logging.getLogger(f"distributed.worker.{name}")
-
-
-logger = create_dask_worker_logger(__name__)
-
-
-def _get_current_task_state() -> Optional[TaskState]:
+def _get_current_task_state() -> TaskState | None:
     worker = get_worker()
     logger.debug("current worker %s", f"{worker=}")
     current_task = worker.get_current_task()
@@ -34,7 +28,7 @@ def _get_current_task_state() -> Optional[TaskState]:
 
 
 def is_current_task_aborted() -> bool:
-    task: Optional[TaskState] = _get_current_task_state()
+    task: TaskState | None = _get_current_task_state()
     logger.debug("found following TaskState: %s", task)
     if task is None:
         # the task was removed from the list of tasks this worker should work on, meaning it is aborted
@@ -63,14 +57,32 @@ def get_current_task_resources() -> dict[str, float]:
 
 @dataclass()
 class TaskPublisher:
-    state: distributed.Pub = field(init=False)
     progress: distributed.Pub = field(init=False)
+    _last_published_progress_value: float = -1
     logs: distributed.Pub = field(init=False)
 
-    def __post_init__(self):
-        self.state = distributed.Pub(TaskStateEvent.topic_name())
+    def __post_init__(self) -> None:
         self.progress = distributed.Pub(TaskProgressEvent.topic_name())
         self.logs = distributed.Pub(TaskLogEvent.topic_name())
+
+    def publish_progress(self, value: float) -> None:
+        rounded_value = round(value, ndigits=2)
+        if rounded_value > self._last_published_progress_value:
+            publish_event(
+                self.progress,
+                TaskProgressEvent.from_dask_worker(progress=rounded_value),
+            )
+            self._last_published_progress_value = rounded_value
+
+    def publish_logs(
+        self,
+        *,
+        message: LogMessageStr,
+        log_level: LogLevelInt,
+    ) -> None:
+        publish_event(
+            self.logs, TaskLogEvent.from_dask_worker(log=message, log_level=log_level)
+        )
 
 
 _TASK_ABORTION_INTERVAL_CHECK_S: int = 2
@@ -91,7 +103,9 @@ async def monitor_task_abortion(
         ):
             publish_event(
                 log_publisher,
-                TaskLogEvent.from_dask_worker(log="[sidecar] cancelling task..."),
+                TaskLogEvent.from_dask_worker(
+                    log="[sidecar] cancelling task...", log_level=logging.INFO
+                ),
             )
             logger.debug("cancelling %s....................", f"{task=}")
             task.cancel()
@@ -113,7 +127,9 @@ async def monitor_task_abortion(
     except asyncio.CancelledError as exc:
         publish_event(
             log_publisher,
-            TaskLogEvent.from_dask_worker(log="[sidecar] task run was aborted"),
+            TaskLogEvent.from_dask_worker(
+                log="[sidecar] task run was aborted", log_level=logging.INFO
+            ),
         )
         raise TaskCancelledError from exc
     finally:
@@ -128,27 +144,6 @@ async def monitor_task_abortion(
 
 
 def publish_event(dask_pub: distributed.Pub, event: BaseTaskEvent) -> None:
-    dask_pub.put(event.json())
-
-
-class LogType(Enum):
-    LOG = 1
-    PROGRESS = 2
-    INSTRUMENTATION = 3
-
-
-def publish_task_logs(
-    progress_pub: distributed.Pub,
-    logs_pub: distributed.Pub,
-    log_type: LogType,
-    message_prefix: str,
-    message: str,
-) -> None:
-    logger.info("[%s - %s]: %s", message_prefix, log_type.name, message)
-    if log_type == LogType.PROGRESS:
-        publish_event(
-            progress_pub,
-            TaskProgressEvent.from_dask_worker(progress=float(message)),
-        )
-    else:
-        publish_event(logs_pub, TaskLogEvent.from_dask_worker(log=message))
+    """never reraises, only CancellationError"""
+    with log_catch(logger, reraise=False):
+        dask_pub.put(event.json())

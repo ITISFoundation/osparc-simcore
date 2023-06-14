@@ -79,12 +79,15 @@ qx.Class.define("osparc.data.model.Node", {
 
     key: {
       check: "String",
-      nullable: true
+      nullable: true,
+      apply: "__applyNewMetaData"
     },
 
     version: {
       check: "String",
-      nullable: true
+      nullable: true,
+      event: "changeVersion",
+      apply: "__applyNewMetaData"
     },
 
     nodeId: {
@@ -261,12 +264,55 @@ qx.Class.define("osparc.data.model.Node", {
       return (metaData && metaData.type && metaData.type === "computational");
     },
 
+    isUpdatable: function(metaData) {
+      return osparc.utils.Services.isUpdatable(metaData);
+    },
+
     isDeprecated: function(metaData) {
       return osparc.utils.Services.isDeprecated(metaData);
     },
 
     isRetired: function(metaData) {
       return osparc.utils.Services.isRetired(metaData);
+    },
+
+    hasBootModes: function(metaData) {
+      if ("boot-options" in metaData && "boot_mode" in metaData["boot-options"] && "items" in metaData["boot-options"]["boot_mode"]) {
+        return Object.keys(metaData["boot-options"]["boot_mode"]["items"]).length;
+      }
+      return false;
+    },
+
+    getBootModesSelectBox: function(nodeMetaData, workbench, nodeId) {
+      if (!osparc.data.model.Node.hasBootModes(nodeMetaData)) {
+        return null;
+      }
+
+      const bootModesMD = nodeMetaData["boot-options"]["boot_mode"];
+      const bootModeSB = new qx.ui.form.SelectBox();
+      const sbItems = [];
+      Object.entries(bootModesMD["items"]).forEach(([bootModeId, bootModeMD]) => {
+        const sbItem = new qx.ui.form.ListItem(bootModeMD["label"]);
+        sbItem.bootModeId = bootModeId;
+        bootModeSB.add(sbItem);
+        sbItems.push(sbItem);
+      });
+      let defaultBMId = null;
+      if (workbench && nodeId && "bootOptions" in workbench[nodeId] && "boot_mode" in workbench[nodeId]["bootOptions"]) {
+        defaultBMId = workbench[nodeId]["bootOptions"]["boot_mode"];
+      } else {
+        defaultBMId = bootModesMD["default"];
+      }
+      sbItems.forEach(sbItem => {
+        if (defaultBMId === sbItem.bootModeId) {
+          bootModeSB.setSelection([sbItem]);
+        }
+      });
+      return bootModeSB;
+    },
+
+    getMinVisibleInputs: function(metaData) {
+      return ("min-visible-inputs" in metaData) ? metaData["min-visible-inputs"] : null;
     },
 
     getOutput: function(outputs, outputKey) {
@@ -331,12 +377,28 @@ qx.Class.define("osparc.data.model.Node", {
       return osparc.data.model.Node.isComputational(this.getMetaData());
     },
 
+    isUpdatable: function() {
+      return osparc.data.model.Node.isUpdatable(this.getMetaData());
+    },
+
     isDeprecated: function() {
       return osparc.data.model.Node.isDeprecated(this.getMetaData());
     },
 
     isRetired: function() {
       return osparc.data.model.Node.isRetired(this.getMetaData());
+    },
+
+    hasBootModes: function() {
+      return osparc.data.model.Node.hasBootModes(this.getMetaData());
+    },
+
+    getMinVisibleInputs: function() {
+      return osparc.data.model.Node.getMinVisibleInputs(this.getMetaData());
+    },
+
+    __applyNewMetaData: function() {
+      this.__metaData = osparc.utils.Services.getMetaData(this.getKey(), this.getVersion());
     },
 
     getMetaData: function() {
@@ -408,6 +470,9 @@ qx.Class.define("osparc.data.model.Node", {
             this.__addSettings(metaData.inputs);
             this.__addSettingsAccessLevelEditor(metaData.inputs);
           }
+          if (this.getPropsForm()) {
+            this.getPropsForm().makeInputsDynamic();
+          }
         }
         if (metaData.outputs) {
           this.setOutputs(metaData.outputs);
@@ -453,6 +518,9 @@ qx.Class.define("osparc.data.model.Node", {
       this.__setInputData(nodeData.inputs);
       this.__setInputUnits(nodeData.inputsUnits);
       this.__setInputDataAccess(nodeData.inputAccess);
+      if (this.getPropsForm()) {
+        this.getPropsForm().makeInputsDynamic();
+      }
       this.setOutputData(nodeData.outputs);
       this.addInputNodes(nodeData.inputNodes);
       this.addOutputNodes(nodeData.outputNodes);
@@ -1165,7 +1233,8 @@ qx.Class.define("osparc.data.model.Node", {
         const msg = "Starting " + metaData.key + ":" + metaData.version + "...";
         const msgData = {
           nodeId: this.getNodeId(),
-          msg: msg
+          msg,
+          level: "INFO"
         };
         this.fireDataEvent("showInLogger", msgData);
 
@@ -1182,7 +1251,8 @@ qx.Class.define("osparc.data.model.Node", {
         const msg = "Stopping " + metaData.key + ":" + metaData.version + "...";
         const msgData = {
           nodeId: this.getNodeId(),
-          msg: msg
+          msg: msg,
+          level: "INFO"
         };
         this.fireDataEvent("showInLogger", msgData);
 
@@ -1218,7 +1288,8 @@ qx.Class.define("osparc.data.model.Node", {
               `reported "${serviceMessage}"`;
             const msgData = {
               nodeId: this.getNodeId(),
-              msg: msg
+              msg: msg,
+              level: "INFO"
             };
             this.fireDataEvent("showInLogger", msgData);
           }
@@ -1386,7 +1457,8 @@ qx.Class.define("osparc.data.model.Node", {
       const msg = "Service ready on " + srvUrl;
       const msgData = {
         nodeId: this.getNodeId(),
-        msg: msg
+        msg,
+        level: "INFO"
       };
       this.fireDataEvent("showInLogger", msgData);
       this.__restartIFrame();
@@ -1405,12 +1477,15 @@ qx.Class.define("osparc.data.model.Node", {
       startButton.executeListenerId = executeListenerId;
     },
 
-    attachHandlersToStopButton: function(stopButton) {
+    attachExecuteHandlerToStopButton: function(stopButton) {
+      const executeListenerId = stopButton.addListener("execute", this.requestStopNode, this);
+      stopButton.executeListenerId = executeListenerId;
+    },
+
+    attachVisibilityHandlerToStopButton: function(stopButton) {
       this.getStatus().bind("interactive", stopButton, "visibility", {
         converter: state => (state === "ready") ? "visible" : "excluded"
       });
-      const executeListenerId = stopButton.addListener("execute", this.requestStopNode, this);
-      stopButton.executeListenerId = executeListenerId;
     },
 
     removeNode: function() {

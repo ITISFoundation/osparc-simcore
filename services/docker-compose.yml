@@ -7,6 +7,7 @@ services:
     environment:
       - WEBSERVER_HOST=${WEBSERVER_HOST:-webserver}
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
+      - LOG_FORMAT_LOCAL_DEV_ENABLED=${LOG_FORMAT_LOCAL_DEV_ENABLED}
     env_file:
       - ../.env
     deploy:
@@ -35,6 +36,7 @@ services:
       - autoscaling_subnet
     environment:
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
+      - LOG_FORMAT_LOCAL_DEV_ENABLED=${LOG_FORMAT_LOCAL_DEV_ENABLED}
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
     volumes:
@@ -64,6 +66,7 @@ services:
       - DIRECTOR_HOST=${DIRECTOR_HOST:-director}
       - DIRECTOR_PORT=${DIRECTOR_PORT:-8080}
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
+      - LOG_FORMAT_LOCAL_DEV_ENABLED=${LOG_FORMAT_LOCAL_DEV_ENABLED}
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -140,6 +143,7 @@ services:
       - DYNAMIC_SIDECAR_IMAGE=${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
       - EXTRA_HOSTS_SUFFIX=${EXTRA_HOSTS_SUFFIX:-undefined}
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
+      - LOG_FORMAT_LOCAL_DEV_ENABLED=${LOG_FORMAT_LOCAL_DEV_ENABLED}
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
       - S3_ENDPOINT=${S3_ENDPOINT}
@@ -174,6 +178,26 @@ services:
       - INVITATIONS_OSPARC_URL=${INVITATIONS_OSPARC_URL}
       - INVITATIONS_USERNAME=${INVITATIONS_USERNAME}
       - INVITATIONS_PASSWORD=${INVITATIONS_PASSWORD}
+      - LOG_FORMAT_LOCAL_DEV_ENABLED=${LOG_FORMAT_LOCAL_DEV_ENABLED}
+
+  resource-usage-tracker:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/resource-usage-tracker:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    networks:
+      - default
+    environment:
+      - LOG_FORMAT_LOCAL_DEV_ENABLED=${LOG_FORMAT_LOCAL_DEV_ENABLED}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - PROMETHEUS_URL=${PROMETHEUS_URL}
+      - PROMETHEUS_USERNAME=${PROMETHEUS_USERNAME}
+      - PROMETHEUS_PASSWORD=${PROMETHEUS_PASSWORD}
+      - RESOURCE_USAGE_TRACKER_LOGLEVEL=${LOG_LEVEL:-INFO}
 
   static-webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
@@ -244,9 +268,11 @@ services:
       DIRECTOR_PORT: ${DIRECTOR_PORT:-8080}
       DIRECTOR_V2_HOST: ${DIRECTOR_V2_HOST:-director-v2}
       DIRECTOR_V2_PORT: ${DIRECTOR_V2_PORT:-8000}
+      LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       STORAGE_HOST: ${STORAGE_HOST:-storage}
       STORAGE_PORT: ${STORAGE_PORT:-8080}
       SWARM_STACK_NAME: ${SWARM_STACK_NAME:-simcore}
+      WEBSERVER_DB_LISTENER: 0
       WEBSERVER_GARBAGE_COLLECTOR: "null"
       WEBSERVER_LOGLEVEL: ${LOG_LEVEL:-WARNING}
     env_file:
@@ -266,6 +292,8 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.path=/v0/
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.interval=2000ms
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.timeout=1000ms
+        # NOTE: stickyness must remain until the long running tasks in the webserver are removed
+        # and also https://github.com/ITISFoundation/osparc-simcore/pull/4180 is resolved.
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.sticky.cookie=true
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.sticky.cookie.samesite=lax
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.sticky.cookie.httponly=true
@@ -279,6 +307,27 @@ services:
     networks:
       - default
       - interactive_services_subnet
+  wb-db-event-listener:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    environment:
+      <<: *webserver-environment
+      WEBSERVER_DB_LISTENER: 1
+      WEBSERVER_SOCKETIO: 1
+    env_file:
+      - ../.env
+      - ../.env-wb-db-event-listener
+    deploy:
+      # NOTE: https://github.com/ITISFoundation/osparc-simcore/pull/4286
+      # NOTE: this MUSTN'T change, or weird things might happen
+      # this will stay until all legacy dynamic services are gone.
+      replicas: 1
+      placement:
+        constraints:
+          - node.platform.os == linux
+    networks:
+      - default
 
   wb-garbage-collector:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
@@ -287,6 +336,7 @@ services:
     environment:
       <<: *webserver-environment
       WEBSERVER_GARBAGE_COLLECTOR: '{"GARBAGE_COLLECTOR_INTERVAL_S": 30}'
+      WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS: 60
     env_file:
       - ../.env
       - ../.env-wb-garbage-collector
@@ -315,6 +365,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       LOGLEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       AGENT_VOLUMES_CLEANUP_S3_SECURE: ${AGENT_VOLUMES_CLEANUP_S3_SECURE}
       AGENT_VOLUMES_CLEANUP_S3_ENDPOINT: ${AGENT_VOLUMES_CLEANUP_S3_ENDPOINT}
       AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY: ${AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY}
@@ -340,6 +391,7 @@ services:
     environment:
       &sidecar-environment
       DASK_SCHEDULER_HOST: ${DASK_SCHEDULER_HOST:-dask-scheduler}
+      DASK_LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       SIDECAR_LOGLEVEL: ${LOG_LEVEL:-WARNING}
       SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME: ${SWARM_STACK_NAME}_computational_shared_data
       SIDECAR_COMP_SERVICES_SHARED_FOLDER: ${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
@@ -365,6 +417,7 @@ services:
       - storage_subnet
     environment:
       - TRACING_THRIFT_COMPACT_ENDPOINT=${TRACING_THRIFT_COMPACT_ENDPOINT}
+      - DATCORE_ADAPTER_LOG_FORMAT_LOCAL_DEV_ENABLED=${LOG_FORMAT_LOCAL_DEV_ENABLED}
 
   storage:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
@@ -404,6 +457,8 @@ services:
     environment:
       - RABBITMQ_DEFAULT_USER=${RABBIT_USER}
       - RABBITMQ_DEFAULT_PASS=${RABBIT_PASSWORD}
+    volumes:
+      - rabbit_data:/var/lib/rabbitmq
     networks:
       - default
       - interactive_services_subnet
@@ -583,6 +638,8 @@ volumes:
     name: ${SWARM_STACK_NAME}_computational_shared_data
   redis-data:
     name: ${SWARM_STACK_NAME}_redis-data
+  rabbit_data:
+    name: ${SWARM_STACK_NAME}_rabbit_data
 
 networks:
   default:

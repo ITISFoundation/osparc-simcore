@@ -6,14 +6,15 @@ set -o pipefail
 IFS=$'\n\t'
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-PYTHON_VERSION=3.9.12
+PYTHON_VERSION=3.10.10
 IMAGE_NAME="local/pydeps-devkit:${PYTHON_VERSION}"
 WORKDIR="$(pwd)"
 
 
 Build()
 {
-  docker build \
+  docker buildx build \
+    --load \
     --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
     --build-arg HOME_DIR="/home/$USER" \
     --tag "$IMAGE_NAME" \

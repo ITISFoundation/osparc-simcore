@@ -5,12 +5,15 @@ import json
 import logging
 import os
 import urllib.parse
-from typing import Any, Optional
+from contextlib import asynccontextmanager
+from typing import Any, AsyncIterator
 
 import aiodocker
 import httpx
 from fastapi import FastAPI
+from models_library.basic_types import PortInt
 from models_library.projects import Node
+from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
@@ -23,10 +26,13 @@ from servicelib.common_headers import (
     X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
     X_SIMCORE_USER_AGENT,
 )
-from simcore_service_director_v2.core.settings import AppSettings
+from simcore_service_director_v2.core.settings import DynamicSidecarSettings
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
+)
+from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
+    SchedulerData,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
     DynamicSidecarsScheduler,
@@ -120,9 +126,7 @@ async def _wait_for_service(service_name: str) -> None:
                 )
 
 
-async def _get_service_published_port(
-    service_name: str, target_port: Optional[int] = None
-) -> int:
+async def _get_service_published_port(service_name: str, target_port: int) -> PortInt:
     # it takes a bit of time for the port to be auto generated
     # keep trying until it is there
     async with aiodocker.Docker() as docker_client:
@@ -190,47 +194,72 @@ async def _get_service_published_port(
         return published_port
 
 
+@asynccontextmanager
+async def _disable_create_user_services(
+    scheduler_data: SchedulerData,
+) -> AsyncIterator[None]:
+    """
+    disables action to avoid proxy configuration from being updated
+    before the service is fully port forwarded
+    """
+    scheduler_data.dynamic_sidecar.was_compose_spec_submitted = True
+    try:
+        yield None
+    finally:
+        scheduler_data.dynamic_sidecar.was_compose_spec_submitted = False
+
+
 async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
     """
-    Normally director-v2 talks via docker-netwoks with the dynamic-sidecar.
-    Since the director-v2 was started outside docker and is not
-    running in a container, the service port needs to be exposed and the
-    url needs to be changed to get_localhost_ip()
+    Calls from director-v2 to dy-sidecar and dy-proxy
+    are normally resolved via docker networks.
+    Since the director-v2 was started outside docker (it is not
+    running in a container) the service port needs to be exposed and the
+    url needs to be changed to get_localhost_ip().
 
-    returns: the local endpoint
+    returns: the dy-sidecar's new endpoint
     """
-    service_name = f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{node_uuid}"
 
-    assert app.state
-    settings: AppSettings = app.state.settings
-    await _wait_for_service(service_name)
-
-    published_port = await _get_service_published_port(
-        service_name,
-        target_port=settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_PORT,
-    )
-    assert (
-        published_port is not None
-    ), f"{settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.json()=}"
-
-    # patch the endppoint inside the scheduler
+    # pylint: disable=protected-access
     scheduler: DynamicSidecarsScheduler = app.state.dynamic_sidecar_scheduler
-    endpoint: Optional[str] = None
-    async with scheduler._scheduler._lock:  # pylint: disable=protected-access
-        for (
-            scheduler_data
-        ) in (  # pylint: disable=protected-access
-            scheduler._scheduler._to_observe.values()
-        ):
-            if scheduler_data.service_name == service_name:
-                scheduler_data.hostname = f"{get_localhost_ip()}"
-                scheduler_data.port = published_port
+    service_name = scheduler._scheduler._inverse_search_mapping[NodeID(node_uuid)]
+    scheduler_data: SchedulerData = scheduler._scheduler._to_observe[service_name]
 
-                endpoint = scheduler_data.endpoint
-                assert endpoint == f"http://{get_localhost_ip()}:{published_port}"
-                break
+    sidecar_settings: DynamicSidecarSettings = (
+        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+    )
 
-    assert endpoint is not None
+    async with _disable_create_user_services(scheduler_data):
+        sidecar_service_name = f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{node_uuid}"
+        proxy_service_name = f"{DYNAMIC_PROXY_SERVICE_PREFIX}_{node_uuid}"
+
+        await _wait_for_service(sidecar_service_name)
+        await _wait_for_service(proxy_service_name)
+
+        sidecar_published_port = await _get_service_published_port(
+            sidecar_service_name,
+            target_port=sidecar_settings.DYNAMIC_SIDECAR_PORT,
+        )
+
+        proxy_published_port = await _get_service_published_port(
+            proxy_service_name,
+            target_port=sidecar_settings.DYNAMIC_SIDECAR_PROXY_SETTINGS.DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT,
+        )
+        assert proxy_published_port is not None, f"{sidecar_settings.json()=}"
+
+        async with scheduler._scheduler._lock:
+            localhost_ip = get_localhost_ip()
+
+            # use prot forwarded address for dy-sidecar
+            scheduler_data.hostname = localhost_ip
+            scheduler_data.port = sidecar_published_port
+
+            # use port forwarded address for dy-proxy
+            scheduler_data.proxy_service_name = localhost_ip
+            scheduler_data.proxy_admin_api_port = proxy_published_port
+
+    endpoint = scheduler_data.endpoint
+    assert endpoint == f"http://{localhost_ip}:{sidecar_published_port}"
     return endpoint
 
 
@@ -244,7 +273,7 @@ async def _get_proxy_port(node_uuid: str) -> PositiveInt:
     returns: the local endpoint
     """
     service_name = f"{DYNAMIC_PROXY_SERVICE_PREFIX}_{node_uuid}"
-    port = await _get_service_published_port(service_name)
+    port = await _get_service_published_port(service_name, target_port=80)
     assert port is not None
     return port
 
@@ -267,7 +296,7 @@ async def assert_start_service(
     service_key: str,
     service_version: str,
     service_uuid: str,
-    basepath: Optional[str],
+    basepath: str | None,
     catalog_url: URL,
 ) -> None:
     service_resources: ServiceResourcesDict = await _get_service_resources(
@@ -281,6 +310,7 @@ async def assert_start_service(
         service_key=service_key,
         service_version=service_version,
         service_uuid=service_uuid,
+        can_save=True,
         basepath=basepath,
         service_resources=ServiceResourcesDictHelpers.create_jsonable(
             service_resources

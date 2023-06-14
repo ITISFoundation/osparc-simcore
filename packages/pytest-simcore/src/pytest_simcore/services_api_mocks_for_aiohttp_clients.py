@@ -21,6 +21,7 @@ from models_library.api_schemas_storage import (
 )
 from models_library.clusters import Cluster
 from models_library.generics import Envelope
+from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, ByteSize, parse_obj_as
@@ -70,7 +71,6 @@ FULL_PROJECT_NODE_STATES: dict[str, dict[str, Any]] = {
 
 
 def create_computation_cb(url, **kwargs) -> CallbackResult:
-
     assert "json" in kwargs, f"missing body in call to {url}"
     body = kwargs["json"]
     for param in ["user_id", "project_id"]:
@@ -103,18 +103,23 @@ def create_computation_cb(url, **kwargs) -> CallbackResult:
                 "62237c33-8d6c-4709-aa92-c3cf693dd6d2",
             ],
         }
-
-    return CallbackResult(
-        status=201,
-        # NOTE: aioresponses uses json.dump which does NOT encode serialization of UUIDs
-        payload={
-            "id": str(kwargs["json"]["project_id"]),
+    returned_computation = ComputationTask.parse_obj(
+        ComputationTask.Config.schema_extra["examples"][0]
+    ).copy(
+        update={
+            "id": f"{kwargs['json']['project_id']}",
             "state": state,
             "pipeline_details": {
                 "adjacency_list": pipeline,
                 "node_states": node_states,
+                "progress": 0,
             },
-        },
+        }
+    )
+    return CallbackResult(
+        status=201,
+        # NOTE: aioresponses uses json.dump which does NOT encode serialization of UUIDs
+        payload=jsonable_encoder(returned_computation),
     )
 
 
@@ -122,25 +127,28 @@ def get_computation_cb(url, **kwargs) -> CallbackResult:
     state = RunningState.NOT_STARTED
     pipeline: dict[str, list[str]] = FULL_PROJECT_PIPELINE_ADJACENCY
     node_states = FULL_PROJECT_NODE_STATES
-
-    return CallbackResult(
-        status=200,
-        payload={
+    returned_computation = ComputationTask.parse_obj(
+        ComputationTask.Config.schema_extra["examples"][0]
+    ).copy(
+        update={
             "id": Path(url.path).name,
             "state": state,
             "pipeline_details": {
                 "adjacency_list": pipeline,
                 "node_states": node_states,
+                "progress": 0,
             },
-            "iteration": 2,
-            "cluster_id": 23,
-        },
+        }
+    )
+
+    return CallbackResult(
+        status=200,
+        payload=jsonable_encoder(returned_computation),
     )
 
 
 def create_cluster_cb(url, **kwargs) -> CallbackResult:
     assert "json" in kwargs, f"missing body in call to {url}"
-    body = kwargs["json"]
     assert url.query.get("user_id")
     random_cluster = Cluster.parse_obj(
         random.choice(Cluster.Config.schema_extra["examples"])
@@ -186,6 +194,7 @@ def get_cluster_cb(url, **kwargs) -> CallbackResult:
 def get_cluster_details_cb(url, **kwargs) -> CallbackResult:
     assert url.query.get("user_id")
     cluster_id = url.path.split("/")[-1]
+    assert cluster_id
     return CallbackResult(
         status=200,
         payload={"scheduler": {}, "cluster": {}, "dashboard_link": "some_faked_link"},
@@ -258,9 +267,6 @@ async def director_v2_service_mock(
     aioresponses_mocker.patch(projects_networks_pattern, status=204, repeat=True)
 
     # clusters
-    cluster_route_pattern = re.compile(
-        r"^http://[a-z\-_]*director-v2:[0-9]+/v2/clusters(/[0-9]+)?\?(\w+(?:=\w+)?\&?){1,}$"
-    )
     aioresponses_mocker.post(
         re.compile(
             r"^http://[a-z\-_]*director-v2:[0-9]+/v2/clusters\?(\w+(?:=\w+)?\&?){1,}$"
@@ -350,7 +356,7 @@ def get_upload_link_cb(url: URL, **kwargs) -> CallbackResult:
     scheme = {LinkType.PRESIGNED: "http", LinkType.S3: "s3"}
 
     if file_size := kwargs["params"].get("file_size") is not None:
-
+        assert file_size
         upload_schema = FileUploadSchema(
             chunk_size=parse_obj_as(ByteSize, "5GiB"),
             urls=[parse_obj_as(AnyUrl, f"{scheme[link_type]}://{file_id}")],

@@ -397,16 +397,17 @@ async def test_regression_io_log_redirect_cb(
         assert inspect.getfullargspec(
             outputs_manager.io_log_redirect_cb.func
         ) == FullArgSpec(
-            args=["app", "logs"],
+            args=["app", "log"],
             varargs=None,
             varkw=None,
             defaults=None,
-            kwonlyargs=[],
+            kwonlyargs=["log_level"],
             kwonlydefaults=None,
             annotations={
                 "return": None,
                 "app": FastAPI,
-                "logs": str,
+                "log": str,
+                "log_level": int,
             },
         )
 

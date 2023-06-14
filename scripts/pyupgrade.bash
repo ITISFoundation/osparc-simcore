@@ -8,12 +8,13 @@ IFS=$'\n\t'
 #
 #
 # NOTE: check --py* flag in CLI when PYTHON_VERSION is modified
-PYTHON_VERSION=3.9.12
+PYTHON_VERSION=3.10.10
 IMAGE_NAME="local/pyupgrade-devkit:${PYTHON_VERSION}"
 WORKDIR="$(pwd)"
 
 Build() {
   docker buildx build \
+    --load \
     --build-arg HOME_DIR="/home/$USER" \
     --tag "$IMAGE_NAME" \
     - <<EOF
@@ -27,7 +28,7 @@ RUN pip install \
   pyupgrade
 
 ENTRYPOINT ["pyupgrade", \
-  "--py39-plus" ]
+  "--py310-plus" ]
 EOF
 }
 

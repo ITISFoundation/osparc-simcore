@@ -18,7 +18,7 @@ const {
   enableDemoMode
 } = utils.parseCommandLineArguments(args)
 
-const studyName = "sim4life";
+const studyName = "New project";
 
 async function runTutorial(user, pass, newUser, parallelUserIdx) {
   const tutorial = new tutorialBase.TutorialBase(
@@ -65,7 +65,7 @@ async function runTutorial(user, pass, newUser, parallelUserIdx) {
     await tutorial.testS4L(s4lNodeId);
   }
   catch (err) {
-    tutorial.setTutorialFailed(true);
+    await tutorial.setTutorialFailed(true);
     console.log('Tutorial error: ' + err);
     throw "Tutorial Failed";
   }

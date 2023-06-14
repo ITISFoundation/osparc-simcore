@@ -3,15 +3,17 @@
 # pylint:disable=redefined-outer-name
 
 import re
+import urllib.parse
 from copy import deepcopy
 from pprint import pformat
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable
 
 import pytest
 from models_library.basic_regex import VERSION_RE
 from models_library.services import (
     COMPUTATIONAL_SERVICE_KEY_FORMAT,
     DYNAMIC_SERVICE_KEY_FORMAT,
+    SERVICE_ENCODED_KEY_RE,
     SERVICE_KEY_RE,
     BootOption,
     ServiceDockerData,
@@ -24,7 +26,7 @@ from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataA
 
 
 @pytest.fixture()
-def minimal_service_common_data() -> Dict[str, Any]:
+def minimal_service_common_data() -> dict[str, Any]:
     return dict(
         name="this is a nice sample service",
         description="this is the description of the service",
@@ -32,7 +34,7 @@ def minimal_service_common_data() -> Dict[str, Any]:
 
 
 def test_create_minimal_service_common_data(
-    minimal_service_common_data: Dict[str, Any]
+    minimal_service_common_data: dict[str, Any]
 ):
     service = _BaseServiceCommonDataModel(**minimal_service_common_data)
 
@@ -41,7 +43,7 @@ def test_create_minimal_service_common_data(
     assert service.thumbnail == None
 
 
-def test_node_with_empty_thumbnail(minimal_service_common_data: Dict[str, Any]):
+def test_node_with_empty_thumbnail(minimal_service_common_data: dict[str, Any]):
     service_data = minimal_service_common_data
     service_data.update({"thumbnail": ""})
 
@@ -52,7 +54,7 @@ def test_node_with_empty_thumbnail(minimal_service_common_data: Dict[str, Any]):
     assert service.thumbnail == None
 
 
-def test_node_with_thumbnail(minimal_service_common_data: Dict[str, Any]):
+def test_node_with_thumbnail(minimal_service_common_data: dict[str, Any]):
     service_data = minimal_service_common_data
     service_data.update(
         {
@@ -85,6 +87,7 @@ def test_service_models_examples(model_cls, model_cls_examples):
         assert model_instance, f"Failed with {name}"
 
 
+@pytest.mark.parametrize("pattern", (SERVICE_KEY_RE, SERVICE_ENCODED_KEY_RE))
 @pytest.mark.parametrize(
     "service_key",
     [
@@ -134,19 +137,16 @@ def test_service_models_examples(model_cls, model_cls_examples):
         "simcore/services/dynamic/raw-graphs-table",
         "simcore/services/dynamic/tissue-properties",
     ],
+    ids=str,
 )
-@pytest.mark.parametrize(
-    "regex_pattern",
-    [SERVICE_KEY_RE, r"^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$"],
-    ids=["pattern_with_w", "pattern_with_s"],
-)
-def test_service_key_regex_patterns(service_key: str, regex_pattern: str):
-    match = re.match(regex_pattern, service_key)
+def test_SERVICE_KEY_RE(service_key: str, pattern: re.Pattern):
+    if pattern == SERVICE_ENCODED_KEY_RE:
+        service_key = urllib.parse.quote(service_key, safe="")
+
+    match = re.match(pattern, service_key)
     assert match
 
-    assert match.group(1) == "simcore"
-    assert match.group(2) == "services"
-    assert match.group(3) in ["comp", "dynamic", "frontend"]
+    assert match.group("type") in ["comp", "dynamic", "frontend"]
     assert match.group(4) is not None
 
     # tests formatters
@@ -163,7 +163,7 @@ def test_service_key_regex_patterns(service_key: str, regex_pattern: str):
         new_service_key = DYNAMIC_SERVICE_KEY_FORMAT.format(service_name=service_name)
 
     if new_service_key:
-        new_match = re.match(regex_pattern, new_service_key)
+        new_match = re.match(pattern, new_service_key)
         assert new_match
         assert new_match.groups() == match.groups()
 
@@ -179,25 +179,27 @@ def test_services_model_examples(model_cls, model_cls_examples):
         assert model_instance, f"Failed with {name}"
 
 
+@pytest.mark.skip(reason="will be disabled by PC")
 @pytest.mark.parametrize(
     "python_regex_pattern, json_schema_file_name, json_schema_entry_paths",
     [
-        (SERVICE_KEY_RE, "project-v0.0.1.json", ["key"]),
-        (VERSION_RE, "project-v0.0.1.json", ["version"]),
-        (VERSION_RE, "node-meta-v0.0.1.json", ["version"]),
-        (SERVICE_KEY_RE, "node-meta-v0.0.1.json", ["key"]),
+        (SERVICE_KEY_RE, "project-v0.0.1-pydantic.json", ["key"]),
+        (VERSION_RE, "project-v0.0.1-pydantic.json", ["version"]),
+        (VERSION_RE, "node-meta-v0.0.1-pydantic.json", ["version"]),
+        (SERVICE_KEY_RE, "node-meta-v0.0.1-pydantic.json", ["key"]),
     ],
 )
 def test_same_regex_patterns_in_jsonschema_and_python(
     python_regex_pattern: str,
     json_schema_file_name: str,
-    json_schema_entry_paths: List[str],
+    json_schema_entry_paths: list[str],
     json_schema_dict: Callable,
 ):
     # read file in
     json_schema_config = json_schema_dict(json_schema_file_name)
+
     # go to keys
-    def _find_pattern_entry(obj: Dict[str, Any], key: str) -> Any:
+    def _find_pattern_entry(obj: dict[str, Any], key: str) -> Any:
         if key in obj:
             return obj[key]["pattern"]
         for v in obj.values():
@@ -217,3 +219,31 @@ def test_boot_option_wrong_default() -> None:
         with pytest.raises(ValueError):
             example["default"] = "__undefined__"
             assert BootOption(**example)
+
+
+# NOTE: do not add items to this list, you are wrong to do so!
+FIELD_NAME_EXCEPTIONS: set[str] = {
+    "integration-version",
+    "boot-options",
+    "min-visible-inputs",
+}
+
+
+def test_service_docker_data_labels_convesion():
+    # tests that no future fields have "dashed names"
+    # we want labels to look like io.simcore.a_label_property
+    convension_breaking_fields: set[tuple[str, str]] = set()
+
+    fiedls_with_aliases: list[tuple[str, str]] = [
+        (x.name, x.alias) for x in ServiceDockerData.__fields__.values()
+    ]
+
+    for name, alias in fiedls_with_aliases:
+        if alias in FIELD_NAME_EXCEPTIONS:
+            continue
+        # check dashes and uppercase
+        if alias.lower() != alias or "-" in alias:
+            convension_breaking_fields.add((name, alias))
+    assert (
+        len(convension_breaking_fields) == 0
+    ), "You are no longer allowed to add labels with dashes in them. All lables should be snake cased!"

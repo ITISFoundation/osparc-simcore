@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 FROM python:3.6-slim as base
 
 LABEL maintainer=sanderegg
@@ -16,8 +17,8 @@ FROM base as build
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
-    build-essential \
-    git \
+  build-essential \
+  git \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
@@ -25,8 +26,9 @@ RUN apt-get update \
 # NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
 RUN python -m venv "${VIRTUAL_ENV}"
 
-RUN pip --no-cache-dir install --upgrade \
-  pip~=23.0  \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install --upgrade \
+  pip~=23.1  \
   wheel \
   setuptools
 

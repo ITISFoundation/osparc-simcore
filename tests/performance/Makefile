@@ -28,7 +28,7 @@ __check_defined = \
 
 .PHONY: build
 build: ## builds distributed osparc locust docker image
-	docker buildx build --build-arg LOCUST_VERSION=$(LOCUST_VERSION) --tag itisfoundation/locust:$(LOCUST_VERSION) --tag local/locust:latest .
+	docker buildx build --load --build-arg LOCUST_VERSION=$(LOCUST_VERSION) --tag itisfoundation/locust:$(LOCUST_VERSION) --tag local/locust:latest .
 
 .PHONY: push
 push:

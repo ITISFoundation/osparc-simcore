@@ -1,6 +1,6 @@
 from datetime import datetime
 from logging import getLogger
-from typing import Literal, Optional, TypedDict
+from typing import Literal, TypedDict
 
 import asyncpg
 from aiohttp import web
@@ -20,14 +20,17 @@ ActionLiteralStr = Literal[
 ]
 
 
-class ConfirmationTokenDict(TypedDict):
-    # SEE packages/postgres-database/src/simcore_postgres_database/models/confirmations.py
+class BaseConfirmationTokenDict(TypedDict):
     code: str
-    user_id: int
     action: ActionLiteralStr
+
+
+class ConfirmationTokenDict(BaseConfirmationTokenDict):
+    # SEE packages/postgres-database/src/simcore_postgres_database/models/confirmations.py
+    user_id: int
     created_at: datetime
     # SEE handlers_confirmation.py::email_confirmation to determine what type is associated to each action
-    data: Optional[str]
+    data: str | None
 
 
 ## REPOSITORY
@@ -90,12 +93,15 @@ class AsyncpgStorage:
             assert code == c  # nosec
             return confirmation
 
-    async def get_confirmation(self, filter_dict) -> Optional[ConfirmationTokenDict]:
+    async def get_confirmation(self, filter_dict) -> ConfirmationTokenDict | None:
         if "user" in filter_dict:
             filter_dict["user_id"] = filter_dict.pop("user")["id"]
         async with self.pool.acquire() as conn:
             confirmation = await _sql.find_one(conn, self.confirm_tbl, filter_dict)
-            return ConfirmationTokenDict(**confirmation) if confirmation else None
+            confirmation_token: ConfirmationTokenDict | None = (
+                ConfirmationTokenDict(**confirmation) if confirmation else None  # type: ignore[misc]
+            )
+            return confirmation_token
 
     async def delete_confirmation(self, confirmation: ConfirmationTokenDict):
         async with self.pool.acquire() as conn:
@@ -128,6 +134,6 @@ class AsyncpgStorage:
 
 
 def get_plugin_storage(app: web.Application) -> AsyncpgStorage:
-    storage = app.get(APP_LOGIN_STORAGE_KEY)
+    storage: AsyncpgStorage = app.get(APP_LOGIN_STORAGE_KEY)
     assert storage, "login plugin was not initialized"  # nosec
     return storage

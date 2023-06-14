@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import TypeAlias
 
 from models_library.clusters import (
     CLUSTER_ADMIN_RIGHTS,
@@ -39,7 +39,7 @@ class WorkerMetrics(BaseModel):
     task_counts: TaskCounts = Field(..., description="task details")
 
 
-AvailableResources = DictModel[str, PositiveFloat]
+AvailableResources: TypeAlias = DictModel[str, PositiveFloat]
 
 
 class UsedResources(DictModel[str, NonNegativeFloat]):
@@ -64,13 +64,12 @@ class Worker(BaseModel):
     metrics: WorkerMetrics
 
 
-class WorkersDict(DictModel[AnyUrl, Worker]):
-    ...
+WorkersDict: TypeAlias = dict[AnyUrl, Worker]
 
 
 class Scheduler(BaseModel):
     status: str = Field(..., description="The running status of the scheduler")
-    workers: Optional[WorkersDict] = Field(default_factory=dict)
+    workers: WorkersDict | None = Field(default_factory=dict)
 
     @validator("workers", pre=True, always=True)
     @classmethod
@@ -112,7 +111,7 @@ class ClusterDetailsGet(ClusterDetails):
 
 
 class ClusterCreate(BaseCluster):
-    owner: Optional[GroupID]
+    owner: GroupID | None
     authentication: ExternalClusterAuthentication
     access_rights: dict[GroupID, ClusterAccessRights] = Field(
         alias="accessRights", default_factory=dict
@@ -165,14 +164,14 @@ class ClusterCreate(BaseCluster):
 
 
 class ClusterPatch(BaseCluster):
-    name: Optional[str]
-    description: Optional[str]
-    type: Optional[ClusterType]
-    owner: Optional[GroupID]
-    thumbnail: Optional[HttpUrl]
-    endpoint: Optional[AnyUrl]
-    authentication: Optional[ExternalClusterAuthentication]
-    access_rights: Optional[dict[GroupID, ClusterAccessRights]] = Field(
+    name: str | None
+    description: str | None
+    type: ClusterType | None
+    owner: GroupID | None
+    thumbnail: HttpUrl | None
+    endpoint: AnyUrl | None
+    authentication: ExternalClusterAuthentication | None
+    access_rights: dict[GroupID, ClusterAccessRights] | None = Field(
         alias="accessRights"
     )
 

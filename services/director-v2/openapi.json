@@ -120,7 +120,7 @@
             "required": true,
             "schema": {
               "title": "Service Key",
-              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+              "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "type": "string",
               "description": "Distinctive name for the node based on the docker registry path"
             },
@@ -178,7 +178,7 @@
             "required": true,
             "schema": {
               "title": "Service Key",
-              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+              "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "type": "string",
               "description": "Distinctive name for the node based on the docker registry path"
             },
@@ -312,7 +312,7 @@
             "required": true,
             "schema": {
               "title": "Service Key",
-              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+              "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
               "type": "string",
               "description": "distinctive name for the node based on the docker registry path"
             },
@@ -815,6 +815,15 @@
             },
             "name": "x-dynamic-sidecar-request-scheme",
             "in": "header"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "X-Simcore-User-Agent",
+              "type": "string"
+            },
+            "name": "x-simcore-user-agent",
+            "in": "header"
           }
         ],
         "requestBody": {
@@ -922,16 +931,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
           "204": {
-            "description": "No Content"
+            "description": "Successful Response"
           },
           "422": {
             "description": "Validation Error",
@@ -1204,7 +1205,7 @@
             "required": true,
             "schema": {
               "title": "Cluster Id",
-              "minimum": 0.0,
+              "minimum": 0,
               "type": "integer"
             },
             "name": "cluster_id",
@@ -1256,7 +1257,7 @@
             "required": true,
             "schema": {
               "title": "Cluster Id",
-              "minimum": 0.0,
+              "minimum": 0,
               "type": "integer"
             },
             "name": "cluster_id",
@@ -1301,7 +1302,7 @@
             "required": true,
             "schema": {
               "title": "Cluster Id",
-              "minimum": 0.0,
+              "minimum": 0,
               "type": "integer"
             },
             "name": "cluster_id",
@@ -1409,7 +1410,7 @@
             "required": true,
             "schema": {
               "title": "Cluster Id",
-              "minimum": 0.0,
+              "minimum": 0,
               "type": "integer"
             },
             "name": "cluster_id",
@@ -1511,7 +1512,7 @@
             "required": true,
             "schema": {
               "title": "Cluster Id",
-              "minimum": 0.0,
+              "minimum": 0,
               "type": "integer"
             },
             "name": "cluster_id",
@@ -2096,7 +2097,7 @@
           },
           "id": {
             "title": "Id",
-            "minimum": 0.0,
+            "minimum": 0,
             "type": "integer",
             "description": "The cluster ID"
           }
@@ -2252,7 +2253,7 @@
           },
           "cluster_id": {
             "title": "Cluster Id",
-            "minimum": 0.0,
+            "minimum": 0,
             "type": "integer",
             "description": "the computation shall use the cluster described by its id, 0 is the default cluster"
           }
@@ -2287,6 +2288,9 @@
           "pipeline_details",
           "iteration",
           "cluster_id",
+          "started",
+          "stopped",
+          "submitted",
           "url"
         ],
         "type": "object",
@@ -2328,9 +2332,27 @@
           },
           "cluster_id": {
             "title": "Cluster Id",
-            "minimum": 0.0,
+            "minimum": 0,
             "type": "integer",
             "description": "the cluster on which the computaional task runs/ran (none if no task ran yet)"
+          },
+          "started": {
+            "title": "Started",
+            "type": "string",
+            "description": "the timestamp when the computation was started or None if not started yet",
+            "format": "date-time"
+          },
+          "stopped": {
+            "title": "Stopped",
+            "type": "string",
+            "description": "the timestamp when the computation was stopped or None if not started nor stopped yet",
+            "format": "date-time"
+          },
+          "submitted": {
+            "title": "Submitted",
+            "type": "string",
+            "description": "task last modification timestamp or None if the there is no task",
+            "format": "date-time"
           },
           "url": {
             "title": "Url",
@@ -2404,13 +2426,14 @@
           "project_id",
           "service_uuid",
           "service_resources",
-          "product_name"
+          "product_name",
+          "can_save"
         ],
         "type": "object",
         "properties": {
           "service_key": {
             "title": "Service Key",
-            "pattern": "^(simcore)/(services)/dynamic(/[\\w/-]+)+$",
+            "pattern": "^simcore/services/dynamic/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
             "type": "string",
             "description": "distinctive name for the node based on the docker registry path"
           },
@@ -2450,6 +2473,11 @@
             "title": "Product Name",
             "type": "string",
             "description": "Current product name"
+          },
+          "can_save": {
+            "title": "Can Save",
+            "type": "boolean",
+            "description": "the service data must be saved when closing"
           }
         },
         "example": {
@@ -2460,6 +2488,7 @@
           "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
           "basepath": "/x/75c7f3f4-18f9-4678-8610-54a2ade78eaa",
           "product_name": "osparc",
+          "can_save": true,
           "service_resources": {
             "container": {
               "image": "simcore/services/dynamic/jupyter-math:2.0.5",
@@ -2503,7 +2532,7 @@
         "properties": {
           "image": {
             "title": "Image",
-            "pattern": "^(?P<registry_host>(?:(?:(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z0-9-]+(?::\\d+)?)|[a-zA-Z0-9-]+:\\d+))?(?:/)?(?P<docker_image>(?:[a-z0-9][a-z0-9_.-]*/)*[a-z0-9-_]+[a-z0-9])(?::(?P<docker_tag>[\\w][\\w.-]{0,126}[\\w]))?(?P<docker_digest>\\@sha256:[a-fA-F0-9]{64})?$",
+            "pattern": "^(?:([a-z0-9-]+(?:\\.[a-z0-9-]+)+(?::\\d+)?|[a-z0-9-]+:\\d+)/)?((?:[a-z0-9][a-z0-9_.-]*/)*[a-z0-9-_]+[a-z0-9])(?::([\\w][\\w.-]{0,127}))?(\\@sha256:[a-fA-F0-9]{32,64})?$",
             "type": "string",
             "description": "Used by the frontend to provide a context for the users.Services with a docker-compose spec will have multiple entries.Using the `image:version` instead of the docker-compose spec is more helpful for the end user."
           },
@@ -2656,7 +2685,7 @@
           },
           "GPU": {
             "title": "Gpu",
-            "minimum": 0.0,
+            "minimum": 0,
             "type": "integer",
             "description": "defines the required (maximum) GPU for running the services"
           },
@@ -2700,6 +2729,14 @@
             ],
             "description": "the node's current state",
             "default": "NOT_STARTED"
+          },
+          "progress": {
+            "title": "Progress",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "type": "number",
+            "description": "current progress of the task if available (None if not started or not a computational task)",
+            "default": 0
           }
         },
         "additionalProperties": false
@@ -2721,6 +2758,7 @@
         "title": "PipelineDetails",
         "required": [
           "adjacency_list",
+          "progress",
           "node_states"
         ],
         "type": "object",
@@ -2736,6 +2774,13 @@
               }
             },
             "description": "The adjacency list of the current pipeline in terms of {NodeID: [successor NodeID]}"
+          },
+          "progress": {
+            "title": "Progress",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "type": "number",
+            "description": "the progress of the pipeline (None if there are no computational tasks)"
           },
           "node_states": {
             "title": "Node States",
@@ -2845,7 +2890,7 @@
         "properties": {
           "service_key": {
             "title": "Service Key",
-            "pattern": "^(simcore)/(services)/dynamic(/[\\w/-]+)+$",
+            "pattern": "^simcore/services/dynamic/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
             "type": "string",
             "description": "distinctive name for the node based on the docker registry path"
           },
@@ -2968,7 +3013,7 @@
           },
           "service_key": {
             "title": "Service Key",
-            "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+            "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
             "type": "string",
             "description": "distinctive name for the node based on the docker registry path",
             "example": [
@@ -3069,7 +3114,11 @@
             "description": "The running status of the scheduler"
           },
           "workers": {
-            "$ref": "#/components/schemas/WorkersDict"
+            "title": "Workers",
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Worker"
+            }
           }
         }
       },
@@ -3159,7 +3208,7 @@
           },
           "key": {
             "title": "Key",
-            "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+            "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
             "type": "string",
             "description": "distinctive name for the node based on the docker registry path"
           },
@@ -3218,6 +3267,12 @@
             "title": "Boot-Options",
             "type": "object",
             "description": "Service defined boot options. These get injected in the service as env variables."
+          },
+          "min-visible-inputs": {
+            "title": "Min-Visible-Inputs",
+            "minimum": 0,
+            "type": "integer",
+            "description": "The number of 'data type inputs' displayed by default in the UI. When None all 'data type inputs' are displayed."
           }
         },
         "additionalProperties": false,
@@ -3700,13 +3755,6 @@
             ],
             "description": "task details"
           }
-        }
-      },
-      "WorkersDict": {
-        "title": "WorkersDict",
-        "type": "object",
-        "additionalProperties": {
-          "$ref": "#/components/schemas/Worker"
         }
       }
     }

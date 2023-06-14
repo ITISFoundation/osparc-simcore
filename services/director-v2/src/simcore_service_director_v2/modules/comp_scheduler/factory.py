@@ -1,12 +1,11 @@
 import logging
-from typing import cast
 
 from fastapi import FastAPI
 from models_library.clusters import DEFAULT_CLUSTER_ID
-from simcore_service_director_v2.modules.dask_clients_pool import DaskClientsPool
 
 from ...core.errors import ConfigurationError
 from ...models.domains.comp_runs import CompRunsAtDB
+from ...modules.dask_clients_pool import DaskClientsPool
 from ...modules.rabbitmq import get_rabbitmq_client
 from ...utils.scheduler import SCHEDULED_STATES, get_repository
 from ..db.repositories.comp_runs import CompRunsRepository
@@ -22,9 +21,7 @@ async def create_from_db(app: FastAPI) -> BaseCompScheduler:
             "Database connection is missing. Please check application configuration."
         )
     db_engine = app.state.engine
-    runs_repository: CompRunsRepository = cast(
-        CompRunsRepository, get_repository(db_engine, CompRunsRepository)
-    )
+    runs_repository: CompRunsRepository = get_repository(db_engine, CompRunsRepository)
 
     # get currently scheduled runs
     runs: list[CompRunsAtDB] = await runs_repository.list(

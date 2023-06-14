@@ -1,8 +1,9 @@
 from ._errors import BaseClientHTTPError, ClientHttpError, UnexpectedStatusError
 from ._public import (
-    DynamicSidecarClient,
-    get_dynamic_sidecar_client,
+    SidecarsClient,
     get_dynamic_sidecar_service_health,
+    get_sidecars_client,
+    remove_sidecars_client,
     setup,
     shutdown,
 )
@@ -10,10 +11,11 @@ from ._public import (
 __all__: tuple[str, ...] = (
     "BaseClientHTTPError",
     "ClientHttpError",
-    "DynamicSidecarClient",
-    "get_dynamic_sidecar_client",
     "get_dynamic_sidecar_service_health",
+    "get_sidecars_client",
+    "remove_sidecars_client",
     "setup",
     "shutdown",
+    "SidecarsClient",
     "UnexpectedStatusError",
 )

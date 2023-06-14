@@ -11,10 +11,9 @@
 --constraint _base.txt
 
 aioboto3
-codecov
 coverage
-coveralls
 faker
+httpx
 moto[server] # mock out tests based on AWS-S3
 pytest
 pytest-asyncio

@@ -33,15 +33,24 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     getStudyAlias: function(options = {}) {
-      let alias = qx.locale.Manager.tr("study");
-      if (this.isProduct("s4llite")) {
-        if (options.plural) {
-          alias = qx.locale.Manager.tr("projects");
-        } else {
-          alias = qx.locale.Manager.tr("project");
-        }
-      } else if (options.plural) {
-        alias = qx.locale.Manager.tr("studies");
+      let alias = null;
+      const product = this.getProductName();
+      switch (product) {
+        case "s4l":
+        case "s4llite":
+          if (options.plural) {
+            alias = qx.locale.Manager.tr("projects");
+          } else {
+            alias = qx.locale.Manager.tr("project");
+          }
+          break;
+        default:
+          if (options.plural) {
+            alias = qx.locale.Manager.tr("studies");
+          } else {
+            alias = qx.locale.Manager.tr("study");
+          }
+          break;
       }
 
       if (options.firstUpperCase) {
@@ -54,15 +63,39 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     getTemplateAlias: function(options = {}) {
-      let alias = qx.locale.Manager.tr("template");
-      if (this.isProduct("s4llite")) {
-        if (options.plural) {
-          alias = qx.locale.Manager.tr("tutorials");
-        } else {
-          alias = qx.locale.Manager.tr("tutorial");
-        }
-      } else if (options.plural) {
-        alias = qx.locale.Manager.tr("templates");
+      let alias = null;
+      const product = this.getProductName();
+      switch (product) {
+        case "s4l":
+        case "s4llite":
+          if (options.plural) {
+            alias = qx.locale.Manager.tr("tutorials");
+          } else {
+            alias = qx.locale.Manager.tr("tutorial");
+          }
+          break;
+        default:
+          if (options.plural) {
+            alias = qx.locale.Manager.tr("templates");
+          } else {
+            alias = qx.locale.Manager.tr("template");
+          }
+          break;
+      }
+
+      if (options.firstUpperCase) {
+        alias = osparc.utils.Utils.capitalize(alias);
+      } else if (options.allUpperCase) {
+        alias = alias.toUpperCase();
+      }
+
+      return alias;
+    },
+
+    getServiceAlias: function(options = {}) {
+      let alias = qx.locale.Manager.tr("service");
+      if (options.plural) {
+        alias = qx.locale.Manager.tr("services");
       }
 
       if (options.firstUpperCase) {
@@ -82,7 +115,7 @@ qx.Class.define("osparc.product.Utils", {
       const product = qx.core.Environment.get("product.name");
       switch (product) {
         case "s4l":
-          logosPath = lightLogo ? "osparc/s4l_zmt-white.svg" : "osparc/s4l_zmt-black.svg";
+          logosPath = lightLogo ? "osparc/s4l-white.png" : "osparc/s4l-black.png";
           break;
         case "s4llite":
           logosPath = lightLogo ? "osparc/s4llite-white.png" : "osparc/s4llite-black.png";
@@ -98,14 +131,14 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showLicenseExtra: function() {
-      if (this.isProduct("s4llite") || this.isProduct("tis")) {
+      if (this.isProduct("s4l") || this.isProduct("s4llite") || this.isProduct("tis")) {
         return true;
       }
       return false;
     },
 
     showAboutProduct: function() {
-      if (this.isProduct("s4llite")) {
+      if (this.isProduct("s4l") || this.isProduct("s4llite")) {
         return true;
       }
       return false;
@@ -126,21 +159,28 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showClusters: function() {
-      if (this.isProduct("s4llite")) {
+      if (this.isProduct("s4llite") || this.isProduct("tis")) {
+        return false;
+      }
+      return true;
+    },
+
+    showDisableServiceAutoStart: function() {
+      if (this.isProduct("s4llite") || this.isProduct("tis")) {
         return false;
       }
       return true;
     },
 
     showQuality: function() {
-      if (this.isProduct("s4llite")) {
+      if (this.isProduct("s4l") || this.isProduct("s4llite")) {
         return false;
       }
       return true;
     },
 
     showClassifiers: function() {
-      if (this.isProduct("s4llite")) {
+      if (this.isProduct("s4l") || this.isProduct("s4llite")) {
         return false;
       }
       return true;

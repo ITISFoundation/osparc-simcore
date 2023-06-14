@@ -4,15 +4,18 @@
 # pylint: disable=no-value-for-parameter
 
 
+from typing import Callable
+
 import pytest
 import sqlalchemy as sa
-from aiopg.sa.engine import Engine
+from aiopg.sa.connection import SAConnection
 from aiopg.sa.exc import ResourceClosedError
 from aiopg.sa.result import ResultProxy, RowProxy
 from pytest_simcore.helpers.utils_services import (
     FAKE_FILE_CONSUMER_SERVICES,
     list_supported_filetypes,
 )
+from simcore_postgres_database.errors import CheckViolation
 from simcore_postgres_database.models.services import services_meta_data
 from simcore_postgres_database.models.services_consume_filetypes import (
     services_consume_filetypes,
@@ -20,12 +23,12 @@ from simcore_postgres_database.models.services_consume_filetypes import (
 
 
 @pytest.fixture
-def make_table():
-    async def _make(conn):
+def make_table() -> Callable:
+    async def _make(connection: SAConnection):
 
         for service in FAKE_FILE_CONSUMER_SERVICES:
 
-            await conn.execute(
+            await connection.execute(
                 services_meta_data.insert().values(
                     key=service["key"],
                     version=service["version"],
@@ -37,7 +40,7 @@ def make_table():
             for n, consumable in enumerate(service["consumes"]):
                 filetype, port, *_ = consumable.split(":") + ["input_1"]
 
-                result: ResultProxy = await conn.execute(
+                result: ResultProxy = await connection.execute(
                     services_consume_filetypes.insert().values(
                         service_key=service["key"],
                         service_version=service["version"],
@@ -57,13 +60,28 @@ def make_table():
 
 
 @pytest.fixture
-async def conn(pg_engine: Engine, make_table):
-    async with pg_engine.acquire() as conn:
-        await make_table(conn)
-        yield conn
+async def connection(connection: SAConnection, make_table: Callable):
+    # EXTENDS
+    await make_table(connection)
+    yield connection
 
 
-async def test_get_compatible_services(conn):
+async def test_check_constraint(connection: SAConnection):
+    stmt_create_services_consume_filetypes = sa.text(
+        'INSERT INTO "services_consume_filetypes" ("service_key", "service_version", "service_display_name", "service_input_port", "filetype", "preference_order", "is_guest_allowed") VALUES'
+        "('simcore/services/dynamic/bio-formats-web',	'1.0.20',	'bio-formats',	'input_1',	'PNG',	0, '1'),"
+        "('simcore/services/dynamic/raw-graphs',	'2.11.20',	'RAWGraphs',	'input_1',	'lowerUpper',	0, '1');"
+    )
+
+    with pytest.raises(CheckViolation) as error_info:
+        await connection.execute(stmt_create_services_consume_filetypes)
+
+    error = error_info.value
+    assert error.pgcode == "23514"
+    assert "ck_filetype_is_upper" in error.pgerror
+
+
+async def test_get_compatible_services(connection: SAConnection):
     # given a filetype, get sorted services
     # test sorting of services given a filetype
     # https://docs.sqlalchemy.org/en/13/core/tutorial.html#ordering-or-grouping-by-a-label
@@ -72,7 +90,7 @@ async def test_get_compatible_services(conn):
         .where(services_consume_filetypes.c.filetype == "DCM")
         .order_by("preference_order")
     )
-    result: ResultProxy = await conn.execute(stmt)
+    result: ResultProxy = await connection.execute(stmt)
 
     assert result.returns_rows
 
@@ -86,7 +104,7 @@ async def test_get_compatible_services(conn):
     assert rows[-1].service_version == "2.0.0"
 
 
-async def test_get_supported_filetypes(conn):
+async def test_get_supported_filetypes(connection: SAConnection):
     # given a service, get supported filetypes
 
     stmt = (
@@ -103,12 +121,12 @@ async def test_get_supported_filetypes(conn):
         .distinct()
     )
 
-    result: ResultProxy = await conn.execute(stmt)
+    result: ResultProxy = await connection.execute(stmt)
     rows: list[RowProxy] = await result.fetchall()
-    assert [v for row in rows for v in row.values()] == ["DCM", "S4LCacheData"]
+    assert [v for row in rows for v in row.values()] == ["DCM", "S4LCACHEDATA"]
 
 
-async def test_list_supported_filetypes(conn):
+async def test_list_supported_filetypes(connection: SAConnection):
     # given a service, get supported filetypes
 
     stmt = (
@@ -121,32 +139,15 @@ async def test_list_supported_filetypes(conn):
         .distinct()
     )
 
-    result: ResultProxy = await conn.execute(stmt)
+    result: ResultProxy = await connection.execute(stmt)
     rows: list[RowProxy] = await result.fetchall()
     assert [v for row in rows for v in row.values()] == list_supported_filetypes()
 
 
-@pytest.mark.skip(reason="Under DEV")
-async def test_list_default_compatible_services():
-    stmt = (
-        sa.select(
-            [
-                services_consume_filetypes,
-            ]
-        )
-        .group_by(services_consume_filetypes.c.filetype)
-        .order_by(
-            services_consume_filetypes.c.key, services_consume_filetypes.c.version
-        )
-        .distinct()
-    )
-    raise NotImplementedError()
-
-
-async def test_contraints(conn):
+async def test_contraints(connection: SAConnection):
     # test foreign key contraints with service metadata table
 
-    await conn.execute(
+    await connection.execute(
         services_meta_data.delete().where(
             services_meta_data.c.key == "simcore/services/dynamic/sim4life"
         )
@@ -163,17 +164,6 @@ async def test_contraints(conn):
         .where(services_consume_filetypes.c.filetype == "DCM")
         .scalar_subquery()
     )
-    result: ResultProxy = await conn.execute(stmt)
+    result: ResultProxy = await connection.execute(stmt)
     num_services = await result.scalar()
     assert num_services == 0
-
-
-@pytest.mark.skip(reason="Under DEV")
-async def test_get_compatible_services_available_to_everyone(conn):
-    # TODO: resolve when this logic is moved to catalog
-
-    # given a filetype, get sorted services
-    # test sorting of services given a filetype
-    # https://docs.sqlalchemy.org/en/13/core/tutorial.html#ordering-or-grouping-by-a-label
-
-    raise NotImplementedError()

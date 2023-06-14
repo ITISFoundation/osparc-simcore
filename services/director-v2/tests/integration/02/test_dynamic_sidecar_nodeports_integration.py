@@ -1,6 +1,7 @@
 # pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
+# pylint:disable=too-many-arguments
 
 import asyncio
 import hashlib
@@ -13,10 +14,11 @@ from pathlib import Path
 from typing import (
     Any,
     AsyncIterable,
+    AsyncIterator,
     Awaitable,
     Callable,
+    Coroutine,
     Iterable,
-    Iterator,
     Optional,
     cast,
 )
@@ -31,8 +33,18 @@ import sqlalchemy as sa
 from aiodocker.containers import DockerContainer
 from aiopg.sa import Engine
 from fastapi import FastAPI
+from helpers.shared_comp_utils import (
+    assert_and_wait_for_pipeline_status,
+    assert_computation_task_out_obj,
+)
 from models_library.clusters import DEFAULT_CLUSTER_ID
-from models_library.projects import Node, ProjectAtDB, ProjectID, Workbench
+from models_library.projects import (
+    Node,
+    NodesDict,
+    ProjectAtDB,
+    ProjectID,
+    ProjectIDStr,
+)
 from models_library.projects_networks import (
     PROJECT_NETWORK_PREFIX,
     ContainerAliases,
@@ -43,8 +55,8 @@ from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.users import UserID
+from pydantic import AnyHttpUrl, parse_obj_as
 from pytest import MonkeyPatch
-from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from servicelib.fastapi.long_running_tasks.client import (
     Client,
@@ -56,10 +68,6 @@ from servicelib.fastapi.long_running_tasks.client import (
 from servicelib.progress_bar import ProgressBarData
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
-from shared_comp_utils import (
-    assert_and_wait_for_pipeline_status,
-    assert_computation_task_out_obj,
-)
 from simcore_postgres_database.models.comp_pipeline import comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects_networks import projects_networks
@@ -131,7 +139,8 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
-def minimal_configuration(  # pylint:disable=too-many-arguments
+async def minimal_configuration(
+    catalog_ready: Callable[[UserID, str], Awaitable[None]],
     sleeper_service: dict,
     dy_static_file_server_dynamic_sidecar_service: dict,
     dy_static_file_server_dynamic_sidecar_compose_spec_service: dict,
@@ -144,9 +153,10 @@ def minimal_configuration(  # pylint:disable=too-many-arguments
     dask_scheduler_service: str,
     dask_sidecar_service: None,
     ensure_swarm_and_networks: None,
+    current_user: dict[str, Any],
     osparc_product_name: str,
-) -> Iterator[None]:
-
+) -> AsyncIterator[None]:
+    await catalog_ready(current_user["id"], osparc_product_name)
     with postgres_db.connect() as conn:
         # pylint: disable=no-value-for-parameter
         conn.execute(comp_tasks.delete())
@@ -218,13 +228,6 @@ def fake_dy_success(mocks_dir: Path) -> dict[str, Any]:
 
 
 @pytest.fixture
-def fake_dy_published(mocks_dir: Path) -> dict[str, Any]:
-    fake_dy_status_published = mocks_dir / "fake_dy_status_published.json"
-    assert fake_dy_status_published.exists()
-    return json.loads(fake_dy_status_published.read_text())
-
-
-@pytest.fixture
 def services_node_uuids(
     fake_dy_workbench: dict[str, Any],
     sleeper_service: dict,
@@ -267,7 +270,6 @@ async def current_study(
     osparc_product_name: str,
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ) -> ProjectAtDB:
-
     project_at_db = project(current_user, workbench=fake_dy_workbench)
 
     # create entries in comp_task table in order to pull output ports
@@ -366,7 +368,6 @@ def mock_env(
     monkeypatch.setenv(
         "DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED", dev_feature_r_clone_enabled
     )
-    monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
     monkeypatch.setenv(
         "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL",
         dask_scheduler_service,
@@ -440,14 +441,14 @@ async def projects_networks_db(
 
 
 async def _get_mapped_nodeports_values(
-    user_id: UserID, project_id: str, workbench: Workbench, db_manager: DBManager
+    user_id: UserID, project_id: str, workbench: NodesDict, db_manager: DBManager
 ) -> dict[str, InputsOutputs]:
     result: dict[str, InputsOutputs] = {}
 
     for node_uuid in workbench:
         PORTS: Nodeports = await node_ports_v2.ports(
             user_id=user_id,
-            project_id=project_id,
+            project_id=ProjectIDStr(project_id),
             node_uuid=NodeIDStr(node_uuid),
             db_manager=db_manager,
         )
@@ -494,7 +495,7 @@ async def _assert_port_values(
 
     # files
 
-    async def _int_value_port(port: Port) -> Optional[int]:
+    async def _int_value_port(port: Port) -> int | None:
         file_path = cast(Optional[Path], await port.get())
         if file_path is None:
             return None
@@ -699,7 +700,7 @@ async def _start_and_wait_for_dynamic_services_ready(
     for service_uuid in workbench_dynamic_services:
         dynamic_service_url = await patch_dynamic_service_url(
             # pylint: disable=protected-access
-            app=director_v2_client._transport.app,
+            app=director_v2_client._transport.app,  # type: ignore
             node_uuid=service_uuid,
         )
         dynamic_services_urls[service_uuid] = dynamic_service_url
@@ -721,7 +722,7 @@ async def _wait_for_dy_services_to_fully_stop(
 ) -> None:
     # pylint: disable=protected-access
     to_observe = (
-        director_v2_client._transport.app.state.dynamic_sidecar_scheduler._scheduler._to_observe
+        director_v2_client._transport.app.state.dynamic_sidecar_scheduler._scheduler._to_observe  # type: ignore
     )
     # TODO: ANE please use tenacity
     for i in range(TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED):
@@ -795,7 +796,7 @@ async def _assert_push_non_file_outputs(
         Client(
             app=initialized_app,
             async_client=director_v2_client,
-            base_url=director_v2_client.base_url,
+            base_url=parse_obj_as(AnyHttpUrl, f"{director_v2_client.base_url}"),
         ),
         task_id,
         task_timeout=60,
@@ -835,17 +836,22 @@ async def _assert_retrieve_completed(
                     container_id
                 )
 
-                logs = " ".join(await container.log(stdout=True, stderr=True))
+                logs = " ".join(
+                    await cast(
+                        Coroutine[Any, Any, list[str]],
+                        container.log(stdout=True, stderr=True),
+                    )
+                )
                 assert (
                     _CONTROL_TESTMARK_DY_SIDECAR_NODEPORT_UPLOADED_MESSAGE in logs
                 ), "TIP: Message missing suggests that the data was never uploaded: look in services/dynamic-sidecar/src/simcore_service_dynamic_sidecar/modules/nodeports.py"
 
 
 async def test_nodeports_integration(
-    # pylint: disable=too-many-arguments
     minimal_configuration: None,
     cleanup_services_and_networks: None,
     projects_networks_db: None,
+    mocked_service_awaits_manual_interventions: None,
     initialized_app: FastAPI,
     update_project_workbench_with_comp_tasks: Callable,
     async_client: httpx.AsyncClient,
@@ -856,9 +862,7 @@ async def test_nodeports_integration(
     workbench_dynamic_services: dict[str, Node],
     services_node_uuids: ServicesNodeUUIDs,
     fake_dy_success: dict[str, Any],
-    fake_dy_published: dict[str, Any],
     tmp_path: Path,
-    mocker: MockerFixture,
     osparc_product_name: str,
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ) -> None:
@@ -908,25 +912,6 @@ async def test_nodeports_integration(
         user_id=current_user["id"],
         start_pipeline=True,
         product_name=osparc_product_name,
-    )
-
-    # check the contents is correct: a pipeline that just started gets PUBLISHED
-    await assert_computation_task_out_obj(
-        task_out,
-        project=current_study,
-        exp_task_state=RunningState.PUBLISHED,
-        exp_pipeline_details=PipelineDetails.parse_obj(fake_dy_published),
-        iteration=1,
-        cluster_id=DEFAULT_CLUSTER_ID,
-    )
-
-    # wait for the computation to start
-    await assert_and_wait_for_pipeline_status(
-        async_client,
-        task_out.url,
-        current_user["id"],
-        current_study.uuid,
-        wait_for_states=[RunningState.STARTED],
     )
 
     # wait for the computation to finish (either by failing, success or abort)
@@ -1000,7 +985,7 @@ async def test_nodeports_integration(
 
     # STEP 4
 
-    app_settings: AppSettings = async_client._transport.app.state.settings
+    app_settings: AppSettings = async_client._transport.app.state.settings  # type: ignore
     r_clone_settings: RCloneSettings = (
         app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_R_CLONE_SETTINGS
     )

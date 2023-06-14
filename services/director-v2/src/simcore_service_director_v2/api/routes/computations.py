@@ -16,7 +16,7 @@ Therefore,
 
 import contextlib
 import logging
-from typing import Any, Optional
+from typing import Any
 
 import networkx as nx
 from fastapi import APIRouter, Depends, HTTPException
@@ -36,6 +36,8 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random
 
 from ...core.errors import (
+    ClusterAccessForbiddenError,
+    ClusterNotFoundError,
     ComputationalRunNotFoundError,
     ProjectNotFoundError,
     SchedulerError,
@@ -51,6 +53,7 @@ from ...models.schemas.comp_tasks import (
 )
 from ...modules.catalog import CatalogClient
 from ...modules.comp_scheduler.base_scheduler import BaseCompScheduler
+from ...modules.db.repositories.clusters import ClustersRepository
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_runs import CompRunsRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
@@ -64,6 +67,9 @@ from ...utils.computations import (
 )
 from ...utils.dags import (
     compute_pipeline_details,
+    compute_pipeline_started_timestamp,
+    compute_pipeline_stopped_timestamp,
+    compute_pipeline_submitted_timestamp,
     create_complete_dag,
     create_complete_dag_from_tasks,
     create_minimal_computational_graph_based_on_selection,
@@ -99,6 +105,7 @@ async def create_computation(
     ),
     comp_tasks_repo: CompTasksRepository = Depends(get_repository(CompTasksRepository)),
     comp_runs_repo: CompRunsRepository = Depends(get_repository(CompRunsRepository)),
+    clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
     director_client: DirectorV0Client = Depends(get_director_v0_client),
     scheduler: BaseCompScheduler = Depends(get_scheduler),
     catalog_client: CatalogClient = Depends(get_catalog_client),
@@ -115,7 +122,7 @@ async def create_computation(
         # FIXME: this could not be valid anymore if the user deletes the project in between right?
 
         # check if current state allow to modify the computation
-        comp_tasks: list[CompTaskAtDB] = await comp_tasks_repo.get_comp_tasks(
+        comp_tasks: list[CompTaskAtDB] = await comp_tasks_repo.list_computational_tasks(
             computation.project_id
         )
         pipeline_state = get_pipeline_state_from_task_states(comp_tasks)
@@ -151,6 +158,23 @@ async def create_computation(
                     status_code=status.HTTP_406_NOT_ACCEPTABLE,
                     detail=f"Project {computation.project_id} cannot run since it contains deprecated tasks {jsonable_encoder( deprecated_tasks)}",
                 )
+            if computation.cluster_id:
+                # check the cluster ID is a valid one
+                try:
+                    await clusters_repo.get_cluster(
+                        computation.user_id, computation.cluster_id
+                    )
+                except ClusterNotFoundError as exc:
+                    raise HTTPException(
+                        status_code=status.HTTP_406_NOT_ACCEPTABLE,
+                        detail=f"Project {computation.project_id} cannot run on cluster {computation.cluster_id}, not found",
+                    ) from exc
+                except ClusterAccessForbiddenError as exc:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail=f"Project {computation.project_id} cannot run on cluster {computation.cluster_id}, no access",
+                    ) from exc
+
         # ok so put the tasks in the db
         await comp_pipelines_repo.upsert_pipeline(
             project.uuid,
@@ -199,7 +223,7 @@ async def create_computation(
         pipeline_state = get_pipeline_state_from_task_states(filtered_tasks)
 
         # get run details if any
-        last_run: Optional[CompRunsAtDB] = None
+        last_run: CompRunsAtDB | None = None
         with contextlib.suppress(ComputationalRunNotFoundError):
             last_run = await comp_runs_repo.get(
                 user_id=computation.user_id, project_id=computation.project_id
@@ -224,10 +248,23 @@ async def create_computation(
             iteration=last_run.iteration if last_run else None,
             cluster_id=last_run.cluster_id if last_run else None,
             result=None,
+            started=compute_pipeline_started_timestamp(
+                minimal_computational_dag, inserted_comp_tasks
+            ),
+            stopped=compute_pipeline_stopped_timestamp(
+                minimal_computational_dag, inserted_comp_tasks
+            ),
+            submitted=compute_pipeline_submitted_timestamp(
+                minimal_computational_dag, inserted_comp_tasks
+            ),
         )
 
     except ProjectNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
+    except ClusterNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_406_NOT_ACCEPTABLE, detail=f"{e}"
+        ) from e
 
 
 @router.get(
@@ -276,7 +313,7 @@ async def get_computation(
     )
 
     # get run details if any
-    last_run: Optional[CompRunsAtDB] = None
+    last_run: CompRunsAtDB | None = None
     with contextlib.suppress(ComputationalRunNotFoundError):
         last_run = await comp_runs_repo.get(user_id=user_id, project_id=project_id)
 
@@ -292,6 +329,9 @@ async def get_computation(
         iteration=last_run.iteration if last_run else None,
         cluster_id=last_run.cluster_id if last_run else None,
         result=None,
+        started=compute_pipeline_started_timestamp(pipeline_dag, all_tasks),
+        stopped=compute_pipeline_stopped_timestamp(pipeline_dag, all_tasks),
+        submitted=compute_pipeline_submitted_timestamp(pipeline_dag, all_tasks),
     )
     return task_out
 
@@ -328,7 +368,7 @@ async def stop_computation(
         )
         pipeline_dag: nx.DiGraph = pipeline_at_db.get_graph()
         # get the project task states
-        tasks: list[CompTaskAtDB] = await comp_tasks_repo.get_all_tasks(project_id)
+        tasks: list[CompTaskAtDB] = await comp_tasks_repo.list_tasks(project_id)
         # create the complete DAG graph
         complete_dag = create_complete_dag_from_tasks(tasks)
         # filter the tasks by the effective pipeline
@@ -341,7 +381,7 @@ async def stop_computation(
             await scheduler.stop_pipeline(computation_stop.user_id, project_id)
 
         # get run details if any
-        last_run: Optional[CompRunsAtDB] = None
+        last_run: CompRunsAtDB | None = None
         with contextlib.suppress(ComputationalRunNotFoundError):
             last_run = await comp_runs_repo.get(
                 user_id=computation_stop.user_id, project_id=project_id
@@ -358,6 +398,9 @@ async def stop_computation(
             iteration=last_run.iteration if last_run else None,
             cluster_id=last_run.cluster_id if last_run else None,
             result=None,
+            started=compute_pipeline_started_timestamp(pipeline_dag, tasks),
+            stopped=compute_pipeline_stopped_timestamp(pipeline_dag, tasks),
+            submitted=compute_pipeline_submitted_timestamp(pipeline_dag, tasks),
         )
 
     except ProjectNotFoundError as e:
@@ -386,7 +429,7 @@ async def delete_computation(
         # get the project
         project: ProjectAtDB = await project_repo.get_project(project_id)
         # check if current state allow to stop the computation
-        comp_tasks: list[CompTaskAtDB] = await comp_tasks_repo.get_comp_tasks(
+        comp_tasks: list[CompTaskAtDB] = await comp_tasks_repo.list_computational_tasks(
             project_id
         )
         pipeline_state = get_pipeline_state_from_task_states(comp_tasks)
@@ -419,9 +462,9 @@ async def delete_computation(
                 before_sleep=before_sleep_log(log, logging.INFO),
             )
             async def check_pipeline_stopped() -> bool:
-                comp_tasks: list[CompTaskAtDB] = await comp_tasks_repo.get_comp_tasks(
-                    project_id
-                )
+                comp_tasks: list[
+                    CompTaskAtDB
+                ] = await comp_tasks_repo.list_computational_tasks(project_id)
                 pipeline_state = get_pipeline_state_from_task_states(
                     comp_tasks,
                 )
@@ -436,7 +479,7 @@ async def delete_computation(
                 )
 
         # delete the pipeline now
-        await comp_tasks_repo.delete_tasks_from_project(project)
+        await comp_tasks_repo.delete_tasks_from_project(project.uuid)
         await comp_pipelines_repo.delete_pipeline(project_id)
 
     except ProjectNotFoundError as e:

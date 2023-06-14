@@ -1,4 +1,5 @@
-ARG PYTHON_VERSION="3.9.12"
+# syntax=docker/dockerfile:1
+ARG PYTHON_VERSION="3.10.10"
 FROM python:${PYTHON_VERSION}-slim-buster as base
 #
 #  USAGE:
@@ -12,13 +13,19 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 
 LABEL maintainer=pcrespov
 
-RUN set -eux && \
+# for docker apt caching to work this needs to be added: [https://vsupalov.com/buildkit-cache-mount-dockerfile/]
+RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
+  echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
+RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
+  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
+  set -eux && \
   apt-get update && \
   apt-get install -y --no-install-recommends \
-  gosu && \
-  rm -rf /var/lib/apt/lists/* && \
+  libmagic1 \
+  gosu \
+  && apt-get clean -y \
   # verify that the binary works
-  gosu nobody true
+  && gosu nobody true
 
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
@@ -66,28 +73,33 @@ FROM base as build
 
 ENV SC_BUILD_TARGET build
 
-RUN apt-get update \
+RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
+  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
+  set -eux \
+  && apt-get update \
   && apt-get install -y --no-install-recommends \
-  build-essential \
-  libmagic1 \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
+  build-essential
+
 
 
 # NOTE: python virtualenv is used here such that installed
 # packages may be moved to production image easily by copying the venv
 RUN python -m venv "${VIRTUAL_ENV}"
 
-RUN pip --no-cache-dir install --upgrade \
-  pip~=23.0  \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install --upgrade  \
+  pip~=23.1  \
   wheel \
   setuptools
 
 WORKDIR /build
 
 # install only base 3rd party dependencies
-COPY  --chown=scu:scu services/web/server/requirements/_base.txt requirements_base.txt
-RUN pip --no-cache-dir --quiet install -r requirements_base.txt
+RUN \
+  --mount=type=bind,source=services/web/server/requirements/_base.txt,target=_base.txt \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install \
+  --requirement _base.txt
 
 # --------------------------Prod-depends-only stage -------------------
 # This stage is for production only dependencies that get partially wiped out afterwards (final docker image concerns)
@@ -100,12 +112,15 @@ FROM build as prod-only-deps
 ENV SC_BUILD_TARGET prod-only-deps
 
 # 2nd party packages
-COPY --chown=scu:scu packages /build/packages
-COPY --chown=scu:scu services/web/server /build/services/web/server
-
 WORKDIR /build/services/web/server
 
-RUN pip --no-cache-dir --quiet install -r requirements/prod.txt
+RUN \
+  --mount=type=bind,source=packages,target=/build/packages,rw \
+  --mount=type=bind,source=services/web/server,target=/build/services/web/server,rw \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install \
+  --requirement requirements/prod.txt \
+  && pip list -v
 
 # --------------------------Production stage -------------------
 # Final cleanup up to reduce image size and startup setup
@@ -116,21 +131,17 @@ RUN pip --no-cache-dir --quiet install -r requirements/prod.txt
 #
 FROM base as production
 
-ARG BUILD_DATE
-ARG VCS_URL
-ARG VCS_REF
+ENV SC_BUILD_TARGET=production \
+  SC_BOOT_MODE=production
+
+ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu
 
+# ensure home folder is read/writable for user scu
+RUN chown -R scu /home/scu
 # bring installed package without build tools
 COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
-
-# libmagic is requried by the exporter
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends \
-  libmagic1 \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
 
 # copy docker entrypoint and boot scripts
 COPY --chown=scu:scu services/web/server/docker services/web/server/docker
@@ -140,20 +151,22 @@ RUN chmod +x services/web/server/docker/*.sh
 # healthcheck.
 # NOTE: do not forget to update variable
 ENV SC_HEALTHCHECK_TIMEOUT=120s
-HEALTHCHECK --interval=30s \
-  --timeout=120s \
-  --start-period=30s \
-  --retries=3 \
+HEALTHCHECK --interval=10s \
+  --timeout=5s \
+  --start-period=10s \
+  --retries=5 \
   CMD ["python3", "/home/scu/services/web/server/docker/healthcheck.py", "http://localhost:8080/v0/health"]
 
+# no need to rebuild everything if just these changed
+ARG BUILD_DATE
+ARG VCS_URL
+ARG VCS_REF
 
-ENV SC_BUILD_TARGET=production \
-  SC_BOOT_MODE=production \
-  SC_BUILD_DATE=${BUILD_DATE} \
+ENV SC_BUILD_DATE=${BUILD_DATE} \
   SC_VCS_URL=${VCS_URL} \
   SC_VCS_REF=${VCS_REF}
 
-ENV PYTHONOPTIMIZE=TRUE
+
 
 ENTRYPOINT [ "services/web/server/docker/entrypoint.sh" ]
 CMD ["services/web/server/docker/boot.sh"]

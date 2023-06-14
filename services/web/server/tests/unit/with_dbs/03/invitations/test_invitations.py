@@ -11,16 +11,16 @@ from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import NewUser
 from simcore_service_webserver.application_settings import ApplicationSettings
-from simcore_service_webserver.invitations import (
-    InvalidInvitation,
-    InvitationsServiceUnavailable,
-    validate_invitation_url,
-)
-from simcore_service_webserver.invitations_client import (
+from simcore_service_webserver.invitations._client import (
     InvitationContent,
     InvitationsServiceApi,
     get_invitations_service_api,
 )
+from simcore_service_webserver.invitations.errors import (
+    InvalidInvitation,
+    InvitationsServiceUnavailable,
+)
+from simcore_service_webserver.invitations.plugin import validate_invitation_url
 from yarl import URL
 
 
@@ -28,13 +28,11 @@ from yarl import URL
 def app_environment(
     app_environment: EnvVarsDict, env_devel_dict: EnvVarsDict, monkeypatch: MonkeyPatch
 ):
-
     envs_plugins = setenvs_from_dict(
         monkeypatch,
         {
             "WEBSERVER_ACTIVITY": "null",
-            "WEBSERVER_CLUSTERS": "null",
-            "WEBSERVER_COMPUTATION": "0",
+            "WEBSERVER_NOTIFICATIONS": "0",
             "WEBSERVER_DIAGNOSTICS": "null",
             "WEBSERVER_DIRECTOR": "null",
             "WEBSERVER_EXPORTER": "null",
@@ -72,7 +70,6 @@ async def test_invitation_service_unavailable(
     client: TestClient,
     expected_invitation: InvitationContent,
 ):
-
     invitations_api: InvitationsServiceApi = get_invitations_service_api(app=client.app)
 
     assert not await invitations_api.ping()
@@ -120,7 +117,6 @@ async def test_invalid_invitation_if_guest_is_already_registered(
     mock_invitations_service_http_api: AioResponsesMock,
     expected_invitation: InvitationContent,
 ):
-
     async with NewUser(
         params={
             "name": "test-user",
@@ -128,7 +124,6 @@ async def test_invalid_invitation_if_guest_is_already_registered(
         },
         app=client.app,
     ) as registered_user:
-
         with pytest.raises(InvalidInvitation):
             await validate_invitation_url(
                 app=client.app,

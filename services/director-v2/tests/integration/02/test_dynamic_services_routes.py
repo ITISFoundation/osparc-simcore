@@ -119,6 +119,7 @@ def start_request_data(
         service_version=dy_static_file_server_dynamic_sidecar_service["image"]["tag"],
         request_scheme="http",
         request_dns="localhost:50000",
+        can_save=True,
         settings=[
             {
                 "name": "resources",
@@ -216,9 +217,7 @@ def mock_project_repository(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def mock_dynamic_sidecar_api_calls(mocker: MockerFixture) -> None:
-    class_path = (
-        f"{DIRECTOR_V2_MODULES}.dynamic_sidecar.api_client.DynamicSidecarClient"
-    )
+    class_path = f"{DIRECTOR_V2_MODULES}.dynamic_sidecar.api_client.SidecarsClient"
     for function_name, return_value in [
         ("pull_service_output_ports", None),
         ("restore_service_state", None),
@@ -277,6 +276,7 @@ async def test_start_status_stop(
     mock_dynamic_sidecar_api_calls: None,
     mock_projects_networks_repository: None,
     mock_projects_repository: None,
+    mocked_service_awaits_manual_interventions: None,
 ):
     # NOTE: this test does not like it when the catalog is not fully ready!!!
 

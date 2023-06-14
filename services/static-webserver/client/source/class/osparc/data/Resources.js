@@ -80,6 +80,11 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects?type=user&offset={offset}&limit={limit}"
           },
+          getPageFilterSearch: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&search={text}"
+          },
           getOne: {
             useCache: false,
             method: "GET",
@@ -97,6 +102,10 @@ qx.Class.define("osparc.data.Resources", {
           open: {
             method: "POST",
             url: statics.API + "/projects/{studyId}:open"
+          },
+          openDisableAutoStart: {
+            method: "POST",
+            url: statics.API + "/projects/{studyId}:open?disable_service_auto_start={disableServiceAutoStart}"
           },
           close: {
             method: "POST",
@@ -158,6 +167,11 @@ qx.Class.define("osparc.data.Resources", {
             useCache: false,
             method: "GET",
             url: statics.API + "/projects/{studyId}/nodes/{nodeId}/errors"
+          },
+          checkShareePermissions: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/nodes/-/services:access?for_gid={gid}"
           },
           addTag: {
             useCache: false,
@@ -818,6 +832,8 @@ qx.Class.define("osparc.data.Resources", {
           }
           if (endpoint.includes("delete")) {
             this.__removeCached(resource, deleteId);
+          } else if (useCache && endpointDef.method === "POST" && options.pollTask !== true) {
+            this.__addCached(resource, data);
           } else if (useCache && endpointDef.method === "GET") {
             if (endpoint.includes("getPage")) {
               this.__addCached(resource, data);
@@ -970,7 +986,7 @@ qx.Class.define("osparc.data.Resources", {
     },
 
     /**
-     * Stores the cached version of a resource, or a collection of them.
+     * Add the given data to the cached version of a resource, or a collection of them.
      * @param {String} resource Name of the resource as defined in the static property 'resources'.
      * @param {*} data Resource or collection of resources to be addded to the cache.
      */

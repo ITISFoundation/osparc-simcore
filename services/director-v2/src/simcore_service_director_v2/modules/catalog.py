@@ -1,17 +1,19 @@
 import logging
 import urllib.parse
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, TypeAlias
 
 import httpx
 from fastapi import FastAPI, HTTPException, status
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
+from settings_library.catalog import CatalogSettings
 
-from ..core.settings import CatalogSettings
 from ..utils.client_decorators import handle_errors, handle_retry
 
 logger = logging.getLogger(__name__)
+
+ServiceResources: TypeAlias = dict[str, Any]
 
 
 def setup(app: FastAPI, settings: CatalogSettings) -> None:
@@ -51,6 +53,7 @@ class CatalogClient:
 
     @classmethod
     def instance(cls, app: FastAPI) -> "CatalogClient":
+        assert type(app.state.catalog_client) == CatalogClient  # nosec
         return app.state.catalog_client
 
     @handle_errors("Catalog", logger)
@@ -73,12 +76,13 @@ class CatalogClient:
         )
         resp.raise_for_status()
         if resp.status_code == status.HTTP_200_OK:
-            return resp.json()
+            json_response: dict[str, Any] = resp.json()
+            return json_response
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     async def get_service_resources(
         self, user_id: UserID, service_key: ServiceKey, service_version: ServiceVersion
-    ) -> dict[str, Any]:
+    ) -> ServiceResources:
         resp = await self.request(
             "GET",
             f"/services/{urllib.parse.quote( service_key, safe='')}/{service_version}/resources",
@@ -86,7 +90,8 @@ class CatalogClient:
         )
         resp.raise_for_status()
         if resp.status_code == status.HTTP_200_OK:
-            return resp.json()
+            json_response: ServiceResources = resp.json()
+            return json_response
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     async def get_service_specifications(
@@ -99,7 +104,8 @@ class CatalogClient:
         )
         resp.raise_for_status()
         if resp.status_code == status.HTTP_200_OK:
-            return resp.json()
+            json_response: dict[str, Any] = resp.json()
+            return json_response
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     async def is_responsive(self) -> bool:

@@ -4,9 +4,12 @@
     - ONLY external apps allowed is postgress (see unit/with_postgres)
 """
 
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
-# pylint: disable=bare-except
-# pylint:disable=redefined-outer-name
+# pylint: disable=unused-variable
+
 
 import json
 import logging
@@ -16,11 +19,11 @@ from typing import Any, Callable, Iterable
 
 import pytest
 import yaml
+from models_library.projects import Project
 from openapi_core.schema.specs.models import Spec as OpenApiSpecs
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_projects import empty_project_data
-from simcore_service_webserver._resources import resources
-from simcore_service_webserver.rest_utils import (
+from simcore_service_webserver.rest._utils import (
     get_openapi_specs_path,
     load_openapi_specs,
 )
@@ -67,15 +70,6 @@ def empty_project() -> Callable:
 
 
 @pytest.fixture
-def project_schema_file(api_version_prefix) -> Path:
-    prj_schema_path = resources.get_path(
-        f"api/{api_version_prefix}/schemas/project-v0.0.1.json"
-    )
-    assert prj_schema_path.exists()
-    return prj_schema_path
-
-
-@pytest.fixture
 def activity_data(fake_data_dir: Path) -> Iterable[dict[str, Any]]:
     with (fake_data_dir / "test_activity_data.json").open() as fp:
         yield json.load(fp)
@@ -103,3 +97,8 @@ def disable_gc_manual_guest_users(mocker):
 def openapi_specs(api_version_prefix) -> OpenApiSpecs:
     spec_path = get_openapi_specs_path(api_version_prefix)
     return load_openapi_specs(spec_path)
+
+
+@pytest.fixture
+def project_jsonschema() -> dict[str, Any]:
+    return Project.schema(by_alias=True)

@@ -133,6 +133,8 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
           const text = this.tr("Collaborator(s) successfully added.");
           osparc.component.message.FlashMessenger.getInstance().logAs(text);
           this._reloadCollaboratorsList();
+
+          this.__checkShareePermissions(gids);
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went adding collaborator(s)"), "ERROR");
@@ -155,6 +157,39 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
               }
             }
           });
+        });
+    },
+
+    __checkShareePermissions: function(gids) {
+      if (gids.length === 0) {
+        return;
+      }
+
+      const promises = [];
+      gids.forEach(gid => {
+        const params = {
+          url: {
+            "studyId": this._serializedData["uuid"],
+            "gid": gid
+          },
+          data: this._serializedData
+        };
+        promises.push(osparc.data.Resources.fetch("studies", "checkShareePermissions", params));
+      });
+      Promise.all(promises)
+        .then(values => {
+          const noAccessible = values.filter(value => value["accessible"] === false);
+          if (noAccessible.length) {
+            const shareePermissions = new osparc.component.share.ShareePermissions(noAccessible);
+            const win = osparc.ui.window.Window.popUpInWindow(shareePermissions, this.tr("Sharee permissions"), 500, 500, "@FontAwesome5Solid/exclamation-triangle/14").set({
+              clickAwayClose: false,
+              resizable: true,
+              showClose: true
+            });
+            win.getChildControl("icon").set({
+              textColor: "warning-yellow"
+            });
+          }
         });
     },
 
@@ -241,8 +276,7 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
 
       const groupData = await osparc.store.Store.getInstance().getGroup(groupId);
       const isOrganization = (groupData && !("id" in groupData));
-      const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
-      if (isOrganization && preferencesSettings.getConfirmDemoteOrgnaization()) {
+      if (isOrganization) {
         const msg = this.tr("Demoting to Viewer will remove write access to all the members of the Organization. Are you sure?");
         const win = new osparc.ui.window.Confirmation(msg).set({
           confirmAction: "delete",

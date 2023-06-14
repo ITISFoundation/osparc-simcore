@@ -2,14 +2,15 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 from enum import Enum
-from typing import Any, AsyncGenerator, Awaitable, Callable, Final, Optional, TypedDict
+from typing import Any, AsyncGenerator, Awaitable, Callable, Final, TypedDict
 
 import aiodocker
 import yaml
 from aiodocker.utils import clean_filters
 from models_library.basic_regex import DOCKER_GENERIC_TAG_KEY_RE
 from models_library.services import RunID
-from pydantic import PositiveInt
+from pydantic import PositiveInt, parse_obj_as
+from servicelib.logging_utils import log_catch
 from settings_library.docker_registry import RegistrySettings
 
 from .errors import UnexpectedDockerError, VolumeNotFoundError
@@ -69,7 +70,8 @@ def get_docker_service_images(compose_spec_yaml: str) -> set[str]:
 
 
 ProgressCB = Callable[[int, int], Awaitable[None]]
-LogCB = Callable[[str], Awaitable[None]]
+LogLevel = int
+LogCB = Callable[[str, LogLevel], Awaitable[None]]
 
 
 async def pull_images(
@@ -137,7 +139,7 @@ def _parse_docker_pull_progress(
     # {'status': 'Digest: sha256:27cb6e6ccef575a4698b66f5de06c7ecd61589132d5a91d098f7f3f9285415a9'}
     # {'status': 'Status: Downloaded newer image for ubuntu:latest'}
 
-    status: Optional[str] = docker_pull_progress.get("status")
+    status: str | None = docker_pull_progress.get("status")
 
     if status in list(_TargetPullStatus):
         assert "id" in docker_pull_progress  # nosec
@@ -232,10 +234,14 @@ async def _pull_image_with_progress(
         if registry_host
         else None,
     ):
-        if _parse_docker_pull_progress(
-            pull_progress, all_image_pulling_data[image_name]
-        ):
-            total_current, total_total = _compute_sizes(all_image_pulling_data)
-            await progress_cb(total_current, total_total)
+        with log_catch(logger, reraise=False):
+            if _parse_docker_pull_progress(
+                parse_obj_as(_DockerProgressDict, pull_progress),
+                all_image_pulling_data[image_name],
+            ):
+                total_current, total_total = _compute_sizes(all_image_pulling_data)
+                await progress_cb(total_current, total_total)
 
-        await log_cb(f"pulling {shorter_image_name}: {pull_progress}...")
+            await log_cb(
+                f"pulling {shorter_image_name}: {pull_progress}...", logging.DEBUG
+            )

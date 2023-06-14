@@ -29,6 +29,10 @@ qx.Class.define("osparc.component.share.Collaborators", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
+    this.set({
+      padding: 5
+    });
+
     this.__buildLayout();
 
     this.__collaborators = {};
@@ -70,6 +74,80 @@ qx.Class.define("osparc.component.share.Collaborators", {
         }
       }
       return sorted;
+    },
+
+    createStudyLinkSection: function(serializedData) {
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+
+      const label = new qx.ui.basic.Label().set({
+        value: qx.locale.Manager.tr("Any logged-in user with access to the ") + osparc.product.Utils.getStudyAlias() + qx.locale.Manager.tr(" can open it"),
+        rich: true
+      });
+      vBox.add(label);
+
+      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+        alignY: "middle"
+      }));
+      vBox.add(hBox, {
+        flex: 1
+      });
+
+      const link = window.location.href + "#/study/" + serializedData["uuid"];
+      const linkField = new qx.ui.form.TextField(link);
+      hBox.add(linkField, {
+        flex: 1
+      });
+
+      const copyLinkBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Copy link"));
+      copyLinkBtn.addListener("execute", () => {
+        if (osparc.utils.Utils.copyTextToClipboard(link)) {
+          copyLinkBtn.setIcon("@FontAwesome5Solid/check/12");
+        }
+      });
+      hBox.add(copyLinkBtn);
+
+      return vBox;
+    },
+
+    createTemplateLinkSection: function(serializedData) {
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+
+      if ("permalink" in serializedData) {
+        const permalink = serializedData["permalink"];
+
+        const label = new qx.ui.basic.Label().set({
+          rich: true
+        });
+        if (permalink["is_public"]) {
+          label.setValue(qx.locale.Manager.tr("Anyone on the internet with the link can open this ") + osparc.product.Utils.getTemplateAlias());
+        } else {
+          label.setValue(qx.locale.Manager.tr("Any logged-in user with the link can copy and open this ") + osparc.product.Utils.getTemplateAlias());
+        }
+        vBox.add(label);
+
+        const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+          alignY: "middle"
+        }));
+        vBox.add(hBox, {
+          flex: 1
+        });
+
+        const link = permalink["url"];
+        const linkField = new qx.ui.form.TextField(link);
+        hBox.add(linkField, {
+          flex: 1
+        });
+
+        const copyLinkBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Copy link"));
+        copyLinkBtn.addListener("execute", () => {
+          if (osparc.utils.Utils.copyTextToClipboard(link)) {
+            copyLinkBtn.setIcon("@FontAwesome5Solid/check/12");
+          }
+        });
+        hBox.add(copyLinkBtn);
+      }
+
+      return vBox;
     }
   },
 
@@ -105,10 +183,17 @@ qx.Class.define("osparc.component.share.Collaborators", {
           });
           break;
         case "study-link":
-          control = this.__createStudyLinkSection();
+          control = this.self().createStudyLinkSection(this._serializedData);
           this._add(control);
           // excluded by default
           control.exclude();
+          break;
+        case "template-link":
+          control = this.self().createTemplateLinkSection(this._serializedData);
+          this._add(control);
+          // excluded by default
+          control.exclude();
+          break;
       }
       return control || this.base(arguments, id);
     },
@@ -118,6 +203,7 @@ qx.Class.define("osparc.component.share.Collaborators", {
       this._createChildControlImpl("open-organizations-btn");
       this._createChildControlImpl("collaborators-list");
       this._createChildControlImpl("study-link");
+      this._createChildControlImpl("template-link");
     },
 
     __createAddCollaboratorSection: function() {
@@ -206,39 +292,6 @@ qx.Class.define("osparc.component.share.Collaborators", {
       vBox.add(collaboratorsUIList, {
         flex: 1
       });
-
-      return vBox;
-    },
-
-    __createStudyLinkSection: function() {
-      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-
-      const label = new qx.ui.basic.Label().set({
-        value: this.tr("Permanent Link for users that have access to the ") + osparc.product.Utils.getStudyAlias(),
-        rich: true
-      });
-      vBox.add(label);
-
-      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
-        alignY: "middle"
-      }));
-      vBox.add(hBox, {
-        flex: 1
-      });
-
-      const link = window.location.href + "#/study/" + this._serializedData["uuid"];
-      const linkField = new qx.ui.form.TextField(link);
-      hBox.add(linkField, {
-        flex: 1
-      });
-
-      const copyLinkBtn = new qx.ui.form.Button(this.tr("Copy link"));
-      copyLinkBtn.addListener("execute", () => {
-        if (osparc.utils.Utils.copyTextToClipboard(link)) {
-          copyLinkBtn.setIcon("@FontAwesome5Solid/check/12");
-        }
-      }, this);
-      hBox.add(copyLinkBtn);
 
       return vBox;
     },

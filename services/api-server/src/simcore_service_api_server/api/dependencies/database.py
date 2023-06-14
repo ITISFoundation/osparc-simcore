@@ -1,5 +1,5 @@
 import logging
-from typing import AsyncGenerator, Callable, Type
+from typing import AsyncGenerator, Callable
 
 from aiopg.sa import Engine
 from fastapi import Depends
@@ -14,7 +14,7 @@ def get_db_engine(request: Request) -> Engine:
     return request.app.state.engine
 
 
-def get_repository(repo_type: Type[BaseRepository]) -> Callable:
+def get_repository(repo_type: type[BaseRepository]) -> Callable:
     async def _get_repo(
         engine: Engine = Depends(get_db_engine),
     ) -> AsyncGenerator[BaseRepository, None]:
@@ -37,3 +37,10 @@ def get_repository(repo_type: Type[BaseRepository]) -> Callable:
         yield repo_type(db_engine=engine)
 
     return _get_repo
+
+
+__all__: tuple[str, ...] = (
+    "Engine",
+    "get_db_engine",
+    "get_repository",
+)

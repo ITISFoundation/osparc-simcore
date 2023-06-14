@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 #
 # ERD: Entity Relationship Diagrams
 #
@@ -6,7 +7,7 @@
 # - https://erdantic.drivendata.org/stable/
 #
 
-ARG PYTHON_VERSION="3.9.12"
+ARG PYTHON_VERSION="3.10.10"
 FROM python:${PYTHON_VERSION}-slim-buster as base
 
 RUN apt-get update \
@@ -22,10 +23,12 @@ RUN apt-get update \
   && apt-get clean
 
 
-RUN pip --no-cache-dir install --upgrade \
-  pip~=23.0  \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install --upgrade \
+  pip~=23.1  \
   wheel \
   setuptools
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install -r requirements.txt

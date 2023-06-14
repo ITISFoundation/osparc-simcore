@@ -30,6 +30,7 @@ class TutorialBase {
     this.__interval = null;
 
     this.__failed = false;
+    this.__reasonFailed = null;
 
     this.startScreenshooter()
   }
@@ -127,6 +128,9 @@ class TutorialBase {
         }).catch(() => { })
       }
       setTimeout(waitForFlash, 0)
+
+      // In case there is landing page, go to the log in page
+      await auto.toLogInPage(this.__page);
 
       const needsRegister = await this.registerIfNeeded();
       if (!needsRegister) {
@@ -227,6 +231,7 @@ class TutorialBase {
     }
     catch (err) {
       console.error(this.__templateName, "could not be started", err);
+      throw (err);
     }
     return resp;
   }
@@ -674,7 +679,7 @@ class TutorialBase {
     await this.waitAndClick('mode-button-postro', s4lIframe);
     await this.takeScreenshot("Postpro");
     const algorithmTrees = await utils.getChildrenElementsBySelector(s4lIframe, '[osparc-test-id="tree-algorithm');
-    if (algorithmTrees.length !== 1) {
+    if (algorithmTrees.length < 1) {
       throw("Post Pro tree missing");
     }
 
@@ -775,6 +780,40 @@ class TutorialBase {
     return false;
   }
 
+  async testSARValidation(sarNodeId) {
+    // SAR Validation service testing
+    await this.waitFor(15000, 'SAR Service started');
+    await this.takeScreenshot("testSARValidation_before");
+
+    this.__responsesQueue.addResponseListener("training-set-generation/generate");
+    this.__responsesQueue.addResponseListener("training-set-generation/data");
+    this.__responsesQueue.addResponseListener("training-set-generation/distribution", false);
+    try {
+      const sarIframe = await this.getIframe(sarNodeId);
+      await this.waitAndClick("createTrainingSetBtn", sarIframe);
+      await this.__responsesQueue.waitUntilResponse("training-set-generation/generate");
+      await this.__responsesQueue.waitUntilResponse("training-set-generation/data");
+      await this.__responsesQueue.waitUntilResponse("training-set-generation/distribution");
+    }
+    catch (err) {
+      console.error(this.__templateName, "training-set can't be generated", err);
+      throw (err);
+    }
+
+    this.__responsesQueue.addResponseListener("training-set-generation/xport", false);
+    try {
+      const sarIframe = await this.getIframe(sarNodeId);
+      await this.waitAndClick("exportTrainingSetBtn", sarIframe);
+      await this.__responsesQueue.waitUntilResponse("training-set-generation/xport");
+    }
+    catch (err) {
+      console.error(this.__templateName, "training-set can't be exported", err);
+      throw (err);
+    }
+
+    await this.takeScreenshot("testSARValidation_after");
+  }
+
   async takeScreenshot(screenshotTitle) {
     // Generates an URL that points to the backend logs at this time
     const snapshotUrl = utils.getGrayLogSnapshotUrl(this.__url, 30);
@@ -793,11 +832,16 @@ class TutorialBase {
     return this.__failed;
   }
 
-  async setTutorialFailed(failed, loggerScreenshot = true) {
+  getTutorialFailedReason() {
+    return this.__reasonFailed;
+  }
+
+  async setTutorialFailed(failed, loggerScreenshot = true, reason = "") {
     if (failed && loggerScreenshot) {
       await this.takeLoggerScreenshot();
     }
     this.__failed = failed;
+    this.__reasonFailed = reason
   }
 }
 

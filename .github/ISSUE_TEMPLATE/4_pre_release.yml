@@ -2,7 +2,7 @@ name: 🚀 Pre-release to staging (developers-only)
 description: Issue to plan and log pre-release from master to staging deploy (including staging hotfixes)
 title: "🚀 Pre-release master -> staging_<sprint_name><version>"
 labels: ["t:maintenance", "release"]
-assignees: ["pcrespov"]
+assignees: ["matusdrobuliak66"]
 body:
   - type: dropdown
     id: prerelease_kind
@@ -64,7 +64,8 @@ body:
     attributes:
       label: What Changed
       description: |
-        List of commit messages in this release. Add a list of links to the corresponding PRs. This way we can trace the release of every single PR. TIP: use the autogenerate changelog feature during the draft release.
+        List of commit messages in this release. Add a list of links to the corresponding PRs. This way we can trace the release of every single PR. TIP: use the autogenerate changelog feature during the draft release
+        (TIP: use regex replace for better visualization ``\*.+ by (@\w+) in (https:.*)`` -> ``* $2 by $1``).
     validations:
       required: false
   - type: textarea
@@ -76,7 +77,7 @@ body:
         Log any issues since this procedure should be taken also as an exercise in preparation for the release to production as well.
       value: |
         - [ ] Add changes (if any) and release tags in https://github.com/ITISFoundation/osparc-ops-environments/tags
-        - [ ] Add changes (if any) and release tags in osparc ops configurations
+        - [ ] Add changes (if any) and release tags in **osparc-ops-deployment-configuration** (staging.osparc.io & osparc-staging.speag.com)
         - [ ] ...
     validations:
       required: false
@@ -114,6 +115,7 @@ body:
     attributes:
       label: Releasing
       value: |
+        - [ ] Check hanging sidecars. Helper command to run in director-v2 CLI `simcore-service-director-v2 close-and-save-service <uuid>`
         - [ ] Release (release draft)
         - [ ] Check Release CI
         - [ ] Check deployed

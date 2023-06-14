@@ -88,7 +88,6 @@ def simcore_stack_deployed_services(
     core_stack_compose_specs: ComposeSpec,
     docker_client: DockerClient,
 ) -> list[Service]:
-
     # NOTE: the goal here is NOT to test time-to-deploy but
     # rather guaranteing that the framework is fully deployed before starting
     # tests. Obviously in a critical state in which the frameworks has a problem
@@ -119,12 +118,11 @@ def simcore_stack_deployed_services(
         # ...
 
     # TODO: find a more reliable way to list services in a stack
-    core_stack_services: list[Service] = [
-        service
-        for service in docker_client.services.list(
+    core_stack_services: list[Service] = list(
+        docker_client.services.list(
             filters={"label": f"com.docker.stack.namespace={core_stack_namespace}"}
         )
-    ]  # type: ignore
+    )
 
     assert (
         core_stack_services
@@ -137,12 +135,14 @@ def simcore_stack_deployed_services(
 
 # OPS stack -----------------------------------
 
+_REQUIRED_OPS_SERVICES = ["minio"]
+
 
 @pytest.fixture(scope="module")
 def ops_services_selection(ops_docker_compose: ComposeSpec) -> list[ServiceNameStr]:
     ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::ops_services_selection
-    # select ALL services for these tests
-    return list(ops_docker_compose["services"].keys())
+    # select only minio for these tests
+    return _REQUIRED_OPS_SERVICES
 
 
 @pytest.fixture(scope="module")

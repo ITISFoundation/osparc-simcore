@@ -1,4 +1,5 @@
-ARG PYTHON_VERSION="3.9.12"
+# syntax=docker/dockerfile:1
+ARG PYTHON_VERSION="3.10.10"
 FROM python:${PYTHON_VERSION}-slim-buster as base
 
 #
@@ -11,12 +12,18 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 
 LABEL maintainer=pcrespov
 
-RUN set -eux && \
+# for docker apt caching to work this needs to be added: [https://vsupalov.com/buildkit-cache-mount-dockerfile/]
+RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
+  echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
+RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
+  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
+  set -eux && \
   apt-get update && \
-  apt-get install -y --no-install-recommends gosu && \
-  rm -rf /var/lib/apt/lists/* && \
+  apt-get install -y --no-install-recommends \
+  gosu \
+  && apt-get clean -y \
   # verify that the binary works
-  gosu nobody true
+  && gosu nobody true
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 ENV SC_USER_ID=8004 \
@@ -56,19 +63,21 @@ FROM base as build
 
 ENV SC_BUILD_TARGET=build
 
-RUN apt-get update \
+RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
+  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
+  set -eux \
+  && apt-get update \
   && apt-get install -y --no-install-recommends \
-  build-essential \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
+  build-essential
 
 
 # NOTE: python virtualenv is used here such that installed
 # packages may be moved to production image easily by copying the venv
 RUN python -m venv "${VIRTUAL_ENV}"
 
-RUN pip --no-cache-dir install --upgrade  \
-  pip~=23.0  \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install --upgrade  \
+  pip~=23.1  \
   wheel \
   setuptools
 
@@ -76,8 +85,11 @@ WORKDIR /build
 
 # install base 3rd party dependencies
 # NOTE: copies to /build to avoid overwriting later which would invalidate this layer
-COPY  --chown=scu:scu services/director-v2/requirements/_base.txt .
-RUN pip --no-cache-dir install -r _base.txt
+RUN \
+  --mount=type=bind,source=services/director-v2/requirements/_base.txt,target=_base.txt \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install \
+  --requirement _base.txt
 
 
 # --------------------------Prod-depends-only stage -------------------
@@ -90,13 +102,15 @@ FROM build as prod-only-deps
 
 ENV SC_BUILD_TARGET prod-only-deps
 
-COPY --chown=scu:scu packages /build/packages
-COPY --chown=scu:scu services/director-v2 /build/services/director-v2
-
 WORKDIR /build/services/director-v2
 
-RUN pip3 --no-cache-dir install -r requirements/prod.txt \
-  && pip3 --no-cache-dir list -v
+RUN \
+  --mount=type=bind,source=packages,target=/build/packages,rw \
+  --mount=type=bind,source=services/director-v2,target=/build/services/director-v2,rw \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install \
+  --requirement requirements/prod.txt \
+  && pip list -v
 
 
 # --------------------------Production stage -------------------
@@ -115,6 +129,8 @@ ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu
 
+# ensure home folder is read/writable for user scu
+RUN chown -R scu /home/scu
 # Starting from clean base image, copies pre-installed virtualenv from prod-only-deps
 COPY --chown=scu:scu --from=prod-only-deps  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 

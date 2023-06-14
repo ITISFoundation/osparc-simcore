@@ -95,6 +95,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __infoPage: null,
     __settingsPage: null,
     __outputsPage: null,
+    __nodeOptionsPage: null,
     __workbenchPanel: null,
     __workbenchPanelPage: null,
     __workbenchUI: null,
@@ -401,6 +402,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       outputsPage.exclude();
       tabViewSecondary.add(outputsPage);
 
+      const nodeOptionsPage = this.__nodeOptionsPage = this.__createTabPage("@FontAwesome5Solid/cogs", this.tr("Options"));
+      osparc.utils.Utils.setIdToWidget(nodeOptionsPage.getChildControl("button"), "nodeOptionsTabButton");
+      nodeOptionsPage.exclude();
+      tabViewSecondary.add(nodeOptionsPage);
+
       this.__addTopBarSpacer(topBar);
 
       this.__populateSecondPanel();
@@ -591,10 +597,20 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const data = e.getData();
         const nodeId = data.nodeId;
         const msg = data.msg;
-        if ("level" in data && data["level"] === "ERROR") {
-          this.__loggerView.error(nodeId, msg);
-        } else {
-          this.__loggerView.info(nodeId, msg);
+        const logLevel = ("level" in data) ? data["level"] : "INFO";
+        switch (logLevel) {
+          case "DEBUG":
+            this.__loggerView.debug(nodeId, msg);
+            break;
+          case "WARNING":
+            this.__loggerView.warn(nodeId, msg);
+            break;
+          case "ERROR":
+            this.__loggerView.error(nodeId, msg);
+            break;
+          default:
+            this.__loggerView.info(nodeId, msg);
+            break;
         }
       }, this);
 
@@ -623,7 +639,22 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           }
           const nodeId = data["node_id"];
           const messages = data["messages"];
-          this.__loggerView.infos(nodeId, messages);
+          const logLevelMap = osparc.component.widget.logger.LoggerView.LOG_LEVEL_MAP;
+          const logLevel = ("log_level" in data) ? logLevelMap[data["log_level"]] : "INFO";
+          switch (logLevel) {
+            case "DEBUG":
+              this.__loggerView.debugs(nodeId, messages);
+              break;
+            case "WARNING":
+              this.__loggerView.warns(nodeId, messages);
+              break;
+            case "ERROR":
+              this.__loggerView.errors(nodeId, messages);
+              break;
+            default:
+              this.__loggerView.infos(nodeId, messages);
+              break;
+          }
           const nodeLogger = this.__getNodeLogger(nodeId);
           if (nodeLogger) {
             nodeLogger.infos(nodeId, messages);
@@ -824,7 +855,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__studyOptionsPage,
         this.__infoPage,
         this.__settingsPage,
-        this.__outputsPage
+        this.__outputsPage,
+        this.__nodeOptionsPage
       ].forEach(page => {
         page.removeAll();
         page.getChildControl("button").exclude();
@@ -1082,26 +1114,23 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       outputFilesBtn.addListener("execute", () => osparc.component.node.BaseNodeView.openNodeDataManager(node));
       this.__outputsPage.add(outputFilesBtn);
 
+      if (node.isDynamic() && (node.isUpdatable() || node.isDeprecated() || node.isRetired())) {
+        this.__nodeOptionsPage.getChildControl("button").show();
+        const lifeCycleView = new osparc.component.node.LifeCycleView(node);
+        node.addListener("versionChanged", () => this.__populateSecondPanel(node));
+        this.__nodeOptionsPage.add(lifeCycleView);
+      }
+
+      if (node.hasBootModes()) {
+        this.__nodeOptionsPage.getChildControl("button").show();
+        const bootOptionsView = new osparc.component.node.BootOptionsView(node);
+        node.addListener("bootModeChanged", () => this.__populateSecondPanel(node));
+        this.__nodeOptionsPage.add(bootOptionsView);
+      }
+
+      // if it's deprecated or retired show the LifeCycleView right away
       if (node.hasOutputs() && node.isDynamic() && (node.isDeprecated() || node.isRetired())) {
-        this.__outputsPage.add(new qx.ui.core.Spacer(null, 20));
-
-        const chip = node.isDeprecated() ? osparc.utils.StatusUI.createServiceDeprecatedChip() : osparc.utils.StatusUI.createServiceRetiredChip();
-        this.__outputsPage.add(chip);
-
-        if (node.isDeprecated()) {
-          const deprecateDateLabel = new qx.ui.basic.Label(osparc.utils.Services.getDeprecationDateText(node.getMetaData())).set({
-            rich: true
-          });
-          this.__outputsPage.add(deprecateDateLabel);
-        }
-
-        const instructionsMsg = node.isDeprecated() ? osparc.utils.Services.DEPRECATED_DYNAMIC_INSTRUCTIONS : osparc.utils.Services.RETIRED_DYNAMIC_INSTRUCTIONS;
-        const instructionsLabel = new qx.ui.basic.Label(instructionsMsg).set({
-          rich: true
-        });
-        this.__outputsPage.add(instructionsLabel);
-
-        this.getChildControl("side-panel-right-tabs").setSelection([this.__outputsPage]);
+        this.getChildControl("side-panel-right-tabs").setSelection([this.__nodeOptionsPage]);
       }
     },
 

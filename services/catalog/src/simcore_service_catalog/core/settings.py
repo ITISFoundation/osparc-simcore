@@ -1,6 +1,6 @@
 import logging
 from functools import cached_property
-from typing import Final, Optional
+from typing import Final
 
 from models_library.basic_types import BootModeEnum, BuildTargetEnum, LogLevel
 from models_library.services_resources import ResourcesDict
@@ -8,11 +8,9 @@ from pydantic import ByteSize, Field, PositiveInt, parse_obj_as
 from settings_library.base import BaseCustomSettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
-from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
-from simcore_service_catalog.models.schemas.services_specifications import (
-    ServiceSpecifications,
-)
+
+from ..models.schemas.services_specifications import ServiceSpecifications
 
 logger = logging.getLogger(__name__)
 
@@ -43,33 +41,36 @@ _DEFAULT_SERVICE_SPECIFICATIONS: Final[
 ] = ServiceSpecifications.parse_obj({})
 
 
-class AppSettings(BaseCustomSettings, MixinLoggingSettings):
+class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     # docker environs
-    SC_BOOT_MODE: Optional[BootModeEnum]
-    SC_BOOT_TARGET: Optional[BuildTargetEnum]
+    SC_BOOT_MODE: BootModeEnum | None
+    SC_BOOT_TARGET: BuildTargetEnum | None
 
     CATALOG_LOG_LEVEL: LogLevel = Field(
         LogLevel.INFO.value,
         env=["CATALOG_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
+    )
+    CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
+        False,
+        env=["CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"],
+        description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
     CATALOG_DEV_FEATURES_ENABLED: bool = Field(
         False,
         description="Enables development features. WARNING: make sure it is disabled in production .env file!",
     )
 
-    CATALOG_POSTGRES: Optional[PostgresSettings] = Field(auto_default_from_env=True)
+    CATALOG_POSTGRES: PostgresSettings | None = Field(auto_default_from_env=True)
 
-    CATALOG_CLIENT_REQUEST: Optional[ClientRequestSettings] = Field(
+    CATALOG_CLIENT_REQUEST: ClientRequestSettings | None = Field(
         auto_default_from_env=True
     )
 
-    CATALOG_DIRECTOR: Optional[DirectorSettings] = Field(auto_default_from_env=True)
+    CATALOG_DIRECTOR: DirectorSettings | None = Field(auto_default_from_env=True)
 
     # BACKGROUND TASK
     CATALOG_BACKGROUND_TASK_REST_TIME: PositiveInt = 60
     CATALOG_BACKGROUND_TASK_WAIT_AFTER_FAILURE: PositiveInt = 5  # secs
-
-    CATALOG_TRACING: Optional[TracingSettings] = None
 
     CATALOG_SERVICES_DEFAULT_RESOURCES: ResourcesDict = _DEFAULT_RESOURCES
     CATALOG_SERVICES_DEFAULT_SPECIFICATIONS: ServiceSpecifications = (
