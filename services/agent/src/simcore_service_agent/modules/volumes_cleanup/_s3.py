@@ -8,6 +8,8 @@ from typing import Final
 from settings_library.r_clone import S3Provider
 from settings_library.utils_r_clone import resolve_provider
 
+from .models import VolumeDict
+
 logger = logging.getLogger(__name__)
 
 R_CLONE_CONFIG = """
@@ -115,7 +117,7 @@ def _log_expected_operation(
 
 async def store_to_s3(  # pylint:disable=too-many-locals,too-many-arguments
     volume_name: str,
-    dyv_volume: dict,
+    dyv_volume: VolumeDict,
     s3_endpoint: str,
     s3_access_key: str,
     s3_secret_key: str,
