@@ -4,6 +4,7 @@ from functools import partial
 from pprint import pformat
 from typing import Any, Callable, Optional
 
+import rich
 import typer
 from pydantic import BaseModel, SecretStr, ValidationError
 from pydantic.env_settings import BaseSettings
@@ -80,7 +81,7 @@ def create_json_encoder_wo_secrets(model_cls: type[BaseModel]):
 
 
 def create_settings_command(
-    settings_cls: type[BaseCustomSettings], logger: Optional[logging.Logger] = None
+    settings_cls: type[BaseCustomSettings], logger: logging.Logger | None = None
 ) -> Callable:
     """Creates typer command function for settings"""
 
@@ -109,7 +110,6 @@ def create_settings_command(
             return
 
         try:
-
             settings_obj = settings_cls.create_from_envs()
 
         except ValidationError as err:
@@ -158,3 +158,27 @@ def create_settings_command(
             )
 
     return settings
+
+
+def create_version_callback(application_version: str) -> Callable:
+    def _version_callback(value: bool):
+        if value:
+            rich.print(application_version)
+            raise typer.Exit()
+
+    def version(
+        ctx: typer.Context,
+        version: Optional[bool] = (
+            typer.Option(
+                None,
+                "--version",
+                callback=_version_callback,
+                is_eager=True,
+            )
+        ),
+    ):
+        """current version"""
+        assert ctx  # nosec
+        assert version or not version  # nosec
+
+    return version
