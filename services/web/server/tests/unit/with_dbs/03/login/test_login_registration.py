@@ -24,6 +24,7 @@ from simcore_service_webserver.login._constants import (
     MSG_EMAIL_EXISTS,
     MSG_LOGGED_IN,
     MSG_PASSWORD_MISMATCH,
+    MSG_WEAK_PASSWORD,
 )
 from simcore_service_webserver.login._registration import (
     InvitationData,
@@ -119,7 +120,7 @@ async def test_register_body_validation(
     }
 
 
-async def test_regitration_is_not_get(client: TestClient):
+async def test_registration_is_not_get(client: TestClient):
     assert client.app
     url = client.app.router["auth_register"].url_for()
     response = await client.get(f"{url}")
@@ -182,6 +183,32 @@ async def test_registration_with_expired_confirmation(
         await db.delete_confirmation(confirmation)
 
     await assert_error(response, web.HTTPConflict, MSG_EMAIL_EXISTS)
+
+
+async def test_registration_with_weak_password_fails(
+    client: TestClient,
+    mocker: MockerFixture,
+    _clean_user_table: None,
+    fake_user_email: str,
+    fake_weak_password: str,
+):
+    assert client.app
+    url = client.app.router["auth_register"].url_for()
+    response = await client.post(
+        f"{url}",
+        json={
+            "email": fake_user_email,
+            "password": fake_weak_password,
+            "confirm": fake_weak_password,
+        },
+    )
+    await assert_error(
+        response,
+        web.HTTPUnauthorized,
+        MSG_WEAK_PASSWORD.format(
+            LOGIN_PASSWORD_MIN_LENGTH=LoginSettingsForProduct.LOGIN_PASSWORD_MIN_LENGTH
+        ),
+    )
 
 
 async def test_registration_with_invalid_confirmation_code(

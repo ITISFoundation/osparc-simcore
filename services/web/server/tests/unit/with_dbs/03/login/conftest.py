@@ -91,6 +91,13 @@ def fake_user_password(faker: Faker) -> str:
 
 
 @pytest.fixture
+def fake_weak_password(faker: Faker) -> str:
+    return faker.password(
+        length=8, special_chars=True, digits=True, upper_case=True, lower_case=True
+    )
+
+
+@pytest.fixture
 def db(client: TestClient) -> AsyncpgStorage:
     """login database repository instance"""
     assert client.app

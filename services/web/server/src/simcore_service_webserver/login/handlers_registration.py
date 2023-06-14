@@ -31,6 +31,7 @@ from ._constants import (
     MSG_2FA_CODE_SENT,
     MSG_CANT_SEND_MAIL,
     MSG_UNAUTHORIZED_REGISTER_PHONE,
+    MSG_WEAK_PASSWORD,
 )
 from ._models import InputSchema, check_confirm_password_match
 from ._registration import (
@@ -174,6 +175,17 @@ async def register(request: web.Request):
         )
         if invitation.trial_account_days:
             expires_at = datetime.utcnow() + timedelta(invitation.trial_account_days)
+
+    if (
+        len(registration.password.get_secret_value())
+        < settings.LOGIN_PASSWORD_MIN_LENGTH
+    ):
+        raise web.HTTPUnauthorized(
+            reason=MSG_WEAK_PASSWORD.format(
+                LOGIN_PASSWORD_MIN_LENGTH=settings.LOGIN_PASSWORD_MIN_LENGTH
+            ),
+            content_type=MIMETYPE_APPLICATION_JSON,
+        )
 
     username = _get_user_name(registration.email)
     user: dict = await db.create_user(

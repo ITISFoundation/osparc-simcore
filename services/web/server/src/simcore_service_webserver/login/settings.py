@@ -51,6 +51,11 @@ class LoginSettings(BaseCustomSettings):
         description="If true, it enables two-factor authentication (2FA)",
     )
 
+    LOGIN_PASSWORD_MIN_LENGTH: PositiveInt = Field(
+        default=12,
+        description="Minimum length of password",
+    )
+
     @validator("LOGIN_2FA_REQUIRED")
     @classmethod
     def login_2fa_needs_email_registration(cls, v, values):
