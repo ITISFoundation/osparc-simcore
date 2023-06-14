@@ -3,7 +3,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import AsyncIterator, Awaitable, Callable, Iterator
+from typing import Any, AsyncIterator, Awaitable, Callable, Iterator
 
 import aiopg.sa
 import aiopg.sa.exc
@@ -14,9 +14,14 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
 from faker import Faker
-from pytest_simcore.helpers.rawdata_fakers import random_group, random_user
+from pytest_simcore.helpers.rawdata_fakers import (
+    random_group,
+    random_project,
+    random_user,
+)
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import ClusterType, clusters
+from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.webserver_models import (
     GroupType,
     groups,
@@ -237,3 +242,26 @@ async def create_fake_cluster(
     # cleanup
     async with pg_engine.acquire() as conn:
         await conn.execute(clusters.delete().where(clusters.c.id.in_(cluster_ids)))
+
+
+@pytest.fixture
+async def create_fake_project(pg_engine: Engine) -> Iterator[Callable]:
+    created_project_uuids = []
+
+    async def _creator(conn, user: dict[str, Any], **overrides) -> RowProxy:
+        prj_to_insert = random_project(prj_owner=user.id, **overrides)
+        result = await conn.execute(
+            projects.insert().values(**prj_to_insert).returning(projects)
+        )
+        assert result
+        new_project = await result.first()
+        assert new_project
+        created_project_uuids.append(new_project.uuid)
+        return new_project
+
+    yield _creator
+
+    async with pg_engine.acquire() as conn:
+        conn.execute(
+            projects.delete().where(projects.c.uuid.in_(created_project_uuids))
+        )
