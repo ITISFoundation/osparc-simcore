@@ -152,6 +152,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       // add Open service button
       [
         this.__getInfoPage,
+        this.__getScenePage,
         this.__getPermissionsPage,
         this.__getTagsPage,
         this.__getServicesUpdatePage,
@@ -265,6 +266,15 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         page.add(openServiceButton);
       }
 
+      return page;
+    },
+
+    __getScenePage: function() {
+      const id = "Scene";
+      const title = this.tr("Scene");
+      const icon = "@FontAwesome5Solid/share-alt";
+      const threeView = new osparc.component.widget.Three("#00FF00");
+      const page = this.__permissionsPage = this.__createPage(title, threeView, icon, id);
       return page;
     },
 
