@@ -20,7 +20,11 @@ class _VolumeRemovalExecutor(BaseSerialExecutor):
         )
 
 
-async def remove_sidecar_volumes(app: FastAPI, sidecar_volumes: SidecarVolumes) -> None:
+async def remove_sidecar_volumes(
+    app: FastAPI,
+    sidecar_volumes: SidecarVolumes,
+    volume_remove_timeout_s: float | None = None,
+) -> None:
     # NOTE: concurrent requests for removal of the same volume are queued.
     # Avoids concurrency issues between the background task and the director-v2 asking
     # for the volume removal.
@@ -33,10 +37,13 @@ async def remove_sidecar_volumes(app: FastAPI, sidecar_volumes: SidecarVolumes) 
     )
     context_key = f"{volume_info.node_uuid}"
 
+    if volume_remove_timeout_s is None:
+        volume_remove_timeout_s = settings.AGENT_VOLUME_REMOVAL_TIMEOUT_S
+
     await volume_removal_executor.wait_for_result(
         settings=settings,
         sidecar_volumes=sidecar_volumes,
-        timeout=settings.AGENT_VOLUME_REMOVAL_TIMEOUT_S,
+        timeout=volume_remove_timeout_s,
         context_key=context_key,
     )
 
