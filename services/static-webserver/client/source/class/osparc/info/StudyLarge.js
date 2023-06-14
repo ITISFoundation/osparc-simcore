@@ -61,6 +61,9 @@ qx.Class.define("osparc.info.StudyLarge", {
     _rebuildLayout: function() {
       this._removeAll();
 
+      const threeView = new osparc.component.widget.Three("#00FF00");
+      this._add(threeView);
+
       const title = this.__createTitle();
       const titleLayout = this.__createViewWithEdit(title, this.__openTitleEditor);
       this._add(titleLayout);
