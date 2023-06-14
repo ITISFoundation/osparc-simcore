@@ -109,9 +109,10 @@ def test_compose_commands(cli: typer.Typer, cli_runner: CliRunner):
 
     # settings command
     result = cli_runner.invoke(cli, ["settings", "--help"], catch_exceptions=False)
+    print(result.stdout)
+    assert result.exit_code == 0, result
+
     received_help = result.stdout
-    print(received_help)
-    assert result.exit_code == 0, received_help
 
     assert "compact" in result.stdout, f"got instead {received_help=}"
     assert "as-json" in received_help, f"got instead {received_help=}"
