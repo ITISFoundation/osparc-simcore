@@ -1,6 +1,5 @@
 import logging
 from functools import partial
-from typing import cast
 
 from fastapi import FastAPI
 from servicelib.rabbitmq import RabbitMQClient
@@ -27,7 +26,8 @@ def _get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
         raise ConfigurationError(
             msg="RabbitMQ client is not available. Please check the configuration."
         )
-    return cast(RabbitMQClient, app.state.rabbitmq_client)
+    rabbit_mq_client: RabbitMQClient = app.state.rabbitmq_client
+    return rabbit_mq_client
 
 
 async def _safe_remove_volumes(
