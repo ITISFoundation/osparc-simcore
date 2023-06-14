@@ -20,7 +20,7 @@ qx.Class.define("osparc.auth.core.Utils", {
 
   statics: {
     passwordLengthValidator: function(value, item) {
-      const valid = value != null && value.length > 11;
+      const valid = (value != null) && (value.length > 11);
       if (!valid) {
         item.setInvalidMessage("Please enter a password at with least 12 characters.");
       }
