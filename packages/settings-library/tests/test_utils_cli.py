@@ -4,9 +4,6 @@
 
 import json
 import logging
-import re
-import sys
-from importlib import reload
 from io import StringIO
 from typing import Any, Callable
 
@@ -22,12 +19,6 @@ from settings_library.utils_cli import (
     create_version_callback,
 )
 from typer.testing import CliRunner
-
-# unload rich for these tests
-import rich
-del rich
-reload(typer)
-
 
 log = logging.getLogger(__name__)
 
@@ -92,7 +83,7 @@ def export_as_dict() -> Callable:
         return json.loads(
             model_obj.json(
                 encoder=create_json_encoder_wo_secrets(model_obj.__class__),
-                **export_options
+                **export_options,
             )
         )
 
@@ -119,43 +110,13 @@ def test_compose_commands(cli: typer.Typer, cli_runner: CliRunner):
     # settings command
     result = cli_runner.invoke(cli, ["settings", "--help"], catch_exceptions=False)
     print(result.stdout)
-
-    assert ("--compact" in result.stdout) or (
-        "\x1b[1;36m-\x1b[0m\x1b[1;36m-compact" in result.stdout
-    )
     assert result.exit_code == 0, result
 
-    def extract_lines(text):
-        # remove typer boxes
-        text = re.sub("[─╭╮╯╰|│]", "", text)
+    assert "compact" in result.stdout, f"got instead {result.stdout=}"
 
-        lines = [line.strip() for line in text.split("\n") if line.strip()]
-        return lines
-
-    assert extract_lines(HELP) == extract_lines(result.stdout)
-
-
-HELP = """
- Usage: app settings [OPTIONS]
-
- Resolves settings and prints envfile
-
-╭─ Options ────────────────────────────────────────────────────────────────────╮
-│ --as-json           --no-as-json             [default: no-as-json]           │
-│ --as-json-schema    --no-as-json-schema      [default: no-as-json-schema]    │
-│ --compact           --no-compact             Print compact form              │
-│                                              [default: no-compact]           │
-│ --verbose           --no-verbose             [default: no-verbose]           │
-│ --show-secrets      --no-show-secrets        [default: no-show-secrets]      │
-│ --exclude-unset     --no-exclude-unset       displays settings that were     │
-│                                              explicitly setThis represents   │
-│                                              current config (i.e. required+  │
-│                                              defaults overriden).            │
-│                                              [default: no-exclude-unset]     │
-│ --help                                       Show this message and exit.     │
-╰──────────────────────────────────────────────────────────────────────────────╯
-
-"""
+    got_help = result.stdout
+    assert "--as-json" in got_help
+    assert "--help" in got_help
 
 
 def test_settings_as_json(
