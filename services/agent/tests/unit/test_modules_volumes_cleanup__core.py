@@ -154,7 +154,6 @@ async def _create_volume(
             try:
                 archive_path = Path(f"/tmp/tar_archive{uuid4()}")
                 with _make_tarfile(archive_path, volume_path_in_container, dir_to_copy):
-
                     await container.put_archive(
                         f"{volume_path_in_container}", archive_path.read_bytes()
                     )

@@ -3,7 +3,7 @@
 # pylint:disable=unused-argument
 
 import asyncio
-from typing import AsyncIterator, Final, Optional
+from typing import AsyncIterator, Final
 
 import pytest
 from fastapi import FastAPI
@@ -32,9 +32,8 @@ async def _job_which_hangs() -> None:
 @pytest.mark.parametrize("repeat_interval_s", [REPEAT_TASK_INTERVAL_S, None])
 async def test_task_monitor_recovers_from_error(
     caplog_debug: LogCaptureFixture,
-    repeat_interval_s: Optional[PositiveFloat],
+    repeat_interval_s: PositiveFloat | None,
 ):
-
     task_monitor = TaskMonitor()
     task_monitor.register_job(
         _job_which_raises_error, repeat_interval_s=repeat_interval_s
