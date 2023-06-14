@@ -21,6 +21,10 @@ class ProjectsNodesProjectNotFound(BaseProjectsNodesError):
     ...
 
 
+class ProjectsNodesOperationNotAllowed(BaseProjectsNodesError):
+    ...
+
+
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ProjectsNodeCreate:
     node_id: uuid.UUID
@@ -41,15 +45,16 @@ class ProjectsNodesRepo:
         self, connection: DBConnection, *, node: ProjectsNodeCreate
     ) -> ProjectsNode:
         async with connection.begin():
-            result = await connection.execute(
-                projects_nodes.insert()
-                .values(**asdict(node))
-                .returning(literal_column("*"))
-            )
-            created_node = await result.first()
-            assert created_node  # nosec
-            created_node = ProjectsNode(**dict(created_node.items()))
             try:
+                result = await connection.execute(
+                    projects_nodes.insert()
+                    .values(**asdict(node))
+                    .returning(literal_column("*"))
+                )
+                created_node = await result.first()
+                assert created_node  # nosec
+                created_node = ProjectsNode(**dict(created_node.items()))
+
                 result = await connection.execute(
                     projects_to_projects_nodes.insert().values(
                         project_uuid=f"{self.project_uuid}",
@@ -59,8 +64,14 @@ class ProjectsNodesRepo:
                 assert result.rowcount == 1  # nosec
                 return created_node
             except psycopg2.errors.ForeignKeyViolation as exc:
+                # this happens when the project does not exist
                 raise ProjectsNodesProjectNotFound(
                     f"Project {self.project_uuid} not found"
+                ) from exc
+            except psycopg2.errors.UniqueViolation as exc:
+                # this happens if the node already exists
+                raise ProjectsNodesOperationNotAllowed(
+                    f"Project node {node.node_id} already exists"
                 ) from exc
 
     async def list(self, connection: DBConnection) -> list[ProjectsNode]:
