@@ -95,7 +95,6 @@ define create_and_validate_openapi
 	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
 
 	# validates OAS file: $@
-	echo $(OPENAPI_GENERATOR_IMAGE)
 	docker run --rm \
 			--volume "$(CURDIR):/local" \
 			$(OPENAPI_GENERATOR_IMAGE) validate --input-spec /local/$@
@@ -167,6 +166,4 @@ python-client: client openapi.json ## runs python client generator
 
 generator-help: ## help on client-api generator
 	# generate help
-	@docker run --rm $(OPENAPI_GENERATOR_IMAGE) help generate
-	# generator config help
 	@docker run --rm $(OPENAPI_GENERATOR_IMAGE) help generate
