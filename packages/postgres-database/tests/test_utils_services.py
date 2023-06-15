@@ -21,6 +21,7 @@ from simcore_postgres_database.models.services_consume_filetypes import (
 )
 from simcore_postgres_database.utils_services import create_select_latest_services_query
 from sqlalchemy.dialects.postgresql import INTEGER
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 
 class RandomServiceFactory:
@@ -144,14 +145,18 @@ def services_fixture(faker: Faker, pg_sa_engine: sa.engine.Engine) -> ServicesFi
 
     with pg_sa_engine.connect() as conn:
         # PRODUCT
+        osparc_product = dict(
+            name="osparc",
+            display_name="Product Osparc",
+            short_name="osparc",
+            host_regex=r"^osparc.",
+            priority=0,
+        )
         product_name = conn.execute(
-            products.insert()
-            .values(
-                name="osparc",
-                display_name="Product Osparc",
-                short_name="osparc",
-                host_regex=r"^osparc.",
-                priority=0,
+            pg_insert(products)
+            .values(**osparc_product)
+            .on_conflict_do_update(
+                index_elements=[products.c.name], set_=osparc_product
             )
             .returning(products.c.name)
         ).scalar()
