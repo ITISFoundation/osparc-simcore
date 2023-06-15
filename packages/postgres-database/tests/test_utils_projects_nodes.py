@@ -2,6 +2,9 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
+import asyncio
+import random
+import uuid
 from random import randint
 from typing import Any, Awaitable, Callable
 
@@ -19,6 +22,13 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectsNodesProjectNotFound,
     ProjectsNodesRepo,
 )
+
+
+async def _delete_project(connection: SAConnection, project_uuid: uuid.UUID) -> None:
+    result = await connection.execute(
+        sqlalchemy.delete(projects).where(projects.c.uuid == f"{project_uuid}")
+    )
+    assert result.rowcount == 1
 
 
 @pytest.fixture
@@ -260,22 +270,48 @@ async def test_delete_project_delete_all_nodes(
     assert received_node == new_node
 
     # now delete the project from the projects table
-    await connection.execute(
-        sqlalchemy.delete(projects).where(
-            projects.c.uuid == f"{projects_nodes_repo.project_uuid}"
-        )
-    )
+    await _delete_project(connection, projects_nodes_repo.project_uuid)
 
     # the project cannot be found anymore (the link in projects_to_projects_nodes is auto-removed)
     with pytest.raises(ProjectsNodesNodeNotFound):
         await projects_nodes_repo.get(connection, node_id=new_node.node_id)
 
     # the underlying projects_nodes should also be gone
-    # result = await connection.execute(
-    #     sqlalchemy.select(projects_nodes).where(
-    #         projects_nodes.c.node_id == f"{new_node.node_id}"
-    #     )
-    # )
-    # assert result
-    # row = await result.first()
-    # assert row is None
+    result = await connection.execute(
+        sqlalchemy.select(projects_nodes).where(
+            projects_nodes.c.node_id == f"{new_node.node_id}"
+        )
+    )
+    assert result
+    row = await result.first()
+    assert row is None
+
+
+@pytest.mark.parametrize("num_concurrent_workflows", [1, 250])
+async def test_multiple_creation_deletion_of_nodes(
+    pg_engine,
+    registered_user: RowProxy,
+    create_fake_project,
+    create_fake_projects_node,
+    num_concurrent_workflows: int,
+):
+    async def _workflow() -> None:
+        async with pg_engine.acquire() as connection:
+            project = await create_fake_project(connection, registered_user)
+            projects_nodes_repo = ProjectsNodesRepo(project_uuid=project.uuid)
+            for _ in range(11):
+                await projects_nodes_repo.create(
+                    connection, node=create_fake_projects_node()
+                )
+            list_nodes = await projects_nodes_repo.list(connection)
+            assert list_nodes
+            assert len(list_nodes) == 11
+            await projects_nodes_repo.delete(
+                connection, node_id=random.choice(list_nodes).node_id
+            )
+            list_nodes = await projects_nodes_repo.list(connection)
+            assert list_nodes
+            assert len(list_nodes) == 10
+            await _delete_project(connection, project_uuid=project.uuid)
+
+    await asyncio.gather(*(_workflow() for _ in range(num_concurrent_workflows)))
