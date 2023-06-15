@@ -57,6 +57,7 @@ qx.Class.define("osparc.component.share.NewCollaboratorsManager", {
         allowStretchX: true,
         margin: [0, 10, 5, 10]
       });
+      this.addListener("appear", () => filter.getChildControl("textfield").focus());
       this.add(filter);
 
       const collabButtonsContainer = this.__collabButtonsContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox());
