@@ -118,14 +118,6 @@ async def test_list_project_nodes(
         for n in range(randint(3, 12))
     ]
 
-    # TODO: PC why is the connection an argument, and not the engine?
-    # created_nodes = await asyncio.gather(
-    #     *(
-    #         projects_node_repo.create(connection, node=create_fake_projects_node())
-    #         for n in range(randint(3, 12))
-    #     )
-    # )
-
     nodes = await projects_node_repo.list(connection)
     assert nodes
     assert len(nodes) == len(created_nodes)
