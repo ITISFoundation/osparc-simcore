@@ -176,6 +176,47 @@ async def test_get_project_node(
     assert received_node == new_node
 
 
+async def test_update_project_node_of_invalid_node_raises(
+    connection: SAConnection,
+    projects_nodes_repo: ProjectsNodesRepo,
+    create_fake_projects_node: Callable[..., ProjectsNodeCreate],
+    faker: Faker,
+):
+    new_node = await projects_nodes_repo.create(
+        connection, node=create_fake_projects_node()
+    )
+    assert new_node.created == new_node.modified
+    with pytest.raises(ProjectsNodesNodeNotFound):
+        await projects_nodes_repo.update(
+            connection,
+            node_id=faker.uuid4(cast_to=None),
+            required_resources={faker.pystr(): faker.pyint()},
+        )
+
+
+async def test_update_project_node(
+    connection: SAConnection,
+    projects_nodes_repo: ProjectsNodesRepo,
+    create_fake_projects_node: Callable[..., ProjectsNodeCreate],
+    faker: Faker,
+):
+    new_node = await projects_nodes_repo.create(
+        connection, node=create_fake_projects_node()
+    )
+    assert new_node.created == new_node.modified
+    required_resources = {faker.pystr(): faker.pyint()}
+    updated_node = await projects_nodes_repo.update(
+        connection,
+        node_id=new_node.node_id,
+        required_resources=required_resources,
+    )
+    assert updated_node
+    assert updated_node != new_node
+    assert updated_node.modified > new_node.modified
+    assert updated_node.created == new_node.created
+    assert updated_node.required_resources == required_resources
+
+
 async def test_delete_invalid_node_does_nothing(
     connection: SAConnection,
     projects_nodes_repo_of_invalid_project: ProjectsNodesRepo,
@@ -276,7 +317,7 @@ async def test_delete_project_delete_all_nodes(
     with pytest.raises(ProjectsNodesNodeNotFound):
         await projects_nodes_repo.get(connection, node_id=new_node.node_id)
 
-    # the underlying projects_nodes should also be gone
+    # the underlying projects_nodes should also be gone, thanks to migration
     result = await connection.execute(
         sqlalchemy.select(projects_nodes).where(
             projects_nodes.c.node_id == f"{new_node.node_id}"

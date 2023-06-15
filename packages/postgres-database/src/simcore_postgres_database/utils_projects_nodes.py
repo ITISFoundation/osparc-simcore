@@ -139,14 +139,26 @@ class ProjectsNodesRepo:
         assert result  # nosec
         row = await result.first()
         if row is None:
-            raise ProjectsNodesNodeNotFound(f"node with {node_id} not found")
+            raise ProjectsNodesNodeNotFound(f"Node with {node_id} not found")
         assert row  # nosec
         return ProjectsNode(**dict(row.items()))
 
+    @staticmethod
     async def update(
-        self, connection: SAConnection, *, node_id: uuid.UUID, **values
+        connection: SAConnection, *, node_id: uuid.UUID, **values
     ) -> ProjectsNode:
-        ...
+        update_stmt = (
+            projects_nodes.update()
+            .values(**values)
+            .where(projects_nodes.c.node_id == f"{node_id}")
+            .returning(literal_column("*"))
+        )
+        result = await connection.execute(update_stmt)
+        updated_entry = await result.first()
+        if not updated_entry:
+            raise ProjectsNodesNodeNotFound(f"Node with {node_id} not found")
+        assert updated_entry  # nosec
+        return ProjectsNode(**dict(updated_entry.items()))
 
     async def delete(self, connection: SAConnection, *, node_id: uuid.UUID) -> None:
         async with connection.begin():
