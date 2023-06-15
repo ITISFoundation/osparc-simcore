@@ -8,6 +8,7 @@ from typing import Any, AsyncIterator, Awaitable, Callable, Iterator
 import aiopg.sa
 import aiopg.sa.exc
 import pytest
+import simcore_postgres_database.cli
 import sqlalchemy as sa
 import yaml
 from aiopg.sa.connection import SAConnection
@@ -91,9 +92,11 @@ def db_metadata() -> sa.MetaData:
     return metadata
 
 
-@pytest.fixture
+@pytest.fixture(params=["sqlModels", "alembicMigration"])
 def pg_sa_engine(
-    make_engine: Callable, db_metadata: sa.MetaData
+    make_engine: Callable,
+    db_metadata: sa.MetaData,
+    request: pytest.FixtureRequest,
 ) -> Iterator[sa.engine.Engine]:
     """
     Runs migration to create tables and return a sqlalchemy engine
@@ -107,11 +110,26 @@ def pg_sa_engine(
 
     # NOTE: ALL is deleted before
     db_metadata.drop_all(sync_engine)
-    db_metadata.create_all(sync_engine)
+    if request.param == "sqlModels":
+        db_metadata.create_all(sync_engine)
+    else:
+        assert simcore_postgres_database.cli.discover.callback
+        assert simcore_postgres_database.cli.upgrade.callback
+        dsn = sync_engine.url
+        simcore_postgres_database.cli.discover.callback(
+            user=dsn.username,
+            password=dsn.password,
+            host=dsn.host,
+            database=dsn.database,
+            port=dsn.port,
+        )
+        simcore_postgres_database.cli.upgrade.callback("head")
 
     yield sync_engine
 
     # NOTE: ALL is deleted after
+    with sync_engine.connect() as conn:
+        conn.execute(sa.DDL("DROP TABLE IF EXISTS alembic_version"))
     db_metadata.drop_all(sync_engine)
     sync_engine.dispose()
 
