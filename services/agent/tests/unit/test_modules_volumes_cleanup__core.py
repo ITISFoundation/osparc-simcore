@@ -13,7 +13,7 @@ from aiodocker import Docker
 from aiodocker.volumes import DockerVolume
 from faker import Faker
 from models_library.sidecar_volumes import VolumeCategory, VolumeState, VolumeStatus
-from pydantic import BaseModel, NonNegativeInt
+from pydantic import NonNegativeInt
 from pytest_mock import MockerFixture
 from servicelib.sidecar_volumes import STORE_FILE_NAME
 from simcore_service_agent.core.settings import ApplicationSettings
@@ -28,6 +28,7 @@ from simcore_service_agent.modules.volumes_cleanup.models import (
     VolumeDict,
 )
 from utils import (
+    ParsingModel,
     create_volume,
     get_minimal_volume_dict,
     get_sidecar_volumes,
@@ -130,10 +131,6 @@ async def sidecar_volumes() -> SidecarVolumes:
     return get_sidecar_volumes(_VOLUMES_TO_GENERATE)
 
 
-class _ParsingModel(BaseModel):
-    volume_states: dict[VolumeCategory, VolumeState]
-
-
 @pytest.fixture
 def volume_states(sidecar_volumes: SidecarVolumes) -> dict[VolumeCategory, VolumeState]:
     return get_volume_states(sidecar_volumes)
@@ -145,7 +142,7 @@ def fake_shared_store_file(
 ) -> Path:
     file_with_data = tmp_path / STORE_FILE_NAME
     # write format to file
-    file_with_data.write_text(_ParsingModel(volume_states=volume_states).json())
+    file_with_data.write_text(ParsingModel(volume_states=volume_states).json())
 
     return file_with_data
 
@@ -156,23 +153,23 @@ async def create_volumes(
     sidecar_volumes: SidecarVolumes,
     volume_cleanup: list[str],
 ) -> SidecarVolumes:
-    store_volume = sidecar_volumes.store_volume["Name"]
+    store_volume_name = sidecar_volumes.store_volume["Name"]
 
     # only one volume has a file inside it the one store
     created_store_volume: VolumeDict = await create_volume(
-        store_volume,
+        store_volume_name,
         volume_path_in_container=SHARED_STORE_PATH / STORE_FILE_NAME,
         dir_to_copy=fake_shared_store_file,
     )
     created_store_volume["Mountpoint"] = f"{fake_shared_store_file.parent}"
-    volume_cleanup.append(store_volume)
+    volume_cleanup.append(store_volume_name)
 
     created_remaining_volumes: list[VolumeDict] = []
 
     for volume in sidecar_volumes.remaining_volumes:
         volume_name = volume["Name"]
         created_remaining_volumes.append(await create_volume(volume_name))
-        volume_cleanup.append(store_volume)
+        volume_cleanup.append(store_volume_name)
 
     return SidecarVolumes(
         store_volume=created_store_volume, remaining_volumes=created_remaining_volumes

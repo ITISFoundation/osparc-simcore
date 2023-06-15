@@ -9,7 +9,7 @@ from aiodocker import Docker
 from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
 from models_library.sidecar_volumes import VolumeCategory, VolumeState, VolumeStatus
-from pydantic import NonNegativeInt
+from pydantic import BaseModel, NonNegativeInt
 from servicelib.sidecar_volumes import VolumeUtils
 from simcore_service_agent.modules.volumes_cleanup.models import (
     SHARED_STORE_PATH,
@@ -134,3 +134,7 @@ def get_volume_states(
     )
 
     return volume_states
+
+
+class ParsingModel(BaseModel):
+    volume_states: dict[VolumeCategory, VolumeState]
