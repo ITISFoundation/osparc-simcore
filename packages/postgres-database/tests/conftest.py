@@ -3,7 +3,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import Any, AsyncIterator, Awaitable, Callable, Iterator
+from typing import AsyncIterator, Awaitable, Callable, Iterator
 
 import aiopg.sa
 import aiopg.sa.exc
@@ -263,10 +263,10 @@ async def create_fake_cluster(
 
 
 @pytest.fixture
-async def create_fake_project(pg_engine: Engine) -> Iterator[Callable]:
+async def create_fake_project(pg_engine: Engine) -> AsyncIterator[Callable]:
     created_project_uuids = []
 
-    async def _creator(conn, user: dict[str, Any], **overrides) -> RowProxy:
+    async def _creator(conn, user: RowProxy, **overrides) -> RowProxy:
         prj_to_insert = random_project(prj_owner=user.id, **overrides)
         result = await conn.execute(
             projects.insert().values(**prj_to_insert).returning(projects)
