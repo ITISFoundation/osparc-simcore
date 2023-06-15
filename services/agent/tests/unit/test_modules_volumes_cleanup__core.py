@@ -30,8 +30,8 @@ from simcore_service_agent.modules.volumes_cleanup.models import (
 from utils import (
     create_volume,
     get_minimal_volume_dict,
-    get_or_create_volume_states,
     get_sidecar_volumes,
+    get_volume_states,
 )
 
 _VOLUMES_TO_GENERATE: Final[NonNegativeInt] = 10
@@ -136,7 +136,7 @@ class _ParsingModel(BaseModel):
 
 @pytest.fixture
 def volume_states(sidecar_volumes: SidecarVolumes) -> dict[VolumeCategory, VolumeState]:
-    return get_or_create_volume_states(sidecar_volumes)
+    return get_volume_states(sidecar_volumes)
 
 
 @pytest.fixture

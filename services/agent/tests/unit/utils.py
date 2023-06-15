@@ -95,14 +95,10 @@ def get_sidecar_volumes(
     )
 
 
-def get_or_create_volume_states(
-    sidecar_volumes: SidecarVolumes | None = None,
+def get_volume_states(
+    sidecar_volumes: SidecarVolumes,
 ) -> dict[VolumeCategory, VolumeState]:
-    if sidecar_volumes:
-        sidecar_volumes = deepcopy(sidecar_volumes)
-    else:
-        # generate some random ones
-        sidecar_volumes = get_sidecar_volumes()
+    sidecar_volumes = deepcopy(sidecar_volumes)
 
     volume_states: dict[VolumeCategory, VolumeState] = {}
 
