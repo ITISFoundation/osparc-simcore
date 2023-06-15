@@ -1639,11 +1639,14 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
               this.__selectedItemChanged(null);
             }
             if (this.__isSelectedItemAnAnnotation()) {
-              const id = this.__selectedItemId;
-              this.__selectedItemChanged(null);
-              this.__removeAnnotation(id);
+              const selectedAnnotation = this.__getAnnotation(this.__selectedItemId);
+              // Only delete if it's a rectangle, for the other cases the user might be editing the text
+              if (selectedAnnotation.getType() === "rect") {
+                const id = this.__selectedItemId;
+                this.__selectedItemChanged(null);
+                this.__removeAnnotation(id);
+              }
             }
-            this.getSelectedAnnotations().forEach(annotation => this.__removeAnnotation(annotation.getId()));
             break;
           case "Escape":
             this.resetSelection();
