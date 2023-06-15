@@ -97,6 +97,8 @@ class ProjectsNodesRepo:
     ) -> ProjectsNode:
         """adds a node with node_id to the current project
 
+        NOTE: Do not use this in an asyncio.gather call as this will fail!
+
         Raises:
             ProjectsNodesOperationNotAllowed: _description_
         """
@@ -117,6 +119,10 @@ class ProjectsNodesRepo:
             ) from exc
 
     async def list(self, connection: SAConnection) -> list[ProjectsNode]:
+        """list the nodes in the current project
+
+        NOTE: Do not use this in an asyncio.gather call as this will fail!
+        """
         list_stmt = (
             sqlalchemy.select(projects_nodes)
             .select_from(self._join_projects_to_projects_nodes())
@@ -131,6 +137,14 @@ class ProjectsNodesRepo:
     async def get(
         self, connection: SAConnection, *, node_id: uuid.UUID
     ) -> ProjectsNode:
+        """get a node in the current project
+
+        NOTE: Do not use this in an asyncio.gather call as this will fail!
+
+        Raises:
+            ProjectsNodesNodeNotFound: _description_
+        """
+
         get_stmt = (
             sqlalchemy.select(projects_nodes)
             .select_from(self._join_projects_to_projects_nodes())
@@ -152,6 +166,13 @@ class ProjectsNodesRepo:
     async def update(
         connection: SAConnection, *, node_id: uuid.UUID, **values
     ) -> ProjectsNode:
+        """update a node in the current project
+
+        NOTE: Do not use this in an asyncio.gather call as this will fail!
+
+        Raises:
+            ProjectsNodesNodeNotFound: _description_
+        """
         update_stmt = (
             projects_nodes.update()
             .values(**values)
@@ -166,6 +187,7 @@ class ProjectsNodesRepo:
         return ProjectsNode(**dict(updated_entry.items()))
 
     async def delete(self, connection: SAConnection, *, node_id: uuid.UUID) -> None:
+        """delete a node in the current project (if the node is shared it will only unmap it)"""
         async with connection.begin():
             # remove mapping
             delete_stmt = sqlalchemy.delete(projects_to_projects_nodes).where(
