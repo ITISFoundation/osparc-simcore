@@ -68,7 +68,7 @@ async def test_delete_non_existing_solver_job(
     solver_key: str,
     solver_version: str,
     faker: Faker,
-    mocked_backend_services_apis_for_delete_project_not_found: MockedBackendApiDict,
+    mocked_backend_services_apis_for_delete_non_existing_project: MockedBackendApiDict,
 ):
     # Cannot delete if it does not exists
     resp = await client.delete(
