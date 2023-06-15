@@ -4,19 +4,19 @@
 
 
 import asyncio
-from typing import Optional
 from unittest import mock
 
 import aiodocker
 import pytest
 from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_dask_sidecar.utils import num_available_gpus
 
 
 @pytest.fixture
 def mock_service_envs(
-    mock_env_devel_environment: dict[str, Optional[str]], monkeypatch: MonkeyPatch
+    mock_env_devel_environment: dict[str, str | None], monkeypatch: MonkeyPatch
 ) -> None:
     monkeypatch.setenv(
         "SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME", "simcore_computational_shared_data"
@@ -36,7 +36,7 @@ def mock_aiodocker(mocker: MockerFixture) -> mock.MagicMock:
 
 def test_num_available_gpus_returns_0_when_container_not_created(
     event_loop: asyncio.events.AbstractEventLoop,
-    mock_service_envs: None,
+    app_environment: EnvVarsDict,
     mock_aiodocker: mock.MagicMock,
 ):
     mock_aiodocker.return_value.__aenter__.return_value.containers.run.return_value = (
@@ -48,7 +48,7 @@ def test_num_available_gpus_returns_0_when_container_not_created(
 
 def test_num_available_gpus_returns_0_when_container_throws_exception_on_run(
     event_loop: asyncio.events.AbstractEventLoop,
-    mock_service_envs: None,
+    app_environment: EnvVarsDict,
     mock_aiodocker: mock.MagicMock,
 ):
     mock_aiodocker.return_value.__aenter__.return_value.containers.run.side_effect = (
@@ -61,7 +61,7 @@ def test_num_available_gpus_returns_0_when_container_throws_exception_on_run(
 
 def test_num_available_gpus_returns_0_when_no_status_code_returned(
     event_loop: asyncio.events.AbstractEventLoop,
-    mock_service_envs: None,
+    app_environment: EnvVarsDict,
     mock_aiodocker: mock.MagicMock,
 ):
     mock_aiodocker.return_value.__aenter__.return_value.containers.run.return_value.wait.return_value = {
@@ -72,7 +72,7 @@ def test_num_available_gpus_returns_0_when_no_status_code_returned(
 
 def test_num_available_gpus_returns_0_when_bad_status_code_returned(
     event_loop: asyncio.events.AbstractEventLoop,
-    mock_service_envs: None,
+    app_environment: EnvVarsDict,
     mock_aiodocker: mock.MagicMock,
 ):
     mock_aiodocker.return_value.__aenter__.return_value.containers.run.return_value.wait.return_value = {
@@ -83,7 +83,7 @@ def test_num_available_gpus_returns_0_when_bad_status_code_returned(
 
 def test_num_available_gpus_returns_0_when_container_wait_timesout(
     event_loop: asyncio.events.AbstractEventLoop,
-    mock_service_envs: None,
+    app_environment: EnvVarsDict,
     mock_aiodocker: mock.MagicMock,
 ):
     mock_aiodocker.return_value.__aenter__.return_value.containers.run.return_value.wait.side_effect = (
@@ -98,7 +98,7 @@ def test_num_available_gpus_returns_0_when_container_wait_timesout(
 )
 def test_num_available_gpus(
     event_loop: asyncio.events.AbstractEventLoop,
-    mock_service_envs: None,
+    app_environment: EnvVarsDict,
     container_logs: list[str],
     expected_num_gpus: int,
     mock_aiodocker: mock.MagicMock,
