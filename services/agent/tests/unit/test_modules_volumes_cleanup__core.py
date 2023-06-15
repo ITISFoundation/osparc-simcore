@@ -2,25 +2,21 @@
 
 
 import itertools
-import tarfile
-from contextlib import contextmanager
+import shutil
 from copy import deepcopy
 from pathlib import Path
-from shutil import copy
 from typing import AsyncIterable, Final
 from unittest.mock import call
-from uuid import UUID, uuid4
 
 import aiodocker
 import pytest
 from aiodocker import Docker
-from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
 from faker import Faker
 from models_library.sidecar_volumes import VolumeCategory, VolumeState, VolumeStatus
 from pydantic import BaseModel, NonNegativeInt
 from pytest_mock import MockerFixture
-from servicelib.sidecar_volumes import STORE_FILE_NAME, VolumeUtils
+from servicelib.sidecar_volumes import STORE_FILE_NAME
 from simcore_service_agent.core.settings import ApplicationSettings
 from simcore_service_agent.modules.volumes_cleanup._core import (
     _get_volumes_status,
@@ -32,25 +28,19 @@ from simcore_service_agent.modules.volumes_cleanup.models import (
     SidecarVolumes,
     VolumeDict,
 )
+from utils import create_volume, get_minimal_volume_dict
 
 _VOLUMES_TO_GENERATE: Final[NonNegativeInt] = 10
-
-
-def _get_minimal_volume_dict(node_uuid: str, run_id: str, path: Path) -> VolumeDict:
-    # NOTE: minimal fields are added for the purpose of the tests
-    return {
-        "Name": VolumeUtils.get_source(path, UUID(node_uuid), UUID(run_id)),
-    }
 
 
 def _get_fake_sidecar_volumes(faker: Faker) -> list[VolumeDict]:
     node_uuid = faker.uuid4()
     run_id = faker.uuid4()
     return [
-        _get_minimal_volume_dict(node_uuid, run_id, Path(f"/tmp/dir{x}"))
+        get_minimal_volume_dict(node_uuid, run_id, Path(f"/tmp/dir{x}"))
         for x in range(_VOLUMES_TO_GENERATE)
     ] + [
-        _get_minimal_volume_dict(node_uuid, run_id, SHARED_STORE_PATH),
+        get_minimal_volume_dict(node_uuid, run_id, SHARED_STORE_PATH),
     ]
 
 
@@ -95,7 +85,7 @@ async def fake_legacy_data_volume_dict(
     volume_data["Mountpoint"] = f"{tmp_path}"
     shared_store_path = Path(volume_data["Mountpoint"]) / STORE_FILE_NAME
 
-    copy(legacy_shared_store_only_volume_states, shared_store_path)
+    shutil.copy(legacy_shared_store_only_volume_states, shared_store_path)
     assert shared_store_path.exists()
 
     yield volume_data
@@ -112,57 +102,6 @@ async def test_get_volumes_status_legacy_format(
         fake_legacy_data_volume_dict
     )
     assert volumes_status
-
-
-@contextmanager
-def _make_tarfile(
-    archive_destination: Path,
-    path_in_archive: Path,
-    source_dir: Path,
-) -> None:
-    with tarfile.open(archive_destination, "w:gz") as tar:
-        tar.add(source_dir, arcname=path_in_archive)
-    try:
-        yield
-    finally:
-        archive_destination.unlink()
-
-
-async def _create_volume(
-    volume_name: str,
-    volume_path_in_container: Path | None = None,
-    dir_to_copy: Path | None = None,
-) -> VolumeDict:
-    """
-    creates a docker volume and copies the content of `dir_to_copy`  if not None
-    """
-
-    async with Docker() as client:
-        volume: DockerVolume = await client.volumes.create({"Name": volume_name})
-
-        if dir_to_copy:
-            assert volume_path_in_container is not None
-            container: DockerContainer = await client.containers.create(
-                {
-                    "Image": "busybox",
-                    "HostConfig": {
-                        "Binds": [f"{volume_name}:{volume_path_in_container}"]
-                    },
-                }
-            )
-
-            try:
-                archive_path = Path(f"/tmp/tar_archive{uuid4()}")
-                with _make_tarfile(archive_path, volume_path_in_container, dir_to_copy):
-                    await container.put_archive(
-                        f"{volume_path_in_container}", archive_path.read_bytes()
-                    )
-                    print("me")
-            finally:
-                await container.delete()
-
-        volume_dict: VolumeDict = await volume.show()
-        return volume_dict
 
 
 # fixtures to create the volumes form the names and then put some data in one of these volumes
@@ -187,11 +126,11 @@ async def sidecar_volumes(faker: Faker) -> SidecarVolumes:
     node_uuid = faker.uuid4()
     run_id = faker.uuid4()
 
-    store_volume: VolumeDict = _get_minimal_volume_dict(
+    store_volume: VolumeDict = get_minimal_volume_dict(
         node_uuid, run_id, SHARED_STORE_PATH
     )
     remaining_volumes: list[VolumeDict] = [
-        _get_minimal_volume_dict(node_uuid, run_id, Path(f"/tmp/other-volumes-{x}"))
+        get_minimal_volume_dict(node_uuid, run_id, Path(f"/tmp/other-volumes-{x}"))
         for x in range(_VOLUMES_TO_GENERATE)
     ]
 
@@ -265,7 +204,7 @@ async def create_volumes(
     store_volume = sidecar_volumes.store_volume["Name"]
 
     # only one volume has a file inside it the one store
-    created_store_volume: VolumeDict = await _create_volume(
+    created_store_volume: VolumeDict = await create_volume(
         store_volume,
         volume_path_in_container=SHARED_STORE_PATH / STORE_FILE_NAME,
         dir_to_copy=fake_shared_store_file,
@@ -277,7 +216,7 @@ async def create_volumes(
 
     for volume in sidecar_volumes.remaining_volumes:
         volume_name = volume["Name"]
-        created_remaining_volumes.append(await _create_volume(volume_name))
+        created_remaining_volumes.append(await create_volume(volume_name))
         volume_cleanup.append(store_volume)
 
     return SidecarVolumes(
