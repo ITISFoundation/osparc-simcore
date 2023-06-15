@@ -95,6 +95,11 @@ class ProjectsNodesRepo:
     async def add(
         self, connection: SAConnection, *, node_id: uuid.UUID
     ) -> ProjectsNode:
+        """adds a node with node_id to the current project
+
+        Raises:
+            ProjectsNodesOperationNotAllowed: _description_
+        """
         try:
             result = await connection.execute(
                 projects_to_projects_nodes.insert().values(
