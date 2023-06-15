@@ -149,11 +149,24 @@ class ProjectsNodesRepo:
         ...
 
     async def delete(self, connection: SAConnection, *, node_id: uuid.UUID) -> None:
-        delete_stmt = sqlalchemy.delete(projects_to_projects_nodes).where(
-            (projects_to_projects_nodes.c.node_id == f"{node_id}")
-            & (projects_to_projects_nodes.c.project_uuid == f"{self.project_uuid}")
-        )
-        await connection.execute(delete_stmt)
+        async with connection.begin():
+            # remove mapping
+            delete_stmt = sqlalchemy.delete(projects_to_projects_nodes).where(
+                (projects_to_projects_nodes.c.node_id == f"{node_id}")
+                & (projects_to_projects_nodes.c.project_uuid == f"{self.project_uuid}")
+            )
+            await connection.execute(delete_stmt)
+            # if this was the last mapping then also delete the node itself
+            num_remaining_mappings = await connection.scalar(
+                sqlalchemy.select(sqlalchemy.func.count())
+                .select_from(projects_to_projects_nodes)
+                .where(projects_to_projects_nodes.c.node_id == f"{node_id}")
+            )
+            if num_remaining_mappings == 0:
+                delete_stmt = sqlalchemy.delete(projects_nodes).where(
+                    projects_nodes.c.node_id == f"{node_id}"
+                )
+                await connection.execute(delete_stmt)
 
     @staticmethod
     def _join_projects_to_projects_nodes():

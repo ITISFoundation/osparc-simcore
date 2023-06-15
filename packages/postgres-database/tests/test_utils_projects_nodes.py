@@ -11,6 +11,7 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from faker import Faker
 from simcore_postgres_database.models.projects import projects
+from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectsNodeCreate,
     ProjectsNodesDuplicateNode,
@@ -235,6 +236,15 @@ async def test_share_nodes_between_projects(
     await second_projects_nodes_repo.delete(connection, node_id=created_node.node_id)
     with pytest.raises(ProjectsNodesNodeNotFound):
         await second_projects_nodes_repo.get(connection, node_id=created_node.node_id)
+
+    # ensure the node was really deleted
+    result = await connection.execute(
+        sqlalchemy.select(projects_nodes).where(
+            projects_nodes.c.node_id == f"{created_node.node_id}"
+        )
+    )
+    assert result
+    assert await result.first() is None
 
 
 async def test_delete_project_delete_all_nodes(
