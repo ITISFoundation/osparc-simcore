@@ -2,7 +2,6 @@
 
 
 import itertools
-import shutil
 from pathlib import Path
 from typing import AsyncIterable, Final
 from unittest.mock import call
@@ -80,21 +79,22 @@ def test_sidecar_volumes_from_volumes(faker: Faker):
 
 @pytest.fixture
 async def fake_legacy_data_volume_dict(
-    unused_volume: DockerVolume,
-    tmp_path: Path,
-    legacy_shared_store_only_volume_states: Path,
+    legacy_shared_store_only_volume_states: Path, faker: Faker
 ) -> AsyncIterable[VolumeDict]:
-    volume_data: VolumeDict = await unused_volume.show()
+    node_uuid = faker.uuid4()
+    run_id = faker.uuid4()
+    volume_name = get_minimal_volume_dict(node_uuid, run_id, SHARED_STORE_PATH)["Name"]
 
-    # can't access directly docker's storage mocking destination
-    volume_data["Mountpoint"] = f"{tmp_path}"
-    shared_store_path = Path(volume_data["Mountpoint"]) / STORE_FILE_NAME
-
-    shutil.copy(legacy_shared_store_only_volume_states, shared_store_path)
-    assert shared_store_path.exists()
+    volume_data: VolumeDict = await create_volume(
+        volume_name,
+        volume_path_in_container=Path("/") / STORE_FILE_NAME,
+        dir_to_copy=legacy_shared_store_only_volume_states,
+    )
 
     yield volume_data
-    shared_store_path.unlink()
+
+    async with Docker() as client:
+        await DockerVolume(client, volume_name).delete()
 
 
 async def test_get_volumes_status_legacy_format(
@@ -113,7 +113,7 @@ async def test_get_volumes_status_legacy_format(
 
 
 @pytest.fixture
-async def volume_cleanup() -> list[str]:
+async def volume_cleanup() -> AsyncIterable[list[str]]:
     volumes_to_remove: list[str] = []
     yield volumes_to_remove
 
@@ -158,7 +158,7 @@ async def create_volumes(
     # only one volume has a file inside it the one store
     created_store_volume: VolumeDict = await create_volume(
         store_volume_name,
-        volume_path_in_container=SHARED_STORE_PATH / STORE_FILE_NAME,
+        volume_path_in_container=Path("/") / STORE_FILE_NAME,
         dir_to_copy=fake_shared_store_file,
     )
     created_store_volume["Mountpoint"] = f"{fake_shared_store_file.parent}"
