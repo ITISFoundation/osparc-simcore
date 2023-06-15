@@ -212,17 +212,6 @@ class TutorialBase {
     return this.__services;
   }
 
-  async checkFirstStudyId(studyId) {
-    await this.__page.waitForSelector('[osparc-test-id="studiesList"]');
-    await this.waitFor(5000, "Wait for studies to be loaded");
-    const studies = await utils.getVisibleChildrenIDs(this.__page, '[osparc-test-id="studiesList"]');
-    console.log("checkFirstStudyId", studyId);
-    console.log(studies);
-    if (studyId !== studies[0]) {
-      throw (studyId + " not found");
-    }
-  }
-
   async waitForOpen() {
     this.__responsesQueue.addResponseListener(":open");
     let resp = null;

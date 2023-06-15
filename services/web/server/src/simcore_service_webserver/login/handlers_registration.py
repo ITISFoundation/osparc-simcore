@@ -31,6 +31,7 @@ from ._constants import (
     MSG_2FA_CODE_SENT,
     MSG_CANT_SEND_MAIL,
     MSG_UNAUTHORIZED_REGISTER_PHONE,
+    MSG_WEAK_PASSWORD,
 )
 from ._models import InputSchema, check_confirm_password_match
 from ._registration import (
@@ -153,6 +154,20 @@ async def register(request: web.Request):
     registration = await parse_request_body_as(RegisterBody, request)
 
     await check_other_registrations(email=registration.email, db=db, cfg=cfg)
+
+    # Check for weak passwords
+    # This should strictly happen before invitation links are checked and consumed
+    # So the invitation can be re-used with a stronger password.
+    if (
+        len(registration.password.get_secret_value())
+        < settings.LOGIN_PASSWORD_MIN_LENGTH
+    ):
+        raise web.HTTPUnauthorized(
+            reason=MSG_WEAK_PASSWORD.format(
+                LOGIN_PASSWORD_MIN_LENGTH=settings.LOGIN_PASSWORD_MIN_LENGTH
+            ),
+            content_type=MIMETYPE_APPLICATION_JSON,
+        )
 
     expires_at: datetime | None = None  # = does not expire
     if settings.LOGIN_REGISTRATION_INVITATION_REQUIRED:
