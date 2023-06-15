@@ -114,9 +114,7 @@ async def test_get_supported_filetypes(connection: SAConnection):
 
     stmt = (
         sa.select(
-            [
-                services_consume_filetypes.c.filetype,
-            ]
+            services_consume_filetypes.c.filetype,
         )
         .where(
             services_consume_filetypes.c.service_key
