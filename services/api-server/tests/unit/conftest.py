@@ -3,13 +3,16 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import json
 from copy import deepcopy
+from pathlib import Path
 from typing import Any, AsyncIterator, Iterator
 
 import aiohttp.test_utils
 import httpx
 import pytest
 import respx
+import yaml
 from asgi_lifespan import LifespanManager
 from cryptography.fernet import Fernet
 from faker import Faker
@@ -156,9 +159,35 @@ def mocked_s3_server_url() -> Iterator[HttpUrl]:
 
 
 @pytest.fixture
+def directorv2_service_openapi_specs(
+    osparc_simcore_services_dir: Path,
+) -> dict[str, Any]:
+    return json.loads(
+        (osparc_simcore_services_dir / "director-v2" / "openapi.json").read_text()
+    )
+
+
+@pytest.fixture
+def webserver_service_openapi_specs(
+    osparc_simcore_services_dir: Path,
+) -> dict[str, Any]:
+    return yaml.safe_load(
+        (
+            osparc_simcore_services_dir
+            / "web/server/src/simcore_service_webserver/api/v0/openapi.yaml"
+        ).read_text()
+    )
+
+
+@pytest.fixture
 def mocked_webserver_service_api_base(
     app: FastAPI, webserver_service_openapi_specs: dict[str, Any], faker: Faker
 ) -> Iterator[MockRouter]:
+    """
+    Creates a respx.mock to capture calls to webserver API
+    Includes only basic routes to check that the configuration is correct
+    IMPORTANT: This fixture shall be extended on a test bases
+    """
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_WEBSERVER
 
@@ -186,5 +215,33 @@ def mocked_webserver_service_api_base(
         respx_mock.get(path="/v0/health", name="healthcheck_liveness_probe").respond(
             status.HTTP_200_OK, json=response_body
         )
+
+        yield respx_mock
+
+
+@pytest.fixture
+def catalog_service_openapi_specs(osparc_simcore_services_dir: Path) -> dict[str, Any]:
+    openapi_path = osparc_simcore_services_dir / "catalog" / "openapi.json"
+    openapi_specs = json.loads(openapi_path.read_text())
+    return openapi_specs
+
+
+@pytest.fixture
+def mocked_catalog_service_api_base(
+    app: FastAPI, catalog_service_openapi_specs: dict[str, Any]
+) -> Iterator[MockRouter]:
+    settings: ApplicationSettings = app.state.settings
+    assert settings.API_SERVER_CATALOG
+
+    openapi = deepcopy(catalog_service_openapi_specs)
+    schemas = openapi["components"]["schemas"]
+
+    # pylint: disable=not-context-manager
+    with respx.mock(
+        base_url=settings.API_SERVER_CATALOG.base_url,
+        assert_all_called=False,
+        assert_all_mocked=True,
+    ) as respx_mock:
+        respx_mock.get("/v0/meta").respond(200, json=schemas["Meta"]["example"])
 
         yield respx_mock

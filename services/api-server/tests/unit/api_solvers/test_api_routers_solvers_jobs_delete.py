@@ -110,7 +110,8 @@ def mocked_backend_services_apis_for_create_and_delete_solver_job(
     ).respond(status_code=capture.status_code, json=capture.response_body)
 
     return MockedBackendApiDict(
-        catalog=mocked_catalog_service_api, webserver=mocked_webserver_service_api
+        catalog=mocked_catalog_service_api,
+        webserver=mocked_webserver_service_api,
     )
 
 
