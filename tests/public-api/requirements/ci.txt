@@ -10,7 +10,7 @@
 --requirement _test.txt
 
 # NOTE: this has to be frozen to specific comment
-osparc @ git+https://github.com/ITISFoundation/osparc-simcore-python-client.git@master
+osparc @ git+https://github.com/ITISFoundation/osparc-simcore-clients.git@master
 
 # installs this repo's packages
 ../../packages/pytest-simcore/

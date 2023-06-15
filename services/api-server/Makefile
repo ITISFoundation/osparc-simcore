@@ -119,11 +119,11 @@ openapi-dev.json: .env
 # SEE https://openapi-generator.tech/docs/generators/python
 #
 # TODO: put instead to additional-props.yaml and --config=openapi-generator/python-config.yaml
-# TODO: copy this code to https://github.com/ITISFoundation/osparc-simcore-python-client/blob/master/Makefile
+# TODO: copy this code to https://github.com/ITISFoundation/osparc-simcore-clients/blob/master/Makefile
 #
 # NOTE: assumes this repo exists
 GIT_USER_ID := ITISFoundation
-GIT_CLIENT_REPO_ID := osparc-simcore-python-client
+GIT_CLIENT_REPO_ID := osparc-simcore-clients
 GIT_OPENAPI_REPO_ID := openapi-generator
 GENERATOR_NAME := python
 ADDITIONAL_PROPS := \
