@@ -181,9 +181,9 @@ function getUserAndPass(args) {
 }
 
 function __getRandUserAndPass() {
-  const randUser = Math.random().toString(36).substring(7);
+  const randUser = Math.random().toString(36).substring(13);
   const user = 'puppeteer_' + randUser + '@itis.testing';
-  const pass = Math.random().toString(36).substring(7);
+  const pass = Math.random().toString(36).substring(13);
   return {
     user,
     pass
