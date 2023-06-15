@@ -69,9 +69,9 @@ class ProjectsNodesRepo:
                     .values(**asdict(node))
                     .returning(literal_column("*"))
                 )
-                created_node = await result.first()
-                assert created_node  # nosec
-                created_node = ProjectsNode(**dict(created_node.items()))
+                created_node_db = await result.first()
+                assert created_node_db  # nosec
+                created_node = ProjectsNode(**dict(created_node_db.items()))
 
                 result = await connection.execute(
                     projects_to_projects_nodes.insert().values(
