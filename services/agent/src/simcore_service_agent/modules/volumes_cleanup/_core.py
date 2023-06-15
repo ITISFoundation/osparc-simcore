@@ -1,14 +1,18 @@
 import json
 import logging
-from pathlib import Path
 
-import aiofiles
 from models_library.sidecar_volumes import VolumeCategory, VolumeState, VolumeStatus
 from pydantic import parse_obj_as
-from servicelib.sidecar_volumes import REGULAR_SOURCE_PORTION_LEN, STORE_FILE_NAME
+from servicelib.sidecar_volumes import REGULAR_SOURCE_PORTION_LEN
 
 from ...core.settings import ApplicationSettings
-from ..docker import delete_volume, docker_client, is_volume_present, is_volume_used
+from ..docker import (
+    delete_volume,
+    docker_client,
+    get_state_file,
+    is_volume_present,
+    is_volume_used,
+)
 from ._s3 import store_to_s3
 from .models import SidecarVolumes, VolumeDict
 
@@ -31,16 +35,16 @@ def get_sidecar_volumes_list(volumes: list[VolumeDict]) -> list[SidecarVolumes]:
             detected_volumes[shared_volume_part] = {}
         detected_volumes[shared_volume_part][volume_name] = volume
 
+    _logger.info("%s", f"{detected_volumes=}")
+
     return [SidecarVolumes.from_volumes(x.values()) for x in detected_volumes.values()]
 
 
 async def _get_volumes_status(
     store_volume: VolumeDict,
 ) -> dict[str, VolumeStatus]:
-    store_file_path = Path(store_volume["Mountpoint"]) / STORE_FILE_NAME
-
-    async with aiofiles.open(store_file_path) as data_file:
-        file_content = await data_file.read()
+    async with docker_client() as client:
+        file_content = await get_state_file(client, store_volume["Name"])
 
     volume_states_dict = json.loads(file_content)["volume_states"]
     stored_volume: dict[VolumeCategory, VolumeState] = parse_obj_as(

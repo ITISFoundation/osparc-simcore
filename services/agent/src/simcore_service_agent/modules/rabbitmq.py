@@ -8,12 +8,14 @@ from servicelib.rabbitmq_utils import (
     RPCNamespace,
     wait_till_rabbitmq_responsive,
 )
+from servicelib.utils import logged_gather
 from settings_library.rabbit import RabbitSettings
 
 from ..core.errors import ConfigurationError
 from ..core.settings import ApplicationSettings
+from .docker import docker_client, get_volume_info
 from .volumes_cleanup import get_sidecar_volumes_list, remove_sidecar_volumes
-from .volumes_cleanup.models import SidecarVolumes
+from .volumes_cleanup.models import SidecarVolumes, VolumeDict
 
 logger = logging.getLogger(__name__)
 
@@ -30,10 +32,19 @@ def _get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
 async def _safe_remove_volumes(
     app: FastAPI, volume_names: list[str], volume_remove_timeout_s: float
 ) -> None:
-    sidecar_volumes: list[SidecarVolumes] = get_sidecar_volumes_list(
-        [{"Name": x} for x in volume_names]
+    async with docker_client() as client:
+        volumes_info: list[VolumeDict] = await logged_gather(
+            *[get_volume_info(client, volume_name) for volume_name in volume_names]
+        )
+
+    sidecar_volumes: list[SidecarVolumes] = get_sidecar_volumes_list(volumes_info)
+
+    await logged_gather(
+        *[
+            remove_sidecar_volumes(app, sidecar_volume, volume_remove_timeout_s)
+            for sidecar_volume in sidecar_volumes
+        ]
     )
-    await remove_sidecar_volumes(app, sidecar_volumes, volume_remove_timeout_s)
 
 
 def setup(app: FastAPI) -> None:
