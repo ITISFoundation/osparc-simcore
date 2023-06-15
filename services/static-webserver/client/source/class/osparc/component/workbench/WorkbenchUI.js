@@ -1360,6 +1360,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.__selectionRectRepr = null;
       }
 
+      const annotationInitPos = osparc.utils.Utils.deepCloneObject(this.__annotationInitPos);
       if (this.__annotationInitPos) {
         this.__annotationInitPos = null;
       }
@@ -1372,9 +1373,11 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         } else if (this.__annotatingText) {
           annotationType = "text";
         }
-        if (this.__consolidateAnnotation(this.__rectAnnotationRepr, annotationType)) {
-          osparc.wrapper.Svg.removeItem(this.__rectAnnotationRepr);
-          this.__rectAnnotationRepr = null;
+        if (this.__consolidateAnnotation(annotationType, annotationInitPos, this.__rectAnnotationRepr)) {
+          if (this.__rectAnnotationRepr) {
+            osparc.wrapper.Svg.removeItem(this.__rectAnnotationRepr);
+            this.__rectAnnotationRepr = null;
+          }
           this.__annotatingNote = false;
           this.__annotatingRect = false;
           this.__annotatingText = false;
@@ -1518,7 +1521,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this.__annotatingNote = true;
       this.__annotatingRect = false;
       this.__annotatingText = false;
-      this.__toolHint.setValue(this.tr("Draw a rectangle"));
+      this.__toolHint.setValue(this.tr("Pick the position"));
     },
 
     startAnnotationsRect: function() {
@@ -1532,7 +1535,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this.__annotatingNote = false;
       this.__annotatingText = true;
       this.__annotatingRect = false;
-      this.__toolHint.setValue(this.tr("Draw a rectangle first"));
+      this.__toolHint.setValue(this.tr("Pick the position"));
     },
 
     __openNodeRenamer: function(nodeId) {
@@ -1820,15 +1823,20 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
     },
 
-    __consolidateAnnotation: function(annotation, type) {
-      if ([null, undefined].includes(annotation)) {
-        osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Draw a rectanlge first"), "WARNING");
-        return false;
-      }
+    __consolidateAnnotation: function(type, initPos, annotation) {
       const serializeData = {
         type,
-        attributes: osparc.wrapper.Svg.getRectAttributes(annotation)
+        attributes: {}
       };
+      if (type === "rect") {
+        if ([null, undefined].includes(annotation)) {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Draw a rectanlge first"), "WARNING");
+          return false;
+        }
+        serializeData.attributes = osparc.wrapper.Svg.getRectAttributes(annotation);
+      } else {
+        serializeData.attributes = initPos;
+      }
       if (type === "note") {
         const noteEditor = new osparc.component.editor.AnnotationNoteEditor();
         const win = osparc.component.editor.AnnotationNoteEditor.popUpInWindow(noteEditor, true);
