@@ -78,14 +78,14 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     app.add_exception_handler(
         NotImplementedError,
         make_http_error_handler_for_exception(
-            status.HTTP_501_NOT_IMPLEMENTED, NotImplementedError
+            NotImplementedError, status.HTTP_501_NOT_IMPLEMENTED
         ),
     )
     app.add_exception_handler(
         Exception,
         make_http_error_handler_for_exception(
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
             Exception,
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
             override_detail_message="Internal error"
             if settings.SC_BOOT_MODE == BootModeEnum.DEBUG
             else None,
