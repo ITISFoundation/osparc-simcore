@@ -122,7 +122,7 @@ def registered_user(
         first_name=first_name.lower(),
         last_name=last_name.lower(),
         email=f"{first_name}.{last_name}@company.com".lower(),
-        password="my secret",
+        password="alongpasswordthatisnotweak",
         api_key="",
         api_secret="",
     )
