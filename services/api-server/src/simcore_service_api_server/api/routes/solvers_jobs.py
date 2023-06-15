@@ -32,7 +32,7 @@ from ..dependencies.authentication import get_current_user_id
 from ..dependencies.database import Engine, get_db_engine
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
-from ..errors.http_error import ErrorGet, create_json_error_response
+from ..errors.http_error import ErrorGet, create_error_json_response
 from ._common import JOB_OUTPUT_LOGFILE_RESPONSES
 
 _logger = logging.getLogger(__name__)
@@ -190,7 +190,7 @@ async def delete_job(
 
     except HTTPException as err:
         if err.status_code == status.HTTP_404_NOT_FOUND:
-            return create_json_error_response(
+            return create_error_json_response(
                 f"Cannot find job={job_name} to delete",
                 status_code=status.HTTP_404_NOT_FOUND,
             )

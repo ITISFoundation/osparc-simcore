@@ -28,7 +28,14 @@ _logger = logging.getLogger(__name__)
 
 
 class WebserverApi(BaseServiceClientApi):
-    """Access to web-server API"""
+    """Access to web-server API
+
+    - BaseServiceClientApi:
+        - wraps a httpx client
+        - lifetime attached to app
+        - responsive tests (i.e. ping) to API in-place
+
+    """
 
 
 @dataclass
