@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import urllib.parse
 from pathlib import Path
 from pprint import pprint
 from typing import Any, Iterator
@@ -330,7 +331,7 @@ async def test_run_solver_job(
 
     mocked_catalog_service_api.get(
         # path__regex=r"/services/(?P<service_key>[\w-]+)/(?P<service_version>[0-9\.]+)",
-        path="/v0/services/simcore%2Fservices%2Fcomp%2Fitis%2Fisolve/1.2.3",
+        path=f"/v0/services/{urllib.parse.quote_plus(solver_key)}/{solver_version}",
         name="get_service_v0_services__service_key___service_version__get",
     ).respond(
         status.HTTP_200_OK,
@@ -382,3 +383,4 @@ async def test_run_solver_job(
     ].called
 
     job_status = JobStatus.parse_obj(resp.json())
+    assert job_status.progress == 0.0
