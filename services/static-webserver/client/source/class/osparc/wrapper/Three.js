@@ -143,11 +143,41 @@ qx.Class.define("osparc.wrapper.Three", {
         }
       };
 
-      const onError = () => console.log("GLTFLoader An error happened");
+      const onError = err => console.error("GLTFLoader An error happened", err);
 
-      let glTFLoader = new THREE.GLTFLoader();
-      glTFLoader.parse(modelBuffer.value, null,
+      const glTFLoader = new THREE.GLTFLoader();
+      glTFLoader.parse(
+        modelBuffer.value,
+        null,
         onLoad,
+        onError
+      );
+    },
+
+    loadSample: function() {
+      const onLoad = gltf => {
+        this.__scene.add(gltf.scene);
+        gltf.animations; // Array<THREE.AnimationClip>
+        gltf.scene; // THREE.Group
+        gltf.scenes; // Array<THREE.Group>
+        gltf.cameras; // Array<THREE.Camera>
+        gltf.asset; // Object
+      };
+
+      const onProgress = xhr => console.log((xhr.loaded / xhr.total * 100) + "% loaded");
+
+      const onError = err => console.error("GLTFLoader An error happened", err);
+
+      const loader = new THREE.GLTFLoader();
+      // Load a glTF resource
+      loader.load(
+        // resource URL
+        "resource/threejs/scene.glb",
+        // called when the resource is loaded
+        onLoad,
+        // called while loading is progressing
+        onProgress,
+        // called when loading has errors
         onError
       );
     },
