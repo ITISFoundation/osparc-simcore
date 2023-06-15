@@ -25,9 +25,7 @@ from simcore_postgres_database.models.services_consume_filetypes import (
 @pytest.fixture
 def make_table() -> Callable:
     async def _make(connection: SAConnection):
-
         for service in FAKE_FILE_CONSUMER_SERVICES:
-
             await connection.execute(
                 services_meta_data.insert().values(
                     key=service["key"],
@@ -60,7 +58,13 @@ def make_table() -> Callable:
 
 
 @pytest.fixture
-async def connection(connection: SAConnection, make_table: Callable):
+async def connection(
+    pg_engine: sa.engine.Engine, connection: SAConnection, make_table: Callable
+):
+    assert pg_engine
+    # NOTE: do not remove th pg_engine, or the test will fail as pytest
+    # cannot set the parameters in the fixture
+
     # EXTENDS
     await make_table(connection)
     yield connection
@@ -78,6 +82,7 @@ async def test_check_constraint(connection: SAConnection):
 
     error = error_info.value
     assert error.pgcode == "23514"
+    assert error.pgerror
     assert "ck_filetype_is_upper" in error.pgerror
 
 
