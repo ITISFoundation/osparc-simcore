@@ -202,13 +202,7 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
                 const studyDataCopy = osparc.data.model.Study.deepCloneStudyObject(studyData);
                 studyDataCopy["resourceType"] = notification.getCategory() === "STUDY_SHARED" ? "study" : "template";
                 const moreOpts = new osparc.dashboard.ResourceMoreOptions(studyData);
-                const title = this.tr("Options");
-                osparc.ui.window.Window.popUpInWindow(
-                  moreOpts,
-                  title,
-                  osparc.dashboard.ResourceMoreOptions.WIDTH,
-                  osparc.dashboard.ResourceMoreOptions.HEIGHT
-                );
+                osparc.dashboard.ResourceMoreOptions.popUpInWindow(moreOpts);
               }
             });
           break;
