@@ -143,7 +143,7 @@ def services_fixture(faker: Faker, pg_sa_engine: sa.engine.Engine) -> ServicesFi
     expected_latest = set()
     num_services = 0
 
-    with pg_sa_engine.connect() as conn:
+    with pg_sa_engine.begin() as conn:
         # PRODUCT
         osparc_product = dict(
             name="osparc",
