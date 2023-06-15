@@ -92,6 +92,25 @@ class ProjectsNodesRepo:
                     f"Project node {node.node_id} already exists"
                 ) from exc
 
+    async def add(
+        self, connection: SAConnection, *, node_id: uuid.UUID
+    ) -> ProjectsNode:
+        try:
+            result = await connection.execute(
+                projects_to_projects_nodes.insert().values(
+                    project_uuid=f"{self.project_uuid}",
+                    node_id=f"{node_id}",
+                )
+            )
+            assert result.rowcount == 1  # nosec
+
+            return await self.get(connection, node_id=node_id)
+
+        except ForeignKeyViolation as exc:
+            raise ProjectsNodesOperationNotAllowed(
+                f"Node {node_id=} cannot be added to project {self.project_uuid}"
+            ) from exc
+
     async def list(self, connection: SAConnection) -> list[ProjectsNode]:
         list_stmt = (
             sqlalchemy.select(projects_nodes)
@@ -130,8 +149,9 @@ class ProjectsNodesRepo:
         ...
 
     async def delete(self, connection: SAConnection, *, node_id: uuid.UUID) -> None:
-        delete_stmt = sqlalchemy.delete(projects_nodes).where(
-            projects_nodes.c.node_id == f"{node_id}"
+        delete_stmt = sqlalchemy.delete(projects_to_projects_nodes).where(
+            (projects_to_projects_nodes.c.node_id == f"{node_id}")
+            & (projects_to_projects_nodes.c.project_uuid == f"{self.project_uuid}")
         )
         await connection.execute(delete_stmt)
 
