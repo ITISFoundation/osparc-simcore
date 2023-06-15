@@ -2,11 +2,11 @@ import datetime
 import uuid
 from dataclasses import asdict, dataclass, field
 
-import psycopg2
 import sqlalchemy
+from aiopg.sa.connection import SAConnection
 from sqlalchemy import literal_column
 
-from ._protocols import DBConnection
+from .errors import ForeignKeyViolation, UniqueViolation
 from .models.projects_nodes import projects_nodes
 from .models.projects_to_projects_nodes import projects_to_projects_nodes
 
@@ -30,6 +30,10 @@ class ProjectsNodesOperationNotAllowed(BaseProjectsNodesError):
     ...
 
 
+class ProjectsNodesDuplicateNode(BaseProjectsNodesError):
+    ...
+
+
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ProjectsNodeCreate:
     node_id: uuid.UUID
@@ -47,8 +51,17 @@ class ProjectsNodesRepo:
     project_uuid: uuid.UUID
 
     async def create(
-        self, connection: DBConnection, *, node: ProjectsNodeCreate
+        self, connection: SAConnection, *, node: ProjectsNodeCreate
     ) -> ProjectsNode:
+        """creates a new entry in *projects_noeds* and *projects_to_projects_nodes* tables
+
+        NOTE: Do not use this in an asyncio.gather call as this will fail!
+
+        Raises:
+            ProjectsNodesProjectNotFound: in case the project_uuid does not exist
+            ProjectsNodesDuplicateNode: in case the node already exists
+
+        """
         async with connection.begin():
             try:
                 result = await connection.execute(
@@ -68,18 +81,18 @@ class ProjectsNodesRepo:
                 )
                 assert result.rowcount == 1  # nosec
                 return created_node
-            except psycopg2.errors.ForeignKeyViolation as exc:
+            except ForeignKeyViolation as exc:
                 # this happens when the project does not exist
                 raise ProjectsNodesProjectNotFound(
                     f"Project {self.project_uuid} not found"
                 ) from exc
-            except psycopg2.errors.UniqueViolation as exc:
+            except UniqueViolation as exc:
                 # this happens if the node already exists
-                raise ProjectsNodesOperationNotAllowed(
+                raise ProjectsNodesDuplicateNode(
                     f"Project node {node.node_id} already exists"
                 ) from exc
 
-    async def list(self, connection: DBConnection) -> list[ProjectsNode]:
+    async def list(self, connection: SAConnection) -> list[ProjectsNode]:
         list_stmt = (
             sqlalchemy.select(projects_nodes)
             .select_from(self._join_projects_to_projects_nodes())
@@ -92,7 +105,7 @@ class ProjectsNodesRepo:
         return nodes
 
     async def get(
-        self, connection: DBConnection, *, node_id: uuid.UUID
+        self, connection: SAConnection, *, node_id: uuid.UUID
     ) -> ProjectsNode:
         get_stmt = (
             sqlalchemy.select(projects_nodes)
@@ -112,11 +125,11 @@ class ProjectsNodesRepo:
         return ProjectsNode(**dict(row.items()))
 
     async def update(
-        self, connection: DBConnection, *, node_id: uuid.UUID, **values
+        self, connection: SAConnection, *, node_id: uuid.UUID, **values
     ) -> ProjectsNode:
         ...
 
-    async def delete(self, connection: DBConnection, *, node_id: uuid.UUID) -> None:
+    async def delete(self, connection: SAConnection, *, node_id: uuid.UUID) -> None:
         delete_stmt = sqlalchemy.delete(projects_nodes).where(
             projects_nodes.c.node_id == f"{node_id}"
         )
