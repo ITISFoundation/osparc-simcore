@@ -3,15 +3,17 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import AsyncIterator, Iterator
+from copy import deepcopy
+from typing import Any, AsyncIterator, Iterator
 
 import aiohttp.test_utils
 import httpx
 import pytest
+import respx
 from asgi_lifespan import LifespanManager
 from cryptography.fernet import Fernet
 from faker import Faker
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from httpx._transports.asgi import ASGITransport
 from moto.server import ThreadedMotoServer
 from pydantic import HttpUrl, parse_obj_as
@@ -19,6 +21,7 @@ from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from requests.auth import HTTPBasicAuth
+from respx import MockRouter
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import ApplicationSettings
 
@@ -147,3 +150,41 @@ def mocked_s3_server_url() -> Iterator[HttpUrl]:
 
     server.stop()
     print(f"<-- stopped mock S3 server on {endpoint_url}")
+
+
+## MOCKED stack services --------------------------------------------------
+
+
+@pytest.fixture
+def mocked_webserver_service_api_base(
+    app: FastAPI, webserver_service_openapi_specs: dict[str, Any], faker: Faker
+) -> Iterator[MockRouter]:
+    settings: ApplicationSettings = app.state.settings
+    assert settings.API_SERVER_WEBSERVER
+
+    openapi = deepcopy(webserver_service_openapi_specs)
+
+    # pylint: disable=not-context-manager
+    with respx.mock(
+        base_url=settings.API_SERVER_WEBSERVER.api_base_url,
+        assert_all_called=False,
+        assert_all_mocked=True,
+    ) as respx_mock:
+        # include /v0
+        assert settings.API_SERVER_WEBSERVER.api_base_url.endswith("/v0")
+
+        # healthcheck_readiness_probe, healthcheck_liveness_probe
+        response_body = {
+            "data": openapi["paths"]["/"]["get"]["responses"]["200"]["content"][
+                "application/json"
+            ]["schema"]["properties"]["data"]["example"]
+        }
+
+        respx_mock.get(path="/v0/", name="healthcheck_readiness_probe").respond(
+            status.HTTP_200_OK, json=response_body
+        )
+        respx_mock.get(path="/v0/health", name="healthcheck_liveness_probe").respond(
+            status.HTTP_200_OK, json=response_body
+        )
+
+        yield respx_mock
