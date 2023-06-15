@@ -9,6 +9,7 @@ import pytest
 import simcore_postgres_database.cli
 from alembic.script.revision import MultipleHeads
 from simcore_postgres_database.utils_migration import get_current_head
+from sqlalchemy import inspect
 
 
 def test_migration_has_no_branches():
@@ -42,7 +43,8 @@ def test_migration_upgrade_downgrade(make_engine: Callable):
     assert simcore_postgres_database.cli.clean.callback
     simcore_postgres_database.cli.downgrade.callback("base")
     simcore_postgres_database.cli.clean.callback()  # just cleans discover cache
+    inspector = inspect(sync_engine)
 
-    assert sync_engine.table_names() == [
+    assert inspector.get_table_names() == [
         "alembic_version"
     ], "Only the alembic table should remain, please check!!!"
