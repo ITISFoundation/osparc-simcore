@@ -1,5 +1,6 @@
 import tarfile
 from contextlib import contextmanager
+from copy import deepcopy
 from pathlib import Path
 from typing import Iterator
 from uuid import UUID, uuid4
@@ -7,8 +8,14 @@ from uuid import UUID, uuid4
 from aiodocker import Docker
 from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
+from models_library.sidecar_volumes import VolumeCategory, VolumeState, VolumeStatus
+from pydantic import NonNegativeInt
 from servicelib.sidecar_volumes import VolumeUtils
-from simcore_service_agent.modules.volumes_cleanup.models import VolumeDict
+from simcore_service_agent.modules.volumes_cleanup.models import (
+    SHARED_STORE_PATH,
+    SidecarVolumes,
+    VolumeDict,
+)
 
 
 def get_minimal_volume_dict(node_uuid: str, run_id: str, path: Path) -> VolumeDict:
@@ -67,3 +74,67 @@ async def create_volume(
 
         volume_dict: VolumeDict = await volume.show()
         return volume_dict
+
+
+def get_sidecar_volumes(
+    volumes_to_generate: NonNegativeInt = 5,
+) -> SidecarVolumes:
+    node_uuid = f"{uuid4()}"
+    run_id = f"{uuid4()}"
+
+    store_volume: VolumeDict = get_minimal_volume_dict(
+        node_uuid, run_id, SHARED_STORE_PATH
+    )
+    remaining_volumes: list[VolumeDict] = [
+        get_minimal_volume_dict(node_uuid, run_id, Path(f"/tmp/other-volumes-{x}"))
+        for x in range(volumes_to_generate)
+    ]
+
+    return SidecarVolumes(
+        store_volume=store_volume, remaining_volumes=remaining_volumes
+    )
+
+
+def get_or_create_volume_states(
+    sidecar_volumes: SidecarVolumes | None = None,
+) -> dict[VolumeCategory, VolumeState]:
+    if sidecar_volumes:
+        sidecar_volumes = deepcopy(sidecar_volumes)
+    else:
+        # generate some random ones
+        sidecar_volumes = get_sidecar_volumes()
+
+    volume_states: dict[VolumeCategory, VolumeState] = {}
+
+    # we have at least 1 volume for inputs outputs and states
+    # all extra volumes will be put to states
+    assert len(sidecar_volumes.remaining_volumes) >= 3
+
+    inputs_volume = sidecar_volumes.remaining_volumes.pop()
+    volume_states[VolumeCategory.INPUTS] = VolumeState(
+        status=VolumeStatus.CONTENT_NO_SAVE_REQUIRED,
+        volume_names=[inputs_volume["Name"]],
+    )
+    outputs_volume = sidecar_volumes.remaining_volumes.pop()
+    volume_states[VolumeCategory.OUTPUTS] = VolumeState(
+        status=VolumeStatus.CONTENT_NEEDS_TO_BE_SAVED,
+        volume_names=[outputs_volume["Name"]],
+    )
+    assert len(sidecar_volumes.remaining_volumes) > 0
+    state_volume_names: list[str] = []
+    for state_volume_name in sidecar_volumes.remaining_volumes:
+        state_volume_names.append(state_volume_name["Name"])
+
+    assert inputs_volume not in state_volume_names
+    assert outputs_volume not in state_volume_names
+
+    volume_states[VolumeCategory.STATES] = VolumeState(
+        status=VolumeStatus.CONTENT_NEEDS_TO_BE_SAVED, volume_names=state_volume_names
+    )
+
+    volume_states[VolumeCategory.SHARED_STORE] = VolumeState(
+        status=VolumeStatus.CONTENT_NO_SAVE_REQUIRED,
+        volume_names=[sidecar_volumes.store_volume["Name"]],
+    )
+
+    return volume_states

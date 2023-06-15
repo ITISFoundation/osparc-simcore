@@ -3,7 +3,6 @@
 
 import itertools
 import shutil
-from copy import deepcopy
 from pathlib import Path
 from typing import AsyncIterable, Final
 from unittest.mock import call
@@ -28,7 +27,12 @@ from simcore_service_agent.modules.volumes_cleanup.models import (
     SidecarVolumes,
     VolumeDict,
 )
-from utils import create_volume, get_minimal_volume_dict
+from utils import (
+    create_volume,
+    get_minimal_volume_dict,
+    get_or_create_volume_states,
+    get_sidecar_volumes,
+)
 
 _VOLUMES_TO_GENERATE: Final[NonNegativeInt] = 10
 
@@ -122,21 +126,8 @@ async def volume_cleanup() -> list[str]:
 
 
 @pytest.fixture
-async def sidecar_volumes(faker: Faker) -> SidecarVolumes:
-    node_uuid = faker.uuid4()
-    run_id = faker.uuid4()
-
-    store_volume: VolumeDict = get_minimal_volume_dict(
-        node_uuid, run_id, SHARED_STORE_PATH
-    )
-    remaining_volumes: list[VolumeDict] = [
-        get_minimal_volume_dict(node_uuid, run_id, Path(f"/tmp/other-volumes-{x}"))
-        for x in range(_VOLUMES_TO_GENERATE)
-    ]
-
-    return SidecarVolumes(
-        store_volume=store_volume, remaining_volumes=remaining_volumes
-    )
+async def sidecar_volumes() -> SidecarVolumes:
+    return get_sidecar_volumes(_VOLUMES_TO_GENERATE)
 
 
 class _ParsingModel(BaseModel):
@@ -145,43 +136,7 @@ class _ParsingModel(BaseModel):
 
 @pytest.fixture
 def volume_states(sidecar_volumes: SidecarVolumes) -> dict[VolumeCategory, VolumeState]:
-    # make a copy locally since pop will affect original dataset
-    sidecar_volumes = deepcopy(sidecar_volumes)
-
-    volume_states: dict[VolumeCategory, VolumeState] = {}
-
-    # we have at least 1 volume for inputs outputs and states
-    # all extra volumes will be put to states
-    assert len(sidecar_volumes.remaining_volumes) >= 3
-
-    inputs_volume = sidecar_volumes.remaining_volumes.pop()
-    volume_states[VolumeCategory.INPUTS] = VolumeState(
-        status=VolumeStatus.CONTENT_NO_SAVE_REQUIRED,
-        volume_names=[inputs_volume["Name"]],
-    )
-    outputs_volume = sidecar_volumes.remaining_volumes.pop()
-    volume_states[VolumeCategory.OUTPUTS] = VolumeState(
-        status=VolumeStatus.CONTENT_NEEDS_TO_BE_SAVED,
-        volume_names=[outputs_volume["Name"]],
-    )
-    assert len(sidecar_volumes.remaining_volumes) > 0
-    state_volume_names: list[str] = []
-    for state_volume_name in sidecar_volumes.remaining_volumes:
-        state_volume_names.append(state_volume_name["Name"])
-
-    assert inputs_volume not in state_volume_names
-    assert outputs_volume not in state_volume_names
-
-    volume_states[VolumeCategory.STATES] = VolumeState(
-        status=VolumeStatus.CONTENT_NEEDS_TO_BE_SAVED, volume_names=state_volume_names
-    )
-
-    volume_states[VolumeCategory.SHARED_STORE] = VolumeState(
-        status=VolumeStatus.CONTENT_NO_SAVE_REQUIRED,
-        volume_names=[sidecar_volumes.store_volume["Name"]],
-    )
-
-    return volume_states
+    return get_or_create_volume_states(sidecar_volumes)
 
 
 @pytest.fixture
