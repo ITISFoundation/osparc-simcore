@@ -125,7 +125,8 @@ async def test_get_supported_filetypes(connection: SAConnection):
     )
 
     result: ResultProxy = await connection.execute(stmt)
-    rows: list[RowProxy] = await result.fetchall()
+    rows = await result.fetchall()
+    assert rows is not None
     assert [v for row in rows for v in row.values()] == ["DCM", "S4LCACHEDATA"]
 
 
@@ -134,16 +135,15 @@ async def test_list_supported_filetypes(connection: SAConnection):
 
     stmt = (
         sa.select(
-            [
-                services_consume_filetypes.c.filetype,
-            ]
+            services_consume_filetypes.c.filetype,
         )
         .order_by(services_consume_filetypes.c.filetype)
         .distinct()
     )
 
     result: ResultProxy = await connection.execute(stmt)
-    rows: list[RowProxy] = await result.fetchall()
+    rows = await result.fetchall()
+    assert rows is not None
     assert [v for row in rows for v in row.values()] == list_supported_filetypes()
 
 
@@ -158,11 +158,9 @@ async def test_contraints(connection: SAConnection):
 
     stmt = (
         sa.select(
-            [
-                sa.func.count(services_consume_filetypes.c.service_key).label(
-                    "num_services"
-                ),
-            ]
+            sa.func.count(services_consume_filetypes.c.service_key).label(
+                "num_services"
+            ),
         )
         .where(services_consume_filetypes.c.filetype == "DCM")
         .scalar_subquery()
