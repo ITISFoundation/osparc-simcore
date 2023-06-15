@@ -32,6 +32,7 @@ from ..dependencies.authentication import get_current_user_id
 from ..dependencies.database import Engine, get_db_engine
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
+from ..errors.http_error import ErrorGet, create_json_error_response
 from ._common import JOB_OUTPUT_LOGFILE_RESPONSES
 
 _logger = logging.getLogger(__name__)
@@ -168,6 +169,7 @@ async def get_job(
 @router.delete(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}",
     status_code=status.HTTP_204_NO_CONTENT,
+    responses={status.HTTP_404_NOT_FOUND: {"model": ErrorGet}},
     include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def delete_job(
@@ -188,10 +190,10 @@ async def delete_job(
 
     except HTTPException as err:
         if err.status_code == status.HTTP_404_NOT_FOUND:
-            raise HTTPException(
-                status_code=err.status_code,
-                detail=f"Cannot find job={job_name} to delete",
-            ) from err
+            return create_json_error_response(
+                f"Cannot find job={job_name} to delete",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
 
 
 @router.post(
