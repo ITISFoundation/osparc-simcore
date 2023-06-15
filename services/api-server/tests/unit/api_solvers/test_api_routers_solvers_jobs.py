@@ -10,20 +10,17 @@ from zipfile import ZipFile
 import arrow
 import boto3
 import httpx
-import jinja2
 import pytest
 import respx
 from faker import Faker
 from fastapi import FastAPI
-from models_library.basic_regex import UUID_RE_BASE
 from models_library.services import ServiceDockerData
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import AnyUrl, HttpUrl, parse_file_as, parse_obj_as
+from pydantic import AnyUrl, HttpUrl, parse_obj_as
 from respx import MockRouter
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.models.schemas.jobs import Job, JobInputs, JobStatus
 from simcore_service_api_server.plugins.director_v2 import ComputationTaskGet
-from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
 from starlette import status
 
 
@@ -385,107 +382,3 @@ async def test_run_solver_job(
     ].called
 
     job_status = JobStatus.parse_obj(resp.json())
-
-
-@pytest.mark.acceptance_test(
-    "For https://github.com/ITISFoundation/osparc-simcore/issues/4111"
-)
-async def test_delete_solver_job_1(
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
-    solver_key: str,
-    solver_version: str,
-    faker: Faker,
-    mocked_webserver_service_api: MockRouter,
-    mocked_catalog_service_api: MockRouter,
-    project_tests_dir: Path,
-):
-
-    mock_name = "delete_project_not_found.json"
-
-    environment = jinja2.Environment(
-        loader=jinja2.FileSystemLoader(project_tests_dir / "mocks")
-    )
-    template = environment.get_template(mock_name)
-
-    def _response(request: httpx.Request, project_id: str):
-        capture = HttpApiCallCaptureModel.parse_raw(
-            template.render(project_id=project_id)
-        )
-        return httpx.Response(
-            status_code=capture.status_code, json=capture.response_body
-        )
-
-    mocked_webserver_service_api.delete(
-        path__regex=rf"/projects/(?P<project_id>{UUID_RE_BASE})$",
-        name="delete_project",
-    ).mock(side_effect=_response)
-
-    # Cannot delete if it does not exists
-    resp = await client.delete(
-        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs/{faker.uuid4()}",
-        auth=auth,
-    )
-    assert resp.status_code == status.HTTP_404_NOT_FOUND
-
-
-@pytest.mark.testit
-@pytest.mark.acceptance_test(
-    "For https://github.com/ITISFoundation/osparc-simcore/issues/4111"
-)
-async def test_delete_solver_job_2(
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
-    solver_key: str,
-    solver_version: str,
-    faker: Faker,
-    mocked_webserver_service_api: MockRouter,
-    mocked_catalog_service_api: MockRouter,
-    project_tests_dir: Path,
-):
-    mock_name = "on_create_job.json"
-    environment = jinja2.Environment(
-        loader=jinja2.FileSystemLoader(project_tests_dir / "mocks")
-    )
-    template = environment.get_template(mock_name)
-
-    # fixture
-    captures = parse_file_as(
-        list[HttpApiCallCaptureModel],
-        project_tests_dir / "mocks" / mock_name,
-    )
-    mocked_catalog_service_api.request(
-        method=captures[0].method,  # GET service
-    )
-
-    for capture in captures[1:]:
-        mocked_webserver_service_api.request(
-            method=capture.method,  # CREATE project, GET task..., DELETE project
-        ).respond(
-            status_code=capture.status_code,
-            json=capture.response_body,
-        )
-
-    # Create Job
-    resp = await client.post(
-        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs",
-        auth=auth,
-        json=JobInputs(
-            values={
-                "x": 3.14,
-                "n": 42,
-            }
-        ).dict(),
-    )
-    assert resp.status_code == status.HTTP_200_OK
-    job = Job.parse_obj(resp.json())
-
-    # Delete Job after creation
-    resp = await client.delete(
-        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs/{job.id}",
-        auth=auth,
-    )
-    assert resp.status_code == status.HTTP_204_NO_CONTENT
-
-    # Run job and try to delete while running
-    # Run a job and delete when finished

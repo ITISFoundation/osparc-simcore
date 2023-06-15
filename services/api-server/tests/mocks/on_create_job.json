@@ -20,22 +20,17 @@
       "type": "computational",
       "authors": [
         {
-          "name": "Manuel Guidon",
-          "email": "guidon@itis.swiss",
-          "affiliation": "IT'IS Foundation"
-        },
-        {
           "name": "Odei Maiz",
-          "email": "maiz@itis.swiss",
-          "affiliation": "IT'IS Foundation"
+          "email": "user@bar.com",
+          "affiliation": "Foo Foundation"
         },
         {
-          "name": "Andrei Neagu",
-          "email": "neagu@itis.swiss",
-          "affiliation": "IT'IS Foundation"
+          "name": "User Foo",
+          "email": "user@foo.com",
+          "affiliation": "Foo Foundation"
         }
       ],
-      "contact": "neagu@itis.swiss",
+      "contact": "user@foo.com",
       "inputs": {
         "input_1": {
           "displayOrder": 1.0,
@@ -253,7 +248,7 @@
             }
           }
         },
-        "prjOwner": "crespo@itis.swiss",
+        "prjOwner": "user@foo.com",
         "accessRights": {
           "3": {
             "read": true,
