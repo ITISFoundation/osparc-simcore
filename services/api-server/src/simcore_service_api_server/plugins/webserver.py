@@ -59,7 +59,7 @@ class AuthSession:
         )
 
     @classmethod
-    def _postprocess(cls, resp: Response) -> JSON | None:
+    def _get_data_or_raise_http_exception(cls, resp: Response) -> JSON | None:
         # enveloped answer
         data: JSON | None = None
         error: JSON | None = None
@@ -77,7 +77,7 @@ class AuthSession:
 
         if resp.is_server_error:
             _logger.error(
-                "webserver error %s [%s]: %s",
+                "webserver reponded with an error: %s [%s]: %s",
                 f"{resp.status_code=}",
                 f"{resp.reason_phrase=}",
                 error,
@@ -85,6 +85,7 @@ class AuthSession:
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
 
         if resp.is_client_error:
+            # NOTE: error is can be a dict
             msg = error or resp.reason_phrase
             raise HTTPException(resp.status_code, detail=msg)
 
@@ -104,7 +105,7 @@ class AuthSession:
             _logger.exception("Failed to get %s", url)
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
 
-        return self._postprocess(resp)
+        return self._get_data_or_raise_http_exception(resp)
 
     async def put(self, path: str, body: dict) -> JSON | None:
         url = path.lstrip("/")
@@ -114,7 +115,7 @@ class AuthSession:
             _logger.exception("Failed to put %s", url)
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
 
-        return self._postprocess(resp)
+        return self._get_data_or_raise_http_exception(resp)
 
     # PROJECTS resource ---
 
@@ -126,7 +127,7 @@ class AuthSession:
             json=jsonable_encoder(project, by_alias=True, exclude={"state"}),
             cookies=self.session_cookies,
         )
-        data: JSON | None = self._postprocess(resp)
+        data: JSON | None = self._get_data_or_raise_http_exception(resp)
         assert data  # nosec
         assert isinstance(data, dict)  # nosec
 
@@ -155,7 +156,7 @@ class AuthSession:
             f"/projects/{project_id}", cookies=self.session_cookies
         )
 
-        data: JSON | None = self._postprocess(resp)
+        data: JSON | None = self._get_data_or_raise_http_exception(resp)
         return Project.parse_obj(data)
 
     async def list_projects(self, solver_name: str) -> list[Project]:
@@ -165,7 +166,9 @@ class AuthSession:
             cookies=self.session_cookies,
         )
 
-        data: ListAnyDict = cast(ListAnyDict, self._postprocess(resp)) or []
+        data: ListAnyDict = (
+            cast(ListAnyDict, self._get_data_or_raise_http_exception(resp)) or []
+        )
 
         projects: deque[Project] = deque()
         for prj in data:
@@ -184,9 +187,7 @@ class AuthSession:
         resp = await self.client.delete(
             f"/projects/{project_id}", cookies=self.session_cookies
         )
-        self._postprocess(resp)
-        # TODO: webserver NotFound error has "project" message and error json.
-        # Transform this in an API error
+        self._get_data_or_raise_http_exception(resp)
 
     async def get_project_metadata_ports(
         self, project_id: ProjectID
@@ -199,7 +200,7 @@ class AuthSession:
             f"/projects/{project_id}/metadata/ports",
             cookies=self.session_cookies,
         )
-        data = self._postprocess(resp)
+        data = self._get_data_or_raise_http_exception(resp)
         assert data
         assert isinstance(data, list)
         return data

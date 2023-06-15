@@ -1,5 +1,4 @@
 # pylint: disable=too-many-arguments
-# TODO: user_id should be injected every request in api instances, i.e. a new api-instance per request
 
 import logging
 from collections import deque
@@ -177,6 +176,10 @@ async def delete_job(
     job_id: UUID,
     webserver_api: AuthSession = Depends(get_webserver_session),
 ):
+    """Deletes an existing solver job
+
+    New in *version 0.5*
+    """
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Deleting Job '%s'", job_name)
 
@@ -184,11 +187,10 @@ async def delete_job(
         await webserver_api.delete_project(project_id=job_id)
 
     except HTTPException as err:
-        # TODO: simplify error handling
         if err.status_code == status.HTTP_404_NOT_FOUND:
             raise HTTPException(
                 status_code=err.status_code,
-                detail=f"Cannot delete job={job_name}: not found",
+                detail=f"Cannot find job={job_name} to delete",
             ) from err
 
 
