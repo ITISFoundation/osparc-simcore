@@ -58,7 +58,6 @@ BEGIN
     WHERE NOT EXISTS (
         SELECT 1 FROM projects_to_projects_nodes
         WHERE projects_to_projects_nodes.node_id = projects_nodes.node_id
-        AND projects_to_projects_nodes.project_uuid = OLD.uuid
     );
     RETURN NULL;
 END;
