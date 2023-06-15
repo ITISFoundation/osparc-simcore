@@ -69,8 +69,8 @@ qx.Class.define("osparc.component.notification.Notifications", {
         "user_id": userId.toString(),
         "category": "ANNOTATION_NOTE",
         "actionable_path": "study/"+studyId,
-        "title": "Note created",
-        "text": "A Note was created for you",
+        "title": "Note added",
+        "text": "A Note was added for you",
         "date": new Date().toISOString()
       };
     },
