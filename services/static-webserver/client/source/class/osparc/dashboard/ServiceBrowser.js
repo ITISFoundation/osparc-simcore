@@ -112,8 +112,10 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     },
 
     __itemClicked: function(card) {
-      const key = card.getUuid();
-      this._createStudyFromService(key, null);
+      // const key = card.getUuid();
+      // this._createStudyFromService(key, null);
+      const serviceData = card.getResourceData();
+      this._openDetailsView(serviceData);
       this.resetSelection();
     },
 
@@ -195,11 +197,11 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     // MENU //
     _populateCardMenu: function(card) {
       const menu = card.getMenu();
-      const studyData = card.getResourceData();
+      const serviceData = card.getResourceData();
 
-      const moreInfoButton = this._getMoreOptionsMenuButton(studyData);
-      if (moreInfoButton) {
-        menu.add(moreInfoButton);
+      const openButton = this._getOpenMenuButton(serviceData);
+      if (openButton) {
+        menu.add(openButton);
       }
     },
 

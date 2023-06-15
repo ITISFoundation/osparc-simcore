@@ -100,6 +100,9 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
                 None,
             )
             else 0,
+            "password_min_length": 12
+            if getattr(app_settings.WEBSERVER_LOGIN, "LOGIN_PASSWORD_MIN_LENGTH", None)
+            else 0,
         },
         "smtp": {
             "host": getattr(app_settings.WEBSERVER_EMAIL, "SMTP_HOST", None),
