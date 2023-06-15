@@ -128,7 +128,7 @@ def pg_sa_engine(
     yield sync_engine
 
     # NOTE: ALL is deleted after
-    with sync_engine.connect() as conn:
+    with sync_engine.begin() as conn:
         conn.execute(sa.DDL("DROP TABLE IF EXISTS alembic_version"))
     db_metadata.drop_all(sync_engine)
     sync_engine.dispose()
