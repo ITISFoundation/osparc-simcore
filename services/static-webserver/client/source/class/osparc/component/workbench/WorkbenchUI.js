@@ -1844,12 +1844,14 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const noteEditor = new osparc.component.editor.AnnotationNoteCreator();
         const win = osparc.component.editor.AnnotationNoteCreator.popUpInWindow(noteEditor, true);
         noteEditor.addListener("addNote", () => {
-          const gid = noteEditor.getDestinatary();
+          const gid = noteEditor.getDestinataryId();
           osparc.store.Store.getInstance().getGroup(gid)
             .then(user => {
-              serializeData.attributes.destinatary = user.label;
+              serializeData.attributes.destinataryId = gid;
               serializeData.attributes.text = noteEditor.getNote();
-              osparc.component.notification.Notifications.postNewAnnotationNote(user.id, this.getStudy().getUuid());
+              if (user) {
+                osparc.component.notification.Notifications.postNewAnnotationNote(user.id, this.getStudy().getUuid());
+              }
               this.__addAnnotation(serializeData);
             })
             .finally(() => win.close());

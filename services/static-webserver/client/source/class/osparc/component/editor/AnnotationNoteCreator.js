@@ -30,11 +30,11 @@ qx.Class.define("osparc.component.editor.AnnotationNoteCreator", {
   },
 
   properties: {
-    destinatary: {
+    destinataryId: {
       check: "Integer",
       init: null,
       nullable: true,
-      event: "changeDestinatary"
+      event: "changeDestinataryId"
     },
 
     note: {
@@ -92,8 +92,7 @@ qx.Class.define("osparc.component.editor.AnnotationNoteCreator", {
               const collabs = e.getData();
               if (collabs) {
                 collaboratorsManager.close();
-                console.log("addCollaborators", collabs);
-                this.__setDestinatary(collabs[0]);
+                this.__setDestinataryId(collabs[0]);
               }
             }, this);
           }, this);
@@ -149,8 +148,8 @@ qx.Class.define("osparc.component.editor.AnnotationNoteCreator", {
       return control || this.base(arguments, id);
     },
 
-    __setDestinatary: function(gid) {
-      this.setDestinatary(gid);
+    __setDestinataryId: function(gid) {
+      this.setDestinataryId(gid);
       osparc.store.Store.getInstance().getGroup(gid)
         .then(user => {
           this.getChildControl("selected-destinatary").setValue(user.label);

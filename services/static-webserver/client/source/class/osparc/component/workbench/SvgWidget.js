@@ -97,8 +97,8 @@ qx.Class.define("osparc.component.workbench.SvgWidget", {
       return osparc.wrapper.Svg.drawAnnotationText(this.__canvas, x, y, label, color, fontSize);
     },
 
-    drawAnnotationNote: function(x, y, destinatary = "user@domain.com", text = "ToDo") {
-      return osparc.wrapper.Svg.drawAnnotationNote(this.__canvas, x, y, destinatary, text);
+    drawAnnotationNote: function(x, y, destinataryName = "", text = "") {
+      return osparc.wrapper.Svg.drawAnnotationNote(this.__canvas, x, y, destinataryName, text);
     },
 
     drawAnnotationRect: function(width, height, x, y, color) {

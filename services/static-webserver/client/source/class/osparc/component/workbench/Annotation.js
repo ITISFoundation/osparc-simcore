@@ -92,7 +92,8 @@ qx.Class.define("osparc.component.workbench.Annotation", {
       let representation = null;
       switch (this.getType()) {
         case "note":
-          representation = this.__svgLayer.drawAnnotationNote(attrs.x, attrs.y, attrs.destinatary, attrs.text);
+          // TODO: convert destinataryId into destinaryName
+          representation = this.__svgLayer.drawAnnotationNote(attrs.x, attrs.y, attrs.destinataryId, attrs.text);
           break;
         case "rect":
           representation = this.__svgLayer.drawAnnotationRect(attrs.width, attrs.height, attrs.x, attrs.y, this.getColor());
