@@ -149,7 +149,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       this.getMenu().removeAll();
 
       const authData = osparc.auth.Data.getInstance();
-      if (["anonymous", "guest"].includes(authData.getRole())) {
+      if (authData.isGuest()) {
         this.getChildControl("log-in");
       } else {
         this.getChildControl("preferences");
@@ -167,7 +167,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
         this.getChildControl("about-product");
       }
       this.getChildControl("license");
-      if (!["anonymous", "guest"].includes(authData.getRole())) {
+      if (!authData.isGuest()) {
         this.getMenu().addSeparator();
         this.getChildControl("log-out");
       }
@@ -178,7 +178,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       osparc.data.Resources.get("statics")
         .then(async () => {
           const authData = osparc.auth.Data.getInstance();
-          if (["anonymous", "guest"].includes(authData.getRole())) {
+          if (authData.isGuest()) {
             this.getChildControl("log-in");
           } else {
             this.getChildControl("preferences");
@@ -201,7 +201,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
             this.getChildControl("about-product");
           }
           this.getChildControl("license");
-          if (!["anonymous", "guest"].includes(authData.getRole())) {
+          if (!authData.isGuest()) {
             this.getMenu().addSeparator();
             this.getChildControl("log-out");
           }

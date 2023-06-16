@@ -402,10 +402,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       outputsPage.exclude();
       tabViewSecondary.add(outputsPage);
 
-      const nodeOptionsPage = this.__nodeOptionsPage = this.__createTabPage("@FontAwesome5Solid/cogs", this.tr("Options"));
-      osparc.utils.Utils.setIdToWidget(nodeOptionsPage.getChildControl("button"), "nodeOptionsTabButton");
-      nodeOptionsPage.exclude();
-      tabViewSecondary.add(nodeOptionsPage);
+      if (!osparc.auth.Data.getInstance().isGuest()) {
+        const nodeOptionsPage = this.__nodeOptionsPage = this.__createTabPage("@FontAwesome5Solid/cogs", this.tr("Options"));
+        osparc.utils.Utils.setIdToWidget(nodeOptionsPage.getChildControl("button"), "nodeOptionsTabButton");
+        nodeOptionsPage.exclude();
+        tabViewSecondary.add(nodeOptionsPage);
+      }
 
       this.__addTopBarSpacer(topBar);
 
