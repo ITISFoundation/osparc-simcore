@@ -45,7 +45,10 @@ from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_postgres_database.models.users import UserRole
-from simcore_postgres_database.utils_projects_nodes import ProjectNodeCreate
+from simcore_postgres_database.utils_projects_nodes import (
+    ProjectNodeCreate,
+    ProjectNodesNodeNotFound,
+)
 from simcore_postgres_database.webserver_models import ProjectType
 
 from ..catalog import client as catalog_client
@@ -248,14 +251,7 @@ async def _start_dynamic_service(
             project_uuid=project_uuid,
         )
         service_resources: ServiceResourcesDict = await get_project_node_resources(
-            request.app,
-            user_id=user_id,
-            project={
-                "workbench": {
-                    f"{node_uuid}": {"key": service_key, "version": service_version}
-                }
-            },
-            node_id=node_uuid,
+            request.app, project_id=project_uuid, node_id=node_uuid
         )
         await director_v2_api.run_dynamic_service(
             app=request.app,
@@ -312,10 +308,10 @@ async def add_project_node(
     await db.update_project_workbench(
         partial_workbench_data, user_id, project["uuid"], product_name
     )
+
     default_resources = await catalog_client.get_service_resources(
         request.app, user_id, service_key, service_version
     )
-
     await db.add_project_node(
         ProjectID(project["uuid"]),
         NodeID(node_uuid),
@@ -908,20 +904,30 @@ async def is_project_node_deprecated(
 
 
 async def get_project_node_resources(
-    app: web.Application, user_id: UserID, project: dict[str, Any], node_id: NodeID
+    app: web.Application, project_id: ProjectID, node_id: NodeID
 ) -> ServiceResourcesDict:
-    if project_node := project.get("workbench", {}).get(f"{node_id}"):
-        default_service_resources = await catalog_client.get_service_resources(
-            app, user_id, project_node["key"], project_node["version"]
-        )
-        return default_service_resources
-    raise NodeNotFoundError(project["uuid"], f"{node_id}")
+    db = ProjectDBAPI.get_from_app_context(app)
+    try:
+        project_node = await db.get_project_node(project_id, node_id)
+        return parse_obj_as(ServiceResourcesDict, project_node.required_resources)
+    except ProjectNodesNodeNotFound as exc:
+        raise NodeNotFoundError(f"{project_id}", f"{node_id}") from exc
 
 
 async def set_project_node_resources(
-    app: web.Application, project: dict[str, Any], node_id: NodeID
-):
-    raise NotImplementedError("cannot change resources for now")
+    app: web.Application,
+    project_id: ProjectID,
+    node_id: NodeID,
+    resources: ServiceResourcesDict,
+) -> ServiceResourcesDict:
+    db = ProjectDBAPI.get_from_app_context(app)
+    try:
+        project_node = await db.update_project_node(
+            project_id, node_id, required_resources=jsonable_encoder(resources)
+        )
+        return parse_obj_as(ServiceResourcesDict, project_node.required_resources)
+    except ProjectNodesNodeNotFound as exc:
+        raise NodeNotFoundError(f"{project_id}", f"{node_id}") from exc
 
 
 #

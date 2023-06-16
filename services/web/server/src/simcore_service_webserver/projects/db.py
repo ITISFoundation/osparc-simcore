@@ -28,6 +28,7 @@ from servicelib.logging_utils import get_log_record_extra, log_context
 from simcore_postgres_database.errors import UniqueViolation
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.utils_projects_nodes import (
+    ProjectNode,
     ProjectNodeCreate,
     ProjectNodesRepo,
 )
@@ -684,6 +685,20 @@ class ProjectDBAPI(BaseProjectDB):
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
         async with self.engine.acquire() as conn:
             await project_nodes_repo.delete(conn, node_id=node_id)
+
+    async def get_project_node(
+        self, project_id: ProjectID, node_id: NodeID
+    ) -> ProjectNode:
+        project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
+        async with self.engine.acquire() as conn:
+            return await project_nodes_repo.get(conn, node_id=node_id)
+
+    async def update_project_node(
+        self, project_id: ProjectID, node_id: NodeID, **values
+    ) -> ProjectNode:
+        project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
+        async with self.engine.acquire() as conn:
+            return await project_nodes_repo.update(conn, node_id=node_id, **values)
 
     async def node_id_exists(self, node_id: str) -> bool:
         """Returns True if the node id exists in any of the available projects"""
