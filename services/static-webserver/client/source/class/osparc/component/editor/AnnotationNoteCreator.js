@@ -67,7 +67,7 @@ qx.Class.define("osparc.component.editor.AnnotationNoteCreator", {
       switch (id) {
         case "instructions":
           control = new qx.ui.basic.Label().set({
-            value: this.tr("Add a destinary and a notification will be sent"),
+            value: this.tr("Add a destinary and a notification will be sent. Please make sure the user has access to the ") + osparc.product.Utils.getStudyAlias() + ".",
             font: "text-14",
             rich: true,
             wrap: true
