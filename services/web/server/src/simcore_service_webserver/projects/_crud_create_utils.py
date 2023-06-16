@@ -50,7 +50,9 @@ async def _prepare_project_copy(
     as_template: bool,
     deep_copy: bool,
     task_progress: TaskProgress,
-) -> tuple[ProjectDict, Coroutine[Any, Any, None] | None]:
+) -> tuple[
+    ProjectDict, Coroutine[Any, Any, None] | None, Coroutine[Any, Any, None] | None
+]:
     source_project = await projects_api.get_project_for_user(
         app,
         project_uuid=f"{src_project_uuid}",
@@ -82,6 +84,12 @@ async def _prepare_project_copy(
     if not as_template:
         new_project["name"] = default_copy_project_name(source_project["name"])
 
+    copy_project_nodes_coro = None
+    if len(nodes_map) > 0:
+        copy_project_nodes_coro = _copy_project_nodes_from_source_project(
+            app, source_project, new_project, nodes_map
+        )
+
     copy_file_coro = None
     if deep_copy and len(nodes_map) > 0:
         copy_file_coro = _copy_files_from_source_project(
@@ -92,7 +100,19 @@ async def _prepare_project_copy(
             user_id,
             task_progress,
         )
-    return new_project, copy_file_coro
+    return new_project, copy_project_nodes_coro, copy_file_coro
+
+
+async def _copy_project_nodes_from_source_project(
+    app: web.Application,
+    source_project: ProjectDict,
+    new_project: ProjectDict,
+    nodes_map: NodesMap,
+) -> None:
+    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
+    await db.deepcopy_project_nodes(
+        ProjectID(source_project["uuid"]), ProjectID(new_project["uuid"]), nodes_map
+    )
 
 
 async def _copy_files_from_source_project(
@@ -188,11 +208,16 @@ async def create_project(
 
     new_project: ProjectDict = {}
     copy_file_coro = None
+    copy_project_nodes_coro = None
     try:
         task_progress.update(message="creating new study...")
         if from_study:
             # 1. prepare copy
-            new_project, copy_file_coro = await _prepare_project_copy(
+            (
+                new_project,
+                copy_project_nodes_coro,
+                copy_file_coro,
+            ) = await _prepare_project_copy(
                 request.app,
                 user_id=user_id,
                 src_project_uuid=from_study,
@@ -213,6 +238,9 @@ async def create_project(
             force_as_template=as_template,
             hidden=copy_data,
         )
+        if copy_project_nodes_coro:
+            # NOTE: the new project shall already be inserted before this can run
+            await copy_project_nodes_coro
 
         # 4. deep copy source project's files
         if copy_file_coro:
