@@ -277,7 +277,13 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const id = "Information";
       const title = this.tr("Information");
       const icon = "@FontAwesome5Solid/info";
+      const infoPageLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+
       const resourceData = this.__resourceData;
+
+      const studyThumbnailExplorer = new osparc.dashboard.StudyThumbnailExplorer(resourceData);
+      infoPageLayout.add(studyThumbnailExplorer);
+
       const infoCard = osparc.utils.Resources.isService(resourceData) ? new osparc.info.ServiceLarge(resourceData, null, false) : new osparc.info.StudyLarge(resourceData, false);
       infoCard.addListener("openAccessRights", () => this.openAccessRights());
       infoCard.addListener("openClassifiers", () => this.openClassifiers());
@@ -305,8 +311,9 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
           this.fireDataEvent("updateTemplate", updatedData);
         }
       });
-      const page = this.self().createPage(title, infoCard, icon, id);
+      infoPageLayout.add(infoCard);
 
+      const page = this.self().createPage(title, infoPageLayout, icon, id);
       return page;
     },
 
