@@ -21,11 +21,11 @@ from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import GroupID
-from pydantic import BaseModel, Field, HttpUrl
 from simcore_service_webserver.projects._handlers_crud import ProjectPathParams
 from simcore_service_webserver.projects._handlers_project_nodes import (
     _NodePathParams,
     _ProjectGroupAccess,
+    _ProjectNodeHomePage,
 )
 
 app = FastAPI(redoc_url=None)
@@ -54,17 +54,6 @@ async def get_project_services_access_for_gid(project_id: ProjectID, for_gid: Gr
 assert_handler_signature_against_model(
     get_project_services_access_for_gid, ProjectPathParams
 )
-
-
-class _HomePageScreenshot(BaseModel):
-    thumbnail_url: HttpUrl
-    file_url: HttpUrl
-
-
-class _ProjectNodeHomePage(BaseModel):
-    project_id: ProjectID
-    node_id: NodeID
-    screenshots: list[_HomePageScreenshot] = Field(default_factory=list)
 
 
 @app.get(

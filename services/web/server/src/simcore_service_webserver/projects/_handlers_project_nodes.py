@@ -6,15 +6,17 @@ import asyncio
 import json
 import logging
 from typing import Any
+from uuid import uuid4
 
 from aiohttp import web
 from models_library.api_schemas_catalog import ServiceAccessRightsGet
 from models_library.groups import EVERYONE_GROUP_ID
+from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.services import ServiceKey, ServiceKeyVersion, ServiceVersion
 from models_library.users import GroupID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, HttpUrl
 from servicelib.aiohttp.long_running_tasks.server import (
     TaskProgress,
     start_long_running_task,
@@ -39,6 +41,7 @@ from ..director_v2.exceptions import DirectorServiceError
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..users.api import get_user_role
+from ..utils_aiohttp import envelope_json_response
 from . import projects_api
 from ._handlers_crud import ProjectPathParams, RequestContext
 from .db import ProjectDBAPI
@@ -474,3 +477,54 @@ async def get_project_services_access_for_gid(request: web.Request) -> web.Respo
     return web.json_response(
         {"data": project_group_access.dict(exclude_none=True)}, dumps=json_dumps
     )
+
+
+class _HomePageScreenshot(BaseModel):
+    thumbnail_url: HttpUrl
+    file_url: HttpUrl
+
+
+class _ProjectNodeHomePage(BaseModel):
+    project_id: ProjectID
+    node_id: NodeID
+    screenshots: list[_HomePageScreenshot] = Field(default_factory=list)
+
+
+@routes.get(
+    f"/{VTAG}/projects/{{project_id}}/nodes/-/homepage",
+    name="list_project_node_homepages",
+)
+@login_required
+@permission_required("project.read")
+async def list_project_node_homepages(request: web.Request) -> web.Response:
+    req_ctx = RequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(ProjectPathParams, request)
+    assert req_ctx  # nosec
+
+    # TODO: get node_ids of project
+    # TODO: get for each homepage info
+    home_pages_per_node = [
+        _ProjectNodeHomePage(
+            project_id=path_params.project_id, node_id=uuid4(), screenshots=[]
+        )
+        for _ in range(2)
+    ]
+    return envelope_json_response(home_pages_per_node)
+
+
+@routes.get(
+    f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}/homepage",
+    name="get_project_node_homepage",
+)
+@login_required
+@permission_required("project.read")
+async def get_project_node_homepage(request: web.Request) -> web.Response:
+    req_ctx = RequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(_NodePathParams, request)
+    assert req_ctx  # nosec
+
+    # TODO: get homepage info
+    node_home_page = _ProjectNodeHomePage(
+        project_id=path_params.project_id, node_id=path_params.node_id, screenshots=[]
+    )
+    return envelope_json_response(node_home_page)
