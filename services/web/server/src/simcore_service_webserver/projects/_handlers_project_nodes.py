@@ -9,6 +9,7 @@ from typing import Any
 from uuid import uuid4
 
 from aiohttp import web
+from aiohttp.web_exceptions import HTTPNotFound
 from models_library.api_schemas_catalog import ServiceAccessRightsGet
 from models_library.groups import EVERYONE_GROUP_ID
 from models_library.projects import ProjectID
@@ -34,6 +35,7 @@ from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserRole
 
+from .._constants import APP_SETTINGS_KEY
 from .._meta import api_version_prefix as VTAG
 from ..catalog import client as catalog_client
 from ..director_v2 import api
@@ -501,14 +503,18 @@ async def list_project_node_homepages(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     assert req_ctx  # nosec
 
-    # TODO: get node_ids of project
-    # TODO: get for each homepage info
-    home_pages_per_node = [
-        _ProjectNodeHomePage(
-            project_id=path_params.project_id, node_id=uuid4(), screenshots=[]
-        )
-        for _ in range(2)
-    ]
+    home_pages_per_node = []
+
+    if request.app[APP_SETTINGS_KEY].WEBSERVER_DEV_FEATURES_ENABLED:
+        # TODO: get node_ids of project
+        # TODO: get for each homepage info
+        home_pages_per_node = [
+            _ProjectNodeHomePage(
+                project_id=path_params.project_id, node_id=uuid4(), screenshots=[]
+            )
+            for _ in range(2)
+        ]
+
     return envelope_json_response(home_pages_per_node)
 
 
@@ -523,8 +529,15 @@ async def get_project_node_homepage(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(_NodePathParams, request)
     assert req_ctx  # nosec
 
-    # TODO: get homepage info
-    node_home_page = _ProjectNodeHomePage(
-        project_id=path_params.project_id, node_id=path_params.node_id, screenshots=[]
+    if request.app[APP_SETTINGS_KEY].WEBSERVER_DEV_FEATURES_ENABLED:
+        # TODO: get homepage info
+        node_home_page = _ProjectNodeHomePage(
+            project_id=path_params.project_id,
+            node_id=path_params.node_id,
+            screenshots=[],
+        )
+        return envelope_json_response(node_home_page)
+
+    raise HTTPNotFound(
+        reason=f"node {path_params.project_id}/{path_params.node_id} has no homepage"
     )
-    return envelope_json_response(node_home_page)

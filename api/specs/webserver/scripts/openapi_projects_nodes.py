@@ -16,7 +16,7 @@ from _common import (
     assert_handler_signature_against_model,
     create_openapi_specs,
 )
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -76,6 +76,7 @@ assert_handler_signature_against_model(list_project_node_homepages, ProjectPathP
     tags=TAGS,
     operation_id="get_project_node_homepage",
     summary="Gets info on a given node's homepage",
+    responses={status.HTTP_404_NOT_FOUND: {"description": "Node has no homepage"}},
 )
 async def get_project_node_homepage(project_id: ProjectID, node_id: NodeID):
     ...
