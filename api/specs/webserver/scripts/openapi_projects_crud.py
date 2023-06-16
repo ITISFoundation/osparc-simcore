@@ -22,6 +22,10 @@ from models_library.projects import ProjectID
 from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
 from pydantic import NonNegativeInt
 from servicelib.aiohttp.long_running_tasks.server import TaskGet
+from simcore_service_webserver.projects._crud_read_utils import (
+    ProjectListFilters,
+    ProjectOrderBy,
+)
 from simcore_service_webserver.projects._handlers_crud import (
     ProjectPathParams,
     ProjectTypeAPI,
@@ -104,6 +108,18 @@ async def list_projects(
     project_type: ProjectTypeAPI = Query(default=ProjectTypeAPI.all, alias="type"),
     show_hidden: bool = Query(
         default=False, description="includes projects marked as hidden in the listing"
+    ),
+    order_by: list[ProjectOrderBy]
+    | None = Query(
+        default=None,
+        description="Comma separated list of fields for ordering. The default sorting order is ascending. To specify descending order for a field, users append a 'desc' suffix",
+        example="foo desc, bar",
+    ),
+    filters: ProjectListFilters
+    | None = Query(
+        default=None,
+        description="Filters to process on the projects list, encoded as JSON",
+        example='{"tags": [1, 5], "classifiers": ["foo", "bar"]}',
     ),
     search: str = Query(
         default=None,
