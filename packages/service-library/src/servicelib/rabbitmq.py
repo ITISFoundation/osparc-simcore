@@ -327,7 +327,7 @@ class RabbitMQClient:
         Call a remote registered `handler` by providing it's `namespace`, `method_name`
         and `kwargs` containing the key value arguments expected by the remote `handler`.
 
-        param: `timeout_s` amount of seconds to wait for a reply from the remote handler
+        param: `timeout_s_method` amount of seconds to wait for a reply from the remote handler
             invoked via `method_name`
         param: `timeout_s_connection_error` amount of seconds to wait for rabbit to
             be available again in case there was a connection error

@@ -20,13 +20,3 @@ class RemoteMethodNotRegisteredError(BaseRPCError):
         "Could not find a remote method named: '{method_name}'. "
         "Message from remote server was returned: {incoming_message}. "
     )
-
-
-class RPCExceptionGroup(BaseRPCError):
-    """
-    Has to be be present in the source code of the
-    `requester` and `replier` to work.
-    """
-
-    code = f"{_ERROR_PREFIX}.executing_raised_errors"
-    msg_template = "The following errors occurred: {errors}"
