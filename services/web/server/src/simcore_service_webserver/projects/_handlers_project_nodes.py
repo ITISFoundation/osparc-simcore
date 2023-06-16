@@ -463,7 +463,7 @@ class _HomePageScreenshot(BaseModel):
 def _fake_screenshots_factory(
     request: web.Request, node_id: NodeID
 ) -> list[_HomePageScreenshot]:
-    assert request.app[APP_SETTINGS_KEY].WEBSERVER_DEV_FEATURES_ENABLED  # noSec
+    assert request.app[APP_SETTINGS_KEY].WEBSERVER_DEV_FEATURES_ENABLED  # nosec
     # https://placehold.co/
     # https://picsum.photos/
     short_nodeid = str(node_id)[4:]
