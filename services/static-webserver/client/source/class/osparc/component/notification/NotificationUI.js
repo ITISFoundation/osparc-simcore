@@ -204,8 +204,8 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
             .then(studyData => {
               if (studyData) {
                 const studyDataCopy = osparc.data.model.Study.deepCloneStudyObject(studyData);
-                studyDataCopy["resourceType"] = notification.getCategory() === "STUDY_SHARED" ? "study" : "template";
-                const moreOpts = new osparc.dashboard.ResourceMoreOptions(studyData);
+                studyDataCopy["resourceType"] = notification.getCategory() === "TEMPLATE_SHARED" ? "template" : "study";
+                const moreOpts = new osparc.dashboard.ResourceMoreOptions(studyDataCopy);
                 const win = osparc.dashboard.ResourceMoreOptions.popUpInWindow(moreOpts);
                 moreOpts.addListener("openingStudy", () => win.close());
               }
