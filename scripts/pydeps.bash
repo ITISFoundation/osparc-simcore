@@ -47,4 +47,4 @@ Run()
 
 Build
 Run "$@"
-echo "DONE"
+echo "DONE. Your result was saved to .svg file in the path where you ran the command"
