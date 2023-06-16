@@ -32,7 +32,7 @@ paths:
     get:
       tags:
       - project
-      summary: Lists info with all node homepages info
+      summary: Lists all nodes homepages info in the project
       operationId: list_project_node_homepages
       parameters:
       - required: true
@@ -48,7 +48,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list___main__._ProjectNodeHomePage__'
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.projects._handlers_project_nodes._ProjectNodeHomePage__'
   /projects/{project_id}/nodes/{node_id}/homepage:
     get:
       tags:
@@ -77,6 +77,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope__ProjectNodeHomePage_'
+        '404':
+          description: Node has no homepage
 components:
   schemas:
     Envelope__ProjectGroupAccess_:
@@ -95,8 +97,8 @@ components:
           $ref: '#/components/schemas/_ProjectNodeHomePage'
         error:
           title: Error
-    Envelope_list___main__._ProjectNodeHomePage__:
-      title: Envelope[list[__main__._ProjectNodeHomePage]]
+    Envelope_list_simcore_service_webserver.projects._handlers_project_nodes._ProjectNodeHomePage__:
+      title: Envelope[list[simcore_service_webserver.projects._handlers_project_nodes._ProjectNodeHomePage]]
       type: object
       properties:
         data:

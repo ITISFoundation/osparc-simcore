@@ -246,12 +246,13 @@ async def start_node(request: web.Request) -> web.Response:
 
 
 async def _stop_dynamic_service_with_progress(
-    _task_progress: TaskProgress, path_params: _NodePathParams, *args, **kwargs
+    _task_progress: TaskProgress, *args, **kwargs
 ):
     # NOTE: _handle_project_nodes_exceptions only decorate handlers
     try:
         await api.stop_dynamic_service(*args, **kwargs)
         raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+
     except (ProjectNotFoundError, NodeNotFoundError) as exc:
         raise web.HTTPNotFound(reason=f"{exc}") from exc
     except DirectorServiceError as exc:
@@ -284,7 +285,7 @@ async def stop_node(request: web.Request) -> web.Response:
         request,
         _stop_dynamic_service_with_progress,
         task_context=jsonable_encoder(req_ctx),
-        path_params=path_params,
+        # task arguments from here on ---
         app=request.app,
         service_uuid=f"{path_params.node_id}",
         simcore_user_agent=request.headers.get(

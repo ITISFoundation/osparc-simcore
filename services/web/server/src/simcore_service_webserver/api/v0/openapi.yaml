@@ -2360,13 +2360,15 @@ paths:
           in: query
         - required: false
           schema:
-            title: ProjectTypeAPI
-            enum:
-              - all
-              - template
-              - user
-            type: string
-            description: An enumeration.
+            allOf:
+              - title: ProjectTypeAPI
+                enum:
+                  - all
+                  - template
+                  - user
+                type: string
+                description: An enumeration.
+            default: all
           name: type
           in: query
         - description: includes projects marked as hidden in the listing
@@ -2378,6 +2380,24 @@ paths:
             default: false
           name: show_hidden
           in: query
+        - description: 'Comma separated list of fields for ordering. The default sorting order is ascending. To specify descending order for a field, users append a ''desc'' suffix'
+          required: false
+          schema:
+            title: Order By
+            type: string
+            description: 'Comma separated list of fields for ordering. The default sorting order is ascending. To specify descending order for a field, users append a ''desc'' suffix'
+          example: 'foo desc, bar'
+          name: order_by
+          in: query
+        - description: 'Filters to process on the projects list, encoded as JSON'
+          required: false
+          schema:
+            title: Filters
+            type: string
+            description: 'Filters to process on the projects list, encoded as JSON'
+          example: '{"tags": [1, 5], "classifiers": ["foo", "bar"]}'
+          name: filters
+          in: query
         - description: Multi column full text search
           required: false
           schema:
@@ -2385,7 +2405,7 @@ paths:
             maxLength: 25
             type: string
             description: Multi column full text search
-          example: My Project
+          example: My project
           name: search
           in: query
       responses:
@@ -2497,10 +2517,14 @@ paths:
                           type: string
                         thumbnail:
                           title: Thumbnail
-                          maxLength: 2083
-                          minLength: 0
-                          type: string
-                          format: uri
+                          anyOf:
+                            - maxLength: 2083
+                              minLength: 0
+                              type: string
+                              format: uri
+                            - enum:
+                                - ''
+                              type: string
                         creationDate:
                           title: Creationdate
                           pattern: '\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z'
@@ -2745,10 +2769,14 @@ paths:
                         type: string
                       thumbnail:
                         title: Thumbnail
-                        maxLength: 2083
-                        minLength: 0
-                        type: string
-                        format: uri
+                        anyOf:
+                          - maxLength: 2083
+                            minLength: 0
+                            type: string
+                            format: uri
+                          - enum:
+                              - ''
+                            type: string
                       creationDate:
                         title: Creationdate
                         pattern: '\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z'
@@ -5451,7 +5479,7 @@ paths:
     get:
       tags:
         - project
-      summary: Lists info with all node homepages info
+      summary: Lists all nodes homepages info in the project
       operationId: list_project_node_homepages
       parameters:
         - required: true
@@ -5467,7 +5495,7 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[list[__main__._ProjectNodeHomePage]]'
+                title: 'Envelope[list[simcore_service_webserver.projects._handlers_project_nodes._ProjectNodeHomePage]]'
                 type: object
                 properties:
                   data:
@@ -5546,6 +5574,8 @@ paths:
                               format: uri
                   error:
                     title: Error
+        '404':
+          description: Node has no homepage
   '/projects/{project_id}/inputs':
     get:
       tags:

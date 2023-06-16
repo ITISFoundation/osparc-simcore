@@ -61,7 +61,7 @@ assert_handler_signature_against_model(
     response_model=Envelope[list[_ProjectNodeHomePage]],
     tags=TAGS,
     operation_id="list_project_node_homepages",
-    summary="Lists info with all node homepages info",
+    summary="Lists all nodes homepages info in the project",
 )
 async def list_project_node_homepages(project_id: ProjectID):
     ...
