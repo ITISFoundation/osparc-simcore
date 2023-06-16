@@ -512,13 +512,29 @@ async def get_project_node_homepage(request: web.Request) -> web.Response:
 
     if request.app[APP_SETTINGS_KEY].WEBSERVER_DEV_FEATURES_ENABLED:
         # TODO: get homepage info
+
+        project = await projects_api.get_project_for_user(
+            request.app,
+            project_uuid=f"{path_params.project_id}",
+            user_id=req_ctx.user_id,
+        )
+
+        if path_params.node_id not in parse_obj_as(
+            list[NodeID], list(project.get("workbench", {}).keys())
+        ):
+            raise NodeNotFoundError(
+                project_uuid=f"{path_params.project_id}",
+                node_uuid=f"{path_params.node_id}",
+            )
+
         node_home_page = _ProjectNodeHomePage(
-            project_id=path_params.project_id,
+            project_id=project["uuid"],
             node_id=path_params.node_id,
             screenshots=[],
         )
         return envelope_json_response(node_home_page)
 
+    # TODO: proper not found resource error
     raise HTTPNotFound(
         reason=f"node {path_params.project_id}/{path_params.node_id} has no homepage"
     )
