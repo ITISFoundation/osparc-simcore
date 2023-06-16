@@ -76,11 +76,11 @@ qx.Class.define("osparc.component.editor.AnnotationNoteCreator", {
           break;
         case "destinatary-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
-            padding: 2
+            alignY: "middle"
           });
           this._add(control);
           break;
-        case "select-destinatary": {
+        case "select-destinatary":
           control = new qx.ui.form.Button(this.tr("Select destinatary")).set({
             allowGrowX: false
           });
@@ -99,16 +99,16 @@ qx.Class.define("osparc.component.editor.AnnotationNoteCreator", {
           }, this);
           this.getChildControl("destinatary-layout").add(control);
           break;
-        }
         case "selected-destinatary":
           control = new qx.ui.basic.Label().set({
-            font: "text-14"
+            font: "text-14",
+            alignY: "middle"
           });
           this.getChildControl("destinatary-layout").add(control, {
             flex: 1
           });
           break;
-        case "note": {
+        case "note":
           control = new qx.ui.form.TextArea().set({
             font: "text-14",
             placeholder: this.tr("Note"),
@@ -120,7 +120,6 @@ qx.Class.define("osparc.component.editor.AnnotationNoteCreator", {
           control.bind("value", this, "note");
           this._add(control);
           break;
-        }
         case "buttonsLayout": {
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
             alignX: "right"
