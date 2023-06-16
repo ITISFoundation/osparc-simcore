@@ -14,52 +14,52 @@ from .models.projects_to_projects_nodes import projects_to_projects_nodes
 #
 # Errors
 #
-class BaseProjectsNodesError(Exception):
+class BaseProjectNodesError(Exception):
     ...
 
 
-class ProjectsNodesProjectNotFound(BaseProjectsNodesError):
+class ProjectNodesProjectNotFound(BaseProjectNodesError):
     ...
 
 
-class ProjectsNodesNodeNotFound(BaseProjectsNodesError):
+class ProjectNodesNodeNotFound(BaseProjectNodesError):
     ...
 
 
-class ProjectsNodesOperationNotAllowed(BaseProjectsNodesError):
+class ProjectNodesOperationNotAllowed(BaseProjectNodesError):
     ...
 
 
-class ProjectsNodesDuplicateNode(BaseProjectsNodesError):
+class ProjectNodesDuplicateNode(BaseProjectNodesError):
     ...
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class ProjectsNodeCreate:
+class ProjectNodeCreate:
     node_id: uuid.UUID
     required_resources: dict = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class ProjectsNode(ProjectsNodeCreate):
+class ProjectNode(ProjectNodeCreate):
     created: datetime.datetime
     modified: datetime.datetime
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class ProjectsNodesRepo:
+class ProjectNodesRepo:
     project_uuid: uuid.UUID
 
     async def create(
-        self, connection: SAConnection, *, node: ProjectsNodeCreate
-    ) -> ProjectsNode:
-        """creates a new entry in *projects_noeds* and *projects_to_projects_nodes* tables
+        self, connection: SAConnection, *, node: ProjectNodeCreate
+    ) -> ProjectNode:
+        """creates a new entry in *projects_nodes* and *projects_to_projects_nodes* tables
 
         NOTE: Do not use this in an asyncio.gather call as this will fail!
 
         Raises:
-            ProjectsNodesProjectNotFound: in case the project_uuid does not exist
-            ProjectsNodesDuplicateNode: in case the node already exists
+            ProjectNodesProjectNotFound: in case the project_uuid does not exist
+            ProjectNodesDuplicateNode: in case the node already exists
 
         """
         async with connection.begin():
@@ -71,7 +71,7 @@ class ProjectsNodesRepo:
                 )
                 created_node_db = await result.first()
                 assert created_node_db  # nosec
-                created_node = ProjectsNode(**dict(created_node_db.items()))
+                created_node = ProjectNode(**dict(created_node_db.items()))
 
                 result = await connection.execute(
                     projects_to_projects_nodes.insert().values(
@@ -83,18 +83,18 @@ class ProjectsNodesRepo:
                 return created_node
             except ForeignKeyViolation as exc:
                 # this happens when the project does not exist
-                raise ProjectsNodesProjectNotFound(
+                raise ProjectNodesProjectNotFound(
                     f"Project {self.project_uuid} not found"
                 ) from exc
             except UniqueViolation as exc:
                 # this happens if the node already exists
-                raise ProjectsNodesDuplicateNode(
+                raise ProjectNodesDuplicateNode(
                     f"Project node {node.node_id} already exists"
                 ) from exc
 
     async def add(
         self, connection: SAConnection, *, node_id: uuid.UUID
-    ) -> ProjectsNode:
+    ) -> ProjectNode:
         """adds a node with node_id to the current project
 
         NOTE: Do not use this in an asyncio.gather call as this will fail!
@@ -114,11 +114,11 @@ class ProjectsNodesRepo:
             return await self.get(connection, node_id=node_id)
 
         except ForeignKeyViolation as exc:
-            raise ProjectsNodesOperationNotAllowed(
+            raise ProjectNodesOperationNotAllowed(
                 f"Node {node_id=} cannot be added to project {self.project_uuid}"
             ) from exc
 
-    async def list(self, connection: SAConnection) -> list[ProjectsNode]:
+    async def list(self, connection: SAConnection) -> list[ProjectNode]:
         """list the nodes in the current project
 
         NOTE: Do not use this in an asyncio.gather call as this will fail!
@@ -129,14 +129,14 @@ class ProjectsNodesRepo:
             .where(projects_to_projects_nodes.c.project_uuid == f"{self.project_uuid}")
         )
         nodes = [
-            ProjectsNode(**dict(row.items()))
+            ProjectNode(**dict(row.items()))
             async for row in connection.execute(list_stmt)
         ]
         return nodes
 
     async def get(
         self, connection: SAConnection, *, node_id: uuid.UUID
-    ) -> ProjectsNode:
+    ) -> ProjectNode:
         """get a node in the current project
 
         NOTE: Do not use this in an asyncio.gather call as this will fail!
@@ -158,14 +158,14 @@ class ProjectsNodesRepo:
         assert result  # nosec
         row = await result.first()
         if row is None:
-            raise ProjectsNodesNodeNotFound(f"Node with {node_id} not found")
+            raise ProjectNodesNodeNotFound(f"Node with {node_id} not found")
         assert row  # nosec
-        return ProjectsNode(**dict(row.items()))
+        return ProjectNode(**dict(row.items()))
 
     @staticmethod
     async def update(
         connection: SAConnection, *, node_id: uuid.UUID, **values
-    ) -> ProjectsNode:
+    ) -> ProjectNode:
         """update a node in the current project
 
         NOTE: Do not use this in an asyncio.gather call as this will fail!
@@ -182,9 +182,9 @@ class ProjectsNodesRepo:
         result = await connection.execute(update_stmt)
         updated_entry = await result.first()
         if not updated_entry:
-            raise ProjectsNodesNodeNotFound(f"Node with {node_id} not found")
+            raise ProjectNodesNodeNotFound(f"Node with {node_id} not found")
         assert updated_entry  # nosec
-        return ProjectsNode(**dict(updated_entry.items()))
+        return ProjectNode(**dict(updated_entry.items()))
 
     async def delete(self, connection: SAConnection, *, node_id: uuid.UUID) -> None:
         """delete a node in the current project (if the node is shared it will only unmap it)"""
