@@ -81,12 +81,12 @@ qx.Class.define("osparc.component.editor.AnnotationNoteCreator", {
           this._add(control);
           break;
         case "select-destinatary":
-          control = new qx.ui.form.Button(this.tr("Select destinatary")).set({
+          control = new qx.ui.form.Button(this.tr("Select recipient")).set({
             allowGrowX: false
           });
           control.addListener("execute", () => {
             const collaboratorsManager = new osparc.component.share.NewCollaboratorsManager(null, false);
-            collaboratorsManager.setCaption("Destinatary");
+            collaboratorsManager.setCaption("Recipient");
             collaboratorsManager.getActionButton().setLabel(this.tr("Add"));
             collaboratorsManager.addListener("addCollaborators", e => {
               const collabs = e.getData();
