@@ -4,9 +4,9 @@ from typing import Any, Iterable, TypeAlias
 
 from servicelib.sidecar_volumes import REGULAR_SOURCE_PORTION_LEN, VolumeUtils
 
-VolumeDict: TypeAlias = dict[str, Any]
-
 SHARED_STORE_PATH = Path("/dy-volumes/shared-store")
+
+VolumeDict: TypeAlias = dict[str, Any]
 
 
 @dataclass
