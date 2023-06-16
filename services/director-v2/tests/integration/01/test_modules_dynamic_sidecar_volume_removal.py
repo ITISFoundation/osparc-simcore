@@ -132,7 +132,7 @@ async def test_remove_volume_from_node_no_volume_found(
     assert len(volumes_to_remove) == 11
 
     with pytest.raises(
-        RPCExceptionGroup,
+        RPCExceptionGroup,  # RPCExceptionGroup is NO LONGER USED
         match=f"get {missing_volume_name}: no such volume",
     ) as exec_info:
         await remove_volumes_from_node(

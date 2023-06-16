@@ -62,7 +62,7 @@ async def test_remove_volumes_a_volume_does_not_exist(faker: Faker):
         volumes_to_remove = volume_names[:1] + ["fake_volume"] + volume_names[1:]
         assert len(volumes_to_remove) == len(volume_names) + 1
 
-        with pytest.raises(
+        with pytest.raises(  # RPCExceptionGroup is NO LONGER USED
             RPCExceptionGroup, match="get fake_volume: no such volume"
         ) as exec_info:
             await remove_volumes(volumes_to_remove, volume_remove_timeout_s=5)

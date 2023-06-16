@@ -76,7 +76,7 @@ async def create_volume(
 
 
 def get_sidecar_volumes(
-    volumes_to_generate: NonNegativeInt = 5,
+    remaining_volumes_to_generate: NonNegativeInt = 5,
 ) -> SidecarVolumes:
     node_uuid = f"{uuid4()}"
     run_id = f"{uuid4()}"
@@ -86,7 +86,7 @@ def get_sidecar_volumes(
     )
     remaining_volumes: list[VolumeDict] = [
         get_minimal_volume_dict(node_uuid, run_id, Path(f"/tmp/other-volumes-{x}"))
-        for x in range(volumes_to_generate)
+        for x in range(remaining_volumes_to_generate)
     ]
 
     return SidecarVolumes(
