@@ -13,8 +13,8 @@ from ..docker import (
     is_volume_present,
     is_volume_used,
 )
+from ..models import SidecarVolumes, VolumeDict
 from ._s3 import store_to_s3
-from .models import SidecarVolumes, VolumeDict
 
 _logger = logging.getLogger(__name__)
 

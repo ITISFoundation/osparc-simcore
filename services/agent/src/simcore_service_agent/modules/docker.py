@@ -15,12 +15,11 @@ from aiodocker.volumes import DockerVolume
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
 from servicelib.logging_utils import log_context
 from servicelib.sidecar_volumes import STORE_FILE_NAME
-from simcore_service_agent.modules.volumes_cleanup.models import SHARED_STORE_PATH
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
-from .volumes_cleanup.models import VolumeDict
+from .models import SHARED_STORE_PATH, VolumeDict
 
 _logger = logging.getLogger(__name__)
 

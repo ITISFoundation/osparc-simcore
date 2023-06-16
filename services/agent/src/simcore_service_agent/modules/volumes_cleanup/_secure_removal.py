@@ -6,7 +6,8 @@ from servicelib.serial_executor import BaseSerialExecutor
 from servicelib.sidecar_volumes import VolumeInfo, VolumeUtils
 
 from ...core.settings import ApplicationSettings
-from ._core import SidecarVolumes, backup_and_remove_sidecar_volumes
+from ..models import SidecarVolumes
+from ._core import backup_and_remove_sidecar_volumes
 
 _logger = logging.getLogger(__name__)
 

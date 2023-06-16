@@ -8,7 +8,7 @@ from typing import Final
 from settings_library.r_clone import S3Provider
 from settings_library.utils_r_clone import resolve_provider
 
-from .models import VolumeDict
+from ..models import VolumeDict
 
 logger = logging.getLogger(__name__)
 
