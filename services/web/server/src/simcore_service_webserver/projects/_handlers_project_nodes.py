@@ -10,6 +10,7 @@ from typing import Any
 
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPNotFound
+from fastapi import Request
 from models_library.api_schemas_catalog import ServiceAccessRightsGet
 from models_library.groups import EVERYONE_GROUP_ID
 from models_library.projects import ProjectID
@@ -459,6 +460,24 @@ class _HomePageScreenshot(BaseModel):
     file_url: HttpUrl
 
 
+def _fake_screenshots_factory(
+    request: Request, node_id: NodeID
+) -> list[_HomePageScreenshot]:
+    assert request.app[APP_SETTINGS_KEY].WEBSERVER_DEV_FEATURES_ENABLED  # noSec
+    # https://placehold.co/
+    # https://picsum.photos/
+    short_nodeid = str(node_id)[4:]
+    count = int(str(node_id.int)[-1])
+    seed = short_nodeid
+    return [
+        _HomePageScreenshot(
+            thumbnail_url=f"https://placehold.co/170x120?text={short_nodeid}",
+            file_url=f"https://picsum.photos/seed/{seed}/500",
+        )
+        for _ in range(count)
+    ]
+
+
 class _ProjectNodeHomePage(BaseModel):
     project_id: ProjectID
     node_id: NodeID
@@ -488,11 +507,14 @@ async def list_project_node_homepages(request: web.Request) -> web.Response:
         )
 
         # TODO: get for each homepage info
+        node_ids = parse_obj_as(list[NodeID], list(project.get("workbench", {}).keys()))
         home_pages_per_node = [
             _ProjectNodeHomePage(
-                project_id=path_params.project_id, node_id=node_id, screenshots=[]
+                project_id=path_params.project_id,
+                node_id=node_id,
+                screenshots=_fake_screenshots_factory(node_id),
             )
-            for node_id in project.get("workbench", {}).keys()
+            for node_id in node_ids
         ]
 
     return envelope_json_response(home_pages_per_node)
@@ -530,7 +552,7 @@ async def get_project_node_homepage(request: web.Request) -> web.Response:
         node_home_page = _ProjectNodeHomePage(
             project_id=project["uuid"],
             node_id=path_params.node_id,
-            screenshots=[],
+            screenshots=_fake_screenshots_factory(path_params.node_id),
         )
         return envelope_json_response(node_home_page)
 
