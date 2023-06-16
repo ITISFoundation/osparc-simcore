@@ -161,7 +161,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       const lines = note.split("\n");
       const width = 200;
       const minHeight = 120;
-      const titleHeight = 24;
+      const titleHeight = 26;
       const padding = 5;
       const nLines = lines.length;
       const height = Math.max(minHeight, titleHeight + nLines*18);
