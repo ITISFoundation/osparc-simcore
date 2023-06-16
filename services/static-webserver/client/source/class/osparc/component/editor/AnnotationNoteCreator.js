@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.editor.AnnotationNoteEditor", {
+qx.Class.define("osparc.component.editor.AnnotationNoteCreator", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
