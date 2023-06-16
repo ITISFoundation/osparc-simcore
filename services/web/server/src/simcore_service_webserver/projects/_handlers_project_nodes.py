@@ -512,7 +512,7 @@ async def list_project_node_homepages(request: web.Request) -> web.Response:
             _ProjectNodeHomePage(
                 project_id=path_params.project_id,
                 node_id=node_id,
-                screenshots=_fake_screenshots_factory(node_id),
+                screenshots=_fake_screenshots_factory(request, node_id),
             )
             for node_id in node_ids
         ]
@@ -552,7 +552,7 @@ async def get_project_node_homepage(request: web.Request) -> web.Response:
         node_home_page = _ProjectNodeHomePage(
             project_id=project["uuid"],
             node_id=path_params.node_id,
-            screenshots=_fake_screenshots_factory(path_params.node_id),
+            screenshots=_fake_screenshots_factory(request, path_params.node_id),
         )
         return envelope_json_response(node_home_page)
 
