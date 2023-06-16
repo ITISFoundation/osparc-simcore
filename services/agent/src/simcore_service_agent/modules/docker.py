@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import tempfile
 from collections import deque
 from contextlib import asynccontextmanager
@@ -12,10 +13,16 @@ from aiodocker.containers import DockerContainer
 from aiodocker.utils import clean_filters
 from aiodocker.volumes import DockerVolume
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
+from servicelib.logging_utils import log_context
 from servicelib.sidecar_volumes import STORE_FILE_NAME
 from simcore_service_agent.modules.volumes_cleanup.models import SHARED_STORE_PATH
+from tenacity._asyncio import AsyncRetrying
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 
 from .volumes_cleanup.models import VolumeDict
+
+_logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -71,13 +78,33 @@ def _blocking_file_read(archive: TarFile) -> str:
         return store_file_path.read_text()
 
 
-async def get_state_file(docker: Docker, volume_name: str) -> str:
-    container: DockerContainer = await docker.containers.create(
-        {
-            "Image": "busybox",
-            "HostConfig": {"Binds": [f"{volume_name}:{SHARED_STORE_PATH}"]},
-        }
-    )
+async def get_state_file(
+    docker: Docker, volume_name: str, docker_image: str = "alpine:3.18.2"
+) -> str:
+    # NOTE: try to start the image, if it is missing pull it and on the
+    # next attempt it will run as expected. Avoids always pulling the image (which takes a while)
+
+    container: DockerContainer | None = None
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1), stop=stop_after_attempt(2), reraise=True
+    ):
+        with attempt:
+            try:
+                container = await docker.containers.create(
+                    {
+                        "Image": docker_image,
+                        "HostConfig": {"Binds": [f"{volume_name}:{SHARED_STORE_PATH}"]},
+                    }
+                )
+            except aiodocker.DockerError as e:
+                if e.status == 404:
+                    with log_context(
+                        _logger, logging.WARNING, f"pulling image {docker_image}"
+                    ):
+                        await docker.images.pull(docker_image)
+                raise e
+    assert container is not None  # nosec
+
     try:
         remote_path = f"{SHARED_STORE_PATH / STORE_FILE_NAME}"
         archive: TarFile = await container.get_archive(remote_path)
