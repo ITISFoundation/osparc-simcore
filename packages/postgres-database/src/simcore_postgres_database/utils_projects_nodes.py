@@ -36,12 +36,12 @@ class ProjectNodesDuplicateNode(BaseProjectNodesError):
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ProjectNodeCreate:
-    node_id: uuid.UUID
     required_resources: dict = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ProjectNode(ProjectNodeCreate):
+    node_id: uuid.UUID
     created: datetime.datetime
     modified: datetime.datetime
 
@@ -74,7 +74,7 @@ class ProjectNodesRepo:
                 if node:
                     result = await connection.execute(
                         projects_nodes.insert()
-                        .values(**asdict(node))
+                        .values(node_id=f"{node_id}", **asdict(node))
                         .returning(literal_column("*"))
                     )
                     created_node_db = await result.first()
