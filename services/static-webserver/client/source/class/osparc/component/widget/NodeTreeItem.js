@@ -86,6 +86,13 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
       nullable: true,
       event: "changeIconColor",
       apply: "__applyIconColor"
+    },
+
+    simpleNode: {
+      check: "Boolean",
+      nullable: true,
+      init: false,
+      event: "changeSimpleNode"
     }
   },
 
@@ -265,7 +272,10 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
           });
           const permissions = osparc.data.Permissions.getInstance();
           permissions.bind("role", control, "visibility", {
-            converter: () => permissions.canDo("study.nodestree.uuid.read") ? "visible" : "excluded"
+            converter: () => !this.isSimpleNode() && permissions.canDo("study.nodestree.uuid.read") ? "visible" : "excluded"
+          });
+          this.bind("simpleNode", control, "visibility", {
+            converter: simpleNode => !simpleNode && permissions.canDo("study.nodestree.uuid.read") ? "visible" : "excluded"
           });
           this.addWidget(control);
           break;
@@ -322,10 +332,16 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
 
     __attachEventHandlers: function() {
       this.addListener("mouseover", () => {
+        if (this.isSimpleNode()) {
+          return;
+        }
         this.getChildControl("buttons").show();
         this.__setHoveredStyle();
       });
       this.addListener("mouseout", () => {
+        if (this.isSimpleNode()) {
+          return;
+        }
         if (this.__optionsMenu.isVisible()) {
           const hideButtonsIfMouseOut = event => {
             if (osparc.utils.Utils.isMouseOnElement(this.__optionsMenu, event, 5)) {
