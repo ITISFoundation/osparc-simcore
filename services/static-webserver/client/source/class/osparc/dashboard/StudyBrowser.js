@@ -335,18 +335,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       if (!item.isMultiSelectionMode()) {
         const studyData = this.__getStudyData(item.getUuid(), false);
-        // this._startStudyById(studyData["uuid"]);
         this._openDetailsView(studyData);
         this.resetSelection();
       }
-    },
-
-    _startStudyById: function(studyId) {
-      if (!this._checkLoggedIn()) {
-        return;
-      }
-
-      this.fireDataEvent("startStudy", studyId);
     },
 
     __attachEventHandlers: function() {

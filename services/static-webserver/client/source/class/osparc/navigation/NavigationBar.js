@@ -280,7 +280,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           const authData = osparc.auth.Data.getInstance();
           authData.bind("expirationDate", control, "visibility", {
             converter: expirationDay => {
-              if (expirationDay && !["anonymous", "guest"].includes(authData.getRole())) {
+              if (expirationDay && !authData.isGuest()) {
                 const now = new Date();
                 const today = new Date(now.toISOString().slice(0, 10));
                 const daysToExpiration = osparc.utils.Utils.daysBetween(today, expirationDay);
@@ -319,8 +319,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           });
           control.set(this.self().BUTTON_OPTIONS);
           const authData = osparc.auth.Data.getInstance();
-          authData.bind("role", control, "visibility", {
-            converter: role => ["anonymous", "guest"].includes(role) ? "visible" : "excluded"
+          authData.bind("guest", control, "visibility", {
+            converter: isGuest => isGuest ? "visible" : "excluded"
           });
           this.getChildControl("right-items").add(control);
           break;
