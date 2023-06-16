@@ -84,17 +84,18 @@ qx.Class.define("osparc.component.workbench.Annotation", {
   members: {
     __svgLayer: null,
 
-    __drawAnnotation: function(attrs) {
+    __drawAnnotation: async function(attrs) {
       if (this.__svgLayer === null) {
         return;
       }
 
       let representation = null;
       switch (this.getType()) {
-        case "note":
-          // TODO: convert destinataryGid into destinaryName
-          representation = this.__svgLayer.drawAnnotationNote(attrs.x, attrs.y, attrs.destinataryGid, attrs.text);
+        case "note": {
+          const user = await osparc.store.Store.getInstance().getGroup(attrs.destinataryGid);
+          representation = this.__svgLayer.drawAnnotationNote(attrs.x, attrs.y, user ? user.label : "", attrs.text);
           break;
+        }
         case "rect":
           representation = this.__svgLayer.drawAnnotationRect(attrs.width, attrs.height, attrs.x, attrs.y, this.getColor());
           break;
