@@ -68,7 +68,6 @@ async def create_volume(
                     await container.put_archive(
                         f"{volume_path_in_container}", archive_path.read_bytes()
                     )
-                    print("me")
             finally:
                 await container.delete()
 
