@@ -26,6 +26,10 @@ from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import get_log_record_extra, log_context
 from simcore_postgres_database.errors import UniqueViolation
 from simcore_postgres_database.models.projects_to_products import projects_to_products
+from simcore_postgres_database.utils_projects_nodes import (
+    ProjectsNodeCreate,
+    ProjectsNodesRepo,
+)
 from simcore_postgres_database.webserver_models import ProjectType, projects, users
 from sqlalchemy import desc, func, literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -667,6 +671,13 @@ class ProjectDBAPI(BaseProjectDB):
                     convert_to_schema_names(project, user_email, tags=tags),
                     changed_entries,
                 )
+
+    async def add_project_node(
+        self, project_id: ProjectID, node: ProjectsNodeCreate
+    ) -> None:
+        project_nodes_repo = ProjectsNodesRepo(project_uuid=project_id)
+        async with self.engine.acquire() as conn:
+            project_nodes_repo.create(conn, node=node)
 
     async def node_id_exists(self, node_id: str) -> bool:
         """Returns True if the node id exists in any of the available projects"""
