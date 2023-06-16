@@ -11,7 +11,7 @@ from aiodocker.volumes import DockerVolume
 from models_library.sidecar_volumes import VolumeCategory, VolumeState, VolumeStatus
 from pydantic import BaseModel, NonNegativeInt
 from servicelib.sidecar_volumes import VolumeUtils
-from simcore_service_agent.modules.volumes_cleanup.models import (
+from simcore_service_agent.modules.models import (
     SHARED_STORE_PATH,
     SidecarVolumes,
     VolumeDict,
