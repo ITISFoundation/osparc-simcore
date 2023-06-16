@@ -26,14 +26,14 @@ from yarl import URL
 
 pytest_plugins = [
     "pytest_simcore.aws_services",
+    "pytest_simcore.cli_runner",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
+    "pytest_simcore.environment_configs",
     "pytest_simcore.monkeypatch_extra",
-    "pytest_simcore.pytest_global_environs",
     "pytest_simcore.repository_paths",
     "pytest_simcore.tmp_path_extra",
-    "pytest_simcore.cli_runner",
 ]
 
 
@@ -72,12 +72,16 @@ def shared_data_folder(
 
 
 @pytest.fixture
-def app_environment(monkeypatch: MonkeyPatch, shared_data_folder: Path) -> EnvVarsDict:
+def app_environment(
+    monkeypatch: MonkeyPatch, env_devel_dict: EnvVarsDict, shared_data_folder: Path
+) -> EnvVarsDict:
 
     # configured as worker
     envs = setenvs_from_dict(
         monkeypatch,
         {
+            # .env-devel
+            **env_devel_dict,
             # Variables directly define inside Dockerfile
             "SC_BOOT_MODE": "debug-ptvsd",
             "SIDECAR_LOGLEVEL": "DEBUG",
@@ -117,7 +121,7 @@ def dask_client(
 
 @pytest.fixture
 async def async_local_cluster(
-    mock_service_envs: None,
+    app_environment: EnvVarsDict,
 ) -> AsyncIterator[distributed.LocalCluster]:
     print(pformat(dask.config.get("distributed")))
     async with distributed.LocalCluster(

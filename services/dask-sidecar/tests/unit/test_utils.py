@@ -8,22 +8,9 @@ from unittest import mock
 
 import aiodocker
 import pytest
-from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_dask_sidecar.utils import num_available_gpus
-
-
-@pytest.fixture
-def mock_service_envs(
-    mock_env_devel_environment: dict[str, str | None], monkeypatch: MonkeyPatch
-) -> None:
-    monkeypatch.setenv(
-        "SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME", "simcore_computational_shared_data"
-    )
-    monkeypatch.setenv(
-        "SIDECAR_COMP_SERVICES_SHARED_FOLDER", "/home/scu/computational_shared_data"
-    )
 
 
 @pytest.fixture(scope="function")
