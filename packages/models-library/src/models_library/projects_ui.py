@@ -45,7 +45,7 @@ class Annotation(BaseModel):
                         "y": 100,
                         "width": 117,
                         "height": 26,
-                        "destinataryId": 4,
+                        "destinataryGid": 4,
                         "text": "ToDo"
                     },
                 },
