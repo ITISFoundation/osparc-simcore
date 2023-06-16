@@ -87,5 +87,15 @@ class UserNotification(BaseModel):
                     "date": "2023-02-23T16:28:13.122Z",
                     "read": False,
                 },
+                {
+                    "id": "390053c9-3931-40e1-839f-585268f6fd3d",
+                    "user_id": "1",
+                    "category": "ANNOTATION_NOTE",
+                    "actionable_path": "study/27edd65c-b360-11ed-93d7-02420a000014",
+                    "title": "Note added",
+                    "text": "A Note was added for you",
+                    "date": "2023-02-23T16:28:13.122Z",
+                    "read": False,
+                },
             ]
         }
