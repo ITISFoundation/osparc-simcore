@@ -77,6 +77,12 @@ async def test_delete_non_existing_solver_job(
     )
     assert resp.status_code == status.HTTP_404_NOT_FOUND
 
+    mock_webserver_router = (
+        mocked_backend_services_apis_for_delete_non_existing_project["webserver"]
+    )
+    assert mock_webserver_router
+    assert mock_webserver_router["delete_project"].called
+
 
 @pytest.fixture
 def mocked_backend_services_apis_for_create_and_delete_solver_job(
@@ -96,8 +102,7 @@ def mocked_backend_services_apis_for_create_and_delete_solver_job(
     assert capture.host == "catalog"
     assert capture.method == "GET"
     mocked_catalog_service_api.request(
-        method=capture.method,  # GET service
-        path=capture.path,
+        method=capture.method, path=capture.path, name="get_service"  # GET service
     ).respond(status_code=capture.status_code, json=capture.response_body)
 
     capture = captures[-1]
@@ -146,5 +151,18 @@ async def test_create_and_delete_solver_job(
     )
     assert resp.status_code == status.HTTP_204_NO_CONTENT
 
+    mock_webserver_router = (
+        mocked_backend_services_apis_for_create_and_delete_solver_job["webserver"]
+    )
+    assert mock_webserver_router
+    assert mock_webserver_router["delete_project"].called
+
+    mock_catalog_router = mocked_backend_services_apis_for_create_and_delete_solver_job[
+        "catalog"
+    ]
+    assert mock_catalog_router
+    assert mock_catalog_router["get_service"].called
+
+    # NOTE: ideas for further tests
     # Run job and try to delete while running
     # Run a job and delete when finished
