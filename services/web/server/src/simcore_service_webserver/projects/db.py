@@ -18,6 +18,7 @@ from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_comments import CommentID, ProjectsCommentsDB
 from models_library.projects_nodes import Node
+from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pydantic import ValidationError, parse_obj_as
 from pydantic.types import PositiveInt
@@ -27,8 +28,8 @@ from servicelib.logging_utils import get_log_record_extra, log_context
 from simcore_postgres_database.errors import UniqueViolation
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.utils_projects_nodes import (
-    ProjectsNodeCreate,
-    ProjectsNodesRepo,
+    ProjectNodeCreate,
+    ProjectNodesRepo,
 )
 from simcore_postgres_database.webserver_models import ProjectType, projects, users
 from sqlalchemy import desc, func, literal_column
@@ -673,11 +674,16 @@ class ProjectDBAPI(BaseProjectDB):
                 )
 
     async def add_project_node(
-        self, project_id: ProjectID, node: ProjectsNodeCreate
+        self, project_id: ProjectID, node_id: NodeID, node: ProjectNodeCreate
     ) -> None:
-        project_nodes_repo = ProjectsNodesRepo(project_uuid=project_id)
+        project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
         async with self.engine.acquire() as conn:
-            project_nodes_repo.create(conn, node=node)
+            await project_nodes_repo.add(conn, node_id=node_id, node=node)
+
+    async def remove_project_node(self, project_id: ProjectID, node_id: NodeID) -> None:
+        project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
+        async with self.engine.acquire() as conn:
+            await project_nodes_repo.delete(conn, node_id=node_id)
 
     async def node_id_exists(self, node_id: str) -> bool:
         """Returns True if the node id exists in any of the available projects"""
