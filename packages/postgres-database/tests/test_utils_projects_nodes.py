@@ -82,9 +82,10 @@ async def test_create_projects_nodes_raises_if_project_not_found(
     projects_nodes_repo_of_invalid_project: ProjectNodesRepo,
     create_fake_projects_node: Callable[..., ProjectNodeCreate],
 ):
+    node_create = create_fake_projects_node()
     with pytest.raises(ProjectNodesProjectNotFound):
-        await projects_nodes_repo_of_invalid_project.create(
-            connection, node=create_fake_projects_node()
+        await projects_nodes_repo_of_invalid_project.add(
+            connection, node_id=node_create.node_id, node=node_create
         )
 
 
@@ -93,8 +94,9 @@ async def test_create_projects_nodes(
     projects_nodes_repo: ProjectNodesRepo,
     create_fake_projects_node: Callable[..., ProjectNodeCreate],
 ):
-    new_node = await projects_nodes_repo.create(
-        connection, node=create_fake_projects_node()
+    node_create = create_fake_projects_node()
+    new_node = await projects_nodes_repo.add(
+        connection, node_id=node_create.node_id, node=node_create
     )
     assert new_node
 
@@ -104,14 +106,17 @@ async def test_create_twice_same_projects_nodes_raises(
     projects_nodes_repo: ProjectNodesRepo,
     create_fake_projects_node: Callable[..., ProjectNodeCreate],
 ):
-    new_node = await projects_nodes_repo.create(
-        connection, node=create_fake_projects_node()
+    node_create = create_fake_projects_node()
+    new_node = await projects_nodes_repo.add(
+        connection, node_id=node_create.node_id, node=node_create
     )
 
     assert new_node
     with pytest.raises(ProjectNodesDuplicateNode):
-        await projects_nodes_repo.create(
-            connection, node=ProjectNodeCreate(node_id=new_node.node_id)
+        await projects_nodes_repo.add(
+            connection,
+            node_id=node_create.node_id,
+            node=ProjectNodeCreate(node_id=new_node.node_id),
         )
 
 
@@ -132,10 +137,14 @@ async def test_list_project_nodes(
     assert nodes == []
 
     # add some nodes
-    created_nodes = [
-        await projects_nodes_repo.create(connection, node=create_fake_projects_node())
-        for n in range(randint(3, 12))
-    ]
+    created_nodes = []
+    for n in range(randint(3, 12)):
+        node_create = create_fake_projects_node()
+        created_nodes.append(
+            await projects_nodes_repo.add(
+                connection, node_id=node_create.node_id, node=node_create
+            )
+        )
 
     nodes = await projects_nodes_repo.list(connection)
     assert nodes
@@ -167,8 +176,9 @@ async def test_get_project_node(
     projects_nodes_repo: ProjectNodesRepo,
     create_fake_projects_node: Callable[..., ProjectNodeCreate],
 ):
-    new_node = await projects_nodes_repo.create(
-        connection, node=create_fake_projects_node()
+    node_create = create_fake_projects_node()
+    new_node = await projects_nodes_repo.add(
+        connection, node_id=node_create.node_id, node=node_create
     )
 
     received_node = await projects_nodes_repo.get(connection, node_id=new_node.node_id)
@@ -182,8 +192,9 @@ async def test_update_project_node_of_invalid_node_raises(
     create_fake_projects_node: Callable[..., ProjectNodeCreate],
     faker: Faker,
 ):
-    new_node = await projects_nodes_repo.create(
-        connection, node=create_fake_projects_node()
+    node_create = create_fake_projects_node()
+    new_node = await projects_nodes_repo.add(
+        connection, node_id=node_create.node_id, node=node_create
     )
     assert new_node.created == new_node.modified
     with pytest.raises(ProjectNodesNodeNotFound):
@@ -200,8 +211,9 @@ async def test_update_project_node(
     create_fake_projects_node: Callable[..., ProjectNodeCreate],
     faker: Faker,
 ):
-    new_node = await projects_nodes_repo.create(
-        connection, node=create_fake_projects_node()
+    node_create = create_fake_projects_node()
+    new_node = await projects_nodes_repo.add(
+        connection, node_id=node_create.node_id, node=node_create
     )
     assert new_node.created == new_node.modified
     required_resources = {faker.pystr(): faker.pyint()}
@@ -232,8 +244,9 @@ async def test_delete_node(
     projects_nodes_repo: ProjectNodesRepo,
     create_fake_projects_node: Callable[..., ProjectNodeCreate],
 ):
-    new_node = await projects_nodes_repo.create(
-        connection, node=create_fake_projects_node()
+    node_create = node_create = create_fake_projects_node()
+    new_node = await projects_nodes_repo.add(
+        connection, node_id=node_create.node_id, node=node_create
     )
 
     received_node = await projects_nodes_repo.get(connection, node_id=new_node.node_id)
@@ -252,8 +265,9 @@ async def test_share_nodes_between_projects(
     create_fake_projects_node: Callable[..., ProjectNodeCreate],
 ):
     # create a project node
-    created_node = await projects_nodes_repo.create(
-        connection, node=create_fake_projects_node()
+    node_create = create_fake_projects_node()
+    created_node = await projects_nodes_repo.add(
+        connection, node_id=node_create.node_id, node=node_create
     )
     assert (
         await projects_nodes_repo.get(connection, node_id=created_node.node_id)
@@ -266,7 +280,7 @@ async def test_share_nodes_between_projects(
     second_projects_nodes_repo = ProjectNodesRepo(project_uuid=second_project.uuid)
     assert second_projects_nodes_repo
     attached_node = await second_projects_nodes_repo.add(
-        connection, node_id=created_node.node_id
+        connection, node_id=created_node.node_id, node=None
     )
     assert attached_node
     assert attached_node == await second_projects_nodes_repo.get(
@@ -304,8 +318,9 @@ async def test_delete_project_delete_all_nodes(
     create_fake_projects_node: Callable[..., ProjectNodeCreate],
 ):
     # create a project node
-    new_node = await projects_nodes_repo.create(
-        connection, node=create_fake_projects_node()
+    node_create = create_fake_projects_node()
+    new_node = await projects_nodes_repo.add(
+        connection, node_id=node_create.node_id, node=node_create
     )
     received_node = await projects_nodes_repo.get(connection, node_id=new_node.node_id)
     assert received_node == new_node
@@ -341,8 +356,9 @@ async def test_multiple_creation_deletion_of_nodes(
             project = await create_fake_project(connection, registered_user)
             projects_nodes_repo = ProjectNodesRepo(project_uuid=project.uuid)
             for _ in range(11):
-                await projects_nodes_repo.create(
-                    connection, node=create_fake_projects_node()
+                node_create = create_fake_projects_node()
+                await projects_nodes_repo.add(
+                    connection, node_id=node_create.node_id, node=node_create
                 )
             list_nodes = await projects_nodes_repo.list(connection)
             assert list_nodes

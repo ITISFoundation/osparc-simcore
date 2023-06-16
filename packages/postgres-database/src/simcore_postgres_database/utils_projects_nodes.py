@@ -50,73 +50,58 @@ class ProjectNode(ProjectNodeCreate):
 class ProjectNodesRepo:
     project_uuid: uuid.UUID
 
-    async def create(
-        self, connection: SAConnection, *, node: ProjectNodeCreate
+    async def add(
+        self,
+        connection: SAConnection,
+        *,
+        node_id: uuid.UUID,
+        node: ProjectNodeCreate | None,
     ) -> ProjectNode:
-        """creates a new entry in *projects_nodes* and *projects_to_projects_nodes* tables
+        """creates a new entry in *projects_nodes* and *projects_to_projects_nodes* tables or
+        attaches an existing one if node is set to `None`
 
         NOTE: Do not use this in an asyncio.gather call as this will fail!
 
         Raises:
             ProjectNodesProjectNotFound: in case the project_uuid does not exist
             ProjectNodesDuplicateNode: in case the node already exists
+            ProjectsNodesNodeNotFound: in case the node does not exist
 
         """
+        created_node = None
         async with connection.begin():
             try:
-                result = await connection.execute(
-                    projects_nodes.insert()
-                    .values(**asdict(node))
-                    .returning(literal_column("*"))
-                )
-                created_node_db = await result.first()
-                assert created_node_db  # nosec
-                created_node = ProjectNode(**dict(created_node_db.items()))
+                if node:
+                    result = await connection.execute(
+                        projects_nodes.insert()
+                        .values(**asdict(node))
+                        .returning(literal_column("*"))
+                    )
+                    created_node_db = await result.first()
+                    assert created_node_db  # nosec
+                    created_node = ProjectNode(**dict(created_node_db.items()))
+                else:
+                    created_node = await self._get_node(connection, node_id=node_id)
 
                 result = await connection.execute(
                     projects_to_projects_nodes.insert().values(
                         project_uuid=f"{self.project_uuid}",
-                        node_id=f"{created_node.node_id}",
+                        node_id=f"{node_id}",
                     )
                 )
                 assert result.rowcount == 1  # nosec
+
                 return created_node
             except ForeignKeyViolation as exc:
-                # this happens when the project does not exist
+                # this happens when the project does not exist, as we first check the node exists
                 raise ProjectNodesProjectNotFound(
                     f"Project {self.project_uuid} not found"
                 ) from exc
             except UniqueViolation as exc:
-                # this happens if the node already exists
+                # this happens if the node already exists on creation
                 raise ProjectNodesDuplicateNode(
-                    f"Project node {node.node_id} already exists"
+                    f"Project node {node_id} already exists"
                 ) from exc
-
-    async def add(
-        self, connection: SAConnection, *, node_id: uuid.UUID
-    ) -> ProjectNode:
-        """adds a node with node_id to the current project
-
-        NOTE: Do not use this in an asyncio.gather call as this will fail!
-
-        Raises:
-            ProjectsNodesOperationNotAllowed: _description_
-        """
-        try:
-            result = await connection.execute(
-                projects_to_projects_nodes.insert().values(
-                    project_uuid=f"{self.project_uuid}",
-                    node_id=f"{node_id}",
-                )
-            )
-            assert result.rowcount == 1  # nosec
-
-            return await self.get(connection, node_id=node_id)
-
-        except ForeignKeyViolation as exc:
-            raise ProjectNodesOperationNotAllowed(
-                f"Node {node_id=} cannot be added to project {self.project_uuid}"
-            ) from exc
 
     async def list(self, connection: SAConnection) -> list[ProjectNode]:
         """list the nodes in the current project
@@ -134,9 +119,7 @@ class ProjectNodesRepo:
         ]
         return nodes
 
-    async def get(
-        self, connection: SAConnection, *, node_id: uuid.UUID
-    ) -> ProjectNode:
+    async def get(self, connection: SAConnection, *, node_id: uuid.UUID) -> ProjectNode:
         """get a node in the current project
 
         NOTE: Do not use this in an asyncio.gather call as this will fail!
@@ -206,6 +189,21 @@ class ProjectNodesRepo:
                     projects_nodes.c.node_id == f"{node_id}"
                 )
                 await connection.execute(delete_stmt)
+
+    async def _get_node(
+        self, connection: SAConnection, *, node_id: uuid.UUID
+    ) -> ProjectNode:
+        get_stmt = sqlalchemy.select(projects_nodes).where(
+            projects_nodes.c.node_id == f"{node_id}"
+        )
+
+        result = await connection.execute(get_stmt)
+        assert result  # nosec
+        row = await result.first()
+        if row is None:
+            raise ProjectNodesNodeNotFound(f"Node with {node_id} not found")
+        assert row  # nosec
+        return ProjectNode(**dict(row.items()))
 
     @staticmethod
     def _join_projects_to_projects_nodes():
