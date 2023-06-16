@@ -14,10 +14,11 @@ from models_library.api_schemas_catalog import ServiceAccessRightsGet
 from models_library.groups import EVERYONE_GROUP_ID
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
+from models_library.projects_nodes_io import NodeIDStr
 from models_library.services import ServiceKey, ServiceKeyVersion, ServiceVersion
 from models_library.users import GroupID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, Field, HttpUrl, parse_obj_as
 from servicelib.aiohttp.long_running_tasks.server import (
     TaskProgress,
     start_long_running_task,
@@ -119,9 +120,7 @@ async def create_node(request: web.Request) -> web.Response:
             body.service_id,
         )
     }
-    return web.json_response(
-        {"data": data}, status=web.HTTPCreated.status_code, dumps=json_dumps
-    )
+    return envelope_json_response(data, status_cls=web.HTTPCreated)
 
 
 class _NodePathParams(ProjectPathParams):
@@ -163,22 +162,19 @@ async def get_node(request: web.Request) -> web.Response:
 
         if "data" not in service_data:
             # dynamic-service NODE STATE
-            return web.json_response({"data": service_data}, dumps=json_dumps)
+            return envelope_json_response(service_data)
 
         # LEGACY-service NODE STATE
-        return web.json_response({"data": service_data["data"]}, dumps=json_dumps)
+        return envelope_json_response(service_data["data"])
 
     except DirectorServiceError as exc:
         if exc.status == web.HTTPNotFound.status_code:
             # the service was not started, so it's state is not started or idle
-            return web.json_response(
+            return envelope_json_response(
                 {
-                    "data": {
-                        "service_state": "idle",
-                        "service_uuid": f"{path_params.node_id}",
-                    }
-                },
-                dumps=json_dumps,
+                    "service_state": "idle",
+                    "service_uuid": f"{path_params.node_id}",
+                }
             )
         raise
 
@@ -200,7 +196,7 @@ async def delete_node(request: web.Request) -> web.Response:
         request,
         path_params.project_id,
         req_ctx.user_id,
-        f"{path_params.node_id}",
+        parse_obj_as(NodeIDStr, path_params.node_id),
     )
 
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
@@ -339,7 +335,7 @@ async def get_node_resources(request: web.Request) -> web.Response:
         project=project,
         node_id=path_params.node_id,
     )
-    return web.json_response({"data": resources}, dumps=json_dumps)
+    return envelope_json_response(resources)
 
 
 @routes.put(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}/resources")
@@ -368,7 +364,7 @@ async def replace_node_resources(request: web.Request) -> web.Response:
     #     request.app, project=project, node_id=node_id
     # )
 
-    # return web.json_response({"data": new_node_resources}, dumps=json_dumps)
+    # return envelope_json_response(new_node_resources)
 
 
 class _ServicesAccessQuery(BaseModel):
@@ -455,9 +451,7 @@ async def get_project_services_access_for_gid(request: web.Request) -> web.Respo
         inaccessible_services=project_inaccessible_services,
     )
 
-    return web.json_response(
-        {"data": project_group_access.dict(exclude_none=True)}, dumps=json_dumps
-    )
+    return envelope_json_response(project_group_access.dict(exclude_none=True))
 
 
 class _HomePageScreenshot(BaseModel):
