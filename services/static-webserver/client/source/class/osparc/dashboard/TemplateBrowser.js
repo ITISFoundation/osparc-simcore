@@ -140,21 +140,13 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       osparc.utils.Study.createStudyFromTemplate(templateData, this._loadingPage)
         .then(studyId => {
           this._hideLoadingPage();
-          this.__startStudyById(studyId);
+          this._startStudyById(studyId);
         })
         .catch(err => {
           this._hideLoadingPage();
           osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
           console.error(err);
         });
-    },
-
-    __startStudyById: function(studyId) {
-      if (!this._checkLoggedIn()) {
-        return;
-      }
-
-      this.fireDataEvent("startStudy", studyId);
     },
 
     // LAYOUT //
@@ -338,7 +330,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     },
 
     __editTemplate: function(studyData) {
-      this.__startStudyById(studyData.uuid);
+      this._startStudyById(studyData.uuid);
     },
 
     __doDeleteTemplate: function(studyData) {

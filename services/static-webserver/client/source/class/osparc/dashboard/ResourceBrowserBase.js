@@ -39,7 +39,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
   },
 
   events: {
-    "startStudy": "qx.event.type.Data",
     "publishTemplate": "qx.event.type.Data"
   },
 
@@ -302,8 +301,12 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
-    _startStudyById: function() {
-      throw new Error("Abstract method called!");
+    _startStudyById: function(studyId) {
+      if (!this._checkLoggedIn()) {
+        return;
+      }
+
+      osparc.desktop.MainPageHandler.getInstance().startStudy(studyId);
     },
 
     _createStudyFromTemplate: function() {

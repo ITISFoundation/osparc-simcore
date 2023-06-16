@@ -218,20 +218,6 @@ qx.Class.define("osparc.desktop.MainPage", {
 
     __attachHandlers: function() {
       const studyBrowser = this.__dashboard.getStudyBrowser();
-      const templateBrowser = this.__dashboard.getTemplateBrowser();
-      const serviceBrowser = this.__dashboard.getServiceBrowser();
-      [
-        studyBrowser,
-        templateBrowser,
-        serviceBrowser
-      ].forEach(browser => {
-        if (browser) {
-          browser.addListener("startStudy", e => {
-            const startStudyId = e.getData();
-            osparc.desktop.MainPageHandler.getInstance().startStudy(startStudyId);
-          }, this);
-        }
-      });
       studyBrowser.addListener("publishTemplate", e => this.__publishTemplate(e.getData()));
     },
 

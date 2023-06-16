@@ -340,14 +340,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
-    _startStudyById: function(studyId) {
-      if (!this._checkLoggedIn()) {
-        return;
-      }
-
-      this.fireDataEvent("startStudy", studyId);
-    },
-
     __attachEventHandlers: function() {
       const socket = osparc.wrapper.WebSocket.getInstance();
       const slotName = "projectStateUpdated";
