@@ -3,10 +3,10 @@
 """
 
 import asyncio
+import functools
 import json
 import logging
 from typing import Any
-from uuid import uuid4
 
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPNotFound
@@ -27,6 +27,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
+from servicelib.aiohttp.typing_extension import Handler
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
@@ -56,6 +57,18 @@ from .exceptions import (
 log = logging.getLogger(__name__)
 
 
+def _handle_project_nodes_exceptions(handler: Handler):
+    @functools.wraps(handler)
+    async def wrapper(request: web.Request) -> web.StreamResponse:
+        try:
+            return await handler(request)
+
+        except (ProjectNotFoundError, NodeNotFoundError) as exc:
+            raise web.HTTPNotFound(reason=f"{exc}") from exc
+
+    return wrapper
+
+
 #
 # projects/*/nodes COLLECTION -------------------------
 #
@@ -72,6 +85,7 @@ class _CreateNodeBody(BaseModel):
 @routes.post(f"/{VTAG}/projects/{{project_id}}/nodes")
 @login_required
 @permission_required("project.node.create")
+@_handle_project_nodes_exceptions
 async def create_node(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
@@ -87,31 +101,27 @@ async def create_node(request: web.Request) -> web.Response:
         raise web.HTTPNotAcceptable(
             reason=f"Service {body.service_key}:{body.service_version} is deprecated"
         )
-    try:
-        # ensure the project exists
-        project_data = await projects_api.get_project_for_user(
-            request.app,
-            project_uuid=f"{path_params.project_id}",
-            user_id=req_ctx.user_id,
+
+    # ensure the project exists
+    project_data = await projects_api.get_project_for_user(
+        request.app,
+        project_uuid=f"{path_params.project_id}",
+        user_id=req_ctx.user_id,
+    )
+    data = {
+        "node_id": await projects_api.add_project_node(
+            request,
+            project_data,
+            req_ctx.user_id,
+            req_ctx.product_name,
+            body.service_key,
+            body.service_version,
+            body.service_id,
         )
-        data = {
-            "node_id": await projects_api.add_project_node(
-                request,
-                project_data,
-                req_ctx.user_id,
-                req_ctx.product_name,
-                body.service_key,
-                body.service_version,
-                body.service_id,
-            )
-        }
-        return web.json_response(
-            {"data": data}, status=web.HTTPCreated.status_code, dumps=json_dumps
-        )
-    except ProjectNotFoundError as exc:
-        raise web.HTTPNotFound(
-            reason=f"Project {path_params.project_id} not found"
-        ) from exc
+    }
+    return web.json_response(
+        {"data": data}, status=web.HTTPCreated.status_code, dumps=json_dumps
+    )
 
 
 class _NodePathParams(ProjectPathParams):
@@ -121,6 +131,7 @@ class _NodePathParams(ProjectPathParams):
 @routes.get(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}")
 @login_required
 @permission_required("project.node.read")
+@_handle_project_nodes_exceptions
 async def get_node(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_NodePathParams, request)
@@ -156,12 +167,7 @@ async def get_node(request: web.Request) -> web.Response:
 
         # LEGACY-service NODE STATE
         return web.json_response({"data": service_data["data"]}, dumps=json_dumps)
-    except ProjectNotFoundError as exc:
-        raise web.HTTPNotFound(
-            reason=f"Project {path_params.project_id} not found"
-        ) from exc
-    except NodeNotFoundError as exc:
-        raise web.HTTPNotFound(reason=f"Node {path_params.node_id} not found") from exc
+
     except DirectorServiceError as exc:
         if exc.status == web.HTTPNotFound.status_code:
             # the service was not started, so it's state is not started or idle
@@ -179,36 +185,31 @@ async def get_node(request: web.Request) -> web.Response:
 
 @login_required
 @permission_required("project.node.delete")
+@_handle_project_nodes_exceptions
 async def delete_node(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_NodePathParams, request)
 
-    try:
-        # ensure the project exists
+    # ensure the project exists
+    await projects_api.get_project_for_user(
+        request.app,
+        project_uuid=f"{path_params.project_id}",
+        user_id=req_ctx.user_id,
+    )
+    await projects_api.delete_project_node(
+        request,
+        path_params.project_id,
+        req_ctx.user_id,
+        f"{path_params.node_id}",
+    )
 
-        await projects_api.get_project_for_user(
-            request.app,
-            project_uuid=f"{path_params.project_id}",
-            user_id=req_ctx.user_id,
-        )
-
-        await projects_api.delete_project_node(
-            request,
-            f"{path_params.project_id}",
-            req_ctx.user_id,
-            f"{path_params.node_id}",
-        )
-
-        raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
-    except ProjectNotFoundError as exc:
-        raise web.HTTPNotFound(
-            reason=f"Project {path_params.project_id} not found"
-        ) from exc
+    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 @routes.post(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:retrieve")
 @login_required
 @permission_required("project.node.read")
+@_handle_project_nodes_exceptions
 async def retrieve_node(request: web.Request) -> web.Response:
     """Has only effect on nodes associated to dynamic services"""
     path_params = parse_request_path_parameters_as(_NodePathParams, request)
@@ -228,6 +229,7 @@ async def retrieve_node(request: web.Request) -> web.Response:
 @routes.post(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:start")
 @login_required
 @permission_required("project.update")
+@_handle_project_nodes_exceptions
 async def start_node(request: web.Request) -> web.Response:
     """Has only effect on nodes associated to dynamic services"""
     req_ctx = RequestContext.parse_obj(request)
@@ -242,32 +244,20 @@ async def start_node(request: web.Request) -> web.Response:
         )
 
         raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+
     except ProjectStartsTooManyDynamicNodes as exc:
         raise web.HTTPConflict(reason=f"{exc}") from exc
-    except ProjectNotFoundError as exc:
-        raise web.HTTPNotFound(
-            reason=f"Project {path_params.project_id} not found"
-        ) from exc
-    except NodeNotFoundError as exc:
-        raise web.HTTPNotFound(
-            reason=f"Node {path_params.node_id} not found in project"
-        ) from exc
 
 
 async def _stop_dynamic_service_with_progress(
     _task_progress: TaskProgress, path_params: _NodePathParams, *args, **kwargs
 ):
+    # NOTE: _handle_project_nodes_exceptions only decorate handlers
     try:
         await api.stop_dynamic_service(*args, **kwargs)
         raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
-    except ProjectNotFoundError as exc:
-        raise web.HTTPNotFound(
-            reason=f"Project {path_params.project_id} not found"
-        ) from exc
-    except NodeNotFoundError as exc:
-        raise web.HTTPNotFound(
-            reason=f"Node {path_params.node_id} not found in project"
-        ) from exc
+    except (ProjectNotFoundError, NodeNotFoundError) as exc:
+        raise web.HTTPNotFound(reason=f"{exc}") from exc
     except DirectorServiceError as exc:
         if exc.status == web.HTTPNotFound.status_code:
             # already stopped, it's all right
@@ -278,13 +268,16 @@ async def _stop_dynamic_service_with_progress(
 @routes.post(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:stop")
 @login_required
 @permission_required("project.update")
+@_handle_project_nodes_exceptions
 async def stop_node(request: web.Request) -> web.Response:
     """Has only effect on nodes associated to dynamic services"""
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_NodePathParams, request)
 
     save_state = await ProjectDBAPI.get_from_app_context(request.app).has_permission(
-        user_id=req_ctx.user_id, project_uuid=path_params.project_id, permission="write"
+        user_id=req_ctx.user_id,
+        project_uuid=f"{path_params.project_id}",
+        permission="write",
     )
 
     user_role = await get_user_role(request.app, req_ctx.user_id)
@@ -309,6 +302,7 @@ async def stop_node(request: web.Request) -> web.Response:
 @routes.post(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:restart")
 @login_required
 @permission_required("project.node.read")
+@_handle_project_nodes_exceptions
 async def restart_node(request: web.Request) -> web.Response:
     """Has only effect on nodes associated to dynamic services"""
 
@@ -327,39 +321,31 @@ async def restart_node(request: web.Request) -> web.Response:
 @routes.get(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}/resources")
 @login_required
 @permission_required("project.node.read")
+@_handle_project_nodes_exceptions
 async def get_node_resources(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_NodePathParams, request)
 
-    try:
-        # ensure the project exists
-        project = await projects_api.get_project_for_user(
-            request.app,
-            project_uuid=f"{path_params.project_id}",
-            user_id=req_ctx.user_id,
-        )
+    # ensure the project exists
+    project = await projects_api.get_project_for_user(
+        request.app,
+        project_uuid=f"{path_params.project_id}",
+        user_id=req_ctx.user_id,
+    )
 
-        resources = await projects_api.get_project_node_resources(
-            request.app,
-            user_id=req_ctx.user_id,
-            project=project,
-            node_id=path_params.node_id,
-        )
-        return web.json_response({"data": resources}, dumps=json_dumps)
-
-    except ProjectNotFoundError as exc:
-        raise web.HTTPNotFound(
-            reason=f"Project {path_params.project_id} not found"
-        ) from exc
-    except NodeNotFoundError as exc:
-        raise web.HTTPNotFound(
-            reason=f"Node {path_params.node_id} not found in project"
-        ) from exc
+    resources = await projects_api.get_project_node_resources(
+        request.app,
+        user_id=req_ctx.user_id,
+        project=project,
+        node_id=path_params.node_id,
+    )
+    return web.json_response({"data": resources}, dumps=json_dumps)
 
 
 @routes.put(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}/resources")
 @login_required
 @permission_required("project.node.update")
+@_handle_project_nodes_exceptions
 async def replace_node_resources(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_NodePathParams, request)
@@ -369,28 +355,20 @@ async def replace_node_resources(request: web.Request) -> web.Response:
     except json.JSONDecodeError as exc:
         raise web.HTTPBadRequest(reason=f"Invalid request body: {exc}") from exc
 
-    try:
-        # ensure the project exists
-        _project = await projects_api.get_project_for_user(
-            request.app,
-            project_uuid=f"{path_params.project_id}",
-            user_id=req_ctx.user_id,
-        )
-        raise web.HTTPNotImplemented(reason="Not yet implemented!")
-        # new_node_resources = await projects_api.set_project_node_resources(
-        #     request.app, project=project, node_id=node_id
-        # )
+    # ensure the project exists
+    _project = await projects_api.get_project_for_user(
+        request.app,
+        project_uuid=f"{path_params.project_id}",
+        user_id=req_ctx.user_id,
+    )
+    raise web.HTTPNotImplemented(reason="Not yet implemented!")
+    # NOTE: SAN? This your code?
+    #
+    # new_node_resources = await projects_api.set_project_node_resources(
+    #     request.app, project=project, node_id=node_id
+    # )
 
-        # return web.json_response({"data": new_node_resources}, dumps=json_dumps)
-
-    except ProjectNotFoundError as exc:
-        raise web.HTTPNotFound(
-            reason=f"Project {path_params.project_id} not found"
-        ) from exc
-    except NodeNotFoundError as exc:
-        raise web.HTTPNotFound(
-            reason=f"Node {path_params.node_id} not found in project"
-        ) from exc
+    # return web.json_response({"data": new_node_resources}, dumps=json_dumps)
 
 
 class _ServicesAccessQuery(BaseModel):
@@ -409,6 +387,7 @@ class _ProjectGroupAccess(BaseModel):
 )
 @login_required
 @permission_required("project.read")
+@_handle_project_nodes_exceptions
 async def get_project_services_access_for_gid(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
@@ -498,6 +477,7 @@ class _ProjectNodeHomePage(BaseModel):
 )
 @login_required
 @permission_required("project.read")
+@_handle_project_nodes_exceptions
 async def list_project_node_homepages(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
@@ -507,12 +487,18 @@ async def list_project_node_homepages(request: web.Request) -> web.Response:
 
     if request.app[APP_SETTINGS_KEY].WEBSERVER_DEV_FEATURES_ENABLED:
         # TODO: get node_ids of project
+        project = await projects_api.get_project_for_user(
+            request.app,
+            project_uuid=f"{path_params.project_id}",
+            user_id=req_ctx.user_id,
+        )
+
         # TODO: get for each homepage info
         home_pages_per_node = [
             _ProjectNodeHomePage(
-                project_id=path_params.project_id, node_id=uuid4(), screenshots=[]
+                project_id=path_params.project_id, node_id=node_id, screenshots=[]
             )
-            for _ in range(2)
+            for node_id in project.get("workbench", {}).keys()
         ]
 
     return envelope_json_response(home_pages_per_node)
@@ -524,6 +510,7 @@ async def list_project_node_homepages(request: web.Request) -> web.Response:
 )
 @login_required
 @permission_required("project.read")
+@_handle_project_nodes_exceptions
 async def get_project_node_homepage(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_NodePathParams, request)
