@@ -108,7 +108,7 @@ qx.Class.define("osparc.auth.Data", {
 
   members: {
     __applyRole: function(role) {
-      if (role && role.includes("user", "tester", "admin")) {
+      if (role && ["user", "tester", "admin"].includes(role)) {
         this.setGuest(false);
       } else {
         this.setGuest(true);
