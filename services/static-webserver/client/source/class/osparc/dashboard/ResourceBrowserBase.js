@@ -349,11 +349,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         win.close();
         this.fireDataEvent("publishTemplate", e.getData());
       });
-      moreOpts.addListener("openStudy", e => {
-        win.close();
-        const openStudyData = e.getData();
-        this._startStudyById(openStudyData["uuid"]);
-      });
+      moreOpts.addListener("openingStudy", () => win.close());
       moreOpts.addListener("openTemplate", e => {
         win.close();
         const templateData = e.getData();

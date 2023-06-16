@@ -128,7 +128,6 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
               source = "@FontAwesome5Solid/copy/14";
               break;
             case "ANNOTATION_NOTE":
-              // source = "@FontAwesome5Solid/note-sticky/14";
               source = "@FontAwesome5Solid/file/14";
               break;
           }
@@ -207,7 +206,8 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
                 const studyDataCopy = osparc.data.model.Study.deepCloneStudyObject(studyData);
                 studyDataCopy["resourceType"] = notification.getCategory() === "STUDY_SHARED" ? "study" : "template";
                 const moreOpts = new osparc.dashboard.ResourceMoreOptions(studyData);
-                osparc.dashboard.ResourceMoreOptions.popUpInWindow(moreOpts);
+                const win = osparc.dashboard.ResourceMoreOptions.popUpInWindow(moreOpts);
+                moreOpts.addListener("openingStudy", () => win.close());
               }
             });
           break;
