@@ -423,7 +423,7 @@ paths:
                       name:
                         title: Name
                         type: string
-                        description: Code name to the front-end page
+                        description: Code name to the front-end page. Ideally a PageStr
                       parameters:
                         title: _PageParams
                         type: object
@@ -545,7 +545,7 @@ paths:
                       name:
                         title: Name
                         type: string
-                        description: Code name to the front-end page
+                        description: Code name to the front-end page. Ideally a PageStr
                       parameters:
                         title: CodePageParams
                         required:
@@ -5331,7 +5331,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/put/responses/200/content/application~1json/schema'
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/put/requestBody/content/application~1json/schema'
+                  error:
+                    nullable: true
+                    default: null
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
     put:
@@ -5367,15 +5375,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - data
-                properties:
-                  data:
-                    $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/put/requestBody/content/application~1json/schema'
-                  error:
-                    nullable: true
-                    default: null
+                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/get/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   '/projects/{project_id}/nodes/-/services:access':
@@ -5447,6 +5447,105 @@ paths:
                           description: This pair uniquely identifies a services
                   error:
                     title: Error
+  '/projects/{project_id}/nodes/-/homepage':
+    get:
+      tags:
+        - project
+      summary: Lists info with all node homepages info
+      operationId: list_project_node_homepages
+      parameters:
+        - required: true
+          schema:
+            title: Project Id
+            type: string
+            format: uuid
+          name: project_id
+          in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: 'Envelope[list[__main__._ProjectNodeHomePage]]'
+                type: object
+                properties:
+                  data:
+                    title: Data
+                    type: array
+                    items:
+                      $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1homepage/get/responses/200/content/application~1json/schema/properties/data'
+                  error:
+                    title: Error
+  '/projects/{project_id}/nodes/{node_id}/homepage':
+    get:
+      tags:
+        - project
+      summary: Gets info on a given node's homepage
+      operationId: get_project_node_homepage
+      parameters:
+        - required: true
+          schema:
+            title: Project Id
+            type: string
+            format: uuid
+          name: project_id
+          in: path
+        - required: true
+          schema:
+            title: Node Id
+            type: string
+            format: uuid
+          name: node_id
+          in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: 'Envelope[_ProjectNodeHomePage]'
+                type: object
+                properties:
+                  data:
+                    title: _ProjectNodeHomePage
+                    required:
+                      - project_id
+                      - node_id
+                    type: object
+                    properties:
+                      project_id:
+                        title: Project Id
+                        type: string
+                        format: uuid
+                      node_id:
+                        title: Node Id
+                        type: string
+                        format: uuid
+                      screenshots:
+                        title: Screenshots
+                        type: array
+                        items:
+                          title: _HomePageScreenshot
+                          required:
+                            - thumbnail_url
+                            - file_url
+                          type: object
+                          properties:
+                            thumbnail_url:
+                              title: Thumbnail Url
+                              maxLength: 2083
+                              minLength: 1
+                              type: string
+                              format: uri
+                            file_url:
+                              title: File Url
+                              maxLength: 2083
+                              minLength: 1
+                              type: string
+                              format: uri
+                  error:
+                    title: Error
   '/projects/{project_id}/inputs':
     get:
       tags:
@@ -5468,7 +5567,7 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[dict[uuid.UUID, simcore_service_webserver.projects._handlers__ports.ProjectInputGet]]'
+                title: 'Envelope[dict[uuid.UUID, simcore_service_webserver.projects._handlers_project_ports.ProjectInputGet]]'
                 type: object
                 properties:
                   data:
@@ -5559,7 +5658,7 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[dict[uuid.UUID, simcore_service_webserver.projects._handlers__ports.ProjectOutputGet]]'
+                title: 'Envelope[dict[uuid.UUID, simcore_service_webserver.projects._handlers_project_ports.ProjectOutputGet]]'
                 type: object
                 properties:
                   data:
@@ -5607,7 +5706,7 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[list[simcore_service_webserver.projects._handlers__ports.ProjectMetadataPortGet]]'
+                title: 'Envelope[list[simcore_service_webserver.projects._handlers_project_ports.ProjectMetadataPortGet]]'
                 type: object
                 properties:
                   data:
@@ -6813,7 +6912,7 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[list[simcore_service_webserver.tags_handlers.TagGet]]'
+                title: 'Envelope[list[simcore_service_webserver.tags._handlers.TagGet]]'
                 type: object
                 properties:
                   data:
@@ -7632,7 +7731,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/put/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/get/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   '/clusters:ping':
@@ -8146,7 +8245,7 @@ paths:
                       properties:
                         key:
                           title: Key
-                          pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+                          pattern: '^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$'
                           type: string
                           description: Service key ID
                         title:
@@ -8303,7 +8402,7 @@ paths:
         - required: true
           schema:
             title: Viewer Key
-            pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+            pattern: '^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$'
             type: string
           name: viewer_key
           in: query
@@ -8343,7 +8442,7 @@ paths:
               properties:
                 key:
                   title: Key
-                  pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+                  pattern: '^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$'
                   type: string
                   description: distinctive name for the node based on the docker registry path
                 version:

@@ -28,6 +28,55 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope__ProjectGroupAccess_'
+  /projects/{project_id}/nodes/-/homepage:
+    get:
+      tags:
+      - project
+      summary: Lists info with all node homepages info
+      operationId: list_project_node_homepages
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list___main__._ProjectNodeHomePage__'
+  /projects/{project_id}/nodes/{node_id}/homepage:
+    get:
+      tags:
+      - project
+      summary: Gets info on a given node's homepage
+      operationId: get_project_node_homepage
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      - required: true
+        schema:
+          title: Node Id
+          type: string
+          format: uuid
+        name: node_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope__ProjectNodeHomePage_'
 components:
   schemas:
     Envelope__ProjectGroupAccess_:
@@ -36,6 +85,25 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/_ProjectGroupAccess'
+        error:
+          title: Error
+    Envelope__ProjectNodeHomePage_:
+      title: Envelope[_ProjectNodeHomePage]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/_ProjectNodeHomePage'
+        error:
+          title: Error
+    Envelope_list___main__._ProjectNodeHomePage__:
+      title: Envelope[list[__main__._ProjectNodeHomePage]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/_ProjectNodeHomePage'
         error:
           title: Error
     ServiceKeyVersion:
@@ -57,6 +125,25 @@ components:
           type: string
           description: service version number
       description: This pair uniquely identifies a services
+    _HomePageScreenshot:
+      title: _HomePageScreenshot
+      required:
+      - thumbnail_url
+      - file_url
+      type: object
+      properties:
+        thumbnail_url:
+          title: Thumbnail Url
+          maxLength: 2083
+          minLength: 1
+          type: string
+          format: uri
+        file_url:
+          title: File Url
+          maxLength: 2083
+          minLength: 1
+          type: string
+          format: uri
     _ProjectGroupAccess:
       title: _ProjectGroupAccess
       required:
@@ -77,3 +164,23 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ServiceKeyVersion'
+    _ProjectNodeHomePage:
+      title: _ProjectNodeHomePage
+      required:
+      - project_id
+      - node_id
+      type: object
+      properties:
+        project_id:
+          title: Project Id
+          type: string
+          format: uuid
+        node_id:
+          title: Node Id
+          type: string
+          format: uuid
+        screenshots:
+          title: Screenshots
+          type: array
+          items:
+            $ref: '#/components/schemas/_HomePageScreenshot'
