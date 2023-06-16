@@ -125,12 +125,13 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       if (!card.isLocked()) {
         card.setValue(false);
         const templateData = this.__getTemplateData(card.getUuid());
-        this.__createStudyFromTemplate(templateData);
+        // this._createStudyFromTemplate(templateData);
+        this._openDetailsView(templateData);
       }
       this.resetSelection();
     },
 
-    __createStudyFromTemplate: function(templateData) {
+    _createStudyFromTemplate: function(templateData) {
       if (!this._checkLoggedIn()) {
         return;
       }
@@ -259,12 +260,17 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     // MENU //
     _populateCardMenu: function(card) {
       const menu = card.getMenu();
-      const studyData = card.getResourceData();
+      const templateData = card.getResourceData();
 
-      const editButton = this.__getEditTemplateMenuButton(studyData);
+      const editButton = this.__getEditTemplateMenuButton(templateData);
       if (editButton) {
         menu.add(editButton);
         menu.addSeparator();
+      }
+
+      const openButton = this._getOpenMenuButton(templateData);
+      if (openButton) {
+        menu.add(openButton);
       }
 
       const shareButton = this._getShareMenuButton(card);
@@ -277,12 +283,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         menu.add(tagsButton);
       }
 
-      const moreInfoButton = this._getMoreOptionsMenuButton(studyData);
-      if (moreInfoButton) {
-        menu.add(moreInfoButton);
-      }
-
-      const deleteButton = this.__getDeleteTemplateMenuButton(studyData);
+      const deleteButton = this.__getDeleteTemplateMenuButton(templateData);
       if (deleteButton && editButton) {
         menu.addSeparator();
         menu.add(deleteButton);

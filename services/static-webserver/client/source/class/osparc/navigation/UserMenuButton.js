@@ -82,8 +82,8 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           control = new osparc.ui.switch.ThemeSwitcherMenuBtn();
           this.getMenu().add(control);
           break;
-        case "register":
-          control = new qx.ui.menu.Button(this.tr("Register"));
+        case "log-in":
+          control = new qx.ui.menu.Button(this.tr("Log in"));
           control.addListener("execute", () => window.open(window.location.href, "_blank"));
           this.getMenu().add(control);
           break;
@@ -135,8 +135,8 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           control.addListener("execute", () => osparc.product.AboutProduct.getInstance().open());
           this.getMenu().add(control);
           break;
-        case "logout":
-          control = new qx.ui.menu.Button(this.tr("Logout"));
+        case "log-out":
+          control = new qx.ui.menu.Button(this.tr("Log out"));
           control.addListener("execute", () => qx.core.Init.getApplication().logout());
           osparc.utils.Utils.setIdToWidget(control, "userMenuLogoutBtn");
           this.getMenu().add(control);
@@ -150,7 +150,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
 
       const authData = osparc.auth.Data.getInstance();
       if (["anonymous", "guest"].includes(authData.getRole())) {
-        this.getChildControl("register");
+        this.getChildControl("log-in");
       } else {
         this.getChildControl("preferences");
         this.getChildControl("organizations");
@@ -167,8 +167,10 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
         this.getChildControl("about-product");
       }
       this.getChildControl("license");
-      this.getMenu().addSeparator();
-      this.getChildControl("logout");
+      if (!["anonymous", "guest"].includes(authData.getRole())) {
+        this.getMenu().addSeparator();
+        this.getChildControl("log-out");
+      }
     },
 
     populateMenuCompact: function() {
@@ -177,7 +179,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
         .then(async () => {
           const authData = osparc.auth.Data.getInstance();
           if (["anonymous", "guest"].includes(authData.getRole())) {
-            this.getChildControl("register");
+            this.getChildControl("log-in");
           } else {
             this.getChildControl("preferences");
             this.getChildControl("organizations");
@@ -199,8 +201,10 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
             this.getChildControl("about-product");
           }
           this.getChildControl("license");
-          this.getMenu().addSeparator();
-          this.getChildControl("logout");
+          if (!["anonymous", "guest"].includes(authData.getRole())) {
+            this.getMenu().addSeparator();
+            this.getChildControl("log-out");
+          }
         });
     },
 
