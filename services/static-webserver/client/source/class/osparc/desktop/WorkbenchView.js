@@ -402,12 +402,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       outputsPage.exclude();
       tabViewSecondary.add(outputsPage);
 
-      if (!osparc.auth.Data.getInstance().isGuest()) {
-        const nodeOptionsPage = this.__nodeOptionsPage = this.__createTabPage("@FontAwesome5Solid/cogs", this.tr("Options"));
-        osparc.utils.Utils.setIdToWidget(nodeOptionsPage.getChildControl("button"), "nodeOptionsTabButton");
-        nodeOptionsPage.exclude();
-        tabViewSecondary.add(nodeOptionsPage);
-      }
+      const nodeOptionsPage = this.__nodeOptionsPage = this.__createTabPage("@FontAwesome5Solid/cogs", this.tr("Options"));
+      osparc.utils.Utils.setIdToWidget(nodeOptionsPage.getChildControl("button"), "nodeOptionsTabButton");
+      nodeOptionsPage.exclude();
+      tabViewSecondary.add(nodeOptionsPage);
 
       this.__addTopBarSpacer(topBar);
 
@@ -1124,7 +1122,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       outputFilesBtn.addListener("execute", () => osparc.component.node.BaseNodeView.openNodeDataManager(node));
       this.__outputsPage.add(outputFilesBtn);
 
-      if (node.isDynamic() && (node.isUpdatable() || node.isDeprecated() || node.isRetired())) {
+      if (
+        !osparc.auth.Data.getInstance().isGuest() &&
+        node.isDynamic() &&
+        (node.isUpdatable() || node.isDeprecated() || node.isRetired())
+      ) {
         this.__nodeOptionsPage.getChildControl("button").show();
         const lifeCycleView = new osparc.component.node.LifeCycleView(node);
         node.addListener("versionChanged", () => this.__populateSecondPanel(node));
