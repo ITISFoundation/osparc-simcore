@@ -190,9 +190,8 @@ class ProjectNodesRepo:
                 )
                 await connection.execute(delete_stmt)
 
-    async def _get_node(
-        self, connection: SAConnection, *, node_id: uuid.UUID
-    ) -> ProjectNode:
+    @staticmethod
+    async def _get_node(connection: SAConnection, *, node_id: uuid.UUID) -> ProjectNode:
         get_stmt = sqlalchemy.select(projects_nodes).where(
             projects_nodes.c.node_id == f"{node_id}"
         )

@@ -271,6 +271,19 @@ async def test_delete_node(
         await projects_nodes_repo.get(connection, node_id=new_node.node_id)
 
 
+async def test_add_invalid_node_in_existing_project_raises(
+    connection: SAConnection,
+    projects_nodes_repo: ProjectNodesRepo,
+    create_fake_projects_node: Callable[..., ProjectNodeCreate],
+    create_fake_node_id: Callable[[], uuid.UUID],
+):
+    # create a project node
+    with pytest.raises(ProjectNodesNodeNotFound):
+        await projects_nodes_repo.add(
+            connection, node_id=create_fake_node_id(), node=None
+        )
+
+
 async def test_share_nodes_between_projects(
     connection: SAConnection,
     registered_user: RowProxy,
