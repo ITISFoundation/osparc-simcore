@@ -10,7 +10,6 @@ from typing import Any
 
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPNotFound
-from fastapi import Request
 from models_library.api_schemas_catalog import ServiceAccessRightsGet
 from models_library.groups import EVERYONE_GROUP_ID
 from models_library.projects import ProjectID
@@ -461,7 +460,7 @@ class _HomePageScreenshot(BaseModel):
 
 
 def _fake_screenshots_factory(
-    request: Request, node_id: NodeID
+    request: web.Request, node_id: NodeID
 ) -> list[_HomePageScreenshot]:
     assert request.app[APP_SETTINGS_KEY].WEBSERVER_DEV_FEATURES_ENABLED  # noSec
     # https://placehold.co/
