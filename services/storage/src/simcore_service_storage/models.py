@@ -1,7 +1,6 @@
 import datetime
 import urllib.parse
 from dataclasses import dataclass
-from typing import Optional
 from uuid import UUID
 
 from models_library.api_schemas_storage import (
@@ -50,17 +49,18 @@ class FileMetaDataAtDB(BaseModel):
     location: LocationName
     bucket_name: S3BucketName
     object_name: SimcoreS3FileID
-    project_id: Optional[ProjectID] = None
-    node_id: Optional[NodeID] = None
+    project_id: ProjectID | None = None
+    node_id: NodeID | None = None
     user_id: UserID
     created_at: datetime.datetime
     file_id: SimcoreS3FileID
     file_size: ByteSize
     last_modified: datetime.datetime
-    entity_tag: Optional[ETag] = None
+    entity_tag: ETag | None = None
     is_soft_link: bool
-    upload_id: Optional[UploadID] = None
-    upload_expires_at: Optional[datetime.datetime] = None
+    upload_id: UploadID | None = None
+    upload_expires_at: datetime.datetime | None = None
+    is_directory: bool
 
     class Config:
         orm_mode = True
@@ -68,15 +68,15 @@ class FileMetaDataAtDB(BaseModel):
 
 
 class FileMetaData(FileMetaDataGet):
-    upload_id: Optional[UploadID] = None
-    upload_expires_at: Optional[datetime.datetime] = None
+    upload_id: UploadID | None = None
+    upload_expires_at: datetime.datetime | None = None
 
     location: LocationName
     bucket_name: str
     object_name: str
-    project_id: Optional[ProjectID]
-    node_id: Optional[NodeID]
-    user_id: Optional[UserID]
+    project_id: ProjectID | None
+    node_id: NodeID | None
+    user_id: UserID | None
 
     @classmethod
     @validate_arguments
@@ -159,7 +159,8 @@ class FileDownloadQueryParams(StorageQueryParamsBase):
 
 class FileUploadQueryParams(StorageQueryParamsBase):
     link_type: LinkType = LinkType.PRESIGNED
-    file_size: Optional[ByteSize]
+    file_size: ByteSize | None
+    is_directory: bool = False
 
     @validator("link_type", pre=True)
     @classmethod
@@ -170,7 +171,7 @@ class FileUploadQueryParams(StorageQueryParamsBase):
 
 
 class DeleteFolderQueryParams(StorageQueryParamsBase):
-    node_id: Optional[NodeID] = None
+    node_id: NodeID | None = None
 
 
 class SearchFilesQueryParams(StorageQueryParamsBase):

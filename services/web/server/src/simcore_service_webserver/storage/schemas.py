@@ -119,6 +119,7 @@ class FileMetaData(BaseModel):
     last_modified: str | None = None
     file_size: int | None = None
     entity_tag: str | None = None
+    is_directory: bool | None = None
 
     class Config:
         schema_extra = {
@@ -133,6 +134,7 @@ class FileMetaData(BaseModel):
                 "last_modified": "2019-06-19T12:29:03.78852Z",
                 "file_size": 73,
                 "entity_tag": "a87ff679a2f3e71d9181a67b7542122c",
+                "is_directory": False,
             }
         }
 
