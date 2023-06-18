@@ -27,7 +27,6 @@ def test_user_role_to_level_map_in_sync():
 
 
 def test_user_role_comparison():
-
     assert UserRole.ANONYMOUS < UserRole.ADMIN
     assert UserRole.GUEST < UserRole.ADMIN
     assert UserRole.USER < UserRole.ADMIN
@@ -74,7 +73,6 @@ async def test_trial_accounts(pg_engine: Engine):
     EXPIRATION_INTERVAL = timedelta(minutes=5)
 
     async with pg_engine.acquire() as conn:
-
         # creates trial user
         client_now = datetime.utcnow()
         user_id: int | None = await conn.scalar(
@@ -92,7 +90,7 @@ async def test_trial_accounts(pg_engine: Engine):
 
         # check expiration date
         result: ResultProxy = await conn.execute(
-            sa.select([users.c.status, users.c.created_at, users.c.expires_at]).where(
+            sa.select(users.c.status, users.c.created_at, users.c.expires_at).where(
                 users.c.id == user_id
             )
         )
@@ -123,7 +121,6 @@ async def test_trial_accounts(pg_engine: Engine):
     ],
 )
 def test_user_name_conversions(first_name: str, last_name: str):
-
     # as 'update_user_profile'
     full_name = FullNameTuple(first_name, last_name)
 

@@ -42,7 +42,7 @@ qx.Class.define("osparc.component.workbench.Annotation", {
   },
 
   statics: {
-    DEFAULT_COLOR: "#007fd4" // Visual Studio blue
+    DEFAULT_COLOR: "#FFFF01"
   },
 
   properties: {
@@ -52,14 +52,14 @@ qx.Class.define("osparc.component.workbench.Annotation", {
     },
 
     type: {
-      check: ["rect", "text"],
+      check: ["note", "rect", "text"],
       nullable: false
     },
 
     color: {
       check: "Color",
       event: "changeColor",
-      init: "#007fd4",
+      init: "#FFFF01",
       apply: "__applyColor"
     },
 
@@ -84,13 +84,18 @@ qx.Class.define("osparc.component.workbench.Annotation", {
   members: {
     __svgLayer: null,
 
-    __drawAnnotation: function(attrs) {
+    __drawAnnotation: async function(attrs) {
       if (this.__svgLayer === null) {
         return;
       }
 
       let representation = null;
       switch (this.getType()) {
+        case "note": {
+          const user = await osparc.store.Store.getInstance().getGroup(attrs.destinataryGid);
+          representation = this.__svgLayer.drawAnnotationNote(attrs.x, attrs.y, user ? user.label : "", attrs.text);
+          break;
+        }
         case "rect":
           representation = this.__svgLayer.drawAnnotationRect(attrs.width, attrs.height, attrs.x, attrs.y, this.getColor());
           break;
@@ -183,6 +188,7 @@ qx.Class.define("osparc.component.workbench.Annotation", {
           case "rect":
             osparc.wrapper.Svg.updateItemColor(representation, selected ? selectedColor : this.getColor());
             break;
+          case "note":
           case "text":
             osparc.wrapper.Svg.updateTextColor(representation, selected ? selectedColor : this.getColor());
             break;

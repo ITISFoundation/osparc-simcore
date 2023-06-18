@@ -337,7 +337,7 @@ async def test_create_cluster(
     # let's check that DB is correctly setup, there is one entry
     with postgres_db.connect() as conn:
         cluster_entry = conn.execute(
-            sa.select([clusters]).where(clusters.c.name == cluster_data.name)
+            sa.select(clusters).where(clusters.c.name == cluster_data.name)
         ).one()
 
 

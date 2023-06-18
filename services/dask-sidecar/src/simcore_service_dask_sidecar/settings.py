@@ -8,6 +8,8 @@ from settings_library.utils_logging import MixinLoggingSettings
 
 
 class Settings(BaseCustomSettings, MixinLoggingSettings):
+    """Dask-sidecar app settings"""
+
     SC_BUILD_TARGET: str | None = None
     SC_BOOT_MODE: str | None = None
     LOG_LEVEL: LogLevel = Field(

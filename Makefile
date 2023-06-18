@@ -524,9 +524,11 @@ openapi-specs: ## bundles and validates openapi specifications and schemas of AL
 
 .PHONY: settings-schema.json
 settings-schema.json: ## [container] dumps json-schema settings of all services
+	@$(MAKE_C) services/agent $@
 	@$(MAKE_C) services/api-server $@
 	@$(MAKE_C) services/autoscaling $@
 	@$(MAKE_C) services/catalog $@
+	@$(MAKE_C) services/dask-sidecar $@
 	@$(MAKE_C) services/datcore-adapter $@
 	@$(MAKE_C) services/director-v2 $@
 	@$(MAKE_C) services/invitations $@
@@ -720,12 +722,12 @@ clean: .check-clean ## cleans all unversioned files in project and temp files cr
 	@$(MAKE_C) services/static-webserver/client clean-files
 
 clean-more: ## cleans containers and unused volumes
-	# stops and deletes running containers
-	@$(if $(_running_containers), docker rm --force $(_running_containers),)
 	# pruning unused volumes
 	-@docker volume prune --force
 	# pruning buildx cache
 	-@docker buildx prune --force
+	# stops and deletes running containers
+	@$(if $(_running_containers), docker rm --force $(_running_containers),)
 
 clean-images: ## removes all created images
 	# Cleaning all service images

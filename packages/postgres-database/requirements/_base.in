@@ -4,7 +4,6 @@
 --constraint ../../../requirements/constraints.txt
 --constraint ./constraints.txt
 
-
 alembic
-sqlalchemy[postgresql_psycopg2binary,asyncio] # SEE extras in https://github.com/sqlalchemy/sqlalchemy/blob/main/setup.cfg#L43
+sqlalchemy[postgresql_psycopg2binary,postgresql_asyncpg] # SEE extras in https://github.com/sqlalchemy/sqlalchemy/blob/main/setup.cfg#L43
 yarl

@@ -138,7 +138,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       this.getChildControl("manual");
       this.getChildControl("feedback");
       this.getChildControl("theme-switch");
-      this.getChildControl("register-button");
+      this.getChildControl("log-in-button");
       this.getChildControl("user-menu");
     },
 
@@ -280,7 +280,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           const authData = osparc.auth.Data.getInstance();
           authData.bind("expirationDate", control, "visibility", {
             converter: expirationDay => {
-              if (expirationDay && !["anonymous", "guest"].includes(authData.getRole())) {
+              if (expirationDay && !authData.isGuest()) {
                 const now = new Date();
                 const today = new Date(now.toISOString().slice(0, 10));
                 const daysToExpiration = osparc.utils.Utils.daysBetween(today, expirationDay);
@@ -313,14 +313,14 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           control.set(this.self().BUTTON_OPTIONS);
           this.getChildControl("right-items").add(control);
           break;
-        case "register-button": {
-          control = this.__createRegisterBtn().set({
+        case "log-in-button": {
+          control = this.__createLoginBtn().set({
             visibility: "excluded"
           });
           control.set(this.self().BUTTON_OPTIONS);
           const authData = osparc.auth.Data.getInstance();
-          authData.bind("role", control, "visibility", {
-            converter: role => ["anonymous", "guest"].includes(role) ? "visible" : "excluded"
+          authData.bind("guest", control, "visibility", {
+            converter: isGuest => isGuest ? "visible" : "excluded"
           });
           this.getChildControl("right-items").add(control);
           break;
@@ -398,8 +398,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       return menuButton;
     },
 
-    __createRegisterBtn: function() {
-      const registerButton = new qx.ui.form.Button(this.tr("Register"), "@FontAwesome5Solid/edit/14");
+    __createLoginBtn: function() {
+      const registerButton = new qx.ui.form.Button(this.tr("Log in"), "@FontAwesome5Solid/edit/14");
       registerButton.addListener("execute", () => window.open(window.location.href, "_blank"));
       return registerButton;
     },

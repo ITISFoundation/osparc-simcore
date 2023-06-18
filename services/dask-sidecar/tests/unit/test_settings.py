@@ -2,39 +2,20 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import Optional
 
-import pytest
 from pytest import MonkeyPatch
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_dask_sidecar.settings import Settings
 
 
-@pytest.fixture
-def mock_service_envs(
-    mock_env_devel_environment: dict[str, Optional[str]], monkeypatch: MonkeyPatch
-) -> None:
-
-    # Variables directly define inside Dockerfile
-    monkeypatch.setenv("SC_BOOT_MODE", "debug-ptvsd")
-
-    # Variables  passed upon start via services/docker-compose.yml file under dask-sidecar/scheduler
-    monkeypatch.setenv("DASK_START_AS_SCHEDULER", "1")
-
-    monkeypatch.setenv("SIDECAR_LOGLEVEL", "DEBUG")
-    monkeypatch.setenv(
-        "SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME", "simcore_computational_shared_data"
-    )
-    monkeypatch.setenv(
-        "SIDECAR_COMP_SERVICES_SHARED_FOLDER", "/home/scu/computational_shared_data"
-    )
-
-
-def test_settings(mock_service_envs: None, monkeypatch: MonkeyPatch):
-
-    monkeypatch.delenv("DASK_START_AS_SCHEDULER")
+def test_settings_as_worker(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
     settings = Settings.create_from_envs()
     assert settings.as_worker()
 
+
+def test_settings_as_scheduler(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
+    assert app_environment.get("DASK_START_AS_SCHEDULER", None) != "1"
     monkeypatch.setenv("DASK_START_AS_SCHEDULER", "1")
+
     settings = Settings.create_from_envs()
     assert settings.as_scheduler()

@@ -17,12 +17,12 @@ from pydantic.networks import AnyUrl
 from servicelib.logging_utils import config_all_loggers
 from settings_library.s3 import S3Settings
 
+from ._meta import print_banner
 from .computational_sidecar.core import ComputationalSidecar
 from .dask_utils import TaskPublisher, get_current_task_resources, monitor_task_abortion
-from .meta import print_banner
 from .settings import Settings
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class GracefulKiller:
@@ -96,7 +96,7 @@ async def _run_computational_sidecar_async(
 ) -> TaskOutputData:
     task_publishers = TaskPublisher()
 
-    log.debug(
+    _logger.debug(
         "run_computational_sidecar %s",
         f"{docker_auth=}, {service_key=}, {service_version=}, {input_data=}, {output_data_keys=}, {command=}, {s3_settings=}",
     )
@@ -119,7 +119,7 @@ async def _run_computational_sidecar_async(
             s3_settings=s3_settings,
         ) as sidecar:
             output_data = await sidecar.run(command=command)
-        log.debug("completed run of sidecar with result %s", f"{output_data=}")
+        _logger.debug("completed run of sidecar with result %s", f"{output_data=}")
         return output_data
 
 

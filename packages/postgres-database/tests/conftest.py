@@ -8,15 +8,21 @@ from typing import AsyncIterator, Awaitable, Callable, Iterator
 import aiopg.sa
 import aiopg.sa.exc
 import pytest
+import simcore_postgres_database.cli
 import sqlalchemy as sa
 import yaml
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
 from faker import Faker
-from pytest_simcore.helpers.rawdata_fakers import random_group, random_user
+from pytest_simcore.helpers.rawdata_fakers import (
+    random_group,
+    random_project,
+    random_user,
+)
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import ClusterType, clusters
+from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.webserver_models import (
     GroupType,
     groups,
@@ -86,9 +92,11 @@ def db_metadata() -> sa.MetaData:
     return metadata
 
 
-@pytest.fixture
+@pytest.fixture(params=["sqlModels", "alembicMigration"])
 def pg_sa_engine(
-    make_engine: Callable, db_metadata: sa.MetaData
+    make_engine: Callable,
+    db_metadata: sa.MetaData,
+    request: pytest.FixtureRequest,
 ) -> Iterator[sa.engine.Engine]:
     """
     Runs migration to create tables and return a sqlalchemy engine
@@ -102,11 +110,26 @@ def pg_sa_engine(
 
     # NOTE: ALL is deleted before
     db_metadata.drop_all(sync_engine)
-    db_metadata.create_all(sync_engine)
+    if request.param == "sqlModels":
+        db_metadata.create_all(sync_engine)
+    else:
+        assert simcore_postgres_database.cli.discover.callback
+        assert simcore_postgres_database.cli.upgrade.callback
+        dsn = sync_engine.url
+        simcore_postgres_database.cli.discover.callback(
+            user=dsn.username,
+            password=dsn.password,
+            host=dsn.host,
+            database=dsn.database,
+            port=dsn.port,
+        )
+        simcore_postgres_database.cli.upgrade.callback("head")
 
     yield sync_engine
 
     # NOTE: ALL is deleted after
+    with sync_engine.begin() as conn:
+        conn.execute(sa.DDL("DROP TABLE IF EXISTS alembic_version"))
     db_metadata.drop_all(sync_engine)
     sync_engine.dispose()
 
@@ -237,3 +260,26 @@ async def create_fake_cluster(
     # cleanup
     async with pg_engine.acquire() as conn:
         await conn.execute(clusters.delete().where(clusters.c.id.in_(cluster_ids)))
+
+
+@pytest.fixture
+async def create_fake_project(pg_engine: Engine) -> AsyncIterator[Callable]:
+    created_project_uuids = []
+
+    async def _creator(conn, user: RowProxy, **overrides) -> RowProxy:
+        prj_to_insert = random_project(prj_owner=user.id, **overrides)
+        result = await conn.execute(
+            projects.insert().values(**prj_to_insert).returning(projects)
+        )
+        assert result
+        new_project = await result.first()
+        assert new_project
+        created_project_uuids.append(new_project.uuid)
+        return new_project
+
+    yield _creator
+
+    async with pg_engine.acquire() as conn:
+        await conn.execute(
+            projects.delete().where(projects.c.uuid.in_(created_project_uuids))
+        )
