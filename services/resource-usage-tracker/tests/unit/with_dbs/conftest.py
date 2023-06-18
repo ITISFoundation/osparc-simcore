@@ -1,3 +1,8 @@
+# pylint: disable=not-context-manager
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 from typing import AsyncIterable
 from unittest import mock
 
