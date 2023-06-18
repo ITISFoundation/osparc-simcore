@@ -91,14 +91,6 @@ class ApplicationSettings(MinimalApplicationSettings):
     """
 
     RESOURCE_USAGE_TRACKER_EVALUATION_INTERVAL_SEC: datetime.timedelta = Field(
-        default=datetime.timedelta(minutes=5),
+        default=datetime.timedelta(minutes=15),
         description="Interval to evaluate the resource usage (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
-    )
-    RESOURCE_USAGE_TRACKER_GRANULARITY_SEC: int = Field(
-        default=60,
-        description="Granularity to fetch data from prometheus. This should be larger than prometheus scraping interval.",
-    )
-    RESOURCE_USAGE_TRACKER_CONTAINER_LABEL_USER_ID_REGEX: str = Field(
-        default=".*",
-        description="Regex for the prometheus timeseries label `CONTAINER_LABEL_USER_ID`.",
     )
