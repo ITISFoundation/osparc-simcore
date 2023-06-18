@@ -38,7 +38,6 @@ def test_prometheus_does_not_initialize_if_deactivated(
         get_prometheus_api_client(initialized_app)
 
 
-@pytest.mark.testit
 def test_mocked_prometheus_initialize(
     disabled_database, mocked_prometheus: None, initialized_app: FastAPI
 ):

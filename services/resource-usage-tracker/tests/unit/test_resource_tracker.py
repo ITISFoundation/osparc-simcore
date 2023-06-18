@@ -63,7 +63,6 @@ async def test_resource_tracker_disabled_if_prometheus_disabled_task_created_and
     mock_background_task.assert_not_called()
 
 
-@pytest.mark.testit
 async def test_resource_tracker_task_created_and_deleted(
     disabled_database: None,
     app_environment: EnvVarsDict,

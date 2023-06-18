@@ -5,7 +5,6 @@
 
 import os
 
-import pytest
 import requests_mock
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_resource_usage_tracker._meta import API_VERSION
@@ -39,7 +38,6 @@ def test_evaluate_without_configuration_raises(
     assert result.exit_code == 1, result.output
 
 
-@pytest.mark.testit
 def test_evaluate(
     cli_runner: CliRunner,
     app_environment: EnvVarsDict,

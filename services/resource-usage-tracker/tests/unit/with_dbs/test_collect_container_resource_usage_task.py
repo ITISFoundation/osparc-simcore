@@ -36,7 +36,6 @@ def mocked_prometheus_client_custom_query(
     return mocked_get_prometheus_api_client
 
 
-@pytest.mark.testit
 async def test_collect_container_resource_usage_task(
     mocked_prometheus: mock.Mock,
     mocked_prometheus_client_custom_query: mock.MagicMock,

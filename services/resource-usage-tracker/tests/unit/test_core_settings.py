@@ -4,7 +4,6 @@
 # pylint: disable=too-many-arguments
 
 
-import pytest
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_resource_usage_tracker.core.settings import (
     ApplicationSettings,
@@ -12,7 +11,6 @@ from simcore_service_resource_usage_tracker.core.settings import (
 )
 
 
-@pytest.mark.testit
 def test_valid_cli_application_settings(app_environment: EnvVarsDict):
     settings = MinimalApplicationSettings.create_from_envs()
     assert settings

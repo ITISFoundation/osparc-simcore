@@ -3,14 +3,12 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-import pytest
 from fastapi import status
 from fastapi.testclient import TestClient
 from simcore_service_resource_usage_tracker._meta import API_VTAG
 from simcore_service_resource_usage_tracker.api._meta import _Meta
 
 
-@pytest.mark.testit
 def test_healthcheck(
     disabled_database: None, disabled_prometheus: None, client: TestClient
 ):
