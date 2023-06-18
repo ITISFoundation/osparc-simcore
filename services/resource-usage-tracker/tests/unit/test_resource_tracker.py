@@ -14,13 +14,6 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_resource_usage_tracker.core.settings import ApplicationSettings
 
-pytest_simcore_core_services_selection = [
-    "postgres",
-]
-pytest_simcore_ops_services_selection = [
-    "adminer",
-]
-
 _FAST_POLL_INTERVAL = 1
 
 
