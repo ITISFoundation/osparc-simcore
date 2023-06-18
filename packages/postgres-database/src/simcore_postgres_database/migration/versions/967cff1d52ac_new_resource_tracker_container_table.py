@@ -1,7 +1,7 @@
 """New resource_tracker_container table
 
 Revision ID: 967cff1d52ac
-Revises: e0a2557dec27
+Revises: c8f072c72adc
 Create Date: 2023-06-13 06:37:31.542190+00:00
 
 """
@@ -10,7 +10,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "967cff1d52ac"
-down_revision = "e0a2557dec27"
+down_revision = "c8f072c72adc"
 branch_labels = None
 depends_on = None
 
