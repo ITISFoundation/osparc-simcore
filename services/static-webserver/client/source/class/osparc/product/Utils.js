@@ -130,6 +130,13 @@ qx.Class.define("osparc.product.Utils", {
       return logosPath;
     },
 
+    getWorkbenhUIPreviewPath: function() {
+      const colorManager = qx.theme.manager.Color.getInstance();
+      const textColor = colorManager.resolve("text");
+      const lightLogo = osparc.utils.Utils.getColorLuminance(textColor) > 0.4;
+      return lightLogo ? "osparc/workbenchUI-dark.png" : "osparc/workbenchUI-light.png";
+    },
+
     showLicenseExtra: function() {
       if (this.isProduct("s4l") || this.isProduct("s4llite") || this.isProduct("tis")) {
         return true;

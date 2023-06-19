@@ -84,15 +84,13 @@ qx.Class.define("osparc.component.editor.ThumbnailSuggestions", {
     },
 
     addWorkbenchUIPreviewToSuggestions: function() {
-      this.__thumbnailsPerNode["workbenchUIPreview"] = [{
+      // make it first in the list
+      this.__thumbnailsPerNode["0000-workbenchUIPreview"] = [{
         type: "workbenchUIPreview",
-        source: "osparc/workbenchUI-dark.png"
+        source: osparc.product.Utils.getWorkbenhUIPreviewPath()
       }];
-      /*
-      // ToDo: support light theme and theme switch
       const themeManager = qx.theme.manager.Meta.getInstance();
-      themeManager.addListener("changeTheme", () => this.__themeChanged());
-      */
+      themeManager.addListener("changeTheme", () => this.addWorkbenchUIPreviewToSuggestions());
     },
 
     setSelectedNodeId: function(selectedNodeId) {
