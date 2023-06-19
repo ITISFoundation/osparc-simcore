@@ -135,8 +135,8 @@ qx.Class.define("osparc.component.editor.ThumbnailEditor", {
       const thumbnailSuggestions = this.getChildControl("scroll-thumbnails");
       thumbnailSuggestions.setSuggestions(suggestions);
       thumbnailSuggestions.addListener("thumbnailTapped", e => {
-        const thumbnailSource = e.getData();
-        this.setUrl(thumbnailSource);
+        const thumbnailData = e.getData();
+        this.setUrl(thumbnailData["source"]);
       });
       this.getChildControl("thumbnails-layout").setVisibility(suggestions.length ? "visible" : "excluded");
     }

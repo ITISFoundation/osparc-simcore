@@ -107,17 +107,6 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
       return thumbnailSuggestions;
     },
 
-    __getWorkbenchUIPreview: function() {
-      const study = new osparc.data.model.Study(this.__studyData);
-      study.buildWorkbench();
-      const workbenchUIPreview = new osparc.component.workbench.WorkbenchUIPreview();
-      workbenchUIPreview.setStudy(study);
-      workbenchUIPreview.loadModel(study.getWorkbench());
-      // eslint-disable-next-line no-underscore-dangle
-      workbenchUIPreview._fitScaleToNodes(0.5);
-      return workbenchUIPreview;
-    },
-
     __buildLayout: function() {
       this.getChildControl("nodes-tree");
       this.getChildControl("scroll-thumbnails");
@@ -133,17 +122,45 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
       });
       const thumbnailViewerLayout = this.getChildControl("thumbnail-viewer-layout");
       scrollThumbnails.addListener("thumbnailTapped", e => {
-        const thumbnailSource = e.getData();
-        thumbnailViewerLayout.removeAll();
-        const maxHeight = this.self().LAYOUT_HEIGHT - this.self().THUMBNAIL_SLIDER_HEIGHT;
-        const thumbnail = new osparc.ui.basic.Thumbnail(thumbnailSource, maxHeight, parseInt(maxHeight*2/3));
-        thumbnailViewerLayout.add(thumbnail, {
-          top: 0,
-          right: 0,
-          bottom: 0,
-          left: 0
-        });
+        const thumbnailData = e.getData();
+        let control = null;
+        switch (thumbnailData["type"]) {
+          case "image":
+            control = this.__getThumbnail(thumbnailData["source"]);
+            break;
+        }
+        if (control) {
+          thumbnailViewerLayout.removeAll();
+          thumbnailViewerLayout.add(control, {
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0
+          });
+        }
       });
+    },
+
+    __getThumbnail: function(thumbnailSource) {
+      const maxHeight = this.self().LAYOUT_HEIGHT - this.self().THUMBNAIL_SLIDER_HEIGHT;
+      const thumbnail = new osparc.ui.basic.Thumbnail(thumbnailSource, maxHeight, parseInt(maxHeight*2/3));
+      return thumbnail;
+    },
+
+    __getWorkbenchUIPreview: function() {
+      const study = new osparc.data.model.Study(this.__studyData);
+      study.buildWorkbench();
+      const workbenchUIPreview = new osparc.component.workbench.WorkbenchUIPreview();
+      workbenchUIPreview.setStudy(study);
+      workbenchUIPreview.loadModel(study.getWorkbench());
+      /*
+      workbenchUIPreview.addListenerOnce("appear", () => {
+        const maxScale = 0.5;
+        // eslint-disable-next-line no-underscore-dangle
+        workbenchUIPreview._fitScaleToNodes(maxScale);
+      });
+      */
+      return workbenchUIPreview;
     },
 
     __initComponents: function() {

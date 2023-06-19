@@ -88,7 +88,10 @@ qx.Class.define("osparc.component.editor.ThumbnailSuggestions", {
         thumbnail.addListener("tap", () => {
           this.getChildren().forEach(thumbnailImg => osparc.utils.Utils.removeBorder(thumbnailImg));
           osparc.utils.Utils.addBorder(thumbnail, 1, "#007fd4"); // Visual Studio blue
-          this.fireDataEvent("thumbnailTapped", thumbnail.getChildControl("image").getSource());
+          this.fireDataEvent("thumbnailTapped", {
+            type: "image",
+            source: thumbnail.getChildControl("image").getSource()
+          });
         });
         this.add(thumbnail);
       });
