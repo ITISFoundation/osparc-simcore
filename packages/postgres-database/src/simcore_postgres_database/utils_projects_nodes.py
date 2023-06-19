@@ -52,9 +52,9 @@ class ProjectNodesRepo:
         self,
         connection: SAConnection,
         *,
-        node_id: uuid.UUID,
-        node: ProjectNodeCreate,
-    ) -> ProjectNode:
+        node_ids: list[uuid.UUID],
+        nodes: list[ProjectNodeCreate],
+    ) -> list[ProjectNode]:
         """creates a new entry in *projects_nodes* and *projects_to_projects_nodes* tables
 
         NOTE: Do not use this in an asyncio.gather call as this will fail!
@@ -63,40 +63,51 @@ class ProjectNodesRepo:
             ProjectNodesProjectNotFound: in case the project_uuid does not exist
             ProjectNodesDuplicateNode: in case the node already exists
             ProjectsNodesNodeNotFound: in case the node does not exist
+            ProjectNodesOperationNotAllowed: in case the function is used with unequal number of node_ids and nodes
 
         """
-        async with connection.begin():
-            try:
-                result = await connection.execute(
-                    projects_nodes.insert()
-                    .values(
-                        project_uuid=f"{self.project_uuid}",
-                        node_id=f"{node_id}",
-                        **asdict(node),
-                    )
-                    .returning(
-                        *[
-                            c
-                            for c in projects_nodes.c
-                            if c is not projects_nodes.c.project_uuid
-                        ]
-                    )
+        if len(node_ids) != len(nodes):
+            raise ProjectNodesOperationNotAllowed(
+                "Invalid usage of add: number of node_ids is not the same as number of nodes!"
+            )
+        insertable_values = [
+            {
+                "project_uuid": f"{self.project_uuid}",
+                "node_id": f"{node_id}",
+                **asdict(node),
+            }
+            for node_id, node in zip(node_ids, nodes)
+        ]
+        try:
+            result = await connection.execute(
+                projects_nodes.insert()
+                .values(insertable_values)
+                .returning(
+                    *[
+                        c
+                        for c in projects_nodes.c
+                        if c is not projects_nodes.c.project_uuid
+                    ]
                 )
-                created_node_db = await result.first()
-                assert created_node_db  # nosec
-                created_node = ProjectNode(**dict(created_node_db.items()))
+            )
+            created_nodes_db = await result.fetchall()
+            assert created_nodes_db  # nosec
+            created_nodes = [
+                ProjectNode(**dict(created_node_db.items()))
+                for created_node_db in created_nodes_db
+            ]
 
-                return created_node
-            except ForeignKeyViolation as exc:
-                # this happens when the project does not exist, as we first check the node exists
-                raise ProjectNodesProjectNotFound(
-                    f"Project {self.project_uuid} not found"
-                ) from exc
-            except UniqueViolation as exc:
-                # this happens if the node already exists on creation
-                raise ProjectNodesDuplicateNode(
-                    f"Project node {node_id} already exists"
-                ) from exc
+            return created_nodes
+        except ForeignKeyViolation as exc:
+            # this happens when the project does not exist, as we first check the node exists
+            raise ProjectNodesProjectNotFound(
+                f"Project {self.project_uuid} not found"
+            ) from exc
+        except UniqueViolation as exc:
+            # this happens if the node already exists on creation
+            raise ProjectNodesDuplicateNode(
+                f"Project node already exists: {exc}"
+            ) from exc
 
     async def list(self, connection: SAConnection) -> list[ProjectNode]:
         """list the nodes in the current project
