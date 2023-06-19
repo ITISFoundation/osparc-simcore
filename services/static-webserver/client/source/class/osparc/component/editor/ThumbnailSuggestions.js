@@ -75,14 +75,21 @@ qx.Class.define("osparc.component.editor.ThumbnailSuggestions", {
           if (!(nodeId in this.__thumbnailsPerNode)) {
             this.__thumbnailsPerNode[nodeId] = [];
           }
-          this.__thumbnailsPerNode[nodeId].push(srvMetadata["thumbnail"]);
+          this.__thumbnailsPerNode[nodeId].push({
+            type: "image",
+            source: srvMetadata["thumbnail"]
+          });
         }
       });
     },
 
     addWorkbenchUIPreviewToSuggestions: function() {
-      this.__thumbnailsPerNode["workbenchUIPreview"] = ["osparc/workbenchUI-dark.png"];
+      this.__thumbnailsPerNode["workbenchUIPreview"] = [{
+        type: "workbenchUIPreview",
+        source: "osparc/workbenchUI-dark.png"
+      }];
       /*
+      // ToDo: support light theme and theme switch
       const themeManager = qx.theme.manager.Meta.getInstance();
       themeManager.addListener("changeTheme", () => this.__themeChanged());
       */
@@ -106,16 +113,16 @@ qx.Class.define("osparc.component.editor.ThumbnailSuggestions", {
       this.removeAll();
       suggestions.forEach(suggestion => {
         const maxHeight = this.getMaxHeight();
-        const thumbnail = new osparc.ui.basic.Thumbnail(suggestion, maxHeight, parseInt(maxHeight*2/3));
+        const thumbnail = new osparc.ui.basic.Thumbnail(suggestion.source, maxHeight, parseInt(maxHeight*2/3));
         thumbnail.setMarginLeft(1); // give some extra space to the selection border
         thumbnail.addListener("tap", () => {
           this.getChildren().forEach(thumbnailImg => osparc.utils.Utils.removeBorder(thumbnailImg));
           osparc.utils.Utils.addBorder(thumbnail, 1, "#007fd4"); // Visual Studio blue
           this.fireDataEvent("thumbnailTapped", {
-            type: "image",
-            source: thumbnail.getChildControl("image").getSource()
+            type: suggestion.type,
+            source: suggestion.source
           });
-        });
+        }, this);
         this.add(thumbnail);
       });
     }

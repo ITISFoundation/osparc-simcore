@@ -129,6 +129,9 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
           case "image":
             control = this.__getThumbnail(thumbnailData["source"]);
             break;
+          case "workbenchUIPreview":
+            control = this.__getWorkbenchUIPreview();
+            break;
         }
         if (control) {
           thumbnailViewerLayout.removeAll();
@@ -156,7 +159,7 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
       const workbenchUIPreview = new osparc.component.workbench.WorkbenchUIPreview();
       workbenchUIPreview.setStudy(study);
       workbenchUIPreview.loadModel(study.getWorkbench());
-      workbenchUIPreview.addListenerOnce("appear", () => {
+      workbenchUIPreview.addListener("appear", () => {
         // give it some time to take the bounds
         setTimeout(() => {
           const maxScale = 0.5;
