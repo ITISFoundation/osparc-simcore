@@ -80,7 +80,7 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
         hideRoot: false,
         backgroundColor: "transparent",
         simpleNodes: true,
-        minWidth: 200,
+        maxWidth: 150,
         minHeight: 200
       });
       nodesTree.setStudy(study);
