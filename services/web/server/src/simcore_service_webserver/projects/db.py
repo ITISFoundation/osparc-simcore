@@ -135,18 +135,7 @@ class ProjectDBAPI(BaseProjectDB):
         :return: inserted project
         """
 
-        # pylint: disable=no-value-for-parameter
         async with self.engine.acquire() as conn:
-            # TODO: check security of this query with args. Hard-code values?
-            # TODO: check best rollback design. see transaction.begin...
-            # TODO: check if template, otherwise standard (e.g. template-  prefix in uuid)
-            project.update(
-                {
-                    "creationDate": now_str(),
-                    "lastChangeDate": now_str(),
-                }
-            )
-
             # NOTE: tags are removed in convert_to_db_names so we keep it
             project_tags = parse_obj_as(list[int], project.get("tags", []).copy())
             insert_values = convert_to_db_names(project)
@@ -156,11 +145,9 @@ class ProjectDBAPI(BaseProjectDB):
                     if (force_as_template or user_id is None)
                     else ProjectType.STANDARD.value,
                     "prj_owner": user_id if user_id else None,
+                    "hidden": hidden,
                 }
             )
-
-            if hidden:
-                insert_values["hidden"] = True
 
             # validate access_rights. are the gids valid? also ensure prj_owner is in there
             if user_id:
