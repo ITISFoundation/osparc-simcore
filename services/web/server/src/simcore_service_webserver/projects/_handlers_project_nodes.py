@@ -196,7 +196,7 @@ async def delete_node(request: web.Request) -> web.Response:
         request,
         path_params.project_id,
         req_ctx.user_id,
-        parse_obj_as(NodeIDStr, path_params.node_id),
+        NodeIDStr(path_params.node_id),
     )
 
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
