@@ -156,9 +156,12 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
       workbenchUIPreview.setStudy(study);
       workbenchUIPreview.loadModel(study.getWorkbench());
       workbenchUIPreview.addListenerOnce("appear", () => {
-        const maxScale = 0.5;
-        // eslint-disable-next-line no-underscore-dangle
-        workbenchUIPreview._fitScaleToNodes(maxScale);
+        // give it some time to take the bounds
+        setTimeout(() => {
+          const maxScale = 0.5;
+          // eslint-disable-next-line no-underscore-dangle
+          workbenchUIPreview._fitScaleToNodes(maxScale);
+        }, 50);
       });
       return workbenchUIPreview;
     },
