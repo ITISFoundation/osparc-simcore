@@ -33,7 +33,7 @@ paths:
       tags:
       - project
       summary: Lists with all node previews in the project
-      operationId: list_project_preview
+      operationId: get_project_preview
       parameters:
       - required: true
         schema:

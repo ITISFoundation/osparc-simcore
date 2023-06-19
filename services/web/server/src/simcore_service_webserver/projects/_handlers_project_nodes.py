@@ -496,7 +496,7 @@ async def list_project_preview(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     assert req_ctx  # nosec
 
-    home_pages_per_node = []
+    nodes_previews = []
 
     if request.app[APP_SETTINGS_KEY].WEBSERVER_DEV_FEATURES_ENABLED:
         project = await projects_api.get_project_for_user(
@@ -506,7 +506,7 @@ async def list_project_preview(request: web.Request) -> web.Response:
         )
 
         node_ids = parse_obj_as(list[NodeID], list(project.get("workbench", {}).keys()))
-        home_pages_per_node = [
+        nodes_previews = [
             _ProjectNodePreview(
                 project_id=path_params.project_id,
                 node_id=node_id,
@@ -515,7 +515,7 @@ async def list_project_preview(request: web.Request) -> web.Response:
             for node_id in node_ids
         ]
 
-    return envelope_json_response(home_pages_per_node)
+    return envelope_json_response(nodes_previews)
 
 
 @routes.get(
