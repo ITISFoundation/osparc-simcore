@@ -587,13 +587,13 @@ async def get_project_node_preview(request: web.Request) -> web.Response:
                 node_uuid=f"{path_params.node_id}",
             )
 
-        node_home_page = _ProjectNodePreview(
+        node_preview = _ProjectNodePreview(
             project_id=project["uuid"],
             node_id=path_params.node_id,
             screenshots=_fake_screenshots_factory(request, path_params.node_id),
         )
-        return envelope_json_response(node_home_page)
+        return envelope_json_response(node_preview)
 
     raise HTTPNotFound(
-        reason=f"node {path_params.project_id}/{path_params.node_id} has no homepage"
+        reason=f"Node '{path_params.project_id}/{path_params.node_id}' has no preview"
     )
