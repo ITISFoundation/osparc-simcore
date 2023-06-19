@@ -279,8 +279,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __getPreviewPage: function() {
-      const id = "Information";
-      const title = this.tr("Information");
+      const id = "Preview";
+      const title = this.tr("Preview");
       const icon = "@FontAwesome5Solid/info";
       const infoPageLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
 
