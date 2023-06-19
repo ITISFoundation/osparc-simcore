@@ -234,13 +234,13 @@ paths:
     $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1nodes~1{node_id}~1resources"
 
   /projects/{project_id}/nodes/-/services:access:
-    $ref: "./openapi-projects-pydantic.yaml#/paths/~1projects~1{project_id}~1nodes~1-~1services:access"
+    $ref: "./openapi-projects-nodes.yaml#/paths/~1projects~1{project_id}~1nodes~1-~1services:access"
 
   /projects/{project_id}/nodes/-/preview:
-    $ref: "./openapi-projects-pydantic.yaml#/paths/~1projects~1{project_id}~1preview"
+    $ref: "./openapi-projects-nodes.yaml#/paths/~1projects~1{project_id}~1preview"
 
   /projects/{project_id}/nodes/{node_id}/preview:
-    $ref: "./openapi-projects-pydantic.yaml#/paths/~1projects~1{project_id}~1nodes~1{node_id}~1preview"
+    $ref: "./openapi-projects-nodes.yaml#/paths/~1projects~1{project_id}~1nodes~1{node_id}~1preview"
 
   /projects/{project_id}/inputs:
     $ref: "./openapi-projects-ports.yaml#/paths/~1projects~1{project_id}~1inputs"

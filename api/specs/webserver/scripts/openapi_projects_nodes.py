@@ -86,4 +86,4 @@ assert_handler_signature_against_model(get_project_node_preview, _NodePathParams
 
 
 if __name__ == "__main__":
-    create_openapi_specs(app, CURRENT_DIR.parent / "openapi-projects-pydantic.yaml")
+    create_openapi_specs(app, CURRENT_DIR.parent / "openapi-projects-nodes.yaml")
