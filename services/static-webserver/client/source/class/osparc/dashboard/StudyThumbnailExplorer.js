@@ -23,6 +23,11 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
 
     this._setLayout(new qx.ui.layout.HBox(5));
 
+    this.set({
+      minHeight: this.self().LAYOUT_HEIGHT,
+      maxHeight: this.self().LAYOUT_HEIGHT
+    });
+
     this.__studyData = studyData;
 
     this.__buildLayout();
@@ -60,7 +65,9 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
           break;
         }
         case "scroll-thumbnails": {
-          control = this.__getThumbnailSuggestions();
+          control = this.__getThumbnailSuggestions().set({
+            marginLeft: 10
+          });
           const thumbnailsLayout = this.getChildControl("thumbnails-layout");
           thumbnailsLayout.add(control);
           break;
