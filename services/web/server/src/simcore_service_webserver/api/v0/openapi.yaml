@@ -5460,7 +5460,7 @@ paths:
               additionalProperties: false
         required: true
       responses:
-        '200':
+        '201':
           description: Successful Response
           content:
             application/json:
@@ -5624,11 +5624,8 @@ paths:
           name: comment_id
           in: path
       responses:
-        '200':
+        '204':
           description: Successful Response
-          content:
-            application/json:
-              schema: {}
   '/projects/{project_id}/nodes/-/services:access':
     get:
       tags:

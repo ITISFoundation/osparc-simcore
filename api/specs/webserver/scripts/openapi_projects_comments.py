@@ -47,6 +47,7 @@ TAGS: list[str | Enum] = ["project", "comments"]
     tags=TAGS,
     operation_id="create_project_comment",
     summary="Create a new comment for a specific project. The request body should contain the comment content and user information.",
+    status_code=201,
 )
 async def create_project_comment(
     project_uuid: ProjectID, body: _CreateProjectCommentsBodyParams
@@ -102,6 +103,7 @@ assert_handler_signature_against_model(
     tags=TAGS,
     operation_id="delete_project_comment",
     summary="Delete a specific comment associated with a project.",
+    status_code=204,
 )
 async def delete_project_comment(project_uuid: ProjectID, comment_id: CommentID):
     ...

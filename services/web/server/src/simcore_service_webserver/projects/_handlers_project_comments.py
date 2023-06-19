@@ -17,6 +17,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
+from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
@@ -64,11 +65,15 @@ async def create_project_comment(request: web.Request):
             reason="User id in body does not match with the logged in user id"
         )
 
-    return await projects_api.create_project_comment(
+    comment_id = await projects_api.create_project_comment(
         request=request,
         project_uuid=path_params.project_uuid,
         user_id=req_ctx.user_id,
         content=body_params.content,
+    )
+
+    return web.json_response(
+        {"data": comment_id}, status=web.HTTPCreated.status_code, dumps=json_dumps
     )
 
 
@@ -80,7 +85,7 @@ class _ListProjectCommentsPathParams(BaseModel):
 
 
 class _ListProjectCommentsQueryParams(BaseModel):
-    limit: int | None = Field(
+    limit: int = Field(
         default=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
         description="maximum number of items to return (pagination)",
         ge=1,
@@ -193,9 +198,11 @@ async def delete_project_comment(request: web.Request):
         request=request,
         comment_id=path_params.comment_id,
     )
+    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 class _GetProjectsCommentPathParams(BaseModel):
+    project_uuid: ProjectID
     comment_id: CommentID
 
     class Config:
