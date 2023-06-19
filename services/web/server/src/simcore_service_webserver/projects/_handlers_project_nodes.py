@@ -6,6 +6,7 @@ import asyncio
 import functools
 import json
 import logging
+import mimetypes
 from typing import Any
 
 from aiohttp import web
@@ -18,7 +19,7 @@ from models_library.projects_nodes_io import NodeIDStr
 from models_library.services import ServiceKey, ServiceKeyVersion, ServiceVersion
 from models_library.users import GroupID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import BaseModel, Field, HttpUrl, parse_obj_as
+from pydantic import BaseModel, Field, HttpUrl, parse_obj_as, root_validator
 from servicelib.aiohttp.long_running_tasks.server import (
     TaskProgress,
     start_long_running_task,
@@ -458,24 +459,64 @@ async def get_project_services_access_for_gid(request: web.Request) -> web.Respo
 class _NodeScreenshot(BaseModel):
     thumbnail_url: HttpUrl
     file_url: HttpUrl
+    mimetype: str = Field(
+        default=None,
+        description="File's media type. SEE https://www.iana.org/assignments/media-types/media-types.xhtml",
+        example="image/jpeg",
+    )
+
+    @root_validator(pre=True)
+    @classmethod
+    def guess_mimetype_if_undefined(cls, values):
+
+        mimetype = values.get("mimetype")
+
+        if not mimetype:
+            file_url = values.get("file_url")
+            assert file_url  # nosec
+
+            _type, _encoding = mimetypes.guess_type(file_url)
+            if _type is None:
+                raise ValueError(
+                    "Could not deduce mimetype, it must be explicitly set."
+                )
+
+            values["mimetype"] = _type
+
+        return values
 
 
 def _fake_screenshots_factory(
     request: web.Request, node_id: NodeID
 ) -> list[_NodeScreenshot]:
     assert request.app[APP_SETTINGS_KEY].WEBSERVER_DEV_FEATURES_ENABLED  # nosec
-    # https://placehold.co/
-    # https://picsum.photos/
-    short_nodeid = str(node_id)[4:]
-    count = int(str(node_id.int)[-1])
-    seed = short_nodeid
-    return [
+    # References:
+    # - https://github.com/Ybalrid/Ogre_glTF
+    # - https://placehold.co/
+    # - https://picsum.photos/
+    #
+    short_nodeid = str(node_id)[:4]
+    count = int(str(node_id.int)[0])
+    seed = node_id.int
+
+    screenshots = [
         _NodeScreenshot(
-            thumbnail_url=f"https://placehold.co/170x120?text={short_nodeid}",
+            thumbnail_url=f"https://placehold.co/170x120?text=img-{short_nodeid}",
             file_url=f"https://picsum.photos/seed/{seed}/500",
+            mimetype="image/jpeg",
         )
         for _ in range(count)
     ]
+
+    if count:
+        screenshots.append(
+            _NodeScreenshot(
+                thumbnail_url=f"https://placehold.co/170x120?text=render-{short_nodeid}",
+                file_url="https://github.com/Ybalrid/Ogre_glTF/blob/6a59adf2f04253a3afb9459549803ab297932e8d/Media/Monster.glb",
+            )
+        )
+
+    return screenshots
 
 
 class _ProjectNodePreview(BaseModel):
