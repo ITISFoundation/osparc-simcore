@@ -300,7 +300,7 @@ qx.Class.define("osparc.info.MergedLarge", {
             nodeId: this.getService().getNodeId()
           }
         };
-        promise = osparc.data.Resources.fetch("nodesInStudyResources", "getResources", params);
+        promise = osparc.data.Resources.get("nodesInStudyResources", params);
       } else {
         const params = {
           url: osparc.data.Resources.getServiceUrl(
@@ -308,7 +308,7 @@ qx.Class.define("osparc.info.MergedLarge", {
             this.getService().getVersion()
           )
         };
-        promise = osparc.data.Resources.fetch("serviceResources", "getResources", params);
+        promise = osparc.data.Resources.get("serviceResources", params);
       }
       promise
         .then(serviceResources => {

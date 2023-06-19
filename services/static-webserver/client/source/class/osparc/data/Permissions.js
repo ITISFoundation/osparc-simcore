@@ -246,7 +246,11 @@ qx.Class.define("osparc.data.Permissions", {
         canDo = this.__canRoleDo(this.getRole(), action);
       }
       if (showMsg && !canDo) {
-        osparc.component.message.FlashMessenger.getInstance().logAs("Operation not permitted", "ERROR");
+        let msg = "Operation not permitted";
+        if (["anonymous", "guest"].includes(this.getRole())) {
+          msg = "Please register to use this functionality";
+        }
+        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
       }
       return canDo;
     },
