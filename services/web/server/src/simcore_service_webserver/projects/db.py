@@ -255,19 +255,24 @@ class ProjectDBAPI(BaseProjectDB):
 
                         # NOTE: this will at some point completely replace workbench in the DB
                         project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
-                        for node_id in selected_values["workbench"].keys():
-                            the_node_id = NodeID(node_id)
-                            await project_nodes_repo.add(
-                                conn,
-                                node_id=the_node_id,
-                                node=ProjectNodeCreate(
-                                    required_resources=node_required_resources.get(
-                                        the_node_id, {}
-                                    )
-                                    if node_required_resources
-                                    else {}
-                                ),
+                        node_ids = [
+                            NodeID(node_id)
+                            for node_id in selected_values["workbench"].keys()
+                        ]
+                        nodes = [
+                            ProjectNodeCreate(
+                                required_resources=node_required_resources.get(
+                                    NodeID(node_id), {}
+                                )
+                                if node_required_resources
+                                else {}
                             )
+                            for node_id in selected_values["workbench"].keys()
+                        ]
+                        await project_nodes_repo.add(
+                            conn, node_ids=node_ids, nodes=nodes
+                        )
+
             # Returns created project with names as in the project schema
             user_email = await self._get_user_email(conn, user_id)
 
@@ -700,7 +705,7 @@ class ProjectDBAPI(BaseProjectDB):
     ) -> None:
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
         async with self.engine.acquire() as conn:
-            await project_nodes_repo.add(conn, node_id=node_id, node=node)
+            await project_nodes_repo.add(conn, node_ids=[node_id], nodes=[node])
         partial_workbench_data: dict[str, Any] = {
             f"{node_id}": jsonable_encoder(
                 old_struct_node,
@@ -748,18 +753,20 @@ class ProjectDBAPI(BaseProjectDB):
         dst_project_nodes_repo = ProjectNodesRepo(project_uuid=dest_project_id)
         project_node_create_field_names = (f.name for f in fields(ProjectNodeCreate))
         async with self.engine.acquire() as conn:
+            node_ids = []
+            nodes = []
             for node in await src_project_nodes_repo.list(conn):
-                await dst_project_nodes_repo.add(
-                    conn,
-                    node_id=NodeID(node_mapping[NodeIDStr(f"{node.node_id}")]),
-                    node=ProjectNodeCreate(
+                node_ids.append(NodeID(node_mapping[NodeIDStr(f"{node.node_id}")]))
+                nodes.append(
+                    ProjectNodeCreate(
                         **{
                             k: v
                             for k, v in asdict(node).items()
                             if k in project_node_create_field_names
                         }
-                    ),
+                    )
                 )
+            await dst_project_nodes_repo.add(conn, node_ids=node_ids, nodes=nodes)
 
     async def node_id_exists(self, node_id: str) -> bool:
         """Returns True if the node id exists in any of the available projects"""
