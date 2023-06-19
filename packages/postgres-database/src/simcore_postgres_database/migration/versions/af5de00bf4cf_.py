@@ -36,9 +36,9 @@ def upgrade():
             nullable=False,
         ),
         sa.ForeignKeyConstraint(
-            ["project_id"],
-            ["projects.id"],
-            name="fk_projects_comments_project_id",
+            ["project_uuid"],
+            ["projects.uuid"],
+            name="fk_projects_comments_project_uuid",
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
