@@ -150,16 +150,16 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
     __getWorkbenchUIPreview: function() {
       const study = new osparc.data.model.Study(this.__studyData);
       study.buildWorkbench();
+      // make nodes not movable
+      study.setReadOnly(true);
       const workbenchUIPreview = new osparc.component.workbench.WorkbenchUIPreview();
       workbenchUIPreview.setStudy(study);
       workbenchUIPreview.loadModel(study.getWorkbench());
-      /*
       workbenchUIPreview.addListenerOnce("appear", () => {
         const maxScale = 0.5;
         // eslint-disable-next-line no-underscore-dangle
         workbenchUIPreview._fitScaleToNodes(maxScale);
       });
-      */
       return workbenchUIPreview;
     },
 
