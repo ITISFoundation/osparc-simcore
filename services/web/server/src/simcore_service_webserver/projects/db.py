@@ -787,7 +787,7 @@ class ProjectDBAPI(BaseProjectDB):
                 )
                 .returning(projects_comments.c.comment_id)
             )
-            result: tuple(PositiveInt) = await project_comment_id.first()
+            result: tuple[PositiveInt] = await project_comment_id.first()
             return parse_obj_as(CommentID, result[0])
 
     async def list_project_comments(
