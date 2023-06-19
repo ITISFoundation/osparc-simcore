@@ -57,17 +57,17 @@ assert_handler_signature_against_model(
 
 
 @app.get(
-    "/projects/{project_id}/preview",
+    "/projects/{project_id}/nodes/-/preview",
     response_model=Envelope[list[_ProjectNodePreview]],
     tags=TAGS,
-    operation_id="get_project_preview",
+    operation_id="list_project_nodes_previews",
     summary="Lists all previews in the node's project",
 )
-async def get_project_preview(project_id: ProjectID):
+async def list_project_nodes_previews(project_id: ProjectID):
     ...
 
 
-assert_handler_signature_against_model(get_project_preview, ProjectPathParams)
+assert_handler_signature_against_model(list_project_nodes_previews, ProjectPathParams)
 
 
 @app.get(

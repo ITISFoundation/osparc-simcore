@@ -5474,12 +5474,12 @@ paths:
                           description: This pair uniquely identifies a services
                   error:
                     title: Error
-  '/projects/{project_id}/preview':
+  '/projects/{project_id}/nodes/-/preview':
     get:
       tags:
         - project
       summary: Lists all previews in the node's project
-      operationId: get_project_preview
+      operationId: list_project_nodes_previews
       parameters:
         - required: true
           schema:
