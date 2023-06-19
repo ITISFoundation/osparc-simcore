@@ -38,7 +38,7 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
   statics: {
     LAYOUT_HEIGHT: 300,
     NODES_TREE_WIDTH: 160,
-    THUMBNAIL_SLIDER_HEIGHT: 45
+    THUMBNAIL_SLIDER_HEIGHT: 40
   },
 
   members: {
@@ -104,6 +104,7 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
         maxHeight: this.self().THUMBNAIL_SLIDER_HEIGHT
       });
       thumbnailSuggestions.setStudy(study);
+      thumbnailSuggestions.addWorkbenchUIPreviewToSuggestions();
       return thumbnailSuggestions;
     },
 

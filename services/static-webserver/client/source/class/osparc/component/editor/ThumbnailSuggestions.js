@@ -80,6 +80,14 @@ qx.Class.define("osparc.component.editor.ThumbnailSuggestions", {
       });
     },
 
+    addWorkbenchUIPreviewToSuggestions: function() {
+      this.__thumbnailsPerNode["workbenchUIPreview"] = ["osparc/workbenchUI-dark.png"];
+      /*
+      const themeManager = qx.theme.manager.Meta.getInstance();
+      themeManager.addListener("changeTheme", () => this.__themeChanged());
+      */
+    },
+
     setSelectedNodeId: function(selectedNodeId) {
       let suggestions = new Set([]);
       if (selectedNodeId && selectedNodeId in this.__thumbnailsPerNode) {
