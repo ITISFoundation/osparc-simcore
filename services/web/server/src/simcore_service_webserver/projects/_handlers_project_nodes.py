@@ -12,7 +12,7 @@ from aiohttp import web
 from aiohttp.web_exceptions import HTTPNotFound
 from models_library.api_schemas_catalog import ServiceAccessRightsGet
 from models_library.groups import EVERYONE_GROUP_ID
-from models_library.projects import ProjectID
+from models_library.projects import Project, ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.services import ServiceKey, ServiceKeyVersion, ServiceVersion
