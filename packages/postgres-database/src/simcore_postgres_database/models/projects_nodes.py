@@ -5,7 +5,6 @@
 """
 
 import sqlalchemy as sa
-from sqlalchemy import event
 from sqlalchemy.dialects.postgresql import JSONB
 
 from ._common import (
@@ -20,10 +19,23 @@ projects_nodes = sa.Table(
     "projects_nodes",
     metadata,
     sa.Column(
+        "project_uuid",
+        sa.String,
+        sa.ForeignKey(
+            projects.c.uuid,
+            onupdate="CASCADE",
+            ondelete="CASCADE",
+            name="fk_projects_to_projects_nodes_to_projects_uuid",
+        ),
+        nullable=False,
+        primary_key=False,
+        doc="The project unique identifier",
+    ),
+    sa.Column(
         "node_id",
         sa.String,
         nullable=False,
-        primary_key=True,
+        primary_key=False,
         doc="The node unique identifier",
     ),
     sa.Column(
@@ -36,42 +48,10 @@ projects_nodes = sa.Table(
     # TIME STAMPS ----
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
+    sa.UniqueConstraint(
+        "project_uuid", "node_id", name="projects_nodes__project_uuid_node_id_ukey"
+    ),
 )
 
 
 register_modified_datetime_auto_update_trigger(projects_nodes)
-
-
-# TRIGGERS -----------------
-projects_to_projects_nodes_deleted_trigger = sa.DDL(
-    """
-DROP TRIGGER IF EXISTS entry_deleted on projects;
-CREATE TRIGGER entry_deleted
-AFTER DELETE ON projects
-FOR EACH ROW
-EXECUTE FUNCTION delete_orphaned_project_nodes();
-    """
-)
-
-# PROCEDURES -------------------
-delete_orphaned_project_nodes_procedure = sa.DDL(
-    """
-CREATE OR REPLACE FUNCTION delete_orphaned_project_nodes()
-RETURNS TRIGGER AS $$
-BEGIN
-    DELETE FROM projects_nodes
-    WHERE NOT EXISTS (
-        SELECT 1 FROM projects_to_projects_nodes
-        WHERE projects_to_projects_nodes.node_id = projects_nodes.node_id
-    );
-    RETURN NULL;
-END;
-$$ LANGUAGE plpgsql;
-    """
-)
-
-# REGISTER THEM PROCEDURES/TRIGGERS
-
-
-event.listen(projects_nodes, "after_create", delete_orphaned_project_nodes_procedure)
-event.listen(projects, "after_create", projects_to_projects_nodes_deleted_trigger)
