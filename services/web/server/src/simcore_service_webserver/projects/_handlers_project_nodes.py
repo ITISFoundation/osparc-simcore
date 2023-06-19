@@ -499,14 +499,12 @@ async def list_project_node_homepages(request: web.Request) -> web.Response:
     home_pages_per_node = []
 
     if request.app[APP_SETTINGS_KEY].WEBSERVER_DEV_FEATURES_ENABLED:
-        # TODO: get node_ids of project
         project = await projects_api.get_project_for_user(
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
         )
 
-        # TODO: get for each homepage info
         node_ids = parse_obj_as(list[NodeID], list(project.get("workbench", {}).keys()))
         home_pages_per_node = [
             _ProjectNodeHomePage(
@@ -533,7 +531,6 @@ async def get_project_node_homepage(request: web.Request) -> web.Response:
     assert req_ctx  # nosec
 
     if request.app[APP_SETTINGS_KEY].WEBSERVER_DEV_FEATURES_ENABLED:
-        # TODO: get homepage info
 
         project = await projects_api.get_project_for_user(
             request.app,
@@ -556,7 +553,6 @@ async def get_project_node_homepage(request: web.Request) -> web.Response:
         )
         return envelope_json_response(node_home_page)
 
-    # TODO: proper not found resource error
     raise HTTPNotFound(
         reason=f"node {path_params.project_id}/{path_params.node_id} has no homepage"
     )
