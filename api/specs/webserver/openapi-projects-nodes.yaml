@@ -146,6 +146,11 @@ components:
           minLength: 1
           type: string
           format: uri
+        mimetype:
+          title: Mimetype
+          type: string
+          description: File's media type. SEE https://www.iana.org/assignments/media-types/media-types.xhtml
+          example: image/jpeg
     _ProjectGroupAccess:
       title: _ProjectGroupAccess
       required:

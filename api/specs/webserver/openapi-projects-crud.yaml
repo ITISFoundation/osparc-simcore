@@ -298,6 +298,7 @@ components:
         type:
           title: Type
           enum:
+          - note
           - rect
           - text
           type: string
@@ -1048,7 +1049,6 @@ components:
       - user
       type: string
       description: An enumeration.
-      default: all
     ProjectUpdate:
       title: ProjectUpdate
       type: object
