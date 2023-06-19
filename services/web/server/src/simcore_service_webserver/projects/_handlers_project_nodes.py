@@ -471,14 +471,14 @@ class _NodeScreenshot(BaseModel):
 
         mimetype = values.get("mimetype")
 
-        if not mimetype:
-            file_url = values.get("file_url")
+        if mimetype is None:
+            file_url = values["file_url"]
             assert file_url  # nosec
 
             _type, _encoding = mimetypes.guess_type(file_url)
             if _type is None:
                 raise ValueError(
-                    "Could not deduce mimetype, it must be explicitly set."
+                    f"Failed to guess mimetype from {file_url=}. Must be explicitly defined."
                 )
 
             values["mimetype"] = _type
@@ -512,7 +512,8 @@ def _fake_screenshots_factory(
         screenshots.append(
             _NodeScreenshot(
                 thumbnail_url=f"https://placehold.co/170x120?text=render-{short_nodeid}",
-                file_url="https://github.com/Ybalrid/Ogre_glTF/blob/6a59adf2f04253a3afb9459549803ab297932e8d/Media/Monster.glb",
+                file_url="https://github.com/Ybalrid/Ogre_glTF/raw/6a59adf2f04253a3afb9459549803ab297932e8d/Media/Monster.glb",
+                mimetype="model/gltf-binary",
             )
         )
 
