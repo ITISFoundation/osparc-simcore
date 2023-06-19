@@ -40,8 +40,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
   },
 
   statics: {
-    WIDTH: 700,
-    HEIGHT: 700,
+    WIDTH: 710,
+    HEIGHT: 710,
 
     popUpInWindow: function(moreOpts) {
       const title = qx.locale.Manager.tr("Details");
@@ -253,7 +253,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
       // add Open service button
       [
-        this.__getInfoPage,
+        this.__getPreviewPage,
         this.__getPermissionsPage,
         this.__getTagsPage,
         this.__getServicesUpdatePage,
@@ -278,7 +278,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       }
     },
 
-    __getInfoPage: function() {
+    __getPreviewPage: function() {
       const id = "Information";
       const title = this.tr("Information");
       const icon = "@FontAwesome5Solid/info";
