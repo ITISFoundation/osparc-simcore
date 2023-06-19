@@ -33,9 +33,7 @@ from simcore_service_webserver.projects._handlers_project_comments import (  # _
 
 app = FastAPI(redoc_url=None)
 
-TAGS: list[str | Enum] = [
-    "project",
-]
+TAGS: list[str | Enum] = ["project", "comments"]
 
 
 #
@@ -69,7 +67,7 @@ assert_handler_signature_against_model(
     summary="Retrieve all comments for a specific project.",
 )
 async def list_project_comments(
-    project_uuid: ProjectID, limit: int, offset: NonNegativeInt
+    project_uuid: ProjectID, limit: NonNegativeInt = 20, offset: NonNegativeInt = 0
 ):
     ...
 

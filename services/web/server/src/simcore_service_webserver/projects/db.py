@@ -787,8 +787,8 @@ class ProjectDBAPI(BaseProjectDB):
                 )
                 .returning(projects_comments.c.comment_id)
             )
-            result = await project_comment_id.first()
-            return parse_obj_as(CommentID, result)
+            result: tuple(PositiveInt) = await project_comment_id.first()
+            return parse_obj_as(CommentID, result[0])
 
     async def list_project_comments(
         self,
@@ -800,7 +800,7 @@ class ProjectDBAPI(BaseProjectDB):
         async with self.engine.acquire() as conn:
             project_comment_result: ResultProxy = await conn.execute(
                 projects_comments.select()
-                .where(projects_comments.c.project_uuid == project_uuid)
+                .where(projects_comments.c.project_uuid == f"{project_uuid}")
                 .order_by(projects_comments.c.created_at.asc())
                 .offset(offset)
                 .limit(limit)
@@ -817,12 +817,12 @@ class ProjectDBAPI(BaseProjectDB):
     ) -> PositiveInt:
         async with self.engine.acquire() as conn:
             project_comment_result: ResultProxy = await conn.execute(
-                projects_comments.select(func.count()).where(
-                    projects_comments.c.project_uuid == project_uuid
-                )
+                select(func.count())
+                .select_from(projects_comments)
+                .where(projects_comments.c.project_uuid == f"{project_uuid}")
             )
-            result: PositiveInt = await project_comment_result.first()
-            return result
+            result: tuple[PositiveInt] = await project_comment_result.first()
+            return result[0]
 
     async def update_project_comment(
         self,

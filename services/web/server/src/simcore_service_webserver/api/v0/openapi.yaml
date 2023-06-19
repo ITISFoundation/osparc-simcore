@@ -5382,6 +5382,7 @@ paths:
     get:
       tags:
         - project
+        - comments
       summary: Retrieve all comments for a specific project.
       operationId: list_project_comments
       parameters:
@@ -5392,17 +5393,20 @@ paths:
             format: uuid
           name: project_uuid
           in: path
-        - required: true
+        - required: false
           schema:
             title: Limit
+            minimum: 0
             type: integer
+            default: 20
           name: limit
           in: query
-        - required: true
+        - required: false
           schema:
             title: Offset
             minimum: 0
             type: integer
+            default: 0
           name: offset
           in: query
       responses:
@@ -5424,6 +5428,7 @@ paths:
     post:
       tags:
         - project
+        - comments
       summary: Create a new comment for a specific project. The request body should contain the comment content and user information.
       operationId: create_project_comment
       parameters:
@@ -5474,6 +5479,7 @@ paths:
     get:
       tags:
         - project
+        - comments
       summary: Retrieve a specific comment by its ID within a project.
       operationId: get_project_comment
       parameters:
@@ -5549,6 +5555,7 @@ paths:
     put:
       tags:
         - project
+        - comments
       summary: Update the content of a specific comment for a project. The request body should contain the updated comment content.
       operationId: update_project_comment
       parameters:
@@ -5597,6 +5604,7 @@ paths:
     delete:
       tags:
         - project
+        - comments
       summary: Delete a specific comment associated with a project.
       operationId: delete_project_comment
       parameters:

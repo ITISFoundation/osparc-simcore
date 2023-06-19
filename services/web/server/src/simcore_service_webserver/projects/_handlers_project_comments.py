@@ -80,7 +80,7 @@ class _ListProjectCommentsPathParams(BaseModel):
 
 
 class _ListProjectCommentsQueryParams(BaseModel):
-    limit: int = Field(
+    limit: int | None = Field(
         default=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
         description="maximum number of items to return (pagination)",
         ge=1,
@@ -98,7 +98,6 @@ class _ListProjectCommentsQueryParams(BaseModel):
 @login_required
 @permission_required("project.open")
 async def list_project_comments(request: web.Request):
-    req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(
         _ListProjectCommentsPathParams, request
     )
@@ -162,11 +161,6 @@ async def update_project_comment(request: web.Request):
     )
     body_params = await parse_request_body_as(_UpdateProjectCommentsBodyParams, request)
 
-    if req_ctx.user_id != body_params.user_id:
-        raise web.HTTPForbidden(
-            reason="User id in body does not match with the logged in user id"
-        )
-
     return await projects_api.update_project_comment(
         request=request,
         comment_id=path_params.comment_id,
@@ -177,6 +171,7 @@ async def update_project_comment(request: web.Request):
 
 
 class _DeleteProjectCommentsPathParams(BaseModel):
+    project_uuid: ProjectID
     comment_id: CommentID
 
     class Config:
@@ -190,7 +185,6 @@ class _DeleteProjectCommentsPathParams(BaseModel):
 @login_required
 @permission_required("project.open")
 async def delete_project_comment(request: web.Request):
-    req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(
         _DeleteProjectCommentsPathParams, request
     )
@@ -215,7 +209,6 @@ class _GetProjectsCommentPathParams(BaseModel):
 @login_required
 @permission_required("project.open")
 async def get_project_comment(request: web.Request):
-    req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(
         _GetProjectsCommentPathParams, request
     )
