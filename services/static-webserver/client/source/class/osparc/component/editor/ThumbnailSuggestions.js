@@ -84,6 +84,7 @@ qx.Class.define("osparc.component.editor.ThumbnailSuggestions", {
       suggestions.forEach(suggestion => {
         const maxHeight = this.getMaxHeight();
         const thumbnail = new osparc.ui.basic.Thumbnail(suggestion, maxHeight, parseInt(maxHeight*2/3));
+        thumbnail.setMarginLeft(1); // give some extra space to the selection border
         thumbnail.addListener("tap", () => {
           this.getChildren().forEach(thumbnailImg => osparc.utils.Utils.removeBorder(thumbnailImg));
           osparc.utils.Utils.addBorder(thumbnail, 1, "#007fd4"); // Visual Studio blue

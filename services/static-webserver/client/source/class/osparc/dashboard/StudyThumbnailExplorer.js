@@ -65,9 +65,7 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
           break;
         }
         case "scroll-thumbnails": {
-          control = this.__getThumbnailSuggestions().set({
-            marginLeft: 10
-          });
+          control = this.__getThumbnailSuggestions();
           const thumbnailsLayout = this.getChildControl("thumbnails-layout");
           thumbnailsLayout.add(control);
           break;
