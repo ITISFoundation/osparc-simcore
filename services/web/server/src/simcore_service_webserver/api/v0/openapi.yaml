@@ -5479,7 +5479,7 @@ paths:
     get:
       tags:
         - project
-      summary: Lists all nodes homepages info in the project
+      summary: Lists with all node previews in the project
       operationId: list_project_preview
       parameters:
         - required: true
@@ -5509,7 +5509,7 @@ paths:
     get:
       tags:
         - project
-      summary: Gets info on a given node's homepage
+      summary: Gets a give node's preview
       operationId: get_project_node_preview
       parameters:
         - required: true

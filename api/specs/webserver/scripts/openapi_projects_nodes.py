@@ -61,7 +61,7 @@ assert_handler_signature_against_model(
     response_model=Envelope[list[_ProjectNodePreview]],
     tags=TAGS,
     operation_id="list_project_preview",
-    summary="Lists all nodes homepages info in the project",
+    summary="Lists with all node previews in the project",
 )
 async def list_project_preview(project_id: ProjectID):
     ...
@@ -75,7 +75,7 @@ assert_handler_signature_against_model(list_project_preview, ProjectPathParams)
     response_model=Envelope[_ProjectNodePreview],
     tags=TAGS,
     operation_id="get_project_node_preview",
-    summary="Gets info on a given node's homepage",
+    summary="Gets a give node's preview",
     responses={status.HTTP_404_NOT_FOUND: {"description": "Node has no homepage"}},
 )
 async def get_project_node_preview(project_id: ProjectID, node_id: NodeID):

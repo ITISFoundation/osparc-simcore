@@ -28,11 +28,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope__ProjectGroupAccess_'
-  /projects/{project_id}/nodes/-/homepage:
+  /projects/{project_id}/preview:
     get:
       tags:
       - project
-      summary: Lists all nodes homepages info in the project
+      summary: Lists with all node previews in the project
       operationId: list_project_preview
       parameters:
       - required: true
@@ -48,12 +48,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.projects._handlers_project_nodes._ProjectNodeHomePage__'
-  /projects/{project_id}/nodes/{node_id}/homepage:
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.projects._handlers_project_nodes._ProjectNodePreview__'
+  /projects/{project_id}/nodes/{node_id}/preview:
     get:
       tags:
       - project
-      summary: Gets info on a given node's homepage
+      summary: Gets a give node's preview
       operationId: get_project_node_preview
       parameters:
       - required: true
@@ -76,7 +76,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope__ProjectNodeHomePage_'
+                $ref: '#/components/schemas/Envelope__ProjectNodePreview_'
         '404':
           description: Node has no homepage
 components:
@@ -89,23 +89,23 @@ components:
           $ref: '#/components/schemas/_ProjectGroupAccess'
         error:
           title: Error
-    Envelope__ProjectNodeHomePage_:
-      title: Envelope[_ProjectNodeHomePage]
+    Envelope__ProjectNodePreview_:
+      title: Envelope[_ProjectNodePreview]
       type: object
       properties:
         data:
-          $ref: '#/components/schemas/_ProjectNodeHomePage'
+          $ref: '#/components/schemas/_ProjectNodePreview'
         error:
           title: Error
-    Envelope_list_simcore_service_webserver.projects._handlers_project_nodes._ProjectNodeHomePage__:
-      title: Envelope[list[simcore_service_webserver.projects._handlers_project_nodes._ProjectNodeHomePage]]
+    Envelope_list_simcore_service_webserver.projects._handlers_project_nodes._ProjectNodePreview__:
+      title: Envelope[list[simcore_service_webserver.projects._handlers_project_nodes._ProjectNodePreview]]
       type: object
       properties:
         data:
           title: Data
           type: array
           items:
-            $ref: '#/components/schemas/_ProjectNodeHomePage'
+            $ref: '#/components/schemas/_ProjectNodePreview'
         error:
           title: Error
     ServiceKeyVersion:
@@ -127,8 +127,8 @@ components:
           type: string
           description: service version number
       description: This pair uniquely identifies a services
-    _HomePageScreenshot:
-      title: _HomePageScreenshot
+    _NodeScreenshot:
+      title: _NodeScreenshot
       required:
       - thumbnail_url
       - file_url
@@ -166,8 +166,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ServiceKeyVersion'
-    _ProjectNodeHomePage:
-      title: _ProjectNodeHomePage
+    _ProjectNodePreview:
+      title: _ProjectNodePreview
       required:
       - project_id
       - node_id
@@ -185,4 +185,4 @@ components:
           title: Screenshots
           type: array
           items:
-            $ref: '#/components/schemas/_HomePageScreenshot'
+            $ref: '#/components/schemas/_NodeScreenshot'
