@@ -30,6 +30,12 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
     this.__initComponents();
   },
 
+  statics: {
+    LAYOUT_HEIGHT: 300,
+    NODES_TREE_WIDTH: 160,
+    THUMBNAIL_SLIDER_HEIGHT: 45
+  },
+
   members: {
     __studyData: null,
 
@@ -39,9 +45,10 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
         case "nodes-tree":
           control = this.__getNodesTree().set({
             backgroundColor: "transparent",
-            minWidth: 150,
-            maxWidth: 150,
-            minHeight: 200
+            minWidth: this.self().NODES_TREE_WIDTH,
+            maxWidth: this.self().NODES_TREE_WIDTH,
+            maxHeight: this.self().LAYOUT_HEIGHT,
+            marginLeft: -20
           });
           this._add(control);
           break;
@@ -60,7 +67,7 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
         }
         case "thumbnail-viewer-layout": {
           control = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
-            maxHeight: 300
+            maxHeight: this.self().LAYOUT_HEIGHT - this.self().THUMBNAIL_SLIDER_HEIGHT
           });
           const thumbnailsLayout = this.getChildControl("thumbnails-layout");
           thumbnailsLayout.add(control, {
@@ -88,7 +95,8 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
       const study = new osparc.data.model.Study(this.__studyData);
       study.buildWorkbench();
       const thumbnailSuggestions = new osparc.component.editor.ThumbnailSuggestions().set({
-        maxHeight: 60
+        minHeight: this.self().THUMBNAIL_SLIDER_HEIGHT,
+        maxHeight: this.self().THUMBNAIL_SLIDER_HEIGHT
       });
       thumbnailSuggestions.setStudy(study);
       return thumbnailSuggestions;
@@ -111,7 +119,7 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
       scrollThumbnails.addListener("thumbnailTapped", e => {
         const thumbnailSource = e.getData();
         thumbnailViewerLayout.removeAll();
-        const maxHeight = 300;
+        const maxHeight = this.self().LAYOUT_HEIGHT - this.self().THUMBNAIL_SLIDER_HEIGHT;
         const thumbnail = new osparc.ui.basic.Thumbnail(thumbnailSource, maxHeight, parseInt(maxHeight*2/3));
         thumbnailViewerLayout.add(thumbnail, {
           top: 0,
