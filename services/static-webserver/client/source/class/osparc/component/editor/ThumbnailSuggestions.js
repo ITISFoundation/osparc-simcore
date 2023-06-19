@@ -54,9 +54,9 @@ qx.Class.define("osparc.component.editor.ThumbnailSuggestions", {
       const wb = study.getWorkbench();
       const nodes = wb.getWorkbenchInitData() ? wb.getWorkbenchInitData() : wb.getNodes();
       Object.values(nodes).forEach(node => {
-        const srvMetadata = osparc.utils.Services.getMetaData(node["key"], node["version"]);
+        const srvMetadata = osparc.utils.Services.getMetaData(node.getKey(), node.getVersion());
         if (srvMetadata && srvMetadata["thumbnail"] && !osparc.data.model.Node.isFrontend(node)) {
-          const nodeId = node["nodeId"];
+          const nodeId = node.getNodeId();
           if (!(nodeId in this.__thumbnailsPerNode)) {
             this.__thumbnailsPerNode[nodeId] = [];
           }
@@ -82,7 +82,8 @@ qx.Class.define("osparc.component.editor.ThumbnailSuggestions", {
     setSuggestions: function(suggestions) {
       this.removeAll();
       suggestions.forEach(suggestion => {
-        const thumbnail = new osparc.ui.basic.Thumbnail(suggestion, 170, 124);
+        const maxHeight = this.getMaxHeight();
+        const thumbnail = new osparc.ui.basic.Thumbnail(suggestion, maxHeight, parseInt(maxHeight*2/3));
         thumbnail.addListener("tap", () => {
           this.getChildren().forEach(thumbnailImg => osparc.utils.Utils.removeBorder(thumbnailImg));
           osparc.utils.Utils.addBorder(thumbnail, 1, "#007fd4"); // Visual Studio blue
