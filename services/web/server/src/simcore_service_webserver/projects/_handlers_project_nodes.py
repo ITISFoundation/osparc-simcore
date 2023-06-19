@@ -6,7 +6,6 @@ import asyncio
 import functools
 import json
 import logging
-import mimetypes
 from typing import Any
 
 from aiohttp import web
@@ -19,7 +18,7 @@ from models_library.projects_nodes_io import NodeIDStr
 from models_library.services import ServiceKey, ServiceKeyVersion, ServiceVersion
 from models_library.users import GroupID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import BaseModel, Field, HttpUrl, parse_obj_as, root_validator
+from pydantic import BaseModel, Field
 from servicelib.aiohttp.long_running_tasks.server import (
     TaskProgress,
     start_long_running_task,
@@ -49,6 +48,7 @@ from ..users.api import get_user_role
 from ..utils_aiohttp import envelope_json_response
 from . import projects_api
 from ._handlers_crud import ProjectPathParams, RequestContext
+from ._nodes_previews import NodeScreenshot, fake_screenshots_factory
 from .db import ProjectDBAPI
 from .exceptions import (
     NodeNotFoundError,
@@ -360,13 +360,6 @@ async def replace_node_resources(request: web.Request) -> web.Response:
         user_id=req_ctx.user_id,
     )
     raise web.HTTPNotImplemented(reason="Not yet implemented!")
-    # NOTE: SAN? This your code?
-    #
-    # new_node_resources = await projects_api.set_project_node_resources(
-    #     request.app, project=project, node_id=node_id
-    # )
-
-    # return envelope_json_response(new_node_resources)
 
 
 class _ServicesAccessQuery(BaseModel):
@@ -456,73 +449,10 @@ async def get_project_services_access_for_gid(request: web.Request) -> web.Respo
     return envelope_json_response(project_group_access.dict(exclude_none=True))
 
 
-class _NodeScreenshot(BaseModel):
-    thumbnail_url: HttpUrl
-    file_url: HttpUrl
-    mimetype: str = Field(
-        default=None,
-        description="File's media type. SEE https://www.iana.org/assignments/media-types/media-types.xhtml",
-        example="image/jpeg",
-    )
-
-    @root_validator(pre=True)
-    @classmethod
-    def guess_mimetype_if_undefined(cls, values):
-
-        mimetype = values.get("mimetype")
-
-        if mimetype is None:
-            file_url = values["file_url"]
-            assert file_url  # nosec
-
-            _type, _encoding = mimetypes.guess_type(file_url)
-            if _type is None:
-                raise ValueError(
-                    f"Failed to guess mimetype from {file_url=}. Must be explicitly defined."
-                )
-
-            values["mimetype"] = _type
-
-        return values
-
-
-def _fake_screenshots_factory(
-    request: web.Request, node_id: NodeID
-) -> list[_NodeScreenshot]:
-    assert request.app[APP_SETTINGS_KEY].WEBSERVER_DEV_FEATURES_ENABLED  # nosec
-    # References:
-    # - https://github.com/Ybalrid/Ogre_glTF
-    # - https://placehold.co/
-    # - https://picsum.photos/
-    #
-    short_nodeid = str(node_id)[:4]
-    count = int(str(node_id.int)[0])
-
-    screenshots = [
-        _NodeScreenshot(
-            thumbnail_url=f"https://placehold.co/170x120?text=img-{short_nodeid}",
-            file_url=f"https://picsum.photos/seed/{node_id.int + n}/500",
-            mimetype="image/jpeg",
-        )
-        for n in range(count)
-    ]
-
-    if count:
-        screenshots.append(
-            _NodeScreenshot(
-                thumbnail_url=f"https://placehold.co/170x120?text=render-{short_nodeid}",
-                file_url="https://github.com/Ybalrid/Ogre_glTF/raw/6a59adf2f04253a3afb9459549803ab297932e8d/Media/Monster.glb",
-                mimetype="model/gltf-binary",
-            )
-        )
-
-    return screenshots
-
-
 class _ProjectNodePreview(BaseModel):
     project_id: ProjectID
     node_id: NodeID
-    screenshots: list[_NodeScreenshot] = Field(default_factory=list)
+    screenshots: list[NodeScreenshot] = Field(default_factory=list)
 
 
 @routes.get(
@@ -540,20 +470,21 @@ async def list_project_nodes_previews(request: web.Request) -> web.Response:
     nodes_previews = []
 
     if request.app[APP_SETTINGS_KEY].WEBSERVER_DEV_FEATURES_ENABLED:
-        project = await projects_api.get_project_for_user(
+        project_data = await projects_api.get_project_for_user(
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
         )
 
-        node_ids = parse_obj_as(list[NodeID], list(project.get("workbench", {}).keys()))
+        project = Project.parse_obj(project_data)
+
         nodes_previews = [
             _ProjectNodePreview(
                 project_id=path_params.project_id,
                 node_id=node_id,
-                screenshots=_fake_screenshots_factory(request, node_id),
+                screenshots=await fake_screenshots_factory(request, node_id, node),
             )
-            for node_id in node_ids
+            for node_id, node in project.workbench.items()
         ]
 
     return envelope_json_response(nodes_previews)
@@ -572,25 +503,27 @@ async def get_project_node_preview(request: web.Request) -> web.Response:
     assert req_ctx  # nosec
 
     if request.app[APP_SETTINGS_KEY].WEBSERVER_DEV_FEATURES_ENABLED:
-
-        project = await projects_api.get_project_for_user(
+        project_data = await projects_api.get_project_for_user(
             request.app,
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
         )
 
-        if path_params.node_id not in parse_obj_as(
-            list[NodeID], list(project.get("workbench", {}).keys())
-        ):
+        project = Project.parse_obj(project_data)
+
+        node = project.workbench.get(path_params.node_id)
+        if node is None:
             raise NodeNotFoundError(
                 project_uuid=f"{path_params.project_id}",
                 node_uuid=f"{path_params.node_id}",
             )
 
         node_preview = _ProjectNodePreview(
-            project_id=project["uuid"],
+            project_id=project.uuid,
             node_id=path_params.node_id,
-            screenshots=_fake_screenshots_factory(request, path_params.node_id),
+            screenshots=await fake_screenshots_factory(
+                request, path_params.node_id, node
+            ),
         )
         return envelope_json_response(node_preview)
 
