@@ -485,7 +485,7 @@ class _ProjectNodeHomePage(BaseModel):
 
 
 @routes.get(
-    f"/{VTAG}/projects/{{project_id}}/nodes/-/homepage",
+    f"/{VTAG}/projects/{{project_id}}/homepage",
     name="list_project_node_homepages",
 )
 @login_required
