@@ -61,7 +61,7 @@ assert_handler_signature_against_model(
     response_model=Envelope[list[_ProjectNodePreview]],
     tags=TAGS,
     operation_id="get_project_preview",
-    summary="Lists with all node previews in the project",
+    summary="Lists all previews in the node's project",
 )
 async def get_project_preview(project_id: ProjectID):
     ...

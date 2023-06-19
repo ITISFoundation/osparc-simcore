@@ -2360,14 +2360,13 @@ paths:
           in: query
         - required: false
           schema:
-            allOf:
-              - title: ProjectTypeAPI
-                enum:
-                  - all
-                  - template
-                  - user
-                type: string
-                description: An enumeration.
+            title: ProjectTypeAPI
+            enum:
+              - all
+              - template
+              - user
+            type: string
+            description: An enumeration.
             default: all
           name: type
           in: query
@@ -5475,11 +5474,11 @@ paths:
                           description: This pair uniquely identifies a services
                   error:
                     title: Error
-  '/projects/{project_id}/nodes/-/homepage':
+  '/projects/{project_id}/preview':
     get:
       tags:
         - project
-      summary: Lists with all node previews in the project
+      summary: Lists all previews in the node's project
       operationId: get_project_preview
       parameters:
         - required: true
@@ -5495,17 +5494,17 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[list[simcore_service_webserver.projects._handlers_project_nodes._ProjectNodeHomePage]]'
+                title: 'Envelope[list[simcore_service_webserver.projects._handlers_project_nodes._ProjectNodePreview]]'
                 type: object
                 properties:
                   data:
                     title: Data
                     type: array
                     items:
-                      $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1homepage/get/responses/200/content/application~1json/schema/properties/data'
+                      $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1preview/get/responses/200/content/application~1json/schema/properties/data'
                   error:
                     title: Error
-  '/projects/{project_id}/nodes/{node_id}/homepage':
+  '/projects/{project_id}/nodes/{node_id}/preview':
     get:
       tags:
         - project
@@ -5532,11 +5531,11 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[_ProjectNodeHomePage]'
+                title: 'Envelope[_ProjectNodePreview]'
                 type: object
                 properties:
                   data:
-                    title: _ProjectNodeHomePage
+                    title: _ProjectNodePreview
                     required:
                       - project_id
                       - node_id
@@ -5554,7 +5553,7 @@ paths:
                         title: Screenshots
                         type: array
                         items:
-                          title: _HomePageScreenshot
+                          title: _NodeScreenshot
                           required:
                             - thumbnail_url
                             - file_url
@@ -5575,7 +5574,7 @@ paths:
                   error:
                     title: Error
         '404':
-          description: Node has no homepage
+          description: Node has no preview
   '/projects/{project_id}/inputs':
     get:
       tags:
