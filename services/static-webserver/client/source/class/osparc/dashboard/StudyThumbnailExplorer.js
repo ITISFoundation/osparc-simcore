@@ -107,6 +107,17 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
       return thumbnailSuggestions;
     },
 
+    __getWorkbenchUIPreview: function() {
+      const study = new osparc.data.model.Study(this.__studyData);
+      study.buildWorkbench();
+      const workbenchUIPreview = new osparc.component.workbench.WorkbenchUIPreview();
+      workbenchUIPreview.setStudy(study);
+      workbenchUIPreview.loadModel(study.getWorkbench());
+      // eslint-disable-next-line no-underscore-dangle
+      workbenchUIPreview._fitScaleToNodes(0.5);
+      return workbenchUIPreview;
+    },
+
     __buildLayout: function() {
       this.getChildControl("nodes-tree");
       this.getChildControl("scroll-thumbnails");
@@ -138,6 +149,10 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
     __initComponents: function() {
       const scrollThumbnails = this.getChildControl("scroll-thumbnails");
       scrollThumbnails.setSelectedNodeId(null);
+
+      const workbenchUIPreview = this.__getWorkbenchUIPreview();
+      const thumbnailViewerLayout = this.getChildControl("thumbnail-viewer-layout");
+      thumbnailViewerLayout.add(workbenchUIPreview);
     }
   }
 });
