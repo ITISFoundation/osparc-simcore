@@ -133,8 +133,8 @@ qx.Class.define("osparc.product.Utils", {
     getWorkbenhUIPreviewPath: function() {
       const colorManager = qx.theme.manager.Color.getInstance();
       const textColor = colorManager.resolve("text");
-      const lightLogo = osparc.utils.Utils.getColorLuminance(textColor) > 0.4;
-      return lightLogo ? "osparc/workbenchUI-dark.png" : "osparc/workbenchUI-light.png";
+      const darkImage = osparc.utils.Utils.getColorLuminance(textColor) > 0.4;
+      return darkImage ? "osparc/workbenchUI-dark.png" : "osparc/workbenchUI-light.png";
     },
 
     showLicenseExtra: function() {
