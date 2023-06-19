@@ -405,7 +405,7 @@ class ProjectDBAPI(BaseProjectDB):
         log.info("Updating project %s for user %s", project_uuid, user_id)
 
         async with self.engine.acquire() as conn:
-            async with conn.begin() as _transaction:
+            async with conn.begin():
                 current_project: dict = await self._get_project(
                     conn,
                     user_id,
@@ -525,7 +525,7 @@ class ProjectDBAPI(BaseProjectDB):
         )
 
         async with self.engine.acquire() as conn:
-            async with conn.begin() as _transaction:
+            async with conn.begin():
                 project = await self._get_project(
                     conn, user_id, project_uuid, for_update=True
                 )
@@ -566,7 +566,7 @@ class ProjectDBAPI(BaseProjectDB):
             msg=f"Patching project {project_uuid} for user {user_id}",
             extra=get_log_record_extra(user_id=user_id),
         ):
-            async with self.engine.acquire() as conn, conn.begin() as _transaction:
+            async with self.engine.acquire() as conn, conn.begin():
                 current_project: dict = await self._get_project(
                     conn,
                     user_id,
@@ -787,7 +787,7 @@ class ProjectDBAPI(BaseProjectDB):
         raises ProjectInvalidRightsError
         """
         async with self.engine.acquire() as conn:
-            async with conn.begin() as _transaction:
+            async with conn.begin():
                 project = await self._get_project(
                     conn, user_id, project_uuid, for_update=True
                 )
