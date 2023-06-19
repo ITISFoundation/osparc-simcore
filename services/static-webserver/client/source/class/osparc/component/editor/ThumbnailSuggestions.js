@@ -47,6 +47,21 @@ qx.Class.define("osparc.component.editor.ThumbnailSuggestions", {
     }
   },
 
+  statics: {
+    extractThumbanilSuggestions: function(study) {
+      const suggestions = new Set([]);
+      const wb = study.getWorkbench();
+      const nodes = wb.getWorkbenchInitData() ? wb.getWorkbenchInitData() : wb.getNodes();
+      Object.values(nodes).forEach(node => {
+        const srvMetadata = osparc.utils.Services.getMetaData(node["key"], node["version"]);
+        if (srvMetadata && srvMetadata["thumbnail"] && !osparc.data.model.Node.isFrontend(node)) {
+          suggestions.add(srvMetadata["thumbnail"]);
+        }
+      });
+      return Array.from(suggestions);
+    }
+  },
+
   members: {
     __thumbnailsPerNode: null,
 
