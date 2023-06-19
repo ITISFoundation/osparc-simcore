@@ -20,6 +20,7 @@ from unittest import mock
 from unittest.mock import AsyncMock, MagicMock, Mock
 from uuid import uuid4
 
+import aiopg.sa
 import pytest
 import redis
 import redis.asyncio as aioredis
@@ -471,6 +472,20 @@ def postgres_db(
 
     orm.metadata.drop_all(engine)
     engine.dispose()
+
+
+@pytest.fixture
+async def aiopg_engine(postgres_db: sa.engine.Engine) -> AsyncIterator[aiopg.sa.Engine]:
+    from aiopg.sa import create_engine
+
+    engine = await create_engine(f"{postgres_db.url}")
+    assert engine
+
+    yield engine
+
+    if engine:
+        engine.close()
+        await engine.wait_closed()
 
 
 # REDIS CORE SERVICE ------------------------------------------------------
