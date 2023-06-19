@@ -20,8 +20,8 @@ def upgrade():
     op.create_table(
         "projects_comments",
         sa.Column("comment_id", sa.BigInteger(), autoincrement=True, nullable=False),
-        sa.Column("project_id", sa.String(), nullable=True),
-        sa.Column("user_id", sa.String(), nullable=True),
+        sa.Column("project_uuid", sa.String(), nullable=False),
+        sa.Column("user_id", sa.BigInteger(), nullable=False),
         sa.Column("content", sa.String(), nullable=True),
         sa.Column(
             "created_at",
