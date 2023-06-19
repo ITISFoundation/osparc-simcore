@@ -125,6 +125,7 @@ class ProjectDBAPI(BaseProjectDB):
         force_project_uuid: bool = False,
         force_as_template: bool = False,
         hidden: bool = False,
+        node_required_resources: dict[NodeID, dict[str, Any]] | None,
     ) -> dict[str, Any]:
         """Inserts a new project in the database
 
@@ -252,6 +253,21 @@ class ProjectDBAPI(BaseProjectDB):
                         )
                         selected_values["tags"] = project_tags
 
+                        # NOTE: this will at some point completely replace workbench in the DB
+                        project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
+                        for node_id in selected_values["workbench"].keys():
+                            the_node_id = NodeID(node_id)
+                            await project_nodes_repo.add(
+                                conn,
+                                node_id=the_node_id,
+                                node=ProjectNodeCreate(
+                                    required_resources=node_required_resources.get(
+                                        the_node_id, {}
+                                    )
+                                    if node_required_resources
+                                    else {}
+                                ),
+                            )
             # Returns created project with names as in the project schema
             user_email = await self._get_user_email(conn, user_id)
 

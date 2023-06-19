@@ -15,6 +15,7 @@ from secrets import choice
 from typing import Any, AsyncIterator, Iterator, get_args
 from uuid import UUID, uuid5
 
+import aiopg.sa
 import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
@@ -27,6 +28,7 @@ from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
 from simcore_postgres_database.models.groups import GroupType
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.models.users import UserRole
+from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 from simcore_service_webserver.projects._db_utils import (
     DB_EXCLUSIVE_COLUMNS,
     SCHEMA_NON_NULL_KEYS,
@@ -164,7 +166,7 @@ def test_check_project_permissions(
         access_rights = {}
         for p in ["read", "write", "delete"]:
             access_rights[p] = (
-                p in permissions if invert == False else p not in permissions
+                p in permissions if invert is False else p not in permissions
             )
         return access_rights
 
@@ -286,8 +288,9 @@ def _assert_added_project(
     added_prj = deepcopy(added_project)
     # no user so the project owner has a pre-defined value
     _DIFFERENT_KEYS = ["creationDate", "lastChangeDate"]
-
-    assert all(added_prj[k] != original_prj[k] for k in _DIFFERENT_KEYS)
+    assert {k: v for k, v in original_prj.items() if k in _DIFFERENT_KEYS} != {
+        k: v for k, v in added_prj.items() if k in _DIFFERENT_KEYS
+    }
     assert to_datetime(added_prj["creationDate"]) > to_datetime(
         exp_project["creationDate"]
     )
@@ -316,6 +319,22 @@ def _assert_projects_to_product_db_row(
     assert rows[0][projects_to_products.c.product_name] == product_name
 
 
+async def _assert_projects_nodes_db_rows(
+    aiopg_engine: aiopg.sa.engine.Engine, project: dict[str, Any]
+) -> None:
+    async with aiopg_engine.acquire() as conn:
+        repo = ProjectNodesRepo(project_uuid=ProjectID(project["uuid"]))
+        list_of_nodes = await repo.list(conn)
+        project_workbench = project.get("workbench", {})
+        assert len(list_of_nodes) == len(project_workbench)
+        for new_style_node, old_style_node in zip(
+            list_of_nodes, project_workbench.items()
+        ):
+            old_style_node_id, old_style_node_data = old_style_node
+            assert old_style_node_data
+            assert f"{new_style_node.node_id}" == old_style_node_id
+
+
 def _assert_project_db_row(
     postgres_db: sa.engine.Engine, project: dict[str, Any], **kwargs
 ):
@@ -342,10 +361,8 @@ def _assert_project_db_row(
         "last_change_date": to_datetime(project["lastChangeDate"]),
     }
     expected_db_entries.update(kwargs)
-    for k in expected_db_entries:
-        assert (
-            row[k] == expected_db_entries[k]
-        ), f"project column [{k}] does not correspond"
+    assert row
+    assert {k: row[k] for k in expected_db_entries} == expected_db_entries
     assert row["last_change_date"] >= row["creation_date"]
 
 
@@ -362,14 +379,17 @@ async def test_insert_project_to_db(
     primary_group: dict[str, str],
     db_api: ProjectDBAPI,
     osparc_product_name: str,
+    aiopg_engine: aiopg.sa.engine.Engine,
 ):
     original_project = deepcopy(fake_project)
 
     # add project without user id -> by default creates a template
     new_project = await db_api.insert_project(
-        project=fake_project, user_id=None, product_name=osparc_product_name
+        project=fake_project,
+        user_id=None,
+        product_name=osparc_product_name,
+        node_required_resources=None,
     )
-
     _assert_added_project(
         original_project,
         new_project,
@@ -377,6 +397,7 @@ async def test_insert_project_to_db(
     )
     _assert_project_db_row(postgres_db, new_project, type="TEMPLATE")
     _assert_projects_to_product_db_row(postgres_db, new_project, osparc_product_name)
+    await _assert_projects_nodes_db_rows(aiopg_engine, new_project)
 
     # adding a project with a fake user id raises
     fake_user_id = 4654654654
@@ -385,6 +406,7 @@ async def test_insert_project_to_db(
             project=fake_project,
             user_id=fake_user_id,
             product_name=osparc_product_name,
+            node_required_resources=None,
         )
         # adding a project with a fake user but forcing as template should still raise
         await db_api.insert_project(
@@ -392,6 +414,7 @@ async def test_insert_project_to_db(
             user_id=fake_user_id,
             force_as_template=True,
             product_name=osparc_product_name,
+            node_required_resources=None,
         )
 
     # adding a project with a logged user does not raise and creates a STANDARD project
@@ -400,6 +423,7 @@ async def test_insert_project_to_db(
         project=fake_project,
         user_id=logged_user["id"],
         product_name=osparc_product_name,
+        node_required_resources=None,
     )
     assert new_project["uuid"] != original_project["uuid"]
     _assert_added_project(
@@ -422,6 +446,7 @@ async def test_insert_project_to_db(
         },
     )
     _assert_projects_to_product_db_row(postgres_db, new_project, osparc_product_name)
+    await _assert_projects_nodes_db_rows(aiopg_engine, new_project)
 
     # adding a project with a logged user and forcing as template, should create a TEMPLATE project owned by the user
     new_project = await db_api.insert_project(
@@ -429,6 +454,7 @@ async def test_insert_project_to_db(
         user_id=logged_user["id"],
         product_name=osparc_product_name,
         force_as_template=True,
+        node_required_resources=None,
     )
     assert new_project["uuid"] != original_project["uuid"]
     _assert_added_project(
@@ -452,6 +478,7 @@ async def test_insert_project_to_db(
         type="TEMPLATE",
     )
     _assert_projects_to_product_db_row(postgres_db, new_project, osparc_product_name)
+    await _assert_projects_nodes_db_rows(aiopg_engine, new_project)
     # add a project with a uuid that is already present, using force_project_uuid shall raise
     with pytest.raises(UniqueViolation):
         await db_api.insert_project(
@@ -459,6 +486,7 @@ async def test_insert_project_to_db(
             user_id=logged_user["id"],
             product_name=osparc_product_name,
             force_project_uuid=True,
+            node_required_resources=None,
         )
 
     # add a project with a bad uuid that is already present, using force_project_uuid shall raise
@@ -469,6 +497,7 @@ async def test_insert_project_to_db(
             user_id=logged_user["id"],
             product_name=osparc_product_name,
             force_project_uuid=True,
+            node_required_resources=None,
         )
 
     # add a project with a bad uuid that is already present, shall not raise
@@ -477,6 +506,7 @@ async def test_insert_project_to_db(
         user_id=logged_user["id"],
         product_name=osparc_product_name,
         force_project_uuid=False,
+        node_required_resources=None,
     )
     _assert_added_project(
         original_project,
@@ -498,6 +528,7 @@ async def test_insert_project_to_db(
         },
     )
     _assert_projects_to_product_db_row(postgres_db, new_project, osparc_product_name)
+    await _assert_projects_nodes_db_rows(aiopg_engine, new_project)
 
 
 @pytest.mark.parametrize(
@@ -535,6 +566,7 @@ async def test_patch_user_project_workbench_creates_nodes(
     db_api: ProjectDBAPI,
     faker: Faker,
     osparc_product_name: str,
+    aiopg_engine: aiopg.sa.engine.Engine,
 ):
     empty_fake_project = deepcopy(fake_project)
     workbench = empty_fake_project.setdefault("workbench", {})
@@ -545,7 +577,9 @@ async def test_patch_user_project_workbench_creates_nodes(
         project=empty_fake_project,
         user_id=logged_user["id"],
         product_name=osparc_product_name,
+        node_required_resources=None,
     )
+    await _assert_projects_nodes_db_rows(aiopg_engine, new_project)
     partial_workbench_data = {
         faker.uuid4(): {
             "key": f"simcore/services/comp/{faker.pystr().lower()}",
@@ -576,6 +610,7 @@ async def test_patch_user_project_workbench_creates_nodes_raises_if_invalid_node
     db_api: ProjectDBAPI,
     faker: Faker,
     osparc_product_name: str,
+    aiopg_engine: aiopg.sa.engine.Engine,
 ):
     empty_fake_project = deepcopy(fake_project)
     workbench = empty_fake_project.setdefault("workbench", {})
@@ -586,7 +621,9 @@ async def test_patch_user_project_workbench_creates_nodes_raises_if_invalid_node
         project=empty_fake_project,
         user_id=logged_user["id"],
         product_name=osparc_product_name,
+        node_required_resources=None,
     )
+    await _assert_projects_nodes_db_rows(aiopg_engine, new_project)
     partial_workbench_data = {
         faker.uuid4(): {
             "version": faker.numerify("%.#.#"),
@@ -615,6 +652,7 @@ async def test_patch_user_project_workbench_concurrently(
     db_api: ProjectDBAPI,
     number_of_nodes: int,
     osparc_product_name: str,
+    aiopg_engine: aiopg.sa.engine.Engine,
 ):
     _NUMBER_OF_NODES = number_of_nodes
     BASE_UUID = UUID("ccc0839f-93b8-4387-ab16-197281060927")
@@ -637,7 +675,9 @@ async def test_patch_user_project_workbench_concurrently(
         project=fake_project,
         user_id=logged_user["id"],
         product_name=osparc_product_name,
+        node_required_resources=None,
     )
+
     _assert_added_project(
         original_project,
         new_project,
@@ -656,6 +696,7 @@ async def test_patch_user_project_workbench_concurrently(
             str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
         },
     )
+    await _assert_projects_nodes_db_rows(aiopg_engine, new_project)
 
     # patch all the nodes concurrently
     randomly_created_outputs = [
@@ -775,6 +816,7 @@ async def lots_of_projects_and_nodes(
     fake_project: dict[str, Any],
     db_api: ProjectDBAPI,
     osparc_product_name: str,
+    aiopg_engine: aiopg.sa.engine.Engine,
 ) -> AsyncIterator[dict[ProjectID, list[NodeID]]]:
     """Will create >1000 projects with each between 200-1434 nodes"""
     NUMBER_OF_PROJECTS = 1245
@@ -802,8 +844,10 @@ async def lots_of_projects_and_nodes(
                 project=new_project,
                 user_id=logged_user["id"],
                 product_name=osparc_product_name,
+                node_required_resources=None,
             )
         )
+        await _assert_projects_nodes_db_rows(aiopg_engine, new_project)
     await asyncio.gather(*project_creation_tasks)
     print(f"---> created {len(all_created_projects)} projects in the database")
     yield all_created_projects
@@ -872,6 +916,7 @@ async def test_replace_user_project(
     logged_user: UserInfoDict,
     osparc_product_name: str,
     postgres_db: sa.engine.Engine,
+    aiopg_engine: aiopg.sa.engine.Engine,
 ):
     PROJECT_DICT_IGNORE_FIELDS = {"lastChangeDate"}
     original_project = user_project
@@ -888,6 +933,7 @@ async def test_replace_user_project(
     _assert_projects_to_product_db_row(
         postgres_db, working_project, osparc_product_name
     )
+    await _assert_projects_nodes_db_rows(aiopg_engine, working_project)
 
     # now let's create some outputs (similar to what happens when running services)
     NODE_INDEX = 1  # this is not the file-picker
@@ -918,6 +964,7 @@ async def test_replace_user_project(
     _assert_projects_to_product_db_row(
         postgres_db, replaced_project, osparc_product_name
     )
+    await _assert_projects_nodes_db_rows(aiopg_engine, replaced_project)
 
     # the frontend sends project without some fields, but for FRONTEND type of nodes
     # replacing should keep the values
@@ -949,6 +996,7 @@ async def test_has_permission(
     access_rights: dict[str, bool],
     user_role: UserRole,
     client: TestClient,
+    aiopg_engine: aiopg.sa.engine.Engine,
 ):
     project_id = faker.uuid4(cast_to=None)
     owner_id = logged_user["id"]
@@ -963,12 +1011,13 @@ async def test_has_permission(
         access_rights={second_user["primary_gid"]: access_rights},
     )
 
-    await db_api.insert_project(
+    new_project = await db_api.insert_project(
         project=new_project,
         user_id=owner_id,
         product_name=osparc_product_name,
+        node_required_resources=None,
     )
-
+    await _assert_projects_nodes_db_rows(aiopg_engine, new_project)
     for permission in get_args(PermissionStr):
         assert permission in access_rights
 

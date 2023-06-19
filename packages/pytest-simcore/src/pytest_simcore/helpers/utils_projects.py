@@ -10,6 +10,7 @@ from typing import Any
 
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from models_library.projects_nodes_io import NodeID
 from simcore_service_webserver.projects._db_utils import DB_EXCLUSIVE_COLUMNS
 from simcore_service_webserver.projects.db import APP_PROJECT_DBAPI, ProjectDBAPI
 from simcore_service_webserver.projects.models import ProjectDict
@@ -68,6 +69,11 @@ async def create_project(
         product_name=product_name,
         force_project_uuid=force_uuid,
         force_as_template=as_template,
+        # NOTE: fake initial resources until more is needed
+        node_required_resources={
+            NodeID(node_id): {"pytest_fake_resource": 42}
+            for node_id in project_data.get("workbench", {}).keys()
+        },
     )
     try:
         uuidlib.UUID(str(project_data["uuid"]))

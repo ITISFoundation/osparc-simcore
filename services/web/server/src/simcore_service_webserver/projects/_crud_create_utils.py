@@ -237,6 +237,7 @@ async def create_project(
             product_name=product_name,
             force_as_template=as_template,
             hidden=copy_data,
+            node_required_resources=None,
         )
         if copy_project_nodes_coro:
             # NOTE: the new project shall already be inserted before this can run
