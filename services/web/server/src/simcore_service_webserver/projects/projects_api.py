@@ -279,7 +279,7 @@ async def add_project_node(
     service_key: str,
     service_version: str,
     service_id: str | None,
-) -> str:
+) -> NodeID:
     log.debug(
         "starting node %s:%s in project %s for user %s",
         service_key,
@@ -288,34 +288,25 @@ async def add_project_node(
         user_id,
         extra=get_log_record_extra(user_id=user_id),
     )
-    node_uuid = service_id if service_id else f"{uuid4()}"
-
-    # ensure the project is up-to-date in the database prior to start any potential service
-    partial_workbench_data: dict[str, Any] = {
-        node_uuid: jsonable_encoder(
-            Node.parse_obj(
-                {
-                    "key": service_key,
-                    "version": service_version,
-                    "label": service_key.split("/")[-1],
-                }
-            ),
-            exclude_unset=True,
-        ),
-    }
-    db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
-    assert db  # nosec
-    await db.update_project_workbench(
-        partial_workbench_data, user_id, project["uuid"], product_name
-    )
-
+    node_uuid = NodeID(service_id if service_id else f"{uuid4()}")
     default_resources = await catalog_client.get_service_resources(
         request.app, user_id, service_key, service_version
     )
+    db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
+    assert db  # nosec
     await db.add_project_node(
+        user_id,
         ProjectID(project["uuid"]),
-        NodeID(node_uuid),
+        node_uuid,
         ProjectNodeCreate(required_resources=jsonable_encoder(default_resources)),
+        Node.parse_obj(
+            {
+                "key": service_key,
+                "version": service_version,
+                "label": service_key.split("/")[-1],
+            }
+        ),
+        product_name,
     )
 
     # also ensure the project is updated by director-v2 since services
@@ -334,7 +325,7 @@ async def add_project_node(
                 product_name=product_name,
                 user_id=user_id,
                 project_uuid=ProjectID(project["uuid"]),
-                node_uuid=NodeID(node_uuid),
+                node_uuid=node_uuid,
             )
 
     return node_uuid
@@ -391,15 +382,9 @@ async def delete_project_node(
     )
 
     # remove the node from the db
-    partial_workbench_data: dict[str, Any] = {
-        node_uuid: None,
-    }
     db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
     assert db  # nosec
-    await db.update_project_workbench(
-        partial_workbench_data, user_id, f"{project_uuid}"
-    )
-    await db.remove_project_node(project_uuid, NodeID(node_uuid))
+    await db.remove_project_node(user_id, project_uuid, NodeID(node_uuid))
     # also ensure the project is updated by director-v2 since services
     product_name = get_product_name(request)
     await director_v2_api.create_or_update_pipeline(

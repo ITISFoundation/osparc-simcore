@@ -21,6 +21,7 @@ from models_library.projects_comments import CommentID, ProjectsCommentsDB
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.users import UserID
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ValidationError, parse_obj_as
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
@@ -676,16 +677,39 @@ class ProjectDBAPI(BaseProjectDB):
                 )
 
     async def add_project_node(
-        self, project_id: ProjectID, node_id: NodeID, node: ProjectNodeCreate
+        self,
+        user_id: UserID,
+        project_id: ProjectID,
+        node_id: NodeID,
+        node: ProjectNodeCreate,
+        old_struct_node: Node,
+        product_name: str,
     ) -> None:
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
         async with self.engine.acquire() as conn:
             await project_nodes_repo.add(conn, node_id=node_id, node=node)
+        partial_workbench_data: dict[str, Any] = {
+            f"{node_id}": jsonable_encoder(
+                old_struct_node,
+                exclude_unset=True,
+            ),
+        }
+        await self.update_project_workbench(
+            partial_workbench_data, user_id, f"{project_id}", product_name
+        )
 
-    async def remove_project_node(self, project_id: ProjectID, node_id: NodeID) -> None:
+    async def remove_project_node(
+        self, user_id: UserID, project_id: ProjectID, node_id: NodeID
+    ) -> None:
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
         async with self.engine.acquire() as conn:
             await project_nodes_repo.delete(conn, node_id=node_id)
+        partial_workbench_data: dict[str, Any] = {
+            f"{node_id}": None,
+        }
+        await self.update_project_workbench(
+            partial_workbench_data, user_id, f"{project_id}"
+        )
 
     async def get_project_node(
         self, project_id: ProjectID, node_id: NodeID
