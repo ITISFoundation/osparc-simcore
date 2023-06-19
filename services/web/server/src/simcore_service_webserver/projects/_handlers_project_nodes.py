@@ -501,10 +501,10 @@ def _fake_screenshots_factory(
     screenshots = [
         _NodeScreenshot(
             thumbnail_url=f"https://placehold.co/170x120?text=img-{short_nodeid}",
-            file_url=f"https://picsum.photos/seed/{node_id.int + seed}/500",
+            file_url=f"https://picsum.photos/seed/{node_id.int + n}/500",
             mimetype="image/jpeg",
         )
-        for seed in range(count)
+        for n in range(count)
     ]
 
     if count:
