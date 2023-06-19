@@ -48,9 +48,7 @@ projects_nodes = sa.Table(
     # TIME STAMPS ----
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
-    sa.UniqueConstraint(
-        "project_uuid", "node_id", name="projects_nodes__project_uuid_node_id_ukey"
-    ),
+    sa.PrimaryKeyConstraint("project_uuid", "node_id"),
 )
 
 
