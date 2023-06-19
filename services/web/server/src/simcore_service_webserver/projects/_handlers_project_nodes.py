@@ -485,13 +485,13 @@ class _ProjectNodePreview(BaseModel):
 
 
 @routes.get(
-    f"/{VTAG}/projects/{{project_id}}/homepage",
-    name="list_project_preview",
+    f"/{VTAG}/projects/{{project_id}}/preview",
+    name="get_project_preview",
 )
 @login_required
 @permission_required("project.read")
 @_handle_project_nodes_exceptions
-async def list_project_preview(request: web.Request) -> web.Response:
+async def get_project_preview(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     assert req_ctx  # nosec
@@ -519,7 +519,7 @@ async def list_project_preview(request: web.Request) -> web.Response:
 
 
 @routes.get(
-    f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}/homepage",
+    f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}/preview",
     name="get_project_node_preview",
 )
 @login_required

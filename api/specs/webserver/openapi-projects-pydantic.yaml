@@ -78,7 +78,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Envelope__ProjectNodePreview_'
         '404':
-          description: Node has no homepage
+          description: Node has no preview
 components:
   schemas:
     Envelope__ProjectGroupAccess_:

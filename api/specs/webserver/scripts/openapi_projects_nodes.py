@@ -76,7 +76,7 @@ assert_handler_signature_against_model(get_project_preview, ProjectPathParams)
     tags=TAGS,
     operation_id="get_project_node_preview",
     summary="Gets a give node's preview",
-    responses={status.HTTP_404_NOT_FOUND: {"description": "Node has no homepage"}},
+    responses={status.HTTP_404_NOT_FOUND: {"description": "Node has no preview"}},
 )
 async def get_project_node_preview(project_id: ProjectID, node_id: NodeID):
     ...
