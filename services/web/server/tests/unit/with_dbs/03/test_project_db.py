@@ -323,7 +323,7 @@ async def _assert_projects_nodes_db_rows(
     aiopg_engine: aiopg.sa.engine.Engine, project: dict[str, Any]
 ) -> None:
     async with aiopg_engine.acquire() as conn:
-        repo = ProjectNodesRepo(project_uuid=ProjectID(project["uuid"]))
+        repo = ProjectNodesRepo(project_uuid=ProjectID(f"{project['uuid']}"))
         list_of_nodes = await repo.list(conn)
         project_workbench = project.get("workbench", {})
         assert len(list_of_nodes) == len(project_workbench)
@@ -847,8 +847,14 @@ async def lots_of_projects_and_nodes(
                 node_required_resources=None,
             )
         )
-        await _assert_projects_nodes_db_rows(aiopg_engine, new_project)
+
     await asyncio.gather(*project_creation_tasks)
+    await asyncio.gather(
+        *(
+            _assert_projects_nodes_db_rows(aiopg_engine, prj)
+            for prj in project_creation_tasks
+        )
+    )
     print(f"---> created {len(all_created_projects)} projects in the database")
     yield all_created_projects
     print(f"<--- removed {len(all_created_projects)} projects in the database")
