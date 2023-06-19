@@ -25,7 +25,7 @@ from simcore_service_webserver.projects._handlers_crud import ProjectPathParams
 from simcore_service_webserver.projects._handlers_project_nodes import (
     _NodePathParams,
     _ProjectGroupAccess,
-    _ProjectNodeHomePage,
+    _ProjectNodePreview,
 )
 
 app = FastAPI(redoc_url=None)
@@ -57,32 +57,32 @@ assert_handler_signature_against_model(
 
 
 @app.get(
-    "/projects/{project_id}/nodes/-/homepage",
-    response_model=Envelope[list[_ProjectNodeHomePage]],
+    "/projects/{project_id}/preview",
+    response_model=Envelope[list[_ProjectNodePreview]],
     tags=TAGS,
-    operation_id="list_project_node_homepages",
+    operation_id="list_project_preview",
     summary="Lists all nodes homepages info in the project",
 )
-async def list_project_node_homepages(project_id: ProjectID):
+async def list_project_preview(project_id: ProjectID):
     ...
 
 
-assert_handler_signature_against_model(list_project_node_homepages, ProjectPathParams)
+assert_handler_signature_against_model(list_project_preview, ProjectPathParams)
 
 
 @app.get(
-    "/projects/{project_id}/nodes/{node_id}/homepage",
-    response_model=Envelope[_ProjectNodeHomePage],
+    "/projects/{project_id}/nodes/{node_id}/preview",
+    response_model=Envelope[_ProjectNodePreview],
     tags=TAGS,
-    operation_id="get_project_node_homepage",
+    operation_id="get_project_node_preview",
     summary="Gets info on a given node's homepage",
     responses={status.HTTP_404_NOT_FOUND: {"description": "Node has no homepage"}},
 )
-async def get_project_node_homepage(project_id: ProjectID, node_id: NodeID):
+async def get_project_node_preview(project_id: ProjectID, node_id: NodeID):
     ...
 
 
-assert_handler_signature_against_model(get_project_node_homepage, _NodePathParams)
+assert_handler_signature_against_model(get_project_node_preview, _NodePathParams)
 
 
 if __name__ == "__main__":

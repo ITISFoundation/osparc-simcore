@@ -455,14 +455,14 @@ async def get_project_services_access_for_gid(request: web.Request) -> web.Respo
     return envelope_json_response(project_group_access.dict(exclude_none=True))
 
 
-class _HomePageScreenshot(BaseModel):
+class _NodeScreenshot(BaseModel):
     thumbnail_url: HttpUrl
     file_url: HttpUrl
 
 
 def _fake_screenshots_factory(
     request: web.Request, node_id: NodeID
-) -> list[_HomePageScreenshot]:
+) -> list[_NodeScreenshot]:
     assert request.app[APP_SETTINGS_KEY].WEBSERVER_DEV_FEATURES_ENABLED  # nosec
     # https://placehold.co/
     # https://picsum.photos/
@@ -470,7 +470,7 @@ def _fake_screenshots_factory(
     count = int(str(node_id.int)[-1])
     seed = short_nodeid
     return [
-        _HomePageScreenshot(
+        _NodeScreenshot(
             thumbnail_url=f"https://placehold.co/170x120?text={short_nodeid}",
             file_url=f"https://picsum.photos/seed/{seed}/500",
         )
@@ -478,20 +478,20 @@ def _fake_screenshots_factory(
     ]
 
 
-class _ProjectNodeHomePage(BaseModel):
+class _ProjectNodePreview(BaseModel):
     project_id: ProjectID
     node_id: NodeID
-    screenshots: list[_HomePageScreenshot] = Field(default_factory=list)
+    screenshots: list[_NodeScreenshot] = Field(default_factory=list)
 
 
 @routes.get(
     f"/{VTAG}/projects/{{project_id}}/homepage",
-    name="list_project_node_homepages",
+    name="list_project_preview",
 )
 @login_required
 @permission_required("project.read")
 @_handle_project_nodes_exceptions
-async def list_project_node_homepages(request: web.Request) -> web.Response:
+async def list_project_preview(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     assert req_ctx  # nosec
@@ -507,7 +507,7 @@ async def list_project_node_homepages(request: web.Request) -> web.Response:
 
         node_ids = parse_obj_as(list[NodeID], list(project.get("workbench", {}).keys()))
         home_pages_per_node = [
-            _ProjectNodeHomePage(
+            _ProjectNodePreview(
                 project_id=path_params.project_id,
                 node_id=node_id,
                 screenshots=_fake_screenshots_factory(request, node_id),
@@ -520,12 +520,12 @@ async def list_project_node_homepages(request: web.Request) -> web.Response:
 
 @routes.get(
     f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}/homepage",
-    name="get_project_node_homepage",
+    name="get_project_node_preview",
 )
 @login_required
 @permission_required("project.read")
 @_handle_project_nodes_exceptions
-async def get_project_node_homepage(request: web.Request) -> web.Response:
+async def get_project_node_preview(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_NodePathParams, request)
     assert req_ctx  # nosec
@@ -546,7 +546,7 @@ async def get_project_node_homepage(request: web.Request) -> web.Response:
                 node_uuid=f"{path_params.node_id}",
             )
 
-        node_home_page = _ProjectNodeHomePage(
+        node_home_page = _ProjectNodePreview(
             project_id=project["uuid"],
             node_id=path_params.node_id,
             screenshots=_fake_screenshots_factory(request, path_params.node_id),

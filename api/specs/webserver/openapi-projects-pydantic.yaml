@@ -33,7 +33,7 @@ paths:
       tags:
       - project
       summary: Lists all nodes homepages info in the project
-      operationId: list_project_node_homepages
+      operationId: list_project_preview
       parameters:
       - required: true
         schema:
@@ -54,7 +54,7 @@ paths:
       tags:
       - project
       summary: Gets info on a given node's homepage
-      operationId: get_project_node_homepage
+      operationId: get_project_node_preview
       parameters:
       - required: true
         schema:
