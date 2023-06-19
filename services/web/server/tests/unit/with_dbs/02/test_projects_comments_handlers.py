@@ -16,7 +16,6 @@ from simcore_service_webserver.db.models import UserRole
 API_PREFIX = "/" + api_version_prefix
 
 
-@pytest.mark.testit
 @pytest.mark.parametrize(
     "user_role,expected",
     [
