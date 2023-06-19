@@ -10,9 +10,11 @@ from models_library.api_schemas_storage import (
     FileLocation,
     FileLocationArray,
     FileMetaDataGet,
+    PresignedLink,
 )
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import SimCoreFileLink
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, HttpUrl, parse_obj_as
@@ -180,6 +182,21 @@ async def get_app_status(app: web.Application) -> dict[str, Any]:
 
 
 async def get_download_link(
-    app: web.Application, user_id: UserID, file_id: str
+    app: web.Application, user_id: UserID, filelink: SimCoreFileLink
 ) -> HttpUrl:
-    raise NotImplementedError()
+    """
+    Raises:
+        ClientError
+        ValidationError
+
+    Returns:
+        A pre-signed link for simcore file-links (i.e. provide in file-picker's outputs['outFile'])
+    """
+    session, api_endpoint = _get_storage_client(app)
+    url = (
+        api_endpoint / f"locations/{filelink.store}/files" / filelink.path
+    ).with_query(user_id=user_id)
+    async with session.get(f"{url}") as response:
+        response.raise_for_status()
+        download = PresignedLink.parse_obj(await response.json())
+        return parse_obj_as(HttpUrl, download.link)

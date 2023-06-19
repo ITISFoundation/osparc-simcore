@@ -1,11 +1,22 @@
+import logging
 import mimetypes
 
 from aiohttp import web
 from models_library.projects_nodes import Node, NodeID
-from pydantic import BaseModel, Field, HttpUrl, root_validator
+from models_library.projects_nodes_io import SimCoreFileLink
+from pydantic import (
+    BaseModel,
+    Field,
+    HttpUrl,
+    ValidationError,
+    parse_obj_as,
+    root_validator,
+)
 
 from .._constants import APP_SETTINGS_KEY, RQT_USERID_KEY
 from ..storage.api import get_download_link
+
+_logger = logging.getLogger(__name__)
 
 
 class NodeScreenshot(BaseModel):
@@ -48,17 +59,24 @@ async def fake_screenshots_factory(
     short_nodeid = str(node_id)[:4]
     screenshots = []
 
-    user_id = request.get(RQT_USERID_KEY)
+    # Example https://github.com/Ybalrid/Ogre_glTF/raw/6a59adf2f04253a3afb9459549803ab297932e8d/Media/Monster.glb
+    if "file-picker" in node.key and node.outputs is not None:
+        try:
+            user_id = request[RQT_USERID_KEY]
+            assert node.outputs is not None  # nosec
 
-    if "file-picker" in node.key and user_id:
-        # Example https://github.com/Ybalrid/Ogre_glTF/raw/6a59adf2f04253a3afb9459549803ab297932e8d/Media/Monster.glb
-        file_url = await get_download_link(request.app, user_id, file_id="")
-        screenshots.append(
-            NodeScreenshot(
-                thumbnail_url=f"https://placehold.co/170x120?text=render-{short_nodeid}",
-                file_url=file_url,
+            filelink = parse_obj_as(SimCoreFileLink, node.outputs["outFile"])
+
+            file_url = await get_download_link(request.app, user_id, filelink)
+            screenshots.append(
+                NodeScreenshot(
+                    thumbnail_url=f"https://placehold.co/170x120?text=render-{short_nodeid}",
+                    file_url=file_url,
+                )
             )
-        )
+        except (KeyError, ValidationError) as err:
+            _logger.debug("Failed to create link from file-picker: %s", err)
+            pass
 
     elif node.key.startswith("simcore/services/dynamic"):
         # For dynamic services, just create fake images
