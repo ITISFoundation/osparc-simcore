@@ -28,6 +28,7 @@ from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import get_log_record_extra, log_context
 from simcore_postgres_database.errors import UniqueViolation
+from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectNode,
@@ -740,8 +741,8 @@ class ProjectDBAPI(BaseProjectDB):
         async with self.engine.acquire() as conn:
             num_entries = await conn.scalar(
                 sa.select(func.count())
-                .select_from(projects)
-                .where(projects.c.workbench.op("->>")(f"{node_id}") != None)
+                .select_from(projects_nodes)
+                .where(projects_nodes.c.node_id == f"{node_id}")
             )
         assert num_entries is not None  # nosec
         assert isinstance(num_entries, int)  # nosec
@@ -749,15 +750,10 @@ class ProjectDBAPI(BaseProjectDB):
 
     async def list_node_ids_in_project(self, project_uuid: str) -> set[str]:
         """Returns a set containing all the node_ids from project with project_uuid"""
-        result = set()
+        repo = ProjectNodesRepo(project_uuid=ProjectID(project_uuid))
         async with self.engine.acquire() as conn:
-            async for row in conn.execute(
-                sa.select(sa.func.json_object_keys(projects.c.workbench))
-                .select_from(projects)
-                .where(projects.c.uuid == f"{project_uuid}")
-            ):
-                result.update(row.as_tuple())
-        return result
+            list_of_nodes = await repo.list(conn)
+        return {f"{node.node_id}" for node in list_of_nodes}
 
     #
     # Project ACCESS RIGHTS/PERMISSIONS
