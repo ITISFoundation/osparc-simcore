@@ -137,6 +137,15 @@ class ProjectDBAPI(BaseProjectDB):
         """
 
         async with self.engine.acquire() as conn:
+            # NOTE: this is very bad and leads to very weird conversions.
+            # needs to be refactored!!! use arrow (https://github.com/ITISFoundation/osparc-simcore/issues/3797)
+            project.update(
+                {
+                    "creationDate": now_str(),
+                    "lastChangeDate": now_str(),
+                }
+            )
+
             # NOTE: tags are removed in convert_to_db_names so we keep it
             project_tags = parse_obj_as(list[int], project.get("tags", []).copy())
             insert_values = convert_to_db_names(project)
