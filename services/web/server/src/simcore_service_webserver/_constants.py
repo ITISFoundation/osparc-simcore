@@ -27,6 +27,10 @@ INDEX_RESOURCE_NAME: Final[str] = "statics.index"
 # Public config per product returned in /config
 APP_PUBLIC_CONFIG_PER_PRODUCT: Final[str] = f"{__name__}.APP_PUBLIC_CONFIG_PER_PRODUCT"
 
+MSG_UNDER_DEVELOPMENT: Final[
+    str
+] = "Under development. Use WEBSERVER_DEV_FEATURES_ENABLED=1 to enable current implementation"
+
 
 __all__: tuple[str, ...] = (
     "APP_CONFIG_KEY",

@@ -105,6 +105,18 @@ async def list_projects(
     show_hidden: bool = Query(
         default=False, description="includes projects marked as hidden in the listing"
     ),
+    order_by: str
+    | None = Query(
+        default=None,
+        description="Comma separated list of fields for ordering. The default sorting order is ascending. To specify descending order for a field, users append a 'desc' suffix",
+        example="foo desc, bar",
+    ),
+    filters: str
+    | None = Query(
+        default=None,
+        description="Filters to process on the projects list, encoded as JSON",
+        example='{"tags": [1, 5], "classifiers": ["foo", "bar"]}',
+    ),
     search: str = Query(
         default=None,
         description="Multi column full text search",
