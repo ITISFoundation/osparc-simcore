@@ -12,7 +12,7 @@ from copy import deepcopy
 from itertools import combinations
 from random import randint
 from secrets import choice
-from typing import Any, AsyncIterator, Iterator, get_args
+from typing import Any, AsyncIterator, Awaitable, Callable, Iterator, get_args
 from uuid import UUID, uuid5
 
 import aiopg.sa
@@ -29,6 +29,7 @@ from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
 from servicelib.utils import logged_gather
 from simcore_postgres_database.models.groups import GroupType
+from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
@@ -378,6 +379,39 @@ def _assert_project_db_row(
     assert row["last_change_date"] >= row["creation_date"]
 
 
+@pytest.fixture
+async def insert_project_in_db(
+    postgres_db: sa.engine.Engine,
+    aiopg_engine: aiopg.sa.engine.Engine,
+    db_api: ProjectDBAPI,
+    osparc_product_name: str,
+) -> AsyncIterator[Callable[..., Awaitable[dict[str, Any]]]]:
+    inserted_projects = []
+
+    async def _inserter(prj: dict[str, Any], **overrides) -> dict[str, Any]:
+        # add project without user id -> by default creates a template
+        default_config = dict(
+            project=prj,
+            user_id=None,
+            product_name=osparc_product_name,
+            node_required_resources=None,
+        )
+        default_config.update(**overrides)
+        new_project = await db_api.insert_project(**default_config)
+
+        inserted_projects.append(new_project["uuid"])
+        return new_project
+
+    yield _inserter
+
+    print(f"<-- removing {len(inserted_projects)} projects...")
+    async with aiopg_engine.acquire() as conn:
+        await conn.execute(
+            projects.delete().where(projects.c.uuid.in_(inserted_projects))
+        )
+    print(f"<-- removal of {len(inserted_projects)} projects done.")
+
+
 @pytest.mark.parametrize(
     "user_role",
     [
@@ -392,18 +426,14 @@ async def test_insert_project_to_db(
     db_api: ProjectDBAPI,
     osparc_product_name: str,
     aiopg_engine: aiopg.sa.engine.Engine,
+    insert_project_in_db: Callable[..., Awaitable[dict[str, Any]]],
 ):
-    original_project = deepcopy(fake_project)
+    expected_project = deepcopy(fake_project)
 
     # add project without user id -> by default creates a template
-    new_project = await db_api.insert_project(
-        project=fake_project,
-        user_id=None,
-        product_name=osparc_product_name,
-        node_required_resources=None,
-    )
+    new_project = await insert_project_in_db(fake_project)
     _assert_added_project(
-        original_project,
+        expected_project,
         new_project,
         exp_overrides={"prjOwner": "not_a_user@unknown.com"},
     )
@@ -414,32 +444,21 @@ async def test_insert_project_to_db(
     # adding a project with a fake user id raises
     fake_user_id = 4654654654
     with pytest.raises(UserNotFoundError):
-        await db_api.insert_project(
-            project=fake_project,
-            user_id=fake_user_id,
-            product_name=osparc_product_name,
-            node_required_resources=None,
-        )
+        await insert_project_in_db(fake_project, user_id=fake_user_id)
         # adding a project with a fake user but forcing as template should still raise
-        await db_api.insert_project(
-            project=fake_project,
+        await insert_project_in_db(
+            expected_project,
+            fake_project,
             user_id=fake_user_id,
             force_as_template=True,
-            product_name=osparc_product_name,
-            node_required_resources=None,
         )
 
     # adding a project with a logged user does not raise and creates a STANDARD project
     # since we already have a project with that uuid, it shall be updated
-    new_project = await db_api.insert_project(
-        project=fake_project,
-        user_id=logged_user["id"],
-        product_name=osparc_product_name,
-        node_required_resources=None,
-    )
-    assert new_project["uuid"] != original_project["uuid"]
+    new_project = await insert_project_in_db(fake_project, user_id=logged_user["id"])
+    assert new_project["uuid"] != expected_project["uuid"]
     _assert_added_project(
-        original_project,
+        expected_project,
         new_project,
         exp_overrides={
             "uuid": new_project["uuid"],
@@ -461,16 +480,14 @@ async def test_insert_project_to_db(
     await _assert_projects_nodes_db_rows(aiopg_engine, new_project)
 
     # adding a project with a logged user and forcing as template, should create a TEMPLATE project owned by the user
-    new_project = await db_api.insert_project(
-        project=fake_project,
+    new_project = await insert_project_in_db(
+        fake_project,
         user_id=logged_user["id"],
-        product_name=osparc_product_name,
         force_as_template=True,
-        node_required_resources=None,
     )
-    assert new_project["uuid"] != original_project["uuid"]
+    assert new_project["uuid"] != expected_project["uuid"]
     _assert_added_project(
-        original_project,
+        expected_project,
         new_project,
         exp_overrides={
             "uuid": new_project["uuid"],
@@ -493,35 +510,29 @@ async def test_insert_project_to_db(
     await _assert_projects_nodes_db_rows(aiopg_engine, new_project)
     # add a project with a uuid that is already present, using force_project_uuid shall raise
     with pytest.raises(UniqueViolation):
-        await db_api.insert_project(
-            project=fake_project,
+        await insert_project_in_db(
+            fake_project,
             user_id=logged_user["id"],
-            product_name=osparc_product_name,
             force_project_uuid=True,
-            node_required_resources=None,
         )
 
     # add a project with a bad uuid that is already present, using force_project_uuid shall raise
     fake_project["uuid"] = "some bad uuid"
     with pytest.raises(ValueError):
-        await db_api.insert_project(
-            project=fake_project,
+        await insert_project_in_db(
+            fake_project,
             user_id=logged_user["id"],
-            product_name=osparc_product_name,
             force_project_uuid=True,
-            node_required_resources=None,
         )
 
     # add a project with a bad uuid that is already present, shall not raise
-    new_project = await db_api.insert_project(
-        project=fake_project,
+    new_project = await insert_project_in_db(
+        fake_project,
         user_id=logged_user["id"],
-        product_name=osparc_product_name,
         force_project_uuid=False,
-        node_required_resources=None,
     )
     _assert_added_project(
-        original_project,
+        expected_project,
         new_project,
         exp_overrides={
             "uuid": new_project["uuid"],
