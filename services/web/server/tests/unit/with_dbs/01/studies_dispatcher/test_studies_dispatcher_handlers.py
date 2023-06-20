@@ -370,6 +370,8 @@ def redirect_url(redirect_type: str, client: TestClient) -> URL:
                 "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/8987c95d0ca0090e14f3a5b52db724fa24114cf5/services/storage/tests/data/users.csv"
             ),
         )
+    else:
+        raise ValueError(f"{redirect_type=} undefined")
 
     url = (
         client.app.router["get_redirection_to_viewer"]
@@ -397,34 +399,41 @@ async def test_dispatch_study_anonymously(
 
     response = await client.get(f"{redirect_url}")
 
-    expected_project_id = await assert_redirected_to_study(response, client.session)
+    if redirect_type == "file_only":
+        message, status_code = assert_error_in_fragment(response)
+        assert (
+            status_code == web.HTTPUnauthorized.status_code
+        ), f"Got instead {status_code=}, {message=}"
 
-    # has auto logged in as guest?
-    me_url = client.app.router["get_my_profile"].url_for()
-    response = await client.get(f"{me_url}")
+    else:
+        expected_project_id = await assert_redirected_to_study(response, client.session)
 
-    data, _ = await assert_status(response, web.HTTPOk)
-    assert data["login"].endswith("guest-at-osparc.io")
-    assert data["gravatar_id"]
-    assert data["role"].upper() == UserRole.GUEST.name
+        # has auto logged in as guest?
+        me_url = client.app.router["get_my_profile"].url_for()
+        response = await client.get(f"{me_url}")
 
-    # guest user only a copy of the template project
-    url = client.app.router["list_projects"].url_for()
-    response = await client.get(f'{url.with_query(type="user")}')
+        data, _ = await assert_status(response, web.HTTPOk)
+        assert data["login"].endswith("guest-at-osparc.io")
+        assert data["gravatar_id"]
+        assert data["role"].upper() == UserRole.GUEST.name
 
-    payload = await response.json()
-    assert response.status == 200, payload
+        # guest user only a copy of the template project
+        url = client.app.router["list_projects"].url_for()
+        response = await client.get(f'{url.with_query(type="user")}')
 
-    projects, error = await assert_status(response, web.HTTPOk)
-    assert not error
+        payload = await response.json()
+        assert response.status == 200, payload
 
-    assert len(projects) == 1
-    guest_project = projects[0]
+        projects, error = await assert_status(response, web.HTTPOk)
+        assert not error
 
-    assert expected_project_id == guest_project["uuid"]
-    assert guest_project["prjOwner"] == data["login"]
+        assert len(projects) == 1
+        guest_project = projects[0]
 
-    assert mock_client_director_v2_func.called
+        assert expected_project_id == guest_project["uuid"]
+        assert guest_project["prjOwner"] == data["login"]
+
+        assert mock_client_director_v2_func.called
 
 
 def assert_error_in_fragment(resp: ClientResponse) -> tuple[str, int]:
