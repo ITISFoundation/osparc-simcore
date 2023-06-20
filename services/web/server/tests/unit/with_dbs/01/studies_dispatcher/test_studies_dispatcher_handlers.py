@@ -337,10 +337,14 @@ async def assert_redirected_to_study(
 
 
 @pytest.fixture(params=["service_and_file", "service_only", "file_only"])
-def redirect_url(request: FixtureRequest, client: TestClient) -> URL:
+def redirect_type(request: FixtureRequest) -> str:
+    return request.param
+
+
+def redirect_url(redirect_type: str, client: TestClient) -> URL:
     assert client.app
     query: dict[str, Any] = {}
-    if request.param == "service_and_file":
+    if redirect_type == "service_and_file":
         query = dict(
             file_name="users.csv",
             file_size=parse_obj_as(ByteSize, "100KB"),
@@ -351,12 +355,12 @@ def redirect_url(request: FixtureRequest, client: TestClient) -> URL:
                 "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/8987c95d0ca0090e14f3a5b52db724fa24114cf5/services/storage/tests/data/users.csv"
             ),
         )
-    elif request.param == "service_only":
+    elif redirect_type == "service_only":
         query = dict(
             viewer_key="simcore/services/dynamic/raw-graphs",
             viewer_version="2.11.1",
         )
-    elif request.param == "file_only":
+    elif redirect_type == "file_only":
         query = dict(
             file_name="users.csv",
             file_size=parse_obj_as(ByteSize, "1MiB"),
@@ -374,9 +378,11 @@ def redirect_url(request: FixtureRequest, client: TestClient) -> URL:
     return url
 
 
+@pytest.mark.testit
 async def test_dispatch_study_anonymously(
     client: TestClient,
     redirect_url: URL,
+    redirect_type: str,
     mocker: MockerFixture,
     storage_subsystem_mock,
     catalog_subsystem_mock: None,
