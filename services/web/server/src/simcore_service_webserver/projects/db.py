@@ -8,7 +8,6 @@ import logging
 import uuid as uuidlib
 from collections import deque
 from contextlib import AsyncExitStack
-from dataclasses import asdict, fields
 from typing import Any
 
 import sqlalchemy as sa
@@ -19,7 +18,7 @@ from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_comments import CommentID, ProjectsCommentsDB
 from models_library.projects_nodes import Node
-from models_library.projects_nodes_io import NodeID, NodeIDStr
+from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ValidationError, parse_obj_as
@@ -71,7 +70,7 @@ from .exceptions import (
     ProjectNotFoundError,
 )
 from .models import ProjectDict
-from .utils import NodesMap, find_changed_node_keys
+from .utils import find_changed_node_keys
 
 log = logging.getLogger(__name__)
 
@@ -739,31 +738,10 @@ class ProjectDBAPI(BaseProjectDB):
         async with self.engine.acquire() as conn:
             return await project_nodes_repo.update(conn, node_id=node_id, **values)
 
-    async def deepcopy_project_nodes(
-        self,
-        source_project_id: ProjectID,
-        dest_project_id: ProjectID,
-        node_mapping: NodesMap,
-    ) -> None:
-        src_project_nodes_repo = ProjectNodesRepo(project_uuid=source_project_id)
-        dst_project_nodes_repo = ProjectNodesRepo(project_uuid=dest_project_id)
-        project_node_create_field_names = (
-            f.name for f in fields(ProjectNodeCreate) if f.name != "node_id"
-        )
-
+    async def list_project_nodes(self, project_id: ProjectID) -> list[ProjectNode]:
+        project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
         async with self.engine.acquire() as conn:
-            nodes = [
-                ProjectNodeCreate(
-                    node_id=NodeID(node_mapping[NodeIDStr(f"{node.node_id}")]),
-                    **{
-                        k: v
-                        for k, v in asdict(node).items()
-                        if k in project_node_create_field_names
-                    },
-                )
-                for node in await src_project_nodes_repo.list(conn)
-            ]
-            await dst_project_nodes_repo.add(conn, nodes=nodes)
+            return await project_nodes_repo.list(conn)
 
     async def node_id_exists(self, node_id: str) -> bool:
         """Returns True if the node id exists in any of the available projects"""
