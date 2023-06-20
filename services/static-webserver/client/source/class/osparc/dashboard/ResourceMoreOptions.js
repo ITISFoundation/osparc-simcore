@@ -323,6 +323,10 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __getPreviewPage: function() {
+      if (!osparc.product.Utils.showStudyPreview()) {
+        return null;
+      }
+
       const id = "Preview";
       const title = this.tr("Preview");
       const icon = "@FontAwesome5Solid/search-plus";

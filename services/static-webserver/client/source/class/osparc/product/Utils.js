@@ -144,6 +144,13 @@ qx.Class.define("osparc.product.Utils", {
       return false;
     },
 
+    showStudyPreview: function() {
+      if (this.isProduct("osparc") || this.isProduct("s4l")) {
+        return true;
+      }
+      return false;
+    },
+
     showAboutProduct: function() {
       if (this.isProduct("s4l") || this.isProduct("s4llite")) {
         return true;
