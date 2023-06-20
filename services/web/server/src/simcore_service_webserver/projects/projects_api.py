@@ -297,8 +297,9 @@ async def add_project_node(
     await db.add_project_node(
         user_id,
         ProjectID(project["uuid"]),
-        node_uuid,
-        ProjectNodeCreate(required_resources=jsonable_encoder(default_resources)),
+        ProjectNodeCreate(
+            node_id=node_uuid, required_resources=jsonable_encoder(default_resources)
+        ),
         Node.parse_obj(
             {
                 "key": service_key,

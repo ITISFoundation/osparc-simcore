@@ -693,7 +693,6 @@ class ProjectDBAPI(BaseProjectDB):
         self,
         user_id: UserID,
         project_id: ProjectID,
-        node_id: NodeID,
         node: ProjectNodeCreate,
         old_struct_node: Node,
         product_name: str,
@@ -702,7 +701,7 @@ class ProjectDBAPI(BaseProjectDB):
         async with self.engine.acquire() as conn:
             await project_nodes_repo.add(conn, nodes=[node])
         partial_workbench_data: dict[str, Any] = {
-            f"{node_id}": jsonable_encoder(
+            f"{node.node_id}": jsonable_encoder(
                 old_struct_node,
                 exclude_unset=True,
             ),
