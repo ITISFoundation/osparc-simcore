@@ -2,6 +2,7 @@ import datetime
 import json
 import logging
 import urllib.parse
+from collections import deque
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from pathlib import Path
@@ -46,6 +47,31 @@ class S3MetaData:
             e_tag=json.loads(obj["ETag"]),
             size=obj["Size"],
         )
+
+
+async def _list_objects_v2_all_items(
+    client: S3Client, bucket: S3BucketName, prefix: str
+) -> list[ObjectTypeDef]:
+    """
+    returns all the ObjectTypeDef in the path
+    """
+
+    # NOTE: potentially this cal be used to list the entire bucket
+    # which is kinda of bad, for sure storage will run out of ram and crash
+    # TODO: @SAN any good idea on how to limit this? proposals:
+    # - more than 10k files raise an error (do not fail silently like it did now)
+    # - raise a timeout error while fetching data saying there are too many files
+    # - ISSUE listing a directory with too many files this will still give an error
+    #    (To solve this we need to paginate the file listing API per se)
+
+    results: deque[ObjectTypeDef] = deque()
+
+    paginator = client.get_paginator("list_objects_v2")
+    async for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
+        for entry in page.get("Contents", []):
+            results.append(entry)
+
+    return list(results)
 
 
 @dataclass
@@ -225,6 +251,21 @@ class StorageS3Client:
         await self.client.delete_object(Bucket=bucket, Key=file_id)
 
     @s3_exception_handler(log)
+    async def delete_files_in_path(self, bucket: S3BucketName, *, prefix: str) -> None:
+        # NOTE: the / at the end of the Prefix is VERY important,
+        # makes the listing several order of magnitudes faster
+
+        s3_meta_data_list: list[S3MetaData] = await self.list_files(
+            bucket, prefix=prefix
+        )
+        await logged_gather(
+            *[
+                self.delete_file(bucket, s3_meta_data.file_id)
+                for s3_meta_data in s3_meta_data_list
+            ]
+        )
+
+    @s3_exception_handler(log)
     async def delete_files_in_project_node(
         self,
         bucket: S3BucketName,
@@ -233,14 +274,13 @@ class StorageS3Client:
     ) -> None:
         # NOTE: the / at the end of the Prefix is VERY important,
         # makes the listing several order of magnitudes faster
-        response = await self.client.list_objects_v2(
-            Bucket=bucket,
-            Prefix=f"{project_id}/{node_id}/" if node_id else f"{project_id}/",
+        s3_objects: list[ObjectTypeDef] = await _list_objects_v2_all_items(
+            self.client,
+            bucket=bucket,
+            prefix=f"{project_id}/{node_id}/" if node_id else f"{project_id}/",
         )
 
-        if objects_to_delete := [
-            f["Key"] for f in response.get("Contents", []) if "Key" in f
-        ]:
+        if objects_to_delete := [f["Key"] for f in s3_objects if "Key" in f]:
             await self.client.delete_objects(
                 Bucket=bucket,
                 Delete={"Objects": [{"Key": key} for key in objects_to_delete]},
@@ -287,10 +327,14 @@ class StorageS3Client:
         self, bucket: S3BucketName, *, prefix: str
     ) -> list[S3MetaData]:
         # NOTE: adding a / at the end of a folder improves speed by several orders of magnitudes
-        response = await self.client.list_objects_v2(Bucket=bucket, Prefix=prefix)
+
+        s3_objects: list[ObjectTypeDef] = await _list_objects_v2_all_items(
+            self.client, bucket, prefix
+        )
+
         return [
             S3MetaData.from_botocore_object(entry)
-            for entry in response.get("Contents", [])
+            for entry in s3_objects
             if all(k in entry for k in ("Key", "LastModified", "ETag", "Size"))
         ]
 

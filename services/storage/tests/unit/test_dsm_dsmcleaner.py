@@ -10,7 +10,7 @@ import asyncio
 import datetime
 import urllib.parse
 from pathlib import Path
-from typing import Awaitable, Callable, Optional
+from typing import Awaitable, Callable
 
 import pytest
 from aiopg.sa.engine import Engine
@@ -88,7 +88,7 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
     """In this test we create valid upload links and check that once
     expired they get properly deleted"""
     await simcore_s3_dsm.create_file_upload_links(
-        user_id, simcore_file_id, link_type, file_size
+        user_id, simcore_file_id, link_type, file_size, False
     )
     # ensure the database is correctly set up
     async with aiopg_engine.acquire() as conn:
@@ -142,7 +142,7 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
 async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pending_uploads(
     disabled_dsm_cleaner_task,
     upload_file: Callable[
-        [ByteSize, str, Optional[SimcoreS3FileID]],
+        [ByteSize, str, SimcoreS3FileID | None],
         Awaitable[tuple[Path, SimcoreS3FileID]],
     ],
     aiopg_engine: Engine,
@@ -163,7 +163,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
 
     # now create a new link to the VERY SAME FILE UUID
     await simcore_s3_dsm.create_file_upload_links(
-        user_id, file_id, link_type, file_size
+        user_id, file_id, link_type, file_size, False
     )
     # ensure the database is correctly set up
     async with aiopg_engine.acquire() as conn:

@@ -25,6 +25,7 @@ from pydantic import (
     ByteSize,
     Extra,
     parse_obj_as,
+    root_validator,
     validate_arguments,
     validator,
 )
@@ -89,7 +90,6 @@ class FileMetaData(FileMetaDataGet):
         location_name: LocationName,
         **file_meta_data_kwargs,
     ):
-
         parts = file_id.split("/")
         now = datetime.datetime.utcnow()
         fmd_kwargs = {
@@ -131,6 +131,7 @@ class MultiPartUploadLinks(BaseModel):
 
 class StorageQueryParamsBase(BaseModel):
     user_id: UserID
+    expand_dirs: bool = True
 
     class Config:
         allow_population_by_field_name = True
@@ -139,6 +140,7 @@ class StorageQueryParamsBase(BaseModel):
 
 class FilesMetadataQueryParams(StorageQueryParamsBase):
     uuid_filter: str = ""
+    expand_dirs: bool = True
 
 
 class SyncMetadataQueryParams(BaseModel):
@@ -168,6 +170,16 @@ class FileUploadQueryParams(StorageQueryParamsBase):
         if v is not None:
             return f"{v}".upper()
         return v
+
+    @root_validator()
+    @classmethod
+    def when_directory_force_link_type_and_file_size(cls, values):
+        if values["is_directory"] is True:
+            # sets directory size by default to undefined
+            values["file_size"] = -1
+            # only 1 link will be returned manged by the uploader
+            values["link_type"] = LinkType.S3
+        return values
 
 
 class DeleteFolderQueryParams(StorageQueryParamsBase):

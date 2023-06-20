@@ -61,6 +61,7 @@ async def get_files_metadata_dataset(request: web.Request) -> web.Response:
     data: list[FileMetaData] = await dsm.list_files_in_dataset(
         user_id=query_params.user_id,
         dataset_id=path_params.dataset_id,
+        expand_dirs=query_params.expand_dirs,
     )
     return web.json_response(
         {"data": [jsonable_encoder(FileMetaDataGet.from_orm(d)) for d in data]},

@@ -24,7 +24,8 @@ from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
-from servicelib.utils import logged_gather
+from servicelib.utils import ensure_ends_with, logged_gather
+from simcore_service_storage.s3_client import S3MetaData
 
 from . import db_file_meta_data, db_projects, db_tokens
 from .constants import (
@@ -106,17 +107,55 @@ class SimcoreS3DataManager(BaseDataManager):
             ]
 
     async def list_files_in_dataset(
-        self, user_id: UserID, dataset_id: str
+        self, user_id: UserID, dataset_id: str, expand_dirs: bool
     ) -> list[FileMetaData]:
         data: list[FileMetaData] = await self.list_files(
-            user_id, uuid_filter=dataset_id + "/"
+            user_id, expand_dirs, uuid_filter=ensure_ends_with(dataset_id, "/")
         )
         return data
 
+    async def _expand_directory(self, fmd: FileMetaDataAtDB) -> list[FileMetaData]:
+        """
+        Scans S3 backend and returns a list S3MetaData entries which get mapped
+        to FileMetaData entry.
+        """
+        files_in_folder: list[S3MetaData] = await get_s3_client(self.app).list_files(
+            self.simcore_bucket_name,
+            prefix=ensure_ends_with(fmd.file_id, "/"),
+        )
+        result: list[FileMetaData] = [
+            convert_db_to_model(
+                FileMetaDataAtDB(
+                    location_id=fmd.location_id,
+                    location=fmd.location,
+                    bucket_name=fmd.bucket_name,
+                    object_name=x.file_id,
+                    user_id=fmd.user_id,
+                    # NOTE `created_at` is inherited from the directory,
+                    # since S3 does not provide it. This filed is
+                    # inaccurate!
+                    created_at=fmd.created_at,
+                    file_id=x.file_id,
+                    file_size=parse_obj_as(ByteSize, x.size),
+                    last_modified=x.last_modified,
+                    entity_tag=x.e_tag,
+                    is_soft_link=False,
+                    is_directory=False,
+                )
+            )
+            for x in files_in_folder
+        ]
+        return result
+
     async def list_files(
-        self, user_id: UserID, uuid_filter: str = ""
+        self, user_id: UserID, expand_dirs: bool, uuid_filter: str = ""
     ) -> list[FileMetaData]:
-        data: list[FileMetaData] = []
+        """
+        expand_dirs `False`: returns the one metadata entry for each directory
+        expand_dirs `True`: returns all files in each directory (no directories will be included)
+        """
+
+        data: deque[FileMetaData] = deque()
         accesible_projects_ids = []
         async with self.engine.acquire() as conn, conn.begin():
             accesible_projects_ids = await get_readable_project_ids(conn, user_id)
@@ -131,6 +170,11 @@ class SimcoreS3DataManager(BaseDataManager):
             )
 
             for fmd in file_metadatas:
+                if fmd.is_directory and expand_dirs:
+                    # lists content of the directory
+                    data.extend(await self._expand_directory(fmd))
+                    continue
+
                 if is_file_entry_valid(fmd):
                     data.append(convert_db_to_model(fmd))
                     continue
@@ -156,7 +200,7 @@ class SimcoreS3DataManager(BaseDataManager):
         #        with information from the projects table!
         # also all this stuff with projects should be done in the client code not here
         # NOTE: sorry for all the FIXMEs here, but this will need further refactoring
-        clean_data = []
+        clean_data: deque[FileMetaData] = deque()
         for d in data:
             if d.project_id not in prj_names_mapping:
                 continue
@@ -192,6 +236,7 @@ class SimcoreS3DataManager(BaseDataManager):
         file_id: StorageFileID,
         link_type: LinkType,
         file_size_bytes: ByteSize,
+        is_directory: bool,
     ) -> UploadLinks:
         async with self.engine.acquire() as conn, conn.begin() as transaction:
             can: AccessRights | None = await get_file_access_rights(
@@ -218,6 +263,7 @@ class SimcoreS3DataManager(BaseDataManager):
                     or link_type == LinkType.S3
                 )
                 else None,
+                is_directory=is_directory,
             )
             # NOTE: ensure the database is updated so cleaner does not pickup newly created uploads
             await transaction.commit()
@@ -379,9 +425,14 @@ class SimcoreS3DataManager(BaseDataManager):
                 file: FileMetaDataAtDB = await db_file_meta_data.get(
                     conn, parse_obj_as(SimcoreS3FileID, file_id)
                 )
-                await get_s3_client(self.app).delete_file(
-                    file.bucket_name, file.file_id
-                )
+                if file.is_directory:
+                    await get_s3_client(self.app).delete_files_in_path(
+                        file.bucket_name, prefix=ensure_ends_with(file.file_id, "/")
+                    )
+                else:
+                    await get_s3_client(self.app).delete_file(
+                        file.bucket_name, file.file_id
+                    )
                 await db_file_meta_data.delete(conn, [file.file_id])
 
     async def delete_project_simcore_s3(
@@ -712,13 +763,17 @@ class SimcoreS3DataManager(BaseDataManager):
     async def _update_database_from_storage(
         self, conn: SAConnection, fmd: FileMetaDataAtDB
     ) -> FileMetaDataAtDB:
-        s3_metadata = await get_s3_client(self.app).get_file_metadata(
-            fmd.bucket_name, fmd.object_name
-        )
+        s3_metadata: S3MetaData | None = None
+        if not fmd.is_directory:
+            s3_metadata = await get_s3_client(self.app).get_file_metadata(
+                fmd.bucket_name, fmd.object_name
+            )
+
         fmd = await db_file_meta_data.get(conn, fmd.file_id)
-        fmd.file_size = parse_obj_as(ByteSize, s3_metadata.size)
-        fmd.last_modified = s3_metadata.last_modified
-        fmd.entity_tag = s3_metadata.e_tag
+        if s3_metadata:
+            fmd.file_size = parse_obj_as(ByteSize, s3_metadata.size)
+            fmd.last_modified = s3_metadata.last_modified
+            fmd.entity_tag = s3_metadata.e_tag
         fmd.upload_expires_at = None
         fmd.upload_id = None
         updated_fmd = await db_file_meta_data.upsert(conn, convert_db_to_model(fmd))
@@ -766,6 +821,7 @@ class SimcoreS3DataManager(BaseDataManager):
                     user_id,
                     dst_file_id,
                     upload_id=S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID,
+                    is_directory=False,
                 )
                 # NOTE: ensure the database is updated so cleaner does not pickup newly created uploads
                 await transaction.commit()
@@ -800,6 +856,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 user_id,
                 dst_file_id,
                 upload_id=S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID,
+                is_directory=False,
             )
             # NOTE: ensure the database is updated so cleaner does not pickup newly created uploads
             await transaction.commit()
@@ -820,6 +877,7 @@ class SimcoreS3DataManager(BaseDataManager):
         user_id: UserID,
         file_id: StorageFileID,
         upload_id: UploadID | None,
+        is_directory: bool,
     ) -> FileMetaDataAtDB:
         now = datetime.datetime.utcnow()
         upload_expiration_date = now + datetime.timedelta(
@@ -833,6 +891,7 @@ class SimcoreS3DataManager(BaseDataManager):
             location_name=self.location_name,
             upload_expires_at=upload_expiration_date,
             upload_id=upload_id,
+            is_directory=is_directory,
         )
         return await db_file_meta_data.upsert(conn, fmd)
 
