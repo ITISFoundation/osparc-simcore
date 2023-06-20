@@ -39,7 +39,7 @@ class ProjectNodeCreate:
     required_resources: dict[str, Any] = field(default_factory=dict)
 
 
-PROJECT_NODE_CREATE_FIELD_NAMES_WO_NODE_ID: Final[tuple[str]] = tuple(
+PROJECT_NODE_CREATE_FIELD_NAMES_WO_NODE_ID: Final[tuple[str, ...]] = tuple(
     f.name for f in fields(ProjectNodeCreate) if f.name != "node_id"
 )
 
