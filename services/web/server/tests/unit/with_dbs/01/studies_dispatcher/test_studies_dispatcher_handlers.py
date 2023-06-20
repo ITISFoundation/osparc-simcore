@@ -341,6 +341,7 @@ def redirect_type(request: FixtureRequest) -> str:
     return request.param
 
 
+@pytest.fixture
 def redirect_url(redirect_type: str, client: TestClient) -> URL:
     assert client.app
     query: dict[str, Any] = {}
