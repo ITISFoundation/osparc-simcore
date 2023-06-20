@@ -29,7 +29,7 @@ projects_comments = sa.Table(
     ),
     sa.Column(
         "user_id",
-        sa.String,
+        sa.BigInteger,
         sa.ForeignKey(
             users.c.id,
             name="fk_projects_comments_user_id",

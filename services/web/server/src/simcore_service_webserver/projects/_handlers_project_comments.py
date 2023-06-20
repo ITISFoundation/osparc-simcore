@@ -26,6 +26,7 @@ from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from . import projects_api
 from ._handlers_crud import RequestContext
+from .exceptions import ProjectNotFoundError
 
 _logger = logging.getLogger(__name__)
 
@@ -52,7 +53,7 @@ class _CreateProjectCommentsBodyParams(BaseModel):
     f"/{VTAG}/projects/{{project_uuid}}/comments", name="create_project_comment"
 )
 @login_required
-@permission_required("project.open")
+@permission_required("project.read")
 async def create_project_comment(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(
@@ -60,21 +61,34 @@ async def create_project_comment(request: web.Request):
     )
     body_params = await parse_request_body_as(_CreateProjectCommentsBodyParams, request)
 
-    if req_ctx.user_id != body_params.user_id:
-        raise web.HTTPForbidden(
-            reason="User id in body does not match with the logged in user id"
+    try:
+        # ensure the project exists
+        await projects_api.get_project_for_user(
+            request.app,
+            project_uuid=f"{path_params.project_uuid}",
+            user_id=req_ctx.user_id,
+            include_state=False,
         )
 
-    comment_id = await projects_api.create_project_comment(
-        request=request,
-        project_uuid=path_params.project_uuid,
-        user_id=req_ctx.user_id,
-        content=body_params.content,
-    )
+        if req_ctx.user_id != body_params.user_id:
+            raise web.HTTPForbidden(
+                reason="User id in body does not match with the logged in user id"
+            )
 
-    return web.json_response(
-        {"data": comment_id}, status=web.HTTPCreated.status_code, dumps=json_dumps
-    )
+        comment_id = await projects_api.create_project_comment(
+            request=request,
+            project_uuid=path_params.project_uuid,
+            user_id=req_ctx.user_id,
+            content=body_params.content,
+        )
+
+        return web.json_response(
+            {"data": comment_id}, status=web.HTTPCreated.status_code, dumps=json_dumps
+        )
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(
+            reason=f"Project {path_params.project_uuid} not found"
+        ) from exc
 
 
 class _ListProjectCommentsPathParams(BaseModel):
@@ -101,8 +115,9 @@ class _ListProjectCommentsQueryParams(BaseModel):
 
 @routes.get(f"/{VTAG}/projects/{{project_uuid}}/comments", name="list_project_comments")
 @login_required
-@permission_required("project.open")
+@permission_required("project.read")
 async def list_project_comments(request: web.Request):
+    req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(
         _ListProjectCommentsPathParams, request
     )
@@ -110,31 +125,44 @@ async def list_project_comments(request: web.Request):
         _ListProjectCommentsQueryParams, request
     )
 
-    total_project_comments = await projects_api.total_project_comments(
-        request=request,
-        project_uuid=path_params.project_uuid,
-    )
-
-    project_comments = await projects_api.list_project_comments(
-        request=request,
-        project_uuid=path_params.project_uuid,
-        offset=query_params.offset,
-        limit=query_params.limit,
-    )
-
-    page = Page[dict[str, Any]].parse_obj(
-        paginate_data(
-            chunk=project_comments,
-            request_url=request.url,
-            total=total_project_comments,
-            limit=query_params.limit,
-            offset=query_params.offset,
+    try:
+        # ensure the project exists
+        await projects_api.get_project_for_user(
+            request.app,
+            project_uuid=f"{path_params.project_uuid}",
+            user_id=req_ctx.user_id,
+            include_state=False,
         )
-    )
-    return web.Response(
-        text=page.json(**RESPONSE_MODEL_POLICY),
-        content_type=MIMETYPE_APPLICATION_JSON,
-    )
+
+        total_project_comments = await projects_api.total_project_comments(
+            request=request,
+            project_uuid=path_params.project_uuid,
+        )
+
+        project_comments = await projects_api.list_project_comments(
+            request=request,
+            project_uuid=path_params.project_uuid,
+            offset=query_params.offset,
+            limit=query_params.limit,
+        )
+
+        page = Page[dict[str, Any]].parse_obj(
+            paginate_data(
+                chunk=project_comments,
+                request_url=request.url,
+                total=total_project_comments,
+                limit=query_params.limit,
+                offset=query_params.offset,
+            )
+        )
+        return web.Response(
+            text=page.json(**RESPONSE_MODEL_POLICY),
+            content_type=MIMETYPE_APPLICATION_JSON,
+        )
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(
+            reason=f"Project {path_params.project_uuid} not found"
+        ) from exc
 
 
 class _UpdateProjectCommentsPathParams(BaseModel):
@@ -158,7 +186,7 @@ class _UpdateProjectCommentsBodyParams(BaseModel):
     name="update_project_comment",
 )
 @login_required
-@permission_required("project.open")
+@permission_required("project.read")
 async def update_project_comment(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(
@@ -166,13 +194,26 @@ async def update_project_comment(request: web.Request):
     )
     body_params = await parse_request_body_as(_UpdateProjectCommentsBodyParams, request)
 
-    return await projects_api.update_project_comment(
-        request=request,
-        comment_id=path_params.comment_id,
-        project_uuid=path_params.project_uuid,
-        user_id=req_ctx.user_id,
-        content=body_params.content,
-    )
+    try:
+        # ensure the project exists
+        await projects_api.get_project_for_user(
+            request.app,
+            project_uuid=f"{path_params.project_uuid}",
+            user_id=req_ctx.user_id,
+            include_state=False,
+        )
+
+        return await projects_api.update_project_comment(
+            request=request,
+            comment_id=path_params.comment_id,
+            project_uuid=path_params.project_uuid,
+            user_id=req_ctx.user_id,
+            content=body_params.content,
+        )
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(
+            reason=f"Project {path_params.project_uuid} not found"
+        ) from exc
 
 
 class _DeleteProjectCommentsPathParams(BaseModel):
@@ -188,17 +229,31 @@ class _DeleteProjectCommentsPathParams(BaseModel):
     name="delete_project_comment",
 )
 @login_required
-@permission_required("project.open")
+@permission_required("project.read")
 async def delete_project_comment(request: web.Request):
+    req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(
         _DeleteProjectCommentsPathParams, request
     )
 
-    await projects_api.delete_project_comment(
-        request=request,
-        comment_id=path_params.comment_id,
-    )
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    try:
+        # ensure the project exists
+        await projects_api.get_project_for_user(
+            request.app,
+            project_uuid=f"{path_params.project_uuid}",
+            user_id=req_ctx.user_id,
+            include_state=False,
+        )
+
+        await projects_api.delete_project_comment(
+            request=request,
+            comment_id=path_params.comment_id,
+        )
+        raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(
+            reason=f"Project {path_params.project_uuid} not found"
+        ) from exc
 
 
 class _GetProjectsCommentPathParams(BaseModel):
@@ -214,13 +269,27 @@ class _GetProjectsCommentPathParams(BaseModel):
     name="get_project_comment",
 )
 @login_required
-@permission_required("project.open")
+@permission_required("project.read")
 async def get_project_comment(request: web.Request):
+    req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(
         _GetProjectsCommentPathParams, request
     )
 
-    return await projects_api.get_project_comment(
-        request=request,
-        comment_id=path_params.comment_id,
-    )
+    try:
+        # ensure the project exists
+        await projects_api.get_project_for_user(
+            request.app,
+            project_uuid=f"{path_params.project_uuid}",
+            user_id=req_ctx.user_id,
+            include_state=False,
+        )
+
+        return await projects_api.get_project_comment(
+            request=request,
+            comment_id=path_params.comment_id,
+        )
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(
+            reason=f"Project {path_params.project_uuid} not found"
+        ) from exc
