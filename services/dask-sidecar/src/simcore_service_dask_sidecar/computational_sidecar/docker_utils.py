@@ -164,10 +164,10 @@ async def _parse_and_publish_logs(
     progress_value = await _try_parse_progress(log_line)
     if progress_value is not None:
         task_publishers.publish_progress(progress_value)
-    else:
-        task_publishers.publish_logs(
-            message=log_line, log_level=guess_message_log_level(log_line)
-        )
+
+    task_publishers.publish_logs(
+        message=log_line, log_level=guess_message_log_level(log_line)
+    )
 
 
 async def _parse_container_log_file(
