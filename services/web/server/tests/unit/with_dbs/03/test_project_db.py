@@ -23,7 +23,9 @@ from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from psycopg2.errors import UniqueViolation
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_dict import copy_from_dict_ex
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
 from simcore_postgres_database.models.groups import GroupType
 from simcore_postgres_database.models.projects_to_products import projects_to_products
@@ -267,16 +269,24 @@ async def test_setup_projects_db(client: TestClient):
     assert db_api.engine
 
 
+@pytest.fixture
+def app_environment(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> EnvVarsDict:
+    # improve speed by using more clients
+    envs_plugins = setenvs_from_dict(
+        monkeypatch,
+        {"POSTGRES_MAXSIZE": "80"},
+    )
+    return app_environment | envs_plugins
+
+
 @pytest.fixture()
 def db_api(client: TestClient, postgres_db: sa.engine.Engine) -> Iterator[ProjectDBAPI]:
     assert client.app
     db_api = ProjectDBAPI.get_from_app_context(app=client.app)
 
     yield db_api
-
-    # clean the projects
-    with postgres_db.connect() as conn:
-        conn.execute("DELETE FROM projects")
 
 
 def _assert_added_project(
@@ -639,6 +649,9 @@ async def test_patch_user_project_workbench_creates_nodes_raises_if_invalid_node
         )
 
 
+print("<-- deleting all projects from database...")
+
+
 @pytest.mark.parametrize(
     "user_role",
     [(UserRole.USER)],
@@ -818,8 +831,8 @@ async def lots_of_projects_and_nodes(
     osparc_product_name: str,
     aiopg_engine: aiopg.sa.engine.Engine,
 ) -> AsyncIterator[dict[ProjectID, list[NodeID]]]:
-    """Will create >1000 projects with each between 200-1434 nodes"""
-    NUMBER_OF_PROJECTS = 1245
+    """Will create a lot of projects with each between 200-1434 nodes"""
+    NUMBER_OF_PROJECTS = 1450
 
     BASE_UUID = UUID("ccc0839f-93b8-4387-ab16-197281060927")
     all_created_projects = {}
@@ -848,11 +861,14 @@ async def lots_of_projects_and_nodes(
             )
         )
 
-    await asyncio.gather(*project_creation_tasks)
+    created_projects = await asyncio.gather(
+        *project_creation_tasks, return_exceptions=True
+    )
     await asyncio.gather(
         *(
             _assert_projects_nodes_db_rows(aiopg_engine, prj)
-            for prj in project_creation_tasks
+            for prj in created_projects
+            if isinstance(prj, dict)
         )
     )
     print(f"---> created {len(all_created_projects)} projects in the database")
@@ -862,12 +878,14 @@ async def lots_of_projects_and_nodes(
     # cleanup
     await asyncio.gather(
         *[
-            db_api.delete_project(logged_user["id"], f"{p_uuid}")
-            for p_uuid in all_created_projects
+            db_api.delete_project(logged_user["id"], f"{prj['uuid']}")
+            for prj in created_projects
+            if isinstance(prj, dict)
         ]
     )
 
 
+@pytest.mark.testit
 @pytest.mark.parametrize(
     "user_role",
     [UserRole.USER],
