@@ -64,6 +64,8 @@ class ProjectNodesRepo:
             ProjectsNodesNodeNotFound: in case the node does not exist
 
         """
+        if not nodes:
+            return []
         insert_stmt = (
             projects_nodes.insert()
             .values(
@@ -82,8 +84,9 @@ class ProjectNodesRepo:
 
         try:
             result = await connection.execute(insert_stmt)
+            assert result  # nosec
             created_nodes_db = await result.fetchall()
-            assert created_nodes_db  # nosec
+            assert created_nodes_db is not None  # nosec
             created_nodes = [
                 ProjectNode(**dict(created_node_db.items()))
                 for created_node_db in created_nodes_db
@@ -109,10 +112,11 @@ class ProjectNodesRepo:
         list_stmt = sqlalchemy.select(
             *[c for c in projects_nodes.c if c is not projects_nodes.c.project_uuid]
         ).where(projects_nodes.c.project_uuid == f"{self.project_uuid}")
-        nodes = [
-            ProjectNode(**dict(row.items()))
-            async for row in connection.execute(list_stmt)
-        ]
+        result = await connection.execute(list_stmt)
+        assert result  # nosec
+        nodes_list_db = await result.fetchall()
+        assert nodes_list_db is not None  # nosec
+        nodes = [ProjectNode(**dict(node.items())) for node in nodes_list_db]
         return nodes
 
     async def get(self, connection: SAConnection, *, node_id: uuid.UUID) -> ProjectNode:
