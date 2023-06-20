@@ -124,6 +124,13 @@ qx.Class.define("osparc.info.StudyLarge", {
         description.addAt(editInTitle, 0);
         this._add(description);
       }
+
+      const commentsList = this.__createCommentsList();
+      this._add(commentsList);
+      if (this.__canIWrite()) {
+        const addComment = this.__createAddComment();
+        this._add(addComment);
+      }
     },
 
     __createViewWithEdit: function(view, cb) {
@@ -264,6 +271,14 @@ qx.Class.define("osparc.info.StudyLarge", {
     __createDescription: function() {
       const maxHeight = 400;
       return osparc.info.StudyUtils.createDescription(this.getStudy(), maxHeight);
+    },
+
+    __createCommentsList: function() {
+      return osparc.info.StudyUtils.createCommentsList(this.getStudy(), maxHeight);
+    },
+
+    __createAddComment: function() {
+      return osparc.info.StudyUtils.createAddComment(this.getStudy(), maxHeight);
     },
 
     __openTitleEditor: function() {
