@@ -34,12 +34,12 @@ class ProjectNodesDuplicateNode(BaseProjectNodesError):
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ProjectNodeCreate:
+    node_id: uuid.UUID
     required_resources: dict = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ProjectNode(ProjectNodeCreate):
-    node_id: uuid.UUID
     created: datetime.datetime
     modified: datetime.datetime
 
@@ -52,7 +52,6 @@ class ProjectNodesRepo:
         self,
         connection: SAConnection,
         *,
-        node_ids: list[uuid.UUID],
         nodes: list[ProjectNodeCreate],
     ) -> list[ProjectNode]:
         """creates a new entry in *projects_nodes* and *projects_to_projects_nodes* tables
@@ -63,20 +62,14 @@ class ProjectNodesRepo:
             ProjectNodesProjectNotFound: in case the project_uuid does not exist
             ProjectNodesDuplicateNode: in case the node already exists
             ProjectsNodesNodeNotFound: in case the node does not exist
-            ProjectNodesOperationNotAllowed: in case the function is used with unequal number of node_ids and nodes
 
         """
-        if len(node_ids) != len(nodes):
-            raise ProjectNodesOperationNotAllowed(
-                "Invalid usage of add: number of node_ids is not the same as number of nodes!"
-            )
         insertable_values = [
             {
                 "project_uuid": f"{self.project_uuid}",
-                "node_id": f"{node_id}",
                 **asdict(node),
             }
-            for node_id, node in zip(node_ids, nodes)
+            for node in nodes
         ]
         try:
             result = await connection.execute(
