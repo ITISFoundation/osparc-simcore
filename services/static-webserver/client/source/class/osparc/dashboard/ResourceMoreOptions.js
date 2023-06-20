@@ -26,7 +26,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     this._setLayout(new qx.ui.layout.VBox(10));
 
     this.__addToolbar();
-    this.__addDetailsView();
+    this.__addTabPagesView();
   },
 
   events: {
@@ -69,7 +69,9 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       }));
 
       // Page content
-      tabPage.add(widget, {
+      const scrollContainer = new qx.ui.container.Scroll();
+      scrollContainer.add(widget);
+      tabPage.add(scrollContainer, {
         flex: 1
       });
 
@@ -89,7 +91,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
   members: {
     __resourceData: null,
     __toolbar: null,
-    __detailsView: null,
+    __tabsView: null,
     __dataPage: null,
     __permissionsPage: null,
     __tagsPage: null,
@@ -155,8 +157,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       this._add(toolbar);
     },
 
-    __addDetailsView: function() {
-      const detailsView = this.__detailsView = new qx.ui.tabview.TabView().set({
+    __addTabPagesView: function() {
+      const detailsView = this.__tabsView = new qx.ui.tabview.TabView().set({
         barPosition: "left",
         contentPadding: 0
       });
@@ -169,7 +171,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
     __openPage: function(page) {
       if (page) {
-        this.__detailsView.setSelection([page]);
+        this.__tabsView.setSelection([page]);
       }
     },
 
@@ -244,7 +246,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __addPages: function() {
-      const detailsView = this.__detailsView;
+      const detailsView = this.__tabsView;
 
       // keep selected page
       const selection = detailsView.getSelection();
