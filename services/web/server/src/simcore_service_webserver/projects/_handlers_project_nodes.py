@@ -525,6 +525,7 @@ async def get_project_node_preview(request: web.Request) -> web.Response:
     # raise HTTPNotFound(
     #     reason=f"Node '{path_params.project_id}/{path_params.node_id}' has no preview"
     # )
+    #
     node_preview = _ProjectNodePreview(
         project_id=project.uuid,
         node_id=path_params.node_id,
