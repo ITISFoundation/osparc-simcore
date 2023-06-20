@@ -274,11 +274,11 @@ qx.Class.define("osparc.info.StudyLarge", {
     },
 
     __createCommentsList: function() {
-      return osparc.info.StudyUtils.createCommentsList(this.getStudy(), maxHeight);
+      return new osparc.info.CommentsList(this.getStudy().getUuid());
     },
 
     __createAddComment: function() {
-      return osparc.info.StudyUtils.createAddComment(this.getStudy(), maxHeight);
+      return new osparc.info.CommentsList(this.getStudy().getUuid());
     },
 
     __openTitleEditor: function() {
