@@ -439,7 +439,7 @@ async def test_dispatch_study_anonymously(
 def assert_error_in_fragment(resp: ClientResponse) -> tuple[str, int]:
     # Expects fragment to indicate client where to find newly created project
     unquoted_fragment = urllib.parse.unquote_plus(resp.real_url.fragment)
-    match = re.match(r"/error\?(.+)", unquoted_fragment)
+    match = re.match(r"/error\?(.+)", unquoted_fragment, re.MULTILINE)
     assert (
         match
     ), f"Expected error fragment as /#/error?message=..., got {unquoted_fragment}"
