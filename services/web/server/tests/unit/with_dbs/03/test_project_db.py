@@ -288,6 +288,10 @@ def db_api(client: TestClient, postgres_db: sa.engine.Engine) -> Iterator[Projec
 
     yield db_api
 
+    # clean the projects
+    with postgres_db.connect() as conn:
+        conn.execute(sa.DDL("DELETE FROM projects"))
+
 
 def _assert_added_project(
     exp_project: dict[str, Any],
@@ -829,7 +833,7 @@ async def lots_of_projects_and_nodes(
     aiopg_engine: aiopg.sa.engine.Engine,
 ) -> AsyncIterator[dict[ProjectID, list[NodeID]]]:
     """Will create a lot of projects with each between 200-1434 nodes"""
-    NUMBER_OF_PROJECTS = 450
+    NUMBER_OF_PROJECTS = 1450
 
     BASE_UUID = UUID("ccc0839f-93b8-4387-ab16-197281060927")
     all_created_projects = {}
