@@ -1,6 +1,7 @@
 import datetime
 import uuid
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, fields
+from typing import Any, Final
 
 import sqlalchemy
 from aiopg.sa.connection import SAConnection
@@ -35,7 +36,12 @@ class ProjectNodesDuplicateNode(BaseProjectNodesError):
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ProjectNodeCreate:
     node_id: uuid.UUID
-    required_resources: dict = field(default_factory=dict)
+    required_resources: dict[str, Any] = field(default_factory=dict)
+
+
+PROJECT_NODE_CREATE_FIELD_NAMES_WO_NODE_ID: Final[tuple[str]] = tuple(
+    f.name for f in fields(ProjectNodeCreate) if f.name != "node_id"
+)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
