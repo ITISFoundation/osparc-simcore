@@ -466,29 +466,29 @@ async def list_project_nodes_previews(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     assert req_ctx  # nosec
 
+    if not request.app[APP_SETTINGS_KEY].WEBSERVER_DEV_FEATURES_ENABLED:
+        raise NotImplementedError(MSG_UNDER_DEVELOPMENT)
+
     nodes_previews: list[_ProjectNodePreview] = []
+    project_data = await projects_api.get_project_for_user(
+        request.app,
+        project_uuid=f"{path_params.project_id}",
+        user_id=req_ctx.user_id,
+    )
+    project = Project.parse_obj(project_data)
 
-    if request.app[APP_SETTINGS_KEY].WEBSERVER_DEV_FEATURES_ENABLED:
-        project_data = await projects_api.get_project_for_user(
-            request.app,
-            project_uuid=f"{path_params.project_id}",
-            user_id=req_ctx.user_id,
-        )
-        project = Project.parse_obj(project_data)
-
-        for node_id, node in project.workbench.items():
-            screenshots = await fake_screenshots_factory(request, NodeID(node_id), node)
-            if screenshots:
-                nodes_previews.append(
-                    _ProjectNodePreview(
-                        project_id=path_params.project_id,
-                        node_id=node_id,
-                        screenshots=screenshots,
-                    )
+    for node_id, node in project.workbench.items():
+        screenshots = await fake_screenshots_factory(request, NodeID(node_id), node)
+        if screenshots:
+            nodes_previews.append(
+                _ProjectNodePreview(
+                    project_id=path_params.project_id,
+                    node_id=node_id,
+                    screenshots=screenshots,
                 )
+            )
 
-        return envelope_json_response(nodes_previews)
-    raise NotImplementedError(MSG_UNDER_DEVELOPMENT)
+    return envelope_json_response(nodes_previews)
 
 
 @routes.get(
@@ -503,33 +503,30 @@ async def get_project_node_preview(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(_NodePathParams, request)
     assert req_ctx  # nosec
 
-    if request.app[APP_SETTINGS_KEY].WEBSERVER_DEV_FEATURES_ENABLED:
-        project_data = await projects_api.get_project_for_user(
-            request.app,
+    if not request.app[APP_SETTINGS_KEY].WEBSERVER_DEV_FEATURES_ENABLED:
+        raise NotImplementedError(MSG_UNDER_DEVELOPMENT)
+    project_data = await projects_api.get_project_for_user(
+        request.app,
+        project_uuid=f"{path_params.project_id}",
+        user_id=req_ctx.user_id,
+    )
+
+    project = Project.parse_obj(project_data)
+
+    node = project.workbench.get(f"{path_params.node_id}")
+    if node is None:
+        raise NodeNotFoundError(
             project_uuid=f"{path_params.project_id}",
-            user_id=req_ctx.user_id,
+            node_uuid=f"{path_params.node_id}",
         )
-
-        project = Project.parse_obj(project_data)
-
-        node = project.workbench.get(f"{path_params.node_id}")
-        if node is None:
-            raise NodeNotFoundError(
-                project_uuid=f"{path_params.project_id}",
-                node_uuid=f"{path_params.node_id}",
-            )
-
-        node_preview = _ProjectNodePreview(
-            project_id=project.uuid,
-            node_id=path_params.node_id,
-            screenshots=await fake_screenshots_factory(
-                request, path_params.node_id, node
-            ),
-        )
-        return envelope_json_response(node_preview)
 
     # NOTE: keep until is not a dev-feature
     # raise HTTPNotFound(
     #     reason=f"Node '{path_params.project_id}/{path_params.node_id}' has no preview"
     # )
-    raise NotImplementedError(MSG_UNDER_DEVELOPMENT)
+    node_preview = _ProjectNodePreview(
+        project_id=project.uuid,
+        node_id=path_params.node_id,
+        screenshots=await fake_screenshots_factory(request, path_params.node_id, node),
+    )
+    return envelope_json_response(node_preview)
