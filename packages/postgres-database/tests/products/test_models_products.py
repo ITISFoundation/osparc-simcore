@@ -36,7 +36,7 @@ async def test_load_products(
     async with pg_engine.acquire() as conn:
         await make_products_table(conn)
 
-        stmt = sa.select([c for c in products.columns if c not in exclude])
+        stmt = sa.select(*[c for c in products.columns if c not in exclude])
         result: ResultProxy = await conn.execute(stmt)
         assert result.returns_rows
 
@@ -102,7 +102,7 @@ async def test_jinja2_templates_table(
         # prints those products having customized templates
         j = products.join(jinja2_templates)
         stmt = sa.select(
-            [products.c.name, jinja2_templates.c.name, products.c.short_name]
+            products.c.name, jinja2_templates.c.name, products.c.short_name
         ).select_from(j)
 
         result: ResultProxy = await conn.execute(stmt)
