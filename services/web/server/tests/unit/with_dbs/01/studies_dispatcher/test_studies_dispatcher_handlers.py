@@ -4,6 +4,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import asyncio
 import re
 import urllib.parse
 from typing import Any, AsyncIterator
@@ -435,6 +436,12 @@ async def test_dispatch_study_anonymously(
         assert mock_client_director_v2_func.called
 
 
+@pytest.mark.parametrize(
+    "user_role",
+    [
+        UserRole.USER,
+    ],
+)
 async def test_dispatch_logged_in_user(
     client: TestClient,
     redirect_url: URL,
@@ -473,12 +480,18 @@ async def test_dispatch_logged_in_user(
     assert not error
 
     assert len(projects) == 1
-    guest_project = projects[0]
+    created_project = projects[0]
 
-    assert expected_project_id == guest_project["uuid"]
-    assert guest_project["prjOwner"] == data["login"]
+    assert expected_project_id == created_project["uuid"]
+    assert created_project["prjOwner"] == data["login"]
 
     assert mock_client_director_v2_func.called
+
+    # delete before exiting
+    url = client.app.router["delete_project"].url_for(project_id=expected_project_id)
+    response = await client.delete(f"{url}")
+    await asyncio.sleep(1)  # needed to let task finish
+    response.raise_for_status()
 
 
 def assert_error_in_fragment(resp: ClientResponse) -> tuple[str, int]:
