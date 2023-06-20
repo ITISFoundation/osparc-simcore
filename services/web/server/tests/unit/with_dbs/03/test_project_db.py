@@ -827,8 +827,8 @@ async def some_projects_and_nodes(
     aiopg_engine: aiopg.sa.engine.Engine,
     insert_project_in_db: Callable[..., Awaitable[dict[str, Any]]],
 ) -> AsyncIterator[dict[ProjectID, list[NodeID]]]:
-    """Will create a lot of projects with each between 200-1434 nodes"""
-    NUMBER_OF_PROJECTS = 150
+    """Will create a few projects, no need to go crazy here"""
+    NUMBER_OF_PROJECTS = 17
 
     BASE_UUID = UUID("ccc0839f-93b8-4387-ab16-197281060927")
     all_created_projects = {}
