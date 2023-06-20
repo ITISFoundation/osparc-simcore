@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from contextlib import AsyncExitStack
-from typing import Any, Coroutine
+from typing import Any, Coroutine, TypeAlias
 
 from aiohttp import web
 from jsonschema import ValidationError as JsonSchemaValidationError
@@ -41,6 +41,8 @@ OVERRIDABLE_DOCUMENT_KEYS = [
 
 log = logging.getLogger(__name__)
 
+CopyFileCoro: TypeAlias = Coroutine[Any, Any, None]
+
 
 async def _prepare_project_copy(
     app: web.Application,
@@ -50,9 +52,7 @@ async def _prepare_project_copy(
     as_template: bool,
     deep_copy: bool,
     task_progress: TaskProgress,
-) -> tuple[
-    ProjectDict, Coroutine[Any, Any, None] | None, Coroutine[Any, Any, None] | None
-]:
+) -> tuple[ProjectDict, Coroutine[Any, Any, None] | None, CopyFileCoro | None]:
     source_project = await projects_api.get_project_for_user(
         app,
         project_uuid=f"{src_project_uuid}",
@@ -237,7 +237,7 @@ async def create_project(
             product_name=product_name,
             force_as_template=as_template,
             hidden=copy_data,
-            node_required_resources=None,
+            project_nodes=None,
         )
         if copy_project_nodes_coro:
             # NOTE: the new project shall already be inserted before this can run

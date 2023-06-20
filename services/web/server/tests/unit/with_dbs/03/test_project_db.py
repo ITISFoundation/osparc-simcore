@@ -394,7 +394,7 @@ async def insert_project_in_db(
             project=prj,
             user_id=None,
             product_name=osparc_product_name,
-            node_required_resources=None,
+            project_nodes=None,
         )
         default_config.update(**overrides)
         new_project = await db_api.insert_project(**default_config)

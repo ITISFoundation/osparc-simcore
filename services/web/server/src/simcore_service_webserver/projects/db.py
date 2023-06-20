@@ -127,7 +127,7 @@ class ProjectDBAPI(BaseProjectDB):
         force_project_uuid: bool = False,
         force_as_template: bool = False,
         hidden: bool = False,
-        node_required_resources: dict[NodeID, dict[str, Any]] | None,
+        project_nodes: dict[NodeID, ProjectNodeCreate] | None,
     ) -> dict[str, Any]:
         """Inserts a new project in the database
 
@@ -259,15 +259,13 @@ class ProjectDBAPI(BaseProjectDB):
                                 project_uuid=project_uuid
                             )
                             nodes = [
-                                ProjectNodeCreate(
-                                    node_id=NodeID(node_id),
-                                    required_resources=node_required_resources.get(
-                                        NodeID(node_id), {}
-                                    )
-                                    if node_required_resources
-                                    else {},
+                                project_nodes.get(
+                                    NodeID(node_id),
+                                    ProjectNodeCreate(
+                                        node_id=NodeID(node_id), required_resources={}
+                                    ),
                                 )
-                                for node_id in selected_values["workbench"].keys()
+                                for node_id in selected_values["workbench"]
                             ]
                             await project_nodes_repo.add(conn, nodes=nodes)
 

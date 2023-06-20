@@ -465,10 +465,10 @@ def postgres_db(
 
     yield engine
 
-    assert pg_cli.downgrade.callback
-    pg_cli.downgrade.callback("base")
-    assert pg_cli.clean.callback
-    pg_cli.clean.callback()
+    # assert pg_cli.downgrade.callback
+    # pg_cli.downgrade.callback("base")
+    # assert pg_cli.clean.callback
+    # pg_cli.clean.callback()
 
     orm.metadata.drop_all(engine)
     engine.dispose()
