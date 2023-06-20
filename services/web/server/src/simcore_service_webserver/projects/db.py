@@ -749,20 +749,22 @@ class ProjectDBAPI(BaseProjectDB):
     ) -> None:
         src_project_nodes_repo = ProjectNodesRepo(project_uuid=source_project_id)
         dst_project_nodes_repo = ProjectNodesRepo(project_uuid=dest_project_id)
-        project_node_create_field_names = (f.name for f in fields(ProjectNodeCreate))
+        project_node_create_field_names = (
+            f.name for f in fields(ProjectNodeCreate) if f.name != "node_id"
+        )
+
         async with self.engine.acquire() as conn:
-            nodes = []
-            for node in await src_project_nodes_repo.list(conn):
-                nodes.append(
-                    ProjectNodeCreate(
-                        node_id=NodeID(node_mapping[NodeIDStr(f"{node.node_id}")]),
-                        **{
-                            k: v
-                            for k, v in asdict(node).items()
-                            if k in project_node_create_field_names
-                        },
-                    )
+            nodes = [
+                ProjectNodeCreate(
+                    node_id=NodeID(node_mapping[NodeIDStr(f"{node.node_id}")]),
+                    **{
+                        k: v
+                        for k, v in asdict(node).items()
+                        if k in project_node_create_field_names
+                    },
                 )
+                for node in await src_project_nodes_repo.list(conn)
+            ]
             await dst_project_nodes_repo.add(conn, nodes=nodes)
 
     async def node_id_exists(self, node_id: str) -> bool:
