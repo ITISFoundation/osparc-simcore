@@ -27,6 +27,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_dict import copy_from_dict_ex
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
+from servicelib.utils import logged_gather
 from simcore_postgres_database.models.groups import GroupType
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.models.users import UserRole
@@ -341,12 +342,9 @@ async def _assert_projects_nodes_db_rows(
         list_of_nodes = await repo.list(conn)
         project_workbench = project.get("workbench", {})
         assert len(list_of_nodes) == len(project_workbench)
-        for new_style_node, old_style_node in zip(
-            list_of_nodes, project_workbench.items()
-        ):
-            old_style_node_id, old_style_node_data = old_style_node
-            assert old_style_node_data
-            assert f"{new_style_node.node_id}" == old_style_node_id
+        new_style_node_ids = sorted(f"{node.node_id}" for node in list_of_nodes)
+        old_style_node_ids = sorted(project_workbench.keys())
+        assert new_style_node_ids == old_style_node_ids
 
 
 def _assert_project_db_row(
@@ -862,13 +860,9 @@ async def lots_of_projects_and_nodes(
             )
         )
 
-    created_projects = await asyncio.gather(*project_creation_tasks)
+    created_projects = await logged_gather(*project_creation_tasks, max_concurrency=60)
     await asyncio.gather(
-        *(
-            _assert_projects_nodes_db_rows(aiopg_engine, prj)
-            for prj in created_projects
-            if isinstance(prj, dict)
-        )
+        *(_assert_projects_nodes_db_rows(aiopg_engine, prj) for prj in created_projects)
     )
     print(f"---> created {len(all_created_projects)} projects in the database")
     yield all_created_projects
