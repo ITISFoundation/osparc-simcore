@@ -53,7 +53,7 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
             minWidth: this.self().NODES_TREE_WIDTH,
             maxWidth: this.self().NODES_TREE_WIDTH,
             maxHeight: this.self().LAYOUT_HEIGHT,
-            marginLeft: -20
+            marginLeft: -18
           });
           this._add(control);
           break;

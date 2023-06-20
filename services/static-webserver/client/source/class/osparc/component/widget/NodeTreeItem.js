@@ -106,9 +106,11 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
   members: {
     __optionsMenu: null,
 
-    __applyStudy: function() {
+    __applyStudy: function(study) {
       const label = this.getChildControl("label");
       osparc.utils.Utils.setMoreToWidget(label, "root");
+
+      study.bind("name", this, "toolTipText");
 
       this.getChildControl("delete-button").exclude();
     },
@@ -116,6 +118,8 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
     __applyNode: function(node) {
       const label = this.getChildControl("label");
       osparc.utils.Utils.setMoreToWidget(label, node.getNodeId());
+
+      node.bind("label", this, "toolTipText");
 
       if (node.isDynamic()) {
         this.getChildControl("fullscreen-button").show();

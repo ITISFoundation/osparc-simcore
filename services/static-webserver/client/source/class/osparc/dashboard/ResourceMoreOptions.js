@@ -319,7 +319,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     __getPreviewPage: function() {
       const id = "Preview";
       const title = this.tr("Preview");
-      const icon = "@FontAwesome5Solid/magnifying-glass";
+      const icon = "@FontAwesome5Solid/search-plus";
       const resourceData = this.__resourceData;
       const studyThumbnailExplorer = new osparc.dashboard.StudyThumbnailExplorer(resourceData);
 
