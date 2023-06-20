@@ -1,6 +1,6 @@
 import sqlalchemy as sa
-from sqlalchemy.sql import func
 
+from ._common import column_created_datetime, column_modified_datetime
 from .base import metadata
 from .projects import projects
 
@@ -35,22 +35,10 @@ projects_comments = sa.Table(
     sa.Column(
         "content",
         sa.String,
-        nullable=True,
+        nullable=False,
         doc="Content of the comment",
     ),
-    sa.Column(
-        "created_at",
-        sa.DateTime(timezone=True),
-        nullable=False,
-        server_default=func.now(),
-        doc="Timestamp on creation",
-    ),
-    sa.Column(
-        "updated_at",
-        sa.DateTime(timezone=True),
-        nullable=False,
-        server_default=func.now(),
-        doc="Timestamp with last update",
-    ),
+    column_created_datetime(timezone=True),
+    column_modified_datetime(timezone=True),
     sa.PrimaryKeyConstraint("comment_id", name="projects_comments_pkey"),
 )

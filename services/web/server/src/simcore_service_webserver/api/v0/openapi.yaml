@@ -5446,17 +5446,11 @@ paths:
               title: _CreateProjectCommentsBodyParams
               required:
                 - content
-                - user_id
               type: object
               properties:
                 content:
                   title: Content
                   type: string
-                user_id:
-                  title: User Id
-                  exclusiveMinimum: true
-                  type: integer
-                  minimum: 0
               additionalProperties: false
         required: true
       responses:
@@ -5514,8 +5508,8 @@ paths:
                       - project_uuid
                       - user_id
                       - content
-                      - created_at
-                      - updated_at
+                      - created
+                      - modified
                     type: object
                     properties:
                       comment_id:
@@ -5539,13 +5533,13 @@ paths:
                         title: Content
                         type: string
                         description: Content of the comment
-                      created_at:
-                        title: Created At
+                      created:
+                        title: Created
                         type: string
                         description: Timestamp on creation
                         format: date-time
-                      updated_at:
-                        title: Updated At
+                      modified:
+                        title: Modified
                         type: string
                         description: Timestamp with last update
                         format: date-time
@@ -5581,17 +5575,11 @@ paths:
               title: _UpdateProjectCommentsBodyParams
               required:
                 - content
-                - user_id
               type: object
               properties:
                 content:
                   title: Content
                   type: string
-                user_id:
-                  title: User Id
-                  exclusiveMinimum: true
-                  type: integer
-                  minimum: 0
               additionalProperties: false
         required: true
       responses:

@@ -783,7 +783,7 @@ class ProjectDBAPI(BaseProjectDB):
                     project_uuid=project_uuid,
                     user_id=user_id,
                     content=content,
-                    updated_at=func.now(),
+                    modified=func.now(),
                 )
                 .returning(projects_comments.c.comment_id)
             )
@@ -801,7 +801,7 @@ class ProjectDBAPI(BaseProjectDB):
             project_comment_result: ResultProxy = await conn.execute(
                 projects_comments.select()
                 .where(projects_comments.c.project_uuid == f"{project_uuid}")
-                .order_by(projects_comments.c.created_at.asc())
+                .order_by(projects_comments.c.created.asc())
                 .offset(offset)
                 .limit(limit)
             )
@@ -836,7 +836,7 @@ class ProjectDBAPI(BaseProjectDB):
                 .values(
                     project_uuid=project_uuid,
                     content=content,
-                    updated_at=func.now(),
+                    modified=func.now(),
                 )
                 .where(projects_comments.c.comment_id == comment_id)
                 .returning(literal_column("*"))

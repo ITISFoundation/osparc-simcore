@@ -21,11 +21,11 @@ class _ProjectsCommentsBase(BaseModel):
         ...,
         description="Content of the comment",
     )
-    created_at: datetime = Field(
+    created: datetime = Field(
         ...,
         description="Timestamp on creation",
     )
-    updated_at: datetime = Field(
+    modified: datetime = Field(
         ...,
         description="Timestamp with last update",
     )

@@ -21,11 +21,6 @@ from uuid import UUID, uuid4
 from aiohttp import web
 from models_library.errors import ErrorDict
 from models_library.projects import Project, ProjectID
-from models_library.projects_comments import (
-    CommentID,
-    ProjectsCommentsAPI,
-    ProjectsCommentsDB,
-)
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import (
@@ -39,7 +34,7 @@ from models_library.projects_state import (
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import PositiveInt, parse_obj_as
+from pydantic import parse_obj_as
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
@@ -859,86 +854,6 @@ async def add_project_states_for_user(
         locked=lock_state, state=ProjectRunningState(value=running_state)
     ).dict(by_alias=True, exclude_unset=True)
     return project
-
-
-#
-#  PROJECT COMMENTS -------------------------------------------------------------------
-#
-
-
-async def create_project_comment(
-    request: web.Request, project_uuid: ProjectID, user_id: UserID, content: str
-) -> CommentID:
-    db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
-
-    comment_id: CommentID = await db.create_project_comment(
-        project_uuid, user_id, content
-    )
-    return comment_id
-
-
-async def list_project_comments(
-    request: web.Request,
-    project_uuid: ProjectID,
-    offset: int | None = 0,
-    limit: int | None = None,
-) -> list[ProjectsCommentsAPI]:
-    db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
-
-    projects_comments_db_model: list[
-        ProjectsCommentsDB
-    ] = await db.list_project_comments(project_uuid, offset, limit)
-    projects_comments_api_model = [
-        ProjectsCommentsAPI(**comment.dict()) for comment in projects_comments_db_model
-    ]
-    return projects_comments_api_model
-
-
-async def total_project_comments(
-    request: web.Request,
-    project_uuid: ProjectID,
-) -> PositiveInt:
-    db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
-
-    project_comments_total: PositiveInt = await db.total_project_comments(project_uuid)
-    return project_comments_total
-
-
-async def update_project_comment(
-    request: web.Request,
-    comment_id: CommentID,
-    project_uuid: ProjectID,
-    content: str,
-) -> ProjectsCommentsAPI:
-    db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
-
-    projects_comments_db_model: ProjectsCommentsDB = await db.update_project_comment(
-        comment_id, project_uuid, content
-    )
-    projects_comments_api_model = ProjectsCommentsAPI(
-        **projects_comments_db_model.dict()
-    )
-    return projects_comments_api_model
-
-
-async def delete_project_comment(request: web.Request, comment_id: CommentID) -> None:
-    db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
-
-    await db.delete_project_comment(comment_id)
-
-
-async def get_project_comment(
-    request: web.Request, comment_id: CommentID
-) -> ProjectsCommentsAPI:
-    db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
-
-    projects_comments_db_model: ProjectsCommentsDB = await db.get_project_comment(
-        comment_id
-    )
-    projects_comments_api_model = ProjectsCommentsAPI(
-        **projects_comments_db_model.dict()
-    )
-    return projects_comments_api_model
 
 
 #

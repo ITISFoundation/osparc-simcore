@@ -1,4 +1,4 @@
-"""empty message
+"""new project comments table
 
 Revision ID: af5de00bf4cf
 Revises: 71ea254837b0
@@ -24,13 +24,13 @@ def upgrade():
         sa.Column("user_id", sa.BigInteger(), nullable=False),
         sa.Column("content", sa.String(), nullable=True),
         sa.Column(
-            "created_at",
+            "created",
             sa.DateTime(timezone=True),
             server_default=sa.text("now()"),
             nullable=False,
         ),
         sa.Column(
-            "updated_at",
+            "modified",
             sa.DateTime(timezone=True),
             server_default=sa.text("now()"),
             nullable=False,

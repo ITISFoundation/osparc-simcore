@@ -43,17 +43,20 @@ async def test_project_comments_user_role_access(
     assert resp.status == 401 if user_role == UserRole.ANONYMOUS else 200
 
 
+@pytest.mark.acceptance_test(
+    "https://github.com/ITISFoundation/osparc-issues/issues/993"
+)
 @pytest.mark.parametrize(
     "user_role,expected",
     [
         (UserRole.USER, web.HTTPOk),
     ],
 )
-async def test_project_comments_basic_crud_operations(
+async def test_project_comments_full_workflow(
     client: TestClient,
     logged_user: dict[str, Any],
     user_project: dict[str, Any],
-    template_project: dict[str, Any],
+    # template_project: dict[str, Any],
     expected: type[web.HTTPException],
     postgres_db,
 ):
@@ -66,16 +69,14 @@ async def test_project_comments_basic_crud_operations(
     assert data["data"] == []
 
     # Now we will add first comment
-    body = {"content": "My first comment", "user_id": logged_user["id"]}
+    body = {"content": "My first comment"}
     resp = await client.post(base_url, json=body)
     assert resp.status == 201
     data = await resp.json()
     first_comment_id = data["data"]
 
     # Now we will add second comment
-    resp = await client.post(
-        base_url, json={"content": "My second comment", "user_id": logged_user["id"]}
-    )
+    resp = await client.post(base_url, json={"content": "My second comment"})
     assert resp.status == 201
     data = await resp.json()
     second_comment_id = data["data"]
@@ -90,7 +91,7 @@ async def test_project_comments_basic_crud_operations(
     updated_comment = "Updated second comment"
     resp = await client.put(
         base_url / f"{second_comment_id}",
-        json={"content": updated_comment, "user_id": logged_user["id"]},
+        json={"content": updated_comment},
     )
     data = await resp.json()
     assert resp.status == 200
@@ -151,10 +152,7 @@ async def test_project_comments_basic_crud_operations(
         # New user will add comment
         resp = await client.post(
             base_url,
-            json={
-                "content": "My first comment as a new user",
-                "user_id": new_logged_user["id"],
-            },
+            json={"content": "My first comment as a new user"},
         )
         assert resp.status == 201
         data = await resp.json()
@@ -164,7 +162,7 @@ async def test_project_comments_basic_crud_operations(
         updated_comment = "Updated My first comment as a new user"
         resp = await client.put(
             base_url / f"{new_user_comment_id}",
-            json={"content": updated_comment, "user_id": new_logged_user["id"]},
+            json={"content": updated_comment},
         )
         data = await resp.json()
         assert resp.status == 200
@@ -180,7 +178,7 @@ async def test_project_comments_basic_crud_operations(
         updated_comment = "Updated comment of previous user"
         resp = await client.put(
             base_url / f"{first_comment_id}",
-            json={"content": updated_comment, "user_id": new_logged_user["id"]},
+            json={"content": updated_comment},
         )
         data = await resp.json()
         assert resp.status == 200

@@ -10,21 +10,20 @@ from models_library.projects import ProjectID
 from models_library.projects_comments import CommentID
 from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
 from models_library.rest_pagination_utils import paginate_data
-from models_library.users import UserID
 from pydantic import BaseModel, Extra, Field, NonNegativeInt
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
-from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._meta import api_version_prefix as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
-from . import projects_api
+from ..utils_aiohttp import envelope_json_response
+from . import _api_project_comments, projects_api
 from ._handlers_crud import RequestContext
 from .exceptions import ProjectNotFoundError
 
@@ -34,16 +33,23 @@ _logger = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
 
-class _CreateProjectCommentsPathParams(BaseModel):
+class _ProjectCommentsPathParams(BaseModel):
     project_uuid: ProjectID
 
     class Config:
         extra = Extra.forbid
 
 
-class _CreateProjectCommentsBodyParams(BaseModel):
+class _ProjectCommentsWithCommentPathParams(BaseModel):
+    project_uuid: ProjectID
+    comment_id: CommentID
+
+    class Config:
+        extra = Extra.forbid
+
+
+class _ProjectCommentsBodyParams(BaseModel):
     content: str
-    user_id: UserID
 
     class Config:
         extra = Extra.forbid
@@ -56,10 +62,8 @@ class _CreateProjectCommentsBodyParams(BaseModel):
 @permission_required("project.read")
 async def create_project_comment(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
-    path_params = parse_request_path_parameters_as(
-        _CreateProjectCommentsPathParams, request
-    )
-    body_params = await parse_request_body_as(_CreateProjectCommentsBodyParams, request)
+    path_params = parse_request_path_parameters_as(_ProjectCommentsPathParams, request)
+    body_params = await parse_request_body_as(_ProjectCommentsBodyParams, request)
 
     try:
         # ensure the project exists
@@ -70,32 +74,18 @@ async def create_project_comment(request: web.Request):
             include_state=False,
         )
 
-        if req_ctx.user_id != body_params.user_id:
-            raise web.HTTPForbidden(
-                reason="User id in body does not match with the logged in user id"
-            )
-
-        comment_id = await projects_api.create_project_comment(
+        comment_id = await _api_project_comments.create_project_comment(
             request=request,
             project_uuid=path_params.project_uuid,
             user_id=req_ctx.user_id,
             content=body_params.content,
         )
 
-        return web.json_response(
-            {"data": comment_id}, status=web.HTTPCreated.status_code, dumps=json_dumps
-        )
+        return envelope_json_response(comment_id, web.HTTPCreated)
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(
             reason=f"Project {path_params.project_uuid} not found"
         ) from exc
-
-
-class _ListProjectCommentsPathParams(BaseModel):
-    project_uuid: ProjectID
-
-    class Config:
-        extra = Extra.forbid
 
 
 class _ListProjectCommentsQueryParams(BaseModel):
@@ -118,9 +108,7 @@ class _ListProjectCommentsQueryParams(BaseModel):
 @permission_required("project.read")
 async def list_project_comments(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
-    path_params = parse_request_path_parameters_as(
-        _ListProjectCommentsPathParams, request
-    )
+    path_params = parse_request_path_parameters_as(_ProjectCommentsPathParams, request)
     query_params = parse_request_query_parameters_as(
         _ListProjectCommentsQueryParams, request
     )
@@ -134,12 +122,12 @@ async def list_project_comments(request: web.Request):
             include_state=False,
         )
 
-        total_project_comments = await projects_api.total_project_comments(
+        total_project_comments = await _api_project_comments.total_project_comments(
             request=request,
             project_uuid=path_params.project_uuid,
         )
 
-        project_comments = await projects_api.list_project_comments(
+        project_comments = await _api_project_comments.list_project_comments(
             request=request,
             project_uuid=path_params.project_uuid,
             offset=query_params.offset,
@@ -165,22 +153,6 @@ async def list_project_comments(request: web.Request):
         ) from exc
 
 
-class _UpdateProjectCommentsPathParams(BaseModel):
-    project_uuid: ProjectID
-    comment_id: CommentID
-
-    class Config:
-        extra = Extra.forbid
-
-
-class _UpdateProjectCommentsBodyParams(BaseModel):
-    content: str
-    user_id: UserID
-
-    class Config:
-        extra = Extra.forbid
-
-
 @routes.put(
     f"/{VTAG}/projects/{{project_uuid}}/comments/{{comment_id}}",
     name="update_project_comment",
@@ -190,9 +162,9 @@ class _UpdateProjectCommentsBodyParams(BaseModel):
 async def update_project_comment(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(
-        _UpdateProjectCommentsPathParams, request
+        _ProjectCommentsWithCommentPathParams, request
     )
-    body_params = await parse_request_body_as(_UpdateProjectCommentsBodyParams, request)
+    body_params = await parse_request_body_as(_ProjectCommentsBodyParams, request)
 
     try:
         # ensure the project exists
@@ -203,7 +175,7 @@ async def update_project_comment(request: web.Request):
             include_state=False,
         )
 
-        return await projects_api.update_project_comment(
+        return await _api_project_comments.update_project_comment(
             request=request,
             comment_id=path_params.comment_id,
             project_uuid=path_params.project_uuid,
@@ -215,14 +187,6 @@ async def update_project_comment(request: web.Request):
         ) from exc
 
 
-class _DeleteProjectCommentsPathParams(BaseModel):
-    project_uuid: ProjectID
-    comment_id: CommentID
-
-    class Config:
-        extra = Extra.forbid
-
-
 @routes.delete(
     f"/{VTAG}/projects/{{project_uuid}}/comments/{{comment_id}}",
     name="delete_project_comment",
@@ -232,7 +196,7 @@ class _DeleteProjectCommentsPathParams(BaseModel):
 async def delete_project_comment(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(
-        _DeleteProjectCommentsPathParams, request
+        _ProjectCommentsWithCommentPathParams, request
     )
 
     try:
@@ -244,7 +208,7 @@ async def delete_project_comment(request: web.Request):
             include_state=False,
         )
 
-        await projects_api.delete_project_comment(
+        await _api_project_comments.delete_project_comment(
             request=request,
             comment_id=path_params.comment_id,
         )
@@ -253,14 +217,6 @@ async def delete_project_comment(request: web.Request):
         raise web.HTTPNotFound(
             reason=f"Project {path_params.project_uuid} not found"
         ) from exc
-
-
-class _GetProjectsCommentPathParams(BaseModel):
-    project_uuid: ProjectID
-    comment_id: CommentID
-
-    class Config:
-        extra = Extra.forbid
 
 
 @routes.get(
@@ -272,7 +228,7 @@ class _GetProjectsCommentPathParams(BaseModel):
 async def get_project_comment(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(
-        _GetProjectsCommentPathParams, request
+        _ProjectCommentsWithCommentPathParams, request
     )
 
     try:
@@ -284,7 +240,7 @@ async def get_project_comment(request: web.Request):
             include_state=False,
         )
 
-        return await projects_api.get_project_comment(
+        return await _api_project_comments.get_project_comment(
             request=request,
             comment_id=path_params.comment_id,
         )
