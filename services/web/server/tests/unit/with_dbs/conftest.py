@@ -465,10 +465,11 @@ def postgres_db(
 
     yield engine
 
-    # assert pg_cli.downgrade.callback
-    # pg_cli.downgrade.callback("base")
-    # assert pg_cli.clean.callback
-    # pg_cli.clean.callback()
+    # NOTE: we directly drop the table, that is faster
+    # testing the upgrade/downgrade is already done in postgres-database.
+    # there is no need to it here.
+    with engine.begin() as conn:
+        conn.execute(sa.DDL("DROP TABLE IF EXISTS alembic_version"))
 
     orm.metadata.drop_all(engine)
     engine.dispose()
