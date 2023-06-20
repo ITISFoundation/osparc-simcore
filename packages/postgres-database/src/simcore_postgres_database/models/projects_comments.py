@@ -24,6 +24,7 @@ projects_comments = sa.Table(
             ondelete="CASCADE",
             onupdate="CASCADE",
         ),
+        index=True,
         doc="project reference for this table",
     ),
     sa.Column(
