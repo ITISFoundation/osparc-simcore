@@ -1,5 +1,7 @@
 import logging
 import mimetypes
+import urllib.parse
+from typing import Final
 
 from aiohttp import web
 from models_library.projects_nodes import Node, NodeID
@@ -22,9 +24,9 @@ _logger = logging.getLogger(__name__)
 class NodeScreenshot(BaseModel):
     thumbnail_url: HttpUrl
     file_url: HttpUrl
-    mimetype: str = Field(
+    mimetype: str | None = Field(
         default=None,
-        description="File's media type. SEE https://www.iana.org/assignments/media-types/media-types.xhtml",
+        description="File's media type or None if unknown. SEE https://www.iana.org/assignments/media-types/media-types.xhtml",
         example="image/jpeg",
     )
 
@@ -38,14 +40,15 @@ class NodeScreenshot(BaseModel):
             assert file_url  # nosec
 
             _type, _encoding = mimetypes.guess_type(file_url)
-            if _type is None:
-                raise ValueError(
-                    f"Failed to guess mimetype from {file_url=}. Must be explicitly defined."
-                )
-
+            # NOTE: mimetypes.guess_type works differently in our image, therefore made it nullable if
+            # cannot guess type
+            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/4385
             values["mimetype"] = _type
 
         return values
+
+
+_FAKE_PREVIEW_KEYWORD: Final[str] = "FakePreview"
 
 
 async def fake_screenshots_factory(
@@ -56,11 +59,15 @@ async def fake_screenshots_factory(
 
     """
     assert request.app[APP_SETTINGS_KEY].WEBSERVER_DEV_FEATURES_ENABLED  # nosec
-    short_nodeid = str(node_id)[:4]
     screenshots = []
 
-    # Example https://github.com/Ybalrid/Ogre_glTF/raw/6a59adf2f04253a3afb9459549803ab297932e8d/Media/Monster.glb
-    if "file-picker" in node.key and node.outputs is not None:
+    if (
+        "file-picker" in node.key
+        and _FAKE_PREVIEW_KEYWORD in node.label
+        and node.outputs is not None
+    ):
+        # Example of file that can be added in file-picker:
+        # Example https://github.com/Ybalrid/Ogre_glTF/raw/6a59adf2f04253a3afb9459549803ab297932e8d/Media/Monster.glb
         try:
             user_id = request[RQT_USERID_KEY]
             assert node.outputs is not None  # nosec
@@ -70,13 +77,16 @@ async def fake_screenshots_factory(
             file_url = await get_download_link(request.app, user_id, filelink)
             screenshots.append(
                 NodeScreenshot(
-                    thumbnail_url=f"https://placehold.co/170x120?text=render-{short_nodeid}",
+                    thumbnail_url=f"https://placehold.co/170x120?text={node.label}",
                     file_url=file_url,
                 )
             )
         except (KeyError, ValidationError) as err:
-            _logger.debug("Failed to create link from file-picker: %s", err)
-            pass
+            _logger.debug(
+                "Failed to create link from file-picker %s: %s",
+                node.json(indent=1),
+                err,
+            )
 
     elif node.key.startswith("simcore/services/dynamic"):
         # For dynamic services, just create fake images
@@ -87,14 +97,25 @@ async def fake_screenshots_factory(
         # - https://picsum.photos/
         #
         count = int(str(node_id.int)[0])
+        text = urllib.parse.quote(node.label)
 
         screenshots = [
-            NodeScreenshot(
-                thumbnail_url=f"https://placehold.co/170x120?text=img-{short_nodeid}",
-                file_url=f"https://picsum.photos/seed/{node_id.int + n}/500",
-                mimetype="image/jpeg",
-            )
-            for n in range(count)
+            *(
+                NodeScreenshot(
+                    thumbnail_url=f"https://picsum.photos/seed/{node_id.int + n}/170/120",
+                    file_url=f"https://picsum.photos/seed/{node_id.int + n}/500",
+                    mimetype="image/jpeg",
+                )
+                for n in range(count)
+            ),
+            *(
+                NodeScreenshot(
+                    thumbnail_url=f"https://placehold.co/170x120?text={text}",
+                    file_url=f"https://placehold.co/500x500?text={text}",
+                    mimetype="image/svg+xml",
+                )
+                for n in range(count)
+            ),
         ]
 
     return screenshots

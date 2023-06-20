@@ -16,7 +16,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
-from pydantic import NonNegativeFloat, NonNegativeInt
+from pydantic import NonNegativeFloat, NonNegativeInt, parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_webserver_unit_with_db import (
@@ -27,6 +27,9 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.projects import projects as projects_db_model
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.projects._handlers_project_nodes import (
+    _ProjectNodePreview,
+)
 from simcore_service_webserver.projects.models import ProjectDict
 
 
@@ -709,3 +712,45 @@ async def test_stop_node(
         mocked_director_v2_api[
             "director_v2.api.stop_dynamic_service"
         ].assert_not_called()
+
+
+@pytest.mark.parametrize("user_role", (UserRole.USER,))
+async def test_read_project_nodes_previews(
+    client: TestClient,
+    user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
+    user_role: UserRole,
+):
+    assert client.app
+    project = await user_project_with_num_dynamic_services(3)
+
+    # LIST all node previews
+    url = client.app.router["list_project_nodes_previews"].url_for(
+        project_id=project["uuid"]
+    )
+    response = await client.get(f"{url}")
+
+    data, error = await assert_status(
+        response,
+        web.HTTPOk,
+    )
+
+    assert not error
+    assert len(data) == 3
+
+    nodes_previews = parse_obj_as(list[_ProjectNodePreview], data)
+
+    # GET node's preview
+    for node_preview in nodes_previews:
+        assert f"{node_preview.project_id}" == project["uuid"]
+
+        url = client.app.router["get_project_node_preview"].url_for(
+            project_id=project["uuid"], node_id=f"{node_preview.node_id}"
+        )
+
+        response = await client.get(f"{url}")
+        data, error = await assert_status(
+            response,
+            web.HTTPOk,
+        )
+
+        assert parse_obj_as(_ProjectNodePreview, data) == node_preview
