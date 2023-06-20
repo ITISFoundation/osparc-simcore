@@ -116,11 +116,11 @@ async def _create_temporary_user(request: web.Request):
 
 @log_decorator(_logger, level=logging.DEBUG)
 async def get_or_create_user(
-    request: web.Request, *, is_guest_allowed: bool
+    request: web.Request, *, allow_anonymous_users: bool
 ) -> UserInfo:
     """
     Arguments:
-        is_guest_allowed -- if True, it will create a temporary GUEST account
+        allow_anonymous_users -- if True, it will create a temporary GUEST account
 
     Raises:
         web.HTTPUnauthorized
@@ -134,12 +134,13 @@ async def get_or_create_user(
         # NOTE: covers valid cookie with unauthorized user (e.g. expired guest/banned)
         user = await _get_authorized_user(request)
 
-    if not user and is_guest_allowed:
-        _logger.debug("Creating temporary GUEST user ...")
+    if not user and allow_anonymous_users:
+        _logger.debug("Anonymous user is accepted as guest...")
         user = await _create_temporary_user(request)
         is_anonymous_user = True
 
-    if not is_guest_allowed and (not user or user.get("role") == GUEST):
+    if not allow_anonymous_users and (not user or user.get("role") == GUEST):
+        # NOTE: if allow_anonymous_users=False then GUEST users are NOT allowed!
         raise web.HTTPUnauthorized(reason=MSG_GUESTS_NOT_ALLOWED)
 
     assert isinstance(user, dict)  # nosec
