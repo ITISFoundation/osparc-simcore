@@ -110,7 +110,7 @@ async def test_get_wrong_node_raises_not_found_error(
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
         (UserRole.GUEST, web.HTTPForbidden),
         (UserRole.USER, web.HTTPForbidden),
-        (UserRole.TESTER, web.HTTPNotImplemented),
+        (UserRole.TESTER, web.HTTPOk),
     ],
 )
 async def test_replace_node_resources(
