@@ -19,7 +19,7 @@ from pydantic import BaseModel, ByteSize, parse_obj_as
 from pytest import FixtureRequest
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import UserRole
+from pytest_simcore.helpers.utils_login import UserInfoDict, UserRole
 from pytest_simcore.pydantic_models import iter_model_examples_in_module
 from servicelib.json_serialization import json_dumps
 from settings_library.redis import RedisSettings
@@ -381,7 +381,6 @@ def redirect_url(redirect_type: str, client: TestClient) -> URL:
     return url
 
 
-@pytest.mark.testit
 async def test_dispatch_study_anonymously(
     client: TestClient,
     redirect_url: URL,
@@ -434,6 +433,52 @@ async def test_dispatch_study_anonymously(
         assert guest_project["prjOwner"] == data["login"]
 
         assert mock_client_director_v2_func.called
+
+
+async def test_dispatch_logged_in_user(
+    client: TestClient,
+    redirect_url: URL,
+    redirect_type: str,
+    logged_user: UserInfoDict,
+    mocker: MockerFixture,
+    storage_subsystem_mock,
+    catalog_subsystem_mock: None,
+    mocks_on_projects_api,
+):
+    assert client.app
+    mock_client_director_v2_func = mocker.patch(
+        "simcore_service_webserver.director_v2.api.create_or_update_pipeline",
+        return_value=None,
+    )
+
+    response = await client.get(f"{redirect_url}")
+
+    expected_project_id = await assert_redirected_to_study(response, client.session)
+
+    # has auto logged in as guest?
+    me_url = client.app.router["get_my_profile"].url_for()
+    response = await client.get(f"{me_url}")
+
+    data, _ = await assert_status(response, web.HTTPOk)
+    assert data["role"].upper() == UserRole.USER.name
+
+    # guest user only a copy of the template project
+    url = client.app.router["list_projects"].url_for()
+    response = await client.get(f'{url.with_query(type="user")}')
+
+    payload = await response.json()
+    assert response.status == 200, payload
+
+    projects, error = await assert_status(response, web.HTTPOk)
+    assert not error
+
+    assert len(projects) == 1
+    guest_project = projects[0]
+
+    assert expected_project_id == guest_project["uuid"]
+    assert guest_project["prjOwner"] == data["login"]
+
+    assert mock_client_director_v2_func.called
 
 
 def assert_error_in_fragment(resp: ClientResponse) -> tuple[str, int]:
