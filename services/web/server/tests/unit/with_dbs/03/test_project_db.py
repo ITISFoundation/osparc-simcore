@@ -353,7 +353,7 @@ def _assert_project_db_row(
 ):
     with postgres_db.connect() as conn:
         row: Row | None = conn.execute(
-            f"SELECT * FROM projects WHERE \"uuid\"='{project['uuid']}'"
+            sa.DDL(f"SELECT * FROM projects WHERE \"uuid\"='{project['uuid']}'")
         ).fetchone()
 
     expected_db_entries = {
