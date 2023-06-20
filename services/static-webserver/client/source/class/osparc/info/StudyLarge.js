@@ -68,6 +68,10 @@ qx.Class.define("osparc.info.StudyLarge", {
       const extraInfo = this.__extraInfo();
       const extraInfoLayout = this.__createExtraInfo(extraInfo);
 
+      if (osparc.product.Utils.showStudyPreview()) {
+        const studyThumbnailExplorer = new osparc.dashboard.StudyThumbnailExplorer(this.getStudy().serialize());
+        this._add(studyThumbnailExplorer);
+      }
 
       const bounds = this.getBounds();
       const offset = 30;
@@ -123,15 +127,6 @@ qx.Class.define("osparc.info.StudyLarge", {
         const editInTitle = this.__createViewWithEdit(description.getChildren()[0], this.__openDescriptionEditor);
         description.addAt(editInTitle, 0);
         this._add(description);
-      }
-
-      const commentsList = this.__createCommentsList();
-      this._add(commentsList);
-      if (this.__canIWrite()) {
-        const addComment = this.__createAddComment();
-        addComment.setPaddingLeft(10);
-        addComment.addListener("commentAdded", () => commentsList.fetchComments());
-        this._add(addComment);
       }
     },
 
@@ -273,14 +268,6 @@ qx.Class.define("osparc.info.StudyLarge", {
     __createDescription: function() {
       const maxHeight = 400;
       return osparc.info.StudyUtils.createDescription(this.getStudy(), maxHeight);
-    },
-
-    __createCommentsList: function() {
-      return new osparc.info.CommentsList(this.getStudy().getUuid());
-    },
-
-    __createAddComment: function() {
-      return new osparc.info.CommentAdd(this.getStudy().getUuid());
     },
 
     __openTitleEditor: function() {
