@@ -139,62 +139,60 @@ class ProjectDBAPI(BaseProjectDB):
         :return: inserted project
         """
 
-        async with self.engine.acquire() as conn:
-            # NOTE: this is very bad and leads to very weird conversions.
-            # needs to be refactored!!! use arrow (https://github.com/ITISFoundation/osparc-simcore/issues/3797)
-            project.update(
-                {
-                    "creationDate": now_str(),
-                    "lastChangeDate": now_str(),
-                }
-            )
+        # NOTE: this is very bad and leads to very weird conversions.
+        # needs to be refactored!!! use arrow (https://github.com/ITISFoundation/osparc-simcore/issues/3797)
+        project.update(
+            {
+                "creationDate": now_str(),
+                "lastChangeDate": now_str(),
+            }
+        )
 
-            # NOTE: tags are removed in convert_to_db_names so we keep it
-            project_tags = parse_obj_as(list[int], project.get("tags", []).copy())
-            insert_values = convert_to_db_names(project)
-            insert_values.update(
-                {
-                    "type": ProjectType.TEMPLATE.value
-                    if (force_as_template or user_id is None)
-                    else ProjectType.STANDARD.value,
-                    "prj_owner": user_id if user_id else None,
-                    "hidden": hidden,
-                }
-            )
+        # NOTE: tags are removed in convert_to_db_names so we keep it
+        project_tags = parse_obj_as(list[int], project.get("tags", []).copy())
+        insert_values = convert_to_db_names(project)
+        insert_values.update(
+            {
+                "type": ProjectType.TEMPLATE.value
+                if (force_as_template or user_id is None)
+                else ProjectType.STANDARD.value,
+                "prj_owner": user_id if user_id else None,
+                "hidden": hidden,
+            }
+        )
 
-            # validate access_rights. are the gids valid? also ensure prj_owner is in there
-            if user_id:
+        # validate access_rights. are the gids valid? also ensure prj_owner is in there
+        if user_id:
+            async with self.engine.acquire() as conn:
                 primary_gid = await self._get_user_primary_group_gid(
                     conn, user_id=user_id
                 )
-                insert_values.setdefault("access_rights", {})
-                insert_values["access_rights"].update(
-                    create_project_access_rights(primary_gid, ProjectAccessRights.OWNER)
-                )
+            insert_values.setdefault("access_rights", {})
+            insert_values["access_rights"].update(
+                create_project_access_rights(primary_gid, ProjectAccessRights.OWNER)
+            )
 
-            # ensure we have the minimal amount of data here
-            # All non-default in projects table
-            insert_values.setdefault("name", "New Study")
-            insert_values.setdefault("workbench", {})
+        # ensure we have the minimal amount of data here
+        # All non-default in projects table
+        insert_values.setdefault("name", "New Study")
+        insert_values.setdefault("workbench", {})
 
-            # must be valid uuid
-            try:
-                uuidlib.UUID(str(insert_values.get("uuid")))
-            except ValueError:
-                if force_project_uuid:
-                    raise
-                insert_values["uuid"] = f"{uuidlib.uuid1()}"
+        # must be valid uuid
+        try:
+            uuidlib.UUID(str(insert_values.get("uuid")))
+        except ValueError:
+            if force_project_uuid:
+                raise
+            insert_values["uuid"] = f"{uuidlib.uuid1()}"
 
-            # Atomic transaction to insert project and update relations
-            #  - Retries insert if UUID collision
-            def _reraise_if_not_unique_uuid_error(err: UniqueViolation):
-                if (
-                    err.diag.constraint_name != "projects_uuid_key"
-                    or force_project_uuid
-                ):
-                    raise err
+        # Atomic transaction to insert project and update relations
+        #  - Retries insert if UUID collision
+        def _reraise_if_not_unique_uuid_error(err: UniqueViolation):
+            if err.diag.constraint_name != "projects_uuid_key" or force_project_uuid:
+                raise err
 
-            selected_values: ProjectDict = {}
+        selected_values: ProjectDict = {}
+        async with self.engine.acquire() as conn:
             async for attempt in AsyncRetrying(retry=retry_if_exception_type(TryAgain)):
                 with attempt:
                     async with conn.begin():
