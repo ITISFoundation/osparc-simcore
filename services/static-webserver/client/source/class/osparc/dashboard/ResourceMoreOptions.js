@@ -280,12 +280,10 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __getInfoPage: function() {
-      const id = "Preview";
-      const title = this.tr("Preview");
+      const id = "Information";
+      const title = this.tr("Information");
       const icon = "@FontAwesome5Solid/info";
-
       const resourceData = this.__resourceData;
-
       const infoCard = osparc.utils.Resources.isService(resourceData) ? new osparc.info.ServiceLarge(resourceData, null, false) : new osparc.info.StudyLarge(resourceData, false);
       infoCard.addListener("openAccessRights", () => this.openAccessRights());
       infoCard.addListener("openClassifiers", () => this.openClassifiers());
@@ -322,9 +320,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const id = "Preview";
       const title = this.tr("Preview");
       const icon = "@FontAwesome5Solid/magnifying-glass";
-
       const resourceData = this.__resourceData;
-
       const studyThumbnailExplorer = new osparc.dashboard.StudyThumbnailExplorer(resourceData);
 
       const page = this.self().createPage(title, studyThumbnailExplorer, icon, id);
