@@ -91,15 +91,13 @@ qx.Class.define("osparc.info.CommentUI", {
       return control || this.base(arguments, id);
     },
 
-    __buildLayout: async function() {
-      const user = await osparc.store.Store.getInstance().getUser(this.__comment["user_id"]);
-
-      const source = osparc.utils.Avatar.getUrl(user ? user["login"] : null, 32);
+    __buildLayout: function() {
+      const source = osparc.utils.Avatar.getUrl(null);
       const thumbnail = this.getChildControl("thumbnail");
       thumbnail.setSource(source);
 
       const userName = this.getChildControl("user-name");
-      userName.setValue(user ? user["first_name"] : "Unknown");
+      userName.setValue("Unknown");
 
       const date = new Date(this.__comment["updated_at"]);
       const date2 = osparc.utils.Utils.formatDateAndTime(date);
@@ -108,6 +106,15 @@ qx.Class.define("osparc.info.CommentUI", {
 
       const commentContent = this.getChildControl("comment-content");
       commentContent.setValue(this.__comment["content"]);
+
+      osparc.store.Store.getInstance().getUser(this.__comment["user_id"])
+        .then(user => {
+          if (user) {
+            const userSource = osparc.utils.Avatar.getUrl(user ? user["login"] : null, 32);
+            thumbnail.setSource(userSource);
+            userName.setValue(user["first_name"]);
+          }
+        });
     }
   }
 });
