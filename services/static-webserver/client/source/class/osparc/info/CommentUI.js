@@ -51,6 +51,9 @@ qx.Class.define("osparc.info.CommentUI", {
             maxWidth: 32,
             maxHeight: 32
           });
+          control.getContentElement().setStyles({
+            "border-radius": "8px"
+          });
           this._add(control, {
             row: 0,
             column: 0,
@@ -78,7 +81,8 @@ qx.Class.define("osparc.info.CommentUI", {
         case "comment-content":
           control = new qx.ui.basic.Label().set({
             font: "text-13",
-            rich: true
+            rich: true,
+            wrap: true
           });
           this._add(control, {
             row: 1,
