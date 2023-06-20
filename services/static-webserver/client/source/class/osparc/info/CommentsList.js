@@ -35,6 +35,8 @@ qx.Class.define("osparc.info.CommentsList", {
   },
 
   members: {
+    __nextRequestParams: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -50,6 +52,11 @@ qx.Class.define("osparc.info.CommentsList", {
           });
           this._add(control);
           break;
+        case "load-more-button":
+          control = new osparc.ui.form.FetchButton(this.tr("Load more comments..."));
+          control.addListener("execute", () => this.fetchComments(false));
+          this._add(control);
+          break;
       }
 
       return control || this.base(arguments, id);
@@ -58,10 +65,15 @@ qx.Class.define("osparc.info.CommentsList", {
     __buildLayout: function() {
       this.getChildControl("title");
       this.getChildControl("comments-list");
+      this.getChildControl("load-more-button");
     },
 
-    fetchComments: function() {
-      this.getChildControl("comments-list").removeAll();
+    fetchComments: function(removeComments = true) {
+      if (removeComments) {
+        this.getChildControl("comments-list").removeAll();
+      }
+      const loadMoreButton = this.getChildControl("load-more-button");
+      loadMoreButton.setFetching(true);
 
       const comments = [{
         "comment_id": 1,
@@ -88,6 +100,16 @@ qx.Class.define("osparc.info.CommentsList", {
       this.__addComments(comments);
       return;
 
+      this.__getNextRequest()
+        .then(resp => {
+          const comments = resp["data"];
+          this.__addComments(comments);
+          this.__nextRequestParams = resp["_links"]["next"];
+        })
+        .finally(() => loadMoreButton.setFetching(false));
+    },
+
+    __getNextRequest: function() {
       const params = {
         url: {
           studyId: this.__studyId,
@@ -95,7 +117,7 @@ qx.Class.define("osparc.info.CommentsList", {
           limit: 20
         }
       };
-      const nextRequestParams = this.__getNextRequestParams();
+      const nextRequestParams = this.__nextRequestParams;
       if (nextRequestParams) {
         params.url.offset = nextRequestParams.offset;
         params.url.limit = nextRequestParams.limit;
@@ -103,12 +125,7 @@ qx.Class.define("osparc.info.CommentsList", {
       const options = {
         resolveWResponse: true
       };
-      osparc.data.Resources.fetch("studyComments", "getPage", params, undefined, options)
-        .then(comments => this.__addComments(comments));
-    },
-
-    __getNextRequestParams: function() {
-      return null;
+      return osparc.data.Resources.fetch("studyComments", "getPage", params, undefined, options)
     },
 
     __addComments: function(comments) {

@@ -27,7 +27,7 @@ qx.Class.define("osparc.info.CardLarge", {
       minHeight: 350,
       padding: this.self().PADDING
     });
-    this._setLayout(new qx.ui.layout.VBox(10));
+    this._setLayout(new qx.ui.layout.VBox(15));
   },
 
   events: {
