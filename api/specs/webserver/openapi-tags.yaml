@@ -11,7 +11,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.tags_handlers.TagGet__'
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.tags._handlers.TagGet__'
     post:
       tags:
       - tag
@@ -81,8 +81,8 @@ components:
           $ref: '#/components/schemas/TagGet'
         error:
           title: Error
-    Envelope_list_simcore_service_webserver.tags_handlers.TagGet__:
-      title: Envelope[list[simcore_service_webserver.tags_handlers.TagGet]]
+    Envelope_list_simcore_service_webserver.tags._handlers.TagGet__:
+      title: Envelope[list[simcore_service_webserver.tags._handlers.TagGet]]
       type: object
       properties:
         data:

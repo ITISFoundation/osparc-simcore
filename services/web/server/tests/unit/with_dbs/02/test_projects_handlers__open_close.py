@@ -895,8 +895,8 @@ async def test_get_active_project(
     ],
 )
 async def test_project_node_lifetime(
-    client,
-    logged_user,
+    client: TestClient,
+    logged_user: UserInfoDict,
     user_project,
     expected_response_on_Create,
     expected_response_on_Get,
@@ -911,6 +911,7 @@ async def test_project_node_lifetime(
         "simcore_service_webserver.projects._handlers_crud.projects_api.storage_api.delete_data_folders_of_project_node",
         return_value="",
     )
+    assert client.app
 
     # create a new dynamic node...
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
