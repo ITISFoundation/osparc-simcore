@@ -505,6 +505,7 @@ async def get_project_node_preview(request: web.Request) -> web.Response:
 
     if not request.app[APP_SETTINGS_KEY].WEBSERVER_DEV_FEATURES_ENABLED:
         raise NotImplementedError(MSG_UNDER_DEVELOPMENT)
+
     project_data = await projects_api.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
