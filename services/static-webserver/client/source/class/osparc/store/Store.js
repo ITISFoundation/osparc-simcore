@@ -559,6 +559,24 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
+    getUser: function(uid) {
+      return new Promise(resolve => {
+        if (uid) {
+          this.getVisibleMembers()
+            .then(visibleMembers => {
+              let user = null;
+              if (uid in visibleMembers) {
+                user = visibleMembers[uid];
+              }
+              resolve(user);
+            })
+            .catch(() => resolve(null));
+        } else {
+          resolve(null);
+        }
+      });
+    },
+
     __getOrgClassifiers: function(orgId, useCache = false) {
       const params = {
         url: {

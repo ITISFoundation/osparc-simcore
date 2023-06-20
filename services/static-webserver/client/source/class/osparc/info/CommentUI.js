@@ -91,21 +91,23 @@ qx.Class.define("osparc.info.CommentUI", {
       return control || this.base(arguments, id);
     },
 
-    __buildLayout: function() {
-      const source = osparc.utils.Avatar.getUrl("maiz@itis.swiss", 32);
+    __buildLayout: async function() {
+      const user = await osparc.store.Store.getInstance().getUser(this.__comment["user_id"]);
+
+      const source = osparc.utils.Avatar.getUrl(user ? user["login"] : null, 32);
       const thumbnail = this.getChildControl("thumbnail");
       thumbnail.setSource(source);
 
       const userName = this.getChildControl("user-name");
-      userName.setValue("Odei Maiz");
+      userName.setValue(user ? user["first_name"] : "Unknown");
 
-      const date = new Date("2023-06-20T09:42:13.805Z");
+      const date = new Date(this.__comment["updated_at"]);
       const date2 = osparc.utils.Utils.formatDateAndTime(date);
       const lastUpdate = this.getChildControl("last-updated");
       lastUpdate.setValue(date2);
 
       const commentContent = this.getChildControl("comment-content");
-      commentContent.setValue("Another comment from user 2");
+      commentContent.setValue(this.__comment["content"]);
     }
   }
 });
