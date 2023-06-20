@@ -310,8 +310,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
           this.fireDataEvent("updateTemplate", updatedData);
         }
       });
-      const page = this.self().createPage(title, infoCard, icon, id);
 
+      const page = this.self().createPage(title, infoCard, icon, id);
       return page;
     },
 
