@@ -9,7 +9,6 @@ import logging
 from typing import Any
 
 from aiohttp import web
-from aiohttp.web_exceptions import HTTPNotFound
 from models_library.api_schemas_catalog import ServiceAccessRightsGet
 from models_library.groups import EVERYONE_GROUP_ID
 from models_library.projects import Project, ProjectID
@@ -37,7 +36,7 @@ from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserRole
 
-from .._constants import APP_SETTINGS_KEY
+from .._constants import APP_SETTINGS_KEY, MSG_UNDER_DEVELOPMENT
 from .._meta import api_version_prefix as VTAG
 from ..catalog import client as catalog_client
 from ..director_v2 import api
@@ -488,7 +487,8 @@ async def list_project_nodes_previews(request: web.Request) -> web.Response:
                     )
                 )
 
-    return envelope_json_response(nodes_previews)
+        return envelope_json_response(nodes_previews)
+    raise NotImplementedError(MSG_UNDER_DEVELOPMENT)
 
 
 @routes.get(
@@ -528,6 +528,8 @@ async def get_project_node_preview(request: web.Request) -> web.Response:
         )
         return envelope_json_response(node_preview)
 
-    raise HTTPNotFound(
-        reason=f"Node '{path_params.project_id}/{path_params.node_id}' has no preview"
-    )
+    # NOTE: keep until is not a dev-feature
+    # raise HTTPNotFound(
+    #     reason=f"Node '{path_params.project_id}/{path_params.node_id}' has no preview"
+    # )
+    raise NotImplementedError(MSG_UNDER_DEVELOPMENT)

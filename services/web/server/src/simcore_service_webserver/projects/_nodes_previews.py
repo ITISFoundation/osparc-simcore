@@ -1,7 +1,6 @@
 import logging
 import mimetypes
 import urllib.parse
-from typing import Final
 
 from aiohttp import web
 from models_library.projects_nodes import Node, NodeID
@@ -48,9 +47,6 @@ class NodeScreenshot(BaseModel):
         return values
 
 
-_FAKE_PREVIEW_KEYWORD: Final[str] = "FakePreview"
-
-
 async def fake_screenshots_factory(
     request: web.Request, node_id: NodeID, node: Node
 ) -> list[NodeScreenshot]:
@@ -63,13 +59,15 @@ async def fake_screenshots_factory(
 
     if (
         "file-picker" in node.key
-        and _FAKE_PREVIEW_KEYWORD in node.label
+        and "fake" in node.label.lower()
         and node.outputs is not None
     ):
         # Example of file that can be added in file-picker:
         # Example https://github.com/Ybalrid/Ogre_glTF/raw/6a59adf2f04253a3afb9459549803ab297932e8d/Media/Monster.glb
         try:
             user_id = request[RQT_USERID_KEY]
+            text = urllib.parse.quote(node.label)
+
             assert node.outputs is not None  # nosec
 
             filelink = parse_obj_as(SimCoreFileLink, node.outputs["outFile"])
@@ -77,7 +75,7 @@ async def fake_screenshots_factory(
             file_url = await get_download_link(request.app, user_id, filelink)
             screenshots.append(
                 NodeScreenshot(
-                    thumbnail_url=f"https://placehold.co/170x120?text={node.label}",
+                    thumbnail_url=f"https://placehold.co/170x120?text={text}",
                     file_url=file_url,
                 )
             )
