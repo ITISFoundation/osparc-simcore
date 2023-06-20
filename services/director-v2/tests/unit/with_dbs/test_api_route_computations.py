@@ -10,7 +10,7 @@ import json
 import re
 import urllib.parse
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Awaitable, Callable
 
 import httpx
 import pytest
@@ -235,11 +235,11 @@ async def test_create_computation(
     product_name: str,
     fake_workbench_without_outputs: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., ProjectAtDB],
+    project: Callable[..., Awaitable[ProjectAtDB]],
     async_client: httpx.AsyncClient,
 ):
     user = registered_user()
-    proj = project(user, workbench=fake_workbench_without_outputs)
+    proj = await project(user, workbench=fake_workbench_without_outputs)
     create_computation_url = httpx.URL("/v2/computations")
     response = await async_client.post(
         create_computation_url,
@@ -259,11 +259,11 @@ async def test_start_computation_without_product_fails(
     product_name: str,
     fake_workbench_without_outputs: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., ProjectAtDB],
+    project: Callable[..., Awaitable[ProjectAtDB]],
     async_client: httpx.AsyncClient,
 ):
     user = registered_user()
-    proj = project(user, workbench=fake_workbench_without_outputs)
+    proj = await project(user, workbench=fake_workbench_without_outputs)
     create_computation_url = httpx.URL("/v2/computations")
     response = await async_client.post(
         create_computation_url,
@@ -283,11 +283,11 @@ async def test_start_computation(
     product_name: str,
     fake_workbench_without_outputs: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., ProjectAtDB],
+    project: Callable[..., Awaitable[ProjectAtDB]],
     async_client: httpx.AsyncClient,
 ):
     user = registered_user()
-    proj = project(user, workbench=fake_workbench_without_outputs)
+    proj = await project(user, workbench=fake_workbench_without_outputs)
     create_computation_url = httpx.URL("/v2/computations")
     response = await async_client.post(
         create_computation_url,
@@ -311,11 +311,11 @@ async def test_start_computation_with_deprecated_services_raises_406(
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., ProjectAtDB],
+    project: Callable[..., Awaitable[ProjectAtDB]],
     async_client: httpx.AsyncClient,
 ):
     user = registered_user()
-    proj = project(user, workbench=fake_workbench_without_outputs)
+    proj = await project(user, workbench=fake_workbench_without_outputs)
     create_computation_url = httpx.URL("/v2/computations")
     response = await async_client.post(
         create_computation_url,
@@ -348,12 +348,12 @@ async def test_start_computation_with_forbidden_cluster_raises_403(
     product_name: str,
     fake_workbench_without_outputs: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., ProjectAtDB],
+    project: Callable[..., Awaitable[ProjectAtDB]],
     async_client: httpx.AsyncClient,
     unusable_cluster: ClusterID,
 ):
     user = registered_user()
-    proj = project(user, workbench=fake_workbench_without_outputs)
+    proj = await project(user, workbench=fake_workbench_without_outputs)
     create_computation_url = httpx.URL("/v2/computations")
     response = await async_client.post(
         create_computation_url,
@@ -378,12 +378,12 @@ async def test_start_computation_with_unknown_cluster_raises_406(
     product_name: str,
     fake_workbench_without_outputs: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., ProjectAtDB],
+    project: Callable[..., Awaitable[ProjectAtDB]],
     async_client: httpx.AsyncClient,
     faker: Faker,
 ):
     user = registered_user()
-    proj = project(user, workbench=fake_workbench_without_outputs)
+    proj = await project(user, workbench=fake_workbench_without_outputs)
     create_computation_url = httpx.URL("/v2/computations")
     unknown_cluster_id = faker.pyint(1, 10000)
     response = await async_client.post(
@@ -407,7 +407,7 @@ async def test_get_computation_from_empty_project(
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., ProjectAtDB],
+    project: Callable[..., Awaitable[ProjectAtDB]],
     pipeline: Callable[..., CompPipelineAtDB],
     faker: Faker,
     async_client: httpx.AsyncClient,
@@ -420,7 +420,7 @@ async def test_get_computation_from_empty_project(
     response = await async_client.get(get_computation_url)
     assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
     # create the project
-    proj = project(user, workbench=fake_workbench_without_outputs)
+    proj = await project(user, workbench=fake_workbench_without_outputs)
     get_computation_url = httpx.URL(
         f"/v2/computations/{proj.uuid}?user_id={user['id']}"
     )
@@ -459,13 +459,13 @@ async def test_get_computation_from_not_started_computation_task(
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., ProjectAtDB],
+    project: Callable[..., Awaitable[ProjectAtDB]],
     pipeline: Callable[..., CompPipelineAtDB],
     tasks: Callable[..., list[CompTaskAtDB]],
     async_client: httpx.AsyncClient,
 ):
     user = registered_user()
-    proj = project(user, workbench=fake_workbench_without_outputs)
+    proj = await project(user, workbench=fake_workbench_without_outputs)
     get_computation_url = httpx.URL(
         f"/v2/computations/{proj.uuid}?user_id={user['id']}"
     )
@@ -531,14 +531,14 @@ async def test_get_computation_from_published_computation_task(
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., ProjectAtDB],
+    project: Callable[..., Awaitable[ProjectAtDB]],
     pipeline: Callable[..., CompPipelineAtDB],
     tasks: Callable[..., list[CompTaskAtDB]],
     runs: Callable[..., CompRunsAtDB],
     async_client: httpx.AsyncClient,
 ):
     user = registered_user()
-    proj = project(user, workbench=fake_workbench_without_outputs)
+    proj = await project(user, workbench=fake_workbench_without_outputs)
     pipeline(
         project_id=proj.uuid,
         dag_adjacency_list=fake_workbench_adjacency,

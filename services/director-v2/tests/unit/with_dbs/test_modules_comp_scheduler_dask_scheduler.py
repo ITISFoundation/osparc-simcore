@@ -10,7 +10,7 @@
 
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Callable, cast
+from typing import Any, Awaitable, Callable, cast
 from unittest import mock
 
 import aiopg
@@ -253,12 +253,12 @@ async def test_empty_pipeline_is_not_scheduled(
     with_disabled_scheduler_task: None,
     scheduler: BaseCompScheduler,
     registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., ProjectAtDB],
+    project: Callable[..., Awaitable[ProjectAtDB]],
     pipeline: Callable[..., CompPipelineAtDB],
     aiopg_engine: aiopg.sa.engine.Engine,
 ):
     user = registered_user()
-    empty_project = project(user)
+    empty_project = await project(user)
 
     # the project is not in the comp_pipeline, therefore scheduling it should fail
     with pytest.raises(PipelineNotFoundError):
@@ -295,7 +295,7 @@ async def test_misconfigured_pipeline_is_not_scheduled(
     with_disabled_scheduler_task: None,
     scheduler: BaseCompScheduler,
     registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., ProjectAtDB],
+    project: Callable[..., Awaitable[ProjectAtDB]],
     pipeline: Callable[..., CompPipelineAtDB],
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
@@ -304,7 +304,7 @@ async def test_misconfigured_pipeline_is_not_scheduled(
     """A pipeline which comp_tasks are missing should not be scheduled.
     It shall be aborted and shown as such in the comp_runs db"""
     user = registered_user()
-    sleepers_project = project(user, workbench=fake_workbench_without_outputs)
+    sleepers_project = await project(user, workbench=fake_workbench_without_outputs)
     pipeline(
         project_id=f"{sleepers_project.uuid}",
         dag_adjacency_list=fake_workbench_adjacency,
