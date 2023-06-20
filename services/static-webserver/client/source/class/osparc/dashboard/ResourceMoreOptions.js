@@ -90,6 +90,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     __resourceData: null,
     __toolbar: null,
     __detailsView: null,
+    __dataPage: null,
     __permissionsPage: null,
     __tagsPage: null,
     __classifiersPage: null,
@@ -170,6 +171,10 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       if (page) {
         this.__detailsView.setSelection([page]);
       }
+    },
+
+    openData: function() {
+      this.__openPage(this.__dataPage);
     },
 
     openAccessRights: function() {
@@ -255,6 +260,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       [
         this.__getInfoPage,
         this.__getPreviewPage,
+        this.__getDataPage,
         this.__getPermissionsPage,
         this.__getTagsPage,
         this.__getServicesUpdatePage,
@@ -324,6 +330,17 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const studyThumbnailExplorer = new osparc.dashboard.StudyThumbnailExplorer(resourceData);
 
       const page = this.self().createPage(title, studyThumbnailExplorer, icon, id);
+      return page;
+    },
+
+    __getDataPage: function() {
+      const id = "Data";
+      const title = this.tr("Data");
+      const icon = "@FontAwesome5Solid/file";
+      const resourceData = this.__resourceData;
+      const studyDataManager = new osparc.component.widget.NodeDataManager(resourceData["uuid"]);
+
+      const page = this.__dataPage = this.self().createPage(title, studyDataManager, icon, id);
       return page;
     },
 
