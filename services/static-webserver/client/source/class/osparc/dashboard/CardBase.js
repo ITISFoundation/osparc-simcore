@@ -617,6 +617,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
       return moreOpts;
     },
 
+    openData: function() {
+      const moreOpts = this.__openMoreOptions();
+      moreOpts.openData();
+    },
+
     openAccessRights: function() {
       const moreOpts = this.__openMoreOptions();
       moreOpts.openAccessRights();
