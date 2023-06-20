@@ -39,7 +39,9 @@ from simcore_postgres_database.webserver_models import ProjectType, projects, us
 from sqlalchemy import desc, func, literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import and_, select
-from tenacity import AsyncRetrying, TryAgain, retry_if_exception_type
+from tenacity import TryAgain
+from tenacity._asyncio import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
 
 from ..db.models import study_tags
 from ..utils import now_str

@@ -64,25 +64,24 @@ class ProjectNodesRepo:
             ProjectsNodesNodeNotFound: in case the node does not exist
 
         """
-        insertable_values = [
-            {
-                "project_uuid": f"{self.project_uuid}",
-                **asdict(node),
-            }
-            for node in nodes
-        ]
-        try:
-            result = await connection.execute(
-                projects_nodes.insert()
-                .values(insertable_values)
-                .returning(
-                    *[
-                        c
-                        for c in projects_nodes.c
-                        if c is not projects_nodes.c.project_uuid
-                    ]
-                )
+        insert_stmt = (
+            projects_nodes.insert()
+            .values(
+                [
+                    {
+                        "project_uuid": f"{self.project_uuid}",
+                        **asdict(node),
+                    }
+                    for node in nodes
+                ]
             )
+            .returning(
+                *[c for c in projects_nodes.c if c is not projects_nodes.c.project_uuid]
+            )
+        )
+
+        try:
+            result = await connection.execute(insert_stmt)
             created_nodes_db = await result.fetchall()
             assert created_nodes_db  # nosec
             created_nodes = [
