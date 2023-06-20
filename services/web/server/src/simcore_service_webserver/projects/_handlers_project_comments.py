@@ -207,7 +207,6 @@ async def update_project_comment(request: web.Request):
             request=request,
             comment_id=path_params.comment_id,
             project_uuid=path_params.project_uuid,
-            user_id=req_ctx.user_id,
             content=body_params.content,
         )
     except ProjectNotFoundError as exc:

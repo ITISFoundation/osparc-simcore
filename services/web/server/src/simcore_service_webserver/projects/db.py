@@ -828,7 +828,6 @@ class ProjectDBAPI(BaseProjectDB):
         self,
         comment_id: CommentID,
         project_uuid: ProjectID,
-        user_id: UserID,
         content: str,
     ) -> ProjectsCommentsDB:
         async with self.engine.acquire() as conn:
@@ -836,7 +835,6 @@ class ProjectDBAPI(BaseProjectDB):
                 projects_comments.update()
                 .values(
                     project_uuid=project_uuid,
-                    user_id=user_id,
                     content=content,
                     updated_at=func.now(),
                 )

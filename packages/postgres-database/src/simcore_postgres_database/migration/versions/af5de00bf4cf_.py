@@ -42,9 +42,6 @@ def upgrade():
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
-        sa.ForeignKeyConstraint(
-            ["user_id"], ["users.id"], name="fk_projects_comments_user_id"
-        ),
         sa.PrimaryKeyConstraint("comment_id", name="projects_comments_pkey"),
     )
     # ### end Alembic commands ###

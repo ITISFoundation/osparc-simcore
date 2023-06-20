@@ -908,13 +908,12 @@ async def update_project_comment(
     request: web.Request,
     comment_id: CommentID,
     project_uuid: ProjectID,
-    user_id: UserID,
     content: str,
 ) -> ProjectsCommentsAPI:
     db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
 
     projects_comments_db_model: ProjectsCommentsDB = await db.update_project_comment(
-        comment_id, project_uuid, user_id, content
+        comment_id, project_uuid, content
     )
     projects_comments_api_model = ProjectsCommentsAPI(
         **projects_comments_db_model.dict()

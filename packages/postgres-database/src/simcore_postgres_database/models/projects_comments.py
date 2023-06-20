@@ -3,7 +3,6 @@ from sqlalchemy.sql import func
 
 from .base import metadata
 from .projects import projects
-from .users import users
 
 projects_comments = sa.Table(
     "projects_comments",
@@ -30,10 +29,6 @@ projects_comments = sa.Table(
     sa.Column(
         "user_id",
         sa.BigInteger,
-        sa.ForeignKey(
-            users.c.id,
-            name="fk_projects_comments_user_id",
-        ),
         doc="user reference for this table",
     ),
     sa.Column(
