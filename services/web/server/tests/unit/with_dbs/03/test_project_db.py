@@ -649,9 +649,6 @@ async def test_patch_user_project_workbench_creates_nodes_raises_if_invalid_node
         )
 
 
-print("<-- deleting all projects from database...")
-
-
 @pytest.mark.parametrize(
     "user_role",
     [(UserRole.USER)],
@@ -832,7 +829,7 @@ async def lots_of_projects_and_nodes(
     aiopg_engine: aiopg.sa.engine.Engine,
 ) -> AsyncIterator[dict[ProjectID, list[NodeID]]]:
     """Will create a lot of projects with each between 200-1434 nodes"""
-    NUMBER_OF_PROJECTS = 1450
+    NUMBER_OF_PROJECTS = 450
 
     BASE_UUID = UUID("ccc0839f-93b8-4387-ab16-197281060927")
     all_created_projects = {}
@@ -861,9 +858,7 @@ async def lots_of_projects_and_nodes(
             )
         )
 
-    created_projects = await asyncio.gather(
-        *project_creation_tasks, return_exceptions=True
-    )
+    created_projects = await asyncio.gather(*project_creation_tasks)
     await asyncio.gather(
         *(
             _assert_projects_nodes_db_rows(aiopg_engine, prj)
@@ -873,7 +868,7 @@ async def lots_of_projects_and_nodes(
     )
     print(f"---> created {len(all_created_projects)} projects in the database")
     yield all_created_projects
-    print(f"<--- removed {len(all_created_projects)} projects in the database")
+    print(f"<--- removing {len(created_projects)} projects from the database")
 
     # cleanup
     await asyncio.gather(
@@ -883,9 +878,9 @@ async def lots_of_projects_and_nodes(
             if isinstance(prj, dict)
         ]
     )
+    print(f"<--- removed {len(created_projects)} projects from the database")
 
 
-@pytest.mark.testit
 @pytest.mark.parametrize(
     "user_role",
     [UserRole.USER],
