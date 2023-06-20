@@ -17,7 +17,9 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from pydantic import NonNegativeFloat, NonNegativeInt, parse_obj_as
+from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     ExpectedResponse,
@@ -712,6 +714,15 @@ async def test_stop_node(
         mocked_director_v2_api[
             "director_v2.api.stop_dynamic_service"
         ].assert_not_called()
+
+
+@pytest.fixture
+def app_environment(
+    app_environment: dict[str, str], monkeypatch: MonkeyPatch
+) -> dict[str, str]:
+    # test_read_project_nodes_previews needs WEBSERVER_DEV_FEATURES_ENABLED=1
+    new_envs = setenvs_from_dict(monkeypatch, {"WEBSERVER_DEV_FEATURES_ENABLED": "1"})
+    return app_environment | new_envs
 
 
 @pytest.mark.parametrize("user_role", (UserRole.USER,))
