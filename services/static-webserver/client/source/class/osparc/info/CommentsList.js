@@ -56,8 +56,7 @@ qx.Class.define("osparc.info.CommentsList", {
       switch (id) {
         case "title":
           control = new qx.ui.basic.Label().set({
-            value: this.tr("Comments"),
-            font: "text-14"
+            value: this.tr("0 Comments")
           });
           this._add(control);
           break;
@@ -101,9 +100,16 @@ qx.Class.define("osparc.info.CommentsList", {
     },
 
     __addComments: function(comments) {
+      const commentsTitle = this.getChildControl("title");
+      if (comments.length === 1) {
+        commentsTitle.setValue(this.tr("1 Comment"));
+      } else if (comments.length > 1) {
+        commentsTitle.setValue(comments.length + this.tr(" Comments"));
+      }
+
       const commentsList = this.getChildControl("comments-list");
       comments.forEach(comment => {
-        const commentUi = comment;
+        const commentUi = new osparc.info.CommentUI(comment);
         commentsList.add(commentUi);
       });
     }

@@ -92,9 +92,8 @@ qx.Class.define("osparc.info.CommentUI", {
     },
 
     __buildLayout: function() {
-      const source = osparc.utils.Avatar.getUrl(null);
       const thumbnail = this.getChildControl("thumbnail");
-      thumbnail.setSource(source);
+      thumbnail.setSource(osparc.utils.Avatar.getUrl("", 32));
 
       const userName = this.getChildControl("user-name");
       userName.setValue("Unknown");
@@ -110,7 +109,7 @@ qx.Class.define("osparc.info.CommentUI", {
       osparc.store.Store.getInstance().getUser(this.__comment["user_id"])
         .then(user => {
           if (user) {
-            const userSource = osparc.utils.Avatar.getUrl(user ? user["login"] : null, 32);
+            const userSource = osparc.utils.Avatar.getUrl(user["login"], 32);
             thumbnail.setSource(userSource);
             userName.setValue(user["first_name"]);
           }

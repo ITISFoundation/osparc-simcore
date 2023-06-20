@@ -128,8 +128,8 @@ qx.Class.define("osparc.info.StudyLarge", {
       const commentsList = this.__createCommentsList();
       this._add(commentsList);
       if (this.__canIWrite()) {
-        const addComment = this.__createAddComment();
-        this._add(addComment);
+        // const addComment = this.__createAddComment();
+        // this._add(addComment);
       }
     },
 
