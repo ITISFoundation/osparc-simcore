@@ -543,15 +543,19 @@ qx.Class.define("osparc.store.Store", {
 
     getGroup: function(gid) {
       return new Promise(resolve => {
-        this.getPotentialCollaborators()
-          .then(potentialCollaborators => {
-            let group = null;
-            if (gid in potentialCollaborators) {
-              group = potentialCollaborators[gid];
-            }
-            resolve(group);
-          })
-          .catch(() => resolve(null));
+        if (gid) {
+          this.getPotentialCollaborators()
+            .then(potentialCollaborators => {
+              let group = null;
+              if (gid in potentialCollaborators) {
+                group = potentialCollaborators[gid];
+              }
+              resolve(group);
+            })
+            .catch(() => resolve(null));
+        } else {
+          resolve(null);
+        }
       });
     },
 

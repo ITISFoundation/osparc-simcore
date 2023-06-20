@@ -6,7 +6,7 @@ from fastapi import FastAPI
 
 class AppDataMixin:
     """
-    appdata preserves a single instance of the data within an app context
+    appdata is a unique entry of app's state
 
     This mixin adds a mechanism to reliably create, get and delete instances
     of the derived class
@@ -16,7 +16,7 @@ class AppDataMixin:
 
     @classmethod
     def create_once(cls, app: FastAPI, **data):
-        """Creates a single instance in app"""
+        """Creates a single instance in app context"""
 
         obj = cls.get_instance(app)
         if obj is None:

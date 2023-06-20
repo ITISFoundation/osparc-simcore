@@ -41,6 +41,7 @@ from packaging import version
 from pydantic import AnyUrl, SecretStr
 from pytest import FixtureRequest, LogCaptureFixture
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.s3 import S3Settings
 from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
     LEGACY_SERVICE_LOG_FILE_NAME,
@@ -425,7 +426,7 @@ def mocked_get_integration_version(
 def test_run_computational_sidecar_real_fct(
     caplog_info_level: LogCaptureFixture,
     event_loop: asyncio.AbstractEventLoop,
-    mock_service_envs: None,
+    app_environment: EnvVarsDict,
     dask_subsystem_mock: dict[str, mock.Mock],
     sleeper_task: ServiceExampleParam,
     s3_settings: S3Settings,
@@ -659,7 +660,7 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
 )
 def test_failing_service_raises_exception(
     caplog_info_level: LogCaptureFixture,
-    mock_service_envs: None,
+    app_environment: EnvVarsDict,
     dask_subsystem_mock: dict[str, mock.Mock],
     failing_ubuntu_task: ServiceExampleParam,
     s3_settings: S3Settings,
@@ -676,7 +677,7 @@ def test_failing_service_raises_exception(
 )
 def test_running_service_that_generates_unexpected_data_raises_exception(
     caplog_info_level: LogCaptureFixture,
-    mock_service_envs: None,
+    app_environment: EnvVarsDict,
     dask_subsystem_mock: dict[str, mock.Mock],
     sleeper_task_unexpected_output: ServiceExampleParam,
     s3_settings: S3Settings,

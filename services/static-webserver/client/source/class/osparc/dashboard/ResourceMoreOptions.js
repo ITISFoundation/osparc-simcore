@@ -30,7 +30,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
   },
 
   events: {
-    "openStudy": "qx.event.type.Data",
+    "openingStudy": "qx.event.type.Data",
     "openTemplate": "qx.event.type.Data",
     "openService": "qx.event.type.Data",
     "updateStudy": "qx.event.type.Data",
@@ -40,8 +40,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
   },
 
   statics: {
-    WIDTH: 700,
-    HEIGHT: 700,
+    WIDTH: 710,
+    HEIGHT: 710,
 
     popUpInWindow: function(moreOpts) {
       const title = qx.locale.Manager.tr("Details");
@@ -90,6 +90,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     __resourceData: null,
     __toolbar: null,
     __detailsView: null,
+    __dataPage: null,
     __permissionsPage: null,
     __tagsPage: null,
     __classifiersPage: null,
@@ -128,13 +129,18 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         center: true
       });
       osparc.utils.Utils.setIdToWidget(openButton, "openResource");
+      const store = osparc.store.Store.getInstance();
+      store.bind("currentStudy", openButton, "visibility", {
+        converter: study => (study === null && this.isShowOpenButton()) ? "visible" : "excluded"
+      });
       this.bind("showOpenButton", openButton, "visibility", {
-        converter: show => show ? "visible" : "excluded"
+        converter: show => (store.getCurrentStudy() === null && show) ? "visible" : "excluded"
       });
       openButton.addListener("execute", () => {
         switch (this.__resourceData["resourceType"]) {
           case "study":
-            this.fireDataEvent("openStudy", this.__resourceData);
+            osparc.desktop.MainPageHandler.getInstance().startStudy(this.__resourceData["uuid"]);
+            this.fireDataEvent("openingStudy", this.__resourceData);
             break;
           case "template":
             this.fireDataEvent("openTemplate", this.__resourceData);
@@ -165,6 +171,10 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       if (page) {
         this.__detailsView.setSelection([page]);
       }
+    },
+
+    openData: function() {
+      this.__openPage(this.__dataPage);
     },
 
     openAccessRights: function() {
@@ -249,6 +259,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       // add Open service button
       [
         this.__getInfoPage,
+        this.__getPreviewPage,
+        this.__getDataPage,
         this.__getPermissionsPage,
         this.__getTagsPage,
         this.__getServicesUpdatePage,
@@ -305,8 +317,34 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
           this.fireDataEvent("updateTemplate", updatedData);
         }
       });
-      const page = this.self().createPage(title, infoCard, icon, id);
 
+      const page = this.self().createPage(title, infoCard, icon, id);
+      return page;
+    },
+
+    __getPreviewPage: function() {
+      if (!osparc.product.Utils.showStudyPreview()) {
+        return null;
+      }
+
+      const id = "Preview";
+      const title = this.tr("Preview");
+      const icon = "@FontAwesome5Solid/search-plus";
+      const resourceData = this.__resourceData;
+      const studyThumbnailExplorer = new osparc.dashboard.StudyThumbnailExplorer(resourceData);
+
+      const page = this.self().createPage(title, studyThumbnailExplorer, icon, id);
+      return page;
+    },
+
+    __getDataPage: function() {
+      const id = "Data";
+      const title = this.tr("Data");
+      const icon = "@FontAwesome5Solid/file";
+      const resourceData = this.__resourceData;
+      const studyDataManager = new osparc.component.widget.NodeDataManager(resourceData["uuid"]);
+
+      const page = this.__dataPage = this.self().createPage(title, studyDataManager, icon, id);
       return page;
     },
 

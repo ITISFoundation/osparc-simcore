@@ -180,6 +180,7 @@ components:
             - NEW_ORGANIZATION
             - STUDY_SHARED
             - TEMPLATE_SHARED
+            - ANNOTATION_NOTE
           description: >-
             notification type, the frontend will use this to decorate the notification
           example: new_organization
