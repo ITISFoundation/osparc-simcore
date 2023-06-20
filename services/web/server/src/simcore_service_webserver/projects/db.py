@@ -254,24 +254,27 @@ class ProjectDBAPI(BaseProjectDB):
                         selected_values["tags"] = project_tags
 
                         # NOTE: this will at some point completely replace workbench in the DB
-                        project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
-                        node_ids = [
-                            NodeID(node_id)
-                            for node_id in selected_values["workbench"].keys()
-                        ]
-                        nodes = [
-                            ProjectNodeCreate(
-                                required_resources=node_required_resources.get(
-                                    NodeID(node_id), {}
-                                )
-                                if node_required_resources
-                                else {}
+                        if selected_values["workbench"]:
+                            project_nodes_repo = ProjectNodesRepo(
+                                project_uuid=project_uuid
                             )
-                            for node_id in selected_values["workbench"].keys()
-                        ]
-                        await project_nodes_repo.add(
-                            conn, node_ids=node_ids, nodes=nodes
-                        )
+                            node_ids = [
+                                NodeID(node_id)
+                                for node_id in selected_values["workbench"].keys()
+                            ]
+                            nodes = [
+                                ProjectNodeCreate(
+                                    required_resources=node_required_resources.get(
+                                        NodeID(node_id), {}
+                                    )
+                                    if node_required_resources
+                                    else {}
+                                )
+                                for node_id in selected_values["workbench"].keys()
+                            ]
+                            await project_nodes_repo.add(
+                                conn, node_ids=node_ids, nodes=nodes
+                            )
 
             # Returns created project with names as in the project schema
             user_email = await self._get_user_email(conn, user_id)
