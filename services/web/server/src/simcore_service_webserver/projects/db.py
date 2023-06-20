@@ -774,7 +774,7 @@ class ProjectDBAPI(BaseProjectDB):
     #
 
     async def create_project_comment(
-        self, project_uuid: ProjectID, user_id: UserID, content: str
+        self, project_uuid: ProjectID, user_id: UserID, contents: str
     ) -> CommentID:
         async with self.engine.acquire() as conn:
             project_comment_id: ResultProxy = await conn.execute(
@@ -782,7 +782,7 @@ class ProjectDBAPI(BaseProjectDB):
                 .values(
                     project_uuid=project_uuid,
                     user_id=user_id,
-                    content=content,
+                    contents=contents,
                     modified=func.now(),
                 )
                 .returning(projects_comments.c.comment_id)
@@ -793,8 +793,8 @@ class ProjectDBAPI(BaseProjectDB):
     async def list_project_comments(
         self,
         project_uuid: ProjectID,
-        offset: int | None = 0,
-        limit: int | None = None,
+        offset: PositiveInt,
+        limit: int,
     ) -> list[ProjectsCommentsDB]:
         result = []
         async with self.engine.acquire() as conn:
@@ -828,14 +828,14 @@ class ProjectDBAPI(BaseProjectDB):
         self,
         comment_id: CommentID,
         project_uuid: ProjectID,
-        content: str,
+        contents: str,
     ) -> ProjectsCommentsDB:
         async with self.engine.acquire() as conn:
             project_comment_result = await conn.execute(
                 projects_comments.update()
                 .values(
                     project_uuid=project_uuid,
-                    content=content,
+                    contents=contents,
                     modified=func.now(),
                 )
                 .where(projects_comments.c.comment_id == comment_id)

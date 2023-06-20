@@ -49,7 +49,7 @@ class _ProjectCommentsWithCommentPathParams(BaseModel):
 
 
 class _ProjectCommentsBodyParams(BaseModel):
-    content: str
+    contents: str
 
     class Config:
         extra = Extra.forbid
@@ -78,10 +78,10 @@ async def create_project_comment(request: web.Request):
             request=request,
             project_uuid=path_params.project_uuid,
             user_id=req_ctx.user_id,
-            content=body_params.content,
+            contents=body_params.contents,
         )
 
-        return envelope_json_response(comment_id, web.HTTPCreated)
+        return envelope_json_response({"comment_id": comment_id}, web.HTTPCreated)
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(
             reason=f"Project {path_params.project_uuid} not found"
@@ -179,7 +179,7 @@ async def update_project_comment(request: web.Request):
             request=request,
             comment_id=path_params.comment_id,
             project_uuid=path_params.project_uuid,
-            content=body_params.content,
+            contents=body_params.contents,
         )
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(

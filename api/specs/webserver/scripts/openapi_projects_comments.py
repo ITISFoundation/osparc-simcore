@@ -10,6 +10,7 @@ This OAS are the source of truth
 
 
 from enum import Enum
+from typing import Literal
 
 from _common import (
     CURRENT_DIR,
@@ -22,13 +23,9 @@ from models_library.projects import ProjectID
 from models_library.projects_comments import CommentID, ProjectsCommentsAPI
 from pydantic import NonNegativeInt
 from simcore_service_webserver.projects._handlers_project_comments import (
-    _CreateProjectCommentsBodyParams,
-    _CreateProjectCommentsPathParams,
-    _DeleteProjectCommentsPathParams,
-    _GetProjectsCommentPathParams,
-    _ListProjectCommentsPathParams,
-    _UpdateProjectCommentsBodyParams,
-    _UpdateProjectCommentsPathParams,
+    _ProjectCommentsBodyParams,
+    _ProjectCommentsPathParams,
+    _ProjectCommentsWithCommentPathParams,
 )
 
 app = FastAPI(redoc_url=None)
@@ -43,20 +40,20 @@ TAGS: list[str | Enum] = ["project", "comments"]
 
 @app.post(
     "/projects/{project_uuid}/comments",
-    response_model=Envelope[CommentID],
+    response_model=Envelope[dict[Literal["comment_id"], CommentID]],
     tags=TAGS,
     operation_id="create_project_comment",
-    summary="Create a new comment for a specific project. The request body should contain the comment content and user information.",
+    summary="Create a new comment for a specific project. The request body should contain the comment contents and user information.",
     status_code=201,
 )
 async def create_project_comment(
-    project_uuid: ProjectID, body: _CreateProjectCommentsBodyParams
+    project_uuid: ProjectID, body: _ProjectCommentsBodyParams
 ):
     ...
 
 
 assert_handler_signature_against_model(
-    create_project_comment, _CreateProjectCommentsPathParams
+    create_project_comment, _ProjectCommentsPathParams
 )
 
 
@@ -68,13 +65,13 @@ assert_handler_signature_against_model(
     summary="Retrieve all comments for a specific project.",
 )
 async def list_project_comments(
-    project_uuid: ProjectID, limit: NonNegativeInt = 20, offset: NonNegativeInt = 0
+    project_uuid: ProjectID, limit: int = 20, offset: NonNegativeInt = 0
 ):
     ...
 
 
 assert_handler_signature_against_model(
-    list_project_comments, _ListProjectCommentsPathParams
+    list_project_comments, _ProjectCommentsPathParams
 )
 
 
@@ -83,18 +80,18 @@ assert_handler_signature_against_model(
     response_model=Envelope[ProjectsCommentsAPI],
     tags=TAGS,
     operation_id="update_project_comment",
-    summary="Update the content of a specific comment for a project. The request body should contain the updated comment content.",
+    summary="Update the contents of a specific comment for a project. The request body should contain the updated comment contents.",
 )
 async def update_project_comment(
     project_uuid: ProjectID,
     comment_id: CommentID,
-    body: _UpdateProjectCommentsBodyParams,
+    body: _ProjectCommentsBodyParams,
 ):
     ...
 
 
 assert_handler_signature_against_model(
-    update_project_comment, _UpdateProjectCommentsPathParams
+    update_project_comment, _ProjectCommentsWithCommentPathParams
 )
 
 
@@ -110,7 +107,7 @@ async def delete_project_comment(project_uuid: ProjectID, comment_id: CommentID)
 
 
 assert_handler_signature_against_model(
-    delete_project_comment, _DeleteProjectCommentsPathParams
+    delete_project_comment, _ProjectCommentsWithCommentPathParams
 )
 
 
@@ -126,7 +123,7 @@ async def get_project_comment(project_uuid: ProjectID, comment_id: CommentID):
 
 
 assert_handler_signature_against_model(
-    get_project_comment, _GetProjectsCommentPathParams
+    get_project_comment, _ProjectCommentsWithCommentPathParams
 )
 
 

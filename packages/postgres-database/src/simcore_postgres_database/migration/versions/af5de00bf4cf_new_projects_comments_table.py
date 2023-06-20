@@ -22,7 +22,7 @@ def upgrade():
         sa.Column("comment_id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.Column("project_uuid", sa.String(), nullable=False),
         sa.Column("user_id", sa.BigInteger(), nullable=False),
-        sa.Column("content", sa.String(), nullable=True),
+        sa.Column("contents", sa.String(), nullable=False),
         sa.Column(
             "created",
             sa.DateTime(timezone=True),

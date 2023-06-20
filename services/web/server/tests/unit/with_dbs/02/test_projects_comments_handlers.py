@@ -43,6 +43,7 @@ async def test_project_comments_user_role_access(
     assert resp.status == 401 if user_role == UserRole.ANONYMOUS else 200
 
 
+@pytest.mark.testit
 @pytest.mark.acceptance_test(
     "https://github.com/ITISFoundation/osparc-issues/issues/993"
 )
@@ -69,17 +70,17 @@ async def test_project_comments_full_workflow(
     assert data["data"] == []
 
     # Now we will add first comment
-    body = {"content": "My first comment"}
+    body = {"contents": "My first comment"}
     resp = await client.post(base_url, json=body)
     assert resp.status == 201
     data = await resp.json()
-    first_comment_id = data["data"]
+    first_comment_id = data["data"]["comment_id"]
 
     # Now we will add second comment
-    resp = await client.post(base_url, json={"content": "My second comment"})
+    resp = await client.post(base_url, json={"contents": "My second comment"})
     assert resp.status == 201
     data = await resp.json()
-    second_comment_id = data["data"]
+    second_comment_id = data["data"]["comment_id"]
 
     # Now we will list all comments for the project
     resp = await client.get(base_url)
@@ -91,17 +92,17 @@ async def test_project_comments_full_workflow(
     updated_comment = "Updated second comment"
     resp = await client.put(
         base_url / f"{second_comment_id}",
-        json={"content": updated_comment},
+        json={"contents": updated_comment},
     )
     data = await resp.json()
     assert resp.status == 200
-    assert data["data"]["content"] == updated_comment
+    assert data["data"]["contents"] == updated_comment
 
     # Now we will get the second comment
     resp = await client.get(base_url / f"{second_comment_id}")
     data = await resp.json()
     assert resp.status == 200
-    assert data["data"]["content"] == updated_comment
+    assert data["data"]["contents"] == updated_comment
 
     # Now we will delete the second comment
     resp = await client.delete(base_url / f"{second_comment_id}")
@@ -152,21 +153,21 @@ async def test_project_comments_full_workflow(
         # New user will add comment
         resp = await client.post(
             base_url,
-            json={"content": "My first comment as a new user"},
+            json={"contents": "My first comment as a new user"},
         )
         assert resp.status == 201
         data = await resp.json()
-        new_user_comment_id = data["data"]
+        new_user_comment_id = data["data"]["comment_id"]
 
         # New user will modify the comment
         updated_comment = "Updated My first comment as a new user"
         resp = await client.put(
             base_url / f"{new_user_comment_id}",
-            json={"content": updated_comment},
+            json={"contents": updated_comment},
         )
         data = await resp.json()
         assert resp.status == 200
-        assert data["data"]["content"] == updated_comment
+        assert data["data"]["contents"] == updated_comment
 
         # New user will list all comments
         resp = await client.get(base_url)
@@ -178,11 +179,11 @@ async def test_project_comments_full_workflow(
         updated_comment = "Updated comment of previous user"
         resp = await client.put(
             base_url / f"{first_comment_id}",
-            json={"content": updated_comment},
+            json={"contents": updated_comment},
         )
         data = await resp.json()
         assert resp.status == 200
-        assert data["data"]["content"] == updated_comment
+        assert data["data"]["contents"] == updated_comment
 
         # New user will delete comment of the previous user
         resp = await client.delete(base_url / f"{first_comment_id}")

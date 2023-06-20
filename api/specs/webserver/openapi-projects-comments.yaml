@@ -17,7 +17,6 @@ paths:
       - required: false
         schema:
           title: Limit
-          minimum: 0
           type: integer
           default: 20
         name: limit
@@ -42,7 +41,7 @@ paths:
       - project
       - comments
       summary: Create a new comment for a specific project. The request body should
-        contain the comment content and user information.
+        contain the comment contents and user information.
       operationId: create_project_comment
       parameters:
       - required: true
@@ -56,7 +55,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/_CreateProjectCommentsBodyParams'
+              $ref: '#/components/schemas/_ProjectCommentsBodyParams'
         required: true
       responses:
         '201':
@@ -64,7 +63,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_PositiveInt_'
+                $ref: '#/components/schemas/Envelope_dict_Literal__comment_id____pydantic.types.PositiveInt__'
   /projects/{project_uuid}/comments/{comment_id}:
     get:
       tags:
@@ -99,8 +98,8 @@ paths:
       tags:
       - project
       - comments
-      summary: Update the content of a specific comment for a project. The request
-        body should contain the updated comment content.
+      summary: Update the contents of a specific comment for a project. The request
+        body should contain the updated comment contents.
       operationId: update_project_comment
       parameters:
       - required: true
@@ -122,7 +121,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/_UpdateProjectCommentsBodyParams'
+              $ref: '#/components/schemas/_ProjectCommentsBodyParams'
         required: true
       responses:
         '200':
@@ -158,23 +157,25 @@ paths:
           description: Successful Response
 components:
   schemas:
-    Envelope_PositiveInt_:
-      title: Envelope[PositiveInt]
-      type: object
-      properties:
-        data:
-          title: Data
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        error:
-          title: Error
     Envelope_ProjectsCommentsAPI_:
       title: Envelope[ProjectsCommentsAPI]
       type: object
       properties:
         data:
           $ref: '#/components/schemas/ProjectsCommentsAPI'
+        error:
+          title: Error
+    Envelope_dict_Literal__comment_id____pydantic.types.PositiveInt__:
+      title: Envelope[dict[Literal['comment_id'], pydantic.types.PositiveInt]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: object
+          additionalProperties:
+            exclusiveMinimum: true
+            type: integer
+            minimum: 0
         error:
           title: Error
     Envelope_list_models_library.projects_comments.ProjectsCommentsAPI__:
@@ -231,23 +232,13 @@ components:
           description: Timestamp with last update
           format: date-time
       additionalProperties: false
-    _CreateProjectCommentsBodyParams:
-      title: _CreateProjectCommentsBodyParams
+    _ProjectCommentsBodyParams:
+      title: _ProjectCommentsBodyParams
       required:
-      - content
+      - contents
       type: object
       properties:
-        content:
-          title: Content
-          type: string
-      additionalProperties: false
-    _UpdateProjectCommentsBodyParams:
-      title: _UpdateProjectCommentsBodyParams
-      required:
-      - content
-      type: object
-      properties:
-        content:
-          title: Content
+        contents:
+          title: Contents
           type: string
       additionalProperties: false

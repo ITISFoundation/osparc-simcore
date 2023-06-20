@@ -21,12 +21,12 @@ log = logging.getLogger(__name__)
 
 
 async def create_project_comment(
-    request: web.Request, project_uuid: ProjectID, user_id: UserID, content: str
+    request: web.Request, project_uuid: ProjectID, user_id: UserID, contents: str
 ) -> CommentID:
     db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
 
     comment_id: CommentID = await db.create_project_comment(
-        project_uuid, user_id, content
+        project_uuid, user_id, contents
     )
     return comment_id
 
@@ -34,8 +34,8 @@ async def create_project_comment(
 async def list_project_comments(
     request: web.Request,
     project_uuid: ProjectID,
-    offset: int | None = 0,
-    limit: int | None = None,
+    offset: PositiveInt,
+    limit: int,
 ) -> list[ProjectsCommentsAPI]:
     db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
 
@@ -62,12 +62,12 @@ async def update_project_comment(
     request: web.Request,
     comment_id: CommentID,
     project_uuid: ProjectID,
-    content: str,
+    contents: str,
 ) -> ProjectsCommentsAPI:
     db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
 
     projects_comments_db_model: ProjectsCommentsDB = await db.update_project_comment(
-        comment_id, project_uuid, content
+        comment_id, project_uuid, contents
     )
     projects_comments_api_model = ProjectsCommentsAPI(
         **projects_comments_db_model.dict()

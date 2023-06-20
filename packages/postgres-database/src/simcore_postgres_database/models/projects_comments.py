@@ -33,7 +33,7 @@ projects_comments = sa.Table(
         doc="user reference for this table",
     ),
     sa.Column(
-        "content",
+        "contents",
         sa.String,
         nullable=False,
         doc="Content of the comment",

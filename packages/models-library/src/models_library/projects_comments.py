@@ -17,9 +17,9 @@ class _ProjectsCommentsBase(BaseModel):
         ...,
         description="user reference for this table",
     )
-    content: str = Field(
+    contents: str = Field(
         ...,
-        description="Content of the comment",
+        description="Contents of the comment",
     )
     created: datetime = Field(
         ...,
@@ -34,10 +34,10 @@ class _ProjectsCommentsBase(BaseModel):
 class ProjectsCommentsDB(_ProjectsCommentsBase):
     class Config:
         extra = Extra.forbid
+        validation = False
 
 
 class ProjectsCommentsAPI(_ProjectsCommentsBase):
     class Config:
         extra = Extra.forbid
-        # Currently, the DB and API is one to one and is already validated when coming from the DB
         validation = False

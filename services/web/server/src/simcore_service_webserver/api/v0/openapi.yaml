@@ -5396,7 +5396,6 @@ paths:
         - required: false
           schema:
             title: Limit
-            minimum: 0
             type: integer
             default: 20
           name: limit
@@ -5429,7 +5428,7 @@ paths:
       tags:
         - project
         - comments
-      summary: Create a new comment for a specific project. The request body should contain the comment content and user information.
+      summary: Create a new comment for a specific project. The request body should contain the comment contents and user information.
       operationId: create_project_comment
       parameters:
         - required: true
@@ -5443,13 +5442,13 @@ paths:
         content:
           application/json:
             schema:
-              title: _CreateProjectCommentsBodyParams
+              title: _ProjectCommentsBodyParams
               required:
-                - content
+                - contents
               type: object
               properties:
-                content:
-                  title: Content
+                contents:
+                  title: Contents
                   type: string
               additionalProperties: false
         required: true
@@ -5459,14 +5458,16 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[PositiveInt]'
+                title: 'Envelope[dict[Literal[''comment_id''], pydantic.types.PositiveInt]]'
                 type: object
                 properties:
                   data:
                     title: Data
-                    exclusiveMinimum: true
-                    type: integer
-                    minimum: 0
+                    type: object
+                    additionalProperties:
+                      exclusiveMinimum: true
+                      type: integer
+                      minimum: 0
                   error:
                     title: Error
   '/projects/{project_uuid}/comments/{comment_id}':
@@ -5550,7 +5551,7 @@ paths:
       tags:
         - project
         - comments
-      summary: Update the content of a specific comment for a project. The request body should contain the updated comment content.
+      summary: Update the contents of a specific comment for a project. The request body should contain the updated comment contents.
       operationId: update_project_comment
       parameters:
         - required: true
@@ -5572,15 +5573,7 @@ paths:
         content:
           application/json:
             schema:
-              title: _UpdateProjectCommentsBodyParams
-              required:
-                - content
-              type: object
-              properties:
-                content:
-                  title: Content
-                  type: string
-              additionalProperties: false
+              $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1comments/post/requestBody/content/application~1json/schema'
         required: true
       responses:
         '200':
