@@ -332,7 +332,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
       const id = "Comments";
       const title = this.tr("Comments");
-      const icon = "@FontAwesome5Solid/comments/";
+      const icon = "@FontAwesome5Solid/comments";
 
       const commentsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       const commentsList = new osparc.info.CommentsList(resourceData["uuid"]);
