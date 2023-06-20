@@ -25,9 +25,9 @@ qx.Class.define("osparc.info.CommentsList", {
   construct: function(studyId) {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(10));
-
     this.__studyId = studyId;
+
+    this._setLayout(new qx.ui.layout.VBox(10));
 
     this.__buildLayout();
 
@@ -90,6 +90,7 @@ qx.Class.define("osparc.info.CommentsList", {
 
       const params = {
         url: {
+          studyId: this.__studyId,
           offset: 0,
           limit: 20
         }

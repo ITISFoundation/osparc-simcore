@@ -19,8 +19,13 @@
 qx.Class.define("osparc.info.CommentAdd", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
+  /**
+    * @param studyId {String} Study Id
+    */
+  construct: function(studyId) {
     this.base(arguments);
+
+    this.__studyId = studyId;
 
     this._setLayout(new qx.ui.layout.VBox(5));
 
@@ -104,7 +109,26 @@ qx.Class.define("osparc.info.CommentAdd", {
       const commentField = this.getChildControl("comment-field");
       const addButton = this.getChildControl("add-comment-button");
       addButton.addListener("execute", () => {
-        console.log(commentField.getChildControl("text-area").getValue());
+        const commentText = commentField.getChildControl("text-area").getValue();
+        if (commentText) {
+          const params = {
+            url: {
+              studyId: this.__studyId
+            },
+            data: {
+              "contents": commentText
+            }
+          };
+          osparc.data.Resources.fetch("studyComments", "addComment", params)
+            .then(() => {
+              this.fireEvent("commentAdded");
+              commentField.getChildControl("text-area").resetValue();
+            })
+            .catch(err => {
+              console.error(err);
+              osparc.component.message.FlashMessenger.logAs(err.message, "ERROR");
+            });
+        }
       });
     }
   }
