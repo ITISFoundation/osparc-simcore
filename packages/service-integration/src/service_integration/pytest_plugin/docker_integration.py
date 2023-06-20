@@ -10,7 +10,7 @@ import urllib.request
 from contextlib import suppress
 from pathlib import Path
 from pprint import pformat
-from typing import Iterator, Optional
+from typing import Iterator
 
 import docker
 import jsonschema
@@ -38,7 +38,8 @@ def docker_image_key(docker_client: docker.DockerClient, project_name: str) -> s
         for image in docker_client.images.list()
         if any(image_key in tag for tag in image.tags)
     ]
-    return docker_images[0].tags[0]
+    tag: str = docker_images[0].tags[0]
+    return tag
 
 
 @pytest.fixture
@@ -64,7 +65,7 @@ def temporary_path(tmp_path: Path) -> Path:
 
 
 @pytest.fixture
-def osparc_service_labels_jsonschema(tmp_path) -> dict:
+def osparc_service_labels_jsonschema(tmp_path: Path) -> dict:
     def _download_url(url: str, file: Path):
         # Download the file from `url` and save it locally under `file_name`:
         with urllib.request.urlopen(url) as response, file.open("wb") as out_file:
@@ -77,14 +78,14 @@ def osparc_service_labels_jsonschema(tmp_path) -> dict:
     file_name = tmp_path / "service_label.json"
     _download_url(url, file_name)
     with file_name.open() as fp:
-        json_schema = json.load(fp)
+        json_schema: dict = json.load(fp)
         return json_schema
 
 
 @pytest.fixture(scope="session")
 def metadata_labels(metadata_file: Path) -> dict:
     with metadata_file.open() as fp:
-        metadata = yaml.safe_load(fp)
+        metadata: dict = yaml.safe_load(fp)
         return metadata
 
 
@@ -134,7 +135,7 @@ def docker_container(
     shutil.copytree(validation_folders["input"], host_folders["input"])
     assert Path(host_folders["input"]).exists()
     # run the container (this may take some time)
-    container: Optional[Container] = None
+    container: Container | None = None
     try:
         volumes = {
             host_folders[folder]: {

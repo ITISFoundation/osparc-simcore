@@ -83,18 +83,22 @@ run-fake-devel: # starts a fake server in a dev-container
 
 
 # BUILD ###########################################################################
+# specification of the used openapi-generator-cli (see also https://github.com/ITISFoundation/openapi-generator)
+OPENAPI_GENERATOR_NAME := itisfoundation/openapi-generator-cli-openapi-generator-v4.2.3
+OPENAPI_GENERATOR_TAG := v0
+OPENAPI_GENERATOR_IMAGE := $(OPENAPI_GENERATOR_NAME):$(OPENAPI_GENERATOR_TAG)
 
 define create_and_validate_openapi
 	# generating openapi specs file under $< (NOTE: Skips DEV FEATURES since this OAS is the 'offically released'!)
-	@set -o allexport; \
-	source .env; \
-	set +o allexport; \
+	@source .env; \
 	export API_SERVER_DEV_FEATURES_ENABLED=$1; \
 	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
 
 	# validates OAS file: $@
-	@cd $(CURDIR); \
-	$(SCRIPTS_DIR)/openapi-generator-cli.bash validate --input-spec /local/$@
+	docker run --rm \
+			--volume "$(CURDIR):/local" \
+			$(OPENAPI_GENERATOR_IMAGE) validate --input-spec /local/$@
+
 endef
 
 
@@ -108,9 +112,8 @@ openapi.json: .env
 openapi-dev.json: .env
 	@$(call create_and_validate_openapi,1)
 
-
 # GENERATION python client ###########################################################################
-.PHONY: python-client generator-help
+.PHONY: python-client generator-help python-client-openapi-branch
 
 # SEE https://openapi-generator.tech/docs/usage#generate
 # SEE https://openapi-generator.tech/docs/generators/python
@@ -120,16 +123,15 @@ openapi-dev.json: .env
 #
 # NOTE: assumes this repo exists
 GIT_USER_ID := ITISFoundation
-GIT_REPO_ID := osparc-simcore-python-client
-
+GIT_CLIENT_REPO_ID := osparc-simcore-python-client
+GIT_OPENAPI_REPO_ID := openapi-generator
 GENERATOR_NAME := python
-
 ADDITIONAL_PROPS := \
 	generateSourceCodeOnly=false\
 	hideGenerationTimestamp=true\
 	library=urllib3\
 	packageName=osparc\
-	packageUrl=https://github.com/$(GIT_USER_ID)/${GIT_REPO_ID}.git\
+	packageUrl=https://github.com/$(GIT_USER_ID)/${GIT_CLIENT_REPO_ID}.git\
 	packageVersion=$(APP_VERSION)\
 	projectName=osparc-simcore-python-api
 ADDITIONAL_PROPS := $(foreach prop,$(ADDITIONAL_PROPS),$(strip $(prop)))
@@ -139,32 +141,29 @@ space := $(null) #
 comma := ,
 
 client:
-	# cloning $(GIT_USER_ID)/$(GIT_REPO_ID) -> $@
-	git clone git@github.com:$(GIT_USER_ID)/$(GIT_REPO_ID).git $@
+	# cloning $(GIT_USER_ID)/$(GIT_CLIENT_REPO_ID) -> $@
+	git clone git@github.com:$(GIT_USER_ID)/$(GIT_CLIENT_REPO_ID).git $@
 	# TODO: if fails, add -b
-	cd client; git checkout "upgrade-${APP_VERSION}"
-
+	cd client; git checkout -b "upgrade-${APP_VERSION}"
 
 python-client: client openapi.json ## runs python client generator
 	# copies latest version of the openapi
 	@cp openapi.json client/api/
 	# generates
-	cd $(CURDIR); \
-	$(SCRIPTS_DIR)/openapi-generator-cli.bash generate \
-		--generator-name=$(GENERATOR_NAME) \
-		--git-user-id=$(GIT_USER_ID)\
-		--git-repo-id=$(GIT_REPO_ID)\
-		--http-user-agent="osparc-api/$(APP_VERSION)/python"\
-		--input-spec=/local/openapi.json \
-		--output=/local/client \
-		--additional-properties=$(subst $(space),$(comma),$(strip $(ADDITIONAL_PROPS)))\
-		--package-name=osparc\
-		--release-note="Updated to $(APP_VERSION)"
-
-
+	@source .env; \
+	docker run --rm \
+			--volume "$(CURDIR):/local" \
+			$(OPENAPI_GENERATOR_IMAGE) generate \
+			--generator-name=$(GENERATOR_NAME) \
+			--git-user-id=$(GIT_USER_ID) \
+			--git-repo-id=$(GIT_CLIENT_REPO_ID) \
+			--http-user-agent="osparc-api/$(APP_VERSION)/python" \
+			--input-spec=/local/openapi.json \
+			--output=/local/client \
+			--additional-properties=$(subst $(space),$(comma),$(strip $(ADDITIONAL_PROPS))) \
+			--package-name=osparc \
+			--release-note="Updated to $(APP_VERSION)"
 
 generator-help: ## help on client-api generator
 	# generate help
-	@$(SCRIPTS_DIR)/openapi-generator-cli.bash help generate
-	# generator config help
-	@$(SCRIPTS_DIR)/openapi-generator-cli.bash config-help -g $(GENERATOR_NAME)
+	@docker run --rm $(OPENAPI_GENERATOR_IMAGE) help generate

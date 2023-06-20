@@ -23,6 +23,7 @@ from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_projects import NewProject
 from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
 from redis.asyncio import Redis
@@ -33,9 +34,10 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver import garbage_collector_core
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.db import setup_db
+from simcore_service_webserver.db.plugin import setup_db
 from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.login.plugin import setup_login
+from simcore_service_webserver.notifications.plugin import setup_notifications
 from simcore_service_webserver.products.plugin import setup_products
 from simcore_service_webserver.projects.exceptions import ProjectNotFoundError
 from simcore_service_webserver.projects.plugin import setup_projects
@@ -43,15 +45,16 @@ from simcore_service_webserver.projects.projects_api import (
     remove_project_dynamic_services,
     submit_delete_project_task,
 )
+from simcore_service_webserver.rabbitmq import setup_rabbitmq
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.resource_manager.registry import (
     RedisResourceRegistry,
     RegistryKeyPrefixDict,
     get_registry,
 )
-from simcore_service_webserver.rest import setup_rest
+from simcore_service_webserver.rest.plugin import setup_rest
 from simcore_service_webserver.security.plugin import setup_security
-from simcore_service_webserver.session import setup_session
+from simcore_service_webserver.session.plugin import setup_session
 from simcore_service_webserver.socketio.messages import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.socketio.plugin import setup_socketio
 from simcore_service_webserver.users.api import delete_user_without_projects
@@ -97,6 +100,20 @@ async def open_project() -> AsyncIterator[Callable[..., Awaitable[None]]]:
 
 
 @pytest.fixture
+def app_environment(
+    app_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch
+) -> dict[str, str]:
+    overrides = setenvs_from_dict(
+        monkeypatch,
+        {
+            "WEBSERVER_COMPUTATION": "1",
+            "WEBSERVER_NOTIFICATIONS": "1",
+        },
+    )
+    return app_environment | overrides
+
+
+@pytest.fixture
 def client(
     event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
@@ -136,6 +153,8 @@ def client(
     setup_projects(app)
     setup_director_v2(app)
     assert setup_resource_manager(app)
+    setup_rabbitmq(app)
+    setup_notifications(app)
     setup_products(app)
 
     assert is_setup_completed("simcore_service_webserver.resource_manager", app)
@@ -283,7 +302,7 @@ async def test_websocket_resource_management(
         with attempt:
             # now the entries should be removed
             assert not await socket_registry.find_keys(("socket_id", sio.get_sid()))
-            assert not sid in await socket_registry.find_resources(
+            assert sid not in await socket_registry.find_resources(
                 resource_key, "socket_id"
             )
             assert not await socket_registry.find_resources(resource_key, "socket_id")
@@ -340,7 +359,7 @@ async def test_websocket_multiple_connections(
 
         assert not sio.sid
         assert not await socket_registry.find_keys(("socket_id", sio.get_sid()))
-        assert not sid in await socket_registry.find_resources(
+        assert sid not in await socket_registry.find_resources(
             resource_key, "socket_id"
         )
 
@@ -374,6 +393,7 @@ async def test_asyncio_task_pending_on_close(
     socketio_client_factory: Callable,
 ):
     sio = await socketio_client_factory()
+    assert sio
     # this test generates warnings on its own
 
 
@@ -397,6 +417,7 @@ async def test_websocket_disconnected_after_logout(
     assert client.app
     app = client.app
     socket_registry = get_registry(app)
+    assert socket_registry
 
     # connect first socket
     cur_client_session_id1 = client_session_id_factory()
@@ -475,6 +496,7 @@ async def test_interactive_services_removed_after_logout(
     # create websocket
     client_session_id1 = client_session_id_factory()
     sio = await socketio_client_factory(client_session_id1)
+    assert sio
     # open project in client 1
     await open_project(client, empty_user_project["uuid"], client_session_id1)
     # logout
@@ -778,10 +800,12 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(
     # open project in tab1
     client_session_id1 = client_session_id_factory()
     sio1 = await socketio_client_factory(client_session_id1)
+    assert sio1
     await open_project(client, empty_user_project["uuid"], client_session_id1)
     # open project in tab2
     client_session_id2 = client_session_id_factory()
     sio2 = await socketio_client_factory(client_session_id2)
+    assert sio2
     await open_project(client, empty_user_project["uuid"], client_session_id2)
     # close project in tab1
     await close_project(client, empty_user_project["uuid"], client_session_id1)
@@ -833,6 +857,7 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     # create websocket
     client_session_id1 = client_session_id_factory()
     sio: socketio.AsyncClient = await socketio_client_factory(client_session_id1)
+    assert sio
     # open project in client 1
     await open_project(client, empty_user_project["uuid"], client_session_id1)
     # logout

@@ -41,6 +41,7 @@ from packaging import version
 from pydantic import AnyUrl, SecretStr
 from pytest import FixtureRequest, LogCaptureFixture
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.s3 import S3Settings
 from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
     LEGACY_SERVICE_LOG_FILE_NAME,
@@ -425,7 +426,7 @@ def mocked_get_integration_version(
 def test_run_computational_sidecar_real_fct(
     caplog_info_level: LogCaptureFixture,
     event_loop: asyncio.AbstractEventLoop,
-    mock_service_envs: None,
+    app_environment: EnvVarsDict,
     dask_subsystem_mock: dict[str, mock.Mock],
     sleeper_task: ServiceExampleParam,
     s3_settings: S3Settings,
@@ -611,7 +612,6 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
     log_sub: distributed.Sub,
     progress_sub: distributed.Sub,
     mocked_get_integration_version: mock.Mock,
-    faker: Faker,
 ):
     mocked_get_integration_version.assert_not_called()
     NUMBER_OF_LOGS = 20000
@@ -649,7 +649,9 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
     assert worker_progresses[-1] == 1, "missing/incorrect final progress value"
 
     worker_logs = [TaskLogEvent.parse_raw(msg).log for msg in log_sub.buffer]
-    assert len(worker_logs) == NUMBER_OF_LOGS + 15
+    # check all the awaited logs are in there
+    filtered_worker_logs = filter(lambda log: "This is iteration" in log, worker_logs)
+    assert len(list(filtered_worker_logs)) == NUMBER_OF_LOGS
     mocked_get_integration_version.assert_called()
 
 
@@ -658,7 +660,7 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
 )
 def test_failing_service_raises_exception(
     caplog_info_level: LogCaptureFixture,
-    mock_service_envs: None,
+    app_environment: EnvVarsDict,
     dask_subsystem_mock: dict[str, mock.Mock],
     failing_ubuntu_task: ServiceExampleParam,
     s3_settings: S3Settings,
@@ -675,7 +677,7 @@ def test_failing_service_raises_exception(
 )
 def test_running_service_that_generates_unexpected_data_raises_exception(
     caplog_info_level: LogCaptureFixture,
-    mock_service_envs: None,
+    app_environment: EnvVarsDict,
     dask_subsystem_mock: dict[str, mock.Mock],
     sleeper_task_unexpected_output: ServiceExampleParam,
     s3_settings: S3Settings,

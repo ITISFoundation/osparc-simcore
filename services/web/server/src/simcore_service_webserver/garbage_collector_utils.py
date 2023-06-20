@@ -6,7 +6,7 @@ from aiopg.sa.result import RowProxy
 from models_library.users import GroupID, UserID
 from simcore_postgres_database.errors import DatabaseError
 
-from .db_models import GroupType
+from .db.models import GroupType
 from .groups.api import get_group_from_gid
 from .projects.db import APP_PROJECT_DBAPI, ProjectAccessRights
 from .projects.exceptions import ProjectNotFoundError
@@ -44,7 +44,7 @@ async def _fetch_new_project_owner_from_groups(
                     possible_user_id,
                 )
 
-        return None
+    return None
 
 
 async def get_new_project_owner_gid(

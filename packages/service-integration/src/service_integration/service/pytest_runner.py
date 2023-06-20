@@ -2,7 +2,6 @@ import logging
 import sys
 import tempfile
 from pathlib import Path
-from typing import Optional
 
 import pytest
 
@@ -13,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def main(
-    service_dir: Path, *, debug: bool = False, extra_args: Optional[list[str]] = None
+    service_dir: Path, *, debug: bool = False, extra_args: list[str] | None = None
 ) -> int:
 
     pytest_args = [
@@ -33,9 +32,9 @@ def main(
         pytest_args += extra_args
 
     logger.debug("Running 'pytest %s'", " ".join(pytest_args))
-    exit_code = pytest.main(pytest_args)
+    exit_code: int | pytest.ExitCode = pytest.main(pytest_args)
     logger.debug("exit with code=%d", exit_code)
-    return exit_code
+    return int(exit_code)
 
 
 if __name__ == "__main__":

@@ -36,16 +36,16 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import api_version_prefix as API_VERSION
 from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.db import APP_DB_ENGINE_KEY, setup_db
+from simcore_service_webserver.db.plugin import APP_DB_ENGINE_KEY, setup_db
 from simcore_service_webserver.groups.plugin import setup_groups
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.redis import (
     get_redis_user_notifications_client,
     setup_redis,
 )
-from simcore_service_webserver.rest import setup_rest
+from simcore_service_webserver.rest.plugin import setup_rest
 from simcore_service_webserver.security.plugin import setup_security
-from simcore_service_webserver.session import setup_session
+from simcore_service_webserver.session.plugin import setup_session
 from simcore_service_webserver.users._handlers import _get_user_notifications
 from simcore_service_webserver.users._notifications import (
     MAX_NOTIFICATIONS_FOR_USER_TO_KEEP,

@@ -962,8 +962,16 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       annotationsSection.add(annotationsButtons);
 
       const buttonsHeight = 28;
+      const addNoteBtn = new qx.ui.form.Button().set({
+        label: this.tr("Note"),
+        icon: "@FontAwesome5Solid/plus/14",
+        height: buttonsHeight
+      });
+      addNoteBtn.addListener("execute", () => this.__workbenchUI.startAnnotationsNote(), this);
+      annotationsButtons.add(addNoteBtn);
+
       const addRectBtn = new qx.ui.form.Button().set({
-        label: this.tr("Rect"),
+        label: this.tr("Rectangle"),
         icon: "@FontAwesome5Solid/plus/14",
         height: buttonsHeight
       });
@@ -1114,7 +1122,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       outputFilesBtn.addListener("execute", () => osparc.component.node.BaseNodeView.openNodeDataManager(node));
       this.__outputsPage.add(outputFilesBtn);
 
-      if (node.isDynamic() && (node.isDeprecated() || node.isRetired())) {
+      if (
+        !osparc.auth.Data.getInstance().isGuest() &&
+        node.isDynamic() &&
+        (node.isUpdatable() || node.isDeprecated() || node.isRetired())
+      ) {
         this.__nodeOptionsPage.getChildControl("button").show();
         const lifeCycleView = new osparc.component.node.LifeCycleView(node);
         node.addListener("versionChanged", () => this.__populateSecondPanel(node));
@@ -1128,6 +1140,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__nodeOptionsPage.add(bootOptionsView);
       }
 
+      // if it's deprecated or retired show the LifeCycleView right away
       if (node.hasOutputs() && node.isDynamic() && (node.isDeprecated() || node.isRetired())) {
         this.getChildControl("side-panel-right-tabs").setSelection([this.__nodeOptionsPage]);
       }

@@ -1,6 +1,6 @@
 import functools
 import logging
-from typing import Any, AsyncIterator, Callable, Coroutine, Final, Union
+from typing import Any, AsyncIterator, Callable, Coroutine, Final
 
 from aiohttp import web
 from models_library.rabbitmq_messages import (
@@ -18,7 +18,7 @@ from servicelib.aiohttp.monitor_services import (
     service_started,
     service_stopped,
 )
-from servicelib.logging_utils import log_context
+from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 
@@ -95,8 +95,8 @@ def _convert_to_node_progress_event(
 
 
 async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
-    rabbit_message = parse_raw_as(
-        Union[ProgressRabbitMessageNode, ProgressRabbitMessageProject], data
+    rabbit_message: ProgressRabbitMessageNode | ProgressRabbitMessageProject = (
+        parse_raw_as(ProgressRabbitMessageNode | ProgressRabbitMessageProject, data)
     )
     socket_message: SocketMessageDict | None = None
     if isinstance(rabbit_message, ProgressRabbitMessageProject):
@@ -185,7 +185,7 @@ EXCHANGE_TO_PARSER_CONFIG: Final[
 )
 
 
-async def setup_rabbitmq_consumers(app: web.Application) -> AsyncIterator[None]:
+async def _subscribe_to_rabbitmq(app) -> dict[str, str]:
     with log_context(_logger, logging.INFO, msg="Subscribing to rabbitmq channels"):
         rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
         subscribed_queues = await logged_gather(
@@ -194,24 +194,33 @@ async def setup_rabbitmq_consumers(app: web.Application) -> AsyncIterator[None]:
                     exchange_name, functools.partial(parser_fct, app), **queue_kwargs
                 )
                 for exchange_name, parser_fct, queue_kwargs in EXCHANGE_TO_PARSER_CONFIG
-            )
+            ),
+            reraise=False,
         )
-        app[APP_RABBITMQ_CONSUMERS_KEY] = {
-            exchange_name: queue_name
-            for (exchange_name, *_), queue_name in zip(
-                EXCHANGE_TO_PARSER_CONFIG, subscribed_queues
-            )
-        }
+    return {
+        exchange_name: queue_name
+        for (exchange_name, *_), queue_name in zip(
+            EXCHANGE_TO_PARSER_CONFIG, subscribed_queues
+        )
+    }
 
-    yield
 
-    # cleanup
-    with log_context(_logger, logging.INFO, msg="Unsubscribing from rabbitmq channels"):
+async def _unsubscribe_from_rabbitmq(app) -> None:
+    with log_context(
+        _logger, logging.INFO, msg="Unsubscribing from rabbitmq channels"
+    ), log_catch(_logger, reraise=False):
         rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
         await logged_gather(
             *(
                 rabbit_client.unsubscribe(queue_name)
-                for queue_name in subscribed_queues
+                for queue_name in app[APP_RABBITMQ_CONSUMERS_KEY].values()
             ),
-            reraise=False,
         )
+
+
+async def setup_rabbitmq_consumers(app: web.Application) -> AsyncIterator[None]:
+    app[APP_RABBITMQ_CONSUMERS_KEY] = await _subscribe_to_rabbitmq(app)
+    yield
+
+    # cleanup
+    await _unsubscribe_from_rabbitmq(app)

@@ -72,13 +72,16 @@ qx.Class.define("osparc.component.editor.AnnotationEditor", {
         return;
       }
 
-      const colorPicker = this.__addColor();
-      annotation.bind("color", colorPicker, "color");
-      colorPicker.bind("color", annotation, "color");
+      let row = 0;
+      if (["text", "rect"].includes(annotation.getType())) {
+        const colorPicker = this.__addColor();
+        annotation.bind("color", colorPicker, "color");
+        colorPicker.bind("color", annotation, "color");
+        row++;
+      }
 
-      let row = 1;
+      const attrs = annotation.getAttributes();
       if (annotation.getType() === "text") {
-        const attrs = annotation.getAttributes();
         this._add(new qx.ui.basic.Label(this.tr("Text")), {
           row,
           column: 0
@@ -90,7 +93,25 @@ qx.Class.define("osparc.component.editor.AnnotationEditor", {
           column: 1
         });
         row++;
+      } else if (annotation.getType() === "note") {
+        this._add(new qx.ui.basic.Label(this.tr("Note")), {
+          row,
+          column: 0
+        });
+        const textArea = new qx.ui.form.TextArea(attrs.text).set({
+          autoSize: true,
+          minHeight: 70,
+          maxHeight: 140
+        });
+        textArea.addListener("changeValue", e => annotation.setText(e.getData()));
+        this._add(textArea, {
+          row,
+          column: 1
+        });
+        row++;
+      }
 
+      if (annotation.getType() === "text") {
         this._add(new qx.ui.basic.Label(this.tr("Size")), {
           row,
           column: 0

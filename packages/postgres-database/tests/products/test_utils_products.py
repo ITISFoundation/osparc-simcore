@@ -26,6 +26,7 @@ async def test_default_product(pg_engine: Engine, make_products_table: Callable)
         assert default_product == "s4l"
 
 
+@pytest.mark.parametrize("pg_sa_engine", ["sqlModels"], indirect=True)
 async def test_default_product_undefined(pg_engine: Engine):
     async with pg_engine.acquire() as conn:
         with pytest.raises(ValueError):
@@ -39,7 +40,7 @@ async def test_get_or_create_group_product(
         await make_products_table(conn)
 
         async for product_row in await conn.execute(
-            sa.select([products.c.name, products.c.group_id]).order_by(
+            sa.select(products.c.name, products.c.group_id).order_by(
                 products.c.priority
             )
         ):
@@ -109,7 +110,7 @@ async def test_get_or_create_group_product_concurrent(
     async def _auto_create_products_groups():
         async with pg_engine.acquire() as conn:
             async for product_row in await conn.execute(
-                sa.select([products.c.name, products.c.group_id]).order_by(
+                sa.select(products.c.name, products.c.group_id).order_by(
                     products.c.priority
                 )
             ):

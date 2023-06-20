@@ -16,7 +16,7 @@ all: build
 
 build:
 	# builds tool's image
-	@docker build --tag ${PROJECT_NAME} .
+	@docker buildx build --load --tag ${PROJECT_NAME} .
 
 clean:
 	# remove created images

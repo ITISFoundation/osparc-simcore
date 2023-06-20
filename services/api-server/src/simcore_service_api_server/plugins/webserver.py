@@ -1,14 +1,13 @@
 import json
 import logging
 from collections import deque
-from contextlib import suppress
 from dataclasses import dataclass
 from typing import Any, cast
 from uuid import UUID
 
 from cryptography import fernet
 from fastapi import FastAPI, HTTPException
-from httpx import AsyncClient, Response
+from httpx import Response
 from models_library.projects import ProjectID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ValidationError
@@ -28,6 +27,17 @@ from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 _logger = logging.getLogger(__name__)
 
 
+class WebserverApi(BaseServiceClientApi):
+    """Access to web-server API
+
+    - BaseServiceClientApi:
+        - wraps a httpx client
+        - lifetime attached to app
+        - responsive tests (i.e. ping) to API in-place
+
+    """
+
+
 @dataclass
 class AuthSession:
     """
@@ -40,20 +50,23 @@ class AuthSession:
     SEE services/api-server/src/simcore_service_api_server/api/dependencies/webserver.py
     """
 
-    client: AsyncClient  # Its lifetime is attached to app
+    _api: WebserverApi
     vtag: str
     session_cookies: dict | None = None
 
     @classmethod
     def create(cls, app: FastAPI, session_cookies: dict) -> "AuthSession":
+        api = WebserverApi.get_instance(app)
+        assert api  # nosec
+        assert isinstance(api, WebserverApi)  # nosec
         return cls(
-            client=app.state.webserver_client,
+            _api=api,
             vtag=app.state.settings.API_SERVER_WEBSERVER.WEBSERVER_VTAG,
             session_cookies=session_cookies,
         )
 
     @classmethod
-    def _postprocess(cls, resp: Response) -> JSON | None:
+    def _get_data_or_raise_http_exception(cls, resp: Response) -> JSON | None:
         # enveloped answer
         data: JSON | None = None
         error: JSON | None = None
@@ -71,7 +84,7 @@ class AuthSession:
 
         if resp.is_server_error:
             _logger.error(
-                "webserver error %s [%s]: %s",
+                "webserver reponded with an error: %s [%s]: %s",
                 f"{resp.status_code=}",
                 f"{resp.reason_phrase=}",
                 error,
@@ -79,12 +92,17 @@ class AuthSession:
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
 
         if resp.is_client_error:
+            # NOTE: error is can be a dict
             msg = error or resp.reason_phrase
             raise HTTPException(resp.status_code, detail=msg)
 
         return data
 
     # OPERATIONS
+
+    @property
+    def client(self):
+        return self._api.client
 
     async def get(self, path: str) -> JSON | None:
         url = path.lstrip("/")
@@ -94,7 +112,7 @@ class AuthSession:
             _logger.exception("Failed to get %s", url)
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
 
-        return self._postprocess(resp)
+        return self._get_data_or_raise_http_exception(resp)
 
     async def put(self, path: str, body: dict) -> JSON | None:
         url = path.lstrip("/")
@@ -104,7 +122,7 @@ class AuthSession:
             _logger.exception("Failed to put %s", url)
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
 
-        return self._postprocess(resp)
+        return self._get_data_or_raise_http_exception(resp)
 
     # PROJECTS resource ---
 
@@ -116,7 +134,7 @@ class AuthSession:
             json=jsonable_encoder(project, by_alias=True, exclude={"state"}),
             cookies=self.session_cookies,
         )
-        data: JSON | None = self._postprocess(resp)
+        data: JSON | None = self._get_data_or_raise_http_exception(resp)
         assert data  # nosec
         assert isinstance(data, dict)  # nosec
 
@@ -145,7 +163,7 @@ class AuthSession:
             f"/projects/{project_id}", cookies=self.session_cookies
         )
 
-        data: JSON | None = self._postprocess(resp)
+        data: JSON | None = self._get_data_or_raise_http_exception(resp)
         return Project.parse_obj(data)
 
     async def list_projects(self, solver_name: str) -> list[Project]:
@@ -155,7 +173,9 @@ class AuthSession:
             cookies=self.session_cookies,
         )
 
-        data: ListAnyDict = cast(ListAnyDict, self._postprocess(resp)) or []
+        data: ListAnyDict = (
+            cast(ListAnyDict, self._get_data_or_raise_http_exception(resp)) or []
+        )
 
         projects: deque[Project] = deque()
         for prj in data:
@@ -170,6 +190,12 @@ class AuthSession:
 
         return list(projects)
 
+    async def delete_project(self, project_id: ProjectID) -> None:
+        resp = await self.client.delete(
+            f"/projects/{project_id}", cookies=self.session_cookies
+        )
+        self._get_data_or_raise_http_exception(resp)
+
     async def get_project_metadata_ports(
         self, project_id: ProjectID
     ) -> list[dict[str, Any]]:
@@ -181,14 +207,10 @@ class AuthSession:
             f"/projects/{project_id}/metadata/ports",
             cookies=self.session_cookies,
         )
-        data = self._postprocess(resp)
+        data = self._get_data_or_raise_http_exception(resp)
         assert data
         assert isinstance(data, list)
         return data
-
-
-class WebserverApi(BaseServiceClientApi):
-    """Access to web-server API"""
 
 
 # MODULES APP SETUP -------------------------------------------------------------
@@ -204,23 +226,13 @@ def setup(app: FastAPI, settings: WebServerSettings | None = None) -> None:
         app, WebserverApi, api_baseurl=settings.api_base_url, service_name="webserver"
     )
 
-    def on_startup() -> None:
+    def _on_startup() -> None:
         # normalize & encrypt
         secret_key = settings.WEBSERVER_SESSION_SECRET_KEY.get_secret_value()
         app.state.webserver_fernet = fernet.Fernet(secret_key)
 
-        # init client
-        _logger.debug("Setup webserver at %s...", settings.api_base_url)
-
-        client = AsyncClient(base_url=settings.api_base_url)
-        app.state.webserver_client = client
-
-    async def on_shutdown() -> None:
-        with suppress(AttributeError):
-            client: AsyncClient = app.state.webserver_client
-            await client.aclose()
-            del app.state.webserver_client
+    async def _on_shutdown() -> None:
         _logger.debug("Webserver closed successfully")
 
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app.add_event_handler("startup", _on_startup)
+    app.add_event_handler("shutdown", _on_shutdown)

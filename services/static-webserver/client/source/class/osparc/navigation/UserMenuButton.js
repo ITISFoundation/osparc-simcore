@@ -82,8 +82,8 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           control = new osparc.ui.switch.ThemeSwitcherMenuBtn();
           this.getMenu().add(control);
           break;
-        case "register":
-          control = new qx.ui.menu.Button(this.tr("Register"));
+        case "log-in":
+          control = new qx.ui.menu.Button(this.tr("Log in"));
           control.addListener("execute", () => window.open(window.location.href, "_blank"));
           this.getMenu().add(control);
           break;
@@ -135,12 +135,14 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           control.addListener("execute", () => osparc.product.AboutProduct.getInstance().open());
           this.getMenu().add(control);
           break;
-        case "logout":
-          control = new qx.ui.menu.Button(this.tr("Logout"));
+        case "log-out": {
+          const authData = osparc.auth.Data.getInstance();
+          control = new qx.ui.menu.Button(authData.isGuest() ? this.tr("Exit") : this.tr("Log out"));
           control.addListener("execute", () => qx.core.Init.getApplication().logout());
           osparc.utils.Utils.setIdToWidget(control, "userMenuLogoutBtn");
           this.getMenu().add(control);
           break;
+        }
       }
       return control || this.base(arguments, id);
     },
@@ -149,8 +151,8 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       this.getMenu().removeAll();
 
       const authData = osparc.auth.Data.getInstance();
-      if (["anonymous", "guest"].includes(authData.getRole())) {
-        this.getChildControl("register");
+      if (authData.isGuest()) {
+        this.getChildControl("log-in");
       } else {
         this.getChildControl("preferences");
         this.getChildControl("organizations");
@@ -168,7 +170,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       }
       this.getChildControl("license");
       this.getMenu().addSeparator();
-      this.getChildControl("logout");
+      this.getChildControl("log-out");
     },
 
     populateMenuCompact: function() {
@@ -176,8 +178,8 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       osparc.data.Resources.get("statics")
         .then(async () => {
           const authData = osparc.auth.Data.getInstance();
-          if (["anonymous", "guest"].includes(authData.getRole())) {
-            this.getChildControl("register");
+          if (authData.isGuest()) {
+            this.getChildControl("log-in");
           } else {
             this.getChildControl("preferences");
             this.getChildControl("organizations");
@@ -200,7 +202,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           }
           this.getChildControl("license");
           this.getMenu().addSeparator();
-          this.getChildControl("logout");
+          this.getChildControl("log-out");
         });
     },
 

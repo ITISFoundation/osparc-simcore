@@ -55,7 +55,7 @@ def get_localhost_ip(default="127.0.0.1") -> str:
         local_ip = s.getsockname()[0]
     finally:
         s.close()
-    return local_ip
+    return f"{local_ip}"
 
 
 @retry(

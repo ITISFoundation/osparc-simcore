@@ -26,7 +26,7 @@ from pydantic import (
 )
 from simcore_postgres_database.models.classifiers import group_classifiers
 
-from ..db import get_database_engine
+from ..db.plugin import get_database_engine
 from ..scicrunch.db import ResearchResourceRepository
 from ..scicrunch.service_client import SciCrunch
 
@@ -80,7 +80,7 @@ class GroupClassifierRepository:
     async def _get_bundle(self, gid: int) -> RowProxy | None:
         async with self.engine.acquire() as conn:
             bundle: RowProxy | None = await conn.scalar(
-                sa.select([group_classifiers.c.bundle]).where(
+                sa.select(group_classifiers.c.bundle).where(
                     group_classifiers.c.gid == gid
                 )
             )
@@ -105,7 +105,7 @@ class GroupClassifierRepository:
     async def group_uses_scicrunch(self, gid: int) -> bool:
         async with self.engine.acquire() as conn:
             value: RowProxy | None = await conn.scalar(
-                sa.select([group_classifiers.c.uses_scicrunch]).where(
+                sa.select(group_classifiers.c.uses_scicrunch).where(
                     group_classifiers.c.gid == gid
                 )
             )

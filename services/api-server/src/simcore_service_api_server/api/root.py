@@ -1,8 +1,16 @@
 from fastapi import APIRouter
-from simcore_service_api_server.api.routes import studies_jobs
 
 from ..core.settings import ApplicationSettings
-from .routes import files, health, meta, solvers, solvers_jobs, studies, users
+from .routes import (
+    files,
+    health,
+    meta,
+    solvers,
+    solvers_jobs,
+    studies,
+    studies_jobs,
+    users,
+)
 
 
 def create_router(settings: ApplicationSettings):

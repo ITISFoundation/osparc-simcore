@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 #
 # Compiles client's source code within an image based in qooxdoo-kit
 #
@@ -14,22 +15,19 @@ RUN mkdir /project/build-output
 FROM touch as build-client
 
 # Installs contributions
-COPY --chown=node:node compile.json compile.json
-COPY --chown=node:node qx-lock.json qx-lock.json
-COPY --chown=node:node Manifest.json Manifest.json
-
 # Install packages (warning: cache might keep these library out-of-date!)
 # TODO: should we freeze packages??
-RUN qx package update &&\
+RUN \
+  --mount=type=bind,source=compile.json,target=compile.json \
+  --mount=type=bind,source=qx-lock.json,target=qx-lock.json \
+  --mount=type=bind,source=Manifest.json,target=Manifest.json \
+  qx package update &&\
   qx package install &&\
   ls -la qx_packages
 # -> /project/qx_packages
 
 
 # Copy sources and compile inside the image
-COPY --chown=node:node source source
-COPY --chown=node:node Manifest.json Manifest.json
-
 ARG VCS_URL=undefined
 ARG VCS_REF="undefined"
 ARG VCS_REF_CLIENT=undefined
@@ -39,7 +37,12 @@ ARG VCS_STATUS_CLIENT=undefined
 ENV NODE_OPTIONS="--max-old-space-size=5120"
 
 # this nice call prints the actual heap size limit in GB
-RUN node -e 'console.log(v8.getHeapStatistics().heap_size_limit/(1024*1024))' && \
+RUN \
+  --mount=type=bind,source=source,target=source \
+  --mount=type=bind,source=compile.json,target=compile.json \
+  --mount=type=bind,source=qx-lock.json,target=qx-lock.json \
+  --mount=type=bind,source=Manifest.json,target=Manifest.json \
+  node -e 'console.log(v8.getHeapStatistics().heap_size_limit/(1024*1024))' && \
   qx compile --target=build \
   --set-env osparc.vcsOriginUrl="${VCS_URL}" \
   --set-env osparc.vcsRef="${VCS_REF}" \

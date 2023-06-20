@@ -12,6 +12,7 @@ from zipfile import ZipFile
 
 import aiofiles
 import pytest
+import redis.asyncio as aioredis
 from aiohttp.test_utils import TestClient
 from pytest import FixtureRequest
 from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
@@ -21,6 +22,7 @@ from pytest_simcore.helpers.utils_projects import (
     empty_project_data,
 )
 from servicelib.aiohttp.application import create_safe_application
+from settings_library.rabbit import RabbitSettings
 from simcore_service_webserver._constants import X_PRODUCT_NAME_HEADER
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.application import (
@@ -35,17 +37,13 @@ from simcore_service_webserver.application import (
     setup_users,
 )
 from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.db import setup_db
+from simcore_service_webserver.db.plugin import setup_db
 from simcore_service_webserver.exporter import settings as exporter_settings
 from simcore_service_webserver.exporter._formatter.archive import get_sds_archive_path
 from simcore_service_webserver.projects.models import ProjectDict
 from yarl import URL
 
-pytest_simcore_core_services_selection = [
-    "migration",
-    "postgres",
-    "redis",
-]
+pytest_simcore_core_services_selection = ["migration", "postgres", "redis", "rabbit"]
 
 _logger = logging.getLogger(__name__)
 
@@ -103,6 +101,9 @@ def client(
     aiohttp_client: Callable,
     app_config: dict,
     monkeypatch_setenv_from_app_config: Callable,
+    redis_client: aioredis.Redis,
+    rabbit_service: RabbitSettings,
+    simcore_services_ready: None,
 ) -> Iterable[TestClient]:
     # test config & env vars ----------------------
     cfg = deepcopy(app_config)

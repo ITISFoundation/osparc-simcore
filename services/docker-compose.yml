@@ -187,8 +187,17 @@ services:
     networks:
       - default
     environment:
-      - RESOURCE_USAGE_TRACKER_LOGLEVEL=${LOG_LEVEL:-INFO}
       - LOG_FORMAT_LOCAL_DEV_ENABLED=${LOG_FORMAT_LOCAL_DEV_ENABLED}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - PROMETHEUS_URL=${PROMETHEUS_URL}
+      - PROMETHEUS_USERNAME=${PROMETHEUS_USERNAME}
+      - PROMETHEUS_PASSWORD=${PROMETHEUS_PASSWORD}
+      - RESOURCE_USAGE_TRACKER_LOGLEVEL=${LOG_LEVEL:-INFO}
 
   static-webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
@@ -263,6 +272,7 @@ services:
       STORAGE_HOST: ${STORAGE_HOST:-storage}
       STORAGE_PORT: ${STORAGE_PORT:-8080}
       SWARM_STACK_NAME: ${SWARM_STACK_NAME:-simcore}
+      WEBSERVER_DB_LISTENER: 0
       WEBSERVER_GARBAGE_COLLECTOR: "null"
       WEBSERVER_LOGLEVEL: ${LOG_LEVEL:-WARNING}
     env_file:
@@ -297,6 +307,27 @@ services:
     networks:
       - default
       - interactive_services_subnet
+  wb-db-event-listener:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    environment:
+      <<: *webserver-environment
+      WEBSERVER_DB_LISTENER: 1
+      WEBSERVER_SOCKETIO: 1
+    env_file:
+      - ../.env
+      - ../.env-wb-db-event-listener
+    deploy:
+      # NOTE: https://github.com/ITISFoundation/osparc-simcore/pull/4286
+      # NOTE: this MUSTN'T change, or weird things might happen
+      # this will stay until all legacy dynamic services are gone.
+      replicas: 1
+      placement:
+        constraints:
+          - node.platform.os == linux
+    networks:
+      - default
 
   wb-garbage-collector:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
@@ -305,6 +336,7 @@ services:
     environment:
       <<: *webserver-environment
       WEBSERVER_GARBAGE_COLLECTOR: '{"GARBAGE_COLLECTOR_INTERVAL_S": 30}'
+      WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS: 60
     env_file:
       - ../.env
       - ../.env-wb-garbage-collector
@@ -454,7 +486,7 @@ services:
       - default # actually needed for the postgres service only
 
   postgres:
-    image: "postgres:14.5-alpine@sha256:db802f226b620fc0b8adbeca7859eb203c8d3c9ce5d84870fadee05dea8f50ce"
+    image: "postgres:14.8-alpine@sha256:150dd39ccb7ae6c7ba6130c3582c39a30bb5d3d22cb08ad0ba37001e3f829abc"
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:

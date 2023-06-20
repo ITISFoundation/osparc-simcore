@@ -55,27 +55,39 @@ def _get_redis_client(app: web.Application, database: RedisDatabase) -> RedisCli
 
 
 def get_redis_resources_client(app: web.Application) -> aioredis.Redis:
-    return _get_redis_client(app, RedisDatabase.RESOURCES).redis
+    redis_client: aioredis.Redis = _get_redis_client(app, RedisDatabase.RESOURCES).redis
+    return redis_client
 
 
 def get_redis_lock_manager_client(app: web.Application) -> aioredis.Redis:
-    return _get_redis_client(app, RedisDatabase.LOCKS).redis
+    redis_client: aioredis.Redis = _get_redis_client(app, RedisDatabase.LOCKS).redis
+    return redis_client
 
 
 def get_redis_lock_manager_client_sdk(app: web.Application) -> RedisClientSDK:
-    return _get_redis_client(app, RedisDatabase.LOCKS)
+    redis_client: aioredis.Redis = _get_redis_client(app, RedisDatabase.LOCKS)
+    return redis_client
 
 
 def get_redis_validation_code_client(app: web.Application) -> aioredis.Redis:
-    return _get_redis_client(app, RedisDatabase.VALIDATION_CODES).redis
+    redis_client: aioredis.Redis = _get_redis_client(
+        app, RedisDatabase.VALIDATION_CODES
+    ).redis
+    return redis_client
 
 
 def get_redis_scheduled_maintenance_client(app: web.Application) -> aioredis.Redis:
-    return _get_redis_client(app, RedisDatabase.SCHEDULED_MAINTENANCE).redis
+    redis_client: aioredis.Redis = _get_redis_client(
+        app, RedisDatabase.SCHEDULED_MAINTENANCE
+    ).redis
+    return redis_client
 
 
 def get_redis_user_notifications_client(app: web.Application) -> aioredis.Redis:
-    return _get_redis_client(app, RedisDatabase.USER_NOTIFICATIONS).redis
+    redis_client: aioredis.Redis = _get_redis_client(
+        app, RedisDatabase.USER_NOTIFICATIONS
+    ).redis
+    return redis_client
 
 
 # PLUGIN SETUP --------------------------------------------------------------------------

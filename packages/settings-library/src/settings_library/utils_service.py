@@ -3,15 +3,15 @@
 
 """
 from enum import Enum, auto
-from typing import Optional
 
+from pydantic import parse_obj_as
 from pydantic.networks import AnyUrl
 from pydantic.types import SecretStr
 
 from .basic_types import PortInt
 
-DEFAULT_AIOHTTP_PORT: PortInt = 8080
-DEFAULT_FASTAPI_PORT: PortInt = 8000
+DEFAULT_AIOHTTP_PORT: PortInt = parse_obj_as(PortInt, 8080)
+DEFAULT_FASTAPI_PORT: PortInt = parse_obj_as(PortInt, 8000)
 
 
 class URLPart(Enum):
@@ -52,19 +52,27 @@ class MixinServiceSettings:
     # base_url  -> http://user:pass@example.com:8042
     # api_base  -> http://user:pass@example.com:8042/v0
 
-    def _safe_getattr(self, key, req: URLPart, default=None) -> Optional[str]:
-        # TODO: convert AttributeError in ValidationError field required
+    def _safe_getattr(
+        self, key: str, req: URLPart, default: str | None = None
+    ) -> str | None:
+        """
 
+        Raises:
+            AttributeError
+
+        """
         if req == URLPart.EXCLUDE:
             return None
 
         if req == URLPart.REQUIRED:
-            # raise AttributeError
-            return getattr(self, key)
+            # raises AttributeError upon failure
+            required_value: str = getattr(self, key)
+            return required_value
 
         if req == URLPart.OPTIONAL:
-            # return default if fails
-            return getattr(self, key, default)
+            # returns default upon failure
+            optional_value: str | None = getattr(self, key, default)
+            return optional_value
 
         return None
 
@@ -77,6 +85,12 @@ class MixinServiceSettings:
         port: URLPart = URLPart.EXCLUDE,
         vtag: URLPart = URLPart.EXCLUDE,
     ) -> str:
+        """
+
+        Raises:
+            AttributeError
+
+        """
         assert prefix  # nosec
         prefix = prefix.upper()
 
@@ -104,7 +118,8 @@ class MixinServiceSettings:
 
         assert all(isinstance(v, str) or v is None for v in kwargs.values())  # nosec
 
-        return AnyUrl.build(**kwargs)
+        composed_url: str = AnyUrl.build(**kwargs)
+        return composed_url
 
     def _build_api_base_url(self, *, prefix: str) -> str:
         return self._compose_url(

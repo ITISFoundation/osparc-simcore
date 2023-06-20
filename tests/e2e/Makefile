@@ -51,7 +51,7 @@ endef
 NUMBERS = 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 define _register-20-users
 $(foreach var,$(NUMBERS),\
-	curl -d '{"email":"test$(var)@test.com","password":"test","confirm":"test","invitation":""}' -H "Content-Type: application/json" -X POST http://localhost:9081/v0/auth/register \
+	curl -d '{"email":"test$(var)@test.com","password":"testpassword123","confirm":"testpassword123","invitation":""}' -H "Content-Type: application/json" -X POST http://localhost:9081/v0/auth/register \
 ;)
 endef
 
@@ -60,7 +60,7 @@ endef
 DEV_MACHINE_IP = "10.43.103.168"
 define _test-jupyters
 echo $(shell python -c 'import os ;\
-[os.system("node --trace-warnings tutorials/jupyterlabs.js http://${DEV_MACHINE_IP}.nip.io:9081 test%s@test.com test 60000 &" % x) for x in range(1, 21)]
+[os.system("node --trace-warnings tutorials/jupyterlabs.js http://${DEV_MACHINE_IP}.nip.io:9081 test%s@test.com testpassword123 60000 &" % x) for x in range(1, 21)]
 ')
 echo "finished parallel run"
 endef

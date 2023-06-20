@@ -22,6 +22,7 @@ from simcore_postgres_database.models.products import (
     WebFeedback,
 )
 from simcore_postgres_database.webserver_models import products
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 
 async def test_load_products(
@@ -35,7 +36,7 @@ async def test_load_products(
     async with pg_engine.acquire() as conn:
         await make_products_table(conn)
 
-        stmt = sa.select([c for c in products.columns if c not in exclude])
+        stmt = sa.select(*[c for c in products.columns if c not in exclude])
         result: ResultProxy = await conn.execute(stmt)
         assert result.returns_rows
 
@@ -50,14 +51,12 @@ async def test_load_products(
 async def test_jinja2_templates_table(
     pg_engine: Engine, osparc_simcore_services_dir: Path
 ):
-
     templates_common_dir = (
         osparc_simcore_services_dir
         / "web/server/src/simcore_service_webserver/templates/common"
     )
 
     async with pg_engine.acquire() as conn:
-
         templates = []
         # templates table
         for p in templates_common_dir.glob("*.jinja2"):
@@ -92,13 +91,18 @@ async def test_jinja2_templates_table(
         ]:
             #  aiopg doesn't support executemany!!
             await conn.execute(
-                products.insert().values(**params),
+                pg_insert(products)
+                .values(**params)
+                .on_conflict_do_update(
+                    index_elements=[products.c.name],
+                    set_=params,
+                ),
             )
 
         # prints those products having customized templates
         j = products.join(jinja2_templates)
         stmt = sa.select(
-            [products.c.name, jinja2_templates.c.name, products.c.short_name]
+            products.c.name, jinja2_templates.c.name, products.c.short_name
         ).select_from(j)
 
         result: ResultProxy = await conn.execute(stmt)
@@ -113,7 +117,7 @@ async def test_jinja2_templates_table(
 
         assert (
             await conn.scalar(
-                sa.select([jinja2_templates.c.content])
+                sa.select(jinja2_templates.c.content)
                 .select_from(j)
                 .where(products.c.name == "s4l")
             )
@@ -122,7 +126,7 @@ async def test_jinja2_templates_table(
 
         assert (
             await conn.scalar(
-                sa.select([jinja2_templates.c.content])
+                sa.select(jinja2_templates.c.content)
                 .select_from(j)
                 .where(products.c.name == "tis")
             )
@@ -172,7 +176,14 @@ async def test_insert_select_product(
 
     async with pg_engine.acquire() as conn:
         # writes
-        stmt = products.insert().values(**osparc_product).returning(products.c.name)
+        stmt = (
+            pg_insert(products)
+            .values(**osparc_product)
+            .on_conflict_do_update(
+                index_elements=[products.c.name], set_=osparc_product
+            )
+            .returning(products.c.name)
+        )
         name = await conn.scalar(stmt)
 
         # reads

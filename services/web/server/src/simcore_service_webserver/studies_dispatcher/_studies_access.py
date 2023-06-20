@@ -26,11 +26,9 @@ from models_library.projects import ProjectID
 from pydantic import parse_obj_as
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.error_codes import create_error_code
-from simcore_service_webserver.director_v2._core_computations import (
-    create_or_update_pipeline,
-)
 
 from .._constants import INDEX_RESOURCE_NAME
+from ..director_v2._core_computations import create_or_update_pipeline
 from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
 from ..products.plugin import get_current_product, get_product_name
 from ..projects.db import ANY_USER, ProjectDBAPI
@@ -40,7 +38,7 @@ from ..redis import get_redis_lock_manager_client
 from ..security.api import is_anonymous, remember
 from ..storage.api import copy_data_folders_from_project
 from ..utils import compose_support_error_msg
-from ..utils_aiohttp import create_redirect_response
+from ..utils_aiohttp import create_redirect_to_page_response
 from ._constants import (
     MSG_PROJECT_NOT_FOUND,
     MSG_PROJECT_NOT_PUBLISHED,
@@ -289,7 +287,7 @@ def _handle_errors_with_error_page(handler: Handler):
             return await handler(request)
 
         except ProjectNotFoundError as err:
-            raise create_redirect_response(
+            raise create_redirect_to_page_response(
                 request.app,
                 page="error",
                 message=compose_support_error_msg(
@@ -300,7 +298,7 @@ def _handle_errors_with_error_page(handler: Handler):
             ) from err
 
         except RedirectToFrontEndPageError as err:
-            raise create_redirect_response(
+            raise create_redirect_to_page_response(
                 request.app,
                 page="error",
                 message=err.human_readable_message,
@@ -314,7 +312,7 @@ def _handle_errors_with_error_page(handler: Handler):
                 f"{error_code}",
                 extra={"error_code": error_code},
             )
-            raise create_redirect_response(
+            raise create_redirect_to_page_response(
                 request.app,
                 page="error",
                 message=compose_support_error_msg(

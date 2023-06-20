@@ -7,17 +7,19 @@ RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM"
 
 LABEL maintainer=mguidon,sanderegg
 
+# for docker apt caching to work this needs to be added: [https://vsupalov.com/buildkit-cache-mount-dockerfile/]
+RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
+  echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
 # libffi-dev is needed for ARM architectures
-RUN  --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=locked \
-  --mount=type=cache,id=baseapt,target=/var/lib/apt,mode=0755,sharing=locked \
+RUN  --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
+  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
   set -eux \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
   gosu \
   libffi-dev \
   libffi7 \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/* \
+  && apt-get clean -y \
   # verify that the binary works
   && gosu nobody true
 
@@ -60,22 +62,20 @@ FROM base as build
 ENV SC_BUILD_TARGET=build
 
 RUN rm -f /etc/apt/apt.conf.d/docker-clean
-RUN  --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=locked \
-  --mount=type=cache,id=baseapt,target=/var/lib/apt,mode=0755,sharing=locked \
+RUN  --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
+  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
   set -eux \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
   build-essential \
   git \
-  golang-go \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
+  golang-go
 
 
 # NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
 RUN python -m venv "${VIRTUAL_ENV}"
-RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
-  pip install --upgrade \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install --upgrade  \
   pip~=23.1  \
   wheel \
   setuptools
@@ -83,8 +83,9 @@ RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
 WORKDIR /build
 
 # install base 3rd party dependencies (NOTE: this speeds up devel mode)
-COPY --chown=scu:scu services/osparc-gateway-server/requirements/_base.txt .
-RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
+RUN \
+  --mount=type=bind,source=services/osparc-gateway-server/requirements/_base.txt,target=_base.txt \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip \
   pip install \
   --requirement _base.txt
 
@@ -107,11 +108,12 @@ FROM build as prod-only-deps
 
 ENV SC_BUILD_TARGET=prod-only-deps
 
-COPY --chown=scu:scu services/osparc-gateway-server/ /build/services/osparc-gateway-server
-
 WORKDIR /build/services/osparc-gateway-server
 
-RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
+RUN \
+  --mount=type=bind,source=packages,target=/build/packages,rw \
+  --mount=type=bind,source=services/osparc-gateway-server,target=/build/services/osparc-gateway-server,rw \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip \
   pip install \
   --requirement requirements/prod.txt
 
@@ -130,7 +132,8 @@ ENV SC_BUILD_TARGET=production \
 ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu
-
+# ensure home folder is read/writable for user scu
+RUN chown -R scu /home/scu
 # bring installed package without build tools
 COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 # copy docker entrypoint and boot scripts

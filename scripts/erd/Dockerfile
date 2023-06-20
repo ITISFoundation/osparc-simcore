@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 #
 # ERD: Entity Relationship Diagrams
 #
@@ -22,10 +23,12 @@ RUN apt-get update \
   && apt-get clean
 
 
-RUN pip --no-cache-dir install --upgrade \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install --upgrade \
   pip~=23.1  \
   wheel \
   setuptools
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install -r requirements.txt

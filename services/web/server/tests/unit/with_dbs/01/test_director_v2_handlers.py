@@ -13,7 +13,7 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     ExpectedResponse,
     standard_role_response,
 )
-from simcore_service_webserver.db_models import UserRole
+from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.director_v2 import api
 
 

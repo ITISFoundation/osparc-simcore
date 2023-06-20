@@ -11,7 +11,7 @@ import yaml
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import (
-    ComposeSpecLabel,
+    ComposeSpecLabelDict,
     SimcoreServiceLabels,
 )
 from models_library.services_resources import (
@@ -182,7 +182,7 @@ async def test_inject_resource_limits_and_reservations(
 )
 @pytest.mark.parametrize("has_quota_support", [True, False])
 def test_update_service_quotas_storage(
-    compose_spec: ComposeSpecLabel, storage_opt_count: int, has_quota_support: bool
+    compose_spec: ComposeSpecLabelDict, storage_opt_count: int, has_quota_support: bool
 ):
     assert json.dumps(compose_spec).count("storage_opt") == storage_opt_count
     if not has_quota_support:

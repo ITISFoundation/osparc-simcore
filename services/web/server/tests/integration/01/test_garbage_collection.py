@@ -7,25 +7,30 @@ import logging
 import re
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncIterable, Callable
+from typing import Any, AsyncIterable, Awaitable, Callable, Iterator
+from unittest import mock
 from uuid import UUID, uuid4
 
 import aiopg
 import aiopg.sa
 import pytest
 import redis.asyncio as aioredis
+import socketio
+import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from models_library.projects_state import RunningState
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
 from pytest_simcore.helpers.utils_projects import create_project, empty_project_data
 from servicelib.aiohttp.application import create_safe_application
+from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver import garbage_collector_core
 from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.db import setup_db
-from simcore_service_webserver.db_models import projects, users
+from simcore_service_webserver.db.models import projects, users
+from simcore_service_webserver.db.plugin import setup_db
 from simcore_service_webserver.director.plugin import setup_director
 from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.garbage_collector import setup_garbage_collector
@@ -39,10 +44,13 @@ from simcore_service_webserver.projects._crud_delete_utils import get_scheduled_
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
-from simcore_service_webserver.resource_manager.registry import get_registry
-from simcore_service_webserver.rest import setup_rest
+from simcore_service_webserver.resource_manager.registry import (
+    RegistryKeyPrefixDict,
+    get_registry,
+)
+from simcore_service_webserver.rest.plugin import setup_rest
 from simcore_service_webserver.security.plugin import setup_security
-from simcore_service_webserver.session import setup_session
+from simcore_service_webserver.session.plugin import setup_session
 from simcore_service_webserver.socketio.plugin import setup_socketio
 from simcore_service_webserver.users.plugin import setup_users
 from sqlalchemy import func, select
@@ -52,10 +60,11 @@ log = logging.getLogger(__name__)
 pytest_simcore_core_services_selection = [
     "migration",
     "postgres",
+    "rabbit",
     "redis",
     "storage",
 ]
-pytest_simcore_ops_services_selection = ["minio"]
+pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
 
 API_VERSION = "v0"
@@ -127,12 +136,15 @@ async def auto_mock_director_v2(
 
 @pytest.fixture
 def client(
-    event_loop,
-    aiohttp_client,
-    app_config,
-    postgres_with_template_db,
-    mock_orphaned_services,
+    event_loop: asyncio.AbstractEventLoop,
+    aiohttp_client: Callable[..., Awaitable[TestClient]],
+    app_config: dict[str, Any],
+    postgres_with_template_db: sa.engine.Engine,
+    mock_orphaned_services: mock.Mock,
     monkeypatch_setenv_from_app_config: Callable,
+    redis_client: aioredis.Redis,
+    rabbit_service: RabbitSettings,
+    simcore_services_ready: None,
 ):
     cfg = deepcopy(app_config)
 
@@ -175,12 +187,18 @@ def client(
 
 
 @pytest.fixture
-def disable_garbage_collector_task(mocker):
+def disable_garbage_collector_task(mocker: MockerFixture) -> Iterator[mock.Mock]:
     """patch the setup of the garbage collector so we can call it manually"""
-    mocker.patch(
-        "simcore_service_webserver.garbage_collector.setup_garbage_collector",
-        return_value="",
+
+    async def _fake_background_task(*args, **kwargs):
+        yield
+
+    mocked_run_background = mocker.patch(
+        "simcore_service_webserver.garbage_collector.run_background_task",
+        side_effect=_fake_background_task,
     )
+    yield mocked_run_background
+    mocked_run_background.assert_called()
 
 
 async def login_user(client: TestClient):
@@ -264,7 +282,7 @@ async def invite_user_to_group(client, owner, invitee, group):
 
 
 async def change_user_role(
-    aiopg_engine: aiopg.sa.Engine, user: dict, role: UserRole
+    aiopg_engine: aiopg.sa.Engine, user: UserInfoDict, role: UserRole
 ) -> None:
     async with aiopg_engine.acquire() as conn:
         await conn.execute(
@@ -272,18 +290,22 @@ async def change_user_role(
         )
 
 
-async def connect_to_socketio(client, user, socketio_client_factory: Callable):
+async def connect_to_socketio(
+    client,
+    user,
+    socketio_client_factory: Callable[..., Awaitable[socketio.AsyncClient]],
+):
     """Connect a user to a socket.io"""
     socket_registry = get_registry(client.server.app)
     cur_client_session_id = f"{uuid4()}"
     sio = await socketio_client_factory(cur_client_session_id, client)
-    resource_key = {
+    resource_key: RegistryKeyPrefixDict = {
         "user_id": str(user["id"]),
         "client_session_id": cur_client_session_id,
     }
-    assert await socket_registry.find_keys(("socket_id", sio.get_sid())) == [
-        resource_key
-    ]
+    sid = sio.get_sid()
+    assert sid
+    assert await socket_registry.find_keys(("socket_id", sid)) == [resource_key]
     assert sio.get_sid() in await socket_registry.find_resources(
         resource_key, "socket_id"
     )
@@ -292,7 +314,7 @@ async def connect_to_socketio(client, user, socketio_client_factory: Callable):
     return sio_connection_data
 
 
-async def disconnect_user_from_socketio(client, sio_connection_data):
+async def disconnect_user_from_socketio(client, sio_connection_data) -> None:
     """disconnect a previously connected socket.io connection"""
     sio, resource_key = sio_connection_data
     sid = sio.get_sid()
@@ -301,63 +323,80 @@ async def disconnect_user_from_socketio(client, sio_connection_data):
     assert not sio.sid
     await asyncio.sleep(0)  # just to ensure there is a context switch
     assert not await socket_registry.find_keys(("socket_id", sio.get_sid()))
-    assert not sid in await socket_registry.find_resources(resource_key, "socket_id")
+    assert sid not in await socket_registry.find_resources(resource_key, "socket_id")
     assert not await socket_registry.find_resources(resource_key, "socket_id")
 
 
-async def assert_users_count(aiopg_engine: aiopg.sa.Engine, expected_users: int):
+async def assert_users_count(
+    aiopg_engine: aiopg.sa.Engine, expected_users: int
+) -> None:
     async with aiopg_engine.acquire() as conn:
         users_count = await conn.scalar(select(func.count()).select_from(users))
         assert users_count == expected_users
 
 
-async def assert_projects_count(aiopg_engine: aiopg.sa.Engine, expected_projects: int):
+async def assert_projects_count(
+    aiopg_engine: aiopg.sa.Engine, expected_projects: int
+) -> None:
     async with aiopg_engine.acquire() as conn:
         projects_count = await conn.scalar(select(func.count()).select_from(projects))
         assert projects_count == expected_projects
 
 
-def assert_dicts_match_by_common_keys(first_dict, second_dict):
+def assert_dicts_match_by_common_keys(first_dict, second_dict) -> None:
     common_keys = set(first_dict.keys()) & set(second_dict.keys())
     for key in common_keys:
         assert first_dict[key] == second_dict[key], key
 
 
-async def fetch_user_from_db(aiopg_engine: aiopg.sa.Engine, user: UserInfoDict):
+async def fetch_user_from_db(
+    aiopg_engine: aiopg.sa.Engine, user: UserInfoDict
+) -> UserInfoDict | None:
     """returns a user from the db"""
     async with aiopg_engine.acquire() as conn:
-        user_result = await conn.execute(
-            users.select().where(users.c.id == int(user["id"]))
-        )
-        return await user_result.first()
+        user_result = await conn.execute(users.select().where(users.c.id == user["id"]))
+        result = await user_result.first()
+        if result is None:
+            return None
+        return UserInfoDict(**dict(result))
 
 
-async def fetch_project_from_db(aiopg_engine: aiopg.sa.Engine, user_project: dict):
+async def fetch_project_from_db(
+    aiopg_engine: aiopg.sa.Engine, user_project: dict
+) -> dict[str, Any]:
     async with aiopg_engine.acquire() as conn:
         project_result = await conn.execute(
             projects.select().where(projects.c.uuid == user_project["uuid"])
         )
-        return await project_result.first()
+        result = await project_result.first()
+        assert result
+        return dict(result)
 
 
-async def assert_user_in_db(aiopg_engine: aiopg.sa.Engine, logged_user: UserInfoDict):
+async def assert_user_in_db(
+    aiopg_engine: aiopg.sa.Engine, logged_user: UserInfoDict
+) -> None:
     user = await fetch_user_from_db(aiopg_engine, logged_user)
     assert user
     user_as_dict = dict(user)
 
     # some values need to be transformed
-    user_as_dict["role"] = user_as_dict["role"].value
-    user_as_dict["status"] = user_as_dict["status"].value
+    user_as_dict["role"] = user_as_dict["role"].value  # type: ignore
+    user_as_dict["status"] = user_as_dict["status"].value  # type: ignore
 
     assert_dicts_match_by_common_keys(user_as_dict, logged_user)
 
 
-async def assert_user_not_in_db(aiopg_engine: aiopg.sa.Engine, user: UserInfoDict):
+async def assert_user_not_in_db(
+    aiopg_engine: aiopg.sa.Engine, user: UserInfoDict
+) -> None:
     user_db = await fetch_user_from_db(aiopg_engine, user)
     assert user_db is None
 
 
-async def assert_project_in_db(aiopg_engine: aiopg.sa.Engine, user_project: dict):
+async def assert_project_in_db(
+    aiopg_engine: aiopg.sa.Engine, user_project: dict
+) -> None:
     project = await fetch_project_from_db(aiopg_engine, user_project)
     assert project
     project_as_dict = dict(project)
@@ -367,19 +406,19 @@ async def assert_project_in_db(aiopg_engine: aiopg.sa.Engine, user_project: dict
 
 async def assert_user_is_owner_of_project(
     aiopg_engine: aiopg.sa.Engine, owner_user: UserInfoDict, owner_project: dict
-):
+) -> None:
     user = await fetch_user_from_db(aiopg_engine, owner_user)
     assert user
 
     project = await fetch_project_from_db(aiopg_engine, owner_project)
     assert project
 
-    assert user.id == project.prj_owner
+    assert user["id"] == project["prj_owner"]
 
 
 async def assert_one_owner_for_project(
     aiopg_engine: aiopg.sa.Engine, project: dict, possible_owners: list[UserInfoDict]
-):
+) -> None:
     q_owners = [
         await fetch_user_from_db(aiopg_engine, owner) for owner in possible_owners
     ]
@@ -388,19 +427,19 @@ async def assert_one_owner_for_project(
     q_project = await fetch_project_from_db(aiopg_engine, project)
     assert q_project
 
-    assert q_project.prj_owner in {user.id for user in q_owners if user}
+    assert q_project["prj_owner"] in {user["id"] for user in q_owners if user}
 
 
 async def test_t1_while_guest_is_connected_no_resources_are_removed(
     disable_garbage_collector_task: None,
-    client,
+    client: TestClient,
     socketio_client_factory: Callable,
-    aiopg_engine,
-    redis_client,
+    aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
 ):
     """while a GUEST user is connected GC will not remove none of its projects nor the user itself"""
+    assert client.app
     logged_guest_user = await login_guest_user(client)
     empty_guest_user_project = await new_project(
         client, logged_guest_user, osparc_product_name, tests_data_dir
@@ -419,15 +458,14 @@ async def test_t1_while_guest_is_connected_no_resources_are_removed(
 @pytest.mark.flaky(max_runs=3)
 async def test_t2_cleanup_resources_after_browser_is_closed(
     disable_garbage_collector_task: None,
-    simcore_services_ready,
-    client,
+    client: TestClient,
     socketio_client_factory: Callable,
-    aiopg_engine,
-    redis_client,
+    aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
 ):
     """After a GUEST users with one opened project closes browser tab regularly (GC cleans everything)"""
+    assert client.app
     logged_guest_user = await login_guest_user(client)
     empty_guest_user_project = await new_project(
         client, logged_guest_user, osparc_product_name, tests_data_dir
@@ -468,10 +506,9 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
 
 
 async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
-    simcore_services_ready,
-    client,
+    client: TestClient,
     socketio_client_factory: Callable,
-    aiopg_engine,
+    aiopg_engine: aiopg.sa.engine.Engine,
     fake_project: dict,
     tests_data_dir: Path,
     osparc_product_name: str,
@@ -491,7 +528,7 @@ async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
         for _ in range(number_of_templates)
     ]
 
-    async def assert_projects_and_users_are_present():
+    async def assert_projects_and_users_are_present() -> None:
         # check user and projects and templates are still in the DB
         await assert_user_in_db(aiopg_engine, logged_user)
         for project in user_projects:
@@ -518,9 +555,8 @@ async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
 
 
 async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owner_removal(
-    simcore_services_ready,
-    client,
-    aiopg_engine,
+    client: TestClient,
+    aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
 ):
@@ -563,9 +599,8 @@ async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owne
 
 
 async def test_t5_project_shared_with_other_users_transferred_to_one_of_them(
-    simcore_services_ready,
-    client,
-    aiopg_engine,
+    client: TestClient,
+    aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
 ):
@@ -579,7 +614,9 @@ async def test_t5_project_shared_with_other_users_transferred_to_one_of_them(
     u3 = await login_user(client)
 
     q_u2 = await fetch_user_from_db(aiopg_engine, u2)
+    assert q_u2
     q_u3 = await fetch_user_from_db(aiopg_engine, u3)
+    assert q_u3
 
     # u1 creates project and shares it with g1
     project = await new_project(
@@ -588,8 +625,8 @@ async def test_t5_project_shared_with_other_users_transferred_to_one_of_them(
         osparc_product_name,
         tests_data_dir,
         access_rights={
-            str(q_u2.primary_gid): {"read": True, "write": True, "delete": False},
-            str(q_u3.primary_gid): {"read": True, "write": True, "delete": False},
+            str(q_u2["primary_gid"]): {"read": True, "write": True, "delete": False},
+            str(q_u3["primary_gid"]): {"read": True, "write": True, "delete": False},
         },
     )
 
@@ -608,9 +645,8 @@ async def test_t5_project_shared_with_other_users_transferred_to_one_of_them(
 
 
 async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on_owner_removal(
-    simcore_services_ready,
-    client,
-    aiopg_engine,
+    client: TestClient,
+    aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
 ):
@@ -661,7 +697,8 @@ async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on
     new_owner = None
     remaining_others = []
     for user in [q_u2, q_u3]:
-        if user.id == q_project.prj_owner:
+        assert user
+        if user["id"] == q_project["prj_owner"]:
             new_owner = user
         else:
             remaining_others.append(user)
@@ -679,9 +716,8 @@ async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on
 
 async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_last_and_all_is_removed(
     disable_garbage_collector_task: None,
-    simcore_services_ready,
-    client,
-    aiopg_engine,
+    client: TestClient,
+    aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
 ):
@@ -695,6 +731,7 @@ async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_l
     afterwards the last user will be marked as "GUEST";
     EXPECTED: the last user will be removed and the project will be removed
     """
+    assert client.app
     u1 = await login_user(client)
     u2 = await login_user(client)
     u3 = await login_user(client)
@@ -737,7 +774,7 @@ async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_l
     remaining_users = []
     for user in [q_u2, q_u3]:
         assert user
-        if user.id == q_project.prj_owner:
+        if user["id"] == q_project["prj_owner"]:
             new_owner = user
         else:
             remaining_users.append(user)
@@ -767,9 +804,8 @@ async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_l
 
 
 async def test_t8_project_shared_with_other_users_transferred_to_one_of_them_until_one_user_remains(
-    simcore_services_ready,
-    client,
-    aiopg_engine,
+    client: TestClient,
+    aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
 ):
@@ -785,7 +821,9 @@ async def test_t8_project_shared_with_other_users_transferred_to_one_of_them_unt
     u3 = await login_user(client)
 
     q_u2 = await fetch_user_from_db(aiopg_engine, u2)
+    assert q_u2
     q_u3 = await fetch_user_from_db(aiopg_engine, u3)
+    assert q_u3
 
     # u1 creates project and shares it with g1
     project = await new_project(
@@ -794,8 +832,8 @@ async def test_t8_project_shared_with_other_users_transferred_to_one_of_them_unt
         osparc_product_name,
         tests_data_dir,
         access_rights={
-            str(q_u2.primary_gid): {"read": True, "write": True, "delete": False},
-            str(q_u3.primary_gid): {"read": True, "write": True, "delete": False},
+            str(q_u2["primary_gid"]): {"read": True, "write": True, "delete": False},
+            str(q_u3["primary_gid"]): {"read": True, "write": True, "delete": False},
         },
     )
 
@@ -820,7 +858,8 @@ async def test_t8_project_shared_with_other_users_transferred_to_one_of_them_unt
     new_owner = None
     remaining_others = []
     for user in [q_u2, q_u3]:
-        if user.id == q_project.prj_owner:
+        assert user
+        if user["id"] == q_project["prj_owner"]:
             new_owner = user
         else:
             remaining_others.append(user)
@@ -839,9 +878,8 @@ async def test_t8_project_shared_with_other_users_transferred_to_one_of_them_unt
 
 
 async def test_t9_project_shared_with_other_users_transferred_between_them_and_then_removed(
-    simcore_services_ready,
-    client,
-    aiopg_engine,
+    client: TestClient,
+    aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
 ):
@@ -859,7 +897,9 @@ async def test_t9_project_shared_with_other_users_transferred_between_them_and_t
     u3 = await login_user(client)
 
     q_u2 = await fetch_user_from_db(aiopg_engine, u2)
+    assert q_u2
     q_u3 = await fetch_user_from_db(aiopg_engine, u3)
+    assert q_u3
 
     # u1 creates project and shares it with g1
     project = await new_project(
@@ -868,8 +908,8 @@ async def test_t9_project_shared_with_other_users_transferred_between_them_and_t
         osparc_product_name,
         tests_data_dir,
         access_rights={
-            str(q_u2.primary_gid): {"read": True, "write": True, "delete": False},
-            str(q_u3.primary_gid): {"read": True, "write": True, "delete": False},
+            str(q_u2["primary_gid"]): {"read": True, "write": True, "delete": False},
+            str(q_u3["primary_gid"]): {"read": True, "write": True, "delete": False},
         },
     )
 
@@ -894,7 +934,8 @@ async def test_t9_project_shared_with_other_users_transferred_between_them_and_t
     new_owner = None
     remaining_others = []
     for user in [q_u2, q_u3]:
-        if user.id == q_project.prj_owner:
+        assert user
+        if user["id"] == q_project["prj_owner"]:
             new_owner = user
         else:
             remaining_others.append(user)
@@ -924,9 +965,8 @@ async def test_t9_project_shared_with_other_users_transferred_between_them_and_t
 
 
 async def test_t10_owner_and_all_shared_users_marked_as_guests(
-    simcore_services_ready,
-    client,
-    aiopg_engine,
+    client: TestClient,
+    aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
 ):
@@ -951,8 +991,8 @@ async def test_t10_owner_and_all_shared_users_marked_as_guests(
         osparc_product_name,
         tests_data_dir,
         access_rights={
-            str(q_u2.primary_gid): {"read": True, "write": True, "delete": False},
-            str(q_u3.primary_gid): {"read": True, "write": True, "delete": False},
+            str(q_u2["primary_gid"]): {"read": True, "write": True, "delete": False},
+            str(q_u3["primary_gid"]): {"read": True, "write": True, "delete": False},
         },
     )
 
@@ -972,9 +1012,8 @@ async def test_t10_owner_and_all_shared_users_marked_as_guests(
 
 
 async def test_t11_owner_and_all_users_in_group_marked_as_guests(
-    simcore_services_ready,
-    client,
-    aiopg_engine,
+    client: TestClient,
+    aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
 ):

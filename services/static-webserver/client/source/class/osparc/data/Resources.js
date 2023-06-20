@@ -80,6 +80,11 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects?type=user&offset={offset}&limit={limit}"
           },
+          getPageFilterSearch: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&search={text}"
+          },
           getOne: {
             useCache: false,
             method: "GET",
@@ -185,10 +190,9 @@ qx.Class.define("osparc.data.Resources", {
        */
       "nodesInStudyResources": {
         idField: "nodeId",
-        useCache: false,
+        useCache: true,
         endpoints: {
-          getResources: {
-            useCache: false,
+          get: {
             method: "GET",
             url: statics.API + "/projects/{studyId}/nodes/{nodeId}/resources"
           }
@@ -196,10 +200,9 @@ qx.Class.define("osparc.data.Resources", {
       },
       "serviceResources": {
         idField: ["key", "version"],
-        useCache: false,
+        useCache: true,
         endpoints: {
-          getResources: {
-            useCache: false,
+          get: {
             method: "GET",
             url: statics.API + "/catalog/services/{key}/{version}/resources"
           }

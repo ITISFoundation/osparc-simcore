@@ -171,8 +171,7 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
           url: {
             "studyId": this._serializedData["uuid"],
             "gid": gid
-          },
-          data: this._serializedData
+          }
         };
         promises.push(osparc.data.Resources.fetch("studies", "checkShareePermissions", params));
       });
@@ -181,10 +180,13 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
           const noAccessible = values.filter(value => value["accessible"] === false);
           if (noAccessible.length) {
             const shareePermissions = new osparc.component.share.ShareePermissions(noAccessible);
-            osparc.ui.window.Window.popUpInWindow(shareePermissions, this.tr("Sharee permissions"), 500, 500, "@FontAwesome5Solid/exclamation-triangle/14").set({
+            const win = osparc.ui.window.Window.popUpInWindow(shareePermissions, this.tr("Sharee permissions"), 500, 500, "@FontAwesome5Solid/exclamation-triangle/14").set({
               clickAwayClose: false,
               resizable: true,
               showClose: true
+            });
+            win.getChildControl("icon").set({
+              textColor: "warning-yellow"
             });
           }
         });
