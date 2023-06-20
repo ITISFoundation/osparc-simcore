@@ -31,23 +31,7 @@ qx.Class.define("osparc.info.CommentsList", {
 
     this.__buildLayout();
 
-    // this.__fetchComments();
-    const comments = [{
-      "comment_id": 1,
-      "project_uuid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-      "user_id": 1,
-      "content": "One comment from user 1",
-      "created_at": "2023-06-20T08:42:13.805Z",
-      "updated_at": "2023-06-20T08:42:13.805Z"
-    }, {
-      "comment_id": 1,
-      "project_uuid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-      "user_id": 2,
-      "content": "Another comment from user 2",
-      "created_at": "2023-06-20T09:42:13.805Z",
-      "updated_at": "2023-06-20T09:42:13.805Z"
-    }];
-    this.__addComments(comments);
+    this.fetchComments();
   },
 
   members: {
@@ -76,7 +60,27 @@ qx.Class.define("osparc.info.CommentsList", {
       this.getChildControl("comments-list");
     },
 
-    __fetchComments: function() {
+    fetchComments: function() {
+      this.getChildControl("comments-list").removeAll();
+
+      const comments = [{
+        "comment_id": 1,
+        "project_uuid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        "user_id": 1,
+        "content": "One comment from user 1",
+        "created_at": "2023-06-20T08:42:13.805Z",
+        "updated_at": "2023-06-20T08:42:13.805Z"
+      }, {
+        "comment_id": 1,
+        "project_uuid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        "user_id": 2,
+        "content": "Another comment from user 2",
+        "created_at": "2023-06-20T09:42:13.805Z",
+        "updated_at": "2023-06-20T09:42:13.805Z"
+      }];
+      this.__addComments(comments);
+      return;
+
       const params = {
         url: {
           offset: 0,

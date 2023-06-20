@@ -27,6 +27,10 @@ qx.Class.define("osparc.info.CommentAdd", {
     this.__buildLayout();
   },
 
+  events: {
+    "commentAdded": "qx.event.type.Event"
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;

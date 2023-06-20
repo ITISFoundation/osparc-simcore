@@ -130,6 +130,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       if (this.__canIWrite()) {
         const addComment = this.__createAddComment();
         addComment.setPaddingLeft(10);
+        addComment.addListener("commentAdded", () => commentsList.fetchComments());
         this._add(addComment);
       }
     },
