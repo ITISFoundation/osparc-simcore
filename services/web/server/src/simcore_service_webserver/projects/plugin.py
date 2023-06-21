@@ -18,8 +18,8 @@ from . import (
     _comments_handlers,
     _handlers,
     _handlers_crud,
-    _handlers_project_nodes,
     _handlers_project_tags,
+    _nodes_handlers,
     _ports_handlers,
 )
 from ._observer import setup_project_observer_events
@@ -77,7 +77,7 @@ def setup_projects(app: web.Application) -> bool:
         _create_routes(
             "project",
             specs,
-            _handlers_project_nodes,
+            _nodes_handlers,
             _handlers_project_tags,
         )
     )

@@ -47,7 +47,7 @@ from ..users.api import get_user_role
 from ..utils_aiohttp import envelope_json_response
 from . import projects_api
 from ._handlers_crud import ProjectPathParams, RequestContext
-from ._nodes_previews import NodeScreenshot, fake_screenshots_factory
+from ._nodes_previews_api import NodeScreenshot, fake_screenshots_factory
 from .db import ProjectDBAPI
 from .exceptions import (
     NodeNotFoundError,

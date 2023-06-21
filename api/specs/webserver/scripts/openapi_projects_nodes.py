@@ -22,7 +22,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import GroupID
 from simcore_service_webserver.projects._handlers_crud import ProjectPathParams
-from simcore_service_webserver.projects._handlers_project_nodes import (
+from simcore_service_webserver.projects._nodes_handlers import (
     _NodePathParams,
     _ProjectGroupAccess,
     _ProjectNodePreview,
