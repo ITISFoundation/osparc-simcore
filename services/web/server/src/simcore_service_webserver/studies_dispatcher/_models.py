@@ -70,4 +70,4 @@ class FileParams(BaseModel):
 
     @property
     def footprint(self) -> str:
-        return f"{self.file_name}.{self.file_type}:{self.file_size}"
+        return f"{self.file_name}:{self.file_type}:{self.file_size}"
