@@ -27,10 +27,10 @@ services_consume_filetypes = sa.Table(
         doc="Key part of a $key:$version service resource name",
     ),
     sa.Column(
-        "service_version",
+        "service_base_version",
         sa.String,
         nullable=False,
-        doc="Version part of a $key:$version service resource name",
+        doc="Defines the minimum version (included) of this version from which this information applies",
     ),
     sa.Column(
         "service_display_name",
@@ -73,7 +73,7 @@ services_consume_filetypes = sa.Table(
     ),
     # If service-key/version gets deleted from service_metadata, it should be deleted from here
     sa.ForeignKeyConstraint(
-        ["service_key", "service_version"],
+        ["service_key", "service_base_version"],
         ["services_meta_data.key", "services_meta_data.version"],
         onupdate="CASCADE",
         ondelete="CASCADE",
@@ -82,7 +82,7 @@ services_consume_filetypes = sa.Table(
     # if more ports can consume, then it should only be added once in this table
     sa.PrimaryKeyConstraint(
         "service_key",
-        "service_version",
+        "service_base_version",
         "filetype",
         name="services_consume_filetypes_pk",
     ),
