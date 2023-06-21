@@ -237,7 +237,7 @@ qx.Class.define("osparc.file.FilePicker", {
       } else if (osparc.file.FilePicker.isOutputDownloadLink(node.getOutputs())) {
         const outFileValue = osparc.file.FilePicker.getOutput(node.getOutputs());
         if (osparc.utils.Utils.isObject(outFileValue) && "downloadLink" in outFileValue) {
-          osparc.utils.Utils.downloadLink(outFileValue["downloadLink"], "GET", null, progressCb, loadedCb);
+          osparc.utils.Utils.downloadLink(outFileValue["downloadLink"], "GET", outFileValue["label"], progressCb, loadedCb);
         }
       }
     },
