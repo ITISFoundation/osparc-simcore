@@ -70,4 +70,5 @@ class FileParams(BaseModel):
 
     @property
     def footprint(self) -> str:
+        """Identifier used to create UUID"""
         return f"{self.file_name}:{self.file_type}:{self.file_size}"
