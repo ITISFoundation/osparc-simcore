@@ -5405,6 +5405,235 @@ paths:
                 $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/get/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
+  '/projects/{project_uuid}/comments':
+    get:
+      tags:
+        - project
+        - comments
+      summary: Retrieve all comments for a specific project.
+      operationId: list_project_comments
+      parameters:
+        - required: true
+          schema:
+            title: Project Uuid
+            type: string
+            format: uuid
+          name: project_uuid
+          in: path
+        - required: false
+          schema:
+            title: Limit
+            type: integer
+            default: 20
+          name: limit
+          in: query
+        - required: false
+          schema:
+            title: Offset
+            minimum: 0
+            type: integer
+            default: 0
+          name: offset
+          in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: 'Envelope[list[models_library.projects_comments.ProjectsCommentsAPI]]'
+                type: object
+                properties:
+                  data:
+                    title: Data
+                    type: array
+                    items:
+                      $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1comments~1%7Bcomment_id%7D/get/responses/200/content/application~1json/schema/properties/data'
+                  error:
+                    title: Error
+    post:
+      tags:
+        - project
+        - comments
+      summary: Create a new comment for a specific project. The request body should contain the comment contents and user information.
+      operationId: create_project_comment
+      parameters:
+        - required: true
+          schema:
+            title: Project Uuid
+            type: string
+            format: uuid
+          name: project_uuid
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: _ProjectCommentsBodyParams
+              required:
+                - contents
+              type: object
+              properties:
+                contents:
+                  title: Contents
+                  type: string
+              additionalProperties: false
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: 'Envelope[dict[Literal[''comment_id''], pydantic.types.PositiveInt]]'
+                type: object
+                properties:
+                  data:
+                    title: Data
+                    type: object
+                    additionalProperties:
+                      exclusiveMinimum: true
+                      type: integer
+                      minimum: 0
+                  error:
+                    title: Error
+  '/projects/{project_uuid}/comments/{comment_id}':
+    get:
+      tags:
+        - project
+        - comments
+      summary: Retrieve a specific comment by its ID within a project.
+      operationId: get_project_comment
+      parameters:
+        - required: true
+          schema:
+            title: Project Uuid
+            type: string
+            format: uuid
+          name: project_uuid
+          in: path
+        - required: true
+          schema:
+            title: Comment Id
+            exclusiveMinimum: true
+            type: integer
+            minimum: 0
+          name: comment_id
+          in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: 'Envelope[ProjectsCommentsAPI]'
+                type: object
+                properties:
+                  data:
+                    title: ProjectsCommentsAPI
+                    required:
+                      - comment_id
+                      - project_uuid
+                      - user_id
+                      - content
+                      - created
+                      - modified
+                    type: object
+                    properties:
+                      comment_id:
+                        title: Comment Id
+                        exclusiveMinimum: true
+                        type: integer
+                        description: 'Primary key, identifies the comment'
+                        minimum: 0
+                      project_uuid:
+                        title: Project Uuid
+                        type: string
+                        description: project reference for this table
+                        format: uuid
+                      user_id:
+                        title: User Id
+                        exclusiveMinimum: true
+                        type: integer
+                        description: user reference for this table
+                        minimum: 0
+                      content:
+                        title: Content
+                        type: string
+                        description: Content of the comment
+                      created:
+                        title: Created
+                        type: string
+                        description: Timestamp on creation
+                        format: date-time
+                      modified:
+                        title: Modified
+                        type: string
+                        description: Timestamp with last update
+                        format: date-time
+                    additionalProperties: false
+                  error:
+                    title: Error
+    put:
+      tags:
+        - project
+        - comments
+      summary: Update the contents of a specific comment for a project. The request body should contain the updated comment contents.
+      operationId: update_project_comment
+      parameters:
+        - required: true
+          schema:
+            title: Project Uuid
+            type: string
+            format: uuid
+          name: project_uuid
+          in: path
+        - required: true
+          schema:
+            title: Comment Id
+            exclusiveMinimum: true
+            type: integer
+            minimum: 0
+          name: comment_id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1comments/post/requestBody/content/application~1json/schema'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1comments~1%7Bcomment_id%7D/get/responses/200/content/application~1json/schema'
+    delete:
+      tags:
+        - project
+        - comments
+      summary: Delete a specific comment associated with a project.
+      operationId: delete_project_comment
+      parameters:
+        - required: true
+          schema:
+            title: Project Uuid
+            type: string
+            format: uuid
+          name: project_uuid
+          in: path
+        - required: true
+          schema:
+            title: Comment Id
+            exclusiveMinimum: true
+            type: integer
+            minimum: 0
+          name: comment_id
+          in: path
+      responses:
+        '204':
+          description: Successful Response
   '/projects/{project_id}/nodes/-/services:access':
     get:
       tags:
