@@ -22,7 +22,6 @@ from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize
 from simcore_service_webserver.storage.schemas import (
     DatasetMetaData,
-    FileLocation,
     FileMetaData,
     FileUploadComplete,
     FileUploadSchema,
@@ -39,7 +38,7 @@ TAGS: list[str | Enum] = [
 
 @app.get(
     "/storage/locations",
-    response_model=list[FileLocation],
+    response_model=list[DatasetMetaData],
     tags=TAGS,
     operation_id="get_storage_locations",
     summary="Get available storage locations",

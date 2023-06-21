@@ -24,7 +24,7 @@ paths:
                 title: Response Get Storage Locations
                 type: array
                 items:
-                  $ref: '#/components/schemas/FileLocation'
+                  $ref: '#/components/schemas/DatasetMetaData'
   /storage/locations/{location_id}:sync:
     post:
       tags:
@@ -571,19 +571,6 @@ components:
             $ref: '#/components/schemas/DatasetMetaData'
         error:
           title: Error
-    FileLocation:
-      title: FileLocation
-      type: object
-      properties:
-        name:
-          title: Name
-          type: string
-        id:
-          title: Id
-          type: number
-      example:
-        name: simcore.s3
-        id: 0
     FileMetaData:
       title: FileMetaData
       type: object
