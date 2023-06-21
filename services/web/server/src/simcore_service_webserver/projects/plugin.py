@@ -18,9 +18,9 @@ from . import (
     _comments_handlers,
     _handlers,
     _handlers_crud,
-    _handlers_project_tags,
     _nodes_handlers,
     _ports_handlers,
+    _tags_handlers,
 )
 from ._observer import setup_project_observer_events
 from ._projects_access import setup_projects_access
@@ -78,7 +78,7 @@ def setup_projects(app: web.Application) -> bool:
             "project",
             specs,
             _nodes_handlers,
-            _handlers_project_tags,
+            _tags_handlers,
         )
     )
 
