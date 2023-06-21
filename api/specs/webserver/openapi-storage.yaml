@@ -420,7 +420,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_FileUploadComplete_'
+                $ref: '#/components/schemas/Envelope_FileUploadCompleteResponse_'
   /storage/locations/{location_id}/files/{file_id}:complete/futures/{future_id}:
     post:
       tags:
@@ -509,12 +509,12 @@ components:
           $ref: '#/components/schemas/FileUploadCompleteFutureResponse'
         error:
           title: Error
-    Envelope_FileUploadComplete_:
-      title: Envelope[FileUploadComplete]
+    Envelope_FileUploadCompleteResponse_:
+      title: Envelope[FileUploadCompleteResponse]
       type: object
       properties:
         data:
-          $ref: '#/components/schemas/FileUploadComplete'
+          $ref: '#/components/schemas/FileUploadCompleteResponse'
         error:
           title: Error
     Envelope_FileUploadCompletionBody_:
@@ -691,14 +691,6 @@ components:
           description: set True if file_id is a directory
           default: false
       additionalProperties: false
-    FileUploadComplete:
-      title: FileUploadComplete
-      required:
-      - links
-      type: object
-      properties:
-        links:
-          $ref: '#/components/schemas/Links1'
     FileUploadCompleteFutureResponse:
       title: FileUploadCompleteFutureResponse
       required:
@@ -710,6 +702,26 @@ components:
         e_tag:
           title: E Tag
           type: string
+    FileUploadCompleteLinks:
+      title: FileUploadCompleteLinks
+      required:
+      - state
+      type: object
+      properties:
+        state:
+          title: State
+          maxLength: 65536
+          minLength: 1
+          type: string
+          format: uri
+    FileUploadCompleteResponse:
+      title: FileUploadCompleteResponse
+      required:
+      - links
+      type: object
+      properties:
+        links:
+          $ref: '#/components/schemas/FileUploadCompleteLinks'
     FileUploadCompleteState:
       title: FileUploadCompleteState
       enum:
@@ -727,6 +739,25 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/UploadedPart'
+    FileUploadLinks:
+      title: FileUploadLinks
+      required:
+      - abort_upload
+      - complete_upload
+      type: object
+      properties:
+        abort_upload:
+          title: Abort Upload
+          maxLength: 65536
+          minLength: 1
+          type: string
+          format: uri
+        complete_upload:
+          title: Complete Upload
+          maxLength: 65536
+          minLength: 1
+          type: string
+          format: uri
     FileUploadSchema:
       title: FileUploadSchema
       required:
@@ -737,15 +768,17 @@ components:
       properties:
         chunk_size:
           title: Chunk Size
-          minimum: 0
           type: integer
         urls:
           title: Urls
           type: array
           items:
+            maxLength: 65536
+            minLength: 1
             type: string
+            format: uri
         links:
-          $ref: '#/components/schemas/Links'
+          $ref: '#/components/schemas/FileUploadLinks'
     LinkType:
       title: LinkType
       enum:
@@ -753,37 +786,18 @@ components:
       - S3
       type: string
       description: An enumeration.
-    Links:
-      title: Links
-      required:
-      - abort_upload
-      - complete_upload
-      type: object
-      properties:
-        abort_upload:
-          title: Abort Upload
-          type: string
-        complete_upload:
-          title: Complete Upload
-          type: string
-    Links1:
-      title: Links1
-      required:
-      - state
-      type: object
-      properties:
-        state:
-          title: State
-          type: string
     PresignedLink:
       title: PresignedLink
+      required:
+      - link
       type: object
       properties:
         link:
           title: Link
+          maxLength: 65536
+          minLength: 1
           type: string
-      example:
-        link: example_link
+          format: uri
     TableSynchronisation:
       title: TableSynchronisation
       required:

@@ -13,21 +13,18 @@ from fastapi import FastAPI, status
 from models_library.api_schemas_storage import (
     FileMetaDataGet,
     FileUploadCompleteFutureResponse,
+    FileUploadCompleteResponse,
     FileUploadCompletionBody,
+    FileUploadSchema,
     LinkType,
+    PresignedLink,
+    TableSynchronisation,
 )
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize
-from simcore_service_webserver.storage.schemas import (
-    DatasetMetaData,
-    FileMetaData,
-    FileUploadComplete,
-    FileUploadSchema,
-    PresignedLink,
-    TableSynchronisation,
-)
+from simcore_service_webserver.storage.schemas import DatasetMetaData, FileMetaData
 
 app = FastAPI(redoc_url=None)
 
@@ -169,7 +166,7 @@ async def abort_upload_file(
 @app.post(
     "/storage/locations/{location_id}/files/{file_id}:complete",
     status_code=status.HTTP_202_ACCEPTED,
-    response_model=Envelope[FileUploadComplete],
+    response_model=Envelope[FileUploadCompleteResponse],
     tags=TAGS,
     operation_id="complete_upload_file",
 )
