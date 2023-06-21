@@ -23,7 +23,7 @@ from servicelib.json_serialization import json_dumps
 from .._meta import api_version_prefix as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
-from . import _ports_utils, projects_api
+from . import _ports_api, projects_api
 from ._handlers_crud import ProjectPathParams, RequestContext
 from .db import ProjectDBAPI
 from .exceptions import (
@@ -143,7 +143,7 @@ async def get_project_inputs(request: web.Request) -> web.Response:
     workbench = await _get_validated_workbench_model(
         app=request.app, project_id=path_params.project_id, user_id=req_ctx.user_id
     )
-    inputs: dict[NodeID, Any] = _ports_utils.get_project_inputs(workbench)
+    inputs: dict[NodeID, Any] = _ports_api.get_project_inputs(workbench)
 
     return _web_json_response_enveloped(
         data={
@@ -170,7 +170,7 @@ async def update_project_inputs(request: web.Request) -> web.Response:
     workbench = await _get_validated_workbench_model(
         app=request.app, project_id=path_params.project_id, user_id=req_ctx.user_id
     )
-    current_inputs: dict[NodeID, Any] = _ports_utils.get_project_inputs(workbench)
+    current_inputs: dict[NodeID, Any] = _ports_api.get_project_inputs(workbench)
 
     # build workbench patch
     partial_workbench_data = {}
@@ -193,7 +193,7 @@ async def update_project_inputs(request: web.Request) -> web.Response:
     )
 
     workbench = parse_obj_as(dict[NodeID, Node], updated_project["workbench"])
-    inputs: dict[NodeID, Any] = _ports_utils.get_project_inputs(workbench)
+    inputs: dict[NodeID, Any] = _ports_api.get_project_inputs(workbench)
 
     return _web_json_response_enveloped(
         data={
@@ -223,7 +223,7 @@ async def get_project_outputs(request: web.Request) -> web.Response:
     workbench = await _get_validated_workbench_model(
         app=request.app, project_id=path_params.project_id, user_id=req_ctx.user_id
     )
-    outputs: dict[NodeID, Any] = _ports_utils.get_project_outputs(workbench)
+    outputs: dict[NodeID, Any] = _ports_api.get_project_outputs(workbench)
 
     return _web_json_response_enveloped(
         data={
@@ -276,6 +276,6 @@ async def list_project_metadata_ports(request: web.Request) -> web.Response:
                 kind=port.kind,
                 content_schema=port.get_schema(),
             )
-            for port in _ports_utils.iter_project_ports(workbench)
+            for port in _ports_api.iter_project_ports(workbench)
         ]
     )
