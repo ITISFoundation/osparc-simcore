@@ -202,5 +202,7 @@ async def get_download_link(
 
     async with session.get(f"{url}") as response:
         response.raise_for_status()
-        download = PresignedLink.parse_obj(await response.json())
+        download: PresignedLink = (
+            Envelope[PresignedLink].parse_obj(await response.json()).data
+        )
         return parse_obj_as(HttpUrl, download.link)
