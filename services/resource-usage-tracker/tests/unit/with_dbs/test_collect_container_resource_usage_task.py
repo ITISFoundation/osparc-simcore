@@ -24,7 +24,12 @@ def mocked_prometheus_client_custom_query(
     mocker: MockerFixture, project_slug_dir: Path
 ) -> mock.MagicMock:
     with open(
-        project_slug_dir / "tests" / "unit" / "with_dbs" / "data" / "data.json"
+        project_slug_dir
+        / "tests"
+        / "unit"
+        / "with_dbs"
+        / "data"
+        / "list_of_prometheus_mocked_outputs.json"
     ) as file:
         data = json.load(file)
 
