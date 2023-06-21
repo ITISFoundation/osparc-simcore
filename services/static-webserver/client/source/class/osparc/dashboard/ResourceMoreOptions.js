@@ -64,9 +64,11 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       osparc.utils.Utils.centerTabIcon(tabPage);
 
       // Page title
-      tabPage.add(new qx.ui.basic.Label(title).set({
-        font: "text-15"
-      }));
+      if (title) {
+        tabPage.add(new qx.ui.basic.Label(title).set({
+          font: "text-15"
+        }));
+      }
 
       // Page content
       const scrollContainer = new qx.ui.container.Scroll();
@@ -289,7 +291,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
     __getInfoPage: function() {
       const id = "Information";
-      const title = this.tr("Information");
+      const title = "";
       const icon = "@FontAwesome5Solid/info";
       const resourceData = this.__resourceData;
       const infoCard = osparc.utils.Resources.isService(resourceData) ? new osparc.info.ServiceLarge(resourceData, null, false) : new osparc.info.StudyLarge(resourceData, false);
