@@ -3,6 +3,7 @@ import sqlalchemy as sa
 from ._common import column_created_datetime, column_modified_datetime
 from .base import metadata
 from .projects import projects
+from .users import users
 
 projects_comments = sa.Table(
     "projects_comments",
@@ -25,12 +26,19 @@ projects_comments = sa.Table(
             onupdate="CASCADE",
         ),
         index=True,
+        nullable=False,
         doc="project reference for this table",
     ),
     sa.Column(
         "user_id",
         sa.BigInteger,
+        sa.ForeignKey(
+            users.c.id,
+            name="fk_projects_comments_user_id",
+            ondelete="SET NULL",
+        ),
         doc="user who created the comment",
+        nullable=True,
     ),
     sa.Column(
         "contents",
