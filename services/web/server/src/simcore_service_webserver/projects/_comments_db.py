@@ -1,7 +1,6 @@
 """ Database API
 
-    - Adds a layer to the postgres API with a focus on the projects data
-    - Shall be used as entry point for all the queries to the database regarding projects
+    - Adds a layer to the postgres API with a focus on the projects comments
 
 """
 import logging
