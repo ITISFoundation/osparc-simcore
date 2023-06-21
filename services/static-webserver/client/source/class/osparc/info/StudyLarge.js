@@ -65,14 +65,16 @@ qx.Class.define("osparc.info.StudyLarge", {
       const titleLayout = this.__createViewWithEdit(title, this.__openTitleEditor);
       this._add(titleLayout);
 
-      const extraInfo = this.__extraInfo();
-      const extraInfoLayout = this.__createExtraInfo(extraInfo);
-
       if (osparc.product.Utils.showStudyPreview()) {
         const studyThumbnailExplorer = new osparc.dashboard.StudyThumbnailExplorer(this.getStudy().serialize());
         this._add(studyThumbnailExplorer);
       }
 
+      const extraInfo = this.__extraInfo();
+      const extraInfoLayout = this.__createExtraInfo(extraInfo);
+      this._add(extraInfoLayout);
+
+      /*
       const bounds = this.getBounds();
       const offset = 30;
       let widgetWidth = bounds ? bounds.width - offset : 500 - offset;
@@ -121,6 +123,7 @@ qx.Class.define("osparc.info.StudyLarge", {
         }
         this._add(tags);
       }
+      */
 
       if (this.getStudy().getDescription() || this.__canIWrite()) {
         const description = this.__createDescription();
@@ -147,56 +150,71 @@ qx.Class.define("osparc.info.StudyLarge", {
     },
 
     __extraInfo: function() {
-      const extraInfo = [{
-        label: this.tr("Author"),
-        view: this.__createOwner(),
-        action: null
-      }, {
-        label: this.tr("Creation Date"),
-        view: this.__createCreationDate(),
-        action: null
-      }, {
-        label: this.tr("Last Modified"),
-        view: this.__createLastChangeDate(),
-        action: null
-      }, {
-        label: this.tr("Access Rights"),
-        view: this.__createAccessRights(),
-        action: {
-          button: osparc.utils.Utils.getViewButton(),
-          callback: this.isOpenOptions() ? this.__openAccessRights : "openAccessRights",
-          ctx: this
+      const extraInfo = {
+        "AUTHOR": {
+          label: this.tr("AUTHOR"),
+          view: this.__createOwner(),
+          action: null
+        },
+        "ACCESS_RIGHTS": {
+          label: this.tr("ACCESS RIGHTS"),
+          view: this.__createAccessRights(),
+          action: {
+            button: osparc.utils.Utils.getViewButton(),
+            callback: this.isOpenOptions() ? this.__openAccessRights : "openAccessRights",
+            ctx: this
+          }
+        },
+        "CREATED": {
+          label: this.tr("CREATED"),
+          view: this.__createCreationDate(),
+          action: null
+        },
+        "MODIFIED": {
+          label: this.tr("MODIFIED"),
+          view: this.__createLastChangeDate(),
+          action: null
+        },
+        "TAGS": {
+          label: this.tr("TAGS"),
+          view: this.__createTags(),
+          action: {
+            button: osparc.utils.Utils.getViewButton(),
+            callback: this.isOpenOptions() ? this.__openTagsEditor : "openTags",
+            ctx: this
+          }
         }
-      }];
+      };
 
       if (
         osparc.product.Utils.showQuality() &&
         this.getStudy().getQuality() &&
         osparc.component.metadata.Quality.isEnabled(this.getStudy().getQuality())
       ) {
-        extraInfo.push({
-          label: this.tr("Quality"),
+        extraInfo["QUALITY"] = {
+          label: this.tr("QUALITY"),
           view: this.__createQuality(),
           action: {
             button: osparc.utils.Utils.getViewButton(),
             callback: this.isOpenOptions() ? this.__openQuality : "openQuality",
             ctx: this
           }
-        });
+        };
       }
 
       if (osparc.product.Utils.showClassifiers()) {
-        extraInfo.push({
-          label: this.tr("Classifiers"),
+        extraInfo["CLASSIFIERS"] = {
+          label: this.tr("CLASSIFIERS"),
           view: this.__createClassifiers(),
           action: (this.getStudy().getClassifiers().length || this.__canIWrite()) ? {
             button: osparc.utils.Utils.getViewButton(),
             callback: this.isOpenOptions() ? this.__openClassifiers : "openClassifiers",
             ctx: this
           } : null
-        });
+        };
       }
 
+      /*
       extraInfo.splice(0, 0, {
         label: osparc.utils.Utils.capitalize(osparc.product.Utils.getStudyAlias()) + " ID",
         view: this.__createStudyId(),
@@ -206,15 +224,13 @@ qx.Class.define("osparc.info.StudyLarge", {
           ctx: this
         }
       });
+      */
 
       return extraInfo;
     },
 
     __createExtraInfo: function(extraInfo) {
-      const moreInfo = osparc.info.StudyUtils.createExtraInfo(extraInfo).set({
-        width: osparc.info.CardLarge.EXTRA_INFO_WIDTH
-      });
-
+      const moreInfo = osparc.info.StudyUtils.createExtraInfo(extraInfo);
       return moreInfo;
     },
 

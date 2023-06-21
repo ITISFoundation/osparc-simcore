@@ -167,9 +167,7 @@ qx.Class.define("osparc.info.StudyUtils", {
           tsrLayout.exclude();
         }
       };
-      study.addListener("changeQuality", () => {
-        addStars(study);
-      }, this);
+      study.addListener("changeQuality", () => addStars(study), this);
       addStars(study);
       return tsrLayout;
     },
@@ -217,7 +215,7 @@ qx.Class.define("osparc.info.StudyUtils", {
         alignY: "middle"
       }));
 
-      const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Description")).set({
+      const label = new qx.ui.basic.Label(qx.locale.Manager.tr("DESCRIPTION")).set({
         font: "text-13"
       });
       descriptionLayout.add(label);
@@ -263,18 +261,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       * @param study {osparc.data.model.Study} Study Model
       */
     createTags: function(study) {
-      const tagsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
-        alignY: "middle"
-      }));
-
-      const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Tags")).set({
-        font: "text-13"
-      });
-      tagsLayout.add(label);
-
       const tagsContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      tagsContainer.setMarginTop(5);
-      tagsLayout.add(tagsContainer);
 
       const addTags = model => {
         tagsContainer.removeAll();
@@ -289,48 +276,82 @@ qx.Class.define("osparc.info.StudyUtils", {
       study.addListener("changeTags", () => addTags(study), this);
       addTags(study);
 
-      return tagsLayout;
+      return tagsContainer;
     },
 
     createExtraInfo: function(extraInfos) {
-      const grid = new qx.ui.layout.Grid(8, 5);
-      grid.setColumnAlign(0, "right", "middle");
+      const positions = {
+        ACCESS_RIGHTS: {
+          column: 0,
+          row: 0
+        },
+        AUTHOR: {
+          column: 1,
+          row: 0
+        },
+        CREATED: {
+          column: 2,
+          row: 0
+        },
+        MODIFIED: {
+          column: 3,
+          row: 0
+        },
+        TAGS: {
+          column: 0,
+          row: 3,
+          colSpan: 2
+        },
+        QUALITY: {
+          column: 2,
+          row: 3
+        },
+        CLASSIFIERS: {
+          column: 3,
+          row: 3
+        }
+      };
+
+      const grid = new qx.ui.layout.Grid(40, 5);
+      grid.setColumnAlign(0, "left", "middle");
       grid.setColumnAlign(1, "left", "middle");
-      const moreInfo = new qx.ui.container.Composite(grid).set({
-        allowGrowX: false,
-        alignX: "center",
-        alignY: "middle"
-      });
+      grid.setColumnAlign(2, "left", "middle");
+      grid.setColumnAlign(3, "left", "middle");
+      grid.setRowHeight(2, 10); // spacer
+      const moreInfo = new qx.ui.container.Composite(grid);
 
-      for (let i=0; i<extraInfos.length; i++) {
-        const extraInfo = extraInfos[i];
-        moreInfo.add(new qx.ui.basic.Label(extraInfo.label).set({
-          font: "text-13"
-        }), {
-          row: i,
-          column: 0
-        });
+      Object.keys(positions).forEach(key => {
+        if (key in extraInfos) {
+          const extraInfo = extraInfos[key];
+          const gridInfo = positions[key];
 
-        moreInfo.add(extraInfo.view, {
-          row: i,
-          column: 1
-        });
+          const titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+          const title = new qx.ui.basic.Label(extraInfo.label);
+          titleLayout.add(title);
+          if (extraInfo.action) {
+            titleLayout.add(extraInfo.action.button);
+            extraInfo.action.button.addListener("execute", () => {
+              const cb = extraInfo.action.callback;
+              if (typeof cb === "string") {
+                extraInfo.action.ctx.fireEvent(cb);
+              } else {
+                cb.call(extraInfo.action.ctx);
+              }
+            }, this);
+          }
+          moreInfo.add(titleLayout, {
+            row: gridInfo.row,
+            column: gridInfo.column,
+            colSpan: gridInfo.colSpan ? gridInfo.colSpan : 1
+          });
 
-        if (extraInfo.action) {
-          extraInfo.action.button.addListener("execute", () => {
-            const cb = extraInfo.action.callback;
-            if (typeof cb === "string") {
-              extraInfo.action.ctx.fireEvent(cb);
-            } else {
-              cb.call(extraInfo.action.ctx);
-            }
-          }, this);
-          moreInfo.add(extraInfo.action.button, {
-            row: i,
-            column: 2
+          moreInfo.add(extraInfo.view, {
+            row: gridInfo.row+1,
+            column: gridInfo.column,
+            colSpan: gridInfo.colSpan ? gridInfo.colSpan : 1
           });
         }
-      }
+      });
 
       return moreInfo;
     },
