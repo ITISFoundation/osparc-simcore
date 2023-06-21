@@ -177,7 +177,7 @@ async def list_viewers(request: Request):
         Viewer.create(request, viewer).dict()
         for viewer in await list_viewers_info(request.app, file_type=file_type)
     ]
-    return viewers
+    return envelope_json_response(viewers)
 
 
 @routes.get(f"/{API_VTAG}/viewers/default", name="list_default_viewers")
@@ -191,7 +191,7 @@ async def list_default_viewers(request: Request):
             request.app, file_type=file_type, only_default=True
         )
     ]
-    return viewers
+    return envelope_json_response(viewers)
 
 
 rest_handler_functions = {

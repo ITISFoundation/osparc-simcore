@@ -247,6 +247,7 @@ qx.Class.define("osparc.utils.Utils", {
     getCopyButton: function() {
       const button = new qx.ui.form.Button(null, "@FontAwesome5Solid/copy/12").set({
         allowGrowY: false,
+        toolTipText: qx.locale.Manager.tr("Copy to clipboard"),
         padding: 3,
         maxWidth: 20
       });
