@@ -16,6 +16,7 @@ from .dsm import get_dsm_provider
 from .models import (
     FileMetaData,
     FilesMetadataDatasetPathParams,
+    FilesMetadataDatasetQueryParams,
     LocationPathParams,
     StorageQueryParamsBase,
 )
@@ -49,7 +50,9 @@ async def get_datasets_metadata(request: web.Request) -> web.Response:
     name="get_files_metadata_dataset",
 )
 async def get_files_metadata_dataset(request: web.Request) -> web.Response:
-    query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
+    query_params = parse_request_query_parameters_as(
+        FilesMetadataDatasetQueryParams, request
+    )
     path_params = parse_request_path_parameters_as(
         FilesMetadataDatasetPathParams, request
     )

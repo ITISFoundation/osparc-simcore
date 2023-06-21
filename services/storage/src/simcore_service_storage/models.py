@@ -131,11 +131,14 @@ class MultiPartUploadLinks(BaseModel):
 
 class StorageQueryParamsBase(BaseModel):
     user_id: UserID
-    expand_dirs: bool = True
 
     class Config:
         allow_population_by_field_name = True
         extra = Extra.forbid
+
+
+class FilesMetadataDatasetQueryParams(StorageQueryParamsBase):
+    expand_dirs: bool = True
 
 
 class FilesMetadataQueryParams(StorageQueryParamsBase):
