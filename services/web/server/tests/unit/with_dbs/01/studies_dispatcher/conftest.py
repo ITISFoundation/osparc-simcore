@@ -28,7 +28,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
             "WEBSERVER_DIRECTOR": "null",
             "WEBSERVER_EXPORTER": "null",
             "WEBSERVER_GROUPS": "1",
-            "WEBSERVER_META_MODELING": "null",
+            "WEBSERVER_META_MODELING": "0",
             "WEBSERVER_PRODUCTS": "1",
             "WEBSERVER_PUBLICATIONS": "0",
             "WEBSERVER_RABBITMQ": "null",

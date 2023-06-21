@@ -31,7 +31,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
             "WEBSERVER_EXPORTER": "null",
             "WEBSERVER_GARBAGE_COLLECTOR": "null",
             "WEBSERVER_GROUPS": "0",
-            "WEBSERVER_META_MODELING": "null",
+            "WEBSERVER_META_MODELING": "0",
             "WEBSERVER_NOTIFICATIONS": "0",
             "WEBSERVER_PROJECTS": "null",
             "WEBSERVER_PUBLICATIONS": "0",

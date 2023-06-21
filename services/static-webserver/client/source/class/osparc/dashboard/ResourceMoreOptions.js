@@ -26,7 +26,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     this._setLayout(new qx.ui.layout.VBox(10));
 
     this.__addToolbar();
-    this.__addDetailsView();
+    this.__addTabPagesView();
   },
 
   events: {
@@ -64,12 +64,16 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       osparc.utils.Utils.centerTabIcon(tabPage);
 
       // Page title
-      tabPage.add(new qx.ui.basic.Label(title).set({
-        font: "text-15"
-      }));
+      if (title) {
+        tabPage.add(new qx.ui.basic.Label(title).set({
+          font: "text-15"
+        }));
+      }
 
       // Page content
-      tabPage.add(widget, {
+      const scrollContainer = new qx.ui.container.Scroll();
+      scrollContainer.add(widget);
+      tabPage.add(scrollContainer, {
         flex: 1
       });
 
@@ -89,7 +93,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
   members: {
     __resourceData: null,
     __toolbar: null,
-    __detailsView: null,
+    __tabsView: null,
     __dataPage: null,
     __permissionsPage: null,
     __tagsPage: null,
@@ -155,8 +159,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       this._add(toolbar);
     },
 
-    __addDetailsView: function() {
-      const detailsView = this.__detailsView = new qx.ui.tabview.TabView().set({
+    __addTabPagesView: function() {
+      const detailsView = this.__tabsView = new qx.ui.tabview.TabView().set({
         barPosition: "left",
         contentPadding: 0
       });
@@ -169,7 +173,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
     __openPage: function(page) {
       if (page) {
-        this.__detailsView.setSelection([page]);
+        this.__tabsView.setSelection([page]);
       }
     },
 
@@ -244,7 +248,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __addPages: function() {
-      const detailsView = this.__detailsView;
+      const detailsView = this.__tabsView;
 
       // keep selected page
       const selection = detailsView.getSelection();
@@ -259,7 +263,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       // add Open service button
       [
         this.__getInfoPage,
-        this.__getPreviewPage,
+        this.__getCommentsPage,
         this.__getDataPage,
         this.__getPermissionsPage,
         this.__getTagsPage,
@@ -287,7 +291,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
     __getInfoPage: function() {
       const id = "Information";
-      const title = this.tr("Information");
+      const title = "";
       const icon = "@FontAwesome5Solid/info";
       const resourceData = this.__resourceData;
       const infoCard = osparc.utils.Resources.isService(resourceData) ? new osparc.info.ServiceLarge(resourceData, null, false) : new osparc.info.StudyLarge(resourceData, false);
@@ -322,18 +326,27 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       return page;
     },
 
-    __getPreviewPage: function() {
-      if (!osparc.product.Utils.showStudyPreview()) {
+    __getCommentsPage: function() {
+      const resourceData = this.__resourceData;
+      if (osparc.utils.Resources.isService(resourceData)) {
         return null;
       }
 
-      const id = "Preview";
-      const title = this.tr("Preview");
-      const icon = "@FontAwesome5Solid/search-plus";
-      const resourceData = this.__resourceData;
-      const studyThumbnailExplorer = new osparc.dashboard.StudyThumbnailExplorer(resourceData);
+      const id = "Comments";
+      const title = this.tr("Comments");
+      const icon = "@FontAwesome5Solid/comments";
 
-      const page = this.self().createPage(title, studyThumbnailExplorer, icon, id);
+      const commentsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      const commentsList = new osparc.info.CommentsList(resourceData["uuid"]);
+      commentsLayout.add(commentsList);
+      if (osparc.data.model.Study.canIWrite(resourceData["accessRights"])) {
+        const addComment = new osparc.info.CommentAdd(resourceData["uuid"]);
+        addComment.setPaddingLeft(10);
+        addComment.addListener("commentAdded", () => commentsList.fetchComments());
+        commentsLayout.add(addComment);
+      }
+
+      const page = this.self().createPage(title, commentsLayout, icon, id);
       return page;
     },
 
