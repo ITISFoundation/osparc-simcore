@@ -568,11 +568,7 @@ qx.Class.define("osparc.store.Store", {
         if (uid) {
           this.getVisibleMembers()
             .then(visibleMembers => {
-              let user = null;
-              if (uid in visibleMembers) {
-                user = visibleMembers[uid];
-              }
-              resolve(user);
+              resolve(Object.values(visibleMembers).find(member => member.id === uid));
             })
             .catch(() => resolve(null));
         } else {

@@ -102,20 +102,20 @@ qx.Class.define("osparc.info.CommentUI", {
       const userName = this.getChildControl("user-name");
       userName.setValue("Unknown");
 
-      const date = new Date(this.__comment["updated_at"]);
+      const date = new Date(this.__comment["modified"]);
       const date2 = osparc.utils.Utils.formatDateAndTime(date);
       const lastUpdate = this.getChildControl("last-updated");
       lastUpdate.setValue(date2);
 
       const commentContent = this.getChildControl("comment-content");
-      commentContent.setValue(this.__comment["content"]);
+      commentContent.setValue(this.__comment["contents"]);
 
       osparc.store.Store.getInstance().getUser(this.__comment["user_id"])
         .then(user => {
           if (user) {
             const userSource = osparc.utils.Avatar.getUrl(user["login"], 32);
             thumbnail.setSource(userSource);
-            userName.setValue(user["first_name"]);
+            userName.setValue(user["label"]);
           }
         });
     }
