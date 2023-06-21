@@ -5533,7 +5533,7 @@ paths:
                       - comment_id
                       - project_uuid
                       - user_id
-                      - content
+                      - contents
                       - created
                       - modified
                     type: object
@@ -5555,10 +5555,10 @@ paths:
                         type: integer
                         description: user reference for this table
                         minimum: 0
-                      content:
-                        title: Content
+                      contents:
+                        title: Contents
                         type: string
-                        description: Content of the comment
+                        description: Contents of the comment
                       created:
                         title: Created
                         type: string
@@ -5780,7 +5780,7 @@ paths:
                         title: Screenshots
                         type: array
                         items:
-                          title: _NodeScreenshot
+                          title: NodeScreenshot
                           required:
                             - thumbnail_url
                             - file_url
@@ -5801,7 +5801,7 @@ paths:
                             mimetype:
                               title: Mimetype
                               type: string
-                              description: 'File''s media type. SEE https://www.iana.org/assignments/media-types/media-types.xhtml'
+                              description: 'File''s media type or None if unknown. SEE https://www.iana.org/assignments/media-types/media-types.xhtml'
                               example: image/jpeg
                   error:
                     title: Error
@@ -5828,7 +5828,7 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[dict[uuid.UUID, simcore_service_webserver.projects._handlers_project_ports.ProjectInputGet]]'
+                title: 'Envelope[dict[uuid.UUID, simcore_service_webserver.projects._ports_handlers.ProjectInputGet]]'
                 type: object
                 properties:
                   data:
@@ -5919,7 +5919,7 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[dict[uuid.UUID, simcore_service_webserver.projects._handlers_project_ports.ProjectOutputGet]]'
+                title: 'Envelope[dict[uuid.UUID, simcore_service_webserver.projects._ports_handlers.ProjectOutputGet]]'
                 type: object
                 properties:
                   data:
@@ -5967,7 +5967,7 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[list[simcore_service_webserver.projects._handlers_project_ports.ProjectMetadataPortGet]]'
+                title: 'Envelope[list[simcore_service_webserver.projects._ports_handlers.ProjectMetadataPortGet]]'
                 type: object
                 properties:
                   data:
