@@ -63,7 +63,19 @@ qx.Class.define("osparc.info.StudyLarge", {
 
       const title = this.__createTitle();
       const titleLayout = this.__createViewWithEdit(title, this.__openTitleEditor);
-      this._add(titleLayout);
+      const button = new qx.ui.form.Button(null, "@FontAwesome5Solid/copy/12").set({
+        label: osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + " Id",
+        toolTipText: "Copy " + osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + " Id"
+      });
+      button.addListener("execute", () => osparc.utils.Utils.copyTextToClipboard(this.getStudy().getUuid()));
+
+      const titleAndCopyLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      titleAndCopyLayout.add(titleLayout);
+      titleAndCopyLayout.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+      titleAndCopyLayout.add(button);
+      this._add(titleAndCopyLayout);
 
       if (osparc.product.Utils.showStudyPreview()) {
         const studyThumbnailExplorer = new osparc.dashboard.StudyThumbnailExplorer(this.getStudy().serialize());
@@ -214,18 +226,6 @@ qx.Class.define("osparc.info.StudyLarge", {
         };
       }
 
-      /*
-      extraInfo.splice(0, 0, {
-        label: osparc.utils.Utils.capitalize(osparc.product.Utils.getStudyAlias()) + " ID",
-        view: this.__createStudyId(),
-        action: {
-          button: osparc.utils.Utils.getCopyButton(),
-          callback: this.__copyUuidToClipboard,
-          ctx: this
-        }
-      });
-      */
-
       return extraInfo;
     },
 
@@ -298,10 +298,6 @@ qx.Class.define("osparc.info.StudyLarge", {
       }, this);
       titleEditor.center();
       titleEditor.open();
-    },
-
-    __copyUuidToClipboard: function() {
-      osparc.utils.Utils.copyTextToClipboard(this.getStudy().getUuid());
     },
 
     __openAccessRights: function() {
