@@ -143,7 +143,7 @@ qx.Class.define("osparc.info.StudyLarge", {
           view: this.__createDescription(),
           action: {
             button: osparc.utils.Utils.getEditButton(),
-            callback: this.isOpenOptions() ? this.__openTagsEditor : "openTags",
+            callback: this.__openDescriptionEditor,
             ctx: this
           }
         },
@@ -152,7 +152,7 @@ qx.Class.define("osparc.info.StudyLarge", {
           view: this.__createThumbnail(),
           action: {
             button: osparc.utils.Utils.getEditButton(),
-            callback: this.isOpenOptions() ? this.__openTagsEditor : "openTags",
+            callback: this.__openThumbnailEditor,
             ctx: this
           }
         }
