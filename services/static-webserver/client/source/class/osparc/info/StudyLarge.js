@@ -85,64 +85,6 @@ qx.Class.define("osparc.info.StudyLarge", {
       const extraInfo = this.__extraInfo();
       const extraInfoLayout = this.__createExtraInfo(extraInfo);
       this._add(extraInfoLayout);
-
-      /*
-      const bounds = this.getBounds();
-      const offset = 30;
-      let widgetWidth = bounds ? bounds.width - offset : 500 - offset;
-      let thumbnailWidth = widgetWidth - 2 * osparc.info.CardLarge.PADDING;
-      const maxThumbnailHeight = extraInfo.length*20;
-      const slim = widgetWidth < osparc.info.CardLarge.EXTRA_INFO_WIDTH + osparc.info.CardLarge.THUMBNAIL_MIN_WIDTH + 2 * osparc.info.CardLarge.PADDING - 20;
-      let hBox = null;
-      if (slim) {
-        this._add(extraInfoLayout);
-      } else {
-        hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
-          alignX: "center"
-        }));
-        hBox.add(extraInfoLayout);
-        thumbnailWidth -= osparc.info.CardLarge.EXTRA_INFO_WIDTH;
-      }
-      thumbnailWidth = Math.min(thumbnailWidth - 20, osparc.info.CardLarge.THUMBNAIL_MAX_WIDTH);
-      const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
-      const thumbnailLayout = this.__createViewWithEdit(thumbnail, this.__openThumbnailEditor);
-      thumbnailLayout.getLayout().set({
-        alignX: "center"
-      });
-      if (slim) {
-        this._add(thumbnailLayout);
-      } else {
-        hBox.add(thumbnailLayout, {
-          flex: 1
-        });
-        this._add(hBox);
-      }
-
-      if (osparc.product.Utils.showDisableServiceAutoStart() && this.__canIWrite()) {
-        const autoStart = this.__createDisableServiceAutoStart();
-        this._add(autoStart);
-      }
-
-      if (this.getStudy().getTags().length || this.__canIWrite()) {
-        const tags = this.__createTags();
-        const editInTitle = this.__createViewWithEdit(tags.getChildren()[0], null);
-        tags.addAt(editInTitle, 0);
-        if (this.__canIWrite()) {
-          const editButton = editInTitle.getChildren()[1];
-          editButton.setIcon("@FontAwesome5Solid/eye/12");
-          editButton.addListener("execute", () => this.fireEvent("openTags"), this);
-          osparc.utils.Utils.setIdToWidget(editButton, "editStudyEditTagsBtn");
-        }
-        this._add(tags);
-      }
-      */
-
-      if (this.getStudy().getDescription() || this.__canIWrite()) {
-        const description = this.__createDescription();
-        const editInTitle = this.__createViewWithEdit(description.getChildren()[0], this.__openDescriptionEditor);
-        description.addAt(editInTitle, 0);
-        this._add(description);
-      }
     },
 
     __createViewWithEdit: function(view, cb) {
