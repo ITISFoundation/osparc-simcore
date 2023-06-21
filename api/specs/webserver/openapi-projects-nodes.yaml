@@ -48,7 +48,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.projects._handlers_project_nodes._ProjectNodePreview__'
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.projects._nodes_handlers._ProjectNodePreview__'
   /projects/{project_id}/nodes/{node_id}/preview:
     get:
       tags:
@@ -97,8 +97,8 @@ components:
           $ref: '#/components/schemas/_ProjectNodePreview'
         error:
           title: Error
-    Envelope_list_simcore_service_webserver.projects._handlers_project_nodes._ProjectNodePreview__:
-      title: Envelope[list[simcore_service_webserver.projects._handlers_project_nodes._ProjectNodePreview]]
+    Envelope_list_simcore_service_webserver.projects._nodes_handlers._ProjectNodePreview__:
+      title: Envelope[list[simcore_service_webserver.projects._nodes_handlers._ProjectNodePreview]]
       type: object
       properties:
         data:

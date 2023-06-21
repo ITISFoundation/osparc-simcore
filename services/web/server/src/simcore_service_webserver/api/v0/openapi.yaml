@@ -5721,7 +5721,7 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[list[simcore_service_webserver.projects._handlers_project_nodes._ProjectNodePreview]]'
+                title: 'Envelope[list[simcore_service_webserver.projects._nodes_handlers._ProjectNodePreview]]'
                 type: object
                 properties:
                   data:
