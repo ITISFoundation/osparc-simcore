@@ -258,6 +258,12 @@ class FileUploadSchema(BaseModel):
     links: FileUploadLinks
 
 
+class TableSynchronisation(BaseModel):
+    dry_run: bool | None = None
+    fire_and_forget: bool | None = None
+    removed: list[str]
+
+
 # /locations/{location_id}/files/{file_id}:complete
 class UploadedPart(BaseModel):
     number: PositiveInt
