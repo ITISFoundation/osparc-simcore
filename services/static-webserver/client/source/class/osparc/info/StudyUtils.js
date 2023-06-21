@@ -227,9 +227,11 @@ qx.Class.define("osparc.info.StudyUtils", {
         maxHeight: maxHeight
       });
       if (study instanceof osparc.data.model.Study) {
-        study.bind("description", description, "value");
+        study.bind("description", description, "value", {
+          converter: desc => desc ? desc : "Add description"
+        });
       } else {
-        description.setValue(study["description"]);
+        description.setValue(study["description"] ? study["description"] : "Add description");
       }
       descriptionLayout.add(description);
 
@@ -276,14 +278,15 @@ qx.Class.define("osparc.info.StudyUtils", {
 
       const addTags = model => {
         tagsContainer.removeAll();
+        const noTagsLabel = new qx.ui.basic.Label(qx.locale.Manager.tr("Add tags"));
+        tagsContainer.add(noTagsLabel);
         osparc.store.Store.getInstance().getTags().filter(tag => model.getTags().includes(tag.id))
           .forEach(selectedTag => {
+            tagsContainer.remove(noTagsLabel);
             tagsContainer.add(new osparc.ui.basic.Tag(selectedTag.name, selectedTag.color));
           });
       };
-      study.addListener("changeTags", () => {
-        addTags(study);
-      }, this);
+      study.addListener("changeTags", () => addTags(study), this);
       addTags(study);
 
       return tagsLayout;
