@@ -257,15 +257,6 @@ paths:
   /projects/{project_id}/metadata/ports:
     $ref: "./openapi-projects-ports.yaml#/paths/~1projects~1{project_id}~1metadata~1ports"
 
-  /nodes/{nodeInstanceUUID}/outputUi/{outputKey}:
-    $ref: "./openapi-node-v0.0.1.yaml#/paths/~1nodes~1{nodeInstanceUUID}~1outputUi~1{outputKey}"
-
-  /nodes/{nodeInstanceUUID}/outputUi/{outputKey}/{apiCall}:
-    $ref: "./openapi-node-v0.0.1.yaml#/paths/~1nodes~1{nodeInstanceUUID}~1outputUi~1{outputKey}~1{apiCall}"
-
-  /nodes/{nodeInstanceUUID}/iframe:
-    $ref: "./openapi-node-v0.0.1.yaml#/paths/~1nodes~1{nodeInstanceUUID}~1iframe"
-
   /projects/{study_uuid}/tags/{tag_id}:
     $ref: "./openapi-projects.yaml#/paths/~1projects~1{study_uuid}~1tags~1{tag_id}"
 
