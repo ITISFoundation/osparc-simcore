@@ -270,41 +270,41 @@ qx.Class.define("osparc.info.StudyUtils", {
 
     createExtraInfo: function(extraInfos) {
       const positions = {
+        DESCRIPTION: {
+          column: 0,
+          row: 0,
+          colSpan: 3
+        },
+        THUMBNAIL: {
+          column: 3,
+          row: 0
+        },
         ACCESS_RIGHTS: {
           column: 0,
-          row: 0
+          row: 3
         },
         AUTHOR: {
           column: 1,
-          row: 0
+          row: 3
         },
         CREATED: {
           column: 2,
-          row: 0
+          row: 3
         },
         MODIFIED: {
           column: 3,
-          row: 0
+          row: 3
         },
         TAGS: {
-          column: 0,
-          row: 3,
-          colSpan: 2
-        },
-        QUALITY: {
-          column: 2,
-          row: 3
-        },
-        CLASSIFIERS: {
-          column: 3,
-          row: 3
-        },
-        DESCRIPTION: {
           column: 0,
           row: 6,
           colSpan: 2
         },
-        THUMBNAIL: {
+        QUALITY: {
+          column: 2,
+          row: 6
+        },
+        CLASSIFIERS: {
           column: 3,
           row: 6
         }
