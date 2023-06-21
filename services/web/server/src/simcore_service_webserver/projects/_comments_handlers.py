@@ -25,7 +25,7 @@ from .._meta import api_version_prefix as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import _api_project_comments, projects_api
+from . import _comments_api, projects_api
 from ._handlers_crud import RequestContext
 from .exceptions import ProjectNotFoundError
 
@@ -92,7 +92,7 @@ async def create_project_comment(request: web.Request):
         include_state=False,
     )
 
-    comment_id = await _api_project_comments.create_project_comment(
+    comment_id = await _comments_api.create_project_comment(
         request=request,
         project_uuid=path_params.project_uuid,
         user_id=req_ctx.user_id,
@@ -136,12 +136,12 @@ async def list_project_comments(request: web.Request):
         include_state=False,
     )
 
-    total_project_comments = await _api_project_comments.total_project_comments(
+    total_project_comments = await _comments_api.total_project_comments(
         request=request,
         project_uuid=path_params.project_uuid,
     )
 
-    project_comments = await _api_project_comments.list_project_comments(
+    project_comments = await _comments_api.list_project_comments(
         request=request,
         project_uuid=path_params.project_uuid,
         offset=query_params.offset,
@@ -184,7 +184,7 @@ async def update_project_comment(request: web.Request):
         include_state=False,
     )
 
-    return await _api_project_comments.update_project_comment(
+    return await _comments_api.update_project_comment(
         request=request,
         comment_id=path_params.comment_id,
         project_uuid=path_params.project_uuid,
@@ -213,7 +213,7 @@ async def delete_project_comment(request: web.Request):
         include_state=False,
     )
 
-    await _api_project_comments.delete_project_comment(
+    await _comments_api.delete_project_comment(
         request=request,
         comment_id=path_params.comment_id,
     )
@@ -241,7 +241,7 @@ async def get_project_comment(request: web.Request):
         include_state=False,
     )
 
-    return await _api_project_comments.get_project_comment(
+    return await _comments_api.get_project_comment(
         request=request,
         comment_id=path_params.comment_id,
     )

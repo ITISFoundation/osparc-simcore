@@ -25,7 +25,6 @@ from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import get_log_record_extra, log_context
 from simcore_postgres_database.errors import UniqueViolation
-from simcore_postgres_database.models.projects_comments import projects_comments
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.webserver_models import ProjectType, projects, users
 from sqlalchemy import desc, func, literal_column
@@ -35,6 +34,14 @@ from tenacity import AsyncRetrying, TryAgain, retry_if_exception_type
 
 from ..db.models import study_tags
 from ..utils import now_str
+from ._comments_db import (
+    create_project_comment,
+    delete_project_comment,
+    get_project_comment,
+    list_project_comments,
+    total_project_comments,
+    update_project_comment,
+)
 from ._db_utils import (
     ANY_USER_ID_SENTINEL,
     BaseProjectDB,
@@ -777,18 +784,7 @@ class ProjectDBAPI(BaseProjectDB):
         self, project_uuid: ProjectID, user_id: UserID, contents: str
     ) -> CommentID:
         async with self.engine.acquire() as conn:
-            project_comment_id: ResultProxy = await conn.execute(
-                projects_comments.insert()
-                .values(
-                    project_uuid=project_uuid,
-                    user_id=user_id,
-                    contents=contents,
-                    modified=func.now(),
-                )
-                .returning(projects_comments.c.comment_id)
-            )
-            result: tuple[PositiveInt] = await project_comment_id.first()
-            return parse_obj_as(CommentID, result[0])
+            return await create_project_comment(conn, project_uuid, user_id, contents)
 
     async def list_project_comments(
         self,
@@ -796,33 +792,15 @@ class ProjectDBAPI(BaseProjectDB):
         offset: PositiveInt,
         limit: int,
     ) -> list[ProjectsCommentsDB]:
-        result = []
         async with self.engine.acquire() as conn:
-            project_comment_result: ResultProxy = await conn.execute(
-                projects_comments.select()
-                .where(projects_comments.c.project_uuid == f"{project_uuid}")
-                .order_by(projects_comments.c.created.asc())
-                .offset(offset)
-                .limit(limit)
-            )
-            result = [
-                parse_obj_as(ProjectsCommentsDB, row)
-                for row in await project_comment_result.fetchall()
-            ]
-            return result
+            return await list_project_comments(conn, project_uuid, offset, limit)
 
     async def total_project_comments(
         self,
         project_uuid: ProjectID,
     ) -> PositiveInt:
         async with self.engine.acquire() as conn:
-            project_comment_result: ResultProxy = await conn.execute(
-                select(func.count())
-                .select_from(projects_comments)
-                .where(projects_comments.c.project_uuid == f"{project_uuid}")
-            )
-            result: tuple[PositiveInt] = await project_comment_result.first()
-            return result[0]
+            return await total_project_comments(conn, project_uuid)
 
     async def update_project_comment(
         self,
@@ -831,36 +809,17 @@ class ProjectDBAPI(BaseProjectDB):
         contents: str,
     ) -> ProjectsCommentsDB:
         async with self.engine.acquire() as conn:
-            project_comment_result = await conn.execute(
-                projects_comments.update()
-                .values(
-                    project_uuid=project_uuid,
-                    contents=contents,
-                    modified=func.now(),
-                )
-                .where(projects_comments.c.comment_id == comment_id)
-                .returning(literal_column("*"))
+            return await update_project_comment(
+                conn, comment_id, project_uuid, contents
             )
-            result = await project_comment_result.first()
-            return parse_obj_as(ProjectsCommentsDB, result)
 
     async def delete_project_comment(self, comment_id: CommentID) -> None:
         async with self.engine.acquire() as conn:
-            await conn.execute(
-                projects_comments.delete().where(
-                    projects_comments.c.comment_id == comment_id
-                )
-            )
+            return await delete_project_comment(conn, comment_id)
 
     async def get_project_comment(self, comment_id: CommentID) -> ProjectsCommentsDB:
         async with self.engine.acquire() as conn:
-            project_comment_result = await conn.execute(
-                projects_comments.select().where(
-                    projects_comments.c.comment_id == comment_id
-                )
-            )
-            result = await project_comment_result.first()
-            return parse_obj_as(ProjectsCommentsDB, result)
+            return await get_project_comment(conn, comment_id)
 
     #
     # Project HIDDEN column
