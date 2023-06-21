@@ -211,15 +211,6 @@ qx.Class.define("osparc.info.StudyUtils", {
       * @param maxHeight {Number} description's maxHeight
       */
     createDescription: function(study, maxHeight) {
-      const descriptionLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
-        alignY: "middle"
-      }));
-
-      const label = new qx.ui.basic.Label(qx.locale.Manager.tr("DESCRIPTION")).set({
-        font: "text-13"
-      });
-      descriptionLayout.add(label);
-
       const description = new osparc.ui.markdown.Markdown().set({
         noMargin: true,
         maxHeight: maxHeight
@@ -231,9 +222,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       } else {
         description.setValue(study["description"] ? study["description"] : "Add description");
       }
-      descriptionLayout.add(description);
-
-      return descriptionLayout;
+      return description;
     },
 
     /**
@@ -309,6 +298,15 @@ qx.Class.define("osparc.info.StudyUtils", {
         CLASSIFIERS: {
           column: 3,
           row: 3
+        },
+        DESCRIPTION: {
+          column: 0,
+          row: 6,
+          colSpan: 2
+        },
+        THUMBNAIL: {
+          column: 3,
+          row: 6
         }
       };
 
@@ -318,6 +316,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       grid.setColumnAlign(2, "left", "middle");
       grid.setColumnAlign(3, "left", "middle");
       grid.setRowHeight(2, 10); // spacer
+      grid.setRowHeight(5, 10); // spacer
       const moreInfo = new qx.ui.container.Composite(grid);
 
       Object.keys(positions).forEach(key => {

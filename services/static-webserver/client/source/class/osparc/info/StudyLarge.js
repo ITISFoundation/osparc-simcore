@@ -195,6 +195,24 @@ qx.Class.define("osparc.info.StudyLarge", {
             callback: this.isOpenOptions() ? this.__openTagsEditor : "openTags",
             ctx: this
           }
+        },
+        "DESCRIPTION": {
+          label: this.tr("DESCRIPTION"),
+          view: this.__createDescription(),
+          action: {
+            button: osparc.utils.Utils.getEditButton(),
+            callback: this.isOpenOptions() ? this.__openTagsEditor : "openTags",
+            ctx: this
+          }
+        },
+        "THUMBNAIL": {
+          label: this.tr("THUMBNAIL"),
+          view: this.__createThumbnail(),
+          action: {
+            button: osparc.utils.Utils.getEditButton(),
+            callback: this.isOpenOptions() ? this.__openTagsEditor : "openTags",
+            ctx: this
+          }
         }
       };
 
@@ -269,7 +287,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       return osparc.info.StudyUtils.createQuality(this.getStudy());
     },
 
-    __createThumbnail: function(maxWidth, maxHeight = 160) {
+    __createThumbnail: function(maxWidth = 160, maxHeight = 100) {
       return osparc.info.StudyUtils.createThumbnail(this.getStudy(), maxWidth, maxHeight);
     },
 
@@ -282,7 +300,7 @@ qx.Class.define("osparc.info.StudyLarge", {
     },
 
     __createDescription: function() {
-      const maxHeight = 400;
+      const maxHeight = 120;
       return osparc.info.StudyUtils.createDescription(this.getStudy(), maxHeight);
     },
 
