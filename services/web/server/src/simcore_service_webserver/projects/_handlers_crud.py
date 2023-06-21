@@ -41,7 +41,7 @@ from ..security.decorators import permission_required
 from ..users.api import get_user_name
 from . import _crud_create_utils, _crud_read_utils, projects_api
 from ._crud_read_utils import OrderDirection, ProjectListFilters, ProjectOrderBy
-from ._permalink import update_or_pop_permalink_in_project
+from ._permalink_api import update_or_pop_permalink_in_project
 from ._rest_schemas import (
     EmptyModel,
     ProjectCopyOverride,
