@@ -68,13 +68,18 @@ qx.Class.define("osparc.info.StudyLarge", {
         toolTipText: "Copy " + osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + " Id"
       });
       button.addListener("execute", () => osparc.utils.Utils.copyTextToClipboard(this.getStudy().getUuid()));
+      let autoStartButton = false;
+      if (osparc.product.Utils.showDisableServiceAutoStart() && this.__canIWrite()) {
+        autoStartButton = this.__createDisableServiceAutoStart();
+      }
 
-      const titleAndCopyLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      const titleAndCopyLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
       titleAndCopyLayout.add(titleLayout);
       titleAndCopyLayout.add(new qx.ui.core.Spacer(), {
         flex: 1
       });
       titleAndCopyLayout.add(button);
+      titleAndCopyLayout.add(autoStartButton);
       this._add(titleAndCopyLayout);
 
       if (osparc.product.Utils.showStudyPreview()) {
