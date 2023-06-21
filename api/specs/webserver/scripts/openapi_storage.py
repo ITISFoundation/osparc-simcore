@@ -62,7 +62,7 @@ async def synchronise_meta_data_table(
 
 
 @app.get(
-    "storage/locations/{location_id}/datasets",
+    "/storage/locations/{location_id}/datasets",
     response_model=Envelope[list[DatasetMetaData]],
     tags=TAGS,
     operation_id="get_datasets_metadata",

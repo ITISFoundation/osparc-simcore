@@ -61,7 +61,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_TableSynchronisation_'
-  storage/locations/{location_id}/datasets:
+  /storage/locations/{location_id}/datasets:
     get:
       tags:
       - storage
