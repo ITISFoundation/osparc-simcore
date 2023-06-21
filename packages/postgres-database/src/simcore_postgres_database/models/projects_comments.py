@@ -29,6 +29,7 @@ projects_comments = sa.Table(
         nullable=False,
         doc="project reference for this table",
     ),
+    # NOTE: if the user gets deleted, it sets to null which should be interpreted as "unknown" user
     sa.Column(
         "user_id",
         sa.BigInteger,
