@@ -3,13 +3,16 @@ import uuid
 from collections import deque
 from functools import lru_cache
 
+import sqlalchemy as sa
 from aiohttp import web
+from models_library.services import ServiceVersion
 from models_library.utils.pydantic_tools_extension import parse_obj_or_none
-from pydantic import ByteSize, ValidationError
+from pydantic import ByteSize, ValidationError, parse_obj_as
 from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.models.services_consume_filetypes import (
     services_consume_filetypes,
 )
+from sqlalchemy.dialects.postgresql import ARRAY, INTEGER
 
 from .._constants import APP_DB_ENGINE_KEY
 from ._errors import FileToLarge, IncompatibleService
@@ -39,21 +42,20 @@ async def list_viewers_info(
     consumers: deque = deque()
 
     async with app[APP_DB_ENGINE_KEY].acquire() as conn:
-
         # FIXME: ADD CONDITION: service MUST be shared with EVERYBODY!
-        stmt = services_consume_filetypes.select()
+        query = services_consume_filetypes.select()
         if file_type:
-            stmt = stmt.where(services_consume_filetypes.c.filetype == file_type)
+            query = query.where(services_consume_filetypes.c.filetype == file_type)
 
-        stmt = stmt.order_by("filetype", "preference_order")
+        query = query.order_by("filetype", "preference_order")
 
         if file_type and only_default:
-            stmt = stmt.limit(1)
+            query = query.limit(1)
 
-        _logger.debug("Listing viewers:\n%s", stmt)
+        _logger.debug("Listing viewers:\n%s", query)
 
         listed_filetype = set()
-        async for row in await conn.execute(stmt):
+        async for row in await conn.execute(query):
             try:
                 # TODO: filter in database (see test_list_default_compatible_services )
                 if only_default:
@@ -109,20 +111,35 @@ async def validate_requested_viewer(
 
     """
 
+    def _version(column_or_value):
+        # converts version value string to array[integer] that can be compared
+        return sa.func.string_to_array(column_or_value, ".").cast(ARRAY(INTEGER))
+
     if not service_key and not service_version:
         return await get_default_viewer(app, file_type, file_size)
 
     if service_key and service_version:
         async with app[APP_DB_ENGINE_KEY].acquire() as conn:
-            stmt = services_consume_filetypes.select().where(
-                (services_consume_filetypes.c.filetype == file_type)
-                & (services_consume_filetypes.c.service_key == service_key)
-                & (services_consume_filetypes.c.service_version == service_version)
+            query = (
+                services_consume_filetypes.select()
+                .where(
+                    (services_consume_filetypes.c.filetype == file_type)
+                    & (services_consume_filetypes.c.service_key == service_key)
+                    & (
+                        _version(services_consume_filetypes.c.service_version)
+                        <= _version(service_version)
+                    )
+                )
+                .order_by(_version(services_consume_filetypes.c.service_version).desc())
+                .limit(1)
             )
-            result = await conn.execute(stmt)
+
+            result = await conn.execute(query)
             row = await result.first()
             if row:
-                return ViewerInfo.create_from_db(row)
+                view = ViewerInfo.create_from_db(row)
+                view.version = parse_obj_as(ServiceVersion, service_version)
+                return view
 
     raise IncompatibleService(file_type=file_type)
 
