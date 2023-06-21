@@ -30,7 +30,7 @@ projects_comments = sa.Table(
     sa.Column(
         "user_id",
         sa.BigInteger,
-        doc="user reference for this table",
+        doc="user who created the comment",
     ),
     sa.Column(
         "contents",
