@@ -69,17 +69,22 @@ qx.Class.define("osparc.info.CommentsList", {
     },
 
     fetchComments: function(removeComments = true) {
+      const loadMoreButton = this.getChildControl("load-more-button");
+      loadMoreButton.show();
+      loadMoreButton.setFetching(true);
+
       if (removeComments) {
         this.getChildControl("comments-list").removeAll();
       }
-      const loadMoreButton = this.getChildControl("load-more-button");
-      loadMoreButton.setFetching(true);
 
       this.__getNextRequest()
         .then(resp => {
           const comments = resp["data"];
           this.__addComments(comments);
           this.__nextRequestParams = resp["_links"]["next"];
+          if (this.__nextRequestParams === null) {
+            loadMoreButton.exclude();
+          }
         })
         .finally(() => loadMoreButton.setFetching(false));
     },

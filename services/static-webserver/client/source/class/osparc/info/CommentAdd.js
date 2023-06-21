@@ -122,7 +122,7 @@ qx.Class.define("osparc.info.CommentAdd", {
           osparc.data.Resources.fetch("studyComments", "addComment", params)
             .then(() => {
               this.fireEvent("commentAdded");
-              commentField.getChildControl("text-area").resetValue();
+              commentField.getChildControl("text-area").setValue("");
             })
             .catch(err => {
               console.error(err);
