@@ -83,6 +83,9 @@ qx.Class.define("osparc.component.editor.TextEditor", {
           const writePage = new qx.ui.tabview.Page(this.tr("Write")).set({
             layout: new qx.ui.layout.VBox(5)
           });
+          writePage.getChildControl("button").getChildControl("label").set({
+            font: "text-13"
+          });
           writePage.add(control, {
             flex: 1
           });
@@ -103,6 +106,9 @@ qx.Class.define("osparc.component.editor.TextEditor", {
           const tabs = this.getChildControl("tabs");
           const previewPage = new qx.ui.tabview.Page(this.tr("Preview")).set({
             layout: new qx.ui.layout.VBox(5)
+          });
+          previewPage.getChildControl("button").getChildControl("label").set({
+            font: "text-13"
           });
           const scrollContainer = new qx.ui.container.Scroll();
           scrollContainer.add(control);
