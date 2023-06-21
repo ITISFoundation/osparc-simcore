@@ -15,9 +15,9 @@ from servicelib.aiohttp.rest_routing import (
 
 from .._constants import APP_OPENAPI_SPECS_KEY, APP_SETTINGS_KEY
 from . import (
+    _comments_handlers,
     _handlers,
     _handlers_crud,
-    _handlers_project_comments,
     _handlers_project_nodes,
     _handlers_project_ports,
     _handlers_project_tags,
@@ -71,7 +71,7 @@ def setup_projects(app: web.Application) -> bool:
     app.router.add_routes(_handlers.routes)
     app.router.add_routes(_handlers_crud.routes)
     app.router.add_routes(_handlers_project_ports.routes)
-    app.router.add_routes(_handlers_project_comments.routes)
+    app.router.add_routes(_comments_handlers.routes)
 
     app.router.add_routes(
         _create_routes(
