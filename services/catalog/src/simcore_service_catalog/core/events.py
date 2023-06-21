@@ -3,8 +3,9 @@ from typing import Callable
 
 from fastapi import FastAPI
 from models_library.basic_types import BootModeEnum
+from servicelib.db_async_engine import close_db_connection, connect_to_db
 
-from ..db.events import close_db_connection, connect_to_db, setup_default_product
+from ..db.events import setup_default_product
 from ..services.director import close_director, setup_director
 from ..services.remote_debug import setup_remote_debugging
 from .background_tasks import start_registry_sync_task, stop_registry_sync_task

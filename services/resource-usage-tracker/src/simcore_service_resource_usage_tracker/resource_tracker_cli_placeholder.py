@@ -11,9 +11,10 @@ from simcore_service_resource_usage_tracker.modules.prometheus import (
     get_prometheus_api_client,
 )
 
-# This script assumes everywhere that the minimum granularity of the data is 1 minute
-# Setting it smaller is unreasonable at least for prometheus, as the scraping interval is apprx. eq. to 1 h
-
+#####
+# This is just a placeholder script with original DevOps provided script, will be modified in upcoming PRs
+# Unit tests are already prepared and running.
+#####
 
 _logger = logging.getLogger(__name__)
 

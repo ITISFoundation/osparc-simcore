@@ -16,36 +16,37 @@ class ResourceTrackerRepository(BaseRepository):
     ) -> None:
         async with self.db_engine.begin() as conn:
             insert_stmt = pg_insert(resource_tracker_container).values(
-                id=data.container_id,
+                container_id=data.container_id,
                 image=data.image,
                 user_id=data.user_id,
                 product_name=data.product_name,
-                cpu_reservation=data.cpu_reservation,
-                ram_reservation=data.ram_reservation,
+                service_settings_reservation_nano_cpus=data.service_settings_reservation_nano_cpus,
+                service_settings_reservation_memory_bytes=data.service_settings_reservation_memory_bytes,
+                service_settings_reservation_additional_info=data.service_settings_reservation_additional_info,
                 container_cpu_usage_seconds_total=data.container_cpu_usage_seconds_total,
-                created_timestamp=data.created_timestamp.datetime,
-                last_prometheus_scraped_timestamp=data.last_prometheus_scraped_timestamp.datetime,
-                last_row_updated_timestamp=func.now(),
+                prometheus_created=data.prometheus_created.datetime,
+                prometheus_last_scraped=data.prometheus_last_scraped.datetime,
+                modified=func.now(),
             )
 
             on_update_stmt = insert_stmt.on_conflict_do_update(
                 index_elements=[
-                    resource_tracker_container.c.id,
+                    resource_tracker_container.c.container_id,
                 ],
                 set_={
                     "container_cpu_usage_seconds_total": func.greatest(
                         resource_tracker_container.c.container_cpu_usage_seconds_total,
                         insert_stmt.excluded.container_cpu_usage_seconds_total,
                     ),
-                    "created_timestamp": func.least(
-                        resource_tracker_container.c.created_timestamp,
-                        insert_stmt.excluded.created_timestamp,
+                    "prometheus_created": func.least(
+                        resource_tracker_container.c.prometheus_created,
+                        insert_stmt.excluded.prometheus_created,
                     ),
-                    "last_prometheus_scraped_timestamp": func.greatest(
-                        resource_tracker_container.c.last_prometheus_scraped_timestamp,
-                        insert_stmt.excluded.last_prometheus_scraped_timestamp,
+                    "prometheus_last_scraped": func.greatest(
+                        resource_tracker_container.c.prometheus_last_scraped,
+                        insert_stmt.excluded.prometheus_last_scraped,
                     ),
-                    "last_row_updated_timestamp": func.now(),
+                    "modified": func.now(),
                 },
             )
 

@@ -20,5 +20,4 @@ packaging
 prometheus_api_client
 typer[all]
 uvicorn[standard]
-aiopg[sa]
 orjson

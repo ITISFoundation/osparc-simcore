@@ -16,6 +16,15 @@ from .modules.db.repositories.resource_tracker import ResourceTrackerRepository
 _logger = logging.getLogger(__name__)
 
 
+# def get_nested_value(data: dict, keys: list[str]) -> int | None:
+#     nested_value: dict = data
+#     for key in keys:
+#         nested_value = nested_value.get(key, {})
+#         if not nested_value:
+#             return None
+#     return int(nested_value)
+
+
 async def _prometheus_client_custom_query(
     prometheus_client: PrometheusConnect, promql_cpu_query: str
 ) -> list[dict]:
@@ -37,7 +46,7 @@ async def _scrape_and_upload_container_resource_usage(
         prometheus_client, promql_cpu_query
     )
     _logger.info(
-        "Recieved %s containers from Prometheus", len(containers_cpu_seconds_usage)
+        "Received %s containers from Prometheus", len(containers_cpu_seconds_usage)
     )
 
     for item in containers_cpu_seconds_usage:
@@ -46,12 +55,20 @@ async def _scrape_and_upload_container_resource_usage(
         container_label_simcore_service_settings: list[dict[str, Any]] = json.loads(
             metric["container_label_simcore_service_settings"]
         )
-        cpu_reservation: int | None = None
-        ram_reservation: int | None = None
+        nano_cpus: int | None = None
+        memory_bytes: int | None = None
         for setting in container_label_simcore_service_settings:
             if setting.get("type") == "Resources":
-                cpu_reservation = int(setting["value"]["Reservations"]["NanoCPUs"])
-                ram_reservation = int(setting["value"]["Reservations"]["MemoryBytes"])
+                nano_cpus = (
+                    setting.get("value", {})
+                    .get("Reservations", {})
+                    .get("NanoCPUs", None)
+                )
+                memory_bytes = (
+                    setting.get("value", {})
+                    .get("Reservations", {})
+                    .get("MemoryBytes", None)
+                )
                 break
 
         # Prepare values
@@ -66,11 +83,16 @@ async def _scrape_and_upload_container_resource_usage(
             image=metric["image"],
             user_id=metric["container_label_user_id"],
             product_name=metric["container_label_product_name"],
-            cpu_reservation=cpu_reservation,
-            ram_reservation=ram_reservation,
+            service_settings_reservation_nano_cpus=int(nano_cpus)
+            if nano_cpus
+            else None,
+            service_settings_reservation_memory_bytes=int(memory_bytes)
+            if memory_bytes
+            else None,
+            service_settings_reservation_additional_info={},
             container_cpu_usage_seconds_total=last_value[1],
-            created_timestamp=arrow.get(first_value[0]),
-            last_prometheus_scraped_timestamp=arrow.get(last_value[0]),
+            prometheus_created=arrow.get(first_value[0]),
+            prometheus_last_scraped=arrow.get(last_value[0]),
         )
 
         await resource_tracker_repo.upsert_resource_tracker_container_data_(

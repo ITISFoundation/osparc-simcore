@@ -77,14 +77,14 @@ def random_promql_output_generator():
                 "container_label_product_name": "osparc",
                 "container_label_simcore_service_settings": '[{"name": "ports", "type": "int", "value": 8888}, {"name": "env", "type": "string", "value": ["DISPLAY=:0"]}, {"name": "env", "type": "string", "value": ["SYM_SERVER_HOSTNAME=sym-server_%service_uuid%"]}, {"name": "mount", "type": "object", "value": [{"ReadOnly": true, "Source": "/tmp/.X11-unix", "Target": "/tmp/.X11-unix", "Type": "bind"}]}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}, {"name": "Resources", "type": "Resources", "value": {"Limits": {"NanoCPUs": 4000000000, "MemoryBytes": 17179869184}, "Reservations": {"NanoCPUs": 100000000, "MemoryBytes": 536870912, "GenericResources": [{"DiscreteResourceSpec": {"Kind": "VRAM", "Value": 1}}]}}}]',
                 "container_label_simcore_user_agent": "puppeteer",
-                "container_label_study_id": "52d7e1a8-0c27-11ee-bec2-02420a0b0fc7",
+                "container_label_study_id": "52d7e1a8-0c27-11ee-bec2-024201234c7",
                 "container_label_user_id": "43820",
-                "container_label_uuid": "2b231c38-0ebc-5cc0-9030-1ffe573f54e9",
+                "container_label_uuid": "2b231c38-0ebc-5cc0-1234-1ffe573f54e9",
                 "id": "/docker/58e1138d51eb5eafd737024d0df0b01ef88f2087e5a3922565c59130d57ac7a3",
                 "image": "registry.osparc.io/simcore/services/dynamic/jupyter-smash:3.0.7",
                 "instance": "gpu1",
                 "job": "cadvisor",
-                "name": "dy-sidecar-2b231c38-0ebc-5cc0-9030-1ffe573f54e9-0-jupyter-smash",
+                "name": "dy-sidecar-2b231c38-0ebc-5cc0-1234-1ffe573f54e9-0-jupyter-smash",
             },
             "values": [
                 [smaller_timestamp, "0.157543565"],
@@ -135,13 +135,13 @@ async def test_collect_container_resource_usage_task(
     assert len(db_rows) == 1
 
     assert (
-        random_promql_output_generator["max_float"] == db_rows[0][6]
+        random_promql_output_generator["max_float"] == db_rows[0][7]
     )  # <-- container_cpu_usage_seconds_total
     assert (
         arrow.get(random_promql_output_generator["min_timestamp"]).datetime
-        == db_rows[0][7]
-    )  # <-- created_timestamp
+        == db_rows[0][8]
+    )  # <-- prometheus_created
     assert (
         arrow.get(random_promql_output_generator["max_timestamp"]).datetime
-        == db_rows[0][8]
-    )  # <-- last_prometheus_scraped_timestamp
+        == db_rows[0][9]
+    )  # <-- prometheus_last_scraped

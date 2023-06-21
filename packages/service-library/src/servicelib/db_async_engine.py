@@ -1,9 +1,6 @@
 import logging
-from typing import Any
 
-import orjson
 from fastapi import FastAPI
-from servicelib.retry_policies import PostgresRetryPolicyUponInitialization
 from settings_library.postgres import PostgresSettings
 from simcore_postgres_database.utils_aiosqlalchemy import (
     get_pg_engine_stateinfo,
@@ -12,11 +9,9 @@ from simcore_postgres_database.utils_aiosqlalchemy import (
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from tenacity import retry
 
+from .retry_policies import PostgresRetryPolicyUponInitialization
+
 logger = logging.getLogger(__name__)
-
-
-def json_serializer(o: Any) -> str:
-    return str(orjson.dumps(o), "utf-8")
 
 
 @retry(**PostgresRetryPolicyUponInitialization(logger).kwargs)

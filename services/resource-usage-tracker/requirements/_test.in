@@ -20,7 +20,6 @@ pytest
 pytest-asyncio
 pytest-cov
 pytest-mock
-pytest-docker
 pytest-runner
 pytest-sugar
 python-dotenv
