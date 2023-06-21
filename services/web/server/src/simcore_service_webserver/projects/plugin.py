@@ -19,8 +19,8 @@ from . import (
     _handlers,
     _handlers_crud,
     _handlers_project_nodes,
-    _handlers_project_ports,
     _handlers_project_tags,
+    _ports_handlers,
 )
 from ._observer import setup_project_observer_events
 from ._projects_access import setup_projects_access
@@ -70,8 +70,8 @@ def setup_projects(app: web.Application) -> bool:
 
     app.router.add_routes(_handlers.routes)
     app.router.add_routes(_handlers_crud.routes)
-    app.router.add_routes(_handlers_project_ports.routes)
     app.router.add_routes(_comments_handlers.routes)
+    app.router.add_routes(_ports_handlers.routes)
 
     app.router.add_routes(
         _create_routes(
