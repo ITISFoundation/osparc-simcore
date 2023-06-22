@@ -124,12 +124,6 @@ qx.Class.define("osparc.info.StudyMedium", {
       }, {
         label: this.tr("MODIFIED"),
         view: osparc.info.StudyUtils.createLastChangeDate(this.getStudy())
-      }, {
-        label: this.tr("TAGS"),
-        view: osparc.info.StudyUtils.createTags(this.getStudy())
-      }, {
-        label: this.tr("DESCRIPTION"),
-        view: osparc.info.StudyUtils.createDescription(this.getStudy(), 200)
       }];
 
       if (
@@ -146,6 +140,17 @@ qx.Class.define("osparc.info.StudyMedium", {
           }
         });
       }
+
+      extraInfo.push({
+        label: this.tr("TAGS"),
+        view: osparc.info.StudyUtils.createTags(this.getStudy())
+      });
+
+      extraInfo.push({
+        label: this.tr("DESCRIPTION"),
+        view: osparc.info.StudyUtils.createDescription(this.getStudy(), 200)
+      });
+
       return extraInfo;
     },
 
