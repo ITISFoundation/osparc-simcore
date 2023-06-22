@@ -66,10 +66,6 @@ class ListModel(GenericModel, Generic[DataT]):
         return len(self.__root__)
 
 
-class EnvelopeNoError(GenericModel, Generic[DataT]):
-    data: DataT | None = None
-
-
 class Envelope(GenericModel, Generic[DataT]):
     data: DataT | None = None
     error: Any | None = None
