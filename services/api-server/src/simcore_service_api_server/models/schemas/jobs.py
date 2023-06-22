@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import TypeAlias, Union
 from uuid import UUID, uuid4
 
+from models_library.projects_state import RunningState
 from pydantic import (
     BaseModel,
     ConstrainedInt,
@@ -13,8 +14,6 @@ from pydantic import (
     StrictInt,
     validator,
 )
-
-from models_library.projects_state import RunningState
 
 from ...models.config import BaseConfig
 from ...models.schemas.files import File
@@ -148,7 +147,7 @@ class Job(BaseModel):
         ..., description="Link to the solver's job (parent collection)"
     )
     outputs_url: HttpUrl | None = Field(
-        ..., description="Link to the job outputs (sub-collection"
+        ..., description="Link to the job outputs (sub-collection)"
     )
 
     class Config(BaseConfig):
@@ -159,9 +158,9 @@ class Job(BaseModel):
                 "runner_name": "solvers/isolve/releases/1.3.4",
                 "inputs_checksum": "12345",
                 "created_at": "2021-01-22T23:59:52.322176",
-                "url": "https://api.osparc.io/v0/jobs/f622946d-fd29-35b9-a193-abdd1095167c",
+                "url": "https://api.osparc.io/v0/solvers/isolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c",
                 "runner_url": "https://api.osparc.io/v0/solvers/isolve/releases/1.3.4",
-                "outputs_url": "https://api.osparc.io/v0/jobs/f622946d-fd29-35b9-a193-abdd1095167c/outputs",
+                "outputs_url": "https://api.osparc.io/v0/solvers/isolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c/outputs",
             }
         }
 
