@@ -14,10 +14,8 @@
 --requirement ../../../packages/service-library/requirements/_fastapi.in
 
 
-asyncpg # database
 fastapi
 packaging
 prometheus_api_client
 typer[all]
 uvicorn[standard]
-orjson

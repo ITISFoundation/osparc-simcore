@@ -50,9 +50,7 @@ async-timeout==4.0.2
     #   aiohttp
     #   redis
 asyncpg==0.27.0
-    # via
-    #   -r _base.in
-    #   sqlalchemy
+    # via sqlalchemy
 attrs==21.4.0
     # via
     #   -c ../../../packages/service-library/requirements/././constraints.txt
@@ -156,8 +154,6 @@ numpy==1.24.3
     #   matplotlib
     #   pandas
     #   prometheus-api-client
-orjson==3.9.1
-    # via -r _base.in
 packaging==23.1
     # via
     #   -r _base.in
