@@ -86,19 +86,21 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
     },
 
     __getNodesTree: function() {
-      const study = new osparc.data.model.Study(this.__studyData);
-      study.buildWorkbench();
       const nodesTree = new osparc.component.widget.NodesTree().set({
         hideRoot: false,
         simpleNodes: true
       });
+      const study = new osparc.data.model.Study(this.__studyData);
+      // Do not show the nodes tree if it's a mononode study
+      if (study.isPipelineMononode()) {
+        nodesTree.exclude();
+      }
       nodesTree.setStudy(study);
       return nodesTree;
     },
 
     __getThumbnailSuggestions: function() {
       const study = new osparc.data.model.Study(this.__studyData);
-      study.buildWorkbench();
       const thumbnailSuggestions = new osparc.component.editor.ThumbnailSuggestions().set({
         minHeight: this.self().THUMBNAIL_SLIDER_HEIGHT,
         maxHeight: this.self().THUMBNAIL_SLIDER_HEIGHT
@@ -153,7 +155,6 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
 
     __getWorkbenchUIPreview: function() {
       const study = new osparc.data.model.Study(this.__studyData);
-      study.buildWorkbench();
       // make nodes not movable
       study.setReadOnly(true);
       const workbenchUIPreview = new osparc.component.workbench.WorkbenchUIPreview();

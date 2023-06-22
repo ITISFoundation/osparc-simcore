@@ -171,7 +171,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       this.__reloadSnapshotsAndIterations();
 
-      study.buildWorkbench();
       study.openStudy()
         .then(() => {
           this.__lastSavedStudy = study.serialize();
