@@ -82,6 +82,13 @@ def _remove_named_groups(regex: str) -> str:
 
 
 def _patch_node_properties(key: str, node: dict):
+    # Validation for URL is broken in the context of the license entry
+    # this helps to bypass validation and then replace with the correct value
+    if key.startswith("__PLACEHOLDER___KEY_"):
+        new_key = key.replace("__PLACEHOLDER___KEY_", "")
+        node[new_key] = node[key]
+        node.pop(key)
+
     # SEE fastapi ISSUE: https://github.com/tiangolo/fastapi/issues/240 (test_openap.py::test_exclusive_min_openapi_issue )
     # SEE openapi-standard: https://swagger.io/docs/specification/data-models/data-types/#range
     if node_type := node.get("type"):
@@ -117,6 +124,9 @@ def _patch(node: Any):
             if key in _SKIP:
                 node.pop(key)
                 continue
+
+            if key == "PLACEHOLDER_URL":
+                print("OK")
             _patch_node_properties(key, node)
 
             # recursive
