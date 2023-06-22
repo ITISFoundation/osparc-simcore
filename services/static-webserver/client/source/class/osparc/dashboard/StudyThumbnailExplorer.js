@@ -86,12 +86,16 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
     },
 
     __getNodesTree: function() {
-      const study = new osparc.data.model.Study(this.__studyData);
-      study.buildWorkbench();
       const nodesTree = new osparc.component.widget.NodesTree().set({
         hideRoot: false,
         simpleNodes: true
       });
+      const study = new osparc.data.model.Study(this.__studyData);
+      study.buildWorkbench();
+      // Do not show the nodes tree if it's a mononode study
+      if (Object.values(this.getNodes()).length < 2) {
+        nodesTree.exclude();
+      }
       nodesTree.setStudy(study);
       return nodesTree;
     },
