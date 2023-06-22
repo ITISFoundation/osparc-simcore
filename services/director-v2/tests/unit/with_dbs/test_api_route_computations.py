@@ -301,6 +301,49 @@ async def test_start_computation(
         ),
     )
     assert response.status_code == status.HTTP_201_CREATED, response.text
+    mocked_get_service_resources = mocked_catalog_service_fcts["get_service_resources"]
+    # there should be as many calls to the catalog as there are no defined resources by default
+    assert mocked_get_service_resources.call_count == len(
+        fake_workbench_without_outputs
+    )
+
+
+async def test_start_computation_with_project_node_resources_defined(
+    minimal_configuration: None,
+    mocked_director_service_fcts,
+    mocked_catalog_service_fcts,
+    product_name: str,
+    fake_workbench_without_outputs: dict[str, Any],
+    registered_user: Callable[..., dict[str, Any]],
+    project: Callable[..., Awaitable[ProjectAtDB]],
+    async_client: httpx.AsyncClient,
+):
+    user = registered_user()
+    proj = await project(
+        user,
+        project_nodes_overrides={
+            "required_resources": ServiceResourcesDictHelpers.Config.schema_extra[
+                "examples"
+            ][0]
+        },
+        workbench=fake_workbench_without_outputs,
+    )
+    create_computation_url = httpx.URL("/v2/computations")
+    response = await async_client.post(
+        create_computation_url,
+        json=jsonable_encoder(
+            ComputationCreate(
+                user_id=user["id"],
+                project_id=proj.uuid,
+                start_pipeline=True,
+                product_name=product_name,
+            )
+        ),
+    )
+    assert response.status_code == status.HTTP_201_CREATED, response.text
+    mocked_get_service_resources = mocked_catalog_service_fcts["get_service_resources"]
+    # there should be no calls to the catalog as there are resources defined, so no need to call the catalog
+    assert mocked_get_service_resources.call_count == 0
 
 
 async def test_start_computation_with_deprecated_services_raises_406(

@@ -66,7 +66,12 @@ async def project(
 ) -> AsyncIterator[Callable[..., Awaitable[ProjectAtDB]]]:
     created_project_ids: list[str] = []
 
-    async def creator(user: dict[str, Any], **project_overrides) -> ProjectAtDB:
+    async def creator(
+        user: dict[str, Any],
+        *,
+        project_nodes_overrides: dict[str, Any] | None = None,
+        **project_overrides,
+    ) -> ProjectAtDB:
         project_uuid = uuid4()
         print(f"Created new project with uuid={project_uuid}")
         project_config = {
@@ -90,10 +95,13 @@ async def project(
             inserted_project = ProjectAtDB.from_orm(await result.first())
             project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
             # NOTE: currently no resources is passed until it becomes necessary
+            default_node_config = {"required_resources": {}}
+            if project_nodes_overrides:
+                default_node_config.update(project_nodes_overrides)
             await project_nodes_repo.add(
                 con,
                 nodes=[
-                    ProjectNodeCreate(node_id=NodeID(node_id))
+                    ProjectNodeCreate(node_id=NodeID(node_id), **default_node_config)
                     for node_id in inserted_project.workbench
                 ],
             )
