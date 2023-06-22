@@ -107,6 +107,15 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
       });
       thumbnailSuggestions.addWorkbenchUIPreviewToSuggestions();
       thumbnailSuggestions.setStudy(study);
+
+      const params = {
+        url: {
+          studyId: this.__studyData["uuid"]
+        }
+      };
+      osparc.data.Resources.fetch("studyPreviews", "getPreviews", params)
+        .then(previewsPerNodes => thumbnailSuggestions.addPreviewsToSuggestions(previewsPerNodes));
+
       return thumbnailSuggestions;
     },
 
@@ -128,11 +137,11 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
         const thumbnailData = e.getData();
         let control = null;
         switch (thumbnailData["type"]) {
-          case "image":
-            control = this.__getThumbnail(thumbnailData["source"]);
-            break;
           case "workbenchUIPreview":
             control = this.__getWorkbenchUIPreview();
+            break;
+          default:
+            control = this.__getThumbnail(thumbnailData["source"]);
             break;
         }
         if (control) {
@@ -174,16 +183,6 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
     __initComponents: function() {
       const scrollThumbnails = this.getChildControl("scroll-thumbnails");
       scrollThumbnails.setSelectedNodeId(null);
-
-      const params = {
-        url: {
-          studyId: this.__studyData["uuid"]
-        }
-      };
-      osparc.data.Resources.fetch("studyPreviews", "getPreviews", params)
-        .then(previews => {
-          console.log(previews);
-        });
 
       const workbenchUIPreview = this.__getWorkbenchUIPreview();
       const thumbnailViewerLayout = this.getChildControl("thumbnail-viewer-layout");

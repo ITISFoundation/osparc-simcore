@@ -76,8 +76,9 @@ qx.Class.define("osparc.component.editor.ThumbnailSuggestions", {
             this.__thumbnailsPerNode[nodeId] = [];
           }
           this.__thumbnailsPerNode[nodeId].push({
-            type: "image",
-            source: srvMetadata["thumbnail"]
+            type: "serviceImage",
+            thumbnailUrl: srvMetadata["thumbnail"],
+            fileUrl: srvMetadata["thumbnail"]
           });
         }
       });
@@ -87,10 +88,31 @@ qx.Class.define("osparc.component.editor.ThumbnailSuggestions", {
       // make it first in the list
       this.__thumbnailsPerNode["0000-workbenchUIPreview"] = [{
         type: "workbenchUIPreview",
-        source: osparc.product.Utils.getWorkbenhUIPreviewPath()
+        thumbnailUrl: osparc.product.Utils.getWorkbenhUIPreviewPath(),
+        fileUrl: osparc.product.Utils.getWorkbenhUIPreviewPath()
       }];
       const themeManager = qx.theme.manager.Meta.getInstance();
       themeManager.addListener("changeTheme", () => this.addWorkbenchUIPreviewToSuggestions());
+    },
+
+    addPreviewsToSuggestions: function(previewsPerNodes) {
+      previewsPerNodes.forEach(previewsPerNode => {
+        const nodeId = previewsPerNode["node_id"];
+        const previews = previewsPerNode["screenshots"];
+        if (previews && previews.length) {
+          if (!(nodeId in this.__thumbnailsPerNode)) {
+            this.__thumbnailsPerNode[nodeId] = [];
+          }
+          previews.forEach(preview => {
+            this.__thumbnailsPerNode[nodeId].push({
+              type: preview["mimetype"],
+              thumbnailUrl: preview["thumbnail_url"],
+              fileUrl: preview["file_url"]
+            });
+          });
+        }
+      });
+      this.setSelectedNodeId(null);
     },
 
     setSelectedNodeId: function(selectedNodeId) {
@@ -111,14 +133,14 @@ qx.Class.define("osparc.component.editor.ThumbnailSuggestions", {
       this.removeAll();
       suggestions.forEach(suggestion => {
         const maxHeight = this.getMaxHeight();
-        const thumbnail = new osparc.ui.basic.Thumbnail(suggestion.source, maxHeight, parseInt(maxHeight*2/3));
+        const thumbnail = new osparc.ui.basic.Thumbnail(suggestion.thumbnailUrl, maxHeight, parseInt(maxHeight*2/3));
         thumbnail.setMarginLeft(1); // give some extra space to the selection border
         thumbnail.addListener("tap", () => {
           this.getChildren().forEach(thumbnailImg => osparc.utils.Utils.removeBorder(thumbnailImg));
           osparc.utils.Utils.addBorder(thumbnail, 1, "#007fd4"); // Visual Studio blue
           this.fireDataEvent("thumbnailTapped", {
             type: suggestion.type,
-            source: suggestion.source
+            source: suggestion.fileUrl
           });
         }, this);
         this.add(thumbnail);
