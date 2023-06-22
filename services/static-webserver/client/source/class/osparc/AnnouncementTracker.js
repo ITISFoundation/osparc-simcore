@@ -42,11 +42,18 @@ qx.Class.define("osparc.AnnouncementTracker", {
       check: "String",
       init: null,
       nullable: true
+    },
+
+    link: {
+      check: "String",
+      init: null,
+      nullable: true
     }
   },
 
   members: {
     __loginAnnouncement: null,
+    __userMenuAnnouncement: null,
 
     startTracker: function() {
       if (osparc.product.Utils.isProduct("s4llite")) {
@@ -54,22 +61,38 @@ qx.Class.define("osparc.AnnouncementTracker", {
           start: "2023-06-22T15:00:00.000Z",
           end: "2023-11-01T02:00:00.000Z",
           title: "Student Competition 2023",
-          description: "For more information click <a href='https://zmt.swiss/news-and-events/news/sim4life/s4llite-student-competition-2023/'  style='color: white' target='_blank'>here</a>"
+          description: "For more information click <a href='https://zmt.swiss/news-and-events/news/sim4life/s4llite-student-competition-2023/' style='color: white' target='_blank'>here</a>",
+          link: "https://zmt.swiss/news-and-events/news/sim4life/s4llite-student-competition-2023/"
         };
         this.__setAnnouncement(announcementData);
       }
     },
 
     getLoginAnnouncement: function() {
-      const now = new Date();
-      if (
-        this.__loginAnnouncement &&
-        this.getStart() > now &&
-        now < this.getEnd()
-      ) {
+      if (this.__isValid() && this.__loginAnnouncement) {
         return this.__loginAnnouncement;
       }
       return null;
+    },
+
+    getUserMenuAnnouncement: function() {
+      if (this.__isValid() && this.__userMenuAnnouncement) {
+        return this.__userMenuAnnouncement;
+      }
+      return null;
+    },
+
+    __isValid: function() {
+      const now = new Date();
+      if (
+        this.getStart() &&
+        this.getEnd() &&
+        this.getStart() > now &&
+        now < this.getEnd()
+      ) {
+        return true;
+      }
+      return false;
     },
 
     __setAnnouncement: function(announcementData) {
@@ -77,6 +100,7 @@ qx.Class.define("osparc.AnnouncementTracker", {
       this.setEnd(announcementData && "end" in announcementData ? new Date(announcementData.end) : null);
       this.setTitle(announcementData && "title" in announcementData ? announcementData.title : null);
       this.setDescription(announcementData && "description" in announcementData ? announcementData.description : null);
+      this.setLink(announcementData && "link" in announcementData ? announcementData.link : null);
 
       this.__buildAnnouncementUIs();
     },
@@ -120,6 +144,11 @@ qx.Class.define("osparc.AnnouncementTracker", {
     },
 
     __buildUserMenuAnnouncement: function() {
+      const link = this.getLink();
+      if (link) {
+        const button = this.__userMenuAnnouncement = new qx.ui.menu.Button(this.getTitle() + "...");
+        button.addListener("execute", () => window.open(link));
+      }
     }
   }
 });
