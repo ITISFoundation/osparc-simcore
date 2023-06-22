@@ -18,8 +18,11 @@ from ..json_serialization import json_dumps
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 ModelClass = TypeVar("ModelClass", bound=BaseModel)
-ModelOrListType = TypeVar("ModelOrListType", bound=Union[BaseModel, list])
+ModelOrListOrDictType = TypeVar(
+    "ModelOrListOrDictType", bound=Union[BaseModel, list, dict]
+)
 UnionOfModelTypes: TypeAlias = Union[type[ModelClass], type[ModelClass]]
+
 
 @contextmanager
 def handle_validation_as_http_error(
@@ -38,7 +41,6 @@ def handle_validation_as_http_error(
     """
 
     try:
-
         yield
 
     except ValidationError as err:
@@ -160,11 +162,11 @@ def parse_request_query_parameters_as(
 
 
 async def parse_request_body_as(
-    model_schema_cls: type[ModelOrListType],
+    model_schema_cls: type[ModelOrListOrDictType],
     request: web.Request,
     *,
     use_enveloped_error_v1: bool = True,
-) -> ModelOrListType:
+) -> ModelOrListOrDictType:
     """Parses and validates request body against schema
 
     Keyword Arguments:
