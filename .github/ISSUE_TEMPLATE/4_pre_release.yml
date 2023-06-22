@@ -65,7 +65,7 @@ body:
       label: What Changed
       description: |
         List of commit messages in this release. Add a list of links to the corresponding PRs. This way we can trace the release of every single PR. TIP: use the autogenerate changelog feature during the draft release
-        (TIP: use regex replace for better visualization ``\*.+ by (@\w+) in (https:.*)`` -> ``* $2 by $1``).
+        (TIP: use regex replace for better visualization ``\*.+ by (@[\w-]+) in (https:.*)`` -> ``* $2 by $1``).
     validations:
       required: false
   - type: textarea

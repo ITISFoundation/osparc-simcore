@@ -23,7 +23,7 @@ from ..storage.api import (
 )
 from ..users.api import get_user_name
 from . import projects_api
-from ._permalink import update_or_pop_permalink_in_project
+from ._permalink_api import update_or_pop_permalink_in_project
 from ._rest_schemas import ProjectGet
 from .db import ProjectDBAPI
 from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError

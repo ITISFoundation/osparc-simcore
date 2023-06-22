@@ -48,7 +48,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.projects._handlers_project_nodes._ProjectNodePreview__'
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.projects._nodes_handlers._ProjectNodePreview__'
   /projects/{project_id}/nodes/{node_id}/preview:
     get:
       tags:
@@ -97,8 +97,8 @@ components:
           $ref: '#/components/schemas/_ProjectNodePreview'
         error:
           title: Error
-    Envelope_list_simcore_service_webserver.projects._handlers_project_nodes._ProjectNodePreview__:
-      title: Envelope[list[simcore_service_webserver.projects._handlers_project_nodes._ProjectNodePreview]]
+    Envelope_list_simcore_service_webserver.projects._nodes_handlers._ProjectNodePreview__:
+      title: Envelope[list[simcore_service_webserver.projects._nodes_handlers._ProjectNodePreview]]
       type: object
       properties:
         data:
@@ -108,27 +108,8 @@ components:
             $ref: '#/components/schemas/_ProjectNodePreview'
         error:
           title: Error
-    ServiceKeyVersion:
-      title: ServiceKeyVersion
-      required:
-      - key
-      - version
-      type: object
-      properties:
-        key:
-          title: Key
-          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
-          type: string
-          description: distinctive name for the node based on the docker registry
-            path
-        version:
-          title: Version
-          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
-          type: string
-          description: service version number
-      description: This pair uniquely identifies a services
-    _NodeScreenshot:
-      title: _NodeScreenshot
+    NodeScreenshot:
+      title: NodeScreenshot
       required:
       - thumbnail_url
       - file_url
@@ -149,8 +130,27 @@ components:
         mimetype:
           title: Mimetype
           type: string
-          description: File's media type. SEE https://www.iana.org/assignments/media-types/media-types.xhtml
+          description: File's media type or None if unknown. SEE https://www.iana.org/assignments/media-types/media-types.xhtml
           example: image/jpeg
+    ServiceKeyVersion:
+      title: ServiceKeyVersion
+      required:
+      - key
+      - version
+      type: object
+      properties:
+        key:
+          title: Key
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
+          description: distinctive name for the node based on the docker registry
+            path
+        version:
+          title: Version
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
+          description: service version number
+      description: This pair uniquely identifies a services
     _ProjectGroupAccess:
       title: _ProjectGroupAccess
       required:
@@ -190,4 +190,4 @@ components:
           title: Screenshots
           type: array
           items:
-            $ref: '#/components/schemas/_NodeScreenshot'
+            $ref: '#/components/schemas/NodeScreenshot'

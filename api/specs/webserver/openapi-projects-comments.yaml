@@ -195,7 +195,7 @@ components:
       - comment_id
       - project_uuid
       - user_id
-      - content
+      - contents
       - created
       - modified
       type: object
@@ -217,10 +217,10 @@ components:
           type: integer
           description: user reference for this table
           minimum: 0
-        content:
-          title: Content
+        contents:
+          title: Contents
           type: string
-          description: Content of the comment
+          description: Contents of the comment
         created:
           title: Created
           type: string
