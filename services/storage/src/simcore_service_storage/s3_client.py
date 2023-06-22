@@ -25,7 +25,7 @@ from types_aiobotocore_s3.type_defs import ObjectTypeDef, PaginatorConfigTypeDef
 from .models import ETag, MultiPartUploadLinks, S3BucketName, UploadID
 from .s3_utils import compute_num_file_chunks, s3_exception_handler
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 MAX_LIST_OBJECTS_V2_ITEMS: Final[NonNegativeInt] = 1000
 
@@ -110,28 +110,28 @@ class StorageS3Client:
 
         return cls(session, client, s3_max_concurrency)
 
-    @s3_exception_handler(log)
+    @s3_exception_handler(_logger)
     async def create_bucket(self, bucket: S3BucketName) -> None:
-        log.debug("Creating bucket: %s", bucket)
+        _logger.debug("Creating bucket: %s", bucket)
         try:
             await self.client.create_bucket(Bucket=bucket)
-            log.info("Bucket %s successfully created", bucket)
+            _logger.info("Bucket %s successfully created", bucket)
         except self.client.exceptions.BucketAlreadyOwnedByYou:
-            log.info(
+            _logger.info(
                 "Bucket %s already exists and is owned by us",
                 bucket,
             )
 
-    @s3_exception_handler(log)
+    @s3_exception_handler(_logger)
     async def check_bucket_connection(self, bucket: S3BucketName) -> None:
         """
         :raises: S3BucketInvalidError if not existing, not enough rights
         :raises: S3AccessError for any other error
         """
-        log.debug("Head bucket: %s", bucket)
+        _logger.debug("Head bucket: %s", bucket)
         await self.client.head_bucket(Bucket=bucket)
 
-    @s3_exception_handler(log)
+    @s3_exception_handler(_logger)
     async def create_single_presigned_download_link(
         self, bucket: S3BucketName, file_id: SimcoreS3FileID, expiration_secs: int
     ) -> AnyUrl:
@@ -146,7 +146,7 @@ class StorageS3Client:
         url: AnyUrl = parse_obj_as(AnyUrl, generated_link)
         return url
 
-    @s3_exception_handler(log)
+    @s3_exception_handler(_logger)
     async def create_single_presigned_upload_link(
         self, bucket: S3BucketName, file_id: SimcoreS3FileID, expiration_secs: int
     ) -> AnyUrl:
@@ -160,7 +160,7 @@ class StorageS3Client:
         url: AnyUrl = parse_obj_as(AnyUrl, generated_link)
         return url
 
-    @s3_exception_handler(log)
+    @s3_exception_handler(_logger)
     async def create_multipart_upload_links(
         self,
         bucket: S3BucketName,
@@ -192,7 +192,7 @@ class StorageS3Client:
                     )
                     for i in range(num_upload_links)
                 ],
-                log=log,
+                log=_logger,
                 max_concurrency=20,
             ),
         )
@@ -200,7 +200,7 @@ class StorageS3Client:
             upload_id=upload_id, chunk_size=chunk_size, urls=upload_links
         )
 
-    @s3_exception_handler(log)
+    @s3_exception_handler(_logger)
     async def list_ongoing_multipart_uploads(
         self,
         bucket: S3BucketName,
@@ -224,7 +224,7 @@ class StorageS3Client:
             for upload in response.get("Uploads", [])
         ]
 
-    @s3_exception_handler(log)
+    @s3_exception_handler(_logger)
     async def abort_multipart_upload(
         self, bucket: S3BucketName, file_id: SimcoreS3FileID, upload_id: UploadID
     ) -> None:
@@ -232,7 +232,7 @@ class StorageS3Client:
             Bucket=bucket, Key=file_id, UploadId=upload_id
         )
 
-    @s3_exception_handler(log)
+    @s3_exception_handler(_logger)
     async def complete_multipart_upload(
         self,
         bucket: S3BucketName,
@@ -253,11 +253,11 @@ class StorageS3Client:
         )
         return response["ETag"]
 
-    @s3_exception_handler(log)
+    @s3_exception_handler(_logger)
     async def delete_file(self, bucket: S3BucketName, file_id: SimcoreS3FileID) -> None:
         await self.client.delete_object(Bucket=bucket, Key=file_id)
 
-    @s3_exception_handler(log)
+    @s3_exception_handler(_logger)
     async def delete_files_in_path(self, bucket: S3BucketName, *, prefix: str) -> None:
         # NOTE: the / at the end of the Prefix is VERY important,
         # makes the listing several order of magnitudes faster
@@ -272,7 +272,7 @@ class StorageS3Client:
             ]
         )
 
-    @s3_exception_handler(log)
+    @s3_exception_handler(_logger)
     async def delete_files_in_project_node(
         self,
         bucket: S3BucketName,
@@ -293,7 +293,7 @@ class StorageS3Client:
                 Delete={"Objects": [{"Key": key} for key in objects_to_delete]},
             )
 
-    @s3_exception_handler(log)
+    @s3_exception_handler(_logger)
     async def get_file_metadata(
         self, bucket: S3BucketName, file_id: SimcoreS3FileID
     ) -> S3MetaData:
@@ -305,7 +305,7 @@ class StorageS3Client:
             size=response["ContentLength"],
         )
 
-    @s3_exception_handler(log)
+    @s3_exception_handler(_logger)
     async def copy_file(
         self,
         bucket: S3BucketName,
@@ -329,7 +329,7 @@ class StorageS3Client:
             copy_options |= dict(Callback=bytes_transfered_cb)
         await self.client.copy(**copy_options)
 
-    @s3_exception_handler(log)
+    @s3_exception_handler(_logger)
     async def list_files(
         self, bucket: S3BucketName, *, prefix: str
     ) -> list[S3MetaData]:
@@ -345,7 +345,7 @@ class StorageS3Client:
             if all(k in entry for k in ("Key", "LastModified", "ETag", "Size"))
         ]
 
-    @s3_exception_handler(log)
+    @s3_exception_handler(_logger)
     async def upload_file(
         self,
         bucket: S3BucketName,
