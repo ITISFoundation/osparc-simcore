@@ -43,5 +43,5 @@ def test_evaluate(
     app_environment: EnvVarsDict,
     mocked_prometheus_with_query: requests_mock.Mocker,
 ):
-    result = cli_runner.invoke(app, ["evaluate", "1234"])
+    result = cli_runner.invoke(app, ["evaluate", "43817"])
     assert result.exit_code == os.EX_OK, result.output
