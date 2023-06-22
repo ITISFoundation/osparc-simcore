@@ -1,7 +1,7 @@
 """adding resource tracker container table
 
 Revision ID: 6e91067932f2
-Revises: af5de00bf4cf
+Revises: 52cf00912ad9
 Create Date: 2023-06-21 14:12:40.292816+00:00
 
 """
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = "6e91067932f2"
-down_revision = "af5de00bf4cf"
+down_revision = "52cf00912ad9"
 branch_labels = None
 depends_on = None
 
