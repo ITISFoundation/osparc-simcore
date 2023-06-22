@@ -113,78 +113,14 @@ class ProjectDBAPI(BaseProjectDB):
         assert self._engine  # nosec
         return self._engine
 
-    #
-    # Project CRUDs
-    #
-
-    async def insert_project(
+    async def _insert_project_in_db(
         self,
-        project: dict[str, Any],
-        user_id: int | None,
-        *,
+        insert_values: ProjectDict,
+        force_project_uuid: bool,
         product_name: str,
-        force_project_uuid: bool = False,
-        force_as_template: bool = False,
-        hidden: bool = False,
+        project_tag_ids: list[int],
         project_nodes: dict[NodeID, ProjectNodeCreate] | None,
-    ) -> dict[str, Any]:
-        """Inserts a new project in the database
-
-        - A valid uuid is automaticaly assigned to the project except if force_project_uuid=False. In the latter case,
-        - passing project_nodes=None will auto-generate default ProjectNodeCreate, this should not be the preferred way, this is for backwards compatibility
-        invalid uuid will raise an exception.
-
-        :raises ProjectInvalidRightsError: assigning project to an unregistered user
-        :raises ValidationError
-        :return: inserted project
-        """
-
-        # NOTE: this is very bad and leads to very weird conversions.
-        # needs to be refactored!!! use arrow (https://github.com/ITISFoundation/osparc-simcore/issues/3797)
-        project.update(
-            {
-                "creationDate": now_str(),
-                "lastChangeDate": now_str(),
-            }
-        )
-
-        # NOTE: tags are removed in convert_to_db_names so we keep it
-        project_tags = parse_obj_as(list[int], project.get("tags", []).copy())
-        insert_values = convert_to_db_names(project)
-        insert_values.update(
-            {
-                "type": ProjectType.TEMPLATE.value
-                if (force_as_template or user_id is None)
-                else ProjectType.STANDARD.value,
-                "prj_owner": user_id if user_id else None,
-                "hidden": hidden,
-            }
-        )
-
-        # validate access_rights. are the gids valid? also ensure prj_owner is in there
-        if user_id:
-            async with self.engine.acquire() as conn:
-                primary_gid = await self._get_user_primary_group_gid(
-                    conn, user_id=user_id
-                )
-            insert_values.setdefault("access_rights", {})
-            insert_values["access_rights"].update(
-                create_project_access_rights(primary_gid, ProjectAccessRights.OWNER)
-            )
-
-        # ensure we have the minimal amount of data here
-        # All non-default in projects table
-        insert_values.setdefault("name", "New Study")
-        insert_values.setdefault("workbench", {})
-
-        # must be valid uuid
-        try:
-            uuidlib.UUID(str(insert_values.get("uuid")))
-        except ValueError:
-            if force_project_uuid:
-                raise
-            insert_values["uuid"] = f"{uuidlib.uuid1()}"
-
+    ) -> ProjectDict:
         # Atomic transaction to insert project and update relations
         #  - Retries insert if UUID collision
         def _reraise_if_not_unique_uuid_error(err: UniqueViolation):
@@ -204,21 +140,12 @@ class ProjectDBAPI(BaseProjectDB):
                                 projects.insert()
                                 .values(**insert_values)
                                 .returning(
-                                    projects.c.id,
-                                    # Parts of ProjectGet
-                                    projects.c.uuid,
-                                    projects.c.name,
-                                    projects.c.description,
-                                    projects.c.thumbnail,
-                                    projects.c.prj_owner,
-                                    projects.c.creation_date,
-                                    projects.c.last_change_date,
-                                    projects.c.workbench,
-                                    projects.c.access_rights,
-                                    projects.c.classifiers,
-                                    projects.c.ui,
-                                    projects.c.quality,
-                                    projects.c.dev,
+                                    *[
+                                        col
+                                        for col in projects.c
+                                        if col.name
+                                        not in ["type", "hidden", "published"]
+                                    ]
                                 )
                             )
                             row: RowProxy | None = await result.fetchone()
@@ -249,9 +176,9 @@ class ProjectDBAPI(BaseProjectDB):
                         await self._upsert_tags_in_project(
                             conn=conn,
                             project_index_id=project_index,
-                            project_tags=project_tags,
+                            project_tags=project_tag_ids,
                         )
-                        selected_values["tags"] = project_tags
+                        selected_values["tags"] = project_tag_ids
 
                         # NOTE: this will at some point completely replace workbench in the DB
                         if selected_values["workbench"]:
@@ -276,13 +203,86 @@ class ProjectDBAPI(BaseProjectDB):
                                 for node_id in selected_values["workbench"]
                             ]
                             await project_nodes_repo.add(conn, nodes=nodes)
+        return selected_values
 
+    async def insert_project(
+        self,
+        project: dict[str, Any],
+        user_id: int | None,
+        *,
+        product_name: str,
+        force_project_uuid: bool = False,
+        force_as_template: bool = False,
+        hidden: bool = False,
+        project_nodes: dict[NodeID, ProjectNodeCreate] | None,
+    ) -> dict[str, Any]:
+        """Inserts a new project in the database
+
+        - A valid uuid is automaticaly assigned to the project except if force_project_uuid=False. In the latter case,
+        - passing project_nodes=None will auto-generate default ProjectNodeCreate, this should not be the preferred way, this is for backwards compatibility
+        invalid uuid will raise an exception.
+
+        :raises ProjectInvalidRightsError: assigning project to an unregistered user
+        :raises ValidationError
+        :return: inserted project
+        """
+
+        # NOTE: tags are removed in convert_to_db_names so we keep it
+        project_tag_ids = parse_obj_as(list[int], project.get("tags", []).copy())
+        insert_values = convert_to_db_names(project)
+        insert_values.update(
+            {
+                "type": ProjectType.TEMPLATE.value
+                if (force_as_template or user_id is None)
+                else ProjectType.STANDARD.value,
+                "prj_owner": user_id if user_id else None,
+                "hidden": hidden,
+                # NOTE: this is very bad and leads to very weird conversions.
+                # needs to be refactored!!! use arrow (https://github.com/ITISFoundation/osparc-simcore/issues/3797)
+                "creation_date": now_str(),
+                "last_change_date": now_str(),
+            }
+        )
+
+        # validate access_rights. are the gids valid? also ensure prj_owner is in there
+        if user_id:
+            async with self.engine.acquire() as conn:
+                primary_gid = await self._get_user_primary_group_gid(
+                    conn, user_id=user_id
+                )
+            insert_values.setdefault("access_rights", {})
+            insert_values["access_rights"].update(
+                create_project_access_rights(primary_gid, ProjectAccessRights.OWNER)
+            )
+
+        # ensure we have the minimal amount of data here
+        # All non-default in projects table
+        insert_values.setdefault("name", "New Study")
+        insert_values.setdefault("workbench", {})
+
+        # must be valid uuid
+        try:
+            uuidlib.UUID(str(insert_values.get("uuid")))
+        except ValueError:
+            if force_project_uuid:
+                raise
+            insert_values["uuid"] = f"{uuidlib.uuid1()}"
+
+        inserted_project = await self._insert_project_in_db(
+            insert_values,
+            force_project_uuid=force_project_uuid,
+            product_name=product_name,
+            project_tag_ids=project_tag_ids,
+            project_nodes=project_nodes,
+        )
+
+        async with self.engine.acquire() as conn:
             # Returns created project with names as in the project schema
             user_email = await self._get_user_email(conn, user_id)
 
-            # Convert to dict parsable by ProjectGet model
-            project_get = convert_to_schema_names(selected_values, user_email)
-            return project_get
+        # Convert to dict parsable by ProjectGet model
+        project_get = convert_to_schema_names(inserted_project, user_email)
+        return project_get
 
     async def upsert_project_linked_product(
         self,
