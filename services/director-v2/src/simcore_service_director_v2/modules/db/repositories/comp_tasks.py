@@ -98,6 +98,36 @@ async def _get_node_infos(
     return result
 
 
+async def _generate_task_image(
+    catalog_client: CatalogClient,
+    connection: aiopg.sa.connection.SAConnection,
+    user_id: UserID,
+    project_uuid: ProjectID,
+    node_id: NodeID,
+    node: Node,
+    node_extras: ServiceExtras | None,
+) -> Image:
+    # aggregates node_details and node_extras into Image
+    data: dict[str, Any] = {
+        "name": node.key,
+        "tag": node.version,
+    }
+    project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
+    project_node = await project_nodes_repo.get(connection, node_id=node_id)
+    node_resources = parse_obj_as(ServiceResources, project_node.required_resources)
+    if not node_resources:
+        node_resources = await catalog_client.get_service_resources(
+            user_id, node.key, node.version
+        )
+
+    if node_resources:
+        data.update(node_requirements=_compute_node_requirements(node_resources))
+        data["boot_mode"] = _compute_node_boot_mode(node_resources)
+    if node_extras and node_extras.container_spec:
+        data.update(command=node_extras.container_spec.command)
+    return Image.parse_obj(data)
+
+
 async def _generate_tasks_list_from_project(
     project: ProjectAtDB,
     catalog_client: CatalogClient,
@@ -115,7 +145,7 @@ async def _generate_tasks_list_from_project(
         )  # the service key version is frozen
         for node in project.workbench.values()
     }
-    project_nodes_repo = ProjectNodesRepo(project_uuid=project.uuid)
+
     key_version_to_node_infos = {
         key_version: await _get_node_infos(
             catalog_client,
@@ -140,22 +170,15 @@ async def _generate_tasks_list_from_project(
         if not node_details:
             continue
 
-        # aggregates node_details and node_extras into Image
-        data: dict[str, Any] = {
-            "name": node.key,
-            "tag": node.version,
-        }
-
-        project_node = await project_nodes_repo.get(connection, node_id=NodeID(node_id))
-
-        node_resources = parse_obj_as(ServiceResources, project_node.required_resources)
-
-        if node_resources:
-            data.update(node_requirements=_compute_node_requirements(node_resources))
-            data["boot_mode"] = _compute_node_boot_mode(node_resources)
-        if node_extras and node_extras.container_spec:
-            data.update(command=node_extras.container_spec.command)
-        image = Image.parse_obj(data)
+        image = await _generate_task_image(
+            catalog_client,
+            connection,
+            user_id,
+            project.uuid,
+            NodeID(node_id),
+            node,
+            node_extras,
+        )
 
         assert node.state is not None  # nosec
         task_state = node.state.current_status
