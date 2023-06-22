@@ -381,7 +381,6 @@ def _assert_project_db_row(
 
 @pytest.fixture
 async def insert_project_in_db(
-    postgres_db: sa.engine.Engine,
     aiopg_engine: aiopg.sa.engine.Engine,
     db_api: ProjectDBAPI,
     osparc_product_name: str,
