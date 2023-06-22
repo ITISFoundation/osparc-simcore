@@ -1,16 +1,15 @@
 import json
 import logging
-from collections import deque
 from dataclasses import dataclass
-from typing import Any, cast
+from typing import Any
 from uuid import UUID
 
 from cryptography import fernet
 from fastapi import FastAPI, HTTPException
 from httpx import Response
 from models_library.projects import ProjectID
+from models_library.rest_pagination import Page
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import ValidationError
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
 from starlette import status
 from tenacity import TryAgain
@@ -21,7 +20,7 @@ from tenacity.wait import wait_fixed
 
 from ..core.settings import WebServerSettings
 from ..models.domain.projects import NewProjectIn, Project
-from ..models.types import JSON, ListAnyDict
+from ..models.types import JSON
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
 _logger = logging.getLogger(__name__)
@@ -168,9 +167,10 @@ class AuthSession:
 
     async def list_projects(
         self, solver_name: str, limit: int, offset: int
-    ) -> list[Project]:
+    ) -> Page[Project]:
         assert 1 <= limit <= 50  # nosec
         assert 0 <= offset  # nosec
+
         resp = await self.client.get(
             "/projects",
             params={
@@ -178,27 +178,18 @@ class AuthSession:
                 "show_hidden": True,
                 "limit": limit,
                 "offset": offset,
+                # FIXME: better way to match jobs with projects (Next PR if this works fine!)
+                "search": solver_name,
             },
             cookies=self.session_cookies,
         )
 
-        data: ListAnyDict = (
-            cast(ListAnyDict, self._get_data_or_raise_http_exception(resp)) or []
-        )
+        # FIXME: error handling. Raise ProjectErrors / WebserverError that should be transformed into HTTP errors on the handler level
+        resp.raise_for_status()
 
-        projects: deque[Project] = deque()
-        for prj in data:
-            possible_job_name = prj.get("name", "")
-            if possible_job_name.startswith(solver_name):
-                try:
-                    projects.append(Project.parse_obj(prj))
-                except ValidationError as err:
-                    _logger.warning(
-                        "Invalid prj %s [%s]: %s", prj.get("uuid"), solver_name, err
-                    )
-
-        assert len(projects) <= limit  # nosec
-        return list(projects)
+        # FIXME: this is a ProjectGet. How to transform from ProjectGet to Job!?
+        projects_page = Page[Project].parse_raw(resp.text)
+        return projects_page
 
     async def delete_project(self, project_id: ProjectID) -> None:
         resp = await self.client.delete(
