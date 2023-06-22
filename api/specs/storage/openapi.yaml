@@ -676,6 +676,13 @@ paths:
       - tasks
       summary: gets the status of the task
       operationId: get_task_status
+      parameters:
+      - required: true
+        schema:
+          title: Task Id
+          type: string
+        name: task_id
+        in: path
       responses:
         '200':
           description: Successful Response
@@ -688,6 +695,13 @@ paths:
       - tasks
       summary: cancels and removes the task
       operationId: cancel_and_delete_task
+      parameters:
+      - required: true
+        schema:
+          title: Task Id
+          type: string
+        name: task_id
+        in: path
       responses:
         '204':
           description: Successful Response
@@ -697,6 +711,13 @@ paths:
       - tasks
       summary: get result of the task
       operationId: get_task_result
+      parameters:
+      - required: true
+        schema:
+          title: Task Id
+          type: string
+        name: task_id
+        in: path
       responses:
         '200':
           description: Successful Response

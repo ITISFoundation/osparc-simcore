@@ -31,7 +31,7 @@ from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize
-from servicelib.long_running_tasks._models import TaskGet, TaskStatus
+from servicelib.long_running_tasks._models import TaskGet, TaskId, TaskStatus
 from settings_library.s3 import S3Settings
 from simcore_service_storage._meta import api_vtag
 from simcore_service_storage.models import DatasetMetaData, FileMetaData
@@ -350,7 +350,7 @@ async def list_tasks():
     summary="gets the status of the task",
     operation_id="get_task_status",
 )
-async def get_task_status():
+async def get_task_status(task_id: TaskId):
     ...
 
 
@@ -361,7 +361,7 @@ async def get_task_status():
     summary="get result of the task",
     operation_id="get_task_result",
 )
-async def get_task_result():
+async def get_task_result(task_id: TaskId):
     ...
 
 
@@ -372,7 +372,7 @@ async def get_task_result():
     summary="cancels and removes the task",
     operation_id="cancel_and_delete_task",
 )
-async def cancel_and_delete_task():
+async def cancel_and_delete_task(task_id: TaskId):
     ...
 
 
