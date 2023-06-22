@@ -20,6 +20,8 @@ from servicelib.aiohttp.long_running_tasks.server import TaskGet
 from ..rest.schemas_base import InputSchema, OutputSchema
 from ._permalink import ProjectPermalink
 
+# NOTE: used for a field which is both not mandatory and not nullable
+# meaning it does not need to appear and cannot be None
 NOT_REQUIRED = Field(default=None)
 
 
