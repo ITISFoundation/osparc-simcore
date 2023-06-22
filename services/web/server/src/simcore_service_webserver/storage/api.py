@@ -3,6 +3,7 @@
 """
 import asyncio
 import logging
+import urllib.parse
 from typing import Any, AsyncGenerator
 
 from aiohttp import ClientError, ClientSession, ClientTimeout, web
@@ -194,9 +195,14 @@ async def get_download_link(
     """
     session, api_endpoint = _get_storage_client(app)
     url = (
-        api_endpoint / f"locations/{filelink.store}/files" / filelink.path
+        api_endpoint
+        / f"locations/{filelink.store}/files"
+        / urllib.parse.quote(filelink.path, safe="")
     ).with_query(user_id=user_id)
+
     async with session.get(f"{url}") as response:
         response.raise_for_status()
-        download = PresignedLink.parse_obj(await response.json())
+        download: PresignedLink = (
+            Envelope[PresignedLink].parse_obj(await response.json()).data
+        )
         return parse_obj_as(HttpUrl, download.link)

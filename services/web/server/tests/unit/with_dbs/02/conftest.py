@@ -369,7 +369,7 @@ def mock_get_total_project_dynamic_nodes_creation_interval(
 ) -> None:
     _VERY_LONG_LOCK_TIMEOUT_S: Final[float] = 300
     mocker.patch(
-        "simcore_service_webserver.projects.projects_api._nodes_utils"
+        "simcore_service_webserver.projects.projects_api._nodes_api"
         ".get_total_project_dynamic_nodes_creation_interval",
         return_value=_VERY_LONG_LOCK_TIMEOUT_S,
     )

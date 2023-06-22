@@ -490,7 +490,7 @@ async def test_dispatch_logged_in_user(
     # delete before exiting
     url = client.app.router["delete_project"].url_for(project_id=expected_project_id)
     response = await client.delete(f"{url}")
-    await asyncio.sleep(1)  # needed to let task finish
+    await asyncio.sleep(2)  # needed to let task finish
     response.raise_for_status()
 
 
