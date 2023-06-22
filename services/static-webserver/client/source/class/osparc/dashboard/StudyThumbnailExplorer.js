@@ -114,7 +114,8 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
         }
       };
       osparc.data.Resources.fetch("studyPreviews", "getPreviews", params)
-        .then(previewsPerNodes => thumbnailSuggestions.addPreviewsToSuggestions(previewsPerNodes));
+        .then(previewsPerNodes => thumbnailSuggestions.addPreviewsToSuggestions(previewsPerNodes))
+        .catch(err => console.error(err));
 
       return thumbnailSuggestions;
     },
