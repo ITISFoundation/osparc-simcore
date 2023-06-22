@@ -349,7 +349,6 @@ async def replace_node_resources(request: web.Request) -> web.Response:
     body = await parse_request_body_as(ServiceResourcesDict, request)
 
     # ensure the project exists
-    # ensure the project exists
     await projects_api.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
