@@ -231,7 +231,7 @@ qx.Class.define("osparc.info.StudyLarge", {
 
     __openAccessRights: function() {
       const permissionsView = osparc.info.StudyUtils.openAccessRights(this.getStudy().serialize());
-      permissionsView.addListener("updateStudy", e => {
+      permissionsView.addListener("updateAccessRights", e => {
         const updatedData = e.getData();
         this.getStudy().setAccessRights(updatedData["accessRights"]);
         this.fireDataEvent("updateStudy", updatedData);
