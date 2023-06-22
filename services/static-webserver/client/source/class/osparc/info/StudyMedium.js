@@ -56,15 +56,11 @@ qx.Class.define("osparc.info.StudyMedium", {
       this.setStudy(study);
     },
 
-    checkResize: function(bounds) {
-      this.__rebuildLayout(bounds.width);
-    },
-
     __applyStudy: function() {
       this.__rebuildLayout();
     },
 
-    __rebuildLayout: function(width) {
+    __rebuildLayout: function() {
       this._removeAll();
 
       const nameAndMenuButton = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
@@ -141,7 +137,7 @@ qx.Class.define("osparc.info.StudyMedium", {
         osparc.component.metadata.Quality.isEnabled(this.getStudy().getQuality())
       ) {
         extraInfo.push({
-          label: this.tr("Quality"),
+          label: this.tr("QUALITY"),
           view: osparc.info.StudyUtils.createQuality(this.getStudy()),
           action: {
             button: osparc.utils.Utils.getViewButton(),
