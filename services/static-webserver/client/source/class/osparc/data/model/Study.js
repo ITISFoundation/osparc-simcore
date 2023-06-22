@@ -65,6 +65,8 @@ qx.Class.define("osparc.data.model.Study", {
     workbench.setStudy(this);
 
     this.setUi(new osparc.data.model.StudyUI(studyData.ui));
+
+    this.__buildWorkbench();
   },
 
   properties: {
@@ -311,7 +313,7 @@ qx.Class.define("osparc.data.model.Study", {
   },
 
   members: {
-    buildWorkbench: function() {
+    __buildWorkbench: function() {
       this.getWorkbench().buildWorkbench();
     },
 
