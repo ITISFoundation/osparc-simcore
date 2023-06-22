@@ -29,7 +29,7 @@ async def _prometheus_client_custom_query(
 async def _scrape_and_upload_container_resource_usage(
     prometheus_client: PrometheusConnect,
     resource_tracker_repo: ResourceTrackerRepository,
-    image_regex: str = "registry.osparc.io/simcore/services/dynamic/jupyter-smash:.*",
+    image_regex: str,
 ) -> None:
     # Query CPU seconds
     promql_cpu_query = f"sum without (cpu) (container_cpu_usage_seconds_total{{image=~'{image_regex}'}})[30m:1m]"
@@ -92,13 +92,20 @@ async def _scrape_and_upload_container_resource_usage(
 
 
 async def collect_container_resource_usage(
-    prometheus_client: PrometheusConnect, db_engine: Any
+    prometheus_client: PrometheusConnect,
+    resource_tracker_repo: ResourceTrackerRepository,
+    machine_fqdn: str,
 ) -> None:
-    await _scrape_and_upload_container_resource_usage(prometheus_client, db_engine)
+    await _scrape_and_upload_container_resource_usage(
+        prometheus_client=prometheus_client,
+        resource_tracker_repo=resource_tracker_repo,
+        image_regex=f"registry.{machine_fqdn}/simcore/services/dynamic/jupyter-smash:.*",
+    )
 
 
 async def collect_container_resource_usage_task(app: FastAPI) -> None:
     await collect_container_resource_usage(
         get_prometheus_api_client(app),
         ResourceTrackerRepository(db_engine=app.state.engine),
+        app.state.settings.MACHINE_FQDN,
     )
