@@ -3,6 +3,7 @@ import mimetypes
 import urllib.parse
 
 from aiohttp import web
+from aiohttp.client import ClientError
 from models_library.projects_nodes import Node, NodeID
 from models_library.projects_nodes_io import SimCoreFileLink
 from pydantic import (
@@ -79,9 +80,9 @@ async def fake_screenshots_factory(
                     file_url=file_url,
                 )
             )
-        except (KeyError, ValidationError) as err:
-            _logger.debug(
-                "Failed to create link from file-picker %s: %s",
+        except (KeyError, ValidationError, ClientError) as err:
+            _logger.warning(
+                "Skipping fake node. Unable to create link from file-picker %s: %s",
                 node.json(indent=1),
                 err,
             )

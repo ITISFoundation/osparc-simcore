@@ -22,7 +22,7 @@ from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_comments import CommentID, ProjectsCommentsAPI
 from pydantic import NonNegativeInt
-from simcore_service_webserver.projects._handlers_project_comments import (
+from simcore_service_webserver.projects._comments_handlers import (
     _ProjectCommentsBodyParams,
     _ProjectCommentsPathParams,
     _ProjectCommentsWithCommentPathParams,
