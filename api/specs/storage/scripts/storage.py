@@ -74,6 +74,36 @@ app = FastAPI(
 )
 
 
+# handlers_datasets.py
+
+
+@app.get(
+    f"/{api_vtag}/locations/{{location_id}}/datasets",
+    response_model=Envelope[list[DatasetMetaData]],
+    tags=TAGS_DATASETS,
+    operation_id="get_datasets_metadata",
+    summary="Get datasets metadata",
+)
+async def get_datasets_metadata(location_id: LocationID, user_id: UserID):
+    """Returns the list of dataset meta-datas"""
+
+
+# handlers_files.py
+
+
+@app.get(
+    f"/{api_vtag}/locations/{{location_id}}/datasets/{{dataset_id}}/metadata",
+    response_model=Envelope[list[FileMetaDataGet]],
+    tags=TAGS_DATASETS,
+    operation_id="get_files_metadata_dataset",
+    summary="Get Files Metadata",
+)
+async def get_files_metadata_dataset(
+    location_id: LocationID, dataset_id: str, user_id: UserID, expand_dirs: bool = True
+):
+    """list of file meta-datas"""
+
+
 @app.get(
     f"/{api_vtag}/locations",
     response_model=list[DatasetMetaData],
@@ -98,15 +128,7 @@ async def synchronise_meta_data_table(
     """Returns an object containing added, changed and removed paths"""
 
 
-@app.get(
-    f"/{api_vtag}/locations/{{location_id}}/datasets",
-    response_model=Envelope[list[DatasetMetaData]],
-    tags=TAGS_DATASETS,
-    operation_id="get_datasets_metadata",
-    summary="Get datasets metadata",
-)
-async def get_datasets_metadata(location_id: LocationID, user_id: UserID):
-    """Returns the list of dataset meta-datas"""
+# handlers_files.py
 
 
 @app.get(
@@ -118,19 +140,6 @@ async def get_datasets_metadata(location_id: LocationID, user_id: UserID):
 )
 async def get_files_metadata(
     location_id: LocationID, uuid_filter: str = "", expand_dirs: bool = True
-):
-    """list of file meta-datas"""
-
-
-@app.get(
-    f"/{api_vtag}/locations/{{location_id}}/datasets/{{dataset_id}}/metadata",
-    response_model=Envelope[list[FileMetaDataGet]],
-    tags=TAGS_DATASETS,
-    operation_id="get_files_metadata_dataset",
-    summary="Get Files Metadata",
-)
-async def get_files_metadata_dataset(
-    location_id: LocationID, dataset_id: str, user_id: UserID, expand_dirs: bool = True
 ):
     """list of file meta-datas"""
 
@@ -181,17 +190,6 @@ async def upload_file(
     """Return upload object"""
 
 
-@app.delete(
-    f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    tags=TAGS_FILES,
-    operation_id="delete_file",
-    summary="Deletes File",
-)
-async def delete_file(location_id: LocationID, file_id: StorageFileID, user_id: UserID):
-    ...
-
-
 @app.post(
     f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}:abort",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -233,17 +231,7 @@ async def is_completed_upload_file(
     """Returns state of upload completion"""
 
 
-@app.post(
-    f"/{api_vtag}/files/{{file_id}}:soft-copy",
-    response_model=FileMetaDataGet,
-    tags=TAGS_FILES,
-    summary="copy file as soft link",
-    operation_id="copy_as_soft_link",
-)
-async def copy_as_soft_link(
-    body_item: SoftCopyBody, file_id: StorageFileID, user_id: UserID
-):
-    ...
+# handlers_health.py
 
 
 @app.get(
@@ -268,48 +256,34 @@ async def get_status():
     ...
 
 
-@app.get(
-    "/",
-    response_model=Envelope[TaskGet],
-    tags=TAGS_TASKS,
-    summary="list current long running tasks",
-    operation_id="list_tasks",
-)
-async def list_tasks():
-    ...
-
-
-@app.get(
-    "/{task_id}",
-    response_model=Envelope[TaskStatus],
-    tags=TAGS_TASKS,
-    summary="gets the status of the task",
-    operation_id="get_task_status",
-)
-async def get_task_status():
-    ...
-
-
-@app.get(
-    "/{task_id}/result",
-    response_model=Any,
-    tags=TAGS_TASKS,
-    summary="get result of the task",
-    operation_id="get_task_result",
-)
-async def get_task_result():
-    ...
+# handlers_locations.py
 
 
 @app.delete(
-    "/{task_id}",
+    f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}",
     status_code=status.HTTP_204_NO_CONTENT,
-    tags=TAGS_TASKS,
-    summary="cancels and removes the task",
-    operation_id="cancel_and_delete_task",
+    tags=TAGS_FILES,
+    operation_id="delete_file",
+    summary="Deletes File",
 )
-async def cancel_and_delete_task():
+async def delete_file(location_id: LocationID, file_id: StorageFileID, user_id: UserID):
     ...
+
+
+@app.post(
+    f"/{api_vtag}/files/{{file_id}}:soft-copy",
+    response_model=FileMetaDataGet,
+    tags=TAGS_FILES,
+    summary="copy file as soft link",
+    operation_id="copy_as_soft_link",
+)
+async def copy_as_soft_link(
+    body_item: SoftCopyBody, file_id: StorageFileID, user_id: UserID
+):
+    ...
+
+
+# handlers_simcore_s3.py
 
 
 @app.post(
@@ -355,6 +329,53 @@ async def delete_folders_of_project(
     operation_id="search_files_starting_with",
 )
 async def search_files_starting_with(user_id: UserID, startswith: str = ""):
+    ...
+
+
+# long_running_tasks.py
+
+
+@app.get(
+    "/",
+    response_model=Envelope[TaskGet],
+    tags=TAGS_TASKS,
+    summary="list current long running tasks",
+    operation_id="list_tasks",
+)
+async def list_tasks():
+    ...
+
+
+@app.get(
+    "/{task_id}",
+    response_model=Envelope[TaskStatus],
+    tags=TAGS_TASKS,
+    summary="gets the status of the task",
+    operation_id="get_task_status",
+)
+async def get_task_status():
+    ...
+
+
+@app.get(
+    "/{task_id}/result",
+    response_model=Any,
+    tags=TAGS_TASKS,
+    summary="get result of the task",
+    operation_id="get_task_result",
+)
+async def get_task_result():
+    ...
+
+
+@app.delete(
+    "/{task_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    tags=TAGS_TASKS,
+    summary="cancels and removes the task",
+    operation_id="cancel_and_delete_task",
+)
+async def cancel_and_delete_task():
     ...
 
 
