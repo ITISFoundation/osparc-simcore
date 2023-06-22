@@ -24,7 +24,7 @@ def create_start_app_handler(app: FastAPI) -> Callable:
 
         # setup connection to pg db
         if app.state.settings.CATALOG_POSTGRES:
-            await connect_to_db(app)
+            await connect_to_db(app, app.state.settings.CATALOG_POSTGRES)
             await setup_default_product(app)
 
         if app.state.settings.CATALOG_DIRECTOR:

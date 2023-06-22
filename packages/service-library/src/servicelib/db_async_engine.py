@@ -15,9 +15,8 @@ logger = logging.getLogger(__name__)
 
 
 @retry(**PostgresRetryPolicyUponInitialization(logger).kwargs)
-async def connect_to_db(app: FastAPI) -> None:
+async def connect_to_db(app: FastAPI, cfg: PostgresSettings) -> None:
     logger.debug("Connecting db ...")
-    cfg: PostgresSettings = app.state.settings.RESOURCE_USAGE_TRACKER_POSTGRES
 
     engine: AsyncEngine = create_async_engine(
         cfg.dsn_with_async_sqlalchemy,
