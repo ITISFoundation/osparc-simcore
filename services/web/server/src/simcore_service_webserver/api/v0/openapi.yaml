@@ -5655,7 +5655,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/put/responses/200/content/application~1json/schema'
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/put/requestBody/content/application~1json/schema'
+                  error:
+                    nullable: true
+                    default: null
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
     put:
@@ -5691,15 +5699,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - data
-                properties:
-                  data:
-                    $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/put/requestBody/content/application~1json/schema'
-                  error:
-                    nullable: true
-                    default: null
+                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/get/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   '/projects/{project_uuid}/comments':
@@ -5823,41 +5823,6 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1comments~1%7Bcomment_id%7D/put/responses/200/content/application~1json/schema'
-    put:
-      tags:
-        - project
-        - comments
-      summary: Update the contents of a specific comment for a project. The request body should contain the updated comment contents.
-      operationId: update_project_comment
-      parameters:
-        - required: true
-          schema:
-            title: Project Uuid
-            type: string
-            format: uuid
-          name: project_uuid
-          in: path
-        - required: true
-          schema:
-            title: Comment Id
-            exclusiveMinimum: true
-            type: integer
-            minimum: 0
-          name: comment_id
-          in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1comments/post/requestBody/content/application~1json/schema'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
                 title: 'Envelope[ProjectsCommentsAPI]'
                 type: object
                 properties:
@@ -5906,6 +5871,41 @@ paths:
                     additionalProperties: false
                   error:
                     title: Error
+    put:
+      tags:
+        - project
+        - comments
+      summary: Update the contents of a specific comment for a project. The request body should contain the updated comment contents.
+      operationId: update_project_comment
+      parameters:
+        - required: true
+          schema:
+            title: Project Uuid
+            type: string
+            format: uuid
+          name: project_uuid
+          in: path
+        - required: true
+          schema:
+            title: Comment Id
+            exclusiveMinimum: true
+            type: integer
+            minimum: 0
+          name: comment_id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1comments/post/requestBody/content/application~1json/schema'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1comments~1%7Bcomment_id%7D/get/responses/200/content/application~1json/schema'
     delete:
       tags:
         - project
@@ -8131,7 +8131,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/put/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/get/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   '/clusters:ping':
