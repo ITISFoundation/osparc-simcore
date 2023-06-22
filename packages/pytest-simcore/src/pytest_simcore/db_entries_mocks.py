@@ -66,7 +66,7 @@ async def project(
 ) -> AsyncIterator[Callable[..., Awaitable[ProjectAtDB]]]:
     created_project_ids: list[str] = []
 
-    async def creator(user: dict[str, Any], **overrides) -> ProjectAtDB:
+    async def creator(user: dict[str, Any], **project_overrides) -> ProjectAtDB:
         project_uuid = uuid4()
         print(f"Created new project with uuid={project_uuid}")
         project_config = {
@@ -79,7 +79,7 @@ async def project(
             "thumbnail": "",
             "workbench": {},
         }
-        project_config.update(**overrides)
+        project_config.update(**project_overrides)
         async with aiopg_engine.acquire() as con, con.begin():
             result = await con.execute(
                 projects.insert()
