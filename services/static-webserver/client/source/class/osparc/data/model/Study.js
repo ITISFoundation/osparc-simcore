@@ -457,7 +457,7 @@ qx.Class.define("osparc.data.model.Study", {
       return false;
     },
 
-    isPipelineEmtpy: function() {
+    isPipelineEmpty: function() {
       return Object.keys(this.getWorkbench().getNodes()).length === 0;
     },
 
