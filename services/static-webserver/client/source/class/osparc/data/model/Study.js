@@ -461,6 +461,10 @@ qx.Class.define("osparc.data.model.Study", {
       return Object.keys(this.getWorkbench().getNodes()).length === 0;
     },
 
+    isPipelineMononode: function() {
+      return Object.keys(this.getWorkbench().getNodes()).length === 1;
+    },
+
     __applyAccessRights: function(accessRights) {
       if (this.isSnapshot()) {
         this.setReadOnly(true);

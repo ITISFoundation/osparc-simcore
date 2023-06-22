@@ -84,7 +84,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       }
       this._add(titleAndCopyLayout);
 
-      if (osparc.product.Utils.showStudyPreview()) {
+      if (osparc.product.Utils.showStudyPreview() && !this.getStudy().isPipelineEmpty()) {
         const studyThumbnailExplorer = new osparc.dashboard.StudyThumbnailExplorer(this.getStudy().serialize());
         this._add(studyThumbnailExplorer);
       }
