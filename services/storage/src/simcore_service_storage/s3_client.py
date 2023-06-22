@@ -6,7 +6,7 @@ from collections import deque
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, cast
+from typing import Callable, Final, cast
 
 import aioboto3
 from aiobotocore.session import ClientCreatorContext
@@ -15,17 +15,19 @@ from botocore.client import Config
 from models_library.api_schemas_storage import UploadedPart
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
-from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pydantic import AnyUrl, ByteSize, NonNegativeInt, parse_obj_as
 from servicelib.utils import logged_gather
 from settings_library.s3 import S3Settings
 from simcore_service_storage.constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
 from types_aiobotocore_s3 import S3Client
-from types_aiobotocore_s3.type_defs import ObjectTypeDef
+from types_aiobotocore_s3.type_defs import ObjectTypeDef, PaginatorConfigTypeDef
 
 from .models import ETag, MultiPartUploadLinks, S3BucketName, UploadID
 from .s3_utils import compute_num_file_chunks, s3_exception_handler
 
 log = logging.getLogger(__name__)
+
+MAX_LIST_OBJECTS_V2_ITEMS: Final[NonNegativeInt] = 1000
 
 
 @dataclass(frozen=True)
@@ -50,24 +52,29 @@ class S3MetaData:
 
 
 async def _list_objects_v2_all_items(
-    client: S3Client, bucket: S3BucketName, prefix: str
+    client: S3Client,
+    bucket: S3BucketName,
+    prefix: str,
+    max_items: int | None = MAX_LIST_OBJECTS_V2_ITEMS,
 ) -> list[ObjectTypeDef]:
     """
     returns all the ObjectTypeDef in the path
     """
+    # NOTE: code was refactored to behave as before. There are risks
+    # of making storage crash, currently the same limits as before
+    # will apply. At most 1000 elements will be returned.
+    # Pagination will be added in the future starting from here.
 
-    # NOTE: potentially this cal be used to list the entire bucket
-    # which is kinda of bad, for sure storage will run out of ram and crash
-    # TODO: @SAN any good idea on how to limit this? proposals:
-    # - more than 10k files raise an error (do not fail silently like it did now)
-    # - raise a timeout error while fetching data saying there are too many files
-    # - ISSUE listing a directory with too many files this will still give an error
-    #    (To solve this we need to paginate the file listing API per se)
+    pagination_config: PaginatorConfigTypeDef = {}
+    if max_items is not None:
+        pagination_config["MaxItems"] = max_items
 
     results: deque[ObjectTypeDef] = deque()
 
     paginator = client.get_paginator("list_objects_v2")
-    async for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
+    async for page in paginator.paginate(
+        Bucket=bucket, Prefix=prefix, PaginationConfig=pagination_config
+    ):
         for entry in page.get("Contents", []):
             results.append(entry)
 
