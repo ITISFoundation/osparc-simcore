@@ -105,7 +105,6 @@ async def test_get_wrong_project_raises_not_found_error(
 )
 async def test_get_wrong_node_raises_not_found_error(
     client: TestClient,
-    logged_user: UserInfoDict,
     user_project: dict[str, Any],
     expected: type[web.HTTPException],
 ):
@@ -128,9 +127,7 @@ async def test_get_wrong_node_raises_not_found_error(
 )
 async def test_replace_node_resources(
     client: TestClient,
-    logged_user: UserInfoDict,
     user_project: dict[str, Any],
-    mock_catalog_service_api_responses: None,
     expected: type[web.HTTPException],
 ):
     assert client.app
@@ -140,7 +137,9 @@ async def test_replace_node_resources(
             project_id=user_project["uuid"], node_id=node_id
         )
         response = await client.put(f"{url}", json={})
-        await assert_status(response, expected)
+        data, error = await assert_status(response, expected)
+        if data:
+            assert not error
 
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
