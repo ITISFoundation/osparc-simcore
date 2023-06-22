@@ -1933,7 +1933,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (!this.isPropertyInitialized("study") || this.__startHint === null) {
         return;
       }
-      const isEmptyWorkspace = this.getStudy().isPipelineEmtpy();
+      const isEmptyWorkspace = this.getStudy().isPipelineEmpty();
       this.__startHint.setVisibility(isEmptyWorkspace ? "visible" : "excluded");
       if (isEmptyWorkspace) {
         const hintBounds = this.__startHint.getBounds() || this.__startHint.getSizeHint();
