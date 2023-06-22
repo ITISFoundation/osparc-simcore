@@ -58,7 +58,12 @@ async def _list_objects_v2_all_items(
     max_items: int | None = MAX_LIST_OBJECTS_V2_ITEMS,
 ) -> list[ObjectTypeDef]:
     """
-    returns all the ObjectTypeDef in the path
+    Scans the given path in prefix and returns information about the files.
+    If `max_items` is None returns all the items in the dataset.
+
+    Keyword Arguments:
+        max_items -- total items to return regardless of pagination
+            (default: {MAX_LIST_OBJECTS_V2_ITEMS})
     """
     # NOTE: code was refactored to behave as before. There are risks
     # of making storage crash, currently the same limits as before
