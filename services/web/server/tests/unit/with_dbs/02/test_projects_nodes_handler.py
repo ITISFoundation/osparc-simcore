@@ -54,8 +54,7 @@ async def test_get_node_resources(
     expected: type[web.HTTPException],
 ):
     assert client.app
-    project_workbench = user_project["workbench"]
-    for node_id in project_workbench:
+    for node_id in user_project["workbench"]:
         url = client.app.router["get_node_resources"].url_for(
             project_id=user_project["uuid"], node_id=node_id
         )
@@ -88,8 +87,7 @@ async def test_get_wrong_project_raises_not_found_error(
     expected: type[web.HTTPException],
 ):
     assert client.app
-    project_workbench = user_project["workbench"]
-    for node_id in project_workbench:
+    for node_id in user_project["workbench"]:
         url = client.app.router["get_node_resources"].url_for(
             project_id=f"{uuid4()}", node_id=node_id
         )
@@ -131,15 +129,101 @@ async def test_replace_node_resources(
     expected: type[web.HTTPException],
 ):
     assert client.app
-    project_workbench = user_project["workbench"]
-    for node_id in project_workbench:
+    for node_id in user_project["workbench"]:
         url = client.app.router["replace_node_resources"].url_for(
             project_id=user_project["uuid"], node_id=node_id
         )
-        response = await client.put(f"{url}", json={})
+        response = await client.put(
+            f"{url}",
+            json=ServiceResourcesDictHelpers.create_jsonable(
+                ServiceResourcesDictHelpers.Config.schema_extra["examples"][0]
+            ),
+        )
         data, error = await assert_status(response, expected)
         if data:
             assert not error
+            node_resources = parse_obj_as(ServiceResourcesDict, data)
+            assert node_resources
+            assert DEFAULT_SINGLE_SERVICE_NAME in node_resources
+            assert (
+                node_resources
+                == ServiceResourcesDictHelpers.Config.schema_extra["examples"][0]
+            )
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.TESTER, web.HTTPUnprocessableEntity),
+    ],
+)
+async def test_replace_node_resources_raises_422_if_resource_does_not_validate(
+    client: TestClient,
+    user_project: dict[str, Any],
+    expected: type[web.HTTPException],
+):
+    assert client.app
+    for node_id in user_project["workbench"]:
+        url = client.app.router["replace_node_resources"].url_for(
+            project_id=user_project["uuid"], node_id=node_id
+        )
+        response = await client.put(
+            f"{url}",
+            json=ServiceResourcesDictHelpers.create_jsonable(
+                # NOTE: we apply a different resource set
+                ServiceResourcesDictHelpers.Config.schema_extra["examples"][1]
+            ),
+        )
+        await assert_status(response, expected)
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.TESTER, web.HTTPNotFound),
+    ],
+)
+async def test_replace_node_resources_raises_404_if_wrong_project_id_used(
+    client: TestClient,
+    user_project: dict[str, Any],
+    expected: type[web.HTTPException],
+    faker: Faker,
+):
+    assert client.app
+    for node_id in user_project["workbench"]:
+        url = client.app.router["replace_node_resources"].url_for(
+            project_id=faker.uuid4(), node_id=node_id
+        )
+        response = await client.put(
+            f"{url}",
+            json={},
+        )
+        await assert_status(response, expected)
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.TESTER, web.HTTPNotFound),
+    ],
+)
+async def test_replace_node_resources_raises_404_if_wrong_node_id_used(
+    client: TestClient,
+    user_project: dict[str, Any],
+    expected: type[web.HTTPException],
+    faker: Faker,
+):
+    assert client.app
+    for node_id in user_project["workbench"]:
+        assert node_id
+        url = client.app.router["replace_node_resources"].url_for(
+            project_id=user_project["uuid"], node_id=faker.uuid4()
+        )
+        response = await client.put(
+            f"{url}",
+            json={},
+        )
+        await assert_status(response, expected)
 
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
