@@ -78,7 +78,9 @@ async def list_jobs(
     )
     _logger.debug("Listing Jobs in Solver '%s'", solver.name)
 
-    projects: list[Project] = await webserver_api.list_projects(solver.name)
+    projects: list[Project] = await webserver_api.list_projects(
+        solver.name, limit=20, offset=0
+    )
     jobs: deque[Job] = deque()
     for prj in projects:
         job = create_job_from_project(solver_key, version, prj, url_for)

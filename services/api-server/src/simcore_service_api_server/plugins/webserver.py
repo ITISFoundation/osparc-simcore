@@ -166,10 +166,19 @@ class AuthSession:
         data: JSON | None = self._get_data_or_raise_http_exception(resp)
         return Project.parse_obj(data)
 
-    async def list_projects(self, solver_name: str) -> list[Project]:
+    async def list_projects(
+        self, solver_name: str, limit: int, offset: int
+    ) -> list[Project]:
+        assert 1 <= limit <= 50  # nosec
+        assert 0 <= offset  # nosec
         resp = await self.client.get(
             "/projects",
-            params={"type": "user", "show_hidden": True},
+            params={
+                "type": "user",
+                "show_hidden": True,
+                "limit": limit,
+                "offset": offset,
+            },
             cookies=self.session_cookies,
         )
 
@@ -188,6 +197,7 @@ class AuthSession:
                         "Invalid prj %s [%s]: %s", prj.get("uuid"), solver_name, err
                     )
 
+        assert len(projects) <= limit  # nosec
         return list(projects)
 
     async def delete_project(self, project_id: ProjectID) -> None:
