@@ -175,6 +175,16 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
       const scrollThumbnails = this.getChildControl("scroll-thumbnails");
       scrollThumbnails.setSelectedNodeId(null);
 
+      const params = {
+        url: {
+          studyId: this.__studyData["uuid"]
+        }
+      };
+      osparc.data.Resources.fetch("studyPreviews", "getPreviews", params)
+        .then(previews => {
+          console.log(previews);
+        });
+
       const workbenchUIPreview = this.__getWorkbenchUIPreview();
       const thumbnailViewerLayout = this.getChildControl("thumbnail-viewer-layout");
       thumbnailViewerLayout.add(workbenchUIPreview);
