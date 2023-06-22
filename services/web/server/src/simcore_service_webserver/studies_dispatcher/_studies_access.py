@@ -245,7 +245,6 @@ async def copy_study_to_account(
             force_project_uuid=True,
             project_nodes=None,
         )
-        # await db.deepcopy_project_nodes(ProjectID(template_project["uuid"]), ProjectID(project["uuid"]))
         async for lr_task in copy_data_folders_from_project(
             request.app,
             template_project,
