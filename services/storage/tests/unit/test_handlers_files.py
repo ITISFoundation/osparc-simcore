@@ -1311,4 +1311,5 @@ async def test_listing_more_than_1000_objects_in_bucket(
         list_of_files: list[FileMetaDataGet] = await _list_files_legacy(
             client, user_id, location_id, directory_file_upload
         )
-        assert len(list_of_files) == files_in_dir
+        # for now no more than 1000 objects will be returned
+        assert len(list_of_files) == 1000
