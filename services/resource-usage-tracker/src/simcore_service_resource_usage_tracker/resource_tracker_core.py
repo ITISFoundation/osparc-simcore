@@ -16,15 +16,6 @@ from .modules.db.repositories.resource_tracker import ResourceTrackerRepository
 _logger = logging.getLogger(__name__)
 
 
-# def get_nested_value(data: dict, keys: list[str]) -> int | None:
-#     nested_value: dict = data
-#     for key in keys:
-#         nested_value = nested_value.get(key, {})
-#         if not nested_value:
-#             return None
-#     return int(nested_value)
-
-
 async def _prometheus_client_custom_query(
     prometheus_client: PrometheusConnect, promql_cpu_query: str
 ) -> list[dict]:
