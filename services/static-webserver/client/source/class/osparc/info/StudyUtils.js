@@ -21,102 +21,73 @@ qx.Class.define("osparc.info.StudyUtils", {
 
   statics: {
     /**
-      * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
+      * @param study {osparc.data.model.Study} Study Model
       */
     createTitle: function(study) {
       const title = osparc.info.Utils.createTitle();
-      if (study instanceof osparc.data.model.Study) {
-        study.bind("name", title, "value");
-      } else {
-        title.setValue(study["name"]);
-      }
+      study.bind("name", title, "value");
       return title;
     },
 
     /**
-      * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
+      * @param study {osparc.data.model.Study} Study Model
       */
     createUuid: function(study) {
       const uuid = osparc.info.Utils.createId();
-      if (study instanceof osparc.data.model.Study) {
-        study.bind("uuid", uuid, "value");
-        study.bind("uuid", uuid, "toolTipText");
-      } else {
-        uuid.set({
-          value: study["uuid"],
-          toolTipText: study["uuid"]
-        });
-      }
+      study.bind("uuid", uuid, "value");
+      study.bind("uuid", uuid, "toolTipText");
       return uuid;
     },
 
     /**
-      * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
+      * @param study {osparc.data.model.Study} Study Model
       */
     createOwner: function(study) {
       const owner = new qx.ui.basic.Label();
-      if (study instanceof osparc.data.model.Study) {
-        study.bind("prjOwner", owner, "value", {
-          converter: email => {
-            if (email === osparc.auth.Data.getInstance().getEmail()) {
-              return qx.locale.Manager.tr("me");
-            }
-            return osparc.utils.Utils.getNameFromEmail(email);
-          },
-          onUpdate: (source, target) => {
-            target.setToolTipText(source.getPrjOwner());
+      study.bind("prjOwner", owner, "value", {
+        converter: email => {
+          if (email === osparc.auth.Data.getInstance().getEmail()) {
+            return qx.locale.Manager.tr("me");
           }
-        });
-      } else {
-        owner.set({
-          value: osparc.utils.Utils.getNameFromEmail(study["prjOwner"]),
-          toolTipText: study["prjOwner"]
-        });
-      }
+          return osparc.utils.Utils.getNameFromEmail(email);
+        },
+        onUpdate: (source, target) => {
+          target.setToolTipText(source.getPrjOwner());
+        }
+      });
       return owner;
     },
 
     /**
-      * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
+      * @param study {osparc.data.model.Study} Study Model
       */
     createCreationDate: function(study) {
       const creationDate = new qx.ui.basic.Label();
-      if (study instanceof osparc.data.model.Study) {
-        const dateOptions = {
-          converter: date => osparc.utils.Utils.formatDateAndTime(date)
-        };
-        study.bind("creationDate", creationDate, "value", dateOptions);
-      } else {
-        const date = osparc.utils.Utils.formatDateAndTime(new Date(study["creationDate"]));
-        creationDate.setValue(date);
-      }
+      study.bind("creationDate", creationDate, "value", {
+        converter: date => osparc.utils.Utils.formatDateAndTime(date)
+      });
       return creationDate;
     },
 
     /**
-      * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
+      * @param study {osparc.data.model.Study} Study Model
       */
     createLastChangeDate: function(study) {
       const lastChangeDate = new qx.ui.basic.Label();
-      if (study instanceof osparc.data.model.Study) {
-        const dateOptions = {
-          converter: date => osparc.utils.Utils.formatDateAndTime(date)
-        };
-        study.bind("lastChangeDate", lastChangeDate, "value", dateOptions);
-      } else {
-        const date = osparc.utils.Utils.formatDateAndTime(new Date(study["lastChangeDate"]));
-        lastChangeDate.setValue(date);
-      }
+      study.bind("lastChangeDate", lastChangeDate, "value", {
+        converter: date => osparc.utils.Utils.formatDateAndTime(date)
+      });
       return lastChangeDate;
     },
 
     /**
-      * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
+      * @param study {osparc.data.model.Study} Study Model
       */
     createAccessRights: function(study) {
+      const accessRights = new qx.ui.basic.Label();
       let permissions = "";
       const myGID = osparc.auth.Data.getInstance().getGroupId();
-      const ar = (study instanceof osparc.data.model.Study) ? study.getAccessRights() : study["accessRights"];
+      const ar = study.getAccessRights();
       if (myGID in ar) {
         if (ar[myGID]["delete"]) {
           permissions = qx.locale.Manager.tr("Owner");
@@ -126,22 +97,18 @@ qx.Class.define("osparc.info.StudyUtils", {
           permissions = qx.locale.Manager.tr("Viewer");
         }
       }
-      const accessRights = new qx.ui.basic.Label(permissions);
+      accessRights.setValue(permissions);
       return accessRights;
     },
 
     /**
-      * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
+      * @param study {osparc.data.model.Study} Study Model
       */
     createClassifiers: function(study) {
       const nClassifiers = new qx.ui.basic.Label();
-      if (study instanceof osparc.data.model.Study) {
-        study.bind("classifiers", nClassifiers, "value", {
-          converter: classifiers => `(${classifiers.length})`
-        });
-      } else {
-        nClassifiers.setValue(`(${study["classifiers"].length})`);
-      }
+      study.bind("classifiers", nClassifiers, "value", {
+        converter: classifiers => `(${classifiers.length})`
+      });
       return nClassifiers;
     },
 
@@ -173,41 +140,29 @@ qx.Class.define("osparc.info.StudyUtils", {
     },
 
     /**
-      * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
+      * @param study {osparc.data.model.Study} Study Model
       * @param maxWidth {Number} thumbnail's maxWidth
       * @param maxHeight {Number} thumbnail's maxHeight
       */
     createThumbnail: function(study, maxWidth, maxHeight) {
       const thumbnail = osparc.info.Utils.createThumbnail(maxWidth, maxHeight);
       const noThumbnail = "osparc/no_photography_black_24dp.svg";
-      if (study instanceof osparc.data.model.Study) {
-        study.bind("thumbnail", thumbnail, "source", {
-          converter: thumb => thumb ? thumb : noThumbnail,
-          onUpdate: (source, target) => {
-            if (source.getThumbnail() === "") {
-              target.getChildControl("image").set({
-                minWidth: 100,
-                minHeight: 100
-              });
-            }
+      study.bind("thumbnail", thumbnail, "source", {
+        converter: thumb => thumb ? thumb : noThumbnail,
+        onUpdate: (source, target) => {
+          if (source.getThumbnail() === "") {
+            target.getChildControl("image").set({
+              minWidth: 100,
+              minHeight: 100
+            });
           }
-        });
-      } else if (study["thumbnail"]) {
-        thumbnail.set({
-          source: study["thumbnail"]
-        });
-      } else {
-        thumbnail.set({
-          source: noThumbnail,
-          minWidth: 100,
-          minHeight: 100
-        });
-      }
+        }
+      });
       return thumbnail;
     },
 
     /**
-      * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
+      * @param study {osparc.data.model.Study} Study Model
       * @param maxHeight {Number} description's maxHeight
       */
     createDescription: function(study, maxHeight) {
@@ -215,13 +170,9 @@ qx.Class.define("osparc.info.StudyUtils", {
         noMargin: true,
         maxHeight: maxHeight
       });
-      if (study instanceof osparc.data.model.Study) {
-        study.bind("description", description, "value", {
-          converter: desc => desc ? desc : "Add description"
-        });
-      } else {
-        description.setValue(study["description"] ? study["description"] : "Add description");
-      }
+      study.bind("description", description, "value", {
+        converter: desc => desc ? desc : "Add description"
+      });
       return description;
     },
 
