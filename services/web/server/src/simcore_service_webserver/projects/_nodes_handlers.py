@@ -52,6 +52,7 @@ from ._nodes_api import NodeScreenshot, fake_screenshots_factory
 from .db import ProjectDBAPI
 from .exceptions import (
     NodeNotFoundError,
+    ProjectNodeResourcesInvalidError,
     ProjectNotFoundError,
     ProjectStartsTooManyDynamicNodes,
 )
@@ -354,14 +355,21 @@ async def replace_node_resources(request: web.Request) -> web.Response:
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
     )
-    new_node_resources = await projects_api.set_project_node_resources(
-        request.app,
-        path_params.project_id,
-        node_id=path_params.node_id,
-        resources=body,
-    )
+    try:
+        new_node_resources = await projects_api.update_project_node_resources(
+            request.app,
+            path_params.project_id,
+            node_id=path_params.node_id,
+            resources=body,
+        )
 
-    return envelope_json_response(new_node_resources)
+        return envelope_json_response(new_node_resources)
+    except ProjectNodeResourcesInvalidError as exc:
+        raise web.HTTPUnprocessableEntity(  # 422
+            reason=f"{exc}",
+            text=f"{exc}",
+            content_type=MIMETYPE_APPLICATION_JSON,
+        )
 
 
 class _ServicesAccessQuery(BaseModel):

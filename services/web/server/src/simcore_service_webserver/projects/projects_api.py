@@ -71,6 +71,7 @@ from ..storage import api as storage_api
 from ..users.api import UserNameDict, get_user_name, get_user_role
 from ..users.exceptions import UserNotFoundError
 from . import _crud_delete_utils, _nodes_api
+from ._nodes_resources import check_can_update_service_resources
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import (
     NodeNotFoundError,
@@ -900,7 +901,7 @@ async def get_project_node_resources(
         raise NodeNotFoundError(f"{project_id}", f"{node_id}") from exc
 
 
-async def set_project_node_resources(
+async def update_project_node_resources(
     app: web.Application,
     project_id: ProjectID,
     node_id: NodeID,
@@ -908,6 +909,14 @@ async def set_project_node_resources(
 ) -> ServiceResourcesDict:
     db = ProjectDBAPI.get_from_app_context(app)
     try:
+        # validate the resource are applied to the same container names
+        current_project_node = await db.get_project_node(project_id, node_id)
+        current_resources = parse_obj_as(
+            ServiceResourcesDict, current_project_node.required_resources
+        )
+
+        check_can_update_service_resources(current_resources, new_resources=resources)
+
         project_node = await db.update_project_node(
             project_id, node_id, required_resources=jsonable_encoder(resources)
         )
