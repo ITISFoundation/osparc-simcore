@@ -20,7 +20,7 @@ qx.Class.define("osparc.info.StudyMedium", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
+    * @param study {osparc.data.model.Study} Study
     */
   construct: function(study) {
     this.base(arguments);
@@ -31,7 +31,7 @@ qx.Class.define("osparc.info.StudyMedium", {
     });
     this._setLayout(new qx.ui.layout.VBox(20));
 
-    if (study instanceof osparc.data.model.Study) {
+    if (study) {
       this.setStudy(study);
     }
 
@@ -48,14 +48,6 @@ qx.Class.define("osparc.info.StudyMedium", {
   },
 
   members: {
-    /**
-      * @param studyData {Object} Serialized Study Object
-      */
-    setStudyData: function(studyData) {
-      const study = new osparc.data.model.Study(studyData, false);
-      this.setStudy(study);
-    },
-
     __applyStudy: function() {
       this.__rebuildLayout();
     },
@@ -105,9 +97,7 @@ qx.Class.define("osparc.info.StudyMedium", {
 
     __getMoreInfoMenuButton: function() {
       const moreInfoButton = new qx.ui.menu.Button(this.tr("More Info"));
-      moreInfoButton.addListener("execute", () => {
-        this.__openStudyDetails();
-      }, this);
+      moreInfoButton.addListener("execute", () => this.__openStudyDetails(), this);
       return moreInfoButton;
     },
 
