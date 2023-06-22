@@ -2,6 +2,7 @@ import logging
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
+from fastapi_pagination import add_pagination
 from httpx import HTTPStatusError
 from models_library.basic_types import BootModeEnum
 from servicelib.logging_utils import config_all_loggers
@@ -47,6 +48,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
         redoc_url=None,  # default disabled, see below
     )
     override_openapi_method(app)
+    add_pagination(app)
 
     app.state.settings = settings
 

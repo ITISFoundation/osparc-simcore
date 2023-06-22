@@ -2,12 +2,14 @@
 
 import logging
 from collections import deque
-from typing import Callable
+from typing import Annotated, Callable
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import RedirectResponse
+from fastapi_pagination.api import create_page
+from fastapi_pagination.limit_offset import LimitOffsetPage, LimitOffsetParams
 from models_library.clusters import ClusterID
 from models_library.projects_nodes_io import BaseFileLink
 from pydantic.types import PositiveInt
@@ -62,13 +64,13 @@ def _compose_job_resource_name(solver_key, solver_version, job_id) -> str:
 async def list_jobs(
     solver_key: SolverKeyId,
     version: VersionStr,
-    user_id: PositiveInt = Depends(get_current_user_id),
-    catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
-    webserver_api: AuthSession = Depends(get_webserver_session),
-    url_for: Callable = Depends(get_reverse_url_mapper),
-    product_name: str = Depends(get_product_name),
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
+    product_name: Annotated[str, Depends(get_product_name)],
 ):
-    """List of all jobs in a specific released solver"""
+    """List of jobs in a specific released solver (limited to 20 jobs)"""
 
     solver = await catalog_client.get_solver(
         user_id=user_id,
@@ -78,11 +80,10 @@ async def list_jobs(
     )
     _logger.debug("Listing Jobs in Solver '%s'", solver.name)
 
-    projects: list[Project] = await webserver_api.list_projects(
-        solver.name, limit=20, offset=0
-    )
+    projects_page = await webserver_api.list_projects(solver.name, limit=20, offset=0)
+
     jobs: deque[Job] = deque()
-    for prj in projects:
+    for prj in projects_page.data:
         job = create_job_from_project(solver_key, version, prj, url_for)
         assert job.id == prj.uuid  # nosec
         assert job.name == prj.name  # nosec
@@ -90,6 +91,54 @@ async def list_jobs(
         jobs.append(job)
 
     return list(jobs)
+
+
+@router.get(
+    "/{solver_key:path}/releases/{version}/jobs/page",
+    # NOTE:
+    # Different entry to keep backwards compatibility with list_jobs.
+    # Eventually use a header with agent version to switch to new interface
+    response_model=LimitOffsetPage[Job],
+    include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def get_jobs_page(
+    solver_key: SolverKeyId,
+    version: VersionStr,
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    page_params: Annotated[LimitOffsetParams, Depends()],
+    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
+    product_name: Annotated[str, Depends(get_product_name)],
+):
+    """List of jobs on a specific released solver (includes pagination)
+
+
+    Breaking change in *version 0.5*: response model changed from list[Job] to pagination Page[Job].
+    """
+
+    solver = await catalog_client.get_solver(
+        user_id=user_id,
+        name=solver_key,
+        version=version,
+        product_name=product_name,
+    )
+    _logger.debug("Listing Jobs in Solver '%s'", solver.name)
+
+    projects_page = await webserver_api.list_projects(
+        solver.name, limit=page_params.limit, offset=page_params.offset
+    )
+
+    jobs = [
+        create_job_from_project(solver_key, version, prj, url_for)
+        for prj in projects_page.data
+    ]
+
+    return create_page(
+        jobs,
+        projects_page.meta.total,
+        page_params,
+    )
 
 
 @router.post(
