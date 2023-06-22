@@ -43,7 +43,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
       } else {
         this._removeAll();
         const label = new qx.ui.basic.Label();
-        if (study.isPipelineEmtpy()) {
+        if (study.isPipelineEmpty()) {
           label.setValue(this.tr("Pipeline is empty"));
         } else {
           label.setValue(this.tr("There are no visible nodes, enable some by editing the App Mode"));
