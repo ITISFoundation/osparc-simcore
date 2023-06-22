@@ -25,7 +25,6 @@ from pydantic import NonNegativeFloat, NonNegativeInt, parse_obj_as
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     ExpectedResponse,
     MockedStorageSubsystem,
@@ -49,7 +48,6 @@ from simcore_service_webserver.projects.models import ProjectDict
 )
 async def test_get_node_resources(
     client: TestClient,
-    logged_user: UserInfoDict,
     user_project: dict[str, Any],
     expected: type[web.HTTPException],
 ):
@@ -82,7 +80,6 @@ async def test_get_node_resources(
 )
 async def test_get_wrong_project_raises_not_found_error(
     client: TestClient,
-    logged_user: UserInfoDict,
     user_project: dict[str, Any],
     expected: type[web.HTTPException],
 ):
