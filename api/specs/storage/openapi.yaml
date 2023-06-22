@@ -15,6 +15,77 @@ servers:
 - url: localhost:8080/v0
   description: Development server
 paths:
+  /v0/locations/{location_id}/datasets:
+    get:
+      tags:
+      - datasets
+      summary: Get datasets metadata
+      description: Returns the list of dataset meta-datas
+      operationId: get_datasets_metadata
+      parameters:
+      - required: true
+        schema:
+          title: Location Id
+          type: integer
+        name: location_id
+        in: path
+      - required: true
+        schema:
+          title: User Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: user_id
+        in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_simcore_service_storage.models.DatasetMetaData__'
+  /v0/locations/{location_id}/datasets/{dataset_id}/metadata:
+    get:
+      tags:
+      - datasets
+      summary: Get Files Metadata
+      description: list of file meta-datas
+      operationId: get_files_metadata_dataset
+      parameters:
+      - required: true
+        schema:
+          title: Location Id
+          type: integer
+        name: location_id
+        in: path
+      - required: true
+        schema:
+          title: Dataset Id
+          type: string
+        name: dataset_id
+        in: path
+      - required: true
+        schema:
+          title: User Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: user_id
+        in: query
+      - required: false
+        schema:
+          title: Expand Dirs
+          type: boolean
+          default: true
+        name: expand_dirs
+        in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_storage.FileMetaDataGet__'
   /v0/locations:
     get:
       tags:
@@ -77,35 +148,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_TableSynchronisation_'
-  /v0/locations/{location_id}/datasets:
-    get:
-      tags:
-      - datasets
-      summary: Get datasets metadata
-      description: Returns the list of dataset meta-datas
-      operationId: get_datasets_metadata
-      parameters:
-      - required: true
-        schema:
-          title: Location Id
-          type: integer
-        name: location_id
-        in: path
-      - required: true
-        schema:
-          title: User Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: user_id
-        in: query
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_list_simcore_service_storage.models.DatasetMetaData__'
   /v0/locations/{location_id}/files/metadata:
     get:
       tags:
@@ -141,48 +183,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_simcore_service_storage.models.DatasetMetaData__'
-  /v0/locations/{location_id}/datasets/{dataset_id}/metadata:
-    get:
-      tags:
-      - datasets
-      summary: Get Files Metadata
-      description: list of file meta-datas
-      operationId: get_files_metadata_dataset
-      parameters:
-      - required: true
-        schema:
-          title: Location Id
-          type: integer
-        name: location_id
-        in: path
-      - required: true
-        schema:
-          title: Dataset Id
-          type: string
-        name: dataset_id
-        in: path
-      - required: true
-        schema:
-          title: User Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: user_id
-        in: query
-      - required: false
-        schema:
-          title: Expand Dirs
-          type: boolean
-          default: true
-        name: expand_dirs
-        in: query
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_storage.FileMetaDataGet__'
   /v0/locations/{location_id}/files/{file_id}/metadata:
     get:
       tags:
@@ -482,6 +482,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_FileUploadCompleteFutureResponse_'
+  /v0/:
+    get:
+      tags:
+      - health
+      summary: health check endpoint
+      description: Current service health
+      operationId: get_health
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_HealthCheck_'
+  /v0/status:
+    get:
+      tags:
+      - health
+      summary: returns the status of the services inside
+      operationId: get_status
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_AppStatusCheck_'
   /v0/files/{file_id}:soft-copy:
     post:
       tags:
@@ -520,80 +547,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FileMetaDataGet'
-  /v0/:
-    get:
-      tags:
-      - health
-      summary: health check endpoint
-      description: Current service health
-      operationId: get_health
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_HealthCheck_'
-  /v0/status:
-    get:
-      tags:
-      - health
-      summary: returns the status of the services inside
-      operationId: get_status
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_AppStatusCheck_'
-  /:
-    get:
-      tags:
-      - tasks
-      summary: list current long running tasks
-      operationId: list_tasks
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_TaskGet_'
-  /{task_id}:
-    get:
-      tags:
-      - tasks
-      summary: gets the status of the task
-      operationId: get_task_status
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_TaskStatus_'
-    delete:
-      tags:
-      - tasks
-      summary: cancels and removes the task
-      operationId: cancel_and_delete_task
-      responses:
-        '204':
-          description: Successful Response
-  /{task_id}/result:
-    get:
-      tags:
-      - tasks
-      summary: get result of the task
-      operationId: get_task_result
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                title: Response Get Task Result
   /v0/simcore-s3:access:
     post:
       tags:
@@ -704,6 +657,53 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_FileMetaDataGet_'
+  /:
+    get:
+      tags:
+      - tasks
+      summary: list current long running tasks
+      operationId: list_tasks
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_TaskGet_'
+  /{task_id}:
+    get:
+      tags:
+      - tasks
+      summary: gets the status of the task
+      operationId: get_task_status
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_TaskStatus_'
+    delete:
+      tags:
+      - tasks
+      summary: cancels and removes the task
+      operationId: cancel_and_delete_task
+      responses:
+        '204':
+          description: Successful Response
+  /{task_id}/result:
+    get:
+      tags:
+      - tasks
+      summary: get result of the task
+      operationId: get_task_result
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: Response Get Task Result
 components:
   schemas:
     AppStatusCheck:
