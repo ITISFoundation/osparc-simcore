@@ -16,6 +16,11 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.services_resources import (
+    DEFAULT_SINGLE_SERVICE_NAME,
+    ServiceResourcesDict,
+    ServiceResourcesDictHelpers,
+)
 from pydantic import NonNegativeFloat, NonNegativeInt, parse_obj_as
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -46,10 +51,6 @@ async def test_get_node_resources(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: dict[str, Any],
-    mock_catalog_service_api_responses: None,
-    mocked_director_v2_api: dict[str, mock.MagicMock],
-    mock_orphaned_services,
-    mock_catalog_api: dict[str, mock.Mock],
     expected: type[web.HTTPException],
 ):
     assert client.app
@@ -59,7 +60,19 @@ async def test_get_node_resources(
             project_id=user_project["uuid"], node_id=node_id
         )
         response = await client.get(f"{url}")
-        await assert_status(response, expected)
+        data, error = await assert_status(response, expected)
+        if data:
+            assert not error
+            node_resources = parse_obj_as(ServiceResourcesDict, data)
+            assert node_resources
+            assert DEFAULT_SINGLE_SERVICE_NAME in node_resources
+            assert (
+                node_resources
+                == ServiceResourcesDictHelpers.Config.schema_extra["examples"][0]
+            )
+        else:
+            assert not data
+            assert error
 
 
 @pytest.mark.parametrize(
