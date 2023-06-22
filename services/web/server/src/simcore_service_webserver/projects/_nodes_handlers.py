@@ -326,16 +326,21 @@ async def get_node_resources(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(_NodePathParams, request)
 
     # ensure the project exists
-    await projects_api.get_project_for_user(
+    project = await projects_api.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
     )
+    if f"{path_params.node_id}" not in project["workbench"]:
+        raise NodeNotFoundError(f"{path_params.project_id}", f"{path_params.node_id}")
 
     resources = await projects_api.get_project_node_resources(
         request.app,
+        user_id=req_ctx.user_id,
         project_id=path_params.project_id,
         node_id=path_params.node_id,
+        service_key=project["workbench"][f"{path_params.node_id}"]["key"],
+        service_version=project["workbench"][f"{path_params.node_id}"]["version"],
     )
     return envelope_json_response(resources)
 

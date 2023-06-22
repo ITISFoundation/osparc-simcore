@@ -252,8 +252,14 @@ async def _start_dynamic_service(
             project_uuid=project_uuid,
         )
         service_resources: ServiceResourcesDict = await get_project_node_resources(
-            request.app, project_id=project_uuid, node_id=node_uuid
+            request.app,
+            user_id=user_id,
+            project_id=project_uuid,
+            node_id=node_uuid,
+            service_key=service_key,
+            service_version=service_version,
         )
+
         await director_v2_api.run_dynamic_service(
             app=request.app,
             product_name=product_name,
@@ -891,12 +897,26 @@ async def is_project_node_deprecated(
 
 
 async def get_project_node_resources(
-    app: web.Application, project_id: ProjectID, node_id: NodeID
+    app: web.Application,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    service_key: str,
+    service_version: str,
 ) -> ServiceResourcesDict:
     db = ProjectDBAPI.get_from_app_context(app)
     try:
         project_node = await db.get_project_node(project_id, node_id)
-        return parse_obj_as(ServiceResourcesDict, project_node.required_resources)
+        node_resources = parse_obj_as(
+            ServiceResourcesDict, project_node.required_resources
+        )
+        if not node_resources:
+            # get default resources
+            node_resources = await catalog_client.get_service_resources(
+                app, user_id, service_key, service_version
+            )
+        return node_resources
+
     except ProjectNodesNodeNotFound as exc:
         raise NodeNotFoundError(f"{project_id}", f"{node_id}") from exc
 

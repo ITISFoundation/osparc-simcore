@@ -219,7 +219,7 @@ class ProjectDBAPI(BaseProjectDB):
         """Inserts a new project in the database
 
         - A valid uuid is automaticaly assigned to the project except if force_project_uuid=False. In the latter case,
-        - passing project_nodes=None will auto-generate default ProjectNodeCreate, this should not be the preferred way, this is for backwards compatibility
+        - passing project_nodes=None will auto-generate default ProjectNodeCreate, default resources will then be used.
         invalid uuid will raise an exception.
 
         :raises ProjectInvalidRightsError: assigning project to an unregistered user
