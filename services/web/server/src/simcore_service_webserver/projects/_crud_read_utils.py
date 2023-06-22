@@ -16,7 +16,7 @@ from simcore_postgres_database.webserver_models import ProjectType as ProjectTyp
 from ..catalog.client import get_services_for_user_in_product
 from ..rest.schemas_base import OutputSchema
 from . import projects_api
-from ._permalink import update_or_pop_permalink_in_project
+from ._permalink_api import update_or_pop_permalink_in_project
 from ._rest_schemas import ProjectListItem
 from .db import ProjectDBAPI
 from .models import ProjectDict, ProjectTypeAPI
