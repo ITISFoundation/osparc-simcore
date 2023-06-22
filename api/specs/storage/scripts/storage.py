@@ -128,9 +128,6 @@ async def synchronise_meta_data_table(
     """Returns an object containing added, changed and removed paths"""
 
 
-# handlers_files.py
-
-
 @app.get(
     f"/{api_vtag}/locations/{{location_id}}/files/metadata",
     response_model=Envelope[list[DatasetMetaData]],
@@ -383,6 +380,3 @@ if __name__ == "__main__":
     from _common import CURRENT_DIR, create_openapi_specs
 
     create_openapi_specs(app, CURRENT_DIR.parent / "openapi.yaml")
-
-
-# TODO: regroup by tags all endpoints
