@@ -2,12 +2,8 @@
 
 UNDER DEVELOPMENT
 """
-import typing
-import warnings
 
 import attr
-
-warnings.warn("DO NOT USE IN PRODUCTION, STILL UNDER DEVELOPMENT")
 
 # NOTE: using these, optional and required fields are always transmitted!
 # NOTE: make some attrs nullable by default!?
@@ -37,8 +33,8 @@ class ErrorItemType:
 
 @attr.s(auto_attribs=True)
 class ErrorType:
-    logs: typing.List[LogMessageType] = attr.Factory(list)
-    errors: typing.List[ErrorItemType] = attr.Factory(list)
+    logs: list[LogMessageType] = attr.Factory(list)
+    errors: list[ErrorItemType] = attr.Factory(list)
     status: int = 400
     message: str = "Unexpected client error"
 
@@ -47,7 +43,7 @@ class ErrorType:
 class FakeType:
     path_value: str
     query_value: str
-    body_value: typing.Dict[str, str]
+    body_value: dict[str, str]
 
 
 @attr.s(auto_attribs=True)
