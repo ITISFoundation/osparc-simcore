@@ -257,6 +257,14 @@ class ProjectDBAPI(BaseProjectDB):
                             project_nodes_repo = ProjectNodesRepo(
                                 project_uuid=project_uuid
                             )
+                            if project_nodes is None:
+                                project_nodes = {
+                                    NodeID(node_id): ProjectNodeCreate(
+                                        node_id=NodeID(node_id), required_resources={}
+                                    )
+                                    for node_id in selected_values["workbench"]
+                                }
+
                             nodes = [
                                 project_nodes.get(
                                     NodeID(node_id),
