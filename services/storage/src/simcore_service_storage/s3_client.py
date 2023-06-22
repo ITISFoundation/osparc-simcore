@@ -71,8 +71,7 @@ async def _list_objects_v2_all_items(
 
     results: deque[ObjectTypeDef] = deque()
 
-    paginator = client.get_paginator("list_objects_v2")
-    async for page in paginator.paginate(
+    async for page in client.get_paginator("list_objects_v2").paginate(
         Bucket=bucket, Prefix=prefix, PaginationConfig=pagination_config
     ):
         for entry in page.get("Contents", []):
