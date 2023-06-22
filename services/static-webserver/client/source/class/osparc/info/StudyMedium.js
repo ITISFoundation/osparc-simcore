@@ -29,7 +29,7 @@ qx.Class.define("osparc.info.StudyMedium", {
       padding: 0,
       backgroundColor: "background-main"
     });
-    this._setLayout(new qx.ui.layout.VBox(8));
+    this._setLayout(new qx.ui.layout.VBox(20));
 
     if (study instanceof osparc.data.model.Study) {
       this.setStudy(study);
