@@ -61,7 +61,9 @@ qx.Class.define("osparc.info.StudyLarge", {
     _rebuildLayout: function() {
       this._removeAll();
 
-      const title = this.__createTitle();
+      const title = osparc.info.StudyUtils.createTitle(this.getStudy()).set({
+        font: "text-14"
+      });
       const titleLayout = this.__createViewWithEdit(title, this.__openTitleEditor);
       const button = new qx.ui.form.Button(null, "@FontAwesome5Solid/copy/12").set({
         label: osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + " Id",
@@ -114,12 +116,12 @@ qx.Class.define("osparc.info.StudyLarge", {
       const extraInfo = {
         "AUTHOR": {
           label: this.tr("AUTHOR"),
-          view: this.__createOwner(),
+          view: osparc.info.StudyUtils.createOwner(this.getStudy()),
           action: null
         },
         "ACCESS_RIGHTS": {
           label: this.tr("ACCESS RIGHTS"),
-          view: this.__createAccessRights(),
+          view: osparc.info.StudyUtils.createAccessRights(this.getStudy()),
           action: {
             button: osparc.utils.Utils.getViewButton(),
             callback: this.isOpenOptions() ? this.__openAccessRights : "openAccessRights",
@@ -128,17 +130,17 @@ qx.Class.define("osparc.info.StudyLarge", {
         },
         "CREATED": {
           label: this.tr("CREATED"),
-          view: this.__createCreationDate(),
+          view: osparc.info.StudyUtils.createCreationDate(this.getStudy()),
           action: null
         },
         "MODIFIED": {
           label: this.tr("MODIFIED"),
-          view: this.__createLastChangeDate(),
+          view: osparc.info.StudyUtils.createLastChangeDate(this.getStudy()),
           action: null
         },
         "TAGS": {
           label: this.tr("TAGS"),
-          view: this.__createTags(),
+          view: osparc.info.StudyUtils.createTags(this.getStudy()),
           action: {
             button: osparc.utils.Utils.getViewButton(),
             callback: this.isOpenOptions() ? this.__openTagsEditor : "openTags",
@@ -147,7 +149,7 @@ qx.Class.define("osparc.info.StudyLarge", {
         },
         "DESCRIPTION": {
           label: this.tr("DESCRIPTION"),
-          view: this.__createDescription(),
+          view: osparc.info.StudyUtils.createDescription(this.getStudy(), 120),
           action: {
             button: osparc.utils.Utils.getEditButton(),
             callback: this.__canIWrite() ? this.__openDescriptionEditor : null,
@@ -172,7 +174,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       ) {
         extraInfo["QUALITY"] = {
           label: this.tr("QUALITY"),
-          view: this.__createQuality(),
+          view: osparc.info.StudyUtils.createQuality(this.getStudy()),
           action: {
             button: osparc.utils.Utils.getViewButton(),
             callback: this.isOpenOptions() ? this.__openQuality : "openQuality",
@@ -184,7 +186,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       if (osparc.product.Utils.showClassifiers()) {
         extraInfo["CLASSIFIERS"] = {
           label: this.tr("CLASSIFIERS"),
-          view: this.__createClassifiers(),
+          view: osparc.info.StudyUtils.createClassifiers(this.getStudy()),
           action: (this.getStudy().getClassifiers().length || this.__canIWrite()) ? {
             button: osparc.utils.Utils.getViewButton(),
             callback: this.isOpenOptions() ? this.__openClassifiers : "openClassifiers",
@@ -201,39 +203,8 @@ qx.Class.define("osparc.info.StudyLarge", {
       return moreInfo;
     },
 
-    __createTitle: function() {
-      const title = osparc.info.StudyUtils.createTitle(this.getStudy()).set({
-        font: "text-14"
-      });
-      return title;
-    },
-
     __createStudyId: function() {
       return osparc.info.StudyUtils.createUuid(this.getStudy());
-    },
-
-    __createOwner: function() {
-      return osparc.info.StudyUtils.createOwner(this.getStudy());
-    },
-
-    __createCreationDate: function() {
-      return osparc.info.StudyUtils.createCreationDate(this.getStudy());
-    },
-
-    __createLastChangeDate: function() {
-      return osparc.info.StudyUtils.createLastChangeDate(this.getStudy());
-    },
-
-    __createAccessRights: function() {
-      return osparc.info.StudyUtils.createAccessRights(this.getStudy());
-    },
-
-    __createClassifiers: function() {
-      return osparc.info.StudyUtils.createClassifiers(this.getStudy());
-    },
-
-    __createQuality: function() {
-      return osparc.info.StudyUtils.createQuality(this.getStudy());
     },
 
     __createThumbnail: function(maxWidth = 160, maxHeight = 100) {
@@ -242,15 +213,6 @@ qx.Class.define("osparc.info.StudyLarge", {
 
     __createDisableServiceAutoStart: function() {
       return osparc.info.StudyUtils.createDisableServiceAutoStart(this.getStudy());
-    },
-
-    __createTags: function() {
-      return osparc.info.StudyUtils.createTags(this.getStudy());
-    },
-
-    __createDescription: function() {
-      const maxHeight = 120;
-      return osparc.info.StudyUtils.createDescription(this.getStudy(), maxHeight);
     },
 
     __openTitleEditor: function() {
