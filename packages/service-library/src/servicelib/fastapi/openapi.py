@@ -105,6 +105,11 @@ def _patch_node_properties(key: str, node: dict):
         elif key == "pattern" and node_type == "string":
             node[key] = _remove_named_groups(regex=node[key])
 
+        elif key == "env_names":
+            # NOTE: `env_names` added by BaseCustomSettings types
+            # and is not compatible with OpenAPI specifications
+            node.pop("env_names")
+
 
 def _patch(node: Any):
     if isinstance(node, dict):
@@ -115,7 +120,8 @@ def _patch(node: Any):
             _patch_node_properties(key, node)
 
             # recursive
-            _patch(node[key])
+            if key in node:  # key could have been removed in _patch_node_properties
+                _patch(node[key])
 
     elif isinstance(node, list):
         for value in node:
