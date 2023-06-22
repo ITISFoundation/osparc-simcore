@@ -268,7 +268,31 @@ qx.Class.define("osparc.info.StudyUtils", {
       return tagsContainer;
     },
 
-    createExtraInfo: function(extraInfos) {
+    createExtraInfoVBox: function(extraInfos) {
+      const grid = new qx.ui.layout.Grid(40, 5);
+      grid.setColumnAlign(0, "right", "middle");
+      grid.setColumnAlign(1, "left", "middle");
+      const moreInfo = new qx.ui.container.Composite(grid);
+
+      Object.keys(extraInfos).forEach((key, idx) => {
+        const extraInfo = extraInfos[key];
+
+        const title = new qx.ui.basic.Label(extraInfo.label);
+        moreInfo.add(title, {
+          row: idx,
+          column: 0
+        });
+
+        moreInfo.add(extraInfo.view, {
+          row: idx,
+          column: 1
+        });
+      });
+
+      return moreInfo;
+    },
+
+    createExtraInfoGrid: function(extraInfos) {
       const positions = {
         DESCRIPTION: {
           column: 0,

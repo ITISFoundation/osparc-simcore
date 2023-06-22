@@ -197,7 +197,7 @@ qx.Class.define("osparc.info.StudyLarge", {
     },
 
     __createExtraInfo: function(extraInfo) {
-      const moreInfo = osparc.info.StudyUtils.createExtraInfo(extraInfo);
+      const moreInfo = osparc.info.StudyUtils.createExtraInfoGrid(extraInfo);
       return moreInfo;
     },
 

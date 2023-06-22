@@ -26,7 +26,7 @@ qx.Class.define("osparc.info.StudyMedium", {
     this.base(arguments);
 
     this.set({
-      padding: this.self().PADDING,
+      padding: 0,
       backgroundColor: "background-main"
     });
     this._setLayout(new qx.ui.layout.VBox(8));
@@ -45,13 +45,6 @@ qx.Class.define("osparc.info.StudyMedium", {
       init: null,
       nullable: false
     }
-  },
-
-  statics: {
-    PADDING: 0,
-    EXTRA_INFO_WIDTH: 220,
-    THUMBNAIL_MIN_WIDTH: 110,
-    THUMBNAIL_MAX_WIDTH: 180
   },
 
   members: {
@@ -83,44 +76,14 @@ qx.Class.define("osparc.info.StudyMedium", {
       nameAndMenuButton.add(this.__createMenuButton());
       this._add(nameAndMenuButton);
 
+      const thumbnail = this.__createThumbnail(160, 100);
+      if (thumbnail) {
+        this._add(thumbnail);
+      }
+
       const extraInfo = this.__extraInfo();
       const extraInfoLayout = this.__createExtraInfo(extraInfo);
-
-      const bounds = this.getBounds();
-      let widgetWidth = null;
-      const offset = 10;
-      if (width) {
-        widgetWidth = width - offset;
-      } else if (bounds) {
-        widgetWidth = bounds.width - offset;
-      } else {
-        widgetWidth = 350 - offset;
-      }
-      let thumbnailWidth = widgetWidth - 2*this.self().PADDING;
-      const maxThumbnailHeight = extraInfo.length*20;
-      const slim = widgetWidth < this.self().EXTRA_INFO_WIDTH + this.self().THUMBNAIL_MIN_WIDTH + 2*this.self().PADDING;
-      if (slim) {
-        this._add(extraInfoLayout);
-        thumbnailWidth = Math.min(thumbnailWidth, this.self().THUMBNAIL_MAX_WIDTH);
-        const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
-        if (thumbnail) {
-          this._add(thumbnail);
-        }
-      } else {
-        const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
-          alignX: "center"
-        }));
-        hBox.add(extraInfoLayout);
-        thumbnailWidth -= this.self().EXTRA_INFO_WIDTH;
-        thumbnailWidth = Math.min(thumbnailWidth, this.self().THUMBNAIL_MAX_WIDTH);
-        const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
-        if (thumbnail) {
-          hBox.add(thumbnail, {
-            flex: 1
-          });
-        }
-        this._add(hBox);
-      }
+      this._add(extraInfoLayout);
 
       const description = this.__createDescription();
       if (description) {
@@ -159,25 +122,28 @@ qx.Class.define("osparc.info.StudyMedium", {
 
     __extraInfo: function() {
       const extraInfo = [{
-        label: this.tr("Author"),
+        label: this.tr("AUTHOR"),
         view: this.__createOwner(),
         action: null
       }, {
-        label: this.tr("Creation Date"),
+        label: this.tr("ACCESS RIGHTS"),
+        view: this.__createAccessRights()
+      }, {
+        label: this.tr("CREATED"),
         view: this.__createCreationDate(),
         action: null
       }, {
-        label: this.tr("Last Modified"),
+        label: this.tr("MODIFIED"),
         view: this.__createLastChangeDate(),
         action: null
       }, {
-        label: this.tr("Access Rights"),
-        view: this.__createAccessRights(),
-        action: {
-          button: osparc.utils.Utils.getViewButton(),
-          callback: this.__openAccessRights,
-          ctx: this
-        }
+        label: this.tr("TAGS"),
+        view: this.__createTags(),
+        action: null
+      }, {
+        label: this.tr("DESCRIPTION"),
+        view: this.__createDescription(),
+        action: null
       }];
 
       if (
@@ -198,9 +164,7 @@ qx.Class.define("osparc.info.StudyMedium", {
     },
 
     __createExtraInfo: function(extraInfo) {
-      const moreInfo = osparc.info.StudyUtils.createExtraInfo(extraInfo).set({
-        width: this.self().EXTRA_INFO_WIDTH
-      });
+      const moreInfo = osparc.info.StudyUtils.createExtraInfoVBox(extraInfo);
 
       return moreInfo;
     },

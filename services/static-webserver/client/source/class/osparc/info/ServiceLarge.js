@@ -254,7 +254,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
     },
 
     __createExtraInfo: function(extraInfo) {
-      const moreInfo = osparc.info.ServiceUtils.createExtraInfo(extraInfo).set({
+      const moreInfo = osparc.info.ServiceUtils.createExtraInfoGrid(extraInfo).set({
         width: osparc.info.CardLarge.EXTRA_INFO_WIDTH
       });
       return moreInfo;
