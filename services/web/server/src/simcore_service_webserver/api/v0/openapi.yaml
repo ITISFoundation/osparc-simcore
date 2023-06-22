@@ -1766,18 +1766,18 @@ paths:
                 title: Response Get Storage Locations
                 type: array
                 items:
-                  title: FileLocation
+                  title: DatasetMetaData
                   type: object
                   properties:
-                    name:
-                      title: Name
+                    dataset_id:
+                      title: Dataset Id
                       type: string
-                    id:
-                      title: Id
-                      type: number
+                    display_name:
+                      title: Display Name
+                      type: string
                   example:
-                    name: simcore.s3
-                    id: 0
+                    dataset_id: 'N:id-aaaa'
+                    display_name: simcore-testing
   '/storage/locations/{location_id}:sync':
     post:
       tags:
@@ -1919,13 +1919,16 @@ paths:
                 properties:
                   data:
                     title: PresignedLink
+                    required:
+                      - link
                     type: object
                     properties:
                       link:
                         title: Link
+                        maxLength: 65536
+                        minLength: 1
                         type: string
-                    example:
-                      link: example_link
+                        format: uri
                   error:
                     title: Error
     put:
@@ -1997,15 +2000,17 @@ paths:
                         properties:
                           chunk_size:
                             title: Chunk Size
-                            minimum: 0
                             type: integer
                           urls:
                             title: Urls
                             type: array
                             items:
+                              maxLength: 65536
+                              minLength: 1
                               type: string
+                              format: uri
                           links:
-                            title: Links
+                            title: FileUploadLinks
                             required:
                               - abort_upload
                               - complete_upload
@@ -2013,10 +2018,16 @@ paths:
                             properties:
                               abort_upload:
                                 title: Abort Upload
+                                maxLength: 65536
+                                minLength: 1
                                 type: string
+                                format: uri
                               complete_upload:
                                 title: Complete Upload
+                                maxLength: 65536
+                                minLength: 1
                                 type: string
+                                format: uri
                       error:
                         title: Error
                   - title: 'Envelope[AnyUrl]'
@@ -2135,24 +2146,27 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[FileUploadComplete]'
+                title: 'Envelope[FileUploadCompleteResponse]'
                 type: object
                 properties:
                   data:
-                    title: FileUploadComplete
+                    title: FileUploadCompleteResponse
                     required:
                       - links
                     type: object
                     properties:
                       links:
-                        title: Links1
+                        title: FileUploadCompleteLinks
                         required:
                           - state
                         type: object
                         properties:
                           state:
                             title: State
+                            maxLength: 65536
+                            minLength: 1
                             type: string
+                            format: uri
                   error:
                     title: Error
   '/storage/locations/{location_id}/files/{file_id}:abort':
@@ -2499,18 +2513,7 @@ paths:
                     title: Data
                     type: array
                     items:
-                      title: DatasetMetaData
-                      type: object
-                      properties:
-                        dataset_id:
-                          title: Dataset Id
-                          type: string
-                        display_name:
-                          title: Display Name
-                          type: string
-                      example:
-                        dataset_id: 'N:id-aaaa'
-                        display_name: simcore-testing
+                      $ref: '#/paths/~1storage~1locations/get/responses/200/content/application~1json/schema/items'
                   error:
                     title: Error
   '/computations/{project_id}':
