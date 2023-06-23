@@ -154,14 +154,19 @@ qx.Class.define("osparc.wrapper.Three", {
       );
     },
 
-    loadScene: function(scenePath = "resource/threejs/scene.glb") {
+    loadScene: function(scenePath) {
       const onLoad = gltf => {
         this.__scene.add(gltf.scene);
+        /*
         gltf.animations; // Array<THREE.AnimationClip>
         gltf.scene; // THREE.Group
         gltf.scenes; // Array<THREE.Group>
         gltf.cameras; // Array<THREE.Camera>
         gltf.asset; // Object
+        */
+
+        // OM
+        this.__fitCameraToCenteredObject(gltf.scene.children);
       };
 
       const onProgress = xhr => console.log((xhr.loaded / xhr.total * 100) + "% loaded");
@@ -198,6 +203,44 @@ qx.Class.define("osparc.wrapper.Three", {
       this.__camera.updateProjectionMatrix();
       this.__renderer.setSize(width, height);
       this.__orbitControls.update();
+      this.render();
+    },
+
+    __fitCameraToCenteredObject: function(selection, fitOffset = 1.2) {
+      const camera = this.__camera;
+      const controls = this.__orbitControls;
+
+      const size = new THREE.Vector3();
+      const center = new THREE.Vector3();
+      const box = new THREE.Box3();
+      box.makeEmpty();
+      for (const object of selection) {
+        box.expandByObject(object);
+      }
+      box.getSize(size);
+      box.getCenter(center);
+
+      const maxSize = Math.max(size.x, size.y, size.z);
+      const fitHeightDistance = maxSize / (2 * Math.atan(Math.PI * camera.fov / 360));
+      const fitWidthDistance = fitHeightDistance / camera.aspect;
+      const distance = fitOffset * Math.max(fitHeightDistance, fitWidthDistance);
+
+      const direction = controls.target.clone()
+        .sub(camera.position)
+        .normalize()
+        .multiplyScalar(distance);
+
+      controls.maxDistance = distance * 10;
+      controls.target.copy(center);
+
+      camera.near = distance / 100;
+      camera.far = distance * 100;
+      camera.updateProjectionMatrix();
+
+      camera.position.copy(controls.target).sub(direction);
+
+      controls.update();
+
       this.render();
     },
 
