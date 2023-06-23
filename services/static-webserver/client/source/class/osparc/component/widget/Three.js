@@ -56,7 +56,7 @@ qx.Class.define("osparc.component.widget.Three", {
 
       this.__render();
 
-      this.__threeWrapper.loadSample();
+      // this.__threeWrapper.loadScene();
     },
 
     __resized: function() {

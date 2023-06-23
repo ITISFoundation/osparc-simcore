@@ -154,7 +154,7 @@ qx.Class.define("osparc.wrapper.Three", {
       );
     },
 
-    loadSample: function() {
+    loadScene: function(scenePath = "resource/threejs/scene.glb") {
       const onLoad = gltf => {
         this.__scene.add(gltf.scene);
         gltf.animations; // Array<THREE.AnimationClip>
@@ -172,7 +172,7 @@ qx.Class.define("osparc.wrapper.Three", {
       // Load a glTF resource
       loader.load(
         // resource URL
-        "resource/threejs/scene.glb",
+        scenePath,
         // called when the resource is loaded
         onLoad,
         // called while loading is progressing
