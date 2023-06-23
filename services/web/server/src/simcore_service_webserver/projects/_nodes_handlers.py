@@ -52,6 +52,7 @@ from ._nodes_api import NodeScreenshot, fake_screenshots_factory
 from .db import ProjectDBAPI
 from .exceptions import (
     NodeNotFoundError,
+    ProjectNodeResourcesInsufficientRightsError,
     ProjectNodeResourcesInvalidError,
     ProjectNotFoundError,
     ProjectStartsTooManyDynamicNodes,
@@ -376,7 +377,13 @@ async def replace_node_resources(request: web.Request) -> web.Response:
             reason=f"{exc}",
             text=f"{exc}",
             content_type=MIMETYPE_APPLICATION_JSON,
-        )
+        ) from exc
+    except ProjectNodeResourcesInsufficientRightsError as exc:
+        raise web.HTTPForbidden(
+            reason=f"{exc}",
+            text=f"{exc}",
+            content_type=MIMETYPE_APPLICATION_JSON,
+        ) from exc
 
 
 class _ServicesAccessQuery(BaseModel):
