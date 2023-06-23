@@ -8,6 +8,7 @@ from aiopg.sa.connection import SAConnection
 
 from .errors import ForeignKeyViolation, UniqueViolation
 from .models.projects_nodes import projects_nodes
+from .utils_models import FromRowMixin
 
 
 #
@@ -44,7 +45,7 @@ class ProjectNodeCreate:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class ProjectNode(ProjectNodeCreate):
+class ProjectNode(ProjectNodeCreate, FromRowMixin):
     created: datetime.datetime
     modified: datetime.datetime
 
@@ -94,14 +95,9 @@ class ProjectNodesRepo:
         try:
             result = await connection.execute(insert_stmt)
             assert result  # nosec
-            created_nodes_db = await result.fetchall()
-            assert created_nodes_db is not None  # nosec
-            created_nodes = [
-                ProjectNode(**dict(created_node_db.items()))
-                for created_node_db in created_nodes_db
-            ]
-
-            return created_nodes
+            rows = await result.fetchall()
+            assert rows is not None  # nosec
+            return [ProjectNode.from_row(r) for r in rows]
         except ForeignKeyViolation as exc:
             # this happens when the project does not exist, as we first check the node exists
             raise ProjectNodesProjectNotFound(
@@ -127,9 +123,9 @@ class ProjectNodesRepo:
         ).where(projects_nodes.c.project_uuid == f"{self.project_uuid}")
         result = await connection.execute(list_stmt)
         assert result  # nosec
-        nodes_list_db = await result.fetchall()
-        assert nodes_list_db is not None  # nosec
-        nodes = [ProjectNode(**dict(node.items())) for node in nodes_list_db]
+        rows = await result.fetchall()
+        assert rows is not None  # nosec
+        nodes = [ProjectNode.from_row(row) for row in rows]
         return nodes
 
     async def get(self, connection: SAConnection, *, node_id: uuid.UUID) -> ProjectNode:
@@ -154,7 +150,7 @@ class ProjectNodesRepo:
         if row is None:
             raise ProjectNodesNodeNotFound(f"Node with {node_id} not found")
         assert row  # nosec
-        return ProjectNode(**dict(row.items()))
+        return ProjectNode.from_row(row)
 
     async def update(
         self, connection: SAConnection, *, node_id: uuid.UUID, **values
@@ -178,11 +174,11 @@ class ProjectNodesRepo:
             )
         )
         result = await connection.execute(update_stmt)
-        updated_entry = await result.first()
-        if not updated_entry:
+        row = await result.first()
+        if not row:
             raise ProjectNodesNodeNotFound(f"Node with {node_id} not found")
-        assert updated_entry  # nosec
-        return ProjectNode(**dict(updated_entry.items()))
+        assert row  # nosec
+        return ProjectNode.from_row(row)
 
     async def delete(self, connection: SAConnection, *, node_id: uuid.UUID) -> None:
         """delete a node in the current project
