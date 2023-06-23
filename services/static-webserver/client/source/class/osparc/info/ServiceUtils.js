@@ -206,15 +206,6 @@ qx.Class.define("osparc.info.ServiceUtils", {
       });
       resourcesLayout.add(resourcesInfo);
 
-      const reservationLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      reservationLayout.add(new qx.ui.basic.Label(this.RESOURCES_INFO["reservation"].label).set({
-        font: "text-13"
-      }));
-      reservationLayout.add(new osparc.ui.hint.InfoHint(this.RESOURCES_INFO["reservation"].tooltip));
-      resourcesInfo.add(reservationLayout, {
-        row: 0,
-        column: 2
-      });
       const limitLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       limitLayout.add(new qx.ui.basic.Label(this.RESOURCES_INFO["limit"].label).set({
         font: "text-13"
@@ -222,7 +213,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       limitLayout.add(new osparc.ui.hint.InfoHint(this.RESOURCES_INFO["limit"].tooltip));
       resourcesInfo.add(limitLayout, {
         row: 0,
-        column: 3
+        column: 2
       });
 
       return resourcesLayout;
