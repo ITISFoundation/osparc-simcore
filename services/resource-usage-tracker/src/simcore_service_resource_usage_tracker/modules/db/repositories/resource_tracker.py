@@ -19,6 +19,7 @@ class ResourceTrackerRepository(BaseRepository):
                 container_id=data.container_id,
                 image=data.image,
                 user_id=data.user_id,
+                project_uuid=str(data.project_uuid),
                 product_name=data.product_name,
                 service_settings_reservation_nano_cpus=data.service_settings_reservation_nano_cpus,
                 service_settings_reservation_memory_bytes=data.service_settings_reservation_memory_bytes,

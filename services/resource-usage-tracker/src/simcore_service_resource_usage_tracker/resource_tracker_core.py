@@ -16,14 +16,11 @@ from .modules.db.repositories.resource_tracker import ResourceTrackerRepository
 _logger = logging.getLogger(__name__)
 
 
-async def _prometheus_client_custom_query(
+def _prometheus_sync_client_custom_query(
     prometheus_client: PrometheusConnect, promql_cpu_query: str
 ) -> list[dict]:
     _logger.info("Querying prometheus with: %s", promql_cpu_query)
-    data: list[dict] = await asyncio.get_event_loop().run_in_executor(
-        None, prometheus_client.custom_query(promql_cpu_query)
-    )
-    return data
+    return prometheus_client.custom_query(promql_cpu_query)
 
 
 async def _scrape_and_upload_container_resource_usage(
@@ -33,8 +30,10 @@ async def _scrape_and_upload_container_resource_usage(
 ) -> None:
     # Query CPU seconds
     promql_cpu_query = f"sum without (cpu) (container_cpu_usage_seconds_total{{image=~'{image_regex}'}})[30m:1m]"
-    containers_cpu_seconds_usage: list = await _prometheus_client_custom_query(
-        prometheus_client, promql_cpu_query
+    containers_cpu_seconds_usage: list[
+        dict
+    ] = await asyncio.get_event_loop().run_in_executor(
+        None, _prometheus_sync_client_custom_query, prometheus_client, promql_cpu_query
     )
     _logger.info(
         "Received %s containers from Prometheus", len(containers_cpu_seconds_usage)
@@ -74,6 +73,7 @@ async def _scrape_and_upload_container_resource_usage(
             image=metric["image"],
             user_id=metric["container_label_user_id"],
             product_name=metric["container_label_product_name"],
+            project_uuid=metric["container_label_study_id"],
             service_settings_reservation_nano_cpus=int(nano_cpus)
             if nano_cpus
             else None,

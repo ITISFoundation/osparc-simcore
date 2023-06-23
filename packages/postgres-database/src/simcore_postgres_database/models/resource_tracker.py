@@ -32,6 +32,12 @@ resource_tracker_container = sa.Table(
         doc="user_id label scraped via Prometheus (taken from container labels)",
     ),
     sa.Column(
+        "project_uuid",
+        sa.String,
+        nullable=False,
+        doc="project_uuid label scraped via Prometheus (taken from container labels)",
+    ),
+    sa.Column(
         "product_name",
         sa.String,
         nullable=False,
