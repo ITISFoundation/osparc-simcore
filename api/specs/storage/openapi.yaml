@@ -72,13 +72,6 @@ paths:
           minimum: 0
         name: user_id
         in: query
-      - required: false
-        schema:
-          title: Expand Dirs
-          type: boolean
-          default: true
-        name: expand_dirs
-        in: query
       responses:
         '200':
           description: Successful Response
@@ -168,13 +161,6 @@ paths:
           type: string
           default: ''
         name: uuid_filter
-        in: query
-      - required: false
-        schema:
-          title: Expand Dirs
-          type: boolean
-          default: true
-        name: expand_dirs
         in: query
       responses:
         '200':
