@@ -59,6 +59,7 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
             "project.import",
             "project.access_rights.update",
             "project.node.create",
+            "project.node.update",
             "project.node.delete",
             "project.template.create",
             "project.classifier.*",
@@ -76,7 +77,6 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
         can=[
             "clusters.create",
             "diagnostics.read",
-            "project.node.update",
             "project.snapshot.read",
             "project.snapshot.create",
         ],
