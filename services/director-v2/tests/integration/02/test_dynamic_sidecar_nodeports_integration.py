@@ -264,13 +264,13 @@ def current_user(registered_user: Callable) -> dict[str, Any]:
 @pytest.fixture
 async def current_study(
     current_user: dict[str, Any],
-    project: Callable[..., ProjectAtDB],
+    project: Callable[..., Awaitable[ProjectAtDB]],
     fake_dy_workbench: dict[str, Any],
     async_client: httpx.AsyncClient,
     osparc_product_name: str,
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ) -> ProjectAtDB:
-    project_at_db = project(current_user, workbench=fake_dy_workbench)
+    project_at_db = await project(current_user, workbench=fake_dy_workbench)
 
     # create entries in comp_task table in order to pull output ports
     await create_pipeline(

@@ -196,7 +196,11 @@ async def _add_new_project(
 
     # update metadata (uuid, timestamps, ownership) and save
     _project_db: dict = await db.insert_project(
-        project_in, user.id, product_name=product_name, force_as_template=False
+        project_in,
+        user.id,
+        product_name=product_name,
+        force_as_template=False,
+        project_nodes=None,
     )
     assert _project_db["uuid"] == str(project.uuid)  # nosec
 
