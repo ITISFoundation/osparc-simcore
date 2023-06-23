@@ -7,7 +7,7 @@
 
 import datetime
 import json
-from typing import Any, Callable, Iterator
+from typing import Any, Awaitable, Callable, Iterator
 from uuid import uuid4
 
 import pytest
@@ -234,16 +234,16 @@ def cluster(
 
 
 @pytest.fixture
-def published_project(
+async def published_project(
     registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., ProjectAtDB],
+    project: Callable[..., Awaitable[ProjectAtDB]],
     pipeline: Callable[..., CompPipelineAtDB],
     tasks: Callable[..., list[CompTaskAtDB]],
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
 ) -> PublishedProject:
     user = registered_user()
-    created_project = project(user, workbench=fake_workbench_without_outputs)
+    created_project = await project(user, workbench=fake_workbench_without_outputs)
     return PublishedProject(
         project=created_project,
         pipeline=pipeline(
@@ -255,9 +255,9 @@ def published_project(
 
 
 @pytest.fixture
-def running_project(
+async def running_project(
     registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., ProjectAtDB],
+    project: Callable[..., Awaitable[ProjectAtDB]],
     pipeline: Callable[..., CompPipelineAtDB],
     tasks: Callable[..., list[CompTaskAtDB]],
     runs: Callable[..., CompRunsAtDB],
@@ -265,7 +265,7 @@ def running_project(
     fake_workbench_adjacency: dict[str, Any],
 ) -> RunningProject:
     user = registered_user()
-    created_project = project(user, workbench=fake_workbench_without_outputs)
+    created_project = await project(user, workbench=fake_workbench_without_outputs)
     return RunningProject(
         project=created_project,
         pipeline=pipeline(

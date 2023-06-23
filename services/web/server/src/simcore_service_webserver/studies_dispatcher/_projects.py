@@ -76,7 +76,6 @@ def _create_project(
     workbench: dict[str, Node],
     workbench_ui: dict[str, dict],
 ) -> Project:
-
     # Access rights policy
     access_rights = AccessRights(read=True, write=True, delete=True)  # will keep a copy
     if owner.is_guest:
@@ -105,7 +104,6 @@ def _create_project_with_service(
     owner: UserInfo,
     service_info: ServiceInfo,
 ) -> Project:
-
     service = Node(
         key=service_info.key,
         version=service_info.version,
@@ -138,7 +136,6 @@ def _create_project_with_filepicker_and_service(
     download_link: HttpUrl,
     viewer_info: ViewerInfo,
 ) -> Project:
-
     file_picker, file_picker_output_id = _create_file_picker(download_link)
 
     viewer_service = Node(
@@ -191,7 +188,11 @@ async def _add_new_project(
 
     # update metadata (uuid, timestamps, ownership) and save
     _project_db: dict = await db.insert_project(
-        project_in, user.id, product_name=product_name, force_as_template=False
+        project_in,
+        user.id,
+        product_name=product_name,
+        force_as_template=False,
+        project_nodes=None,
     )
     assert _project_db["uuid"] == str(project.uuid)  # nosec
 
@@ -270,7 +271,6 @@ async def get_or_create_project_with_file_and_service(
         exists = False
 
     if not exists:
-
         project = _create_project_with_filepicker_and_service(
             project_uid,
             file_picker_id,
@@ -293,7 +293,6 @@ async def get_or_create_project_with_service(
     *,
     product_name: str,
 ) -> ProjectNodePair:
-
     project_uid: ProjectID = compose_uuid_from(user.id, service_info.footprint)
     _, service_id = _generate_nodeids(project_uid)
 
@@ -325,7 +324,6 @@ async def get_or_create_project_with_file(
     project_thumbnail: HttpUrl,
     product_name: str,
 ) -> ProjectNodePair:
-
     project_uid: ProjectID = compose_uuid_from(user.id, file_params.footprint)
     file_picker_id, _ = _generate_nodeids(project_uid)
 
