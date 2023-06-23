@@ -3,7 +3,7 @@ from models_library.services_resources import ServiceResourcesDict
 from .exceptions import ProjectNodeResourcesInvalidError
 
 
-def check_can_update_service_resources(
+def validate_new_service_resources(
     resources: ServiceResourcesDict, *, new_resources: ServiceResourcesDict
 ) -> None:
     """validate new_resources can be applied on resources
