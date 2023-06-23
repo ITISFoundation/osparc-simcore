@@ -48,7 +48,7 @@ class ProjectAccessRights(Enum):
 def check_project_permissions(
     project: ProjectProxy | ProjectDict,
     user_id: int,
-    user_groups: list[RowProxy],
+    user_groups: list[dict[str, Any]],
     permission: str,
 ) -> None:
     """

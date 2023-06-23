@@ -45,6 +45,10 @@ from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_postgres_database.models.users import UserRole
+from simcore_postgres_database.utils_projects_nodes import (
+    ProjectNodeCreate,
+    ProjectNodesNodeNotFound,
+)
 from simcore_postgres_database.webserver_models import ProjectType
 
 from ..catalog import client as catalog_client
@@ -67,6 +71,7 @@ from ..storage import api as storage_api
 from ..users.api import UserNameDict, get_user_name, get_user_role
 from ..users.exceptions import UserNotFoundError
 from . import _crud_delete_utils, _nodes_api
+from ._nodes_utils import check_can_update_service_resources
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import (
     NodeNotFoundError,
@@ -249,13 +254,12 @@ async def _start_dynamic_service(
         service_resources: ServiceResourcesDict = await get_project_node_resources(
             request.app,
             user_id=user_id,
-            project={
-                "workbench": {
-                    f"{node_uuid}": {"key": service_key, "version": service_version}
-                }
-            },
+            project_id=project_uuid,
             node_id=node_uuid,
+            service_key=service_key,
+            service_version=service_version,
         )
+
         await director_v2_api.run_dynamic_service(
             app=request.app,
             product_name=product_name,
@@ -282,7 +286,7 @@ async def add_project_node(
     service_key: str,
     service_version: str,
     service_id: str | None,
-) -> str:
+) -> NodeID:
     log.debug(
         "starting node %s:%s in project %s for user %s",
         service_key,
@@ -291,26 +295,28 @@ async def add_project_node(
         user_id,
         extra=get_log_record_extra(user_id=user_id),
     )
-    node_uuid = service_id if service_id else f"{uuid4()}"
-
-    # ensure the project is up-to-date in the database prior to start any potential service
-    partial_workbench_data: dict[str, Any] = {
-        node_uuid: jsonable_encoder(
-            Node.parse_obj(
-                {
-                    "key": service_key,
-                    "version": service_version,
-                    "label": service_key.split("/")[-1],
-                }
-            ),
-            exclude_unset=True,
-        ),
-    }
+    node_uuid = NodeID(service_id if service_id else f"{uuid4()}")
+    default_resources = await catalog_client.get_service_resources(
+        request.app, user_id, service_key, service_version
+    )
     db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
     assert db  # nosec
-    await db.update_project_workbench(
-        partial_workbench_data, user_id, project["uuid"], product_name
+    await db.add_project_node(
+        user_id,
+        ProjectID(project["uuid"]),
+        ProjectNodeCreate(
+            node_id=node_uuid, required_resources=jsonable_encoder(default_resources)
+        ),
+        Node.parse_obj(
+            {
+                "key": service_key,
+                "version": service_version,
+                "label": service_key.split("/")[-1],
+            }
+        ),
+        product_name,
     )
+
     # also ensure the project is updated by director-v2 since services
     # are due to access comp_tasks at some point see [https://github.com/ITISFoundation/osparc-simcore/issues/3216]
     await director_v2_api.create_or_update_pipeline(
@@ -327,7 +333,7 @@ async def add_project_node(
                 product_name=product_name,
                 user_id=user_id,
                 project_uuid=ProjectID(project["uuid"]),
-                node_uuid=NodeID(node_uuid),
+                node_uuid=node_uuid,
             )
 
     return node_uuid
@@ -384,14 +390,9 @@ async def delete_project_node(
     )
 
     # remove the node from the db
-    partial_workbench_data: dict[str, Any] = {
-        node_uuid: None,
-    }
     db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
     assert db  # nosec
-    await db.update_project_workbench(
-        partial_workbench_data, user_id, f"{project_uuid}"
-    )
+    await db.remove_project_node(user_id, project_uuid, NodeID(node_uuid))
     # also ensure the project is updated by director-v2 since services
     product_name = get_product_name(request)
     await director_v2_api.create_or_update_pipeline(
@@ -896,20 +897,52 @@ async def is_project_node_deprecated(
 
 
 async def get_project_node_resources(
-    app: web.Application, user_id: UserID, project: dict[str, Any], node_id: NodeID
+    app: web.Application,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    service_key: str,
+    service_version: str,
 ) -> ServiceResourcesDict:
-    if project_node := project.get("workbench", {}).get(f"{node_id}"):
-        default_service_resources = await catalog_client.get_service_resources(
-            app, user_id, project_node["key"], project_node["version"]
+    db = ProjectDBAPI.get_from_app_context(app)
+    try:
+        project_node = await db.get_project_node(project_id, node_id)
+        node_resources = parse_obj_as(
+            ServiceResourcesDict, project_node.required_resources
         )
-        return default_service_resources
-    raise NodeNotFoundError(project["uuid"], f"{node_id}")
+        if not node_resources:
+            # get default resources
+            node_resources = await catalog_client.get_service_resources(
+                app, user_id, service_key, service_version
+            )
+        return node_resources
+
+    except ProjectNodesNodeNotFound as exc:
+        raise NodeNotFoundError(f"{project_id}", f"{node_id}") from exc
 
 
-async def set_project_node_resources(
-    app: web.Application, project: dict[str, Any], node_id: NodeID
-):
-    raise NotImplementedError("cannot change resources for now")
+async def update_project_node_resources(
+    app: web.Application,
+    project_id: ProjectID,
+    node_id: NodeID,
+    resources: ServiceResourcesDict,
+) -> ServiceResourcesDict:
+    db = ProjectDBAPI.get_from_app_context(app)
+    try:
+        # validate the resource are applied to the same container names
+        current_project_node = await db.get_project_node(project_id, node_id)
+        current_resources = parse_obj_as(
+            ServiceResourcesDict, current_project_node.required_resources
+        )
+
+        check_can_update_service_resources(current_resources, new_resources=resources)
+
+        project_node = await db.update_project_node(
+            project_id, node_id, required_resources=jsonable_encoder(resources)
+        )
+        return parse_obj_as(ServiceResourcesDict, project_node.required_resources)
+    except ProjectNodesNodeNotFound as exc:
+        raise NodeNotFoundError(f"{project_id}", f"{node_id}") from exc
 
 
 #
