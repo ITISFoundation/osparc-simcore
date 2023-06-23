@@ -70,6 +70,7 @@ from .exceptions import (
     NodeNotFoundError,
     ProjectDeleteError,
     ProjectInvalidRightsError,
+    ProjectNodeResourcesInsufficientRightsError,
     ProjectNotFoundError,
 )
 from .models import ProjectDict
@@ -751,9 +752,15 @@ class ProjectDBAPI(BaseProjectDB):
     ) -> ProjectNode:
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
         async with self.engine.acquire() as conn:
-            await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
-                conn, user_id=user_id, product_name=product_name
+            user_extra_properties = (
+                await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+                    conn, user_id=user_id, product_name=product_name
+                )
             )
+            if not user_extra_properties.override_services_specifications:
+                raise ProjectNodeResourcesInsufficientRightsError(
+                    "User not allowed to modify node resources! TIP: Ask your administrator or contact support"
+                )
             return await project_nodes_repo.update(conn, node_id=node_id, **values)
 
     async def list_project_nodes(self, project_id: ProjectID) -> list[ProjectNode]:
