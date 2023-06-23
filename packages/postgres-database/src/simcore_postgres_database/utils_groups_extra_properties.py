@@ -7,7 +7,7 @@ from simcore_postgres_database.models.groups_extra_properties import (
     groups_extra_properties,
 )
 
-from .models.groups import groups, user_to_groups
+from .models.groups import GroupType, groups, user_to_groups
 from .utils_models import FromRowMixin
 
 
@@ -45,8 +45,9 @@ class GroupExtraPropertiesRepo:
             return GroupExtraProperties.from_row(row)
         raise GroupExtraPropertiesNotFound(f"Properties for group {gid} not found")
 
+    @staticmethod
     async def get_aggregated_properties_for_user(
-        self, connection: SAConnection, *, user_id: int, product_name: str
+        connection: SAConnection, *, user_id: int, product_name: str
     ) -> GroupExtraProperties:
         subquery = (
             sqlalchemy.select(
@@ -55,9 +56,10 @@ class GroupExtraPropertiesRepo:
                     groups.c.type,
                     sqlalchemy.case(
                         [
-                            (groups.c.type == "EVERYONE", sqlalchemy.literal(1)),
+                            # NOTE: the ordering is important for the aggregation afterwards
+                            (groups.c.type == "EVERYONE", sqlalchemy.literal(3)),
                             (groups.c.type == "STANDARD", sqlalchemy.literal(2)),
-                            (groups.c.type == "PRIMARY", sqlalchemy.literal(3)),
+                            (groups.c.type == "PRIMARY", sqlalchemy.literal(1)),
                         ],
                         else_=sqlalchemy.literal(4),
                     ).label("type_order"),
@@ -75,22 +77,33 @@ class GroupExtraPropertiesRepo:
                 )
             )
             .where(
-                (user_to_groups.c.uid == user_id)
-                & (groups_extra_properties.c.product_name == product_name)
+                (groups_extra_properties.c.product_name == product_name)
+                & (user_to_groups.c.uid == user_id)
             )
             .alias()
         )
 
-        query = sqlalchemy.select(subquery).order_by(subquery.c.type_order)
-
-        result = await connection.execute(query)
+        result = await connection.execute(
+            sqlalchemy.select(subquery).order_by(subquery.c.type_order)
+        )
         assert result  # nosec
 
         rows = await result.fetchall()
         assert rows is not None  # nosec
-
-        everyone_extra_properties = GroupExtraProperties.from_row(rows[0])
-        standard_extra_properties = [
-            GroupExtraProperties.from_row(row for row in rows[1:-2])
-        ]
-        primary_extra_properties = GroupExtraProperties.from_row(rows[-1])
+        standard_extra_properties = []
+        for row in rows:
+            group_extra_properties = GroupExtraProperties.from_row(row)
+            match row.type:
+                case GroupType.PRIMARY:
+                    return group_extra_properties
+                case GroupType.STANDARD:
+                    standard_extra_properties.append(group_extra_properties)
+                case GroupType.EVERYONE:
+                    return (
+                        standard_extra_properties[0]
+                        if standard_extra_properties
+                        else group_extra_properties
+                    )
+        raise GroupExtraPropertiesNotFound(
+            f"Properties for user {user_id} in {product_name} not found"
+        )
