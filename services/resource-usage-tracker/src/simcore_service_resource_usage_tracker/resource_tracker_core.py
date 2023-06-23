@@ -20,7 +20,8 @@ def _prometheus_sync_client_custom_query(
     prometheus_client: PrometheusConnect, promql_cpu_query: str
 ) -> list[dict]:
     _logger.info("Querying prometheus with: %s", promql_cpu_query)
-    return prometheus_client.custom_query(promql_cpu_query)
+    data: list[dict] = prometheus_client.custom_query(promql_cpu_query)
+    return data
 
 
 async def _scrape_and_upload_container_resource_usage(

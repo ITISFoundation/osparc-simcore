@@ -106,7 +106,7 @@ def mocked_prometheus_client_custom_query(
     mocker: MockerFixture, project_slug_dir: Path, random_promql_output_generator
 ) -> dict[str, mock.Mock]:
     mocked_get_prometheus_api_client = mocker.patch(
-        "simcore_service_resource_usage_tracker.resource_tracker_core._prometheus_client_custom_query",
+        "simcore_service_resource_usage_tracker.resource_tracker_core._prometheus_sync_client_custom_query",
         autospec=True,
         return_value=random_promql_output_generator["data"],
     )
