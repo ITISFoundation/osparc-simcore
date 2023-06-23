@@ -15,6 +15,7 @@ from models_library.projects import Project, ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.services import ServiceKey, ServiceKeyVersion, ServiceVersion
+from models_library.services_resources import ServiceResourcesDict
 from models_library.users import GroupID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import BaseModel, Field
@@ -51,6 +52,7 @@ from ._nodes_api import NodeScreenshot, fake_screenshots_factory
 from .db import ProjectDBAPI
 from .exceptions import (
     NodeNotFoundError,
+    ProjectNodeResourcesInvalidError,
     ProjectNotFoundError,
     ProjectStartsTooManyDynamicNodes,
 )
@@ -329,12 +331,16 @@ async def get_node_resources(request: web.Request) -> web.Response:
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
     )
+    if f"{path_params.node_id}" not in project["workbench"]:
+        raise NodeNotFoundError(f"{path_params.project_id}", f"{path_params.node_id}")
 
     resources = await projects_api.get_project_node_resources(
         request.app,
         user_id=req_ctx.user_id,
-        project=project,
+        project_id=path_params.project_id,
         node_id=path_params.node_id,
+        service_key=project["workbench"][f"{path_params.node_id}"]["key"],
+        service_version=project["workbench"][f"{path_params.node_id}"]["version"],
     )
     return envelope_json_response(resources)
 
@@ -346,19 +352,29 @@ async def get_node_resources(request: web.Request) -> web.Response:
 async def replace_node_resources(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_NodePathParams, request)
-
-    try:
-        _body = await request.json()
-    except json.JSONDecodeError as exc:
-        raise web.HTTPBadRequest(reason=f"Invalid request body: {exc}") from exc
+    body = await parse_request_body_as(ServiceResourcesDict, request)
 
     # ensure the project exists
-    _project = await projects_api.get_project_for_user(
+    await projects_api.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
     )
-    raise web.HTTPNotImplemented(reason="Not yet implemented!")
+    try:
+        new_node_resources = await projects_api.update_project_node_resources(
+            request.app,
+            path_params.project_id,
+            node_id=path_params.node_id,
+            resources=body,
+        )
+
+        return envelope_json_response(new_node_resources)
+    except ProjectNodeResourcesInvalidError as exc:
+        raise web.HTTPUnprocessableEntity(  # 422
+            reason=f"{exc}",
+            text=f"{exc}",
+            content_type=MIMETYPE_APPLICATION_JSON,
+        )
 
 
 class _ServicesAccessQuery(BaseModel):

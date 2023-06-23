@@ -1,13 +1,14 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-from typing import Any, Callable, cast
+from typing import Any, Awaitable, Callable, cast
 
 import pytest
 import sqlalchemy as sa
 from faker import Faker
 from fastapi import FastAPI
 from models_library.projects import ProjectAtDB
+from models_library.projects_nodes_io import NodeID
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
@@ -66,10 +67,10 @@ def workbench() -> dict[str, Any]:
 async def project(
     mock_env: EnvVarsDict,
     registered_user: Callable[..., dict],
-    project: Callable[..., ProjectAtDB],
+    project: Callable[..., Awaitable[ProjectAtDB]],
     workbench: dict[str, Any],
 ) -> ProjectAtDB:
-    return project(registered_user(), workbench=workbench)
+    return await project(registered_user(), workbench=workbench)
 
 
 async def test_is_node_present_in_workbench(
@@ -83,7 +84,7 @@ async def test_is_node_present_in_workbench(
     for node_uuid in project.workbench:
         assert (
             await project_repository.is_node_present_in_workbench(
-                project_id=project.uuid, node_uuid=node_uuid
+                project_id=project.uuid, node_uuid=NodeID(node_uuid)
             )
             is True
         )
