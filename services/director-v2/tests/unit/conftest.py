@@ -15,7 +15,6 @@ from typing import (
     Mapping,
 )
 
-import aiodocker
 import pytest
 import respx
 import traitlets.config
@@ -49,10 +48,6 @@ from simcore_service_director_v2.models.schemas.dynamic_services import (
     SchedulerData,
     ServiceDetails,
     ServiceState,
-)
-from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.volume_remover import (
-    DIND_VERSION,
-    DockerVersion,
 )
 from yarl import URL
 
@@ -443,14 +438,3 @@ def mock_docker_api(mocker: MockerFixture) -> None:
         f"{module_base}._core._scheduler_utils.get_dynamic_sidecar_state",
         return_value=(ServiceState.PENDING, ""),
     )
-
-
-@pytest.fixture
-async def async_docker_client() -> AsyncIterable[aiodocker.Docker]:
-    async with aiodocker.Docker() as docker_client:
-        yield docker_client
-
-
-@pytest.fixture
-async def docker_version() -> DockerVersion:
-    return parse_obj_as(DockerVersion, DIND_VERSION)

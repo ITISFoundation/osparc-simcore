@@ -18,7 +18,6 @@ from servicelib.fastapi.long_running_tasks.client import (
     TaskClientResultError,
 )
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
-from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 from simcore_postgres_database.models.comp_tasks import NodeClass
@@ -55,10 +54,10 @@ from ...docker_api import (
     get_projects_networks_containers,
     remove_dynamic_sidecar_network,
     remove_dynamic_sidecar_stack,
-    remove_volumes_from_node,
     try_to_remove_network,
 )
 from ...errors import EntrypointContainerNotFoundError
+from ...volume_removal import remove_volumes_from_node
 from ...volumes import DY_SIDECAR_SHARED_STORE_PATH, DynamicSidecarVolumesPathsResolver
 
 logger = logging.getLogger(__name__)
@@ -210,17 +209,15 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
                 ]
                 + scheduler_data.paths_mapping.state_paths
             ]
-            with log_context(
-                logger, logging.DEBUG, f"removing volumes via service for {node_uuid}"
-            ):
-                await remove_volumes_from_node(
-                    dynamic_sidecar_settings=dynamic_sidecar_settings,
-                    volume_names=unique_volume_names,
-                    docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
-                    user_id=scheduler_data.user_id,
-                    project_id=scheduler_data.project_id,
-                    node_uuid=scheduler_data.node_uuid,
-                )
+            rabbitmq_client: RabbitMQClient = app.state.rabbitmq_client
+            await remove_volumes_from_node(
+                rabbitmq_client=rabbitmq_client,
+                volume_names=unique_volume_names,
+                docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
+                swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+                volume_remove_timeout_s=dynamic_sidecar_settings.DYNAMIC_SIDECAR_VOLUME_REMOVE_TIMEOUT_S,
+                connection_error_timeout_s=dynamic_sidecar_settings.DYNAMIC_SIDECAR_RABBITMQ_CONNECTION_ERROR_TIMEOUT_S,
+            )
 
     logger.debug(
         "Removed dynamic-sidecar services and crated container for '%s'",

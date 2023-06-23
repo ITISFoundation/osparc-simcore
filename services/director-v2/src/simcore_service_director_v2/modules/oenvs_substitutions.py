@@ -55,7 +55,6 @@ async def substitute_session_oenvs(
     project_id: ProjectID,
     node_id: NodeID,
 ) -> dict[str, Any]:
-
     assert specs  # nosec
     new_specs: dict[str, Any]
 

@@ -95,7 +95,6 @@ async def resolve_session_environments(
     oenvs_getters: dict[str, ContextGetter],
     session_context: ContextDict,
 ) -> dict[str, SubstitutionValue]:
-
     # evaluate getters from context values
     pre_environs: dict[str, SubstitutionValue | RequestTuple] = {
         key: fun(session_context) for key, fun in oenvs_getters.items()

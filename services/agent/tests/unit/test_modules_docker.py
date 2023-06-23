@@ -7,9 +7,10 @@ import pytest
 from aiodocker.volumes import DockerVolume
 from pytest_mock import MockerFixture
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
-from simcore_service_agent.modules.volumes_cleanup._docker import (
+from simcore_service_agent.modules.docker import (
     docker_client,
     get_dyv_volumes,
+    is_volume_present,
     is_volume_used,
 )
 
@@ -131,3 +132,10 @@ async def test_regression_volume_labels_are_none(mocker: MockerFixture):
         mocker.patch.object(client.volumes, "list", return_value=mocked_volumes)
 
         await get_dyv_volumes(client, "test")
+
+
+async def test_is_volume_present(unused_volume: DockerVolume):
+    async with docker_client() as client:
+        assert await is_volume_present(client, unused_volume.name) is True
+
+        assert await is_volume_present(client, "missing-volume") is False

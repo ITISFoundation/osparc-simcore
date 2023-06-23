@@ -4,7 +4,6 @@
 
 import hashlib
 from pathlib import Path
-from typing import Optional
 
 import aioboto3
 import pytest
@@ -23,7 +22,7 @@ from simcore_service_agent.modules.volumes_cleanup._s3 import (
 
 
 def _get_file_hashes_in_path(
-    path_to_hash: Path, exclude_files: Optional[set[Path]] = None
+    path_to_hash: Path, exclude_files: set[Path] | None = None
 ) -> set[tuple[Path, str]]:
     def _hash_path(path: Path):
         sha256_hash = hashlib.sha256()
@@ -178,7 +177,7 @@ async def test_regression_non_aws_providers(
     unused_volume_path: Path,
     bucket: str,
     settings: ApplicationSettings,
-    caplog_info_debug: LogCaptureFixture,
+    caplog_debug: LogCaptureFixture,
     provider: S3Provider,
 ):
     _create_data(unused_volume_path)
@@ -202,7 +201,7 @@ async def test_regression_non_aws_providers(
         exclude_files=settings.AGENT_VOLUMES_CLEANUP_EXCLUDE_FILES,
     )
 
-    assert f'provider "{provider}" not known' not in caplog_info_debug.text
+    assert f'provider "{provider}" not known' not in caplog_debug.text
 
 
 async def test_regression_store_to_s3_volume_mountpoint_not_found(
@@ -211,7 +210,7 @@ async def test_regression_store_to_s3_volume_mountpoint_not_found(
     unused_volume_path: Path,
     bucket: str,
     settings: ApplicationSettings,
-    caplog_info_debug: LogCaptureFixture,
+    caplog_debug: LogCaptureFixture,
 ):
     dyv_volume = await unused_volume.show()
     assert unused_volume_path.exists() is False
@@ -233,5 +232,5 @@ async def test_regression_store_to_s3_volume_mountpoint_not_found(
         s3_retries=1,
         exclude_files=settings.AGENT_VOLUMES_CLEANUP_EXCLUDE_FILES,
     )
-    assert f"mountpoint {unused_volume_path} does not exist" in caplog_info_debug.text
-    assert f"{unused_volume.name}" in caplog_info_debug.text
+    assert f"mountpoint {unused_volume_path} does not exist" in caplog_debug.text
+    assert f"{unused_volume.name}" in caplog_debug.text

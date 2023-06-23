@@ -1,0 +1,32 @@
+{
+  "volume_states": {
+    "INPUTS": {
+      "status": "CONTENT_NO_SAVE_REQUIRED",
+      "volume_names": [
+        "dyv_095a01cb-8243-4a77-93c3-a2d811b8a984_0f68639a-465a-49c9-84f6-cd2189edb4b7_stupni_krow_nayvoj_emoh_"
+      ],
+      "last_changed": "2023-06-08T07:43:55.055204+00:00"
+    },
+    "SHARED_STORE": {
+      "status": "CONTENT_NO_SAVE_REQUIRED",
+      "volume_names": [
+        "dyv_095a01cb-8243-4a77-93c3-a2d811b8a984_0f68639a-465a-49c9-84f6-cd2189edb4b7_erots-derahs_semulov-yd_"
+      ],
+      "last_changed": "2023-06-08T07:43:55.055236+00:00"
+    },
+    "OUTPUTS": {
+      "status": "CONTENT_NEEDS_TO_BE_SAVED",
+      "volume_names": [
+        "dyv_095a01cb-8243-4a77-93c3-a2d811b8a984_0f68639a-465a-49c9-84f6-cd2189edb4b7_stuptuo_krow_nayvoj_emoh_"
+      ],
+      "last_changed": "2023-06-08T07:43:55.055250+00:00"
+    },
+    "STATES": {
+      "status": "CONTENT_NEEDS_TO_BE_SAVED",
+      "volume_names": [
+        "dyv_095a01cb-8243-4a77-93c3-a2d811b8a984_0f68639a-465a-49c9-84f6-cd2189edb4b7_ecapskrow_krow_nayvoj_emoh_"
+      ],
+      "last_changed": "2023-06-08T07:43:55.055262+00:00"
+    }
+  }
+}

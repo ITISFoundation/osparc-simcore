@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from fastapi import Path as PathParam
 from fastapi import status
-from models_library.sidecar_volumes import VolumeCategory, VolumeState, VolumeStatus
+from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import BaseModel
 
 from ..models.shared_store import SharedStore
@@ -25,4 +25,4 @@ async def put_volume_state(
     shared_store: SharedStore = Depends(get_shared_store),
 ) -> None:
     async with shared_store:
-        shared_store.volume_states[volume_category] = VolumeState(status=item.status)
+        shared_store.volume_states[volume_category].status = item.status

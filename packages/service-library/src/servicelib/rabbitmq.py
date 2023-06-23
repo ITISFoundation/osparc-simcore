@@ -5,10 +5,16 @@ from typing import Any, Awaitable, Callable, Final, Protocol
 
 import aio_pika
 import aiormq
+from aio_pika.exceptions import AMQPConnectionError, ChannelInvalidStateError
 from aio_pika.patterns import RPC
-from pydantic import PositiveInt
+from pydantic import PositiveFloat
 from servicelib.logging_utils import log_catch, log_context
 from settings_library.rabbit import RabbitSettings
+from tenacity._asyncio import AsyncRetrying
+from tenacity.before_sleep import before_sleep_log
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_random_exponential
 
 from .rabbitmq_errors import RemoteMethodNotRegisteredError, RPCNotInitializedError
 from .rabbitmq_utils import (
@@ -122,8 +128,7 @@ class RabbitMQClient:
             },
         )
         self._rpc_channel = await self._rpc_connection.channel()
-
-        self._rpc = RPC(self._rpc_channel)
+        self._rpc = RPC(self._rpc_channel, host_exceptions=True)
         await self._rpc.initialize()
 
     async def close(self) -> None:
@@ -314,12 +319,18 @@ class RabbitMQClient:
         namespace: RPCNamespace,
         method_name: RPCMethodName,
         *,
-        timeout_s: PositiveInt | None = 5,
+        timeout_s_method: PositiveFloat,
+        timeout_s_connection_error: PositiveFloat,
         **kwargs: dict[str, Any],
     ) -> Any:
         """
         Call a remote registered `handler` by providing it's `namespace`, `method_name`
         and `kwargs` containing the key value arguments expected by the remote `handler`.
+
+        param: `timeout_s_method` amount of seconds to wait for a reply from the remote handler
+            invoked via `method_name`
+        param: `timeout_s_connection_error` amount of seconds to wait for rabbit to
+            be available again in case there was a connection error
 
         :raises asyncio.TimeoutError: when message expired
         :raises CancelledError: when called :func:`RPC.cancel`
@@ -335,13 +346,23 @@ class RabbitMQClient:
             namespace, method_name
         )
         try:
-            queue_expiration_timeout = timeout_s
-            awaitable = self._rpc.call(
-                namespaced_method_name,
-                expiration=queue_expiration_timeout,
-                kwargs=kwargs,
-            )
-            return await asyncio.wait_for(awaitable, timeout=timeout_s)
+            async for attempt in AsyncRetrying(
+                wait=wait_random_exponential(max=5),
+                stop=stop_after_delay(timeout_s_connection_error),
+                retry=retry_if_exception_type(
+                    (AMQPConnectionError, ChannelInvalidStateError)
+                ),
+                before_sleep=before_sleep_log(_logger, logging.WARNING),
+                reraise=True,
+            ):
+                with attempt:
+                    queue_expiration_timeout = timeout_s_method
+                    awaitable = self._rpc.call(
+                        namespaced_method_name,
+                        expiration=queue_expiration_timeout,
+                        kwargs=kwargs,
+                    )
+                    return await asyncio.wait_for(awaitable, timeout=timeout_s_method)
         except aio_pika.MessageProcessError as e:
             if e.args[0] == "Message has been returned":
                 raise RemoteMethodNotRegisteredError(
@@ -366,8 +387,14 @@ class RabbitMQClient:
         if self._rpc is None:
             raise RPCNotInitializedError()
 
+        namespaced_method_name = RPCNamespacedMethodName.from_namespace_and_method(
+            namespace, method_name
+        )
+        _logger.info(
+            "RPC registered handler '%s' to queue '%s'", handler, namespaced_method_name
+        )
         await self._rpc.register(
-            RPCNamespacedMethodName.from_namespace_and_method(namespace, method_name),
+            namespaced_method_name,
             handler,
             auto_delete=True,
         )

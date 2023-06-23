@@ -15,7 +15,7 @@ from .._meta import (
     SUMMARY,
     VERSION,
 )
-from ..modules import task_monitor
+from ..modules import rabbitmq, register_tasks, task_monitor, volumes_cleanup
 from ._routes import router
 from .settings import ApplicationSettings
 
@@ -26,7 +26,7 @@ def _setup_logger(settings: ApplicationSettings):
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3148
     logging.basicConfig(level=settings.LOGLEVEL.value)  # NOSONAR
     logging.root.setLevel(settings.LOGLEVEL.value)
-    config_all_loggers(settings.AGENT_VOLUMES_LOG_FORMAT_LOCAL_DEV_ENABLED)
+    config_all_loggers(settings.AGENT_LOG_FORMAT_LOCAL_DEV_ENABLED)
 
 
 def create_app() -> FastAPI:
@@ -50,8 +50,11 @@ def create_app() -> FastAPI:
     # ROUTERS
     app.include_router(router)
 
-    # EVENTS
+    # SUBMODULES
+    volumes_cleanup.setup(app)
     task_monitor.setup(app)
+    register_tasks.setup(app)
+    rabbitmq.setup(app)
 
     async def _on_startup() -> None:
         print(APP_STARTED_BANNER_MSG, flush=True)
