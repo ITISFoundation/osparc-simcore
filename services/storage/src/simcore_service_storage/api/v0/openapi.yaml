@@ -472,7 +472,7 @@ paths:
         - health
       summary: health check endpoint
       description: Current service health
-      operationId: get_health
+      operationId: health_check
       responses:
         '200':
           description: Successful Response

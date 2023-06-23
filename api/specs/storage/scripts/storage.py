@@ -234,7 +234,7 @@ async def is_completed_upload_file(
     response_model=Envelope[HealthCheck],
     tags=TAGS_HEALTH,
     summary="health check endpoint",
-    operation_id="get_health",
+    operation_id="health_check",
 )
 async def get_health():
     """Current service health"""
