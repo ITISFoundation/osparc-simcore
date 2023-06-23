@@ -5,10 +5,10 @@
 
 """
 import logging
-import uuid as uuidlib
 from collections import deque
 from contextlib import AsyncExitStack
 from typing import Any
+from uuid import uuid1
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -37,7 +37,7 @@ from simcore_postgres_database.utils_projects_nodes import (
 from simcore_postgres_database.webserver_models import ProjectType, projects, users
 from sqlalchemy import desc, func, literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy.sql import and_, select
+from sqlalchemy.sql import and_
 from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -157,7 +157,7 @@ class ProjectDBAPI(BaseProjectDB):
                             _reraise_if_not_unique_uuid_error(err)
 
                             # Tries new uuid
-                            insert_values["uuid"] = f"{uuidlib.uuid1()}"
+                            insert_values["uuid"] = f"{uuid1()}"
 
                             # NOTE: Retry is over transaction context
                             # to rollout when a new insert is required
@@ -261,11 +261,11 @@ class ProjectDBAPI(BaseProjectDB):
 
         # must be valid uuid
         try:
-            uuidlib.UUID(str(insert_values.get("uuid")))
+            ProjectID(str(insert_values.get("uuid")))
         except ValueError:
             if force_project_uuid:
                 raise
-            insert_values["uuid"] = f"{uuidlib.uuid1()}"
+            insert_values["uuid"] = f"{uuid1()}"
 
         inserted_project = await self._insert_project_in_db(
             insert_values,
@@ -954,27 +954,6 @@ class ProjectDBAPI(BaseProjectDB):
                 project_uuid=project_uuid,
                 reason="Project has more than one linked product. This needs manual intervention. Please contact oSparc support.",
             )
-
-    async def make_unique_project_uuid(self) -> str:
-        """Generates a project identifier still not used in database
-
-        WARNING: this method does not guarantee always unique id due to possible race condition
-        (i.e. while client gets this uuid and uses it, another client might have used the same id already)
-
-        :return: project UUID
-        :rtype: str
-        """
-        async with self.engine.acquire() as conn:
-            # TODO: add failure in case of hangs in while loop??
-            while True:
-                project_uuid = str(uuidlib.uuid1())
-                result = await conn.execute(
-                    select(projects).where(projects.c.uuid == project_uuid)
-                )
-                found = await result.first()
-                if not found:
-                    break
-        return project_uuid
 
 
 def setup_projects_db(app: web.Application):
