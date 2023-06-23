@@ -8,6 +8,7 @@ import itertools
 import random
 from copy import deepcopy
 from typing import Any, AsyncIterator, Awaitable, Callable
+from unittest import mock
 
 import aiodocker
 import pytest
@@ -16,6 +17,7 @@ from faker import Faker
 from models_library.docker import DockerGenericTag, DockerLabelKey
 from models_library.generated_models.docker_rest_api import (
     Availability,
+    NodeDescription,
     NodeState,
     Service,
     Task,
@@ -788,6 +790,28 @@ async def test_try_get_node_with_name_fake(
         autoscaling_docker, fake_node.Description.Hostname
     )
     assert received_node is None
+
+
+@pytest.fixture
+async def mocked_docker_list_nodes(
+    mocker: MockerFixture, create_fake_node: Callable[..., Node]
+) -> mock.Mock:
+    common_prefix = "ip-10-0-1-"
+    return mocker.patch(
+        "simcore_service_autoscaling.utils.utils_docker.AutoscalingDocker.nodes.list",
+        return_value=[
+            create_fake_node(
+                Description=NodeDescription(Hostname=f"{common_prefix}{'1'*(i+1)}")
+            )
+            for i in range(3)
+        ],
+    )
+
+
+async def test_find_node_with_name_with_common_prefixed_nodes(
+    autoscaling_docker: AutoscalingDocker, mocked_docker_list_nodes: mock.Mock
+):
+    ...
 
 
 async def test_tag_node(
