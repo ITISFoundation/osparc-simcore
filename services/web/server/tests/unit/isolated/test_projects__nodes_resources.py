@@ -6,7 +6,7 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from pydantic import parse_obj_as
-from simcore_service_webserver.projects._nodes_resources import (
+from simcore_service_webserver.projects._nodes_utils import (
     check_can_update_service_resources,
 )
 from simcore_service_webserver.projects.exceptions import (
