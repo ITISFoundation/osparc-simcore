@@ -8,7 +8,6 @@ import itertools
 import random
 from copy import deepcopy
 from typing import Any, AsyncIterator, Awaitable, Callable
-from unittest import mock
 
 import aiodocker
 import pytest
@@ -792,26 +791,42 @@ async def test_try_get_node_with_name_fake(
     assert received_node is None
 
 
-@pytest.fixture
-async def mocked_docker_list_nodes(
-    mocker: MockerFixture, create_fake_node: Callable[..., Node]
-) -> mock.Mock:
-    common_prefix = "ip-10-0-1-"
-    return mocker.patch(
-        "simcore_service_autoscaling.utils.utils_docker.AutoscalingDocker.nodes.list",
-        return_value=[
-            create_fake_node(
-                Description=NodeDescription(Hostname=f"{common_prefix}{'1'*(i+1)}")
-            )
-            for i in range(3)
-        ],
-    )
-
-
 async def test_find_node_with_name_with_common_prefixed_nodes(
-    autoscaling_docker: AutoscalingDocker, mocked_docker_list_nodes: mock.Mock
+    autoscaling_docker: AutoscalingDocker,
+    mocker: MockerFixture,
+    create_fake_node: Callable[..., Node],
 ):
-    ...
+    common_prefix = "ip-10-0-1-"
+    mocked_aiodocker = mocker.patch.object(autoscaling_docker, "nodes", autospec=True)
+    mocked_aiodocker.list.return_value = [
+        create_fake_node(
+            Description=NodeDescription(Hostname=f"{common_prefix}{'1'*(i+1)}")
+        )
+        for i in range(3)
+    ]
+    needed_host_name = f"{common_prefix}11"
+    found_node = await find_node_with_name(autoscaling_docker, needed_host_name)
+    assert found_node
+    assert found_node.Description
+    assert found_node.Description.Hostname == needed_host_name
+
+
+async def test_find_node_with_smaller_name_with_common_prefixed_nodes_returns_none(
+    autoscaling_docker: AutoscalingDocker,
+    mocker: MockerFixture,
+    create_fake_node: Callable[..., Node],
+):
+    common_prefix = "ip-10-0-1-"
+    mocked_aiodocker = mocker.patch.object(autoscaling_docker, "nodes", autospec=True)
+    mocked_aiodocker.list.return_value = [
+        create_fake_node(
+            Description=NodeDescription(Hostname=f"{common_prefix}{'1'*(i+1)}")
+        )
+        for i in range(3)
+    ]
+    needed_host_name = f"{common_prefix}"
+    found_node = await find_node_with_name(autoscaling_docker, needed_host_name)
+    assert found_node is None
 
 
 async def test_tag_node(
