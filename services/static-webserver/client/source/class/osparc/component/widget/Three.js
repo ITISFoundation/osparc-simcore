@@ -18,7 +18,7 @@
 qx.Class.define("osparc.component.widget.Three", {
   extend: qx.ui.core.Widget,
 
-  construct : function() {
+  construct : function(fileUrl) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.Canvas());
@@ -29,11 +29,11 @@ qx.Class.define("osparc.component.widget.Three", {
     this.addListenerOnce("appear", () => {
       this.__threeWrapper = osparc.wrapper.Three.getInstance();
       if (this.__threeWrapper.isLibReady()) {
-        this.__start();
+        this.__start(fileUrl);
       } else {
         this.__threeWrapper.addListener("ThreeLibReady", e => {
           if (e.getData()) {
-            this.__start();
+            this.__start(fileUrl);
           }
         });
       }
@@ -43,7 +43,7 @@ qx.Class.define("osparc.component.widget.Three", {
   members: {
     __threeWrapper: null,
 
-    __start: function() {
+    __start: function(fileUrl) {
       this.getContentElement().getDomElement()
         .appendChild(this.__threeWrapper.getDomElement());
 
@@ -56,7 +56,7 @@ qx.Class.define("osparc.component.widget.Three", {
 
       this.__render();
 
-      // this.__threeWrapper.loadScene();
+      this.__threeWrapper.loadScene(fileUrl);
     },
 
     __resized: function() {

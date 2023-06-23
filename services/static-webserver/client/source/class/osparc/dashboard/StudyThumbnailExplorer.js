@@ -142,7 +142,7 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
             control = this.__getWorkbenchUIPreview();
             break;
           case null:
-            control = this.__getThreeSceneViewer(thumbnailData["fileUrl"]);
+            control = this.__getThreeSceneViewer(thumbnailData["source"]);
             break;
           default:
             control = this.__getThumbnail(thumbnailData["source"]);
@@ -185,8 +185,7 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
     },
 
     __getThreeSceneViewer: function(fileUrl) {
-      const threeView = new osparc.component.widget.Three("#00FF00");
-      threeView.loadScene(fileUrl);
+      const threeView = new osparc.component.widget.Three(fileUrl);
       return threeView;
     },
 
