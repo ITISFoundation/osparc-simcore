@@ -124,6 +124,21 @@ async def everyone_group_id(connection: aiopg.sa.connection.SAConnection) -> int
     return result
 
 
+async def test_get_aggregated_properties_for_user_with_no_entries_raises(
+    connection: aiopg.sa.connection.SAConnection,
+    product_name: str,
+    registered_user: RowProxy,
+    create_fake_product: Callable[..., Awaitable[RowProxy]],
+    create_fake_group: Callable[..., Awaitable[RowProxy]],
+    create_fake_group_extra_properties: Callable[..., Awaitable[GroupExtraProperties]],
+    everyone_group_id: int,
+):
+    with pytest.raises(GroupExtraPropertiesNotFound):
+        await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+            connection, user_id=registered_user.id, product_name=product_name
+        )
+
+
 async def test_get_aggregated_properties_for_user(
     connection: aiopg.sa.connection.SAConnection,
     product_name: str,
