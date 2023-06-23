@@ -203,8 +203,7 @@ qx.Class.define("osparc.data.Resources", {
        * NODES
        */
       "nodesInStudyResources": {
-        idField: "nodeId",
-        useCache: true,
+        idField: ["studyId", "nodeId"],
         endpoints: {
           get: {
             method: "GET",
@@ -214,7 +213,6 @@ qx.Class.define("osparc.data.Resources", {
       },
       "serviceResources": {
         idField: ["key", "version"],
-        useCache: true,
         endpoints: {
           get: {
             method: "GET",
