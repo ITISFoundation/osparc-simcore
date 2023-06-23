@@ -53,6 +53,6 @@ def test_route_against_openapi_specification(route, openapi_specs):
     assert route.path.startswith(f"/{api_vtag}")
     assert "name" in route.kwargs, f"missing name for {route=}"
     assert (
-        openapi_specs.paths[path].operations[route.method.lower()].operation_id
+        openapi_specs.paths[route.path].operations[route.method.lower()].operation_id
         == route.kwargs["name"]
     ), f"openapi specs does not fit route {route}"
