@@ -1138,7 +1138,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       let showPage = false;
       let showStopButton = false;
 
-      if (node.isDynamic() && (node.isUpdatable() || node.isDeprecated() || node.isRetired())) {
+      if (
+        node.isDynamic() &&
+        (node.isUpdatable() || node.isDeprecated() || node.isRetired())
+      ) {
         const lifeCycleView = new osparc.component.node.LifeCycleView(node);
         node.addListener("versionChanged", () => this.__populateSecondPanel(node));
         this.__nodeOptionsPage.add(lifeCycleView);
