@@ -141,10 +141,9 @@ class ProjectDBAPI(BaseProjectDB):
                                 .values(**insert_values)
                                 .returning(
                                     *[
-                                        col
-                                        for col in projects.c
-                                        if col.name
-                                        not in ["type", "hidden", "published"]
+                                        c
+                                        for c in projects.columns
+                                        if c.name not in ["type", "hidden", "published"]
                                     ]
                                 )
                             )
