@@ -43,7 +43,7 @@ qx.Class.define("osparc.component.node.UpdateResourceLimitsView", {
 
   members: {
     __applyNode: function(node) {
-      if (node.isComputational() || node.isDinamic()) {
+      if (node.isComputational() || node.isDynamic()) {
         this.__populateLayout();
       }
     },
