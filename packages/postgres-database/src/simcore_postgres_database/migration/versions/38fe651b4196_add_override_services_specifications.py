@@ -27,6 +27,20 @@ def upgrade():
         ),
     )
     # ### end Alembic commands ###
+    groups_extra_properties_table = sa.table(
+        "groups_extra_properties",
+        sa.column("group_id"),
+        sa.column("node_id"),
+        sa.column("created"),
+        sa.column("modified"),
+        sa.column("override_services_specifications"),
+    )
+    # default to false
+    op.execute(
+        groups_extra_properties_table.update().values(
+            override_services_specifications=False
+        )
+    )
 
 
 def downgrade():
