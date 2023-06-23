@@ -1,6 +1,4 @@
 """ rest - common schema models and classes
-
-UNDER DEVELOPMENT
 """
 
 import attr
