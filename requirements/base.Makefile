@@ -9,7 +9,7 @@ REPO_BASE_DIR := $(shell git rev-parse --show-toplevel)
 .DEFAULT_GOAL := help
 
 DO_CLEAN_OR_UPGRADE:=$(if $(clean),,--upgrade)
-UPGRADE_OPTION := $(if $(upgrade),--upgrade-package $(upgrade),$(DO_CLEAN_OR_UPGRADE))
+UPGRADE_OPTION := $(if $(upgrade),--upgrade-package "$(upgrade)",$(DO_CLEAN_OR_UPGRADE))
 
 
 objects = $(sort $(wildcard *.in))
