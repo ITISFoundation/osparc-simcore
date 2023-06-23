@@ -3,13 +3,14 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-from typing import Awaitable, Callable
+from typing import AsyncIterator, Awaitable, Callable
 
 import aiopg.sa
 import pytest
 import sqlalchemy
 from aiopg.sa.result import RowProxy
 from faker import Faker
+from simcore_postgres_database.models.groups import GroupType, groups, user_to_groups
 from simcore_postgres_database.models.groups_extra_properties import (
     groups_extra_properties,
 )
@@ -63,9 +64,11 @@ def create_fake_product(
 
 
 @pytest.fixture
-def create_fake_group_extra_properties(
+async def create_fake_group_extra_properties(
     connection: aiopg.sa.connection.SAConnection,
-) -> Callable[..., Awaitable[GroupExtraProperties]]:
+) -> AsyncIterator[Callable[..., Awaitable[GroupExtraProperties]]]:
+    created_properties = []
+
     async def _creator(gid: int, product_name: str) -> GroupExtraProperties:
         result = await connection.execute(
             sqlalchemy.insert(groups_extra_properties)
@@ -75,9 +78,19 @@ def create_fake_group_extra_properties(
         assert result
         row = await result.first()
         assert row
-        return GroupExtraProperties.from_row(row)
+        properties = GroupExtraProperties.from_row(row)
+        created_properties.append((properties.group_id, properties.product_name))
+        return properties
 
-    return _creator
+    yield _creator
+
+    for group_id, product_name in created_properties:
+        await connection.execute(
+            sqlalchemy.delete(groups_extra_properties).where(
+                (groups_extra_properties.c.group_id == group_id)
+                & (groups_extra_properties.c.product_name == product_name)
+            )
+        )
 
 
 async def test_get(
@@ -100,3 +113,84 @@ async def test_get(
         connection, gid=registered_user.primary_gid, product_name=product_name
     )
     assert created_extra_properties == received_extra_properties
+
+
+@pytest.fixture
+async def everyone_group_id(connection: aiopg.sa.connection.SAConnection) -> int:
+    result = await connection.scalar(
+        sqlalchemy.select(groups.c.gid).where(groups.c.type == GroupType.EVERYONE)
+    )
+    assert result
+    return result
+
+
+async def test_get_aggregated_properties_for_user(
+    connection: aiopg.sa.connection.SAConnection,
+    product_name: str,
+    registered_user: RowProxy,
+    create_fake_product: Callable[..., Awaitable[RowProxy]],
+    create_fake_group: Callable[..., Awaitable[RowProxy]],
+    create_fake_group_extra_properties: Callable[..., Awaitable[GroupExtraProperties]],
+    everyone_group_id: int,
+):
+    await create_fake_product(product_name)
+    await create_fake_product(f"{product_name}_additional_just_for_fun")
+
+    # let's create a few groups
+    created_groups = [await create_fake_group(connection) for _ in range(5)]
+
+    # create a specific extra properties for group everyone
+    everyone_group_extra_properties = await create_fake_group_extra_properties(
+        everyone_group_id, product_name
+    )
+
+    # this should return the everyone group properties
+    aggregated_group_properties = (
+        await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+            connection, user_id=registered_user.id, product_name=product_name
+        )
+    )
+    assert aggregated_group_properties == everyone_group_extra_properties
+
+    # let's add the user in these groups
+    for group in created_groups:
+        await connection.execute(
+            sqlalchemy.insert(user_to_groups).values(
+                uid=registered_user.id, gid=group.gid
+            )
+        )
+
+    # this changes nothing
+    aggregated_group_properties = (
+        await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+            connection, user_id=registered_user.id, product_name=product_name
+        )
+    )
+    assert aggregated_group_properties == everyone_group_extra_properties
+
+    # now create some extra properties
+    standard_group_extra_properties = [
+        await create_fake_group_extra_properties(group.gid, product_name)
+        for group in created_groups
+    ]
+
+    # this returns the last properties created
+    aggregated_group_properties = (
+        await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+            connection, user_id=registered_user.id, product_name=product_name
+        )
+    )
+    assert aggregated_group_properties != everyone_group_extra_properties
+    assert aggregated_group_properties == standard_group_extra_properties[0]
+
+    # now create some personal extra properties
+    personal_group_extra_properties = await create_fake_group_extra_properties(
+        registered_user.primary_gid, product_name
+    )
+    # this now returns the primary properties
+    aggregated_group_properties = (
+        await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+            connection, user_id=registered_user.id, product_name=product_name
+        )
+    )
+    assert aggregated_group_properties == personal_group_extra_properties
