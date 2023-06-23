@@ -196,9 +196,9 @@ qx.Class.define("osparc.info.ServiceUtils", {
       resourcesLayout.add(label);
 
       const grid = new qx.ui.layout.Grid(10, 5);
-      grid.setColumnAlign(0, "right", "middle");
-      grid.setColumnAlign(1, "left", "middle");
-      grid.setColumnAlign(2, "left", "middle");
+      grid.setColumnAlign(0, "right", "middle"); // subservice name
+      grid.setColumnAlign(1, "left", "middle"); // resource type
+      grid.setColumnAlign(2, "left", "middle"); // resource limit value
       const resourcesInfo = new qx.ui.container.Composite(grid).set({
         allowGrowX: false,
         alignX: "left",
@@ -220,10 +220,6 @@ qx.Class.define("osparc.info.ServiceUtils", {
     },
 
     RESOURCES_INFO: {
-      "reservation": {
-        label: qx.locale.Manager.tr("Reservation"),
-        tooltip: qx.locale.Manager.tr("Schedule time check:<br>The service requires this 'reservation' amount of resources to start - if insufficient hardware resources are available, the service will not start")
-      },
       "limit": {
         label: qx.locale.Manager.tr("Limit"),
         tooltip: qx.locale.Manager.tr("Runtime check:<br>The service can consume a maximum of 'limit' resources - if it attempts to use more resources than this limit, it will be stopped")
