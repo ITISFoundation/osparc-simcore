@@ -83,7 +83,11 @@ class ProjectNodesRepo:
                 ]
             )
             .returning(
-                *[c for c in projects_nodes.c if c is not projects_nodes.c.project_uuid]
+                *[
+                    c
+                    for c in projects_nodes.columns
+                    if c is not projects_nodes.c.project_uuid
+                ]
             )
         )
 
@@ -115,7 +119,11 @@ class ProjectNodesRepo:
         NOTE: Do not use this in an asyncio.gather call as this will fail!
         """
         list_stmt = sqlalchemy.select(
-            *[c for c in projects_nodes.c if c is not projects_nodes.c.project_uuid]
+            *[
+                c
+                for c in projects_nodes.columns
+                if c is not projects_nodes.c.project_uuid
+            ]
         ).where(projects_nodes.c.project_uuid == f"{self.project_uuid}")
         result = await connection.execute(list_stmt)
         assert result  # nosec
