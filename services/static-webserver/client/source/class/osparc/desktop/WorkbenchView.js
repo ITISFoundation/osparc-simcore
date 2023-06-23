@@ -1138,15 +1138,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       let showPage = false;
       let showStopButton = false;
 
-      if (osparc.data.Permissions.getInstance().canDo("services.all.updateLimits") &&
-        (node.isComputational() || node.isDynamic())
-      ) {
-        const updateResourceLimitsView = new osparc.component.node.UpdateResourceLimitsView(node);
-        node.addListener("limitsChanged", () => this.__populateSecondPanel(node));
-        this.__nodeOptionsPage.add(updateResourceLimitsView);
-        showStopButton = node.isDynamic();
-      }
-
       if (node.isDynamic() && (node.isUpdatable() || node.isDeprecated() || node.isRetired())) {
         const lifeCycleView = new osparc.component.node.LifeCycleView(node);
         node.addListener("versionChanged", () => this.__populateSecondPanel(node));
@@ -1161,6 +1152,15 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__nodeOptionsPage.add(bootOptionsView);
         showPage = true;
         showStopButton = true;
+      }
+
+      if (osparc.data.Permissions.getInstance().canDo("services.all.updateLimits") &&
+        (node.isComputational() || node.isDynamic())
+      ) {
+        const updateResourceLimitsView = new osparc.component.node.UpdateResourceLimitsView(node);
+        node.addListener("limitsChanged", () => this.__populateSecondPanel(node));
+        this.__nodeOptionsPage.add(updateResourceLimitsView);
+        showStopButton |= node.isDynamic();
       }
 
       if (showPage) {
