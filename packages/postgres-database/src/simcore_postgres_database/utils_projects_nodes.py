@@ -1,7 +1,7 @@
 import datetime
 import uuid
 from dataclasses import asdict, dataclass, field, fields
-from typing import Any, Final
+from typing import Any
 
 import sqlalchemy
 from aiopg.sa.connection import SAConnection
@@ -38,10 +38,9 @@ class ProjectNodeCreate:
     node_id: uuid.UUID
     required_resources: dict[str, Any] = field(default_factory=dict)
 
-
-PROJECT_NODE_CREATE_FIELD_NAMES_WO_NODE_ID: Final[tuple[str, ...]] = tuple(
-    f.name for f in fields(ProjectNodeCreate) if f.name != "node_id"
-)
+    @staticmethod
+    def get_field_names(*, exclude: set[str]) -> set[str]:
+        return {f.name for f in fields(ProjectNodeCreate) if f.name not in exclude}
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

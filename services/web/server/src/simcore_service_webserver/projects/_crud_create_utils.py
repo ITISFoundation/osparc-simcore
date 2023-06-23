@@ -16,7 +16,6 @@ from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.utils_projects_nodes import (
-    PROJECT_NODE_CREATE_FIELD_NAMES_WO_NODE_ID,
     ProjectNode,
     ProjectNodeCreate,
 )
@@ -127,7 +126,7 @@ async def _copy_project_nodes_from_source_project(
             **{
                 k: v
                 for k, v in asdict(node).items()
-                if k in PROJECT_NODE_CREATE_FIELD_NAMES_WO_NODE_ID
+                if k in ProjectNodeCreate.get_field_names(exclude={"node_id"})
             },
         )
         for node in await db.list_project_nodes(ProjectID(source_project["uuid"]))
