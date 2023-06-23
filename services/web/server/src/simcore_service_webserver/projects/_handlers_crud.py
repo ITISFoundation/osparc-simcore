@@ -202,7 +202,7 @@ class _ProjectListParams(BaseModel):
     search: str | None = Field(
         default=None,
         description="Multi column full text search",
-        max_length=25,
+        max_length=100,
         example="My Project",
     )
 

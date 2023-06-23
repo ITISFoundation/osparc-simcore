@@ -37,12 +37,19 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     config_all_loggers(settings.API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED)
     _logger.debug("App settings:\n%s", settings.json(indent=2))
 
+    labels = []
+    if settings.API_SERVER_DEV_FEATURES_ENABLED:
+        labels.append("alpha")
+    if settings.debug:
+        labels.append("debug")
+    suffix_label = "+".join(labels)
+
     # creates app instance
     app = FastAPI(
         debug=settings.debug,
-        title="osparc.io web API",
-        description="osparc-simcore public web API specifications",
-        version=API_VERSION,
+        title="osparc.io web API" + f" ({suffix_label})" if suffix_label else "",
+        description="osparc-simcore public API specifications",
+        version=API_VERSION + f"-{suffix_label}",
         openapi_url=f"/api/{API_VTAG}/openapi.json",
         docs_url="/dev/doc",
         redoc_url=None,  # default disabled, see below

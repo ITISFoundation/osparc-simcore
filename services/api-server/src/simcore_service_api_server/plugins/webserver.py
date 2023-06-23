@@ -1,15 +1,19 @@
 import json
 import logging
+import urllib.parse
+from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
 
+import httpx
 from cryptography import fernet
 from fastapi import FastAPI, HTTPException
 from httpx import Response
 from models_library.projects import ProjectID
 from models_library.rest_pagination import Page
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from pydantic import ValidationError
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
 from starlette import status
 from tenacity import TryAgain
@@ -24,6 +28,41 @@ from ..models.types import JSON
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
 _logger = logging.getLogger(__name__)
+
+
+@contextmanager
+def _handle_webserver_api_errors():
+    try:
+        yield
+
+    except ValidationError as exc:
+        # Invalid formatted response body
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from exc
+
+    # TODO: review httpx error: https://www.python-httpx.org/exceptions/
+    except httpx.RequestError as exc:
+        # Bad connection
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from exc
+
+    except httpx.HTTPStatusError as exc:
+        resp = exc.response
+        if resp.is_server_error:
+            _logger.error(
+                "webserver reponded with an error: %s [%s]: %s",
+                f"{resp.status_code=}",
+                f"{resp.reason_phrase=}",
+                exc,
+            )
+            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from exc
+
+        if resp.is_client_error:
+            # Validation error?
+            # returns error
+
+            # FIXME: error handling. Raise ProjectErrors / WebserverError that should be transformed into HTTP errors on the handler level
+            error = exc.response.json().get("error", {})
+            msg = error.get("errors") or resp.reason_phrase or f"{exc}"
+            raise HTTPException(resp.status_code, detail=msg) from exc
 
 
 class WebserverApi(BaseServiceClientApi):
@@ -170,26 +209,26 @@ class AuthSession:
     ) -> Page[Project]:
         assert 1 <= limit <= 50  # nosec
         assert 0 <= offset  # nosec
+        with _handle_webserver_api_errors():
+            resp = await self.client.get(
+                "/projects",
+                params={
+                    "type": "user",
+                    "show_hidden": True,
+                    "limit": limit,
+                    "offset": offset,
+                    # FIXME: better way to match jobs with projects (Next PR if this works fine!)
+                    "search": urllib.parse.quote(
+                        solver_name, safe=""
+                    ),  # WARNING: has a limit!
+                },
+                cookies=self.session_cookies,
+            )
+            resp.raise_for_status()
 
-        resp = await self.client.get(
-            "/projects",
-            params={
-                "type": "user",
-                "show_hidden": True,
-                "limit": limit,
-                "offset": offset,
-                # FIXME: better way to match jobs with projects (Next PR if this works fine!)
-                "search": solver_name,
-            },
-            cookies=self.session_cookies,
-        )
-
-        # FIXME: error handling. Raise ProjectErrors / WebserverError that should be transformed into HTTP errors on the handler level
-        resp.raise_for_status()
-
-        # FIXME: this is a ProjectGet. How to transform from ProjectGet to Job!?
-        projects_page = Page[Project].parse_raw(resp.text)
-        return projects_page
+            # FIXME: this is a ProjectGet. How to transform from ProjectGet to Job!?
+            projects_page = Page[Project].parse_raw(resp.text)
+            return projects_page
 
     async def delete_project(self, project_id: ProjectID) -> None:
         resp = await self.client.delete(
