@@ -87,7 +87,7 @@ qx.Class.define("osparc.AnnouncementTracker", {
       if (
         this.getStart() &&
         this.getEnd() &&
-        this.getStart() > now &&
+        now > this.getStart() &&
         now < this.getEnd()
       ) {
         return true;

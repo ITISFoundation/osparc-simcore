@@ -85,13 +85,13 @@ qx.Class.define("osparc.file.FilePicker", {
     getOutputLabel: function(outputs) {
       const outFileValue = osparc.file.FilePicker.getOutput(outputs);
       if (outFileValue) {
-        if ("label" in outFileValue) {
+        if ("label" in outFileValue && outFileValue["label"]) {
           return outFileValue.label;
         }
-        if ("path" in outFileValue) {
+        if ("path" in outFileValue && outFileValue["path"]) {
           return this.self().getFilenameFromPath(outFileValue);
         }
-        if ("downloadLink" in outFileValue) {
+        if ("downloadLink" in outFileValue && outFileValue["downloadLink"]) {
           return osparc.file.FileDownloadLink.extractLabelFromLink(outFileValue["downloadLink"]);
         }
       }

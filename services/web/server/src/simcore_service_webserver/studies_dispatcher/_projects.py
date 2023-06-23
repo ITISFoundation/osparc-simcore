@@ -7,6 +7,7 @@
 """
 import json
 import logging
+from pathlib import Path
 from typing import NamedTuple
 
 from aiohttp import web
@@ -47,7 +48,18 @@ def _generate_nodeids(project_id: ProjectID) -> tuple[NodeID, NodeID]:
     return file_picker_id, viewer_id
 
 
-def _create_file_picker(download_link: str):
+def _create_file_picker(download_link: str, output_label: str | None):
+    # NOTE: Label is used here to display in the file-picker and
+    # also to name the file in case it is downloaded
+
+    data = {}
+    data["downloadLink"] = url = parse_obj_as(AnyUrl, download_link)
+    if output_label:
+        data["label"] = Path(output_label).name
+    elif url.path:
+        data["label"] = Path(url.path).name
+    output = DownloadLink.parse_obj(data)
+
     output_id = "outFile"
     node = Node(
         key=_FILE_PICKER_KEY,
@@ -55,13 +67,7 @@ def _create_file_picker(download_link: str):
         label="File Picker",
         inputs={},
         inputNodes=[],
-        outputs={
-            # NOTE: Empty label checked with @odeimaiz
-            output_id: DownloadLink(
-                downloadLink=parse_obj_as(AnyUrl, download_link),
-                label="",
-            )
-        },
+        outputs={output_id: output},
         progress=0,
     )
     return node, output_id
@@ -138,8 +144,9 @@ def _create_project_with_filepicker_and_service(
     download_link: HttpUrl,
     viewer_info: ViewerInfo,
 ) -> Project:
-
-    file_picker, file_picker_output_id = _create_file_picker(download_link)
+    file_picker, file_picker_output_id = _create_file_picker(
+        download_link, output_label=None
+    )
 
     viewer_service = Node(
         key=viewer_info.key,
@@ -335,7 +342,9 @@ async def get_or_create_project_with_file(
         project_uuid=project_uid,
     ):
         # nodes
-        file_picker, _ = _create_file_picker(file_params.download_link)
+        file_picker, _ = _create_file_picker(
+            file_params.download_link, output_label=file_params.file_name
+        )
 
         # project
         project = _create_project(
