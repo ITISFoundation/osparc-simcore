@@ -32,7 +32,7 @@ def app_environment(
 @pytest.fixture
 def mock_background_task(mocker: MockerFixture) -> mock.Mock:
     mocked_task = mocker.patch(
-        "simcore_service_resource_usage_tracker.resource_tracker.collect_service_resource_usage_task",
+        "simcore_service_resource_usage_tracker.resource_tracker.collect_container_resource_usage_task",
         autospec=True,
     )
     return mocked_task
@@ -40,6 +40,7 @@ def mock_background_task(mocker: MockerFixture) -> mock.Mock:
 
 async def test_resource_tracker_disabled_if_prometheus_disabled_task_created_and_deleted(
     app_environment: EnvVarsDict,
+    disabled_database: None,
     disabled_prometheus: None,
     mock_background_task: mock.Mock,
     initialized_app: FastAPI,
@@ -56,6 +57,7 @@ async def test_resource_tracker_disabled_if_prometheus_disabled_task_created_and
 
 
 async def test_resource_tracker_task_created_and_deleted(
+    disabled_database: None,
     app_environment: EnvVarsDict,
     mocked_prometheus: requests_mock.Mocker,
     mock_background_task: mock.Mock,

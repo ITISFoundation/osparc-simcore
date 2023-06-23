@@ -66,7 +66,7 @@ from ..socketio.messages import (
 from ..storage import api as storage_api
 from ..users.api import UserNameDict, get_user_name, get_user_role
 from ..users.exceptions import UserNotFoundError
-from . import _crud_delete_utils, _nodes_utils
+from . import _crud_delete_utils, _nodes_api
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import (
     NodeNotFoundError,
@@ -226,21 +226,21 @@ async def _start_dynamic_service(
             user_id=user_id, project_uuid=f"{project_uuid}", permission="write"
         )
 
-    lock_key = _nodes_utils.get_service_start_lock_key(user_id, project_uuid)
+    lock_key = _nodes_api.get_service_start_lock_key(user_id, project_uuid)
     redis_client_sdk = get_redis_lock_manager_client_sdk(request.app)
     project_settings: ProjectsSettings = get_plugin_settings(request.app)
 
     async with redis_client_sdk.lock_context(
         lock_key,
         blocking=True,
-        blocking_timeout_s=_nodes_utils.get_total_project_dynamic_nodes_creation_interval(
+        blocking_timeout_s=_nodes_api.get_total_project_dynamic_nodes_creation_interval(
             project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
         ),
     ):
         project_running_nodes = await director_v2_api.list_dynamic_services(
             request.app, user_id, f"{project_uuid}"
         )
-        _nodes_utils.check_num_service_per_projects_limit(
+        _nodes_api.check_num_service_per_projects_limit(
             app=request.app,
             number_of_services=len(project_running_nodes),
             user_id=user_id,

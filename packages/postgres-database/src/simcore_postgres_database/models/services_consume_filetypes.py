@@ -30,7 +30,7 @@ services_consume_filetypes = sa.Table(
         "service_version",
         sa.String,
         nullable=False,
-        doc="Version part of a $key:$version service resource name",
+        doc="Defines the minimum version (included) of this version from which this information applies",
     ),
     sa.Column(
         "service_display_name",

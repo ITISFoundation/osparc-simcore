@@ -8,7 +8,7 @@ from unittest import mock
 import pytest
 import requests_mock
 from fastapi import FastAPI
-from simcore_service_resource_usage_tracker.resource_tracker_core import (
+from simcore_service_resource_usage_tracker.resource_tracker_cli_placeholder import (
     collect_service_resource_usage_task,
 )
 
@@ -34,6 +34,7 @@ def trigger_collect_service_resource_usage(
 
 
 async def test_triggering(
+    disabled_database: None,
     minimal_configuration: None,
     mocked_prometheus_with_query: requests_mock.Mocker,
     trigger_collect_service_resource_usage: Callable[[], Awaitable[None]],

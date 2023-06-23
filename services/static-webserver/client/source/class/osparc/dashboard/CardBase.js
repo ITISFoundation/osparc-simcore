@@ -602,13 +602,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     __openMoreOptions: function() {
       const resourceData = this.getResourceData();
       const moreOpts = new osparc.dashboard.ResourceMoreOptions(resourceData);
-      const title = this.tr("Options");
-      const win = osparc.ui.window.Window.popUpInWindow(
-        moreOpts,
-        title,
-        osparc.dashboard.ResourceMoreOptions.WIDTH,
-        osparc.dashboard.ResourceMoreOptions.HEIGHT
-      );
+      const win = osparc.dashboard.ResourceMoreOptions.popUpInWindow(moreOpts);
       [
         "updateStudy",
         "updateTemplate",
@@ -621,6 +615,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
         this.fireDataEvent("publishTemplate", e.getData());
       });
       return moreOpts;
+    },
+
+    openData: function() {
+      const moreOpts = this.__openMoreOptions();
+      moreOpts.openData();
     },
 
     openAccessRights: function() {

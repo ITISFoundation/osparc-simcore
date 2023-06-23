@@ -121,7 +121,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           // set by the url or active study
           const loadStudyId = osparc.store.Store.getInstance().getCurrentStudyId();
           if (loadStudyId) {
-            this.__startStudyById(loadStudyId);
+            this._startStudyById(loadStudyId);
           } else {
             this.reloadResources();
           }
@@ -335,16 +335,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       if (!item.isMultiSelectionMode()) {
         const studyData = this.__getStudyData(item.getUuid(), false);
-        this.__startStudyById(studyData["uuid"]);
+        this._openDetailsView(studyData);
+        this.resetSelection();
       }
-    },
-
-    __startStudyById: function(studyId) {
-      if (!this._checkLoggedIn()) {
-        return;
-      }
-
-      this.fireDataEvent("startStudy", studyId);
     },
 
     __attachEventHandlers: function() {
@@ -740,7 +733,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.utils.Study.createStudyFromTemplate(templateCopyData, this._loadingPage)
         .then(studyId => {
           this._hideLoadingPage();
-          this.__startStudyById(studyId);
+          this._startStudyById(studyId);
         })
         .catch(err => {
           this._hideLoadingPage();
@@ -755,7 +748,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.utils.Study.createStudyFromService(key, version, this._resourcesList, newStudyLabel)
         .then(studyId => {
           this._hideLoadingPage();
-          this.__startStudyById(studyId);
+          this._startStudyById(studyId);
         })
         .catch(err => {
           this._hideLoadingPage();
@@ -773,7 +766,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.utils.Study.createStudyAndPoll(params)
         .then(studyData => {
           this._hideLoadingPage();
-          this.__startStudyById(studyData["uuid"]);
+          this._startStudyById(studyData["uuid"]);
         })
         .catch(err => {
           this._hideLoadingPage();
@@ -809,12 +802,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const writeAccess = osparc.data.model.Study.canIWrite(studyData["accessRights"]);
       const deleteAccess = osparc.data.model.Study.canIDelete(studyData["accessRights"]);
 
+      const openButton = this._getOpenMenuButton(studyData);
+      if (openButton) {
+        menu.add(openButton);
+      }
+
       if (writeAccess) {
         const renameStudyButton = this.__getRenameStudyMenuButton(studyData);
         menu.add(renameStudyButton);
       }
 
-      const studyDataButton = this.__getStudyDataMenuButton(studyData);
+      const studyDataButton = this.__getStudyDataMenuButton(card);
       menu.add(studyDataButton);
 
       if (writeAccess) {
@@ -834,9 +832,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       const exportButton = this.__getExportMenuButton(studyData);
       menu.add(exportButton);
-
-      const moreOptionsButton = this._getMoreOptionsMenuButton(studyData);
-      menu.add(moreOptionsButton);
 
       if (deleteAccess) {
         const deleteButton = this.__getDeleteStudyMenuButton(studyData, false);
@@ -880,15 +875,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __getStudyDataMenuButton: function(studyData) {
+    __getStudyDataMenuButton: function(card) {
       const text = osparc.utils.Utils.capitalize(osparc.product.Utils.getStudyAlias()) + this.tr(" data...");
       const studyDataButton = new qx.ui.menu.Button(text);
-      studyDataButton.addListener("execute", () => {
-        const studyDataManager = new osparc.component.widget.NodeDataManager(studyData["uuid"]);
-        osparc.ui.window.Window.popUpInWindow(studyDataManager, studyData["name"], 900, 600).set({
-          appearance: "service-window"
-        });
-      }, this);
+      studyDataButton.addListener("tap", () => card.openData(), this);
       return studyDataButton;
     },
 
@@ -899,7 +889,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getExportMenuButton: function(studyData) {
-      const exportButton = new qx.ui.menu.Button(this.tr("Export"));
+      const exportButton = new qx.ui.menu.Button(this.tr("Export cMIS"));
       exportButton.exclude();
       osparc.utils.DisabledPlugins.isExportDisabled()
         .then(isDisabled => {

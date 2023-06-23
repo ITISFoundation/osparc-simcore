@@ -159,6 +159,7 @@ async function dashboardOpenFirstTemplate(page, templateName) {
   if (children.length) {
     const firstChildId = '[osparc-test-id="' + children[0] + '"]';
     await utils.waitAndClick(page, firstChildId);
+    await utils.waitAndClick(page, '[osparc-test-id="openResource"]');
     return true;
   }
   console.log("Creating New Study from template: no template found");
@@ -191,6 +192,7 @@ async function dashboardOpenService(page, serviceName) {
     }
     const firstChildId = '[osparc-test-id="' + children[idx] + '"]';
     await utils.waitAndClick(page, firstChildId);
+    await utils.waitAndClick(page, '[osparc-test-id="openResource"]');
     return true;
   }
   console.log("Creating New Study from service: no service found");

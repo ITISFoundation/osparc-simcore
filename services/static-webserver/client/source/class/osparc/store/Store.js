@@ -62,6 +62,10 @@ qx.Class.define("osparc.store.Store", {
       check: "Array",
       init: []
     },
+    studyComments: {
+      check: "Array",
+      init: []
+    },
     nodesInStudyResources: {
       check: "Array",
       init: []
@@ -543,15 +547,33 @@ qx.Class.define("osparc.store.Store", {
 
     getGroup: function(gid) {
       return new Promise(resolve => {
-        this.getPotentialCollaborators()
-          .then(potentialCollaborators => {
-            let group = null;
-            if (gid in potentialCollaborators) {
-              group = potentialCollaborators[gid];
-            }
-            resolve(group);
-          })
-          .catch(() => resolve(null));
+        if (gid) {
+          this.getPotentialCollaborators()
+            .then(potentialCollaborators => {
+              let group = null;
+              if (gid in potentialCollaborators) {
+                group = potentialCollaborators[gid];
+              }
+              resolve(group);
+            })
+            .catch(() => resolve(null));
+        } else {
+          resolve(null);
+        }
+      });
+    },
+
+    getUser: function(uid) {
+      return new Promise(resolve => {
+        if (uid) {
+          this.getVisibleMembers()
+            .then(visibleMembers => {
+              resolve(Object.values(visibleMembers).find(member => member.id === uid));
+            })
+            .catch(() => resolve(null));
+        } else {
+          resolve(null);
+        }
       });
     },
 

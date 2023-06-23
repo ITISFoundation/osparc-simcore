@@ -112,8 +112,10 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     },
 
     __itemClicked: function(card) {
-      const key = card.getUuid();
-      this._createStudyFromService(key, null);
+      // const key = card.getUuid();
+      // this._createStudyFromService(key, null);
+      const serviceData = card.getResourceData();
+      this._openDetailsView(serviceData);
       this.resetSelection();
     },
 
@@ -126,21 +128,13 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       osparc.utils.Study.createStudyFromService(key, version)
         .then(studyId => {
           this._hideLoadingPage();
-          this.__startStudyById(studyId);
+          this._startStudyById(studyId);
         })
         .catch(err => {
           this._hideLoadingPage();
           osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
           console.error(err);
         });
-    },
-
-    __startStudyById: function(studyId) {
-      if (!this._checkLoggedIn()) {
-        return;
-      }
-
-      this.fireDataEvent("startStudy", studyId);
     },
 
     // LAYOUT //
@@ -195,11 +189,11 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     // MENU //
     _populateCardMenu: function(card) {
       const menu = card.getMenu();
-      const studyData = card.getResourceData();
+      const serviceData = card.getResourceData();
 
-      const moreInfoButton = this._getMoreOptionsMenuButton(studyData);
-      if (moreInfoButton) {
-        menu.add(moreInfoButton);
+      const openButton = this._getOpenMenuButton(serviceData);
+      if (openButton) {
+        menu.add(openButton);
       }
     },
 
