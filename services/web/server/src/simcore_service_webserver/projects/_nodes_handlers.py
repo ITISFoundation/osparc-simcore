@@ -363,8 +363,10 @@ async def replace_node_resources(request: web.Request) -> web.Response:
     try:
         new_node_resources = await projects_api.update_project_node_resources(
             request.app,
-            path_params.project_id,
+            user_id=req_ctx.user_id,
+            project_id=path_params.project_id,
             node_id=path_params.node_id,
+            product_name=req_ctx.product_name,
             resources=body,
         )
 
