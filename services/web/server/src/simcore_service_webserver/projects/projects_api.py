@@ -923,8 +923,10 @@ async def get_project_node_resources(
 
 async def update_project_node_resources(
     app: web.Application,
+    user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
+    product_name: str,
     resources: ServiceResourcesDict,
 ) -> ServiceResourcesDict:
     db = ProjectDBAPI.get_from_app_context(app)
@@ -938,7 +940,11 @@ async def update_project_node_resources(
         validate_new_service_resources(current_resources, new_resources=resources)
 
         project_node = await db.update_project_node(
-            project_id, node_id, required_resources=jsonable_encoder(resources)
+            user_id=user_id,
+            project_id=project_id,
+            node_id=node_id,
+            product_name=product_name,
+            required_resources=jsonable_encoder(resources),
         )
         return parse_obj_as(ServiceResourcesDict, project_node.required_resources)
     except ProjectNodesNodeNotFound as exc:

@@ -29,6 +29,9 @@ from servicelib.logging_utils import get_log_record_extra, log_context
 from simcore_postgres_database.errors import UniqueViolation
 from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.models.projects_to_products import projects_to_products
+from simcore_postgres_database.utils_groups_extra_properties import (
+    GroupExtraPropertiesRepo,
+)
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectNode,
     ProjectNodeCreate,
@@ -739,10 +742,18 @@ class ProjectDBAPI(BaseProjectDB):
             return await project_nodes_repo.get(conn, node_id=node_id)
 
     async def update_project_node(
-        self, project_id: ProjectID, node_id: NodeID, **values
+        self,
+        user_id: UserID,
+        project_id: ProjectID,
+        node_id: NodeID,
+        product_name: str,
+        **values,
     ) -> ProjectNode:
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
         async with self.engine.acquire() as conn:
+            await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+                conn, user_id=user_id, product_name=product_name
+            )
             return await project_nodes_repo.update(conn, node_id=node_id, **values)
 
     async def list_project_nodes(self, project_id: ProjectID) -> list[ProjectNode]:
