@@ -71,7 +71,7 @@ from ..storage import api as storage_api
 from ..users.api import UserNameDict, get_user_name, get_user_role
 from ..users.exceptions import UserNotFoundError
 from . import _crud_delete_utils, _nodes_api
-from ._nodes_utils import check_can_update_service_resources
+from ._nodes_utils import validate_new_service_resources
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import (
     NodeNotFoundError,
@@ -935,7 +935,7 @@ async def update_project_node_resources(
             ServiceResourcesDict, current_project_node.required_resources
         )
 
-        check_can_update_service_resources(current_resources, new_resources=resources)
+        validate_new_service_resources(current_resources, new_resources=resources)
 
         project_node = await db.update_project_node(
             project_id, node_id, required_resources=jsonable_encoder(resources)
