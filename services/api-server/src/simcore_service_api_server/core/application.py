@@ -27,6 +27,21 @@ from .settings import ApplicationSettings
 _logger = logging.getLogger(__name__)
 
 
+def _label_info_with_state(settings: ApplicationSettings, title: str, version: str):
+    labels = []
+    if settings.API_SERVER_DEV_FEATURES_ENABLED:
+        labels.append("alpha")
+
+    if settings.debug:
+        labels.append("debug")
+
+    if suffix_label := "+".join(labels):
+        title += f" ({suffix_label})"
+        version += f"-{suffix_label}"
+
+    return title, version
+
+
 def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     if settings is None:
         settings = ApplicationSettings.create_from_envs()
@@ -37,19 +52,18 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     config_all_loggers(settings.API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED)
     _logger.debug("App settings:\n%s", settings.json(indent=2))
 
-    labels = []
-    if settings.API_SERVER_DEV_FEATURES_ENABLED:
-        labels.append("alpha")
-    if settings.debug:
-        labels.append("debug")
-    suffix_label = "+".join(labels)
+    # Labeling
+    title = "osparc.io web API"
+    version = API_VERSION
+    description = "osparc-simcore public API specifications"
+    title, version = _label_info_with_state(settings, title, version)
 
     # creates app instance
     app = FastAPI(
         debug=settings.debug,
-        title="osparc.io web API" + f" ({suffix_label})" if suffix_label else "",
-        description="osparc-simcore public API specifications",
-        version=API_VERSION + f"-{suffix_label}",
+        title=title,
+        description=description,
+        version=version,
         openapi_url=f"/api/{API_VTAG}/openapi.json",
         docs_url="/dev/doc",
         redoc_url=None,  # default disabled, see below
