@@ -11,6 +11,9 @@ from pydantic import (
 )
 from pydantic.generics import GenericModel
 
+# Default limit values
+#  - Using same values across all pagination entrypoints simplifies
+#    interconnecting paginated calls
 DEFAULT_NUMBER_OF_ITEMS_PER_PAGE: Final[int] = 20
 MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE: Final[int] = 50
 
