@@ -9,20 +9,14 @@ from fastapi import APIRouter, Depends, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi_pagination.api import create_page
-from fastapi_pagination.limit_offset import LimitOffsetParams
-from fastapi_pagination.links.limmit_offset import LimitOffsetPage
 from models_library.clusters import ClusterID
 from models_library.projects_nodes_io import BaseFileLink
-from models_library.rest_pagination import (
-    DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
-    MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
-)
-from pydantic import Field
 from pydantic.types import PositiveInt
 
 from ...core.settings import BasicSettings
 from ...models.basic_types import VersionStr
 from ...models.domain.projects import NewProjectIn, Project
+from ...models.pagination import LimitOffsetPage, LimitOffsetParams
 from ...models.schemas.files import File
 from ...models.schemas.jobs import ArgumentTypes, Job, JobInputs, JobOutputs, JobStatus
 from ...models.schemas.solvers import Solver, SolverKeyId
@@ -47,14 +41,6 @@ _logger = logging.getLogger(__name__)
 _settings = BasicSettings.create_from_envs()
 
 router = APIRouter()
-
-
-# NOTE: same pagination limits and defaults as web-server
-LimitOffsetPage = LimitOffsetPage.with_custom_options(
-    limit=Field(
-        DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, ge=1, le=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
-    )
-)
 
 
 def _compose_job_resource_name(solver_key, solver_version, job_id) -> str:
