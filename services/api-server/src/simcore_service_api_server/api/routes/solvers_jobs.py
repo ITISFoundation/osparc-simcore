@@ -13,6 +13,11 @@ from fastapi_pagination.limit_offset import LimitOffsetParams
 from fastapi_pagination.links.limmit_offset import LimitOffsetPage
 from models_library.clusters import ClusterID
 from models_library.projects_nodes_io import BaseFileLink
+from models_library.rest_pagination import (
+    DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
+)
+from pydantic import Field
 from pydantic.types import PositiveInt
 
 from ...core.settings import BasicSettings
@@ -39,9 +44,17 @@ from ..errors.http_error import ErrorGet, create_error_json_response
 from ._common import JOB_OUTPUT_LOGFILE_RESPONSES
 
 _logger = logging.getLogger(__name__)
+_settings = BasicSettings.create_from_envs()
 
 router = APIRouter()
-settings = BasicSettings.create_from_envs()
+
+
+# NOTE: same pagination limits and defaults as web-server
+LimitOffsetPage = LimitOffsetPage.with_custom_options(
+    limit=Field(
+        DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, ge=1, le=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+    )
+)
 
 
 def _compose_job_resource_name(solver_key, solver_version, job_id) -> str:
@@ -100,7 +113,7 @@ async def list_jobs(
     # Different entry to keep backwards compatibility with list_jobs.
     # Eventually use a header with agent version to switch to new interface
     response_model=LimitOffsetPage[Job],
-    include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
+    include_in_schema=_settings.API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_jobs_page(
     solver_key: SolverKeyId,
@@ -222,7 +235,7 @@ async def get_job(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}",
     status_code=status.HTTP_204_NO_CONTENT,
     responses={status.HTTP_404_NOT_FOUND: {"model": ErrorGet}},
-    include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
+    include_in_schema=_settings.API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def delete_job(
     solver_key: SolverKeyId,

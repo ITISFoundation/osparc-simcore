@@ -1,4 +1,4 @@
-from typing import Generic, List, Optional, TypeVar
+from typing import Final, Generic, TypeVar
 
 from pydantic import (
     AnyHttpUrl,
@@ -11,7 +11,10 @@ from pydantic import (
 )
 from pydantic.generics import GenericModel
 
-DEFAULT_NUMBER_OF_ITEMS_PER_PAGE = 20
+DEFAULT_NUMBER_OF_ITEMS_PER_PAGE: Final[int] = 20
+MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE: Final[int] = 50
+
+assert DEFAULT_NUMBER_OF_ITEMS_PER_PAGE < MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE  # nosec
 
 
 class PageMetaInfoLimitOffset(BaseModel):
@@ -59,8 +62,8 @@ class PageMetaInfoLimitOffset(BaseModel):
 class PageLinks(BaseModel):
     self: AnyHttpUrl
     first: AnyHttpUrl
-    prev: Optional[AnyHttpUrl]
-    next: Optional[AnyHttpUrl]
+    prev: AnyHttpUrl | None
+    next: AnyHttpUrl | None
     last: AnyHttpUrl
 
     class Config:
@@ -77,7 +80,7 @@ class Page(GenericModel, Generic[ItemT]):
 
     meta: PageMetaInfoLimitOffset = Field(alias="_meta")
     links: PageLinks = Field(alias="_links")
-    data: List[ItemT]
+    data: list[ItemT]
 
     @validator("data", pre=True)
     @classmethod
