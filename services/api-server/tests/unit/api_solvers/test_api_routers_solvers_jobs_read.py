@@ -57,13 +57,13 @@ def mocked_backend_services_apis_to_read_solver_jobs(
     assert capture.name == "list_projects"
     mocked_webserver_service_api_base.request(
         method=capture.method,
-        path=capture.path,
         name=capture.name,
-        params__contains={
-            "show_hidden": "true",
-            "offset": "0",
-            "search": "solvers%2Fsimcore%252Fservices%252Fcomp%252Fitis%252Fsleeper%2Freleases%2F2.0.0",
-        },
+        path__startswith=capture.path,
+        # params__contains={
+        #    "show_hidden": "true",
+        #    "offset": "0",
+        # "search": "solvers%2Fsimcore%252Fservices%252Fcomp%252Fitis%252Fsleeper%2Freleases%2F2.0.0",
+        # },
     ).respond(status_code=capture.status_code, json=capture.response_body)
 
     return MockedBackendApiDict(

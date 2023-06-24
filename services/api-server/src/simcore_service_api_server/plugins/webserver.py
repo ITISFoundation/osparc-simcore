@@ -220,7 +220,7 @@ class AuthSession:
                     # FIXME: better way to match jobs with projects (Next PR if this works fine!)
                     "search": urllib.parse.quote(
                         solver_name, safe=""
-                    ),  # WARNING: has a limit!
+                    ),  # WARNING: search text has a limit that I needed to increas for the example!
                 },
                 cookies=self.session_cookies,
             )
