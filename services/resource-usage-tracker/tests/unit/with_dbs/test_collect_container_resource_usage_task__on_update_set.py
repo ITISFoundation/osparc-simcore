@@ -77,7 +77,7 @@ def random_promql_output_generator():
                 "container_label_product_name": "osparc",
                 "container_label_simcore_service_settings": '[{"name": "ports", "type": "int", "value": 8888}, {"name": "env", "type": "string", "value": ["DISPLAY=:0"]}, {"name": "env", "type": "string", "value": ["SYM_SERVER_HOSTNAME=sym-server_%service_uuid%"]}, {"name": "mount", "type": "object", "value": [{"ReadOnly": true, "Source": "/tmp/.X11-unix", "Target": "/tmp/.X11-unix", "Type": "bind"}]}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}, {"name": "Resources", "type": "Resources", "value": {"Limits": {"NanoCPUs": 4000000000, "MemoryBytes": 17179869184}, "Reservations": {"NanoCPUs": 100000000, "MemoryBytes": 536870912, "GenericResources": [{"DiscreteResourceSpec": {"Kind": "VRAM", "Value": 1}}]}}}]',
                 "container_label_simcore_user_agent": "puppeteer",
-                "container_label_study_id": "52d7e1a8-0c27-11ee-bec2-024201234c7",
+                "container_label_study_id": "46449cc3-7d83-4081-a44e-fc75a0c85f2c",
                 "container_label_user_id": "43820",
                 "container_label_uuid": "2b231c38-0ebc-5cc0-1234-1ffe573f54e9",
                 "id": "/docker/58e1138d51eb5eafd737024d0df0b01ef88f2087e5a3922565c59130d57ac7a3",
@@ -113,6 +113,7 @@ def mocked_prometheus_client_custom_query(
     return mocked_get_prometheus_api_client
 
 
+@pytest.mark.testit
 async def test_collect_container_resource_usage_task(
     mocked_prometheus,
     mocked_prometheus_client_custom_query,
@@ -135,13 +136,13 @@ async def test_collect_container_resource_usage_task(
     assert len(db_rows) == 1
 
     assert (
-        random_promql_output_generator["max_float"] == db_rows[0][7]
+        random_promql_output_generator["max_float"] == db_rows[0][8]
     )  # <-- container_cpu_usage_seconds_total
     assert (
         arrow.get(random_promql_output_generator["min_timestamp"]).datetime
-        == db_rows[0][8]
+        == db_rows[0][9]
     )  # <-- prometheus_created
     assert (
         arrow.get(random_promql_output_generator["max_timestamp"]).datetime
-        == db_rows[0][9]
+        == db_rows[0][10]
     )  # <-- prometheus_last_scraped
