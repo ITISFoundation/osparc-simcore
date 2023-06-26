@@ -10,8 +10,15 @@ info:
     url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
   version: 0.3.0
 servers:
-- url: /v0
-  description: API server
+- url: /
+  description: 'Default server: requests directed to serving url'
+- url: http://{host}:{port}
+  description: 'Development server: can configure any base url'
+  variables:
+    host:
+      default: 127.0.0.1
+    port:
+      default: '8000'
 paths:
   /v0/locations/{location_id}/datasets:
     get:

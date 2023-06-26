@@ -1897,7 +1897,6 @@ paths:
           schema:
             allOf:
               - $ref: '#/paths/~1storage~1locations~1%7Blocation_id%7D~1files~1%7Bfile_id%7D/put/parameters/3/schema/allOf/0'
-            default: PRESIGNED
           name: link_type
           in: query
       responses:
@@ -1961,7 +1960,7 @@ paths:
                   - S3
                 type: string
                 description: An enumeration.
-            default: PRESIGNED
+                default: PRESIGNED
           name: link_type
           in: query
         - required: false
@@ -2641,7 +2640,7 @@ paths:
                   - user
                 type: string
                 description: An enumeration.
-            default: all
+                default: all
           name: type
           in: query
         - description: includes projects marked as hidden in the listing

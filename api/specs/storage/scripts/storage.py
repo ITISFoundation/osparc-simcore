@@ -54,7 +54,17 @@ app = FastAPI(
         "name": "MIT",
         "__PLACEHOLDER___KEY_url": "https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE",
     },
-    servers=[{"description": "API server", "url": "/v0"}],
+    servers=[
+        {"url": "/", "description": "Default server: requests directed to serving url"},
+        {
+            "url": "http://{host}:{port}",
+            "description": "Development server: can configure any base url",
+            "variables": {
+                "host": {"default": "127.0.0.1"},
+                "port": {"default": "8000"},
+            },
+        },
+    ],
     openapi_tags=[
         {"name": x}
         for x in list(
