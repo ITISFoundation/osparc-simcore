@@ -13,9 +13,11 @@ from fastapi import FastAPI, status
 from models_library.generics import Envelope
 from simcore_service_webserver.users._handlers import (
     PermissionGet,
-    UserNotificationsGet,
+    TokenCreate,
+    TokenUpdate,
 )
-from simcore_service_webserver.users.schemas import ProfileGet, Token
+from simcore_service_webserver.users._notifications import UserNotification
+from simcore_service_webserver.users.schemas import ProfileGet, ProfileUpdate, Token
 
 # from simcore_service_webserver.users._handlers import
 
@@ -36,6 +38,16 @@ async def get_user_profile():
     ...
 
 
+@app.put(
+    "/me",
+    status_code=status.HTTP_204_NO_CONTENT,
+    tags=TAGS,
+    operation_id="update_my_profile",
+)
+async def update_my_profile(profile: ProfileUpdate):
+    ...
+
+
 @app.get(
     "/me/tokens",
     response_model=Envelope[list[Token]],
@@ -49,10 +61,11 @@ async def list_tokens():
 @app.post(
     "/me/tokens",
     response_model=Envelope[Token],
+    status_code=status.HTTP_201_CREATED,
     tags=TAGS,
     operation_id="create_token",
 )
-async def create_token():
+async def create_token(token: TokenCreate):
     ...
 
 
@@ -67,12 +80,12 @@ async def get_token():
 
 
 @app.put(
-    "/me/tokens/{token_id}",
+    "/me/tokens/{service_id}",
     response_model=Envelope[Token],
     tags=TAGS,
     operation_id="update_token",
 )
-async def update_token():
+async def update_token(token: TokenUpdate):
     ...
 
 
@@ -88,7 +101,7 @@ async def delete_token():
 
 @app.get(
     "/me/notifications",
-    response_model=Envelope[list[UserNotificationsGet]],
+    response_model=Envelope[list[UserNotification]],
     tags=TAGS,
     operation_id="get_user_notifications",
 )
@@ -102,7 +115,7 @@ async def get_user_notifications():
     tags=TAGS,
     operation_id="post_user_notification",
 )
-async def post_user_notification():
+async def post_user_notification(notification: UserNotification):
     ...
 
 
@@ -112,7 +125,7 @@ async def post_user_notification():
     tags=TAGS,
     operation_id="update_user_notification",
 )
-async def update_user_notification():
+async def update_user_notification(notification: UserNotification):
     ...
 
 
