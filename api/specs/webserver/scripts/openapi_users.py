@@ -70,7 +70,7 @@ async def create_token(token: TokenCreate):
 
 
 @app.get(
-    "/me/tokens/{token_id}",
+    "/me/tokens/{service}",
     response_model=Envelope[Token],
     tags=TAGS,
     operation_id="get_token",
@@ -80,7 +80,7 @@ async def get_token():
 
 
 @app.put(
-    "/me/tokens/{service_id}",
+    "/me/tokens/{service}",
     response_model=Envelope[Token],
     tags=TAGS,
     operation_id="update_token",
@@ -90,7 +90,7 @@ async def update_token(token: TokenUpdate):
 
 
 @app.delete(
-    "/me/tokens/{token_id}",
+    "/me/tokens/{service}",
     status_code=status.HTTP_204_NO_CONTENT,
     tags=TAGS,
     operation_id="delete_token",
