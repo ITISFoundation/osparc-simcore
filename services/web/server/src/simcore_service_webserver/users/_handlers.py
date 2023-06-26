@@ -72,6 +72,10 @@ def _handle_tokens_errors(handler: Handler):
     return _wrapper
 
 
+class TokenCreate(BaseModel):
+    token_data: dict[str, str]
+
+
 @login_required
 @permission_required("user.tokens.*")
 async def create_tokens(request: web.Request):
@@ -101,6 +105,10 @@ async def get_token(request: web.Request):
 
     one_token = await _tokens.get_token(request.app, uid, service_id)
     return envelope_json_response(one_token)
+
+
+class TokenUpdate(BaseModel):
+    token_data: dict[str, str]
 
 
 @login_required
