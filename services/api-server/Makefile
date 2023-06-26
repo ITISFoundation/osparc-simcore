@@ -16,7 +16,6 @@ reqs: ## compiles pip requirements (.in -> .txt)
 
 
 
-# BUILD ###########################################################################
 # specification of the used openapi-generator-cli (see also https://github.com/ITISFoundation/openapi-generator)
 OPENAPI_GENERATOR_NAME := itisfoundation/openapi-generator-cli-openapi-generator-v4.2.3
 OPENAPI_GENERATOR_TAG := v0
@@ -48,6 +47,15 @@ openapi-dev.json: .env ## Creates OAS under development (API_SERVER_DEV_FEATURES
 
 openapi-diff.json: openapi.json openapi-dev.json ## Diffs openapi.json and openapi-dev.json and checks backwards compatibility
 	$(SCRIPTS_DIR)/openapi-diff.bash $(foreach f,$^,/specs/$f) --fail-on-incompatible --json=/specs/$@
+
+
+
+# SEE https://schemathesis.readthedocs.io/en/stable/index.html
+APP_URL:=http://$(get_my_ip).nip.io:8006
+
+test-api: ## Runs schemathesis against development server (NOTE: make up-devel first)
+	@docker run schemathesis/schemathesis:stable run \
+		"$(APP_URL)/api/v0/openapi.json"
 
 
 # GENERATION python client ###########################################################################
