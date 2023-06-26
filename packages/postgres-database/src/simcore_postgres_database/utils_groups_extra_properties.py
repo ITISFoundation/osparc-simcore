@@ -1,8 +1,10 @@
 import datetime
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 
 import sqlalchemy
 from aiopg.sa.connection import SAConnection
+from aiopg.sa.result import RowProxy
+from models_library.users import UserID
 from simcore_postgres_database.models.groups_extra_properties import (
     groups_extra_properties,
 )
@@ -46,9 +48,9 @@ class GroupExtraPropertiesRepo:
         raise GroupExtraPropertiesNotFound(f"Properties for group {gid} not found")
 
     @staticmethod
-    async def get_aggregated_properties_for_user(
-        connection: SAConnection, *, user_id: int, product_name: str
-    ) -> GroupExtraProperties:
+    async def _list_table_entries_ordered_by_group_type(
+        connection: SAConnection, user_id: UserID, product_name: str
+    ) -> list[RowProxy]:
         subquery = (
             sqlalchemy.select(
                 *[
@@ -90,20 +92,58 @@ class GroupExtraPropertiesRepo:
 
         rows = await result.fetchall()
         assert rows is not None  # nosec
-        standard_extra_properties = []
+        return rows
+
+    @staticmethod
+    def _merge_extra_properties_booleans(
+        instance1: GroupExtraProperties, instance2: GroupExtraProperties
+    ) -> GroupExtraProperties:
+        merged_properties = {}
+        for field in fields(instance1):
+            value1 = getattr(instance1, field.name)
+            value2 = getattr(instance2, field.name)
+
+            if isinstance(value1, bool):
+                merged_properties[field.name] = value1 or value2
+            merged_properties[field.name] = value1
+        return GroupExtraProperties(**merged_properties)
+
+    @staticmethod
+    async def get_aggregated_properties_for_user(
+        connection: SAConnection,
+        *,
+        user_id: int,
+        product_name: str,
+    ) -> GroupExtraProperties:
+        rows = await GroupExtraPropertiesRepo._list_table_entries_ordered_by_group_type(
+            connection, user_id, product_name
+        )
+        aggregated_standard_extra_properties = None
         for row in rows:
             group_extra_properties = GroupExtraProperties.from_row(row)
             match row.type:
                 case GroupType.PRIMARY:
+                    # this always has highest priority
                     return group_extra_properties
                 case GroupType.STANDARD:
-                    standard_extra_properties.append(group_extra_properties)
+                    if aggregated_standard_extra_properties:
+                        aggregated_standard_extra_properties = (
+                            GroupExtraPropertiesRepo._merge_extra_properties_booleans(
+                                group_extra_properties,
+                                aggregated_standard_extra_properties,
+                            )
+                        )
+                    else:
+                        aggregated_standard_extra_properties = group_extra_properties
                 case GroupType.EVERYONE:
+                    # if there are standard properties, they take precedence
                     return (
-                        standard_extra_properties[0]
-                        if standard_extra_properties
+                        aggregated_standard_extra_properties
+                        if aggregated_standard_extra_properties
                         else group_extra_properties
                     )
+        if aggregated_standard_extra_properties:
+            return aggregated_standard_extra_properties
         raise GroupExtraPropertiesNotFound(
             f"Properties for user {user_id} in {product_name} not found"
         )
