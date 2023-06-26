@@ -50,6 +50,8 @@ qx.Class.define("osparc.component.node.UpdateResourceLimitsView", {
       }));
 
       const resourcesLayout = osparc.info.ServiceUtils.createResourcesInfo(false);
+      const title = resourcesLayout.getChildren()[0];
+      title.exclude();
       resourcesLayout.exclude();
       this._add(resourcesLayout);
 
@@ -63,10 +65,10 @@ qx.Class.define("osparc.component.node.UpdateResourceLimitsView", {
       osparc.data.Resources.get("nodesInStudyResources", params)
         .then(serviceResources => {
           resourcesLayout.show();
-          const layout = resourcesLayout.getChildren()[0];
+          const gridLayout = resourcesLayout.getChildren()[1];
           let row = 1;
           Object.entries(serviceResources).forEach(([imageName, imageInfo]) => {
-            layout.add(new qx.ui.basic.Label(imageName).set({
+            gridLayout.add(new qx.ui.basic.Label(imageName).set({
               font: "text-13"
             }), {
               row,
@@ -75,13 +77,17 @@ qx.Class.define("osparc.component.node.UpdateResourceLimitsView", {
             if ("resources" in imageInfo) {
               const resourcesInfo = imageInfo["resources"];
               Object.keys(resourcesInfo).forEach(resourceKey => {
+                if (resourceKey === "VRAM") {
+                  return;
+                }
+
                 let column = 1;
                 const resourceInfo = resourcesInfo[resourceKey];
                 let label = resourceKey;
                 if (resourceKey === "RAM") {
                   label += " (GB)";
                 }
-                layout.add(new qx.ui.basic.Label(label).set({
+                gridLayout.add(new qx.ui.basic.Label(label).set({
                   font: "text-13"
                 }), {
                   row,
@@ -98,18 +104,16 @@ qx.Class.define("osparc.component.node.UpdateResourceLimitsView", {
                       singleStep: 0.1
                     });
                     const nf = new qx.util.format.NumberFormat();
-                    nf.setMinimumFractionDigits(1);
-                    nf.setMaximumFractionDigits(1);
+                    nf.setMinimumFractionDigits(2);
+                    nf.setMaximumFractionDigits(2);
                     spinner.setNumberFormat(nf);
 
                     spinner.imageName = imageName;
                     spinner.resourceKey = resourceKey;
                     this.__resourceFields.push(spinner);
-                    if (!(resourceKey === "VRAM")) {
-                      layout.add(spinner, {
-                        row,
-                        column
-                      });
+                    gridLayout.add(spinner, {
+                      column
+                    });
                     }
                     column++;
                   }
