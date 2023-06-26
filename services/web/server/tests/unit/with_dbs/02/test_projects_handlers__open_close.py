@@ -895,8 +895,8 @@ async def test_get_active_project(
     ],
 )
 async def test_project_node_lifetime(
-    client,
-    logged_user,
+    client: TestClient,
+    logged_user: UserInfoDict,
     user_project,
     expected_response_on_Create,
     expected_response_on_Get,
@@ -911,11 +911,12 @@ async def test_project_node_lifetime(
         "simcore_service_webserver.projects._handlers_crud.projects_api.storage_api.delete_data_folders_of_project_node",
         return_value="",
     )
+    assert client.app
 
     # create a new dynamic node...
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
     body = {"service_key": "simcore/services/dynamic/key", "service_version": "1.3.4"}
-    resp = await client.post(url, json=body)
+    resp = await client.post(f"{url}", json=body)
     data, errors = await assert_status(resp, expected_response_on_Create)
     node_id = None
     if resp.status == web.HTTPCreated.status_code:
@@ -936,7 +937,7 @@ async def test_project_node_lifetime(
         "service_key": "simcore/services/comp/key",
         "service_version": "1.3.4",
     }
-    resp = await client.post(url, json=body)
+    resp = await client.post(f"{url}", json=body)
     data, errors = await assert_status(resp, expected_response_on_Create)
     node_id_2 = None
     if resp.status == web.HTTPCreated.status_code:
@@ -960,7 +961,7 @@ async def test_project_node_lifetime(
     mocked_director_v2_api["director_v2.api.get_dynamic_service"].return_value = {
         "service_state": "running"
     }
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, errors = await assert_status(resp, expected_response_on_Get)
     if resp.status == web.HTTPOk.status_code:
         assert "service_state" in data
@@ -975,7 +976,7 @@ async def test_project_node_lifetime(
     mocked_director_v2_api["director_v2.api.get_dynamic_service"].return_value = {
         "service_state": "idle"
     }
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, errors = await assert_status(resp, expected_response_on_Get)
     if resp.status == web.HTTPOk.status_code:
         assert "service_state" in data
@@ -988,7 +989,7 @@ async def test_project_node_lifetime(
     url = client.app.router["delete_node"].url_for(
         project_id=user_project["uuid"], node_id=node_id
     )
-    resp = await client.delete(url)
+    resp = await client.delete(f"{url}")
     data, errors = await assert_status(resp, expected_response_on_Delete)
     if resp.status == web.HTTPNoContent.status_code:
         mocked_director_v2_api[
@@ -1008,7 +1009,7 @@ async def test_project_node_lifetime(
     url = client.app.router["delete_node"].url_for(
         project_id=user_project["uuid"], node_id=node_id_2
     )
-    resp = await client.delete(url)
+    resp = await client.delete(f"{url}")
     data, errors = await assert_status(resp, expected_response_on_Delete)
     if resp.status == web.HTTPNoContent.status_code:
         mocked_director_v2_api[

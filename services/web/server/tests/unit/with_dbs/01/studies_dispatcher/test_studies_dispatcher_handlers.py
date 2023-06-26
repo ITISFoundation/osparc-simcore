@@ -4,6 +4,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import asyncio
 import re
 import urllib.parse
 from typing import Any, AsyncIterator
@@ -19,7 +20,7 @@ from pydantic import BaseModel, ByteSize, parse_obj_as
 from pytest import FixtureRequest
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import UserRole
+from pytest_simcore.helpers.utils_login import UserInfoDict, UserRole
 from pytest_simcore.pydantic_models import iter_model_examples_in_module
 from servicelib.json_serialization import json_dumps
 from settings_library.redis import RedisSettings
@@ -337,10 +338,15 @@ async def assert_redirected_to_study(
 
 
 @pytest.fixture(params=["service_and_file", "service_only", "file_only"])
-def redirect_url(request: FixtureRequest, client: TestClient) -> URL:
+def redirect_type(request: FixtureRequest) -> str:
+    return request.param
+
+
+@pytest.fixture
+def redirect_url(redirect_type: str, client: TestClient) -> URL:
     assert client.app
     query: dict[str, Any] = {}
-    if request.param == "service_and_file":
+    if redirect_type == "service_and_file":
         query = dict(
             file_name="users.csv",
             file_size=parse_obj_as(ByteSize, "100KB"),
@@ -351,12 +357,12 @@ def redirect_url(request: FixtureRequest, client: TestClient) -> URL:
                 "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/8987c95d0ca0090e14f3a5b52db724fa24114cf5/services/storage/tests/data/users.csv"
             ),
         )
-    elif request.param == "service_only":
+    elif redirect_type == "service_only":
         query = dict(
             viewer_key="simcore/services/dynamic/raw-graphs",
             viewer_version="2.11.1",
         )
-    elif request.param == "file_only":
+    elif redirect_type == "file_only":
         query = dict(
             file_name="users.csv",
             file_size=parse_obj_as(ByteSize, "1MiB"),
@@ -365,6 +371,8 @@ def redirect_url(request: FixtureRequest, client: TestClient) -> URL:
                 "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/8987c95d0ca0090e14f3a5b52db724fa24114cf5/services/storage/tests/data/users.csv"
             ),
         )
+    else:
+        raise ValueError(f"{redirect_type=} undefined")
 
     url = (
         client.app.router["get_redirection_to_viewer"]
@@ -377,6 +385,68 @@ def redirect_url(request: FixtureRequest, client: TestClient) -> URL:
 async def test_dispatch_study_anonymously(
     client: TestClient,
     redirect_url: URL,
+    redirect_type: str,
+    mocker: MockerFixture,
+    storage_subsystem_mock,
+    catalog_subsystem_mock: None,
+    mocks_on_projects_api,
+):
+    assert client.app
+    mock_client_director_v2_func = mocker.patch(
+        "simcore_service_webserver.director_v2.api.create_or_update_pipeline",
+        return_value=None,
+    )
+
+    response = await client.get(f"{redirect_url}")
+
+    if redirect_type == "file_only":
+        message, status_code = assert_error_in_fragment(response)
+        assert (
+            status_code == web.HTTPUnauthorized.status_code
+        ), f"Got instead {status_code=}, {message=}"
+
+    else:
+        expected_project_id = await assert_redirected_to_study(response, client.session)
+
+        # has auto logged in as guest?
+        me_url = client.app.router["get_my_profile"].url_for()
+        response = await client.get(f"{me_url}")
+
+        data, _ = await assert_status(response, web.HTTPOk)
+        assert data["login"].endswith("guest-at-osparc.io")
+        assert data["gravatar_id"]
+        assert data["role"].upper() == UserRole.GUEST.name
+
+        # guest user only a copy of the template project
+        url = client.app.router["list_projects"].url_for()
+        response = await client.get(f'{url.with_query(type="user")}')
+
+        payload = await response.json()
+        assert response.status == 200, payload
+
+        projects, error = await assert_status(response, web.HTTPOk)
+        assert not error
+
+        assert len(projects) == 1
+        guest_project = projects[0]
+
+        assert expected_project_id == guest_project["uuid"]
+        assert guest_project["prjOwner"] == data["login"]
+
+        assert mock_client_director_v2_func.called
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [
+        UserRole.USER,
+    ],
+)
+async def test_dispatch_logged_in_user(
+    client: TestClient,
+    redirect_url: URL,
+    redirect_type: str,
+    logged_user: UserInfoDict,
     mocker: MockerFixture,
     storage_subsystem_mock,
     catalog_subsystem_mock: None,
@@ -397,9 +467,7 @@ async def test_dispatch_study_anonymously(
     response = await client.get(f"{me_url}")
 
     data, _ = await assert_status(response, web.HTTPOk)
-    assert data["login"].endswith("guest-at-osparc.io")
-    assert data["gravatar_id"]
-    assert data["role"].upper() == UserRole.GUEST.name
+    assert data["role"].upper() == UserRole.USER.name
 
     # guest user only a copy of the template project
     url = client.app.router["list_projects"].url_for()
@@ -412,18 +480,24 @@ async def test_dispatch_study_anonymously(
     assert not error
 
     assert len(projects) == 1
-    guest_project = projects[0]
+    created_project = projects[0]
 
-    assert expected_project_id == guest_project["uuid"]
-    assert guest_project["prjOwner"] == data["login"]
+    assert expected_project_id == created_project["uuid"]
+    assert created_project["prjOwner"] == data["login"]
 
     assert mock_client_director_v2_func.called
+
+    # delete before exiting
+    url = client.app.router["delete_project"].url_for(project_id=expected_project_id)
+    response = await client.delete(f"{url}")
+    await asyncio.sleep(2)  # needed to let task finish
+    response.raise_for_status()
 
 
 def assert_error_in_fragment(resp: ClientResponse) -> tuple[str, int]:
     # Expects fragment to indicate client where to find newly created project
     unquoted_fragment = urllib.parse.unquote_plus(resp.real_url.fragment)
-    match = re.match(r"/error\?(.+)", unquoted_fragment)
+    match = re.match(r"/error\?(.+)", unquoted_fragment, re.DOTALL)
     assert (
         match
     ), f"Expected error fragment as /#/error?message=..., got {unquoted_fragment}"

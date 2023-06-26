@@ -3,6 +3,7 @@
 """
 import asyncio
 import logging
+import urllib.parse
 from typing import Any, AsyncGenerator
 
 from aiohttp import ClientError, ClientSession, ClientTimeout, web
@@ -10,13 +11,14 @@ from models_library.api_schemas_storage import (
     FileLocation,
     FileLocationArray,
     FileMetaDataGet,
+    PresignedLink,
 )
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import SimCoreFileLink
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import ByteSize, parse_obj_as
-from pydantic.types import PositiveInt
+from pydantic import ByteSize, HttpUrl, parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.long_running_tasks.client import (
     LRTask,
@@ -29,9 +31,9 @@ from ..projects.models import ProjectDict
 from ..projects.utils import NodesMap
 from .settings import StorageSettings, get_plugin_settings
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
-TOTAL_TIMEOUT_TO_COPY_DATA_SECS = 60 * 60
+_TOTAL_TIMEOUT_TO_COPY_DATA_SECS = 60 * 60
 
 
 def _get_storage_client(app: web.Application) -> tuple[ClientSession, URL]:
@@ -46,7 +48,7 @@ def _get_storage_client(app: web.Application) -> tuple[ClientSession, URL]:
 async def get_storage_locations(
     app: web.Application, user_id: UserID
 ) -> FileLocationArray:
-    log.debug("getting %s accessible locations...", f"{user_id=}")
+    _logger.debug("getting %s accessible locations...", f"{user_id=}")
     session, api_endpoint = _get_storage_client(app)
     locations_url = (api_endpoint / "locations").with_query(user_id=user_id)
     async with session.get(f"{locations_url}") as response:
@@ -55,7 +57,7 @@ async def get_storage_locations(
             await response.json()
         )
         assert locations_enveloped.data  # nosec
-        log.info(
+        _logger.info(
             "%s can access %s",
             f"{user_id=}",
             f"{locations_enveloped.data=}",
@@ -68,7 +70,7 @@ async def get_project_total_size_simcore_s3(
     app: web.Application, user_id: UserID, project_uuid: ProjectID
 ) -> ByteSize:
     with log_context(
-        log,
+        _logger,
         logging.DEBUG,
         msg=f"getting {project_uuid=} total size in S3 for {user_id=}",
         extra=get_log_record_extra(user_id=user_id),
@@ -103,7 +105,7 @@ async def copy_data_folders_from_project(
     user_id: UserID,
 ) -> AsyncGenerator[LRTask, None]:
     session, api_endpoint = _get_storage_client(app)
-    log.debug("Copying %d nodes", len(nodes_map))
+    _logger.debug("Copying %d nodes", len(nodes_map))
     # /simcore-s3/folders:
     async for lr_task in long_running_task_request(
         session,
@@ -115,14 +117,14 @@ async def copy_data_folders_from_project(
                 "nodes_map": nodes_map,
             }
         ),
-        client_timeout=TOTAL_TIMEOUT_TO_COPY_DATA_SECS,
+        client_timeout=_TOTAL_TIMEOUT_TO_COPY_DATA_SECS,
     ):
         yield lr_task
 
 
 async def _delete(session, target_url):
     async with session.delete(target_url, ssl=False) as resp:
-        log.info(
+        _logger.info(
             "delete_data_folders_of_project request responded with status %s",
             resp.status,
         )
@@ -140,7 +142,7 @@ async def delete_data_folders_of_project(app, project_id, user_id):
 
 
 async def delete_data_folders_of_project_node(
-    app, project_id: str, node_id: str, user_id: PositiveInt
+    app, project_id: str, node_id: str, user_id: UserID
 ):
     # SEE api/specs/storage/v0/openapi.yaml
     session, api_endpoint = _get_storage_client(app)
@@ -163,7 +165,7 @@ async def is_healthy(app: web.Application) -> bool:
         return True
     except (ClientError, asyncio.TimeoutError) as err:
         # ClientResponseError, ClientConnectionError, ClientPayloadError, InValidURL
-        log.debug("Storage is NOT healthy: %s", err)
+        _logger.debug("Storage is NOT healthy: %s", err)
         return False
 
 
@@ -178,3 +180,29 @@ async def get_app_status(app: web.Application) -> dict[str, Any]:
         data = payload["data"]
 
     return data
+
+
+async def get_download_link(
+    app: web.Application, user_id: UserID, filelink: SimCoreFileLink
+) -> HttpUrl:
+    """
+    Raises:
+        ClientError
+        ValidationError
+
+    Returns:
+        A pre-signed link for simcore file-links (i.e. provide in file-picker's outputs['outFile'])
+    """
+    session, api_endpoint = _get_storage_client(app)
+    url = (
+        api_endpoint
+        / f"locations/{filelink.store}/files"
+        / urllib.parse.quote(filelink.path, safe="")
+    ).with_query(user_id=user_id)
+
+    async with session.get(f"{url}") as response:
+        response.raise_for_status()
+        download: PresignedLink = (
+            Envelope[PresignedLink].parse_obj(await response.json()).data
+        )
+        return parse_obj_as(HttpUrl, download.link)

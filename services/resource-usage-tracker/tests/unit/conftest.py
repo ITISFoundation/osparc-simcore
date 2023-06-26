@@ -25,9 +25,18 @@ from simcore_service_resource_usage_tracker.core.application import create_app
 from simcore_service_resource_usage_tracker.core.settings import ApplicationSettings
 
 pytest_plugins = [
+    "pytest_simcore.docker_compose",
+    "pytest_simcore.docker_registry",
+    "pytest_simcore.docker_swarm",
+    "pytest_simcore.monkeypatch_extra",
+    "pytest_simcore.postgres_service",
+    "pytest_simcore.pydantic_models",
+    "pytest_simcore.repository_paths",
+    "pytest_simcore.schemas",
+    "pytest_simcore.tmp_path_extra",
+    "pytest_simcore.pytest_global_environs",
     "pytest_simcore.cli_runner",
     "pytest_simcore.environment_configs",
-    "pytest_simcore.repository_paths",
 ]
 
 
@@ -47,11 +56,11 @@ def app_environment(monkeypatch: MonkeyPatch, faker: Faker) -> EnvVarsDict:
         {
             "POSTGRES_HOST": faker.domain_name(),
             "POSTGRES_USER": faker.user_name(),
-            "POSTGRES_PASSWORD": faker.password(),
+            "POSTGRES_PASSWORD": faker.password(special_chars=False),
             "POSTGRES_DB": faker.pystr(),
-            "PROMETHEUS_URL": f"{choice(['http', 'https'])}://{faker.domain_name()}:{faker.port_number()}",
+            "PROMETHEUS_URL": f"{choice(['http', 'https'])}://{faker.domain_name()}",
             "PROMETHEUS_USERNAME": faker.user_name(),
-            "PROMETHEUS_PASSWORD": faker.password(),
+            "PROMETHEUS_PASSWORD": faker.password(special_chars=False),
         },
     )
 
@@ -68,7 +77,19 @@ def disabled_prometheus(
 
 
 @pytest.fixture
-def app_settings(app_environment: EnvVarsDict) -> ApplicationSettings:
+def disabled_database(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("POSTGRES_HOST")
+    monkeypatch.delenv("POSTGRES_USER")
+    monkeypatch.delenv("POSTGRES_PASSWORD")
+    monkeypatch.delenv("POSTGRES_DB")
+
+
+@pytest.fixture
+def app_settings(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> ApplicationSettings:
     settings = ApplicationSettings.create_from_envs()
     return settings
 

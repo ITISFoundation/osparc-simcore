@@ -37,7 +37,7 @@ def app_environment(
             "WEBSERVER_DIRECTOR": "null",
             "WEBSERVER_EXPORTER": "null",
             "WEBSERVER_GARBAGE_COLLECTOR": "null",
-            "WEBSERVER_META_MODELING": "null",
+            "WEBSERVER_META_MODELING": "0",
             "WEBSERVER_PUBLICATIONS": "0",
             "WEBSERVER_REMOTE_DEBUG": "0",
             "WEBSERVER_SOCKETIO": "0",

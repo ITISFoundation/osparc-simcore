@@ -218,7 +218,7 @@ qx.Class.define("osparc.info.MergedLarge", {
     },
 
     __createExtraInfo: function(extraInfo) {
-      const moreInfo = osparc.info.StudyUtils.createExtraInfo(extraInfo).set({
+      const moreInfo = osparc.info.StudyUtils.createExtraInfoGrid(extraInfo).set({
         width: osparc.info.CardLarge.EXTRA_INFO_WIDTH
       });
 
@@ -365,16 +365,7 @@ qx.Class.define("osparc.info.MergedLarge", {
     __openThumbnailEditor: function() {
       const title = this.tr("Edit Thumbnail");
       const oldThumbnail = this.getStudy().getThumbnail();
-      let suggestions = new Set([]);
-      const wb = this.getStudy().getWorkbench();
-      const nodes = wb.getWorkbenchInitData() ? wb.getWorkbenchInitData() : wb.getNodes();
-      Object.values(nodes).forEach(node => {
-        const srvMetadata = osparc.utils.Services.getMetaData(node["key"], node["version"]);
-        if (srvMetadata && srvMetadata["thumbnail"] && !osparc.data.model.Node.isFrontend(node)) {
-          suggestions.add(srvMetadata["thumbnail"]);
-        }
-      });
-      suggestions = Array.from(suggestions);
+      const suggestions = osparc.component.editor.ThumbnailSuggestions.extractThumbanilSuggestions(this.getStudy());
       const thumbnailEditor = new osparc.component.editor.ThumbnailEditor(oldThumbnail, suggestions);
       const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, suggestions.length > 2 ? 500 : 350, suggestions.length ? 280 : 115);
       thumbnailEditor.addListener("updateThumbnail", e => {

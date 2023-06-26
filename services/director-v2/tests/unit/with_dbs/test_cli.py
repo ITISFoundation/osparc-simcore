@@ -5,7 +5,7 @@ import os
 import re
 import traceback
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterable, AsyncIterator, Callable
+from typing import Any, AsyncIterable, AsyncIterator, Awaitable, Callable
 
 import pytest
 import respx
@@ -59,13 +59,13 @@ def cli_runner(minimal_configuration: None) -> CliRunner:
 
 
 @pytest.fixture
-def project_at_db(
+async def project_at_db(
     registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., ProjectAtDB],
+    project: Callable[..., Awaitable[ProjectAtDB]],
     fake_workbench_without_outputs: dict[str, Any],
 ) -> ProjectAtDB:
     user = registered_user()
-    return project(user, workbench=fake_workbench_without_outputs)
+    return await project(user, workbench=fake_workbench_without_outputs)
 
 
 @pytest.fixture
