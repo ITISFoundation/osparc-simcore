@@ -48,6 +48,16 @@ class HttpApiCallCaptureModel(BaseModel):
     def request_desc(self) -> str:
         return f"{self.method} {self.path}"
 
+    def as_request(self) -> httpx.Request:
+        return httpx.Request(
+            self.method,
+            url=f"https://{self.host}/{self.path or ''}/{ self.query or ''}",
+            json=self.request_payload,
+        )
+
+    def as_response(self) -> httpx.Response:
+        raise NotImplementedError
+
 
 def get_captured_as_json(name: str, response: httpx.Response) -> str:
     capture_json: str = HttpApiCallCaptureModel.create_from_response(
