@@ -23,7 +23,7 @@ def upgrade():
             "override_services_specifications",
             sa.Boolean(),
             server_default=sa.text("false"),
-            nullable=False,
+            nullable=True,
         ),
     )
     # ### end Alembic commands ###
@@ -35,11 +35,16 @@ def upgrade():
         sa.column("modified"),
         sa.column("override_services_specifications"),
     )
+
     # default to false
     op.execute(
         groups_extra_properties_table.update().values(
             override_services_specifications=False
         )
+    )
+    # # set to non nullable
+    op.alter_column(
+        "groups_extra_properties", "override_services_specifications", nullable=False
     )
 
 
