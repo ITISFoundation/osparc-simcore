@@ -1157,7 +1157,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         showStopButton = true;
       }
 
-      if (osparc.data.Permissions.getInstance().canDo("services.all.updateLimits") &&
+      if (
+        osparc.data.Permissions.getInstance().canDo("services.all.updateLimits") &&
         (node.isComputational() || node.isDynamic())
       ) {
         const updateResourceLimitsView = new osparc.component.node.UpdateResourceLimitsView(node);
