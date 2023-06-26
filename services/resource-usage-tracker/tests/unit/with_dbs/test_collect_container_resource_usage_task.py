@@ -34,7 +34,7 @@ def mocked_prometheus_client_custom_query(
         data = json.load(file)
 
     mocked_get_prometheus_api_client = mocker.patch(
-        "simcore_service_resource_usage_tracker.resource_tracker_core._prometheus_client_custom_query",
+        "simcore_service_resource_usage_tracker.resource_tracker_core._prometheus_sync_client_custom_query",
         autospec=True,
         return_value=data,
     )

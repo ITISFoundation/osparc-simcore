@@ -2,6 +2,7 @@ from typing import Any
 
 from arrow import Arrow
 from models_library.products import ProductName
+from models_library.projects import ProjectID
 from models_library.users import UserID
 from pydantic import BaseModel
 
@@ -11,6 +12,7 @@ class ContainerResourceUsageMetric(BaseModel):
     image: str
     user_id: UserID
     product_name: ProductName
+    project_uuid: ProjectID
     service_settings_reservation_nano_cpus: int | None
     service_settings_reservation_memory_bytes: int | None
     service_settings_reservation_additional_info: dict[str, Any] = {}

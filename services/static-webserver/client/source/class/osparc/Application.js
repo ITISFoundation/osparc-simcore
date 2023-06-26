@@ -64,6 +64,9 @@ qx.Class.define("osparc.Application", {
       const intlTelInput = osparc.wrapper.IntlTelInput.getInstance();
       intlTelInput.init();
 
+      const threejs = osparc.wrapper.Three.getInstance();
+      threejs.init();
+
       const webSocket = osparc.wrapper.WebSocket.getInstance();
       webSocket.addListener("connect", () => osparc.io.WatchDog.getInstance().setOnline(true));
       webSocket.addListener("disconnect", () => osparc.io.WatchDog.getInstance().setOnline(false));
