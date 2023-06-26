@@ -66,7 +66,7 @@ def create_openapi_specs(
 
     schemas = openapi["components"]["schemas"]
     for section in ("HTTPValidationError", "ValidationError"):
-        schemas.pop(section)
+        schemas.pop(section, None)
 
     # Removes default response 422
     if drop_fastapi_default_422:
@@ -94,7 +94,6 @@ class ParamSpec(NamedTuple):
 def assert_handler_signature_against_model(
     handler: Callable, model_cls: type[BaseModel]
 ):
-
     sig = inspect.signature(handler)
 
     # query, path and body parameters
