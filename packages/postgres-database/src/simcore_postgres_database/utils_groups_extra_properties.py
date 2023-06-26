@@ -12,6 +12,24 @@ from .models.groups import GroupType, groups, user_to_groups
 from .utils_models import FromRowMixin
 
 
+class GroupExtraPropertiesError(Exception):
+    ...
+
+
+class GroupExtraPropertiesNotFound(GroupExtraPropertiesError):
+    ...
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class GroupExtraProperties(FromRowMixin):
+    group_id: int
+    product_name: str
+    internet_access: bool
+    override_services_specifications: bool
+    created: datetime.datetime
+    modified: datetime.datetime
+
+
 async def _list_table_entries_ordered_by_group_type(
     connection: SAConnection, user_id: int, product_name: str
 ) -> list[RowProxy]:
@@ -59,22 +77,19 @@ async def _list_table_entries_ordered_by_group_type(
     return rows
 
 
-class GroupExtraPropertiesError(Exception):
-    ...
+def _merge_extra_properties_booleans(
+    instance1: GroupExtraProperties, instance2: GroupExtraProperties
+) -> GroupExtraProperties:
+    merged_properties = {}
+    for field in fields(instance1):
+        value1 = getattr(instance1, field.name)
+        value2 = getattr(instance2, field.name)
 
-
-class GroupExtraPropertiesNotFound(GroupExtraPropertiesError):
-    ...
-
-
-@dataclass(frozen=True, slots=True, kw_only=True)
-class GroupExtraProperties(FromRowMixin):
-    group_id: int
-    product_name: str
-    internet_access: bool
-    override_services_specifications: bool
-    created: datetime.datetime
-    modified: datetime.datetime
+        if isinstance(value1, bool):
+            merged_properties[field.name] = value1 or value2
+        else:
+            merged_properties[field.name] = value1
+    return GroupExtraProperties(**merged_properties)  # type: ignore
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -94,20 +109,6 @@ class GroupExtraPropertiesRepo:
         raise GroupExtraPropertiesNotFound(f"Properties for group {gid} not found")
 
     @staticmethod
-    def _merge_extra_properties_booleans(
-        instance1: GroupExtraProperties, instance2: GroupExtraProperties
-    ) -> GroupExtraProperties:
-        merged_properties = {}
-        for field in fields(instance1):
-            value1 = getattr(instance1, field.name)
-            value2 = getattr(instance2, field.name)
-
-            if isinstance(value1, bool):
-                merged_properties[field.name] = value1 or value2
-            merged_properties[field.name] = value1
-        return GroupExtraProperties(**merged_properties)
-
-    @staticmethod
     async def get_aggregated_properties_for_user(
         connection: SAConnection,
         *,
@@ -117,7 +118,7 @@ class GroupExtraPropertiesRepo:
         rows = await _list_table_entries_ordered_by_group_type(
             connection, user_id, product_name
         )
-        aggregated_standard_extra_properties = None
+        merged_standard_extra_properties = None
         for row in rows:
             group_extra_properties = GroupExtraProperties.from_row(row)
             match row.type:
@@ -125,24 +126,24 @@ class GroupExtraPropertiesRepo:
                     # this always has highest priority
                     return group_extra_properties
                 case GroupType.STANDARD:
-                    if aggregated_standard_extra_properties:
-                        aggregated_standard_extra_properties = (
-                            GroupExtraPropertiesRepo._merge_extra_properties_booleans(
+                    if merged_standard_extra_properties:
+                        merged_standard_extra_properties = (
+                            _merge_extra_properties_booleans(
+                                merged_standard_extra_properties,
                                 group_extra_properties,
-                                aggregated_standard_extra_properties,
                             )
                         )
                     else:
-                        aggregated_standard_extra_properties = group_extra_properties
+                        merged_standard_extra_properties = group_extra_properties
                 case GroupType.EVERYONE:
                     # if there are standard properties, they take precedence
                     return (
-                        aggregated_standard_extra_properties
-                        if aggregated_standard_extra_properties
+                        merged_standard_extra_properties
+                        if merged_standard_extra_properties
                         else group_extra_properties
                     )
-        if aggregated_standard_extra_properties:
-            return aggregated_standard_extra_properties
+        if merged_standard_extra_properties:
+            return merged_standard_extra_properties
         raise GroupExtraPropertiesNotFound(
             f"Properties for user {user_id} in {product_name} not found"
         )
