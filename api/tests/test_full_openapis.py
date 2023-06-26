@@ -1,6 +1,3 @@
-# pylint: disable=redefined-outer-name
-# pylint: disable=unused-argument
-
 from pathlib import Path
 
 import pytest
@@ -15,8 +12,8 @@ from utils import is_openapi_schema, list_files_in_api_specs, load_specs
 @pytest.mark.parametrize(
     "spec_file", list_files_in_api_specs("*.json") + list_files_in_api_specs("*.y*ml")
 )
-def test_valid_openapi_specs(spec_file: str):
-    spec_file_path = Path(spec_file)
+def test_valid_openapi_specs(spec_file_path: str):
+    spec_file_path = Path(spec_file_path)
     specs = load_specs(spec_file_path)
     if is_openapi_schema(specs):
         try:
