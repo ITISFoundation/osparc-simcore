@@ -38,12 +38,10 @@ def _prometheus_sync_client_custom_query(
     promql_cpu_query: str,
     scrape_timestamp: datetime,
 ) -> list[dict]:
-    rfc3339_str = scrape_timestamp.isoformat("T")
-    _logger.info(
-        "Querying prometheus at <%s> with: <%s>", rfc3339_str, promql_cpu_query
-    )
+    rfc3339: str = scrape_timestamp.isoformat("T")
+    _logger.info("Querying prometheus at <%s> with: <%s>", rfc3339, promql_cpu_query)
     data: list[dict] = prometheus_client.custom_query(
-        promql_cpu_query, params={"time": rfc3339_str}
+        promql_cpu_query, params={"time": rfc3339}
     )
     return data
 

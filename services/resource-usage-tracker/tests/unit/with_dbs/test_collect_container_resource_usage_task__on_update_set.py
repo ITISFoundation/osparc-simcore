@@ -1,6 +1,7 @@
 import logging
 import random
 from pathlib import Path
+from typing import Any
 from unittest import mock
 
 import arrow
@@ -115,11 +116,11 @@ def mocked_prometheus_client_custom_query(
 
 async def test_collect_container_resource_usage_task(
     mocked_redis_server: None,
-    mocked_prometheus,
-    mocked_prometheus_client_custom_query,
+    mocked_prometheus: mock.MagicMock,
+    mocked_prometheus_client_custom_query: mock.MagicMock,
     initialized_app: FastAPI,
-    postgres_db,
-    random_promql_output_generator,
+    postgres_db: sa.engine.Engine,
+    random_promql_output_generator: dict[str, Any],
 ):
     await collect_container_resource_usage_task(initialized_app)
 
