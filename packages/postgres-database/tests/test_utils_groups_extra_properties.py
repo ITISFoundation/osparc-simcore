@@ -196,7 +196,7 @@ async def test_get_aggregated_properties_for_user(
         )
     )
     assert aggregated_group_properties != everyone_group_extra_properties
-    assert aggregated_group_properties == standard_group_extra_properties[0]
+    assert aggregated_group_properties == standard_group_extra_properties[-1]
 
     # now create some personal extra properties
     personal_group_extra_properties = await create_fake_group_extra_properties(
