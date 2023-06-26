@@ -54,9 +54,12 @@ app = FastAPI(
         "__PLACEHOLDER___KEY_url": "https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE",
     },
     servers=[
-        {"url": "/", "description": "Default server: requests directed to serving url"},
         {
-            "url": "http://{host}:{port}",
+            "url": "/v0",
+            "description": "Default server: requests directed to serving url",
+        },
+        {
+            "url": "http://{host}:{port}/v0",
             "description": "Development server: can configure any base url",
             "variables": {
                 "host": {"default": "127.0.0.1"},
