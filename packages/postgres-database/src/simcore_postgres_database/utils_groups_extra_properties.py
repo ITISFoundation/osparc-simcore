@@ -1,5 +1,6 @@
 import datetime
 from dataclasses import dataclass, fields
+from typing import Any
 
 import sqlalchemy
 from aiopg.sa.connection import SAConnection
@@ -39,7 +40,7 @@ async def _list_table_entries_ordered_by_group_type(
                 groups_extra_properties,
                 groups.c.type,
                 sqlalchemy.case(
-                    [
+                    *[
                         # NOTE: the ordering is important for the aggregation afterwards
                         (groups.c.type == "EVERYONE", sqlalchemy.literal(3)),
                         (groups.c.type == "STANDARD", sqlalchemy.literal(2)),
@@ -80,7 +81,7 @@ async def _list_table_entries_ordered_by_group_type(
 def _merge_extra_properties_booleans(
     instance1: GroupExtraProperties, instance2: GroupExtraProperties
 ) -> GroupExtraProperties:
-    merged_properties = {}
+    merged_properties: dict[str, Any] = {}
     for field in fields(instance1):
         value1 = getattr(instance1, field.name)
         value2 = getattr(instance2, field.name)
@@ -89,7 +90,7 @@ def _merge_extra_properties_booleans(
             merged_properties[field.name] = value1 or value2
         else:
             merged_properties[field.name] = value1
-    return GroupExtraProperties(**merged_properties)  # type: ignore
+    return GroupExtraProperties(**merged_properties)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
