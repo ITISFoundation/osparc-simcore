@@ -9,12 +9,11 @@ from ..db.models import user_to_groups
 
 
 async def do_update_expired_users(conn: SAConnection) -> list[UserID]:
-
     result: ResultProxy = await conn.execute(
         users.update()
         .values(status=UserStatus.EXPIRED)
         .where(
-            (users.c.expires_at != None)
+            (users.c.expires_at.is_(None))
             & (users.c.status == UserStatus.ACTIVE)
             & (users.c.expires_at < func.now())
         )
