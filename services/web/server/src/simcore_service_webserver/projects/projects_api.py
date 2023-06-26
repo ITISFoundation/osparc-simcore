@@ -926,6 +926,8 @@ async def update_project_node_resources(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
+    service_key: str,
+    service_version: str,
     product_name: str,
     resources: ServiceResourcesDict,
 ) -> ServiceResourcesDict:
@@ -936,6 +938,12 @@ async def update_project_node_resources(
         current_resources = parse_obj_as(
             ServiceResourcesDict, current_project_node.required_resources
         )
+        if not current_resources:
+            # NOTE: this can happen after the migration
+            # get default resources
+            current_resources = await catalog_client.get_service_resources(
+                app, user_id, service_key, service_version
+            )
 
         validate_new_service_resources(current_resources, new_resources=resources)
 
