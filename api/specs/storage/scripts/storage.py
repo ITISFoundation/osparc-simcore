@@ -7,7 +7,6 @@
 # pylint: disable=too-many-arguments
 
 
-import itertools
 from enum import Enum
 from typing import Any
 
@@ -67,15 +66,13 @@ app = FastAPI(
     ],
     openapi_tags=[
         {"name": x}
-        for x in list(
-            itertools.chain(
-                TAGS_DATASETS,
-                TAGS_FILES,
-                TAGS_HEALTH,
-                TAGS_LOCATIONS,
-                TAGS_TASKS,
-                TAGS_SIMCORE_S3,
-            )
+        for x in (
+            TAGS_DATASETS
+            + TAGS_FILES
+            + TAGS_HEALTH
+            + TAGS_LOCATIONS
+            + TAGS_TASKS
+            + TAGS_SIMCORE_S3
         )
     ],
 )
