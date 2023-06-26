@@ -184,7 +184,7 @@ async def test_get_aggregated_properties_for_user_returns_properties_in_expected
     # let's add the user in these groups
     for group in created_groups:
         await _add_user_to_group(
-            connection, user_id=registered_user.id, group_id=group.id
+            connection, user_id=registered_user.id, group_id=group.gid
         )
 
     # this changes nothing
@@ -208,7 +208,54 @@ async def test_get_aggregated_properties_for_user_returns_properties_in_expected
         )
     )
     assert aggregated_group_properties != everyone_group_extra_properties
-    assert aggregated_group_properties == standard_group_extra_properties[-1]
+    assert aggregated_group_properties == standard_group_extra_properties[0]
+
+    # now create some personal extra properties
+    personal_group_extra_properties = await create_fake_group_extra_properties(
+        registered_user.primary_gid, product_name
+    )
+    # this now returns the primary properties
+    aggregated_group_properties = (
+        await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+            connection, user_id=registered_user.id, product_name=product_name
+        )
+    )
+    assert aggregated_group_properties == personal_group_extra_properties
+
+
+async def test_get_aggregated_properties_for_user_returns_properties_in_expected_priority_without_everyone_group(
+    connection: aiopg.sa.connection.SAConnection,
+    product_name: str,
+    registered_user: RowProxy,
+    create_fake_product: Callable[..., Awaitable[RowProxy]],
+    create_fake_group: Callable[..., Awaitable[RowProxy]],
+    create_fake_group_extra_properties: Callable[..., Awaitable[GroupExtraProperties]],
+    everyone_group_id: int,
+):
+    await create_fake_product(product_name)
+    await create_fake_product(f"{product_name}_additional_just_for_fun")
+
+    # let's create a few groups
+    created_groups = [await create_fake_group(connection) for _ in range(5)]
+    # let's add the user in these groups
+    for group in created_groups:
+        await _add_user_to_group(
+            connection, user_id=registered_user.id, group_id=group.gid
+        )
+
+    # now create some extra properties
+    standard_group_extra_properties = [
+        await create_fake_group_extra_properties(group.gid, product_name)
+        for group in created_groups
+    ]
+
+    # this returns the last properties created
+    aggregated_group_properties = (
+        await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+            connection, user_id=registered_user.id, product_name=product_name
+        )
+    )
+    assert aggregated_group_properties == standard_group_extra_properties[0]
 
     # now create some personal extra properties
     personal_group_extra_properties = await create_fake_group_extra_properties(
