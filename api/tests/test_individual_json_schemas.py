@@ -12,8 +12,7 @@ from utils import is_json_schema, list_files_in_api_specs, load_specs
     "spec_file_path",
     list_files_in_api_specs("*.json") + list_files_in_api_specs("*.y*ml"),
 )
-def test_valid_individual_json_schemas_specs(spec_file_path):
-    spec_file_path = Path(spec_file_path)
+def test_valid_individual_json_schemas_specs(spec_file_path: Path):
     specs_dict = load_specs(spec_file_path)
 
     if is_json_schema(specs_dict):

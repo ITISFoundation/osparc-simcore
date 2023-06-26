@@ -82,6 +82,13 @@ def _remove_named_groups(regex: str) -> str:
 
 
 def _patch_node_properties(key: str, node: dict):
+    # Validation for URL is broken in the context of the license entry
+    # this helps to bypass validation and then replace with the correct value
+    if key.startswith("__PLACEHOLDER___KEY_"):
+        new_key = key.replace("__PLACEHOLDER___KEY_", "")
+        node[new_key] = node[key]
+        node.pop(key)
+
     # SEE fastapi ISSUE: https://github.com/tiangolo/fastapi/issues/240 (test_openap.py::test_exclusive_min_openapi_issue )
     # SEE openapi-standard: https://swagger.io/docs/specification/data-models/data-types/#range
     if node_type := node.get("type"):
@@ -105,6 +112,11 @@ def _patch_node_properties(key: str, node: dict):
         elif key == "pattern" and node_type == "string":
             node[key] = _remove_named_groups(regex=node[key])
 
+        elif key == "env_names":
+            # NOTE: `env_names` added by BaseCustomSettings types
+            # and is not compatible with OpenAPI specifications
+            node.pop("env_names")
+
 
 def _patch(node: Any):
     if isinstance(node, dict):
@@ -115,7 +127,8 @@ def _patch(node: Any):
             _patch_node_properties(key, node)
 
             # recursive
-            _patch(node[key])
+            if key in node:  # key could have been removed in _patch_node_properties
+                _patch(node[key])
 
     elif isinstance(node, list):
         for value in node:
