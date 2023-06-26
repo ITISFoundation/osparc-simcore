@@ -136,18 +136,23 @@ qx.Class.define("osparc.component.node.UpdateResourceLimitsView", {
           resourceField.imageName in updatedResources &&
           resourceField.resourceKey in updatedResources[resourceField.imageName].resources
         ) {
-          updatedResources[resourceField.imageName].resources[resourceField.resourceKey] = resourceField.getValue();
+          let value = resourceField.getValue();
+          if (resourceField.resourceKey === "RAM") {
+            value = osparc.utils.Utils.gBToBytes(value);
+          }
+          updatedResources[resourceField.imageName].resources[resourceField.resourceKey]["limit"] = value;
         }
       });
+      const node = this.getNode();
       const params = {
         url: {
-          studyId: this.getStudyId(),
-          nodeId: this.getNodeId()
+          studyId: node.getStudy().getUuid(),
+          nodeId: node.getNodeId()
         },
         data: updatedResources
       };
-      osparc.data.Resources.fetch("nodesInStudyResources", params)
-        .then(updatedStudy => {
+      osparc.data.Resources.fetch("nodesInStudyResources", "put", params)
+        .then(() => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Limits successfully updated"));
           this.fireEvent("limitsChanged");
         })
