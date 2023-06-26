@@ -3,7 +3,7 @@ import functools
 import redis.asyncio as aioredis
 from aiohttp import web
 from models_library.users import UserID
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Extra, Field
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -203,6 +203,18 @@ async def mark_notification_as_read(request: web.Request) -> web.Response:
             raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+
+
+class _OutputSchema(BaseModel):
+    class Config:
+        allow_population_by_field_name = True
+        extra = Extra.ignore
+        allow_mutations = False
+
+
+class PermissionGet(_OutputSchema):
+    name: str
+    allow: bool
 
 
 @routes.get(f"/{API_VTAG}/me/permissions", name="list_user_permissions")
