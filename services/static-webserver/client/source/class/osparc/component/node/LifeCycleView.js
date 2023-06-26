@@ -16,33 +16,14 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.component.node.LifeCycleView", {
-  extend: qx.ui.core.Widget,
-
-  construct: function(node) {
-    this.base();
-
-    this._setLayout(new qx.ui.layout.VBox(5));
-
-    if (node) {
-      this.setNode(node);
-    }
-  },
+  extend: osparc.component.node.ServiceOptionsView,
 
   events: {
     "versionChanged": "qx.event.type.Event"
   },
 
-  properties: {
-    node: {
-      check: "osparc.data.model.Node",
-      init: null,
-      nullable: false,
-      apply: "__applyNode"
-    }
-  },
-
   members: {
-    __applyNode: function(node) {
+    _applyNode: function(node) {
       if (node.isUpdatable() || node.isDeprecated() || node.isRetired()) {
         this.__populateLayout();
       }

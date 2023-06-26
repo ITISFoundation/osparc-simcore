@@ -16,33 +16,14 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.component.node.UpdateResourceLimitsView", {
-  extend: qx.ui.core.Widget,
-
-  construct: function(node) {
-    this.base();
-
-    this._setLayout(new qx.ui.layout.VBox(5));
-
-    if (node) {
-      this.setNode(node);
-    }
-  },
+  extend: osparc.component.node.ServiceOptionsView,
 
   events: {
     "limitsChanged": "qx.event.type.Event"
   },
 
-  properties: {
-    node: {
-      check: "osparc.data.model.Node",
-      init: null,
-      nullable: false,
-      apply: "__applyNode"
-    }
-  },
-
   members: {
-    __applyNode: function(node) {
+    _applyNode: function(node) {
       if (node.isComputational() || node.isDynamic()) {
         this.__populateLayout();
       }
@@ -55,7 +36,7 @@ qx.Class.define("osparc.component.node.UpdateResourceLimitsView", {
         font: "text-14"
       }));
 
-      const resourcesLayout = osparc.info.ServiceUtils.createResourcesInfo();
+      const resourcesLayout = osparc.info.ServiceUtils.createResourcesInfo(false);
       this._add(resourcesLayout);
 
       const node = this.getNode();
@@ -68,7 +49,7 @@ qx.Class.define("osparc.component.node.UpdateResourceLimitsView", {
       osparc.data.Resources.get("nodesInStudyResources", params)
         .then(serviceResources => {
           resourcesLayout.show();
-          const layout = resourcesLayout.getChildren()[1];
+          const layout = resourcesLayout.getChildren()[0];
           let row = 1;
           Object.entries(serviceResources).forEach(([imageName, imageInfo]) => {
             layout.add(new qx.ui.basic.Label(imageName).set({
@@ -99,8 +80,10 @@ qx.Class.define("osparc.component.node.UpdateResourceLimitsView", {
                     if (resourceKey === "RAM") {
                       value = osparc.utils.Utils.bytesToGB(value);
                     }
-                    const spinner = new qx.ui.form.Spinner(0, value, 300);
-                    spinner.setSingleStep(0.1);
+                    const spinner = new qx.ui.form.Spinner(0, value, 200).set({
+                      singleStep: 0.1,
+                      enabled: !(resourceKey === "VRAM")
+                    });
                     layout.add(spinner, {
                       row,
                       column
