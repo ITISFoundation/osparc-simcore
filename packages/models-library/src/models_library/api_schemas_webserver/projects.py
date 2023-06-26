@@ -7,18 +7,18 @@ SEE rationale in https://fastapi.tiangolo.com/tutorial/extra-models/#multiple-mo
 
 from typing import Any, Literal, TypeAlias
 
-from models_library.emails import LowerCaseEmailStr
-from models_library.projects import ClassifierID, DateTimeStr, NodesDict, ProjectID
-from models_library.projects_access import AccessRights, GroupIDStr
-from models_library.projects_nodes import HttpUrlWithCustomMinLength
-from models_library.projects_state import ProjectState
-from models_library.projects_ui import StudyUI
-from models_library.utils.common_validators import empty_str_to_none, none_to_empty_str
 from pydantic import BaseModel, Extra, Field, validator
 from servicelib.aiohttp.long_running_tasks.server import TaskGet
 
-from ..rest.schemas_base import InputSchema, OutputSchema
-from ._permalink_api import ProjectPermalink
+from ..emails import LowerCaseEmailStr
+from ..projects import ClassifierID, DateTimeStr, NodesDict, ProjectID
+from ..projects_access import AccessRights, GroupIDStr
+from ..projects_nodes import HttpUrlWithCustomMinLength
+from ..projects_state import ProjectState
+from ..projects_ui import StudyUI
+from ..utils.common_validators import empty_str_to_none, none_to_empty_str
+from ._base import InputSchema, OutputSchema
+from .projects_permalink import ProjectPermalink
 
 NOT_REQUIRED = Field(default=None)
 

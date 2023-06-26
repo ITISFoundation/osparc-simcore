@@ -6,6 +6,7 @@ from typing import Any, Coroutine, TypeAlias
 
 from aiohttp import web
 from jsonschema import ValidationError as JsonSchemaValidationError
+from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import ProjectStatus
@@ -30,7 +31,6 @@ from ..storage.api import (
 from ..users.api import get_user_name
 from . import projects_api
 from ._permalink_api import update_or_pop_permalink_in_project
-from ._rest_schemas import ProjectGet
 from .db import ProjectDBAPI
 from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from .models import ProjectDict

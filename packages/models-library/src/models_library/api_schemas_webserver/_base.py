@@ -5,8 +5,9 @@
 
 from typing import Any
 
-from models_library.utils.change_case import snake_to_camel
 from pydantic import BaseModel, Extra
+
+from ..utils.change_case import snake_to_camel
 
 
 class InputSchema(BaseModel):
