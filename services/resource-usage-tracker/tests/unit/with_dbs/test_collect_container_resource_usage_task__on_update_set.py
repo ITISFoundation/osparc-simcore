@@ -114,6 +114,7 @@ def mocked_prometheus_client_custom_query(
 
 
 async def test_collect_container_resource_usage_task(
+    mocked_redis_server: None,
     mocked_prometheus,
     mocked_prometheus_client_custom_query,
     initialized_app: FastAPI,
@@ -124,7 +125,7 @@ async def test_collect_container_resource_usage_task(
 
     expected_query = "sum without (cpu) (container_cpu_usage_seconds_total{image=~'registry.osparc-master.speag.com/simcore/services/dynamic/jupyter-smash:.*'})[30m:1m]"
     mocked_prometheus_client_custom_query.assert_called_once_with(
-        mocked_prometheus.return_value, expected_query
+        mocked_prometheus.return_value, expected_query, mock.ANY
     )
 
     db_rows = []

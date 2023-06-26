@@ -1,7 +1,8 @@
 import logging
+from datetime import datetime
 
+import sqlalchemy as sa
 from simcore_postgres_database.models.resource_tracker import resource_tracker_container
-from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from ....models.resource_tracker_container import ContainerResourceUsage
@@ -11,7 +12,16 @@ _logger = logging.getLogger(__name__)
 
 
 class ResourceTrackerRepository(BaseRepository):
-    async def upsert_resource_tracker_container_data_(
+    async def get_prometheus_last_scraped_timestamp(self) -> datetime | None:
+        async with self.db_engine.begin() as conn:
+            max_last_scraped_timestamp = await conn.scalar(
+                sa.select(
+                    sa.func.max(resource_tracker_container.c.prometheus_last_scraped)
+                )
+            )
+            return max_last_scraped_timestamp
+
+    async def upsert_resource_tracker_container_data(
         self, data: ContainerResourceUsage
     ) -> None:
         async with self.db_engine.begin() as conn:
@@ -27,7 +37,7 @@ class ResourceTrackerRepository(BaseRepository):
                 container_cpu_usage_seconds_total=data.container_cpu_usage_seconds_total,
                 prometheus_created=data.prometheus_created.datetime,
                 prometheus_last_scraped=data.prometheus_last_scraped.datetime,
-                modified=func.now(),
+                modified=sa.func.now(),
             )
 
             on_update_stmt = insert_stmt.on_conflict_do_update(
@@ -35,19 +45,19 @@ class ResourceTrackerRepository(BaseRepository):
                     resource_tracker_container.c.container_id,
                 ],
                 set_={
-                    "container_cpu_usage_seconds_total": func.greatest(
+                    "container_cpu_usage_seconds_total": sa.func.greatest(
                         resource_tracker_container.c.container_cpu_usage_seconds_total,
                         insert_stmt.excluded.container_cpu_usage_seconds_total,
                     ),
-                    "prometheus_created": func.least(
+                    "prometheus_created": sa.func.least(
                         resource_tracker_container.c.prometheus_created,
                         insert_stmt.excluded.prometheus_created,
                     ),
-                    "prometheus_last_scraped": func.greatest(
+                    "prometheus_last_scraped": sa.func.greatest(
                         resource_tracker_container.c.prometheus_last_scraped,
                         insert_stmt.excluded.prometheus_last_scraped,
                     ),
-                    "modified": func.now(),
+                    "modified": sa.func.now(),
                 },
             )
 
