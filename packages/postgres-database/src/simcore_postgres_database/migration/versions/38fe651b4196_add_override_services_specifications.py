@@ -1,7 +1,7 @@
 """add override_services_specifications
 
 Revision ID: 38fe651b4196
-Revises: add0afaaf728
+Revises: 417f9eb848ce
 Create Date: 2023-06-23 11:37:04.833354+00:00
 
 """
@@ -10,7 +10,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "38fe651b4196"
-down_revision = "add0afaaf728"
+down_revision = "417f9eb848ce"
 branch_labels = None
 depends_on = None
 
