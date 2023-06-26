@@ -190,6 +190,11 @@ qx.Class.define("osparc.info.ServiceUtils", {
         alignY: "middle"
       }));
 
+      const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Resources")).set({
+        font: "text-13"
+      });
+      resourcesLayout.add(label);
+
       const grid = new qx.ui.layout.Grid(10, 5);
       grid.setColumnAlign(0, "right", "middle"); // subservice name
       grid.setColumnAlign(1, "left", "middle"); // resource type

@@ -49,7 +49,7 @@ qx.Class.define("osparc.component.node.UpdateResourceLimitsView", {
         font: "text-14"
       }));
 
-      const resourcesLayout = osparc.info.ServiceUtils.createResourcesInfo(false);
+      const resourcesLayout = osparc.info.ServiceUtils.createResourcesInfo();
       const title = resourcesLayout.getChildren()[0];
       title.exclude();
       resourcesLayout.exclude();
@@ -86,9 +86,10 @@ qx.Class.define("osparc.component.node.UpdateResourceLimitsView", {
                 if (resourceKey === "RAM") {
                   label += " (GB)";
                 }
-                gridLayout.add(new qx.ui.basic.Label(label).set({
+                const resourceKeyTitle = new qx.ui.basic.Label(label).set({
                   font: "text-13"
-                }), {
+                });
+                gridLayout.add(resourceKeyTitle, {
                   row,
                   column
                 });
