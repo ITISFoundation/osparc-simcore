@@ -14,7 +14,7 @@ _logger = logging.getLogger(__name__)
 class ResourceTrackerRepository(BaseRepository):
     async def get_prometheus_last_scraped_timestamp(self) -> datetime | None:
         async with self.db_engine.begin() as conn:
-            max_last_scraped_timestamp = await conn.scalar(
+            max_last_scraped_timestamp: datetime | None = await conn.scalar(
                 sa.select(
                     sa.func.max(resource_tracker_container.c.prometheus_last_scraped)
                 )
