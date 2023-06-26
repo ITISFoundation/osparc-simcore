@@ -80,7 +80,6 @@ qx.Class.define("osparc.component.node.UpdateResourceLimitsView", {
                 if (resourceKey === "VRAM") {
                   return;
                 }
-
                 let column = 1;
                 const resourceInfo = resourcesInfo[resourceKey];
                 let label = resourceKey;
@@ -112,9 +111,9 @@ qx.Class.define("osparc.component.node.UpdateResourceLimitsView", {
                     spinner.resourceKey = resourceKey;
                     this.__resourceFields.push(spinner);
                     gridLayout.add(spinner, {
+                      row,
                       column
                     });
-                    }
                     column++;
                   }
                 });
