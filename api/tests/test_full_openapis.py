@@ -1,3 +1,4 @@
+# pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
 from pathlib import Path
@@ -44,7 +45,13 @@ def _patch(node: Any):
 
 @pytest.fixture(scope="module")
 def patch_specs_in_place(tmpdir_factory) -> Iterable[None]:
-    tmp_path = Path(tmpdir_factory.mktemp("backupdata"))
+    # NOTE: this fixture below only runs once
+
+    # NOTE: since the specs are defined in multiple files
+    # the patching needs to be applied to all the files
+    # The files will be restored to their original state
+    # after the tests finish
+    tmp_path = Path(tmpdir_factory.mktemp("backups"))
     for file in ALL_SPEC_FILES:
         # create backup of spec
         file_path = Path(file)
@@ -60,7 +67,7 @@ def patch_specs_in_place(tmpdir_factory) -> Iterable[None]:
     yield
 
     for file in ALL_SPEC_FILES:
-        # restore backup
+        # restore from backup if modified
         file_path = Path(file)
         backup = tmp_path / file_path.relative_to("/")
         if file_path.read_text() != backup.read_text():
