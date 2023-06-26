@@ -28,6 +28,15 @@ qx.Class.define("osparc.component.node.UpdateResourceLimitsView", {
 
     _applyNode: function(node) {
       if (node.isComputational() || node.isDynamic()) {
+        if (node.isComputational()) {
+          node.getStatus().bind("interactive", this, "enabled", {
+            converter: () => !osparc.data.model.NodeStatus.isComputationalRunning(node)
+          });
+        } else if (node.isDynamic()) {
+          node.getStatus().bind("interactive", this, "enabled", {
+            converter: interactive => interactive === "idle"
+          });
+        }
         this.__populateLayout();
       }
     },
@@ -86,8 +95,7 @@ qx.Class.define("osparc.component.node.UpdateResourceLimitsView", {
                       value = osparc.utils.Utils.bytesToGB(value);
                     }
                     const spinner = new qx.ui.form.Spinner(0, value, 200).set({
-                      singleStep: 0.1,
-                      enabled: !(resourceKey === "VRAM")
+                      singleStep: 0.1
                     });
                     const nf = new qx.util.format.NumberFormat();
                     nf.setMinimumFractionDigits(1);
@@ -97,10 +105,12 @@ qx.Class.define("osparc.component.node.UpdateResourceLimitsView", {
                     spinner.imageName = imageName;
                     spinner.resourceKey = resourceKey;
                     this.__resourceFields.push(spinner);
-                    layout.add(spinner, {
-                      row,
-                      column
-                    });
+                    if (!(resourceKey === "VRAM")) {
+                      layout.add(spinner, {
+                        row,
+                        column
+                      });
+                    }
                     column++;
                   }
                 });
