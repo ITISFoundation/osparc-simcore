@@ -12,6 +12,7 @@ from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 
+from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..redis import get_redis_user_notifications_client
@@ -201,4 +202,11 @@ async def mark_notification_as_read(request: web.Request) -> web.Response:
             await redis_client.lset(key, k, user_notification.json())
             raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
+    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+
+
+@routes.get(f"/{API_VTAG}/me/permissions", name="list_user_permissions")
+@login_required
+async def list_user_permissions(request: web.Request) -> web.Response:
+    req_ctx = _RequestContext.parse_obj(request)
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
