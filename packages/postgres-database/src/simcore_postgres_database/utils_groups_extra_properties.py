@@ -4,13 +4,59 @@ from dataclasses import dataclass, fields
 import sqlalchemy
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
-from models_library.users import UserID
 from simcore_postgres_database.models.groups_extra_properties import (
     groups_extra_properties,
 )
 
 from .models.groups import GroupType, groups, user_to_groups
 from .utils_models import FromRowMixin
+
+
+async def _list_table_entries_ordered_by_group_type(
+    connection: SAConnection, user_id: int, product_name: str
+) -> list[RowProxy]:
+    subquery = (
+        sqlalchemy.select(
+            *[
+                groups_extra_properties,
+                groups.c.type,
+                sqlalchemy.case(
+                    [
+                        # NOTE: the ordering is important for the aggregation afterwards
+                        (groups.c.type == "EVERYONE", sqlalchemy.literal(3)),
+                        (groups.c.type == "STANDARD", sqlalchemy.literal(2)),
+                        (groups.c.type == "PRIMARY", sqlalchemy.literal(1)),
+                    ],
+                    else_=sqlalchemy.literal(4),
+                ).label("type_order"),
+            ]
+        )
+        .select_from(
+            sqlalchemy.join(
+                sqlalchemy.join(
+                    groups_extra_properties,
+                    user_to_groups,
+                    groups_extra_properties.c.group_id == user_to_groups.c.gid,
+                ),
+                groups,
+                groups_extra_properties.c.group_id == groups.c.gid,
+            )
+        )
+        .where(
+            (groups_extra_properties.c.product_name == product_name)
+            & (user_to_groups.c.uid == user_id)
+        )
+        .alias()
+    )
+
+    result = await connection.execute(
+        sqlalchemy.select(subquery).order_by(subquery.c.type_order)
+    )
+    assert result  # nosec
+
+    rows = await result.fetchall()
+    assert rows is not None  # nosec
+    return rows
 
 
 class GroupExtraPropertiesError(Exception):
@@ -48,53 +94,6 @@ class GroupExtraPropertiesRepo:
         raise GroupExtraPropertiesNotFound(f"Properties for group {gid} not found")
 
     @staticmethod
-    async def _list_table_entries_ordered_by_group_type(
-        connection: SAConnection, user_id: UserID, product_name: str
-    ) -> list[RowProxy]:
-        subquery = (
-            sqlalchemy.select(
-                *[
-                    groups_extra_properties,
-                    groups.c.type,
-                    sqlalchemy.case(
-                        [
-                            # NOTE: the ordering is important for the aggregation afterwards
-                            (groups.c.type == "EVERYONE", sqlalchemy.literal(3)),
-                            (groups.c.type == "STANDARD", sqlalchemy.literal(2)),
-                            (groups.c.type == "PRIMARY", sqlalchemy.literal(1)),
-                        ],
-                        else_=sqlalchemy.literal(4),
-                    ).label("type_order"),
-                ]
-            )
-            .select_from(
-                sqlalchemy.join(
-                    sqlalchemy.join(
-                        groups_extra_properties,
-                        user_to_groups,
-                        groups_extra_properties.c.group_id == user_to_groups.c.gid,
-                    ),
-                    groups,
-                    groups_extra_properties.c.group_id == groups.c.gid,
-                )
-            )
-            .where(
-                (groups_extra_properties.c.product_name == product_name)
-                & (user_to_groups.c.uid == user_id)
-            )
-            .alias()
-        )
-
-        result = await connection.execute(
-            sqlalchemy.select(subquery).order_by(subquery.c.type_order)
-        )
-        assert result  # nosec
-
-        rows = await result.fetchall()
-        assert rows is not None  # nosec
-        return rows
-
-    @staticmethod
     def _merge_extra_properties_booleans(
         instance1: GroupExtraProperties, instance2: GroupExtraProperties
     ) -> GroupExtraProperties:
@@ -115,7 +114,7 @@ class GroupExtraPropertiesRepo:
         user_id: int,
         product_name: str,
     ) -> GroupExtraProperties:
-        rows = await GroupExtraPropertiesRepo._list_table_entries_ordered_by_group_type(
+        rows = await _list_table_entries_ordered_by_group_type(
             connection, user_id, product_name
         )
         aggregated_standard_extra_properties = None
