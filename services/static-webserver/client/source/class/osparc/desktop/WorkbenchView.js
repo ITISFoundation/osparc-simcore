@@ -1164,6 +1164,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const updateResourceLimitsView = new osparc.component.node.UpdateResourceLimitsView(node);
         node.addListener("limitsChanged", () => this.__populateSecondPanel(node));
         this.__nodeOptionsPage.add(updateResourceLimitsView);
+        showPage = true;
         showStopButton |= node.isDynamic();
       }
 
