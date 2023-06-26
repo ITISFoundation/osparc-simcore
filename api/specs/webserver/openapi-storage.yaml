@@ -230,7 +230,8 @@ paths:
         schema:
           allOf:
           - $ref: '#/components/schemas/LinkType'
-          default: PRESIGNED
+          # NOTE: always apply this patch manually
+          # default: PRESIGNED
         name: link_type
         in: query
       responses:
@@ -273,7 +274,8 @@ paths:
         schema:
           allOf:
           - $ref: '#/components/schemas/LinkType'
-          default: PRESIGNED
+          # NOTE: always apply this patch manually
+          # default: PRESIGNED
         name: link_type
         in: query
       - required: false
@@ -763,6 +765,8 @@ components:
       - S3
       type: string
       description: An enumeration.
+      # NOTE: always apply this patch manually
+      default: PRESIGNED
     PresignedLink:
       title: PresignedLink
       required:
