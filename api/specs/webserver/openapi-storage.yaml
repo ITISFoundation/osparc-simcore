@@ -6,15 +6,6 @@ paths:
       summary: Get available storage locations
       description: Returns the list of available storage locations
       operationId: get_storage_locations
-      parameters:
-      - required: true
-        schema:
-          title: User Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: user_id
-        in: query
       responses:
         '200':
           description: Successful Response
@@ -75,14 +66,6 @@ paths:
           type: integer
         name: location_id
         in: path
-      - required: true
-        schema:
-          title: User Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: user_id
-        in: query
       responses:
         '200':
           description: Successful Response
@@ -138,14 +121,6 @@ paths:
           type: string
         name: dataset_id
         in: path
-      - required: true
-        schema:
-          title: User Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: user_id
-        in: query
       responses:
         '200':
           description: Successful Response
@@ -176,14 +151,6 @@ paths:
             type: string
         name: file_id
         in: path
-      - required: true
-        schema:
-          title: User Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: user_id
-        in: query
       responses:
         '200':
           description: Successful Response
@@ -218,14 +185,6 @@ paths:
             type: string
         name: file_id
         in: path
-      - required: true
-        schema:
-          title: User Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: user_id
-        in: query
       - required: false
         schema:
           allOf:
@@ -317,14 +276,6 @@ paths:
             type: string
         name: file_id
         in: path
-      - required: true
-        schema:
-          title: User Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: user_id
-        in: query
       responses:
         '204':
           description: Successful Response
@@ -353,14 +304,6 @@ paths:
             type: string
         name: file_id
         in: path
-      - required: true
-        schema:
-          title: User Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: user_id
-        in: query
       responses:
         '204':
           description: Successful Response
@@ -388,14 +331,6 @@ paths:
             type: string
         name: file_id
         in: path
-      - required: true
-        schema:
-          title: User Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: user_id
-        in: query
       requestBody:
         content:
           application/json:
@@ -439,14 +374,6 @@ paths:
           type: string
         name: future_id
         in: path
-      - required: true
-        schema:
-          title: User Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: user_id
-        in: query
       responses:
         '200':
           description: Successful Response

@@ -22,7 +22,6 @@ from models_library.api_schemas_storage import (
 )
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID, StorageFileID
-from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize
 from simcore_service_webserver.storage.schemas import DatasetMetaData, FileMetaData
 
@@ -40,7 +39,7 @@ TAGS: list[str | Enum] = [
     operation_id="get_storage_locations",
     summary="Get available storage locations",
 )
-async def get_storage_locations(user_id: UserID):
+async def get_storage_locations():
     """Returns the list of available storage locations"""
 
 
@@ -64,7 +63,7 @@ async def synchronise_meta_data_table(
     operation_id="get_datasets_metadata",
     summary="Get datasets metadata",
 )
-async def get_datasets_metadata(location_id: LocationID, user_id: UserID):
+async def get_datasets_metadata(location_id: LocationID):
     """Returns the list of dataset meta-datas"""
 
 
@@ -86,9 +85,7 @@ async def get_files_metadata(location_id: LocationID, uuid_filter: str = ""):
     operation_id="get_files_metadata_dataset",
     summary="Get Files Metadata",
 )
-async def get_files_metadata_dataset(
-    location_id: LocationID, dataset_id: str, user_id: UserID
-):
+async def get_files_metadata_dataset(location_id: LocationID, dataset_id: str):
     """list of file meta-datas"""
 
 
@@ -99,9 +96,7 @@ async def get_files_metadata_dataset(
     summary="Get File Metadata",
     operation_id="get_file_metadata",
 )
-async def get_file_metadata(
-    location_id: LocationID, file_id: StorageFileID, user_id: UserID
-):
+async def get_file_metadata(location_id: LocationID, file_id: StorageFileID):
     ...
 
 
@@ -115,7 +110,6 @@ async def get_file_metadata(
 async def download_file(
     location_id: LocationID,
     file_id: StorageFileID,
-    user_id: UserID,
     link_type: LinkType = LinkType.PRESIGNED,
 ):
     """Returns a presigned link"""
@@ -145,7 +139,7 @@ async def upload_file(
     operation_id="delete_file",
     summary="Deletes File",
 )
-async def delete_file(location_id: LocationID, file_id: StorageFileID, user_id: UserID):
+async def delete_file(location_id: LocationID, file_id: StorageFileID):
     ...
 
 
@@ -155,9 +149,7 @@ async def delete_file(location_id: LocationID, file_id: StorageFileID, user_id: 
     tags=TAGS,
     operation_id="abort_upload_file",
 )
-async def abort_upload_file(
-    location_id: LocationID, file_id: StorageFileID, user_id: UserID
-):
+async def abort_upload_file(location_id: LocationID, file_id: StorageFileID):
     """Asks the server to abort the upload and revert to the last valid version if any"""
 
 
@@ -172,7 +164,6 @@ async def complete_upload_file(
     body_item: Envelope[FileUploadCompletionBody],
     location_id: LocationID,
     file_id: StorageFileID,
-    user_id: UserID,
 ):
     """Asks the server to complete the upload"""
 
@@ -185,7 +176,7 @@ async def complete_upload_file(
     operation_id="is_completed_upload_file",
 )
 async def is_completed_upload_file(
-    location_id: LocationID, file_id: StorageFileID, future_id: str, user_id: UserID
+    location_id: LocationID, file_id: StorageFileID, future_id: str
 ):
     """Returns state of upload completion"""
 
