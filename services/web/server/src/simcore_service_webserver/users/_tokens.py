@@ -4,7 +4,6 @@
 """
 import sqlalchemy as sa
 from aiohttp import web
-from aiopg.sa.result import RowProxy
 from models_library.users import UserID
 from sqlalchemy import and_, literal_column
 
@@ -76,7 +75,8 @@ async def update_token(
             .returning(literal_column("*"))
         )
         assert resp.rowcount == 1  # nosec
-        updated_token: RowProxy = await resp.fetchone()
+        updated_token = await resp.fetchone()
+        assert updated_token  # nosec
         return dict(updated_token["token_data"])
 
 
