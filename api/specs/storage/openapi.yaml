@@ -12,8 +12,6 @@ info:
 servers:
 - url: /v0
   description: API server
-- url: localhost:8080/v0
-  description: Development server
 paths:
   /v0/locations/{location_id}/datasets:
     get:
