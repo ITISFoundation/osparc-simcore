@@ -185,15 +185,17 @@ qx.Class.define("osparc.info.ServiceUtils", {
       return descriptionLayout;
     },
 
-    createResourcesInfo: function() {
+    createResourcesInfo: function(showTitle = true) {
       const resourcesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
         alignY: "middle"
       }));
 
-      const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Resources")).set({
-        font: "text-13"
-      });
-      resourcesLayout.add(label);
+      if (showTitle) {
+        const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Resources")).set({
+          font: "text-13"
+        });
+        resourcesLayout.add(label);
+      }
 
       const grid = new qx.ui.layout.Grid(10, 5);
       grid.setColumnAlign(0, "right", "middle"); // subservice name
