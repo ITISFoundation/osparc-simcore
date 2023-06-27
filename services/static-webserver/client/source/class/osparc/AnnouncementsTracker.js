@@ -70,7 +70,7 @@ qx.Class.define("osparc.AnnouncementsTracker", {
           description: "For more information click <a href='https://zmt.swiss/news-and-events/news/sim4life/s4llite-student-competition-2023/' style='color: white' target='_blank'>here</a>",
           link: "https://zmt.swiss/news-and-events/news/sim4life/s4llite-student-competition-2023/"
         };
-        this.__setAnnouncement(announcementData);
+        this.__setAnnouncements(announcementData);
       }
       */
       const checkAnnouncements = () => {
@@ -78,10 +78,9 @@ qx.Class.define("osparc.AnnouncementsTracker", {
           .then(announcements => {
             console.log("announcements", announcements);
             if (announcements) {
-              // for now it's just a string
-              this.__setAnnouncement(JSON.parse(announcements));
+              this.__setAnnouncements(JSON.parse(announcements));
             } else {
-              this.__setMaintenance(null);
+              this.__setAnnouncements(null);
             }
           })
           .catch(err => console.error(err));
@@ -123,7 +122,7 @@ qx.Class.define("osparc.AnnouncementsTracker", {
       return false;
     },
 
-    __setAnnouncement: function(announcementData) {
+    __setAnnouncements: function(announcementData) {
       this.setStart(announcementData && "start" in announcementData ? new Date(announcementData.start) : null);
       this.setEnd(announcementData && "end" in announcementData ? new Date(announcementData.end) : null);
       this.setTitle(announcementData && "title" in announcementData ? announcementData.title : null);

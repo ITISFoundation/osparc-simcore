@@ -164,7 +164,6 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
         osparc.store.Support.addPanddyToMenu(this.getMenu());
       }
       const AnnouncementsTracker = osparc.AnnouncementsTracker.getInstance();
-      AnnouncementsTracker.startTracker();
       const userMenuAnnouncement = AnnouncementsTracker.getUserMenuAnnouncement();
       if (userMenuAnnouncement) {
         this.getMenu().add(userMenuAnnouncement);
