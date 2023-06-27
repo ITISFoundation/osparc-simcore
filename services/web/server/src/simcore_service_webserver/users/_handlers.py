@@ -68,9 +68,6 @@ async def update_my_profile(request: web.Request) -> web.Response:
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
-# TODO: rename to third_party_tokens
-
-
 # me/tokens/ ------------------------------------------------------
 def _handle_tokens_errors(handler: Handler):
     @functools.wraps(handler)
