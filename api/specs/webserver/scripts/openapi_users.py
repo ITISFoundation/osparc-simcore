@@ -134,4 +134,4 @@ async def mark_notification_as_read(
 if __name__ == "__main__":
     from _common import CURRENT_DIR, create_openapi_specs
 
-    create_openapi_specs(app, CURRENT_DIR.parent / "openapi-user.yaml")
+    create_openapi_specs(app, CURRENT_DIR.parent / "openapi-users.yaml")
