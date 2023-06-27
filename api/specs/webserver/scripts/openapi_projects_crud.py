@@ -17,6 +17,15 @@ from _common import (
     create_openapi_specs,
 )
 from fastapi import FastAPI, Query, status
+from models_library.api_schemas_webserver.projects import (
+    ProjectCopyOverride,
+    ProjectCreateNew,
+    ProjectGet,
+    ProjectListItem,
+    ProjectReplace,
+    ProjectUpdate,
+    TaskGet,
+)
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
@@ -28,15 +37,6 @@ from simcore_service_webserver.projects._handlers_crud import (
     _ProjectActiveParams,
     _ProjectCreateParams,
     _ProjectListParams,
-)
-from simcore_service_webserver.projects._rest_schemas import (
-    ProjectCopyOverride,
-    ProjectCreateNew,
-    ProjectGet,
-    ProjectListItem,
-    ProjectReplace,
-    ProjectUpdate,
-    TaskGet,
 )
 
 app = FastAPI(redoc_url=None)
