@@ -19,7 +19,7 @@ async def do_update_expired_users(conn: SAConnection) -> list[UserID]:
         users.update()
         .values(status=UserStatus.EXPIRED)
         .where(
-            (users.c.expires_at.is_(None))
+            (users.c.expires_at.is_not(None))
             & (users.c.status == UserStatus.ACTIVE)
             & (users.c.expires_at < func.now())
         )
