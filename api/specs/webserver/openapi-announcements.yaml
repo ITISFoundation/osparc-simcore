@@ -26,16 +26,40 @@ components:
       title: Announcements
       type: object
       properties:
+        products:
+          title: Products
+          description: Products in which the announcement should be displayed
+          type: array
+          items:
+            type: string
+            description: Product id
+            example: "s4llite"
         start:
           title: Start
-          type: string
           description: At what time the Announcement starts (UTC)
+          type: string
         end:
           title: End
-          type: string
           description: At what time the Announcement ends (UTC)
-        reason:
-          title: Reason
           type: string
+        title:
+          title: Title
           description: What the purpose of the Announcement is
+          type: string
+        description:
+          title: Description
+          description: What the purpose of the Announcement is
+          type: string
+        link:
+          title: External link with more information
+          description: What the purpose of the Announcement is
+          type: string
+        widgets:
+          title: External link with more information
+          description: Products in which the announcement should be displayed
+          type: array
+          items:
+            type: string
+            description: Product id
+            example: "ribbon"
       additionalProperties: false

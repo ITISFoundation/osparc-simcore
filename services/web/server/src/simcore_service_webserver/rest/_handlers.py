@@ -101,16 +101,23 @@ async def get_scheduled_maintenance(request: web.Request):
 
 
 @routes.get(f"/{API_VTAG}/announcements", name="get_announcements")
-@login_required
 async def get_announcements(request: web.Request):
     """Check announcements table in redis"""
 
     redis_client = get_redis_announcements_client(request.app)
     hash_key = "announcements"
-    # Examples.
-    #  {"start": "2023-01-17T14:45:00.000Z", "end": "2023-01-17T23:00:00.000Z", "reason": "Release 1.0.4"}
-    #  {"start": "2023-01-20T09:00:00.000Z", "end": "2023-01-20T10:30:00.000Z", "reason": "Release ResistanceIsFutile2"}
-    # NOTE: datetime is UTC (Canary islands / UK)
+    # Example:
+    """
+    {
+        "products": ["s4llite"],
+        "start": "2023-06-22T15:00:00.000Z",
+        "end": "2023-11-01T02:00:00.000Z",
+        "title": "Student Competition 2023",
+        "description": "For more information click <a href='https://zmt.swiss/news-and-events/news/sim4life/s4llite-student-competition-2023/' style='color: white' target='_blank'>here</a>",
+        "link": "https://zmt.swiss/news-and-events/news/sim4life/s4llite-student-competition-2023/",
+        "widgets": ["login", "ribbon", "user-menu"],
+    }
+    """
     if maintenance_str := await redis_client.get(hash_key):
         return web.json_response(data={"data": maintenance_str})
 
