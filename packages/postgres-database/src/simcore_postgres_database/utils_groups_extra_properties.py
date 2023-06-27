@@ -73,7 +73,7 @@ async def _list_table_entries_ordered_by_group_type(
     )
     assert result  # nosec
 
-    rows = await result.fetchall()
+    rows: list[RowProxy] | None = await result.fetchall()
     assert rows is not None  # nosec
     return rows
 
