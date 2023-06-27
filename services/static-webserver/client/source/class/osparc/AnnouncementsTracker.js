@@ -86,8 +86,7 @@ qx.Class.define("osparc.AnnouncementsTracker", {
       if (announcementsData) {
         announcementsData.forEach(announcementData => {
           const announcement = new osparc.component.announcement.Announcement(announcementData);
-          const announcementFactory = new osparc.component.announcement.AnnouncementUIFactory(announcement);
-          announcementFactory.buildAnnouncementUIs();
+          osparc.component.announcement.AnnouncementUIFactory.getInstance().setAnnouncement(announcement);
         });
       }
     }

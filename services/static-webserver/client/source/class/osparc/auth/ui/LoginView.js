@@ -55,6 +55,18 @@ qx.Class.define("osparc.auth.ui.LoginView", {
     __loginBtn: null,
 
     _buildPage: function() {
+      const addLoginAnnouncement = announcement => {
+        if (announcement) {
+          this.addAt(announcement, 0);
+        }
+      };
+      const announcementUIFactory = osparc.component.announcement.AnnouncementUIFactory.getInstance();
+      if (announcementUIFactory.getLoginAnnouncement()) {
+        addLoginAnnouncement(announcementUIFactory.getLoginAnnouncement());
+      } else {
+        announcementUIFactory.addListener("changeLoginAnnouncement", () => addLoginAnnouncement(announcementUIFactory.getLoginAnnouncement()));
+      }
+
       this.__form = new qx.ui.form.Form();
 
       const email = new qx.ui.form.TextField().set({

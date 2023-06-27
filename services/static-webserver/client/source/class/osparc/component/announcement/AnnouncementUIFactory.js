@@ -17,45 +17,48 @@
 
 qx.Class.define("osparc.component.announcement.AnnouncementUIFactory", {
   extend: qx.core.Object,
-
-  construct: function(announcement) {
-    this.base(arguments);
-
-    if (announcement) {
-      this.setAnnouncement(announcement);
-    }
-  },
+  type: "singleton",
 
   properties: {
     announcement: {
       check: "osparc.component.announcement.Announcement",
       init: null,
-      nullable: false
+      nullable: false,
+      apply: "__buildAnnouncementUIs"
+    },
+
+    loginAnnouncement: {
+      check: "qx.ui.core.Widget",
+      init: null,
+      nullable: true,
+      event: "changeLoginAnnouncement"
+    },
+
+    ribbonAnnouncement: {
+      check: "qx.ui.core.Widget",
+      init: null,
+      nullable: true,
+      event: "changeRibbonAnnouncement"
+    },
+
+    userMenuAnnouncement: {
+      check: "qx.ui.core.Widget",
+      init: null,
+      nullable: true,
+      event: "changeUserMenuAnnouncement"
     }
   },
 
   members: {
-    __loginAnnouncement: null,
-    __userMenuAnnouncement: null,
-
-    buildAnnouncementUIs: function() {
-      console.log("build announcements", this.getAnnouncement());
-      this.__buildLoginAnnouncement();
-      this.__buildUserMenuAnnouncement();
-    },
-
-    getLoginAnnouncement: function() {
-      if (this.__isValid() && this.__loginAnnouncement) {
-        return this.__loginAnnouncement;
+    __buildAnnouncementUIs: function() {
+      if (this.__isValid()) {
+        this.__buildLoginAnnouncement();
+        this.__buildUserMenuAnnouncement();
+      } else {
+        this.setLoginAnnouncement(null);
+        this.setRibbonAnnouncement(null);
+        this.setUserMenuAnnouncement(null);
       }
-      return null;
-    },
-
-    getUserMenuAnnouncement: function() {
-      if (this.__isValid() && this.__userMenuAnnouncement) {
-        return this.__userMenuAnnouncement;
-      }
-      return null;
     },
 
     __isValid: function() {
@@ -63,8 +66,7 @@ qx.Class.define("osparc.component.announcement.AnnouncementUIFactory", {
 
       const now = new Date();
       if (
-        announcement.getStart() &&
-        announcement.getEnd() &&
+        announcement.getProducts().includes(osparc.product.Utils.getProductName()) &&
         now > announcement.getStart() &&
         now < announcement.getEnd()
       ) {
@@ -76,14 +78,14 @@ qx.Class.define("osparc.component.announcement.AnnouncementUIFactory", {
     __buildLoginAnnouncement: function() {
       const announcement = this.getAnnouncement();
 
-      const announcmentLayout = this.__loginAnnouncement = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
+      const loginAnnouncement = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
         backgroundColor: "strong-main",
         alignX: "center",
         padding: 12,
         allowGrowX: true,
         maxWidth: 300
       });
-      announcmentLayout.getContentElement().setStyles({
+      loginAnnouncement.getContentElement().setStyles({
         "border-radius": "8px"
       });
 
@@ -95,7 +97,7 @@ qx.Class.define("osparc.component.announcement.AnnouncementUIFactory", {
         rich: true,
         wrap: true
       });
-      announcmentLayout.add(titleLabel);
+      loginAnnouncement.add(titleLabel);
 
       const descriptionLabel = new qx.ui.basic.Label().set({
         value: announcement.getDescription(),
@@ -105,7 +107,9 @@ qx.Class.define("osparc.component.announcement.AnnouncementUIFactory", {
         rich: true,
         wrap: true
       });
-      announcmentLayout.add(descriptionLabel);
+      loginAnnouncement.add(descriptionLabel);
+
+      this.setLoginAnnouncement(loginAnnouncement);
     },
 
     __buildUserMenuAnnouncement: function() {
@@ -113,8 +117,12 @@ qx.Class.define("osparc.component.announcement.AnnouncementUIFactory", {
 
       const link = announcement.getLink();
       if (link) {
-        const button = this.__userMenuAnnouncement = new qx.ui.menu.Button(announcement.getTitle() + "...");
-        button.addListener("execute", () => window.open(link));
+        const userMenuAnnouncement = new qx.ui.menu.Button(announcement.getTitle() + "...");
+        userMenuAnnouncement.addListener("execute", () => window.open(link));
+
+        this.setUserMenuAnnouncement(userMenuAnnouncement);
+      } else {
+        this.setUserMenuAnnouncement(null);
       }
     }
   }
