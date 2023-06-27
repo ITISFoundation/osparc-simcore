@@ -67,8 +67,8 @@ qx.Class.define("osparc.Application", {
       const threejs = osparc.wrapper.Three.getInstance();
       threejs.init();
 
-      const announcementTracker = osparc.AnnouncementTracker.getInstance();
-      announcementTracker.startTracker();
+      const AnnouncementsTracker = osparc.AnnouncementsTracker.getInstance();
+      AnnouncementsTracker.startTracker();
 
       const webSocket = osparc.wrapper.WebSocket.getInstance();
       webSocket.addListener("connect", () => osparc.io.WatchDog.getInstance().setOnline(true));
@@ -434,7 +434,7 @@ qx.Class.define("osparc.Application", {
 
       osparc.data.PollTasks.getInstance().removeTasks();
       osparc.MaintenanceTracker.getInstance().stopTracker();
-      osparc.AnnouncementTracker.getInstance().stopTracker();
+      osparc.AnnouncementsTracker.getInstance().stopTracker();
       osparc.auth.Manager.getInstance().logout();
       if (this.__mainPage) {
         this.__mainPage.closeEditor();

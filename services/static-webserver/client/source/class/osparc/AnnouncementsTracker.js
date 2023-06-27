@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.AnnouncementTracker", {
+qx.Class.define("osparc.AnnouncementsTracker", {
   extend: qx.core.Object,
   type: "singleton",
 
@@ -76,6 +76,7 @@ qx.Class.define("osparc.AnnouncementTracker", {
       const checkAnnouncements = () => {
         osparc.data.Resources.get("announcements")
           .then(announcements => {
+            console.log("announcements", announcements);
             if (announcements) {
               // for now it's just a string
               this.__setAnnouncement(JSON.parse(announcements));
