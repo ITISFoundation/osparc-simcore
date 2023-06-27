@@ -1454,7 +1454,7 @@ paths:
       responses:
         '204':
           description: Successful Response
-  '/me/notifications/{id}':
+  '/me/notifications/{notification_id}':
     patch:
       tags:
         - user
