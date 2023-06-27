@@ -2283,6 +2283,9 @@ paths:
                       entity_tag:
                         title: Entity Tag
                         type: string
+                      is_directory:
+                        title: Is Directory
+                        type: boolean
                     example:
                       file_uuid: simcore-testing/105/1000/3
                       location_id: '0'
