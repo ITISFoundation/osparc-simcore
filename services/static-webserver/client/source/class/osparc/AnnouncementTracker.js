@@ -51,11 +51,17 @@ qx.Class.define("osparc.AnnouncementTracker", {
     }
   },
 
+  statics: {
+    CHECK_INTERVAL: 60*60*1000 // Check every 60'
+  },
+
   members: {
+    __checkInternval: null,
     __loginAnnouncement: null,
     __userMenuAnnouncement: null,
 
     startTracker: function() {
+      /*
       if (osparc.product.Utils.isProduct("s4llite")) {
         const announcementData = {
           start: "2023-06-22T15:00:00.000Z",
@@ -65,6 +71,27 @@ qx.Class.define("osparc.AnnouncementTracker", {
           link: "https://zmt.swiss/news-and-events/news/sim4life/s4llite-student-competition-2023/"
         };
         this.__setAnnouncement(announcementData);
+      }
+      */
+      const checkAnnouncements = () => {
+        osparc.data.Resources.get("announcements")
+          .then(announcements => {
+            if (announcements) {
+              // for now it's just a string
+              this.__setAnnouncement(JSON.parse(announcements));
+            } else {
+              this.__setMaintenance(null);
+            }
+          })
+          .catch(err => console.error(err));
+      };
+      checkAnnouncements();
+      this.__checkInternval = setInterval(checkAnnouncements, this.self().CHECK_INTERVAL);
+    },
+
+    stopTracker: function() {
+      if (this.__checkInternval) {
+        clearInterval(this.__checkInternval);
       }
     },
 

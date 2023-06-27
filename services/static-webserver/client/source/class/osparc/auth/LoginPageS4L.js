@@ -69,7 +69,6 @@ qx.Class.define("osparc.auth.LoginPageS4L", {
       loginLayout.add(image);
 
       const announcementTracker = osparc.AnnouncementTracker.getInstance();
-      announcementTracker.startTracker();
       const loginAnnouncement = announcementTracker.getLoginAnnouncement();
       if (loginAnnouncement) {
         loginLayout.add(loginAnnouncement);
