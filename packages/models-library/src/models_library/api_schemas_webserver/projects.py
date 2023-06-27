@@ -8,8 +8,8 @@ SEE rationale in https://fastapi.tiangolo.com/tutorial/extra-models/#multiple-mo
 from typing import Any, Literal, TypeAlias
 
 from pydantic import Field, validator
-from servicelib.aiohttp.long_running_tasks.server import TaskGet
 
+from ..api_schemas_long_running_tasks.tasks import TaskGet
 from ..emails import LowerCaseEmailStr
 from ..projects import ClassifierID, DateTimeStr, NodesDict, ProjectID
 from ..projects_access import AccessRights, GroupIDStr
