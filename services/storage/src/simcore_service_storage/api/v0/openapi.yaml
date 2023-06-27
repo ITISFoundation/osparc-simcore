@@ -11,9 +11,14 @@ info:
   version: 0.3.0
 servers:
   - url: /v0
-    description: API server
-  - url: 'localhost:8080/v0'
-    description: Development server
+    description: 'Default server: requests directed to serving url'
+  - url: 'http://{host}:{port}/v0'
+    description: 'Development server: can configure any base url'
+    variables:
+      host:
+        default: 127.0.0.1
+      port:
+        default: '8000'
 paths:
   '/v0/locations/{location_id}/datasets':
     get:
@@ -71,13 +76,6 @@ paths:
             type: integer
             minimum: 0
           name: user_id
-          in: query
-        - required: false
-          schema:
-            title: Expand Dirs
-            type: boolean
-            default: true
-          name: expand_dirs
           in: query
       responses:
         '200':
@@ -167,13 +165,6 @@ paths:
             type: string
             default: ''
           name: uuid_filter
-          in: query
-        - required: false
-          schema:
-            title: Expand Dirs
-            type: boolean
-            default: true
-          name: expand_dirs
           in: query
       responses:
         '200':
@@ -486,7 +477,7 @@ paths:
         - health
       summary: health check endpoint
       description: Current service health
-      operationId: get_health
+      operationId: health_check
       responses:
         '200':
           description: Successful Response
@@ -976,11 +967,6 @@ components:
           type: boolean
           description: 'If true, this file is a soft link.i.e. is another entry with the same object_name'
           default: false
-        is_directory:
-          title: Is Directory
-          type: boolean
-          description: set True if file_id is a directory
-          default: false
         upload_id:
           title: Upload Id
           type: string
@@ -1071,11 +1057,6 @@ components:
           title: Is Soft Link
           type: boolean
           description: 'If true, this file is a soft link.i.e. is another entry with the same object_name'
-          default: false
-        is_directory:
-          title: Is Directory
-          type: boolean
-          description: set True if file_id is a directory
           default: false
       additionalProperties: false
     FileUploadCompleteFutureResponse:

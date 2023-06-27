@@ -463,6 +463,11 @@ qx.Class.define("osparc.utils.Utils", {
       return Math.round(100*bytes/b2gb)/100;
     },
 
+    gBToBytes: function(gbytes) {
+      const b2gb = 1024*1024*1024;
+      return gbytes*b2gb;
+    },
+
     retrieveURLAndDownload: function(locationId, fileId) {
       return new Promise((resolve, reject) => {
         let fileName = fileId.split("/");

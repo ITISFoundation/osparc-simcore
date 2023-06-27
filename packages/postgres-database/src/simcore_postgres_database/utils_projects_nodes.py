@@ -1,12 +1,14 @@
 import datetime
 import uuid
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, fields
+from typing import Any
 
 import sqlalchemy
 from aiopg.sa.connection import SAConnection
 
 from .errors import ForeignKeyViolation, UniqueViolation
 from .models.projects_nodes import projects_nodes
+from .utils_models import FromRowMixin
 
 
 #
@@ -34,12 +36,16 @@ class ProjectNodesDuplicateNode(BaseProjectNodesError):
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ProjectNodeCreate:
-    required_resources: dict = field(default_factory=dict)
+    node_id: uuid.UUID
+    required_resources: dict[str, Any] = field(default_factory=dict)
+
+    @staticmethod
+    def get_field_names(*, exclude: set[str]) -> set[str]:
+        return {f.name for f in fields(ProjectNodeCreate) if f.name not in exclude}
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class ProjectNode(ProjectNodeCreate):
-    node_id: uuid.UUID
+class ProjectNode(ProjectNodeCreate, FromRowMixin):
     created: datetime.datetime
     modified: datetime.datetime
 
@@ -52,9 +58,8 @@ class ProjectNodesRepo:
         self,
         connection: SAConnection,
         *,
-        node_id: uuid.UUID,
-        node: ProjectNodeCreate,
-    ) -> ProjectNode:
+        nodes: list[ProjectNodeCreate],
+    ) -> list[ProjectNode]:
         """creates a new entry in *projects_nodes* and *projects_to_projects_nodes* tables
 
         NOTE: Do not use this in an asyncio.gather call as this will fail!
@@ -65,38 +70,44 @@ class ProjectNodesRepo:
             ProjectsNodesNodeNotFound: in case the node does not exist
 
         """
-        async with connection.begin():
-            try:
-                result = await connection.execute(
-                    projects_nodes.insert()
-                    .values(
-                        project_uuid=f"{self.project_uuid}",
-                        node_id=f"{node_id}",
+        if not nodes:
+            return []
+        insert_stmt = (
+            projects_nodes.insert()
+            .values(
+                [
+                    {
+                        "project_uuid": f"{self.project_uuid}",
                         **asdict(node),
-                    )
-                    .returning(
-                        *[
-                            c
-                            for c in projects_nodes.c
-                            if c is not projects_nodes.c.project_uuid
-                        ]
-                    )
-                )
-                created_node_db = await result.first()
-                assert created_node_db  # nosec
-                created_node = ProjectNode(**dict(created_node_db.items()))
+                    }
+                    for node in nodes
+                ]
+            )
+            .returning(
+                *[
+                    c
+                    for c in projects_nodes.columns
+                    if c is not projects_nodes.c.project_uuid
+                ]
+            )
+        )
 
-                return created_node
-            except ForeignKeyViolation as exc:
-                # this happens when the project does not exist, as we first check the node exists
-                raise ProjectNodesProjectNotFound(
-                    f"Project {self.project_uuid} not found"
-                ) from exc
-            except UniqueViolation as exc:
-                # this happens if the node already exists on creation
-                raise ProjectNodesDuplicateNode(
-                    f"Project node {node_id} already exists"
-                ) from exc
+        try:
+            result = await connection.execute(insert_stmt)
+            assert result  # nosec
+            rows = await result.fetchall()
+            assert rows is not None  # nosec
+            return [ProjectNode.from_row(r) for r in rows]
+        except ForeignKeyViolation as exc:
+            # this happens when the project does not exist, as we first check the node exists
+            raise ProjectNodesProjectNotFound(
+                f"Project {self.project_uuid} not found"
+            ) from exc
+        except UniqueViolation as exc:
+            # this happens if the node already exists on creation
+            raise ProjectNodesDuplicateNode(
+                f"Project node already exists: {exc}"
+            ) from exc
 
     async def list(self, connection: SAConnection) -> list[ProjectNode]:
         """list the nodes in the current project
@@ -104,12 +115,17 @@ class ProjectNodesRepo:
         NOTE: Do not use this in an asyncio.gather call as this will fail!
         """
         list_stmt = sqlalchemy.select(
-            *[c for c in projects_nodes.c if c is not projects_nodes.c.project_uuid]
+            *[
+                c
+                for c in projects_nodes.columns
+                if c is not projects_nodes.c.project_uuid
+            ]
         ).where(projects_nodes.c.project_uuid == f"{self.project_uuid}")
-        nodes = [
-            ProjectNode(**dict(row.items()))
-            async for row in connection.execute(list_stmt)
-        ]
+        result = await connection.execute(list_stmt)
+        assert result  # nosec
+        rows = await result.fetchall()
+        assert rows is not None  # nosec
+        nodes = [ProjectNode.from_row(row) for row in rows]
         return nodes
 
     async def get(self, connection: SAConnection, *, node_id: uuid.UUID) -> ProjectNode:
@@ -134,7 +150,7 @@ class ProjectNodesRepo:
         if row is None:
             raise ProjectNodesNodeNotFound(f"Node with {node_id} not found")
         assert row  # nosec
-        return ProjectNode(**dict(row.items()))
+        return ProjectNode.from_row(row)
 
     async def update(
         self, connection: SAConnection, *, node_id: uuid.UUID, **values
@@ -158,11 +174,11 @@ class ProjectNodesRepo:
             )
         )
         result = await connection.execute(update_stmt)
-        updated_entry = await result.first()
-        if not updated_entry:
+        row = await result.first()
+        if not row:
             raise ProjectNodesNodeNotFound(f"Node with {node_id} not found")
-        assert updated_entry  # nosec
-        return ProjectNode(**dict(updated_entry.items()))
+        assert row  # nosec
+        return ProjectNode.from_row(row)
 
     async def delete(self, connection: SAConnection, *, node_id: uuid.UUID) -> None:
         """delete a node in the current project

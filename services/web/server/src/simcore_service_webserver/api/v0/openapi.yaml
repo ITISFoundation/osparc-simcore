@@ -1854,13 +1854,6 @@ paths:
             default: ''
           name: uuid_filter
           in: query
-        - required: false
-          schema:
-            title: Expand Dirs
-            type: boolean
-            default: true
-          name: expand_dirs
-          in: query
       responses:
         '200':
           description: Successful Response
@@ -1892,19 +1885,10 @@ paths:
                 type: string
           name: file_id
           in: path
-        - required: true
-          schema:
-            title: User Id
-            exclusiveMinimum: true
-            type: integer
-            minimum: 0
-          name: user_id
-          in: query
         - required: false
           schema:
             allOf:
               - $ref: '#/paths/~1storage~1locations~1%7Blocation_id%7D~1files~1%7Bfile_id%7D/put/parameters/3/schema/allOf/0'
-            default: PRESIGNED
           name: link_type
           in: query
       responses:
@@ -1968,7 +1952,7 @@ paths:
                   - S3
                 type: string
                 description: An enumeration.
-            default: PRESIGNED
+                default: PRESIGNED
           name: link_type
           in: query
         - required: false
@@ -2062,14 +2046,6 @@ paths:
                 type: string
           name: file_id
           in: path
-        - required: true
-          schema:
-            title: User Id
-            exclusiveMinimum: true
-            type: integer
-            minimum: 0
-          name: user_id
-          in: query
       responses:
         '204':
           description: Successful Response
@@ -2097,14 +2073,6 @@ paths:
                 type: string
           name: file_id
           in: path
-        - required: true
-          schema:
-            title: User Id
-            exclusiveMinimum: true
-            type: integer
-            minimum: 0
-          name: user_id
-          in: query
       requestBody:
         content:
           application/json:
@@ -2192,14 +2160,6 @@ paths:
                 type: string
           name: file_id
           in: path
-        - required: true
-          schema:
-            title: User Id
-            exclusiveMinimum: true
-            type: integer
-            minimum: 0
-          name: user_id
-          in: query
       responses:
         '204':
           description: Successful Response
@@ -2233,14 +2193,6 @@ paths:
             type: string
           name: future_id
           in: path
-        - required: true
-          schema:
-            title: User Id
-            exclusiveMinimum: true
-            type: integer
-            minimum: 0
-          name: user_id
-          in: query
       responses:
         '200':
           description: Successful Response
@@ -2290,14 +2242,6 @@ paths:
                 type: string
           name: file_id
           in: path
-        - required: true
-          schema:
-            title: User Id
-            exclusiveMinimum: true
-            type: integer
-            minimum: 0
-          name: user_id
-          in: query
       responses:
         '200':
           description: Successful Response
@@ -2339,9 +2283,6 @@ paths:
                       entity_tag:
                         title: Entity Tag
                         type: string
-                      is_directory:
-                        title: Is Directory
-                        type: boolean
                     example:
                       file_uuid: simcore-testing/105/1000/3
                       location_id: '0'
@@ -2353,7 +2294,6 @@ paths:
                       last_modified: '2019-06-19T12:29:03.78852Z'
                       file_size: 73
                       entity_tag: a87ff679a2f3e71d9181a67b7542122c
-                      is_directory: false
                   - title: 'Envelope[FileMetaDataGet]'
                     type: object
                     properties:
@@ -2381,21 +2321,6 @@ paths:
             type: string
           name: dataset_id
           in: path
-        - required: true
-          schema:
-            title: User Id
-            exclusiveMinimum: true
-            type: integer
-            minimum: 0
-          name: user_id
-          in: query
-        - required: false
-          schema:
-            title: Expand Dirs
-            type: boolean
-            default: true
-          name: expand_dirs
-          in: query
       responses:
         '200':
           description: Successful Response
@@ -2469,11 +2394,6 @@ paths:
                           type: boolean
                           description: 'If true, this file is a soft link.i.e. is another entry with the same object_name'
                           default: false
-                        is_directory:
-                          title: Is Directory
-                          type: boolean
-                          description: set True if file_id is a directory
-                          default: false
                       additionalProperties: false
                   error:
                     title: Error
@@ -2491,14 +2411,6 @@ paths:
             type: integer
           name: location_id
           in: path
-        - required: true
-          schema:
-            title: User Id
-            exclusiveMinimum: true
-            type: integer
-            minimum: 0
-          name: user_id
-          in: query
       responses:
         '200':
           description: Successful Response
@@ -2664,7 +2576,7 @@ paths:
                   - user
                 type: string
                 description: An enumeration.
-            default: all
+                default: all
           name: type
           in: query
         - description: includes projects marked as hidden in the listing

@@ -3,7 +3,7 @@
 # pylint: disable=unused-variable
 
 
-from typing import Any, Callable, NamedTuple
+from typing import Any, Awaitable, Callable, NamedTuple
 from unittest import mock
 
 import httpx
@@ -103,18 +103,18 @@ def user_id(user):
 
 
 @pytest.fixture
-def project_id(
+async def project_id(
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
     user: dict[str, Any],
-    project: Callable[..., ProjectAtDB],
+    project: Callable[..., Awaitable[ProjectAtDB]],
     pipeline: Callable[..., CompPipelineAtDB],
     tasks: Callable[..., list[CompTaskAtDB]],
 ):
     """project uuid of a saved project (w/ tasks up-to-date)"""
 
     # insert project -> db
-    proj = project(user, workbench=fake_workbench_without_outputs)
+    proj = await project(user, workbench=fake_workbench_without_outputs)
 
     # insert pipeline  -> comp_pipeline
     pipeline(

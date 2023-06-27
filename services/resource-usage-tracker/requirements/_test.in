@@ -10,10 +10,13 @@
 #
 --constraint _base.txt
 
+alembic # migration due to pytest_simcore.postgres_service
 asgi-lifespan
 coverage
+docker
 faker
 httpx
+fakeredis[lua]
 pytest
 pytest-asyncio
 pytest-cov
@@ -23,3 +26,4 @@ pytest-sugar
 python-dotenv
 requests-mock
 respx
+sqlalchemy[mypy] # adds Mypy / Pep-484 Support for ORM Mappings SEE https://docs.sqlalchemy.org/en/20/orm/extensions/mypy.html

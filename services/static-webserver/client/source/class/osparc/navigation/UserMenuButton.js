@@ -163,6 +163,12 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
         osparc.store.Support.addQuickStartToMenu(this.getMenu());
         osparc.store.Support.addPanddyToMenu(this.getMenu());
       }
+      const announcementTracker = osparc.AnnouncementTracker.getInstance();
+      announcementTracker.startTracker();
+      const userMenuAnnouncement = announcementTracker.getUserMenuAnnouncement();
+      if (userMenuAnnouncement) {
+        this.getMenu().add(userMenuAnnouncement);
+      }
       this.getMenu().addSeparator();
       this.getChildControl("about");
       if (osparc.product.Utils.showAboutProduct()) {

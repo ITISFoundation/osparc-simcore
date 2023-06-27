@@ -32,7 +32,8 @@ paths:
         schema:
           allOf:
           - $ref: '#/components/schemas/ProjectTypeAPI'
-          default: all
+         # NOTE: always apply this patch manually
+         # default: all
         name: type
         in: query
       - description: includes projects marked as hidden in the listing
@@ -1051,6 +1052,8 @@ components:
       - user
       type: string
       description: An enumeration.
+      # NOTE: always apply this patch manually
+      default: all
     ProjectUpdate:
       title: ProjectUpdate
       type: object

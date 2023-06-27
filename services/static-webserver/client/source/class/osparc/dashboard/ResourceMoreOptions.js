@@ -361,6 +361,16 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       return page;
     },
 
+    __getScenePage: function() {
+      const id = "Scene";
+      const title = this.tr("Scene");
+      const icon = "https://avatars.githubusercontent.com/u/33161876?s=32";
+      const threeView = new osparc.component.widget.Three("#00FF00");
+      const page = this.__permissionsPage = this.__createPage(title, threeView, icon, id);
+      page.setIcon(icon);
+      return page;
+    },
+
     __getPermissionsPage: function() {
       const id = "Permissions";
       const resourceData = this.__resourceData;

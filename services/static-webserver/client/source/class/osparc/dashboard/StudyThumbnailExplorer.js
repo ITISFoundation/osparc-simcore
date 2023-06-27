@@ -107,6 +107,16 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
       });
       thumbnailSuggestions.addWorkbenchUIPreviewToSuggestions();
       thumbnailSuggestions.setStudy(study);
+
+      const params = {
+        url: {
+          studyId: this.__studyData["uuid"]
+        }
+      };
+      osparc.data.Resources.fetch("studyPreviews", "getPreviews", params)
+        .then(previewsPerNodes => thumbnailSuggestions.addPreviewsToSuggestions(previewsPerNodes))
+        .catch(err => console.error(err));
+
       return thumbnailSuggestions;
     },
 
@@ -128,11 +138,14 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
         const thumbnailData = e.getData();
         let control = null;
         switch (thumbnailData["type"]) {
-          case "image":
-            control = this.__getThumbnail(thumbnailData["source"]);
-            break;
           case "workbenchUIPreview":
             control = this.__getWorkbenchUIPreview();
+            break;
+          case null:
+            control = this.__getThreeSceneViewer(thumbnailData["source"]);
+            break;
+          default:
+            control = this.__getThumbnail(thumbnailData["source"]);
             break;
         }
         if (control) {
@@ -169,6 +182,11 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
         }, 50);
       });
       return workbenchUIPreview;
+    },
+
+    __getThreeSceneViewer: function(fileUrl) {
+      const threeView = new osparc.component.widget.Three(fileUrl);
+      return threeView;
     },
 
     __initComponents: function() {

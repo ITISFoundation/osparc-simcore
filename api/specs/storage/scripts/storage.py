@@ -7,7 +7,6 @@
 # pylint: disable=too-many-arguments
 
 
-import itertools
 from enum import Enum
 from typing import Any
 
@@ -55,20 +54,28 @@ app = FastAPI(
         "__PLACEHOLDER___KEY_url": "https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE",
     },
     servers=[
-        {"description": "API server", "url": "/v0"},
-        {"description": "Development server", "url": "localhost:8080/v0"},
+        {
+            "url": "/v0",
+            "description": "Default server: requests directed to serving url",
+        },
+        {
+            "url": "http://{host}:{port}/v0",
+            "description": "Development server: can configure any base url",
+            "variables": {
+                "host": {"default": "127.0.0.1"},
+                "port": {"default": "8000"},
+            },
+        },
     ],
     openapi_tags=[
         {"name": x}
-        for x in list(
-            itertools.chain(
-                TAGS_DATASETS,
-                TAGS_FILES,
-                TAGS_HEALTH,
-                TAGS_LOCATIONS,
-                TAGS_TASKS,
-                TAGS_SIMCORE_S3,
-            )
+        for x in (
+            TAGS_DATASETS
+            + TAGS_FILES
+            + TAGS_HEALTH
+            + TAGS_LOCATIONS
+            + TAGS_TASKS
+            + TAGS_SIMCORE_S3
         )
     ],
 )
@@ -236,7 +243,7 @@ async def is_completed_upload_file(
     response_model=Envelope[HealthCheck],
     tags=TAGS_HEALTH,
     summary="health check endpoint",
-    operation_id="get_health",
+    operation_id="health_check",
 )
 async def get_health():
     """Current service health"""

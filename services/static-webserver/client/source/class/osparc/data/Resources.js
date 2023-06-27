@@ -199,22 +199,34 @@ qx.Class.define("osparc.data.Resources", {
           }
         }
       },
+      "studyPreviews": {
+        useCache: true,
+        idField: "uuid",
+        endpoints: {
+          getPreviews: {
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/nodes/-/preview"
+          }
+        }
+      },
       /*
        * NODES
        */
       "nodesInStudyResources": {
-        idField: "nodeId",
-        useCache: true,
+        idField: ["studyId", "nodeId"],
         endpoints: {
           get: {
             method: "GET",
+            url: statics.API + "/projects/{studyId}/nodes/{nodeId}/resources"
+          },
+          put: {
+            method: "PUT",
             url: statics.API + "/projects/{studyId}/nodes/{nodeId}/resources"
           }
         }
       },
       "serviceResources": {
         idField: ["key", "version"],
-        useCache: true,
         endpoints: {
           get: {
             method: "GET",

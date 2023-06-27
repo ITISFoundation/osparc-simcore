@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Any
 
+from models_library.api_schemas_storage import TableSynchronisation
 from pydantic import BaseModel, Field
 
 
@@ -19,12 +20,6 @@ class FileLocation(BaseModel):
 
 class FileLocationArray(BaseModel):
     __root__: list[FileLocation]
-
-
-class TableSynchronisation(BaseModel):
-    dry_run: bool | None = None
-    fire_and_forget: bool | None = None
-    removed: list[str]
 
 
 class Links(BaseModel):
