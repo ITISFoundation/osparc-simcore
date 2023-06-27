@@ -70,6 +70,7 @@ services:
 
   webserver:
     environment:
+      - GUNICORN_CMD_ARGS=--timeout=0
       - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
       - REST_SWAGGER_API_DOC_ENABLED=1
     ports:
