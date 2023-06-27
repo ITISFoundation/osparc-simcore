@@ -40,6 +40,10 @@ class TokenID(BaseModel):
     __root__: str = Field(..., description="toke identifier")
 
 
+class TokenCreate(Token):
+    ...
+
+
 #
 # PROFILE resource
 #
