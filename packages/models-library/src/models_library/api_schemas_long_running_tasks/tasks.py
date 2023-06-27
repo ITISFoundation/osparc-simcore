@@ -29,4 +29,3 @@ class TaskGet(BaseModel):
     @classmethod
     def unquote_str(cls, v) -> str:
         return urllib.parse.unquote(v)
-        return urllib.parse.unquote(v)
