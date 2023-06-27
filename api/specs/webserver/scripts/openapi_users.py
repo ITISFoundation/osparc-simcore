@@ -11,11 +11,7 @@ from enum import Enum
 
 from fastapi import FastAPI, status
 from models_library.generics import Envelope
-from simcore_service_webserver.users._handlers import (
-    PermissionGet,
-    TokenCreate,
-    TokenUpdate,
-)
+from simcore_service_webserver.users._handlers import TokenCreate, TokenUpdate
 from simcore_service_webserver.users._notifications import UserNotification
 from simcore_service_webserver.users.schemas import ProfileGet, ProfileUpdate, Token
 
@@ -126,16 +122,6 @@ async def post_user_notification(notification: UserNotification):
     operation_id="update_user_notification",
 )
 async def update_user_notification(notification: UserNotification):
-    ...
-
-
-@app.get(
-    "/me/permissions",
-    response_model=Envelope[list[PermissionGet]],
-    tags=TAGS,
-    operation_id="list_user_permissions",
-)
-async def list_user_permissions():
     ...
 
 
