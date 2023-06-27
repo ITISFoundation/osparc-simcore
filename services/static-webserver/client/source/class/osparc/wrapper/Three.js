@@ -28,6 +28,10 @@
   */
 
 /**
+  * @ignore(THREE)
+  */
+
+/**
   * A qooxdoo wrapper for
   * <a href='https://github.com/mrdoob/three.js' target='_blank'>Threejs</a>
   */
