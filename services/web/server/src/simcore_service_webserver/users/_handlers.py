@@ -84,6 +84,7 @@ def _handle_tokens_errors(handler: Handler):
 
 
 @login_required
+@_handle_tokens_errors
 @permission_required("user.tokens.*")
 @routes.get(f"/{API_VTAG}/me/tokens", name="list_tokens")
 async def list_tokens(request: web.Request) -> web.Response:
@@ -93,6 +94,7 @@ async def list_tokens(request: web.Request) -> web.Response:
 
 
 @login_required
+@_handle_tokens_errors
 @permission_required("user.tokens.*")
 @routes.post(f"/{API_VTAG}/me/tokens", name="create_tokens")
 async def create_tokens(request: web.Request) -> web.Response:
