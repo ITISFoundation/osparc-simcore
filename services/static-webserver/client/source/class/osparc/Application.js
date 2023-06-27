@@ -67,8 +67,8 @@ qx.Class.define("osparc.Application", {
       const threejs = osparc.wrapper.Three.getInstance();
       threejs.init();
 
-      const AnnouncementsTracker = osparc.AnnouncementsTracker.getInstance();
-      AnnouncementsTracker.startTracker();
+      const announcementsTracker = osparc.AnnouncementsTracker.getInstance();
+      announcementsTracker.startTracker();
 
       const webSocket = osparc.wrapper.WebSocket.getInstance();
       webSocket.addListener("connect", () => osparc.io.WatchDog.getInstance().setOnline(true));
