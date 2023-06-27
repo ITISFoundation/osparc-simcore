@@ -77,8 +77,8 @@ qx.Class.define("osparc.component.announcement.Announcement", {
     },
 
     widgets: {
-      check: "String",
-      init: null,
+      check: "Array",
+      init: [],
       nullable: true
     }
   }

@@ -57,6 +57,7 @@ qx.Class.define("osparc.AnnouncementsTracker", {
 
   members: {
     __checkInternval: null,
+    __announcements: null,
     __loginAnnouncement: null,
     __userMenuAnnouncement: null,
 
@@ -76,9 +77,8 @@ qx.Class.define("osparc.AnnouncementsTracker", {
       const checkAnnouncements = () => {
         osparc.data.Resources.get("announcements")
           .then(announcements => {
-            console.log("announcements", announcements);
             if (announcements) {
-              this.__setAnnouncements(JSON.parse(announcements));
+              this.__setAnnouncements([JSON.parse(announcements)]);
             } else {
               this.__setAnnouncements(null);
             }
@@ -122,12 +122,16 @@ qx.Class.define("osparc.AnnouncementsTracker", {
       return false;
     },
 
-    __setAnnouncements: function(announcementData) {
-      this.setStart(announcementData && "start" in announcementData ? new Date(announcementData.start) : null);
-      this.setEnd(announcementData && "end" in announcementData ? new Date(announcementData.end) : null);
-      this.setTitle(announcementData && "title" in announcementData ? announcementData.title : null);
-      this.setDescription(announcementData && "description" in announcementData ? announcementData.description : null);
-      this.setLink(announcementData && "link" in announcementData ? announcementData.link : null);
+    __setAnnouncements: function(announcementsData) {
+      console.log("announcements", announcementsData);
+      this.__announcements = {};
+      if (announcementsData) {
+        announcementsData.forEach(announcementData => {
+          const announcement = new osparc.component.announcement.Announcement(announcementData);
+          const announcementFactory = new osparc.component.announcement.AnnouncementUIFactory(announcement);
+          console.log(announcementFactory);
+        });
+      }
 
       this.__buildAnnouncementUIs();
     },
