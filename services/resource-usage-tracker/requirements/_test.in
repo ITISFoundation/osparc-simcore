@@ -16,6 +16,7 @@ coverage
 docker
 faker
 httpx
+fakeredis[lua]
 pytest
 pytest-asyncio
 pytest-cov
