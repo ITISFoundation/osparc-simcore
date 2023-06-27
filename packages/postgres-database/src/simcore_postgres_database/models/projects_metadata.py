@@ -17,7 +17,7 @@ from .projects import projects
 projects_metadata = sa.Table(
     "projects_metadata",
     #
-    # Holds runtime metadata on a project.
+    # Holds **runtime** metadata on a project
     #
     # Things like 'stars', 'quality', 'classifiers' etc (or any kind of stats)
     # should be moved here.
@@ -37,7 +37,7 @@ projects_metadata = sa.Table(
         doc="The project unique identifier is also used to identify the associated job",
     ),
     sa.Column(
-        "user_metadata",
+        "custom_metadata",
         JSONB,
         nullable=False,
         server_default=sa.text("'{}'::jsonb"),
@@ -59,7 +59,7 @@ projects_jobs_metadata = sa.Table(
     # Every job is mapped to a project and has an ancestor (see job_parent_name)
     # but not every project is associated to a job.
     #
-    # This table
+    # This table contains specific metadata on projects/jobs
     #   - holds all projects associated to jobs
     #   - stores jobs ancestry relations and metadata
     #
