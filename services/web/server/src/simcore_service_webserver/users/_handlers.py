@@ -159,11 +159,10 @@ async def list_user_notifications(request: web.Request) -> web.Response:
 @login_required
 @permission_required("user.notifications.write")
 async def create_user_notification(request: web.Request) -> web.Response:
-    req_ctx = _RequestContext.parse_obj(request)
     # body includes the updated notification
     body = await parse_request_body_as(UserNotificationCreate, request)
     user_notification = UserNotification.create_from_request_data(body)
-    key = get_notification_key(req_ctx.user_id)
+    key = get_notification_key(user_notification.user_id)
 
     # insert at the head of the list and discard extra notifications
     redis_client = get_redis_user_notifications_client(request.app)
