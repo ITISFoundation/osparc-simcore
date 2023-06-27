@@ -33,7 +33,7 @@ services:
         "tcp_keepalives_count=5"
       ]
   adminer:
-    image: adminer:4.8.0
+    image: adminer:4.8.1
     init: true
     environment:
       - ADMINER_DEFAULT_SERVER=postgres
