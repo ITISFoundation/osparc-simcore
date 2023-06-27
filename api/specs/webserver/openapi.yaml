@@ -123,7 +123,7 @@ paths:
     $ref: "./openapi-user.yaml#/paths/~1me~1notifications"
 
   /me/notifications/{id}:
-    $ref: "./openapi-user.yaml#/paths/~1me~1notifications~1{id}"
+    $ref: "./openapi-user.yaml#/paths/~1me~1notifications~1{notification_id}"
 
   # GROUP SETTINGS ------------------------------------------------------------------
 
