@@ -1,0 +1,5 @@
+# Never enforce `E501` (line length violations).
+ignore = ["E501"]
+
+# Assume Python 3.10.
+target-version = "py310"
