@@ -1,16 +1,16 @@
-"""add is directory to file meta data table
+"""add_is_directory_to_file_meta_data_table
 
-Revision ID: 9ee58100b5ee
-Revises: 52cf00912ad9
-Create Date: 2023-06-22 09:49:50.603888+00:00
+Revision ID: 319c0eefac25
+Revises: 417f9eb848ce
+Create Date: 2023-06-27 08:00:14.777873+00:00
 
 """
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "9ee58100b5ee"
-down_revision = "52cf00912ad9"
+revision = "319c0eefac25"
+down_revision = "417f9eb848ce"
 branch_labels = None
 depends_on = None
 
