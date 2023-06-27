@@ -434,7 +434,7 @@ qx.Class.define("osparc.Application", {
 
       osparc.data.PollTasks.getInstance().removeTasks();
       osparc.MaintenanceTracker.getInstance().stopTracker();
-      osparc.AnnonuncementTracker.getInstance().stopTracker();
+      osparc.AnnouncementTracker.getInstance().stopTracker();
       osparc.auth.Manager.getInstance().logout();
       if (this.__mainPage) {
         this.__mainPage.closeEditor();
