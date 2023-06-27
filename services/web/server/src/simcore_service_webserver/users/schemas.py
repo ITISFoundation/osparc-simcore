@@ -7,15 +7,15 @@ from models_library.emails import LowerCaseEmailStr
 from pydantic import BaseModel, Field, validator
 from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.models.users import UserRole
+from simcore_service_webserver.rest.schemas_base import OutputSchema
 
 from ..groups.schemas import AllUsersGroups
 from ..utils import gravatar_hash
 
+
 #
 # TOKENS resource
 #
-
-
 class Token(BaseModel):
     """
     Tokens used to access third-party services connected to osparc (e.g. pennsieve, scicrunch, etc)
@@ -134,3 +134,15 @@ def convert_user_db_to_schema(
     if expires_at := row[f"{prefix}expires_at"]:
         data["expires_at"] = expires_at
     return data
+
+
+#
+# Permissions
+#
+class Permission(BaseModel):
+    name: str
+    allowed: bool
+
+
+class PermissionGet(Permission, OutputSchema):
+    ...
