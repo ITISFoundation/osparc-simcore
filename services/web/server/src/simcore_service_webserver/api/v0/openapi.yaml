@@ -1747,15 +1747,6 @@ paths:
       summary: Get available storage locations
       description: Returns the list of available storage locations
       operationId: get_storage_locations
-      parameters:
-        - required: true
-          schema:
-            title: User Id
-            exclusiveMinimum: true
-            type: integer
-            minimum: 0
-          name: user_id
-          in: query
       responses:
         '200':
           description: Successful Response
@@ -1853,6 +1844,13 @@ paths:
             type: string
             default: ''
           name: uuid_filter
+          in: query
+        - required: false
+          schema:
+            title: Expand Dirs
+            type: boolean
+            default: true
+          name: expand_dirs
           in: query
       responses:
         '200':
@@ -2297,6 +2295,7 @@ paths:
                       last_modified: '2019-06-19T12:29:03.78852Z'
                       file_size: 73
                       entity_tag: a87ff679a2f3e71d9181a67b7542122c
+                      is_directory: false
                   - title: 'Envelope[FileMetaDataGet]'
                     type: object
                     properties:
@@ -2324,6 +2323,13 @@ paths:
             type: string
           name: dataset_id
           in: path
+        - required: false
+          schema:
+            title: Expand Dirs
+            type: boolean
+            default: true
+          name: expand_dirs
+          in: query
       responses:
         '200':
           description: Successful Response
@@ -2396,6 +2402,11 @@ paths:
                           title: Is Soft Link
                           type: boolean
                           description: 'If true, this file is a soft link.i.e. is another entry with the same object_name'
+                          default: false
+                        is_directory:
+                          title: Is Directory
+                          type: boolean
+                          description: set True if file_id is a directory
                           default: false
                       additionalProperties: false
                   error:
