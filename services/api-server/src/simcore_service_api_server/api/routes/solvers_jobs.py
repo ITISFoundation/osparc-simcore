@@ -83,6 +83,26 @@ async def list_jobs(
     SEE get_jobs_page for paginated version of this function
     """
 
+    # ```mermaid
+    # sequenceDiagram
+    #     participant API
+    #     participant AS
+    #     participant CS
+    #     participant WS
+    #     link API: OAS @ https://editor.swagger.io/?url=https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/services/api-server/openapi.json
+    #     link CS: OAS @ https://editor.swagger.io/?url=https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/services/catalog/openapi.json
+    #     link WS: OAS @ https://editor.swagger.io/?url=https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/services/web/server/src/simcore_service_webserver/api/v0/openapi.yaml
+    #
+    #     API->>+AS: list_job
+    #     AS->>+CS: get_service
+    #     CS-->>-AS: ServiceGet
+    #     AS->>+WS: list_projects(page*)
+    #     WS-->>-AS: list[ProjectGet]
+    #     AS-->>-API: list[Job] | Page[Job]*
+    # ```
+    # SEE https://mermaid.live/
+    # * = still not implemented
+
     solver = await catalog_client.get_service(
         user_id=user_id,
         name=solver_key,
@@ -171,6 +191,31 @@ async def create_job(
     NOTE: This operation does **not** start the job
     """
 
+    # ```mermaid
+    # sequenceDiagram
+    #    participant API
+    #    participant AS
+    #    participant CS
+    #    participant WS
+    #    link API: OAS @ https://editor.swagger.io/?url=https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/services/api-server/openapi.json
+    #    link CS: OAS @ https://editor.swagger.io/?url=https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/services/catalog/openapi.json
+    #    link WS: OAS @ https://editor.swagger.io/?url=https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/services/web/server/src/simcore_service_webserver/api/v0/openapi.yaml
+    #
+    #    API->>+AS: create_job
+    #    AS->>+CS: get_service
+    #    CS-->>-AS: ServiceGet
+    #    AS->>+CS: get_service_ports*
+    #    CS-->>-AS: ServicePortGet*
+    #    Note right of AS: Validate SolverInputs*
+    #    AS->>+WS: create_project
+    #    WS-->>-AS: ProjectGet
+    #    AS-->>-API: Job
+    # ```
+    # SEE https://mermaid.live/
+    # * = still not implemented
+
+    # -> catalog
+    # TODO: validate inputs against solver input schema
     # ensures user has access to solver
     solver = await catalog_client.get_service(
         user_id=user_id,
