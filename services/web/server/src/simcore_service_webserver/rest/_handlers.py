@@ -109,6 +109,7 @@ async def get_announcements(request: web.Request):
     # Example:
     """
     {
+        "id": "Student_Competition_2023",
         "products": ["s4llite"],
         "start": "2023-06-22T15:00:00.000Z",
         "end": "2023-11-01T02:00:00.000Z",

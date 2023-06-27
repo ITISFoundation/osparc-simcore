@@ -26,6 +26,10 @@ components:
       title: Announcements
       type: object
       properties:
+        id:
+          title: id
+          description: Announcement ID
+          type: string
         products:
           title: Products
           description: Products in which the announcement should be displayed
