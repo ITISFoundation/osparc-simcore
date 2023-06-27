@@ -29,7 +29,6 @@ import simcore_service_webserver.db.models as orm
 import simcore_service_webserver.email
 import simcore_service_webserver.email._core
 import simcore_service_webserver.utils
-import sqlalchemy
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
@@ -703,7 +702,7 @@ async def with_permitted_override_services_specifications(
     async with aiopg_engine.acquire() as conn:
         old_value = bool(
             await conn.scalar(
-                sqlalchemy.select(
+                sa.select(
                     groups_extra_properties.c.override_services_specifications
                 ).where(groups_extra_properties.c.group_id == 1)
             )
