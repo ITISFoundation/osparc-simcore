@@ -38,6 +38,7 @@ async def setup_redis_client(app: web.Application):
             RedisDatabase.VALIDATION_CODES,
             RedisDatabase.SCHEDULED_MAINTENANCE,
             RedisDatabase.USER_NOTIFICATIONS,
+            RedisDatabase.ANNOUNCEMENTS,
         },
         settings=redis_settings,
     )
@@ -86,6 +87,13 @@ def get_redis_scheduled_maintenance_client(app: web.Application) -> aioredis.Red
 def get_redis_user_notifications_client(app: web.Application) -> aioredis.Redis:
     redis_client: aioredis.Redis = _get_redis_client(
         app, RedisDatabase.USER_NOTIFICATIONS
+    ).redis
+    return redis_client
+
+
+def get_redis_announcements_client(app: web.Application) -> aioredis.Redis:
+    redis_client: aioredis.Redis = _get_redis_client(
+        app, RedisDatabase.ANNOUNCEMENTS
     ).redis
     return redis_client
 
