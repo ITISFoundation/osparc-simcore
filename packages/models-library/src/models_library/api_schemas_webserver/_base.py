@@ -5,9 +5,17 @@
 
 from typing import Any
 
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel, Extra, Field
 
 from ..utils.change_case import snake_to_camel
+
+NOT_REQUIRED = Field(default=None)
+
+
+class EmptyModel(BaseModel):
+    # Used to represent body={}
+    class Config:
+        extra = Extra.forbid
 
 
 class InputSchema(BaseModel):

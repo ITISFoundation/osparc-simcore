@@ -7,7 +7,7 @@ SEE rationale in https://fastapi.tiangolo.com/tutorial/extra-models/#multiple-mo
 
 from typing import Any, Literal, TypeAlias
 
-from pydantic import BaseModel, Extra, Field, validator
+from pydantic import Field, validator
 from servicelib.aiohttp.long_running_tasks.server import TaskGet
 
 from ..emails import LowerCaseEmailStr
@@ -17,16 +17,8 @@ from ..projects_nodes import HttpUrlWithCustomMinLength
 from ..projects_state import ProjectState
 from ..projects_ui import StudyUI
 from ..utils.common_validators import empty_str_to_none, none_to_empty_str
-from ._base import InputSchema, OutputSchema
+from ._base import NOT_REQUIRED, EmptyModel, InputSchema, OutputSchema
 from .projects_permalink import ProjectPermalink
-
-NOT_REQUIRED = Field(default=None)
-
-
-class EmptyModel(BaseModel):
-    # Used to represent body={}
-    class Config:
-        extra = Extra.forbid
 
 
 class ProjectCreateNew(InputSchema):
@@ -123,8 +115,9 @@ class ProjectUpdate(InputSchema):
 
 
 __all__: tuple[str, ...] = (
-    "ProjectCreateNew",
+    "EmptyModel",
     "ProjectCopyOverride",
+    "ProjectCreateNew",
     "ProjectGet",
     "ProjectListItem",
     "ProjectReplace",
