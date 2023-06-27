@@ -1,4 +1,3 @@
-from copy import deepcopy
 from datetime import datetime
 from enum import auto
 from typing import Any, Final
@@ -23,36 +22,44 @@ class NotificationCategory(StrAutoEnum):
     ANNOTATION_NOTE = auto()
 
 
-class UserNotification(BaseModel):
-    # Ideally the `id` field, will be a UUID type in the future.
-    # Since there is no Redis data migration service, data type
-    # will not change to UUID nor Union[str, UUID]
-    id: str
+class BaseUserNotification(BaseModel):
     user_id: UserID
     category: NotificationCategory
     actionable_path: str
     title: str
     text: str
     date: datetime
-    read: bool
-
-    def update_from(self, data: dict[str, Any]) -> None:
-        for k, v in data.items():
-            self.__setattr__(k, v)
 
     @validator("category", pre=True)
     @classmethod
     def category_to_upper(cls, value: str) -> str:
         return value.upper()
 
+
+class UserNotificationCreate(BaseUserNotification):
+    ...
+
+
+class UserNotificationPatch(BaseModel):
+    read: bool
+
+
+class UserNotification(BaseUserNotification):
+    # Ideally the `id` field, will be a UUID type in the future.
+    # Since there is no Redis data migration service, data type
+    # will not change to UUID nor Union[str, UUID]
+    id: str
+    read: bool
+
+    def update_from(self, data: dict[str, Any]) -> None:
+        for k, v in data.items():
+            self.__setattr__(k, v)
+
     @classmethod
     def create_from_request_data(
-        cls, request_data: dict[str, Any]
+        cls, request_data: UserNotificationCreate
     ) -> "UserNotification":
-        params = deepcopy(request_data)
-        params["id"] = f"{uuid4()}"
-        params["read"] = False
-        return cls.parse_obj(params)
+        return cls.construct(id=f"{uuid4()}", read=False, **request_data.dict())
 
     class Config:
         schema_extra = {

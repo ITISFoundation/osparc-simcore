@@ -1,5 +1,4 @@
 import functools
-from typing import Any
 
 import redis.asyncio as aioredis
 from aiohttp import web
@@ -23,6 +22,8 @@ from ._notifications import (
     MAX_NOTIFICATIONS_FOR_USER_TO_KEEP,
     MAX_NOTIFICATIONS_FOR_USER_TO_SHOW,
     UserNotification,
+    UserNotificationCreate,
+    UserNotificationPatch,
     get_notification_key,
 )
 from .exceptions import TokenNotFoundError, UserNotFoundError
@@ -159,8 +160,8 @@ async def list_user_notifications(request: web.Request) -> web.Response:
 async def post_user_notification(request: web.Request) -> web.Response:
     req_ctx = _RequestContext.parse_obj(request)
     # body includes the updated notification
-    notification_data: dict[str, Any] = await request.json()
-    user_notification = UserNotification.create_from_request_data(notification_data)
+    body = await parse_request_body_as(UserNotificationCreate, request)
+    user_notification = UserNotification.create_from_request_data(body)
     key = get_notification_key(req_ctx.user_id)
 
     # insert at the head of the list and discard extra notifications
@@ -173,12 +174,19 @@ async def post_user_notification(request: web.Request) -> web.Response:
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
+class _NotificationPathParams(BaseModel):
+    notification_id: str
+
+
 @login_required
-@routes.patch(f"/{API_VTAG}/notifications/{{id}}", name="update_user_notification")
-async def update_user_notification(request: web.Request) -> web.Response:
+@routes.patch(
+    f"/{API_VTAG}/notifications/{{notification_id}}", name="mark_notification_as_read"
+)
+async def mark_notification_as_read(request: web.Request) -> web.Response:
     redis_client = get_redis_user_notifications_client(request.app)
     req_ctx = _RequestContext.parse_obj(request)
-    notification_id = request.match_info["id"]
+    req_path_params = parse_request_path_parameters_as(_NotificationPathParams, request)
+    body = await parse_request_body_as(UserNotificationPatch, request)
 
     # NOTE: only the user's notifications can be patched
     key = get_notification_key(req_ctx.user_id)
@@ -186,9 +194,8 @@ async def update_user_notification(request: web.Request) -> web.Response:
         UserNotification.parse_raw(x) for x in await redis_client.lrange(key, 0, -1)
     ]
     for k, user_notification in enumerate(all_user_notifications):
-        if notification_id == user_notification.id:
-            patch_data: dict[str, Any] = await request.json()
-            user_notification.update_from(patch_data)
+        if req_path_params.notification_id == user_notification.id:
+            user_notification.read = body.read
             await redis_client.lset(key, k, user_notification.json())
             raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
