@@ -77,6 +77,13 @@ paths:
           minimum: 0
         name: user_id
         in: query
+      - required: false
+        schema:
+          title: Expand Dirs
+          type: boolean
+          default: true
+        name: expand_dirs
+        in: query
       responses:
         '200':
           description: Successful Response
@@ -166,6 +173,13 @@ paths:
           type: string
           default: ''
         name: uuid_filter
+        in: query
+      - required: false
+        schema:
+          title: Expand Dirs
+          type: boolean
+          default: true
+        name: expand_dirs
         in: query
       responses:
         '200':
@@ -975,6 +989,11 @@ components:
           description: If true, this file is a soft link.i.e. is another entry with
             the same object_name
           default: false
+        is_directory:
+          title: Is Directory
+          type: boolean
+          description: set True if file_id is a directory
+          default: false
         upload_id:
           title: Upload Id
           type: string
@@ -1069,6 +1088,11 @@ components:
           type: boolean
           description: If true, this file is a soft link.i.e. is another entry with
             the same object_name
+          default: false
+        is_directory:
+          title: Is Directory
+          type: boolean
+          description: set True if file_id is a directory
           default: false
       additionalProperties: false
     FileUploadCompleteFutureResponse:
