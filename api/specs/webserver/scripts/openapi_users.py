@@ -11,9 +11,17 @@ from enum import Enum
 
 from fastapi import FastAPI, status
 from models_library.generics import Envelope
-from simcore_service_webserver.users._handlers import TokenCreate, TokenUpdate
-from simcore_service_webserver.users._notifications import UserNotification
-from simcore_service_webserver.users.schemas import ProfileGet, ProfileUpdate, Token
+from simcore_service_webserver.users._notifications import (
+    UserNotification,
+    UserNotificationCreate,
+    UserNotificationPatch,
+)
+from simcore_service_webserver.users.schemas import (
+    ProfileGet,
+    ProfileUpdate,
+    Token,
+    TokenCreate,
+)
 
 # from simcore_service_webserver.users._handlers import
 
@@ -75,16 +83,6 @@ async def get_token():
     ...
 
 
-@app.put(
-    "/me/tokens/{service}",
-    response_model=Envelope[Token],
-    tags=TAGS,
-    operation_id="update_token",
-)
-async def update_token(token: TokenUpdate):
-    ...
-
-
 @app.delete(
     "/me/tokens/{service}",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -99,9 +97,9 @@ async def delete_token():
     "/me/notifications",
     response_model=Envelope[list[UserNotification]],
     tags=TAGS,
-    operation_id="get_user_notifications",
+    operation_id="list_user_notifications",
 )
-async def get_user_notifications():
+async def list_user_notifications():
     ...
 
 
@@ -109,9 +107,9 @@ async def get_user_notifications():
     "/me/notifications",
     status_code=status.HTTP_204_NO_CONTENT,
     tags=TAGS,
-    operation_id="post_user_notification",
+    operation_id="create_user_notification",
 )
-async def post_user_notification(notification: UserNotification):
+async def create_user_notification(notification: UserNotificationCreate):
     ...
 
 
@@ -119,9 +117,9 @@ async def post_user_notification(notification: UserNotification):
     "/me/notifications/{notification_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     tags=TAGS,
-    operation_id="update_user_notification",
+    operation_id="mark_notification_as_read",
 )
-async def update_user_notification(notification: UserNotification):
+async def mark_notification_as_read(notification: UserNotificationPatch):
     ...
 
 

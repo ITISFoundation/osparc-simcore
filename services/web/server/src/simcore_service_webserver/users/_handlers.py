@@ -156,8 +156,8 @@ async def list_user_notifications(request: web.Request) -> web.Response:
 
 
 @login_required
-@routes.post(f"/{API_VTAG}/me/notifications", name="post_user_notification")
-async def post_user_notification(request: web.Request) -> web.Response:
+@routes.post(f"/{API_VTAG}/me/notifications", name="create_user_notification")
+async def create_user_notification(request: web.Request) -> web.Response:
     req_ctx = _RequestContext.parse_obj(request)
     # body includes the updated notification
     body = await parse_request_body_as(UserNotificationCreate, request)
