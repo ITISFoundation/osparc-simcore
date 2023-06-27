@@ -1,9 +1,5 @@
-"""
-    These tables were designed to be controled by projects-plugin in
-    the webserver's service
-"""
-
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import JSONB
 
 from ._common import (
     column_created_datetime,
@@ -13,13 +9,15 @@ from ._common import (
 from .base import metadata
 from .projects import projects
 
-projects_to_jobs = sa.Table(
-    "projects_to_jobs",
+projects_metadata_jobs = sa.Table(
+    "projects_metadata_jobs",
     #
     # Every job is mapped to a project and has an ancestor (see job_parent_name)
     # but not every project is associated to a job.
     #
-    # This table holds all projects associated to jobs
+    # This table
+    #   - holds all projects associated to jobs
+    #   - stores jobs ancestry relations and metadata
     #
     metadata,
     sa.Column(
@@ -29,7 +27,7 @@ projects_to_jobs = sa.Table(
             projects.c.uuid,
             onupdate="CASCADE",
             ondelete="CASCADE",
-            name="fk_projects_to_jobs_project_uuid",
+            name="fk_projects_metadata_jobs_project_uuid",
         ),
         nullable=False,
         primary_key=True,
@@ -43,10 +41,18 @@ projects_to_jobs = sa.Table(
         " - solver job: solver name (e.g. /v0/solvers/{id}/releases/{version})"
         " - study job: study name (e.g. /v0/studies/{id})",
     ),
+    sa.Column(
+        "job_metadata",
+        JSONB,
+        nullable=True,
+        server_default=sa.text("'{}'::jsonb"),
+        doc="Job can store here metadata. "
+        "Preserves class information during serialization/deserialization",
+    ),
     # TIME STAMPS ----
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
     sa.PrimaryKeyConstraint("project_uuid"),
 )
 
-register_modified_datetime_auto_update_trigger(projects_to_jobs)
+register_modified_datetime_auto_update_trigger(projects_metadata_jobs)

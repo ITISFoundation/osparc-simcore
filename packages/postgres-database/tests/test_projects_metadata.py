@@ -7,7 +7,7 @@
 
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_metadata import projects_metadata
-from simcore_postgres_database.models.projects_to_jobs import projects_to_jobs
+from simcore_postgres_database.models.projects_metadata_jobs import projects_to_jobs
 
 
 def test_paginate_solver_jobs():
