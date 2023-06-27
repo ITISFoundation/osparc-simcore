@@ -39,7 +39,7 @@ TAGS: list[str | Enum] = [
     operation_id="get_storage_locations",
     summary="Get available storage locations",
 )
-async def get_storage_locations(user_id: UserID):
+async def get_storage_locations():
     """Returns the list of available storage locations"""
 
 
