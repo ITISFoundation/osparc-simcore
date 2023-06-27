@@ -22,6 +22,7 @@ from simcore_service_webserver.users._notifications import (
     UserNotificationPatch,
 )
 from simcore_service_webserver.users.schemas import (
+    PermissionGet,
     ProfileGet,
     ProfileUpdate,
     Token,
@@ -128,6 +129,16 @@ async def mark_notification_as_read(
     params: Annotated[_NotificationPathParams, Depends()],
     notification: UserNotificationPatch,
 ):
+    ...
+
+
+@app.get(
+    "/me/permissions",
+    response_model=Envelope[list[PermissionGet]],
+    tags=TAGS,
+    operation_id="list_user_permissions",
+)
+async def list_user_permissions():
     ...
 
 

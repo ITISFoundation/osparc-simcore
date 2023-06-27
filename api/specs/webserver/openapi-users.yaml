@@ -141,6 +141,19 @@ paths:
       responses:
         '204':
           description: Successful Response
+  /me/permissions:
+    get:
+      tags:
+      - user
+      summary: List User Permissions
+      operationId: list_user_permissions
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.users.schemas.PermissionGet__'
 components:
   schemas:
     AllUsersGroups:
@@ -218,6 +231,17 @@ components:
             $ref: '#/components/schemas/UserNotification'
         error:
           title: Error
+    Envelope_list_simcore_service_webserver.users.schemas.PermissionGet__:
+      title: Envelope[list[simcore_service_webserver.users.schemas.PermissionGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/PermissionGet'
+        error:
+          title: Error
     Envelope_list_simcore_service_webserver.users.schemas.Token__:
       title: Envelope[list[simcore_service_webserver.users.schemas.Token]]
       type: object
@@ -256,6 +280,19 @@ components:
       - ANNOTATION_NOTE
       type: string
       description: An enumeration.
+    PermissionGet:
+      title: PermissionGet
+      required:
+      - name
+      - allowed
+      type: object
+      properties:
+        name:
+          title: Name
+          type: string
+        allowed:
+          title: Allowed
+          type: boolean
     ProfileGet:
       title: ProfileGet
       required:
