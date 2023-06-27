@@ -90,7 +90,7 @@ def _merge_extra_properties_booleans(
             merged_properties[field.name] = value1 or value2
         else:
             merged_properties[field.name] = value1
-    return GroupExtraProperties(**merged_properties)
+    return GroupExtraProperties(**merged_properties)  # pylint: disable=missing-kwoa
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
