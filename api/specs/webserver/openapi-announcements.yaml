@@ -37,33 +37,40 @@ components:
           items:
             type: string
             description: Product id
-            example: "s4llite"
+            example:
+              - "osparc"
+              - "tis"
+              - "s4l"
+              - "s4llite"
         start:
           title: Start
-          description: At what time the Announcement starts (UTC)
+          description: From what time the Announcement should be displayed (UTC)
           type: string
         end:
           title: End
-          description: At what time the Announcement ends (UTC)
+          description: At what time the Announcement should be excluded (UTC)
           type: string
         title:
           title: Title
-          description: What the purpose of the Announcement is
+          description: Title of the Announcement in HTML (max ~5 words)
           type: string
         description:
           title: Description
-          description: What the purpose of the Announcement is
+          description: A longer description of the Announcement in HTML (max ~15 words)
           type: string
         link:
           title: External link with more information
-          description: What the purpose of the Announcement is
+          description: External link that will be open when executing buttons related to the Announcement
           type: string
         widgets:
-          title: External link with more information
-          description: Products in which the announcement should be displayed
+          title: Where in the app the Announcement should be displayed
+          description: 3 different widgets are supported, 'login', 'ribbon' and 'user-menu'
           type: array
           items:
             type: string
             description: Product id
-            example: "ribbon"
+            example:
+              - "login"
+              - "ribbon"
+              - "user-menu"
       additionalProperties: false
