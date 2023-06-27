@@ -52,6 +52,7 @@ from simcore_service_webserver.users._notifications import (
     MAX_NOTIFICATIONS_FOR_USER_TO_SHOW,
     NotificationCategory,
     UserNotification,
+    UserNotificationCreate,
     get_notification_key,
 )
 from simcore_service_webserver.users.plugin import setup_users
@@ -229,6 +230,7 @@ async def test_create_token(
     logged_user: UserInfoDict,
     tokens_db,
     expected: type[web.HTTPException],
+    faker: Faker,
 ):
     assert client.app
 
@@ -237,8 +239,8 @@ async def test_create_token(
 
     token = {
         "service": "pennsieve",
-        "token_key": "4k9lyzBTS",
-        "token_secret": "my secret",
+        "token_key": faker.uuid4(),
+        "token_secret": faker.uuid4(),
     }
 
     resp = await client.post(f"{url}", json=token)
@@ -286,46 +288,6 @@ async def test_read_token(
         data, error = await assert_status(resp, expected)
 
         assert data == expected_token, "list and read item are both read operations"
-
-
-@pytest.mark.parametrize(
-    "user_role,expected",
-    [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPNoContent),
-        (UserRole.TESTER, web.HTTPNoContent),
-    ],
-)
-async def test_update_token(
-    client: TestClient,
-    logged_user: UserInfoDict,
-    tokens_db,
-    fake_tokens,
-    expected: type[web.HTTPException],
-):
-    assert client.app
-
-    selected = random.choice(fake_tokens)
-    sid = selected["service"]
-
-    url = client.app.router["get_token"].url_for(service=sid)
-    assert "/v0/me/tokens/%s" % sid == f"{url}"
-
-    resp = await client.put(
-        f"{url}", json={"token_secret": "some completely new secret"}
-    )
-    data, error = await assert_status(resp, expected)
-
-    if not error:
-        # check in db
-        token_in_db = await get_token_from_db(tokens_db, token_service=sid)
-        assert token_in_db
-        assert token_in_db["token_data"]["token_secret"] == "some completely new secret"
-        assert token_in_db["token_data"]["token_secret"] != selected["token_secret"]
-
-        selected["token_secret"] = "some completely new secret"
-        assert token_in_db["token_data"] == selected
 
 
 @pytest.mark.parametrize(
@@ -401,7 +363,7 @@ async def test_get_profile_with_failing_db_connection(
         mock_failing_connection.call_count == NUM_RETRY
     ), "Expected mock failure raised in AuthorizationPolicy.authorized_userid after severals"
 
-    data, error = await assert_status(resp, expected)
+    await assert_status(resp, expected)
 
 
 @pytest.fixture
@@ -423,14 +385,16 @@ async def _create_notifications(
 
     user_notifications: list[UserNotification] = [
         UserNotification.create_from_request_data(
-            {
-                "user_id": user_id,
-                "category": random.choice(notification_categories),
-                "actionable_path": "a/path",
-                "title": "test_title",
-                "text": "text_text",
-                "date": datetime.now(timezone.utc).isoformat(),
-            }
+            UserNotificationCreate.parse_obj(
+                {
+                    "user_id": user_id,
+                    "category": random.choice(notification_categories),
+                    "actionable_path": "a/path",
+                    "title": "test_title",
+                    "text": "text_text",
+                    "date": datetime.now(timezone.utc).isoformat(),
+                }
+            )
         )
         for _ in range(count)
     ]
@@ -445,7 +409,15 @@ async def _create_notifications(
     await redis_client.flushall()
 
 
-@pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize(
+    "user_role,expected_response",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPOk),
+        (UserRole.USER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk),
+    ],
+)
 @pytest.mark.parametrize(
     "notification_count",
     [
@@ -455,30 +427,44 @@ async def _create_notifications(
         MAX_NOTIFICATIONS_FOR_USER_TO_SHOW + 1,
     ],
 )
-async def test_get_user_notifications(
+async def test_list_user_notifications(
     logged_user: UserInfoDict,
     notification_redis_client: aioredis.Redis,
     client: TestClient,
     notification_count: int,
+    expected_response: type[web.HTTPException],
 ):
     assert client.app
-    url = client.app.router["get_user_notifications"].url_for()
+    url = client.app.router["list_user_notifications"].url_for()
     assert str(url) == "/v0/me/notifications"
+    response = await client.get(f"{url}")
+    data, error = await assert_status(response, expected_response)
+    if data:
+        assert data == []
+        assert not error
 
-    async with _create_notifications(
-        notification_redis_client, logged_user, notification_count
-    ) as created_notifications:
-        response = await client.get(f"{url}")
-        json_response = await response.json()
+        async with _create_notifications(
+            notification_redis_client, logged_user, notification_count
+        ) as created_notifications:
+            response = await client.get(f"{url}")
+            json_response = await response.json()
 
-        result = parse_obj_as(list[UserNotification], json_response["data"])
-        assert len(result) <= MAX_NOTIFICATIONS_FOR_USER_TO_SHOW
-        assert result == list(
-            reversed(created_notifications[:MAX_NOTIFICATIONS_FOR_USER_TO_SHOW])
-        )
+            result = parse_obj_as(list[UserNotification], json_response["data"])
+            assert len(result) <= MAX_NOTIFICATIONS_FOR_USER_TO_SHOW
+            assert result == list(
+                reversed(created_notifications[:MAX_NOTIFICATIONS_FOR_USER_TO_SHOW])
+            )
 
 
-@pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize(
+    "user_role,expected_response",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPForbidden),
+        (UserRole.USER, web.HTTPNoContent),
+        (UserRole.TESTER, web.HTTPNoContent),
+    ],
+)
 @pytest.mark.parametrize(
     "notification_dict",
     [
@@ -508,31 +494,36 @@ async def test_get_user_notifications(
         ),
     ],
 )
-async def test_post_user_notification(
+async def test_create_user_notification(
     logged_user: UserInfoDict,
     notification_redis_client: aioredis.Redis,
     client: TestClient,
     notification_dict: dict[str, Any],
+    expected_response: type[web.HTTPException],
 ):
     assert client.app
-    url = client.app.router["post_user_notification"].url_for()
+    url = client.app.router["create_user_notification"].url_for()
     assert str(url) == "/v0/me/notifications"
     notification_dict["user_id"] = logged_user["id"]
     resp = await client.post(f"{url}", json=notification_dict)
-    assert resp.status == web.HTTPNoContent.status_code, await resp.text()
+    data, error = await assert_status(resp, expected_response)
+    assert data is None  # 204...
 
-    user_id = logged_user["id"]
-    user_notifications = await _get_user_notifications(
-        notification_redis_client, user_id
-    )
-    assert len(user_notifications) == 1
-    # these are always generated and overwritten, even if provided by the user, since
-    # we do not want to overwrite existing ones
-    assert user_notifications[0].read is False
-    assert user_notifications[0].id != notification_dict.get("id", None)
+    if not error:
+        user_id = logged_user["id"]
+        user_notifications = await _get_user_notifications(
+            notification_redis_client, user_id
+        )
+        assert len(user_notifications) == 1
+        # these are always generated and overwritten, even if provided by the user, since
+        # we do not want to overwrite existing ones
+        assert user_notifications[0].read is False
+        assert user_notifications[0].id != notification_dict.get("id", None)
+    else:
+        assert error is not None
 
 
-@pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize("user_role", [(UserRole.USER)])
 @pytest.mark.parametrize(
     "notification_count",
     [
@@ -543,14 +534,14 @@ async def test_post_user_notification(
         MAX_NOTIFICATIONS_FOR_USER_TO_KEEP * 10,
     ],
 )
-async def test_post_user_notification_capped_list_length(
+async def test_create_user_notification_capped_list_length(
     logged_user: UserInfoDict,
     notification_redis_client: aioredis.Redis,
     client: TestClient,
     notification_count: int,
 ):
     assert client.app
-    url = client.app.router["post_user_notification"].url_for()
+    url = client.app.router["create_user_notification"].url_for()
     assert str(url) == "/v0/me/notifications"
 
     notifications_create_results = await asyncio.gather(
@@ -582,6 +573,36 @@ async def test_post_user_notification_capped_list_length(
         notification_redis_client, user_id
     )
     assert len(user_notifications) <= MAX_NOTIFICATIONS_FOR_USER_TO_KEEP
+
+
+@pytest.mark.parametrize(
+    "user_role,expected_response",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPNoContent),
+        (UserRole.USER, web.HTTPNoContent),
+        (UserRole.TESTER, web.HTTPNoContent),
+    ],
+)
+async def test_update_user_notification(
+    logged_user: UserInfoDict,
+    notification_redis_client: aioredis.Redis,
+    client: TestClient,
+    expected_response: type[web.HTTPException],
+):
+    async with _create_notifications(
+        notification_redis_client, logged_user, 1
+    ) as created_notifications:
+        assert client.app
+        for notification in created_notifications:
+            url = client.app.router["mark_notification_as_read"].url_for(
+                notification_id=f"{notification.id}"
+            )
+            assert str(url) == f"/v0/me/notifications/{notification.id}"
+            assert notification.read is False
+
+            resp = await client.patch(f"{url}", json={"read": True})
+            await assert_status(resp, expected_response)
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
@@ -619,8 +640,8 @@ async def test_update_user_notification_at_correct_index(
     ) as created_notifications:
         notifications_before_update = await _get_stored_notifications()
         for notification in created_notifications:
-            url = client.app.router["update_user_notification"].url_for(
-                id=f"{notification.id}"
+            url = client.app.router["mark_notification_as_read"].url_for(
+                notification_id=f"{notification.id}"
             )
             assert str(url) == f"/v0/me/notifications/{notification.id}"
             assert notification.read is False
