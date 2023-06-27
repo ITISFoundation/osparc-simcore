@@ -74,7 +74,9 @@ async def get_datasets_metadata(location_id: LocationID):
     operation_id="get_files_metadata",
     summary="Get datasets metadata",
 )
-async def get_files_metadata(location_id: LocationID, uuid_filter: str = ""):
+async def get_files_metadata(
+    location_id: LocationID, uuid_filter: str = "", expand_dirs: bool = True
+):
     """list of file meta-datas"""
 
 
