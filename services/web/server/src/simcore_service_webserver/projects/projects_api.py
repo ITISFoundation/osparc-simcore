@@ -20,7 +20,7 @@ from uuid import UUID, uuid4
 
 from aiohttp import web
 from models_library.errors import ErrorDict
-from models_library.projects import Project, ProjectID
+from models_library.projects import Project, ProjectID, ProjectIDStr
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import (
@@ -71,7 +71,7 @@ from ..storage import api as storage_api
 from ..users.api import UserNameDict, get_user_name, get_user_role
 from ..users.exceptions import UserNotFoundError
 from . import _crud_delete_utils, _nodes_api
-from ._nodes_utils import validate_new_service_resources
+from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_resources
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import (
     NodeNotFoundError,
@@ -149,7 +149,7 @@ async def update_project_last_change_timestamp(
 ):
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     assert db  # nosec
-    await db.update_project_last_change_timestamp(project_uuid)
+    await db.update_project_last_change_timestamp(ProjectIDStr(f"{project_uuid}"))
 
 
 #
@@ -946,6 +946,7 @@ async def update_project_node_resources(
             )
 
         validate_new_service_resources(current_resources, new_resources=resources)
+        set_reservation_same_as_limit(resources)
 
         project_node = await db.update_project_node(
             user_id=user_id,

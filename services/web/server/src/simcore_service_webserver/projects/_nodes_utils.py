@@ -25,3 +25,10 @@ def validate_new_service_resources(
             raise ProjectNodeResourcesInvalidError(
                 f"Incompatible '{container_resources.image=}' cannot be applied on {container_name}:{resources[container_name].image}!"
             )
+
+
+def set_reservation_same_as_limit(
+    resources: ServiceResourcesDict,
+) -> None:
+    for container_resources in resources.values():
+        container_resources.set_reservation_same_as_limit()
