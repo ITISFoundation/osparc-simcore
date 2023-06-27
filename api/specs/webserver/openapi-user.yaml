@@ -63,6 +63,13 @@ paths:
       - user
       summary: Get Token
       operationId: get_token
+      parameters:
+      - required: true
+        schema:
+          title: Service
+          type: string
+        name: service
+        in: path
       responses:
         '200':
           description: Successful Response
@@ -75,6 +82,13 @@ paths:
       - user
       summary: Delete Token
       operationId: delete_token
+      parameters:
+      - required: true
+        schema:
+          title: Service
+          type: string
+        name: service
+        in: path
       responses:
         '204':
           description: Successful Response
@@ -111,6 +125,13 @@ paths:
       - user
       summary: Mark Notification As Read
       operationId: mark_notification_as_read
+      parameters:
+      - required: true
+        schema:
+          title: Notification Id
+          type: string
+        name: notification_id
+        in: path
       requestBody:
         content:
           application/json:

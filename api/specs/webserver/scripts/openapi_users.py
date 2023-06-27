@@ -8,9 +8,14 @@
 
 
 from enum import Enum
+from typing import Annotated
 
-from fastapi import FastAPI, status
+from fastapi import Depends, FastAPI, status
 from models_library.generics import Envelope
+from simcore_service_webserver.users._handlers import (
+    _NotificationPathParams,
+    _TokenPathParams,
+)
 from simcore_service_webserver.users._notifications import (
     UserNotification,
     UserNotificationCreate,
@@ -79,7 +84,7 @@ async def create_token(token: TokenCreate):
     tags=TAGS,
     operation_id="get_token",
 )
-async def get_token():
+async def get_token(params: Annotated[_TokenPathParams, Depends()]):
     ...
 
 
@@ -89,7 +94,7 @@ async def get_token():
     tags=TAGS,
     operation_id="delete_token",
 )
-async def delete_token():
+async def delete_token(params: Annotated[_TokenPathParams, Depends()]):
     ...
 
 
@@ -119,7 +124,10 @@ async def create_user_notification(notification: UserNotificationCreate):
     tags=TAGS,
     operation_id="mark_notification_as_read",
 )
-async def mark_notification_as_read(notification: UserNotificationPatch):
+async def mark_notification_as_read(
+    params: Annotated[_NotificationPathParams, Depends()],
+    notification: UserNotificationPatch,
+):
     ...
 
 
