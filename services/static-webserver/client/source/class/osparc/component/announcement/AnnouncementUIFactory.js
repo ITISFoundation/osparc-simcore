@@ -53,6 +53,7 @@ qx.Class.define("osparc.component.announcement.AnnouncementUIFactory", {
     __buildAnnouncementUIs: function() {
       if (this.__isValid()) {
         this.__buildLoginAnnouncement();
+        this.__buildRibbonAnnouncement();
         this.__buildUserMenuAnnouncement();
       } else {
         this.setLoginAnnouncement(null);
@@ -110,6 +111,16 @@ qx.Class.define("osparc.component.announcement.AnnouncementUIFactory", {
       loginAnnouncement.add(descriptionLabel);
 
       this.setLoginAnnouncement(loginAnnouncement);
+    },
+
+    __buildRibbonAnnouncement: function() {
+      const announcement = this.getAnnouncement();
+      let text = announcement.getTitle() + ": ";
+      text += announcement.getDescription();
+
+      const ribbonNotification = new osparc.component.notification.RibbonNotification(text, "announcement", true);
+      osparc.component.notification.RibbonNotifications.getInstance().addNotification(ribbonNotification);
+      // this.setRibbonAnnouncement(ribbonNotification);
     },
 
     __buildUserMenuAnnouncement: function() {

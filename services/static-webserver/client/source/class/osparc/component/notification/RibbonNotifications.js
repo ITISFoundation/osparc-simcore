@@ -27,7 +27,6 @@ qx.Class.define("osparc.component.notification.RibbonNotifications", {
     this.__notifications = new qx.data.Array();
 
     this.set({
-      backgroundColor: "warning-yellow-s4l",
       alignX: "center",
       alignY: "middle",
       visibility: "excluded"
@@ -63,17 +62,22 @@ qx.Class.define("osparc.component.notification.RibbonNotifications", {
       if (notifications.length) {
         this.show();
         notifications.forEach(notification => {
-          const text = notification.getFullText();
+          const notificationLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5, "center")).set({
+            backgroundColor: notification.getType() === "announcement" ? "strong-main" : "warning-yellow-s4l",
+            allowGrowX: true
+          });
+          this._add(notificationLayout);
+
           const notificationAtom = new qx.ui.basic.Atom().set({
-            label: text,
-            icon: "@FontAwesome5Solid/exclamation-triangle/14",
+            label: notification.getFullText(),
+            icon: notification.getType() === "announcement" ? null : "@FontAwesome5Solid/exclamation-triangle/14",
             center: true,
             padding: 2,
             gap: 10,
             height: 20
           });
           notificationAtom.getChildControl("label").set({
-            textColor: "black",
+            textColor: notification.getType() === "announcement" ? "white" : "black",
             font: "text-14",
             rich: true,
             wrap: true,
@@ -82,18 +86,15 @@ qx.Class.define("osparc.component.notification.RibbonNotifications", {
           notificationAtom.getChildControl("icon").set({
             textColor: "black"
           });
+          notificationLayout.add(notificationAtom);
+
           if (notification.getClosable()) {
-            const closableLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5, "center"));
-            closableLayout.add(notificationAtom);
             const closeButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/times/12").set({
               backgroundColor: "transparent",
-              textColor: "black"
+              textColor: notification.getType() === "announcement" ? "white" : "black"
             });
             closeButton.addListener("tap", () => this.removeNotification(notification), this);
-            closableLayout.add(closeButton);
-            this._add(closableLayout);
-          } else {
-            this._add(notificationAtom);
+            notificationLayout.add(closeButton);
           }
         });
       } else {
