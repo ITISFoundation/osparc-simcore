@@ -19,38 +19,6 @@ qx.Class.define("osparc.AnnouncementsTracker", {
   extend: qx.core.Object,
   type: "singleton",
 
-  properties: {
-    start: {
-      check: "Date",
-      init: null,
-      nullable: true
-    },
-
-    end: {
-      check: "Date",
-      init: null,
-      nullable: true
-    },
-
-    title: {
-      check: "String",
-      init: null,
-      nullable: true
-    },
-
-    description: {
-      check: "String",
-      init: null,
-      nullable: true
-    },
-
-    link: {
-      check: "String",
-      init: null,
-      nullable: true
-    }
-  },
-
   statics: {
     CHECK_INTERVAL: 60*60*1000 // Check every 60'
   },
