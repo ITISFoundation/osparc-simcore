@@ -15,6 +15,8 @@ from aiodocker import Docker, DockerError
 from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
+from models_library.basic_types import EnvVarKey
+from models_library.docker import DockerLabelKey
 from models_library.services_resources import BootMode
 from packaging import version
 from pydantic import ByteSize
@@ -44,6 +46,7 @@ LogPublishingCB = Callable[[LogMessageStr, LogLevelInt], Awaitable[None]]
 
 
 async def create_container_config(
+    *,
     docker_registry: str,
     service_key: str,
     service_version: str,
@@ -51,26 +54,32 @@ async def create_container_config(
     comp_volume_mount_point: str,
     boot_mode: BootMode,
     task_max_resources: dict[str, Any],
+    task_envs: dict[EnvVarKey, str],
+    docker_labels: dict[DockerLabelKey, str],
 ) -> DockerContainerConfig:
     nano_cpus_limit = int(task_max_resources.get("CPU", 1) * 1e9)
     memory_limit = ByteSize(task_max_resources.get("RAM", 1024**3))
+    env_variables = [
+        f"{name.upper()}_FOLDER=/{name}s"
+        for name in [
+            "input",
+            "output",
+            "log",
+        ]
+    ] + [
+        f"SC_COMP_SERVICES_SCHEDULED_AS={boot_mode.value}",
+        f"SIMCORE_NANO_CPUS_LIMIT={nano_cpus_limit}",
+        f"SIMCORE_MEMORY_BYTES_LIMIT={memory_limit}",
+    ]
+    if task_envs:
+        env_variables += [
+            f"{env_key}={env_value}" for env_key, env_value in task_envs.items()
+        ]
     config = DockerContainerConfig(
-        Env=[
-            *[
-                f"{name.upper()}_FOLDER=/{name}s"
-                for name in [
-                    "input",
-                    "output",
-                    "log",
-                ]
-            ],
-            f"SC_COMP_SERVICES_SCHEDULED_AS={boot_mode.value}",
-            f"SIMCORE_NANO_CPUS_LIMIT={nano_cpus_limit}",
-            f"SIMCORE_MEMORY_BYTES_LIMIT={memory_limit}",
-        ],
+        Env=env_variables,
         Cmd=command,
         Image=f"{docker_registry}/{service_key}:{service_version}",
-        Labels={},
+        Labels=cast(dict[str, str], docker_labels),
         HostConfig=ContainerHostConfig(
             Init=True,
             Binds=[

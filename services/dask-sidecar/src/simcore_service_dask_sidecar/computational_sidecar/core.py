@@ -20,6 +20,8 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputData,
     TaskOutputDataSchema,
 )
+from models_library.basic_types import EnvVarKey
+from models_library.docker import DockerLabelKey
 from models_library.services_resources import BootMode
 from packaging import version
 from pydantic import ValidationError
@@ -59,6 +61,8 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
     task_max_resources: dict[str, float]
     task_publishers: TaskPublisher
     s3_settings: S3Settings | None
+    task_envs: dict[EnvVarKey, str]
+    docker_labels: dict[DockerLabelKey, str]
 
     async def _write_input_data(
         self,
@@ -200,6 +204,8 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                 comp_volume_mount_point=f"{computational_shared_data_mount_point}/{run_id}",
                 boot_mode=self.boot_mode,
                 task_max_resources=self.task_max_resources,
+                task_envs=self.task_envs,
+                docker_labels=self.docker_labels,
             )
             await self._write_input_data(task_volumes, integration_version)
 
