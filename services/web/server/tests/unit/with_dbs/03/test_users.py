@@ -579,7 +579,7 @@ async def test_create_user_notification_capped_list_length(
     "user_role,expected_response",
     [
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPNoContent),
+        (UserRole.GUEST, web.HTTPForbidden),
         (UserRole.USER, web.HTTPNoContent),
         (UserRole.TESTER, web.HTTPNoContent),
     ],
