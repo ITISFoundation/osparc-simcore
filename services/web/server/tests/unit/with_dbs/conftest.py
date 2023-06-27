@@ -29,6 +29,7 @@ import simcore_service_webserver.db.models as orm
 import simcore_service_webserver.email
 import simcore_service_webserver.email._core
 import simcore_service_webserver.utils
+import sqlalchemy
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
@@ -47,6 +48,9 @@ from servicelib.aiohttp.long_running_tasks.server import ProgressPercent, TaskPr
 from servicelib.common_aiopg_utils import DSN
 from settings_library.email import SMTPSettings
 from settings_library.redis import RedisDatabase, RedisSettings
+from simcore_postgres_database.models.groups_extra_properties import (
+    groups_extra_properties,
+)
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.groups.api import (
@@ -689,3 +693,32 @@ async def user_project(
         print("-----> added project", project["name"])
         yield project
         print("<----- removed project", project["name"])
+
+
+@pytest.fixture
+async def with_permitted_override_services_specifications(
+    aiopg_engine: aiopg.sa.engine.Engine,
+) -> AsyncIterator[None]:
+    old_value = False
+    async with aiopg_engine.acquire() as conn:
+        old_value = bool(
+            await conn.scalar(
+                sqlalchemy.select(
+                    groups_extra_properties.c.override_services_specifications
+                ).where(groups_extra_properties.c.group_id == 1)
+            )
+        )
+
+        await conn.execute(
+            groups_extra_properties.update()
+            .where(groups_extra_properties.c.group_id == 1)
+            .values(override_services_specifications=True)
+        )
+    yield
+
+    async with aiopg_engine.acquire() as conn:
+        await conn.execute(
+            groups_extra_properties.update()
+            .where(groups_extra_properties.c.group_id == 1)
+            .values(override_services_specifications=old_value)
+        )
