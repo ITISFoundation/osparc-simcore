@@ -64,6 +64,10 @@ paths:
   /config:
     $ref: "./openapi-diagnostics.yaml#/paths/~1config"
 
+  # ANNOUNCEMENTS--------------------------------------------------------
+  /:
+    $ref: "./openapi-announcements.yaml#/paths/~1announcements"
+
   # AUTHENTICATION & AUTHORIZATION --------------------------------------
 
   /auth/register/invitations:check:

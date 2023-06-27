@@ -11,7 +11,7 @@ from .._constants import APP_PUBLIC_CONFIG_PER_PRODUCT, APP_SETTINGS_KEY
 from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..products.plugin import get_product_name
-from ..redis import get_redis_scheduled_maintenance_client
+from ..redis import get_redis_announcements_client, get_redis_scheduled_maintenance_client
 from ..utils_aiohttp import envelope_json_response
 from .healthcheck import HealthCheck, HealthCheckFailed
 
@@ -98,3 +98,23 @@ async def get_scheduled_maintenance(request: web.Request):
     response = web.json_response(status=web.HTTPNoContent.status_code)
     assert response.status == 204  # nosec
     return response
+
+
+@routes.get(f"/{API_VTAG}/announcements", name="get_announcements")
+@login_required
+async def get_announcements(request: web.Request):
+    """Check announcements table in redis"""
+
+    redis_client = get_redis_announcements_client(request.app)
+    hash_key = "announcements"
+    # Examples.
+    #  {"start": "2023-01-17T14:45:00.000Z", "end": "2023-01-17T23:00:00.000Z", "reason": "Release 1.0.4"}
+    #  {"start": "2023-01-20T09:00:00.000Z", "end": "2023-01-20T10:30:00.000Z", "reason": "Release ResistanceIsFutile2"}
+    # NOTE: datetime is UTC (Canary islands / UK)
+    if maintenance_str := await redis_client.get(hash_key):
+        return web.json_response(data={"data": maintenance_str})
+
+    response = web.json_response(status=web.HTTPNoContent.status_code)
+    assert response.status == 204  # nosec
+    return response
+
