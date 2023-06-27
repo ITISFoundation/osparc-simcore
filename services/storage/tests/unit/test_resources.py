@@ -21,7 +21,6 @@ def app_resources(package_dir: Path) -> list[str]:
 
 
 def test_resource_io_utils(app_resources: list[str]):
-
     assert not resources.exists("fake_resource_name")
 
     for resource_name in app_resources:
