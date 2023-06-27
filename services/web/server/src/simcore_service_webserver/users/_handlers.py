@@ -83,20 +83,20 @@ def _handle_tokens_errors(handler: Handler):
     return _wrapper
 
 
+@routes.get(f"/{API_VTAG}/me/tokens", name="list_tokens")
 @login_required
 @_handle_tokens_errors
 @permission_required("user.tokens.*")
-@routes.get(f"/{API_VTAG}/me/tokens", name="list_tokens")
 async def list_tokens(request: web.Request) -> web.Response:
     req_ctx = _RequestContext.parse_obj(request)
     all_tokens = await _tokens.list_tokens(request.app, req_ctx.user_id)
     return envelope_json_response(all_tokens)
 
 
+@routes.post(f"/{API_VTAG}/me/tokens", name="create_tokens")
 @login_required
 @_handle_tokens_errors
 @permission_required("user.tokens.*")
-@routes.post(f"/{API_VTAG}/me/tokens", name="create_tokens")
 async def create_tokens(request: web.Request) -> web.Response:
     req_ctx = _RequestContext.parse_obj(request)
     token_create = await parse_request_body_as(TokenCreate, request)
@@ -108,10 +108,10 @@ class _TokenPathParams(BaseModel):
     service: str
 
 
+@routes.get(f"/{API_VTAG}/me/tokens/{{service}}", name="get_token")
 @login_required
 @_handle_tokens_errors
 @permission_required("user.tokens.*")
-@routes.get(f"/{API_VTAG}/me/tokens/{{service}}", name="get_token")
 async def get_token(request: web.Request) -> web.Response:
     req_ctx = _RequestContext.parse_obj(request)
     req_path_params = parse_request_path_parameters_as(_TokenPathParams, request)
@@ -121,10 +121,10 @@ async def get_token(request: web.Request) -> web.Response:
     return envelope_json_response(token)
 
 
+@routes.delete(f"/{API_VTAG}/me/tokens/{{service}}", name="delete_token")
 @login_required
 @_handle_tokens_errors
 @permission_required("user.tokens.*")
-@routes.delete(f"/{API_VTAG}/me/tokens/{{service}}", name="delete_token")
 async def delete_token(request: web.Request) -> web.Response:
     req_ctx = _RequestContext.parse_obj(request)
     req_path_params = parse_request_path_parameters_as(_TokenPathParams, request)
@@ -145,8 +145,8 @@ async def _get_user_notifications(
     return [UserNotification.parse_raw(x) for x in raw_notifications]
 
 
-@login_required
 @routes.get(f"/{API_VTAG}/me/notifications", name="list_user_notifications")
+@login_required
 async def list_user_notifications(request: web.Request) -> web.Response:
     redis_client = get_redis_user_notifications_client(request.app)
     req_ctx = _RequestContext.parse_obj(request)
@@ -154,8 +154,8 @@ async def list_user_notifications(request: web.Request) -> web.Response:
     return envelope_json_response(notifications)
 
 
-@login_required
 @routes.post(f"/{API_VTAG}/me/notifications", name="create_user_notification")
+@login_required
 async def create_user_notification(request: web.Request) -> web.Response:
     req_ctx = _RequestContext.parse_obj(request)
     # body includes the updated notification
@@ -177,10 +177,10 @@ class _NotificationPathParams(BaseModel):
     notification_id: str
 
 
-@login_required
 @routes.patch(
     f"/{API_VTAG}/notifications/{{notification_id}}", name="mark_notification_as_read"
 )
+@login_required
 async def mark_notification_as_read(request: web.Request) -> web.Response:
     redis_client = get_redis_user_notifications_client(request.app)
     req_ctx = _RequestContext.parse_obj(request)
