@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import auto
-from typing import Any, Final
+from typing import Final
 from uuid import uuid4
 
 from models_library.users import UserID
@@ -50,10 +50,6 @@ class UserNotification(BaseUserNotification):
     # will not change to UUID nor Union[str, UUID]
     id: str
     read: bool
-
-    def update_from(self, data: dict[str, Any]) -> None:
-        for k, v in data.items():
-            self.__setattr__(k, v)
 
     @classmethod
     def create_from_request_data(
