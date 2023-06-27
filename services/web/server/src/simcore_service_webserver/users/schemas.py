@@ -2,12 +2,12 @@ from datetime import date
 from typing import Any, Literal, Mapping
 from uuid import UUID
 
+from models_library.api_schemas_webserver._base import OutputSchema
 from models_library.basic_types import IdInt
 from models_library.emails import LowerCaseEmailStr
 from pydantic import BaseModel, Field, validator
 from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.rest.schemas_base import OutputSchema
 
 from ..groups.schemas import AllUsersGroups
 from ..utils import gravatar_hash
