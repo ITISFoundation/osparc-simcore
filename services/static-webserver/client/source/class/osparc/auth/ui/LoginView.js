@@ -55,6 +55,8 @@ qx.Class.define("osparc.auth.ui.LoginView", {
     __loginBtn: null,
 
     _buildPage: function() {
+      this.__form = new qx.ui.form.Form();
+
       const email = new qx.ui.form.TextField().set({
         placeholder: this.tr(" Your email address"),
         required: true
