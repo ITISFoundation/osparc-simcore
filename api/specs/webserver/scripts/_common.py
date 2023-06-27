@@ -62,7 +62,7 @@ def create_openapi_specs(
 
     # Remove these sections
     for section in ("info", "openapi"):
-        openapi.pop(section)
+        openapi.pop(section, None)
 
     schemas = openapi["components"]["schemas"]
     for section in ("HTTPValidationError", "ValidationError"):
