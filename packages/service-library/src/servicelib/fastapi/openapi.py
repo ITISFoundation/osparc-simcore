@@ -125,8 +125,6 @@ def _patch(node: Any):
                 node.pop(key)
                 continue
 
-            if key == "PLACEHOLDER_URL":
-                print("OK")
             _patch_node_properties(key, node)
 
             # recursive
