@@ -15,6 +15,7 @@ import pytest
 import requests_mock
 from asgi_lifespan import LifespanManager
 from faker import Faker
+from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pytest import MonkeyPatch
@@ -189,3 +190,9 @@ def disabled_tracker_background_task(mocker: MockerFixture) -> dict[str, mock.Mo
         autospec=True,
     )
     return {"start_task": mocked_start, "stop_task": mocked_stop}
+
+
+@pytest.fixture
+async def mocked_redis_server(mocker: MockerFixture) -> None:
+    mock_redis = FakeRedis()
+    mocker.patch("redis.asyncio.from_url", return_value=mock_redis)
