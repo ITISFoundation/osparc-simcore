@@ -147,6 +147,7 @@ async def _get_user_notifications(
 
 @routes.get(f"/{API_VTAG}/me/notifications", name="list_user_notifications")
 @login_required
+@permission_required("user.notifications.read")
 async def list_user_notifications(request: web.Request) -> web.Response:
     redis_client = get_redis_user_notifications_client(request.app)
     req_ctx = _RequestContext.parse_obj(request)
@@ -156,6 +157,7 @@ async def list_user_notifications(request: web.Request) -> web.Response:
 
 @routes.post(f"/{API_VTAG}/me/notifications", name="create_user_notification")
 @login_required
+@permission_required("user.notifications.write")
 async def create_user_notification(request: web.Request) -> web.Response:
     req_ctx = _RequestContext.parse_obj(request)
     # body includes the updated notification
@@ -178,9 +180,11 @@ class _NotificationPathParams(BaseModel):
 
 
 @routes.patch(
-    f"/{API_VTAG}/notifications/{{notification_id}}", name="mark_notification_as_read"
+    f"/{API_VTAG}/me/notifications/{{notification_id}}",
+    name="mark_notification_as_read",
 )
 @login_required
+@permission_required("user.notifications.update")
 async def mark_notification_as_read(request: web.Request) -> web.Response:
     redis_client = get_redis_user_notifications_client(request.app)
     req_ctx = _RequestContext.parse_obj(request)
