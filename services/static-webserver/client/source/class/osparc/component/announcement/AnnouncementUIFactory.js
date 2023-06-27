@@ -24,50 +24,18 @@ qx.Class.define("osparc.component.announcement.AnnouncementUIFactory", {
       check: "osparc.component.announcement.Announcement",
       init: null,
       nullable: false,
-      apply: "__buildAnnouncementUIs"
-    },
-
-    loginAnnouncement: {
-      check: "qx.ui.core.Widget",
-      init: null,
-      nullable: true,
-      event: "changeLoginAnnouncement"
-    },
-
-    ribbonAnnouncement: {
-      check: "qx.ui.core.Widget",
-      init: null,
-      nullable: true,
-      event: "changeRibbonAnnouncement"
-    },
-
-    userMenuAnnouncement: {
-      check: "qx.ui.core.Widget",
-      init: null,
-      nullable: true,
-      event: "changeUserMenuAnnouncement"
+      apply: "__applyAnnouncement"
     }
   },
 
   members: {
-    __buildAnnouncementUIs: function() {
-      if (this.__isValid()) {
-        this.__buildLoginAnnouncement();
-        this.__buildRibbonAnnouncement();
-        this.__buildUserMenuAnnouncement();
-      } else {
-        this.setLoginAnnouncement(null);
-        this.setRibbonAnnouncement(null);
-        this.setUserMenuAnnouncement(null);
-      }
-    },
-
-    __isValid: function() {
+    __isValid: function(widgetType) {
       const announcement = this.getAnnouncement();
 
       const now = new Date();
       if (
         announcement.getProducts().includes(osparc.product.Utils.getProductName()) &&
+        announcement.getWidgets().includes(widgetType) &&
         now > announcement.getStart() &&
         now < announcement.getEnd()
       ) {
@@ -76,7 +44,25 @@ qx.Class.define("osparc.component.announcement.AnnouncementUIFactory", {
       return false;
     },
 
-    __buildLoginAnnouncement: function() {
+    __applyAnnouncement: function() {
+      if (this.hasRibbonAnnouncement()) {
+        this.addRibbonAnnouncement();
+      }
+    },
+
+    hasLoginAnnouncement: function() {
+      return this.__isValid("login");
+    },
+
+    hasRibbonAnnouncement: function() {
+      return this.__isValid("ribbon");
+    },
+
+    hasUserMenuAnnouncement: function() {
+      return this.__isValid("user-menu") && this.getAnnouncement().getLink();
+    },
+
+    createLoginAnnouncement: function() {
       const announcement = this.getAnnouncement();
 
       const loginAnnouncement = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
@@ -110,31 +96,25 @@ qx.Class.define("osparc.component.announcement.AnnouncementUIFactory", {
       });
       loginAnnouncement.add(descriptionLabel);
 
-      this.setLoginAnnouncement(loginAnnouncement);
+      return loginAnnouncement;
     },
 
-    __buildRibbonAnnouncement: function() {
+    addRibbonAnnouncement: function() {
       const announcement = this.getAnnouncement();
       let text = announcement.getTitle() + ": ";
       text += announcement.getDescription();
 
       const ribbonNotification = new osparc.component.notification.RibbonNotification(text, "announcement", true);
       osparc.component.notification.RibbonNotifications.getInstance().addNotification(ribbonNotification);
-      // this.setRibbonAnnouncement(ribbonNotification);
     },
 
-    __buildUserMenuAnnouncement: function() {
+    createUserMenuAnnouncement: function() {
       const announcement = this.getAnnouncement();
 
       const link = announcement.getLink();
-      if (link) {
-        const userMenuAnnouncement = new qx.ui.menu.Button(announcement.getTitle() + "...");
-        userMenuAnnouncement.addListener("execute", () => window.open(link));
-
-        this.setUserMenuAnnouncement(userMenuAnnouncement);
-      } else {
-        this.setUserMenuAnnouncement(null);
-      }
+      const userMenuAnnouncement = new qx.ui.menu.Button(announcement.getTitle() + "...");
+      userMenuAnnouncement.addListener("execute", () => window.open(link));
+      return userMenuAnnouncement;
     }
   }
 });

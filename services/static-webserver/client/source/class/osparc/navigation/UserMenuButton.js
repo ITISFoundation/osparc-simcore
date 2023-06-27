@@ -164,6 +164,10 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
         osparc.store.Support.addPanddyToMenu(this.getMenu());
       }
       this.getMenu().addSeparator();
+      const announcementUIFactory = osparc.component.announcement.AnnouncementUIFactory.getInstance();
+      if (announcementUIFactory.hasUserMenuAnnouncement()) {
+        this.getMenu().add(announcementUIFactory.createUserMenuAnnouncement());
+      }
       this.getChildControl("about");
       if (osparc.product.Utils.showAboutProduct()) {
         this.getChildControl("about-product");
@@ -196,6 +200,10 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           this.getChildControl("theme-switcher");
 
           this.getMenu().addSeparator();
+          const announcementUIFactory = osparc.component.announcement.AnnouncementUIFactory.getInstance();
+          if (announcementUIFactory.hasUserMenuAnnouncement()) {
+            this.getMenu().add(announcementUIFactory.createUserMenuAnnouncement());
+          }
           this.getChildControl("about");
           if (!osparc.product.Utils.isProduct("osparc")) {
             this.getChildControl("about-product");
