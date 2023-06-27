@@ -495,7 +495,7 @@ def _human_readable_resources(resources: dict[str, Any]) -> dict[str, Any]:
                     ByteSize, res_value
                 ).human_readable()
             except ValidationError:
-                logger.warning("could not parse %s:", f"{res_name=}", res_value)
+                logger.warning("could not parse %s:%s", f"{res_name=}", res_value)
                 human_readable_resources[res_name] = res_value
         else:
             human_readable_resources[res_name] = res_value
