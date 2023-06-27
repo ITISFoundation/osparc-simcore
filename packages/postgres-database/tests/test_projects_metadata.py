@@ -17,7 +17,7 @@ from simcore_postgres_database.models.projects_metadata import (
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 
-async def test_create_job(
+async def test_jobs_workflow(
     connection: SAConnection,
     create_fake_project: Callable[..., Awaitable[RowProxy]],
     create_fake_user: Callable[..., Awaitable[RowProxy]],
@@ -31,7 +31,7 @@ async def test_create_job(
         query = projects_jobs_metadata.insert().values(
             project_uuid=project.uuid,
             parent_name=parent_name,
-            jobs_metadata={
+            job_metadata={
                 "__type__": "JobMeta",
                 "inputs_checksum": f"{n}2bfd4885aa1daf5c16fdd39b9118f652c4977c4021c900794dc125cf123718e",
                 "created_at": f"2022-06-01T15:{n}:56.807441",
@@ -39,11 +39,12 @@ async def test_create_job(
         )
         result: ResultProxy = await connection.execute(query)
         assert result
-        return UUID(project.uuid)
+        return project.uuid
 
     # some project from the UI
     project_study = await create_fake_project(connection, user, hidden=True)
 
+    # CREATE
     # some solver-job projects
     created_jobs: list[UUID] = [
         await _create_solver_job(
@@ -54,15 +55,27 @@ async def test_create_job(
 
     assert project_study.uuid not in set(created_jobs)
 
-    # list jobs of a solver
-    j = projects.join(
-        projects_jobs_metadata,
-        (projects.c.uuid == projects_jobs_metadata.c.project_uuid),
-    )
-    query = sa.select(projects_jobs_metadata, projects.c.hidden).select_from(j)
-    got_jobs = await (await connection.execute(query)).fetchall()
-    assert got_jobs
+    # READ
+    async def _list_solver_jobs(service_key: str, service_version: str):
+        # list jobs of a solver
+        parent_name = f"/v0/solvers/{service_key}/releases/{service_version}"
 
+        j = projects.join(
+            projects_jobs_metadata,
+            (projects.c.uuid == projects_jobs_metadata.c.project_uuid),
+        )
+        query = (
+            sa.select(projects_jobs_metadata, projects.c.hidden)
+            .select_from(j)
+            .where(projects_jobs_metadata.c.parent_name == parent_name)
+        )
+        jobs = await (await connection.execute(query)).fetchall()
+        assert jobs
+        return jobs
+
+    got_jobs = await _list_solver_jobs(
+        service_key="simcore/comp/itis/sleeper", service_version="2.0.0"
+    )
     assert {j.project_uuid for j in got_jobs} == set(created_jobs)
     assert all(j.hidden for j in got_jobs)
 
@@ -84,29 +97,19 @@ async def test_create_job(
         )
         await connection.execute(on_update_stmt)
 
+    # UPDATE custom - meta
     await _upsert_custom_metadata(project_study.uuid, metadata={"my data": "foo"})
-    await _upsert_custom_metadata(got_jobs[0].uuid, metadata={"jobs data": "bar"})
+    await _upsert_custom_metadata(
+        got_jobs[0].project_uuid, metadata={"jobs data": "bar"}
+    )
+
+    # DELETE job by deleting project
 
 
 # test create a job
+#
 #    - from a study
 #    - from a solver
 # - search jobs from a study, from a solver, etc
 # - list studies  -> projects uuids that are not jobs
 # - list study jobs -> projects uuids that are Jodbs
-
-
-def test_paginate_solver_jobs():
-    ...
-
-
-def test_read_job_metadata():
-    ...
-
-
-def test_update_job_metadata():
-    ...
-
-
-def test_delete_job_metadata():
-    ...
