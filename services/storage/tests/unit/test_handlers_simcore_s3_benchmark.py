@@ -195,6 +195,7 @@ def mock_max_items(mocker: MockerFixture) -> None:
     ],
 )
 async def test_benchmark_s3_listing(
+    # pylint: disable=too-many-arguments
     mock_max_items: None,
     benchmark_s3_client: StorageS3Client,
     benchmark_s3_settings: S3Settings,
