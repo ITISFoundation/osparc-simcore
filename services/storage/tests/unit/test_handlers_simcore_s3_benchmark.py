@@ -380,9 +380,11 @@ def _render_report() -> None:
             average = sum(all_times) / len(all_times)
             best = min(all_times)
 
+            file_count = g2_items[0].tags["generated_file_count"]
+
             row = [
                 from_to_key,
-                g2_items[0].tags["generated_file_count"],
+                file_count,
                 f"{worst:.2f}",
                 f"{average:.2f}",
                 f"{best:.2f}",
@@ -392,10 +394,12 @@ def _render_report() -> None:
 
         rendered_table = _render_table(_flip_list_matrix(table_data))
 
+        query = g1_items[0].tags["query"]
+
         rendered_report_section = _TEMPLATE_REPORT_SECTION.format(
             session_id=session_id,
             reason=reason,
-            query=g1_items[0].tags["query"],
+            query=query,
             rendered_table=rendered_table,
         )
         file_content += rendered_report_section
