@@ -485,7 +485,7 @@ def _cluster_missing_resources(
     return [r for r in task_resources if r not in cluster_resources]
 
 
-def _human_readable_resources(resources: dict[str, Any]) -> dict[str, Any]:
+def _to_human_readable_resource_values(resources: dict[str, Any]) -> dict[str, Any]:
     human_readable_resources = {}
 
     for res_name, res_value in resources.items():
@@ -495,7 +495,11 @@ def _human_readable_resources(resources: dict[str, Any]) -> dict[str, Any]:
                     ByteSize, res_value
                 ).human_readable()
             except ValidationError:
-                _logger.warning("could not parse %s:%s", f"{res_name=}", res_value)
+                _logger.warning(
+                    "could not parse %s:%s, please check what changed in how Dask prepares resources!",
+                    f"{res_name=}",
+                    res_value,
+                )
                 human_readable_resources[res_name] = res_value
         else:
             human_readable_resources[res_name] = res_value
@@ -509,7 +513,7 @@ def check_if_cluster_is_able_to_run_pipeline(
     task_resources: dict[str, Any],
     node_image: Image,
     cluster_id: ClusterID,
-):
+) -> None:
     _logger.debug("Dask scheduler infos: %s", json_dumps(scheduler_info, indent=2))
     workers = scheduler_info.get("workers", {})
 
@@ -554,8 +558,8 @@ def check_if_cluster_is_able_to_run_pipeline(
     raise InsuficientComputationalResourcesError(
         project_id=project_id,
         node_id=node_id,
-        msg=f"Insufficient computational resources to run {node_image.name}:{node_image.tag} with {_human_readable_resources( task_resources)} on cluster {cluster_id}."
-        f"Cluster available workers: {[_human_readable_resources( worker.get('resources', None)) for worker in workers.values()]}"
+        msg=f"Insufficient computational resources to run {node_image.name}:{node_image.tag} with {_to_human_readable_resource_values( task_resources)} on cluster {cluster_id}."
+        f"Cluster available workers: {[_to_human_readable_resource_values( worker.get('resources', None)) for worker in workers.values()]}"
         "TIP: Reduce service required resources or contact oSparc support",
     )
 
