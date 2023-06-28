@@ -229,7 +229,7 @@ async def test_benchmark_s3_listing(
                 "description": "list_files(prefix='')",
                 "total_queries": f"{total_queries}",
                 "query_number": f"{i +1}",
-                "generation_description": description,
+                "reason": description,
                 "depth": f"{depth}",
                 "dirs_per_dir": f"{dirs_per_dir}",
                 "files_per_dir": f"{files_per_dir}",
@@ -256,13 +256,13 @@ def generate_report() -> Iterable[None]:
 _REPORT: Path = CURRENT_DIR / "report.ignore.md"
 
 SessionId: TypeAlias = str
-Description: TypeAlias = str
+Reason: TypeAlias = str
 FromTo: TypeAlias = str
 
 
 class GroupMap(TypedDict):
     session_id: SessionId
-    description: Description
+    reason: Reason
     from_to: FromTo
     item: MetricsResult
 
@@ -285,7 +285,7 @@ def __get_grouping_map(metrics_results: list[MetricsResult]) -> list[GroupMap]:
     return [
         GroupMap(
             session_id=entry.session_id,
-            description=entry.tags["generation_description"],
+            reason=entry.tags["reason"],
             from_to=entry.tags["from"] + " -> " + entry.tags["to"],
             item=entry,
         )
@@ -295,11 +295,11 @@ def __get_grouping_map(metrics_results: list[MetricsResult]) -> list[GroupMap]:
 
 def _group_by_session_id_and_description(
     metrics_results: list[MetricsResult],
-) -> dict[tuple[SessionId, Description], list[MetricsResult]]:
+) -> dict[tuple[SessionId, Reason], list[MetricsResult]]:
     grouped_results: dict[
-        tuple[SessionId, Description], list[MetricsResult]
+        tuple[SessionId, Reason], list[MetricsResult]
     ] = __group_by_keys(
-        __get_grouping_map(metrics_results), group_keys=("session_id", "description")
+        __get_grouping_map(metrics_results), group_keys=("session_id", "reason")
     )
     return grouped_results
 
@@ -308,7 +308,7 @@ def _group_by_from_to_key(
     metrics_results: list[MetricsResult],
 ) -> dict[tuple[FromTo], list[MetricsResult]]:
     grouped_results: dict[
-        tuple[SessionId, Description], list[MetricsResult]
+        tuple[SessionId, Reason], list[MetricsResult]
     ] = __group_by_keys(__get_grouping_map(metrics_results), group_keys=("from_to",))
     return grouped_results
 
@@ -339,7 +339,7 @@ def _flip_list_matrix(matrix: list[list[Any]]) -> list[list[Any]]:
 def _render_report() -> None:
     # Data divided in:
     # group by sessions_id
-    #   -> group by description
+    #   -> group by reason
     #       -> group by subdivide by "[from] -> [to]"
     #           -> list entries here
 
@@ -359,7 +359,7 @@ def _render_report() -> None:
 
     file_content = ""
 
-    for (session_id, description), g1_items in _group_by_session_id_and_description(
+    for (session_id, reason), g1_items in _group_by_session_id_and_description(
         metrics_results
     ).items():
         table_data: list[list[str]] = []
@@ -394,8 +394,8 @@ def _render_report() -> None:
 
         rendered_report_section = _TEMPLATE_REPORT_SECTION.format(
             session_id=session_id,
-            description=description,
-            query=g1_items[0].tags["description"],
+            reason=reason,
+            query=g1_items[0].tags["query"],
             rendered_table=rendered_table,
         )
         file_content += rendered_report_section
