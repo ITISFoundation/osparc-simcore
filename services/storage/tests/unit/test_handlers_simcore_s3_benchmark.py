@@ -226,7 +226,7 @@ async def test_benchmark_s3_listing(
             tags={
                 "from": "Z43",
                 "to": benchmark_s3_settings.S3_ENDPOINT,
-                "description": "lis_files(prefix='')",
+                "description": "list_files(prefix='')",
                 "total_queries": f"{total_queries}",
                 "query_number": f"{i +1}",
                 "generation_description": description,
@@ -314,9 +314,9 @@ def _group_by_from_to_key(
 
 
 _TEMPLATE_REPORT_SECTION = """
-## Test Session {session_id}
+### Test Session {session_id}
 
-Test description `{description}`
+Reason `{reason}` data query `{query}`
 
 {rendered_table}
 
@@ -395,6 +395,7 @@ def _render_report() -> None:
         rendered_report_section = _TEMPLATE_REPORT_SECTION.format(
             session_id=session_id,
             description=description,
+            query=g1_items[0].tags["description"],
             rendered_table=rendered_table,
         )
         file_content += rendered_report_section
