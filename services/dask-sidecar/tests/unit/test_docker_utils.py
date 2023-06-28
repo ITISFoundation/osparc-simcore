@@ -168,6 +168,7 @@ async def test__try_parse_progress(
         asyncio.CancelledError("testcancel"),
         aiodocker.DockerError(status=404, data={"message": None}),
     ],
+    ids=str,
 )
 async def test_managed_container_always_removes_container(
     docker_registry: str,
@@ -179,13 +180,15 @@ async def test_managed_container_always_removes_container(
     exception_type: Exception,
 ):
     container_config = await create_container_config(
-        docker_registry,
-        service_key,
-        service_version,
-        command,
-        comp_volume_mount_point,
+        docker_registry=docker_registry,
+        service_key=service_key,
+        service_version=service_version,
+        command=command,
+        comp_volume_mount_point=comp_volume_mount_point,
         boot_mode=BootMode.CPU,
         task_max_resources={},
+        task_envs={},
+        task_labels={},
     )
 
     mocked_aiodocker = mocker.patch("aiodocker.Docker", autospec=True)
@@ -229,13 +232,15 @@ async def test_managed_container_with_broken_container_raises_docker_exception(
     mocker: MockerFixture,
 ):
     container_config = await create_container_config(
-        docker_registry,
-        service_key,
-        service_version,
-        command,
-        comp_volume_mount_point,
+        docker_registry=docker_registry,
+        service_key=service_key,
+        service_version=service_version,
+        command=command,
+        comp_volume_mount_point=comp_volume_mount_point,
         boot_mode=BootMode.CPU,
         task_max_resources={},
+        task_envs={},
+        task_labels={},
     )
     mocked_aiodocker = mocker.patch("aiodocker.Docker", autospec=True)
     mocked_aiodocker.return_value.__aenter__.return_value.containers.create.return_value.delete.side_effect = aiodocker.DockerError(
