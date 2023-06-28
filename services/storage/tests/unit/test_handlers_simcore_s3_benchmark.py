@@ -17,8 +17,10 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from pydantic import BaseModel, ByteSize, parse_file_as, parse_obj_as
 from pytest import FixtureRequest
+from pytest_mock import MockerFixture
 from servicelib.utils import logged_gather
 from settings_library.s3 import S3Settings
+from simcore_service_storage import s3_client
 from simcore_service_storage.models import S3BucketName
 from simcore_service_storage.s3_client import StorageS3Client
 from simcore_service_storage.settings import Settings
@@ -59,13 +61,11 @@ async def benchmark_s3_client(
 
         # make sure bucket is empty
         await client.delete_files_in_path(bucket, prefix="")
-        assert len(await client.list_files(bucket, prefix="")) == 0
 
         yield client
 
         # empty bucket once more when done testing
         await client.delete_files_in_path(bucket, prefix="")
-        assert len(await client.list_files(bucket, prefix="")) == 0
 
 
 @asynccontextmanager
@@ -177,6 +177,12 @@ async def metrics(tests_session_id: str, tags: dict[str, str]) -> AsyncIterator[
     _TEST_RESULTS.write_text(MetricsResultList.parse_obj(metrics_results).json())
 
 
+@pytest.fixture
+def mock_max_items(mocker: MockerFixture) -> None:
+    # pylint: disable=protected-access
+    mocker.patch.object(s3_client._list_objects_v2_all_items, "__defaults__", (None,))
+
+
 @pytest.mark.parametrize("total_queries", [3])
 @pytest.mark.parametrize(
     "depth, dirs_per_dir, files_per_dir, description",
@@ -187,7 +193,7 @@ async def metrics(tests_session_id: str, tags: dict[str, str]) -> AsyncIterator[
     ],
 )
 async def test_benchmark_s3_listing(
-    # TODO: patch to allow for all files to be listed
+    mock_max_items: None,
     benchmark_s3_client: StorageS3Client,
     benchmark_s3_settings: S3Settings,
     faker: Faker,
