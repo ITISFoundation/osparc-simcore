@@ -15,6 +15,8 @@ from ..redis import get_redis_announcements_client, get_redis_scheduled_maintena
 from ..utils_aiohttp import envelope_json_response
 from .healthcheck import HealthCheck, HealthCheckFailed
 
+from ._announcements import Announcement
+
 _logger = logging.getLogger(__name__)
 
 routes = web.RouteTableDef()
@@ -100,29 +102,23 @@ async def get_scheduled_maintenance(request: web.Request):
     return response
 
 
+# announcements -----------------------------------------------------------
+
+
+async def _get_announcements(redis_client) -> list[Announcement]:
+    hash_key = "announcements"
+    raw_announcements: list[str] = await redis_client.get(hash_key)
+    return [Announcement.parse_raw(x) for x in raw_announcements]
+
+
+class AnnouncementsGet(BaseModel):
+    data: list[Announcement]
+
+
 @routes.get(f"/{API_VTAG}/announcements", name="get_announcements")
 async def get_announcements(request: web.Request):
     """Check announcements table in redis"""
-
     redis_client = get_redis_announcements_client(request.app)
-    hash_key = "announcements"
-    # Example:
-    """
-    {
-        "id": "Student_Competition_2023",
-        "products": ["s4llite"],
-        "start": "2023-06-22T15:00:00.000Z",
-        "end": "2023-11-01T02:00:00.000Z",
-        "title": "Student Competition 2023",
-        "description": "For more information click <a href='https://zmt.swiss/news-and-events/news/sim4life/s4llite-student-competition-2023/' style='color: white' target='_blank'>here</a>",
-        "link": "https://zmt.swiss/news-and-events/news/sim4life/s4llite-student-competition-2023/",
-        "widgets": ["login", "ribbon", "user-menu"],
-    }
-    """
-    if maintenance_str := await redis_client.get(hash_key):
-        return web.json_response(data={"data": maintenance_str})
-
-    response = web.json_response(status=web.HTTPNoContent.status_code)
-    assert response.status == 204  # nosec
-    return response
+    announcements = await _get_announcements(redis_client)
+    return web.json_response(text=AnnouncementsGet(data=announcements).json())
 

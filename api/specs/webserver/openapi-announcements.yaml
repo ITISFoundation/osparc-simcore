@@ -3,7 +3,7 @@ paths:
     get:
       tags:
         - announcements
-      summary: Get Announcements
+      summary: List of Announcements
       operationId: get_announcements
       responses:
         "200":
@@ -24,6 +24,11 @@ components:
   schemas:
     Announcements:
       title: Announcements
+      type: array
+      items:
+        $ref: "#/components/schemas/Announcement"
+    Announcement:
+      title: Announcement
       type: object
       properties:
         id:
