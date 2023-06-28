@@ -524,6 +524,7 @@ def test_run_multiple_computational_sidecar_dask(
             s3_settings=s3_settings,
             resources={},
             boot_mode=boot_mode,
+            task_labels={},
         )
         for _ in range(NUMBER_OF_TASKS)
     ]
@@ -571,6 +572,7 @@ async def test_run_computational_sidecar_dask(
         s3_settings=s3_settings,
         resources={},
         boot_mode=boot_mode,
+        task_labels={},
     )
 
     worker_name = next(iter(dask_client.scheduler_info()["workers"]))
@@ -647,6 +649,7 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
         s3_settings=s3_settings,
         resources={},
         boot_mode=boot_mode,
+        task_labels={},
     )
     output_data = future.result()
     assert output_data is not None
@@ -685,6 +688,7 @@ def test_failing_service_raises_exception(
         run_computational_sidecar(
             **failing_ubuntu_task.sidecar_params(),
             s3_settings=s3_settings,
+            task_labels={},
         )
 
 
@@ -702,4 +706,5 @@ def test_running_service_that_generates_unexpected_data_raises_exception(
         run_computational_sidecar(
             **sleeper_task_unexpected_output.sidecar_params(),
             s3_settings=s3_settings,
+            task_labels={},
         )
