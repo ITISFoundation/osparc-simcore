@@ -1,4 +1,4 @@
-from typing import Final, Literal, Union
+from typing import Final, Literal, TypeAlias, Union
 
 from pydantic import AnyUrl, BaseModel, Extra, Field, HttpUrl, SecretStr, root_validator
 from pydantic.types import NonNegativeInt
@@ -107,7 +107,7 @@ class BaseCluster(BaseModel):
         use_enum_values = True
 
 
-ClusterID = NonNegativeInt
+ClusterID: TypeAlias = NonNegativeInt
 DEFAULT_CLUSTER_ID: Final[NonNegativeInt] = 0
 
 
