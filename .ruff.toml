@@ -1,5 +1,16 @@
-# Never enforce `E501` (line length violations).
-ignore = ["E501"]
 
-# Assume Python 3.10.
-target-version = "py310"
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "C",  # flake8-comprehensions
+    "B",  # flake8-bugbear
+    "UP", # pyupgrade
+]
+ignore = [
+    "E501",  # line too long, handled by black
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+]
+extend-exclude = ["**/tests", "**/generated_models", "**/director/"]
