@@ -140,7 +140,7 @@ def run_computational_sidecar(
     log_file_url: AnyUrl,
     command: list[str],
     task_envs: dict[EnvVarKey, str],
-    docker_labels: dict[DockerLabelKey, str],
+    task_labels: dict[DockerLabelKey, str],
     s3_settings: S3Settings | None,
     boot_mode: BootMode = BootMode.CPU,
 ) -> TaskOutputData:
@@ -165,7 +165,7 @@ def run_computational_sidecar(
             log_file_url=log_file_url,
             command=command,
             task_envs=task_envs,
-            task_labels=docker_labels,
+            task_labels=task_labels,
             s3_settings=s3_settings,
             boot_mode=boot_mode,
         )

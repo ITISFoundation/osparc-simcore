@@ -452,7 +452,7 @@ def test_run_computational_sidecar_real_fct(
         **sleeper_task.sidecar_params(),
         s3_settings=s3_settings,
         boot_mode=boot_mode,
-        docker_labels={},
+        task_labels={},
     )
     mocked_get_integration_version.assert_called_once_with(
         mock.ANY,
