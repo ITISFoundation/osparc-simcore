@@ -280,6 +280,8 @@ def __group_by_keys(
 
 
 def __get_grouping_map(metrics_results: list[MetricsResult]) -> list[GroupMap]:
+    # NOTE: if more fields are required for grouping,
+    # extend the GroupMap model and add them below
     return [
         GroupMap(
             session_id=entry.session_id,
