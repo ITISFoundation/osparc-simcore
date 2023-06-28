@@ -71,5 +71,11 @@
     "--settings-path=${workspaceFolder}/.isort.cfg"
   ],
   "python.analysis.autoImportCompletions": true,
-  "python.analysis.typeCheckingMode": "basic"
+  "python.analysis.typeCheckingMode": "basic",
+  "ruff.args": [
+    "--config=${workspaceFolder}/.ruff.toml"
+  ],
+  "ruff.path": [
+    "${workspaceFolder}/.venv/bin/ruff"
+  ]
 }
