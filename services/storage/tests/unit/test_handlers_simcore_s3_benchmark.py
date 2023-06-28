@@ -188,7 +188,8 @@ def mock_max_items(mocker: MockerFixture) -> None:
     "depth, dirs_per_dir, files_per_dir, description",
     [
         (1, 10, 3, "very few files"),
-        (1, 1, 1000, "1000 files in one dir"),
+        (1, 1, 1092, "1092 files in one dir"),
+        (1, 1, 3279, "3279 files in one dir"),
         (6, 3, 3, "spread out files and dirs"),
         (7, 3, 3, "lots of spread files and dirs"),
     ],
