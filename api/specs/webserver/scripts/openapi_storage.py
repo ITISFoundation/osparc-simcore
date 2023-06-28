@@ -8,6 +8,7 @@
 
 
 from enum import Enum
+from typing import TypeAlias
 
 from fastapi import FastAPI, status
 from models_library.api_schemas_storage import (
@@ -21,7 +22,7 @@ from models_library.api_schemas_storage import (
     TableSynchronisation,
 )
 from models_library.generics import Envelope
-from models_library.projects_nodes_io import LocationID, StorageFileID
+from models_library.projects_nodes_io import LocationID
 from pydantic import AnyUrl, ByteSize
 from simcore_service_webserver.storage.schemas import DatasetMetaData, FileMetaData
 
@@ -30,6 +31,13 @@ app = FastAPI(redoc_url=None)
 TAGS: list[str | Enum] = [
     "storage",
 ]
+
+
+# NOTE: storage generates URLs that contain double encoded
+# slashes, and when applying validation via `StorageFileID`
+# it raises an error. Before `StorageFileID`, `str` was the
+# type used in the OpenAPI specs.
+StorageFileIDStr: TypeAlias = str
 
 
 @app.get(
@@ -96,7 +104,7 @@ async def get_files_metadata_dataset(location_id: LocationID, dataset_id: str):
     summary="Get File Metadata",
     operation_id="get_file_metadata",
 )
-async def get_file_metadata(location_id: LocationID, file_id: StorageFileID):
+async def get_file_metadata(location_id: LocationID, file_id: StorageFileIDStr):
     ...
 
 
@@ -109,7 +117,7 @@ async def get_file_metadata(location_id: LocationID, file_id: StorageFileID):
 )
 async def download_file(
     location_id: LocationID,
-    file_id: StorageFileID,
+    file_id: StorageFileIDStr,
     link_type: LinkType = LinkType.PRESIGNED,
 ):
     """Returns a presigned link"""
@@ -124,7 +132,7 @@ async def download_file(
 )
 async def upload_file(
     location_id: LocationID,
-    file_id: StorageFileID,
+    file_id: StorageFileIDStr,
     file_size: ByteSize | None,
     link_type: LinkType = LinkType.PRESIGNED,
     is_directory: bool = False,
@@ -139,7 +147,7 @@ async def upload_file(
     operation_id="delete_file",
     summary="Deletes File",
 )
-async def delete_file(location_id: LocationID, file_id: StorageFileID):
+async def delete_file(location_id: LocationID, file_id: StorageFileIDStr):
     ...
 
 
@@ -149,7 +157,7 @@ async def delete_file(location_id: LocationID, file_id: StorageFileID):
     tags=TAGS,
     operation_id="abort_upload_file",
 )
-async def abort_upload_file(location_id: LocationID, file_id: StorageFileID):
+async def abort_upload_file(location_id: LocationID, file_id: StorageFileIDStr):
     """Asks the server to abort the upload and revert to the last valid version if any"""
 
 
@@ -163,7 +171,7 @@ async def abort_upload_file(location_id: LocationID, file_id: StorageFileID):
 async def complete_upload_file(
     body_item: Envelope[FileUploadCompletionBody],
     location_id: LocationID,
-    file_id: StorageFileID,
+    file_id: StorageFileIDStr,
 ):
     """Asks the server to complete the upload"""
 
@@ -176,7 +184,7 @@ async def complete_upload_file(
     operation_id="is_completed_upload_file",
 )
 async def is_completed_upload_file(
-    location_id: LocationID, file_id: StorageFileID, future_id: str
+    location_id: LocationID, file_id: StorageFileIDStr, future_id: str
 ):
     """Returns state of upload completion"""
 

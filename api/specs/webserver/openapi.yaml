@@ -115,19 +115,19 @@ paths:
   # USER SETTINGS ------------------------------------------------------------------
 
   /me:
-    $ref: "./openapi-user.yaml#/paths/~1me"
+    $ref: "./openapi-users.yaml#/paths/~1me"
 
   /me/tokens:
-    $ref: "./openapi-user.yaml#/paths/~1me~1tokens"
+    $ref: "./openapi-users.yaml#/paths/~1me~1tokens"
 
   /me/tokens/{service}:
-    $ref: "./openapi-user.yaml#/paths/~1me~1tokens~1{service}"
+    $ref: "./openapi-users.yaml#/paths/~1me~1tokens~1{service}"
 
   /me/notifications:
-    $ref: "./openapi-user.yaml#/paths/~1me~1notifications"
+    $ref: "./openapi-users.yaml#/paths/~1me~1notifications"
 
-  /me/notifications/{id}:
-    $ref: "./openapi-user.yaml#/paths/~1me~1notifications~1{id}"
+  /me/notifications/{notification_id}:
+    $ref: "./openapi-users.yaml#/paths/~1me~1notifications~1{notification_id}"
 
   # GROUP SETTINGS ------------------------------------------------------------------
 
