@@ -10,6 +10,8 @@ from unittest.mock import call
 import aiodocker
 import arrow
 import pytest
+from models_library.basic_types import EnvVarKey
+from models_library.docker import DockerLabelKey
 from models_library.services_resources import BootMode
 from pytest_mock.plugin import MockerFixture
 from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
@@ -45,9 +47,21 @@ def comp_volume_mount_point() -> str:
 
 
 @pytest.mark.parametrize(
-    "task_max_resources", [{}, {"CPU": 12, "RAM": 2**9}, {"GPU": 4, "RAM": 1**6}]
+    "task_max_resources",
+    [{}, {"CPU": 12, "RAM": 2**9}, {"GPU": 4, "RAM": 1**6}],
+    ids=lambda x: f"task_resources={x}",
 )
-@pytest.mark.parametrize("boot_mode", list(BootMode))
+@pytest.mark.parametrize("boot_mode", list(BootMode), ids=lambda x: f"bootmode={x}")
+@pytest.mark.parametrize(
+    "task_envs",
+    [{}, {"SOME_ENV": "whatever value that is"}],
+    ids=lambda x: f"task_envs={x}",
+)
+@pytest.mark.parametrize(
+    "task_labels",
+    [{}, {"some_label": "some_label value"}],
+    ids=lambda x: f"task_labels={x}",
+)
 async def test_create_container_config(
     docker_registry: str,
     service_key: str,
@@ -56,15 +70,19 @@ async def test_create_container_config(
     comp_volume_mount_point: str,
     boot_mode: BootMode,
     task_max_resources: dict[str, Any],
+    task_envs: dict[EnvVarKey, str],
+    task_labels: dict[DockerLabelKey, str],
 ):
     container_config = await create_container_config(
-        docker_registry,
-        service_key,
-        service_version,
-        command,
-        comp_volume_mount_point,
-        boot_mode,
-        task_max_resources,
+        docker_registry=docker_registry,
+        service_key=service_key,
+        service_version=service_version,
+        command=command,
+        comp_volume_mount_point=comp_volume_mount_point,
+        boot_mode=boot_mode,
+        task_max_resources=task_max_resources,
+        task_envs=task_envs,
+        task_labels=task_labels,
     )
     assert container_config.dict(by_alias=True) == (
         {
@@ -75,10 +93,11 @@ async def test_create_container_config(
                 f"SC_COMP_SERVICES_SCHEDULED_AS={boot_mode.value}",
                 f"SIMCORE_NANO_CPUS_LIMIT={task_max_resources.get('CPU', 1) * 1e9:.0f}",
                 f"SIMCORE_MEMORY_BYTES_LIMIT={task_max_resources.get('RAM', 1024 ** 3)}",
+                *[f"{env_var}={env_value}" for env_var, env_value in task_envs.items()],
             ],
             "Cmd": command,
             "Image": f"{docker_registry}/{service_key}:{service_version}",
-            "Labels": {},
+            "Labels": task_labels,
             "HostConfig": {
                 "Binds": [
                     f"{comp_volume_mount_point}/inputs:/inputs",

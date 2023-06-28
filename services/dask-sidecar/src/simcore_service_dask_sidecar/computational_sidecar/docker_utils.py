@@ -55,7 +55,7 @@ async def create_container_config(
     boot_mode: BootMode,
     task_max_resources: dict[str, Any],
     task_envs: dict[EnvVarKey, str],
-    docker_labels: dict[DockerLabelKey, str],
+    task_labels: dict[DockerLabelKey, str],
 ) -> DockerContainerConfig:
     nano_cpus_limit = int(task_max_resources.get("CPU", 1) * 1e9)
     memory_limit = ByteSize(task_max_resources.get("RAM", 1024**3))
@@ -79,7 +79,7 @@ async def create_container_config(
         Env=env_variables,
         Cmd=command,
         Image=f"{docker_registry}/{service_key}:{service_version}",
-        Labels=cast(dict[str, str], docker_labels),
+        Labels=cast(dict[str, str], task_labels),
         HostConfig=ContainerHostConfig(
             Init=True,
             Binds=[

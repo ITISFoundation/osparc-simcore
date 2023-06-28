@@ -205,7 +205,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                 boot_mode=self.boot_mode,
                 task_max_resources=self.task_max_resources,
                 task_envs=self.task_envs,
-                docker_labels=self.docker_labels,
+                task_labels=self.docker_labels,
             )
             await self._write_input_data(task_volumes, integration_version)
 
