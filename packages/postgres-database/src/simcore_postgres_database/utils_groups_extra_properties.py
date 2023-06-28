@@ -34,21 +34,17 @@ class GroupExtraProperties(FromRowMixin):
 async def _list_table_entries_ordered_by_group_type(
     connection: SAConnection, user_id: int, product_name: str
 ) -> list[RowProxy]:
-    subquery = (
+    list_stmt = (
         sqlalchemy.select(
-            *[
-                groups_extra_properties,
-                groups.c.type,
-                sqlalchemy.case(
-                    *[
-                        # NOTE: the ordering is important for the aggregation afterwards
-                        (groups.c.type == "EVERYONE", sqlalchemy.literal(3)),
-                        (groups.c.type == "STANDARD", sqlalchemy.literal(2)),
-                        (groups.c.type == "PRIMARY", sqlalchemy.literal(1)),
-                    ],
-                    else_=sqlalchemy.literal(4),
-                ).label("type_order"),
-            ]
+            groups_extra_properties,
+            groups.c.type,
+            sqlalchemy.case(
+                # NOTE: the ordering is important for the aggregation afterwards
+                (groups.c.type == GroupType.EVERYONE, sqlalchemy.literal(3)),
+                (groups.c.type == GroupType.STANDARD, sqlalchemy.literal(2)),
+                (groups.c.type == GroupType.PRIMARY, sqlalchemy.literal(1)),
+                else_=sqlalchemy.literal(4),
+            ).label("type_order"),
         )
         .select_from(
             sqlalchemy.join(
@@ -69,7 +65,7 @@ async def _list_table_entries_ordered_by_group_type(
     )
 
     result = await connection.execute(
-        sqlalchemy.select(subquery).order_by(subquery.c.type_order)
+        sqlalchemy.select(list_stmt).order_by(list_stmt.c.type_order)
     )
     assert result  # nosec
 
