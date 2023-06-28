@@ -6,6 +6,7 @@
 from typing import Any, Awaitable, Callable
 from uuid import UUID
 
+import pytest
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
@@ -15,6 +16,24 @@ from simcore_postgres_database.models.projects_metadata import (
     projects_metadata,
 )
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+
+
+@pytest.fixture
+async def fake_user(
+    connection: SAConnection,
+    create_fake_user: Callable[..., Awaitable[RowProxy]],
+) -> RowProxy:
+    user: RowProxy = await create_fake_user(connection, name=f"user.{__name__}")
+    return user
+
+
+@pytest.fixture
+async def fake_project(
+    connection: SAConnection,
+    fake_user: RowProxy,
+    create_fake_project: Callable[..., Awaitable[RowProxy]],
+):
+    project: RowProxy = await create_fake_project(connection, fake_user, hidden=True)
 
 
 async def test_jobs_workflow(
