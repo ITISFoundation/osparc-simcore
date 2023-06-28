@@ -1,23 +1,48 @@
 
 select = [
-    "E",  # pycodestyle errors
-    "W",  # pycodestyle warnings
-    "F",  # pyflakes
-    "I",  # isort
-    "ASYNC", # flake8-async
-    "C",  # flake8-comprehensions
-    "B",  # flake8-bugbear
-    "UP", # pyupgrade
-    "S", # flake8-bandit (Automated security testing)
-    "TRY", # tryceratops (exception anti-patterns)
-    "C90", # mccabe (complexity)
-    "N", # pep8-naming
-    "YTT", # flake8-2020
-    #"ANN", # flake8-annotations
-    "FBT", # flake8-boolean-trap
+    "A", # [https://pypi.org/project/flake8-builtins/]
+    "ARG", # [https://pypi.org/project/flake8-unused-arguments/]
+    "ASYNC", # [https://pypi.org/project/flake8-async/]
+    "B",  # [https://pypi.org/project/flake8-bugbear/]
+    "C4",  # [https://pypi.org/project/flake8-comprehensions/]
+    "C90", # [https://pypi.org/project/mccabe/] (complexity)
+    "DTZ", # [https://pypi.org/project/flake8-datetimez/]
+    "E",  # [https://pypi.org/project/pycodestyle/] errors
+    "EM", # [https://pypi.org/project/flake8-errmsg/]
+    "ERA", # [https://pypi.org/project/eradicate/]
+    "F",  # [https://pypi.org/project/pyflakes/]
+    "FBT", # [https://pypi.org/project/flake8-boolean-trap/]
+    "FIX", # [https://github.com/tommilligan/flake8-fixme]
+    "G", # [https://pypi.org/project/flake8-logging-format/0.9.0/]
+    "I",  # [https://pypi.org/project/isort/]
+    "ICN", # [https://github.com/joaopalmeiro/flake8-import-conventions]
+    "ISC", # [https://pypi.org/project/flake8-implicit-str-concat/]
+    "N", # [https://pypi.org/project/pep8-naming/]
+    "NPY", # NumPy-speficic rules
+    "PERF", # [https://pypi.org/project/perflint/]
+    "PIE", # [https://pypi.org/project/flake8-pie/]
+    "PL", # [https://pypi.org/project/pylint/]
+    "PT", # [https://pypi.org/project/flake8-pytest-style/]
+    "PTH", # [https://pypi.org/project/flake8-use-pathlib/]
+    "PYI", # [https://pypi.org/project/flake8-pyi/]
+    "RET", # [https://pypi.org/project/flake8-return/]
+    "RSE", # [https://pypi.org/project/flake8-raise/]
+    "RUF", # RUFF-specific rules
+    "S", # [https://pypi.org/project/flake8-bandit/] (Automated security testing)
+    "SIM", # [https://pypi.org/project/flake8-simplify/]
+    "SLF", # [https://pypi.org/project/flake8-self/]
+    "SLOT", # [https://pypi.org/project/flake8-slots/]
+    "T10", # https://pypi.org/project/flake8-debugger/
+    "T20", # [https://pypi.org/project/flake8-print/]
+    "TID", # [https://pypi.org/project/flake8-tidy-imports/]
+    "TRY", # [https://pypi.org/project/tryceratops/1.1.0/] (exception anti-patterns)
+    "UP", # [https://pypi.org/project/pyupgrade/]
+    "W",  # [https://pypi.org/project/pycodestyle/] warnings
+    "YTT", # [https://pypi.org/project/flake8-2020/]
 ]
 ignore = [
     "E501",  # line too long, handled by black
     "S101", # use of `assert` detected hanbled by pylance, does not support noseq
+    "TID252", # [*] Relative imports from parent modules are banned
 ]
 extend-exclude = ["**/tests", "**/generated_models", "**/director/"]
