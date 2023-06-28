@@ -142,8 +142,7 @@ async def _create_files(
 
 
 @pytest.fixture(scope="session")
-def test_session_id() -> str:
-    # faker does nto exist
+def tests_session_id() -> str:
     return datetime.datetime.utcnow().isoformat()
 
 
@@ -157,13 +156,13 @@ class MetricsResultList(BaseModel):
     __root__: list[MetricsResult]
 
 
-_RESULTS_PATH = CURRENT_DIR / "test_results.ignore.json"
+_TEST_RESULTS: Path = CURRENT_DIR / "test_results.ignore.json"
 
 
 @asynccontextmanager
-async def metrics(test_session_id: str, tags: dict[str, str]) -> AsyncIterator[None]:
-    if not _RESULTS_PATH.exists():
-        _RESULTS_PATH.write_text(json.dumps([]))
+async def metrics(tests_session_id: str, tags: dict[str, str]) -> AsyncIterator[None]:
+    if not _TEST_RESULTS.exists():
+        _TEST_RESULTS.write_text(json.dumps([]))
 
     start = time.time_ns()
 
@@ -171,11 +170,11 @@ async def metrics(test_session_id: str, tags: dict[str, str]) -> AsyncIterator[N
 
     elapsed_ms = (time.time_ns() - start) / 1e6
 
-    metrics_results = parse_file_as(list[MetricsResult], _RESULTS_PATH)
+    metrics_results = parse_file_as(list[MetricsResult], _TEST_RESULTS)
     metrics_results.append(
-        MetricsResult(session_id=test_session_id, duration_ms=elapsed_ms, tags=tags)
+        MetricsResult(session_id=tests_session_id, duration_ms=elapsed_ms, tags=tags)
     )
-    _RESULTS_PATH.write_text(MetricsResultList.parse_obj(metrics_results).json())
+    _TEST_RESULTS.write_text(MetricsResultList.parse_obj(metrics_results).json())
 
 
 @pytest.mark.parametrize("total_queries", [3])
@@ -192,7 +191,7 @@ async def test_benchmark_s3_listing(
     benchmark_s3_client: StorageS3Client,
     benchmark_s3_settings: S3Settings,
     faker: Faker,
-    test_session_id: str,
+    tests_session_id: str,
     depth: int,
     dirs_per_dir: int,
     files_per_dir: int,
@@ -217,7 +216,7 @@ async def test_benchmark_s3_listing(
 
     for i in range(total_queries):
         async with metrics(
-            test_session_id=test_session_id,
+            tests_session_id=tests_session_id,
             tags={
                 "from": "Z43",
                 "to": benchmark_s3_settings.S3_ENDPOINT,
@@ -245,10 +244,10 @@ def generate_report() -> Iterable[None]:
     # creates report after running benchmark tests
     yield
     _render_report()
-    print(f"please open report found at {_REPORT_PATH}")
+    print(f"please open report found at {_REPORT}")
 
 
-_REPORT_PATH = CURRENT_DIR / "report.ignore.md"
+_REPORT: Path = CURRENT_DIR / "report.ignore.md"
 
 SessionId: TypeAlias = str
 Description: TypeAlias = str
@@ -336,7 +335,7 @@ def _render_report() -> None:
     #       -> group by subdivide by "[from] -> [to]"
     #           -> list entries here
 
-    metrics_results = parse_file_as(list[MetricsResult], _RESULTS_PATH)
+    metrics_results = parse_file_as(list[MetricsResult], _TEST_RESULTS)
 
     def _render_table(table_data: list[list[str]]) -> str:
         def _render_row(data: Iterable) -> str:
@@ -392,12 +391,12 @@ def _render_report() -> None:
         )
         file_content += rendered_report_section
 
-    _REPORT_PATH.write_text(file_content)
+    _REPORT.write_text(file_content)
 
 
 if __name__ == "__main__":
     # use this to generate a report after the benchmark tests have been ran
-    if not _RESULTS_PATH.exists():
+    if not _TEST_RESULTS.exists():
         print(
             "First run the following\npytest tests/unit/test_handlers_simcore_s3_benchmark.py"
         )
