@@ -95,7 +95,7 @@ async def _run_computational_sidecar_async(
     log_file_url: AnyUrl,
     command: list[str],
     task_envs: dict[EnvVarKey, str],
-    docker_labels: dict[DockerLabelKey, str],
+    task_labels: dict[DockerLabelKey, str],
     s3_settings: S3Settings | None,
     boot_mode: BootMode,
 ) -> TaskOutputData:
@@ -123,7 +123,7 @@ async def _run_computational_sidecar_async(
             task_publishers=task_publishers,
             s3_settings=s3_settings,
             task_envs=task_envs,
-            docker_labels=docker_labels,
+            task_labels=task_labels,
         ) as sidecar:
             output_data = await sidecar.run(command=command)
         _logger.debug("completed run of sidecar with result %s", f"{output_data=}")
@@ -165,7 +165,7 @@ def run_computational_sidecar(
             log_file_url=log_file_url,
             command=command,
             task_envs=task_envs,
-            docker_labels=docker_labels,
+            task_labels=docker_labels,
             s3_settings=s3_settings,
             boot_mode=boot_mode,
         )

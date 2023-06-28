@@ -62,7 +62,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
     task_publishers: TaskPublisher
     s3_settings: S3Settings | None
     task_envs: dict[EnvVarKey, str]
-    docker_labels: dict[DockerLabelKey, str]
+    task_labels: dict[DockerLabelKey, str]
 
     async def _write_input_data(
         self,
@@ -205,7 +205,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                 boot_mode=self.boot_mode,
                 task_max_resources=self.task_max_resources,
                 task_envs=self.task_envs,
-                task_labels=self.docker_labels,
+                task_labels=self.task_labels,
             )
             await self._write_input_data(task_volumes, integration_version)
 
