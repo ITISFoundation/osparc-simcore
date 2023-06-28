@@ -4,13 +4,20 @@ select = [
     "W",  # pycodestyle warnings
     "F",  # pyflakes
     "I",  # isort
+    "ASYNC", # flake8-async
     "C",  # flake8-comprehensions
     "B",  # flake8-bugbear
     "UP", # pyupgrade
+    "S", # flake8-bandit (Automated security testing)
+    "TRY", # tryceratops (exception anti-patterns)
+    "C90", # mccabe (complexity)
+    "N", # pep8-naming
+    "YTT", # flake8-2020
+    #"ANN", # flake8-annotations
+    "FBT", # flake8-boolean-trap
 ]
 ignore = [
     "E501",  # line too long, handled by black
-    "B008",  # do not perform function calls in argument defaults
-    "C901",  # too complex
+    "S101", # use of `assert` detected hanbled by pylance, does not support noseq
 ]
 extend-exclude = ["**/tests", "**/generated_models", "**/director/"]
