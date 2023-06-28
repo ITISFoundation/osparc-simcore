@@ -2,7 +2,7 @@ import datetime
 from dataclasses import dataclass, fields
 from typing import Any
 
-import sqlalchemy
+import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from simcore_postgres_database.models.groups_extra_properties import (
@@ -35,20 +35,20 @@ async def _list_table_entries_ordered_by_group_type(
     connection: SAConnection, user_id: int, product_name: str
 ) -> list[RowProxy]:
     list_stmt = (
-        sqlalchemy.select(
+        sa.select(
             groups_extra_properties,
             groups.c.type,
-            sqlalchemy.case(
+            sa.case(
                 # NOTE: the ordering is important for the aggregation afterwards
-                (groups.c.type == GroupType.EVERYONE, sqlalchemy.literal(3)),
-                (groups.c.type == GroupType.STANDARD, sqlalchemy.literal(2)),
-                (groups.c.type == GroupType.PRIMARY, sqlalchemy.literal(1)),
-                else_=sqlalchemy.literal(4),
+                (groups.c.type == GroupType.EVERYONE, sa.literal(3)),
+                (groups.c.type == GroupType.STANDARD, sa.literal(2)),
+                (groups.c.type == GroupType.PRIMARY, sa.literal(1)),
+                else_=sa.literal(4),
             ).label("type_order"),
         )
         .select_from(
-            sqlalchemy.join(
-                sqlalchemy.join(
+            sa.join(
+                sa.join(
                     groups_extra_properties,
                     user_to_groups,
                     groups_extra_properties.c.group_id == user_to_groups.c.gid,
@@ -65,7 +65,7 @@ async def _list_table_entries_ordered_by_group_type(
     )
 
     result = await connection.execute(
-        sqlalchemy.select(list_stmt).order_by(list_stmt.c.type_order)
+        sa.select(list_stmt).order_by(list_stmt.c.type_order)
     )
     assert result  # nosec
 
@@ -95,7 +95,7 @@ class GroupExtraPropertiesRepo:
     async def get(
         connection: SAConnection, *, gid: int, product_name: str
     ) -> GroupExtraProperties:
-        get_stmt = sqlalchemy.select(groups_extra_properties).where(
+        get_stmt = sa.select(groups_extra_properties).where(
             (groups_extra_properties.c.group_id == gid)
             & (groups_extra_properties.c.product_name == product_name)
         )
