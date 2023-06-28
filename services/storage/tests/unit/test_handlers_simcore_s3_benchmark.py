@@ -190,6 +190,7 @@ def mock_max_items(mocker: MockerFixture) -> None:
         (1, 10, 3, "very few files"),
         (1, 1, 1000, "1000 files in one dir"),
         (6, 3, 3, "spread out files and dirs"),
+        (7, 3, 3, "lots of spread files and dirs"),
     ],
 )
 async def test_benchmark_s3_listing(
@@ -226,7 +227,7 @@ async def test_benchmark_s3_listing(
             tags={
                 "from": "Z43",
                 "to": benchmark_s3_settings.S3_ENDPOINT,
-                "description": "list_files(prefix='')",
+                "query": "list_files(prefix='')",
                 "total_queries": f"{total_queries}",
                 "query_number": f"{i +1}",
                 "reason": description,
