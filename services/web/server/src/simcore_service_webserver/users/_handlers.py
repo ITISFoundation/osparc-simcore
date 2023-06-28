@@ -216,5 +216,8 @@ async def list_user_permissions(request: web.Request) -> web.Response:
         request.app, req_ctx.user_id, req_ctx.product_name
     )
     return envelope_json_response(
-        [PermissionGet.construct(**p.dict()) for p in list_permissions]
+        [
+            PermissionGet.construct(_fields_set=p.__fields_set__, **p.dict())
+            for p in list_permissions
+        ]
     )
