@@ -283,7 +283,7 @@ def __get_grouping_map(metrics_results: list[MetricsResult]) -> list[GroupMap]:
     return [
         GroupMap(
             session_id=entry.session_id,
-            description=entry.tags["description"],
+            description=entry.tags["generation_description"],
             from_to=entry.tags["from"] + " -> " + entry.tags["to"],
             item=entry,
         )
