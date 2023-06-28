@@ -1,4 +1,5 @@
 import datetime
+import logging
 from dataclasses import dataclass, fields
 from typing import Any
 
@@ -11,6 +12,8 @@ from simcore_postgres_database.models.groups_extra_properties import (
 
 from .models.groups import GroupType, groups, user_to_groups
 from .utils_models import FromRowMixin
+
+_logger = logging.getLogger(__name__)
 
 
 class GroupExtraPropertiesError(Exception):
@@ -138,6 +141,11 @@ class GroupExtraPropertiesRepo:
                         merged_standard_extra_properties
                         if merged_standard_extra_properties
                         else group_extra_properties
+                    )
+                case _:
+                    _logger.warning(
+                        "Unexpected GroupType found in %s db table! Please adapt code here!",
+                        groups_extra_properties.name,
                     )
         if merged_standard_extra_properties:
             return merged_standard_extra_properties
