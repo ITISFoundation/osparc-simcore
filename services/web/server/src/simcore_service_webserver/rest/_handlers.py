@@ -6,6 +6,7 @@ import logging
 from typing import Any
 
 from aiohttp import web
+from pydantic import BaseModel
 
 from .._constants import APP_PUBLIC_CONFIG_PER_PRODUCT, APP_SETTINGS_KEY
 from .._meta import API_VTAG
