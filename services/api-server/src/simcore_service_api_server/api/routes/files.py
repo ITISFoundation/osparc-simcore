@@ -48,8 +48,8 @@ _common_error_responses = {
 
 @router.get("", response_model=list[File])
 async def list_files(
-    storage_client: Annotated[StorageApi, get_api_client(StorageApi)],
-    user_id: Annotated[int, get_current_user_id],
+    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
+    user_id: Annotated[int, Depends(get_current_user_id)],
 ):
     """Lists all files stored in the system"""
 
@@ -83,8 +83,8 @@ async def list_files(
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_files_page(
-    storage_client: Annotated[StorageApi, get_api_client(StorageApi)],
-    user_id: Annotated[int, get_current_user_id],
+    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
+    user_id: Annotated[int, Depends(get_current_user_id)],
     page_params: Annotated[LimitOffsetParams, Depends()],
 ):
     assert storage_client  # nosec
@@ -114,7 +114,7 @@ async def upload_file(
     request: Request,
     file: Annotated[UploadFile, FileParam(...)],
     content_length: Annotated[str | None, Header(None)],
-    user_id: Annotated[int, get_current_user_id],
+    user_id: Annotated[int, Depends(get_current_user_id)],
 ):
     """Uploads a single file to the system"""
     # TODO: For the moment we upload file here and re-upload to S3
@@ -171,8 +171,8 @@ async def upload_files(files: list[UploadFile] = FileParam(...)):
 @router.get("/{file_id}", response_model=File, responses={**_common_error_responses})
 async def get_file(
     file_id: UUID,
-    storage_client: Annotated[StorageApi, get_api_client(StorageApi)],
-    user_id: Annotated[int, get_current_user_id],
+    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
+    user_id: Annotated[int, Depends(get_current_user_id)],
 ):
     """Gets metadata for a given file resource"""
 
@@ -206,8 +206,8 @@ async def get_file(
 )
 async def delete_file(
     file_id: UUID,
-    storage_client: Annotated[StorageApi, get_api_client(StorageApi)],
-    user_id: Annotated[int, get_current_user_id],
+    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
+    user_id: Annotated[int, Depends(get_current_user_id)],
 ):
     assert file_id  # nosec
     assert storage_client  # nsoec
@@ -232,8 +232,8 @@ async def delete_file(
 )
 async def download_file(
     file_id: UUID,
-    storage_client: Annotated[StorageApi, get_api_client(StorageApi)],
-    user_id: Annotated[int, get_current_user_id],
+    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
+    user_id: Annotated[int, Depends(get_current_user_id)],
 ):
     # NOTE: application/octet-stream is defined as "arbitrary binary data" in RFC 2046,
     # gets meta
