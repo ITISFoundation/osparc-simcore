@@ -514,6 +514,11 @@ ruff: ## python ruffing
 	@ruff --version
 	# Running ruff in packages and services (except director)
 	@ruff check \
+		--config=$(CURDIR)/.ruff.toml \
+		--respect-gitignore \
+		--extend-exclude="**/tests" \
+		--extend-exclude="**/generated_models" \
+		--extend-exclude="**/director/" \
 		$(CURDIR)/services \
 		$(CURDIR)/packages
 
