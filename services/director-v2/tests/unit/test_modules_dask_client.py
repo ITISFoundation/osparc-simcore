@@ -46,7 +46,6 @@ from models_library.services_resources import BootMode
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, SecretStr
 from pydantic.tools import parse_obj_as
-from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.background_task import periodic_task
@@ -119,7 +118,7 @@ def user_id(faker: Faker) -> UserID:
 def _minimal_dask_config(
     mock_env: EnvVarsDict,
     project_env_devel_environment: dict[str, Any],
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """set a minimal configuration for testing the dask connection only"""
     monkeypatch.setenv("DIRECTOR_ENABLED", "0")
@@ -251,7 +250,7 @@ async def dask_client(
         assert future
         assert isinstance(future, Coroutine)
         result = await future
-        assert result == -285  # noqa: PLR2004
+        assert result == -285
     except AttributeError:
         # enforces existance of 'app.state.engine' and sets to None
         client.app.state.engine = None
@@ -377,7 +376,7 @@ async def test_dask_cluster_executes_simple_functions(dask_client: DaskClient):
     assert future
 
     result = await future.result(timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS)  # type: ignore
-    assert result == 7  # noqa: PLR2004
+    assert result == 7
 
 
 @pytest.mark.xfail(
@@ -521,7 +520,7 @@ async def test_send_computation_task(
     # check the results
     task_result = await dask_client.get_task_result(job_id)
     assert isinstance(task_result, TaskOutputData)
-    assert task_result.get("some_output_key") == 123  # noqa: PLR2004
+    assert task_result.get("some_output_key") == 123
 
     # now release the results
     await dask_client.release_task_result(job_id)
@@ -736,9 +735,8 @@ async def test_failed_task_returns_exceptions(
         s3_settings: S3Settings | None,
         boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
-        raise ValueError(
-            "sadly we are failing to execute anything cause we are dumb..."
-        )
+        err_msg = "sadly we are failing to execute anything cause we are dumb..."
+        raise ValueError(err_msg)
 
     node_id_to_job_ids = await dask_client.send_computation_tasks(
         user_id=user_id,
@@ -963,7 +961,8 @@ async def test_get_tasks_status(
         start_event = Event(_DASK_EVENT_NAME)
         start_event.wait(timeout=5)
         if fail_remote_fct:
-            raise ValueError("We fail because we're told to!")
+            err_msg = "We fail because we're told to!"
+            raise ValueError(err_msg)
         return TaskOutputData.parse_obj({"some_output_key": 123})
 
     node_id_to_job_ids = await dask_client.send_computation_tasks(
