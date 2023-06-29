@@ -18,6 +18,7 @@ click
 docker
 faker
 moto[server] # mock out tests based on AWS-S3
+openapi-core
 pytest
 pytest-asyncio
 pytest-cov
