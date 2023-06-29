@@ -27,9 +27,8 @@ JobID: TypeAlias = UUID
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def list_study_jobs(study_id: StudyID):
-    raise NotImplementedError(
-        f"list study jobs {study_id=}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
-    )
+    msg = f"list study jobs study_id={study_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
+    raise NotImplementedError(msg)
 
 
 @router.post(
@@ -38,9 +37,8 @@ async def list_study_jobs(study_id: StudyID):
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def create_study_job(study_id: StudyID):
-    raise NotImplementedError(
-        f"create study job {study_id=}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
-    )
+    msg = f"create study job study_id={study_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
+    raise NotImplementedError(msg)
 
 
 @router.get(
@@ -52,9 +50,8 @@ async def get_study_job(
     study_id: StudyID,
     job_id: JobID,
 ):
-    raise NotImplementedError(
-        f"get study job {study_id=} {job_id=}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
-    )
+    msg = f"get study job study_id={study_id!r} job_id={job_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
+    raise NotImplementedError(msg)
 
 
 @router.delete(
@@ -63,9 +60,8 @@ async def get_study_job(
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def delete_study_job(study_id: StudyID, job_id: JobID):
-    raise NotImplementedError(
-        f"delete study job {study_id=} {job_id=}.  SEE https://github.com/ITISFoundation/osparc-simcore/issues/4111"
-    )
+    msg = f"delete study job study_id={study_id!r} job_id={job_id!r}.  SEE https://github.com/ITISFoundation/osparc-simcore/issues/4111"
+    raise NotImplementedError(msg)
 
 
 @router.post(
@@ -77,9 +73,8 @@ async def start_study_job(
     study_id: StudyID,
     job_id: JobID,
 ):
-    raise NotImplementedError(
-        f"start study job {study_id=} {job_id=}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
-    )
+    msg = f"start study job study_id={study_id!r} job_id={job_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
+    raise NotImplementedError(msg)
 
 
 @router.post(
@@ -91,9 +86,8 @@ async def stop_study_job(
     study_id: StudyID,
     job_id: JobID,
 ):
-    raise NotImplementedError(
-        f"stop study job {study_id=} {job_id=}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
-    )
+    msg = f"stop study job study_id={study_id!r} job_id={job_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
+    raise NotImplementedError(msg)
 
 
 @router.post(
@@ -105,9 +99,8 @@ async def inspect_study_job(
     study_id: StudyID,
     job_id: JobID,
 ):
-    raise NotImplementedError(
-        f"inspect study job {study_id=} {job_id=}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
-    )
+    msg = f"inspect study job study_id={study_id!r} job_id={job_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
+    raise NotImplementedError(msg)
 
 
 @router.post(
@@ -119,9 +112,8 @@ async def get_study_job_outputs(
     study_id: StudyID,
     job_id: JobID,
 ):
-    raise NotImplementedError(
-        f"get study job outputs {study_id=} {job_id=}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
-    )
+    msg = f"get study job outputs study_id={study_id!r} job_id={job_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
+    raise NotImplementedError(msg)
 
 
 @router.post(
@@ -131,6 +123,5 @@ async def get_study_job_outputs(
     responses=job_output_logfile_responses,
 )
 async def get_study_job_output_logfile(study_id: StudyID, job_id: JobID):
-    raise NotImplementedError(
-        f"get study job output logfile {study_id=} {job_id=}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
-    )
+    msg = f"get study job output logfile study_id={study_id!r} job_id={job_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
+    raise NotImplementedError(msg)

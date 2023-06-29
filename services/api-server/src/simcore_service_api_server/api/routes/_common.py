@@ -4,7 +4,7 @@ from fastapi import status
 
 from ...core.settings import BasicSettings
 
-job_output_logfile_responses: dict[int, dict[str, Any]] = {
+job_output_logfile_responses: dict[int | str, dict[str, Any]] = {
     status.HTTP_200_OK: {
         "content": {
             "application/octet-stream": {
