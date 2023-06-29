@@ -96,7 +96,7 @@ async def list_jobs(
 
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/page",
-    response_model=LimitOffsetPage[Job],  # type: ignore
+    response_model=LimitOffsetPage[Job],
     include_in_schema=_settings.API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_jobs_page(
@@ -161,7 +161,6 @@ async def create_job(
     NOTE: This operation does **not** start the job
     """
 
-    # -> catalog
     # ensures user has access to solver
     solver = await catalog_client.get_solver(
         user_id=user_id,
@@ -174,7 +173,6 @@ async def create_job(
     pre_job = Job.create_solver_job(solver=solver, inputs=inputs)
     _logger.debug("Creating Job '%s'", pre_job.name)
 
-    #   -> webserver:  NewProjectIn = Job
     project_in: NewProjectIn = create_new_project_for_job(solver, pre_job, inputs)
     new_project: Project = await webserver_api.create_project(project_in)
     assert new_project  # nosec
