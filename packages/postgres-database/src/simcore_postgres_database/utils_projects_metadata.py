@@ -16,7 +16,7 @@ from .utils_models import FromRowMixin
 #
 
 
-class ProjectNotFound(Exception):
+class ProjectNotFoundError(Exception):
     code = "projects.not_found"
 
 
@@ -24,7 +24,7 @@ class BaseProjectJobMetadataError(Exception):
     ...
 
 
-class ProjectJobMetadataNotFound(BaseProjectJobMetadataError):
+class ProjectJobMetadataNotFoundError(BaseProjectJobMetadataError):
     code = "projects.job_metadata.not_found"
 
 
@@ -67,10 +67,10 @@ class ProjectJobMetadataRepo:
         job_metadata: dict[str, Any] | None = None,
     ) -> ProjectJobMetadata:
 
-        values: dict[str, Any] = dict(
-            project_uuid=project_uuid,
-            parent_name=self._get_parent_name(service_key, service_version),
-        )
+        values: dict[str, Any] = {
+            "project_uuid": project_uuid,
+            "parent_name": self._get_parent_name(service_key, service_version),
+        }
         if job_metadata:
             values["job_metadata"] = job_metadata
 
@@ -86,9 +86,8 @@ class ProjectJobMetadataRepo:
             return ProjectJobMetadata.from_row(row)
 
         except ForeignKeyViolation as exc:
-            raise ProjectNotFound(
-                f"Cannot create metadata without a valid project {project_uuid=}"
-            ) from exc
+            msg = f"Cannot create metadata without a valid project {project_uuid=}"
+            raise ProjectNotFoundError(msg) from exc
 
     async def list_solver_jobs(
         self,
@@ -122,7 +121,7 @@ class ProjectJobMetadataRepo:
         result: ResultProxy = await connection.execute(get_stmt)
         if row := await result.first():
             return ProjectJobMetadata.from_row(row)
-        raise ProjectJobMetadataNotFound
+        raise ProjectJobMetadataNotFoundError
 
     async def update(
         self,
@@ -141,7 +140,7 @@ class ProjectJobMetadataRepo:
         result = await connection.execute(update_stmt)
         if row := await result.first():
             return ProjectJobMetadata.from_row(row)
-        raise ProjectJobMetadataNotFound
+        raise ProjectJobMetadataNotFoundError
 
     async def delete(self, connection: SAConnection, project_uuid: uuid.UUID) -> None:
         delete_stmt = sa.delete(projects_jobs_metadata).where(
@@ -149,6 +148,5 @@ class ProjectJobMetadataRepo:
         )
         result = await connection.execute(delete_stmt)
         if result.rowcount:
-            raise ProjectJobMetadataNotFound(
-                f"Could not delete non-existing metadata of {project_uuid=}"
-            )
+            msg = f"Could not delete non-existing metadata of project_uuid={project_uuid!r}"
+            raise ProjectJobMetadataNotFoundError(msg)
