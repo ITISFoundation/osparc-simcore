@@ -91,7 +91,7 @@ async def get_files_page(
     assert user_id  # nosec
 
     def _do():
-        files = []
+        files: list[File] = []
         return create_page(
             files,
             total=100,
