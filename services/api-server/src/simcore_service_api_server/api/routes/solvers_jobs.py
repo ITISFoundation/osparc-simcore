@@ -73,7 +73,7 @@ async def list_jobs(
 ):
     """List of jobs in a specific released solver (limited to 20 jobs)"""
 
-    solver = await catalog_client.get_solver(
+    solver = await catalog_client.get_service(
         user_id=user_id,
         name=solver_key,
         version=version,
@@ -118,7 +118,7 @@ async def get_jobs_page(
     # NOTE: Different entry to keep backwards compatibility with list_jobs.
     # Eventually use a header with agent version to switch to new interface
 
-    solver = await catalog_client.get_solver(
+    solver = await catalog_client.get_service(
         user_id=user_id,
         name=solver_key,
         version=version,
@@ -130,15 +130,15 @@ async def get_jobs_page(
         solver.name, limit=page_params.limit, offset=page_params.offset
     )
 
-    jobs = [
+    jobs: list[Job] = [
         create_job_from_project(solver_key, version, prj, url_for)
         for prj in projects_page.data
     ]
 
     return create_page(
         jobs,
-        projects_page.meta.total,
-        page_params,
+        total=projects_page.meta.total,
+        params=page_params,
     )
 
 
@@ -162,7 +162,7 @@ async def create_job(
     """
 
     # ensures user has access to solver
-    solver = await catalog_client.get_solver(
+    solver = await catalog_client.get_service(
         user_id=user_id,
         name=solver_key,
         version=version,

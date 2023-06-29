@@ -27,4 +27,5 @@ assert LimitOffsetParams  # nosec
 __all__: tuple[str, ...] = (
     "LimitOffsetPage",
     "LimitOffsetParams",
+    "MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE",
 )

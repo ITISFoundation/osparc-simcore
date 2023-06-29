@@ -139,7 +139,7 @@ async def get_solver_release(
 ) -> Solver:
     """Gets a specific release of a solver"""
     try:
-        solver = await catalog_client.get_solver(
+        solver = await catalog_client.get_service(
             user_id=user_id,
             name=solver_key,
             version=version,
@@ -183,7 +183,7 @@ async def list_solver_ports(
     """
     try:
 
-        ports = await catalog_client.get_solver_ports(
+        ports = await catalog_client.get_service_ports(
             user_id=user_id,
             name=solver_key,
             version=version,

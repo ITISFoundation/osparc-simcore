@@ -58,7 +58,8 @@ def mocked_backend_services_apis_to_read_solver_jobs(
     mocked_webserver_service_api_base.request(
         method=capture.method,
         name=capture.name,
-        path__startswith=capture.path,
+        # path__startswith=capture.path,
+        path__regex="/projects$",
         # params__contains={
         #    "show_hidden": "true",
         #    "offset": "0",
@@ -92,11 +93,11 @@ async def test_list_solver_jobs(
 
     # list jobs (w/ pagination)
     resp = await client.get(
-        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs",
+        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs/page",
         auth=auth,
         params={"limits": 20},
     )
-    assert resp.status_code == status.HTTP_204_NO_CONTENT
+    assert resp.status_code == status.HTTP_200_OK
 
     jobs_page = parse_obj_as(LimitOffsetPage[Job], resp.json())
 

@@ -9,18 +9,12 @@ from functools import lru_cache
 from typing import Callable
 
 import arrow
-from models_library.api_schemas_webserver.projects import ProjectGet
+from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.projects_nodes import InputID
 from pydantic import parse_obj_as
 
 from ..models.basic_types import VersionStr
-from ..models.domain.projects import (
-    InputTypes,
-    Node,
-    ProjectCreateNew,
-    SimCoreFileLink,
-    StudyUI,
-)
+from ..models.domain.projects import InputTypes, Node, SimCoreFileLink, StudyUI
 from ..models.schemas.files import File
 from ..models.schemas.jobs import (
     ArgumentTypes,
@@ -152,7 +146,7 @@ def create_new_project_for_job(
         include={"id", "name", "inputs_checksum", "created_at"}, indent=2
     )
 
-    project_create_new = ProjectCreateNew(
+    return ProjectCreateNew(
         uuid=project_id,
         name=job.name,  # NOTE: this IS an identifier as well. MUST NOT be changed in the case of project APIs!
         description=f"Study associated to solver job:\n{job_info}",
@@ -166,9 +160,8 @@ def create_new_project_for_job(
             currentNodeId=solver_id,
             annotations={},
         ),
+        accessRights={},
     )
-
-    return project_create_new
 
 
 def _copy_n_update_urls(
