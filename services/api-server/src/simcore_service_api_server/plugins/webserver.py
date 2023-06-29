@@ -47,11 +47,10 @@ def _handle_webserver_api_errors():
     except httpx.HTTPStatusError as exc:
         resp = exc.response
         if resp.is_server_error:
-            _logger.error(
-                "webserver reponded with an error: %s [%s]: %s",
+            _logger.exception(
+                "webserver reponded with an error: %s [%s]",
                 f"{resp.status_code=}",
                 f"{resp.reason_phrase=}",
-                exc,
             )
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from exc
 
@@ -190,15 +189,16 @@ class AuthSession:
                 data = await self.get(status_url)
                 task_status = TaskStatus.parse_obj(data)
                 if not task_status.done:
-                    raise TryAgain(
-                        "Timed out creating project. TIP: Try again, or contact oSparc support if this is happening repeatedly"
-                    )
+                    msg = "Timed out creating project. TIP: Try again, or contact oSparc support if this is happening repeatedly"
+                    raise TryAgain(msg)
+
         data = await self.get(f"{result_url}")
         return Project.parse_obj(data)
 
     async def get_project(self, project_id: UUID) -> Project:
         resp = await self.client.get(
-            f"/projects/{project_id}", cookies=self.session_cookies
+            f"/projects/{project_id}",
+            cookies=self.session_cookies,
         )
 
         data: JSON | None = self._get_data_or_raise_http_exception(resp)
@@ -227,8 +227,7 @@ class AuthSession:
             resp.raise_for_status()
 
             # FIXME: this is a ProjectGet. How to transform from ProjectGet to Job!?
-            projects_page = Page[Project].parse_raw(resp.text)
-            return projects_page
+            return Page[Project].parse_raw(resp.text)
 
     async def delete_project(self, project_id: ProjectID) -> None:
         resp = await self.client.delete(

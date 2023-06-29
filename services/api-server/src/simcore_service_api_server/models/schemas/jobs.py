@@ -67,10 +67,10 @@ class JobInputs(BaseModel):
                     "n": 55,
                     "title": "Temperature",
                     "enabled": True,
-                    "input_file": dict(
-                        filename="input.txt",
-                        id="0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
-                    ),
+                    "input_file": {
+                        "filename": "input.txt",
+                        "id": "0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
+                    },
                 }
             }
         }

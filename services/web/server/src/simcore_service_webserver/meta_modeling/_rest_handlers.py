@@ -47,16 +47,17 @@ class _QueryParametersModel(BaseModel):
             return CommitID(v)
         except ValueError as err:
             # e.g. HEAD
-            raise NotImplementedError(
-                "cannot convert ref (e.g. HEAD) -> commit id"
-            ) from err
+            msg = "cannot convert ref (e.g. HEAD) -> commit id"
+            raise NotImplementedError(msg) from err
 
 
 def parse_query_parameters(request: web.Request) -> _QueryParametersModel:
     try:
         return _QueryParametersModel(**request.match_info)
     except ValidationError as err:
-        raise web.HTTPUnprocessableEntity(reason=f"Invalid query parameters: {err}")
+        raise web.HTTPUnprocessableEntity(
+            reason=f"Invalid query parameters: {err}"
+        ) from err
 
 
 class _NotTaggedAsIteration(Exception):
