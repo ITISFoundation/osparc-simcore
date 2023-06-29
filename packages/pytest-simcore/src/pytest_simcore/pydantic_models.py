@@ -3,9 +3,10 @@ import importlib
 import inspect
 import itertools
 import pkgutil
+from collections.abc import Iterator
 from contextlib import suppress
 from types import ModuleType
-from typing import Any, Iterator, NamedTuple
+from typing import Any, NamedTuple
 
 import pytest
 from pydantic import BaseModel
