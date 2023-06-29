@@ -222,8 +222,7 @@ def mocked_webserver_service_api_base(
 @pytest.fixture
 def catalog_service_openapi_specs(osparc_simcore_services_dir: Path) -> dict[str, Any]:
     openapi_path = osparc_simcore_services_dir / "catalog" / "openapi.json"
-    openapi_specs = json.loads(openapi_path.read_text())
-    return openapi_specs
+    return json.loads(openapi_path.read_text())
 
 
 @pytest.fixture
