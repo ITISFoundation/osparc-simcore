@@ -10,6 +10,8 @@ import pytest
 import simcore_service_api_server.models
 from pydantic import BaseModel
 from pytest_simcore.pydantic_models import walk_model_examples_in_package
+from simcore_postgres_database.models.users import UserRole
+from simcore_service_api_server.models.schemas.profiles import UserRoleEnum
 
 
 @pytest.mark.parametrize(
@@ -22,3 +24,8 @@ def test_api_server_model_examples(
     assert model_cls.parse_obj(
         example_data
     ), f"Failed {example_name} : {json.dumps(example_data)}"
+
+
+def test_enums_in_sync():
+    # if this test fails, API needs to be updated
+    assert {e.value for e in UserRole} == {e.value for e in UserRoleEnum}
