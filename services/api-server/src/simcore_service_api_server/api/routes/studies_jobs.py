@@ -8,7 +8,7 @@ from fastapi.responses import RedirectResponse
 from ...core.settings import BasicSettings
 from ...models.schemas.jobs import Job, JobOutputs, JobStatus
 from ...models.schemas.studies import StudyID
-from ._common import JOB_OUTPUT_LOGFILE_RESPONSES
+from ._common import job_output_logfile_responses
 
 _logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -130,7 +130,7 @@ async def get_study_job_outputs(
     "/studies/{study_id}/job/{job_id}/outputs/logfile",
     response_class=RedirectResponse,
     include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
-    responses=JOB_OUTPUT_LOGFILE_RESPONSES,
+    responses=job_output_logfile_responses,
 )
 async def get_study_job_output_logfile(study_id: StudyID, job_id: JobID):
     raise NotImplementedError(

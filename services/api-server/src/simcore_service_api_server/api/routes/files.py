@@ -4,7 +4,7 @@ import logging
 from collections import deque
 from datetime import datetime
 from textwrap import dedent
-from typing import IO, Deque
+from typing import IO, Annotated, Deque
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
@@ -12,6 +12,7 @@ from fastapi import File as FileParam
 from fastapi import Header, Request, UploadFile, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse
+from fastapi_pagination.api import create_page
 from models_library.projects_nodes_io import StorageFileID
 from pydantic import ValidationError, parse_obj_as
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
@@ -21,14 +22,16 @@ from simcore_sdk.node_ports_common.filemanager import upload_file as storage_upl
 from starlette.responses import RedirectResponse
 
 from ..._meta import API_VTAG
+from ...models.pagination import LimitOffsetPage, LimitOffsetParams
 from ...models.schemas.files import File
 from ...services.storage import StorageApi, StorageFileMetaData, to_file_api_model
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
+from ..errors.http_error import ErrorGet
+from ._common import API_SERVER_DEV_FEATURES_ENABLED
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 router = APIRouter()
-
 
 ## FILES ---------------------------------------------------------------------------------
 #
@@ -38,15 +41,15 @@ router = APIRouter()
 #
 #
 
-common_error_responses = {
-    status.HTTP_404_NOT_FOUND: {"description": "File not found"},
+_common_error_responses = {
+    status.HTTP_404_NOT_FOUND: {"description": "File not found", "model": ErrorGet},
 }
 
 
 @router.get("", response_model=list[File])
 async def list_files(
-    storage_client: StorageApi = Depends(get_api_client(StorageApi)),
-    user_id: int = Depends(get_current_user_id),
+    storage_client: Annotated[StorageApi, get_api_client(StorageApi)],
+    user_id: Annotated[int, get_current_user_id],
 ):
     """Lists all files stored in the system"""
 
@@ -61,7 +64,7 @@ async def list_files(
             file_meta: File = to_file_api_model(stored_file_meta)
 
         except (ValidationError, ValueError, AttributeError) as err:
-            logger.warning(
+            _logger.warning(
                 "Skipping corrupted entry in storage '%s' (%s)"
                 "TIP: check this entry in file_meta_data table.",
                 stored_file_meta.file_uuid,
@@ -72,6 +75,30 @@ async def list_files(
             files_meta.append(file_meta)
 
     return list(files_meta)
+
+
+@router.get(
+    "/page",
+    response_model=LimitOffsetPage[File],
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def get_files_page(
+    storage_client: Annotated[StorageApi, get_api_client(StorageApi)],
+    user_id: Annotated[int, get_current_user_id],
+    page_params: Annotated[LimitOffsetParams, Depends()],
+):
+    assert storage_client  # nosec
+    assert user_id  # nosec
+
+    def _do():
+        files = []
+        return create_page(
+            files,
+            total=100,
+            params=page_params,
+        )
+
+    raise NotImplementedError
 
 
 def _get_spooled_file_size(file_io: IO) -> int:
@@ -85,9 +112,9 @@ def _get_spooled_file_size(file_io: IO) -> int:
 @cancel_on_disconnect
 async def upload_file(
     request: Request,
-    file: UploadFile = FileParam(...),
-    content_length: str | None = Header(None),
-    user_id: int = Depends(get_current_user_id),
+    file: Annotated[UploadFile, FileParam(...)],
+    content_length: Annotated[str | None, Header(None)],
+    user_id: Annotated[int, get_current_user_id],
 ):
     """Uploads a single file to the system"""
     # TODO: For the moment we upload file here and re-upload to S3
@@ -105,7 +132,7 @@ async def upload_file(
     file_meta: File = await File.create_from_uploaded(
         file, file_size=file_size, created_at=datetime.utcnow().isoformat()
     )
-    logger.debug(
+    _logger.debug(
         "Assigned id: %s of %s bytes (content-length), real size %s bytes",
         file_meta,
         content_length,
@@ -141,11 +168,11 @@ async def upload_files(files: list[UploadFile] = FileParam(...)):
     raise NotImplementedError()
 
 
-@router.get("/{file_id}", response_model=File, responses={**common_error_responses})
+@router.get("/{file_id}", response_model=File, responses={**_common_error_responses})
 async def get_file(
     file_id: UUID,
-    storage_client: StorageApi = Depends(get_api_client(StorageApi)),
-    user_id: int = Depends(get_current_user_id),
+    storage_client: Annotated[StorageApi, get_api_client(StorageApi)],
+    user_id: Annotated[int, get_current_user_id],
 ):
     """Gets metadata for a given file resource"""
 
@@ -164,18 +191,34 @@ async def get_file(
         return file_meta
 
     except (ValueError, ValidationError) as err:
-        logger.debug("File %d not found: %s", file_id, err)
+        _logger.debug("File %d not found: %s", file_id, err)
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
             detail=f"File with identifier {file_id} not found",
         ) from err
 
 
+@router.delete(
+    "/{file_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={**_common_error_responses},
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def delete_file(
+    file_id: UUID,
+    storage_client: Annotated[StorageApi, get_api_client(StorageApi)],
+    user_id: Annotated[int, get_current_user_id],
+):
+    assert file_id  # nosec
+    assert storage_client  # nsoec
+    assert user_id  # nosec
+
+
 @router.get(
     "/{file_id}/content",
     response_class=RedirectResponse,
     responses={
-        **common_error_responses,
+        **_common_error_responses,
         200: {
             "content": {
                 "application/octet-stream": {
@@ -189,8 +232,8 @@ async def get_file(
 )
 async def download_file(
     file_id: UUID,
-    storage_client: StorageApi = Depends(get_api_client(StorageApi)),
-    user_id: int = Depends(get_current_user_id),
+    storage_client: Annotated[StorageApi, get_api_client(StorageApi)],
+    user_id: Annotated[int, get_current_user_id],
 ):
     # NOTE: application/octet-stream is defined as "arbitrary binary data" in RFC 2046,
     # gets meta
@@ -201,7 +244,7 @@ async def download_file(
         user_id, file_meta.id, file_meta.filename
     )
 
-    logger.info("Downloading %s to %s ...", file_meta, presigned_download_link)
+    _logger.info("Downloading %s to %s ...", file_meta, presigned_download_link)
     return RedirectResponse(presigned_download_link)
 
 

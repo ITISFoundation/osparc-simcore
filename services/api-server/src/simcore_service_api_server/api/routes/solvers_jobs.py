@@ -36,7 +36,7 @@ from ..dependencies.database import Engine, get_db_engine
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
 from ..errors.http_error import ErrorGet, create_error_json_response
-from ._common import JOB_OUTPUT_LOGFILE_RESPONSES
+from ._common import job_output_logfile_responses
 
 _logger = logging.getLogger(__name__)
 _settings = BasicSettings.create_from_envs()
@@ -367,7 +367,7 @@ async def get_job_outputs(
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/outputs/logfile",
     response_class=RedirectResponse,
-    responses=JOB_OUTPUT_LOGFILE_RESPONSES,
+    responses=job_output_logfile_responses,
 )
 async def get_job_output_logfile(
     solver_key: SolverKeyId,
