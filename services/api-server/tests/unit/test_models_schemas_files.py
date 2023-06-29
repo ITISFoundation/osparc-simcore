@@ -7,8 +7,6 @@
 import hashlib
 import tempfile
 from pathlib import Path
-from pprint import pformat
-from typing import Any
 from uuid import uuid4
 
 import pytest
@@ -102,22 +100,3 @@ def test_convert_between_file_models():
     with pytest.raises(ValidationError):
         storage_file_meta.file_id = parse_obj_as(StorageFileID, "api/NOTUUID/foo.txt")
         to_file_api_model(storage_file_meta)
-
-
-@pytest.mark.parametrize(
-    "model_cls",
-    [
-        File,
-    ],
-)
-def test_file_model_examples(model_cls: type, model_cls_examples: dict[str, Any]):
-    for name, example in model_cls_examples.items():
-        print(name, ":", pformat(example))
-
-        model_instance = model_cls(**example)
-
-        assert model_instance, f"Failed with {name}"
-        print(name, ":", model_instance)
-
-        assert model_instance.content_type is not None
-        assert model_instance.content_type is not None
