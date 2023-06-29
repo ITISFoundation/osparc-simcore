@@ -21,8 +21,9 @@ from ..groups.schemas import convert_groups_db_to_schema
 from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..security.api import clean_auth_policy_cache
 from . import _db
+from ._db import list_user_permissions as db_list_of_permissions
 from .exceptions import UserNotFoundError
-from .schemas import ProfileGet, ProfileUpdate, convert_user_db_to_schema
+from .schemas import Permission, ProfileGet, ProfileUpdate, convert_user_db_to_schema
 
 _logger = logging.getLogger(__name__)
 
@@ -245,3 +246,12 @@ async def get_users_in_group(app: web.Application, gid: GroupID) -> set[UserID]:
 async def update_expired_users(engine: Engine) -> list[UserID]:
     async with engine.acquire() as conn:
         return await _db.do_update_expired_users(conn)
+
+
+async def list_user_permissions(
+    app: web.Application, user_id: UserID, product_name: str
+) -> list[Permission]:
+    list_of_permissions = await db_list_of_permissions(
+        app, user_id=user_id, product_name=product_name
+    )
+    return list_of_permissions

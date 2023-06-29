@@ -3,7 +3,7 @@ from models_library.services_resources import ServiceResourcesDict
 from .exceptions import ProjectNodeResourcesInvalidError
 
 
-def check_can_update_service_resources(
+def validate_new_service_resources(
     resources: ServiceResourcesDict, *, new_resources: ServiceResourcesDict
 ) -> None:
     """validate new_resources can be applied on resources
@@ -25,3 +25,10 @@ def check_can_update_service_resources(
             raise ProjectNodeResourcesInvalidError(
                 f"Incompatible '{container_resources.image=}' cannot be applied on {container_name}:{resources[container_name].image}!"
             )
+
+
+def set_reservation_same_as_limit(
+    resources: ServiceResourcesDict,
+) -> None:
+    for container_resources in resources.values():
+        container_resources.set_reservation_same_as_limit()

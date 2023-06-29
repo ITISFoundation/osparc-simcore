@@ -20,7 +20,7 @@ from uuid import UUID, uuid4
 
 from aiohttp import web
 from models_library.errors import ErrorDict
-from models_library.projects import Project, ProjectID
+from models_library.projects import Project, ProjectID, ProjectIDStr
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import (
@@ -71,7 +71,7 @@ from ..storage import api as storage_api
 from ..users.api import UserNameDict, get_user_name, get_user_role
 from ..users.exceptions import UserNotFoundError
 from . import _crud_delete_utils, _nodes_api
-from ._nodes_utils import check_can_update_service_resources
+from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_resources
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import (
     NodeNotFoundError,
@@ -149,7 +149,7 @@ async def update_project_last_change_timestamp(
 ):
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     assert db  # nosec
-    await db.update_project_last_change_timestamp(project_uuid)
+    await db.update_project_last_change_timestamp(ProjectIDStr(f"{project_uuid}"))
 
 
 #
@@ -923,8 +923,12 @@ async def get_project_node_resources(
 
 async def update_project_node_resources(
     app: web.Application,
+    user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
+    service_key: str,
+    service_version: str,
+    product_name: str,
     resources: ServiceResourcesDict,
 ) -> ServiceResourcesDict:
     db = ProjectDBAPI.get_from_app_context(app)
@@ -934,11 +938,22 @@ async def update_project_node_resources(
         current_resources = parse_obj_as(
             ServiceResourcesDict, current_project_node.required_resources
         )
+        if not current_resources:
+            # NOTE: this can happen after the migration
+            # get default resources
+            current_resources = await catalog_client.get_service_resources(
+                app, user_id, service_key, service_version
+            )
 
-        check_can_update_service_resources(current_resources, new_resources=resources)
+        validate_new_service_resources(current_resources, new_resources=resources)
+        set_reservation_same_as_limit(resources)
 
         project_node = await db.update_project_node(
-            project_id, node_id, required_resources=jsonable_encoder(resources)
+            user_id=user_id,
+            project_id=project_id,
+            node_id=node_id,
+            product_name=product_name,
+            required_resources=jsonable_encoder(resources),
         )
         return parse_obj_as(ServiceResourcesDict, project_node.required_resources)
     except ProjectNodesNodeNotFound as exc:

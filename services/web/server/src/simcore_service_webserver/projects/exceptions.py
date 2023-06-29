@@ -98,3 +98,7 @@ class PermalinkFactoryError(ProjectsException):
 
 class ProjectNodeResourcesInvalidError(ProjectsException):
     ...
+
+
+class ProjectNodeResourcesInsufficientRightsError(ProjectsException):
+    ...

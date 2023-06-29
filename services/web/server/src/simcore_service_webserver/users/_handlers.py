@@ -12,6 +12,7 @@ from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 
+from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..redis import get_redis_user_notifications_client
@@ -26,14 +27,16 @@ from ._notifications import (
     UserNotificationPatch,
     get_notification_key,
 )
+from .api import list_user_permissions as api_list_user_permissions
 from .exceptions import TokenNotFoundError, UserNotFoundError
-from .schemas import ProfileGet, ProfileUpdate, TokenCreate
+from .schemas import Permission, PermissionGet, ProfileGet, ProfileUpdate, TokenCreate
 
 routes = web.RouteTableDef()
 
 
 class _RequestContext(BaseModel):
     user_id: UserID = Field(..., alias=RQT_USERID_KEY)
+    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
 
 
 def _handle_users_exceptions(handler: Handler):
@@ -202,3 +205,19 @@ async def mark_notification_as_read(request: web.Request) -> web.Response:
             raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+
+
+@routes.get(f"/{API_VTAG}/me/permissions", name="list_user_permissions")
+@login_required
+@permission_required("user.permissions.read")
+async def list_user_permissions(request: web.Request) -> web.Response:
+    req_ctx = _RequestContext.parse_obj(request)
+    list_permissions: list[Permission] = await api_list_user_permissions(
+        request.app, req_ctx.user_id, req_ctx.product_name
+    )
+    return envelope_json_response(
+        [
+            PermissionGet.construct(_fields_set=p.__fields_set__, **p.dict())
+            for p in list_permissions
+        ]
+    )
