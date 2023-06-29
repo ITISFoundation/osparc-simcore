@@ -82,7 +82,7 @@ from ..utils.dask_client_utils import (
     create_internal_client_based_on_auth,
 )
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 _DASK_TASK_STATUS_RUNNING_STATE_MAP = {
@@ -119,19 +119,19 @@ class DaskClient:
         authentication: ClusterAuthentication,
         tasks_file_link_type: FileLinkType,
     ) -> "DaskClient":
-        logger.info(
+        _logger.info(
             "Initiating connection to %s with auth: %s",
             f"dask-scheduler/gateway at {endpoint}",
             authentication,
         )
         async for attempt in AsyncRetrying(
             reraise=True,
-            before_sleep=before_sleep_log(logger, logging.INFO),
+            before_sleep=before_sleep_log(_logger, logging.INFO),
             wait=wait_fixed(0.3),
             stop=stop_after_attempt(3),
         ):
             with attempt:
-                logger.debug(
+                _logger.debug(
                     "Connecting to %s, attempt %s...",
                     endpoint,
                     attempt.retry_state.attempt_number,
@@ -146,12 +146,12 @@ class DaskClient:
                     settings=settings,
                     tasks_file_link_type=tasks_file_link_type,
                 )
-                logger.info(
+                _logger.info(
                     "Connection to %s succeeded [%s]",
                     f"dask-scheduler/gateway at {endpoint}",
                     json.dumps(attempt.retry_state.retry_object.statistics),
                 )
-                logger.info(
+                _logger.info(
                     "Scheduler info:\n%s",
                     json.dumps(backend.client.scheduler_info(), indent=2),
                 )
@@ -161,12 +161,12 @@ class DaskClient:
         raise ValueError(err_msg)
 
     async def delete(self) -> None:
-        logger.debug("closing dask client...")
+        _logger.debug("closing dask client...")
         for task in self._subscribed_tasks:
             task.cancel()
         await asyncio.gather(*self._subscribed_tasks, return_exceptions=True)
         await self.backend.close()
-        logger.info("dask client properly closed")
+        _logger.info("dask client properly closed")
 
     def register_handlers(self, task_handlers: TaskHandlers) -> None:
         _event_consumer_map = [
@@ -334,7 +334,7 @@ class DaskClient:
                     self.backend.client.publish_dataset(task_future, name=job_id)
                 )
 
-                logger.debug(
+                _logger.debug(
                     "Dask task %s started [%s]",
                     f"{task_future.key=}",
                     f"{node_image.command=}",
@@ -365,7 +365,7 @@ class DaskClient:
         task_statuses = await wrap_client_async_routine(
             self.backend.client.run_on_scheduler(_get_pipeline_statuses)
         )
-        logger.debug("found dask task statuses: %s", f"{task_statuses=}")
+        _logger.debug("found dask task statuses: %s", f"{task_statuses=}")
 
         running_states: list[RunningState] = []
         for job_id in job_ids:
@@ -380,7 +380,7 @@ class DaskClient:
                     running_states.append(RunningState.ABORTED)
                 else:
                     assert exception  # nosec
-                    logger.warning(
+                    _logger.warning(
                         "Task  %s completed in error:\n%s\nTrace:\n%s",
                         job_id,
                         exception,
@@ -402,7 +402,7 @@ class DaskClient:
         # If the sidecar has already taken the job, then the cancellation must be user-defined.
         # therefore the dask PUB is used, and the dask-sidecar will then let the abort
         # process, and report when it is finished and properly cancelled.
-        logger.debug("cancelling task with %s", f"{job_id=}")
+        _logger.debug("cancelling task with %s", f"{job_id=}")
         try:
             task_future: distributed.Future = await wrap_client_async_routine(
                 self.backend.client.get_dataset(name=job_id)
@@ -414,12 +414,12 @@ class DaskClient:
             )
             await wrap_client_async_routine(cancel_event.set())
             await wrap_client_async_routine(task_future.cancel())
-            logger.debug("Dask task %s cancelled", task_future.key)
+            _logger.debug("Dask task %s cancelled", task_future.key)
         except KeyError:
-            logger.warning("Unknown task cannot be aborted: %s", f"{job_id=}")
+            _logger.warning("Unknown task cannot be aborted: %s", f"{job_id=}")
 
     async def get_task_result(self, job_id: str) -> TaskOutputData:
-        logger.debug("getting result of %s", f"{job_id=}")
+        _logger.debug("getting result of %s", f"{job_id=}")
         try:
             task_future: distributed.Future = await wrap_client_async_routine(
                 self.backend.client.get_dataset(name=job_id)
@@ -433,7 +433,7 @@ class DaskClient:
             raise ComputationalBackendTaskResultsNotReadyError from exc
 
     async def release_task_result(self, job_id: str) -> None:
-        logger.debug("releasing results for %s", f"{job_id=}")
+        _logger.debug("releasing results for %s", f"{job_id=}")
         try:
             # first check if the key exists
             await wrap_client_async_routine(
@@ -443,7 +443,7 @@ class DaskClient:
                 self.backend.client.unpublish_dataset(name=job_id)
             )
         except KeyError:
-            logger.warning("Unknown task cannot be unpublished: %s", f"{job_id=}")
+            _logger.warning("Unknown task cannot be unpublished: %s", f"{job_id=}")
 
     async def get_cluster_details(self) -> ClusterDetails:
         check_scheduler_is_still_the_same(
@@ -463,7 +463,7 @@ class DaskClient:
                 used_resources[worker_name] = worker_state.used_resources
             return used_resources
 
-        with log_catch(logger, reraise=False):
+        with log_catch(_logger, reraise=False):
             # NOTE: this runs directly on the dask-scheduler and may rise exceptions
             used_resources_per_worker: dict[
                 str, dict[str, Any]
