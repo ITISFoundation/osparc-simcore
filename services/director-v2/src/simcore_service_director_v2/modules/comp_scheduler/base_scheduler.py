@@ -100,6 +100,10 @@ class BaseCompScheduler(ABC):
             user_id=user_id,
             project_id=project_id,
             cluster_id=cluster_id,
+            metadata={
+                "product_name": product_name,
+                "simcore_user_agent": simcore_user_agent,
+            },
         )
         self.scheduled_pipelines[
             (user_id, project_id, new_run.iteration)

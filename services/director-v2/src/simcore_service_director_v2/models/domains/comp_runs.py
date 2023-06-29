@@ -1,5 +1,6 @@
 import datetime
 from contextlib import suppress
+from typing import Any
 
 from models_library.clusters import DEFAULT_CLUSTER_ID, ClusterID
 from models_library.projects import ProjectID
@@ -9,6 +10,8 @@ from pydantic import BaseModel, PositiveInt, validator
 from simcore_postgres_database.models.comp_pipeline import StateType
 
 from ...utils.db import DB_TO_RUNNING_STATE
+
+MetadataDict = dict[str, Any]
 
 
 class CompRunsAtDB(BaseModel):
@@ -22,6 +25,7 @@ class CompRunsAtDB(BaseModel):
     modified: datetime.datetime
     started: datetime.datetime | None
     ended: datetime.datetime | None
+    metadata: MetadataDict | None
 
     @validator("result", pre=True)
     @classmethod
@@ -75,6 +79,10 @@ class CompRunsAtDB(BaseModel):
                     "modified": "2021-03-01 13:07:34.19161",
                     "started": "2021-03-01 8:07:34.19161",
                     "ended": "2021-03-01 13:07:34.10",
+                    "metadata": {
+                        "product_name": "osparc",
+                        "some-other-metadata-which-is-an-array": [1, 3, 4],
+                    },
                 },
             ]
         }
