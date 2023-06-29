@@ -49,3 +49,18 @@ test-ci: ## runs ci tests (i.e. w/o debug tools and with code coverage)
 	--color=yes \
 	--durations=10 \
 	$(CURDIR)
+
+.PHONY: install-python-osparc
+install-python-osparc: ## install the latest python osparc package
+	$(eval REPO := bisgaard-itis/osparc-simcore-clients)
+	$(eval BRANCH := update-gh-workflows)
+	$(eval WORKFLOW := publish-and-test-python-client)
+	@-rm -rf ./osparc_python_wheels
+	@python -m pip uninstall osparc -y
+	@python -m pip uninstall osparc_client -y
+	run_id=$$(gh run list --repo=$(REPO) --branch=$(BRANCH) --workflow=$(WORKFLOW) --limit=1 --json=databaseId --jq=.[].databaseId); \
+	echo "run_id: $${run_id}";\
+	[[ -z "$${run_id}" ]] && { echo "Could not find osparc python package" ; exit 1; };\
+	gh run download $${run_id} --repo=$(REPO) --dir=. ;\
+	osparc_wheel=$$(ls ./osparc_python_wheels/osparc-*.whl); \
+	python -m pip install $${osparc_wheel} --find-links=./osparc_python_wheels/;\

@@ -6,15 +6,23 @@
 import hashlib
 from typing import TypedDict
 
+import pkg_resources
 import pytest
-from osparc import ApiClient, UsersApi
-from osparc.models import Profile, ProfileUpdate, UserRoleEnum
 from pytest_simcore.helpers.utils_public_api import RegisteredUserDict
+
+try:
+    pkg_resources.require("osparc>=0.5.0")
+    import osparc_client
+
+    # Use the imported package here
+except pkg_resources.DistributionNotFound:
+    # Package or minimum version not found
+    import osparc as osparc_client
 
 
 @pytest.fixture(scope="module")
-def users_api(api_client: ApiClient) -> UsersApi:
-    return UsersApi(api_client)
+def users_api(api_client: osparc_client.ApiClient) -> osparc_client.UsersApi:
+    return osparc_client.UsersApi(api_client)
 
 
 class GroupDict(TypedDict):
@@ -33,7 +41,7 @@ class ProfileDict(TypedDict):
     first_name: str
     last_name: str
     email: str
-    role: UserRoleEnum
+    role: osparc_client.UserRoleEnum
     groups: ProfileGroupsDict
     gravatar_id: str
 
@@ -49,7 +57,7 @@ def expected_profile(registered_user: RegisteredUserDict) -> ProfileDict:
             "first_name": first_name,
             "last_name": registered_user["last_name"],
             "login": email,
-            "role": UserRoleEnum.USER,
+            "role": osparc_client.UserRoleEnum.USER,
             "groups": {
                 "all": {
                     "gid": "1",
@@ -74,18 +82,20 @@ def expected_profile(registered_user: RegisteredUserDict) -> ProfileDict:
     )
 
 
-def test_get_user(users_api: UsersApi, expected_profile: ProfileDict):
-    user: Profile = users_api.get_my_profile()
+def test_get_user(users_api: osparc_client.UsersApi, expected_profile: ProfileDict):
+    user: osparc_client.Profile = users_api.get_my_profile()
 
     assert user.login == expected_profile["login"]
     # NOTE: cannot predict gid! assert user.to_dict() == expected_profile
 
 
-def test_update_user(users_api: UsersApi):
-    before: Profile = users_api.get_my_profile()
+def test_update_user(users_api: osparc_client.UsersApi):
+    before: osparc_client.Profile = users_api.get_my_profile()
     assert before.first_name != "Richard"
 
-    after: Profile = users_api.update_my_profile(ProfileUpdate(first_name="Richard"))
+    after: osparc_client.Profile = users_api.update_my_profile(
+        osparc_client.ProfileUpdate(first_name="Richard")
+    )
     assert after != before
     assert after.first_name == "Richard"
     assert after == users_api.get_my_profile()
