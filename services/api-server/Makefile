@@ -45,8 +45,30 @@ openapi.json: .env ## Creates OAS (API_SERVER_DEV_FEATURES_ENABLED=0)
 openapi-dev.json: .env ## Creates OAS under development (API_SERVER_DEV_FEATURES_ENABLED=1)
 	@$(call _create_and_validate_openapi,1)
 
-openapi-diff.json: openapi.json openapi-dev.json ## Diffs openapi.json and openapi-dev.json and checks backwards compatibility
+
+CLIENT_RELEASE=0.5.0
+CLIENT_OAS_PATH=osparc-simcore-clients-$(CLIENT_RELEASE)/api/openapi.json
+
+openapi-client.json:
+	# download artifacts for $(CLIENT_RELEASE)
+	@temp_dir=$$(mktemp --directory); \
+	cd "$$temp_dir"; \
+	wget --output-document=artifacts.zip "https://github.com/ITISFoundation/osparc-simcore-clients/archive/refs/tags/v$(CLIENT_RELEASE).zip"; \
+	unzip artifacts.zip "$(CLIENT_OAS_PATH)";\
+	mv "$(CLIENT_OAS_PATH)" "$(CURDIR)/$@";\
+	rm -rf "$$temp_dir"
+
+
+define _openapi_diff_inputs
 	$(SCRIPTS_DIR)/openapi-diff.bash $(foreach f,$^,/specs/$f) --fail-on-incompatible --json=/specs/$@
+endef
+
+.PHONY: openapi-diff-dev.json
+openapi-dev-diff.json: openapi.json openapi-dev.json ## Diffs against newer openapi-dev.json and checks backwards compatibility
+	$(call _openapi_diff_inputs)
+
+openapi-client-diff.json: openapi-client.json openapi.json ## Diffs against older openapi-client.json and checks backwards compatibility
+	$(call _openapi_diff_inputs)
 
 
 

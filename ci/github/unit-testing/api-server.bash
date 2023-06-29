@@ -32,7 +32,7 @@ typecheck() {
 
 openapi-diff(){
   pushd services/api-server
-  make openapi-diff.json
+  make openapi-dev-diff.json
   popd
 }
 

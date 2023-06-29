@@ -2,5 +2,4 @@
 client
 
 # openapi for development mode
-openapi-dev.json
-openapi-diff.json
+openapi-*.json
