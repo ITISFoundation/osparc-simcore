@@ -52,8 +52,8 @@ test-ci: ## runs ci tests (i.e. w/o debug tools and with code coverage)
 
 .PHONY: install-python-osparc
 install-python-osparc: ## install the latest python osparc package
-	$(eval REPO := bisgaard-itis/osparc-simcore-clients)
-	$(eval BRANCH := update-gh-workflows)
+	$(eval REPO := ITISFoundation/osparc-simcore-clients)
+	$(eval BRANCH := master)
 	$(eval WORKFLOW := publish-and-test-python-client)
 	@-rm -rf ./osparc_python_wheels
 	@python -m pip uninstall osparc -y
