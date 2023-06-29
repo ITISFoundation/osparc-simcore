@@ -45,4 +45,27 @@ ignore = [
     "S101", # use of `assert` detected hanbled by pylance, does not support noseq
     "TID252", # [*] Relative imports from parent modules are banned
 ]
-extend-exclude = ["**/tests", "**/generated_models", "**/director/"]
+
+target-version = "py310"
+
+
+[per-file-ignores]
+"**/tests/**" = [
+  "T201", # print found
+  "ARG001", # unused function argument
+  "PT019", # user pytest.mark.usefixture
+  "PLR2004", # use of magic values
+  "PLR0913", # too many arguments
+  "N806", # Uppercase variables in functions
+  "PT001", # use pytest.fixture over pytest.fixture() whatsoever
+  "ERA001", # found commented out code
+]
+
+[flake8-pytest-style]
+fixture-parentheses = false
+parametrize-names-type = "csv"
+
+
+
+[pylint]
+max-args = 10
