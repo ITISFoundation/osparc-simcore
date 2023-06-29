@@ -20,7 +20,7 @@ from fastapi import FastAPI, status
 from httpx._transports.asgi import ASGITransport
 from moto.server import ThreadedMotoServer
 from pydantic import HttpUrl, parse_obj_as
-from pytest import MonkeyPatch
+from pytest import MonkeyPatch  # noqa: PT013
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from requests.auth import HTTPBasicAuth
