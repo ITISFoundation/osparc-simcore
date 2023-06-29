@@ -30,7 +30,7 @@ _logger = logging.getLogger(__name__)
 def _label_info_with_state(settings: ApplicationSettings, title: str, version: str):
     labels = []
     if settings.API_SERVER_DEV_FEATURES_ENABLED:
-        labels.append("alpha")
+        labels.append("dev")
 
     if settings.debug:
         labels.append("debug")

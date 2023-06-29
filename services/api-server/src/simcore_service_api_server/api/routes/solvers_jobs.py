@@ -2,7 +2,8 @@
 
 import logging
 from collections import deque
-from typing import Annotated, Callable
+from collections.abc import Callable
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
@@ -95,10 +96,7 @@ async def list_jobs(
 
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/page",
-    # NOTE:
-    # Different entry to keep backwards compatibility with list_jobs.
-    # Eventually use a header with agent version to switch to new interface
-    response_model=LimitOffsetPage[Job],
+    response_model=LimitOffsetPage[Job],  # type: ignore
     include_in_schema=_settings.API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_jobs_page(
@@ -116,6 +114,9 @@ async def get_jobs_page(
 
     Breaking change in *version 0.5*: response model changed from list[Job] to pagination Page[Job].
     """
+
+    # NOTE: Different entry to keep backwards compatibility with list_jobs.
+    # Eventually use a header with agent version to switch to new interface
 
     solver = await catalog_client.get_solver(
         user_id=user_id,
@@ -149,17 +150,18 @@ async def create_job(
     solver_key: SolverKeyId,
     version: VersionStr,
     inputs: JobInputs,
-    user_id: PositiveInt = Depends(get_current_user_id),
-    catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
-    webserver_api: AuthSession = Depends(get_webserver_session),
-    url_for: Callable = Depends(get_reverse_url_mapper),
-    product_name: str = Depends(get_product_name),
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
+    product_name: Annotated[str, Depends(get_product_name)],
 ):
     """Creates a job in a specific release with given inputs.
 
     NOTE: This operation does **not** start the job
     """
 
+    # -> catalog
     # ensures user has access to solver
     solver = await catalog_client.get_solver(
         user_id=user_id,
@@ -171,9 +173,6 @@ async def create_job(
     # creates NEW job as prototype
     pre_job = Job.create_solver_job(solver=solver, inputs=inputs)
     _logger.debug("Creating Job '%s'", pre_job.name)
-
-    # -> catalog
-    # TODO: validate inputs against solver input schema
 
     #   -> webserver:  NewProjectIn = Job
     project_in: NewProjectIn = create_new_project_for_job(solver, pre_job, inputs)
@@ -202,8 +201,8 @@ async def get_job(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: UUID,
-    webserver_api: AuthSession = Depends(get_webserver_session),
-    url_for: Callable = Depends(get_reverse_url_mapper),
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
     """Gets job of a given solver"""
     _logger.debug(
@@ -227,7 +226,7 @@ async def delete_job(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: UUID,
-    webserver_api: AuthSession = Depends(get_webserver_session),
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
     """Deletes an existing solver job
 
@@ -255,10 +254,10 @@ async def start_job(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: UUID,
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
+    product_name: Annotated[str, Depends(get_product_name)],
     cluster_id: ClusterID | None = None,
-    user_id: PositiveInt = Depends(get_current_user_id),
-    director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
-    product_name: str = Depends(get_product_name),
 ):
     """Starts job job_id created with the solver solver_key:version
 
@@ -285,8 +284,8 @@ async def stop_job(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: UUID,
-    user_id: PositiveInt = Depends(get_current_user_id),
-    director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ):
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Stopping Job '%s'", job_name)
@@ -306,8 +305,8 @@ async def inspect_job(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: UUID,
-    user_id: PositiveInt = Depends(get_current_user_id),
-    director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ) -> JobStatus:
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Inspecting Job '%s'", job_name)
@@ -325,10 +324,10 @@ async def get_job_outputs(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: UUID,
-    user_id: PositiveInt = Depends(get_current_user_id),
-    db_engine: Engine = Depends(get_db_engine),
-    webserver_api: AuthSession = Depends(get_webserver_session),
-    storage_client: StorageApi = Depends(get_api_client(StorageApi)),
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    db_engine: Annotated[Engine, Depends(get_db_engine)],
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
 ):
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Get Job '%s' outputs", job_name)
@@ -364,8 +363,7 @@ async def get_job_outputs(
             # TODO: cast against catalog's output port specs
             results[name] = value
 
-    job_outputs = JobOutputs(job_id=job_id, results=results)
-    return job_outputs
+    return JobOutputs(job_id=job_id, results=results)
 
 
 @router.get(
@@ -377,8 +375,8 @@ async def get_job_output_logfile(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: UUID,
-    user_id: PositiveInt = Depends(get_current_user_id),
-    director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ):
     """Special extra output with persistent logs file for the solver run.
 
