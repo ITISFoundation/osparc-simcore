@@ -1921,6 +1921,8 @@ jobs:
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./ci/github/system-testing/public-api.bash install
       - name: test
         run: ./ci/github/system-testing/public-api.bash test
