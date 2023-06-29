@@ -16,6 +16,7 @@ from models_library.rest_pagination import Page
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ValidationError
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
+from servicelib.error_codes import create_error_code
 from starlette import status
 from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
@@ -38,14 +39,22 @@ def _handle_webserver_api_errors():
 
     except ValidationError as exc:
         # Invalid formatted response body
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from exc
+        error_code = create_error_code(exc)
+        _logger.exception(
+            "Invalid data exchanged with webserver service [%s]",
+            error_code,
+            extra={"error_code": error_code},
+        )
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE, detail=error_code
+        ) from exc
 
-    # TODO: review httpx error: https://www.python-httpx.org/exceptions/
     except httpx.RequestError as exc:
-        # Bad connection
+        # e.g. TransportError, DecodingError, TooManyRedirects
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from exc
 
     except httpx.HTTPStatusError as exc:
+
         resp = exc.response
         if resp.is_server_error:
             _logger.exception(
@@ -56,10 +65,7 @@ def _handle_webserver_api_errors():
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from exc
 
         if resp.is_client_error:
-            # Validation error?
-            # returns error
-
-            # FIXME: error handling. Raise ProjectErrors / WebserverError that should be transformed into HTTP errors on the handler level
+            # NOTE: Raise ProjectErrors / WebserverError that should be transformed into HTTP errors on the handler level
             error = exc.response.json().get("error", {})
             msg = error.get("errors") or resp.reason_phrase or f"{exc}"
             raise HTTPException(resp.status_code, detail=msg) from exc
@@ -218,7 +224,7 @@ class AuthSession:
                     "show_hidden": True,
                     "limit": limit,
                     "offset": offset,
-                    # FIXME: better way to match jobs with projects (Next PR if this works fine!)
+                    # WARNING: better way to match jobs with projects (Next PR if this works fine!)
                     "search": urllib.parse.quote(solver_name, safe=""),
                     # WARNING: search text has a limit that I needed to increas for the example!
                 },
@@ -226,7 +232,6 @@ class AuthSession:
             )
             resp.raise_for_status()
 
-            # FIXME: this is a ProjectGet. How to transform from ProjectGet to Job!?
             return Page[ProjectGet].parse_raw(resp.text)
 
     async def delete_project(self, project_id: ProjectID) -> None:
