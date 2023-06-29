@@ -7,8 +7,9 @@
 # pylint:disable=no-name-in-module
 
 
+from collections.abc import Callable
 from random import choice
-from typing import Any, Callable
+from typing import Any
 from unittest import mock
 
 import aiopg
@@ -31,7 +32,6 @@ from models_library.users import UserID
 from pydantic import ByteSize
 from pydantic.networks import AnyUrl
 from pydantic.tools import parse_obj_as
-from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_sdk.node_ports_v2 import FileLinkType
@@ -271,7 +271,7 @@ async def test_parse_output_data(
 @pytest.fixture
 def app_with_db(
     mock_env: EnvVarsDict,
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     postgres_host_config: dict[str, str],
 ):
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
@@ -349,6 +349,7 @@ def tasks_file_link_scheme(tasks_file_link_type: FileLinkType) -> tuple:
     if tasks_file_link_type == FileLinkType.PRESIGNED:
         return ("http", "https")
     pytest.fail("unknown file link type, need update of the fixture")
+    # pylint: disable=inconsisten-return-statements
 
 
 async def test_compute_output_data_schema(
@@ -501,7 +502,9 @@ def cluster_id(faker: Faker) -> ClusterID:
 
 @pytest.fixture
 def _app_with_dask_client(
-    app_with_db: None, dask_spec_local_cluster: SpecCluster, monkeypatch: MonkeyPatch
+    app_with_db: None,
+    dask_spec_local_cluster: SpecCluster,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
     monkeypatch.setenv(
