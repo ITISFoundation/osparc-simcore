@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import uuid
-from typing import Any, Awaitable, Coroutine, Optional, cast
+from typing import Any, Awaitable, Coroutine, cast
 
 import aiodocker
 from aiodocker.containers import DockerContainer
@@ -35,7 +35,7 @@ def num_available_gpus() -> int:
 
     async def async_num_available_gpus() -> int:
         num_gpus = 0
-        container: Optional[DockerContainer] = None
+        container: DockerContainer | None = None
         async with aiodocker.Docker() as docker:
             spec_config = _nvidia_smi_docker_config(["--list-gpus"])
             try:
@@ -78,7 +78,7 @@ def video_memory() -> int:
 
     async def async_video_memory() -> int:
         video_ram: ByteSize = ByteSize(0)
-        container: Optional[DockerContainer] = None
+        container: DockerContainer | None = None
         async with aiodocker.Docker() as docker:
             spec_config = _nvidia_smi_docker_config(
                 [

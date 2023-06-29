@@ -155,7 +155,7 @@ def run_computational_sidecar(
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
-    result = asyncio.get_event_loop().run_until_complete(
+    return asyncio.get_event_loop().run_until_complete(
         _run_computational_sidecar_async(
             docker_auth=docker_auth,
             service_key=service_key,
@@ -170,4 +170,3 @@ def run_computational_sidecar(
             boot_mode=boot_mode,
         )
     )
-    return result
