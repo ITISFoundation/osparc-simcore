@@ -222,7 +222,14 @@
             }
           },
           "404": {
-            "description": "File not found"
+            "description": "File not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -266,7 +273,14 @@
             "description": "Successful Response"
           },
           "404": {
-            "description": "File not found"
+            "description": "File not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
           },
           "200": {
             "description": "Returns a arbitrary binary data",
@@ -1108,6 +1122,20 @@
             "title": "File",
             "type": "string",
             "format": "binary"
+          }
+        }
+      },
+      "ErrorGet": {
+        "title": "ErrorGet",
+        "required": [
+          "errors"
+        ],
+        "type": "object",
+        "properties": {
+          "errors": {
+            "title": "Errors",
+            "type": "array",
+            "items": {}
           }
         }
       },
