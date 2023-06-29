@@ -514,8 +514,8 @@ async def test_send_computation_task(
         remote_fct=functools.partial(
             fake_sidecar_fct,
             expected_annotations=image_params.expected_annotations,
-            expected_envs={"wrong": "data"},
-            expected_labels={"wrong": "data"},
+            expected_envs={},
+            expected_labels={},
         ),
     )
     assert node_id_to_job_ids
