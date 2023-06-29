@@ -76,7 +76,12 @@ class BaseCompScheduler(ABC):
     rabbitmq_client: RabbitMQClient
 
     async def run_new_pipeline(
-        self, user_id: UserID, project_id: ProjectID, cluster_id: ClusterID
+        self,
+        user_id: UserID,
+        project_id: ProjectID,
+        cluster_id: ClusterID,
+        product_name: str,
+        simcore_user_agent: str,
     ) -> None:
         """Sets a new pipeline to be scheduled on the computational resources.
         Passing cluster_id=0 will use the default cluster. Passing an existing ID will instruct

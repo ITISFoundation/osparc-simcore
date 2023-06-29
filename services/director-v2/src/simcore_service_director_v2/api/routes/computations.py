@@ -19,7 +19,7 @@ import logging
 from typing import Any
 
 import networkx as nx
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.services import ServiceKeyVersion
@@ -99,6 +99,7 @@ router = APIRouter()
 async def create_computation(
     computation: ComputationCreate,
     request: Request,
+    x_simcore_user_agent: str = Header(...),
     project_repo: ProjectsRepository = Depends(get_repository(ProjectsRepository)),
     comp_pipelines_repo: CompPipelinesRepository = Depends(
         get_repository(CompPipelinesRepository)
@@ -212,6 +213,8 @@ async def create_computation(
                 computation.user_id,
                 computation.project_id,
                 computation.cluster_id or DEFAULT_CLUSTER_ID,
+                computation.product_name,
+                x_simcore_user_agent,
             )
 
         # filter the tasks by the effective pipeline
