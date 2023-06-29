@@ -1,4 +1,4 @@
-from typing import Generic, List, Optional, TypeVar
+from typing import Final, Generic, TypeVar
 
 from pydantic import (
     AnyHttpUrl,
@@ -11,7 +11,13 @@ from pydantic import (
 )
 from pydantic.generics import GenericModel
 
-DEFAULT_NUMBER_OF_ITEMS_PER_PAGE = 20
+# Default limit values
+#  - Using same values across all pagination entrypoints simplifies
+#    interconnecting paginated calls
+DEFAULT_NUMBER_OF_ITEMS_PER_PAGE: Final[int] = 20
+MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE: Final[int] = 50
+
+assert DEFAULT_NUMBER_OF_ITEMS_PER_PAGE < MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE  # nosec
 
 
 class PageMetaInfoLimitOffset(BaseModel):
@@ -24,26 +30,24 @@ class PageMetaInfoLimitOffset(BaseModel):
     @classmethod
     def check_offset(cls, v, values):
         if v > 0 and v >= values["total"]:
-            raise ValueError(
-                f"offset {v} cannot be equal or bigger than total {values['total']}, please check"
-            )
+            msg = f"offset {v} cannot be equal or bigger than total {values['total']}, please check"
+            raise ValueError(msg)
         return v
 
     @validator("count")
     @classmethod
     def check_count(cls, v, values):
         if v > values["limit"]:
-            raise ValueError(
-                f"count {v} bigger than limit {values['limit']}, please check"
-            )
+            msg = f"count {v} bigger than limit {values['limit']}, please check"
+            raise ValueError(msg)
         if v > values["total"]:
-            raise ValueError(
+            msg = (
                 f"count {v} bigger than expected total {values['total']}, please check"
             )
+            raise ValueError(msg)
         if "offset" in values and (values["offset"] + v) > values["total"]:
-            raise ValueError(
-                f"offset {values['offset']} + count {v} is bigger than allowed total {values['total']}, please check"
-            )
+            msg = f"offset {values['offset']} + count {v} is bigger than allowed total {values['total']}, please check"
+            raise ValueError(msg)
         return v
 
     class Config:
@@ -59,8 +63,8 @@ class PageMetaInfoLimitOffset(BaseModel):
 class PageLinks(BaseModel):
     self: AnyHttpUrl
     first: AnyHttpUrl
-    prev: Optional[AnyHttpUrl]
-    next: Optional[AnyHttpUrl]
+    prev: AnyHttpUrl | None
+    next: AnyHttpUrl | None
     last: AnyHttpUrl
 
     class Config:
@@ -77,7 +81,7 @@ class Page(GenericModel, Generic[ItemT]):
 
     meta: PageMetaInfoLimitOffset = Field(alias="_meta")
     links: PageLinks = Field(alias="_links")
-    data: List[ItemT]
+    data: list[ItemT]
 
     @validator("data", pre=True)
     @classmethod

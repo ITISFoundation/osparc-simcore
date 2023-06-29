@@ -21,7 +21,7 @@ from pydantic import AnyUrl, HttpUrl, parse_obj_as
 from respx import MockRouter
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.models.schemas.jobs import Job, JobInputs, JobStatus
-from simcore_service_api_server.plugins.director_v2 import ComputationTaskGet
+from simcore_service_api_server.services.director_v2 import ComputationTaskGet
 from starlette import status
 
 
@@ -217,6 +217,7 @@ def solver_version() -> str:
     return "2.0.0"
 
 
+@pytest.mark.testit
 @pytest.mark.acceptance_test(
     "New feature https://github.com/ITISFoundation/osparc-simcore/issues/3940"
 )
