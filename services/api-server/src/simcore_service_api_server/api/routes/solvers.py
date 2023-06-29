@@ -94,15 +94,16 @@ async def get_solver(
         solver.url = url_for(
             "get_solver_release", solver_key=solver.id, version=solver.version
         )
-        assert solver.id == solver_key  # nosec
-
-        return solver
 
     except (KeyError, HTTPStatusError, IndexError) as err:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Solver with id={solver_key} not found",
         ) from err
+
+    else:
+        assert solver.id == solver_key  # nosec
+        return solver
 
 
 @router.get("/{solver_key:path}/releases", response_model=list[Solver])
@@ -148,8 +149,6 @@ async def get_solver_release(
             "get_solver_release", solver_key=solver.id, version=solver.version
         )
 
-        return solver
-
     except (
         ValueError,
         IndexError,
@@ -161,6 +160,9 @@ async def get_solver_release(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Solver {solver_key}:{version} not found",
         ) from err
+
+    else:
+        return solver
 
 
 @router.get(
@@ -186,7 +188,6 @@ async def list_solver_ports(
             version=version,
             product_name=product_name,
         )
-        return ports
 
     except ValidationError as err:
         error_code = create_error_code(err)
@@ -206,3 +207,6 @@ async def list_solver_ports(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Ports for solver {solver_key}:{version} not found",
         ) from err
+
+    else:
+        return ports
