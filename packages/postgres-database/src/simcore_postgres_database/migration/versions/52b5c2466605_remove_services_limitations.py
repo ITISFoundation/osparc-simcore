@@ -44,7 +44,7 @@ def upgrade():
     op.drop_table("services_limitations")
     # ### end Alembic commands ###
     # custom
-    op.execute(f"DROP FUNCTION services_limitations_auto_update_modified();")
+    op.execute("DROP FUNCTION services_limitations_auto_update_modified();")
 
 
 def downgrade():
