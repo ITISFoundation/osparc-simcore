@@ -1,8 +1,8 @@
 import asyncio
+import datetime
 import io
 import logging
 from collections import deque
-from datetime import datetime
 from textwrap import dedent
 from typing import IO, Annotated, Deque
 from uuid import UUID
@@ -98,7 +98,8 @@ async def get_files_page(
             params=page_params,
         )
 
-    raise NotImplementedError
+    msg = f"get_files_page of user_id={user_id!r} with page_params={page_params!r}. SEE https://github.com/ITISFoundation/osparc-issues/issues/952"
+    raise NotImplementedError(msg)
 
 
 def _get_spooled_file_size(file_io: IO) -> int:
@@ -130,7 +131,9 @@ async def upload_file(
     )
     # assign file_id.
     file_meta: File = await File.create_from_uploaded(
-        file, file_size=file_size, created_at=datetime.utcnow().isoformat()
+        file,
+        file_size=file_size,
+        created_at=datetime.datetime.now(datetime.timezone.utc).isoformat(),
     )
     _logger.debug(
         "Assigned id: %s of %s bytes (content-length), real size %s bytes",
@@ -181,14 +184,14 @@ async def get_file(
             user_id, file_id
         )
         if not stored_files:
-            raise ValueError("Not found in storage")
+            msg = "Not found in storage"
+            raise ValueError(msg)  # noqa: TRY301
 
         stored_file_meta = stored_files[0]
         assert stored_file_meta.file_id  # nosec
 
         # Adapts storage API model to API model
-        file_meta = to_file_api_model(stored_file_meta)
-        return file_meta
+        return to_file_api_model(stored_file_meta)
 
     except (ValueError, ValidationError) as err:
         _logger.debug("File %d not found: %s", file_id, err)
@@ -212,6 +215,9 @@ async def delete_file(
     assert file_id  # nosec
     assert storage_client  # nsoec
     assert user_id  # nosec
+
+    msg = f"delete file {file_id=} of {user_id=}. SEE https://github.com/ITISFoundation/osparc-issues/issues/952"
+    raise NotImplementedError(msg)
 
 
 @router.get(

@@ -5,14 +5,12 @@ from uuid import UUID
 from fastapi import APIRouter, status
 from fastapi.responses import RedirectResponse
 
-from ...core.settings import BasicSettings
 from ...models.schemas.jobs import Job, JobOutputs, JobStatus
 from ...models.schemas.studies import StudyID
-from ._common import job_output_logfile_responses
+from ._common import API_SERVER_DEV_FEATURES_ENABLED, job_output_logfile_responses
 
 _logger = logging.getLogger(__name__)
 router = APIRouter()
-settings = BasicSettings.create_from_envs()
 
 #
 # - Study maps to project
@@ -26,7 +24,7 @@ JobID: TypeAlias = UUID
 @router.get(
     "/studies/{study_id:uuid}/jobs",
     response_model=list[Job],
-    include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def list_study_jobs(study_id: StudyID):
     raise NotImplementedError(
@@ -37,7 +35,7 @@ async def list_study_jobs(study_id: StudyID):
 @router.post(
     "/studies/{study_id:uuid}/jobs",
     response_model=Job,
-    include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def create_study_job(study_id: StudyID):
     raise NotImplementedError(
@@ -48,7 +46,7 @@ async def create_study_job(study_id: StudyID):
 @router.get(
     "/studies/{study_id:uuid}/jobs/{job_id:uuid}",
     response_model=Job,
-    include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_study_job(
     study_id: StudyID,
@@ -62,7 +60,7 @@ async def get_study_job(
 @router.delete(
     "/studies/{study_id:uuid}/jobs/{job_id:uuid}",
     status_code=status.HTTP_204_NO_CONTENT,
-    include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def delete_study_job(study_id: StudyID, job_id: JobID):
     raise NotImplementedError(
@@ -73,7 +71,7 @@ async def delete_study_job(study_id: StudyID, job_id: JobID):
 @router.post(
     "/studies/{study_id:uuid}/jobs/{job_id:uuid}:start",
     response_model=JobStatus,
-    include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def start_study_job(
     study_id: StudyID,
@@ -87,7 +85,7 @@ async def start_study_job(
 @router.post(
     "/studies/{study_id:uuid}/jobs/{job_id:uuid}:stop",
     response_model=Job,
-    include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def stop_study_job(
     study_id: StudyID,
@@ -101,7 +99,7 @@ async def stop_study_job(
 @router.post(
     "/studies/{study_id}/job/{job_id}:inspect",
     response_model=JobStatus,
-    include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def inspect_study_job(
     study_id: StudyID,
@@ -115,7 +113,7 @@ async def inspect_study_job(
 @router.post(
     "/studies/{study_id}/job/{job_id}/outputs",
     response_model=JobOutputs,
-    include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_study_job_outputs(
     study_id: StudyID,
@@ -129,7 +127,7 @@ async def get_study_job_outputs(
 @router.post(
     "/studies/{study_id}/job/{job_id}/outputs/logfile",
     response_class=RedirectResponse,
-    include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     responses=job_output_logfile_responses,
 )
 async def get_study_job_output_logfile(study_id: StudyID, job_id: JobID):

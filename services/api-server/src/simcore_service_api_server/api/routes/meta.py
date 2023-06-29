@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Annotated, Callable
 
 from fastapi import APIRouter, Depends
 
@@ -11,7 +11,7 @@ router = APIRouter()
 
 @router.get("", response_model=Meta)
 async def get_service_metadata(
-    url_for: Callable = Depends(get_reverse_url_mapper),
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
     return Meta(
         name=__name__.split(".")[0],
