@@ -112,7 +112,17 @@ async def _assert_wait_for_task_status(
             current_task_status = (await dask_client.get_tasks_status([job_id]))[0]
             assert isinstance(current_task_status, RunningState)
             print(f"{current_task_status=} vs {expected_status=}")
-            assert current_task_status == expected_status
+            if (
+                current_task_status is RunningState.FAILED
+                and expected_status is not RunningState.FAILED
+            ):
+                # we can fail fast here
+                result = await asyncio.gather(
+                    dask_client.get_task_result(job_id), return_exceptions=True
+                )
+                err_msg = f"{job_id=} unexpectedly {current_task_status} with {result=}, instead of {expected_status=}"
+                pytest.fail(reason=err_msg)
+            assert current_task_status is expected_status
 
 
 @pytest.fixture
@@ -477,13 +487,17 @@ async def test_send_computation_task(
         task_labels: ContainerLabelsDict,
         s3_settings: S3Settings | None,
         boot_mode: BootMode,
-        expected_annotations,
+        expected_annotations: dict[str, Any],
+        expected_envs: ContainerEnvsDict,
+        expected_labels: ContainerLabelsDict,
     ) -> TaskOutputData:
         # get the task data
         worker = get_worker()
         task = worker.state.tasks.get(worker.get_current_task())
         assert task is not None
         assert task.annotations == expected_annotations
+        assert task_envs == expected_envs
+        assert task_labels == expected_labels
         assert command == ["run"]
         event = distributed.Event(_DASK_EVENT_NAME)
         event.wait(timeout=25)
@@ -498,7 +512,10 @@ async def test_send_computation_task(
         tasks=image_params.fake_tasks,
         callback=mocked_user_completed_cb,
         remote_fct=functools.partial(
-            fake_sidecar_fct, expected_annotations=image_params.expected_annotations
+            fake_sidecar_fct,
+            expected_annotations=image_params.expected_annotations,
+            expected_envs={"wrong": "data"},
+            expected_labels={"wrong": "data"},
         ),
     )
     assert node_id_to_job_ids
