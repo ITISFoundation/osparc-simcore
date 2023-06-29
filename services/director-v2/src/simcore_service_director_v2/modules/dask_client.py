@@ -185,12 +185,15 @@ class DaskClient:
 
     async def send_computation_tasks(
         self,
+        *,
         user_id: UserID,
         project_id: ProjectID,
         cluster_id: ClusterID,
         tasks: dict[NodeID, Image],
         callback: _UserCallbackInSepThread,
         remote_fct: ContainerRemoteFct | None = None,
+        product_name: str,
+        simcore_user_agent: str,
     ) -> list[tuple[NodeID, str]]:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
         function that runs container will be started."""
@@ -322,7 +325,11 @@ class DaskClient:
                     command=node_image.command,
                     task_envs={},
                     task_labels=SimcoreServiceDockerLabelKeys(
-                        user_id=user_id, study_id=project_id, uuid=node_id
+                        user_id=user_id,
+                        study_id=project_id,
+                        uuid=node_id,
+                        product_name=product_name,
+                        simcore_user_agent=simcore_user_agent,
                     ).to_docker_labels(),
                     s3_settings=s3_settings,
                     boot_mode=node_image.boot_mode,

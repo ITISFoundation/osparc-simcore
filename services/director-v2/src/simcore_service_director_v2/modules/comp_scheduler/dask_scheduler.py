@@ -76,6 +76,8 @@ class DaskScheduler(BaseCompScheduler):
         user_id: UserID,
         project_id: ProjectID,
         cluster_id: ClusterID,
+        product_name: str,
+        simcore_user_agent: str,
         scheduled_tasks: dict[NodeID, Image],
     ):
         # now transfer the pipeline to the dask scheduler
@@ -88,6 +90,8 @@ class DaskScheduler(BaseCompScheduler):
                 cluster_id=cluster_id,
                 tasks=scheduled_tasks,
                 callback=self._wake_up_scheduler_now,
+                product_name=product_name,
+                simcore_user_agent=simcore_user_agent,
             )
             logger.debug(
                 "started following tasks (node_id, job_id)[%s] on cluster %s",

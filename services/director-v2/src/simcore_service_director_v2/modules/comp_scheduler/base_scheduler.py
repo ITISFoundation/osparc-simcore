@@ -331,6 +331,8 @@ class BaseCompScheduler(ABC):
         user_id: UserID,
         project_id: ProjectID,
         cluster_id: ClusterID,
+        product_name: str,
+        simcore_user_agent: str,
         scheduled_tasks: dict[NodeID, Image],
     ) -> None:
         ...
