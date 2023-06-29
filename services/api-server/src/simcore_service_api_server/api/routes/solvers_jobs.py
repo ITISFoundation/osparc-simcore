@@ -21,9 +21,9 @@ from ...models.pagination import LimitOffsetPage, LimitOffsetParams
 from ...models.schemas.files import File
 from ...models.schemas.jobs import ArgumentTypes, Job, JobInputs, JobOutputs, JobStatus
 from ...models.schemas.solvers import Solver, SolverKeyId
-from ...plugins.catalog import CatalogApi
-from ...plugins.director_v2 import DirectorV2Api, DownloadLink, NodeName
-from ...plugins.storage import StorageApi, to_file_api_model
+from ...services.catalog import CatalogApi
+from ...services.director_v2 import DirectorV2Api, DownloadLink, NodeName
+from ...services.storage import StorageApi, to_file_api_model
 from ...utils.solver_job_models_converters import (
     create_job_from_project,
     create_jobstatus_from_task,

@@ -18,7 +18,7 @@ from ..api.errors.httpx_client_error import httpx_client_error_handler
 from ..api.errors.validation_error import http422_error_handler
 from ..api.root import create_router
 from ..api.routes.health import router as health_router
-from ..plugins import catalog, director_v2, remote_debug, storage, webserver
+from ..services import catalog, director_v2, remote_debug, storage, webserver
 from .events import create_start_app_handler, create_stop_app_handler
 from .openapi import override_openapi_method, use_route_names_as_operation_ids
 from .redoc import create_redoc_handler
