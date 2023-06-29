@@ -31,6 +31,8 @@ typecheck() {
 }
 
 openapi-diff(){
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
   pushd services/api-server
   make openapi-dev-diff.json
   popd
