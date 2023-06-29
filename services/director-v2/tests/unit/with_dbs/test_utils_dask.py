@@ -316,7 +316,9 @@ async def test_compute_input_data(
 
     # mock the get_value function so we can test it is called correctly
     def return_fake_input_value(*args, **kwargs):
-        for value, value_type in zip(fake_inputs.values(), fake_io_schema.values()):
+        for value, value_type in zip(
+            fake_inputs.values(), fake_io_schema.values(), strict=True
+        ):
             if value_type["type"] == "data:*/*":
                 yield parse_obj_as(AnyUrl, faker.url())
             else:
@@ -328,17 +330,14 @@ async def test_compute_input_data(
         side_effect=return_fake_input_value(),
     )
     computed_input_data = await compute_input_data(
-        async_client._transport.app,
+        async_client._transport.app,  # noqa: SLF001
         user_id,
         published_project.project.uuid,
         sleeper_task.node_id,
         file_link_type=tasks_file_link_type,
     )
     mocked_node_ports_get_value_fct.assert_has_calls(
-        [
-            mock.call(mock.ANY, file_link_type=tasks_file_link_type)
-            for n in fake_io_data.keys()
-        ]
+        [mock.call(mock.ANY, file_link_type=tasks_file_link_type) for n in fake_io_data]
     )
     assert computed_input_data.keys() == fake_io_data.keys()
 
@@ -349,7 +348,7 @@ def tasks_file_link_scheme(tasks_file_link_type: FileLinkType) -> tuple:
         return ("s3", "s3a")
     if tasks_file_link_type == FileLinkType.PRESIGNED:
         return ("http", "https")
-    assert False, "unknown file link type, need update of the fixture"
+    pytest.fail("unknown file link type, need update of the fixture")
 
 
 async def test_compute_output_data_schema(
@@ -371,7 +370,7 @@ async def test_compute_output_data_schema(
     )
 
     output_schema = await compute_output_data_schema(
-        async_client._transport.app,
+        async_client._transport.app,  # noqa: SLF001
         user_id,
         published_project.project.uuid,
         sleeper_task.node_id,
@@ -401,7 +400,7 @@ async def test_clean_task_output_and_log_files_if_invalid(
     published_project: PublishedProject,
     mocked_node_ports_filemanager_fcts: dict[str, mock.MagicMock],
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
-    entry_exists_returns: bool,
+    entry_exists_returns: bool,  # noqa: FBT001
     fake_io_schema: dict[str, dict[str, str]],
     faker: Faker,
 ):
@@ -442,7 +441,7 @@ async def test_clean_task_output_and_log_files_if_invalid(
             store_id=0,
             s3_object=f"{published_project.project.uuid}/{sleeper_task.node_id}/{next(iter(fake_io_schema[key].get('fileToKeyMap', {key:key})))}",
         )
-        for key in fake_outputs.keys()
+        for key in fake_outputs
     ] + [
         mock.call(
             user_id=user_id,
@@ -471,7 +470,7 @@ def test_node_requirements_correctly_convert_to_dask_resources(
     # all the dask resources shall be of type: RESOURCE_NAME: VALUE
     for resource_key, resource_value in dask_resources.items():
         assert isinstance(resource_key, str)
-        assert isinstance(resource_value, (int, float, str, bool))
+        assert isinstance(resource_value, int | float | str | bool)
         assert resource_value is not None
 
 
@@ -501,7 +500,7 @@ def cluster_id(faker: Faker) -> ClusterID:
 
 
 @pytest.fixture
-def app_with_dask_client(
+def _app_with_dask_client(
     app_with_db: None, dask_spec_local_cluster: SpecCluster, monkeypatch: MonkeyPatch
 ) -> None:
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
@@ -512,7 +511,7 @@ def app_with_dask_client(
 
 
 async def test_check_if_cluster_is_able_to_run_pipeline(
-    app_with_dask_client: None,
+    _app_with_dask_client: None,
     project_id: ProjectID,
     node_id: NodeID,
     cluster_id: ClusterID,
@@ -520,7 +519,7 @@ async def test_check_if_cluster_is_able_to_run_pipeline(
     async_client: httpx.AsyncClient,
 ):
     sleeper_task: CompTaskAtDB = published_project.tasks[1]
-    app = async_client._transport.app
+    app = async_client._transport.app  # noqa: SLF001
     dask_scheduler_settings = app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND
     default_cluster = dask_scheduler_settings.default_cluster
     dask_clients_pool = DaskClientsPool.instance(app)
