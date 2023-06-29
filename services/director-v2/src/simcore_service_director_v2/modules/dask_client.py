@@ -12,10 +12,11 @@ import asyncio
 import json
 import logging
 import traceback
+from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass, field
 from http.client import HTTPException
-from typing import Any, Callable
+from typing import Any
 
 import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
@@ -95,10 +96,10 @@ _DASK_TASK_STATUS_RUNNING_STATE_MAP = {
     "erred": RunningState.FAILED,
 }
 
-DASK_DEFAULT_TIMEOUT_S = 1
+_DASK_DEFAULT_TIMEOUT_S = 1
 
 
-UserCallbackInSepThread = Callable[[], None]
+_UserCallbackInSepThread = Callable[[], None]
 
 
 @dataclass
@@ -187,7 +188,7 @@ class DaskClient:
         project_id: ProjectID,
         cluster_id: ClusterID,
         tasks: dict[NodeID, Image],
-        callback: UserCallbackInSepThread,
+        callback: _UserCallbackInSepThread,
         remote_fct: ContainerRemoteFct | None = None,
     ) -> list[tuple[NodeID, str]]:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
@@ -373,7 +374,9 @@ class DaskClient:
             if dask_status == "erred":
                 # find out if this was a cancellation
                 exception = await wrap_client_async_routine(
-                    distributed.Future(job_id).exception(timeout=DASK_DEFAULT_TIMEOUT_S)
+                    distributed.Future(job_id).exception(
+                        timeout=_DASK_DEFAULT_TIMEOUT_S
+                    )
                 )
 
                 if isinstance(exception, TaskCancelledError):
@@ -425,7 +428,7 @@ class DaskClient:
                 self.backend.client.get_dataset(name=job_id)
             )
             return await wrap_client_async_routine(
-                task_future.result(timeout=DASK_DEFAULT_TIMEOUT_S)
+                task_future.result(timeout=_DASK_DEFAULT_TIMEOUT_S)
             )
         except KeyError as exc:
             raise ComputationalBackendTaskNotFoundError(job_id=job_id) from exc
