@@ -185,26 +185,50 @@ qx.Class.define("osparc.data.Resources", {
           }
         }
       },
+      "studyComments": {
+        useCache: true,
+        idField: "uuid",
+        endpoints: {
+          getPage: {
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/comments?offset={offset}&limit={limit}"
+          },
+          addComment: {
+            method: "POST",
+            url: statics.API + "/projects/{studyId}/comments"
+          }
+        }
+      },
+      "studyPreviews": {
+        useCache: true,
+        idField: "uuid",
+        endpoints: {
+          getPreviews: {
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/nodes/-/preview"
+          }
+        }
+      },
       /*
        * NODES
        */
       "nodesInStudyResources": {
-        idField: "nodeId",
-        useCache: false,
+        idField: ["studyId", "nodeId"],
         endpoints: {
-          getResources: {
-            useCache: false,
+          get: {
             method: "GET",
+            url: statics.API + "/projects/{studyId}/nodes/{nodeId}/resources"
+          },
+          put: {
+            method: "PUT",
             url: statics.API + "/projects/{studyId}/nodes/{nodeId}/resources"
           }
         }
       },
       "serviceResources": {
         idField: ["key", "version"],
-        useCache: false,
         endpoints: {
-          getResources: {
-            useCache: false,
+          get: {
             method: "GET",
             url: statics.API + "/catalog/services/{key}/{version}/resources"
           }

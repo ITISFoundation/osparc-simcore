@@ -335,18 +335,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       if (!item.isMultiSelectionMode()) {
         const studyData = this.__getStudyData(item.getUuid(), false);
-        // this._startStudyById(studyData["uuid"]);
         this._openDetailsView(studyData);
         this.resetSelection();
       }
-    },
-
-    _startStudyById: function(studyId) {
-      if (!this._checkLoggedIn()) {
-        return;
-      }
-
-      this.fireDataEvent("startStudy", studyId);
     },
 
     __attachEventHandlers: function() {
@@ -821,7 +812,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         menu.add(renameStudyButton);
       }
 
-      const studyDataButton = this.__getStudyDataMenuButton(studyData);
+      const studyDataButton = this.__getStudyDataMenuButton(card);
       menu.add(studyDataButton);
 
       if (writeAccess) {
@@ -884,15 +875,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __getStudyDataMenuButton: function(studyData) {
+    __getStudyDataMenuButton: function(card) {
       const text = osparc.utils.Utils.capitalize(osparc.product.Utils.getStudyAlias()) + this.tr(" data...");
       const studyDataButton = new qx.ui.menu.Button(text);
-      studyDataButton.addListener("execute", () => {
-        const studyDataManager = new osparc.component.widget.NodeDataManager(studyData["uuid"]);
-        osparc.ui.window.Window.popUpInWindow(studyDataManager, studyData["name"], 900, 600).set({
-          appearance: "service-window"
-        });
-      }, this);
+      studyDataButton.addListener("tap", () => card.openData(), this);
       return studyDataButton;
     },
 

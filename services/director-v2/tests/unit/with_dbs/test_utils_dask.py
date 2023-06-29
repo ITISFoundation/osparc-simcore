@@ -21,8 +21,10 @@ from dask_task_models_library.container_tasks.io import (
     FileUrl,
     TaskOutputData,
 )
+from distributed import SpecCluster
 from faker import Faker
 from models_library.api_schemas_storage import FileUploadLinks, FileUploadSchema
+from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimCoreFileLink, SimcoreS3FileID
 from models_library.users import UserID
@@ -35,8 +37,11 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_sdk.node_ports_v2 import FileLinkType
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
 from simcore_service_director_v2.models.schemas.services import NodeRequirements
+from simcore_service_director_v2.modules.dask_clients_pool import DaskClientsPool
 from simcore_service_director_v2.utils.dask import (
     _LOGS_FILE_NAME,
+    _to_human_readable_resource_values,
+    check_if_cluster_is_able_to_run_pipeline,
     clean_task_output_and_log_files_if_invalid,
     compute_input_data,
     compute_output_data_schema,
@@ -468,3 +473,63 @@ def test_node_requirements_correctly_convert_to_dask_resources(
         assert isinstance(resource_key, str)
         assert isinstance(resource_value, (int, float, str, bool))
         assert resource_value is not None
+
+
+@pytest.mark.parametrize(
+    "input_resources, expected_human_readable_resources",
+    [
+        ({}, {}),
+        (
+            {"CPU": 2.1, "RAM": 1024, "VRAM": 2097152},
+            {"CPU": 2.1, "RAM": "1.0KiB", "VRAM": "2.0MiB"},
+        ),
+    ],
+    ids=str,
+)
+def test__to_human_readable_resource_values(
+    input_resources: dict[str, Any], expected_human_readable_resources: dict[str, Any]
+):
+    assert (
+        _to_human_readable_resource_values(input_resources)
+        == expected_human_readable_resources
+    )
+
+
+@pytest.fixture
+def cluster_id(faker: Faker) -> ClusterID:
+    return faker.pyint(min_value=0)
+
+
+@pytest.fixture
+def app_with_dask_client(
+    app_with_db: None, dask_spec_local_cluster: SpecCluster, monkeypatch: MonkeyPatch
+) -> None:
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
+    monkeypatch.setenv(
+        "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL",
+        dask_spec_local_cluster.scheduler_address,
+    )
+
+
+async def test_check_if_cluster_is_able_to_run_pipeline(
+    app_with_dask_client: None,
+    project_id: ProjectID,
+    node_id: NodeID,
+    cluster_id: ClusterID,
+    published_project: PublishedProject,
+    async_client: httpx.AsyncClient,
+):
+    sleeper_task: CompTaskAtDB = published_project.tasks[1]
+    app = async_client._transport.app
+    dask_scheduler_settings = app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND
+    default_cluster = dask_scheduler_settings.default_cluster
+    dask_clients_pool = DaskClientsPool.instance(app)
+    async with dask_clients_pool.acquire(default_cluster) as dask_client:
+        check_if_cluster_is_able_to_run_pipeline(
+            project_id=project_id,
+            node_id=node_id,
+            cluster_id=cluster_id,
+            node_image=sleeper_task.image,
+            scheduler_info=dask_client.backend.client.scheduler_info(),
+            task_resources={},
+        )

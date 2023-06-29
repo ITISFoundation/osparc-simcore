@@ -27,7 +27,7 @@ qx.Class.define("osparc.info.CardLarge", {
       minHeight: 350,
       padding: this.self().PADDING
     });
-    this._setLayout(new qx.ui.layout.VBox(8));
+    this._setLayout(new qx.ui.layout.VBox(15));
   },
 
   events: {
@@ -57,7 +57,8 @@ qx.Class.define("osparc.info.CardLarge", {
   members: {
     _attachHandlers: function() {
       this.addListenerOnce("appear", () => this._rebuildLayout(), this);
-      this.addListener("resize", () => this._rebuildLayout(), this);
+      // OM: Not so sure about this one
+      // this.addListener("resize", () => this._rebuildLayout(), this);
     },
 
     _rebuildLayout: function() {

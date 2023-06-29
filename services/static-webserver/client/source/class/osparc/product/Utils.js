@@ -130,8 +130,22 @@ qx.Class.define("osparc.product.Utils", {
       return logosPath;
     },
 
+    getWorkbenhUIPreviewPath: function() {
+      const colorManager = qx.theme.manager.Color.getInstance();
+      const textColor = colorManager.resolve("text");
+      const darkImage = osparc.utils.Utils.getColorLuminance(textColor) > 0.4;
+      return darkImage ? "osparc/workbenchUI-dark.png" : "osparc/workbenchUI-light.png";
+    },
+
     showLicenseExtra: function() {
       if (this.isProduct("s4l") || this.isProduct("s4llite") || this.isProduct("tis")) {
+        return true;
+      }
+      return false;
+    },
+
+    showStudyPreview: function() {
+      if (this.isProduct("osparc") || this.isProduct("s4l") || this.isProduct("s4llite")) {
         return true;
       }
       return false;

@@ -103,6 +103,7 @@ def setup_client_instance(
 
     # events
     def _create_instance() -> None:
+        _logger.debug("Creating %s for %s", f"{client_class=}", f"{api_baseurl=}")
         api_cls.create_once(
             app,
             client=client_class(base_url=api_baseurl),

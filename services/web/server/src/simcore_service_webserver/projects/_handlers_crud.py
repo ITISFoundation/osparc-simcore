@@ -8,6 +8,13 @@ import logging
 
 from aiohttp import web
 from jsonschema import ValidationError as JsonSchemaValidationError
+from models_library.api_schemas_webserver.projects import (
+    EmptyModel,
+    ProjectCopyOverride,
+    ProjectCreateNew,
+    ProjectGet,
+    ProjectUpdate,
+)
 from models_library.projects import Project, ProjectID
 from models_library.projects_state import ProjectLocked
 from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
@@ -41,14 +48,7 @@ from ..security.decorators import permission_required
 from ..users.api import get_user_name
 from . import _crud_create_utils, _crud_read_utils, projects_api
 from ._crud_read_utils import OrderDirection, ProjectListFilters, ProjectOrderBy
-from ._permalink import update_or_pop_permalink_in_project
-from ._rest_schemas import (
-    EmptyModel,
-    ProjectCopyOverride,
-    ProjectCreateNew,
-    ProjectGet,
-    ProjectUpdate,
-)
+from ._permalink_api import update_or_pop_permalink_in_project
 from .db import ProjectDBAPI
 from .exceptions import (
     ProjectDeleteError,

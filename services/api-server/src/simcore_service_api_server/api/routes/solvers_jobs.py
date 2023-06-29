@@ -1,5 +1,4 @@
 # pylint: disable=too-many-arguments
-# TODO: user_id should be injected every request in api instances, i.e. a new api-instance per request
 
 import logging
 from collections import deque
@@ -33,6 +32,7 @@ from ..dependencies.authentication import get_current_user_id
 from ..dependencies.database import Engine, get_db_engine
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
+from ..errors.http_error import ErrorGet, create_error_json_response
 from ._common import JOB_OUTPUT_LOGFILE_RESPONSES
 
 _logger = logging.getLogger(__name__)
@@ -155,9 +155,9 @@ async def get_job(
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
     """Gets job of a given solver"""
-
-    job_name = _compose_job_resource_name(solver_key, version, job_id)
-    _logger.debug("Getting Job '%s'", job_name)
+    _logger.debug(
+        "Getting Job '%s'", _compose_job_resource_name(solver_key, version, job_id)
+    )
 
     project: Project = await webserver_api.get_project(project_id=job_id)
 
@@ -169,12 +169,31 @@ async def get_job(
 @router.delete(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}",
     status_code=status.HTTP_204_NO_CONTENT,
+    responses={status.HTTP_404_NOT_FOUND: {"model": ErrorGet}},
     include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
 )
-async def delete_job(solver_key: SolverKeyId, version: VersionStr, job_id: UUID):
-    raise NotImplementedError(
-        f"delete job {solver_key=} {version=} {job_id=}.  SEE https://github.com/ITISFoundation/osparc-simcore/issues/4111"
-    )
+async def delete_job(
+    solver_key: SolverKeyId,
+    version: VersionStr,
+    job_id: UUID,
+    webserver_api: AuthSession = Depends(get_webserver_session),
+):
+    """Deletes an existing solver job
+
+    New in *version 0.5*
+    """
+    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    _logger.debug("Deleting Job '%s'", job_name)
+
+    try:
+        await webserver_api.delete_project(project_id=job_id)
+
+    except HTTPException as err:
+        if err.status_code == status.HTTP_404_NOT_FOUND:
+            return create_error_json_response(
+                f"Cannot find job={job_name} to delete",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
 
 
 @router.post(

@@ -247,6 +247,7 @@ qx.Class.define("osparc.utils.Utils", {
     getCopyButton: function() {
       const button = new qx.ui.form.Button(null, "@FontAwesome5Solid/copy/12").set({
         allowGrowY: false,
+        toolTipText: qx.locale.Manager.tr("Copy to clipboard"),
         padding: 3,
         maxWidth: 20
       });
@@ -460,6 +461,11 @@ qx.Class.define("osparc.utils.Utils", {
     bytesToGB: function(bytes) {
       const b2gb = 1024*1024*1024;
       return Math.round(100*bytes/b2gb)/100;
+    },
+
+    gBToBytes: function(gbytes) {
+      const b2gb = 1024*1024*1024;
+      return gbytes*b2gb;
     },
 
     retrieveURLAndDownload: function(locationId, fileId) {

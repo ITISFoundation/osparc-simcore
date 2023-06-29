@@ -20,6 +20,7 @@ from unittest import mock
 from unittest.mock import AsyncMock, MagicMock, Mock
 from uuid import uuid4
 
+import aiopg.sa
 import pytest
 import redis
 import redis.asyncio as aioredis
@@ -46,6 +47,9 @@ from servicelib.aiohttp.long_running_tasks.server import ProgressPercent, TaskPr
 from servicelib.common_aiopg_utils import DSN
 from settings_library.email import SMTPSettings
 from settings_library.redis import RedisDatabase, RedisSettings
+from simcore_postgres_database.models.groups_extra_properties import (
+    groups_extra_properties,
+)
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.groups.api import (
@@ -141,8 +145,9 @@ def mocked_send_email(monkeypatch: MonkeyPatch) -> None:
             f"=== EMAIL FROM: {sender}\n=== EMAIL TO: {recipient}\n=== SUBJECT: {subject}\n=== BODY:\n{body}"
         )
 
+    # pylint: disable=protected-access
     monkeypatch.setattr(
-        simcore_service_webserver.email._core,  # pylint: disable=protected-access
+        simcore_service_webserver.email._core,
         "send_email",
         _print_mail_to_stdout,
     )
@@ -464,13 +469,28 @@ def postgres_db(
 
     yield engine
 
-    assert pg_cli.downgrade.callback
-    pg_cli.downgrade.callback("base")
-    assert pg_cli.clean.callback
-    pg_cli.clean.callback()
+    # NOTE: we directly drop the table, that is faster
+    # testing the upgrade/downgrade is already done in postgres-database.
+    # there is no need to it here.
+    with engine.begin() as conn:
+        conn.execute(sa.DDL("DROP TABLE IF EXISTS alembic_version"))
 
     orm.metadata.drop_all(engine)
     engine.dispose()
+
+
+@pytest.fixture
+async def aiopg_engine(postgres_db: sa.engine.Engine) -> AsyncIterator[aiopg.sa.Engine]:
+    from aiopg.sa import create_engine
+
+    engine = await create_engine(f"{postgres_db.url}")
+    assert engine
+
+    yield engine
+
+    if engine:
+        engine.close()
+        await engine.wait_closed()
 
 
 # REDIS CORE SERVICE ------------------------------------------------------
@@ -673,3 +693,32 @@ async def user_project(
         print("-----> added project", project["name"])
         yield project
         print("<----- removed project", project["name"])
+
+
+@pytest.fixture
+async def with_permitted_override_services_specifications(
+    aiopg_engine: aiopg.sa.engine.Engine,
+) -> AsyncIterator[None]:
+    old_value = False
+    async with aiopg_engine.acquire() as conn:
+        old_value = bool(
+            await conn.scalar(
+                sa.select(
+                    groups_extra_properties.c.override_services_specifications
+                ).where(groups_extra_properties.c.group_id == 1)
+            )
+        )
+
+        await conn.execute(
+            groups_extra_properties.update()
+            .where(groups_extra_properties.c.group_id == 1)
+            .values(override_services_specifications=True)
+        )
+    yield
+
+    async with aiopg_engine.acquire() as conn:
+        await conn.execute(
+            groups_extra_properties.update()
+            .where(groups_extra_properties.c.group_id == 1)
+            .values(override_services_specifications=old_value)
+        )

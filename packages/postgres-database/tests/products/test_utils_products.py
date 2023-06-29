@@ -26,6 +26,7 @@ async def test_default_product(pg_engine: Engine, make_products_table: Callable)
         assert default_product == "s4l"
 
 
+@pytest.mark.parametrize("pg_sa_engine", ["sqlModels"], indirect=True)
 async def test_default_product_undefined(pg_engine: Engine):
     async with pg_engine.acquire() as conn:
         with pytest.raises(ValueError):

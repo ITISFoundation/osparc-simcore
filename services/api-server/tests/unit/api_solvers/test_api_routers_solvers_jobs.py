@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import urllib.parse
 from pathlib import Path
 from pprint import pprint
 from typing import Any, Iterator
@@ -208,12 +209,12 @@ async def test_solver_logs(
 
 @pytest.fixture
 def solver_key() -> str:
-    return "simcore/services/comp/itis/isolve"
+    return "simcore/services/comp/itis/sleeper"
 
 
 @pytest.fixture
 def solver_version() -> str:
-    return "1.2.3"
+    return "2.0.0"
 
 
 @pytest.mark.acceptance_test(
@@ -330,7 +331,7 @@ async def test_run_solver_job(
 
     mocked_catalog_service_api.get(
         # path__regex=r"/services/(?P<service_key>[\w-]+)/(?P<service_version>[0-9\.]+)",
-        path="/v0/services/simcore%2Fservices%2Fcomp%2Fitis%2Fisolve/1.2.3",
+        path=f"/v0/services/{urllib.parse.quote_plus(solver_key)}/{solver_version}",
         name="get_service_v0_services__service_key___service_version__get",
     ).respond(
         status.HTTP_200_OK,
@@ -382,47 +383,4 @@ async def test_run_solver_job(
     ].called
 
     job_status = JobStatus.parse_obj(resp.json())
-
-
-@pytest.mark.xfail(reason="Still not implemented")
-@pytest.mark.acceptance_test(
-    "For https://github.com/ITISFoundation/osparc-simcore/issues/4111"
-)
-async def test_delete_solver_job(
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
-    solver_key: str,
-    solver_version: str,
-    faker: Faker,
-):
-
-    # Cannot delete if it does not exists
-    resp = await client.delete(
-        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs/{faker.uuid4()}",
-        auth=auth,
-    )
-    assert resp.status_code == status.HTTP_404_NOT_FOUND
-
-    # Create Job
-    resp = await client.post(
-        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs",
-        auth=auth,
-        json=JobInputs(
-            values={
-                "x": 3.14,
-                "n": 42,
-            }
-        ).dict(),
-    )
-    assert resp.status_code == status.HTTP_200_OK
-    job = Job.parse_obj(resp.json())
-
-    # Delete Job after creation
-    resp = await client.delete(
-        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs/{job.id}",
-        auth=auth,
-    )
-    assert resp.status_code == status.HTTP_204_NO_CONTENT
-
-    # Run job and try to delete while running
-    # Run a job and delete when finished
+    assert job_status.progress == 0.0

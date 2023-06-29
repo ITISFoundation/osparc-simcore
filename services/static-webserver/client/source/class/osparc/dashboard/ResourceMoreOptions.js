@@ -26,11 +26,11 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     this._setLayout(new qx.ui.layout.VBox(10));
 
     this.__addToolbar();
-    this.__addDetailsView();
+    this.__addTabPagesView();
   },
 
   events: {
-    "openStudy": "qx.event.type.Data",
+    "openingStudy": "qx.event.type.Data",
     "openTemplate": "qx.event.type.Data",
     "openService": "qx.event.type.Data",
     "updateStudy": "qx.event.type.Data",
@@ -40,8 +40,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
   },
 
   statics: {
-    WIDTH: 700,
-    HEIGHT: 700,
+    WIDTH: 715,
+    HEIGHT: 715,
 
     popUpInWindow: function(moreOpts) {
       const title = qx.locale.Manager.tr("Details");
@@ -64,12 +64,16 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       osparc.utils.Utils.centerTabIcon(tabPage);
 
       // Page title
-      tabPage.add(new qx.ui.basic.Label(title).set({
-        font: "text-15"
-      }));
+      if (title) {
+        tabPage.add(new qx.ui.basic.Label(title).set({
+          font: "text-15"
+        }));
+      }
 
       // Page content
-      tabPage.add(widget, {
+      const scrollContainer = new qx.ui.container.Scroll();
+      scrollContainer.add(widget);
+      tabPage.add(scrollContainer, {
         flex: 1
       });
 
@@ -89,7 +93,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
   members: {
     __resourceData: null,
     __toolbar: null,
-    __detailsView: null,
+    __tabsView: null,
+    __dataPage: null,
     __permissionsPage: null,
     __tagsPage: null,
     __classifiersPage: null,
@@ -128,13 +133,18 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         center: true
       });
       osparc.utils.Utils.setIdToWidget(openButton, "openResource");
+      const store = osparc.store.Store.getInstance();
+      store.bind("currentStudy", openButton, "visibility", {
+        converter: study => (study === null && this.isShowOpenButton()) ? "visible" : "excluded"
+      });
       this.bind("showOpenButton", openButton, "visibility", {
-        converter: show => show ? "visible" : "excluded"
+        converter: show => (store.getCurrentStudy() === null && show) ? "visible" : "excluded"
       });
       openButton.addListener("execute", () => {
         switch (this.__resourceData["resourceType"]) {
           case "study":
-            this.fireDataEvent("openStudy", this.__resourceData);
+            osparc.desktop.MainPageHandler.getInstance().startStudy(this.__resourceData["uuid"]);
+            this.fireDataEvent("openingStudy", this.__resourceData);
             break;
           case "template":
             this.fireDataEvent("openTemplate", this.__resourceData);
@@ -149,8 +159,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       this._add(toolbar);
     },
 
-    __addDetailsView: function() {
-      const detailsView = this.__detailsView = new qx.ui.tabview.TabView().set({
+    __addTabPagesView: function() {
+      const detailsView = this.__tabsView = new qx.ui.tabview.TabView().set({
         barPosition: "left",
         contentPadding: 0
       });
@@ -163,8 +173,12 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
     __openPage: function(page) {
       if (page) {
-        this.__detailsView.setSelection([page]);
+        this.__tabsView.setSelection([page]);
       }
+    },
+
+    openData: function() {
+      this.__openPage(this.__dataPage);
     },
 
     openAccessRights: function() {
@@ -234,7 +248,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __addPages: function() {
-      const detailsView = this.__detailsView;
+      const detailsView = this.__tabsView;
 
       // keep selected page
       const selection = detailsView.getSelection();
@@ -249,6 +263,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       // add Open service button
       [
         this.__getInfoPage,
+        this.__getCommentsPage,
+        this.__getDataPage,
         this.__getPermissionsPage,
         this.__getTagsPage,
         this.__getServicesUpdatePage,
@@ -275,7 +291,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
     __getInfoPage: function() {
       const id = "Information";
-      const title = this.tr("Information");
+      const title = "";
       const icon = "@FontAwesome5Solid/info";
       const resourceData = this.__resourceData;
       const infoCard = osparc.utils.Resources.isService(resourceData) ? new osparc.info.ServiceLarge(resourceData, null, false) : new osparc.info.StudyLarge(resourceData, false);
@@ -305,8 +321,53 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
           this.fireDataEvent("updateTemplate", updatedData);
         }
       });
-      const page = this.self().createPage(title, infoCard, icon, id);
 
+      const page = this.self().createPage(title, infoCard, icon, id);
+      return page;
+    },
+
+    __getCommentsPage: function() {
+      const resourceData = this.__resourceData;
+      if (osparc.utils.Resources.isService(resourceData)) {
+        return null;
+      }
+
+      const id = "Comments";
+      const title = this.tr("Comments");
+      const icon = "@FontAwesome5Solid/comments";
+
+      const commentsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      const commentsList = new osparc.info.CommentsList(resourceData["uuid"]);
+      commentsLayout.add(commentsList);
+      if (osparc.data.model.Study.canIWrite(resourceData["accessRights"])) {
+        const addComment = new osparc.info.CommentAdd(resourceData["uuid"]);
+        addComment.setPaddingLeft(10);
+        addComment.addListener("commentAdded", () => commentsList.fetchComments());
+        commentsLayout.add(addComment);
+      }
+
+      const page = this.self().createPage(title, commentsLayout, icon, id);
+      return page;
+    },
+
+    __getDataPage: function() {
+      const id = "Data";
+      const title = this.tr("Data");
+      const icon = "@FontAwesome5Solid/file";
+      const resourceData = this.__resourceData;
+      const studyDataManager = new osparc.component.widget.NodeDataManager(resourceData["uuid"]);
+
+      const page = this.__dataPage = this.self().createPage(title, studyDataManager, icon, id);
+      return page;
+    },
+
+    __getScenePage: function() {
+      const id = "Scene";
+      const title = this.tr("Scene");
+      const icon = "https://avatars.githubusercontent.com/u/33161876?s=32";
+      const threeView = new osparc.component.widget.Three("#00FF00");
+      const page = this.__permissionsPage = this.__createPage(title, threeView, icon, id);
+      page.setIcon(icon);
       return page;
     },
 

@@ -1,6 +1,6 @@
 import logging
 from enum import auto
-from typing import Any, Final, Optional, Union
+from typing import Any, Final, TypeAlias
 
 from models_library.docker import DockerGenericTag
 from models_library.utils.enums import StrAutoEnum
@@ -37,8 +37,8 @@ CPU_100_PERCENT: Final[int] = int(1 * GIGA)
 
 
 class ResourceValue(BaseModel):
-    limit: Union[StrictInt, StrictFloat, str]
-    reservation: Union[StrictInt, StrictFloat, str]
+    limit: StrictInt | StrictFloat | str
+    reservation: StrictInt | StrictFloat | str
 
     @root_validator()
     @classmethod
@@ -52,6 +52,9 @@ class ResourceValue(BaseModel):
             values["reservation"] = values["limit"]
 
         return values
+
+    def set_reservation_same_as_limit(self) -> None:
+        self.reservation = self.limit
 
     class Config:
         validate_assignment = True
@@ -82,6 +85,10 @@ class ImageResources(BaseModel):
         description="describe how a service shall be booted, using CPU, MPI, openMP or GPU",
     )
 
+    def set_reservation_same_as_limit(self) -> None:
+        for resource in self.resources.values():
+            resource.set_reservation_same_as_limit()
+
     class Config:
         schema_extra = {
             "example": {
@@ -100,7 +107,7 @@ class ImageResources(BaseModel):
         }
 
 
-ServiceResourcesDict = dict[DockerGenericTag, ImageResources]
+ServiceResourcesDict: TypeAlias = dict[DockerGenericTag, ImageResources]
 
 
 class ServiceResourcesDictHelpers:
@@ -108,7 +115,7 @@ class ServiceResourcesDictHelpers:
     def create_from_single_service(
         image: DockerGenericTag,
         resources: ResourcesDict,
-        boot_modes: Optional[list[BootMode]] = None,
+        boot_modes: list[BootMode] | None = None,
     ) -> ServiceResourcesDict:
         if boot_modes is None:
             boot_modes = [BootMode.CPU]

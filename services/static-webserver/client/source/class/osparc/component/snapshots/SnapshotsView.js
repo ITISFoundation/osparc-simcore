@@ -219,7 +219,6 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
           studyData["workbench"] = data["workbench"];
           studyData["ui"] = data["ui"];
           const study = new osparc.data.model.Study(studyData);
-          study.buildWorkbench();
           study.setReadOnly(true);
           this.__snapshotPreview.set({
             study: study

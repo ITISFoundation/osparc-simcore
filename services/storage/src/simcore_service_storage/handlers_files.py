@@ -26,7 +26,6 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
-# Exclusive for simcore-s3 storage -----------------------
 from ._meta import api_vtag
 from .dsm import get_dsm_provider
 from .exceptions import FileMetaDataNotFoundError

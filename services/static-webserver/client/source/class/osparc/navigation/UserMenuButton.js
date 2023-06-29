@@ -135,12 +135,14 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           control.addListener("execute", () => osparc.product.AboutProduct.getInstance().open());
           this.getMenu().add(control);
           break;
-        case "log-out":
-          control = new qx.ui.menu.Button(this.tr("Log out"));
+        case "log-out": {
+          const authData = osparc.auth.Data.getInstance();
+          control = new qx.ui.menu.Button(authData.isGuest() ? this.tr("Exit") : this.tr("Log out"));
           control.addListener("execute", () => qx.core.Init.getApplication().logout());
           osparc.utils.Utils.setIdToWidget(control, "userMenuLogoutBtn");
           this.getMenu().add(control);
           break;
+        }
       }
       return control || this.base(arguments, id);
     },
@@ -149,7 +151,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       this.getMenu().removeAll();
 
       const authData = osparc.auth.Data.getInstance();
-      if (["anonymous", "guest"].includes(authData.getRole())) {
+      if (authData.isGuest()) {
         this.getChildControl("log-in");
       } else {
         this.getChildControl("preferences");
@@ -161,16 +163,20 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
         osparc.store.Support.addQuickStartToMenu(this.getMenu());
         osparc.store.Support.addPanddyToMenu(this.getMenu());
       }
+      const announcementTracker = osparc.AnnouncementTracker.getInstance();
+      announcementTracker.startTracker();
+      const userMenuAnnouncement = announcementTracker.getUserMenuAnnouncement();
+      if (userMenuAnnouncement) {
+        this.getMenu().add(userMenuAnnouncement);
+      }
       this.getMenu().addSeparator();
       this.getChildControl("about");
       if (osparc.product.Utils.showAboutProduct()) {
         this.getChildControl("about-product");
       }
       this.getChildControl("license");
-      if (!["anonymous", "guest"].includes(authData.getRole())) {
-        this.getMenu().addSeparator();
-        this.getChildControl("log-out");
-      }
+      this.getMenu().addSeparator();
+      this.getChildControl("log-out");
     },
 
     populateMenuCompact: function() {
@@ -178,7 +184,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       osparc.data.Resources.get("statics")
         .then(async () => {
           const authData = osparc.auth.Data.getInstance();
-          if (["anonymous", "guest"].includes(authData.getRole())) {
+          if (authData.isGuest()) {
             this.getChildControl("log-in");
           } else {
             this.getChildControl("preferences");
@@ -201,10 +207,8 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
             this.getChildControl("about-product");
           }
           this.getChildControl("license");
-          if (!["anonymous", "guest"].includes(authData.getRole())) {
-            this.getMenu().addSeparator();
-            this.getChildControl("log-out");
-          }
+          this.getMenu().addSeparator();
+          this.getChildControl("log-out");
         });
     },
 

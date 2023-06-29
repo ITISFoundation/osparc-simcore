@@ -56,13 +56,24 @@ def fake_task(faker: Faker) -> Callable[..., Task]:
     return _creator
 
 
+@pytest.mark.parametrize(
+    "aws_private_dns, expected_host_name",
+    [
+        ("ip-10-12-32-3.internal-data", "ip-10-12-32-3"),
+        ("ip-10-12-32-32.internal-data", "ip-10-12-32-32"),
+        ("ip-10-0-3-129.internal-data", "ip-10-0-3-129"),
+        ("ip-10-0-3-12.internal-data", "ip-10-0-3-12"),
+    ],
+)
 def test_node_host_name_from_ec2_private_dns(
-    fake_ec2_instance_data: Callable[..., EC2InstanceData]
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
+    aws_private_dns: str,
+    expected_host_name: str,
 ):
     instance = fake_ec2_instance_data(
-        aws_private_dns="ip-10-12-32-3.internal-data",
+        aws_private_dns=aws_private_dns,
     )
-    assert node_host_name_from_ec2_private_dns(instance) == "ip-10-12-32-3"
+    assert node_host_name_from_ec2_private_dns(instance) == expected_host_name
 
 
 def test_node_host_name_from_ec2_private_dns_raises_with_invalid_name(

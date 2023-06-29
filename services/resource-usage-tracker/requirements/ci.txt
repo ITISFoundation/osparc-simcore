@@ -15,6 +15,7 @@
 ../../packages/pytest-simcore
 ../../packages/service-library[fastapi]
 ../../packages/settings-library
+../../packages/postgres-database
 
 # installs current package
 .
