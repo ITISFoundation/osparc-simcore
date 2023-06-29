@@ -15,12 +15,17 @@ from aiodocker import Docker, DockerError
 from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
-from models_library.basic_types import EnvVarKey
-from models_library.docker import DockerLabelKey
+from dask_task_models_library.container_tasks.protocol import (
+    ContainerCommands,
+    ContainerEnvsDict,
+    ContainerImage,
+    ContainerLabelsDict,
+    ContainerTag,
+    LogFileUploadURL,
+)
 from models_library.services_resources import BootMode
 from packaging import version
 from pydantic import ByteSize
-from pydantic.networks import AnyUrl
 from servicelib.logging_utils import (
     LogLevelInt,
     LogMessageStr,
@@ -48,14 +53,14 @@ LogPublishingCB = Callable[[LogMessageStr, LogLevelInt], Awaitable[None]]
 async def create_container_config(
     *,
     docker_registry: str,
-    service_key: str,
-    service_version: str,
-    command: list[str],
+    service_key: ContainerImage,
+    service_version: ContainerTag,
+    command: ContainerCommands,
     comp_volume_mount_point: str,
     boot_mode: BootMode,
     task_max_resources: dict[str, Any],
-    task_envs: dict[EnvVarKey, str],
-    task_labels: dict[DockerLabelKey, str],
+    task_envs: ContainerEnvsDict,
+    task_labels: ContainerLabelsDict,
 ) -> DockerContainerConfig:
     nano_cpus_limit = int(task_max_resources.get("CPU", 1) * 1e9)
     memory_limit = ByteSize(task_max_resources.get("RAM", 1024**3))
@@ -181,12 +186,12 @@ async def _parse_and_publish_logs(
 
 async def _parse_container_log_file(
     container: DockerContainer,
-    service_key: str,
-    service_version: str,
+    service_key: ContainerImage,
+    service_version: ContainerTag,
     container_name: str,
     task_publishers: TaskPublisher,
     task_volumes: TaskSharedVolumes,
-    log_file_url: AnyUrl,
+    log_file_url: LogFileUploadURL,
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
 ) -> None:
@@ -229,11 +234,11 @@ async def _parse_container_log_file(
 
 async def _parse_container_docker_logs(
     container: DockerContainer,
-    service_key: str,
-    service_version: str,
+    service_key: ContainerImage,
+    service_version: ContainerTag,
     container_name: str,
     task_publishers: TaskPublisher,
-    log_file_url: AnyUrl,
+    log_file_url: LogFileUploadURL,
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
 ) -> None:
@@ -272,12 +277,12 @@ async def _parse_container_docker_logs(
 
 async def _monitor_container_logs(
     container: DockerContainer,
-    service_key: str,
-    service_version: str,
+    service_key: ContainerImage,
+    service_version: ContainerTag,
     task_publishers: TaskPublisher,
     integration_version: version.Version,
     task_volumes: TaskSharedVolumes,
-    log_file_url: AnyUrl,
+    log_file_url: LogFileUploadURL,
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
 ) -> None:
@@ -322,12 +327,12 @@ async def _monitor_container_logs(
 @contextlib.asynccontextmanager
 async def managed_monitor_container_log_task(
     container: DockerContainer,
-    service_key: str,
-    service_version: str,
+    service_key: ContainerImage,
+    service_version: ContainerTag,
     task_publishers: TaskPublisher,
     integration_version: version.Version,
     task_volumes: TaskSharedVolumes,
-    log_file_url: AnyUrl,
+    log_file_url: LogFileUploadURL,
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
 ) -> AsyncIterator[Awaitable[None]]:
@@ -367,8 +372,8 @@ async def managed_monitor_container_log_task(
 async def pull_image(
     docker_client: Docker,
     docker_auth: DockerBasicAuth,
-    service_key: str,
-    service_version: str,
+    service_key: ContainerImage,
+    service_version: ContainerTag,
     log_publishing_cb: LogPublishingCB,
 ) -> None:
     async for pull_progress in docker_client.images.pull(
@@ -392,8 +397,8 @@ async def pull_image(
 async def get_integration_version(
     docker_client: Docker,
     docker_auth: DockerBasicAuth,
-    service_key: str,
-    service_version: str,
+    service_key: ContainerImage,
+    service_version: ContainerTag,
 ) -> version.Version:
     image_cfg = await docker_client.images.inspect(
         f"{docker_auth.server_address}/{service_key}:{service_version}"

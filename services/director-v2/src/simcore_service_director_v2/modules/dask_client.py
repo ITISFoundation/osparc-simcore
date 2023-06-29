@@ -15,7 +15,7 @@ import traceback
 from copy import deepcopy
 from dataclasses import dataclass, field
 from http.client import HTTPException
-from typing import Any, Callable, Protocol
+from typing import Any, Callable
 
 import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
@@ -26,10 +26,17 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputData,
     TaskOutputDataSchema,
 )
+from dask_task_models_library.container_tasks.protocol import (
+    ContainerCommands,
+    ContainerEnvsDict,
+    ContainerImage,
+    ContainerLabelsDict,
+    ContainerRemoteFct,
+    ContainerTag,
+    LogFileUploadURL,
+)
 from fastapi import FastAPI
-from models_library.basic_types import EnvVarKey
 from models_library.clusters import ClusterAuthentication, ClusterID
-from models_library.docker import DockerLabelKey
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -89,31 +96,6 @@ _DASK_TASK_STATUS_RUNNING_STATE_MAP = {
 }
 
 DASK_DEFAULT_TIMEOUT_S = 1
-
-
-ServiceKey = str
-ServiceVersion = str
-LogFileUploadURL = AnyUrl
-Commands = list[str]
-
-
-class RemoteFct(Protocol):
-    def __call__(  # noqa: PLR0913
-        self,
-        *,
-        docker_auth: DockerBasicAuth,
-        service_key: str,
-        service_version: str,
-        input_data: TaskInputData,
-        output_data_keys: TaskOutputDataSchema,
-        log_file_url: AnyUrl,
-        command: list[str],
-        task_envs: dict[EnvVarKey, str],
-        task_labels: dict[DockerLabelKey, str],
-        s3_settings: S3Settings | None,
-        boot_mode: BootMode,
-    ) -> TaskOutputData:
-        ...
 
 
 UserCallbackInSepThread = Callable[[], None]
@@ -206,21 +188,22 @@ class DaskClient:
         cluster_id: ClusterID,
         tasks: dict[NodeID, Image],
         callback: UserCallbackInSepThread,
-        remote_fct: RemoteFct | None = None,
+        remote_fct: ContainerRemoteFct | None = None,
     ) -> list[tuple[NodeID, str]]:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
         function that runs container will be started."""
 
         def _comp_sidecar_fct(  # noqa: PLR0913
+            *,
             docker_auth: DockerBasicAuth,
-            service_key: str,
-            service_version: str,
+            service_key: ContainerImage,
+            service_version: ContainerTag,
             input_data: TaskInputData,
             output_data_keys: TaskOutputDataSchema,
-            log_file_url: AnyUrl,
-            command: list[str],
-            task_envs: dict[EnvVarKey, str],
-            task_labels: dict[DockerLabelKey, str],
+            log_file_url: LogFileUploadURL,
+            command: ContainerCommands,
+            task_envs: ContainerEnvsDict,
+            task_labels: ContainerLabelsDict,
             s3_settings: S3Settings | None,
             boot_mode: BootMode,
         ) -> TaskOutputData:
@@ -229,17 +212,17 @@ class DaskClient:
             from simcore_service_dask_sidecar.tasks import run_computational_sidecar
 
             return run_computational_sidecar(
-                docker_auth,
-                service_key,
-                service_version,
-                input_data,
-                output_data_keys,
-                log_file_url,
-                command,
-                task_envs,
-                task_labels,
-                s3_settings,
-                boot_mode,
+                docker_auth=docker_auth,
+                service_key=service_key,
+                service_version=service_version,
+                input_data=input_data,
+                output_data_keys=output_data_keys,
+                log_file_url=log_file_url,
+                command=command,
+                task_envs=task_envs,
+                task_labels=task_labels,
+                s3_settings=s3_settings,
+                boot_mode=boot_mode,
             )
 
         if remote_fct is None:

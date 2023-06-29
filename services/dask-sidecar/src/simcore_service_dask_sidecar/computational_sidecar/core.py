@@ -20,8 +20,12 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputData,
     TaskOutputDataSchema,
 )
-from models_library.basic_types import EnvVarKey
-from models_library.docker import DockerLabelKey
+from dask_task_models_library.container_tasks.protocol import (
+    ContainerEnvsDict,
+    ContainerImage,
+    ContainerLabelsDict,
+    ContainerTag,
+)
 from models_library.services_resources import BootMode
 from packaging import version
 from pydantic import ValidationError
@@ -52,8 +56,8 @@ CONTAINER_WAIT_TIME_SECS = 2
 @dataclass
 class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
     docker_auth: DockerBasicAuth
-    service_key: str
-    service_version: str
+    service_key: ContainerImage
+    service_version: ContainerTag
     input_data: TaskInputData
     output_data_keys: TaskOutputDataSchema
     log_file_url: AnyUrl
@@ -61,8 +65,8 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
     task_max_resources: dict[str, float]
     task_publishers: TaskPublisher
     s3_settings: S3Settings | None
-    task_envs: dict[EnvVarKey, str]
-    task_labels: dict[DockerLabelKey, str]
+    task_envs: ContainerEnvsDict
+    task_labels: ContainerLabelsDict
 
     async def _write_input_data(
         self,

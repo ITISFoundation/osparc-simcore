@@ -11,11 +11,16 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputData,
     TaskOutputDataSchema,
 )
+from dask_task_models_library.container_tasks.protocol import (
+    ContainerCommands,
+    ContainerEnvsDict,
+    ContainerImage,
+    ContainerLabelsDict,
+    ContainerTag,
+    LogFileUploadURL,
+)
 from distributed.worker import logger
-from models_library.basic_types import EnvVarKey
-from models_library.docker import DockerLabelKey
 from models_library.services_resources import BootMode
-from pydantic.networks import AnyUrl
 from servicelib.logging_utils import config_all_loggers
 from settings_library.s3 import S3Settings
 
@@ -88,14 +93,14 @@ async def dask_teardown(_worker: distributed.Worker) -> None:
 async def _run_computational_sidecar_async(
     *,
     docker_auth: DockerBasicAuth,
-    service_key: str,
-    service_version: str,
+    service_key: ContainerImage,
+    service_version: ContainerTag,
     input_data: TaskInputData,
     output_data_keys: TaskOutputDataSchema,
-    log_file_url: AnyUrl,
-    command: list[str],
-    task_envs: dict[EnvVarKey, str],
-    task_labels: dict[DockerLabelKey, str],
+    log_file_url: LogFileUploadURL,
+    command: ContainerCommands,
+    task_envs: ContainerEnvsDict,
+    task_labels: ContainerLabelsDict,
     s3_settings: S3Settings | None,
     boot_mode: BootMode,
 ) -> TaskOutputData:
@@ -133,14 +138,14 @@ async def _run_computational_sidecar_async(
 def run_computational_sidecar(
     # pylint: disable=too-many-arguments
     docker_auth: DockerBasicAuth,
-    service_key: str,
-    service_version: str,
+    service_key: ContainerImage,
+    service_version: ContainerTag,
     input_data: TaskInputData,
     output_data_keys: TaskOutputDataSchema,
-    log_file_url: AnyUrl,
-    command: list[str],
-    task_envs: dict[EnvVarKey, str],
-    task_labels: dict[DockerLabelKey, str],
+    log_file_url: LogFileUploadURL,
+    command: ContainerCommands,
+    task_envs: ContainerEnvsDict,
+    task_labels: ContainerLabelsDict,
     s3_settings: S3Settings | None,
     boot_mode: BootMode = BootMode.CPU,
 ) -> TaskOutputData:

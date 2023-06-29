@@ -10,8 +10,13 @@ from unittest.mock import call
 import aiodocker
 import arrow
 import pytest
-from models_library.basic_types import EnvVarKey
-from models_library.docker import DockerLabelKey
+from dask_task_models_library.container_tasks.protocol import (
+    ContainerCommands,
+    ContainerEnvsDict,
+    ContainerImage,
+    ContainerLabelsDict,
+    ContainerTag,
+)
 from models_library.services_resources import BootMode
 from pytest_mock.plugin import MockerFixture
 from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
@@ -64,14 +69,14 @@ def comp_volume_mount_point() -> str:
 )
 async def test_create_container_config(
     docker_registry: str,
-    service_key: str,
-    service_version: str,
-    command: list[str],
+    service_key: ContainerImage,
+    service_version: ContainerTag,
+    command: ContainerCommands,
     comp_volume_mount_point: str,
     boot_mode: BootMode,
     task_max_resources: dict[str, Any],
-    task_envs: dict[EnvVarKey, str],
-    task_labels: dict[DockerLabelKey, str],
+    task_envs: ContainerEnvsDict,
+    task_labels: ContainerLabelsDict,
 ):
     container_config = await create_container_config(
         docker_registry=docker_registry,
@@ -172,9 +177,9 @@ async def test__try_parse_progress(
 )
 async def test_managed_container_always_removes_container(
     docker_registry: str,
-    service_key: str,
-    service_version: str,
-    command: list[str],
+    service_key: ContainerImage,
+    service_version: ContainerTag,
+    command: ContainerCommands,
     comp_volume_mount_point: str,
     mocker: MockerFixture,
     exception_type: Exception,
@@ -225,9 +230,9 @@ async def test_managed_container_always_removes_container(
 
 async def test_managed_container_with_broken_container_raises_docker_exception(
     docker_registry: str,
-    service_key: str,
-    service_version: str,
-    command: list[str],
+    service_key: ContainerImage,
+    service_version: ContainerTag,
+    command: ContainerCommands,
     comp_volume_mount_point: str,
     mocker: MockerFixture,
 ):

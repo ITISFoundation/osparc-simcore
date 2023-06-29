@@ -31,14 +31,20 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputData,
     TaskOutputDataSchema,
 )
+from dask_task_models_library.container_tasks.protocol import (
+    ContainerCommands,
+    ContainerEnvsDict,
+    ContainerImage,
+    ContainerLabelsDict,
+    ContainerTag,
+    LogFileUploadURL,
+)
 from distributed import Event, Scheduler
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
 from fastapi.applications import FastAPI
 from models_library.api_schemas_storage import LinkType
-from models_library.basic_types import EnvVarKey
 from models_library.clusters import ClusterID, NoAuthentication, SimpleAuthentication
-from models_library.docker import DockerLabelKey
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -461,14 +467,14 @@ async def test_send_computation_task(
     # the dask-worker must be able to import the function
     def fake_sidecar_fct(
         docker_auth: DockerBasicAuth,
-        service_key: str,
-        service_version: str,
+        service_key: ContainerImage,
+        service_version: ContainerTag,
         input_data: TaskInputData,
         output_data_keys: TaskOutputDataSchema,
-        log_file_url: AnyUrl,
-        command: list[str],
-        task_envs: dict[EnvVarKey, str],
-        task_labels: dict[DockerLabelKey, str],
+        log_file_url: LogFileUploadURL,
+        command: ContainerCommands,
+        task_envs: ContainerEnvsDict,
+        task_labels: ContainerLabelsDict,
         s3_settings: S3Settings | None,
         boot_mode: BootMode,
         expected_annotations,
@@ -557,14 +563,14 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
     # the dask-worker must be able to import the function
     def fake_sidecar_fct(
         docker_auth: DockerBasicAuth,
-        service_key: str,
-        service_version: str,
+        service_key: ContainerImage,
+        service_version: ContainerTag,
         input_data: TaskInputData,
         output_data_keys: TaskOutputDataSchema,
-        log_file_url: AnyUrl,
-        command: list[str],
-        task_envs: dict[EnvVarKey, str],
-        task_labels: dict[DockerLabelKey, str],
+        log_file_url: LogFileUploadURL,
+        command: ContainerCommands,
+        task_envs: ContainerEnvsDict,
+        task_labels: ContainerLabelsDict,
         s3_settings: S3Settings | None,
         boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
@@ -639,14 +645,14 @@ async def test_abort_computation_tasks(
     # the dask-worker must be able to import the function
     def fake_remote_fct(
         docker_auth: DockerBasicAuth,
-        service_key: str,
-        service_version: str,
+        service_key: ContainerImage,
+        service_version: ContainerTag,
         input_data: TaskInputData,
         output_data_keys: TaskOutputDataSchema,
-        log_file_url: AnyUrl,
-        command: list[str],
-        task_envs: dict[EnvVarKey, str],
-        task_labels: dict[DockerLabelKey, str],
+        log_file_url: LogFileUploadURL,
+        command: ContainerCommands,
+        task_envs: ContainerEnvsDict,
+        task_labels: ContainerLabelsDict,
         s3_settings: S3Settings | None,
         boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
@@ -724,14 +730,14 @@ async def test_failed_task_returns_exceptions(
     # the dask-worker must be able to import the function
     def fake_failing_sidecar_fct(
         docker_auth: DockerBasicAuth,
-        service_key: str,
-        service_version: str,
+        service_key: ContainerImage,
+        service_version: ContainerTag,
         input_data: TaskInputData,
         output_data_keys: TaskOutputDataSchema,
-        log_file_url: AnyUrl,
-        command: list[str],
-        task_envs: dict[EnvVarKey, str],
-        task_labels: dict[DockerLabelKey, str],
+        log_file_url: LogFileUploadURL,
+        command: ContainerCommands,
+        task_envs: ContainerEnvsDict,
+        task_labels: ContainerLabelsDict,
         s3_settings: S3Settings | None,
         boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
@@ -946,14 +952,14 @@ async def test_get_tasks_status(
 
     def fake_remote_fct(
         docker_auth: DockerBasicAuth,
-        service_key: str,
-        service_version: str,
+        service_key: ContainerImage,
+        service_version: ContainerTag,
         input_data: TaskInputData,
         output_data_keys: TaskOutputDataSchema,
-        log_file_url: AnyUrl,
-        command: list[str],
-        task_envs: dict[EnvVarKey, str],
-        task_labels: dict[DockerLabelKey, str],
+        log_file_url: LogFileUploadURL,
+        command: ContainerCommands,
+        task_envs: ContainerEnvsDict,
+        task_labels: ContainerLabelsDict,
         s3_settings: S3Settings | None,
         boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
@@ -1031,14 +1037,14 @@ async def test_dask_sub_handlers(
 
     def fake_remote_fct(
         docker_auth: DockerBasicAuth,
-        service_key: str,
-        service_version: str,
+        service_key: ContainerImage,
+        service_version: ContainerTag,
         input_data: TaskInputData,
         output_data_keys: TaskOutputDataSchema,
-        log_file_url: AnyUrl,
-        command: list[str],
-        task_envs: dict[EnvVarKey, str],
-        task_labels: dict[DockerLabelKey, str],
+        log_file_url: LogFileUploadURL,
+        command: ContainerCommands,
+        task_envs: ContainerEnvsDict,
+        task_labels: ContainerLabelsDict,
         s3_settings: S3Settings | None,
         boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
@@ -1108,14 +1114,14 @@ async def test_get_cluster_details(
     # send a fct that uses resources
     def fake_sidecar_fct(
         docker_auth: DockerBasicAuth,
-        service_key: str,
-        service_version: str,
+        service_key: ContainerImage,
+        service_version: ContainerTag,
         input_data: TaskInputData,
         output_data_keys: TaskOutputDataSchema,
-        log_file_url: AnyUrl,
-        command: list[str],
-        task_envs: dict[EnvVarKey, str],
-        task_labels: dict[DockerLabelKey, str],
+        log_file_url: LogFileUploadURL,
+        command: ContainerCommands,
+        task_envs: ContainerEnvsDict,
+        task_labels: ContainerLabelsDict,
         s3_settings: S3Settings | None,
         boot_mode: BootMode,
         expected_annotations,
