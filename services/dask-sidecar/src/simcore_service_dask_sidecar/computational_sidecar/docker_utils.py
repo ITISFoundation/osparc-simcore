@@ -53,14 +53,14 @@ LogPublishingCB = Callable[[LogMessageStr, LogLevelInt], Awaitable[None]]
 async def create_container_config(
     *,
     docker_registry: str,
-    service_key: ContainerImage,
-    service_version: ContainerTag,
+    image: ContainerImage,
+    tag: ContainerTag,
     command: ContainerCommands,
     comp_volume_mount_point: str,
     boot_mode: BootMode,
     task_max_resources: dict[str, Any],
-    task_envs: ContainerEnvsDict,
-    task_labels: ContainerLabelsDict,
+    envs: ContainerEnvsDict,
+    labels: ContainerLabelsDict,
 ) -> DockerContainerConfig:
     nano_cpus_limit = int(task_max_resources.get("CPU", 1) * 1e9)
     memory_limit = ByteSize(task_max_resources.get("RAM", 1024**3))
@@ -76,15 +76,15 @@ async def create_container_config(
         f"SIMCORE_NANO_CPUS_LIMIT={nano_cpus_limit}",
         f"SIMCORE_MEMORY_BYTES_LIMIT={memory_limit}",
     ]
-    if task_envs:
+    if envs:
         env_variables += [
-            f"{env_key}={env_value}" for env_key, env_value in task_envs.items()
+            f"{env_key}={env_value}" for env_key, env_value in envs.items()
         ]
     config = DockerContainerConfig(
         Env=env_variables,
         Cmd=command,
-        Image=f"{docker_registry}/{service_key}:{service_version}",
-        Labels=cast(dict[str, str], task_labels),
+        Image=f"{docker_registry}/{image}:{tag}",
+        Labels=cast(dict[str, str], labels),
         HostConfig=ContainerHostConfig(
             Init=True,
             Binds=[

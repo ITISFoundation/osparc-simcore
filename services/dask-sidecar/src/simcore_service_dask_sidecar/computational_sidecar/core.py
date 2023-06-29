@@ -202,14 +202,14 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
             )
             config = await create_container_config(
                 docker_registry=self.docker_auth.server_address,
-                service_key=self.service_key,
-                service_version=self.service_version,
+                image=self.service_key,
+                tag=self.service_version,
                 command=command,
                 comp_volume_mount_point=f"{computational_shared_data_mount_point}/{run_id}",
                 boot_mode=self.boot_mode,
                 task_max_resources=self.task_max_resources,
-                task_envs=self.task_envs,
-                task_labels=self.task_labels,
+                envs=self.task_envs,
+                labels=self.task_labels,
             )
             await self._write_input_data(task_volumes, integration_version)
 

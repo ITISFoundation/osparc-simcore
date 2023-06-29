@@ -32,12 +32,12 @@ def docker_registry() -> str:
 
 
 @pytest.fixture()
-def service_key() -> str:
-    return "myfake/service_key"
+def image() -> str:
+    return "myfake/image"
 
 
 @pytest.fixture()
-def service_version() -> str:
+def tag() -> str:
     return "2.3.45"
 
 
@@ -69,8 +69,8 @@ def comp_volume_mount_point() -> str:
 )
 async def test_create_container_config(
     docker_registry: str,
-    service_key: ContainerImage,
-    service_version: ContainerTag,
+    image: ContainerImage,
+    tag: ContainerTag,
     command: ContainerCommands,
     comp_volume_mount_point: str,
     boot_mode: BootMode,
@@ -80,14 +80,14 @@ async def test_create_container_config(
 ):
     container_config = await create_container_config(
         docker_registry=docker_registry,
-        service_key=service_key,
-        service_version=service_version,
+        image=image,
+        tag=tag,
         command=command,
         comp_volume_mount_point=comp_volume_mount_point,
         boot_mode=boot_mode,
         task_max_resources=task_max_resources,
-        task_envs=task_envs,
-        task_labels=task_labels,
+        envs=task_envs,
+        labels=task_labels,
     )
     assert container_config.dict(by_alias=True) == (
         {
@@ -101,7 +101,7 @@ async def test_create_container_config(
                 *[f"{env_var}={env_value}" for env_var, env_value in task_envs.items()],
             ],
             "Cmd": command,
-            "Image": f"{docker_registry}/{service_key}:{service_version}",
+            "Image": f"{docker_registry}/{image}:{tag}",
             "Labels": task_labels,
             "HostConfig": {
                 "Binds": [
@@ -177,8 +177,8 @@ async def test__try_parse_progress(
 )
 async def test_managed_container_always_removes_container(
     docker_registry: str,
-    service_key: ContainerImage,
-    service_version: ContainerTag,
+    image: ContainerImage,
+    tag: ContainerTag,
     command: ContainerCommands,
     comp_volume_mount_point: str,
     mocker: MockerFixture,
@@ -186,14 +186,14 @@ async def test_managed_container_always_removes_container(
 ):
     container_config = await create_container_config(
         docker_registry=docker_registry,
-        service_key=service_key,
-        service_version=service_version,
+        image=image,
+        tag=tag,
         command=command,
         comp_volume_mount_point=comp_volume_mount_point,
         boot_mode=BootMode.CPU,
         task_max_resources={},
-        task_envs={},
-        task_labels={},
+        envs={},
+        labels={},
     )
 
     mocked_aiodocker = mocker.patch("aiodocker.Docker", autospec=True)
@@ -230,22 +230,22 @@ async def test_managed_container_always_removes_container(
 
 async def test_managed_container_with_broken_container_raises_docker_exception(
     docker_registry: str,
-    service_key: ContainerImage,
-    service_version: ContainerTag,
+    image: ContainerImage,
+    tag: ContainerTag,
     command: ContainerCommands,
     comp_volume_mount_point: str,
     mocker: MockerFixture,
 ):
     container_config = await create_container_config(
         docker_registry=docker_registry,
-        service_key=service_key,
-        service_version=service_version,
+        image=image,
+        tag=tag,
         command=command,
         comp_volume_mount_point=comp_volume_mount_point,
         boot_mode=BootMode.CPU,
         task_max_resources={},
-        task_envs={},
-        task_labels={},
+        envs={},
+        labels={},
     )
     mocked_aiodocker = mocker.patch("aiodocker.Docker", autospec=True)
     mocked_aiodocker.return_value.__aenter__.return_value.containers.create.return_value.delete.side_effect = aiodocker.DockerError(
