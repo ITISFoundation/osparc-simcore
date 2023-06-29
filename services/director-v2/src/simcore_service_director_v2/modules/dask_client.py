@@ -38,6 +38,7 @@ from dask_task_models_library.container_tasks.protocol import (
 )
 from fastapi import FastAPI
 from models_library.clusters import ClusterAuthentication, ClusterID
+from models_library.docker import SimcoreServiceDockerLabelKeys
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -320,7 +321,9 @@ class DaskClient:
                     log_file_url=log_file_url,
                     command=node_image.command,
                     task_envs={},
-                    task_labels={},
+                    task_labels=SimcoreServiceDockerLabelKeys(
+                        user_id=user_id, study_id=project_id, uuid=node_id
+                    ).to_docker_labels(),
                     s3_settings=s3_settings,
                     boot_mode=node_image.boot_mode,
                     key=job_id,

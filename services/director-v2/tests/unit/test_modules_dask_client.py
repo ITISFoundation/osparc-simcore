@@ -45,6 +45,7 @@ from faker import Faker
 from fastapi.applications import FastAPI
 from models_library.api_schemas_storage import LinkType
 from models_library.clusters import ClusterID, NoAuthentication, SimpleAuthentication
+from models_library.docker import SimcoreServiceDockerLabelKeys
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -464,6 +465,7 @@ async def test_send_computation_task(
     dask_client: DaskClient,
     user_id: UserID,
     project_id: ProjectID,
+    node_id: NodeID,
     cluster_id: ClusterID,
     image_params: ImageParams,
     _mocked_node_ports: None,
@@ -505,6 +507,7 @@ async def test_send_computation_task(
         return TaskOutputData.parse_obj({"some_output_key": 123})
 
     # NOTE: We pass another fct so it can run in our localy created dask cluster
+    # NOTE2: since there is only 1 task here, it's ok to pass the nodeID
     node_id_to_job_ids = await dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
@@ -515,7 +518,12 @@ async def test_send_computation_task(
             fake_sidecar_fct,
             expected_annotations=image_params.expected_annotations,
             expected_envs={},
-            expected_labels={},
+            expected_labels=parse_obj_as(
+                ContainerLabelsDict,
+                SimcoreServiceDockerLabelKeys(
+                    user_id=user_id, study_id=project_id, uuid=node_id
+                ).to_docker_labels(),
+            ),
         ),
     )
     assert node_id_to_job_ids
