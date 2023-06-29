@@ -22,7 +22,6 @@ def override_openapi_method(app: FastAPI):
         returns OAS schema with vendor extensions
         """
         if not zelf.openapi_schema:
-
             if zelf.redoc_url:
                 desc = compose_long_description(zelf.description)
             else:
@@ -62,10 +61,11 @@ def use_route_names_as_operation_ids(app: FastAPI) -> None:
 
 def dump_openapi(app: FastAPI, filepath: Path):
     logger.info("Dumping openapi specs as %s", filepath)
-    with open(filepath, "wt") as fh:
+    with Path.open(filepath, "w") as fh:
         if filepath.suffix == ".json":
             json.dump(app.openapi(), fh, indent=2)
         elif filepath.suffix in (".yaml", ".yml"):
             yaml.safe_dump(app.openapi(), fh)
         else:
-            raise ValueError("invalid")
+            msg = "invalid"
+            raise ValueError(msg)
