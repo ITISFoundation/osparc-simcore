@@ -10,6 +10,7 @@ import httpx
 from cryptography import fernet
 from fastapi import FastAPI, HTTPException
 from httpx import Response
+from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.projects import ProjectID
 from models_library.rest_pagination import Page
 from models_library.utils.fastapi_encoders import jsonable_encoder
@@ -23,7 +24,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from ..core.settings import WebServerSettings
-from ..models.domain.projects import NewProjectIn, Project
+from ..models.pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from ..models.types import JSON
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
@@ -163,7 +164,7 @@ class AuthSession:
 
     # PROJECTS resource ---
 
-    async def create_project(self, project: NewProjectIn):
+    async def create_project(self, project: ProjectCreateNew) -> ProjectGet:
         # POST /projects --> 202
         resp = await self.client.post(
             "/projects",
@@ -193,22 +194,22 @@ class AuthSession:
                     raise TryAgain(msg)
 
         data = await self.get(f"{result_url}")
-        return Project.parse_obj(data)
+        return ProjectGet.parse_obj(data)
 
-    async def get_project(self, project_id: UUID) -> Project:
+    async def get_project(self, project_id: UUID) -> ProjectGet:
         resp = await self.client.get(
             f"/projects/{project_id}",
             cookies=self.session_cookies,
         )
 
         data: JSON | None = self._get_data_or_raise_http_exception(resp)
-        return Project.parse_obj(data)
+        return ProjectGet.parse_obj(data)
 
     async def list_projects(
         self, solver_name: str, limit: int, offset: int
-    ) -> Page[Project]:
-        assert 1 <= limit <= 50  # nosec
-        assert 0 <= offset  # nosec
+    ) -> Page[ProjectGet]:
+        assert 1 <= limit <= MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE  # nosec
+        assert offset >= 0  # nosec
         with _handle_webserver_api_errors():
             resp = await self.client.get(
                 "/projects",
@@ -218,16 +219,15 @@ class AuthSession:
                     "limit": limit,
                     "offset": offset,
                     # FIXME: better way to match jobs with projects (Next PR if this works fine!)
-                    "search": urllib.parse.quote(
-                        solver_name, safe=""
-                    ),  # WARNING: search text has a limit that I needed to increas for the example!
+                    "search": urllib.parse.quote(solver_name, safe=""),
+                    # WARNING: search text has a limit that I needed to increas for the example!
                 },
                 cookies=self.session_cookies,
             )
             resp.raise_for_status()
 
             # FIXME: this is a ProjectGet. How to transform from ProjectGet to Job!?
-            return Page[Project].parse_raw(resp.text)
+            return Page[ProjectGet].parse_raw(resp.text)
 
     async def delete_project(self, project_id: ProjectID) -> None:
         resp = await self.client.delete(

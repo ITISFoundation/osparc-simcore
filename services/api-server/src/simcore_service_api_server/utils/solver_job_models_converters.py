@@ -9,15 +9,15 @@ from functools import lru_cache
 from typing import Callable
 
 import arrow
+from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.projects_nodes import InputID
 from pydantic import parse_obj_as
 
 from ..models.basic_types import VersionStr
 from ..models.domain.projects import (
     InputTypes,
-    NewProjectIn,
     Node,
-    Project,
+    ProjectCreateNew,
     SimCoreFileLink,
     StudyUI,
 )
@@ -116,7 +116,7 @@ def get_node_id(project_id, solver_id) -> str:
 
 def create_new_project_for_job(
     solver: Solver, job: Job, inputs: JobInputs
-) -> NewProjectIn:
+) -> ProjectCreateNew:
     """
     Creates a project for a solver's job
 
@@ -152,7 +152,7 @@ def create_new_project_for_job(
         include={"id", "name", "inputs_checksum", "created_at"}, indent=2
     )
 
-    create_project_body = NewProjectIn(
+    project_create_new = ProjectCreateNew(
         uuid=project_id,
         name=job.name,  # NOTE: this IS an identifier as well. MUST NOT be changed in the case of project APIs!
         description=f"Study associated to solver job:\n{job_info}",
@@ -160,21 +160,15 @@ def create_new_project_for_job(
         workbench={solver_id: solver_service},
         ui=StudyUI(
             workbench={
-                solver_id: {"position": {"x": 633, "y": 229}},
+                f"{solver_id}": {"position": {"x": 633, "y": 229}},
             },
             slideshow={},
             currentNodeId=solver_id,
             annotations={},
         ),
-        # FIXME: these should be unnecessary
-        prjOwner="api-placeholder@osparc.io",
-        creationDate=now_str(),
-        lastChangeDate=now_str(),
-        accessRights={},
-        dev={},
     )
 
-    return create_project_body
+    return project_create_new
 
 
 def _copy_n_update_urls(
@@ -203,7 +197,7 @@ def _copy_n_update_urls(
 def create_job_from_project(
     solver_key: SolverKeyId,
     solver_version: VersionStr,
-    project: Project,
+    project: ProjectGet,
     url_for: Callable | None = None,
 ) -> Job:
     """

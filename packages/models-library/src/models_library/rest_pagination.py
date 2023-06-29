@@ -30,26 +30,24 @@ class PageMetaInfoLimitOffset(BaseModel):
     @classmethod
     def check_offset(cls, v, values):
         if v > 0 and v >= values["total"]:
-            raise ValueError(
-                f"offset {v} cannot be equal or bigger than total {values['total']}, please check"
-            )
+            msg = f"offset {v} cannot be equal or bigger than total {values['total']}, please check"
+            raise ValueError(msg)
         return v
 
     @validator("count")
     @classmethod
     def check_count(cls, v, values):
         if v > values["limit"]:
-            raise ValueError(
-                f"count {v} bigger than limit {values['limit']}, please check"
-            )
+            msg = f"count {v} bigger than limit {values['limit']}, please check"
+            raise ValueError(msg)
         if v > values["total"]:
-            raise ValueError(
+            msg = (
                 f"count {v} bigger than expected total {values['total']}, please check"
             )
+            raise ValueError(msg)
         if "offset" in values and (values["offset"] + v) > values["total"]:
-            raise ValueError(
-                f"offset {values['offset']} + count {v} is bigger than allowed total {values['total']}, please check"
-            )
+            msg = f"offset {values['offset']} + count {v} is bigger than allowed total {values['total']}, please check"
+            raise ValueError(msg)
         return v
 
     class Config:

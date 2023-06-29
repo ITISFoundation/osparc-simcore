@@ -10,13 +10,13 @@ from fastapi import APIRouter, Depends, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi_pagination.api import create_page
+from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.clusters import ClusterID
 from models_library.projects_nodes_io import BaseFileLink
 from pydantic.types import PositiveInt
 
 from ...core.settings import BasicSettings
 from ...models.basic_types import VersionStr
-from ...models.domain.projects import NewProjectIn, Project
 from ...models.pagination import LimitOffsetPage, LimitOffsetParams
 from ...models.schemas.files import File
 from ...models.schemas.jobs import ArgumentTypes, Job, JobInputs, JobOutputs, JobStatus
@@ -173,8 +173,8 @@ async def create_job(
     pre_job = Job.create_solver_job(solver=solver, inputs=inputs)
     _logger.debug("Creating Job '%s'", pre_job.name)
 
-    project_in: NewProjectIn = create_new_project_for_job(solver, pre_job, inputs)
-    new_project: Project = await webserver_api.create_project(project_in)
+    project_in: ProjectCreateNew = create_new_project_for_job(solver, pre_job, inputs)
+    new_project: ProjectGet = await webserver_api.create_project(project_in)
     assert new_project  # nosec
     assert new_project.uuid == pre_job.id  # nosec
 
@@ -207,7 +207,7 @@ async def get_job(
         "Getting Job '%s'", _compose_job_resource_name(solver_key, version, job_id)
     )
 
-    project: Project = await webserver_api.get_project(project_id=job_id)
+    project: ProjectGet = await webserver_api.get_project(project_id=job_id)
 
     job = create_job_from_project(solver_key, version, project, url_for)
     assert job.id == job_id  # nosec
@@ -330,7 +330,7 @@ async def get_job_outputs(
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Get Job '%s' outputs", job_name)
 
-    project: Project = await webserver_api.get_project(project_id=job_id)
+    project: ProjectGet = await webserver_api.get_project(project_id=job_id)
     node_ids = list(project.workbench.keys())
     assert len(node_ids) == 1  # nosec
 
