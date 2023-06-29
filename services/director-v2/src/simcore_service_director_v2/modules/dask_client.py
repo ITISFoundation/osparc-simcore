@@ -15,7 +15,7 @@ import traceback
 from copy import deepcopy
 from dataclasses import dataclass, field
 from http.client import HTTPException
-from typing import Any, Callable
+from typing import Any, Callable, Protocol
 
 import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
@@ -95,22 +95,27 @@ ServiceKey = str
 ServiceVersion = str
 LogFileUploadURL = AnyUrl
 Commands = list[str]
-RemoteFct = Callable[
-    [
-        DockerBasicAuth,
-        ServiceKey,
-        ServiceVersion,
-        TaskInputData,
-        TaskOutputDataSchema,
-        LogFileUploadURL,
-        Commands,
-        dict[EnvVarKey, str],
-        dict[DockerLabelKey, str],
-        S3Settings | None,
-        BootMode,
-    ],
-    TaskOutputData,
-]
+
+
+class RemoteFct(Protocol):
+    def __call__(  # noqa: PLR0913
+        self,
+        *,
+        docker_auth: DockerBasicAuth,
+        service_key: str,
+        service_version: str,
+        input_data: TaskInputData,
+        output_data_keys: TaskOutputDataSchema,
+        log_file_url: AnyUrl,
+        command: list[str],
+        task_envs: dict[EnvVarKey, str],
+        task_labels: dict[DockerLabelKey, str],
+        s3_settings: S3Settings | None,
+        boot_mode: BootMode,
+    ) -> TaskOutputData:
+        ...
+
+
 UserCallbackInSepThread = Callable[[], None]
 
 
@@ -206,7 +211,7 @@ class DaskClient:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
         function that runs container will be started."""
 
-        def _comp_sidecar_fct(
+        def _comp_sidecar_fct(  # noqa: PLR0913
             docker_auth: DockerBasicAuth,
             service_key: str,
             service_version: str,
@@ -330,6 +335,8 @@ class DaskClient:
                     output_data_keys=output_data_keys,
                     log_file_url=log_file_url,
                     command=node_image.command,
+                    task_envs={},
+                    task_labels={},
                     s3_settings=s3_settings,
                     boot_mode=node_image.boot_mode,
                     key=job_id,
