@@ -1,6 +1,6 @@
 [
   {
-    "name": "GET /services/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/2.0.0",
+    "name": "get_service",
     "description": "<Request('GET', 'http://catalog:8000/v0/services/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/2.0.0?user_id=1')>",
     "method": "GET",
     "host": "catalog",
