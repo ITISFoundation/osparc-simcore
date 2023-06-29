@@ -8,8 +8,9 @@ import asyncio
 import datetime
 import functools
 import traceback
+from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Awaitable, Callable, Coroutine, NoReturn
+from typing import Any, NoReturn
 from unittest import mock
 from uuid import uuid4
 
@@ -35,7 +36,9 @@ from distributed.deploy.spec import SpecCluster
 from faker import Faker
 from fastapi.applications import FastAPI
 from models_library.api_schemas_storage import LinkType
+from models_library.basic_types import EnvVarKey
 from models_library.clusters import ClusterID, NoAuthentication, SimpleAuthentication
+from models_library.docker import DockerLabelKey
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -113,7 +116,7 @@ def user_id(faker: Faker) -> UserID:
 
 
 @pytest.fixture
-def minimal_dask_config(
+def _minimal_dask_config(
     mock_env: EnvVarsDict,
     project_env_devel_environment: dict[str, Any],
     monkeypatch: MonkeyPatch,
@@ -132,7 +135,7 @@ def minimal_dask_config(
 
 @pytest.fixture
 async def create_dask_client_from_scheduler(
-    minimal_dask_config: None,
+    _minimal_dask_config: None,
     dask_spec_local_cluster: SpecCluster,
     minimal_app: FastAPI,
     tasks_file_link_type: FileLinkType,
@@ -153,7 +156,7 @@ async def create_dask_client_from_scheduler(
             client.settings
             == minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND
         )
-        assert not client._subscribed_tasks
+        assert not client._subscribed_tasks  # noqa: SLF001
 
         assert client.backend.client
         assert not client.backend.gateway
@@ -172,7 +175,7 @@ async def create_dask_client_from_scheduler(
 
 @pytest.fixture
 async def create_dask_client_from_gateway(
-    minimal_dask_config: None,
+    _minimal_dask_config: None,
     local_dask_gateway_server: DaskGatewayServer,
     minimal_app: FastAPI,
     tasks_file_link_type: FileLinkType,
@@ -196,7 +199,7 @@ async def create_dask_client_from_gateway(
             client.settings
             == minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND
         )
-        assert not client._subscribed_tasks
+        assert not client._subscribed_tasks  # noqa: SLF001
 
         assert client.backend.client
         assert client.backend.gateway
@@ -248,7 +251,7 @@ async def dask_client(
         assert future
         assert isinstance(future, Coroutine)
         result = await future
-        assert result == -285
+        assert result == -285  # noqa: PLR2004
     except AttributeError:
         # enforces existance of 'app.state.engine' and sets to None
         client.app.state.engine = None
@@ -340,8 +343,8 @@ def image_params(
     }[request.param]
 
 
-@pytest.fixture()
-def mocked_node_ports(mocker: MockerFixture):
+@pytest.fixture
+def _mocked_node_ports(mocker: MockerFixture) -> None:
     mocker.patch(
         "simcore_service_director_v2.modules.dask_client.create_node_ports",
         return_value=None,
@@ -374,7 +377,7 @@ async def test_dask_cluster_executes_simple_functions(dask_client: DaskClient):
     assert future
 
     result = await future.result(timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS)  # type: ignore
-    assert result == 7
+    assert result == 7  # noqa: PLR2004
 
 
 @pytest.mark.xfail(
@@ -389,16 +392,15 @@ async def test_dask_does_not_report_asyncio_cancelled_error_in_task(
     def fct_that_raise_cancellation_error() -> NoReturn:
         import asyncio
 
-        raise asyncio.CancelledError("task was cancelled, but dask does not care...")
+        cancel_msg = "task was cancelled, but dask does not care..."
+        raise asyncio.CancelledError(cancel_msg)
 
     future = dask_client.backend.client.submit(fct_that_raise_cancellation_error)
     # NOTE: Since asyncio.CancelledError is derived from BaseException and the worker code checks Exception only
     # this goes through...
     # The day this is fixed, this test should detect it... SAN would be happy to know about it.
-    assert (
-        await future.exception(timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS)  # type: ignore
-        and future.cancelled() == True
-    )
+    assert await future.exception(timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS)  # type: ignore
+    assert future.cancelled() is True
 
 
 @pytest.mark.xfail(
@@ -408,19 +410,16 @@ async def test_dask_does_not_report_asyncio_cancelled_error_in_task(
     "dask_client", ["create_dask_client_from_scheduler"], indirect=True
 )
 async def test_dask_does_not_report_base_exception_in_task(dask_client: DaskClient):
-    def fct_that_raise_base_exception():
-        raise BaseException(  # pylint: disable=broad-exception-raised
-            "task triggers a base exception, but dask does not care..."
-        )
+    def fct_that_raise_base_exception() -> NoReturn:
+        err_msg = "task triggers a base exception, but dask does not care..."
+        raise BaseException(err_msg)  # pylint: disable=broad-exception-raised
 
     future = dask_client.backend.client.submit(fct_that_raise_base_exception)
     # NOTE: Since asyncio.CancelledError is derived from BaseException and the worker code checks Exception only
     # this goes through...
     # The day this is fixed, this test should detect it... SAN would be happy to know about it.
-    assert (
-        await future.exception(timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS)  # type: ignore
-        and future.cancelled() == True
-    )
+    assert await future.exception(timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS)  # type: ignore
+    assert future.cancelled() is True
 
 
 @pytest.mark.parametrize("exc", [Exception, TaskCancelledError])
@@ -452,7 +451,7 @@ async def test_send_computation_task(
     project_id: ProjectID,
     cluster_id: ClusterID,
     image_params: ImageParams,
-    mocked_node_ports: None,
+    _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
     faker: Faker,
@@ -469,6 +468,8 @@ async def test_send_computation_task(
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
         command: list[str],
+        task_envs: dict[EnvVarKey, str],
+        task_labels: dict[DockerLabelKey, str],
         s3_settings: S3Settings | None,
         boot_mode: BootMode,
         expected_annotations,
@@ -520,7 +521,7 @@ async def test_send_computation_task(
     # check the results
     task_result = await dask_client.get_task_result(job_id)
     assert isinstance(task_result, TaskOutputData)
-    assert task_result.get("some_output_key") == 123
+    assert task_result.get("some_output_key") == 123  # noqa: PLR2004
 
     # now release the results
     await dask_client.release_task_result(job_id)
@@ -539,7 +540,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
     project_id: ProjectID,
     cluster_id: ClusterID,
     image_params: ImageParams,
-    mocked_node_ports: None,
+    _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
 ):
@@ -563,6 +564,8 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
         command: list[str],
+        task_envs: dict[EnvVarKey, str],
+        task_labels: dict[DockerLabelKey, str],
         s3_settings: S3Settings | None,
         boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
@@ -626,7 +629,7 @@ async def test_abort_computation_tasks(
     project_id: ProjectID,
     cluster_id: ClusterID,
     image_params: ImageParams,
-    mocked_node_ports: None,
+    _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
     faker: Faker,
@@ -643,6 +646,8 @@ async def test_abort_computation_tasks(
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
         command: list[str],
+        task_envs: dict[EnvVarKey, str],
+        task_labels: dict[DockerLabelKey, str],
         s3_settings: S3Settings | None,
         boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
@@ -712,7 +717,7 @@ async def test_failed_task_returns_exceptions(
     project_id: ProjectID,
     cluster_id: ClusterID,
     gpu_image: ImageParams,
-    mocked_node_ports: None,
+    _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
 ):
@@ -726,6 +731,8 @@ async def test_failed_task_returns_exceptions(
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
         command: list[str],
+        task_envs: dict[EnvVarKey, str],
+        task_labels: dict[DockerLabelKey, str],
         s3_settings: S3Settings | None,
         boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
@@ -776,7 +783,7 @@ async def test_missing_resource_send_computation_task(
     project_id: ProjectID,
     cluster_id: ClusterID,
     image_params: ImageParams,
-    mocked_node_ports: None,
+    _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
 ):
@@ -817,7 +824,7 @@ async def test_too_many_resources_send_computation_task(
     project_id: ProjectID,
     node_id: NodeID,
     cluster_id: ClusterID,
-    mocked_node_ports: None,
+    _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
 ):
@@ -855,7 +862,7 @@ async def test_disconnected_backend_raises_exception(
     project_id: ProjectID,
     cluster_id: ClusterID,
     cpu_image: ImageParams,
-    mocked_node_ports: None,
+    _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
 ):
@@ -885,7 +892,7 @@ async def test_changed_scheduler_raises_exception(
     project_id: ProjectID,
     cluster_id: ClusterID,
     cpu_image: ImageParams,
-    mocked_node_ports: None,
+    _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
     unused_tcp_port_factory: Callable,
@@ -929,7 +936,7 @@ async def test_get_tasks_status(
     project_id: ProjectID,
     cluster_id: ClusterID,
     cpu_image: ImageParams,
-    mocked_node_ports: None,
+    _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
     faker: Faker,
@@ -947,6 +954,8 @@ async def test_get_tasks_status(
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
         command: list[str],
+        task_envs: dict[EnvVarKey, str],
+        task_labels: dict[DockerLabelKey, str],
         s3_settings: S3Settings | None,
         boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
@@ -1013,7 +1022,7 @@ async def test_dask_sub_handlers(
     project_id: ProjectID,
     cluster_id: ClusterID,
     cpu_image: ImageParams,
-    mocked_node_ports: None,
+    _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
     fake_task_handlers: TaskHandlers,
@@ -1029,6 +1038,8 @@ async def test_dask_sub_handlers(
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
         command: list[str],
+        task_envs: dict[EnvVarKey, str],
+        task_labels: dict[DockerLabelKey, str],
         s3_settings: S3Settings | None,
         boot_mode: BootMode = BootMode.CPU,
     ) -> TaskOutputData:
@@ -1085,7 +1096,7 @@ async def test_get_cluster_details(
     project_id: ProjectID,
     cluster_id: ClusterID,
     image_params: ImageParams,
-    mocked_node_ports: None,
+    _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
     faker: Faker,
@@ -1104,6 +1115,8 @@ async def test_get_cluster_details(
         output_data_keys: TaskOutputDataSchema,
         log_file_url: AnyUrl,
         command: list[str],
+        task_envs: dict[EnvVarKey, str],
+        task_labels: dict[DockerLabelKey, str],
         s3_settings: S3Settings | None,
         boot_mode: BootMode,
         expected_annotations,
@@ -1194,7 +1207,7 @@ async def test_get_cluster_details_robust_to_worker_disappearing(
     dask_client = await create_dask_client_from_gateway()
     await dask_client.get_cluster_details()
 
-    async def _scale_up_and_down():
+    async def _scale_up_and_down() -> None:
         assert dask_client.backend.gateway_cluster
         await dask_client.backend.gateway_cluster.scale(40)
         await asyncio.sleep(1)
@@ -1203,6 +1216,6 @@ async def test_get_cluster_details_robust_to_worker_disappearing(
     async with periodic_task(
         _scale_up_and_down, interval=datetime.timedelta(seconds=1), task_name="pytest"
     ):
-        for n in range(900):
+        for _ in range(900):
             await dask_client.get_cluster_details()
             await asyncio.sleep(0.1)

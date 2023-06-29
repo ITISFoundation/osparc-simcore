@@ -15,7 +15,7 @@ import traceback
 from copy import deepcopy
 from dataclasses import dataclass, field
 from http.client import HTTPException
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
@@ -27,7 +27,9 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputDataSchema,
 )
 from fastapi import FastAPI
+from models_library.basic_types import EnvVarKey
 from models_library.clusters import ClusterAuthentication, ClusterID
+from models_library.docker import DockerLabelKey
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -102,7 +104,9 @@ RemoteFct = Callable[
         TaskOutputDataSchema,
         LogFileUploadURL,
         Commands,
-        Optional[S3Settings],
+        dict[EnvVarKey, str],
+        dict[DockerLabelKey, str],
+        S3Settings | None,
         BootMode,
     ],
     TaskOutputData,
@@ -166,7 +170,8 @@ class DaskClient:
                 )
                 return instance
         # this is to satisfy pylance
-        raise ValueError("Could not create client")
+        err_msg = "Could not create client"
+        raise ValueError(err_msg)
 
     async def delete(self) -> None:
         logger.debug("closing dask client...")
@@ -177,7 +182,7 @@ class DaskClient:
         logger.info("dask client properly closed")
 
     def register_handlers(self, task_handlers: TaskHandlers) -> None:
-        _EVENT_CONSUMER_MAP = [
+        _event_consumer_map = [
             (self.backend.progress_sub, task_handlers.task_progress_handler),
             (self.backend.logs_sub, task_handlers.task_log_handler),
         ]
@@ -186,7 +191,7 @@ class DaskClient:
                 dask_sub_consumer_task(dask_sub, handler),
                 name=f"{dask_sub.name}_dask_sub_consumer_task",
             )
-            for dask_sub, handler in _EVENT_CONSUMER_MAP
+            for dask_sub, handler in _event_consumer_map
         ]
 
     async def send_computation_tasks(
@@ -209,6 +214,8 @@ class DaskClient:
             output_data_keys: TaskOutputDataSchema,
             log_file_url: AnyUrl,
             command: list[str],
+            task_envs: dict[EnvVarKey, str],
+            task_labels: dict[DockerLabelKey, str],
             s3_settings: S3Settings | None,
             boot_mode: BootMode,
         ) -> TaskOutputData:
@@ -224,6 +231,8 @@ class DaskClient:
                 output_data_keys,
                 log_file_url,
                 command,
+                task_envs,
+                task_labels,
                 s3_settings,
                 boot_mode,
             )
@@ -254,8 +263,6 @@ class DaskClient:
             # is runnable because we CAN'T. A cluster might auto-scale, the worker(s)
             # might also auto-scale and the gateway does not know that a priori.
             # So, we'll just send the tasks over and see what happens after a while.
-            # TODO: one idea is to do a lazy checking. A cluster might take a few seconds to run a
-            # sidecar, which will then populate the scheduler with resources available on the cluster
             if not self.backend.gateway:
                 check_if_cluster_is_able_to_run_pipeline(
                     project_id=project_id,
@@ -273,7 +280,7 @@ class DaskClient:
                         user_id
                     )
                 except HTTPException as err:
-                    raise ComputationalBackendNoS3AccessError() from err
+                    raise ComputationalBackendNoS3AccessError from err
 
             # This instance is created only once so it can be reused in calls below
             node_ports = await create_node_ports(
