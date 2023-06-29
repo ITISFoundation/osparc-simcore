@@ -10,7 +10,7 @@
 #
 
 exec docker run \
-  --interactive --tty \
+  --interactive \
   --rm \
   --volume="/etc/group:/etc/group:ro" \
   --volume="/etc/passwd:/etc/passwd:ro" \
