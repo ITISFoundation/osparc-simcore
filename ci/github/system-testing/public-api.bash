@@ -16,7 +16,7 @@ install() {
   bash ci/helpers/ensure_python_pip.bash
   pushd tests/public-api
   pip3 install -r requirements/ci.txt
-  make install-python-osparc
+  make install-latest-python-osparc
   pip freeze
   popd
   make .env
