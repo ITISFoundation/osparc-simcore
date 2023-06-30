@@ -167,13 +167,17 @@ async def list_solver_releases(
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_solver_releases_page(
+    solver_key: SolverKeyId,
     page_params: Annotated[LimitOffsetParams, Depends()],
 ):
-    msg = f"list solver (one) releases with pagination={page_params!r}"
+    msg = f"list solver {solver_key=} (one) releases with pagination={page_params!r}"
     raise NotImplementedError(msg)
 
 
-@router.get("/{solver_key:path}/releases/{version}", response_model=Solver)
+@router.get(
+    "/{solver_key:path}/releases/{version}",
+    response_model=Solver,
+)
 async def get_solver_release(
     solver_key: SolverKeyId,
     version: VersionStr,

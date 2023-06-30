@@ -1,5 +1,5 @@
 import urllib.parse
-from typing import Any, Literal
+from typing import Any, ClassVar, Literal
 
 import packaging.version
 from models_library.basic_regex import PUBLIC_VARIABLE_NAME_RE
@@ -37,9 +37,10 @@ class SolverKeyId(ConstrainedStr):
 class Solver(BaseModel):
     """A released solver with a specific version"""
 
-    id: SolverKeyId = Field(
+    id_: SolverKeyId = Field(
         ...,
         description="Solver identifier",
+        alias="id",
     )
     version: VersionStr = Field(
         ...,
@@ -58,7 +59,7 @@ class Solver(BaseModel):
 
     class Config:
         extra = Extra.ignore
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "id": "simcore/services/comp/isolve",
                 "version": "2.1.1",
@@ -92,12 +93,12 @@ class Solver(BaseModel):
     @property
     def url_friendly_id(self) -> str:
         """Use to pass id as parameter in urls"""
-        return urllib.parse.quote_plus(self.id)
+        return urllib.parse.quote_plus(self.id_)
 
     @property
     def resource_name(self) -> str:
         """Relative resource name"""
-        return self.compose_resource_name(self.id, self.version)
+        return self.compose_resource_name(self.id_, self.version)
 
     @property
     def name(self) -> str:
