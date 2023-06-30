@@ -17,12 +17,12 @@ from models_library.utils.specs_substitution import SubstitutionValue
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.faker_compose_specs import generate_fake_docker_compose
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_director_v2.modules.o2vars_substitutions import (
+from simcore_service_director_v2.modules.osparc_variables_substitutions import (
     substitute_lifespan_o2vars,
     substitute_session_o2vars,
     substitute_vendor_secrets_o2vars,
 )
-from simcore_service_director_v2.utils.session_o2vars import (
+from simcore_service_director_v2.utils.osparc_session_variables import (
     ContextDict,
     SessionVariablesTable,
     factory_context_getter,
@@ -45,7 +45,7 @@ def session_context(faker: Faker) -> ContextDict:
     )
 
 
-@pytest.mark.acceptance_test
+@pytest.mark.acceptance_test()
 async def test_resolve_session_environs(faker: Faker, session_context: ContextDict):
     assert substitute_session_o2vars
     assert substitute_vendor_secrets_o2vars

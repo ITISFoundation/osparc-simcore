@@ -12,7 +12,7 @@ from models_library.utils.specs_substitution import SpecsSubstitutionsResolver
 from pydantic import EmailStr
 
 from ..utils.db import get_repository
-from ..utils.session_o2vars import (
+from ..utils.osparc_session_variables import (
     ContextDict,
     SessionVariablesTable,
     resolve_session_variables,
