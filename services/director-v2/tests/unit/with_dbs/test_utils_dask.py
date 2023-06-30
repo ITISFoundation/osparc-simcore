@@ -22,6 +22,7 @@ from dask_task_models_library.container_tasks.io import (
     FileUrl,
     TaskOutputData,
 )
+from dask_task_models_library.container_tasks.protocol import ContainerLabelsDict
 from distributed import SpecCluster
 from faker import Faker
 from models_library.api_schemas_storage import FileUploadLinks, FileUploadSchema
@@ -35,16 +36,19 @@ from pydantic.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_sdk.node_ports_v2 import FileLinkType
+from simcore_service_director_v2.models.domains.comp_runs import MetadataDict
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
 from simcore_service_director_v2.models.schemas.services import NodeRequirements
 from simcore_service_director_v2.modules.dask_clients_pool import DaskClientsPool
 from simcore_service_director_v2.utils.dask import (
     _LOGS_FILE_NAME,
+    _UNDEFINED_METADATA,
     _to_human_readable_resource_values,
     check_if_cluster_is_able_to_run_pipeline,
     clean_task_output_and_log_files_if_invalid,
     compute_input_data,
     compute_output_data_schema,
+    compute_task_labels,
     create_node_ports,
     from_node_reqs_to_dask_resources,
     generate_dask_job_id,
@@ -548,3 +552,42 @@ async def test_check_if_cluster_is_able_to_run_pipeline(
             scheduler_info=dask_client.backend.client.scheduler_info(),
             task_resources={},
         )
+
+
+@pytest.mark.parametrize(
+    "run_metadata, expected_additional_task_labels",
+    [
+        (
+            {},
+            {
+                "product_name": _UNDEFINED_METADATA,
+                "simcore_user_agent": _UNDEFINED_METADATA,
+            },
+        ),
+        (
+            {
+                "product_name": "the awesome osparc",
+                "some-crazy-additional-label": "with awesome value",
+            },
+            {
+                "product_name": "the awesome osparc",
+                "simcore_user_agent": _UNDEFINED_METADATA,
+                "some-crazy-additional-label": "with awesome value",
+            },
+        ),
+    ],
+)
+def test_compute_task_labels(
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    run_metadata: MetadataDict,
+    expected_additional_task_labels: ContainerLabelsDict,
+):
+    task_labels = compute_task_labels(user_id, project_id, node_id, run_metadata)
+    expected_task_labels = {
+        "user_id": f"{user_id}",
+        "study_id": f"{project_id}",
+        "uuid": f"{node_id}",
+    } | expected_additional_task_labels
+    assert task_labels == expected_task_labels
