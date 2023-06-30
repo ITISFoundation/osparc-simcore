@@ -9,7 +9,7 @@ from pydantic.errors import PydanticValueError
 from servicelib.error_codes import create_error_code
 
 from ...models.basic_types import VersionStr
-from ...models.pagination import LimitOffsetPage, LimitOffsetParams
+from ...models.pagination import LimitOffsetPage, LimitOffsetParams, OnePage
 from ...models.schemas.solvers import Solver, SolverKeyId, SolverPort
 from ...services.catalog import CatalogApi
 from ..dependencies.application import get_product_name, get_reverse_url_mapper
@@ -38,7 +38,10 @@ async def list_solvers(
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
 ):
-    """Lists all available solvers (latest version)"""
+    """Lists all available solvers (latest version)
+
+    SEE get_solvers_page for paginated version of this function
+    """
     solvers: list[Solver] = await catalog_client.list_latest_releases(
         user_id=user_id, product_name=product_name
     )
@@ -70,7 +73,10 @@ async def list_solvers_releases(
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
 ):
-    """Lists all released solvers (all released versions)"""
+    """Lists all released solvers i.e. all released versions
+
+    SEE get_solvers_releases_page for a paginated version of this function
+    """
     assert await catalog_client.is_responsive()  # nosec
 
     solvers: list[Solver] = await catalog_client.list_solvers(
@@ -139,7 +145,10 @@ async def list_solver_releases(
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
 ):
-    """Lists all releases of a given solver"""
+    """Lists all releases of a given (one) solver
+
+    SEE get_solver_releases_page for a paginated version of this function
+    """
     releases: list[Solver] = await catalog_client.list_solver_releases(
         user_id, solver_key, product_name=product_name
     )
@@ -204,7 +213,7 @@ async def get_solver_release(
 
 @router.get(
     "/{solver_key:path}/releases/{version}/ports",
-    response_model=list[SolverPort],
+    response_model=OnePage[SolverPort],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def list_solver_ports(
@@ -246,4 +255,4 @@ async def list_solver_ports(
         ) from err
 
     else:
-        return ports
+        return OnePage.create(items=ports)

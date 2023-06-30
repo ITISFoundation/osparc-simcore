@@ -77,7 +77,10 @@ async def list_jobs(
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
 ):
-    """List of jobs in a specific released solver (limited to 20 jobs)"""
+    """List of jobs in a specific released solver (limited to 20 jobs)
+
+    SEE get_jobs_page for paginated version of this function
+    """
 
     solver = await catalog_client.get_service(
         user_id=user_id,

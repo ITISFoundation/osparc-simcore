@@ -4,7 +4,7 @@ import io
 import logging
 from collections import deque
 from textwrap import dedent
-from typing import IO, Annotated, Deque
+from typing import IO, Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
@@ -51,12 +51,15 @@ async def list_files(
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
     user_id: Annotated[int, Depends(get_current_user_id)],
 ):
-    """Lists all files stored in the system"""
+    """Lists all files stored in the system
+
+    SEE get_files_page for a paginated version of this function
+    """
 
     stored_files: list[StorageFileMetaData] = await storage_client.list_files(user_id)
 
     # Adapts storage API model to API model
-    files_meta: Deque = deque()
+    files_meta: deque = deque()
     for stored_file_meta in stored_files:
         try:
             assert stored_file_meta.file_id  # nosec
@@ -158,7 +161,6 @@ async def upload_file(
     return file_meta
 
 
-# DISABLED @router.post(":upload-multiple", response_model=list[FileMetadata])
 # MaG suggested a single function that can upload one or multiple files instead of having
 # two of them. Tried something like upload_file( files: Union[list[UploadFile], File] ) but it
 # produces an error in the generated openapi.json
@@ -168,7 +170,7 @@ async def upload_file(
 #
 async def upload_files(files: list[UploadFile] = FileParam(...)):
     """Uploads multiple files to the system"""
-    raise NotImplementedError()
+    raise NotImplementedError
 
 
 @router.get("/{file_id}", response_model=File, responses={**_common_error_responses})

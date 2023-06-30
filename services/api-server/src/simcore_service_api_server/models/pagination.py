@@ -21,11 +21,18 @@ T = TypeVar("T")
 
 
 class OnePage(BasePage[T], Generic[T]):
+    """
+    A single page is use to envelope a sequence that fits in a single page
+
+    If total >  MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE, we should consider extending this
+    entrypoint to proper pagination
+    """
+
     @classmethod
     def create(
         cls,
         items: Sequence[T],
-    ) -> OnePage[T]:
+    ):
         return cls(items=items, total=len(items))
 
 
