@@ -61,7 +61,6 @@ target-version = "py310"
   "PT001", # use pytest.fixture over pytest.fixture() whatsoever
   "ERA001", # found commented out code
   "FBT001", # Boolean positional arg in function definition
-  "W606", # async and await are reserved keywords starting with Python 3.7
 ]
 
 [flake8-pytest-style]
