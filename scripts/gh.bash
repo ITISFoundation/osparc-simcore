@@ -20,7 +20,7 @@ else
       echo "GH_TOKEN=<your github token>"
       exit 1
   fi
-  cur_dir=/tmp/curdir
-  docker run --rm --env-file=${GH_TOKEN_FILE} --volume=$(pwd):${cur_dir} --workdir=${cur_dir} --user=${UID}:${UID}\
+  curdir=/tmp/curdir
+  docker run --rm --env-file=${GH_TOKEN_FILE} --volume=$(pwd):${curdir} --workdir=${curdir} --user=${UID}:${UID}\
     ${IMAGE_NAME}:${IMAGE_VERSION} "$@"
 fi
