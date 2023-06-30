@@ -7,10 +7,10 @@ from fastapi.responses import PlainTextResponse
 from models_library.app_diagnostics import AppStatusCheck
 
 from ..._meta import API_VERSION, PROJECT_NAME
-from ...plugins.catalog import CatalogApi
-from ...plugins.director_v2 import DirectorV2Api
-from ...plugins.storage import StorageApi
-from ...plugins.webserver import WebserverApi
+from ...services.catalog import CatalogApi
+from ...services.director_v2 import DirectorV2Api
+from ...services.storage import StorageApi
+from ...services.webserver import WebserverApi
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.services import get_api_client
 
