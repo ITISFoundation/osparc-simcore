@@ -56,11 +56,11 @@ from ..db.repositories.comp_tasks import CompTasksRepository
 logger = logging.getLogger(__name__)
 
 
-@dataclass
+@dataclass(kw_only=True)
 class ScheduledPipelineParams:
     cluster_id: ClusterID
-    mark_for_cancellation: bool = False
     metadata: MetadataDict
+    mark_for_cancellation: bool = False
 
 
 _Previous = CompTaskAtDB
