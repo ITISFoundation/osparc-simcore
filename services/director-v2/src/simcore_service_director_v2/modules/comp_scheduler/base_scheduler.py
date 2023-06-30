@@ -40,7 +40,7 @@ from ...core.errors import (
     TaskSchedulingError,
 )
 from ...models.domains.comp_pipelines import CompPipelineAtDB
-from ...models.domains.comp_runs import CompRunsAtDB
+from ...models.domains.comp_runs import CompRunsAtDB, MetadataDict
 from ...models.domains.comp_tasks import CompTaskAtDB, Image
 from ...utils.computations import get_pipeline_state_from_task_states
 from ...utils.scheduler import (
@@ -60,6 +60,7 @@ logger = logging.getLogger(__name__)
 class ScheduledPipelineParams:
     cluster_id: ClusterID
     mark_for_cancellation: bool = False
+    metadata: MetadataDict
 
 
 _Previous = CompTaskAtDB
@@ -107,7 +108,7 @@ class BaseCompScheduler(ABC):
         )
         self.scheduled_pipelines[
             (user_id, project_id, new_run.iteration)
-        ] = ScheduledPipelineParams(cluster_id=cluster_id)
+        ] = ScheduledPipelineParams(cluster_id=cluster_id, metadata=new_run.metadata)
         # ensure the scheduler starts right away
         self._wake_up_scheduler_now()
 
@@ -140,11 +141,12 @@ class BaseCompScheduler(ABC):
         await logged_gather(
             *(
                 self._schedule_pipeline(
-                    user_id,
-                    project_id,
-                    pipeline_params.cluster_id,
-                    iteration,
-                    pipeline_params.mark_for_cancellation,
+                    user_id=user_id,
+                    project_id=project_id,
+                    cluster_id=pipeline_params.cluster_id,
+                    iteration=iteration,
+                    marked_for_stopping=pipeline_params.mark_for_cancellation,
+                    metadata=pipeline_params.metadata,
                 )
                 for (
                     user_id,
@@ -328,11 +330,11 @@ class BaseCompScheduler(ABC):
     @abstractmethod
     async def _start_tasks(
         self,
+        *,
         user_id: UserID,
         project_id: ProjectID,
         cluster_id: ClusterID,
-        product_name: str,
-        simcore_user_agent: str,
+        metadata: MetadataDict,
         scheduled_tasks: dict[NodeID, Image],
     ) -> None:
         ...
@@ -357,11 +359,13 @@ class BaseCompScheduler(ABC):
 
     async def _schedule_pipeline(
         self,
+        *,
         user_id: UserID,
         project_id: ProjectID,
         cluster_id: ClusterID,
         iteration: PositiveInt,
         marked_for_stopping: bool,
+        metadata: MetadataDict,
     ) -> None:
         logger.debug(
             "checking run of project [%s:%s] for user [%s]",
@@ -388,7 +392,12 @@ class BaseCompScheduler(ABC):
             else:
                 # let's get the tasks to schedule then
                 await self._schedule_tasks_to_start(
-                    user_id, project_id, cluster_id, comp_tasks, dag
+                    user_id=user_id,
+                    project_id=project_id,
+                    cluster_id=cluster_id,
+                    comp_tasks=comp_tasks,
+                    dag=dag,
+                    metadata=metadata,
                 )
             # 4. Update the run result
             pipeline_result = await self._update_run_result_from_tasks(
@@ -447,6 +456,7 @@ class BaseCompScheduler(ABC):
         user_id: UserID,
         project_id: ProjectID,
         cluster_id: ClusterID,
+        metadata: MetadataDict,
         comp_tasks: dict[str, CompTaskAtDB],
         dag: nx.DiGraph,
     ):
@@ -487,9 +497,10 @@ class BaseCompScheduler(ABC):
         results = await asyncio.gather(
             *[
                 self._start_tasks(
-                    user_id,
-                    project_id,
-                    cluster_id,
+                    user_id=user_id,
+                    project_id=project_id,
+                    cluster_id=cluster_id,
+                    metadata=metadata,
                     scheduled_tasks={node_id: task.image},
                 )
                 for node_id, task in tasks_ready_to_start.items()

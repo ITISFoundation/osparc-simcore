@@ -6,7 +6,7 @@ from models_library.clusters import DEFAULT_CLUSTER_ID, ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
-from pydantic import BaseModel, PositiveInt, validator
+from pydantic import BaseModel, Field, PositiveInt, validator
 from simcore_postgres_database.models.comp_pipeline import StateType
 
 from ...utils.db import DB_TO_RUNNING_STATE
@@ -25,7 +25,7 @@ class CompRunsAtDB(BaseModel):
     modified: datetime.datetime
     started: datetime.datetime | None
     ended: datetime.datetime | None
-    metadata: MetadataDict | None
+    metadata: MetadataDict = Field(default_factory=dict)
 
     @validator("result", pre=True)
     @classmethod

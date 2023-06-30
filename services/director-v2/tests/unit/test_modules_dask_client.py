@@ -45,7 +45,6 @@ from faker import Faker
 from fastapi.applications import FastAPI
 from models_library.api_schemas_storage import LinkType
 from models_library.clusters import ClusterID, NoAuthentication, SimpleAuthentication
-from models_library.docker import SimcoreServiceDockerLabelKeys
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -65,9 +64,11 @@ from simcore_service_director_v2.core.errors import (
     InsuficientComputationalResourcesError,
     MissingComputationalResourcesError,
 )
+from simcore_service_director_v2.models.domains.comp_runs import MetadataDict
 from simcore_service_director_v2.models.domains.comp_tasks import Image
 from simcore_service_director_v2.models.schemas.services import NodeRequirements
 from simcore_service_director_v2.modules.dask_client import DaskClient, TaskHandlers
+from simcore_service_director_v2.utils.dask import compute_task_labels
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -508,6 +509,12 @@ async def test_send_computation_task(
 
     # NOTE: We pass another fct so it can run in our localy created dask cluster
     # NOTE2: since there is only 1 task here, it's ok to pass the nodeID
+    metadata = MetadataDict(
+        product_name="some fake name",
+        simcore_user_agent="pytest_user_agent",
+        additional="whateer",
+    )
+    task_labels = compute_task_labels(user_id, project_id, node_id, metadata)
     node_id_to_job_ids = await dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
@@ -518,13 +525,9 @@ async def test_send_computation_task(
             fake_sidecar_fct,
             expected_annotations=image_params.expected_annotations,
             expected_envs={},
-            expected_labels=parse_obj_as(
-                ContainerLabelsDict,
-                SimcoreServiceDockerLabelKeys(
-                    user_id=user_id, study_id=project_id, uuid=node_id
-                ).to_docker_labels(),
-            ),
+            expected_labels=task_labels,
         ),
+        metadata=task_labels,
     )
     assert node_id_to_job_ids
     assert len(node_id_to_job_ids) == 1

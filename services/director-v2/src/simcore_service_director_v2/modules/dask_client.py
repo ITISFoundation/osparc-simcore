@@ -38,7 +38,6 @@ from dask_task_models_library.container_tasks.protocol import (
 )
 from fastapi import FastAPI
 from models_library.clusters import ClusterAuthentication, ClusterID
-from models_library.docker import SimcoreServiceDockerLabelKeys
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -49,6 +48,7 @@ from pydantic.networks import AnyUrl
 from servicelib.logging_utils import log_catch
 from settings_library.s3 import S3Settings
 from simcore_sdk.node_ports_v2 import FileLinkType
+from simcore_service_director_v2.models.domains.comp_runs import MetadataDict
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_attempt
@@ -72,6 +72,7 @@ from ..utils.dask import (
     compute_input_data,
     compute_output_data_schema,
     compute_service_log_file_upload_link,
+    compute_task_labels,
     create_node_ports,
     dask_sub_consumer_task,
     from_node_reqs_to_dask_resources,
@@ -192,8 +193,7 @@ class DaskClient:
         tasks: dict[NodeID, Image],
         callback: _UserCallbackInSepThread,
         remote_fct: ContainerRemoteFct | None = None,
-        product_name: str,
-        simcore_user_agent: str,
+        metadata: MetadataDict,
     ) -> list[tuple[NodeID, str]]:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
         function that runs container will be started."""
@@ -306,6 +306,8 @@ class DaskClient:
                 file_link_type=self.tasks_file_link_type,
             )
 
+            task_labels = compute_task_labels(user_id, project_id, node_id, metadata)
+
             try:
                 assert self.app.state  # nosec
                 assert self.app.state.settings  # nosec
@@ -324,13 +326,7 @@ class DaskClient:
                     log_file_url=log_file_url,
                     command=node_image.command,
                     task_envs={},
-                    task_labels=SimcoreServiceDockerLabelKeys(
-                        user_id=user_id,
-                        study_id=project_id,
-                        uuid=node_id,
-                        product_name=product_name,
-                        simcore_user_agent=simcore_user_agent,
-                    ).to_docker_labels(),
+                    task_labels=task_labels,
                     s3_settings=s3_settings,
                     boot_mode=node_image.boot_mode,
                     key=job_id,

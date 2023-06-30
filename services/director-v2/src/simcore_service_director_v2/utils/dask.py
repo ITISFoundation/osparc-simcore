@@ -24,8 +24,10 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputData,
     TaskOutputDataSchema,
 )
+from dask_task_models_library.container_tasks.protocol import ContainerLabelsDict
 from fastapi import FastAPI
 from models_library.clusters import ClusterID
+from models_library.docker import SimcoreServiceDockerLabelKeys
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
@@ -48,6 +50,7 @@ from ..core.errors import (
     MissingComputationalResourcesError,
     PortsValidationError,
 )
+from ..models.domains.comp_runs import MetadataDict
 from ..models.domains.comp_tasks import Image
 from ..models.schemas.services import NodeRequirements
 
@@ -306,6 +309,26 @@ async def compute_service_log_file_upload_link(
     )
     url: AnyUrl = value_links.urls[0]
     return url
+
+
+_UNDEFINED_METADATA: Final[str] = "undefined-label"
+
+
+def compute_task_labels(
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    metadata: MetadataDict,
+) -> ContainerLabelsDict:
+    task_labels = SimcoreServiceDockerLabelKeys(
+        user_id=user_id,
+        study_id=project_id,
+        uuid=node_id,
+        product_name=metadata.get("product_name", _UNDEFINED_METADATA),
+        simcore_user_agent=metadata.get("simcore_user_agent", _UNDEFINED_METADATA),
+    ).to_docker_labels()
+    task_labels |= {k: f"{v}" for k, v in metadata.items()}
+    return task_labels
 
 
 async def get_service_log_file_download_link(

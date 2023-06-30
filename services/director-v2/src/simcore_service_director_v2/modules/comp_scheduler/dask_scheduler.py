@@ -24,6 +24,7 @@ from models_library.rabbitmq_messages import (
 from models_library.users import UserID
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.comp_tasks import NodeClass
+from simcore_service_director_v2.models.domains.comp_runs import MetadataDict
 
 from ...core.errors import TaskSchedulingError
 from ...core.settings import ComputationalBackendSettings
@@ -73,11 +74,11 @@ class DaskScheduler(BaseCompScheduler):
 
     async def _start_tasks(
         self,
+        *,
         user_id: UserID,
         project_id: ProjectID,
         cluster_id: ClusterID,
-        product_name: str,
-        simcore_user_agent: str,
+        metadata: MetadataDict,
         scheduled_tasks: dict[NodeID, Image],
     ):
         # now transfer the pipeline to the dask scheduler
@@ -90,8 +91,7 @@ class DaskScheduler(BaseCompScheduler):
                 cluster_id=cluster_id,
                 tasks=scheduled_tasks,
                 callback=self._wake_up_scheduler_now,
-                product_name=product_name,
-                simcore_user_agent=simcore_user_agent,
+                metadata=metadata,
             )
             logger.debug(
                 "started following tasks (node_id, job_id)[%s] on cluster %s",
