@@ -5,6 +5,10 @@
 # By default the pwd is mounted into the docker container and used as the current working directory
 # N.B. For Github actions: Remember to expose GITHUB_TOKEN in your Github workflow .yml file."
 
+set -o errexit  # abort on nonzero exitstatus
+set -o nounset  # abort on unbound variable
+set -o pipefail # don't hide errors within pipes
+
 IMAGE_NAME=itisfoundation/gh
 IMAGE_VERSION=v0
 
