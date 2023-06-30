@@ -306,7 +306,27 @@ class DaskClient:
                 file_link_type=self.tasks_file_link_type,
             )
 
-            task_labels = compute_task_labels(user_id, project_id, node_id, metadata)
+            task_labels = compute_task_labels(
+                user_id,
+                project_id,
+                node_id,
+                metadata
+                # TODO:
+                # substitute_session_oenvs(
+                #     self.app, metadata, user_id, metadata.get("product_name", "")
+                # ),
+            )
+
+            def _compute_task_envs() -> ContainerEnvsDict:
+                # TODO:
+                # get env labels from catalog?
+                # subsitute variables
+                # task_envs = substitute_session_oenvs(
+                #     self.app, task_envs, user_id, metadata.get("product_name", "")
+                # )
+                return {}
+
+            task_envs = _compute_task_envs()
 
             try:
                 assert self.app.state  # nosec
@@ -325,7 +345,7 @@ class DaskClient:
                     output_data_keys=output_data_keys,
                     log_file_url=log_file_url,
                     command=node_image.command,
-                    task_envs={},
+                    task_envs=task_envs,
                     task_labels=task_labels,
                     s3_settings=s3_settings,
                     boot_mode=node_image.boot_mode,
