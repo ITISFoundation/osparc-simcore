@@ -1,6 +1,6 @@
 import hashlib
 from datetime import datetime
-from typing import TypeAlias, Union
+from typing import Any, TypeAlias, Union
 from uuid import UUID, uuid4
 
 from models_library.projects_state import RunningState
@@ -23,6 +23,8 @@ from ..api_resources import (
     compose_resource_name,
     split_resource_name,
 )
+
+JobID: TypeAlias = UUID
 
 # ArgumentTypes are types used in the job inputs (see ResultsTypes)
 ArgumentTypes: TypeAlias = Union[
@@ -49,6 +51,9 @@ def _compute_keyword_arguments_checksum(kwargs: KeywordArguments):
 #  - Wrappers for input/output values
 #  - Input/outputs are defined in service metadata
 #
+
+
+JobMetadataDict: TypeAlias = dict[str, Any]
 
 
 class JobInputs(BaseModel):
@@ -82,7 +87,7 @@ class JobInputs(BaseModel):
 class JobOutputs(BaseModel):
     # TODO: JobOutputs is a resources!
 
-    job_id: UUID = Field(..., description="Job that produced this output")
+    job_id: JobID = Field(..., description="Job that produced this output")
 
     # TODO: an output could be computed before than the others? has a state? not-ready/ready?
     results: KeywordArguments
@@ -130,7 +135,7 @@ class JobOutputs(BaseModel):
 
 
 class Job(BaseModel):
-    id: UUID
+    id: JobID
     name: RelativeResourceName
 
     inputs_checksum: str = Field(..., description="Input's checksum")
@@ -227,7 +232,7 @@ class JobStatus(BaseModel):
     #  What is the status of X? What sort of state is X in?
     #  SEE https://english.stackexchange.com/questions/12958/status-vs-state
 
-    job_id: UUID
+    job_id: JobID
     state: RunningState
     progress: PercentageInt = Field(default=PercentageInt(0))
 

@@ -19,7 +19,15 @@ from ...core.settings import BasicSettings
 from ...models.basic_types import VersionStr
 from ...models.pagination import LimitOffsetPage, LimitOffsetParams
 from ...models.schemas.files import File
-from ...models.schemas.jobs import ArgumentTypes, Job, JobInputs, JobOutputs, JobStatus
+from ...models.schemas.jobs import (
+    ArgumentTypes,
+    Job,
+    JobID,
+    JobInputs,
+    JobMetadataDict,
+    JobOutputs,
+    JobStatus,
+)
 from ...models.schemas.solvers import Solver, SolverKeyId
 from ...services.catalog import CatalogApi
 from ...services.director_v2 import DirectorV2Api, DownloadLink, NodeName
@@ -198,7 +206,7 @@ async def create_job(
 async def get_job(
     solver_key: SolverKeyId,
     version: VersionStr,
-    job_id: UUID,
+    job_id: JobID,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
@@ -223,7 +231,7 @@ async def get_job(
 async def delete_job(
     solver_key: SolverKeyId,
     version: VersionStr,
-    job_id: UUID,
+    job_id: JobID,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
     """Deletes an existing solver job
@@ -251,7 +259,7 @@ async def delete_job(
 async def start_job(
     solver_key: SolverKeyId,
     version: VersionStr,
-    job_id: UUID,
+    job_id: JobID,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     product_name: Annotated[str, Depends(get_product_name)],
@@ -281,7 +289,7 @@ async def start_job(
 async def stop_job(
     solver_key: SolverKeyId,
     version: VersionStr,
-    job_id: UUID,
+    job_id: JobID,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ):
@@ -302,7 +310,7 @@ async def stop_job(
 async def inspect_job(
     solver_key: SolverKeyId,
     version: VersionStr,
-    job_id: UUID,
+    job_id: JobID,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ) -> JobStatus:
@@ -321,7 +329,7 @@ async def inspect_job(
 async def get_job_outputs(
     solver_key: SolverKeyId,
     version: VersionStr,
-    job_id: UUID,
+    job_id: JobID,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     db_engine: Annotated[Engine, Depends(get_db_engine)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
@@ -372,7 +380,7 @@ async def get_job_outputs(
 async def get_job_output_logfile(
     solver_key: SolverKeyId,
     version: VersionStr,
-    job_id: UUID,
+    job_id: JobID,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ):
@@ -419,3 +427,31 @@ async def get_job_output_logfile(
         detail=f"Log for {solver_key}/releases/{version}/jobs/{job_id} not found."
         "Note that these logs are only available after the job is completed.",
     )
+
+
+@router.post(
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/metadata",
+)
+async def create_job_custom_metadata(
+    solver_key: SolverKeyId,
+    version: VersionStr,
+    job_id: JobID,
+    metadata: JobMetadataDict,
+):
+    """Attaches custom metadata to a job."""
+    msg = f"Attaches {metadata=} to Job {_compose_job_resource_name(solver_key, version, job_id)!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4313"
+    raise NotImplementedError(msg)
+
+
+@router.get(
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/metadata",
+    response_model=JobMetadataDict,
+)
+async def get_job_custom_metadata(
+    solver_key: SolverKeyId,
+    version: VersionStr,
+    job_id: JobID,
+):
+    """Gets custom metadata from a job"""
+    msg = f"Getting Job metadata {_compose_job_resource_name(solver_key, version, job_id)!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4313"
+    raise NotImplementedError(msg)

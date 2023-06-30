@@ -19,10 +19,9 @@ router = APIRouter()
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def list_studies(
-    study_id: StudyID,
     page_params: Annotated[LimitOffsetParams, Depends()],
 ):
-    msg = f"list_studies study_id={study_id!r} with pagination={page_params!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
+    msg = f"list user's studies with pagination={page_params!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
     raise NotImplementedError(msg)
 
 
@@ -32,7 +31,7 @@ async def list_studies(
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_study(study_id: StudyID):
-    msg = f"get_study study_id={study_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
+    msg = f"get user's study study_id={study_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
     raise NotImplementedError(msg)
 
 
