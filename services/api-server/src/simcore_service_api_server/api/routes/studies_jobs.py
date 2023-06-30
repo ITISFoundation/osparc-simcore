@@ -1,14 +1,17 @@
 import logging
+from typing import Annotated
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
 from fastapi.responses import RedirectResponse
 
+from ...models.pagination import LimitOffsetPage, LimitOffsetParams
 from ...models.schemas.jobs import Job, JobID, JobMetadataDict, JobOutputs, JobStatus
 from ...models.schemas.studies import StudyID
 from ._common import API_SERVER_DEV_FEATURES_ENABLED, job_output_logfile_responses
 
 _logger = logging.getLogger(__name__)
 router = APIRouter()
+
 
 #
 # - Study maps to project
@@ -18,11 +21,14 @@ router = APIRouter()
 
 @router.get(
     "/{study_id:uuid}/jobs",
-    response_model=list[Job],
+    response_model=LimitOffsetPage[Job],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
-async def list_study_jobs(study_id: StudyID):
-    msg = f"list study jobs study_id={study_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
+async def list_study_jobs(
+    study_id: StudyID,
+    page_params: Annotated[LimitOffsetParams, Depends()],
+):
+    msg = f"list study jobs study_id={study_id!r} with pagination={page_params!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
     raise NotImplementedError(msg)
 
 

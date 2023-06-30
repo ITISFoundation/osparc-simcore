@@ -9,6 +9,7 @@ from pydantic.errors import PydanticValueError
 from servicelib.error_codes import create_error_code
 
 from ...models.basic_types import VersionStr
+from ...models.pagination import LimitOffsetPage, LimitOffsetParams
 from ...models.schemas.solvers import Solver, SolverKeyId, SolverPort
 from ...services.catalog import CatalogApi
 from ..dependencies.application import get_product_name, get_reverse_url_mapper
@@ -50,6 +51,18 @@ async def list_solvers(
     return sorted(solvers, key=attrgetter("id"))
 
 
+@router.get(
+    "/page",
+    response_model=LimitOffsetPage[Solver],
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def get_solvers_page(
+    page_params: Annotated[LimitOffsetParams, Depends()],
+):
+    msg = f"list solvers with pagination={page_params!r}"
+    raise NotImplementedError(msg)
+
+
 @router.get("/releases", response_model=list[Solver], summary="Lists All Releases")
 async def list_solvers_releases(
     user_id: Annotated[int, Depends(get_current_user_id)],
@@ -70,6 +83,18 @@ async def list_solvers_releases(
         )
 
     return sorted(solvers, key=attrgetter("id", "pep404_version"))
+
+
+@router.get(
+    "releases/page",
+    response_model=LimitOffsetPage[Solver],
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def get_solvers_releases_page(
+    page_params: Annotated[LimitOffsetParams, Depends()],
+):
+    msg = f"list solvers releases with pagination={page_params!r}"
+    raise NotImplementedError(msg)
 
 
 @router.get(
@@ -125,6 +150,18 @@ async def list_solver_releases(
         )
 
     return sorted(releases, key=attrgetter("pep404_version"))
+
+
+@router.get(
+    "/{solver_key:path}/releases/page",
+    response_model=LimitOffsetPage[Solver],
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def get_solver_releases_page(
+    page_params: Annotated[LimitOffsetParams, Depends()],
+):
+    msg = f"list solver (one) releases with pagination={page_params!r}"
+    raise NotImplementedError(msg)
 
 
 @router.get("/{solver_key:path}/releases/{version}", response_model=Solver)

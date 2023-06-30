@@ -3,7 +3,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
 
-from ...models.pagination import LimitOffsetPage, LimitOffsetParams
+from ...models.pagination import LimitOffsetPage, LimitOffsetParams, OnePage
 from ...models.schemas.studies import Study, StudyID, StudyPort
 from ...services.webserver import AuthSession
 from ..dependencies.webserver import get_webserver_session
@@ -37,7 +37,7 @@ async def get_study(study_id: StudyID):
 
 @router.get(
     "/{study_id}/ports",
-    response_model=list[StudyPort],
+    response_model=OnePage[StudyPort],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def list_study_ports(
@@ -51,4 +51,5 @@ async def list_study_ports(
     project_ports: list[
         dict[str, Any]
     ] = await webserver_api.get_project_metadata_ports(project_id=study_id)
-    return project_ports
+
+    return OnePage.create(project_ports)
