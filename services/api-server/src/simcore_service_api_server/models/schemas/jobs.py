@@ -1,6 +1,6 @@
 import hashlib
 from datetime import datetime
-from typing import Any, TypeAlias, Union
+from typing import Any, TypeAlias
 from uuid import UUID, uuid4
 
 from models_library.projects_state import RunningState
@@ -27,9 +27,9 @@ from ..api_resources import (
 JobID: TypeAlias = UUID
 
 # ArgumentTypes are types used in the job inputs (see ResultsTypes)
-ArgumentTypes: TypeAlias = Union[
-    File, StrictFloat, StrictInt, StrictBool, str, list, None
-]
+ArgumentTypes: TypeAlias = (
+    File | StrictFloat | StrictInt | StrictBool | str | list | None
+)
 KeywordArguments: TypeAlias = dict[str, ArgumentTypes]
 PositionalArguments: TypeAlias = list[ArgumentTypes]
 
@@ -94,7 +94,6 @@ class JobOutputs(BaseModel):
 
     # TODO: an error might have occurred at the level of the job, i.e. affects all outputs, or only
     # on one specific output.
-    # errors: list[JobErrors] = []
 
     class Config(BaseConfig):
         frozen = True
@@ -107,10 +106,10 @@ class JobOutputs(BaseModel):
                     "n": 55,
                     "title": "Specific Absorption Rate",
                     "enabled": False,
-                    "output_file": dict(
-                        filename="sar_matrix.txt",
-                        id="0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
-                    ),
+                    "output_file": {
+                        "filename": "sar_matrix.txt",
+                        "id": "0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
+                    },
                 },
             }
         }
@@ -174,7 +173,8 @@ class Job(BaseModel):
     def check_name(cls, v, values):
         _id = str(values["id"])
         if not v.endswith(f"/{_id}"):
-            raise ValueError(f"Resource name [{v}] and id [{_id}] do not match")
+            msg = f"Resource name [{v}] and id [{_id}] do not match"
+            raise ValueError(msg)
         return v
 
     # constructors ------
@@ -198,11 +198,10 @@ class Job(BaseModel):
 
     @classmethod
     def create_solver_job(cls, *, solver: Solver, inputs: JobInputs):
-        job = Job.create_now(
+        return Job.create_now(
             parent_name=solver.name,  # type: ignore
             inputs_checksum=inputs.compute_checksum(),
         )
-        return job
 
     @classmethod
     def compose_resource_name(
@@ -210,7 +209,8 @@ class Job(BaseModel):
     ) -> str:
         # CAREFUL, this is not guarantee a UNIQUE identifier since the resource
         # could have some alias entrypoints and the wrong parent_name might be introduced here
-        collection_or_resource_ids = split_resource_name(parent_name) + [
+        collection_or_resource_ids = [
+            *split_resource_name(parent_name),
             "jobs",
             f"{job_id}",
         ]
@@ -250,8 +250,6 @@ class JobStatus(BaseModel):
     )
 
     class Config(BaseConfig):
-        # frozen = True
-        # allow_mutation = False
         schema_extra = {
             "example": {
                 "job_id": "145beae4-a3a8-4fde-adbb-4e8257c2c083",

@@ -11,7 +11,7 @@
 
 import functools
 import logging
-from typing import Callable, Union
+from collections.abc import Callable
 
 import httpx
 from fastapi import HTTPException
@@ -43,7 +43,7 @@ def handle_retry(logger: logging.Logger):
 
 
 def handle_errors(
-    service_name: str, logger: logging.Logger, *, return_json: bool = True
+    service_name: str, _logger: logging.Logger, *, return_json: bool = True
 ):
     """
     Handles different types of errors and transform them into error reponses
@@ -56,13 +56,13 @@ def handle_errors(
 
     def decorator_func(request_func: Callable):
         @functools.wraps(request_func)
-        async def wrapper_func(*args, **kwargs) -> Union[JSON, httpx.Response]:
+        async def wrapper_func(*args, **kwargs) -> JSON | httpx.Response:
             try:
                 # TODO: assert signature!?
                 resp: httpx.Response = await request_func(*args, **kwargs)
 
             except httpx.RequestError as err:
-                logger.error(
+                _logger.error(
                     "Failed request %s(%s, %s)", request_func.__name__, args, kwargs
                 )
                 raise HTTPException(
@@ -75,7 +75,7 @@ def handle_errors(
                 raise HTTPException(resp.status_code, detail=resp.reason_phrase)
 
             if httpx.codes.is_server_error(resp.status_code):  # i.e. 5XX error
-                logger.error(
+                _logger.error(
                     "%s service error %d [%s]: %s",
                     service_name,
                     resp.reason_phrase,

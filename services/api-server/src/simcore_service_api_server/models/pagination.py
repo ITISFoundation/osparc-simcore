@@ -6,7 +6,8 @@ Usage:
 
 """
 
-from typing import Generic, Sequence, TypeVar
+from collections.abc import Sequence
+from typing import Generic, TypeVar
 
 from fastapi_pagination.bases import BasePage
 from fastapi_pagination.limit_offset import LimitOffsetParams

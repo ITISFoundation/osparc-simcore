@@ -22,7 +22,6 @@ from pydantic.types import ConstrainedStr
 #    "//calendar.googleapis.com/users/john smith/events/123"
 #
 #   This is the corresponding HTTP URL.
-#    "https://calendar.googleapis.com/v3/users/john%20smith/events/123"
 #
 # SEE https://tools.ietf.org/html/rfc3986#appendix-B
 #

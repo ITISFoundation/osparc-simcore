@@ -35,7 +35,8 @@ async def get_current_user_id(
         api_key=credentials.username, api_secret=credentials.password
     )
     if not user_id:
-        raise _create_exception()
+        exc = _create_exception()
+        raise exc
     return user_id
 
 
@@ -45,7 +46,8 @@ async def get_active_user_email(
 ) -> str:
     email = await users_repo.get_email_from_user_id(user_id)
     if not email:
-        raise _create_exception()
+        exc = _create_exception()
+        raise exc
     return email
 
 

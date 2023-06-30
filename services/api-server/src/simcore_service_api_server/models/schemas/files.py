@@ -1,6 +1,5 @@
 from mimetypes import guess_type
 from pathlib import Path
-from typing import Optional
 from uuid import UUID, uuid3
 
 import aiofiles
@@ -21,10 +20,10 @@ class File(BaseModel):
     id: UUID = Field(..., description="Resource identifier")
 
     filename: str = Field(..., description="Name of the file with extension")
-    content_type: Optional[str] = Field(
+    content_type: str | None = Field(
         default=None, description="Guess of type content [EXPERIMENTAL]"
     )
-    checksum: Optional[str] = Field(
+    checksum: str | None = Field(
         None, description="MD5 hash of the file's content [EXPERIMENTAL]"
     )
 

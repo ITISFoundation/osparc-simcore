@@ -1,4 +1,4 @@
-from typing import Callable
+from collections.abc import Callable
 
 from fastapi import FastAPI
 from fastapi.applications import HTMLResponse, Request
@@ -32,11 +32,7 @@ def add_vendor_extensions(openapi_schema: dict):
     # TODO: See if openapi-cli does this already
     # TODO: check that all url are available before exposing
     # openapi_schema["paths"][f"/{api_vtag}/meta"]["get"]["x-code-samples"] = [
-    #     {
-    #         "lang": "python",
-    #         "source": {"$ref": f"{PYTHON_CODE_SAMPLES_BASE_URL}/meta/get.py"},
     #     },
-    # ]
 
 
 def create_redoc_handler(app: FastAPI) -> Callable:
