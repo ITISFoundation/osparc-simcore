@@ -30,7 +30,7 @@ from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.users import UserID
-from pydantic import AnyUrl, ByteSize, ValidationError
+from pydantic import AnyUrl, ByteSize, ValidationError, parse_obj_as
 from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_catch, log_context
 from simcore_sdk import node_ports_v2
@@ -51,7 +51,7 @@ from ..core.errors import (
 from ..models.domains.comp_tasks import Image
 from ..models.schemas.services import NodeRequirements
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 ServiceKeyStr = str
 ServiceVersionStr = str
@@ -144,7 +144,7 @@ async def parse_output_data(
         project_id,
         node_id,
     ) = parse_dask_job_id(job_id)
-    logger.debug(
+    _logger.debug(
         "parsing output %s of dask task for %s:%s of user %s on project '%s' and node '%s'",
         json_dumps(data, indent=2),
         service_key,
@@ -212,7 +212,7 @@ async def compute_input_data(
 
             # Mapping _PVType -> PortValue
             if isinstance(value, AnyUrl):
-                logger.debug("Creating file url for %s", f"{port=}")
+                _logger.debug("Creating file url for %s", f"{port=}")
                 input_data[port.key] = FileUrl(
                     url=value,
                     file_mapping=(
@@ -330,7 +330,7 @@ async def get_service_log_file_download_link(
         return value_link
 
     except (S3InvalidPathError, StorageInvalidCall) as err:
-        logger.debug("Log for task %s not found: %s", f"{project_id=}/{node_id=}", err)
+        _logger.debug("Log for task %s not found: %s", f"{project_id=}/{node_id=}", err)
         return None
 
 
@@ -360,7 +360,7 @@ async def clean_task_output_and_log_files_if_invalid(
             user_id, f"{project_id}", f"{node_id}", file_name
         ):
             continue
-        logger.debug("entry %s is invalid, cleaning...", port.key)
+        _logger.debug("entry %s is invalid, cleaning...", port.key)
         await port_utils.delete_target_link(
             user_id, f"{project_id}", f"{node_id}", file_name
         )
@@ -381,7 +381,7 @@ async def _dask_sub_consumer(
     handler: Callable[[str], Awaitable[None]],
 ) -> None:
     async for dask_event in dask_sub:
-        logger.debug(
+        _logger.debug(
             "received dask event '%s' of topic %s",
             dask_event,
             dask_sub.name,
@@ -397,8 +397,8 @@ async def dask_sub_consumer_task(
     handler: Callable[[str], Awaitable[None]],
 ) -> NoReturn:
     while True:
-        with log_catch(logger, reraise=False), log_context(
-            logger, level=logging.DEBUG, msg=f"dask sub task for topic {dask_sub.name}"
+        with log_catch(_logger, reraise=False), log_context(
+            _logger, level=logging.DEBUG, msg=f"dask sub task for topic {dask_sub.name}"
         ):
             await _dask_sub_consumer(dask_sub, handler)
         # we sleep a bit before restarting
@@ -414,14 +414,14 @@ def from_node_reqs_to_dask_resources(
         by_alias=True,
         exclude_none=True,
     )
-    logger.debug("transformed to dask resources: %s", dask_resources)
+    _logger.debug("transformed to dask resources: %s", dask_resources)
     return dask_resources
 
 
 def check_scheduler_is_still_the_same(
     original_scheduler_id: str, client: distributed.Client
 ):
-    logger.debug("current %s", f"{client.scheduler_info()=}")
+    _logger.debug("current %s", f"{client.scheduler_info()=}")
     if "id" not in client.scheduler_info():
         raise ComputationalSchedulerChangedError(
             original_scheduler_id=original_scheduler_id,
@@ -429,7 +429,7 @@ def check_scheduler_is_still_the_same(
         )
     current_scheduler_id = client.scheduler_info()["id"]
     if current_scheduler_id != original_scheduler_id:
-        logger.error("The computational backend changed!")
+        _logger.error("The computational backend changed!")
         raise ComputationalSchedulerChangedError(
             original_scheduler_id=original_scheduler_id,
             current_scheduler_id=current_scheduler_id,
@@ -448,7 +448,7 @@ def check_communication_with_scheduler_is_open(client: distributed.Client):
 def check_scheduler_status(client: distributed.Client):
     client_status = client.status
     if client_status not in "running":
-        logger.error(
+        _logger.error(
             "The computational backend is not connected!",
         )
         raise ComputationalBackendNotConnectedError()
@@ -462,6 +462,50 @@ async def check_maximize_workers(cluster: dask_gateway.GatewayCluster | None) ->
         await cluster.scale(_LARGE_NUMBER_OF_WORKERS)
 
 
+def _can_task_run_on_worker(
+    task_resources: dict[str, Any], worker_resources: dict[str, Any]
+) -> bool:
+    def gen_check(
+        task_resources: dict[str, Any], worker_resources: dict[str, Any]
+    ) -> Iterable[bool]:
+        for name, required_value in task_resources.items():
+            if required_value is None:
+                yield True
+            elif worker_has := worker_resources.get(name):
+                yield worker_has >= required_value
+            else:
+                yield False
+
+    return all(gen_check(task_resources, worker_resources))
+
+
+def _cluster_missing_resources(
+    task_resources: dict[str, Any], cluster_resources: dict[str, Any]
+) -> list[str]:
+    return [r for r in task_resources if r not in cluster_resources]
+
+
+def _to_human_readable_resource_values(resources: dict[str, Any]) -> dict[str, Any]:
+    human_readable_resources = {}
+
+    for res_name, res_value in resources.items():
+        if "RAM" in res_name:
+            try:
+                human_readable_resources[res_name] = parse_obj_as(
+                    ByteSize, res_value
+                ).human_readable()
+            except ValidationError:
+                _logger.warning(
+                    "could not parse %s:%s, please check what changed in how Dask prepares resources!",
+                    f"{res_name=}",
+                    res_value,
+                )
+                human_readable_resources[res_name] = res_value
+        else:
+            human_readable_resources[res_name] = res_value
+    return human_readable_resources
+
+
 def check_if_cluster_is_able_to_run_pipeline(
     project_id: ProjectID,
     node_id: NodeID,
@@ -469,41 +513,20 @@ def check_if_cluster_is_able_to_run_pipeline(
     task_resources: dict[str, Any],
     node_image: Image,
     cluster_id: ClusterID,
-):
-    logger.debug("Dask scheduler infos: %s", json_dumps(scheduler_info, indent=2))
+) -> None:
+    _logger.debug("Dask scheduler infos: %s", json_dumps(scheduler_info, indent=2))
     workers = scheduler_info.get("workers", {})
-
-    def can_task_run_on_worker(
-        task_resources: dict[str, Any], worker_resources: dict[str, Any]
-    ) -> bool:
-        def gen_check(
-            task_resources: dict[str, Any], worker_resources: dict[str, Any]
-        ) -> Iterable[bool]:
-            for name, required_value in task_resources.items():
-                if required_value is None:
-                    yield True
-                elif worker_has := worker_resources.get(name):
-                    yield worker_has >= required_value
-                else:
-                    yield False
-
-        return all(gen_check(task_resources, worker_resources))
-
-    def cluster_missing_resources(
-        task_resources: dict[str, Any], cluster_resources: dict[str, Any]
-    ) -> list[str]:
-        return [r for r in task_resources if r not in cluster_resources]
 
     cluster_resources_counter: collections.Counter = collections.Counter()
     can_a_worker_run_task = False
     for worker in workers:
         worker_resources = workers[worker].get("resources", {})
         cluster_resources_counter.update(worker_resources)
-        if can_task_run_on_worker(task_resources, worker_resources):
+        if _can_task_run_on_worker(task_resources, worker_resources):
             can_a_worker_run_task = True
     all_available_resources_in_cluster = dict(cluster_resources_counter)
 
-    logger.debug(
+    _logger.debug(
         "Dask scheduler total available resources in cluster %s: %s, task needed resources %s",
         cluster_id,
         json_dumps(all_available_resources_in_cluster, indent=2),
@@ -514,7 +537,7 @@ def check_if_cluster_is_able_to_run_pipeline(
         return
 
     # check if we have missing resources
-    if missing_resources := cluster_missing_resources(
+    if missing_resources := _cluster_missing_resources(
         task_resources, all_available_resources_in_cluster
     ):
         cluster_resources = (
@@ -535,10 +558,9 @@ def check_if_cluster_is_able_to_run_pipeline(
     raise InsuficientComputationalResourcesError(
         project_id=project_id,
         node_id=node_id,
-        msg=f"Service {node_image.name}:{node_image.tag} cannot be scheduled "
-        f"on cluster {cluster_id}: insuficient resources"
-        f"cluster has '{all_available_resources_in_cluster}', cluster has no worker with the"
-        " necessary computational resources for running the service! TIP: contact oSparc support",
+        msg=f"Insufficient computational resources to run {node_image.name}:{node_image.tag} with {_to_human_readable_resource_values( task_resources)} on cluster {cluster_id}."
+        f"Cluster available workers: {[_to_human_readable_resource_values( worker.get('resources', None)) for worker in workers.values()]}"
+        "TIP: Reduce service required resources or contact oSparc support",
     )
 
 

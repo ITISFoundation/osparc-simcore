@@ -6,7 +6,11 @@ from typing import Callable, NamedTuple
 
 from aiohttp import web
 from models_library.projects import ProjectID
-from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
+from models_library.rest_pagination import (
+    DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
+    Page,
+)
 from models_library.rest_pagination_utils import paginate_data
 from pydantic import BaseModel, ValidationError, validator
 from pydantic.fields import Field
@@ -31,7 +35,9 @@ log = logging.getLogger(__name__)
 class _QueryParametersModel(BaseModel):
     project_uuid: ProjectID
     ref_id: CommitID
-    limit: int = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE
+    limit: int = Field(
+        DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, gt=0, lt=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+    )
     offset: int = 0
 
     @validator("ref_id", pre=True)
@@ -41,16 +47,17 @@ class _QueryParametersModel(BaseModel):
             return CommitID(v)
         except ValueError as err:
             # e.g. HEAD
-            raise NotImplementedError(
-                "cannot convert ref (e.g. HEAD) -> commit id"
-            ) from err
+            msg = "cannot convert ref (e.g. HEAD) -> commit id"
+            raise NotImplementedError(msg) from err
 
 
 def parse_query_parameters(request: web.Request) -> _QueryParametersModel:
     try:
         return _QueryParametersModel(**request.match_info)
     except ValidationError as err:
-        raise web.HTTPUnprocessableEntity(reason=f"Invalid query parameters: {err}")
+        raise web.HTTPUnprocessableEntity(
+            reason=f"Invalid query parameters: {err}"
+        ) from err
 
 
 class _NotTaggedAsIteration(Exception):

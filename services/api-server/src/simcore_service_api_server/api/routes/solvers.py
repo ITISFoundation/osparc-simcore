@@ -11,7 +11,7 @@ from servicelib.error_codes import create_error_code
 from ...core.settings import BasicSettings
 from ...models.basic_types import VersionStr
 from ...models.schemas.solvers import Solver, SolverKeyId, SolverPort
-from ...plugins.catalog import CatalogApi
+from ...services.catalog import CatalogApi
 from ..dependencies.application import get_product_name, get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
@@ -139,7 +139,7 @@ async def get_solver_release(
 ) -> Solver:
     """Gets a specific release of a solver"""
     try:
-        solver = await catalog_client.get_solver(
+        solver = await catalog_client.get_service(
             user_id=user_id,
             name=solver_key,
             version=version,
@@ -183,7 +183,7 @@ async def list_solver_ports(
     """
     try:
 
-        ports = await catalog_client.get_solver_ports(
+        ports = await catalog_client.get_service_ports(
             user_id=user_id,
             name=solver_key,
             version=version,

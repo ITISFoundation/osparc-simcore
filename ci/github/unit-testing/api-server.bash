@@ -30,6 +30,14 @@ typecheck() {
   popd
 }
 
+openapi-diff(){
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
+  pushd services/api-server
+  make openapi-dev-diff.json
+  popd
+}
+
 # Check if the function exists (bash specific)
 if declare -f "$1" >/dev/null; then
   # call arguments verbatim

@@ -5,6 +5,13 @@
 
 
 import pytest
+from models_library.api_schemas_webserver.projects import (
+    ProjectCreateNew,
+    ProjectGet,
+    ProjectListItem,
+    ProjectReplace,
+    TaskProjectGet,
+)
 from models_library.generics import Envelope
 from models_library.rest_pagination import Page
 from pydantic import parse_obj_as
@@ -18,13 +25,6 @@ from pytest_simcore.simcore_webserver_projects_rest_api import (
     REPLACE_PROJECT,
     REPLACE_PROJECT_ON_MODIFIED,
     HttpApiCallCapture,
-)
-from simcore_service_webserver.projects._rest_schemas import (
-    ProjectCreateNew,
-    ProjectGet,
-    ProjectListItem,
-    ProjectReplace,
-    TaskProjectGet,
 )
 
 
