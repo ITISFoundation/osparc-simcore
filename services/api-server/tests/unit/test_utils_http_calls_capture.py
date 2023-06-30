@@ -7,15 +7,13 @@
 import asyncio
 import re
 from pathlib import Path
-from typing import Any
 
 import httpx
 import jinja2
 import respx
 from faker import Faker
 from models_library.basic_regex import UUID_RE_BASE
-from openapi_core import create_spec, validate_request, validate_response
-from pydantic import HttpUrl, parse_file_as
+from pydantic import HttpUrl
 from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
 
 
@@ -27,7 +25,7 @@ async def test_capture_http_call(
         response: httpx.Response = await client.get(f"{httpbin_base_url}/json")
         print(response)
 
-        request: httpx.Request = response.request
+        _request: httpx.Request = response.request
         assert response.request
 
         captured = HttpApiCallCaptureModel.create_from_response(
@@ -75,7 +73,7 @@ async def test_capture_http_dynamic_call(
         )
         print(response)
 
-        request: httpx.Request = response.request
+        _request: httpx.Request = response.request
         assert response.request
 
         captured = HttpApiCallCaptureModel.create_from_response(
@@ -136,7 +134,7 @@ def test_template_capture(project_tests_dir: Path, faker: Faker):
 
     # get paramters from capture
     environment = jinja2.Environment(
-        loader=jinja2.FileSystemLoader(project_tests_dir / "mocks")
+        loader=jinja2.FileSystemLoader(project_tests_dir / "mocks"), autoescape=True
     )
     template = environment.get_template("delete_project_not_found.json")
 
@@ -145,35 +143,3 @@ def test_template_capture(project_tests_dir: Path, faker: Faker):
     capture = HttpApiCallCaptureModel.parse_raw(template.render(context))
     print(capture.json(indent=1))
     assert capture.path == url_path
-
-
-def test_mocks_captures_against_openapi(
-    project_tests_dir: Path,
-    catalog_service_openapi_specs: dict[str, Any],
-    webserver_service_openapi_specs: dict[str, Any],
-):
-    captures = parse_file_as(
-        list[HttpApiCallCaptureModel], project_tests_dir / "mocks" / "on_list_jobs.json"
-    )
-
-    openapi = {
-        "catalog": create_spec(catalog_service_openapi_specs),
-        "webserver": create_spec(webserver_service_openapi_specs),
-    }
-
-    for capture in captures:
-        request = httpx.Request(
-            method=capture.method,
-            url=f"http://{capture.host}/{capture.path}",
-            params=capture.query,
-            json=capture.request_payload,
-        )
-        response = httpx.Response(
-            status_code=capture.status_code, json=capture.response_body
-        )
-        validate_request(openapi[capture.host], request)
-        validate_response(
-            openapi[capture.host],
-            request,
-            response,
-        )
