@@ -15,7 +15,6 @@ from models_library.clusters import ClusterID
 from models_library.projects_nodes_io import BaseFileLink
 from pydantic.types import PositiveInt
 
-from ...core.settings import BasicSettings
 from ...models.basic_types import VersionStr
 from ...models.pagination import LimitOffsetPage, LimitOffsetParams
 from ...models.schemas.files import File
@@ -44,10 +43,9 @@ from ..dependencies.database import Engine, get_db_engine
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
 from ..errors.http_error import ErrorGet, create_error_json_response
-from ._common import job_output_logfile_responses
+from ._common import API_SERVER_DEV_FEATURES_ENABLED, job_output_logfile_responses
 
 _logger = logging.getLogger(__name__)
-_settings = BasicSettings.create_from_envs()
 
 router = APIRouter()
 
@@ -105,7 +103,7 @@ async def list_jobs(
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/page",
     response_model=LimitOffsetPage[Job],
-    include_in_schema=_settings.API_SERVER_DEV_FEATURES_ENABLED,
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_jobs_page(
     solver_key: SolverKeyId,
@@ -226,7 +224,7 @@ async def get_job(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}",
     status_code=status.HTTP_204_NO_CONTENT,
     responses={status.HTTP_404_NOT_FOUND: {"model": ErrorGet}},
-    include_in_schema=_settings.API_SERVER_DEV_FEATURES_ENABLED,
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def delete_job(
     solver_key: SolverKeyId,
@@ -284,7 +282,8 @@ async def start_job(
 
 
 @router.post(
-    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}:stop", response_model=Job
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}:stop",
+    response_model=Job,
 )
 async def stop_job(
     solver_key: SolverKeyId,
@@ -431,6 +430,7 @@ async def get_job_output_logfile(
 
 @router.post(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/metadata",
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def create_job_custom_metadata(
     solver_key: SolverKeyId,
@@ -446,6 +446,7 @@ async def create_job_custom_metadata(
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/metadata",
     response_model=JobMetadataDict,
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_job_custom_metadata(
     solver_key: SolverKeyId,

@@ -124,8 +124,9 @@ async def get_study_job_output_logfile(study_id: StudyID, job_id: JobID):
 
 @router.post(
     "/studies/{study_id}/jobs/{job_id}/metadata",
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
-async def create_job_custom_metadata(
+async def create_study_job_custom_metadata(
     study_id: StudyID, job_id: JobID, metadata: JobMetadataDict
 ):
     """Attaches custom metadata to a job"""
@@ -134,9 +135,11 @@ async def create_job_custom_metadata(
 
 
 @router.get(
-    "/studies/{study_id}/jobs/{job_id}/metadata", response_model=JobMetadataDict
+    "/studies/{study_id}/jobs/{job_id}/metadata",
+    response_model=JobMetadataDict,
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
-async def get_job_custom_metadata(
+async def get_study_job_custom_metadata(
     study_id: StudyID,
     job_id: JobID,
 ):
