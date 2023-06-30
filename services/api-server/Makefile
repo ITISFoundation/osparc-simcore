@@ -115,55 +115,7 @@ openapi-dev.json: .env
 # GENERATION python client ###########################################################################
 .PHONY: python-client generator-help python-client-openapi-branch
 
-# SEE https://openapi-generator.tech/docs/usage#generate
-# SEE https://openapi-generator.tech/docs/generators/python
-#
-# TODO: put instead to additional-props.yaml and --config=openapi-generator/python-config.yaml
-# TODO: copy this code to https://github.com/ITISFoundation/osparc-simcore-python-client/blob/master/Makefile
-#
 # NOTE: assumes this repo exists
 GIT_USER_ID := ITISFoundation
 GIT_CLIENT_REPO_ID := osparc-simcore-python-client
-GIT_OPENAPI_REPO_ID := openapi-generator
-GENERATOR_NAME := python
-ADDITIONAL_PROPS := \
-	generateSourceCodeOnly=false\
-	hideGenerationTimestamp=true\
-	library=urllib3\
-	packageName=osparc\
-	packageUrl=https://github.com/$(GIT_USER_ID)/${GIT_CLIENT_REPO_ID}.git\
-	packageVersion=$(APP_VERSION)\
-	projectName=osparc-simcore-python-api
-ADDITIONAL_PROPS := $(foreach prop,$(ADDITIONAL_PROPS),$(strip $(prop)))
-
-null  :=
-space := $(null) #
-comma := ,
-
-client:
-	# cloning $(GIT_USER_ID)/$(GIT_CLIENT_REPO_ID) -> $@
-	git clone git@github.com:$(GIT_USER_ID)/$(GIT_CLIENT_REPO_ID).git $@
-	# TODO: if fails, add -b
-	cd client; git checkout -b "upgrade-${APP_VERSION}"
-
-python-client: client openapi.json ## runs python client generator
-	# copies latest version of the openapi
-	@cp openapi.json client/api/
-	# generates
-	@source .env; \
-	docker run --rm \
-			--volume "$(CURDIR):/local" \
-			$(OPENAPI_GENERATOR_IMAGE) generate \
-			--generator-name=$(GENERATOR_NAME) \
-			--git-user-id=$(GIT_USER_ID) \
-			--git-repo-id=$(GIT_CLIENT_REPO_ID) \
-			--http-user-agent="osparc-api/$(APP_VERSION)/python" \
-			--input-spec=/local/openapi.json \
-			--output=/local/client \
-			--additional-properties=$(subst $(space),$(comma),$(strip $(ADDITIONAL_PROPS))) \
-			--package-name=osparc \
-			--release-note="Updated to $(APP_VERSION)"
-
-generator-help: ## help on client-api generator
-	# generate help
-	@docker run --rm $(OPENAPI_GENERATOR_IMAGE) help generate
+CLIENT_BRANCH := master
