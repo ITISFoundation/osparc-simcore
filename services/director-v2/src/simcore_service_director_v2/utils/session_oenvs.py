@@ -1,6 +1,7 @@
 import asyncio
 import inspect
-from typing import Any, Callable, Final, NamedTuple, TypeAlias
+from collections.abc import Callable
+from typing import Any, Final, NamedTuple, TypeAlias
 
 from models_library.utils.specs_substitution import SubstitutionValue
 from pydantic import NonNegativeInt, parse_obj_as
@@ -23,9 +24,8 @@ def factory_context_getter(parameter_name: str) -> ContextGetter:
         try:
             return context[parameter_name]
         except KeyError as err:
-            raise CaptureError(
-                "Parameter {keyname} missing from substitution context"
-            ) from err
+            msg = "Parameter {keyname} missing from substitution context"
+            raise CaptureError(msg) from err
 
     # For context["foo"] -> return operator.methodcaller("__getitem__", keyname)
     # For context.foo -> return operator.attrgetter("project_id")
@@ -51,13 +51,13 @@ def factory_handler(coro: Callable) -> Callable[[ContextDict], RequestTuple]:
     return _create
 
 
-class SessionEnvironmentsTable:
+class SessionVariablesTable:
     def __init__(self):
         self._oenv_getters: dict[str, ContextGetter] = {}
 
     def register(self, table: dict[str, Callable]):
         assert all(  # nosec
-            name.startswith("OSPARC_ENVIRONMENT_") for name in table.keys()
+            name.startswith("OSPARC_ENVIRONMENT_") for name in table
         )  # nosec
         self._oenv_getters.update(table)
 
@@ -91,7 +91,7 @@ class SessionEnvironmentsTable:
 _HANDLERS_TIMEOUT: Final[NonNegativeInt] = parse_obj_as(NonNegativeInt, 4)
 
 
-async def resolve_session_environments(
+async def resolve_session_variables(
     oenvs_getters: dict[str, ContextGetter],
     session_context: ContextDict,
 ) -> dict[str, SubstitutionValue]:
@@ -115,7 +115,7 @@ async def resolve_session_environments(
 
     # evaluates handlers
     values = await asyncio.gather(*coros.values())
-    for key, value in zip(coros.keys(), values):
+    for key, value in zip(coros.keys(), values, strict=True):
         environs[key] = value
 
     assert set(environs.keys()) == set(oenvs_getters.keys())  # nosec

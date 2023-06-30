@@ -14,8 +14,8 @@ from pydantic import EmailStr
 from ..utils.db import get_repository
 from ..utils.session_oenvs import (
     ContextDict,
-    SessionEnvironmentsTable,
-    resolve_session_environments,
+    SessionVariablesTable,
+    resolve_session_variables,
 )
 from .db.repositories.services_environments import ServicesEnvironmentsRepository
 
@@ -56,14 +56,14 @@ async def substitute_session_o2vars(
 
     assert specs  # nosec
 
-    table: SessionEnvironmentsTable = app.state.session_environments_table
+    table: SessionVariablesTable = app.state.session_environments_table
     resolver = SpecsSubstitutionsResolver(specs, upgrade=False)
 
     if requested := set(resolver.get_identifiers()):
         available = set(table.name_keys())
 
         if identifiers := available.intersection(requested):
-            environs = await resolve_session_environments(
+            environs = await resolve_session_variables(
                 table.copy(include=identifiers),
                 session_context=ContextDict(
                     app=app,
@@ -99,7 +99,7 @@ async def _request_user_role(app: FastAPI, user_id: UserID):
 
 
 def _setup_session_o2vars(app: FastAPI):
-    app.state.session_environments_table = table = SessionEnvironmentsTable()
+    app.state.session_environments_table = table = SessionVariablesTable()
 
     # Registers some session oenvs
     # WARNING: context_name needs to match session_context!

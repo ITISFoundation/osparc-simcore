@@ -24,10 +24,10 @@ from simcore_service_director_v2.modules.oenvs_substitutions import (
 )
 from simcore_service_director_v2.utils.session_oenvs import (
     ContextDict,
-    SessionEnvironmentsTable,
+    SessionVariablesTable,
     factory_context_getter,
     factory_handler,
-    resolve_session_environments,
+    resolve_session_variables,
 )
 
 
@@ -57,7 +57,7 @@ async def test_resolve_session_environs(faker: Faker, session_context: ContextDi
         return faker.random_element(elements=list(UserRole)).value
 
     # REGISTRATION -----
-    oenvs_table = SessionEnvironmentsTable()
+    oenvs_table = SessionVariablesTable()
 
     # bulk registration
     oenvs_table.register(
@@ -84,7 +84,7 @@ async def test_resolve_session_environs(faker: Faker, session_context: ContextDi
     # TODO: test validation errors handling
     # TODO: test timeout error handling
 
-    environs = await resolve_session_environments(oenvs_table.copy(), session_context)
+    environs = await resolve_session_variables(oenvs_table.copy(), session_context)
 
     assert set(environs.keys()) == set(oenvs_table.name_keys())
 
