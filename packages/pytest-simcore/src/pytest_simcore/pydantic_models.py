@@ -58,7 +58,7 @@ def iter_model_examples_in_module(module: object) -> Iterator[ModelExample]:
 
         @pytest.mark.parametrize(
             "model_cls, example_name, example_data",
-            iter_examples(simcore_service_webserver.storage_schemas),
+            iter_model_examples_in_module(simcore_service_webserver.storage_schemas),
         )
         def test_model_examples(
             model_cls: type[BaseModel], example_name: int, example_data: Any
@@ -141,7 +141,4 @@ def model_cls_examples(model_cls: type[BaseModel]) -> dict[str, dict[str, Any]]:
     if example:
         examples[f"{model_cls.__name__}.example"] = example
 
-    return examples
-
-    return examples
     return examples
