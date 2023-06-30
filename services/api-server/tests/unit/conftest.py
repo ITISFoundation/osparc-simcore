@@ -19,6 +19,7 @@ from faker import Faker
 from fastapi import FastAPI, status
 from httpx._transports.asgi import ASGITransport
 from moto.server import ThreadedMotoServer
+from packaging.version import Version
 from pydantic import HttpUrl, parse_obj_as
 from pytest import MonkeyPatch  # noqa: PT013
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
@@ -162,21 +163,47 @@ def mocked_s3_server_url() -> Iterator[HttpUrl]:
 def directorv2_service_openapi_specs(
     osparc_simcore_services_dir: Path,
 ) -> dict[str, Any]:
-    return json.loads(
-        (osparc_simcore_services_dir / "director-v2" / "openapi.json").read_text()
-    )
+    openapi_path = osparc_simcore_services_dir / "director-v2" / "openapi.json"
+    return json.loads(openapi_path.read_text())
 
 
 @pytest.fixture
 def webserver_service_openapi_specs(
     osparc_simcore_services_dir: Path,
 ) -> dict[str, Any]:
-    return yaml.safe_load(
-        (
-            osparc_simcore_services_dir
-            / "web/server/src/simcore_service_webserver/api/v0/openapi.yaml"
-        ).read_text()
+    openapi_path = (
+        osparc_simcore_services_dir
+        / "web/server/src/simcore_service_webserver/api/v0/openapi.yaml"
     )
+    return yaml.safe_load(openapi_path.read_text())
+
+
+@pytest.fixture
+def catalog_service_openapi_specs(osparc_simcore_services_dir: Path) -> dict[str, Any]:
+    openapi_path = osparc_simcore_services_dir / "catalog" / "openapi.json"
+    return json.loads(openapi_path.read_text())
+
+
+@pytest.fixture
+def mocked_directorv2_service_api_base(
+    app: FastAPI,
+    directorv2_service_openapi_specs: dict[str, Any],
+):
+    settings: ApplicationSettings = app.state.settings
+    assert settings.API_SERVER_DIRECTOR_V2
+
+    openapi = deepcopy(directorv2_service_openapi_specs)
+    assert Version(openapi["info"]["version"]).major == 2
+
+    # pylint: disable=not-context-manager
+    with respx.mock(
+        base_url=settings.API_SERVER_DIRECTOR_V2.api_base_url,
+        assert_all_called=False,
+        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
+    ) as respx_mock:
+        assert openapi
+
+        yield respx_mock
 
 
 @pytest.fixture
@@ -192,6 +219,7 @@ def mocked_webserver_service_api_base(
     assert settings.API_SERVER_WEBSERVER
 
     openapi = deepcopy(webserver_service_openapi_specs)
+    assert Version(openapi["info"]["version"]).major == 0
 
     # pylint: disable=not-context-manager
     with respx.mock(
@@ -199,7 +227,7 @@ def mocked_webserver_service_api_base(
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
-        # include /v0
+        # WARNING: For this service, DO NOT include /v0 in the `path` to match !!!!
         assert settings.API_SERVER_WEBSERVER.api_base_url.endswith("/v0")
 
         # healthcheck_readiness_probe, healthcheck_liveness_probe
@@ -220,12 +248,6 @@ def mocked_webserver_service_api_base(
 
 
 @pytest.fixture
-def catalog_service_openapi_specs(osparc_simcore_services_dir: Path) -> dict[str, Any]:
-    openapi_path = osparc_simcore_services_dir / "catalog" / "openapi.json"
-    return json.loads(openapi_path.read_text())
-
-
-@pytest.fixture
 def mocked_catalog_service_api_base(
     app: FastAPI, catalog_service_openapi_specs: dict[str, Any]
 ) -> Iterator[MockRouter]:
@@ -233,6 +255,7 @@ def mocked_catalog_service_api_base(
     assert settings.API_SERVER_CATALOG
 
     openapi = deepcopy(catalog_service_openapi_specs)
+    assert Version(openapi["info"]["version"]).major == 0
     schemas = openapi["components"]["schemas"]
 
     # pylint: disable=not-context-manager
