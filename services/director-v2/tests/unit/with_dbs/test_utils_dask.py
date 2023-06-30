@@ -45,6 +45,7 @@ from simcore_service_director_v2.utils.dask import (
     clean_task_output_and_log_files_if_invalid,
     compute_input_data,
     compute_output_data_schema,
+    create_node_ports,
     from_node_reqs_to_dask_resources,
     generate_dask_job_id,
     parse_dask_job_id,
@@ -329,12 +330,17 @@ async def test_compute_input_data(
         autospec=True,
         side_effect=return_fake_input_value(),
     )
+    node_ports = await create_node_ports(
+        db_engine=async_client._transport.app.state.engine,  # noqa: SLF001
+        user_id=user_id,
+        project_id=published_project.project.uuid,
+        node_id=sleeper_task.node_id,
+    )
     computed_input_data = await compute_input_data(
-        async_client._transport.app,  # noqa: SLF001
-        user_id,
-        published_project.project.uuid,
-        sleeper_task.node_id,
+        project_id=published_project.project.uuid,
+        node_id=sleeper_task.node_id,
         file_link_type=tasks_file_link_type,
+        node_ports=node_ports,
     )
     mocked_node_ports_get_value_fct.assert_has_calls(
         [mock.call(mock.ANY, file_link_type=tasks_file_link_type) for n in fake_io_data]
@@ -370,12 +376,19 @@ async def test_compute_output_data_schema(
         aiopg_engine, sleeper_task.node_id, fake_io_schema, no_outputs
     )
 
+    node_ports = await create_node_ports(
+        db_engine=async_client._transport.app.state.engine,  # noqa: SLF001
+        user_id=user_id,
+        project_id=published_project.project.uuid,
+        node_id=sleeper_task.node_id,
+    )
+
     output_schema = await compute_output_data_schema(
-        async_client._transport.app,  # noqa: SLF001
-        user_id,
-        published_project.project.uuid,
-        sleeper_task.node_id,
+        user_id=user_id,
+        project_id=published_project.project.uuid,
+        node_id=sleeper_task.node_id,
         file_link_type=tasks_file_link_type,
+        node_ports=node_ports,
     )
     for port_key, port_schema in fake_io_schema.items():
         assert port_key in output_schema

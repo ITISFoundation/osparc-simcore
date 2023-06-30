@@ -25,7 +25,6 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputDataSchema,
 )
 from dask_task_models_library.container_tasks.protocol import ContainerLabelsDict
-from fastapi import FastAPI
 from models_library.clusters import ClusterID
 from models_library.docker import SimcoreServiceDockerLabelKeys
 from models_library.errors import ErrorDict
@@ -183,33 +182,21 @@ async def parse_output_data(
 
 
 async def compute_input_data(
-    app: FastAPI,
-    user_id: UserID,
+    *,
     project_id: ProjectID,
     node_id: NodeID,
     file_link_type: FileLinkType,
-    ports: node_ports_v2.Nodeports | None = None,
+    node_ports: node_ports_v2.Nodeports,
 ) -> TaskInputData:
     """Retrieves values registered to the inputs of project_id/node_id
-
-    - ports is optional because
-
     :raises PortsValidationError: when inputs ports validation fail
     """
-
-    if ports is None:
-        ports = await create_node_ports(
-            db_engine=app.state.engine,
-            user_id=user_id,
-            project_id=project_id,
-            node_id=node_id,
-        )
 
     input_data = {}
 
     ports_errors = []
     port: Port
-    for port in (await ports.inputs).values():
+    for port in (await node_ports.inputs).values():
         try:
             value: _PVType = await port.get_value(file_link_type=file_link_type)
 
@@ -238,31 +225,20 @@ async def compute_input_data(
 
 
 async def compute_output_data_schema(
-    app: FastAPI,
+    *,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
     file_link_type: FileLinkType,
-    ports: node_ports_v2.Nodeports | None = None,
+    node_ports: node_ports_v2.Nodeports,
 ) -> TaskOutputDataSchema:
     """
 
     :raises PortsValidationError
     """
-    if ports is None:
-        # Based on when this function is normally called,
-        # it is very unlikely that NodePorts raise an exception here
-        # This function only needs the outputs but the design of NodePorts
-        # will validate all inputs and outputs.
-        ports = await create_node_ports(
-            db_engine=app.state.engine,
-            user_id=user_id,
-            project_id=project_id,
-            node_id=node_id,
-        )
 
     output_data_schema: dict[str, Any] = {}
-    for port in (await ports.outputs).values():
+    for port in (await node_ports.outputs).values():
         output_data_schema[port.key] = {"required": port.default_value is None}
 
         if port_utils.is_file_type(port.property_type):

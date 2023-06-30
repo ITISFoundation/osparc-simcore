@@ -284,19 +284,16 @@ class DaskClient:
             )
             # NOTE: for download there is no need to go with S3 links
             input_data = await compute_input_data(
-                self.app,
-                user_id,
-                project_id,
-                node_id,
-                ports=node_ports,
+                project_id=project_id,
+                node_id=node_id,
+                node_ports=node_ports,
                 file_link_type=FileLinkType.PRESIGNED,
             )
             output_data_keys = await compute_output_data_schema(
-                self.app,
-                user_id,
-                project_id,
-                node_id,
-                ports=node_ports,
+                user_id=user_id,
+                project_id=project_id,
+                node_id=node_id,
+                node_ports=node_ports,
                 file_link_type=self.tasks_file_link_type,
             )
             log_file_url = await compute_service_log_file_upload_link(
