@@ -17,7 +17,7 @@ router = APIRouter()
 
 
 @router.get(
-    "/studies/{study_id:uuid}/jobs",
+    "/{study_id:uuid}/jobs",
     response_model=list[Job],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
@@ -27,7 +27,7 @@ async def list_study_jobs(study_id: StudyID):
 
 
 @router.post(
-    "/studies/{study_id:uuid}/jobs",
+    "/{study_id:uuid}/jobs",
     response_model=Job,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
@@ -37,7 +37,7 @@ async def create_study_job(study_id: StudyID):
 
 
 @router.get(
-    "/studies/{study_id:uuid}/jobs/{job_id:uuid}",
+    "/{study_id:uuid}/jobs/{job_id:uuid}",
     response_model=Job,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
@@ -50,7 +50,7 @@ async def get_study_job(
 
 
 @router.delete(
-    "/studies/{study_id:uuid}/jobs/{job_id:uuid}",
+    "/{study_id:uuid}/jobs/{job_id:uuid}",
     status_code=status.HTTP_204_NO_CONTENT,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
@@ -60,7 +60,7 @@ async def delete_study_job(study_id: StudyID, job_id: JobID):
 
 
 @router.post(
-    "/studies/{study_id:uuid}/jobs/{job_id:uuid}:start",
+    "/{study_id:uuid}/jobs/{job_id:uuid}:start",
     response_model=JobStatus,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
@@ -73,7 +73,7 @@ async def start_study_job(
 
 
 @router.post(
-    "/studies/{study_id:uuid}/jobs/{job_id:uuid}:stop",
+    "/{study_id:uuid}/jobs/{job_id:uuid}:stop",
     response_model=Job,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
@@ -86,7 +86,7 @@ async def stop_study_job(
 
 
 @router.post(
-    "/studies/{study_id}/jobs/{job_id}:inspect",
+    "/{study_id}/jobs/{job_id}:inspect",
     response_model=JobStatus,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
@@ -99,7 +99,7 @@ async def inspect_study_job(
 
 
 @router.post(
-    "/studies/{study_id}/jobs/{job_id}/outputs",
+    "/{study_id}/jobs/{job_id}/outputs",
     response_model=JobOutputs,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
@@ -112,7 +112,7 @@ async def get_study_job_outputs(
 
 
 @router.post(
-    "/studies/{study_id}/jobs/{job_id}/outputs/logfile",
+    "/{study_id}/jobs/{job_id}/outputs/logfile",
     response_class=RedirectResponse,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     responses=job_output_logfile_responses,
@@ -123,7 +123,7 @@ async def get_study_job_output_logfile(study_id: StudyID, job_id: JobID):
 
 
 @router.post(
-    "/studies/{study_id}/jobs/{job_id}/metadata",
+    "/{study_id}/jobs/{job_id}/metadata",
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def create_study_job_custom_metadata(
@@ -135,7 +135,7 @@ async def create_study_job_custom_metadata(
 
 
 @router.get(
-    "/studies/{study_id}/jobs/{job_id}/metadata",
+    "/{study_id}/jobs/{job_id}/metadata",
     response_model=JobMetadataDict,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
