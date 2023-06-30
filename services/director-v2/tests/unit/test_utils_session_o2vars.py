@@ -62,17 +62,17 @@ async def test_resolve_session_environs(faker: Faker, session_context: ContextDi
     # bulk registration
     oenvs_table.register(
         {
-            "OSPARC_ENVIRONMENT_PRODUCT_NAME": factory_context_getter("product_name"),
-            "OSPARC_ENVIRONMENT_STUDY_UUID": factory_context_getter("project_id"),
-            "OSPARC_ENVIRONMENT_USER_ROLE": factory_handler(_request_user_role),
+            "OSPARC_VARIABLE_PRODUCT_NAME": factory_context_getter("product_name"),
+            "OSPARC_VARIABLE_STUDY_UUID": factory_context_getter("project_id"),
+            "OSPARC_VARIABLE_USER_ROLE": factory_handler(_request_user_role),
         }
     )
 
     # single entry
-    oenvs_table.register_from_context("OSPARC_ENVIRONMENT_NODE_UUID", "node_id")
+    oenvs_table.register_from_context("OSPARC_VARIABLE_NODE_UUID", "node_id")
 
     # using decorator
-    @oenvs_table.register_from_handler("OSPARC_ENVIRONMENT_USER_EMAIL")
+    @oenvs_table.register_from_handler("OSPARC_VARIABLE_USER_EMAIL")
     async def request_user_email(app: FastAPI, user_id: UserID) -> SubstitutionValue:
         print(app, user_id)
         await asyncio.sleep(1)
@@ -94,9 +94,9 @@ async def test_resolve_session_environs(faker: Faker, session_context: ContextDi
     }
 
     for oenv_name, context_name in [
-        ("OSPARC_ENVIRONMENT_PRODUCT_NAME", "product_name"),
-        ("OSPARC_ENVIRONMENT_STUDY_UUID", "project_id"),
-        ("OSPARC_ENVIRONMENT_NODE_UUID", "node_id"),
+        ("OSPARC_VARIABLE_PRODUCT_NAME", "product_name"),
+        ("OSPARC_VARIABLE_STUDY_UUID", "project_id"),
+        ("OSPARC_VARIABLE_NODE_UUID", "node_id"),
     ]:
         assert environs[oenv_name] == session_context[context_name]
 

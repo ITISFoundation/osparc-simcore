@@ -104,14 +104,14 @@ def _setup_session_o2vars(app: FastAPI):
     # Registers some session oenvs
     # WARNING: context_name needs to match session_context!
     for name, context_name in [
-        ("OSPARC_ENVIRONMENT_PRODUCT_NAME", "product_name"),
-        ("OSPARC_ENVIRONMENT_STUDY_UUID", "project_id"),
-        ("OSPARC_ENVIRONMENT_NODE_ID", "node_id"),
+        ("OSPARC_VARIABLE_PRODUCT_NAME", "product_name"),
+        ("OSPARC_VARIABLE_STUDY_UUID", "project_id"),
+        ("OSPARC_VARIABLE_NODE_ID", "node_id"),
     ]:
         table.register_from_context(name, context_name)
 
-    table.register_from_handler("OSPARC_ENVIRONMENT_USER_EMAIL")(_request_user_email)
-    table.register_from_handler("OSPARC_ENVIRONMENT_USER_ROLE")(_request_user_role)
+    table.register_from_handler("OSPARC_VARIABLE_USER_EMAIL")(_request_user_email)
+    table.register_from_handler("OSPARC_VARIABLE_USER_ROLE")(_request_user_role)
 
     _logger.debug("Registered session_environments_table=%s", sorted(table.name_keys()))
 

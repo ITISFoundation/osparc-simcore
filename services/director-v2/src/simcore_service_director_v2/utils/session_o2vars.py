@@ -57,7 +57,7 @@ class SessionVariablesTable:
 
     def register(self, table: dict[str, Callable]):
         assert all(  # nosec
-            name.startswith("OSPARC_ENVIRONMENT_") for name in table
+            name.startswith("OSPARC_VARIABLE_") for name in table
         )  # nosec
         self._oenv_getters.update(table)
 
