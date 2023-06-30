@@ -21,10 +21,16 @@ try:
     )
 
     OPENAPI_CORE_INSTALLED = True
+
+
 except ImportError:
     Spec: TypeAlias = Any
-    StarletteOpenAPIRequest: TypeAlias = httpx.Request
-    StarletteOpenAPIResponse: TypeAlias = httpx.Response
+    StarletteOpenAPIRequest = pytest.fail
+    StarletteOpenAPIResponse = pytest.fail
+    create_spec = pytest.fail
+    validate_request = pytest.fail
+    validate_response = pytest.fail
+
     OPENAPI_CORE_INSTALLED = False
 
 
@@ -46,36 +52,45 @@ mock_folder_path = CURRENT_DIR.parent / "mocks"
 mock_folder_path.exists()
 
 
-@pytest.mark.skip_if(
-    OPENAPI_CORE_INSTALLED,
+@pytest.mark.skipif(
+    not OPENAPI_CORE_INSTALLED,
     reason="openapi-core is very restritive with jsonschema version and limits requirements/_base.txt",
 )
-@pytest.mark.parametrize("mock_capture_path", mock_folder_path.glob("*.json"))
-def test_mock_captures_against_openapi(
+@pytest.mark.parametrize(
+    "mock_capture_path", mock_folder_path.glob("*.json"), ids=lambda p: p.name
+)
+def test_openapion_capture_mock(
     mock_capture_path: Path,
     openapi_specs: dict[str, Spec],
 ):
     assert mock_capture_path.exists()
     assert mock_capture_path.name.endswith(".json")
 
-    captures = parse_file_as(list[HttpApiCallCaptureModel], mock_capture_path)
+    captures = parse_file_as(
+        list[HttpApiCallCaptureModel] | HttpApiCallCaptureModel, mock_capture_path
+    )
+
+    if not isinstance(captures, list):
+        captures = [
+            captures,
+        ]
 
     for capture in captures:
+        # SEE https://openapi-core.readthedocs.io/en/latest/
+
         request = httpx.Request(
             method=capture.method,
             url=f"http://{capture.host}/{capture.path}",
             params=capture.query,
             json=capture.request_payload,
         )
+        openapi_request = StarletteOpenAPIRequest(request)
+
         response = httpx.Response(
             status_code=capture.status_code,
             json=capture.response_body,
         )
-
-        # SEE https://openapi-core.readthedocs.io/en/latest/
-
         openapi_response = StarletteOpenAPIResponse(response)
-        openapi_request = StarletteOpenAPIRequest(request)
 
         validate_request(openapi_specs[capture.host], openapi_request)
         validate_response(
