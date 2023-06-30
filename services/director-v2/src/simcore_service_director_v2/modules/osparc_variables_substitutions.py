@@ -15,10 +15,10 @@ from models_library.utils.specs_substitution import SpecsSubstitutionsResolver
 from pydantic import EmailStr
 
 from ..utils.db import get_repository
-from ..utils.osparc_session_variables import (
+from ..utils.osparc_variables import (
     ContextDict,
-    SessionVariablesTable,
-    resolve_session_variables,
+    OsparcVariablesTable,
+    resolve_variables_from_context,
 )
 from .db.repositories.services_environments import ServicesEnvironmentsRepository
 
@@ -58,19 +58,18 @@ async def resolve_and_substitute_session_variables_in_specs(
     project_id: ProjectID,
     node_id: NodeID,
 ) -> dict[str, Any]:
-
     assert specs  # nosec
 
-    table: SessionVariablesTable = app.state.session_environments_table
+    table: OsparcVariablesTable = app.state.session_variables_table
     resolver = SpecsSubstitutionsResolver(specs, upgrade=False)
 
     if requested := set(resolver.get_identifiers()):
         available = set(table.variables_names())
 
         if identifiers := available.intersection(requested):
-            environs = await resolve_session_variables(
+            environs = await resolve_variables_from_context(
                 table.copy(include=identifiers),
-                session_context=ContextDict(
+                context=ContextDict(
                     app=app,
                     user_id=user_id,
                     product_name=product_name,
@@ -105,7 +104,7 @@ async def _request_user_role(app: FastAPI, user_id: UserID):
 
 
 def _setup_session_osparc_variables(app: FastAPI):
-    app.state.session_environments_table = table = SessionVariablesTable()
+    app.state.session_variables_table = table = OsparcVariablesTable()
 
     # Registers some session osparc_variables
     # WARNING: context_name needs to match session_context!
@@ -120,7 +119,7 @@ def _setup_session_osparc_variables(app: FastAPI):
     table.register_from_handler("OSPARC_VARIABLE_USER_ROLE")(_request_user_role)
 
     _logger.debug(
-        "Registered session_environments_table=%s", sorted(table.variables_names())
+        "Registered session_variables_table=%s", sorted(table.variables_names())
     )
 
 

@@ -22,12 +22,12 @@ from simcore_service_director_v2.modules.osparc_variables_substitutions import (
     resolve_and_substitute_session_variables_in_specs,
     substitute_vendor_secrets_in_specs,
 )
-from simcore_service_director_v2.utils.osparc_session_variables import (
+from simcore_service_director_v2.utils.osparc_variables import (
     ContextDict,
-    SessionVariablesTable,
+    OsparcVariablesTable,
     factory_context_getter,
     factory_handler,
-    resolve_session_variables,
+    resolve_variables_from_context,
 )
 
 
@@ -57,7 +57,7 @@ async def test_resolve_session_environs(faker: Faker, session_context: ContextDi
         return faker.random_element(elements=list(UserRole)).value
 
     # REGISTRATION -----
-    osparc_variables_table = SessionVariablesTable()
+    osparc_variables_table = OsparcVariablesTable()
 
     # bulk registration
     osparc_variables_table.register(
@@ -84,7 +84,7 @@ async def test_resolve_session_environs(faker: Faker, session_context: ContextDi
     # TODO: test validation errors handling
     # TODO: test timeout error handling
 
-    environs = await resolve_session_variables(
+    environs = await resolve_variables_from_context(
         osparc_variables_table.copy(), session_context
     )
 

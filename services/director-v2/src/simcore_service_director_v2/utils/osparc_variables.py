@@ -51,7 +51,7 @@ def factory_handler(coro: Callable) -> Callable[[ContextDict], RequestTuple]:
     return _create
 
 
-class SessionVariablesTable:
+class OsparcVariablesTable:
     def __init__(self):
         self._variables_getters: dict[str, ContextGetter] = {}
 
@@ -91,14 +91,14 @@ class SessionVariablesTable:
 _HANDLERS_TIMEOUT: Final[NonNegativeInt] = parse_obj_as(NonNegativeInt, 4)
 
 
-async def resolve_session_variables(
-    osparc_variables_getters: dict[str, ContextGetter],
-    session_context: ContextDict,
+async def resolve_variables_from_context(
+    variables_getters: dict[str, ContextGetter],
+    context: ContextDict,
 ) -> dict[str, SubstitutionValue]:
 
     # evaluate getters from context values
     pre_environs: dict[str, SubstitutionValue | RequestTuple] = {
-        key: fun(session_context) for key, fun in osparc_variables_getters.items()
+        key: fun(context) for key, fun in variables_getters.items()
     }
 
     environs: dict[str, SubstitutionValue] = {}
@@ -118,5 +118,5 @@ async def resolve_session_variables(
     for key, value in zip(coros.keys(), values, strict=True):
         environs[key] = value
 
-    assert set(environs.keys()) == set(osparc_variables_getters.keys())  # nosec
+    assert set(environs.keys()) == set(variables_getters.keys())  # nosec
     return environs
