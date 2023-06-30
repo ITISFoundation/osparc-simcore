@@ -1,3 +1,6 @@
+""" Substitution of osparc variables and secrets
+
+"""
 import logging
 from collections.abc import Callable, Mapping
 from copy import deepcopy
@@ -22,9 +25,10 @@ from .db.repositories.services_environments import ServicesEnvironmentsRepositor
 _logger = logging.getLogger(__name__)
 
 
-async def substitute_vendor_secrets_o2vars(
+async def substitute_vendor_secrets_in_specs(
     app: FastAPI,
     specs: dict[str, Any],
+    *,
     service_key: ServiceKey,
     service_version: ServiceVersion,
 ) -> dict[str, Any]:
@@ -45,9 +49,10 @@ async def substitute_vendor_secrets_o2vars(
     return deepcopy(specs)
 
 
-async def substitute_session_o2vars(
+async def resolve_and_substitute_session_variables_in_specs(
     app: FastAPI,
     specs: dict[str, Any],
+    *,
     user_id: UserID,
     product_name: str,
     project_id: ProjectID,
@@ -60,7 +65,7 @@ async def substitute_session_o2vars(
     resolver = SpecsSubstitutionsResolver(specs, upgrade=False)
 
     if requested := set(resolver.get_identifiers()):
-        available = set(table.name_keys())
+        available = set(table.variables_names())
 
         if identifiers := available.intersection(requested):
             environs = await resolve_session_variables(
@@ -80,9 +85,10 @@ async def substitute_session_o2vars(
     return deepcopy(specs)
 
 
-async def substitute_lifespan_o2vars(
+async def resolve_and_substitute_lifespan_variables_in_specs(
     _app: FastAPI,
     _specs: dict[str, Any],
+    *,
     _callbacks_registry: Mapping[str, Callable],
 ):
     raise NotImplementedError
@@ -98,10 +104,10 @@ async def _request_user_role(app: FastAPI, user_id: UserID):
     return await repo.get_user_role(user_id=user_id)
 
 
-def _setup_session_o2vars(app: FastAPI):
+def _setup_session_osparc_variables(app: FastAPI):
     app.state.session_environments_table = table = SessionVariablesTable()
 
-    # Registers some session oenvs
+    # Registers some session osparc_variables
     # WARNING: context_name needs to match session_context!
     for name, context_name in [
         ("OSPARC_VARIABLE_PRODUCT_NAME", "product_name"),
@@ -113,7 +119,9 @@ def _setup_session_o2vars(app: FastAPI):
     table.register_from_handler("OSPARC_VARIABLE_USER_EMAIL")(_request_user_email)
     table.register_from_handler("OSPARC_VARIABLE_USER_ROLE")(_request_user_role)
 
-    _logger.debug("Registered session_environments_table=%s", sorted(table.name_keys()))
+    _logger.debug(
+        "Registered session_environments_table=%s", sorted(table.variables_names())
+    )
 
 
 def setup(app: FastAPI):
@@ -125,6 +133,6 @@ def setup(app: FastAPI):
     """
 
     def on_startup() -> None:
-        _setup_session_o2vars(app)
+        _setup_session_osparc_variables(app)
 
     app.add_event_handler("startup", on_startup)

@@ -18,9 +18,9 @@ from pydantic import parse_obj_as
 from pytest_simcore.helpers.faker_compose_specs import generate_fake_docker_compose
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_director_v2.modules.osparc_variables_substitutions import (
-    substitute_lifespan_o2vars,
-    substitute_session_o2vars,
-    substitute_vendor_secrets_o2vars,
+    resolve_and_substitute_lifespan_variables_in_specs,
+    resolve_and_substitute_session_variables_in_specs,
+    substitute_vendor_secrets_in_specs,
 )
 from simcore_service_director_v2.utils.osparc_session_variables import (
     ContextDict,
@@ -47,9 +47,9 @@ def session_context(faker: Faker) -> ContextDict:
 
 @pytest.mark.acceptance_test()
 async def test_resolve_session_environs(faker: Faker, session_context: ContextDict):
-    assert substitute_session_o2vars
-    assert substitute_vendor_secrets_o2vars
-    assert substitute_lifespan_o2vars
+    assert resolve_and_substitute_session_variables_in_specs
+    assert substitute_vendor_secrets_in_specs
+    assert resolve_and_substitute_lifespan_variables_in_specs
 
     async def _request_user_role(app: FastAPI, user_id: UserID) -> SubstitutionValue:
         print(app, user_id)
@@ -57,10 +57,10 @@ async def test_resolve_session_environs(faker: Faker, session_context: ContextDi
         return faker.random_element(elements=list(UserRole)).value
 
     # REGISTRATION -----
-    oenvs_table = SessionVariablesTable()
+    osparc_variables_table = SessionVariablesTable()
 
     # bulk registration
-    oenvs_table.register(
+    osparc_variables_table.register(
         {
             "OSPARC_VARIABLE_PRODUCT_NAME": factory_context_getter("product_name"),
             "OSPARC_VARIABLE_STUDY_UUID": factory_context_getter("project_id"),
@@ -69,10 +69,10 @@ async def test_resolve_session_environs(faker: Faker, session_context: ContextDi
     )
 
     # single entry
-    oenvs_table.register_from_context("OSPARC_VARIABLE_NODE_UUID", "node_id")
+    osparc_variables_table.register_from_context("OSPARC_VARIABLE_NODE_UUID", "node_id")
 
     # using decorator
-    @oenvs_table.register_from_handler("OSPARC_VARIABLE_USER_EMAIL")
+    @osparc_variables_table.register_from_handler("OSPARC_VARIABLE_USER_EMAIL")
     async def request_user_email(app: FastAPI, user_id: UserID) -> SubstitutionValue:
         print(app, user_id)
         await asyncio.sleep(1)
@@ -84,20 +84,22 @@ async def test_resolve_session_environs(faker: Faker, session_context: ContextDi
     # TODO: test validation errors handling
     # TODO: test timeout error handling
 
-    environs = await resolve_session_variables(oenvs_table.copy(), session_context)
+    environs = await resolve_session_variables(
+        osparc_variables_table.copy(), session_context
+    )
 
-    assert set(environs.keys()) == set(oenvs_table.name_keys())
+    assert set(environs.keys()) == set(osparc_variables_table.variables_names())
 
     # All values extracted from the context MUST be SubstitutionValue
     assert {
         key: parse_obj_as(SubstitutionValue, value) for key, value in environs.items()
     }
 
-    for oenv_name, context_name in [
+    for osparc_variable_name, context_name in [
         ("OSPARC_VARIABLE_PRODUCT_NAME", "product_name"),
         ("OSPARC_VARIABLE_STUDY_UUID", "project_id"),
         ("OSPARC_VARIABLE_NODE_UUID", "node_id"),
     ]:
-        assert environs[oenv_name] == session_context[context_name]
+        assert environs[osparc_variable_name] == session_context[context_name]
 
     print(json.dumps(environs, indent=1))

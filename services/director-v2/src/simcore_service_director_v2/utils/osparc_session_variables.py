@@ -53,13 +53,13 @@ def factory_handler(coro: Callable) -> Callable[[ContextDict], RequestTuple]:
 
 class SessionVariablesTable:
     def __init__(self):
-        self._oenv_getters: dict[str, ContextGetter] = {}
+        self._variables_getters: dict[str, ContextGetter] = {}
 
     def register(self, table: dict[str, Callable]):
         assert all(  # nosec
             name.startswith("OSPARC_VARIABLE_") for name in table
         )  # nosec
-        self._oenv_getters.update(table)
+        self._variables_getters.update(table)
 
     def register_from_context(self, name: str, context_name: str):
         self.register({name: factory_context_getter(context_name)})
@@ -71,13 +71,13 @@ class SessionVariablesTable:
 
         return _decorator
 
-    def name_keys(self):
-        return self._oenv_getters.keys()
+    def variables_names(self):
+        return self._variables_getters.keys()
 
     def copy(
         self, include: set[str] | None = None, exclude: set[str] | None = None
     ) -> dict[str, ContextGetter]:
-        all_ = set(self._oenv_getters.keys())
+        all_ = set(self._variables_getters.keys())
         exclude = exclude or set()
         include = include or all_
 
@@ -85,20 +85,20 @@ class SessionVariablesTable:
         assert include.issubset(all_)  # nosec
 
         selection = include.difference(exclude)
-        return {k: self._oenv_getters[k] for k in selection}
+        return {k: self._variables_getters[k] for k in selection}
 
 
 _HANDLERS_TIMEOUT: Final[NonNegativeInt] = parse_obj_as(NonNegativeInt, 4)
 
 
 async def resolve_session_variables(
-    oenvs_getters: dict[str, ContextGetter],
+    osparc_variables_getters: dict[str, ContextGetter],
     session_context: ContextDict,
 ) -> dict[str, SubstitutionValue]:
 
     # evaluate getters from context values
     pre_environs: dict[str, SubstitutionValue | RequestTuple] = {
-        key: fun(session_context) for key, fun in oenvs_getters.items()
+        key: fun(session_context) for key, fun in osparc_variables_getters.items()
     }
 
     environs: dict[str, SubstitutionValue] = {}
@@ -118,5 +118,5 @@ async def resolve_session_variables(
     for key, value in zip(coros.keys(), values, strict=True):
         environs[key] = value
 
-    assert set(environs.keys()) == set(oenvs_getters.keys())  # nosec
+    assert set(environs.keys()) == set(osparc_variables_getters.keys())  # nosec
     return environs
