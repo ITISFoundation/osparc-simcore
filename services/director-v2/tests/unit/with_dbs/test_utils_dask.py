@@ -48,6 +48,7 @@ from simcore_service_director_v2.utils.dask import (
     clean_task_output_and_log_files_if_invalid,
     compute_input_data,
     compute_output_data_schema,
+    compute_task_envs,
     compute_task_labels,
     create_node_ports,
     from_node_reqs_to_dask_resources,
@@ -591,3 +592,11 @@ def test_compute_task_labels(
         "uuid": f"{node_id}",
     } | expected_additional_task_labels
     assert task_labels == expected_task_labels
+
+
+def test_compute_task_envs(
+    published_project: PublishedProject,
+):
+    sleeper_task: CompTaskAtDB = published_project.tasks[1]
+    task_envs = compute_task_envs(sleeper_task.image)
+    assert task_envs == {}
