@@ -3,6 +3,7 @@
 # Github CLI (https://cli.github.com/)
 # The Dockerfile for generating the image used here is located here: https://github.com/ITISFoundation/osparc-simcore-clients/blob/master/scripts/gh/Dockerfile
 # By default the pwd is mounted into the docker container and used as the current working directory
+# N.B. For Github actions: Remember to expose GITHUB_TOKEN in your Github workflow .yml file."
 
 IMAGE_NAME=itisfoundation/gh
 IMAGE_VERSION=v0
@@ -12,8 +13,6 @@ USER_DIR=$(realpath ~)
 GH_TOKEN_FILE=${USER_DIR}/.gh-token
 
 if [ -v GITHUB_ACTIONS ]; then
-  echo "Running in GitHub Actions. Remember to expose GITHUB_TOKEN in your Github workflow .yml file."
-  echo "command: gh '$@'"
   gh "$@"
 else
   if [ ! -f "${GH_TOKEN_FILE}" ]; then
