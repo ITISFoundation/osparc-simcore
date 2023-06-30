@@ -41,9 +41,16 @@ class CompRunsAtDB(BaseModel):
 
     @validator("cluster_id", pre=True)
     @classmethod
-    def concert_null_to_default_cluster_id(cls, v):
+    def convert_null_to_default_cluster_id(cls, v):
         if v is None:
             v = DEFAULT_CLUSTER_ID
+        return v
+
+    @validator("metadata", pre=True)
+    @classmethod
+    def convert_null_to_empty_metadata(cls, v):
+        if v is None:
+            v = MetadataDict()
         return v
 
     @validator("created", "modified", "started", "ended")
