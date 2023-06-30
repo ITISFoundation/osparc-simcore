@@ -125,10 +125,10 @@ def _setup_session_osparc_variables(app: FastAPI):
 
 def setup(app: FastAPI):
     """
-    **o2sparc-variables** (*o2vars* in short) are identifiers-value maps that are substituted on the service specs (e.g. docker-compose).
+    **o2sparc variables and secrets** are identifiers-value maps that are substituted on the service specs (e.g. docker-compose).
         - **vendor secrets**: information set by a vendor on the platform. e.g. a vendor service license
-        - **session o2vars**: some session information as "current user email" or the "current product name"
-        - **lifespan o2vars**: produced  before a service is started and cleaned up after it finishes (e.g. API tokens )
+        - **session variables**: some session information as "current user email" or the "current product name"
+        - **lifespan variables**: produced before a service is started and cleaned up after it finishes (e.g. API tokens )
     """
 
     def on_startup() -> None:
