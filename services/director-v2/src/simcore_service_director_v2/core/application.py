@@ -25,7 +25,7 @@ from ..modules import (
     dynamic_services,
     dynamic_sidecar,
     node_rights,
-    oenvs_substitutions,
+    o2vars_substitutions,
     rabbitmq,
     remote_debug,
     storage,
@@ -132,7 +132,7 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
         settings = app.state.settings
     assert settings  # nosec
 
-    oenvs_substitutions.setup(app)
+    o2vars_substitutions.setup(app)
 
     if settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
         remote_debug.setup(app)
