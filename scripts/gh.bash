@@ -12,7 +12,7 @@ set -o pipefail # don't hide errors within pipes
 IMAGE_NAME=itisfoundation/gh
 IMAGE_VERSION=v0
 
-readonly UID=$(id -u)
+USERID=$(id -u)
 USER_DIR=$(realpath ~)
 GH_TOKEN_FILE=${USER_DIR}/.gh-token
 
@@ -25,6 +25,6 @@ else
       exit 1
   fi
   curdir=/tmp/curdir
-  docker run --rm --env-file=${GH_TOKEN_FILE} --volume=$(pwd):${curdir} --workdir=${curdir} --user=${UID}:${UID}\
+  docker run --rm --env-file=${GH_TOKEN_FILE} --volume=$(pwd):${curdir} --workdir=${curdir} --user=${USERID}:${USERID}\
     ${IMAGE_NAME}:${IMAGE_VERSION} "$@"
 fi
