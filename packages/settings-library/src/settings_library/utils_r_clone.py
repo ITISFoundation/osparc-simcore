@@ -20,21 +20,23 @@ _PROVIDER_ENTRIES: dict[S3Provider, dict[str, str]] = {
 }
 
 
-def _format_config(entries: dict[str, str]) -> str:
+def _format_config(entries: dict[str, str], s3_config_key: str) -> str:
     config = configparser.ConfigParser()
-    config["dst"] = entries
+    config[s3_config_key] = entries
     with StringIO() as string_io:
         config.write(string_io)
         string_io.seek(0)
         return string_io.read()
 
 
-def get_r_clone_config(r_clone_settings: RCloneSettings) -> str:
+def get_r_clone_config(r_clone_settings: RCloneSettings, *, s3_config_key: str) -> str:
     provider = r_clone_settings.R_CLONE_PROVIDER
     entries = deepcopy(_COMMON_ENTRIES)
     entries.update(_PROVIDER_ENTRIES[provider])
 
-    r_clone_config_template = _format_config(entries=entries)
+    r_clone_config_template = _format_config(
+        entries=entries, s3_config_key=s3_config_key
+    )
 
     # replace entries in template
     r_clone_config = r_clone_config_template.format(

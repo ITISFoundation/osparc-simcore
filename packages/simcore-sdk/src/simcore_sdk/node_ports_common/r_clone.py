@@ -3,6 +3,8 @@ import logging
 import re
 import shlex
 import urllib.parse
+from abc import abstractmethod
+from asyncio.streams import StreamReader
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncIterator
@@ -11,10 +13,18 @@ from aiocache import cached
 from aiofiles import tempfile
 from models_library.api_schemas_storage import FileUploadSchema
 from pydantic.errors import PydanticErrorMixin
+from servicelib.progress_bar import ProgressBarData
+from servicelib.utils import logged_gather
 from settings_library.r_clone import RCloneSettings
 from settings_library.utils_r_clone import get_r_clone_config
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
+
+
+class BaseRCloneLogParser:
+    @abstractmethod
+    async def __call__(self, logs: str) -> None:
+        ...
 
 
 class RCloneFailedError(PydanticErrorMixin, RuntimeError):
@@ -30,7 +40,25 @@ async def _config_file(config: str) -> AsyncIterator[str]:
         yield f.name
 
 
-async def _async_command(*cmd: str, cwd: str | None = None) -> str:
+async def _read_stream(
+    stream: StreamReader, r_clone_log_parsers: list[BaseRCloneLogParser]
+):
+    while True:
+        line: bytes = await stream.readline()
+        if line:
+            decoded_line = line.decode()
+            await logged_gather(
+                *[parser(decoded_line) for parser in r_clone_log_parsers]
+            )
+        else:
+            break
+
+
+async def _async_command(
+    *cmd: str,
+    r_clone_log_parsers: list[BaseRCloneLogParser] | None = None,
+    cwd: str | None = None,
+) -> str:
     str_cmd = " ".join(cmd)
     proc = await asyncio.create_subprocess_shell(
         str_cmd,
@@ -40,12 +68,15 @@ async def _async_command(*cmd: str, cwd: str | None = None) -> str:
         cwd=cwd,
     )
 
+    if r_clone_log_parsers:
+        await asyncio.wait([_read_stream(proc.stdout, r_clone_log_parsers)])
+
     stdout, _ = await proc.communicate()
     decoded_stdout = stdout.decode()
     if proc.returncode != 0:
         raise RCloneFailedError(command=str_cmd, stdout=decoded_stdout)
 
-    logger.debug("'%s' result:\n%s", str_cmd, decoded_stdout)
+    _logger.debug("'%s' result:\n%s", str_cmd, decoded_stdout)
     return decoded_stdout
 
 
@@ -61,55 +92,146 @@ async def is_r_clone_available(r_clone_settings: RCloneSettings | None) -> bool:
         return False
 
 
-async def sync_local_to_s3(
-    local_file_path: Path,
-    r_clone_settings: RCloneSettings,
-    upload_file_links: FileUploadSchema,
-) -> None:
-    """_summary_
-
-    :raises e: RCloneFailedError
+class SyncProgressLogParser(BaseRCloneLogParser):
     """
-    assert len(upload_file_links.urls) == 1  # nosec
-    s3_link = urllib.parse.unquote(upload_file_links.urls[0])
-    s3_path = re.sub(r"^s3://", "", s3_link)
-    logger.debug(" %s; %s", f"{s3_link=}", f"{s3_path=}")
+    log processor that only yields and progress updates detected in the logs.
+    """
 
-    r_clone_config_file_content = get_r_clone_config(r_clone_settings)
+    def __init__(self, progress_bar: ProgressBarData) -> None:
+        self._last_update_value = 0
+        self.progress_bar = progress_bar
+
+    async def __call__(self, logs: str) -> None:
+        # Try to do it with https://github.com/r1chardj0n3s/parse
+        if "Transferred" not in logs:
+            return
+
+        to_parse = logs.split("Transferred")[-1]
+        match = re.search(r"(\d+)%", to_parse)
+        if not match:
+            return
+
+        # extracting percentage and only emitting if
+        # value is bigger than the one previously emitted
+        # avoids to send the same progress twice
+        percentage = int(match.group(1))
+        if percentage > self._last_update_value:
+            progress_delta = percentage - self._last_update_value
+            await self.progress_bar.update(progress_delta)
+            self._last_update_value = percentage
+
+
+class DebugLogParser(BaseRCloneLogParser):
+    async def __call__(self, logs: str) -> None:
+        print("|>>>|", logs, "|")
+
+
+async def _sync_sources(
+    r_clone_settings: RCloneSettings,
+    progress_bar: ProgressBarData,
+    *,
+    source: str,
+    destination: str,
+    local_dir: Path,
+    s3_config_key: str,
+    s3_retries: int = 3,
+    s3_parallelism: int = 5,
+    debug_progress: bool = False,
+) -> None:
+    r_clone_config_file_content = get_r_clone_config(
+        r_clone_settings, s3_config_key=s3_config_key
+    )
     async with _config_file(r_clone_config_file_content) as config_file_name:
-        source_path = local_file_path
-        destination_path = Path(s3_path)
-        file_name = local_file_path.name
-        # FIXME: capture progress and connect progressbars or some event to inform the UI
-
-        # rclone only acts upon directories, so to target a specific file
-        # we must run the command from the file's directory. See below
-        # example for further details:
-        #
-        # local_file_path=`/tmp/pytest-of-silenthk/pytest-80/test_sync_local_to_s30/filee3e70682-c209-4cac-a29f-6fbed82c07cd.txt`
-        # s3_path=`simcore/00000000-0000-0000-0000-000000000001/00000000-0000-0000-0000-000000000002/filee3e70682-c209-4cac-a29f-6fbed82c07cd.txt`
-        #
-        # rclone
-        #   --config
-        #   /tmp/tmpd_1rtmss
-        #   sync
-        #   '/tmp/pytest-of-silenthk/pytest-80/test_sync_local_to_s30'
-        #   'dst:simcore/00000000-0000-0000-0000-000000000001/00000000-0000-0000-0000-000000000002'
-        #   --progress
-        #   --copy-links
-        #   --include
-        #   'filee3e70682-c209-4cac-a29f-6fbed82c07cd.txt'
         r_clone_command = (
             "rclone",
             "--config",
             config_file_name,
+            "--retries",
+            f"{s3_retries}",
+            "--transfers",
+            f"{s3_parallelism}",
+            # below two options reduce to a minimum the memory footprint
+            # https://forum.rclone.org/t/how-to-set-a-memory-limit/10230/4
+            "--use-mmap",  # docs https://rclone.org/docs/#use-mmap
+            "--buffer-size",  # docs https://rclone.org/docs/#buffer-size-size
+            "0M",
+            # make sure stats can be noticed
+            "--stats-log-level",
+            "NOTICE",
+            # frequent polling for faster progress updates
+            # "--stats",
+            # "1s",
+            # "--stats-one-line-date",
             "sync",
-            shlex.quote(f"{source_path.parent}"),
-            shlex.quote(f"dst:{destination_path.parent}"),
+            shlex.quote(source),
+            shlex.quote(destination),
             "--progress",
             "--copy-links",
-            "--include",
-            shlex.quote(f"{file_name}"),
+            "--verbose",
         )
 
-        await _async_command(*r_clone_command, cwd=f"{source_path.parent}")
+        async with progress_bar.sub_progress(steps=100) as sub_progress:
+            r_clone_log_parsers: list[BaseRCloneLogParser] = (
+                [DebugLogParser()] if debug_progress else []
+            )
+            r_clone_log_parsers.append(SyncProgressLogParser(sub_progress))
+
+            await _async_command(
+                *r_clone_command,
+                r_clone_log_parsers=r_clone_log_parsers,
+                cwd=f"{local_dir}",
+            )
+
+
+async def sync_local_to_s3(
+    r_clone_settings: RCloneSettings,
+    progress_bar: ProgressBarData,
+    *,
+    local_directory_path: Path,
+    upload_directory_link: FileUploadSchema,
+) -> None:
+    """transfer the contents of a local directory to an s3 path
+
+    :raises e: RCloneFailedError
+    """
+    assert len(upload_directory_link.urls) == 1  # nosec
+    upload_s3_link = urllib.parse.unquote(upload_directory_link.urls[0])
+    upload_s3_path = re.sub(r"^s3://", "", upload_s3_link)
+    _logger.debug(" %s; %s", f"{upload_s3_link=}", f"{upload_s3_path=}")
+
+    await _sync_sources(
+        r_clone_settings,
+        progress_bar,
+        source=f"{local_directory_path}",
+        destination=f"s3-destination:{upload_s3_path}",
+        local_dir=local_directory_path,
+        s3_config_key="s3-destination",
+    )
+
+
+async def sync_s3_to_local(
+    r_clone_settings: RCloneSettings,
+    progress_bar: ProgressBarData,
+    *,
+    local_directory_path: Path,
+    download_directory_link: FileUploadSchema,
+) -> None:
+    """transfer the contents of a path in s3 to a local directory
+
+    :raises e: RCloneFailedError
+    """
+
+    assert len(download_directory_link.urls) == 1  # nosec
+    download_s3_link = urllib.parse.unquote(download_directory_link.urls[0])
+    download_s3_path = re.sub(r"^s3://", "", download_s3_link)
+    _logger.debug(" %s; %s", f"{download_s3_link=}", f"{download_s3_path=}")
+
+    await _sync_sources(
+        r_clone_settings,
+        progress_bar,
+        source=f"s3-source:{download_s3_path}",
+        destination=f"{local_directory_path}",
+        local_dir=local_directory_path,
+        s3_config_key="s3-source",
+        debug_progress=True,
+    )
