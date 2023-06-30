@@ -355,7 +355,7 @@ def tasks_file_link_scheme(tasks_file_link_type: FileLinkType) -> tuple:
     if tasks_file_link_type == FileLinkType.PRESIGNED:
         return ("http", "https")
     pytest.fail("unknown file link type, need update of the fixture")
-    # pylint: disable=inconsistent-return-statements
+    return ("thankspylint",)
 
 
 async def test_compute_output_data_schema(
