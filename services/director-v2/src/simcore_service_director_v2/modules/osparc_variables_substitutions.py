@@ -44,7 +44,8 @@ async def substitute_vendor_secrets_in_specs(
 
         # resolve substitutions
         resolver.set_substitutions(environs=vendor_secrets)
-        return resolver.run()
+        new_specs: dict[str, Any] = resolver.run()
+        return new_specs
 
     return deepcopy(specs)
 
@@ -79,7 +80,8 @@ async def resolve_and_substitute_session_variables_in_specs(
             )
 
             resolver.set_substitutions(environs=environs)
-            return resolver.run()
+            new_specs: dict[str, Any] = resolver.run()
+            return new_specs
 
     return deepcopy(specs)
 
