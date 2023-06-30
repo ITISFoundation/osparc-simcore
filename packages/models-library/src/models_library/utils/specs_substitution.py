@@ -72,4 +72,4 @@ class SpecsSubstitutionsResolver:
     def run(self) -> dict[str, Any]:
         new_specs_txt: str = self._template.safe_substitute(self._substitutions)
         new_specs = yaml.safe_load(new_specs_txt)
-        return cast(new_specs, dict[str, Any])
+        return cast(dict[str, Any], new_specs)
