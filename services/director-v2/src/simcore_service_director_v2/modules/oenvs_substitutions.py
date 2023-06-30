@@ -1,6 +1,7 @@
 import logging
+from collections.abc import Callable, Mapping
 from copy import deepcopy
-from typing import Any, Callable, Mapping
+from typing import Any
 
 from fastapi import FastAPI
 from models_library.projects import ProjectID
@@ -21,15 +22,13 @@ from .db.repositories.services_environments import ServicesEnvironmentsRepositor
 _logger = logging.getLogger(__name__)
 
 
-async def substitute_vendor_secrets_oenvs(
+async def substitute_vendor_secrets_o2vars(
     app: FastAPI,
     specs: dict[str, Any],
     service_key: ServiceKey,
     service_version: ServiceVersion,
 ) -> dict[str, Any]:
     assert specs  # nosec
-    new_specs: dict[str, Any]
-
     resolver = SpecsSubstitutionsResolver(specs, upgrade=False)
     repo = get_repository(app, ServicesEnvironmentsRepository)
 
@@ -41,13 +40,12 @@ async def substitute_vendor_secrets_oenvs(
 
         # resolve substitutions
         resolver.set_substitutions(environs=vendor_secrets)
-        new_specs = resolver.run()
-        return new_specs
+        return resolver.run()
 
     return deepcopy(specs)
 
 
-async def substitute_session_oenvs(
+async def substitute_session_o2vars(
     app: FastAPI,
     specs: dict[str, Any],
     user_id: UserID,
@@ -57,7 +55,6 @@ async def substitute_session_oenvs(
 ) -> dict[str, Any]:
 
     assert specs  # nosec
-    new_specs: dict[str, Any]
 
     table: SessionEnvironmentsTable = app.state.session_environments_table
     resolver = SpecsSubstitutionsResolver(specs, upgrade=False)
@@ -78,18 +75,17 @@ async def substitute_session_oenvs(
             )
 
             resolver.set_substitutions(environs=environs)
-            new_specs = resolver.run()
+            return resolver.run()
 
-            return new_specs
     return deepcopy(specs)
 
 
-async def substitute_lifespan_oenvs(
+async def substitute_lifespan_o2vars(
     _app: FastAPI,
     _specs: dict[str, Any],
     _callbacks_registry: Mapping[str, Callable],
 ):
-    raise NotImplementedError()
+    raise NotImplementedError
 
 
 async def _request_user_email(app: FastAPI, user_id: UserID) -> EmailStr:
@@ -102,7 +98,7 @@ async def _request_user_role(app: FastAPI, user_id: UserID):
     return await repo.get_user_role(user_id=user_id)
 
 
-def _setup_session_oenvs(app: FastAPI):
+def _setup_session_o2vars(app: FastAPI):
     app.state.session_environments_table = table = SessionEnvironmentsTable()
 
     # Registers some session oenvs
@@ -117,20 +113,18 @@ def _setup_session_oenvs(app: FastAPI):
     table.register_from_handler("OSPARC_ENVIRONMENT_USER_EMAIL")(_request_user_email)
     table.register_from_handler("OSPARC_ENVIRONMENT_USER_ROLE")(_request_user_role)
 
-    _logger.debug(
-        "Registered session_environments_table=%s", sorted(list(table.name_keys()))
-    )
+    _logger.debug("Registered session_environments_table=%s", sorted(table.name_keys()))
 
 
 def setup(app: FastAPI):
     """
-    **osparc-environments** (*oenvs* in short) are identifiers-value maps that are substituted on the service specs (e.g. docker-compose).
+    **o2sparc-variables** (*o2vars* in short) are identifiers-value maps that are substituted on the service specs (e.g. docker-compose).
         - **vendor secrets**: information set by a vendor on the platform. e.g. a vendor service license
-        - **session oenvs**: some session information as "current user email" or the "current product name"
-        - **lifespan oenvs**: produced  before a service is started and cleaned up after it finishes (e.g. API tokens )
+        - **session o2vars**: some session information as "current user email" or the "current product name"
+        - **lifespan o2vars**: produced  before a service is started and cleaned up after it finishes (e.g. API tokens )
     """
 
     def on_startup() -> None:
-        _setup_session_oenvs(app)
+        _setup_session_o2vars(app)
 
     app.add_event_handler("startup", on_startup)
