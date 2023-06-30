@@ -24,7 +24,10 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputData,
     TaskOutputDataSchema,
 )
-from dask_task_models_library.container_tasks.protocol import ContainerLabelsDict
+from dask_task_models_library.container_tasks.protocol import (
+    ContainerEnvsDict,
+    ContainerLabelsDict,
+)
 from models_library.clusters import ClusterID
 from models_library.docker import SimcoreServiceDockerLabelKeys
 from models_library.errors import ErrorDict
@@ -304,7 +307,19 @@ def compute_task_labels(
         simcore_user_agent=metadata.get("simcore_user_agent", _UNDEFINED_METADATA),
     ).to_docker_labels()
     task_labels |= {k: f"{v}" for k, v in metadata.items()}
+    # TODO:
+    # substitute_session_oenvs(
+    #     self.app, metadata, user_id, metadata.get("product_name", "")
+    # ),
     return task_labels
+
+
+def compute_task_envs(node_image: Image) -> ContainerEnvsDict:
+    # subsitute variables
+    # task_envs = substitute_session_oenvs(
+    #     self.app, task_envs, user_id, metadata.get("product_name", "")
+    # )
+    return node_image.envs
 
 
 async def get_service_log_file_download_link(

@@ -72,6 +72,7 @@ from ..utils.dask import (
     compute_input_data,
     compute_output_data_schema,
     compute_service_log_file_upload_link,
+    compute_task_envs,
     compute_task_labels,
     create_node_ports,
     dask_sub_consumer_task,
@@ -302,28 +303,8 @@ class DaskClient:
                 node_id,
                 file_link_type=self.tasks_file_link_type,
             )
-
-            task_labels = compute_task_labels(
-                user_id,
-                project_id,
-                node_id,
-                metadata
-                # TODO:
-                # substitute_session_oenvs(
-                #     self.app, metadata, user_id, metadata.get("product_name", "")
-                # ),
-            )
-
-            def _compute_task_envs() -> ContainerEnvsDict:
-                # TODO:
-                # get env labels from catalog?
-                # subsitute variables
-                # task_envs = substitute_session_oenvs(
-                #     self.app, task_envs, user_id, metadata.get("product_name", "")
-                # )
-                return {}
-
-            task_envs = _compute_task_envs()
+            task_labels = compute_task_labels(user_id, project_id, node_id, metadata)
+            task_envs = compute_task_envs(node_image)
 
             try:
                 assert self.app.state  # nosec
