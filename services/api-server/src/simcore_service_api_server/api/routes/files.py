@@ -12,7 +12,6 @@ from fastapi import File as FileParam
 from fastapi import Header, Request, UploadFile, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse
-from fastapi_pagination.api import create_page
 from models_library.projects_nodes_io import StorageFileID
 from pydantic import ValidationError, parse_obj_as
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
@@ -36,13 +35,15 @@ router = APIRouter()
 ## FILES ---------------------------------------------------------------------------------
 #
 # - WARNING: the order of the router-decorated functions MATTER
-# - TODO: pagination ?
 # - TODO: extend :search as https://cloud.google.com/apis/design/custom_methods ?
 #
 #
 
 _common_error_responses = {
-    status.HTTP_404_NOT_FOUND: {"description": "File not found", "model": ErrorGet},
+    status.HTTP_404_NOT_FOUND: {
+        "description": "File not found",
+        "model": ErrorGet,
+    },
 }
 
 
@@ -92,14 +93,6 @@ async def get_files_page(
 ):
     assert storage_client  # nosec
     assert user_id  # nosec
-
-    def _do():
-        files: list[File] = []
-        return create_page(
-            files,
-            total=100,
-            params=page_params,
-        )
 
     msg = f"get_files_page of user_id={user_id!r} with page_params={page_params!r}. SEE https://github.com/ITISFoundation/osparc-issues/issues/952"
     raise NotImplementedError(msg)
