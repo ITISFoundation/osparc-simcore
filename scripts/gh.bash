@@ -13,6 +13,7 @@ GH_TOKEN_FILE=${USER_DIR}/.gh-token
 
 if [ -v GITHUB_ACTIONS ]; then
   echo "Running in GitHub Actions. Remember to expose GITHUB_TOKEN in your Github workflow .yml file."
+  echo "command: gh '$@'"
   gh "$@"
 else
   if [ ! -f "${GH_TOKEN_FILE}" ]; then
