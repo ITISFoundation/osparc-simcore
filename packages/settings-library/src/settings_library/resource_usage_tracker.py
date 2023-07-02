@@ -17,7 +17,7 @@ class ResourceUsageTrackerSettings(BaseCustomSettings, MixinServiceSettings):
 
     @cached_property
     def api_base_url(self) -> str:
-        # http://catalog:8000/v1
+        # http://resource-usage-tracker:8000/v1
         return self._compose_url(
             prefix="RESOURCE_USAGE_TRACKER",
             port=URLPart.REQUIRED,
@@ -26,7 +26,7 @@ class ResourceUsageTrackerSettings(BaseCustomSettings, MixinServiceSettings):
 
     @cached_property
     def base_url(self) -> str:
-        # http://catalog:8000
+        # http://resource-usage-tracker:8000
         return self._compose_url(
             prefix="RESOURCE_USAGE_TRACKER",
             port=URLPart.REQUIRED,

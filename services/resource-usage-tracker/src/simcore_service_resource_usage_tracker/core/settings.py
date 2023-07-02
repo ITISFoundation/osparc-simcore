@@ -83,11 +83,11 @@ class MinimalApplicationSettings(_BaseApplicationSettings):
 
     RESOURCE_USAGE_TRACKER_PROMETHEUS: PrometheusSettings | None = Field(
         auto_default_from_env=True
-    )  # MATUS: remove None
+    )
 
     RESOURCE_USAGE_TRACKER_POSTGRES: PostgresSettings | None = Field(
         auto_default_from_env=True
-    )  # MATUS: remove None
+    )
 
     RESOURCE_USAGE_TRACKER_REDIS: RedisSettings = Field(auto_default_from_env=True)
 
