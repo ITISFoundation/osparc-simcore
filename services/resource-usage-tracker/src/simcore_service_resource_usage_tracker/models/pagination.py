@@ -33,3 +33,6 @@ class LimitOffsetParamsWithDefault(LimitOffsetParams):
         le=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
         description="Page size limit",
     )
+
+
+__all__: tuple[str, ...] = ("LimitOffsetPage",)

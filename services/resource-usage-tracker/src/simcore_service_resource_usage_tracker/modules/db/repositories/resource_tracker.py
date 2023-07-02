@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime
+from typing import cast
 
 import sqlalchemy as sa
 from models_library.products import ProductName
@@ -127,5 +128,5 @@ class ResourceTrackerRepository(BaseRepository):
             )
 
             result = await conn.execute(query)
-            total_count: tuple = result.first()
-            return total_count[0]
+            row = result.first()
+            return cast(int, row[0]) if row else 0

@@ -17,7 +17,8 @@ class OSparcRepository(BaseRepository):
                 sa.select(users.c.email).where(users.c.id == user_id)
             )
             data = result.first()
-            return data[0] if data else None
+            output: str | None = data[0] if data else None
+            return output
 
     async def get_project_name_and_workbench(
         self, project_uuid: ProjectID
