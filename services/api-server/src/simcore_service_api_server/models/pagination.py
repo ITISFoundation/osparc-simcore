@@ -7,7 +7,7 @@ Usage:
 """
 
 from fastapi_pagination.limit_offset import LimitOffsetParams
-from fastapi_pagination.links.limit_offset import LimitOffsetPage
+from fastapi_pagination.links.limmit_offset import LimitOffsetPage
 from models_library.rest_pagination import (
     DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
