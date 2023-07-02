@@ -70,6 +70,8 @@ def random_resource_tracker_container(**overrides) -> dict[str, Any]:
         service_settings_limit_memory_bytes=None,
         project_name=FAKE.word(),
         user_email=FAKE.email(),
+        service_key="simcore/services/dynamic/jupyter-smash",
+        service_version="3.0.7",
     )
 
     data.update(overrides)

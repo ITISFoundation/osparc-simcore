@@ -1,15 +1,15 @@
 """adding node_uuid, instance, cpu/memory limits and indexes to resource tracker container table
 
-Revision ID: 27e18461e695
+Revision ID: 8f085c5a4157
 Revises: 52b5c2466605
-Create Date: 2023-06-30 13:22:43.030683+00:00
+Create Date: 2023-07-02 18:08:58.675510+00:00
 
 """
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "27e18461e695"
+revision = "8f085c5a4157"
 down_revision = "52b5c2466605"
 branch_labels = None
 depends_on = None
@@ -46,6 +46,14 @@ def upgrade():
         "resource_tracker_container",
         sa.Column("user_email", sa.String(), nullable=True),
     )
+    op.add_column(
+        "resource_tracker_container",
+        sa.Column("service_key", sa.String(), nullable=False),
+    )
+    op.add_column(
+        "resource_tracker_container",
+        sa.Column("service_version", sa.String(), nullable=False),
+    )
     op.create_index(
         op.f("ix_resource_tracker_container_product_name"),
         "resource_tracker_container",
@@ -81,6 +89,8 @@ def downgrade():
         op.f("ix_resource_tracker_container_product_name"),
         table_name="resource_tracker_container",
     )
+    op.drop_column("resource_tracker_container", "service_version")
+    op.drop_column("resource_tracker_container", "service_key")
     op.drop_column("resource_tracker_container", "user_email")
     op.drop_column("resource_tracker_container", "project_name")
     op.drop_column("resource_tracker_container", "service_settings_limit_memory_bytes")

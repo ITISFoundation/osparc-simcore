@@ -120,6 +120,18 @@ resource_tracker_container = sa.Table(
         nullable=True,
         doc="user email",
     ),
+    sa.Column(
+        "service_key",
+        sa.String,
+        nullable=False,
+        doc="Service Key (parsed from image label scraped via Prometheus)",
+    ),
+    sa.Column(
+        "service_version",
+        sa.String,
+        nullable=False,
+        doc="Service Version (parsed from image label scraped via Prometheus)",
+    ),
     # ---------------------------
     sa.PrimaryKeyConstraint("container_id", name="resource_tracker_container_pkey"),
 )

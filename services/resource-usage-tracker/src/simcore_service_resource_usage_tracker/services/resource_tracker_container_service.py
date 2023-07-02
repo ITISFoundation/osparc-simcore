@@ -4,7 +4,6 @@ from typing import Annotated
 from fastapi import Depends
 from models_library.products import ProductName
 from models_library.resource_tracker import ContainerListAPI, ContainerStatus
-from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import PositiveInt
 
@@ -57,15 +56,6 @@ async def list_containers(
             container.prometheus_last_scraped - container.prometheus_created
         ).total_seconds() / 60
 
-        _service_key, _service_version = container.image.split(":")
-
-        # Split the string at "/"
-        split_parts = _service_key.split("/")
-        # Find the index of "/simcore/"
-        simcore_index = split_parts.index("simcore")
-        # Extract the desired part
-        _service_key = "/".join(split_parts[simcore_index:])
-
         _processors = (
             container.service_settings_reservation_nano_cpus / 1e9
             if container.service_settings_reservation_nano_cpus
@@ -80,6 +70,8 @@ async def list_containers(
         else:
             _status = ContainerStatus.RUNNING
 
+        # NOTE: When we will have "pricing DB table" this will be computed in the SQL
+        # so for example total sum could be quickly computed via another endpoint
         _core_hours = round((_duration_mins / 60) * _processors * _MAGIC_NUMBER, 2)
 
         tracked_containers_api_model.append(
@@ -88,8 +80,8 @@ async def list_containers(
                 project_name=container.project_name,
                 node_uuid=container.node_uuid,
                 node_label=container.node_label,
-                service_key=ServiceKey(_service_key),
-                service_version=ServiceVersion(_service_version),
+                service_key=container.service_key,
+                service_version=container.service_version,
                 start_time=container.prometheus_created,
                 duration=round(_duration_mins, 2),
                 processors=round(_processors, 2),

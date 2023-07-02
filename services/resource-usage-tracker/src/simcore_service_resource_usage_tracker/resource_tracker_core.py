@@ -9,6 +9,7 @@ from aiocache import cached
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.services import ServiceKey, ServiceVersion
 from prometheus_api_client import PrometheusConnect
 from pydantic import BaseModel
 from simcore_service_resource_usage_tracker.modules.prometheus import (
@@ -153,6 +154,14 @@ async def _scrape_container_resource_usage(
         )
         project_name, node_label = project_info
 
+        service_key, service_version = metric["image"].split(":")
+        # Split the string at "/"
+        split_parts = service_key.split("/")
+        # Find the index of "/simcore/"
+        simcore_index = split_parts.index("simcore")
+        # Extract the desired part
+        service_key = "/".join(split_parts[simcore_index:])
+
         container_resource_usage = ContainerScrapedResourceUsage(
             container_id=metric["id"],
             image=metric["image"],
@@ -176,6 +185,8 @@ async def _scrape_container_resource_usage(
             project_name=project_name,
             node_label=node_label,
             user_email=user_email,
+            service_key=ServiceKey(service_key),
+            service_version=ServiceVersion(service_version),
         )
 
         data.append(container_resource_usage)

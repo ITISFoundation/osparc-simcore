@@ -52,6 +52,8 @@ class ResourceTrackerRepository(BaseRepository):
                 instance=data.instance,
                 service_settings_limit_nano_cpus=data.service_settings_limit_nano_cpus,
                 service_settings_limit_memory_bytes=data.service_settings_limit_memory_bytes,
+                service_key=data.service_key,
+                service_version=data.service_version,
             )
 
             on_update_stmt = insert_stmt.on_conflict_do_update(
@@ -83,7 +85,6 @@ class ResourceTrackerRepository(BaseRepository):
         async with self.db_engine.begin() as conn:
             query = (
                 sa.select(
-                    resource_tracker_container.c.image,
                     resource_tracker_container.c.service_settings_reservation_nano_cpus,
                     resource_tracker_container.c.service_settings_reservation_memory_bytes,
                     resource_tracker_container.c.prometheus_created,
@@ -92,6 +93,8 @@ class ResourceTrackerRepository(BaseRepository):
                     resource_tracker_container.c.project_name,
                     resource_tracker_container.c.node_uuid,
                     resource_tracker_container.c.node_label,
+                    resource_tracker_container.c.service_key,
+                    resource_tracker_container.c.service_version,
                 )
                 .where(
                     sa.and_(

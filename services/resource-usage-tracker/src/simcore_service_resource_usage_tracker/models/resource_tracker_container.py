@@ -5,6 +5,7 @@ from arrow import Arrow
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import BaseModel
 
@@ -27,6 +28,8 @@ class ContainerScrapedResourceUsageMetric(BaseModel):
     service_settings_reservation_additional_info: dict[str, Any] = {}
     service_settings_limit_nano_cpus: int | None
     service_settings_limit_memory_bytes: int | None
+    service_key: ServiceKey
+    service_version: ServiceVersion
 
 
 class ContainerScrapedResourceUsageValues(BaseModel):
@@ -48,7 +51,6 @@ class ContainerScrapedResourceUsage(
 
 
 class ContainerListDB(BaseModel):
-    image: str
     service_settings_reservation_nano_cpus: int | None
     service_settings_reservation_memory_bytes: int | None
     prometheus_created: datetime
@@ -57,6 +59,8 @@ class ContainerListDB(BaseModel):
     project_name: str | None
     node_uuid: NodeID
     node_label: str | None
+    service_key: ServiceKey
+    service_version: ServiceVersion
 
     class Config:
         validation = False
