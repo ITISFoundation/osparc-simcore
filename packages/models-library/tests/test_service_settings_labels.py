@@ -393,18 +393,18 @@ def test_not_allowed_in_both_permit_list_and_outgoing_internet():
 @pytest.fixture
 def vendor_environments() -> dict[str, Any]:
     return {
-        "OSPARC_ENVIRONMENT_VENDOR_SECRET_DNS_RESOLVER_ADDRESS": "172.0.0.1",
-        "OSPARC_ENVIRONMENT_VENDOR_SECRET_DNS_RESOLVER_PORT": 1234,
-        "OSPARC_ENVIRONMENT_VENDOR_SECRET_LICENCE_HOSTNAME": "hostname",
-        "OSPARC_ENVIRONMENT_VENDOR_SECRET_TCP_PORTS": [
+        "OSPARC_VARIABLE_VENDOR_SECRET_DNS_RESOLVER_ADDRESS": "172.0.0.1",
+        "OSPARC_VARIABLE_VENDOR_SECRET_DNS_RESOLVER_PORT": 1234,
+        "OSPARC_VARIABLE_VENDOR_SECRET_LICENCE_HOSTNAME": "hostname",
+        "OSPARC_VARIABLE_VENDOR_SECRET_TCP_PORTS": [
             1,
             2,
             3,
             4,
         ],
-        "OSPARC_ENVIRONMENT_VENDOR_SECRET_TCP_PORTS_1": 1,
-        "OSPARC_ENVIRONMENT_VENDOR_SECRET_TCP_PORTS_2": 2,
-        "OSPARC_ENVIRONMENT_VENDOR_SECRET_TCP_PORTS_3": 3,
+        "OSPARC_VARIABLE_VENDOR_SECRET_TCP_PORTS_1": 1,
+        "OSPARC_VARIABLE_VENDOR_SECRET_TCP_PORTS_2": 2,
+        "OSPARC_VARIABLE_VENDOR_SECRET_TCP_PORTS_3": 3,
     }
 
 
@@ -446,13 +446,13 @@ def service_labels() -> dict[str, str]:
                     {
                         "hostname": "license.com",
                         "tcp_ports": [
-                            "$OSPARC_ENVIRONMENT_VENDOR_SECRET_TCP_PORTS_1",
-                            "$OSPARC_ENVIRONMENT_VENDOR_SECRET_TCP_PORTS_2",
+                            "$OSPARC_VARIABLE_VENDOR_SECRET_TCP_PORTS_1",
+                            "$OSPARC_VARIABLE_VENDOR_SECRET_TCP_PORTS_2",
                             3,
                         ],
                         "dns_resolver": {
-                            "address": "$OSPARC_ENVIRONMENT_VENDOR_SECRET_DNS_RESOLVER_ADDRESS",
-                            "port": "$OSPARC_ENVIRONMENT_VENDOR_SECRET_DNS_RESOLVER_PORT",
+                            "address": "$OSPARC_VARIABLE_VENDOR_SECRET_DNS_RESOLVER_ADDRESS",
+                            "port": "$OSPARC_VARIABLE_VENDOR_SECRET_DNS_RESOLVER_PORT",
                         },
                     }
                 ]
@@ -522,14 +522,14 @@ def service_labels() -> dict[str, str]:
 def test_can_parse_labels_with_osparc_identifiers(
     vendor_environments: dict[str, Any], service_labels: dict[str, str]
 ):
-    # can load OSPARC_ENVIRONMENT_ identifiers!!
+    # can load OSPARC_VARIABLE_ identifiers!!
     service_meta = SimcoreServiceLabels.parse_obj(service_labels)
 
     assert service_meta.containers_allowed_outgoing_permit_list["s4l-core"][
         0
     ].tcp_ports == [
-        "$OSPARC_ENVIRONMENT_VENDOR_SECRET_TCP_PORTS_1",
-        "$OSPARC_ENVIRONMENT_VENDOR_SECRET_TCP_PORTS_2",
+        "$OSPARC_VARIABLE_VENDOR_SECRET_TCP_PORTS_1",
+        "$OSPARC_VARIABLE_VENDOR_SECRET_TCP_PORTS_2",
         3,
     ]
 
