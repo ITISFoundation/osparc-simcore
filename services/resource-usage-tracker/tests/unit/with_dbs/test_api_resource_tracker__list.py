@@ -39,15 +39,6 @@ def mocked_setup_prometheus_api_client(mocker: MockerFixture):
     return mocked_setup_prometheus_api_client
 
 
-# @pytest.fixture
-# def mocked_db(mocker: MockerFixture):
-#     mocked_db = mocker.patch(
-#         "simcore_service_resource_usage_tracker.core.application.setup_db",
-#         autospec=True,
-#     )
-#     return mocked_db
-
-
 def random_resource_tracker_container(**overrides) -> dict[str, Any]:
     """Generates random fake data projects DATABASE table"""
     data = dict(
@@ -102,7 +93,6 @@ def resource_tracker_container_db(postgres_db: sa.engine.Engine) -> Iterator[lis
         con.execute(resource_tracker_container.delete())
 
 
-@pytest.mark.testit
 async def test_list_containers(
     mocked_redis_server: None,
     mocked_setup_background_task: mock.Mock,

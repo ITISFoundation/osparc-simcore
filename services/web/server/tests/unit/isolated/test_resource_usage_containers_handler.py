@@ -104,7 +104,6 @@ def mock_get_resource_usage_tracker_client(mocker: MockerFixture):
     )
 
 
-@pytest.mark.testit
 async def test_resource_usage_containers_handler(
     client: TestClient,
     mock_user_logged_in,
