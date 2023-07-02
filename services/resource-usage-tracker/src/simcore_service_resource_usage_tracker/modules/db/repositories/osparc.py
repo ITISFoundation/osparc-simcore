@@ -32,5 +32,4 @@ class OSparcRepository(BaseRepository):
             if output:
                 project_name, project_workbench = output
                 return project_name, project_workbench
-            else:
-                return None
+            return None
