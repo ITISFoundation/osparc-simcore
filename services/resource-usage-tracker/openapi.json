@@ -45,7 +45,7 @@
         }
       }
     },
-    "/v1/resource-usage-tracker/containers": {
+    "/v1/usage/containers": {
       "get": {
         "tags": [
           "resource-usage-tracker"
@@ -129,9 +129,7 @@
         "title": "ContainerListAPI",
         "required": [
           "project_uuid",
-          "project_name",
           "node_uuid",
-          "node_label",
           "service_key",
           "service_version",
           "start_time",
