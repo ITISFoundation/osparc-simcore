@@ -2,10 +2,16 @@ import logging
 from datetime import datetime
 
 import sqlalchemy as sa
+from models_library.products import ProductName
+from models_library.users import UserID
+from pydantic import PositiveInt, parse_obj_as
 from simcore_postgres_database.models.resource_tracker import resource_tracker_container
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
-from ....models.resource_tracker_container import ContainerResourceUsage
+from ....models.resource_tracker_container import (
+    ContainerListDB,
+    ContainerScrapedResourceUsage,
+)
 from ._base import BaseRepository
 
 _logger = logging.getLogger(__name__)
@@ -22,14 +28,16 @@ class ResourceTrackerRepository(BaseRepository):
             return max_last_scraped_timestamp
 
     async def upsert_resource_tracker_container_data(
-        self, data: ContainerResourceUsage
+        self, data: ContainerScrapedResourceUsage
     ) -> None:
         async with self.db_engine.begin() as conn:
             insert_stmt = pg_insert(resource_tracker_container).values(
                 container_id=data.container_id,
                 image=data.image,
                 user_id=data.user_id,
-                project_uuid=str(data.project_uuid),
+                user_email=data.user_email,
+                project_uuid=f"{data.project_uuid}",
+                project_name=data.project_name,
                 product_name=data.product_name,
                 service_settings_reservation_nano_cpus=data.service_settings_reservation_nano_cpus,
                 service_settings_reservation_memory_bytes=data.service_settings_reservation_memory_bytes,
@@ -38,6 +46,11 @@ class ResourceTrackerRepository(BaseRepository):
                 prometheus_created=data.prometheus_created.datetime,
                 prometheus_last_scraped=data.prometheus_last_scraped.datetime,
                 modified=sa.func.now(),
+                node_uuid=f"{data.node_uuid}",
+                node_label=data.node_label,
+                instance=data.instance,
+                service_settings_limit_nano_cpus=data.service_settings_limit_nano_cpus,
+                service_settings_limit_memory_bytes=data.service_settings_limit_memory_bytes,
             )
 
             on_update_stmt = insert_stmt.on_conflict_do_update(
@@ -62,3 +75,57 @@ class ResourceTrackerRepository(BaseRepository):
             )
 
             await conn.execute(on_update_stmt)
+
+    async def list_containers_by_user_and_product(
+        self, user_id: UserID, product_name: ProductName, offset: int, limit: int
+    ) -> list[ContainerListDB]:
+        async with self.db_engine.begin() as conn:
+            query = (
+                sa.select(
+                    resource_tracker_container.c.image,
+                    resource_tracker_container.c.service_settings_reservation_nano_cpus,
+                    resource_tracker_container.c.service_settings_reservation_memory_bytes,
+                    resource_tracker_container.c.prometheus_created,
+                    resource_tracker_container.c.prometheus_last_scraped,
+                    resource_tracker_container.c.project_uuid,
+                    resource_tracker_container.c.project_name,
+                    resource_tracker_container.c.node_uuid,
+                    resource_tracker_container.c.node_label,
+                )
+                .where(
+                    sa.and_(
+                        resource_tracker_container.c.user_id == user_id,
+                        resource_tracker_container.c.product_name == product_name,
+                    )
+                )
+                .order_by(resource_tracker_container.c.prometheus_last_scraped.desc())
+                .offset(offset)
+                .limit(limit)
+            )
+
+            list_containers_result = await conn.execute(query)
+            result = [
+                parse_obj_as(ContainerListDB, row)
+                for row in list_containers_result.fetchall()
+            ]
+
+            return result
+
+    async def total_containers_by_user_and_product(
+        self, user_id: UserID, product_name: ProductName
+    ) -> PositiveInt:
+        async with self.db_engine.begin() as conn:
+            query = (
+                sa.select(sa.func.count())
+                .select_from(resource_tracker_container)
+                .where(
+                    sa.and_(
+                        resource_tracker_container.c.user_id == user_id,
+                        resource_tracker_container.c.product_name == product_name,
+                    )
+                )
+            )
+
+            result = await conn.execute(query)
+            total_count: tuple = result.first()
+            return total_count[0]

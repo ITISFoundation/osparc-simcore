@@ -34,6 +34,7 @@ from .rabbitmq import setup_rabbitmq
 from .redis import setup_redis
 from .remote_debug import setup_remote_debugging
 from .resource_manager.plugin import setup_resource_manager
+from .resource_usage.plugin import setup_resource_tracker
 from .rest.plugin import setup_rest
 from .scicrunch.plugin import setup_scicrunch
 from .security.plugin import setup_security
@@ -98,6 +99,9 @@ def create_application() -> web.Application:
     # resource management
     setup_resource_manager(app)
     setup_garbage_collector(app)
+
+    # resource tracking / billing
+    setup_resource_tracker(app)
 
     # users
     setup_users(app)

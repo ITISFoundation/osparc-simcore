@@ -15,7 +15,9 @@
 
 
 fastapi
+fastapi-pagination
 packaging
 prometheus_api_client
 typer[all]
 uvicorn[standard]
+aiocache

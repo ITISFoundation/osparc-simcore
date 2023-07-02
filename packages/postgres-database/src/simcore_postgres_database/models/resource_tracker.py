@@ -30,6 +30,7 @@ resource_tracker_container = sa.Table(
         sa.BigInteger,
         nullable=False,
         doc="user_id label scraped via Prometheus (taken from container labels)",
+        index=True,
     ),
     sa.Column(
         "project_uuid",
@@ -42,6 +43,7 @@ resource_tracker_container = sa.Table(
         sa.String,
         nullable=False,
         doc="product_name label scraped via Prometheus (taken from container labels)",
+        index=True,
     ),
     sa.Column(
         "service_settings_reservation_nano_cpus",
@@ -73,8 +75,51 @@ resource_tracker_container = sa.Table(
         sa.DateTime(timezone=True),
         nullable=False,
         doc="Last prometheus scraped timestamp (UTC timestamp)",
+        index=True,
     ),
     column_modified_datetime(timezone=True),
+    sa.Column(
+        "node_uuid",
+        sa.String,
+        nullable=False,
+        doc="node_uuid label scraped via Prometheus (taken from container labels)",
+    ),
+    sa.Column(
+        "node_label",
+        sa.String,
+        nullable=True,
+        doc="node label",
+    ),
+    sa.Column(
+        "instance",
+        sa.String,
+        nullable=True,
+        doc="instance label scraped via Prometheus (taken from container labels)",
+    ),
+    sa.Column(
+        "service_settings_limit_nano_cpus",
+        sa.BigInteger,
+        nullable=True,
+        doc="CPU resource limit allocated to a container, ex.500000000 means that the container has limit for 0.5 CPU shares",
+    ),
+    sa.Column(
+        "service_settings_limit_memory_bytes",
+        sa.BigInteger,
+        nullable=True,
+        doc="memory limit in bytes scraped via Prometheus",
+    ),
+    sa.Column(
+        "project_name",
+        sa.String,
+        nullable=True,
+        doc="project name",
+    ),
+    sa.Column(
+        "user_email",
+        sa.String,
+        nullable=True,
+        doc="user email",
+    ),
     # ---------------------------
     sa.PrimaryKeyConstraint("container_id", name="resource_tracker_container_pkey"),
 )

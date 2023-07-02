@@ -6,6 +6,7 @@ Usage:
 
 """
 
+from fastapi import Query
 from fastapi_pagination.limit_offset import LimitOffsetParams
 from fastapi_pagination.links.limit_offset import LimitOffsetPage
 from models_library.rest_pagination import (
@@ -24,8 +25,11 @@ LimitOffsetPage = LimitOffsetPage.with_custom_options(
 
 assert LimitOffsetParams  # nosec
 
-__all__: tuple[str, ...] = (
-    "LimitOffsetPage",
-    "LimitOffsetParams",
-    "MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE",
-)
+
+class LimitOffsetParamsWithDefault(LimitOffsetParams):
+    limit: int = Query(
+        DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+        ge=1,
+        le=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
+        description="Page size limit",
+    )
