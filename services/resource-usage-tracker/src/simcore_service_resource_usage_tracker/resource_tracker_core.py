@@ -55,11 +55,11 @@ def _to_int_or_none(value) -> int | None:
     return int(value) if value else None
 
 
-def _build_cache_key_user_id(fct, *args, **kwargs):
+def _build_cache_key_user_id(fct, *args):
     return f"{fct.__name__}_{args[1]}"
 
 
-def _build_cache_key_project_and_node_id(fct, *args, **kwargs):
+def _build_cache_key_project_and_node_id(fct, *args):
     return f"{fct.__name__}_{args[1]}_{args[2]}"
 
 
@@ -77,8 +77,7 @@ async def _get_project_and_node_names(
     if output:
         project_name, project_workbench = output
         return (project_name, project_workbench[f"{node_uuid}"].get("label"))
-    else:
-        return (None, None)
+    return (None, None)
 
 
 async def _scrape_container_resource_usage(

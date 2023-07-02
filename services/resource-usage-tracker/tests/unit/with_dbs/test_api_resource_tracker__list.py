@@ -76,16 +76,20 @@ def random_resource_tracker_container(**overrides) -> dict[str, Any]:
     return data
 
 
+_TOTAL_GENERATED_RESOURCE_TRACKER_CONTAINER_ROWS = 30
+_USER_ID = 1
+
+
 @pytest.fixture()
 def resource_tracker_container_db(postgres_db: sa.engine.Engine) -> Iterator[list]:
     with postgres_db.connect() as con:
         # removes all projects before continuing
         con.execute(resource_tracker_container.delete())
         created_projects = []
-        for _ in range(30):  # MATUS: IMPROVE NUMBER
+        for _ in range(_TOTAL_GENERATED_RESOURCE_TRACKER_CONTAINER_ROWS):
             result = con.execute(
                 resource_tracker_container.insert()
-                .values(**random_resource_tracker_container(user_id=1))
+                .values(**random_resource_tracker_container(user_id=_USER_ID))
                 .returning(resource_tracker_container)
             )
             project = result.first()
@@ -108,7 +112,7 @@ async def test_list_containers(
     url = URL("/v1/usage/containers")
 
     response = await async_client.get(
-        f'{url.with_query({"user_id": 1, "product_name": "osparc"})}'
+        f'{url.with_query({"user_id": _USER_ID, "product_name": "osparc"})}'
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
@@ -116,7 +120,7 @@ async def test_list_containers(
     assert data["total"] == 30
 
     response = await async_client.get(
-        f'{url.with_query({"user_id": 1, "product_name": "osparc", "offset": 5, "limit": 10})}'
+        f'{url.with_query({"user_id": _USER_ID, "product_name": "osparc", "offset": 5, "limit": 10})}'
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
@@ -134,3 +138,6 @@ async def test_list_containers(
     assert data["total"] == 0
 
     # MATUS: ADD ADDITIONAL DOMAIN TEST.
+    # - check status: running/finished
+    # - check duration
+    # - check processors/core_hours
