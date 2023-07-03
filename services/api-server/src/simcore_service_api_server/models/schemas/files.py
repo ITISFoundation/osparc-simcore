@@ -17,7 +17,7 @@ class File(BaseModel):
     # WARNING: from pydantic import File as FileParam
     # NOTE: see https://ant.apache.org/manual/Tasks/checksum.html
 
-    id: UUID = Field(..., description="Resource identifier")
+    id: UUID = Field(..., description="Resource identifier")  # noqa: A003
 
     filename: str = Field(..., description="Name of the file with extension")
     content_type: str | None = Field(

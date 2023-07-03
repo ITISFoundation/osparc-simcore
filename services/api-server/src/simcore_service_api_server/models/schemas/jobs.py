@@ -134,7 +134,7 @@ class JobOutputs(BaseModel):
 
 
 class Job(BaseModel):
-    id: JobID
+    id: JobID  # noqa: A003
     name: RelativeResourceName
 
     inputs_checksum: str = Field(..., description="Input's checksum")

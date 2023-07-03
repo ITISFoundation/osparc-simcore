@@ -37,11 +37,7 @@ class SolverKeyId(ConstrainedStr):
 class Solver(BaseModel):
     """A released solver with a specific version"""
 
-    id_: SolverKeyId = Field(
-        ...,
-        description="Solver identifier",
-        alias="id",
-    )
+    id: SolverKeyId = Field(..., description="Solver identifier")  # noqa: A003
     version: VersionStr = Field(
         ...,
         description="semantic version number of the node",
@@ -93,12 +89,12 @@ class Solver(BaseModel):
     @property
     def url_friendly_id(self) -> str:
         """Use to pass id as parameter in urls"""
-        return urllib.parse.quote_plus(self.id_)
+        return urllib.parse.quote_plus(self.id)
 
     @property
     def resource_name(self) -> str:
         """Relative resource name"""
-        return self.compose_resource_name(self.id_, self.version)
+        return self.compose_resource_name(self.id, self.version)
 
     @property
     def name(self) -> str:

@@ -48,17 +48,17 @@ async def test_list_solvers(
         # get_solver_latest_version_by_name
         resp0 = await client.get(solver.url.path)
         assert resp0.status_code == status.HTTP_501_NOT_IMPLEMENTED
-        assert f"GET solver {solver.id_}" in resp0.json()["errors"][0]
+        assert f"GET solver {solver.id}" in resp0.json()["errors"][0]
         # get_solver
-        resp1 = await client.get(f"/v0/solvers/{solver.id_}")
+        resp1 = await client.get(f"/v0/solvers/{solver.id}")
         assert resp1.status_code == status.HTTP_501_NOT_IMPLEMENTED
-        assert f"GET solver {solver.id_}" in resp1.json()["errors"][0]
+        assert f"GET solver {solver.id}" in resp1.json()["errors"][0]
 
         # get_solver_latest_version_by_name
-        resp2 = await client.get(f"/v0/solvers/{solver.id_}/latest")
+        resp2 = await client.get(f"/v0/solvers/{solver.id}/latest")
 
         assert resp2.status_code == status.HTTP_501_NOT_IMPLEMENTED
-        assert f"GET latest {solver.id_}" in resp2.json()["errors"][0]
+        assert f"GET latest {solver.id}" in resp2.json()["errors"][0]
 
 
 async def test_list_solver_ports(

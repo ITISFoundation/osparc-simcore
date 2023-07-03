@@ -189,7 +189,7 @@ async def create_job(
 
     # for consistency, it rebuild job
     job = create_job_from_project(
-        solver_key=solver.id_,
+        solver_key=solver.id,
         solver_version=solver.version,
         project=new_project,
         url_for=url_for,
