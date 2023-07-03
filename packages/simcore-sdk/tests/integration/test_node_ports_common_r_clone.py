@@ -133,9 +133,19 @@ async def _upload_local_dir_to_s3(
     r_clone_settings: RCloneSettings,
     s3_directory_link: FileUploadSchema,
     source_dir: Path,
+    check_progress: bool = False,
 ) -> None:
+    # NOTE: progress is enforced only when uploading and only when using
+    # total file sizes that are quite big, otherwise the test will fail
+    # we ant to avoid this from being flaky.
+    # Since using moto to mock the S3 api, downloading is way to fast.
+    # Progress behaves as expected with CEPH and AWS S3 backends.
+
+    progress_entries: list[float] = []
+
     async def _report_progress_upload(progress_value: float) -> None:
         print(">>>|", progress_value, "| ⏫")
+        progress_entries.append(progress_value)
 
     async with ProgressBarData(
         steps=1, progress_report_cb=_report_progress_upload
@@ -146,6 +156,10 @@ async def _upload_local_dir_to_s3(
             local_directory_path=source_dir,
             upload_directory_link=s3_directory_link,
         )
+    if check_progress:
+        # NOTE: a progress of 1 is always sent ny the progress bar
+        # we want to check that rclone also reports some progress entries
+        assert len(progress_entries) > 1
 
 
 async def _download_from_s3_to_local_dir(
@@ -203,14 +217,14 @@ def dir_downloaded_files_2(tmp_path: Path, faker: Faker) -> Path:
 
 
 @pytest.mark.parametrize(
-    "file_count, file_size",
+    "file_count, file_size, check_progress",
     [
-        (0, parse_obj_as(ByteSize, "0")),
-        (1, parse_obj_as(ByteSize, "1mib")),
-        (2, parse_obj_as(ByteSize, "1mib")),
-        (1, parse_obj_as(ByteSize, "1Gib")),
-        (4, parse_obj_as(ByteSize, "500Mib")),
-        (100, parse_obj_as(ByteSize, "20mib")),
+        (0, parse_obj_as(ByteSize, "0"), False),
+        (1, parse_obj_as(ByteSize, "1mib"), False),
+        (2, parse_obj_as(ByteSize, "1mib"), False),
+        (1, parse_obj_as(ByteSize, "1Gib"), True),
+        (4, parse_obj_as(ByteSize, "500Mib"), True),
+        (100, parse_obj_as(ByteSize, "20mib"), True),
     ],
 )
 async def test_local_to_remote_to_local(
@@ -220,6 +234,7 @@ async def test_local_to_remote_to_local(
     dir_downloaded_files_1: Path,
     file_count: int,
     file_size: ByteSize,
+    check_progress: bool,
 ) -> None:
     await _create_files_in_dir(dir_locally_created_files, file_count, file_size)
 
@@ -229,7 +244,10 @@ async def test_local_to_remote_to_local(
 
     # run the test
     await _upload_local_dir_to_s3(
-        r_clone_settings, s3_directory_link, dir_locally_created_files
+        r_clone_settings,
+        s3_directory_link,
+        dir_locally_created_files,
+        check_progress=check_progress,
     )
     await _download_from_s3_to_local_dir(
         r_clone_settings, s3_directory_link, dir_downloaded_files_1
