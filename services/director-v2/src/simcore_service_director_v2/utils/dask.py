@@ -1,18 +1,8 @@
 import asyncio
 import collections
 import logging
-from typing import (
-    Any,
-    Awaitable,
-    Callable,
-    Coroutine,
-    Final,
-    Iterable,
-    NoReturn,
-    Optional,
-    cast,
-    get_args,
-)
+from collections.abc import Awaitable, Callable, Coroutine, Iterable
+from typing import Any, Final, NoReturn, Optional, cast, get_args
 from uuid import uuid4
 
 import dask_gateway
@@ -30,7 +20,7 @@ from fastapi import FastAPI
 from models_library.clusters import ClusterID
 from models_library.docker import SimcoreServiceDockerLabelKeys
 from models_library.errors import ErrorDict
-from models_library.projects import ProjectID
+from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
@@ -44,10 +34,7 @@ from simcore_sdk.node_ports_common.exceptions import (
 )
 from simcore_sdk.node_ports_v2 import FileLinkType, Port, links, port_utils
 from simcore_sdk.node_ports_v2.links import ItemValue as _NPItemValue
-from simcore_service_director_v2.modules.osparc_variables_substitutions import (
-    resolve_and_substitute_session_variables_in_specs,
-    substitute_vendor_secrets_in_specs,
-)
+from simcore_sdk.node_ports_v2.ports_mapping import PortKey
 
 from ..core.errors import (
     ComputationalBackendNotConnectedError,
@@ -59,6 +46,10 @@ from ..core.errors import (
 from ..models.domains.comp_runs import MetadataDict
 from ..models.domains.comp_tasks import Image
 from ..models.schemas.services import NodeRequirements
+from ..modules.osparc_variables_substitutions import (
+    resolve_and_substitute_session_variables_in_specs,
+    substitute_vendor_secrets_in_specs,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -95,11 +86,14 @@ def generate_dask_job_id(
     return f"{service_key}:{service_version}:userid_{user_id}:projectid_{project_id}:nodeid_{node_id}:uuid_{uuid4()}"
 
 
+_JOB_ID_PARTS: Final[int] = 6
+
+
 def parse_dask_job_id(
     job_id: str,
 ) -> tuple[ServiceKeyStr, ServiceVersionStr, UserID, ProjectID, NodeID]:
     parts = job_id.split(":")
-    assert len(parts) == 6  # nosec
+    assert len(parts) == _JOB_ID_PARTS  # nosec
     return (
         parts[0],
         parts[1],
@@ -128,7 +122,7 @@ async def create_node_ports(
         db_manager = node_ports_v2.DBManager(db_engine)
         return await node_ports_v2.ports(
             user_id=user_id,
-            project_id=f"{project_id}",
+            project_id=ProjectIDStr(f"{project_id}"),
             node_uuid=NodeIDStr(f"{node_id}"),
             db_manager=db_manager,
         )
@@ -180,6 +174,7 @@ async def parse_output_data(
             value_to_transfer = port_value
 
         try:
+            assert isinstance(port_key, PortKey)  # nosec
             await (await ports.outputs)[port_key].set_value(value_to_transfer)
         except ValidationError as err:
             ports_errors.extend(_get_port_validation_errors(port_key, err))
@@ -306,24 +301,26 @@ async def compute_task_labels(
     metadata: MetadataDict,
 ) -> dict[str, str]:
     product_name = metadata.get("product_name", _UNDEFINED_METADATA)
-    task_labels = SimcoreServiceDockerLabelKeys(
+    standard_simcore_labels = SimcoreServiceDockerLabelKeys(
         user_id=user_id,
         study_id=project_id,
         uuid=node_id,
         product_name=product_name,
         simcore_user_agent=metadata.get("simcore_user_agent", _UNDEFINED_METADATA),
     ).to_docker_labels()
-    task_labels |= {k: f"{v}" for k, v in metadata.items()}
-    task_labels = await resolve_and_substitute_session_variables_in_specs(
+    all_labels = standard_simcore_labels | {
+        k: f"{v}"
+        for k, v in metadata.items()
+        if k not in ["product_name", "simcore_user_agent"]
+    }
+    return await resolve_and_substitute_session_variables_in_specs(
         app,
-        task_labels,
+        all_labels,
         user_id=user_id,
         product_name=product_name,
         project_id=project_id,
         node_id=node_id,
     )
-
-    return task_labels
 
 
 async def compute_task_envs(
@@ -379,7 +376,6 @@ async def get_service_log_file_download_link(
             link_type=file_link_type,
         )
         return value_link
-
     except (S3InvalidPathError, StorageInvalidCall) as err:
         _logger.debug("Log for task %s not found: %s", f"{project_id=}/{node_id=}", err)
         return None
