@@ -1,3 +1,5 @@
+import contextlib
+
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.connection import SAConnection
@@ -5,6 +7,7 @@ from aiopg.sa.result import ResultProxy
 from models_library.users import GroupID, UserID
 from simcore_postgres_database.models.users import UserStatus, users
 from simcore_postgres_database.utils_groups_extra_properties import (
+    GroupExtraPropertiesNotFound,
     GroupExtraPropertiesRepo,
 )
 from sqlalchemy.sql import func
@@ -45,16 +48,20 @@ async def list_user_permissions(
     app: web.Application, *, user_id: UserID, product_name: str
 ) -> list[Permission]:
     engine = get_database_engine(app)
-
-    async with engine.acquire() as conn:
-        user_group_extra_properties = (
-            await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
-                conn, user_id=user_id, product_name=product_name
-            )
-        )
-    return [
+    permissions = [
         Permission(
             name="override_services_specifications",
-            allowed=user_group_extra_properties.override_services_specifications,
+            allowed=False,
         )
     ]
+    with contextlib.suppress(GroupExtraPropertiesNotFound):
+        async with engine.acquire() as conn:
+            user_group_extra_properties = (
+                await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+                    conn, user_id=user_id, product_name=product_name
+                )
+            )
+        permissions[
+            0
+        ].allowed = user_group_extra_properties.override_services_specifications
+    return permissions
