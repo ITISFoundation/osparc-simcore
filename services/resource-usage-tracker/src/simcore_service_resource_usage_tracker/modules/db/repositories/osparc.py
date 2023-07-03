@@ -17,9 +17,10 @@ class OSparcRepository(BaseRepository):
             result = await conn.execute(
                 sa.select(users.c.email).where(users.c.id == user_id)
             )
-            data = result.first()
-            output: str | None = data[0] if data else None
-            return output
+            row = result.first()
+            if row:
+                return row[0]
+            return None
 
     async def get_project_name_and_workbench(
         self, project_uuid: ProjectID
@@ -30,8 +31,8 @@ class OSparcRepository(BaseRepository):
                     projects.c.uuid == f"{project_uuid}"
                 )
             )
-            output = result.first()
-            if output:
-                project_name, project_workbench = output
+            row = result.first()
+            if row:
+                project_name, project_workbench = row
                 return project_name, project_workbench
             return None

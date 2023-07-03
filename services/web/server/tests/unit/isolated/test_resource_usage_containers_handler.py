@@ -54,7 +54,7 @@ def mock_user_logged_in(mocker: MockerFixture) -> UserID:
 
 
 @pytest.fixture
-def mock_perimission(mocker: MockerFixture):
+def mock_permission(mocker: MockerFixture):
     # patches @check_permission decorator
     mocker.patch(
         "simcore_service_webserver.security.decorators.check_permission",
@@ -107,7 +107,7 @@ def mock_get_resource_usage_tracker_client(mocker: MockerFixture):
 async def test_resource_usage_containers_handler(
     client: TestClient,
     mock_user_logged_in,
-    mock_perimission,
+    mock_permission,
     mock_get_resource_usage_tracker_client,
 ):
     assert client.app

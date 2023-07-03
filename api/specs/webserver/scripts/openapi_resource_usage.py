@@ -17,8 +17,9 @@ from _common import (
     create_openapi_specs,
 )
 from fastapi import FastAPI
+from models_library.api_schemas_webserver.resource_usage import ContainerGet
 from models_library.generics import Envelope
-from models_library.resource_tracker import ContainerGet
+from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE
 from pydantic import NonNegativeInt
 from simcore_service_webserver.resource_usage._containers_handlers import (
     _ListContainersPathParams,
@@ -41,7 +42,9 @@ TAGS: list[str | Enum] = ["usage"]
     operation_id="list_resource_usage_containers",
     summary="Retrieve containers that were running for a user and product taken from context.",
 )
-async def list_resource_usage_containers(limit: int = 20, offset: NonNegativeInt = 0):
+async def list_resource_usage_containers(
+    limit: int = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, offset: NonNegativeInt = 0
+):
     ...
 
 

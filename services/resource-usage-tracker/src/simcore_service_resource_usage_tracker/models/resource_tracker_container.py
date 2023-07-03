@@ -1,13 +1,14 @@
 from datetime import datetime
-from typing import Any
+from typing import Any, NamedTuple
 
 from arrow import Arrow
+from models_library.api_schemas_webserver.resource_usage import ContainerGet
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import BaseModel
+from pydantic import BaseModel, PositiveInt
 
 # Scraped from prometheus
 
@@ -61,3 +62,8 @@ class ContainerGetDB(BaseModel):
     node_label: str | None
     service_key: ServiceKey
     service_version: ServiceVersion
+
+
+class ContainersPage(NamedTuple):
+    items: list[ContainerGet]
+    total: PositiveInt

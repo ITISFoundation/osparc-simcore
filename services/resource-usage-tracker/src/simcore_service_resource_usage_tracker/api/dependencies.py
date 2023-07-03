@@ -3,7 +3,7 @@
 #
 
 import logging
-from typing import AsyncGenerator, Callable
+from typing import Annotated, AsyncGenerator, Callable
 
 from fastapi import Depends
 from fastapi.requests import Request
@@ -23,7 +23,7 @@ def get_resource_tracker_db_engine(request: Request) -> AsyncEngine:
 
 def get_repository(repo_type: type[BaseRepository]) -> Callable:
     async def _get_repo(
-        engine: AsyncEngine = Depends(get_resource_tracker_db_engine),
+        engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
     ) -> AsyncGenerator[BaseRepository, None]:
         yield repo_type(db_engine=engine)
 
@@ -34,6 +34,6 @@ assert get_reverse_url_mapper  # nosec
 assert get_app  # nosec
 
 __all__: tuple[str, ...] = (
-    "get_reverse_url_mapper",
     "get_app",
+    "get_reverse_url_mapper",
 )

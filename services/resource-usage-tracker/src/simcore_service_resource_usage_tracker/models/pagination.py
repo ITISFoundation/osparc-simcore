@@ -23,8 +23,6 @@ LimitOffsetPage = LimitOffsetPage.with_custom_options(
     )
 )
 
-assert LimitOffsetParams  # nosec
-
 
 class LimitOffsetParamsWithDefault(LimitOffsetParams):
     limit: int = Query(

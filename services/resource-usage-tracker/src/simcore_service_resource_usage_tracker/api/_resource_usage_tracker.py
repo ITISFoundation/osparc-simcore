@@ -4,10 +4,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from fastapi_pagination.api import create_page
 from fastapi_pagination.bases import AbstractPage
-from models_library.resource_tracker import ContainerGet
-from pydantic import PositiveInt
+from models_library.api_schemas_webserver.resource_usage import ContainerGet
 
 from ..models.pagination import LimitOffsetPage, LimitOffsetParamsWithDefault
+from ..models.resource_tracker_container import ContainersPage
 from ..services import resource_tracker_container_service
 
 logger = logging.getLogger(__name__)
@@ -24,13 +24,14 @@ router = APIRouter()
 )
 async def list_containers(
     page_params: Annotated[LimitOffsetParamsWithDefault, Depends()],
-    containers_info: tuple[list[ContainerGet], PositiveInt] = Depends(
-        resource_tracker_container_service.list_containers
-    ),
+    containers_page: Annotated[
+        ContainersPage,
+        Depends(resource_tracker_container_service.list_containers),
+    ],
 ) -> AbstractPage[ContainerGet]:
     page = create_page(
-        containers_info[0],
-        containers_info[1],
-        page_params,
+        containers_page[0],
+        total=containers_page[1],
+        page_params=page_params,
     )
     return page

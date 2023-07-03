@@ -7596,9 +7596,7 @@ paths:
                       type: object
                       required:
                         - project_uuid
-                        - project_name
                         - node_uuid
-                        - node_label
                         - service_key
                         - service_version
                         - start_time
@@ -7612,7 +7610,7 @@ paths:
                   error:
                     title: Error
                 type: object
-                title: 'Envelope[list[models_library.resource_tracker.ContainerGet]]'
+                title: 'Envelope[list[models_library.api_schemas_webserver.resource_usage.ContainerGet]]'
   /publications/service-submission:
     post:
       tags:

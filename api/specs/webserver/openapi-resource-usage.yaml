@@ -28,7 +28,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.resource_tracker.ContainerGet__'
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.resource_usage.ContainerGet__'
 components:
   schemas:
     ContainerGet:
@@ -73,9 +73,7 @@ components:
       type: object
       required:
       - project_uuid
-      - project_name
       - node_uuid
-      - node_label
       - service_key
       - service_version
       - start_time
@@ -91,7 +89,7 @@ components:
       - finished
       title: ContainerStatus
       description: An enumeration.
-    Envelope_list_models_library.resource_tracker.ContainerGet__:
+    Envelope_list_models_library.api_schemas_webserver.resource_usage.ContainerGet__:
       properties:
         data:
           items:
@@ -101,4 +99,4 @@ components:
         error:
           title: Error
       type: object
-      title: Envelope[list[models_library.resource_tracker.ContainerGet]]
+      title: Envelope[list[models_library.api_schemas_webserver.resource_usage.ContainerGet]]

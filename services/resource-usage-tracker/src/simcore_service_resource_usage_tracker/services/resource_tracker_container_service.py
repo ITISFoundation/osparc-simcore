@@ -2,14 +2,17 @@ from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
 from fastapi import Depends
+from models_library.api_schemas_webserver.resource_usage import (
+    ContainerGet,
+    ContainerStatus,
+)
 from models_library.products import ProductName
-from models_library.resource_tracker import ContainerGet, ContainerStatus
 from models_library.users import UserID
 from pydantic import PositiveInt
 
 from ..api.dependencies import get_repository
 from ..models.pagination import LimitOffsetParamsWithDefault
-from ..models.resource_tracker_container import ContainerGetDB
+from ..models.resource_tracker_container import ContainerGetDB, ContainersPage
 from ..modules.db.repositories.resource_tracker import ResourceTrackerRepository
 
 _OSPARC_TOKEN_PRICE = 3.5  # We will need to store pricing in the DB
@@ -19,10 +22,10 @@ async def list_containers(
     user_id: UserID,
     product_name: ProductName,
     page_params: Annotated[LimitOffsetParamsWithDefault, Depends()],
-    resource_tacker_repo: ResourceTrackerRepository = Depends(
-        get_repository(ResourceTrackerRepository)
-    ),
-) -> tuple[list[ContainerGet], PositiveInt]:
+    resource_tacker_repo: Annotated[
+        ResourceTrackerRepository, Depends(get_repository(ResourceTrackerRepository))
+    ],
+) -> ContainersPage:
     # Prepare helper variables
     overall_last_scraped_timestamp_or_none: datetime | None = (
         await resource_tacker_repo.get_prometheus_last_scraped_timestamp()
@@ -92,4 +95,4 @@ async def list_containers(
             )
         )
 
-    return (tracked_containers_api_model, total_containers)
+    return ContainersPage(tracked_containers_api_model, total_containers)

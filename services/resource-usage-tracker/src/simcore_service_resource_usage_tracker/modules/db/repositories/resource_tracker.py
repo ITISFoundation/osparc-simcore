@@ -105,13 +105,13 @@ class ResourceTrackerRepository(BaseRepository):
                 .limit(limit)
             )
 
-            list_containers_result = await conn.execute(query)
-            result = [
+            result = await conn.execute(query)
+            containers_list = [
                 ContainerGetDB.construct(**row)  # type: ignore[arg-type]
-                for row in list_containers_result.fetchall()
+                for row in result.fetchall()
             ]
 
-            return result
+            return containers_list
 
     async def total_containers_by_user_and_product(
         self, user_id: UserID, product_name: ProductName
