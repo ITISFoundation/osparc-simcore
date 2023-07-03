@@ -7,7 +7,7 @@ from abc import abstractmethod
 from asyncio.streams import StreamReader
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncIterator
+from typing import AsyncIterator, Final
 
 from aiocache import cached
 from aiofiles import tempfile
@@ -19,6 +19,10 @@ from settings_library.r_clone import RCloneSettings
 from settings_library.utils_r_clone import get_r_clone_config
 
 _logger = logging.getLogger(__name__)
+
+
+S3_RETRIES: Final[int] = 3
+S3_PARALLELISM: Final[int] = 5
 
 
 class BaseRCloneLogParser:
@@ -134,8 +138,8 @@ async def _sync_sources(
     destination: str,
     local_dir: Path,
     s3_config_key: str,
-    s3_retries: int = 3,
-    s3_parallelism: int = 5,
+    s3_retries: int = S3_RETRIES,
+    s3_parallelism: int = S3_PARALLELISM,
     debug_progress: bool = False,
 ) -> None:
     r_clone_config_file_content = get_r_clone_config(
@@ -233,5 +237,4 @@ async def sync_s3_to_local(
         destination=f"{local_directory_path}",
         local_dir=local_directory_path,
         s3_config_key="s3-source",
-        debug_progress=True,
     )
