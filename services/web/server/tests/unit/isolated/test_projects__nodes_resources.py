@@ -7,7 +7,7 @@ from models_library.services_resources import (
 )
 from pydantic import parse_obj_as
 from simcore_service_webserver.projects._nodes_utils import (
-    check_can_update_service_resources,
+    validate_new_service_resources,
 )
 from simcore_service_webserver.projects.exceptions import (
     ProjectNodeResourcesInvalidError,
@@ -25,7 +25,7 @@ def test_check_can_update_service_resources_with_same_does_not_raise(
     resources: ServiceResourcesDict,
 ):
     new_resources = deepcopy(resources)
-    check_can_update_service_resources(resources, new_resources=new_resources)
+    validate_new_service_resources(resources, new_resources=new_resources)
 
 
 @pytest.mark.parametrize(
@@ -44,7 +44,7 @@ def test_check_can_update_service_resources_with_invalid_container_name_raises(
     }
 
     with pytest.raises(ProjectNodeResourcesInvalidError, match="invalid-name"):
-        check_can_update_service_resources(resources, new_resources=new_resources)
+        validate_new_service_resources(resources, new_resources=new_resources)
 
 
 @pytest.mark.parametrize(
@@ -64,4 +64,4 @@ def test_check_can_update_service_resources_with_invalid_image_name_raises(
     with pytest.raises(
         ProjectNodeResourcesInvalidError, match="some-invalid-image-name"
     ):
-        check_can_update_service_resources(resources, new_resources=new_resources)
+        validate_new_service_resources(resources, new_resources=new_resources)

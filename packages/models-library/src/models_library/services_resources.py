@@ -53,6 +53,9 @@ class ResourceValue(BaseModel):
 
         return values
 
+    def set_reservation_same_as_limit(self) -> None:
+        self.reservation = self.limit
+
     class Config:
         validate_assignment = True
 
@@ -81,6 +84,10 @@ class ImageResources(BaseModel):
         default=[BootMode.CPU],
         description="describe how a service shall be booted, using CPU, MPI, openMP or GPU",
     )
+
+    def set_reservation_same_as_limit(self) -> None:
+        for resource in self.resources.values():
+            resource.set_reservation_same_as_limit()
 
     class Config:
         schema_extra = {

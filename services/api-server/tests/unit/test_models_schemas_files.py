@@ -17,7 +17,7 @@ from models_library.api_schemas_storage import FileMetaDataGet as StorageFileMet
 from models_library.basic_types import MD5Str
 from pydantic import ValidationError, parse_obj_as
 from simcore_service_api_server.models.schemas.files import File
-from simcore_service_api_server.plugins.storage import to_file_api_model
+from simcore_service_api_server.services.storage import to_file_api_model
 
 FILE_CONTENT = "This is a test"
 

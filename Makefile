@@ -509,6 +509,18 @@ pylint: ## python linting
 	@pylint --rcfile=.pylintrc -v $(CURDIR)/tests --ignore=examples
 	# See exit codes and command line https://pylint.readthedocs.io/en/latest/user_guide/run.html#exit-codes
 
+ruff: ## python ruffing
+	# ruff version info
+	@ruff --version
+	# Running ruff in packages and services (except director)
+	@ruff check \
+		--config=$(CURDIR)/.ruff.toml \
+		--respect-gitignore \
+		--extend-exclude="**/tests" \
+		--extend-exclude="**/generated_models" \
+		--extend-exclude="**/director/" \
+		$(CURDIR)/services \
+		$(CURDIR)/packages
 
 .PHONY: new-service
 new-service: .venv ## Bakes a new project from cookiecutter-simcore-pyservice and drops it under services/ [UNDER DEV]

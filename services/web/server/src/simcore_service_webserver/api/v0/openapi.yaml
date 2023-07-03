@@ -1483,6 +1483,39 @@ paths:
       responses:
         '204':
           description: Successful Response
+  /me/permissions:
+    get:
+      tags:
+        - user
+      summary: List User Permissions
+      operationId: list_user_permissions
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: 'Envelope[list[simcore_service_webserver.users.schemas.PermissionGet]]'
+                type: object
+                properties:
+                  data:
+                    title: Data
+                    type: array
+                    items:
+                      title: PermissionGet
+                      required:
+                        - name
+                        - allowed
+                      type: object
+                      properties:
+                        name:
+                          title: Name
+                          type: string
+                        allowed:
+                          title: Allowed
+                          type: boolean
+                  error:
+                    title: Error
   /groups:
     get:
       summary: List my groups
