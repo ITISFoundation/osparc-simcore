@@ -1,4 +1,5 @@
 import logging
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Security
 
@@ -16,18 +17,16 @@ router = APIRouter()
 
 @router.get("", response_model=Profile)
 async def get_my_profile(
-    client: AuthSession = Depends(get_webserver_session),
+    client: Annotated[AuthSession, Depends(get_webserver_session)],
 ) -> Profile:
     data = await client.get("/me")
-    profile = Profile.parse_obj(data)
-
-    return profile
+    return Profile.parse_obj(data)
 
 
 @router.put("", response_model=Profile)
 async def update_my_profile(
     profile_update: ProfileUpdate,
-    client: AuthSession = Security(get_webserver_session, scopes=["write"]),
+    client: Annotated[AuthSession, Security(get_webserver_session, scopes=["write"])],
 ) -> Profile:
     # FIXME: replace by patch
     # TODO: improve. from patch -> put, we need to ensure it has a default in place
