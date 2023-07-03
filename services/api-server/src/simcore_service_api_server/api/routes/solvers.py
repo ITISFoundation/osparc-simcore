@@ -1,6 +1,7 @@
 import logging
+from collections.abc import Callable
 from operator import attrgetter
-from typing import Annotated, Callable
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from httpx import HTTPStatusError
@@ -196,6 +197,7 @@ async def get_solver_release(
         solver.url = url_for(
             "get_solver_release", solver_key=solver.id, version=solver.version
         )
+        return solver  # noqa: TRY300
 
     except (
         ValueError,
@@ -208,9 +210,6 @@ async def get_solver_release(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Solver {solver_key}:{version} not found",
         ) from err
-
-    else:
-        return solver
 
 
 @router.get(
@@ -237,6 +236,8 @@ async def list_solver_ports(
             product_name=product_name,
         )
 
+        return OnePage[SolverPort](items=ports)
+
     except ValidationError as err:
         error_code = create_error_code(err)
         _logger.exception(
@@ -255,6 +256,3 @@ async def list_solver_ports(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Ports for solver {solver_key}:{version} not found",
         ) from err
-
-    else:
-        return OnePage[SolverPort].construct(items=ports, total=len(ports))

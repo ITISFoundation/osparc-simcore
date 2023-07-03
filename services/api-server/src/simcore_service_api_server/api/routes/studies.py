@@ -52,4 +52,4 @@ async def list_study_ports(
         dict[str, Any]
     ] = await webserver_api.get_project_metadata_ports(project_id=study_id)
 
-    return OnePage[StudyPort].construct(items=project_ports, total=len(project_ports))
+    return OnePage[StudyPort](items=project_ports)  # type: ignore[arg-type]

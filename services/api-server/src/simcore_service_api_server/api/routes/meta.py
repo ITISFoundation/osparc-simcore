@@ -17,6 +17,6 @@ async def get_service_metadata(
         name=__name__.split(".")[0],
         version=API_VERSION,  # type: ignore
         released={API_VTAG: API_VERSION},  # type: ignore
-        docs_url=url_for("redoc_html"),
+        docs_url=url_for("swagger_ui_html"),
         docs_dev_url=url_for("swagger_ui_html"),
     )
