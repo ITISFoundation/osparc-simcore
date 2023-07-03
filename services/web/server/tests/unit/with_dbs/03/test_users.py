@@ -14,6 +14,7 @@ from itertools import repeat
 from typing import Any, AsyncIterable, AsyncIterator, Callable
 from unittest.mock import MagicMock, Mock
 
+import aiopg.sa
 import pytest
 import redis.asyncio as aioredis
 from aiohttp import web
@@ -33,6 +34,7 @@ from pytest_simcore.helpers.utils_tokens import (
 from redis import Redis
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
+from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import api_version_prefix as API_VERSION
 from simcore_service_webserver.application_settings import setup_settings
@@ -727,3 +729,60 @@ async def test_list_permissions_with_overriden_extra_properties(
 
     assert override_services_specifications.name == "override_services_specifications"
     assert override_services_specifications.allowed is True
+
+
+@pytest.fixture
+async def with_no_product_name_defined(
+    aiopg_engine: aiopg.sa.engine.Engine,
+) -> AsyncIterator[None]:
+    async with aiopg_engine.acquire() as conn:
+        result = await conn.execute(products.select())
+        assert result
+        list_of_products = await result.fetchall()
+
+        # remove them all
+        result = await conn.execute(products.delete())
+        assert result
+
+    yield
+
+    # revert changes
+    if list_of_products:
+        async with aiopg_engine.acquire() as conn:
+            await conn.execute(
+                products.insert().values(
+                    [dict(product.items()) for product in list_of_products]
+                )
+            )
+
+
+@pytest.mark.parametrize(
+    "user_role,expected_response",
+    [
+        (UserRole.USER, web.HTTPOk),
+    ],
+)
+async def test_list_permissions_with_no_group_defined_returns_default_false_for_services_override(
+    logged_user: UserInfoDict,
+    client: TestClient,
+    expected_response: type[web.HTTPException],
+    with_no_product_name_defined: None,
+):
+    assert client.app
+    url = client.app.router["list_user_permissions"].url_for()
+    assert f"{url}" == "/v0/me/permissions"
+    resp = await client.get(f"{url}")
+    data, error = await assert_status(resp, expected_response)
+    assert data
+    assert not error
+    list_of_permissions = parse_obj_as(list[PermissionGet], data)
+    filtered_permissions = list(
+        filter(
+            lambda x: x.name == "override_services_specifications", list_of_permissions
+        )
+    )
+    assert len(filtered_permissions) == 1
+    override_services_specifications = filtered_permissions[0]
+
+    assert override_services_specifications.name == "override_services_specifications"
+    assert override_services_specifications.allowed is False

@@ -353,6 +353,8 @@ qx.Class.define("osparc.Application", {
       // Invalidate the entire cache
       osparc.store.Store.getInstance().invalidate();
 
+      osparc.data.Resources.get("permissions");
+
       osparc.data.Resources.getOne("profile")
         .then(profile => {
           this.__connectWebSocket();

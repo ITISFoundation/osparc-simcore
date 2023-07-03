@@ -432,6 +432,18 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * PERMISSIONS
+       */
+      "permissions": {
+        useCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/me/permissions"
+          }
+        }
+      },
+      /*
        * API-KEYS
        */
       "apiKeys": {
