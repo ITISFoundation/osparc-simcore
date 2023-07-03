@@ -22,7 +22,7 @@ from .modules.db.repositories.resource_tracker import ResourceTrackerRepository
 
 _logger = logging.getLogger(__name__)
 
-_TTL = 3600  # 60 minutes
+_TTL = 300  # 5 minutes
 
 _PAST_X_MINUTES = 30  # in promql query the first part: [30m:1m]
 _RESOLUTION_MINUTES = 1  # in promql query the second part: [30m:1m]
