@@ -435,11 +435,12 @@ async def _assert_schedule_pipeline_PENDING(
     mocked_dask_client.send_computation_tasks.assert_has_calls(
         calls=[
             mock.call(
-                published_project.project.prj_owner,
+                user_id=published_project.project.prj_owner,
                 project_id=published_project.project.uuid,
                 cluster_id=DEFAULT_CLUSTER_ID,
                 tasks={f"{p.node_id}": p.image},
                 callback=scheduler._wake_up_scheduler_now,
+                metadata=mock.ANY,
             )
             for p in expected_pending_tasks
         ],
@@ -596,6 +597,7 @@ async def test_proper_pipeline_is_scheduled(
             f"{next_pending_task.node_id}": next_pending_task.image,
         },
         callback=scheduler._wake_up_scheduler_now,
+        metadata=mock.ANY,
     )
     mocked_dask_client.send_computation_tasks.reset_mock()
     mocked_dask_client.get_tasks_status.assert_has_calls(
