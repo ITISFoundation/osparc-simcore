@@ -10,6 +10,7 @@ from typing import (
     Iterable,
     NoReturn,
     Optional,
+    cast,
     get_args,
 )
 from uuid import uuid4
@@ -24,15 +25,14 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputData,
     TaskOutputDataSchema,
 )
-from dask_task_models_library.container_tasks.protocol import (
-    ContainerEnvsDict,
-    ContainerLabelsDict,
-)
+from dask_task_models_library.container_tasks.protocol import ContainerEnvsDict
+from fastapi import FastAPI
 from models_library.clusters import ClusterID
 from models_library.docker import SimcoreServiceDockerLabelKeys
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
+from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, ValidationError, parse_obj_as
 from servicelib.json_serialization import json_dumps
@@ -44,6 +44,10 @@ from simcore_sdk.node_ports_common.exceptions import (
 )
 from simcore_sdk.node_ports_v2 import FileLinkType, Port, links, port_utils
 from simcore_sdk.node_ports_v2.links import ItemValue as _NPItemValue
+from simcore_service_director_v2.modules.osparc_variables_substitutions import (
+    resolve_and_substitute_session_variables_in_specs,
+    substitute_vendor_secrets_in_specs,
+)
 
 from ..core.errors import (
     ComputationalBackendNotConnectedError,
@@ -293,33 +297,66 @@ async def compute_service_log_file_upload_link(
 _UNDEFINED_METADATA: Final[str] = "undefined-label"
 
 
-def compute_task_labels(
+async def compute_task_labels(
+    app: FastAPI,
+    *,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
     metadata: MetadataDict,
-) -> ContainerLabelsDict:
+) -> dict[str, str]:
+    product_name = metadata.get("product_name", _UNDEFINED_METADATA)
     task_labels = SimcoreServiceDockerLabelKeys(
         user_id=user_id,
         study_id=project_id,
         uuid=node_id,
-        product_name=metadata.get("product_name", _UNDEFINED_METADATA),
+        product_name=product_name,
         simcore_user_agent=metadata.get("simcore_user_agent", _UNDEFINED_METADATA),
     ).to_docker_labels()
     task_labels |= {k: f"{v}" for k, v in metadata.items()}
-    # TODO:
-    # substitute_session_oenvs(
-    #     self.app, metadata, user_id, metadata.get("product_name", "")
-    # ),
+    task_labels = await resolve_and_substitute_session_variables_in_specs(
+        app,
+        task_labels,
+        user_id=user_id,
+        product_name=product_name,
+        project_id=project_id,
+        node_id=node_id,
+    )
+
     return task_labels
 
 
-def compute_task_envs(node_image: Image) -> ContainerEnvsDict:
-    # subsitute variables
-    # task_envs = substitute_session_oenvs(
-    #     self.app, task_envs, user_id, metadata.get("product_name", "")
-    # )
-    return node_image.envs
+async def compute_task_envs(
+    app: FastAPI,
+    *,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    node_image: Image,
+    metadata: MetadataDict,
+) -> ContainerEnvsDict:
+    product_name = metadata.get("product_name", _UNDEFINED_METADATA)
+    task_envs = node_image.envs
+    if task_envs:
+        vendor_substituted_envs = await substitute_vendor_secrets_in_specs(
+            app,
+            node_image.envs,
+            service_key=ServiceKey(node_image.name),
+            service_version=ServiceVersion(node_image.tag),
+        )
+        resolved_envs = await resolve_and_substitute_session_variables_in_specs(
+            app,
+            vendor_substituted_envs,
+            user_id=user_id,
+            product_name=product_name,
+            project_id=project_id,
+            node_id=node_id,
+        )
+        # NOTE: see https://github.com/ITISFoundation/osparc-simcore/issues/3638
+        # we currently do not validate as we are using illegal docker key names with underscores
+        task_envs = cast(ContainerEnvsDict, resolved_envs)
+
+    return task_envs
 
 
 async def get_service_log_file_download_link(

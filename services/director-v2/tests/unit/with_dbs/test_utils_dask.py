@@ -14,7 +14,6 @@ from unittest import mock
 
 import aiopg
 import aiopg.sa
-import httpx
 import pytest
 from _helpers import PublishedProject, set_comp_task_inputs, set_comp_task_outputs
 from dask_task_models_library.container_tasks.io import (
@@ -22,9 +21,13 @@ from dask_task_models_library.container_tasks.io import (
     FileUrl,
     TaskOutputData,
 )
-from dask_task_models_library.container_tasks.protocol import ContainerLabelsDict
+from dask_task_models_library.container_tasks.protocol import (
+    ContainerEnvsDict,
+    ContainerLabelsDict,
+)
 from distributed import SpecCluster
 from faker import Faker
+from fastapi import FastAPI
 from models_library.api_schemas_storage import FileUploadLinks, FileUploadSchema
 from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
@@ -275,7 +278,7 @@ async def test_parse_output_data(
 
 
 @pytest.fixture
-def app_with_db(
+def _app_config_with_db(
     mock_env: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     postgres_host_config: dict[str, str],
@@ -290,9 +293,9 @@ def app_with_db(
 
 
 async def test_compute_input_data(
-    app_with_db: None,
+    _app_config_with_db: None,
     aiopg_engine: aiopg.sa.engine.Engine,
-    async_client: httpx.AsyncClient,
+    initialized_app: FastAPI,
     user_id: UserID,
     published_project: PublishedProject,
     fake_io_schema: dict[str, dict[str, str]],
@@ -336,7 +339,7 @@ async def test_compute_input_data(
         side_effect=return_fake_input_value(),
     )
     node_ports = await create_node_ports(
-        db_engine=async_client._transport.app.state.engine,  # noqa: SLF001
+        db_engine=initialized_app.state.engine,
         user_id=user_id,
         project_id=published_project.project.uuid,
         node_id=sleeper_task.node_id,
@@ -364,9 +367,9 @@ def tasks_file_link_scheme(tasks_file_link_type: FileLinkType) -> tuple:
 
 
 async def test_compute_output_data_schema(
-    app_with_db: None,
+    _app_config_with_db: None,
     aiopg_engine: aiopg.sa.engine.Engine,
-    async_client: httpx.AsyncClient,
+    initialized_app: FastAPI,
     user_id: UserID,
     published_project: PublishedProject,
     fake_io_schema: dict[str, dict[str, str]],
@@ -382,7 +385,7 @@ async def test_compute_output_data_schema(
     )
 
     node_ports = await create_node_ports(
-        db_engine=async_client._transport.app.state.engine,  # noqa: SLF001
+        db_engine=initialized_app.state.engine,
         user_id=user_id,
         project_id=published_project.project.uuid,
         node_id=sleeper_task.node_id,
@@ -519,8 +522,8 @@ def cluster_id(faker: Faker) -> ClusterID:
 
 
 @pytest.fixture
-def _app_with_dask_client(
-    app_with_db: None,
+def _app_config_with_dask_client(
+    _app_config_with_db: None,
     dask_spec_local_cluster: SpecCluster,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -532,18 +535,19 @@ def _app_with_dask_client(
 
 
 async def test_check_if_cluster_is_able_to_run_pipeline(
-    _app_with_dask_client: None,
+    _app_config_with_dask_client: None,
     project_id: ProjectID,
     node_id: NodeID,
     cluster_id: ClusterID,
     published_project: PublishedProject,
-    async_client: httpx.AsyncClient,
+    initialized_app: FastAPI,
 ):
     sleeper_task: CompTaskAtDB = published_project.tasks[1]
-    app = async_client._transport.app  # noqa: SLF001
-    dask_scheduler_settings = app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND
+    dask_scheduler_settings = (
+        initialized_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND
+    )
     default_cluster = dask_scheduler_settings.default_cluster
-    dask_clients_pool = DaskClientsPool.instance(app)
+    dask_clients_pool = DaskClientsPool.instance(initialized_app)
     async with dask_clients_pool.acquire(default_cluster) as dask_client:
         check_if_cluster_is_able_to_run_pipeline(
             project_id=project_id,
@@ -578,14 +582,23 @@ async def test_check_if_cluster_is_able_to_run_pipeline(
         ),
     ],
 )
-def test_compute_task_labels(
+async def test_compute_task_labels(
+    _app_config_with_db: None,
+    published_project: PublishedProject,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
     run_metadata: MetadataDict,
     expected_additional_task_labels: ContainerLabelsDict,
+    initialized_app: FastAPI,
 ):
-    task_labels = compute_task_labels(user_id, project_id, node_id, run_metadata)
+    task_labels = await compute_task_labels(
+        initialized_app,
+        user_id=user_id,
+        project_id=project_id,
+        node_id=node_id,
+        metadata=run_metadata,
+    )
     expected_task_labels = {
         "user_id": f"{user_id}",
         "study_id": f"{project_id}",
@@ -594,9 +607,45 @@ def test_compute_task_labels(
     assert task_labels == expected_task_labels
 
 
-def test_compute_task_envs(
+@pytest.mark.parametrize(
+    "run_metadata",
+    [
+        {"product_name": "some amazing product name"},
+    ],
+)
+@pytest.mark.parametrize(
+    "input_task_envs, expected_computed_task_envs",
+    [
+        pytest.param({}, {}, id="empty envs"),
+        pytest.param(
+            {"SOME_FAKE_ENV": "this is my fake value"},
+            {"SOME_FAKE_ENV": "this is my fake value"},
+            id="standard env",
+        ),
+        pytest.param(
+            {"SOME_FAKE_ENV": "this is my $OSPARC_VARIABLE_PRODUCT_NAME value"},
+            {"SOME_FAKE_ENV": "this is my some amazing product name value"},
+            id="substituable env",
+        ),
+    ],
+)
+async def test_compute_task_envs(
+    _app_config_with_db: None,
     published_project: PublishedProject,
+    initialized_app: FastAPI,
+    run_metadata: MetadataDict,
+    input_task_envs: ContainerEnvsDict,
+    expected_computed_task_envs: ContainerEnvsDict,
 ):
     sleeper_task: CompTaskAtDB = published_project.tasks[1]
-    task_envs = compute_task_envs(sleeper_task.image)
-    assert task_envs == {}
+    sleeper_task.image.envs = input_task_envs
+    assert published_project.project.prj_owner is not None
+    task_envs = await compute_task_envs(
+        initialized_app,
+        user_id=published_project.project.prj_owner,
+        project_id=published_project.project.uuid,
+        node_id=sleeper_task.node_id,
+        node_image=sleeper_task.image,
+        metadata=run_metadata,
+    )
+    assert task_envs == expected_computed_task_envs
