@@ -167,14 +167,39 @@ async def _download_from_s3_to_local_dir(
         )
 
 
-def _directories_have_the_same_content(
-    dir_1: Path, dir_2: Path, *, expected_file_names: set[str]
-) -> bool:
+def _directories_have_the_same_content(dir_1: Path, dir_2: Path) -> bool:
+    names_in_dir_1 = {x.name for x in dir_1.glob("*")}
+    names_in_dir_2 = {x.name for x in dir_2.glob("*")}
+    if names_in_dir_1 != names_in_dir_2:
+        return False
+
     filecmp.clear_cache()
     return all(
         filecmp.cmp(dir_1 / file_name, dir_2 / file_name, shallow=False)
-        for file_name in expected_file_names
+        for file_name in names_in_dir_1
     )
+
+
+def _ensure_dir(tmp_path: Path, faker: Faker, *, dir_prefix: str) -> Path:
+    generated_files_dir: Path = tmp_path / f"{dir_prefix}-{faker.uuid4()}"
+    generated_files_dir.mkdir(parents=True, exist_ok=True)
+    assert generated_files_dir.exists()
+    return generated_files_dir
+
+
+@pytest.fixture
+def dir_locally_created_files(tmp_path: Path, faker: Faker) -> Path:
+    return _ensure_dir(tmp_path, faker, dir_prefix="source")
+
+
+@pytest.fixture
+def dir_downloaded_files_1(tmp_path: Path, faker: Faker) -> Path:
+    return _ensure_dir(tmp_path, faker, dir_prefix="downloaded-1")
+
+
+@pytest.fixture
+def dir_downloaded_files_2(tmp_path: Path, faker: Faker) -> Path:
+    return _ensure_dir(tmp_path, faker, dir_prefix="downloaded-2")
 
 
 @pytest.mark.parametrize(
@@ -183,49 +208,141 @@ def _directories_have_the_same_content(
         (0, parse_obj_as(ByteSize, "0")),
         (1, parse_obj_as(ByteSize, "1mib")),
         (2, parse_obj_as(ByteSize, "1mib")),
-        # (1, parse_obj_as(ByteSize, "1Gib")),
-        # (4, parse_obj_as(ByteSize, "500Mib")),
-        # (100, parse_obj_as(ByteSize, "20mib")),
+        (1, parse_obj_as(ByteSize, "1Gib")),
+        (4, parse_obj_as(ByteSize, "500Mib")),
+        (100, parse_obj_as(ByteSize, "20mib")),
     ],
 )
 async def test_local_to_remote_to_local(
     r_clone_settings: RCloneSettings,
     create_valid_file_uuid: Callable[[str, Path], str],
-    tmp_path: Path,
-    faker: Faker,
+    dir_locally_created_files: Path,
+    dir_downloaded_files_1: Path,
     file_count: int,
     file_size: ByteSize,
 ) -> None:
-    # locally created files directory
-    generated_files_dir: Path = tmp_path / f"source-{faker.uuid4()}"
-    generated_files_dir.mkdir(parents=True, exist_ok=True)
-    assert generated_files_dir.exists()
-
-    # downloaded files directory
-    downloaded_files_dir = tmp_path / f"local-destination-{faker.uuid4()}"
-    downloaded_files_dir.mkdir(parents=True, exist_ok=True)
-    assert downloaded_files_dir.exists()
-
-    generated_file_names: set[str] = await _create_files_in_dir(
-        generated_files_dir, file_count, file_size
-    )
+    await _create_files_in_dir(dir_locally_created_files, file_count, file_size)
 
     # get s3 reference link
-    directory_uuid = create_valid_file_uuid(f"{generated_files_dir}", Path(""))
+    directory_uuid = create_valid_file_uuid(f"{dir_locally_created_files}", Path(""))
     s3_directory_link = _fake_upload_file_link(r_clone_settings, directory_uuid)
 
     # run the test
     await _upload_local_dir_to_s3(
-        r_clone_settings, s3_directory_link, generated_files_dir
+        r_clone_settings, s3_directory_link, dir_locally_created_files
     )
     await _download_from_s3_to_local_dir(
-        r_clone_settings, s3_directory_link, downloaded_files_dir
+        r_clone_settings, s3_directory_link, dir_downloaded_files_1
     )
     assert _directories_have_the_same_content(
-        generated_files_dir,
-        downloaded_files_dir,
-        expected_file_names=generated_file_names,
+        dir_locally_created_files, dir_downloaded_files_1
     )
 
-    # check same file contents after upload and download
-    assert filecmp.cmp(local_file, local_download_file)
+
+def _change_content_of_one_file(
+    dir_locally_created_files: Path, generated_file_names: set[str]
+) -> None:
+    a_generated_file = next(iter(generated_file_names))
+    (dir_locally_created_files / a_generated_file).write_bytes(os.urandom(10))
+
+
+def _change_content_of_all_file(
+    dir_locally_created_files: Path, generated_file_names: set[str]
+) -> None:
+    for file_name in generated_file_names:
+        (dir_locally_created_files / file_name).unlink()
+        (dir_locally_created_files / file_name).write_bytes(os.urandom(10))
+
+
+def _remove_one_file(
+    dir_locally_created_files: Path, generated_file_names: set[str]
+) -> None:
+    a_generated_file = next(iter(generated_file_names))
+    (dir_locally_created_files / a_generated_file).unlink()
+
+
+def _rename_one_file(
+    dir_locally_created_files: Path, generated_file_names: set[str]
+) -> None:
+    a_generated_file = next(iter(generated_file_names))
+    (dir_locally_created_files / a_generated_file).rename(
+        dir_locally_created_files / f"renamed-{a_generated_file}"
+    )
+
+
+def _add_a_new_file(
+    dir_locally_created_files: Path, generated_file_names: set[str]
+) -> None:
+    (dir_locally_created_files / "new_file.bin").write_bytes(os.urandom(10))
+
+
+def _remove_all_files(
+    dir_locally_created_files: Path, generated_file_names: set[str]
+) -> None:
+    for file_name in generated_file_names:
+        (dir_locally_created_files / file_name).unlink()
+
+
+@pytest.mark.parametrize(
+    "changes_callable",
+    [
+        _change_content_of_one_file,
+        _change_content_of_all_file,
+        _remove_one_file,
+        _remove_all_files,
+        _rename_one_file,
+        _add_a_new_file,
+    ],
+)
+async def test_overwrite_an_existing_file_and_sync_again(
+    r_clone_settings: RCloneSettings,
+    create_valid_file_uuid: Callable[[str, Path], str],
+    dir_locally_created_files: Path,
+    dir_downloaded_files_1: Path,
+    dir_downloaded_files_2: Path,
+    changes_callable: Callable[[Path, set[str]], None],
+) -> None:
+    generated_file_names: set[str] = await _create_files_in_dir(
+        dir_locally_created_files,
+        r_clone.S3_PARALLELISM * 3,
+        parse_obj_as(ByteSize, "1kib"),
+    )
+    assert len(generated_file_names) > 0
+
+    # get s3 reference link
+    directory_uuid = create_valid_file_uuid(f"{dir_locally_created_files}", Path(""))
+    s3_directory_link = _fake_upload_file_link(r_clone_settings, directory_uuid)
+
+    # sync local to remote and check
+    await _upload_local_dir_to_s3(
+        r_clone_settings, s3_directory_link, dir_locally_created_files
+    )
+    await _download_from_s3_to_local_dir(
+        r_clone_settings, s3_directory_link, dir_downloaded_files_1
+    )
+    assert _directories_have_the_same_content(
+        dir_locally_created_files, dir_downloaded_files_1
+    )
+
+    # make some changes to local content
+    changes_callable(dir_locally_created_files, generated_file_names)
+
+    # ensure local content changed form remote content
+    assert not _directories_have_the_same_content(
+        dir_locally_created_files, dir_downloaded_files_1
+    )
+
+    # upload and check new local and new remote are in sync
+    await _upload_local_dir_to_s3(
+        r_clone_settings, s3_directory_link, dir_locally_created_files
+    )
+    await _download_from_s3_to_local_dir(
+        r_clone_settings, s3_directory_link, dir_downloaded_files_2
+    )
+    assert _directories_have_the_same_content(
+        dir_locally_created_files, dir_downloaded_files_2
+    )
+    # check that old remote and new remote are nto the same
+    assert not _directories_have_the_same_content(
+        dir_downloaded_files_1, dir_downloaded_files_2
+    )
