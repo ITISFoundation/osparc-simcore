@@ -7,6 +7,7 @@ import re
 import urllib.parse
 from pathlib import Path
 from typing import Callable, Final
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import aiofiles
@@ -91,6 +92,7 @@ def test_s3_url_quote_and_unquote():
 async def _create_random_binary_file(
     file_path: Path,
     file_size: ByteSize,
+    # NOTE: bigger files get created faster with bigger chunk_size
     chunk_size: int = parse_obj_as(ByteSize, "1mib"),
 ):
     async with aiofiles.open(file_path, mode="wb") as file:
@@ -364,3 +366,25 @@ async def test_overwrite_an_existing_file_and_sync_again(
     assert not _directories_have_the_same_content(
         dir_downloaded_files_1, dir_downloaded_files_2
     )
+
+
+async def test_raises_error_if_local_directory_path_is_a_file(
+    tmp_path: Path, faker: Faker
+):
+    file_path = await _create_file_of_size(
+        tmp_path, name=f"test{faker.uuid4()}.bin", file_size=ByteSize(1)
+    )
+    with pytest.raises(r_clone.RCloneFileFoundError):
+        await r_clone.sync_local_to_s3(
+            r_clone_settings=AsyncMock(),
+            progress_bar=AsyncMock(),
+            local_directory_path=file_path,
+            upload_directory_link=AsyncMock(),
+        )
+    with pytest.raises(r_clone.RCloneFileFoundError):
+        await r_clone.sync_s3_to_local(
+            r_clone_settings=AsyncMock(),
+            progress_bar=AsyncMock(),
+            local_directory_path=file_path,
+            download_directory_link=AsyncMock(),
+        )

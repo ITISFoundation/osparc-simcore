@@ -30,8 +30,18 @@ class BaseRCloneLogParser:
         ...
 
 
-class RCloneFailedError(PydanticErrorMixin, RuntimeError):
+class BaseRCloneError(PydanticErrorMixin, RuntimeError):
+    ...
+
+
+class RCloneFailedError(BaseRCloneError):
     msg_template: str = "Command {command} finished with exception:\n{stdout}"
+
+
+class RCloneFileFoundError(BaseRCloneError):
+    msg_template: str = (
+        "Provided path '{local_directory_path}' is a file. Expects a directory!"
+    )
 
 
 @asynccontextmanager
@@ -186,6 +196,11 @@ async def _sync_sources(
             )
 
 
+def _raise_if_directory_is_file(local_directory_path: Path) -> None:
+    if local_directory_path.exists() and local_directory_path.is_file():
+        raise RCloneFileFoundError(local_directory_path=local_directory_path)
+
+
 async def sync_local_to_s3(
     r_clone_settings: RCloneSettings,
     progress_bar: ProgressBarData,
@@ -197,6 +212,8 @@ async def sync_local_to_s3(
 
     :raises e: RCloneFailedError
     """
+    _raise_if_directory_is_file(local_directory_path)
+
     assert len(upload_directory_link.urls) == 1  # nosec
     upload_s3_link = urllib.parse.unquote(upload_directory_link.urls[0])
     upload_s3_path = re.sub(r"^s3://", "", upload_s3_link)
@@ -223,6 +240,7 @@ async def sync_s3_to_local(
 
     :raises e: RCloneFailedError
     """
+    _raise_if_directory_is_file(local_directory_path)
 
     assert len(download_directory_link.urls) == 1  # nosec
     download_s3_link = urllib.parse.unquote(download_directory_link.urls[0])
