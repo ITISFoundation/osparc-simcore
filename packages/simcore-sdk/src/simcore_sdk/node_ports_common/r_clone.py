@@ -18,11 +18,10 @@ from servicelib.utils import logged_gather
 from settings_library.r_clone import RCloneSettings
 from settings_library.utils_r_clone import get_r_clone_config
 
-_logger = logging.getLogger(__name__)
-
-
 S3_RETRIES: Final[int] = 3
 S3_PARALLELISM: Final[int] = 5
+
+_logger = logging.getLogger(__name__)
 
 
 class BaseRCloneLogParser:
@@ -127,7 +126,7 @@ class SyncProgressLogParser(BaseRCloneLogParser):
 
 class DebugLogParser(BaseRCloneLogParser):
     async def __call__(self, logs: str) -> None:
-        print("|>>>|", logs, "|")
+        _logger.debug("|>>>| %s |", logs)
 
 
 async def _sync_sources(
