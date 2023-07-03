@@ -26,7 +26,7 @@ def specs_folder():
     return current_dir.parent / "specs"
 
 
-def list_files_in_api_specs(wildcard: str) -> list[str]:
+def list_files_in_api_specs(wildcard: str) -> list[Path]:
     """Helper function to parameterize tests with list of files
 
     e.g.  pytest -v  test_individual_openapi_schemas.py
@@ -36,7 +36,7 @@ def list_files_in_api_specs(wildcard: str) -> list[str]:
     specs_dir = specs_folder()
 
     # NOTE: keep as string and not path, so it can be rendered
-    return list(str(p) for p in specs_dir.rglob(wildcard))
+    return list(Path(p) for p in specs_dir.rglob(wildcard))
 
 
 def list_all_openapi() -> list[str]:

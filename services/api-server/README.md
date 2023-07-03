@@ -43,7 +43,7 @@ will start the api-server in development-mode together with a postgres db initia
 
 ## Clients
 
-- [Python client for osparc-simcore API](https://github.com/ITISFoundation/osparc-simcore-python-client)
+- [Python client for osparc-simcore API](https://github.com/ITISFoundation/osparc-simcore-clients)
 
 ## Acknowledgments
 

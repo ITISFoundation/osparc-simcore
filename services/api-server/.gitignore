@@ -2,4 +2,4 @@
 client
 
 # openapi for development mode
-openapi-dev.json
+openapi-*.json

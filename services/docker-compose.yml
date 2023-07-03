@@ -198,6 +198,8 @@ services:
       - PROMETHEUS_USERNAME=${RESOURCE_USAGE_TRACKER_PROMETHEUS_USERNAME}
       - PROMETHEUS_PASSWORD=${RESOURCE_USAGE_TRACKER_PROMETHEUS_PASSWORD}
       - RESOURCE_USAGE_TRACKER_LOGLEVEL=${LOG_LEVEL:-INFO}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
 
   static-webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
@@ -268,6 +270,9 @@ services:
       DIRECTOR_PORT: ${DIRECTOR_PORT:-8080}
       DIRECTOR_V2_HOST: ${DIRECTOR_V2_HOST:-director-v2}
       DIRECTOR_V2_PORT: ${DIRECTOR_V2_PORT:-8000}
+      # see [https://docs.gunicorn.org/en/stable/settings.html#timeout],
+      # since we have the docker healthcheck already, this should be ok
+      GUNICORN_CMD_ARGS: --timeout=180
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       STORAGE_HOST: ${STORAGE_HOST:-storage}
       STORAGE_PORT: ${STORAGE_PORT:-8080}

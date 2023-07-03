@@ -196,9 +196,9 @@ qx.Class.define("osparc.info.ServiceUtils", {
       resourcesLayout.add(label);
 
       const grid = new qx.ui.layout.Grid(10, 5);
-      grid.setColumnAlign(0, "right", "middle");
-      grid.setColumnAlign(1, "left", "middle");
-      grid.setColumnAlign(2, "left", "middle");
+      grid.setColumnAlign(0, "right", "middle"); // subservice name
+      grid.setColumnAlign(1, "left", "middle"); // resource type
+      grid.setColumnAlign(2, "left", "middle"); // resource limit value
       const resourcesInfo = new qx.ui.container.Composite(grid).set({
         allowGrowX: false,
         alignX: "left",
@@ -206,15 +206,6 @@ qx.Class.define("osparc.info.ServiceUtils", {
       });
       resourcesLayout.add(resourcesInfo);
 
-      const reservationLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      reservationLayout.add(new qx.ui.basic.Label(this.RESOURCES_INFO["reservation"].label).set({
-        font: "text-13"
-      }));
-      reservationLayout.add(new osparc.ui.hint.InfoHint(this.RESOURCES_INFO["reservation"].tooltip));
-      resourcesInfo.add(reservationLayout, {
-        row: 0,
-        column: 2
-      });
       const limitLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       limitLayout.add(new qx.ui.basic.Label(this.RESOURCES_INFO["limit"].label).set({
         font: "text-13"
@@ -222,17 +213,13 @@ qx.Class.define("osparc.info.ServiceUtils", {
       limitLayout.add(new osparc.ui.hint.InfoHint(this.RESOURCES_INFO["limit"].tooltip));
       resourcesInfo.add(limitLayout, {
         row: 0,
-        column: 3
+        column: 2
       });
 
       return resourcesLayout;
     },
 
     RESOURCES_INFO: {
-      "reservation": {
-        label: qx.locale.Manager.tr("Reservation"),
-        tooltip: qx.locale.Manager.tr("Schedule time check:<br>The service requires this 'reservation' amount of resources to start - if insufficient hardware resources are available, the service will not start")
-      },
       "limit": {
         label: qx.locale.Manager.tr("Limit"),
         tooltip: qx.locale.Manager.tr("Runtime check:<br>The service can consume a maximum of 'limit' resources - if it attempts to use more resources than this limit, it will be stopped")

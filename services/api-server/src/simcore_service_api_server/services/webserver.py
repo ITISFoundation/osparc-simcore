@@ -1,17 +1,22 @@
 import json
 import logging
-from collections import deque
+import urllib.parse
+from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Any, cast
+from typing import Any
 from uuid import UUID
 
+import httpx
 from cryptography import fernet
 from fastapi import FastAPI, HTTPException
 from httpx import Response
+from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.projects import ProjectID
+from models_library.rest_pagination import Page
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ValidationError
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
+from servicelib.error_codes import create_error_code
 from starlette import status
 from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
@@ -20,11 +25,50 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from ..core.settings import WebServerSettings
-from ..models.domain.projects import NewProjectIn, Project
-from ..models.types import JSON, ListAnyDict
+from ..models.pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+from ..models.types import JSON
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
 _logger = logging.getLogger(__name__)
+
+
+@contextmanager
+def _handle_webserver_api_errors():
+    try:
+        yield
+
+    except ValidationError as exc:
+        # Invalid formatted response body
+        error_code = create_error_code(exc)
+        _logger.exception(
+            "Invalid data exchanged with webserver service [%s]",
+            error_code,
+            extra={"error_code": error_code},
+        )
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE, detail=error_code
+        ) from exc
+
+    except httpx.RequestError as exc:
+        # e.g. TransportError, DecodingError, TooManyRedirects
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from exc
+
+    except httpx.HTTPStatusError as exc:
+
+        resp = exc.response
+        if resp.is_server_error:
+            _logger.exception(
+                "webserver reponded with an error: %s [%s]",
+                f"{resp.status_code=}",
+                f"{resp.reason_phrase=}",
+            )
+            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from exc
+
+        if resp.is_client_error:
+            # NOTE: Raise ProjectErrors / WebserverError that should be transformed into HTTP errors on the handler level
+            error = exc.response.json().get("error", {})
+            msg = error.get("errors") or resp.reason_phrase or f"{exc}"
+            raise HTTPException(resp.status_code, detail=msg) from exc
 
 
 class WebserverApi(BaseServiceClientApi):
@@ -126,7 +170,7 @@ class AuthSession:
 
     # PROJECTS resource ---
 
-    async def create_project(self, project: NewProjectIn):
+    async def create_project(self, project: ProjectCreateNew) -> ProjectGet:
         # POST /projects --> 202
         resp = await self.client.post(
             "/projects",
@@ -152,43 +196,43 @@ class AuthSession:
                 data = await self.get(status_url)
                 task_status = TaskStatus.parse_obj(data)
                 if not task_status.done:
-                    raise TryAgain(
-                        "Timed out creating project. TIP: Try again, or contact oSparc support if this is happening repeatedly"
-                    )
+                    msg = "Timed out creating project. TIP: Try again, or contact oSparc support if this is happening repeatedly"
+                    raise TryAgain(msg)
+
         data = await self.get(f"{result_url}")
-        return Project.parse_obj(data)
+        return ProjectGet.parse_obj(data)
 
-    async def get_project(self, project_id: UUID) -> Project:
+    async def get_project(self, project_id: UUID) -> ProjectGet:
         resp = await self.client.get(
-            f"/projects/{project_id}", cookies=self.session_cookies
-        )
-
-        data: JSON | None = self._get_data_or_raise_http_exception(resp)
-        return Project.parse_obj(data)
-
-    async def list_projects(self, solver_name: str) -> list[Project]:
-        resp = await self.client.get(
-            "/projects",
-            params={"type": "user", "show_hidden": True},
+            f"/projects/{project_id}",
             cookies=self.session_cookies,
         )
 
-        data: ListAnyDict = (
-            cast(ListAnyDict, self._get_data_or_raise_http_exception(resp)) or []
-        )
+        data: JSON | None = self._get_data_or_raise_http_exception(resp)
+        return ProjectGet.parse_obj(data)
 
-        projects: deque[Project] = deque()
-        for prj in data:
-            possible_job_name = prj.get("name", "")
-            if possible_job_name.startswith(solver_name):
-                try:
-                    projects.append(Project.parse_obj(prj))
-                except ValidationError as err:
-                    _logger.warning(
-                        "Invalid prj %s [%s]: %s", prj.get("uuid"), solver_name, err
-                    )
+    async def list_projects(
+        self, solver_name: str, limit: int, offset: int
+    ) -> Page[ProjectGet]:
+        assert 1 <= limit <= MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE  # nosec
+        assert offset >= 0  # nosec
+        with _handle_webserver_api_errors():
+            resp = await self.client.get(
+                "/projects",
+                params={
+                    "type": "user",
+                    "show_hidden": True,
+                    "limit": limit,
+                    "offset": offset,
+                    # WARNING: better way to match jobs with projects (Next PR if this works fine!)
+                    "search": urllib.parse.quote(solver_name, safe=""),
+                    # WARNING: search text has a limit that I needed to increas for the example!
+                },
+                cookies=self.session_cookies,
+            )
+            resp.raise_for_status()
 
-        return list(projects)
+            return Page[ProjectGet].parse_raw(resp.text)
 
     async def delete_project(self, project_id: ProjectID) -> None:
         resp = await self.client.delete(

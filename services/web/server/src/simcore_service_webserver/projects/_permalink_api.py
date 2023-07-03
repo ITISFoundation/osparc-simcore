@@ -3,20 +3,14 @@ import logging
 from typing import Any, Callable, Coroutine, cast
 
 from aiohttp import web
+from models_library.api_schemas_webserver.projects_permalink import ProjectPermalink
 from models_library.projects import ProjectID
-from pydantic import BaseModel, HttpUrl
 
 from .exceptions import PermalinkFactoryError, PermalinkNotAllowedError
 from .models import ProjectDict
 
 _PROJECT_PERMALINK = f"{__name__}"
 _logger = logging.getLogger(__name__)
-
-
-class ProjectPermalink(BaseModel):
-    url: HttpUrl
-    is_public: bool
-
 
 _CreateLinkCallable = Callable[
     [web.Request, ProjectID], Coroutine[Any, Any, ProjectPermalink]

@@ -2,8 +2,8 @@
   "openapi": "3.0.2",
   "info": {
     "title": "osparc.io web API",
-    "description": "osparc-simcore public web API specifications",
-    "version": "0.4.4",
+    "description": "osparc-simcore public API specifications",
+    "version": "0.4.5",
     "x-logo": {
       "url": "https://raw.githubusercontent.com/ITISFoundation/osparc-manual/b809d93619512eb60c827b7e769c6145758378d0/_media/osparc-logo.svg",
       "altText": "osparc-simcore logo"
@@ -531,7 +531,7 @@
           "solvers"
         ],
         "summary": "List Jobs",
-        "description": "List of all jobs in a specific released solver",
+        "description": "List of jobs in a specific released solver (limited to 20 jobs)",
         "operationId": "list_jobs",
         "parameters": [
           {
@@ -1242,7 +1242,7 @@
             "maxLength": 2083,
             "minLength": 1,
             "type": "string",
-            "description": "Link to the job outputs (sub-collection",
+            "description": "Link to the job outputs (sub-collection)",
             "format": "uri"
           }
         },
@@ -1252,9 +1252,9 @@
           "runner_name": "solvers/isolve/releases/1.3.4",
           "inputs_checksum": "12345",
           "created_at": "2021-01-22T23:59:52.322176",
-          "url": "https://api.osparc.io/v0/jobs/f622946d-fd29-35b9-a193-abdd1095167c",
+          "url": "https://api.osparc.io/v0/solvers/isolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c",
           "runner_url": "https://api.osparc.io/v0/solvers/isolve/releases/1.3.4",
-          "outputs_url": "https://api.osparc.io/v0/jobs/f622946d-fd29-35b9-a193-abdd1095167c/outputs"
+          "outputs_url": "https://api.osparc.io/v0/solvers/isolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c/outputs"
         }
       },
       "JobInputs": {
@@ -1376,7 +1376,7 @@
             "format": "uuid"
           },
           "state": {
-            "$ref": "#/components/schemas/TaskStates"
+            "$ref": "#/components/schemas/RunningState"
           },
           "progress": {
             "title": "Progress",
@@ -1388,6 +1388,7 @@
           "submitted_at": {
             "title": "Submitted At",
             "type": "string",
+            "description": "Last modification timestamp of the solver job",
             "format": "date-time"
           },
           "started_at": {
@@ -1538,6 +1539,22 @@
           }
         }
       },
+      "RunningState": {
+        "title": "RunningState",
+        "enum": [
+          "UNKNOWN",
+          "PUBLISHED",
+          "NOT_STARTED",
+          "PENDING",
+          "STARTED",
+          "RETRY",
+          "SUCCESS",
+          "FAILED",
+          "ABORTED"
+        ],
+        "type": "string",
+        "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state"
+      },
       "Solver": {
         "title": "Solver",
         "required": [
@@ -1592,22 +1609,6 @@
           "maintainer": "info@itis.swiss",
           "url": "https://api.osparc.io/v0/solvers/simcore%2Fservices%2Fcomp%2Fisolve/releases/2.1.1"
         }
-      },
-      "TaskStates": {
-        "title": "TaskStates",
-        "enum": [
-          "UNKNOWN",
-          "PUBLISHED",
-          "NOT_STARTED",
-          "PENDING",
-          "STARTED",
-          "RETRY",
-          "SUCCESS",
-          "FAILED",
-          "ABORTED"
-        ],
-        "type": "string",
-        "description": "An enumeration."
       },
       "UserRoleEnum": {
         "title": "UserRoleEnum",

@@ -1,6 +1,7 @@
 import logging
 import random
 from pathlib import Path
+from typing import Any
 from unittest import mock
 
 import arrow
@@ -114,17 +115,18 @@ def mocked_prometheus_client_custom_query(
 
 
 async def test_collect_container_resource_usage_task(
-    mocked_prometheus,
-    mocked_prometheus_client_custom_query,
+    mocked_redis_server: None,
+    mocked_prometheus: mock.MagicMock,
+    mocked_prometheus_client_custom_query: mock.MagicMock,
     initialized_app: FastAPI,
-    postgres_db,
-    random_promql_output_generator,
+    postgres_db: sa.engine.Engine,
+    random_promql_output_generator: dict[str, Any],
 ):
     await collect_container_resource_usage_task(initialized_app)
 
     expected_query = "sum without (cpu) (container_cpu_usage_seconds_total{image=~'registry.osparc-master.speag.com/simcore/services/dynamic/jupyter-smash:.*'})[30m:1m]"
     mocked_prometheus_client_custom_query.assert_called_once_with(
-        mocked_prometheus.return_value, expected_query
+        mocked_prometheus.return_value, expected_query, mock.ANY
     )
 
     db_rows = []

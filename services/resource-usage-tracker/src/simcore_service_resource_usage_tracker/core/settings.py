@@ -8,6 +8,7 @@ from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import BuildTargetEnum, LogLevel, VersionTag
 from settings_library.postgres import PostgresSettings
 from settings_library.prometheus import PrometheusSettings
+from settings_library.redis import RedisSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 from .._meta import API_VERSION, API_VTAG, PROJECT_NAME
@@ -87,6 +88,8 @@ class MinimalApplicationSettings(_BaseApplicationSettings):
     RESOURCE_USAGE_TRACKER_POSTGRES: PostgresSettings | None = Field(
         auto_default_from_env=True
     )
+
+    RESOURCE_USAGE_TRACKER_REDIS: RedisSettings = Field(auto_default_from_env=True)
 
 
 class ApplicationSettings(MinimalApplicationSettings):

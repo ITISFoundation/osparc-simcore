@@ -106,7 +106,7 @@ WORKDIR /build/services/catalog
 RUN \
   --mount=type=bind,source=packages,target=/build/packages,rw \
   --mount=type=bind,source=services/catalog,target=/build/services/catalog,rw \
-  --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip,sharing=private \
   pip install \
   --requirement requirements/prod.txt \
   && pip list -v

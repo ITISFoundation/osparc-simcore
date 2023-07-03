@@ -58,7 +58,7 @@ WORKDIR /build/packages/postgres-database
 # install only base 3rd party dependencies
 RUN \
   --mount=type=bind,source=packages/postgres-database,target=/build/packages/postgres-database,rw \
-  --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip,sharing=private \
   pip install \
   --requirement requirements/prod.txt \
   && pip list -v

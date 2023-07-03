@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends
 
 from ...core.settings import BasicSettings
 from ...models.schemas.studies import Study, StudyID, StudyPort
-from ...plugins.webserver import AuthSession
+from ...services.webserver import AuthSession
 from ..dependencies.webserver import get_webserver_session
 
 _logger = logging.getLogger(__name__)

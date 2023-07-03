@@ -10,7 +10,10 @@ from simcore_service_resource_usage_tracker.api._meta import _Meta
 
 
 def test_healthcheck(
-    disabled_database: None, disabled_prometheus: None, client: TestClient
+    disabled_database: None,
+    disabled_prometheus: None,
+    mocked_redis_server: None,
+    client: TestClient,
 ):
     response = client.get("/")
     assert response.status_code == status.HTTP_200_OK
@@ -19,7 +22,12 @@ def test_healthcheck(
     )
 
 
-def test_meta(disabled_database: None, disabled_prometheus: None, client: TestClient):
+def test_meta(
+    disabled_database: None,
+    disabled_prometheus: None,
+    mocked_redis_server: None,
+    client: TestClient,
+):
     response = client.get(f"/{API_VTAG}/meta")
     assert response.status_code == status.HTTP_200_OK
     meta = _Meta.parse_obj(response.json())

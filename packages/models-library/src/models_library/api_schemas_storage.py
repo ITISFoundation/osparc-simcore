@@ -9,7 +9,7 @@
 import re
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional, Pattern, Union
+from typing import Any, Pattern
 from uuid import UUID
 
 from models_library.projects_nodes_io import (
@@ -38,19 +38,19 @@ ETag = str
 
 
 class S3BucketName(ConstrainedStr):
-    regex: Optional[Pattern[str]] = re.compile(S3_BUCKET_NAME_RE)
+    regex: Pattern[str] | None = re.compile(S3_BUCKET_NAME_RE)
 
 
 class DatCoreDatasetName(ConstrainedStr):
-    regex: Optional[Pattern[str]] = re.compile(DATCORE_DATASET_NAME_RE)
+    regex: Pattern[str] | None = re.compile(DATCORE_DATASET_NAME_RE)
 
 
 # /
 class HealthCheck(BaseModel):
-    name: Optional[str]
-    status: Optional[str]
-    api_version: Optional[str]
-    version: Optional[str]
+    name: str | None
+    status: str | None
+    api_version: str | None
+    version: str | None
 
 
 # /locations
@@ -73,7 +73,7 @@ FileLocationArray = ListModel[FileLocation]
 
 
 class DatasetMetaDataGet(BaseModel):
-    dataset_id: Union[UUID, DatCoreDatasetName]
+    dataset_id: UUID | DatCoreDatasetName
     display_name: str
 
     class Config:
@@ -115,11 +115,11 @@ class FileMetaDataGet(BaseModel):
         description="NOT a unique ID, like (api|uuid)/uuid/file_name or DATCORE folder structure",
     )
     location_id: LocationID = Field(..., description="Storage location")
-    project_name: Optional[str] = Field(
+    project_name: str | None = Field(
         default=None,
         description="optional project name, used by frontend to display path",
     )
-    node_name: Optional[str] = Field(
+    node_name: str | None = Field(
         default=None,
         description="optional node name, used by frontend to display path",
     )
@@ -131,7 +131,7 @@ class FileMetaDataGet(BaseModel):
     created_at: datetime
     last_modified: datetime
     file_size: ByteSize = Field(-1, description="File size in bytes (-1 means invalid)")
-    entity_tag: Optional[ETag] = Field(
+    entity_tag: ETag | None = Field(
         default=None,
         description="Entity tag (or ETag), represents a specific version of the file, None if invalid upload or datcore",
     )
@@ -240,6 +240,12 @@ class FileUploadSchema(BaseModel):
     links: FileUploadLinks
 
 
+class TableSynchronisation(BaseModel):
+    dry_run: bool | None = None
+    fire_and_forget: bool | None = None
+    removed: list[str]
+
+
 # /locations/{location_id}/files/{file_id}:complete
 class UploadedPart(BaseModel):
     number: PositiveInt
@@ -266,7 +272,7 @@ class FileUploadCompleteState(Enum):
 
 class FileUploadCompleteFutureResponse(BaseModel):
     state: FileUploadCompleteState
-    e_tag: Optional[ETag] = Field(default=None)
+    e_tag: ETag | None = Field(default=None)
 
 
 # /simcore-s3/
