@@ -114,17 +114,27 @@ def test_docker_generic_tag(image_name: str, valid: bool):
                 "project_id": _faker.uuid4(),
                 "node_id": _faker.uuid4(),
             },
-            id="parse_existing_service_labels",
+            id="parse_existing_service_labels-and-legacy",
         ),
         pytest.param(
             {
                 "user_id": _faker.pyint(),
                 "project_id": _faker.uuid4(),
                 "node_id": _faker.uuid4(),
-                "product": "test_p",
+                "product_name": "test_p",
                 "simcore_user_agent": "a-test-puppet",
             },
-            id="parse_new_service_labels",
+            id="parse_new_service_labels-soon-to-removed",
+        ),
+        pytest.param(
+            {
+                "io.simcore.container.user_id": _faker.pyint(),
+                "io.simcore.container.project_id": _faker.uuid4(),
+                "io.simcore.container.node_id": _faker.uuid4(),
+                "io.simcore.container.product-name": "test_p",
+                "io.simcore.container.simcore_user_agent": "a-test-puppet",
+            },
+            id="labels following docker rules",
         ),
     ],
 )

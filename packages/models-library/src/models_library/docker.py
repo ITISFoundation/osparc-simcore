@@ -35,18 +35,18 @@ class SimcoreServiceDockerLabelKeys(BaseModel):
     project_id: ProjectID = Field(..., alias="study_id")
     node_id: NodeID = Field(..., alias="uuid")
 
-    product_name: ProductName
-    simcore_user_agent: str
+    product_name: ProductName = "osparc"
+    simcore_user_agent: str = "undefined"
 
     # None is for backwards compatibility, can be removed in a few sprints
     memory_limit: ByteSize | None
     cpu_limit: float | None
 
-    def to_docker_labels(self) -> dict[str, str]:
+    def to_docker_labels(self) -> dict[DockerLabelKey, str]:
         """returns a dictionary of strings as required by docker"""
         std_export = self.dict(by_alias=True)
         return {
-            f"{_SIMCORE_CONTAINER_PREFIX}{k.replace('_', '-')}": f"{v}"
+            DockerLabelKey(f"{_SIMCORE_CONTAINER_PREFIX}{k.replace('_', '-')}"): f"{v}"
             for k, v in sorted(std_export.items())
         }
 
@@ -59,3 +59,25 @@ class SimcoreServiceDockerLabelKeys(BaseModel):
 
     class Config:
         allow_population_by_field_name = True
+        schema_extra = {
+            "examples": [
+                # legacy with no limits (a.k.a all dynamic services)
+                {
+                    "uuid": "1f963626-66e1-43f1-a777-33955c08b909",
+                    "study_id": "29f393fc-1410-47b3-b4b9-61dfce21a2a6",
+                    "user_id": "5",
+                    "product_name": "osparc",
+                    "simcore_user_agent": "puppeteer",
+                },
+                # modern both dynamic-sidecar services and computational services
+                {
+                    "io.simcore.container.node-id": "1f963626-66e1-43f1-a777-33955c08b909",
+                    "io.simcore.container.project-id": "29f393fc-1410-47b3-b4b9-61dfce21a2a6",
+                    "io.simcore.container.user-id": "5",
+                    "io.simcore.container.product-name": "osparc",
+                    "io.simcore.container.simcore-user-agent": "puppeteer",
+                    "io.simcore.container.memory-limit": "1073741824",
+                    "io.simcore.container.cpu-limit": "2.4",
+                },
+            ]
+        }
