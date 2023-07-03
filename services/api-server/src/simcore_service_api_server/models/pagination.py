@@ -9,32 +9,29 @@ Usage:
 from collections.abc import Sequence
 from typing import Generic, TypeVar
 
-from fastapi_pagination.bases import BasePage
 from fastapi_pagination.limit_offset import LimitOffsetParams
 from fastapi_pagination.links.limit_offset import LimitOffsetPage
 from models_library.rest_pagination import (
     DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
 )
-from pydantic import Field
+from pydantic import Field, NonNegativeInt
+from pydantic.generics import GenericModel
 
 T = TypeVar("T")
 
 
-class OnePage(BasePage[T], Generic[T]):
+class OnePage(GenericModel, Generic[T]):
     """
-    A single page is use to envelope a sequence that fits in a single page
+    A single page is used to envelope a small sequence that does not require
+    pagination
 
     If total >  MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE, we should consider extending this
     entrypoint to proper pagination
     """
 
-    @classmethod
-    def create(
-        cls,
-        items: Sequence[T],
-    ):
-        return cls(items=items, total=len(items))
+    items: Sequence[T]
+    total: NonNegativeInt
 
 
 # NOTE: same pagination limits and defaults as web-server

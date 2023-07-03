@@ -257,4 +257,4 @@ async def list_solver_ports(
         ) from err
 
     else:
-        return OnePage.create(items=ports)
+        return OnePage[SolverPort].construct(items=ports, total=len(ports))

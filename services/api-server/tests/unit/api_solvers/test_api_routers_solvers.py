@@ -72,16 +72,19 @@ async def test_list_solver_ports(
     )
     assert resp.status_code == status.HTTP_200_OK
 
-    assert resp.json() == [
-        {
-            "key": "input_1",
-            "kind": "input",
-            "content_schema": {
-                "title": "Sleep interval",
-                "type": "integer",
-                "x_unit": "second",
-                "minimum": 0,
-                "maximum": 5,
+    assert resp.json() == {
+        "total": 1,
+        "items": [
+            {
+                "key": "input_1",
+                "kind": "input",
+                "content_schema": {
+                    "title": "Sleep interval",
+                    "type": "integer",
+                    "x_unit": "second",
+                    "minimum": 0,
+                    "maximum": 5,
+                },
             },
-        }
-    ]
+        ],
+    }
