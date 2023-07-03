@@ -123,7 +123,6 @@ qx.Class.define("osparc.data.Permissions", {
           "studies.template.create.all",
           "services.all.read",
           "services.all.reupdate",
-          "services.all.updateLimits",
           "services.filePicker.read.all",
           "user.role.update",
           "user.clusters.create",
