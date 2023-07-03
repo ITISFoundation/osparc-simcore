@@ -172,7 +172,7 @@ qx.Class.define("osparc.component.node.UpdateResourceLimitsView", {
         })
         .catch(err => {
           console.error(err);
-          const msg = err.message || this.tr("Something went wrong Updating the limits");
+          const msg = err.message || this.tr("Something went wrong updating the limits");
           osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
         })
         .finally(() => {
