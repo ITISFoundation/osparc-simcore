@@ -1,17 +1,18 @@
 from datetime import datetime
 
+from typing import Literal
 from pydantic import BaseModel
 
 
 class Announcement(BaseModel):
     id: str
-    products: list
+    products: list[Literal["osparc", "s4l", "s4llite", "tis"]]
     start: datetime
     end: datetime
     title: str
     description: str
     link: str
-    widgets: list
+    widgets: list[Literal["login", "ribbon", "user-menu"]]
 
     class Config:
         schema_extra = {
