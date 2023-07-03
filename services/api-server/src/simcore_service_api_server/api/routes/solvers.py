@@ -48,7 +48,7 @@ async def list_solvers(
 
     for solver in solvers:
         solver.url = url_for(
-            "get_solver_release", solver_key=solver.id, version=solver.version
+            "get_solver_release", solver_key=solver.id_, version=solver.version
         )
 
     return sorted(solvers, key=attrgetter("id"))
@@ -85,7 +85,7 @@ async def list_solvers_releases(
 
     for solver in solvers:
         solver.url = url_for(
-            "get_solver_release", solver_key=solver.id, version=solver.version
+            "get_solver_release", solver_key=solver.id_, version=solver.version
         )
 
     return sorted(solvers, key=attrgetter("id", "pep404_version"))
@@ -123,18 +123,16 @@ async def get_solver(
             user_id, solver_key, product_name=product_name
         )
         solver.url = url_for(
-            "get_solver_release", solver_key=solver.id, version=solver.version
+            "get_solver_release", solver_key=solver.id_, version=solver.version
         )
+        assert solver.id_ == solver_key  # nosec
+        return solver  # noqa: TRY300
 
     except (KeyError, HTTPStatusError, IndexError) as err:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Solver with id={solver_key} not found",
         ) from err
-
-    else:
-        assert solver.id == solver_key  # nosec
-        return solver
 
 
 @router.get("/{solver_key:path}/releases", response_model=list[Solver])
@@ -155,7 +153,7 @@ async def list_solver_releases(
 
     for solver in releases:
         solver.url = url_for(
-            "get_solver_release", solver_key=solver.id, version=solver.version
+            "get_solver_release", solver_key=solver.id_, version=solver.version
         )
 
     return sorted(releases, key=attrgetter("pep404_version"))
@@ -196,7 +194,7 @@ async def get_solver_release(
         )
 
         solver.url = url_for(
-            "get_solver_release", solver_key=solver.id, version=solver.version
+            "get_solver_release", solver_key=solver.id_, version=solver.version
         )
 
     except (
