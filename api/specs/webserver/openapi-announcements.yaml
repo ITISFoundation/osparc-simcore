@@ -4,7 +4,7 @@ paths:
       tags:
         - announcements
       summary: List of Announcements
-      operationId: get_announcements
+      operationId: list_announcements
       responses:
         "200":
           description: Announcements per product

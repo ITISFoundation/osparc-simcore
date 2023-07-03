@@ -5,6 +5,7 @@
 import logging
 from typing import Any
 
+import redis.asyncio as aioredis
 from aiohttp import web
 from pydantic import BaseModel
 
@@ -106,20 +107,26 @@ async def get_scheduled_maintenance(request: web.Request):
 # announcements -----------------------------------------------------------
 
 
-async def _get_announcements(redis_client) -> list[Announcement]:
+async def _list_announcements(
+    redis_client: aioredis.Redis
+) -> list[Announcement]:
     hash_key = "announcements"
+    print(hash_key)
     raw_announcements: list[str] = await redis_client.get(hash_key)
-    return [Announcement.parse_raw(x) for x in raw_announcements]
+    print(raw_announcements)
+    return []
+    # return [Announcement.parse_raw(x) for x in raw_announcements]
 
 
 class AnnouncementsGet(BaseModel):
     data: list[Announcement]
 
 
-@routes.get(f"/{API_VTAG}/announcements", name="get_announcements")
-async def get_announcements(request: web.Request):
+@routes.get(f"/{API_VTAG}/announcements", name="list_announcements")
+async def list_announcements(request: web.Request) -> web.Response:
     """Check announcements table in redis"""
     redis_client = get_redis_announcements_client(request.app)
-    announcements = await _get_announcements(redis_client)
-    return web.json_response(text=AnnouncementsGet(data=announcements).json())
+    announcements = await _list_announcements(redis_client)
+    # return envelope_json_response(announcements)
+    return web.json_response(status=204)
 
