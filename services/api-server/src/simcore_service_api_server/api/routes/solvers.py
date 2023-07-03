@@ -127,7 +127,7 @@ async def get_solver(
             "get_solver_release", solver_key=solver.id, version=solver.version
         )
         assert solver.id == solver_key  # nosec
-        return solver  # noqa: TRY300
+        return solver
 
     except (KeyError, HTTPStatusError, IndexError) as err:
         raise HTTPException(
