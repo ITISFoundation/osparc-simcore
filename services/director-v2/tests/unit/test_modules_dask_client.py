@@ -118,12 +118,12 @@ async def _assert_wait_for_task_status(
                 RunningState.FAILED,
                 RunningState.UNKNOWN,
             ]:
-                # we can fail fast here
-                result = await asyncio.gather(
-                    dask_client.get_task_result(job_id), return_exceptions=True
-                )
-                err_msg = f"{job_id=} unexpectedly {current_task_status} with {result=}, instead of {expected_status=}"
-                pytest.fail(reason=err_msg)
+                try:
+                    # we can fail fast here
+                    # this will raise and we catch the Assertion to not reraise too long
+                    await dask_client.get_task_result(job_id)
+                except AssertionError as exc:
+                    raise RuntimeError from exc
             assert current_task_status is expected_status
 
 
