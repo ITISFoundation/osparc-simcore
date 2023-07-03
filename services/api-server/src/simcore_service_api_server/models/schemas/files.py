@@ -1,5 +1,6 @@
 from mimetypes import guess_type
 from pathlib import Path
+from typing import Any, ClassVar
 from uuid import UUID, uuid3
 
 import aiofiles
@@ -28,7 +29,7 @@ class File(BaseModel):
     )
 
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 # complete
                 {
