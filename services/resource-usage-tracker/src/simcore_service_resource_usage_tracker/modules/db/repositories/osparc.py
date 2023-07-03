@@ -2,6 +2,7 @@ import logging
 
 import sqlalchemy as sa
 from models_library.projects import ProjectID
+from models_library.users import UserID
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import users
 
@@ -11,7 +12,7 @@ _logger = logging.getLogger(__name__)
 
 
 class OSparcRepository(BaseRepository):
-    async def get_user_email(self, user_id: int) -> str | None:
+    async def get_user_email(self, user_id: UserID) -> str | None:
         async with self.db_engine.connect() as conn:
             result = await conn.execute(
                 sa.select(users.c.email).where(users.c.id == user_id)

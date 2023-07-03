@@ -7606,13 +7606,13 @@ paths:
                         - processors
                         - core_hours
                         - status
-                      title: ContainerListAPI
+                      title: ContainerGet
                     type: array
                     title: Data
                   error:
                     title: Error
                 type: object
-                title: 'Envelope[list[models_library.resource_tracker.ContainerListAPI]]'
+                title: 'Envelope[list[models_library.resource_tracker.ContainerGet]]'
   /publications/service-submission:
     post:
       tags:

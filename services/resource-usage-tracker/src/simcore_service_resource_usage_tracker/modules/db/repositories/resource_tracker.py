@@ -5,12 +5,12 @@ from typing import cast
 import sqlalchemy as sa
 from models_library.products import ProductName
 from models_library.users import UserID
-from pydantic import PositiveInt, parse_obj_as
+from pydantic import PositiveInt
 from simcore_postgres_database.models.resource_tracker import resource_tracker_container
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from ....models.resource_tracker_container import (
-    ContainerListDB,
+    ContainerGetDB,
     ContainerScrapedResourceUsage,
 )
 from ._base import BaseRepository
@@ -81,7 +81,7 @@ class ResourceTrackerRepository(BaseRepository):
 
     async def list_containers_by_user_and_product(
         self, user_id: UserID, product_name: ProductName, offset: int, limit: int
-    ) -> list[ContainerListDB]:
+    ) -> list[ContainerGetDB]:
         async with self.db_engine.begin() as conn:
             query = (
                 sa.select(
@@ -97,10 +97,8 @@ class ResourceTrackerRepository(BaseRepository):
                     resource_tracker_container.c.service_version,
                 )
                 .where(
-                    sa.and_(
-                        resource_tracker_container.c.user_id == user_id,
-                        resource_tracker_container.c.product_name == product_name,
-                    )
+                    (resource_tracker_container.c.user_id == user_id)
+                    & (resource_tracker_container.c.product_name == product_name)
                 )
                 .order_by(resource_tracker_container.c.prometheus_last_scraped.desc())
                 .offset(offset)
@@ -109,7 +107,7 @@ class ResourceTrackerRepository(BaseRepository):
 
             list_containers_result = await conn.execute(query)
             result = [
-                parse_obj_as(ContainerListDB, row)
+                ContainerGetDB.construct(**row)  # type: ignore[arg-type]
                 for row in list_containers_result.fetchall()
             ]
 
@@ -123,10 +121,8 @@ class ResourceTrackerRepository(BaseRepository):
                 sa.select(sa.func.count())
                 .select_from(resource_tracker_container)
                 .where(
-                    sa.and_(
-                        resource_tracker_container.c.user_id == user_id,
-                        resource_tracker_container.c.product_name == product_name,
-                    )
+                    (resource_tracker_container.c.user_id == user_id)
+                    & (resource_tracker_container.c.product_name == product_name)
                 )
             )
 

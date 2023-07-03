@@ -50,7 +50,7 @@ class ContainerScrapedResourceUsage(
 # List containers from DB table
 
 
-class ContainerListDB(BaseModel):
+class ContainerGetDB(BaseModel):
     service_settings_reservation_nano_cpus: int | None
     service_settings_reservation_memory_bytes: int | None
     prometheus_created: datetime
@@ -61,6 +61,3 @@ class ContainerListDB(BaseModel):
     node_label: str | None
     service_key: ServiceKey
     service_version: ServiceVersion
-
-    class Config:
-        validation = False

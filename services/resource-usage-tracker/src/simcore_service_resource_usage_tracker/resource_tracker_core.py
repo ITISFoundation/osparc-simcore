@@ -74,8 +74,7 @@ async def _get_user_email(osparc_repo: OSparcRepository, user_id: int) -> str | 
 async def _get_project_and_node_names(
     osparc_repo: OSparcRepository, project_uuid: ProjectID, node_uuid: NodeID
 ) -> tuple[str | None, str | None]:
-    output = await osparc_repo.get_project_name_and_workbench(project_uuid)
-    if output:
+    if output := await osparc_repo.get_project_name_and_workbench(project_uuid):
         project_name, project_workbench = output
         return (project_name, project_workbench[f"{node_uuid}"].get("label"))
     return (None, None)

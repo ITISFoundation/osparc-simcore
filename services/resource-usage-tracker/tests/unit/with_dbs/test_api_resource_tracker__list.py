@@ -93,6 +93,7 @@ def resource_tracker_container_db(postgres_db: sa.engine.Engine) -> Iterator[lis
         con.execute(resource_tracker_container.delete())
 
 
+@pytest.mark.testit
 async def test_list_containers(
     mocked_redis_server: None,
     mocked_setup_background_task: mock.Mock,

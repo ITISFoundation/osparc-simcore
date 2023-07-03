@@ -14,7 +14,7 @@ class ContainerStatus(str, Enum):
     FINISHED = "finished"
 
 
-class ContainerListAPI(BaseModel):
+class ContainerGet(BaseModel):
     project_uuid: ProjectID
     project_name: str | None
     node_uuid: NodeID

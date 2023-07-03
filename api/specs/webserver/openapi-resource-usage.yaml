@@ -28,10 +28,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.resource_tracker.ContainerListAPI__'
+                $ref: '#/components/schemas/Envelope_list_models_library.resource_tracker.ContainerGet__'
 components:
   schemas:
-    ContainerListAPI:
+    ContainerGet:
       properties:
         project_uuid:
           type: string
@@ -83,7 +83,7 @@ components:
       - processors
       - core_hours
       - status
-      title: ContainerListAPI
+      title: ContainerGet
     ContainerStatus:
       type: string
       enum:
@@ -91,14 +91,14 @@ components:
       - finished
       title: ContainerStatus
       description: An enumeration.
-    Envelope_list_models_library.resource_tracker.ContainerListAPI__:
+    Envelope_list_models_library.resource_tracker.ContainerGet__:
       properties:
         data:
           items:
-            $ref: '#/components/schemas/ContainerListAPI'
+            $ref: '#/components/schemas/ContainerGet'
           type: array
           title: Data
         error:
           title: Error
       type: object
-      title: Envelope[list[models_library.resource_tracker.ContainerListAPI]]
+      title: Envelope[list[models_library.resource_tracker.ContainerGet]]

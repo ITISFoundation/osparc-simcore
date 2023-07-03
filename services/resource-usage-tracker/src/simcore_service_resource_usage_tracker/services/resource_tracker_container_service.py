@@ -3,16 +3,16 @@ from typing import Annotated
 
 from fastapi import Depends
 from models_library.products import ProductName
-from models_library.resource_tracker import ContainerListAPI, ContainerStatus
+from models_library.resource_tracker import ContainerGet, ContainerStatus
 from models_library.users import UserID
 from pydantic import PositiveInt
 
 from ..api.dependencies import get_repository
 from ..models.pagination import LimitOffsetParamsWithDefault
-from ..models.resource_tracker_container import ContainerListDB
+from ..models.resource_tracker_container import ContainerGetDB
 from ..modules.db.repositories.resource_tracker import ResourceTrackerRepository
 
-_MAGIC_NUMBER = 3.5  # We will need to store pricing in the DB
+_OSPARC_TOKEN_PRICE = 3.5  # We will need to store pricing in the DB
 
 
 async def list_containers(
@@ -22,7 +22,7 @@ async def list_containers(
     resource_tacker_repo: ResourceTrackerRepository = Depends(
         get_repository(ResourceTrackerRepository)
     ),
-) -> tuple[list[ContainerListAPI], PositiveInt]:
+) -> tuple[list[ContainerGet], PositiveInt]:
     # Prepare helper variables
     overall_last_scraped_timestamp_or_none: datetime | None = (
         await resource_tacker_repo.get_prometheus_last_scraped_timestamp()
@@ -44,13 +44,13 @@ async def list_containers(
 
     # Get all tracked containers
     tracked_containers_db_model: list[
-        ContainerListDB
+        ContainerGetDB
     ] = await resource_tacker_repo.list_containers_by_user_and_product(
         user_id, product_name, page_params.offset, page_params.limit
     )
 
     # Prepare response
-    tracked_containers_api_model: list[ContainerListAPI] = []
+    tracked_containers_api_model: list[ContainerGet] = []
     for container in tracked_containers_db_model:
         _duration_mins = (
             container.prometheus_last_scraped - container.prometheus_created
@@ -72,10 +72,12 @@ async def list_containers(
 
         # NOTE: When we will have "pricing DB table" this will be computed in the SQL
         # so for example total sum could be quickly computed via another endpoint
-        _core_hours = round((_duration_mins / 60) * _processors * _MAGIC_NUMBER, 2)
+        _core_hours = round(
+            (_duration_mins / 60) * _processors * _OSPARC_TOKEN_PRICE, 2
+        )
 
         tracked_containers_api_model.append(
-            ContainerListAPI(
+            ContainerGet(
                 project_uuid=container.project_uuid,
                 project_name=container.project_name,
                 node_uuid=container.node_uuid,
