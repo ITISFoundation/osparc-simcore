@@ -256,6 +256,21 @@ qx.Class.define("osparc.data.Permissions", {
       return canDo;
     },
 
+    checkCanDo: function(action) {
+      return new Promise((resolve, reject) => {
+        osparc.data.Resources.get("permissions")
+          .then(permissions => {
+            const found = permissions.find(permission => permission["name"] === action);
+            if (found) {
+              resolve(found["allowed"]);
+            } else {
+              resolve(false);
+            }
+          })
+          .catch(err => reject(err));
+      });
+    },
+
     isTester: function() {
       return ["admin", "tester"].includes(this.getRole());
     }
