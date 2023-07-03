@@ -21,7 +21,6 @@ from ..api.routes.health import router as health_router
 from ..services import catalog, director_v2, remote_debug, storage, webserver
 from .events import create_start_app_handler, create_stop_app_handler
 from .openapi import override_openapi_method, use_route_names_as_operation_ids
-from .redoc import create_redoc_handler
 from .settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
@@ -119,10 +118,6 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     # healthcheck at / and at /VTAG/
     app.include_router(health_router)
-
-    # docs
-    redoc_html = create_redoc_handler(app)
-    app.add_route("/doc", redoc_html, name="redoc_html", include_in_schema=False)
 
     # api under /v*
     api_router = create_router(settings)
