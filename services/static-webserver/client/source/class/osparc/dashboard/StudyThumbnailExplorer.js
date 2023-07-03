@@ -121,18 +121,21 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
     },
 
     __buildLayout: function() {
-      this.getChildControl("nodes-tree");
+      // For now, do not show the Nodes Tree
+      // this.getChildControl("nodes-tree");
       this.getChildControl("scroll-thumbnails");
       this.getChildControl("thumbnail-viewer-layout");
     },
 
     __attachEventHandlers: function() {
+      /*
       const nodesTree = this.getChildControl("nodes-tree");
-      const scrollThumbnails = this.getChildControl("scroll-thumbnails");
       nodesTree.addListener("changeSelectedNode", e => {
         const selectedNodeId = e.getData();
         scrollThumbnails.setSelectedNodeId(selectedNodeId);
       });
+      */
+      const scrollThumbnails = this.getChildControl("scroll-thumbnails");
       const thumbnailViewerLayout = this.getChildControl("thumbnail-viewer-layout");
       scrollThumbnails.addListener("thumbnailTapped", e => {
         const thumbnailData = e.getData();
