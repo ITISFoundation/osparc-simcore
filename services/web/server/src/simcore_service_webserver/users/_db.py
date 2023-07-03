@@ -47,21 +47,19 @@ async def get_users_ids_in_group(conn: SAConnection, gid: GroupID) -> set[UserID
 async def list_user_permissions(
     app: web.Application, *, user_id: UserID, product_name: str
 ) -> list[Permission]:
-    engine = get_database_engine(app)
-    permissions = [
-        Permission(
-            name="override_services_specifications",
-            allowed=False,
-        )
-    ]
+    override_services_specifications = Permission(
+        name="override_services_specifications",
+        allowed=False,
+    )
     with contextlib.suppress(GroupExtraPropertiesNotFound):
-        async with engine.acquire() as conn:
+        async with get_database_engine(app).acquire() as conn:
             user_group_extra_properties = (
                 await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
                     conn, user_id=user_id, product_name=product_name
                 )
             )
-        permissions[
-            0
-        ].allowed = user_group_extra_properties.override_services_specifications
-    return permissions
+        override_services_specifications.allowed = (
+            user_group_extra_properties.override_services_specifications
+        )
+
+    return [override_services_specifications]
