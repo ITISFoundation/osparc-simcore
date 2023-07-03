@@ -34,6 +34,7 @@ qx.Class.define("osparc.component.announcement.AnnouncementUIFactory", {
 
       const now = new Date();
       if (
+        announcement &&
         announcement.getProducts().includes(osparc.product.Utils.getProductName()) &&
         announcement.getWidgets().includes(widgetType) &&
         now > announcement.getStart() &&

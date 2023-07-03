@@ -31,7 +31,7 @@ qx.Class.define("osparc.AnnouncementsTracker", {
       const checkAnnouncements = () => {
         osparc.data.Resources.get("announcements")
           .then(announcements => {
-            if (announcements) {
+            if (announcements && announcements.length) {
               this.__setAnnouncements([JSON.parse(announcements)]);
             } else {
               this.__setAnnouncements(null);
