@@ -105,7 +105,7 @@ class CatalogApi(BaseServiceClientApi):
                 )
         return solvers
 
-    async def get_solver(
+    async def get_service(
         self, user_id: int, name: SolverKeyId, version: VersionStr, *, product_name: str
     ) -> Solver:
 
@@ -129,7 +129,7 @@ class CatalogApi(BaseServiceClientApi):
         solver: Solver = service.to_solver()
         return solver
 
-    async def get_solver_ports(
+    async def get_service_ports(
         self, user_id: int, name: SolverKeyId, version: VersionStr, *, product_name: str
     ):
 

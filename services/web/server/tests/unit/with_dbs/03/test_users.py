@@ -56,7 +56,7 @@ from simcore_service_webserver.users._notifications import (
     get_notification_key,
 )
 from simcore_service_webserver.users.plugin import setup_users
-from simcore_service_webserver.users.schemas import ProfileGet
+from simcore_service_webserver.users.schemas import PermissionGet, ProfileGet
 
 
 @pytest.fixture
@@ -579,7 +579,7 @@ async def test_create_user_notification_capped_list_length(
     "user_role,expected_response",
     [
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPNoContent),
+        (UserRole.GUEST, web.HTTPForbidden),
         (UserRole.USER, web.HTTPNoContent),
         (UserRole.TESTER, web.HTTPNoContent),
     ],
@@ -661,3 +661,69 @@ async def test_update_user_notification_at_correct_index(
         assert (
             _marked_as_read(notifications_before_update) == notifications_after_update
         )
+
+
+@pytest.mark.parametrize(
+    "user_role,expected_response",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPForbidden),
+        (UserRole.USER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk),
+    ],
+)
+async def test_list_permissions(
+    logged_user: UserInfoDict,
+    client: TestClient,
+    expected_response: type[web.HTTPException],
+):
+    assert client.app
+    url = client.app.router["list_user_permissions"].url_for()
+    assert f"{url}" == "/v0/me/permissions"
+
+    resp = await client.get(f"{url}")
+    data, error = await assert_status(resp, expected_response)
+    if data:
+        assert not error
+        list_of_permissions = parse_obj_as(list[PermissionGet], data)
+        assert (
+            len(list_of_permissions) == 1
+        ), "for now there is only 1 permission, but when we sync frontend/backend permissions there will be more"
+        assert list_of_permissions[0].name == "override_services_specifications"
+        assert list_of_permissions[0].allowed is False, "defaults should be False!"
+    else:
+        assert data is None
+        assert error is not None
+
+
+@pytest.mark.parametrize(
+    "user_role,expected_response",
+    [
+        (UserRole.USER, web.HTTPOk),
+    ],
+)
+async def test_list_permissions_with_overriden_extra_properties(
+    logged_user: UserInfoDict,
+    client: TestClient,
+    expected_response: type[web.HTTPException],
+    with_permitted_override_services_specifications: None,
+):
+    assert client.app
+    url = client.app.router["list_user_permissions"].url_for()
+    assert f"{url}" == "/v0/me/permissions"
+
+    resp = await client.get(f"{url}")
+    data, error = await assert_status(resp, expected_response)
+    assert data
+    assert not error
+    list_of_permissions = parse_obj_as(list[PermissionGet], data)
+    filtered_permissions = list(
+        filter(
+            lambda x: x.name == "override_services_specifications", list_of_permissions
+        )
+    )
+    assert len(filtered_permissions) == 1
+    override_services_specifications = filtered_permissions[0]
+
+    assert override_services_specifications.name == "override_services_specifications"
+    assert override_services_specifications.allowed is True

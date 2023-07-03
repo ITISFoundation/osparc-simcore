@@ -557,6 +557,9 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/api-server.bash test
+      - name: OAS backwards compatibility check
+        if: always()
+        run: ./ci/github/unit-testing/api-server.bash openapi-diff
       - uses: codecov/codecov-action@v3.1.4
         with:
           flags: unittests #optional

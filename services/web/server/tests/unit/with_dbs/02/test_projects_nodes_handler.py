@@ -117,13 +117,51 @@ async def test_get_wrong_node_raises_not_found_error(
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
         (UserRole.GUEST, web.HTTPForbidden),
         (UserRole.USER, web.HTTPForbidden),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPForbidden),
     ],
 )
-async def test_replace_node_resources(
+async def test_replace_node_resources_is_forbidden_by_default(
     client: TestClient,
     user_project: dict[str, Any],
     expected: type[web.HTTPException],
+):
+    assert client.app
+    for node_id in user_project["workbench"]:
+        url = client.app.router["replace_node_resources"].url_for(
+            project_id=user_project["uuid"], node_id=node_id
+        )
+        response = await client.put(
+            f"{url}",
+            json=ServiceResourcesDictHelpers.create_jsonable(
+                ServiceResourcesDictHelpers.Config.schema_extra["examples"][0]
+            ),
+        )
+        data, error = await assert_status(response, expected)
+        if data:
+            assert not error
+            node_resources = parse_obj_as(ServiceResourcesDict, data)
+            assert node_resources
+            assert DEFAULT_SINGLE_SERVICE_NAME in node_resources
+            assert (
+                node_resources
+                == ServiceResourcesDictHelpers.Config.schema_extra["examples"][0]
+            )
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPForbidden),
+        (UserRole.USER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk),
+    ],
+)
+async def test_replace_node_resources_is_ok_if_explicitly_authorized(
+    client: TestClient,
+    user_project: dict[str, Any],
+    expected: type[web.HTTPException],
+    with_permitted_override_services_specifications: None,
 ):
     assert client.app
     for node_id in user_project["workbench"]:

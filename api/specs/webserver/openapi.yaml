@@ -129,6 +129,9 @@ paths:
   /me/notifications/{notification_id}:
     $ref: "./openapi-users.yaml#/paths/~1me~1notifications~1{notification_id}"
 
+  /me/permissions:
+    $ref: "./openapi-users.yaml#/paths/~1me~1permissions"
+
   # GROUP SETTINGS ------------------------------------------------------------------
 
   /groups:

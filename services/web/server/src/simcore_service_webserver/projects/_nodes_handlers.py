@@ -52,6 +52,7 @@ from ._nodes_api import NodeScreenshot, fake_screenshots_factory
 from .db import ProjectDBAPI
 from .exceptions import (
     NodeNotFoundError,
+    ProjectNodeResourcesInsufficientRightsError,
     ProjectNodeResourcesInvalidError,
     ProjectNotFoundError,
     ProjectStartsTooManyDynamicNodes,
@@ -355,16 +356,22 @@ async def replace_node_resources(request: web.Request) -> web.Response:
     body = await parse_request_body_as(ServiceResourcesDict, request)
 
     # ensure the project exists
-    await projects_api.get_project_for_user(
+    project = await projects_api.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
     )
+    if f"{path_params.node_id}" not in project["workbench"]:
+        raise NodeNotFoundError(f"{path_params.project_id}", f"{path_params.node_id}")
     try:
         new_node_resources = await projects_api.update_project_node_resources(
             request.app,
-            path_params.project_id,
+            user_id=req_ctx.user_id,
+            project_id=path_params.project_id,
             node_id=path_params.node_id,
+            service_key=project["workbench"][f"{path_params.node_id}"]["key"],
+            service_version=project["workbench"][f"{path_params.node_id}"]["version"],
+            product_name=req_ctx.product_name,
             resources=body,
         )
 
@@ -374,7 +381,13 @@ async def replace_node_resources(request: web.Request) -> web.Response:
             reason=f"{exc}",
             text=f"{exc}",
             content_type=MIMETYPE_APPLICATION_JSON,
-        )
+        ) from exc
+    except ProjectNodeResourcesInsufficientRightsError as exc:
+        raise web.HTTPForbidden(
+            reason=f"{exc}",
+            text=f"{exc}",
+            content_type=MIMETYPE_APPLICATION_JSON,
+        ) from exc
 
 
 class _ServicesAccessQuery(BaseModel):
