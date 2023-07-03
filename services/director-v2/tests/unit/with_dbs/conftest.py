@@ -197,12 +197,10 @@ def cluster(
             access_rights_in_db = {}
             for row in conn.execute(
                 sa.select(
-                    [
-                        cluster_to_groups.c.gid,
-                        cluster_to_groups.c.read,
-                        cluster_to_groups.c.write,
-                        cluster_to_groups.c.delete,
-                    ]
+                    cluster_to_groups.c.gid,
+                    cluster_to_groups.c.read,
+                    cluster_to_groups.c.write,
+                    cluster_to_groups.c.delete,
                 )
                 .select_from(clusters.join(cluster_to_groups))
                 .where(clusters.c.id == created_cluster.id)
