@@ -68,7 +68,6 @@ from simcore_service_director_v2.models.domains.comp_runs import MetadataDict
 from simcore_service_director_v2.models.domains.comp_tasks import Image
 from simcore_service_director_v2.models.schemas.services import NodeRequirements
 from simcore_service_director_v2.modules.dask_client import DaskClient, TaskHandlers
-from simcore_service_director_v2.utils.dask import compute_task_labels
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -471,13 +470,8 @@ def comp_run_metadata(faker: Faker) -> MetadataDict:
 
 
 @pytest.fixture
-def task_labels(
-    user_id: UserID,
-    project_id: ProjectID,
-    node_id: NodeID,
-    comp_run_metadata: MetadataDict,
-) -> ContainerLabelsDict:
-    return compute_task_labels(user_id, project_id, node_id, comp_run_metadata)
+def task_labels(comp_run_metadata: MetadataDict) -> ContainerLabelsDict:
+    return comp_run_metadata
 
 
 async def test_send_computation_task(
@@ -539,7 +533,12 @@ async def test_send_computation_task(
             fake_sidecar_fct,
             expected_annotations=image_params.expected_annotations,
             expected_envs={},
-            expected_labels=task_labels,
+            expected_labels=task_labels
+            | {
+                "user_id": f"{user_id}",
+                "study_id": f"{project_id}",
+                "uuid": f"{node_id}",
+            },  # type: ignore
         ),
         metadata=comp_run_metadata,
     )
