@@ -80,7 +80,7 @@ async def list_containers(
         )
 
         tracked_containers_api_model.append(
-            ContainerGet(
+            ContainerGet.construct(
                 project_uuid=container.project_uuid,
                 project_name=container.project_name,
                 node_uuid=container.node_uuid,

@@ -3,7 +3,6 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 from fastapi_pagination.api import create_page
-from fastapi_pagination.bases import AbstractPage
 from models_library.api_schemas_webserver.resource_usage import ContainerGet
 
 from ..models.pagination import LimitOffsetPage, LimitOffsetParamsWithDefault
@@ -28,7 +27,7 @@ async def list_containers(
         ContainersPage,
         Depends(resource_tracker_container_service.list_containers),
     ],
-) -> AbstractPage[ContainerGet]:
+):
     page = create_page(
         containers_page.items,
         total=containers_page.total,

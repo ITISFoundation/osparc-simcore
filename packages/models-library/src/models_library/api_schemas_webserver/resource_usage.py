@@ -26,6 +26,3 @@ class ContainerGet(BaseModel):
     processors: float
     core_hours: float
     status: ContainerStatus
-
-    class Config:
-        validation = False
