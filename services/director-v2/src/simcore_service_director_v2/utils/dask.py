@@ -493,7 +493,7 @@ def check_communication_with_scheduler_is_open(client: distributed.Client):
         and client.scheduler_comm.comm is not None
         and client.scheduler_comm.comm.closed()
     ):
-        raise ComputationalBackendNotConnectedError()
+        raise ComputationalBackendNotConnectedError
 
 
 def check_scheduler_status(client: distributed.Client):
@@ -502,7 +502,7 @@ def check_scheduler_status(client: distributed.Client):
         _logger.error(
             "The computational backend is not connected!",
         )
-        raise ComputationalBackendNotConnectedError()
+        raise ComputationalBackendNotConnectedError
 
 
 _LARGE_NUMBER_OF_WORKERS: Final[int] = 10000
@@ -621,5 +621,4 @@ async def wrap_client_async_routine(
     """Dask async behavior does not go well with Pylance as it returns
     a union of types. this wrapper makes both mypy and pylance happy"""
     assert client_coroutine  # nosec
-    ret = await client_coroutine
-    return ret
+    return await client_coroutine
