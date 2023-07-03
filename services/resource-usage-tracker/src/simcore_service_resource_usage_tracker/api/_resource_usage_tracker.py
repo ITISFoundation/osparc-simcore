@@ -30,8 +30,8 @@ async def list_containers(
     ],
 ) -> AbstractPage[ContainerGet]:
     page = create_page(
-        containers_page[0],
-        total=containers_page[1],
-        page_params=page_params,
+        containers_page.items,
+        total=containers_page.total,
+        params=page_params,
     )
     return page

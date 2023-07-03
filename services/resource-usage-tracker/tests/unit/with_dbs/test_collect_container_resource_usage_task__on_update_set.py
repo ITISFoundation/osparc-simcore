@@ -152,21 +152,21 @@ async def test_collect_container_resource_usage_task(
     assert len(db_rows) == 1
 
     assert (
-        random_promql_output_generator["max_float"] == db_rows[0][8]
+        random_promql_output_generator["max_float"] == db_rows[0][7]
     )  # <-- container_cpu_usage_seconds_total
     assert (
         arrow.get(random_promql_output_generator["min_timestamp"]).datetime
-        == db_rows[0][9]
+        == db_rows[0][8]
     )  # <-- prometheus_created
     assert (
         arrow.get(random_promql_output_generator["max_timestamp"]).datetime
-        == db_rows[0][10]
+        == db_rows[0][9]
     )  # <-- prometheus_last_scraped
-    assert f"{project_uuid}" == db_rows[0][3]  # <-- project_uuid
+    assert f"{project_uuid}" == db_rows[0][2]  # <-- project_uuid
     node_uuid_ = list(project_db["workbench"].keys())[0]
-    assert node_uuid_ == db_rows[0][12]  # <-- node_uuid
+    assert node_uuid_ == db_rows[0][11]  # <-- node_uuid
     assert (
-        project_db["workbench"][node_uuid_]["label"] == db_rows[0][13]
+        project_db["workbench"][node_uuid_]["label"] == db_rows[0][12]
     )  # <-- node_label
-    assert project_db["name"] == db_rows[0][17]  # <-- project_name
-    assert user_db["email"] == db_rows[0][18]  # <-- user_email
+    assert project_db["name"] == db_rows[0][16]  # <-- project_name
+    assert user_db["email"] == db_rows[0][17]  # <-- user_email

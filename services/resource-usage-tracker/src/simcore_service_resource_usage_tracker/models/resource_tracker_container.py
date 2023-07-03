@@ -8,14 +8,14 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import BaseModel, PositiveInt
+from models_library.utils.pydantic_tools_extension import parse_obj_or_none
+from pydantic import BaseModel, PositiveInt, validator
 
 # Scraped from prometheus
 
 
 class ContainerScrapedResourceUsageMetric(BaseModel):
     container_id: str
-    image: str
     user_id: UserID
     user_email: str | None
     product_name: ProductName
@@ -31,6 +31,26 @@ class ContainerScrapedResourceUsageMetric(BaseModel):
     service_settings_limit_memory_bytes: int | None
     service_key: ServiceKey
     service_version: ServiceVersion
+
+    @validator("service_settings_reservation_nano_cpus", pre=True)
+    @classmethod
+    def service_settings_reservation_nano_cpus_to_object_or_none(cls, v):
+        return parse_obj_or_none(int, v)
+
+    @validator("service_settings_reservation_memory_bytes", pre=True)
+    @classmethod
+    def service_settings_reservation_memory_bytes_to_object_or_none(cls, v):
+        return parse_obj_or_none(int, v)
+
+    @validator("service_settings_limit_nano_cpus", pre=True)
+    @classmethod
+    def fservice_settings_limit_nano_cpus_to_object(cls, v):
+        return parse_obj_or_none(int, v)
+
+    @validator("service_settings_limit_memory_bytes", pre=True)
+    @classmethod
+    def service_settings_limit_memory_bytes_to_object_or_none(cls, v):
+        return parse_obj_or_none(int, v)
 
 
 class ContainerScrapedResourceUsageValues(BaseModel):

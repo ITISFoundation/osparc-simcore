@@ -34,7 +34,6 @@ class ResourceTrackerRepository(BaseRepository):
         async with self.db_engine.begin() as conn:
             insert_stmt = pg_insert(resource_tracker_container).values(
                 container_id=data.container_id,
-                image=data.image,
                 user_id=data.user_id,
                 user_email=data.user_email,
                 project_uuid=f"{data.project_uuid}",

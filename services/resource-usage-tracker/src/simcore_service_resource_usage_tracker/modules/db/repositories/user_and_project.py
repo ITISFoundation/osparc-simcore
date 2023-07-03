@@ -11,7 +11,7 @@ from ._base import BaseRepository
 _logger = logging.getLogger(__name__)
 
 
-class OSparcRepository(BaseRepository):
+class UserAndProjectRepository(BaseRepository):
     async def get_user_email(self, user_id: UserID) -> str | None:
         async with self.db_engine.connect() as conn:
             result = await conn.execute(

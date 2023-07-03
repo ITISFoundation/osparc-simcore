@@ -17,8 +17,8 @@ from simcore_service_resource_usage_tracker.modules.prometheus import (
 )
 
 from .models.resource_tracker_container import ContainerScrapedResourceUsage
-from .modules.db.repositories.osparc import OSparcRepository
 from .modules.db.repositories.resource_tracker import ResourceTrackerRepository
+from .modules.db.repositories.user_and_project import UserAndProjectRepository
 
 _logger = logging.getLogger(__name__)
 
@@ -52,10 +52,6 @@ def _prometheus_sync_client_custom_query(
     return data
 
 
-def _to_int_or_none(value) -> int | None:
-    return int(value) if value else None
-
-
 def _build_cache_key_user_id(fct, *args):
     return f"{fct.__name__}_{args[1]}"
 
@@ -65,14 +61,16 @@ def _build_cache_key_project_and_node_id(fct, *args):
 
 
 @cached(ttl=_TTL, key_builder=_build_cache_key_user_id)
-async def _get_user_email(osparc_repo: OSparcRepository, user_id: int) -> str | None:
+async def _get_user_email(
+    osparc_repo: UserAndProjectRepository, user_id: int
+) -> str | None:
     user_email: str | None = await osparc_repo.get_user_email(user_id)
     return user_email
 
 
 @cached(ttl=_TTL, key_builder=_build_cache_key_project_and_node_id)
 async def _get_project_and_node_names(
-    osparc_repo: OSparcRepository, project_uuid: ProjectID, node_uuid: NodeID
+    osparc_repo: UserAndProjectRepository, project_uuid: ProjectID, node_uuid: NodeID
 ) -> tuple[str | None, str | None]:
     if output := await osparc_repo.get_project_name_and_workbench(project_uuid):
         project_name, project_workbench = output
@@ -82,7 +80,7 @@ async def _get_project_and_node_names(
 
 async def _scrape_container_resource_usage(
     prometheus_client: PrometheusConnect,
-    osparc_repo: OSparcRepository,
+    osparc_repo: UserAndProjectRepository,
     image_regex: str,
     scrape_timestamp: datetime = datetime.now(tz=timezone.utc),
 ) -> list[ContainerScrapedResourceUsage]:
@@ -163,24 +161,19 @@ async def _scrape_container_resource_usage(
 
         container_resource_usage = ContainerScrapedResourceUsage(
             container_id=metric["id"],
-            image=metric["image"],
             user_id=metric["container_label_user_id"],
             product_name=metric["container_label_product_name"],
             project_uuid=metric["container_label_study_id"],
-            service_settings_reservation_nano_cpus=_to_int_or_none(
-                reservation_nano_cpus
-            ),
-            service_settings_reservation_memory_bytes=_to_int_or_none(
-                reservation_memory_bytes
-            ),
+            service_settings_reservation_nano_cpus=reservation_nano_cpus,
+            service_settings_reservation_memory_bytes=reservation_memory_bytes,
             service_settings_reservation_additional_info={},
             container_cpu_usage_seconds_total=last_value[1],
             prometheus_created=arrow.get(first_value[0]),
             prometheus_last_scraped=arrow.get(last_value[0]),
             node_uuid=metric["container_label_uuid"],
             instance=metric.get("instance", None),
-            service_settings_limit_nano_cpus=_to_int_or_none(limit_nano_cpus),
-            service_settings_limit_memory_bytes=_to_int_or_none(limit_memory_bytes),
+            service_settings_limit_nano_cpus=limit_nano_cpus,
+            service_settings_limit_memory_bytes=limit_memory_bytes,
             project_name=project_name,
             node_label=node_label,
             user_email=user_email,
@@ -230,7 +223,7 @@ def _prepare_prom_query_parameters(
 async def collect_container_resource_usage(
     prometheus_client: PrometheusConnect,
     resource_tracker_repo: ResourceTrackerRepository,
-    osparc_repo: OSparcRepository,
+    osparc_repo: UserAndProjectRepository,
     machine_fqdn: str,
 ) -> None:
     prometheus_last_scraped_timestamp: datetime | None = (
@@ -274,7 +267,7 @@ async def collect_container_resource_usage_task(app: FastAPI) -> None:
     await collect_container_resource_usage(
         get_prometheus_api_client(app),
         ResourceTrackerRepository(db_engine=app.state.engine),
-        OSparcRepository(
+        UserAndProjectRepository(
             db_engine=app.state.engine
         ),  # potencionally, will point to different database in the future
         app.state.settings.MACHINE_FQDN,

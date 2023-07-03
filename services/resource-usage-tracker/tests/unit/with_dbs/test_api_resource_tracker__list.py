@@ -40,10 +40,9 @@ def mocked_setup_prometheus_api_client(mocker: MockerFixture):
 
 
 def random_resource_tracker_container(**overrides) -> dict[str, Any]:
-    """Generates random fake data projects DATABASE table"""
+    """Generates random fake data resource tracker DATABASE table"""
     data = dict(
         container_id=FAKE.uuid4(),
-        image="registry.osparc.io/simcore/services/dynamic/jupyter-smash:3.0.7",
         user_id=FAKE.pyint(),
         project_uuid=FAKE.uuid4(),
         product_name="osparc",

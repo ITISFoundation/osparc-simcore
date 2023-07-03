@@ -20,12 +20,6 @@ resource_tracker_container = sa.Table(
         doc="Refers to container id scraped via Prometheus",
     ),
     sa.Column(
-        "image",
-        sa.String,
-        nullable=False,
-        doc="image label scraped via Prometheus (taken from container labels), ex. registry.osparc.io/simcore/services/dynamic/jupyter-smash:3.0.9",
-    ),
-    sa.Column(
         "user_id",
         sa.BigInteger,
         nullable=False,
