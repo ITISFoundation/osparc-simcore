@@ -211,18 +211,27 @@ def mocked_directorv2_service_api_base(
 
     # pylint: disable=not-context-manager
     with respx.mock(
-        base_url=settings.API_SERVER_DIRECTOR_V2.api_base_url,
+        base_url=settings.API_SERVER_DIRECTOR_V2.base_url,
         assert_all_called=False,
         assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as respx_mock:
+
         assert openapi
+        assert (
+            openapi["paths"]["/"]["get"]["operationId"] == "check_service_health__get"
+        )
+
+        respx_mock.get(path="/", name="check_service_health__get").respond(
+            status.HTTP_200_OK,
+            json=openapi["components"]["schemas"]["HealthCheckGet"]["example"],
+        )
 
         yield respx_mock
 
 
 @pytest.fixture
 def mocked_webserver_service_api_base(
-    app: FastAPI, storage_service_openapi_specs: dict[str, Any]
+    app: FastAPI, webserver_service_openapi_specs: dict[str, Any]
 ) -> Iterator[MockRouter]:
     """
     Creates a respx.mock to capture calls to webserver API
@@ -232,7 +241,7 @@ def mocked_webserver_service_api_base(
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_WEBSERVER
 
-    openapi = deepcopy(storage_service_openapi_specs)
+    openapi = deepcopy(webserver_service_openapi_specs)
     assert Version(openapi["info"]["version"]).major == 0
 
     # pylint: disable=not-context-manager
@@ -251,10 +260,10 @@ def mocked_webserver_service_api_base(
             ]["schema"]["properties"]["data"]["example"]
         }
 
-        respx_mock.get(path="/v0/", name="healthcheck_readiness_probe").respond(
+        respx_mock.get(path="/", name="healthcheck_readiness_probe").respond(
             status.HTTP_200_OK, json=response_body
         )
-        respx_mock.get(path="/v0/health", name="healthcheck_liveness_probe").respond(
+        respx_mock.get(path="/health", name="healthcheck_liveness_probe").respond(
             status.HTTP_200_OK, json=response_body
         )
 
@@ -328,6 +337,12 @@ def mocked_catalog_service_api_base(
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
-        respx_mock.get("/v0/meta").respond(200, json=schemas["Meta"]["example"])
+        respx_mock.get("/v0/").respond(
+            status.HTTP_200_OK,
+            text="simcore_service_catalog.api.routes.health@2023-07-03T12:59:12.024551+00:00",
+        )
+        respx_mock.get("/v0/meta").respond(
+            status.HTTP_200_OK, json=schemas["Meta"]["example"]
+        )
 
         yield respx_mock

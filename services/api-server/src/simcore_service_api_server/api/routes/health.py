@@ -23,7 +23,12 @@ async def check_service_health():
     return f"{__name__}@{datetime.datetime.now(tz=datetime.timezone.utc).isoformat()}"
 
 
-@router.get("/state", include_in_schema=False)
+@router.get(
+    "/state",
+    include_in_schema=False,
+    response_model=AppStatusCheck,
+    response_model_exclude_unset=True,
+)
 async def get_service_state(
     catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
@@ -42,18 +47,14 @@ async def get_service_state(
         return_exceptions=False,
     )
 
-    current_status = AppStatusCheck(
+    return AppStatusCheck(
         app_name=PROJECT_NAME,
         version=API_VERSION,
         services={
             api.service_name: {
                 "healthy": bool(is_healty),
-                "url": str(api.client.base_url) + api.health_check_path.lstrip("/"),
             }
             for api, is_healty in zip(apis, healths, strict=True)
         },
         url=url_for("get_service_state"),
     )
-    resp = current_status.dict(exclude_unset=True)
-    resp.update(docs_dev_url=url_for("swagger_ui_html"))
-    return resp
