@@ -48,7 +48,6 @@ from pydantic.networks import AnyUrl
 from servicelib.logging_utils import log_catch
 from settings_library.s3 import S3Settings
 from simcore_sdk.node_ports_v2 import FileLinkType
-from simcore_service_director_v2.models.domains.comp_runs import MetadataDict
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_attempt
@@ -60,6 +59,7 @@ from ..core.errors import (
     ComputationalBackendTaskResultsNotReadyError,
 )
 from ..core.settings import AppSettings, ComputationalBackendSettings
+from ..models.domains.comp_runs import MetadataDict
 from ..models.domains.comp_tasks import Image
 from ..models.schemas.clusters import ClusterDetails, Scheduler
 from ..modules.storage import StorageClient
@@ -303,8 +303,21 @@ class DaskClient:
                 node_id,
                 file_link_type=self.tasks_file_link_type,
             )
-            task_labels = compute_task_labels(user_id, project_id, node_id, metadata)
-            task_envs = compute_task_envs(node_image)
+            task_labels = await compute_task_labels(
+                self.app,
+                user_id=user_id,
+                project_id=project_id,
+                node_id=node_id,
+                metadata=metadata,
+            )
+            task_envs = await compute_task_envs(
+                self.app,
+                user_id=user_id,
+                project_id=project_id,
+                node_id=node_id,
+                node_image=node_image,
+                metadata=metadata,
+            )
 
             try:
                 assert self.app.state  # nosec
