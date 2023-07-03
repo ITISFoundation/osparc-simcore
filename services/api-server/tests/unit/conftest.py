@@ -18,6 +18,9 @@ from cryptography.fernet import Fernet
 from faker import Faker
 from fastapi import FastAPI, status
 from httpx._transports.asgi import ASGITransport
+from models_library.api_schemas_storage import HealthCheck
+from models_library.app_diagnostics import AppStatusCheck
+from models_library.generics import Envelope
 from moto.server import ThreadedMotoServer
 from packaging.version import Version
 from pydantic import HttpUrl, parse_obj_as
@@ -179,6 +182,17 @@ def webserver_service_openapi_specs(
 
 
 @pytest.fixture
+def storage_service_openapi_specs(
+    osparc_simcore_services_dir: Path,
+) -> dict[str, Any]:
+    openapi_path = (
+        osparc_simcore_services_dir
+        / "storage/src/simcore_service_storage/api/v0/openapi.yaml"
+    )
+    return yaml.safe_load(openapi_path.read_text())
+
+
+@pytest.fixture
 def catalog_service_openapi_specs(osparc_simcore_services_dir: Path) -> dict[str, Any]:
     openapi_path = osparc_simcore_services_dir / "catalog" / "openapi.json"
     return json.loads(openapi_path.read_text())
@@ -188,7 +202,7 @@ def catalog_service_openapi_specs(osparc_simcore_services_dir: Path) -> dict[str
 def mocked_directorv2_service_api_base(
     app: FastAPI,
     directorv2_service_openapi_specs: dict[str, Any],
-):
+) -> Iterator[MockRouter]:
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_DIRECTOR_V2
 
@@ -208,7 +222,7 @@ def mocked_directorv2_service_api_base(
 
 @pytest.fixture
 def mocked_webserver_service_api_base(
-    app: FastAPI, webserver_service_openapi_specs: dict[str, Any], faker: Faker
+    app: FastAPI, storage_service_openapi_specs: dict[str, Any]
 ) -> Iterator[MockRouter]:
     """
     Creates a respx.mock to capture calls to webserver API
@@ -218,7 +232,7 @@ def mocked_webserver_service_api_base(
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_WEBSERVER
 
-    openapi = deepcopy(webserver_service_openapi_specs)
+    openapi = deepcopy(storage_service_openapi_specs)
     assert Version(openapi["info"]["version"]).major == 0
 
     # pylint: disable=not-context-manager
@@ -242,6 +256,56 @@ def mocked_webserver_service_api_base(
         )
         respx_mock.get(path="/v0/health", name="healthcheck_liveness_probe").respond(
             status.HTTP_200_OK, json=response_body
+        )
+
+        yield respx_mock
+
+
+@pytest.fixture
+def mocked_storage_service_api_base(
+    app: FastAPI, storage_service_openapi_specs: dict[str, Any], faker: Faker
+) -> Iterator[MockRouter]:
+    """
+    Creates a respx.mock to capture calls to strage API
+    Includes only basic routes to check that the configuration is correct
+    IMPORTANT: This fixture shall be extended on a test bases
+    """
+    settings: ApplicationSettings = app.state.settings
+    assert settings.API_SERVER_STORAGE
+
+    openapi = deepcopy(storage_service_openapi_specs)
+    assert Version(openapi["info"]["version"]).major == 0
+
+    # pylint: disable=not-context-manager
+    with respx.mock(
+        base_url=settings.API_SERVER_STORAGE.base_url,
+        assert_all_called=False,
+        assert_all_mocked=True,
+    ) as respx_mock:
+        assert openapi["paths"]["/v0/"]["get"]["operationId"] == "health_check"
+        respx_mock.get(path="/v0/", name="health_check").respond(
+            status.HTTP_200_OK,
+            json=Envelope[HealthCheck](
+                data={
+                    "name": "storage",
+                    "status": "ok",
+                    "api_version": "1.0.0",
+                    "version": "1.0.0",
+                },
+            ).dict(),
+        )
+
+        assert openapi["paths"]["/v0/status"]["get"]["operationId"] == "get_status"
+        respx_mock.get(path="/v0/status", name="get_status").respond(
+            status.HTTP_200_OK,
+            json=Envelope[AppStatusCheck](
+                data={
+                    "app_name": "storage",
+                    "version": "1.0.0",
+                    "url": faker.url(),
+                    "diagnostics_url": faker.url(),
+                }
+            ).dict(),
         )
 
         yield respx_mock

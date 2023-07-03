@@ -41,10 +41,14 @@ CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 def openapi_specs(
     catalog_service_openapi_specs: dict[str, Any],
     webserver_service_openapi_specs: dict[str, Any],
+    storage_service_openapi_specs: dict[str, Any],
+    directorv2_service_openapi_specs: dict[str, Any],
 ) -> dict[str, Spec]:
     return {
         "catalog": create_spec(catalog_service_openapi_specs),
         "webserver": create_spec(webserver_service_openapi_specs),
+        "storage": create_spec(storage_service_openapi_specs),
+        "directorv2": create_spec(directorv2_service_openapi_specs),
     }
 
 
