@@ -174,8 +174,9 @@ async def parse_output_data(
             value_to_transfer = port_value
 
         try:
-            assert isinstance(port_key, PortKey)  # nosec
-            await (await ports.outputs)[port_key].set_value(value_to_transfer)
+            await (await ports.outputs)[cast(PortKey, port_key)].set_value(
+                value_to_transfer
+            )
         except ValidationError as err:
             ports_errors.extend(_get_port_validation_errors(port_key, err))
 
