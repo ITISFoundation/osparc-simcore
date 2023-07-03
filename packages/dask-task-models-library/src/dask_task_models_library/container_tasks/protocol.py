@@ -1,4 +1,4 @@
-from typing import Protocol
+from typing import Protocol, TypeAlias
 
 from models_library.basic_types import EnvVarKey
 from models_library.docker import DockerLabelKey
@@ -9,12 +9,12 @@ from settings_library.s3 import S3Settings
 from .docker import DockerBasicAuth
 from .io import TaskInputData, TaskOutputData, TaskOutputDataSchema
 
-ContainerImage = str
-ContainerTag = str
-LogFileUploadURL = AnyUrl
-ContainerCommands = list[str]
-ContainerEnvsDict = dict[EnvVarKey, str]
-ContainerLabelsDict = dict[DockerLabelKey, str]
+ContainerImage: TypeAlias = str
+ContainerTag: TypeAlias = str
+LogFileUploadURL: TypeAlias = AnyUrl
+ContainerCommands: TypeAlias = list[str]
+ContainerEnvsDict: TypeAlias = dict[EnvVarKey, str]
+ContainerLabelsDict: TypeAlias = dict[DockerLabelKey, str]
 
 
 class ContainerRemoteFct(Protocol):
