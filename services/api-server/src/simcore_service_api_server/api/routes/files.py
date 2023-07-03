@@ -2,7 +2,6 @@ import asyncio
 import datetime
 import io
 import logging
-from collections import deque
 from textwrap import dedent
 from typing import IO, Annotated
 from uuid import UUID
@@ -60,7 +59,7 @@ async def list_files(
     stored_files: list[StorageFileMetaData] = await storage_client.list_files(user_id)
 
     # Adapts storage API model to API model
-    files_meta: deque = deque()
+    all_files: list[File] = []
     for stored_file_meta in stored_files:
         try:
             assert stored_file_meta.file_id  # nosec
@@ -76,9 +75,9 @@ async def list_files(
             )
 
         else:
-            files_meta.append(file_meta)
+            all_files.append(file_meta)
 
-    return list(files_meta)
+    return all_files
 
 
 @router.get(
