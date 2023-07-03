@@ -1,8 +1,8 @@
 import asyncio
 import collections
 import logging
-from collections.abc import Awaitable, Callable, Coroutine, Iterable
-from typing import Any, Final, NoReturn, Optional, cast, get_args
+from collections.abc import Awaitable, Callable, Coroutine
+from typing import Any, Final, Generator, NoReturn, Optional, cast, get_args
 from uuid import uuid4
 
 import dask_gateway
@@ -514,7 +514,7 @@ def _can_task_run_on_worker(
 ) -> bool:
     def gen_check(
         task_resources: dict[str, Any], worker_resources: dict[str, Any]
-    ) -> Iterable[bool]:
+    ) -> Generator[bool, None, None]:
         for name, required_value in task_resources.items():
             if required_value is None:
                 yield True
