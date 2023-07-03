@@ -1,11 +1,12 @@
 import re
+from typing import Final
 
 from models_library.generated_models.docker_rest_api import Task
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.users import UserID
-from pydantic import BaseModel, ConstrainedStr, Field
+from pydantic import BaseModel, ByteSize, ConstrainedStr, Field
 
 from .basic_regex import DOCKER_GENERIC_TAG_KEY_RE, DOCKER_LABEL_KEY_REGEX
 
@@ -21,22 +22,33 @@ class DockerGenericTag(ConstrainedStr):
     regex: re.Pattern[str] | None = DOCKER_GENERIC_TAG_KEY_RE
 
 
+_SIMCORE_CONTAINER_PREFIX: Final[str] = "io.simcore.container."
+
+
 class SimcoreServiceDockerLabelKeys(BaseModel):
     # NOTE: in a next PR, this should be moved to packages models-library and used
     # all over, and aliases should use io.simcore.service.*
     # https://github.com/ITISFoundation/osparc-simcore/issues/3638
 
+    # The alias is for backwards compatibility, can be removed in a few sprints
     user_id: UserID = Field(..., alias="user_id")
     project_id: ProjectID = Field(..., alias="study_id")
     node_id: NodeID = Field(..., alias="uuid")
 
-    product_name: ProductName = "opsarc"
-    simcore_user_agent: str = ""
+    product_name: ProductName
+    simcore_user_agent: str
+
+    # None is for backwards compatibility, can be removed in a few sprints
+    memory_limit: ByteSize | None
+    cpu_limit: float | None
 
     def to_docker_labels(self) -> dict[str, str]:
         """returns a dictionary of strings as required by docker"""
         std_export = self.dict(by_alias=True)
-        return {k: f"{v}" for k, v in sorted(std_export.items())}
+        return {
+            f"{_SIMCORE_CONTAINER_PREFIX}{k.replace('_', '-')}": f"{v}"
+            for k, v in sorted(std_export.items())
+        }
 
     @classmethod
     def from_docker_task(cls, docker_task: Task) -> "SimcoreServiceDockerLabelKeys":
