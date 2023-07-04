@@ -36,6 +36,26 @@ will start the api-server in development-mode together with a postgres db initia
 - http://127.0.0.1:8000/docs: redoc documentation
 - http://127.0.0.1:8000/dev/docs: swagger type of documentation
 
+## Backwards compatibility of the server API
+
+```mermaid
+
+flowchart
+  direction LR
+  subgraph Development workflow
+    direction LR
+    subgraph Server
+      direction LR
+      A1(dev branch) .->  B1(master) .-> C1(staging) .-> D1(production)
+    end
+    subgraph Client
+      direction LR
+      A2(dev branch) .-> B2(master) .-> C2(staging) .-> D2(production)
+    end
+  end
+
+```
+
 ## References
 
 - [Design patterns for modern web APIs](https://blog.feathersjs.com/design-patterns-for-modern-web-apis-1f046635215) by D. Luecke
