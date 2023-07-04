@@ -51,7 +51,7 @@ test-ci: ## runs ci tests (i.e. w/o debug tools and with code coverage)
 	$(CURDIR)
 
 .PHONY: install-latest-python-osparc
-install-latest-python-osparc: ## install the latest python osparc package (the latest built wheels on ITISFoundation/osparc-simcore-clients master)
+install-latest-python-osparc: _check_venv_active ## install the latest python osparc package (the latest built wheels on ITISFoundation/osparc-simcore-clients master)
 	$(eval REPO := ITISFoundation/osparc-simcore-clients)
 	$(eval BRANCH := master)
 	$(eval WORKFLOW := publish-and-test-python-client)
