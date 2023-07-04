@@ -41,7 +41,7 @@ projects_metadata = sa.Table(
         JSONB,
         nullable=False,
         server_default=sa.text("'{}'::jsonb"),
-        doc="Free json for user to store her metadata",
+        doc="Free json for user to store her metadata.",
     ),
     # TIME STAMPS ----
     column_created_datetime(timezone=True),

@@ -33,12 +33,12 @@ async def get_project_job_metadata(request: web.Request) -> web.Response:
     raise NotImplementedError
 
 
-@routes.patch(
-    f"/{VTAG}/projects/{{project_id}}/job-metadata", name="create_project_job_metadata"
+@routes.put(
+    f"/{VTAG}/projects/{{project_id}}/job-metadata", name="replace_project_job_metadata"
 )
 @login_required
 @permission_required("project.create")
-async def update_project_job_metadata(request: web.Request) -> web.Response:
+async def replace_project_job_metadata(request: web.Request) -> web.Response:
     raise NotImplementedError
 
 
@@ -59,9 +59,9 @@ async def get_project_custom_metadata(request: web.Request) -> web.Response:
 
 @routes.put(
     f"/{VTAG}/projects/{{project_id}}/custom-metadata",
-    name="update_project_custom_metadata",
+    name="replace_project_custom_metadata",
 )
 @login_required
 @permission_required("project.update")
-async def update_project_custom_metadata(request: web.Request) -> web.Response:
+async def replace_project_custom_metadata(request: web.Request) -> web.Response:
     raise NotImplementedError

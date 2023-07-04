@@ -3,7 +3,8 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-from typing import Any, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
 from uuid import UUID
 
 import pytest
@@ -32,8 +33,9 @@ async def fake_project(
     connection: SAConnection,
     fake_user: RowProxy,
     create_fake_project: Callable[..., Awaitable[RowProxy]],
-):
+) -> RowProxy:
     project: RowProxy = await create_fake_project(connection, fake_user, hidden=True)
+    return project
 
 
 async def test_jobs_workflow(
