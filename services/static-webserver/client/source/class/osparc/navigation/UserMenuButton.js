@@ -161,7 +161,9 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       } else {
         this.getChildControl("preferences");
         this.getChildControl("organizations");
-        this.getChildControl("usage-overview");
+        if (osparc.data.Permissions.getInstance().canDo("usage.all.read")) {
+          this.getChildControl("usage-overview");
+        }
         this.getChildControl("clusters");
       }
       if (osparc.product.tutorial.Utils.getTutorial()) {
@@ -195,7 +197,9 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           } else {
             this.getChildControl("preferences");
             this.getChildControl("organizations");
-            this.getChildControl("usage-overview");
+            if (osparc.data.Permissions.getInstance().canDo("usage.all.read")) {
+              this.getChildControl("usage-overview");
+            }
             this.getChildControl("clusters");
           }
           this.getMenu().addSeparator();
