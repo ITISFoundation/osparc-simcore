@@ -131,10 +131,12 @@ class SimcoreS3DataManager(BaseDataManager):
                     bucket_name=fmd.bucket_name,
                     object_name=x.file_id,
                     user_id=fmd.user_id,
-                    # NOTE `created_at` is inherited from the directory,
-                    # since S3 does not provide it. This filed is
-                    # inaccurate!
-                    created_at=fmd.created_at,
+                    # NOTE: to ensure users have a consistent experience the
+                    # `created_at` field is inherited from the last_modified
+                    # coming from S3. This way if a file is created 1 month after the
+                    # creation of the directory, the file's creation date
+                    # will not be 1 month in the passed.
+                    created_at=x.last_modified,
                     file_id=x.file_id,
                     file_size=parse_obj_as(ByteSize, x.size),
                     last_modified=x.last_modified,
