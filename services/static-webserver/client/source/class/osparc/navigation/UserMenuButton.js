@@ -101,7 +101,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           break;
         case "usage-overview":
           control = new qx.ui.menu.Button(this.tr("Usage Overview"));
-          control.addListener("execute", () => osparc.component.reourceUsage.Overview.popUpInWindow(), this);
+          control.addListener("execute", () => osparc.component.resourceUsage.Overview.popUpInWindow(), this);
           this.getMenu().add(control);
           break;
         case "clusters":

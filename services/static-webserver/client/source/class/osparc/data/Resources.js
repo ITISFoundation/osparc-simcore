@@ -212,7 +212,7 @@ qx.Class.define("osparc.data.Resources", {
       "resourceUsage": {
         useCache: true,
         endpoints: {
-          get: {
+          getPage: {
             method: "GET",
             url: statics.API + "/resource-usage/containers?offset={offset}&limit={limit}"
           }

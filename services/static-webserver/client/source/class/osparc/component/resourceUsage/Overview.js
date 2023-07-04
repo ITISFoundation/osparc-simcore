@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.reourceUsage.Overview", {
+qx.Class.define("osparc.component.resourceUsage.Overview", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -27,9 +27,11 @@ qx.Class.define("osparc.component.reourceUsage.Overview", {
   },
 
   statics: {
+    ITEMS_PER_PAGE: 10,
+
     popUpInWindow: function() {
       const title = qx.locale.Manager.tr("Usage Overview");
-      const noteEditor = new osparc.component.reourceUsage.Overview();
+      const noteEditor = new osparc.component.resourceUsage.Overview();
       const win = osparc.ui.window.Window.popUpInWindow(noteEditor, title, 325, 256);
       win.center();
       win.open();
@@ -38,6 +40,8 @@ qx.Class.define("osparc.component.reourceUsage.Overview", {
   },
 
   members: {
+    __nextRequestParams: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -60,6 +64,46 @@ qx.Class.define("osparc.component.reourceUsage.Overview", {
 
     __fetchData: function() {
 
+    },
+
+
+    fetchComments: function(removeComments = true) {
+      const loadMoreButton = this.getChildControl("load-more-button");
+      loadMoreButton.show();
+      loadMoreButton.setFetching(true);
+
+      if (removeComments) {
+        this.getChildControl("comments-list").removeAll();
+      }
+
+      this.__getNextRequest()
+        .then(resp => {
+          const comments = resp["data"];
+          this.__addComments(comments);
+          this.__nextRequestParams = resp["_links"]["next"];
+          if (this.__nextRequestParams === null) {
+            loadMoreButton.exclude();
+          }
+        })
+        .finally(() => loadMoreButton.setFetching(false));
+    },
+
+    __getNextRequest: function() {
+      const params = {
+        url: {
+          offset: 0,
+          limit: osparc.component.resourceUsage.Overview.ITEMS_PER_PAGE
+        }
+      };
+      const nextRequestParams = this.__nextRequestParams;
+      if (nextRequestParams) {
+        params.url.offset = nextRequestParams.offset;
+        params.url.limit = nextRequestParams.limit;
+      }
+      const options = {
+        resolveWResponse: true
+      };
+      return osparc.data.Resources.fetch("resourceUsage", "getPage", params, undefined, options);
     }
   }
 });
