@@ -1,7 +1,7 @@
 """add metadata column
 
 Revision ID: 58b24613c3f7
-Revises: 52b5c2466605
+Revises: 0cdf095b10fe
 Create Date: 2023-06-29 15:48:37.110117+00:00
 
 """
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = "58b24613c3f7"
-down_revision = "52b5c2466605"
+down_revision = "0cdf095b10fe"
 branch_labels = None
 depends_on = None
 
