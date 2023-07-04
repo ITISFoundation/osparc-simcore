@@ -490,8 +490,8 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
     spec will be generated before starting the service.
     """
 
-    settings: Json[SimcoreServiceSettingsLabel] | None = Field(
-        ...,
+    settings: Json[SimcoreServiceSettingsLabel] = Field(
+        default_factory=dict,
         alias="simcore.service.settings",
         description=(
             "Json encoded. Contains setting like environment variables and "
