@@ -92,7 +92,7 @@ app = FastAPI(
     summary="Get datasets metadata",
 )
 async def get_datasets_metadata(location_id: LocationID, user_id: UserID):
-    """Returns the list of dataset meta-datas"""
+    """returns all the top level datasets a user has access to"""
 
 
 # handlers_files.py
@@ -108,7 +108,7 @@ async def get_datasets_metadata(location_id: LocationID, user_id: UserID):
 async def get_files_metadata_dataset(
     location_id: LocationID, dataset_id: str, user_id: UserID, expand_dirs: bool = True
 ):
-    """list of file meta-datas"""
+    """returns all the file meta data inside dataset with dataset_id"""
 
 
 @app.get(
@@ -145,7 +145,7 @@ async def synchronise_meta_data_table(
 async def get_files_metadata(
     location_id: LocationID, uuid_filter: str = "", expand_dirs: bool = True
 ):
-    """list of file meta-datas"""
+    """returns all the file meta data a user has access to (uuid_filter may be used)"""
 
 
 @app.get(
@@ -158,7 +158,7 @@ async def get_files_metadata(
 async def get_file_metadata(
     location_id: LocationID, file_id: StorageFileID, user_id: UserID
 ):
-    ...
+    """returns the file meta data of file_id if user_id has the rights to"""
 
 
 @app.get(
@@ -174,7 +174,7 @@ async def download_file(
     user_id: UserID,
     link_type: LinkType = LinkType.PRESIGNED,
 ):
-    """Returns a presigned link"""
+    """creates a download file link if user has the rights to"""
 
 
 @app.put(
@@ -191,7 +191,7 @@ async def upload_file(
     link_type: LinkType = LinkType.PRESIGNED,
     is_directory: bool = False,
 ):
-    """Return upload object"""
+    """creates one or more upload file links if user has the rights to, expects the client to complete/abort upload"""
 
 
 @app.post(
@@ -203,7 +203,8 @@ async def upload_file(
 async def abort_upload_file(
     location_id: LocationID, file_id: StorageFileID, user_id: UserID
 ):
-    """Asks the server to abort the upload and revert to the last valid version if any"""
+    """aborts an upload if user has the rights to, and reverts
+    to the latest version if available, else will delete the file"""
 
 
 @app.post(
@@ -219,7 +220,7 @@ async def complete_upload_file(
     file_id: StorageFileID,
     user_id: UserID,
 ):
-    """Asks the server to complete the upload"""
+    """completes an upload if the user has the rights to"""
 
 
 @app.post(
@@ -257,7 +258,7 @@ async def get_health():
     operation_id="get_status",
 )
 async def get_status():
-    ...
+    """returns the status of all the external dependencies"""
 
 
 # handlers_locations.py
@@ -271,7 +272,7 @@ async def get_status():
     summary="Deletes File",
 )
 async def delete_file(location_id: LocationID, file_id: StorageFileID, user_id: UserID):
-    ...
+    """deletes file if user has the rights to"""
 
 
 @app.post(
@@ -284,7 +285,7 @@ async def delete_file(location_id: LocationID, file_id: StorageFileID, user_id: 
 async def copy_as_soft_link(
     body_item: SoftCopyBody, file_id: StorageFileID, user_id: UserID
 ):
-    ...
+    """creates and returns a soft link"""
 
 
 # handlers_simcore_s3.py
@@ -298,7 +299,7 @@ async def copy_as_soft_link(
     operation_id="get_or_create_temporary_s3_access",
 )
 async def get_or_create_temporary_s3_access(user_id: UserID):
-    ...
+    """returns a set of S3 credentials"""
 
 
 @app.post(
@@ -309,7 +310,7 @@ async def get_or_create_temporary_s3_access(user_id: UserID):
     operation_id="copy_folders_from_project",
 )
 async def copy_folders_from_project(body_item: FoldersBody, user_id: UserID):
-    ...
+    """copies folders from project"""
 
 
 @app.delete(
@@ -322,7 +323,7 @@ async def copy_folders_from_project(body_item: FoldersBody, user_id: UserID):
 async def delete_folders_of_project(
     folder_id: str, user_id: UserID, node_id: NodeID | None = None
 ):
-    ...
+    """removes folders from a project"""
 
 
 @app.post(
@@ -333,7 +334,7 @@ async def delete_folders_of_project(
     operation_id="search_files_starting_with",
 )
 async def search_files_starting_with(user_id: UserID, startswith: str = ""):
-    ...
+    """search for files starting with `startswith` in the file_meta_data table"""
 
 
 # long_running_tasks.py
@@ -347,7 +348,7 @@ async def search_files_starting_with(user_id: UserID, startswith: str = ""):
     operation_id="list_tasks",
 )
 async def list_tasks():
-    ...
+    """list current long running tasks"""
 
 
 @app.get(
@@ -358,7 +359,7 @@ async def list_tasks():
     operation_id="get_task_status",
 )
 async def get_task_status(task_id: TaskId):
-    ...
+    """gets the status of the task"""
 
 
 @app.get(
@@ -369,7 +370,7 @@ async def get_task_status(task_id: TaskId):
     operation_id="get_task_result",
 )
 async def get_task_result(task_id: TaskId):
-    ...
+    """get result of the task"""
 
 
 @app.delete(
@@ -380,7 +381,7 @@ async def get_task_result(task_id: TaskId):
     operation_id="cancel_and_delete_task",
 )
 async def cancel_and_delete_task(task_id: TaskId):
-    ...
+    """cancels and removes the task"""
 
 
 if __name__ == "__main__":
