@@ -101,7 +101,7 @@ async def test_2fa_code_operations(client: TestClient):
     assert await get_2fa_code(client.app, email) is None
 
 
-@pytest.mark.acceptance_test
+@pytest.mark.acceptance_test()
 async def test_workflow_register_and_login_with_2fa(
     client: TestClient,
     db: AsyncpgStorage,

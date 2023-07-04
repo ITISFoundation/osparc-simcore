@@ -1,6 +1,9 @@
 from typing import Final
 
 MSG_2FA_CODE_SENT: Final[str] = "Code sent by SMS to {phone_number}"
+MSG_2FA_UNAVAILABLE_OEC: Final[
+    str
+] = "Currently we cannot use 2FA, please try again later ({error_code})"
 MSG_ACTIVATED: Final[str] = "Your account is activated"
 MSG_ACTIVATION_REQUIRED: Final[
     str
