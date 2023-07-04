@@ -193,9 +193,12 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
       const scrollThumbnails = this.getChildControl("scroll-thumbnails");
       scrollThumbnails.setSelectedNodeId(null);
 
-      const workbenchUIPreview = this.__getWorkbenchUIPreview();
-      const thumbnailViewerLayout = this.getChildControl("thumbnail-viewer-layout");
-      thumbnailViewerLayout.add(workbenchUIPreview);
+      // Do not add the preview if the study is in App Mode
+      if (!["guided", "app"].includes(this.__study.getUi())) {
+        const workbenchUIPreview = this.__getWorkbenchUIPreview();
+        const thumbnailViewerLayout = this.getChildControl("thumbnail-viewer-layout");
+        thumbnailViewerLayout.add(workbenchUIPreview);
+      }
     }
   }
 });
