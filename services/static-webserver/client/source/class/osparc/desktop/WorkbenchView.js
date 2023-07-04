@@ -1094,7 +1094,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
     },
 
-    __populateSecondPanelNode: function(node) {
+    __populateSecondPanelNode: async function(node) {
       this.__settingsPage.getChildControl("button").show();
       this.__outputsPage.getChildControl("button").show();
       if (![this.__settingsPage, this.__outputsPage].includes(this.getChildControl("side-panel-right-tabs").getSelection()[0])) {
@@ -1123,14 +1123,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       outputFilesBtn.addListener("execute", () => osparc.component.node.BaseNodeView.openNodeDataManager(node));
       this.__outputsPage.add(outputFilesBtn);
 
-      const showPage = this.__populateNodeOptionsPage(node);
+      const showPage = await this.__populateNodeOptionsPage(node);
       // if it's deprecated or retired show the LifeCycleView right away
       if (showPage && node.hasOutputs() && node.isDynamic() && (node.isDeprecated() || node.isRetired())) {
         this.getChildControl("side-panel-right-tabs").setSelection([this.__nodeOptionsPage]);
       }
     },
 
-    __populateNodeOptionsPage: function(node) {
+    __populateNodeOptionsPage: async function(node) {
       if (osparc.auth.Data.getInstance().isGuest()) {
         return false;
       }
@@ -1158,7 +1158,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
 
       if (
-        osparc.data.Permissions.getInstance().canDo("services.all.updateLimits") &&
+        await osparc.data.Permissions.getInstance().checkCanDo("override_services_specifications") &&
         (node.isComputational() || node.isDynamic())
       ) {
         const updateResourceLimitsView = new osparc.component.node.UpdateResourceLimitsView(node);

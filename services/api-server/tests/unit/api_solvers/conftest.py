@@ -11,7 +11,7 @@ import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI, status
-from models_library.projects import Project
+from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_simcore.helpers import faker_catalog
 from respx import MockRouter
@@ -28,7 +28,7 @@ def mocked_webserver_service_api(
     class _SideEffects:
         def __init__(self):
             # cached
-            self._projects: dict[str, Project] = {}
+            self._projects: dict[str, ProjectGet] = {}
 
         @staticmethod
         def get_body_as_json(request):
@@ -38,7 +38,14 @@ def mocked_webserver_service_api(
             task_id = faker.uuid4()
 
             project_create = self.get_body_as_json(request)
-            self._projects[task_id] = Project(**project_create)
+            self._projects[task_id] = ProjectGet.parse_obj(
+                {
+                    "creationDate": "2018-07-01T11:13:43Z",
+                    "lastChangeDate": "2018-07-01T11:13:43Z",
+                    "prjOwner": "owner@email.com",
+                    **project_create,
+                }
+            )
 
             return httpx.Response(
                 status.HTTP_202_ACCEPTED,
@@ -95,7 +102,6 @@ def mocked_catalog_service_api(
     mocked_catalog_service_api_base: MockRouter,
     catalog_service_openapi_specs: dict[str, Any],
 ) -> MockRouter:
-
     respx_mock = mocked_catalog_service_api_base
     openapi = deepcopy(catalog_service_openapi_specs)
     schemas = openapi["components"]["schemas"]

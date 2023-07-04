@@ -1,5 +1,6 @@
 import json
 import time
+from typing import Annotated
 
 from cryptography.fernet import Fernet
 from fastapi import Depends, FastAPI, HTTPException, status
@@ -7,13 +8,13 @@ from fastapi.requests import Request
 
 from ..._constants import MSG_BACKEND_SERVICE_UNAVAILABLE
 from ...core.settings import ApplicationSettings, WebServerSettings
-from ...plugins.webserver import AuthSession
+from ...services.webserver import AuthSession
 from .application import get_app, get_settings
 from .authentication import get_active_user_email
 
 
 def _get_settings(
-    app_settings: ApplicationSettings = Depends(get_settings),
+    app_settings: Annotated[ApplicationSettings, Depends(get_settings)],
 ) -> WebServerSettings:
     settings = app_settings.API_SERVER_WEBSERVER
     if not settings:
@@ -30,9 +31,9 @@ def _get_encrypt(request: Request) -> Fernet | None:
 
 
 def get_session_cookie(
-    identity: str = Depends(get_active_user_email),
-    settings: WebServerSettings = Depends(_get_settings),
-    fernet: Fernet | None = Depends(_get_encrypt),
+    identity: Annotated[str, Depends(get_active_user_email)],
+    settings: Annotated[WebServerSettings, Depends(_get_settings)],
+    fernet: Annotated[Fernet | None, Depends(_get_encrypt)],
 ) -> dict:
     # Based on aiohttp_session and aiohttp_security
     # SEE services/web/server/tests/unit/with_dbs/test_login.py
@@ -58,8 +59,8 @@ def get_session_cookie(
 
 
 def get_webserver_session(
-    app: FastAPI = Depends(get_app),
-    session_cookies: dict = Depends(get_session_cookie),
+    app: Annotated[FastAPI, Depends(get_app)],
+    session_cookies: Annotated[dict, Depends(get_session_cookie)],
 ) -> AuthSession:
     """
     Lifetime of AuthSession wrapper is one request because it needs different session cookies

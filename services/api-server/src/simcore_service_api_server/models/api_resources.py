@@ -22,7 +22,6 @@ from pydantic.types import ConstrainedStr
 #    "//calendar.googleapis.com/users/john smith/events/123"
 #
 #   This is the corresponding HTTP URL.
-#    "https://calendar.googleapis.com/v3/users/john%20smith/events/123"
 #
 # SEE https://tools.ietf.org/html/rfc3986#appendix-B
 #
@@ -67,9 +66,9 @@ def split_resource_name(resource_name: RelativeResourceName) -> list[str]:
 #
 class BaseResource(BaseModel):
     name: RelativeResourceName = Field(None, example="solvers/isolve/releases/1.2.3")
-    id: Any = Field(None, description="Resource ID", example="1.2.3")
+    id: Any = Field(None, description="Resource ID", example="1.2.3")  # noqa: A003
 
 
 class BaseCollection(BaseModel):
     name: RelativeResourceName = Field(None, example="solvers/isolve/releases")
-    id: Any = Field(None, description="Collection ID", example="releases")
+    id: Any = Field(None, description="Collection ID", example="releases")  # noqa: A003
