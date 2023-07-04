@@ -4,6 +4,7 @@ from collections import deque
 from typing import Any, cast
 
 from models_library.boot_options import BootOption, EnvVarKey
+from models_library.docker import _SIMCORE_CONTAINER_PREFIX
 from models_library.service_settings_labels import (
     ComposeSpecLabelDict,
     SimcoreServiceLabels,
@@ -112,14 +113,13 @@ def update_service_params_from_settings(
             ] = str(param.value)
         # REST-API compatible
         elif param.setting_type == "EndpointSpec":
-            if "Ports" in param.value:
-                if (
-                    isinstance(param.value["Ports"], list)
-                    and "TargetPort" in param.value["Ports"][0]
-                ):
-                    create_service_params["labels"]["port"] = create_service_params[
-                        "labels"
-                    ]["service_port"] = str(param.value["Ports"][0]["TargetPort"])
+            if "Ports" in param.value and (
+                isinstance(param.value["Ports"], list)
+                and "TargetPort" in param.value["Ports"][0]
+            ):
+                create_service_params["labels"]["port"] = create_service_params[
+                    "labels"
+                ]["service_port"] = str(param.value["Ports"][0]["TargetPort"])
 
         # placement constraints
         elif param.name == "constraints":  # python-API compatible
@@ -148,11 +148,17 @@ def update_service_params_from_settings(
                 ].extend(mount_settings)
 
     container_spec = create_service_params["task_template"]["ContainerSpec"]
-    # set labels for CPU and Memory limits
-    container_spec["Labels"]["nano_cpus_limit"] = str(
+    # set labels for CPU and Memory limits, for both service and container labels
+    container_spec["Labels"][f"{_SIMCORE_CONTAINER_PREFIX}cpu-limit"] = str(
         create_service_params["task_template"]["Resources"]["Limits"]["NanoCPUs"]
     )
-    container_spec["Labels"]["mem_limit"] = str(
+    create_service_params["labels"][f"{_SIMCORE_CONTAINER_PREFIX}cpu-limit"] = str(
+        create_service_params["task_template"]["Resources"]["Limits"]["NanoCPUs"]
+    )
+    container_spec["Labels"][f"{_SIMCORE_CONTAINER_PREFIX}memory-limit"] = str(
+        create_service_params["task_template"]["Resources"]["Limits"]["MemoryBytes"]
+    )
+    create_service_params["labels"][f"{_SIMCORE_CONTAINER_PREFIX}memory-limit"] = str(
         create_service_params["task_template"]["Resources"]["Limits"]["MemoryBytes"]
     )
 

@@ -3,8 +3,9 @@ from copy import deepcopy
 
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.basic_types import BootModeEnum, PortInt
+from models_library.docker import SimcoreServiceDockerLabelKeys
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
-from pydantic import parse_obj_as
+from pydantic import ByteSize, parse_obj_as
 from servicelib.json_serialization import json_dumps
 
 from ....core.settings import AppSettings, DynamicSidecarSettings
@@ -241,17 +242,26 @@ def get_dynamic_sidecar_spec(
         "endpoint_spec": {"Ports": ports} if ports else {},
         "labels": {
             "type": ServiceType.MAIN.value,  # required to be listed as an interactive service and be properly cleaned up
-            "user_id": f"{scheduler_data.user_id}",
             "port": f"{dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT}",
-            "study_id": f"{scheduler_data.project_id}",
             # the following are used for scheduling
+            # TODO: GitHK please take care of removing uuid, swarm_stack_name, need help here
             "uuid": f"{scheduler_data.node_uuid}",  # also needed for removal when project is closed
             "swarm_stack_name": dynamic_sidecar_settings.SWARM_STACK_NAME,  # required for listing services with uuid
             DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: scheduler_data.as_label_data(),
             "service_image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,
             "key": scheduler_data.key,
             "version": scheduler_data.version,
-        },
+        }
+        | SimcoreServiceDockerLabelKeys(
+            user_id=scheduler_data.user_id,
+            project_id=scheduler_data.project_id,
+            node_id=scheduler_data.node_uuid,
+            product_name=scheduler_data.product_name,
+            simcore_user_agent=scheduler_data.request_simcore_user_agent,
+            swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+            memory_limit=ByteSize(0),  # this should get overwritten
+            cpu_limit=0,  # this should get overwritten
+        ).to_docker_labels(),
         "name": scheduler_data.service_name,
         "networks": [{"Target": swarm_network_id}],
         "task_template": {
@@ -268,12 +278,16 @@ def get_dynamic_sidecar_spec(
                 "CapabilityAdd": [
                     "CAP_LINUX_IMMUTABLE",
                 ],
-                "Labels": {
-                    # NOTE: these labels get on the tasks and that is also useful to trace
-                    "user_id": f"{scheduler_data.user_id}",
-                    "study_id": f"{scheduler_data.project_id}",
-                    "uuid": f"{scheduler_data.node_uuid}",
-                },
+                "Labels": SimcoreServiceDockerLabelKeys(
+                    user_id=scheduler_data.user_id,
+                    project_id=scheduler_data.project_id,
+                    node_id=scheduler_data.node_uuid,
+                    product_name=scheduler_data.product_name,
+                    simcore_user_agent=scheduler_data.request_simcore_user_agent,
+                    swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+                    memory_limit=ByteSize(0),  # this should get overwritten
+                    cpu_limit=0,  # this should get overwritten
+                ).to_docker_labels(),
                 "Mounts": mounts,
                 "Secrets": [
                     {
