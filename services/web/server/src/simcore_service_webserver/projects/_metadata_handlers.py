@@ -1,3 +1,15 @@
+"""
+
+Design rationale:
+
+- Resource metadata/labels: https://cloud.google.com/apis/design/design_patterns#resource_labels
+	- named `metadata` instead of labels
+	- limit number of entries and depth? dict[str, st] ??
+- Singleton https://cloud.google.com/apis/design/design_patterns#singleton_resources
+	- the singleton is implicitly created or deleted when its parent is created or deleted
+	- Get and Update methods only
+"""
+
 from aiohttp import web
 
 from .._meta import api_version_prefix as VTAG
@@ -12,15 +24,6 @@ routes = web.RouteTableDef()
 #
 
 
-@routes.post(
-    f"/{VTAG}/projects/{{project_id}}/job-metadata", name="create_project_job_metadata"
-)
-@login_required
-@permission_required("project.create")
-async def create_project_job_metadata(request: web.Request) -> web.Response:
-    raise NotImplementedError
-
-
 @routes.get(
     f"/{VTAG}/projects/{{project_id}}/job-metadata", name="get_project_job_metadata"
 )
@@ -30,26 +33,18 @@ async def get_project_job_metadata(request: web.Request) -> web.Response:
     raise NotImplementedError
 
 
-@routes.get(f"/{VTAG}/projects/-/job-metadata", name="list_projects_job_metadata")
+@routes.patch(
+    f"/{VTAG}/projects/{{project_id}}/job-metadata", name="create_project_job_metadata"
+)
 @login_required
-@permission_required("project.read")
-async def list_projects_job_metadata(request: web.Request) -> web.Response:
+@permission_required("project.create")
+async def update_project_job_metadata(request: web.Request) -> web.Response:
     raise NotImplementedError
 
 
 #
 # projects/*/custom-metadata
 #
-
-
-@routes.post(
-    f"/{VTAG}/projects/{{project_id}}/custom-metadata",
-    name="create_project_custom_metadata",
-)
-@login_required
-@permission_required("project.create")
-async def create_project_custom_metadata(request: web.Request) -> web.Response:
-    raise NotImplementedError
 
 
 @routes.get(
@@ -62,21 +57,11 @@ async def get_project_custom_metadata(request: web.Request) -> web.Response:
     raise NotImplementedError
 
 
-@routes.patch(
+@routes.put(
     f"/{VTAG}/projects/{{project_id}}/custom-metadata",
     name="update_project_custom_metadata",
 )
 @login_required
 @permission_required("project.update")
 async def update_project_custom_metadata(request: web.Request) -> web.Response:
-    raise NotImplementedError
-
-
-@routes.delete(
-    f"/{VTAG}/projects/{{project_id}}/custom-metadata",
-    name="update_project_custom_metadata",
-)
-@login_required
-@permission_required("project.delete")
-async def delete_project_custom_metadata(request: web.Request) -> web.Response:
     raise NotImplementedError
