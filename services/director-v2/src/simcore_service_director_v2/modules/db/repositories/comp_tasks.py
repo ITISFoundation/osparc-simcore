@@ -148,7 +148,7 @@ async def _generate_task_image(
         data.update(node_requirements=_compute_node_requirements(node_resources))
         data.update(boot_mode=_compute_node_boot_mode(node_resources))
     if node_labels:
-        data.update(envs={})
+        data.update(envs=_compute_node_envs(node_labels))
     if node_extras and node_extras.container_spec:
         data.update(command=node_extras.container_spec.command)
     return Image.parse_obj(data)
