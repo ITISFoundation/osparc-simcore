@@ -491,7 +491,7 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
     """
 
     settings: Json[SimcoreServiceSettingsLabel] = Field(
-        ...,
+        default_factory=dict,
         alias="simcore.service.settings",
         description=(
             "Json encoded. Contains setting like environment variables and "
