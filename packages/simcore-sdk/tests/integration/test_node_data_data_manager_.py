@@ -156,6 +156,7 @@ async def test_valid_upload_download(
             node_uuid=node_uuid,
             file_or_folder=content_path,
             io_log_redirect_cb=None,
+            r_clone_settings=None,
             progress_bar=progress_bar,
         )
         assert progress_bar._continuous_progress_value == pytest.approx(2.0)
@@ -207,6 +208,7 @@ async def test_valid_upload_download_saved_to(
             file_or_folder=content_path,
             save_to=new_destination,
             io_log_redirect_cb=None,
+            r_clone_settings=None,
             progress_bar=progress_bar,
         )
         assert progress_bar._continuous_progress_value == pytest.approx(2)

@@ -259,6 +259,7 @@ class Port(BaseServiceIOModel):
                     file_to_key_map=self.file_to_key_map,
                     value=self.value,
                     io_log_redirect_cb=self._node_ports.io_log_redirect_cb,
+                    r_clone_settings=self._node_ports.r_clone_settings,
                     progress_bar=progress_bar,
                 )
 

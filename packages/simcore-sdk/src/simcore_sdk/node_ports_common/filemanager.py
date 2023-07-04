@@ -20,7 +20,7 @@ from models_library.generics import Envelope
 from models_library.projects_nodes_io import StorageFileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import ByteSize, parse_obj_as
+from pydantic import AnyUrl, ByteSize, parse_obj_as
 from servicelib.progress_bar import ProgressBarData
 from settings_library.r_clone import RCloneSettings
 from tenacity._asyncio import AsyncRetrying
@@ -32,7 +32,6 @@ from yarl import URL
 
 from ..node_ports_common.client_session_manager import ClientSessionContextManager
 from . import exceptions, r_clone, storage_client
-from .constants import SIMCORE_LOCATION
 from .file_io_utils import (
     LogRedirectCB,
     UploadableFileObject,
@@ -115,6 +114,25 @@ async def _complete_upload(
     )
 
 
+async def _resolve_location_id(
+    client_session: ClientSession | None,
+    user_id: UserID,
+    store_name: LocationName | None,
+    store_id: LocationID | None,
+) -> LocationID:
+    if store_name is None and store_id is None:
+        msg = f"both {store_name=} and {store_id=} are None"
+        raise exceptions.NodeportsException(msg)
+
+    if store_name is not None:
+        async with ClientSessionContextManager(client_session) as session:
+            store_id = await _get_location_id_from_location_name(
+                user_id, store_name, session
+            )
+    assert store_id is not None  # nosec
+    return store_id
+
+
 async def get_download_link_from_s3(
     *,
     user_id: UserID,
@@ -130,15 +148,10 @@ async def get_download_link_from_s3(
     :raises exceptions.StorageInvalidCall
     :raises exceptions.StorageServerIssue
     """
-    if store_name is None and store_id is None:
-        raise exceptions.NodeportsException(msg="both store name and store id are None")
-
     async with ClientSessionContextManager(client_session) as session:
-        if store_name is not None:
-            store_id = await _get_location_id_from_location_name(
-                user_id, store_name, session
-            )
-        assert store_id is not None  # nosec
+        store_id = await _resolve_location_id(
+            client_session, user_id, store_name, store_id
+        )
         file_link = await storage_client.get_download_file_link(
             session=session,
             file_id=s3_object,
@@ -159,15 +172,10 @@ async def get_upload_links_from_s3(
     client_session: ClientSession | None = None,
     file_size: ByteSize,
 ) -> tuple[LocationID, FileUploadSchema]:
-    if store_name is None and store_id is None:
-        raise exceptions.NodeportsException(msg="both store name and store id are None")
-
     async with ClientSessionContextManager(client_session) as session:
-        if store_name is not None:
-            store_id = await _get_location_id_from_location_name(
-                user_id, store_name, session
-            )
-        assert store_id is not None  # nosec
+        store_id = await _resolve_location_id(
+            client_session, user_id, store_name, store_id
+        )
         file_links = await storage_client.get_upload_file_links(
             session=session,
             file_id=s3_object,
@@ -179,7 +187,7 @@ async def get_upload_links_from_s3(
         return (store_id, file_links)
 
 
-async def download_file_from_s3(
+async def download_path_from_s3(
     *,
     user_id: UserID,
     store_name: LocationName | None,
@@ -188,12 +196,14 @@ async def download_file_from_s3(
     local_folder: Path,
     io_log_redirect_cb: LogRedirectCB | None,
     client_session: ClientSession | None = None,
+    r_clone_settings: RCloneSettings | None,
     progress_bar: ProgressBarData,
 ) -> Path:
     """Downloads a file from S3
 
     :param session: add app[APP_CLIENT_SESSION_KEY] session here otherwise default is opened/closed every call
     :type session: ClientSession, optional
+    :raises exceptions.NodeportsException
     :raises exceptions.S3InvalidPathError
     :raises exceptions.StorageInvalidCall
     :return: path to downloaded file
@@ -207,6 +217,22 @@ async def download_file_from_s3(
     )
 
     async with ClientSessionContextManager(client_session) as session:
+        store_id = await _resolve_location_id(
+            client_session, user_id, store_name, store_id
+        )
+        file_meta_data: FileMetaDataGet = await _get_file_meta_data(
+            user_id=user_id,
+            s3_object=s3_object,
+            store_id=store_id,
+            client_session=session,
+        )
+
+        if file_meta_data.is_directory and not await r_clone.is_r_clone_available(
+            r_clone_settings
+        ):
+            msg = f"Requested to download directory {s3_object}, but no rclone support was detected"
+            raise exceptions.NodeportsException(msg)
+
         # get the s3 link
         download_link = await get_download_link_from_s3(
             user_id=user_id,
@@ -214,20 +240,32 @@ async def download_file_from_s3(
             store_id=store_id,
             s3_object=s3_object,
             client_session=session,
-            link_type=LinkType.PRESIGNED,
+            link_type=(
+                LinkType.S3 if file_meta_data.is_directory else LinkType.PRESIGNED
+            ),
         )
 
         # the link contains the file name
         if not download_link:
             raise exceptions.S3InvalidPathError(s3_object)
 
-        return await download_file_from_link(
-            download_link,
-            local_folder,
-            client_session=session,
-            io_log_redirect_cb=io_log_redirect_cb,
-            progress_bar=progress_bar,
-        )
+        if file_meta_data.is_directory:
+            assert r_clone_settings  # nosec
+            await r_clone.sync_s3_to_local(
+                r_clone_settings,
+                progress_bar,
+                local_directory_path=local_folder,
+                download_s3_link=parse_obj_as(AnyUrl, download_link),
+            )
+            return local_folder
+        else:
+            return await download_file_from_link(
+                download_link,
+                local_folder,
+                client_session=session,
+                io_log_redirect_cb=io_log_redirect_cb,
+                progress_bar=progress_bar,
+            )
 
 
 async def download_file_from_link(
@@ -277,13 +315,13 @@ async def _abort_upload(
     log.warning("Upload aborted")
 
 
-async def upload_file(
+async def upload_path(
     *,
     user_id: UserID,
     store_id: LocationID | None,
     store_name: LocationName | None,
     s3_object: StorageFileID,
-    file_to_upload: Path | UploadableFileObject,
+    path_to_upload: Path | UploadableFileObject,
     io_log_redirect_cb: LogRedirectCB | None,
     client_session: ClientSession | None = None,
     r_clone_settings: RCloneSettings | None = None,
@@ -300,7 +338,7 @@ async def upload_file(
     """
     log.debug(
         "Uploading %s to %s:%s@%s",
-        f"{file_to_upload=}",
+        f"{path_to_upload=}",
         f"{store_id=}",
         f"{store_name=}",
         f"{s3_object=}",
@@ -309,13 +347,13 @@ async def upload_file(
     if not progress_bar:
         progress_bar = ProgressBarData(steps=1)
 
-    use_rclone = (
-        await r_clone.is_r_clone_available(r_clone_settings)
-        and store_id == SIMCORE_LOCATION
-        and isinstance(file_to_upload, Path)
-    )
+    is_directory: bool = isinstance(path_to_upload, Path) and path_to_upload.is_dir()
+    if is_directory and not await r_clone.is_r_clone_available(r_clone_settings):
+        msg = f"Requested to upload directory {path_to_upload}, but no rclone support was detected"
+        raise exceptions.NodeportsException(msg)
+
     if io_log_redirect_cb:
-        await io_log_redirect_cb(f"uploading {file_to_upload}, please wait...")
+        await io_log_redirect_cb(f"uploading {path_to_upload}, please wait...")
     async with ClientSessionContextManager(client_session) as session:
         upload_links = None
         try:
@@ -325,29 +363,31 @@ async def upload_file(
                 store_id=store_id,
                 s3_object=s3_object,
                 client_session=session,
-                link_type=LinkType.S3 if use_rclone else LinkType.PRESIGNED,
+                link_type=LinkType.S3 if is_directory else LinkType.PRESIGNED,
                 file_size=ByteSize(
-                    file_to_upload.stat().st_size
-                    if isinstance(file_to_upload, Path)
-                    else file_to_upload.file_size
+                    path_to_upload.stat().st_size
+                    if isinstance(path_to_upload, Path)
+                    else path_to_upload.file_size
                 ),
             )
             # NOTE: in case of S3 upload, there are no multipart uploads, so this remains empty
             uploaded_parts: list[UploadedPart] = []
-            if use_rclone:
+            if is_directory:
                 assert r_clone_settings  # nosec
-                assert isinstance(file_to_upload, Path)  # nosec
+                assert isinstance(path_to_upload, Path)  # nosec
+                assert len(upload_links.urls) > 0  # nosec
                 await r_clone.sync_local_to_s3(
-                    file_to_upload,
                     r_clone_settings,
-                    upload_links,
+                    progress_bar,
+                    local_directory_path=path_to_upload,
+                    upload_s3_link=upload_links.urls[0],
                 )
-                await progress_bar.update()
             else:
+                # uploading a file
                 uploaded_parts = await upload_file_to_presigned_links(
                     session,
                     upload_links,
-                    file_to_upload,
+                    path_to_upload,
                     num_retries=NodePortsSettings.create_from_envs().NODE_PORTS_IO_NUM_RETRY_ATTEMPTS,
                     io_log_redirect_cb=io_log_redirect_cb,
                     progress_bar=progress_bar,
@@ -369,8 +409,31 @@ async def upload_file(
                 await _abort_upload(session, upload_links, reraise_exceptions=False)
             raise
         if io_log_redirect_cb:
-            await io_log_redirect_cb(f"upload of {file_to_upload} complete.")
+            await io_log_redirect_cb(f"upload of {path_to_upload} complete.")
         return store_id, e_tag
+
+
+async def _get_file_meta_data(
+    user_id: UserID,
+    store_id: LocationID,
+    s3_object: StorageFileID,
+    client_session: ClientSession | None = None,
+) -> FileMetaDataGet:
+    async with ClientSessionContextManager(client_session) as session:
+        log.debug("Will request metadata for s3_object=%s", s3_object)
+
+        file_metadata: FileMetaDataGet = await storage_client.get_file_metadata(
+            session=session,
+            file_id=s3_object,
+            location_id=store_id,
+            user_id=user_id,
+        )
+        log.debug(
+            "Result for metadata s3_object=%s, result=%s",
+            s3_object,
+            f"{file_metadata=}",
+        )
+        return file_metadata
 
 
 async def entry_exists(
@@ -381,21 +444,10 @@ async def entry_exists(
 ) -> bool:
     """Returns True if metadata for s3_object is present"""
     try:
-        async with ClientSessionContextManager(client_session) as session:
-            log.debug("Will request metadata for s3_object=%s", s3_object)
-
-            file_metadata: FileMetaDataGet = await storage_client.get_file_metadata(
-                session=session,
-                file_id=s3_object,
-                location_id=store_id,
-                user_id=user_id,
-            )
-            log.debug(
-                "Result for metadata s3_object=%s, result=%s",
-                s3_object,
-                f"{file_metadata=}",
-            )
-            return bool(file_metadata.file_id == s3_object)
+        file_metadata: FileMetaDataGet = await _get_file_meta_data(
+            user_id, store_id, s3_object, client_session
+        )
+        return bool(file_metadata.file_id == s3_object)
     except exceptions.S3InvalidPathError as err:
         log.debug("Failed request metadata for s3_object=%s with %s", s3_object, err)
         return False

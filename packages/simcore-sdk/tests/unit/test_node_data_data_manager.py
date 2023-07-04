@@ -9,6 +9,7 @@ from shutil import copy, make_archive, unpack_archive
 from typing import Callable, Iterator
 
 import pytest
+from pytest_mock import MockerFixture
 from servicelib.progress_bar import ProgressBarData
 from simcore_sdk.node_data import data_manager
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
@@ -36,7 +37,7 @@ async def test_push_folder(
     user_id: int,
     project_id: str,
     node_uuid: str,
-    mocker,
+    mocker: MockerFixture,
     tmpdir: Path,
     create_files: Callable[..., list[Path]],
 ):
@@ -83,9 +84,9 @@ async def test_push_folder(
 
     mock_temporary_directory.assert_called_once()
     mock_filemanager.upload_file.assert_called_once_with(
-        file_to_upload=(test_compression_folder / f"{test_folder.stem}.zip"),
         r_clone_settings=None,
         io_log_redirect_cb=None,
+        path_to_upload=(test_compression_folder / f"{test_folder.stem}.zip"),
         s3_object=f"{project_id}/{node_uuid}/{test_folder.stem}.zip",
         store_id=SIMCORE_LOCATION,
         store_name=None,
@@ -143,7 +144,7 @@ async def test_push_file(
     mock_filemanager.upload_file.assert_called_once_with(
         r_clone_settings=None,
         io_log_redirect_cb=None,
-        file_to_upload=file_path,
+        path_to_upload=file_path,
         s3_object=f"{project_id}/{node_uuid}/{file_path.name}",
         store_id=SIMCORE_LOCATION,
         store_name=None,
@@ -192,7 +193,7 @@ async def test_pull_folder(
     mock_filemanager = mocker.patch(
         "simcore_sdk.node_data.data_manager.filemanager", spec=True
     )
-    mock_filemanager.download_file_from_s3.return_value = fake_zipped_folder
+    mock_filemanager.download_path_from_s3.return_value = fake_zipped_folder
     mock_temporary_directory = mocker.patch(
         "simcore_sdk.node_data.data_manager.TemporaryDirectory"
     )
@@ -201,23 +202,27 @@ async def test_pull_folder(
     )
 
     async with ProgressBarData(steps=1) as progress_bar:
+        # note this wil be pulling the folder as a zipped file
+        # TODO: we need to add a test to also pull the folder via r_clone
         await data_manager.pull(
             user_id,
             project_id,
             node_uuid,
             test_folder,
             io_log_redirect_cb=None,
+            r_clone_settings=None,
             progress_bar=progress_bar,
         )
     assert progress_bar._continuous_progress_value == pytest.approx(1)
     mock_temporary_directory.assert_called_once()
-    mock_filemanager.download_file_from_s3.assert_called_once_with(
+    mock_filemanager.download_path_from_s3.assert_called_once_with(
         local_folder=test_compression_folder,
         s3_object=f"{project_id}/{node_uuid}/{test_folder.stem}.zip",
         store_id=SIMCORE_LOCATION,
         store_name=None,
         user_id=user_id,
         io_log_redirect_cb=None,
+        r_clone_settings=None,
         progress_bar=progress_bar._children[0],
     )
 
@@ -251,7 +256,7 @@ async def test_pull_file(
     mock_filemanager = mocker.patch(
         "simcore_sdk.node_data.data_manager.filemanager", spec=True
     )
-    mock_filemanager.download_file_from_s3.return_value = fake_downloaded_file
+    mock_filemanager.download_path_from_s3.return_value = fake_downloaded_file
     mock_temporary_directory = mocker.patch(
         "simcore_sdk.node_data.data_manager.TemporaryDirectory"
     )
@@ -263,16 +268,18 @@ async def test_pull_file(
             node_uuid,
             file_path,
             io_log_redirect_cb=None,
+            r_clone_settings=None,
             progress_bar=progress_bar,
         )
     assert progress_bar._continuous_progress_value == pytest.approx(1)
     mock_temporary_directory.assert_not_called()
-    mock_filemanager.download_file_from_s3.assert_called_once_with(
+    mock_filemanager.download_path_from_s3.assert_called_once_with(
         local_folder=file_path.parent,
         s3_object=f"{project_id}/{node_uuid}/{file_path.name}",
         store_id=SIMCORE_LOCATION,
         store_name=None,
         user_id=user_id,
         io_log_redirect_cb=None,
+        r_clone_settings=None,
         progress_bar=progress_bar,
     )

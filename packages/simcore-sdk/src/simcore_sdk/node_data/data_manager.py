@@ -41,12 +41,12 @@ async def _push_file(
         project_id, node_uuid, rename_to if rename_to else file_path
     )
     log.info("uploading %s to S3 to %s...", file_path.name, s3_object)
-    await filemanager.upload_file(
+    await filemanager.upload_path(
         user_id=user_id,
         store_id=store_id,
         store_name=None,
         s3_object=s3_object,
-        file_to_upload=file_path,
+        path_to_upload=file_path,
         r_clone_settings=r_clone_settings,
         io_log_redirect_cb=io_log_redirect_cb,
         progress_bar=progress_bar,
@@ -129,18 +129,20 @@ async def _pull_file(
     *,
     io_log_redirect_cb: LogRedirectCB | None,
     save_to: Path | None = None,
+    r_clone_settings: RCloneSettings | None,
     progress_bar: ProgressBarData,
 ) -> None:
     destination_path = file_path if save_to is None else save_to
     s3_object = _create_s3_object(project_id, node_uuid, file_path)
     log.info("pulling data from %s to %s...", s3_object, file_path)
-    downloaded_file = await filemanager.download_file_from_s3(
+    downloaded_file = await filemanager.download_path_from_s3(
         user_id=user_id,
         store_id=SIMCORE_LOCATION,
         store_name=None,
         s3_object=s3_object,
         local_folder=destination_path.parent,
         io_log_redirect_cb=io_log_redirect_cb,
+        r_clone_settings=r_clone_settings,
         progress_bar=progress_bar,
     )
     if downloaded_file != destination_path:
@@ -161,6 +163,7 @@ async def pull(
     *,
     io_log_redirect_cb: LogRedirectCB | None,
     save_to: Path | None = None,
+    r_clone_settings: RCloneSettings | None,
     progress_bar: ProgressBarData,
 ) -> None:
     if file_or_folder.is_file():
@@ -171,6 +174,7 @@ async def pull(
             file_or_folder,
             save_to=save_to,
             io_log_redirect_cb=io_log_redirect_cb,
+            r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
         )
     # we have a folder, so we need somewhere to extract it to
@@ -183,6 +187,7 @@ async def pull(
                 node_uuid,
                 archive_file,
                 io_log_redirect_cb=io_log_redirect_cb,
+                r_clone_settings=r_clone_settings,
                 progress_bar=sub_prog,
             )
 

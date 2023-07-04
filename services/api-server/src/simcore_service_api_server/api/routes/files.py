@@ -17,7 +17,7 @@ from pydantic import ValidationError, parse_obj_as
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 from simcore_sdk.node_ports_common.filemanager import UploadableFileObject
-from simcore_sdk.node_ports_common.filemanager import upload_file as storage_upload_file
+from simcore_sdk.node_ports_common.filemanager import upload_path as storage_upload_file
 from starlette.responses import RedirectResponse
 
 from ..._meta import API_VTAG
@@ -120,7 +120,7 @@ async def upload_file(
         s3_object=parse_obj_as(
             StorageFileID, f"api/{file_meta.id}/{file_meta.filename}"
         ),
-        file_to_upload=UploadableFileObject(file.file, file.filename, file_size),
+        path_to_upload=UploadableFileObject(file.file, file.filename, file_size),
         io_log_redirect_cb=None,
     )
 

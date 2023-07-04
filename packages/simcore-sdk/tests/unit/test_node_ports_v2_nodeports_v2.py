@@ -146,9 +146,9 @@ def e_tag() -> str:
 
 
 @pytest.fixture
-async def mock_upload_file(mocker, e_tag):
+async def mock_upload_path(mocker, e_tag):
     mock = mocker.patch(
-        "simcore_sdk.node_ports_common.filemanager.upload_file",
+        "simcore_sdk.node_ports_common.filemanager.upload_path",
         return_value=(0, e_tag),
         autospec=True,
     )
@@ -161,7 +161,7 @@ async def test_node_ports_set_file_by_keymap(
     user_id: int,
     project_id: str,
     node_uuid: str,
-    mock_upload_file,
+    mock_upload_path,
 ):
     db_manager = mock_db_manager(default_configuration)
 

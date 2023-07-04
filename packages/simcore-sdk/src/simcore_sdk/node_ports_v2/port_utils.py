@@ -176,18 +176,20 @@ async def pull_file_from_store(
     file_to_key_map: dict[str, str] | None,
     value: FileLink,
     io_log_redirect_cb: LogRedirectCB | None,
+    r_clone_settings: RCloneSettings | None,
     progress_bar: ProgressBarData | None,
 ) -> Path:
     log.debug("pulling file from storage %s", value)
     # do not make any assumption about s3_path, it is a str containing stuff that can be anything depending on the store
     local_path = data_items_utils.create_folder_path(key)
-    downloaded_file = await filemanager.download_file_from_s3(
+    downloaded_file = await filemanager.download_path_from_s3(
         user_id=user_id,
         store_id=value.store,
         store_name=None,
         s3_object=value.path,
         local_folder=local_path,
         io_log_redirect_cb=io_log_redirect_cb,
+        r_clone_settings=r_clone_settings,
         progress_bar=progress_bar or ProgressBarData(steps=1),
     )
     # if a file alias is present use it to rename the file accordingly
@@ -217,12 +219,12 @@ async def push_file_to_store(
     s3_object = data_items_utils.create_simcore_file_id(
         file, project_id, node_id, file_base_path=file_base_path
     )
-    store_id, e_tag = await filemanager.upload_file(
+    store_id, e_tag = await filemanager.upload_path(
         user_id=user_id,
         store_id=SIMCORE_LOCATION,
         store_name=None,
         s3_object=s3_object,
-        file_to_upload=file,
+        path_to_upload=file,
         r_clone_settings=r_clone_settings,
         io_log_redirect_cb=io_log_redirect_cb,
         progress_bar=progress_bar,
@@ -238,6 +240,7 @@ async def pull_file_from_download_link(
     io_log_redirect_cb: LogRedirectCB | None,
     progress_bar: ProgressBarData | None,
 ) -> Path:
+    # download 1 file from a link
     log.debug(
         "Getting value from download link [%s] with label %s",
         value.download_link,

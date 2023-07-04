@@ -263,6 +263,7 @@ async def task_restore_state(
                     io_log_redirect_cb=functools.partial(
                         post_sidecar_log_message, app, log_level=logging.INFO
                     ),
+                    r_clone_settings=settings.rclone_settings_for_nodeports,
                     progress_bar=root_progress,
                 )
                 for path in effective_paths
