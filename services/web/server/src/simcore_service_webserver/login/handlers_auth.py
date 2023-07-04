@@ -125,7 +125,7 @@ async def login(request: web.Request):
 
     # no phone
     if not user["phone"]:
-        response = envelope_response(
+        return envelope_response(
             # LoginNextPage
             {
                 "name": CODE_PHONE_NUMBER_REQUIRED,
@@ -139,7 +139,6 @@ async def login(request: web.Request):
             },
             status=web.HTTPAccepted.status_code,
         )
-        return response
 
     # create 2FA
     assert user["phone"]  # nosec
@@ -268,5 +267,4 @@ async def logout(request: web.Request) -> web.Response:
         await notify_user_logout(request.app, user_id, logout_.client_session_id)
         await forget(request, response)
 
-        return response
         return response
