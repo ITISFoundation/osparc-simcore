@@ -293,35 +293,31 @@ async def compute_service_log_file_upload_link(
 _UNDEFINED_METADATA: Final[str] = "undefined-label"
 
 
-async def compute_task_labels(
-    app: FastAPI,
+def compute_task_labels(
     *,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
     metadata: MetadataDict,
+    node_requirements: NodeRequirements,
 ) -> dict[str, str]:
     product_name = metadata.get("product_name", _UNDEFINED_METADATA)
-    standard_simcore_labels = SimcoreServiceDockerLabelKeys(
+    standard_simcore_labels = SimcoreServiceDockerLabelKeys.construct(
         user_id=user_id,
-        study_id=project_id,
-        uuid=node_id,
+        project_id=project_id,
+        node_id=node_id,
         product_name=product_name,
         simcore_user_agent=metadata.get("simcore_user_agent", _UNDEFINED_METADATA),
+        swarm_stack_name=_UNDEFINED_METADATA,  # NOTE: there is currently no need for this label in the comp backend
+        memory_limit=node_requirements.ram,
+        cpu_limit=node_requirements.cpu,
     ).to_docker_labels()
     all_labels = standard_simcore_labels | {
         k: f"{v}"
         for k, v in metadata.items()
         if k not in ["product_name", "simcore_user_agent"]
     }
-    return await resolve_and_substitute_session_variables_in_specs(
-        app,
-        all_labels,
-        user_id=user_id,
-        product_name=product_name,
-        project_id=project_id,
-        node_id=node_id,
-    )
+    return all_labels
 
 
 async def compute_task_envs(
