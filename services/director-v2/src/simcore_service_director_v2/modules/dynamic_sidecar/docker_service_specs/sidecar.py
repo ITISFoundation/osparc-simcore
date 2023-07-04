@@ -2,7 +2,7 @@ import logging
 from copy import deepcopy
 
 from models_library.aiodocker_api import AioDockerServiceSpec
-from models_library.basic_types import BootModeEnum
+from models_library.basic_types import BootModeEnum, PortInt
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from pydantic import parse_obj_as
 from servicelib.json_serialization import json_dumps
@@ -20,9 +20,9 @@ log = logging.getLogger(__name__)
 
 def extract_service_port_from_compose_start_spec(
     create_service_params: AioDockerServiceSpec,
-) -> int:
+) -> PortInt:
     assert create_service_params.Labels  # nosec
-    return parse_obj_as(int, create_service_params.Labels["service_port"])
+    return parse_obj_as(PortInt, create_service_params.Labels["service_port"])
 
 
 def _get_environment_variables(

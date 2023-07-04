@@ -376,10 +376,11 @@ class GetStatus(DynamicSchedulerEvent):
         # Extra containers (utilities like forward proxies) can also be present here,
         # these also are expected to be created or running.
 
-        containers_with_error: list[DockerContainerInspect] = []
-        for container_inspect in scheduler_data.dynamic_sidecar.containers_inspect:
-            if container_inspect.status not in _EXPECTED_STATUSES:
-                containers_with_error.append(container_inspect)
+        containers_with_error: list[DockerContainerInspect] = [
+            container_inspect
+            for container_inspect in scheduler_data.dynamic_sidecar.containers_inspect
+            if container_inspect.status not in _EXPECTED_STATUSES
+        ]
 
         if len(containers_with_error) > 0:
             raise UnexpectedContainerStatusError(
@@ -443,14 +444,13 @@ class CreateUserServices(DynamicSchedulerEvent):
             or scheduler_data.dynamic_sidecar.swarm_network_name is None
             or scheduler_data.proxy_admin_api_port is None
         ):
-            raise ValueError(
-                "Did not expect None for any of the following: "
-                f"{scheduler_data.dynamic_sidecar.dynamic_sidecar_id=} "
-                f"{scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id=} "
-                f"{scheduler_data.dynamic_sidecar.swarm_network_id=} "
-                f"{scheduler_data.dynamic_sidecar.swarm_network_name=} "
-                f"{scheduler_data.proxy_admin_api_port=}"
+            msg = (
+                f"Did not expect None for any of the following:"
+                f" scheduler_data.dynamic_sidecar.dynamic_sidecar_id={scheduler_data.dynamic_sidecar.dynamic_sidecar_id!r} "
+                f"scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id={scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id!r} scheduler_data.dynamic_sidecar.swarm_network_id={scheduler_data.dynamic_sidecar.swarm_network_id!r} scheduler_data.dynamic_sidecar.swarm_network_name={scheduler_data.dynamic_sidecar.swarm_network_name!r} "
+                f"scheduler_data.proxy_admin_api_port={scheduler_data.proxy_admin_api_port!r}"
             )
+            raise ValueError(msg)
 
         # Starts dynamic SIDECAR -------------------------------------
         # creates a docker compose spec given the service key and tag
