@@ -19,7 +19,6 @@ def create_files() -> Iterator[Callable[..., list[Path]]]:
     created_files = []
 
     def _create_files(number: int, folder: Path) -> list[Path]:
-
         for i in range(number):
             file_path = folder / f"{i}.test"
             file_path.write_text(f"I am test file number {i}")
