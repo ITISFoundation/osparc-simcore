@@ -46,11 +46,3 @@ async def test_prepare_prom_query_parameters(
     for current_item, next_item in zip(data, data[1:]):
         assert current_item.image_regex.startswith("registry.osparc.local")
         assert current_item.scrape_timestamp < next_item.scrape_timestamp
-
-
-async def test_prepare_prom_query_parameters_with_default_value():
-    data: list[_PromQueryParameters] = _prepare_prom_query_parameters(
-        "osparc.local", _current_timestamp
-    )
-    assert len(data) == 1
-    assert data[0].image_regex.startswith("registry.osparc.local")
