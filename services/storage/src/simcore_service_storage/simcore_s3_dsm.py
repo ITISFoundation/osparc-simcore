@@ -109,6 +109,7 @@ class SimcoreS3DataManager(BaseDataManager):
     async def list_files_in_dataset(
         self, user_id: UserID, dataset_id: str, expand_dirs: bool
     ) -> list[FileMetaData]:
+        # NOTE: expand_dirs will be replaced by pagination in the future
         data: list[FileMetaData] = await self.list_files(
             user_id, expand_dirs, uuid_filter=ensure_ends_with(dataset_id, "/")
         )
@@ -156,6 +157,7 @@ class SimcoreS3DataManager(BaseDataManager):
         expand_dirs `False`: returns the one metadata entry for each directory
         expand_dirs `True`: returns all files in each directory (no directories will be included)
         """
+        # NOTE: expand_dirs will be replaced by pagination in the future
 
         data: deque[FileMetaData] = deque()
         accesible_projects_ids = []

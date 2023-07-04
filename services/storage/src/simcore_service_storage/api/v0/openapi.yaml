@@ -77,10 +77,12 @@ paths:
             minimum: 0
           name: user_id
           in: query
-        - required: false
+        - description: Automatic directory expansion. This will be replaced by pagination the future
+          required: false
           schema:
             title: Expand Dirs
             type: boolean
+            description: Automatic directory expansion. This will be replaced by pagination the future
             default: true
           name: expand_dirs
           in: query
@@ -173,10 +175,12 @@ paths:
             default: ''
           name: uuid_filter
           in: query
-        - required: false
+        - description: Automatic directory expansion. This will be replaced by pagination the future
+          required: false
           schema:
             title: Expand Dirs
             type: boolean
+            description: Automatic directory expansion. This will be replaced by pagination the future
             default: true
           name: expand_dirs
           in: query

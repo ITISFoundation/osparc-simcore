@@ -2035,10 +2035,12 @@ paths:
             default: ''
           name: uuid_filter
           in: query
-        - required: false
+        - description: Automatic directory expansion. This will be replaced by pagination the future
+          required: false
           schema:
             title: Expand Dirs
             type: boolean
+            description: Automatic directory expansion. This will be replaced by pagination the future
             default: true
           name: expand_dirs
           in: query
@@ -2489,10 +2491,12 @@ paths:
             type: string
           name: dataset_id
           in: path
-        - required: false
+        - description: Automatic directory expansion. This will be replaced by pagination the future
+          required: false
           schema:
             title: Expand Dirs
             type: boolean
+            description: Automatic directory expansion. This will be replaced by pagination the future
             default: true
           name: expand_dirs
           in: query
