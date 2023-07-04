@@ -13,7 +13,6 @@ from uuid import uuid4
 import aiofiles
 import pytest
 from faker import Faker
-from models_library.api_schemas_storage import FileUploadLinks, FileUploadSchema
 from pydantic import AnyUrl, ByteSize, parse_obj_as
 from pytest import FixtureRequest
 from servicelib.progress_bar import ProgressBarData
@@ -56,31 +55,20 @@ def local_file_for_download(upload_file_dir: Path, file_name: str) -> Path:
 # UTILS
 
 
-def _fake_upload_file_link(
-    r_clone_settings: RCloneSettings, s3_object: str
-) -> FileUploadSchema:
-    return FileUploadSchema(
-        chunk_size=ByteSize(0),
-        urls=[
-            parse_obj_as(
-                AnyUrl,
-                f"s3://{r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME}/{urllib.parse.quote(s3_object)}",
-            )
-        ],
-        links=FileUploadLinks(
-            abort_upload=parse_obj_as(AnyUrl, "https://www.fakeabort.com"),
-            complete_upload=parse_obj_as(AnyUrl, "https://www.fakecomplete.com"),
-        ),
+def _fake_s3_link(r_clone_settings: RCloneSettings, s3_object: str) -> AnyUrl:
+    return parse_obj_as(
+        AnyUrl,
+        f"s3://{r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME}/{urllib.parse.quote(s3_object)}",
     )
 
 
 def test_s3_url_quote_and_unquote():
-    """This test was added to validate quotation operations in _fake_upload_file_link
+    """This test was added to validate quotation operations in _fake_s3_link
     against unquotation operation in
 
     """
     src = "53a35372-d44d-4d2e-8319-b40db5f31ce0/2f67d5cb-ea9c-4f8c-96ef-eae8445a0fe7/6fa73b0f-4006-46c6-9847-967b45ff3ae7.bin"
-    # as in _fake_upload_file_link
+    # as in _fake_s3_link
     url = f"s3://simcore/{urllib.parse.quote(src)}"
 
     # as in sync_local_to_s3
@@ -133,7 +121,7 @@ async def _create_files_in_dir(
 
 async def _upload_local_dir_to_s3(
     r_clone_settings: RCloneSettings,
-    s3_directory_link: FileUploadSchema,
+    s3_directory_link: AnyUrl,
     source_dir: Path,
     check_progress: bool = False,
 ) -> None:
@@ -156,7 +144,7 @@ async def _upload_local_dir_to_s3(
             r_clone_settings,
             progress_bar,
             local_directory_path=source_dir,
-            upload_directory_link=s3_directory_link,
+            upload_s3_link=s3_directory_link,
         )
     if check_progress:
         # NOTE: a progress of 1 is always sent ny the progress bar
@@ -166,7 +154,7 @@ async def _upload_local_dir_to_s3(
 
 async def _download_from_s3_to_local_dir(
     r_clone_settings: RCloneSettings,
-    s3_directory_link: FileUploadSchema,
+    s3_directory_link: AnyUrl,
     destination_dir: Path,
 ) -> None:
     async def _report_progress_download(progress_value: float) -> None:
@@ -179,7 +167,7 @@ async def _download_from_s3_to_local_dir(
             r_clone_settings,
             progress_bar,
             local_directory_path=destination_dir,
-            download_directory_link=s3_directory_link,
+            download_s3_link=s3_directory_link,
         )
 
 
@@ -242,7 +230,7 @@ async def test_local_to_remote_to_local(
 
     # get s3 reference link
     directory_uuid = create_valid_file_uuid(f"{dir_locally_created_files}", Path(""))
-    s3_directory_link = _fake_upload_file_link(r_clone_settings, directory_uuid)
+    s3_directory_link = _fake_s3_link(r_clone_settings, directory_uuid)
 
     # run the test
     await _upload_local_dir_to_s3(
@@ -331,7 +319,7 @@ async def test_overwrite_an_existing_file_and_sync_again(
 
     # get s3 reference link
     directory_uuid = create_valid_file_uuid(f"{dir_locally_created_files}", Path(""))
-    s3_directory_link = _fake_upload_file_link(r_clone_settings, directory_uuid)
+    s3_directory_link = _fake_s3_link(r_clone_settings, directory_uuid)
 
     # sync local to remote and check
     await _upload_local_dir_to_s3(
@@ -379,12 +367,12 @@ async def test_raises_error_if_local_directory_path_is_a_file(
             r_clone_settings=AsyncMock(),
             progress_bar=AsyncMock(),
             local_directory_path=file_path,
-            upload_directory_link=AsyncMock(),
+            upload_s3_link=AsyncMock(),
         )
     with pytest.raises(r_clone.RCloneFileFoundError):
         await r_clone.sync_s3_to_local(
             r_clone_settings=AsyncMock(),
             progress_bar=AsyncMock(),
             local_directory_path=file_path,
-            download_directory_link=AsyncMock(),
+            download_s3_link=AsyncMock(),
         )

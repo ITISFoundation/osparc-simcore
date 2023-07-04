@@ -2,7 +2,6 @@ import asyncio
 import logging
 import re
 import shlex
-import urllib.parse
 from abc import abstractmethod
 from asyncio.streams import StreamReader
 from contextlib import asynccontextmanager
@@ -11,7 +10,7 @@ from typing import AsyncIterator, Final
 
 from aiocache import cached
 from aiofiles import tempfile
-from models_library.api_schemas_storage import FileUploadSchema
+from pydantic import AnyUrl
 from pydantic.errors import PydanticErrorMixin
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
@@ -206,7 +205,7 @@ async def sync_local_to_s3(
     progress_bar: ProgressBarData,
     *,
     local_directory_path: Path,
-    upload_directory_link: FileUploadSchema,
+    upload_s3_link: AnyUrl,
 ) -> None:
     """transfer the contents of a local directory to an s3 path
 
@@ -214,8 +213,6 @@ async def sync_local_to_s3(
     """
     _raise_if_directory_is_file(local_directory_path)
 
-    assert len(upload_directory_link.urls) == 1  # nosec
-    upload_s3_link = urllib.parse.unquote(upload_directory_link.urls[0])
     upload_s3_path = re.sub(r"^s3://", "", upload_s3_link)
     _logger.debug(" %s; %s", f"{upload_s3_link=}", f"{upload_s3_path=}")
 
@@ -234,7 +231,8 @@ async def sync_s3_to_local(
     progress_bar: ProgressBarData,
     *,
     local_directory_path: Path,
-    download_directory_link: FileUploadSchema,
+    download_s3_link: AnyUrl,
+    # TODO: change this to take AnyURL which is the download_link
 ) -> None:
     """transfer the contents of a path in s3 to a local directory
 
@@ -242,8 +240,6 @@ async def sync_s3_to_local(
     """
     _raise_if_directory_is_file(local_directory_path)
 
-    assert len(download_directory_link.urls) == 1  # nosec
-    download_s3_link = urllib.parse.unquote(download_directory_link.urls[0])
     download_s3_path = re.sub(r"^s3://", "", download_s3_link)
     _logger.debug(" %s; %s", f"{download_s3_link=}", f"{download_s3_path=}")
 
