@@ -19,7 +19,7 @@ class UserAndProjectRepository(BaseRepository):
             )
             row = result.first()
             if row:
-                return row[0]
+                return f"{row[0]}"
             return None
 
     async def get_project_name_and_workbench(
