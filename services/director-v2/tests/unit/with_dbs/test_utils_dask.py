@@ -30,6 +30,7 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_storage import FileUploadLinks, FileUploadSchema
 from models_library.clusters import ClusterID
+from models_library.docker import _SIMCORE_CONTAINER_PREFIX
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimCoreFileLink, SimcoreS3FileID
 from models_library.users import UserID
@@ -565,18 +566,18 @@ async def test_check_if_cluster_is_able_to_run_pipeline(
         (
             {},
             {
-                "product_name": _UNDEFINED_METADATA,
-                "simcore_user_agent": _UNDEFINED_METADATA,
+                f"{_SIMCORE_CONTAINER_PREFIX}product-name": _UNDEFINED_METADATA,
+                f"{_SIMCORE_CONTAINER_PREFIX}simcore-user-agent": _UNDEFINED_METADATA,
             },
         ),
         (
             {
-                "product_name": "the awesome osparc",
+                f"{_SIMCORE_CONTAINER_PREFIX}product-name": "the awesome osparc",
                 "some-crazy-additional-label": "with awesome value",
             },
             {
-                "product_name": "the awesome osparc",
-                "simcore_user_agent": _UNDEFINED_METADATA,
+                f"{_SIMCORE_CONTAINER_PREFIX}product-name": "the awesome osparc",
+                f"{_SIMCORE_CONTAINER_PREFIX}simcore-user-agent": _UNDEFINED_METADATA,
                 "some-crazy-additional-label": "with awesome value",
             },
         ),
@@ -592,17 +593,23 @@ async def test_compute_task_labels(
     expected_additional_task_labels: ContainerLabelsDict,
     initialized_app: FastAPI,
 ):
-    task_labels = await compute_task_labels(
-        initialized_app,
+    sleeper_task = published_project.tasks[1]
+    assert sleeper_task.image
+    assert sleeper_task.image.node_requirements
+    task_labels = compute_task_labels(
         user_id=user_id,
         project_id=project_id,
         node_id=node_id,
         metadata=run_metadata,
+        node_requirements=sleeper_task.image.node_requirements,
     )
     expected_task_labels = {
-        "user_id": f"{user_id}",
-        "study_id": f"{project_id}",
-        "uuid": f"{node_id}",
+        f"{_SIMCORE_CONTAINER_PREFIX}user-id": f"{user_id}",
+        f"{_SIMCORE_CONTAINER_PREFIX}project-id": f"{project_id}",
+        f"{_SIMCORE_CONTAINER_PREFIX}node-id": f"{node_id}",
+        f"{_SIMCORE_CONTAINER_PREFIX}swarm-stack-name": f"{_UNDEFINED_METADATA}",
+        f"{_SIMCORE_CONTAINER_PREFIX}cpu-limit": f"{sleeper_task.image.node_requirements.cpu}",
+        f"{_SIMCORE_CONTAINER_PREFIX}memory-limit": f"{sleeper_task.image.node_requirements.ram}",
     } | expected_additional_task_labels
     assert task_labels == expected_task_labels
 
