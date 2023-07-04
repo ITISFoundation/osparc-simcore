@@ -772,7 +772,7 @@ class SimcoreS3DataManager(BaseDataManager):
             )
 
         fmd = await db_file_meta_data.get(conn, fmd.file_id)
-        if s3_metadata:
+        if fmd.is_directory is False and s3_metadata:
             fmd.file_size = parse_obj_as(ByteSize, s3_metadata.size)
             fmd.last_modified = s3_metadata.last_modified
             fmd.entity_tag = s3_metadata.e_tag
