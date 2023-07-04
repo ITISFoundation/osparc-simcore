@@ -50,11 +50,13 @@ test-ci: ## runs ci tests (i.e. w/o debug tools and with code coverage)
 	--durations=10 \
 	$(CURDIR)
 
+
+REPO := ITISFoundation/osparc-simcore-clients
+BRANCH := master
+WORKFLOW := publish-and-test-python-client
+
 .PHONY: install-latest-python-osparc
 install-latest-python-osparc: _check_venv_active ## install the latest python osparc package (the latest built wheels on ITISFoundation/osparc-simcore-clients master)
-	$(eval REPO := ITISFoundation/osparc-simcore-clients)
-	$(eval BRANCH := master)
-	$(eval WORKFLOW := publish-and-test-python-client)
 	@-rm -rf ./osparc_python_wheels && python -m pip uninstall osparc -y && python -m pip uninstall osparc_client -y
 	@run_id=$$(bash $(SCRIPTS_DIR)/gh.bash run list --repo=$(REPO) --branch=$(BRANCH) --workflow=$(WORKFLOW) --limit=1 --json=databaseId --jq=.[].databaseId); \
 	[[ -z "$${run_id}" ]] && { echo "Could not find osparc python package" ; exit 1; };\
