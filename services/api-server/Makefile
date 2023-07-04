@@ -14,8 +14,6 @@ reqs: ## compiles pip requirements (.in -> .txt)
 	cp .env-devel $@
 
 
-
-
 # specification of the used openapi-generator-cli (see also https://github.com/ITISFoundation/openapi-generator)
 OPENAPI_GENERATOR_NAME := itisfoundation/openapi-generator-cli-openapi-generator-v4.2.3
 OPENAPI_GENERATOR_TAG := v0
@@ -71,16 +69,9 @@ openapi-client-diff.json: openapi-client.json openapi.json ## Diffs against olde
 	$(call _openapi_diff_inputs)
 
 
-
 # SEE https://schemathesis.readthedocs.io/en/stable/index.html
 APP_URL:=http://$(get_my_ip).nip.io:8006
 
 test-api: ## Runs schemathesis against development server (NOTE: make up-devel first)
 	@docker run schemathesis/schemathesis:stable run \
 		"$(APP_URL)/api/v0/openapi.json"
-
-
-# Python client ###########################################################################
-GIT_USER_ID := ITISFoundation
-GIT_CLIENT_REPO_ID := osparc-simcore-python-client
-CLIENT_BRANCH := master

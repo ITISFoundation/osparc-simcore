@@ -7,7 +7,7 @@ from collections import UserDict
 from string import Template
 from typing import Any
 
-OSPARC_IDENTIFIER_PREFIX = "OSPARC_ENVIRONMENT_"
+OSPARC_IDENTIFIER_PREFIX = "OSPARC_VARIABLE_"
 
 
 def upgrade_identifier(identifier: str) -> str:
@@ -30,7 +30,7 @@ _LEGACY_IDENTIFIER_RE_PATTERN = re.compile(r"%{1,2}([_a-z][_a-z0-9\.\-]*)%{1,2}"
 def substitute_all_legacy_identifiers(text: str) -> str:
     """Substitutes all legacy identifiers found in the text by the new format expected in TemplateText
 
-    For instance:  '%%this-identifier%%' will be substituted by '$OSPARC_ENVIRONMENT_THIS_IDENTIFIER'
+    For instance:  '%%this-identifier%%' will be substituted by '$OSPARC_VARIABLE_THIS_IDENTIFIER'
     """
 
     def _upgrade(match):

@@ -59,7 +59,8 @@ services:
 
   resource-usage-tracker:
     ports:
-      - "8000"
+      - "8009:8000"
+      - "3014:3000"
 
   storage:
     environment:

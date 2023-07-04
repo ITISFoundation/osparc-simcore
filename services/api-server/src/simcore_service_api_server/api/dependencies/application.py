@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import Depends, FastAPI, Request
 from servicelib.fastapi.dependencies import get_app, get_reverse_url_mapper
 from simcore_postgres_database.utils_products import get_default_product_name
@@ -11,7 +13,7 @@ def get_settings(request: Request) -> ApplicationSettings:
     return settings
 
 
-async def get_product_name(app: FastAPI = Depends(get_app)) -> str:
+async def get_product_name(app: Annotated[FastAPI, Depends(get_app)]) -> str:
     if not hasattr(app.state, "default_product_name"):
         # lazy evaluation
         async with app.state.engine.acquire() as conn:

@@ -37,6 +37,7 @@ from .invitations.settings import InvitationsSettings
 from .login.settings import LoginSettings
 from .projects.settings import ProjectsSettings
 from .resource_manager.settings import ResourceManagerSettings
+from .resource_usage.settings import ResourceUsageTrackerSettings
 from .rest.settings import RestSettings
 from .scicrunch.settings import SciCrunchSettings
 from .session.settings import SessionSettings
@@ -172,6 +173,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     WEBSERVER_RESOURCE_MANAGER: ResourceManagerSettings = Field(
         auto_default_from_env=True, description="resource_manager plugin"
+    )
+    WEBSERVER_RESOURCE_USAGE_TRACKER: ResourceUsageTrackerSettings | None = Field(
+        auto_default_from_env=True,
+        description="resource usage tracker service client's plugin",
     )
     WEBSERVER_SCICRUNCH: SciCrunchSettings | None = Field(
         auto_default_from_env=True, description="scicrunch plugin"

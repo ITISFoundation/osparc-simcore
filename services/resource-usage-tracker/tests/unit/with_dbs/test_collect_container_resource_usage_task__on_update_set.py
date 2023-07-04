@@ -9,6 +9,8 @@ import pytest
 import sqlalchemy as sa
 from faker import Faker
 from fastapi import FastAPI
+from models_library.projects import ProjectID
+from models_library.users import UserID
 from pytest_mock import MockerFixture
 from simcore_postgres_database.models.resource_tracker import resource_tracker_container
 from simcore_service_resource_usage_tracker.resource_tracker_core import (
@@ -114,6 +116,16 @@ def mocked_prometheus_client_custom_query(
     return mocked_get_prometheus_api_client
 
 
+@pytest.fixture()
+def user_id() -> UserID:
+    return UserID(43820)
+
+
+@pytest.fixture()
+def project_uuid() -> ProjectID:
+    return ProjectID("46449cc3-7d83-4081-a44e-fc75a0c85f2c")
+
+
 async def test_collect_container_resource_usage_task(
     mocked_redis_server: None,
     mocked_prometheus: mock.MagicMock,
@@ -121,6 +133,9 @@ async def test_collect_container_resource_usage_task(
     initialized_app: FastAPI,
     postgres_db: sa.engine.Engine,
     random_promql_output_generator: dict[str, Any],
+    user_db,
+    project_uuid,
+    project_db,
 ):
     await collect_container_resource_usage_task(initialized_app)
 
@@ -137,13 +152,21 @@ async def test_collect_container_resource_usage_task(
     assert len(db_rows) == 1
 
     assert (
-        random_promql_output_generator["max_float"] == db_rows[0][8]
+        random_promql_output_generator["max_float"] == db_rows[0][7]
     )  # <-- container_cpu_usage_seconds_total
     assert (
         arrow.get(random_promql_output_generator["min_timestamp"]).datetime
-        == db_rows[0][9]
+        == db_rows[0][8]
     )  # <-- prometheus_created
     assert (
         arrow.get(random_promql_output_generator["max_timestamp"]).datetime
-        == db_rows[0][10]
+        == db_rows[0][9]
     )  # <-- prometheus_last_scraped
+    assert f"{project_uuid}" == db_rows[0][2]  # <-- project_uuid
+    node_uuid_ = list(project_db["workbench"].keys())[0]
+    assert node_uuid_ == db_rows[0][11]  # <-- node_uuid
+    assert (
+        project_db["workbench"][node_uuid_]["label"] == db_rows[0][12]
+    )  # <-- node_label
+    assert project_db["name"] == db_rows[0][16]  # <-- project_name
+    assert user_db["email"] == db_rows[0][17]  # <-- user_email

@@ -123,7 +123,6 @@ qx.Class.define("osparc.data.Permissions", {
           "studies.template.create.all",
           "services.all.read",
           "services.all.reupdate",
-          "services.all.updateLimits",
           "services.filePicker.read.all",
           "user.role.update",
           "user.clusters.create",
@@ -254,6 +253,21 @@ qx.Class.define("osparc.data.Permissions", {
         osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
       }
       return canDo;
+    },
+
+    checkCanDo: function(action) {
+      return new Promise((resolve, reject) => {
+        osparc.data.Resources.get("permissions")
+          .then(permissions => {
+            const found = permissions.find(permission => permission["name"] === action);
+            if (found) {
+              resolve(found["allowed"]);
+            } else {
+              resolve(false);
+            }
+          })
+          .catch(err => reject(err));
+      });
     },
 
     isTester: function() {

@@ -39,7 +39,7 @@ def mocked_backend_services_apis_for_delete_non_existing_project(
 ) -> MockedBackendApiDict:
     mock_name = "delete_project_not_found.json"
     environment = jinja2.Environment(
-        loader=jinja2.FileSystemLoader(project_tests_dir / "mocks")
+        loader=jinja2.FileSystemLoader(project_tests_dir / "mocks"), autoescape=True
     )
     template = environment.get_template(mock_name)
 
