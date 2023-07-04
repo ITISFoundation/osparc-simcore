@@ -45,6 +45,7 @@ from faker import Faker
 from fastapi.applications import FastAPI
 from models_library.api_schemas_storage import LinkType
 from models_library.clusters import ClusterID, NoAuthentication, SimpleAuthentication
+from models_library.docker import _SIMCORE_CONTAINER_PREFIX
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -471,7 +472,14 @@ def comp_run_metadata(faker: Faker) -> MetadataDict:
 
 @pytest.fixture
 def task_labels(comp_run_metadata: MetadataDict) -> ContainerLabelsDict:
-    return comp_run_metadata
+    return parse_obj_as(
+        ContainerLabelsDict,
+        {
+            k.replace("_", "-").lower(): v
+            for k, v in comp_run_metadata.items()
+            if k not in ["product_name", "simcore_user_agent"]
+        },
+    )
 
 
 async def test_send_computation_task(
@@ -523,6 +531,9 @@ async def test_send_computation_task(
 
     # NOTE: We pass another fct so it can run in our localy created dask cluster
     # NOTE2: since there is only 1 task here, it's ok to pass the nodeID
+    assert image_params.fake_tasks[node_id].node_requirements is not None
+    assert image_params.fake_tasks[node_id].node_requirements.cpu
+    assert image_params.fake_tasks[node_id].node_requirements.ram
     node_id_to_job_ids = await dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
@@ -535,9 +546,14 @@ async def test_send_computation_task(
             expected_envs={},
             expected_labels=task_labels
             | {
-                "user_id": f"{user_id}",
-                "study_id": f"{project_id}",
-                "uuid": f"{node_id}",
+                f"{_SIMCORE_CONTAINER_PREFIX}user-id": f"{user_id}",
+                f"{_SIMCORE_CONTAINER_PREFIX}project-id": f"{project_id}",
+                f"{_SIMCORE_CONTAINER_PREFIX}node-id": f"{node_id}",
+                f"{_SIMCORE_CONTAINER_PREFIX}cpu-limit": f"{image_params.fake_tasks[node_id].node_requirements.cpu}",
+                f"{_SIMCORE_CONTAINER_PREFIX}memory-limit": f"{image_params.fake_tasks[node_id].node_requirements.ram}",
+                f"{_SIMCORE_CONTAINER_PREFIX}product-name": f"{comp_run_metadata['product_name']}",
+                f"{_SIMCORE_CONTAINER_PREFIX}simcore-user-agent": f"{comp_run_metadata['simcore_user_agent']}",
+                f"{_SIMCORE_CONTAINER_PREFIX}swarm-stack-name": "undefined-label",
             },  # type: ignore
         ),
         metadata=comp_run_metadata,

@@ -15,7 +15,10 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputData,
     TaskOutputDataSchema,
 )
-from dask_task_models_library.container_tasks.protocol import ContainerEnvsDict
+from dask_task_models_library.container_tasks.protocol import (
+    ContainerEnvsDict,
+    ContainerLabelsDict,
+)
 from fastapi import FastAPI
 from models_library.clusters import ClusterID
 from models_library.docker import SimcoreServiceDockerLabelKeys
@@ -300,7 +303,7 @@ def compute_task_labels(
     node_id: NodeID,
     metadata: MetadataDict,
     node_requirements: NodeRequirements,
-) -> dict[str, str]:
+) -> ContainerLabelsDict:
     product_name = metadata.get("product_name", _UNDEFINED_METADATA)
     standard_simcore_labels = SimcoreServiceDockerLabelKeys.construct(
         user_id=user_id,
@@ -312,11 +315,14 @@ def compute_task_labels(
         memory_limit=node_requirements.ram,
         cpu_limit=node_requirements.cpu,
     ).to_docker_labels()
-    all_labels = standard_simcore_labels | {
-        k: f"{v}"
-        for k, v in metadata.items()
-        if k not in ["product_name", "simcore_user_agent"]
-    }
+    all_labels = standard_simcore_labels | parse_obj_as(
+        ContainerLabelsDict,
+        {
+            k.lower(): f"{v}"
+            for k, v in metadata.items()
+            if k not in ["product_name", "simcore_user_agent"]
+        },
+    )
     return all_labels
 
 
