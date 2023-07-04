@@ -1,6 +1,6 @@
 import contextlib
 import re
-from typing import Any, Final
+from typing import Any, ClassVar, Final
 
 from models_library.generated_models.docker_rest_api import Task
 from models_library.products import ProductName
@@ -75,6 +75,7 @@ class SimcoreServiceDockerLabelKeys(BaseModel):
     cpu_limit: float = Field(..., alias=f"{_SIMCORE_CONTAINER_PREFIX}cpu-limit")
 
     @root_validator(pre=True)
+    @classmethod
     def _backwards_compatibility(cls, values: dict[str, Any]) -> dict[str, Any]:
         # NOTE: this is necessary for dy-sidecar and legacy service until they are adjusted
         if mapped_values := {
@@ -123,14 +124,12 @@ class SimcoreServiceDockerLabelKeys(BaseModel):
 
     class Config:
         allow_population_by_field_name = True
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 # legacy service labels
                 {
-                    "port": "8080",  # TODO: go away
                     "study_id": "29f393fc-1410-47b3-b4b9-61dfce21a2a6",
                     "swarm_stack_name": "devel-simcore",
-                    "type": "main",  # TODO: go away
                     "user_id": "5",
                     "uuid": "1f963626-66e1-43f1-a777-33955c08b909",
                 },
@@ -146,17 +145,10 @@ class SimcoreServiceDockerLabelKeys(BaseModel):
                 },
                 # dy-sidecar service labels
                 {
-                    "key": "simcore/services/dynamic/jupyter-math",  # TODO: go away
-                    "port": "8888",  # TODO: go away
-                    "service_image": "itisfoundation/dynamic-sidecar:master-github-latest",  # TODO: go away
-                    "service_port": "8888",  # TODO: go away
                     "study_id": "29f393fc-1410-47b3-b4b9-61dfce21a2a6",
                     "swarm_stack_name": "devel-simcore",
-                    "type": "main-v2",  # TODO: go away
                     "user_id": "5",
                     "uuid": "1f963626-66e1-43f1-a777-33955c08b909",
-                    "version": "2.0.9",  # TODO: go away
-                    # "simcore_user_agent": "???????misssing??"
                 },
                 # dy-sidecar container labels
                 {
