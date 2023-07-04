@@ -287,13 +287,13 @@ async def create_service(
     docker_swarm: None,
     faker: Faker,
 ) -> AsyncIterator[
-    Callable[[dict[str, Any], dict[str, str] | None], Awaitable[Service]]
+    Callable[[dict[str, Any], dict[DockerLabelKey, str] | None], Awaitable[Service]]
 ]:
     created_services = []
 
     async def _creator(
         task_template: dict[str, Any],
-        labels: dict[str, str] | None = None,
+        labels: dict[DockerLabelKey, str] | None = None,
         wait_for_service_state="running",
     ) -> Service:
         service_name = f"pytest_{faker.pystr()}"

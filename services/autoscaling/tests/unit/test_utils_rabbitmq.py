@@ -54,7 +54,9 @@ async def test_post_task_log_message(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     mocker: MockerFixture,
     async_docker_client: aiodocker.Docker,
-    create_service: Callable[[dict[str, Any], dict[str, str], str], Awaitable[Service]],
+    create_service: Callable[
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
+    ],
     task_template: dict[str, Any],
     osparc_docker_label_keys: SimcoreServiceDockerLabelKeys,
     faker: Faker,
@@ -140,7 +142,9 @@ async def test_post_task_progress_message(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     mocker: MockerFixture,
     async_docker_client: aiodocker.Docker,
-    create_service: Callable[[dict[str, Any], dict[str, str], str], Awaitable[Service]],
+    create_service: Callable[
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
+    ],
     task_template: dict[str, Any],
     osparc_docker_label_keys: SimcoreServiceDockerLabelKeys,
     faker: Faker,

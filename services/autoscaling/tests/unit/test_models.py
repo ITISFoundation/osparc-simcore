@@ -7,7 +7,7 @@ from typing import Any, Awaitable, Callable
 
 import aiodocker
 import pytest
-from models_library.docker import SimcoreServiceDockerLabelKeys
+from models_library.docker import DockerLabelKey, SimcoreServiceDockerLabelKeys
 from models_library.generated_models.docker_rest_api import Service, Task
 from pydantic import ByteSize, ValidationError, parse_obj_as
 from simcore_service_autoscaling.models import Resources
@@ -112,7 +112,9 @@ async def test_get_simcore_service_docker_labels_from_task_with_missing_labels_r
 
 async def test_get_simcore_service_docker_labels(
     async_docker_client: aiodocker.Docker,
-    create_service: Callable[[dict[str, Any], dict[str, str], str], Awaitable[Service]],
+    create_service: Callable[
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
+    ],
     task_template: dict[str, Any],
     osparc_docker_label_keys: SimcoreServiceDockerLabelKeys,
 ):
