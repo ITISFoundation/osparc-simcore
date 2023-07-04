@@ -1,4 +1,7 @@
 # Extra reqs, besides webserver's
 
+# has to depend on the base service as well, or it will uninstall some packages
+--constraint  ./../../../../services/web/server/requirements/_base.txt
+
 fastapi
 jsonref
