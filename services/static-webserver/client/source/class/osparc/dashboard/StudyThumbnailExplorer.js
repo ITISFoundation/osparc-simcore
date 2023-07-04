@@ -66,7 +66,7 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
           });
           break;
         }
-        case "scroll-thumbnails": {
+        case "thumbnails-scroll": {
           control = this.__getThumbnailSuggestions();
           const thumbnailsLayout = this.getChildControl("thumbnails-layout");
           thumbnailsLayout.add(control);
@@ -105,7 +105,9 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
         minHeight: this.self().THUMBNAIL_SLIDER_HEIGHT,
         maxHeight: this.self().THUMBNAIL_SLIDER_HEIGHT
       });
-      thumbnailSuggestions.addWorkbenchUIPreviewToSuggestions();
+      if (this.__showWorkbenchUIPreview()) {
+        thumbnailSuggestions.addWorkbenchUIPreviewToSuggestions();
+      }
       thumbnailSuggestions.setStudy(this.__study);
 
       const params = {
@@ -123,7 +125,7 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
     __buildLayout: function() {
       // For now, do not show the Nodes Tree
       // this.getChildControl("nodes-tree");
-      this.getChildControl("scroll-thumbnails");
+      this.getChildControl("thumbnails-scroll");
       this.getChildControl("thumbnail-viewer-layout");
     },
 
@@ -135,7 +137,7 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
         scrollThumbnails.setSelectedNodeId(selectedNodeId);
       });
       */
-      const scrollThumbnails = this.getChildControl("scroll-thumbnails");
+      const scrollThumbnails = this.getChildControl("thumbnails-scroll");
       const thumbnailViewerLayout = this.getChildControl("thumbnail-viewer-layout");
       scrollThumbnails.addListener("thumbnailTapped", e => {
         const thumbnailData = e.getData();
@@ -190,15 +192,19 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
     },
 
     __initComponents: function() {
-      const scrollThumbnails = this.getChildControl("scroll-thumbnails");
+      const scrollThumbnails = this.getChildControl("thumbnails-scroll");
       scrollThumbnails.setSelectedNodeId(null);
 
       // Do not add the preview if the study is in App Mode
-      if (!["guided", "app"].includes(this.__study.getUi())) {
+      if (this.__showWorkbenchUIPreview()) {
         const workbenchUIPreview = this.__getWorkbenchUIPreview();
         const thumbnailViewerLayout = this.getChildControl("thumbnail-viewer-layout");
         thumbnailViewerLayout.add(workbenchUIPreview);
       }
+    },
+
+    __showWorkbenchUIPreview: function() {
+      return !["guided", "app"].includes(this.__study.getUi().getMode());
     }
   }
 });
