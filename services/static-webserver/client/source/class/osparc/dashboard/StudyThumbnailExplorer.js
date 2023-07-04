@@ -66,7 +66,7 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
           });
           break;
         }
-        case "thumbnails-scroll": {
+        case "thumbnail-suggestions": {
           control = this.__getThumbnailSuggestions();
           const thumbnailsLayout = this.getChildControl("thumbnails-layout");
           thumbnailsLayout.add(control);
@@ -96,7 +96,6 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
       if (this.__study.isPipelineMononode()) {
         nodesTree.exclude();
       }
-      nodesTree.setStudy(this.__study);
       return nodesTree;
     },
 
@@ -105,19 +104,6 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
         minHeight: this.self().THUMBNAIL_SLIDER_HEIGHT,
         maxHeight: this.self().THUMBNAIL_SLIDER_HEIGHT
       });
-      if (this.__showWorkbenchUIPreview()) {
-        thumbnailSuggestions.addWorkbenchUIPreviewToSuggestions();
-      }
-      thumbnailSuggestions.setStudy(this.__study);
-
-      const params = {
-        url: {
-          studyId: this.__study.getUuid()
-        }
-      };
-      osparc.data.Resources.fetch("studyPreviews", "getPreviews", params)
-        .then(previewsPerNodes => thumbnailSuggestions.addPreviewsToSuggestions(previewsPerNodes))
-        .catch(err => console.error(err));
 
       return thumbnailSuggestions;
     },
@@ -125,7 +111,7 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
     __buildLayout: function() {
       // For now, do not show the Nodes Tree
       // this.getChildControl("nodes-tree");
-      this.getChildControl("thumbnails-scroll");
+      this.getChildControl("thumbnail-suggestions");
       this.getChildControl("thumbnail-viewer-layout");
     },
 
@@ -137,7 +123,7 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
         scrollThumbnails.setSelectedNodeId(selectedNodeId);
       });
       */
-      const scrollThumbnails = this.getChildControl("thumbnails-scroll");
+      const scrollThumbnails = this.getChildControl("thumbnail-suggestions");
       const thumbnailViewerLayout = this.getChildControl("thumbnail-viewer-layout");
       scrollThumbnails.addListener("thumbnailTapped", e => {
         const thumbnailData = e.getData();
@@ -192,8 +178,26 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
     },
 
     __initComponents: function() {
-      const scrollThumbnails = this.getChildControl("thumbnails-scroll");
-      scrollThumbnails.setSelectedNodeId(null);
+      /*
+      const nodesTree = this.getChildControl("nodes-tree");
+      nodesTree.setStudy(this.__study);
+      */
+
+      const thumbnailSuggestions = this.getChildControl("thumbnail-suggestions");
+      if (this.__showWorkbenchUIPreview()) {
+        thumbnailSuggestions.addWorkbenchUIPreviewToSuggestions();
+      }
+      thumbnailSuggestions.setStudy(this.__study);
+      const params = {
+        url: {
+          studyId: this.__study.getUuid()
+        }
+      };
+      osparc.data.Resources.fetch("studyPreviews", "getPreviews", params)
+        .then(previewsPerNodes => thumbnailSuggestions.addPreviewsToSuggestions(previewsPerNodes))
+        .catch(err => console.error(err));
+
+      thumbnailSuggestions.setSelectedNodeId(null);
 
       // Do not add the preview if the study is in App Mode
       if (this.__showWorkbenchUIPreview()) {
