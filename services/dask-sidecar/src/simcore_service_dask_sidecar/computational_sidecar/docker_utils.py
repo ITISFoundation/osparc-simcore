@@ -65,13 +65,9 @@ async def create_container_config(
     nano_cpus_limit = int(task_max_resources.get("CPU", 1) * 1e9)
     memory_limit = ByteSize(task_max_resources.get("RAM", 1024**3))
     env_variables = [
-        f"{name.upper()}_FOLDER=/{name}s"
-        for name in [
-            "input",
-            "output",
-            "log",
-        ]
-    ] + [
+        "INPUT_FOLDER=/inputs",
+        "OUTPUT_FOLDER=/outputs",
+        "LOG_FOLDER=/logs",
         f"SC_COMP_SERVICES_SCHEDULED_AS={boot_mode.value}",
         f"SIMCORE_NANO_CPUS_LIMIT={nano_cpus_limit}",
         f"SIMCORE_MEMORY_BYTES_LIMIT={memory_limit}",
