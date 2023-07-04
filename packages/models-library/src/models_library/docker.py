@@ -1,12 +1,12 @@
 import re
-from typing import Final
+from typing import Any, Final
 
 from models_library.generated_models.docker_rest_api import Task
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.users import UserID
-from pydantic import BaseModel, ByteSize, ConstrainedStr, Field
+from pydantic import BaseModel, ByteSize, ConstrainedStr, Field, root_validator
 
 from .basic_regex import DOCKER_GENERIC_TAG_KEY_RE, DOCKER_LABEL_KEY_REGEX
 
@@ -23,24 +23,47 @@ class DockerGenericTag(ConstrainedStr):
 
 
 _SIMCORE_CONTAINER_PREFIX: Final[str] = "io.simcore.container."
+_BACKWARDS_COMPATIBILITY_MAP: Final[dict[str, str]] = {
+    "user_id": f"{_SIMCORE_CONTAINER_PREFIX}user-id",
+    "study_id": f"{_SIMCORE_CONTAINER_PREFIX}project-id",
+    "uuid": f"{_SIMCORE_CONTAINER_PREFIX}node-id",
+    "product_name": f"{_SIMCORE_CONTAINER_PREFIX}product-name",
+    "simcore_user_agent": f"{_SIMCORE_CONTAINER_PREFIX}simcore-user-agent",
+}
 
 
 class SimcoreServiceDockerLabelKeys(BaseModel):
-    # NOTE: in a next PR, this should be moved to packages models-library and used
-    # all over, and aliases should use io.simcore.service.*
+    # NOTE: in a next PR, aliases should use io.simcore.service.*
     # https://github.com/ITISFoundation/osparc-simcore/issues/3638
 
     # The alias is for backwards compatibility, can be removed in a few sprints
-    user_id: UserID = Field(..., alias="user_id")
-    project_id: ProjectID = Field(..., alias="study_id")
-    node_id: NodeID = Field(..., alias="uuid")
+    user_id: UserID = Field(..., alias=f"{_SIMCORE_CONTAINER_PREFIX}user-id")
+    project_id: ProjectID = Field(..., alias=f"{_SIMCORE_CONTAINER_PREFIX}project-id")
+    node_id: NodeID = Field(..., alias=f"{_SIMCORE_CONTAINER_PREFIX}node-id")
 
-    product_name: ProductName = "osparc"
-    simcore_user_agent: str = "undefined"
+    product_name: ProductName = Field(
+        default="osparc", alias=f"{_SIMCORE_CONTAINER_PREFIX}product-name"
+    )
+    simcore_user_agent: str = Field(
+        default="undefined", alias=f"{_SIMCORE_CONTAINER_PREFIX}simcore-user-agent"
+    )
 
     # None is for backwards compatibility, can be removed in a few sprints
-    memory_limit: ByteSize | None
-    cpu_limit: float | None
+    memory_limit: ByteSize | None = Field(
+        ..., alias=f"{_SIMCORE_CONTAINER_PREFIX}memory-limit"
+    )
+    cpu_limit: float | None = Field(..., alias=f"{_SIMCORE_CONTAINER_PREFIX}cpu-limit")
+
+    @root_validator(pre=True)
+    def _backwards_compatibility(cls, values: dict[str, Any]) -> dict[str, Any]:
+        # NOTE: this is necessary for deployment and legacy service
+        if mapped_values := {
+            _BACKWARDS_COMPATIBILITY_MAP[k]: v
+            for k, v in values.items()
+            if k in _BACKWARDS_COMPATIBILITY_MAP
+        }:
+            return mapped_values
+        return values
 
     def to_docker_labels(self) -> dict[DockerLabelKey, str]:
         """returns a dictionary of strings as required by docker"""
