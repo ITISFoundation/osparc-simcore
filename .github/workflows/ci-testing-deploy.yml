@@ -79,7 +79,6 @@ jobs:
       anything-js: ${{ steps.filter.outputs.anything-js }}
     steps:
       - uses: actions/checkout@v3
-        if: ${{ github.event_name != 'pull_request' }}
       # For pull requests it's not necessary to checkout the code
       - uses: dorny/paths-filter@v2
         id: filter
