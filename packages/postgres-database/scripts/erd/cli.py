@@ -19,13 +19,6 @@ from typing import Any
 
 import simcore_postgres_database.models
 from simcore_postgres_database.models.base import metadata
-from simcore_postgres_database.models.projects import projects
-from simcore_postgres_database.models.projects_comments import projects_comments
-from simcore_postgres_database.models.projects_metadata import (
-    projects_jobs_metadata,
-    projects_metadata,
-)
-from simcore_postgres_database.models.projects_nodes import projects_nodes
 from sqlalchemy_schemadisplay import create_schema_graph
 
 models_folder = Path(simcore_postgres_database.models.__file__).parent

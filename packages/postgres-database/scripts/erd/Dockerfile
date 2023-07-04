@@ -16,7 +16,7 @@ RUN apt-get update \
 
 
 RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
-  pip install --upgrade \
+  pip --no-cache-dir install --upgrade \
   pip~=23.1  \
   wheel \
   setuptools
