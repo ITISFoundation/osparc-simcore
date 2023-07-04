@@ -306,6 +306,11 @@ paths:
   /tags/{tag_id}:
     $ref: "./openapi-tags.yaml#/paths/~1tags~1{tag_id}"
 
+  # RESOURCE USAGE ------------------------------------------------------------------
+
+  /resource-usage/containers:
+    $ref: "./openapi-resource-usage.yaml#/paths/~1resource-usage~1containers"
+
   # PUBLICATIONS -------------------------------------------------------------------------
   /publications/service-submission:
     $ref: "./openapi-publications.yaml#/paths/~1publications~1service-submission"

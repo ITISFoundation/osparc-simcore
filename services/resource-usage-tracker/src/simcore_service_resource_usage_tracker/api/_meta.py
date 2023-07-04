@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, HttpUrl
 
 from .._meta import API_VERSION, PROJECT_NAME
-from ._dependencies import get_reverse_url_mapper
+from .dependencies import get_reverse_url_mapper
 
 logger = logging.getLogger(__name__)
 
