@@ -104,7 +104,6 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
         minHeight: this.self().THUMBNAIL_SLIDER_HEIGHT,
         maxHeight: this.self().THUMBNAIL_SLIDER_HEIGHT
       });
-
       return thumbnailSuggestions;
     },
 
@@ -184,6 +183,9 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
       */
 
       const thumbnailSuggestions = this.getChildControl("thumbnail-suggestions");
+      // make it visible only if there are thumbnails
+      this.exclude();
+      thumbnailSuggestions.addListener("thumbnailAdded", () => this.show());
       if (this.__showWorkbenchUIPreview()) {
         thumbnailSuggestions.addWorkbenchUIPreviewToSuggestions();
       }
