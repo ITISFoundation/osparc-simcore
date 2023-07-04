@@ -4,9 +4,9 @@
 """
 import urllib.parse
 import uuid
+from collections.abc import Callable
 from datetime import datetime
 from functools import lru_cache
-from typing import Callable
 
 import arrow
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
@@ -98,8 +98,7 @@ def create_job_inputs_from_node_inputs(inputs: dict[InputID, InputTypes]) -> Job
         else:
             input_values[name] = value
 
-    job_inputs = JobInputs(values=input_values)  # raises ValidationError
-    return job_inputs
+    return JobInputs(values=input_values)  # raises ValidationError
 
 
 def get_node_id(project_id, solver_id) -> str:
@@ -235,7 +234,7 @@ def create_job_from_project(
 
 
 def create_jobstatus_from_task(task: ComputationTaskGet) -> JobStatus:
-    job_status = JobStatus(
+    return JobStatus(
         job_id=task.id,
         state=task.state,
         progress=PercentageInt((task.pipeline_details.progress or 0) * 100.0),
@@ -243,5 +242,3 @@ def create_jobstatus_from_task(task: ComputationTaskGet) -> JobStatus:
         started_at=task.started,
         stopped_at=task.stopped,
     )
-
-    return job_status

@@ -7,6 +7,7 @@
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 from pprint import pformat
 from typing import Callable
@@ -37,9 +38,12 @@ from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
 ## POSTGRES -----
 
 
+CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
+
 @pytest.fixture(scope="session")
 def docker_compose_file(
-    default_app_env_vars: dict[str, str], tests_utils_dir: Path, tmpdir_factory
+    default_app_env_vars: dict[str, str], tmpdir_factory: Callable
 ) -> Path:
     # Overrides fixture in https://github.com/avast/pytest-docker
 
@@ -47,7 +51,7 @@ def docker_compose_file(
     environ = dict(os.environ)
     environ.update(default_app_env_vars)
 
-    src_path = tests_utils_dir / "docker-compose.yml"
+    src_path = CURRENT_DIR / "data" / "docker-compose.yml"
     assert src_path.exists
 
     dst_path = Path(str(tmpdir_factory.mktemp("config").join("docker-compose.yml")))
@@ -68,7 +72,6 @@ def docker_compose_file(
 
 @pytest.fixture(scope="session")
 def postgres_service(docker_services, docker_ip, docker_compose_file: Path) -> dict:
-
     # check docker-compose's environ is resolved properly
     config = yaml.safe_load(docker_compose_file.read_text())
     environ = config["services"]["postgres"]["environment"]
