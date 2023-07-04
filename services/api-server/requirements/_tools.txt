@@ -74,6 +74,8 @@ pyyaml==5.4.1
     #   -c requirements/_test.txt
     #   pre-commit
     #   watchdog
+ruff==0.0.275
+    # via -r requirements/../../../requirements/devenv.txt
 tomli==2.0.1
     # via
     #   -c requirements/_test.txt
