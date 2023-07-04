@@ -139,8 +139,8 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
                     "value": [
                         {
                             "ReadOnly": True,
-                            "Source": "/tmp/.X11-unix",  # nosec
-                            "Target": "/tmp/.X11-unix",  # nosec
+                            "Source": "/tmp/.X11-unix",  # nosec  # noqa: S108
+                            "Target": "/tmp/.X11-unix",  # nosec  # noqa: S108
                             "Type": "bind",
                         }
                     ],
