@@ -31,7 +31,7 @@ from tenacity.wait import wait_fixed
 
 try:
     pkg_resources.require("osparc>=0.5.0")
-    import osparc_client
+    from osparc import osparc_client
 
     # Use the imported package here
 except pkg_resources.DistributionNotFound:

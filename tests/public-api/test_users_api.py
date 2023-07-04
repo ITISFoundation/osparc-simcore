@@ -12,7 +12,7 @@ from pytest_simcore.helpers.utils_public_api import RegisteredUserDict
 
 try:
     pkg_resources.require("osparc>=0.5.0")
-    import osparc_client
+    from osparc import osparc_client
 
     # Use the imported package here
 except pkg_resources.DistributionNotFound:
