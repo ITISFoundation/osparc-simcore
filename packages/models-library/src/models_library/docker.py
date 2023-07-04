@@ -26,26 +26,24 @@ _SIMCORE_CONTAINER_PREFIX: Final[str] = "io.simcore.container."
 _BACKWARDS_COMPATIBILITY_MAP: Final[dict[str, str]] = {
     "user_id": f"{_SIMCORE_CONTAINER_PREFIX}user-id",
     "study_id": f"{_SIMCORE_CONTAINER_PREFIX}project-id",
+    "project_id": f"{_SIMCORE_CONTAINER_PREFIX}project-id",
     "uuid": f"{_SIMCORE_CONTAINER_PREFIX}node-id",
+    "node_id": f"{_SIMCORE_CONTAINER_PREFIX}node-id",
     "product_name": f"{_SIMCORE_CONTAINER_PREFIX}product-name",
     "simcore_user_agent": f"{_SIMCORE_CONTAINER_PREFIX}simcore-user-agent",
 }
 
 
 class SimcoreServiceDockerLabelKeys(BaseModel):
-    # NOTE: in a next PR, aliases should use io.simcore.service.*
-    # https://github.com/ITISFoundation/osparc-simcore/issues/3638
-
-    # The alias is for backwards compatibility, can be removed in a few sprints
     user_id: UserID = Field(..., alias=f"{_SIMCORE_CONTAINER_PREFIX}user-id")
     project_id: ProjectID = Field(..., alias=f"{_SIMCORE_CONTAINER_PREFIX}project-id")
     node_id: NodeID = Field(..., alias=f"{_SIMCORE_CONTAINER_PREFIX}node-id")
 
     product_name: ProductName = Field(
-        default="osparc", alias=f"{_SIMCORE_CONTAINER_PREFIX}product-name"
+        ..., alias=f"{_SIMCORE_CONTAINER_PREFIX}product-name"
     )
     simcore_user_agent: str = Field(
-        default="undefined", alias=f"{_SIMCORE_CONTAINER_PREFIX}simcore-user-agent"
+        ..., alias=f"{_SIMCORE_CONTAINER_PREFIX}simcore-user-agent"
     )
 
     # None is for backwards compatibility, can be removed in a few sprints
@@ -62,6 +60,14 @@ class SimcoreServiceDockerLabelKeys(BaseModel):
             for k, v in values.items()
             if k in _BACKWARDS_COMPATIBILITY_MAP
         }:
+            mapped_values.setdefault(
+                f"{_SIMCORE_CONTAINER_PREFIX}product-name", "osparc"
+            )
+            mapped_values.setdefault(
+                f"{_SIMCORE_CONTAINER_PREFIX}simcore-user-agent", "undefined"
+            )
+            mapped_values.setdefault(f"{_SIMCORE_CONTAINER_PREFIX}memory-limit", "0")
+            mapped_values.setdefault(f"{_SIMCORE_CONTAINER_PREFIX}cpu-limit", "0")
             return mapped_values
         return values
 
