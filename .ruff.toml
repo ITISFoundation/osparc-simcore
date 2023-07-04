@@ -44,6 +44,7 @@ ignore = [
     "E501",  # line too long, handled by black
     "S101", # use of `assert` detected hanbled by pylance, does not support noseq
     "TID252", # [*] Relative imports from parent modules are banned
+    "TRY300", # Checks for return statements in try blocks. SEE https://beta.ruff.rs/docs/rules/try-consider-else/
 ]
 
 target-version = "py310"
