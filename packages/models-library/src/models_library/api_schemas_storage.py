@@ -140,9 +140,7 @@ class FileMetaDataGet(BaseModel):
         description="If true, this file is a soft link."
         "i.e. is another entry with the same object_name",
     )
-    is_directory: bool = Field(
-        default=False, description="set True if file_id is a directory"
-    )
+    is_directory: bool = Field(default=False, description="if True this is a directory")
 
     @validator("location_id", pre=True)
     @classmethod
