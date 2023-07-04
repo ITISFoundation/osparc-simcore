@@ -12,7 +12,7 @@ def create_file_of_size(tmp_path: Path, faker: Faker) -> Callable[[ByteSize], Pa
     def _creator(size: ByteSize, name: str | None = None) -> Path:
         file: Path = tmp_path / (name or faker.file_name())
         if not file.parent.exists():
-            file.parent.mkdir(parents=True, exist_ok=True)
+            file.parent.mkdir(parents=True)
         with file.open("wb") as fp:
             fp.write(f"I am a {size.human_readable()} file".encode())
             fp.truncate(size)
