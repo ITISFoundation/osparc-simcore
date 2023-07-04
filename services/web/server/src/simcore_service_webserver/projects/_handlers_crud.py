@@ -17,7 +17,11 @@ from models_library.api_schemas_webserver.projects import (
 )
 from models_library.projects import Project, ProjectID
 from models_library.projects_state import ProjectLocked
-from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
+from models_library.rest_pagination import (
+    DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
+    Page,
+)
 from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
@@ -179,7 +183,7 @@ class _ProjectListParams(BaseModel):
         default=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
         description="maximum number of items to return (pagination)",
         ge=1,
-        lt=50,
+        lt=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
     )
     offset: NonNegativeInt = Field(
         default=0, description="index to the first item to return (pagination)"
@@ -202,7 +206,7 @@ class _ProjectListParams(BaseModel):
     search: str | None = Field(
         default=None,
         description="Multi column full text search",
-        max_length=25,
+        max_length=100,
         example="My Project",
     )
 

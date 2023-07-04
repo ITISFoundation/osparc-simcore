@@ -125,6 +125,9 @@ paths:
   /me/notifications/{notification_id}:
     $ref: "./openapi-users.yaml#/paths/~1me~1notifications~1{notification_id}"
 
+  /me/permissions:
+    $ref: "./openapi-users.yaml#/paths/~1me~1permissions"
+
   # GROUP SETTINGS ------------------------------------------------------------------
 
   /groups:
@@ -302,6 +305,11 @@ paths:
 
   /tags/{tag_id}:
     $ref: "./openapi-tags.yaml#/paths/~1tags~1{tag_id}"
+
+  # RESOURCE USAGE ------------------------------------------------------------------
+
+  /resource-usage/containers:
+    $ref: "./openapi-resource-usage.yaml#/paths/~1resource-usage~1containers"
 
   # PUBLICATIONS -------------------------------------------------------------------------
   /publications/service-submission:

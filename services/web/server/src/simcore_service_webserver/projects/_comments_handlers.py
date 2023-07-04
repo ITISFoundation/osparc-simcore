@@ -9,7 +9,11 @@ from typing import Any
 from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.projects_comments import CommentID
-from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
+from models_library.rest_pagination import (
+    DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
+    Page,
+)
 from models_library.rest_pagination_utils import paginate_data
 from pydantic import BaseModel, Extra, Field, NonNegativeInt
 from servicelib.aiohttp.requests_validation import (
@@ -107,7 +111,7 @@ class _ListProjectCommentsQueryParams(BaseModel):
         default=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
         description="maximum number of items to return (pagination)",
         ge=1,
-        lt=50,
+        lt=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
     )
     offset: NonNegativeInt = Field(
         default=0, description="index to the first item to return (pagination)"
