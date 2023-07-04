@@ -10,7 +10,7 @@
 from enum import Enum
 from typing import Any
 
-from fastapi import FastAPI, status
+from fastapi import FastAPI, Query, status
 from models_library.api_schemas_storage import (
     FileMetaDataGet,
     FileUploadCompleteFutureResponse,
@@ -106,7 +106,15 @@ async def get_datasets_metadata(location_id: LocationID, user_id: UserID):
     summary="Get Files Metadata",
 )
 async def get_files_metadata_dataset(
-    location_id: LocationID, dataset_id: str, user_id: UserID, expand_dirs: bool = True
+    location_id: LocationID,
+    dataset_id: str,
+    user_id: UserID,
+    expand_dirs: bool = Query(
+        True,
+        description=(
+            "Automatic directory expansion. This will be replaced by pagination the future"
+        ),
+    ),
 ):
     """returns all the file meta data inside dataset with dataset_id"""
 
@@ -143,7 +151,14 @@ async def synchronise_meta_data_table(
     summary="Get datasets metadata",
 )
 async def get_files_metadata(
-    location_id: LocationID, uuid_filter: str = "", expand_dirs: bool = True
+    location_id: LocationID,
+    uuid_filter: str = "",
+    expand_dirs: bool = Query(
+        True,
+        description=(
+            "Automatic directory expansion. This will be replaced by pagination the future"
+        ),
+    ),
 ):
     """returns all the file meta data a user has access to (uuid_filter may be used)"""
 
