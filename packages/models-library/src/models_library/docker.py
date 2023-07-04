@@ -49,6 +49,11 @@ _UNDEFINED_VALUE_INT: Final[str] = "0"
 
 
 class SimcoreServiceDockerLabelKeys(BaseModel):
+    """
+    Represents the standard label on oSparc created containers (not yet services)
+    In order to create this object in code, please use construct() method!
+    """
+
     user_id: UserID = Field(..., alias=f"{_SIMCORE_CONTAINER_PREFIX}user-id")
     project_id: ProjectID = Field(..., alias=f"{_SIMCORE_CONTAINER_PREFIX}project-id")
     node_id: NodeID = Field(..., alias=f"{_SIMCORE_CONTAINER_PREFIX}node-id")
