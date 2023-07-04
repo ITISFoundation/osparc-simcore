@@ -23,6 +23,11 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
+    const loadingImage = this.getChildControl("loading-image");
+    loadingImage.show();
+    const table = this.getChildControl("table");
+    table.exclude();
+
     this.__fetchData();
   },
 
@@ -45,47 +50,70 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "icon":
+        case "loading-image":
           control = new qx.ui.basic.Image().set({
             source: "@FontAwesome5Solid/paw/14",
             alignX: "center",
             alignY: "middle",
-            minWidth: 18
+            minHeight: 200
           });
-          this._add(control, {
-            row: 0,
-            column: 0,
-            rowSpan: 3
-          });
+          this._add(control);
           break;
+        case "table":
+          control = new osparc.component.resourceUsage.OverviewTable();
+          this._add(control);
+          break;
+        case "page-buttons":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
+            alignX: "center"
+          });
+          this._add(control);
+          break;
+        case "prev-page-button": {
+          control = new qx.ui.form.Button(this.tr("Prev")).set({
+            allowGrowX: false
+          });
+          const pageButtons = this.getChildControl("page-buttons");
+          pageButtons.add(control);
+          break;
+        }
+        case "current-page-label": {
+          control = new qx.ui.basic.Label().set({
+            font: "text-14"
+          });
+          const pageButtons = this.getChildControl("page-buttons");
+          pageButtons.add(control);
+          break;
+        }
+        case "next-page-button": {
+          control = new qx.ui.form.Button(this.tr("Next")).set({
+            allowGrowX: false
+          });
+          const pageButtons = this.getChildControl("page-buttons");
+          pageButtons.add(control);
+          break;
+        }
       }
       return control || this.base(arguments, id);
     },
 
     __fetchData: function() {
-
-    },
-
-
-    fetchComments: function(removeComments = true) {
-      const loadMoreButton = this.getChildControl("load-more-button");
-      loadMoreButton.show();
-      loadMoreButton.setFetching(true);
-
-      if (removeComments) {
-        this.getChildControl("comments-list").removeAll();
-      }
+      const loadingImage = this.getChildControl("loading-image");
+      loadingImage.show();
+      const table = this.getChildControl("table");
+      table.exclude();
 
       this.__getNextRequest()
         .then(resp => {
-          const comments = resp["data"];
-          this.__addComments(comments);
+          const data = resp["data"];
           this.__nextRequestParams = resp["_links"]["next"];
-          if (this.__nextRequestParams === null) {
-            loadMoreButton.exclude();
-          }
+          this.__setData(data);
+          this.__enableButtons();
         })
-        .finally(() => loadMoreButton.setFetching(false));
+        .finally(() => {
+          loadingImage.exclude();
+          table.show();
+        });
     },
 
     __getNextRequest: function() {
@@ -104,6 +132,17 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
         resolveWResponse: true
       };
       return osparc.data.Resources.fetch("resourceUsage", "getPage", params, undefined, options);
+    },
+
+    __setData: function(data) {
+      const table = this.getChildControl("table");
+      table.setData(data);
+    },
+
+    __enableButtons:function() {
+      this.getChildControl("prev-page-button").setEnabled(false);
+      this.getChildControl("current-page-label").setValue("1");
+      this.getChildControl("next-page-button").setEnabled(false);
     }
   }
 });
