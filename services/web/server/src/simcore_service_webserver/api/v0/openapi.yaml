@@ -5919,41 +5919,6 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1comments~1%7Bcomment_id%7D/put/responses/200/content/application~1json/schema'
-    put:
-      tags:
-        - project
-        - comments
-      summary: Update the contents of a specific comment for a project. The request body should contain the updated comment contents.
-      operationId: update_project_comment
-      parameters:
-        - required: true
-          schema:
-            title: Project Uuid
-            type: string
-            format: uuid
-          name: project_uuid
-          in: path
-        - required: true
-          schema:
-            title: Comment Id
-            exclusiveMinimum: true
-            type: integer
-            minimum: 0
-          name: comment_id
-          in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1comments/post/requestBody/content/application~1json/schema'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
                 title: 'Envelope[ProjectsCommentsAPI]'
                 type: object
                 properties:
@@ -6002,6 +5967,41 @@ paths:
                     additionalProperties: false
                   error:
                     title: Error
+    put:
+      tags:
+        - project
+        - comments
+      summary: Update the contents of a specific comment for a project. The request body should contain the updated comment contents.
+      operationId: update_project_comment
+      parameters:
+        - required: true
+          schema:
+            title: Project Uuid
+            type: string
+            format: uuid
+          name: project_uuid
+          in: path
+        - required: true
+          schema:
+            title: Comment Id
+            exclusiveMinimum: true
+            type: integer
+            minimum: 0
+          name: comment_id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1comments/post/requestBody/content/application~1json/schema'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1comments~1%7Bcomment_id%7D/get/responses/200/content/application~1json/schema'
     delete:
       tags:
         - project
@@ -7559,16 +7559,16 @@ paths:
       parameters:
         - required: false
           schema:
-            title: Limit
             type: integer
+            title: Limit
             default: 20
           name: limit
           in: query
         - required: false
           schema:
-            title: Offset
-            minimum: 0
             type: integer
+            minimum: 0
+            title: Offset
             default: 0
           name: offset
           in: query
@@ -7578,14 +7578,53 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[list[models_library.api_schemas_webserver.resource_usage.ContainerGet]]'
-                type: object
                 properties:
                   data:
-                    title: Data
-                    type: array
                     items:
-                      title: ContainerGet
+                      properties:
+                        project_uuid:
+                          type: string
+                          format: uuid
+                          title: Project Uuid
+                        project_name:
+                          type: string
+                          title: Project Name
+                        node_uuid:
+                          type: string
+                          format: uuid
+                          title: Node Uuid
+                        node_label:
+                          type: string
+                          title: Node Label
+                        service_key:
+                          type: string
+                          pattern: '^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$'
+                          title: Service Key
+                        service_version:
+                          type: string
+                          pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+                          title: Service Version
+                        start_time:
+                          type: string
+                          format: date-time
+                          title: Start Time
+                        duration:
+                          type: number
+                          title: Duration
+                        processors:
+                          type: number
+                          title: Processors
+                        core_hours:
+                          type: number
+                          title: Core Hours
+                        status:
+                          type: string
+                          enum:
+                            - running
+                            - finished
+                          title: ContainerStatus
+                          description: An enumeration.
+                      type: object
                       required:
                         - project_uuid
                         - node_uuid
@@ -7596,52 +7635,13 @@ paths:
                         - processors
                         - core_hours
                         - status
-                      type: object
-                      properties:
-                        project_uuid:
-                          title: Project Uuid
-                          type: string
-                          format: uuid
-                        project_name:
-                          title: Project Name
-                          type: string
-                        node_uuid:
-                          title: Node Uuid
-                          type: string
-                          format: uuid
-                        node_label:
-                          title: Node Label
-                          type: string
-                        service_key:
-                          title: Service Key
-                          pattern: '^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$'
-                          type: string
-                        service_version:
-                          title: Service Version
-                          pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
-                          type: string
-                        start_time:
-                          title: Start Time
-                          type: string
-                          format: date-time
-                        duration:
-                          title: Duration
-                          type: number
-                        processors:
-                          title: Processors
-                          type: number
-                        core_hours:
-                          title: Core Hours
-                          type: number
-                        status:
-                          title: ContainerStatus
-                          enum:
-                            - running
-                            - finished
-                          type: string
-                          description: An enumeration.
+                      title: ContainerGet
+                    type: array
+                    title: Data
                   error:
                     title: Error
+                type: object
+                title: 'Envelope[list[models_library.api_schemas_webserver.resource_usage.ContainerGet]]'
   /publications/service-submission:
     post:
       tags:
