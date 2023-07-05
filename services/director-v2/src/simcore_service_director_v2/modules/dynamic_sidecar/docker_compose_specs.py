@@ -3,7 +3,7 @@ from copy import deepcopy
 from typing import Any, Optional, TypedDict
 
 from fastapi.applications import FastAPI
-from models_library.docker import DockerGenericTag, SimcoreServiceDockerLabelKeys
+from models_library.docker import DockerGenericTag, StandardSimcoreDockerLabels
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -225,7 +225,7 @@ def _update_container_labels(
             spec_service_key, default_limits
         )
 
-        label_keys = SimcoreServiceDockerLabelKeys.construct(
+        label_keys = StandardSimcoreDockerLabels.construct(
             user_id=user_id,
             project_id=project_id,
             node_id=node_id,

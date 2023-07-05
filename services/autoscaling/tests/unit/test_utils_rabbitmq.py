@@ -9,7 +9,7 @@ from typing import Any, Awaitable, Callable
 import aiodocker
 from faker import Faker
 from fastapi import FastAPI
-from models_library.docker import DockerLabelKey, SimcoreServiceDockerLabelKeys
+from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
 from models_library.generated_models.docker_rest_api import Service, Task
 from models_library.rabbitmq_messages import (
     LoggerRabbitMessage,
@@ -58,7 +58,7 @@ async def test_post_task_log_message(
         [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
     ],
     task_template: dict[str, Any],
-    osparc_docker_label_keys: SimcoreServiceDockerLabelKeys,
+    osparc_docker_label_keys: StandardSimcoreDockerLabels,
     faker: Faker,
 ):
     mocked_message_handler = mocker.AsyncMock(return_value=True)
@@ -148,7 +148,7 @@ async def test_post_task_progress_message(
         [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
     ],
     task_template: dict[str, Any],
-    osparc_docker_label_keys: SimcoreServiceDockerLabelKeys,
+    osparc_docker_label_keys: StandardSimcoreDockerLabels,
     faker: Faker,
 ):
     mocked_message_handler = mocker.AsyncMock(return_value=True)

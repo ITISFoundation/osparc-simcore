@@ -11,7 +11,7 @@ from models_library.docker import (
     _SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX,
     DockerGenericTag,
     DockerLabelKey,
-    SimcoreServiceDockerLabelKeys,
+    StandardSimcoreDockerLabels,
 )
 from pydantic import ValidationError, parse_obj_as
 
@@ -107,12 +107,12 @@ def test_docker_generic_tag(image_name: str, valid: bool):
 
 
 @pytest.mark.parametrize(
-    "obj_data", SimcoreServiceDockerLabelKeys.Config.schema_extra["examples"], ids=str
+    "obj_data",
+    StandardSimcoreDockerLabels.Config.schema_extra["examples"],
+    ids=str,
 )
 def test_simcore_service_docker_label_keys(obj_data: dict[str, Any]):
-    simcore_service_docker_label_keys = SimcoreServiceDockerLabelKeys.parse_obj(
-        obj_data
-    )
+    simcore_service_docker_label_keys = StandardSimcoreDockerLabels.parse_obj(obj_data)
     exported_dict = simcore_service_docker_label_keys.to_simcore_runtime_docker_labels()
     assert all(
         isinstance(v, str) for v in exported_dict.values()
@@ -121,7 +121,7 @@ def test_simcore_service_docker_label_keys(obj_data: dict[str, Any]):
         key.startswith(_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX) for key in exported_dict
     )
     re_imported_docker_label_keys = parse_obj_as(
-        SimcoreServiceDockerLabelKeys, exported_dict
+        StandardSimcoreDockerLabels, exported_dict
     )
     assert re_imported_docker_label_keys
     assert simcore_service_docker_label_keys == re_imported_docker_label_keys

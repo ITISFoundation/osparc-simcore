@@ -21,7 +21,7 @@ from dask_task_models_library.container_tasks.protocol import (
 )
 from fastapi import FastAPI
 from models_library.clusters import ClusterID
-from models_library.docker import SimcoreServiceDockerLabelKeys
+from models_library.docker import StandardSimcoreDockerLabels
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes_io import NodeID, NodeIDStr
@@ -305,7 +305,7 @@ def compute_task_labels(
     node_requirements: NodeRequirements,
 ) -> ContainerLabelsDict:
     product_name = metadata.get("product_name", _UNDEFINED_METADATA)
-    standard_simcore_labels = SimcoreServiceDockerLabelKeys.construct(
+    standard_simcore_labels = StandardSimcoreDockerLabels.construct(
         user_id=user_id,
         project_id=project_id,
         node_id=node_id,

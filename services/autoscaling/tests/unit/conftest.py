@@ -21,7 +21,7 @@ from deepdiff import DeepDiff
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
-from models_library.docker import DockerLabelKey, SimcoreServiceDockerLabelKeys
+from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
 from models_library.generated_models.docker_rest_api import (
     Availability,
     Node,
@@ -613,8 +613,8 @@ def host_memory_total() -> ByteSize:
 @pytest.fixture
 def osparc_docker_label_keys(
     faker: Faker,
-) -> SimcoreServiceDockerLabelKeys:
-    return SimcoreServiceDockerLabelKeys.parse_obj(
+) -> StandardSimcoreDockerLabels:
+    return StandardSimcoreDockerLabels.parse_obj(
         dict(user_id=faker.pyint(), project_id=faker.uuid4(), node_id=faker.uuid4())
     )
 

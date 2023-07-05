@@ -54,7 +54,7 @@ def to_simcore_runtime_docker_label_key(key: str) -> DockerLabelKey:
     )
 
 
-class SimcoreServiceDockerLabelKeys(BaseModel):
+class StandardSimcoreDockerLabels(BaseModel):
     """
     Represents the standard label on oSparc created containers (not yet services)
     In order to create this object in code, please use construct() method!
@@ -128,7 +128,7 @@ class SimcoreServiceDockerLabelKeys(BaseModel):
         }
 
     @classmethod
-    def from_docker_task(cls, docker_task: Task) -> "SimcoreServiceDockerLabelKeys":
+    def from_docker_task(cls, docker_task: Task) -> "StandardSimcoreDockerLabels":
         assert docker_task.Spec  # nosec
         assert docker_task.Spec.ContainerSpec  # nosec
         task_labels = docker_task.Spec.ContainerSpec.Labels or {}

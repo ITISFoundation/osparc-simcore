@@ -3,7 +3,7 @@ from copy import deepcopy
 
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.basic_types import BootModeEnum, PortInt
-from models_library.docker import SimcoreServiceDockerLabelKeys
+from models_library.docker import StandardSimcoreDockerLabels
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from pydantic import ByteSize, parse_obj_as
 from servicelib.json_serialization import json_dumps
@@ -247,7 +247,7 @@ def get_dynamic_sidecar_spec(
             "key": scheduler_data.key,
             "version": scheduler_data.version,
         }
-        | SimcoreServiceDockerLabelKeys(
+        | StandardSimcoreDockerLabels(
             user_id=scheduler_data.user_id,
             project_id=scheduler_data.project_id,
             node_id=scheduler_data.node_uuid,
@@ -273,7 +273,7 @@ def get_dynamic_sidecar_spec(
                 "CapabilityAdd": [
                     "CAP_LINUX_IMMUTABLE",
                 ],
-                "Labels": SimcoreServiceDockerLabelKeys(
+                "Labels": StandardSimcoreDockerLabels(
                     user_id=scheduler_data.user_id,
                     project_id=scheduler_data.project_id,
                     node_id=scheduler_data.node_uuid,
