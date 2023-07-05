@@ -6,7 +6,6 @@ from typing import Any, Final
 
 import aiodocker
 from aiodocker.utils import clean_filters, clean_map
-from fastapi import status
 from fastapi.encoders import jsonable_encoder
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.docker import to_simcore_runtime_docker_label_key
