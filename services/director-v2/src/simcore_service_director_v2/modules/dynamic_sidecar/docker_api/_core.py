@@ -1,5 +1,6 @@
 import json
 import logging
+import warnings
 from collections.abc import Mapping
 from typing import Any, Final
 
@@ -264,6 +265,11 @@ async def _list_docker_services(
             filters["name"] = [f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}"]
         return filters
 
+    warnings.warn(
+        "After PR#4453 [https://github.com/ITISFoundation/osparc-simcore/pull/4453] reaches"
+        " production, the backwards compatible code may be removed",
+        stacklevel=2,
+    )
     services_list: list[Mapping] = await client.services.list(
         filters=_make_filters(backwards_compatible=True)
     ) + await client.services.list(filters=_make_filters(backwards_compatible=False))
