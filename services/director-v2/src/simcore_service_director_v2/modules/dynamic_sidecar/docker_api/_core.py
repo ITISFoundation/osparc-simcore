@@ -11,7 +11,6 @@ from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.users import UserID
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from starlette import status
@@ -119,15 +118,11 @@ async def get_dynamic_sidecars_to_observe(
 ) -> list[SchedulerData]:
     """called when scheduler is started to discover new services to observe"""
     async with docker_client() as client:
-        running_dynamic_sidecar_services: list[
-            Mapping[str, Any]
-        ] = await client.services.list(
-            filters={
-                "label": [
-                    f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}={dynamic_sidecar_settings.SWARM_STACK_NAME}"
-                ],
-                "name": [f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}"],
-            }
+        running_dynamic_sidecar_services = await _list_docker_services(
+            client,
+            node_id=None,
+            swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+            return_only_sidecars=True,
         )
     return [
         SchedulerData.from_service_inspect(x) for x in running_dynamic_sidecar_services
@@ -208,27 +203,17 @@ async def get_dynamic_sidecar_state(service_id: str) -> tuple[ServiceState, str]
     return service_state, message
 
 
-async def _get_dynamic_sidecar_stack_services(
-    node_uuid: NodeID, dynamic_sidecar_settings: DynamicSidecarSettings
-) -> list[Mapping]:
-    filters = {
-        "label": [
-            f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}={dynamic_sidecar_settings.SWARM_STACK_NAME}",
-            f"{to_simcore_runtime_docker_label_key('node_id')}={node_uuid}",
-        ]
-    }
-    async with docker_client() as client:
-        list_result: list[Mapping] = await client.services.list(filters=filters)
-        return list_result
-
-
 async def is_dynamic_sidecar_stack_missing(
     node_uuid: NodeID, dynamic_sidecar_settings: DynamicSidecarSettings
 ) -> bool:
     """Check if the proxy and the dynamic-sidecar are absent"""
-    stack_services = await _get_dynamic_sidecar_stack_services(
-        node_uuid, dynamic_sidecar_settings
-    )
+    async with docker_client() as client:
+        stack_services = await _list_docker_services(
+            client,
+            node_id=node_uuid,
+            swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+            return_only_sidecars=False,
+        )
     return len(stack_services) == 0
 
 
@@ -241,13 +226,51 @@ async def are_sidecar_and_proxy_services_present(
     """
     The dynamic-sidecar stack always expects to have 2 running services
     """
-    stack_services = await _get_dynamic_sidecar_stack_services(
-        node_uuid, dynamic_sidecar_settings
-    )
+    async with docker_client() as client:
+        stack_services = await _list_docker_services(
+            client,
+            node_id=node_uuid,
+            swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+            return_only_sidecars=False,
+        )
     if len(stack_services) != _NUM_SIDECAR_STACK_SERVICES:
         return False
 
     return True
+
+
+async def _list_docker_services(
+    client: aiodocker.docker.Docker,
+    *,
+    node_id: NodeID | None,
+    swarm_stack_name: str,
+    return_only_sidecars: bool,
+) -> list[Mapping[str, Any]]:
+    # NOTE: this is here for backward compatibility when first deploying this change.
+    # shall be removed after 1-2 releases without issues
+    # backwards compatibility part
+
+    def _make_filters(*, backwards_compatible: bool) -> Mapping[str, Any]:
+        filters = {
+            "label": [
+                f"{'swarm_stack_name' if backwards_compatible else to_simcore_runtime_docker_label_key('swarm_stack_name')}={swarm_stack_name}",
+            ],
+        }
+        if node_id:
+            filters["label"].append(
+                f"{'node_id'  if backwards_compatible else to_simcore_runtime_docker_label_key('node_id')}={node_id}"
+            )
+        if return_only_sidecars:
+            filters["name"] = [f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}"]
+        return filters
+
+    backwards_compatibility_services_list = await client.services.list(
+        filters=_make_filters(backwards_compatible=True)
+    )
+    services_list = await client.services.list(
+        filters=_make_filters(backwards_compatible=False)
+    )
+    return backwards_compatibility_services_list + services_list
 
 
 async def remove_dynamic_sidecar_stack(
@@ -255,14 +278,13 @@ async def remove_dynamic_sidecar_stack(
 ) -> None:
     """Removes all services from the stack, in theory there should only be 2 services"""
     async with docker_client() as client:
-        services_to_remove = await client.services.list(
-            filters={
-                "label": [
-                    f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}={dynamic_sidecar_settings.SWARM_STACK_NAME}",
-                    f"{to_simcore_runtime_docker_label_key('node_id')}={node_uuid}",
-                ]
-            }
+        services_to_remove = await _list_docker_services(
+            client,
+            node_id=node_uuid,
+            swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+            return_only_sidecars=False,
         )
+
         if services_to_remove:
             await logged_gather(
                 *(
@@ -288,41 +310,15 @@ async def remove_dynamic_sidecar_network(network_name: str) -> bool:
         return False
 
 
-async def list_dynamic_sidecar_services(
-    dynamic_sidecar_settings: DynamicSidecarSettings,
-    user_id: UserID | None = None,
-    project_id: ProjectID | None = None,
-) -> list[dict[str, Any]]:
-    service_filters = {
-        "label": [
-            f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}={dynamic_sidecar_settings.SWARM_STACK_NAME}",
-        ],
-        "name": [f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}"],
-    }
-    if user_id is not None:
-        service_filters["label"].append(f"user_id={user_id}")
-    if project_id is not None:
-        service_filters["label"].append(f"study_id={project_id}")
-
-    async with docker_client() as client:
-        list_result: list[dict[str, Any]] = await client.services.list(
-            filters=service_filters
-        )
-        return list_result
-
-
 async def is_sidecar_running(
     node_uuid: NodeID, dynamic_sidecar_settings: DynamicSidecarSettings
 ) -> bool:
     async with docker_client() as client:
-        sidecar_service_list = await client.services.list(
-            filters={
-                "label": [
-                    f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}={dynamic_sidecar_settings.SWARM_STACK_NAME}",
-                    f"{to_simcore_runtime_docker_label_key('node_id')}={node_uuid}",
-                ],
-                "name": [f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}"],
-            }
+        sidecar_service_list = await _list_docker_services(
+            client,
+            node_id=node_uuid,
+            swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+            return_only_sidecars=True,
         )
         if len(sidecar_service_list) != 1:
             return False
