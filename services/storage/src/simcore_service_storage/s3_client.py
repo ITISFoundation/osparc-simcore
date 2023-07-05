@@ -278,8 +278,11 @@ class StorageS3Client:
 
     @s3_exception_handler(_logger)
     async def delete_files_in_path(self, bucket: S3BucketName, *, prefix: str) -> None:
+        """Removes one or more files form a given S3 path.
+
         # NOTE: the / at the end of the Prefix is VERY important,
         # makes the listing several order of magnitudes faster
+        """
 
         # NOTE: deletion of objects is done in batches of max 1000 elements,
         # the maximum for accepted by the S3 API
@@ -355,8 +358,10 @@ class StorageS3Client:
         prefix: str,
         max_files_to_list: int = EXPAND_DIR_MAX_ITEM_COUNT,
     ) -> list[S3MetaData]:
-        # NOTE: adding a / at the end of a folder improves speed by several orders of magnitudes
-        # This endpoint is currently limited to only return EXPAND_DIR_MAX_ITEM_COUNT by default
+        """
+        NOTE: adding a / at the end of a folder improves speed by several orders of magnitudes
+        This endpoint is currently limited to only return EXPAND_DIR_MAX_ITEM_COUNT by default
+        """
 
         s3_objects, _ = await _list_objects_v2_paginated(
             self.client, bucket, prefix, max_total_items=max_files_to_list

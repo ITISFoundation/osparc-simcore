@@ -446,14 +446,17 @@ class SimcoreS3DataManager(BaseDataManager):
                 file: FileMetaDataAtDB = await db_file_meta_data.get(
                     conn, parse_obj_as(SimcoreS3FileID, file_id)
                 )
-                if file.is_directory:
-                    await get_s3_client(self.app).delete_files_in_path(
-                        file.bucket_name, prefix=ensure_ends_with(file.file_id, "/")
-                    )
-                else:
-                    await get_s3_client(self.app).delete_file(
-                        file.bucket_name, file.file_id
-                    )
+                # NOTE: since this lists the files before deleting them
+                # it can be used to filter for just a single file and also
+                # to delete it
+                await get_s3_client(self.app).delete_files_in_path(
+                    file.bucket_name,
+                    prefix=(
+                        ensure_ends_with(file.file_id, "/")
+                        if file.is_directory
+                        else file.file_id
+                    ),
+                )
                 await db_file_meta_data.delete(conn, [file.file_id])
 
     async def delete_project_simcore_s3(
