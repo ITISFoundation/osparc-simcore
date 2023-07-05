@@ -164,7 +164,6 @@ def expected_dynamic_sidecar_spec(
             "key": "simcore/services/dynamic/3dviewer",
             "version": "2.4.5",
             "port": "8888",
-            "service_image": "local/dynamic-sidecar:MOCK",
             "service_port": "8888",
             f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}memory-limit": "8589934592",
             f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}cpu-limit": "4.0",
