@@ -56,11 +56,12 @@ BRANCH := master
 WORKFLOW := publish-and-test-python-client
 
 .PHONY: install-latest-python-osparc
-install-latest-python-osparc: ## install the latest python osparc package (the latest built wheels on ITISFoundation/osparc-simcore-clients master)
+install-latest-python-osparc: ## install the latest python osparc package. Pass the env variables "REPO", "BRANCH" and "WORKFLOW" to customize where to grab the client from
+	@echo "Using REPO=$(REPO), BRANCH=$(BRANCH), WORKFLOW=$(WORKFLOW)"
 	@-rm -rf ./osparc_python_wheels && python -m pip uninstall osparc -y && python -m pip uninstall osparc_client -y
 	@run_id=$$(bash $(SCRIPTS_DIR)/gh.bash run list --repo=$(REPO) --branch=$(BRANCH) --workflow=$(WORKFLOW) --limit=1 --json=databaseId --jq=.[].databaseId); \
 	[[ -z "$${run_id}" ]] && { echo "Could not find osparc python package" ; exit 1; };\
-	echo "run_id for latest build of '$(WORKFLOW)' on $(REPO)/$(BRANCH): $${run_id}"; \
+	echo "run_id for latest build of '$(WORKFLOW)' on '$(BRANCH)' in '$(REPO)': $${run_id}"; \
 	bash $(SCRIPTS_DIR)/gh.bash run download $${run_id} --repo=$(REPO) &&\
 	osparc_wheel=$$(ls ./osparc_python_wheels/osparc-*.whl) && \
 	python -m pip install $${osparc_wheel} --find-links=./osparc_python_wheels/
