@@ -245,7 +245,7 @@ async def _list_docker_services(
     node_id: NodeID | None,
     swarm_stack_name: str,
     return_only_sidecars: bool,
-) -> list[Mapping[str, Any]]:
+) -> list[Mapping]:
     # NOTE: this is here for backward compatibility when first deploying this change.
     # shall be removed after 1-2 releases without issues
     # backwards compatibility part
@@ -264,13 +264,10 @@ async def _list_docker_services(
             filters["name"] = [f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}"]
         return filters
 
-    backwards_compatibility_services_list = await client.services.list(
+    services_list: list[Mapping] = await client.services.list(
         filters=_make_filters(backwards_compatible=True)
-    )
-    services_list = await client.services.list(
-        filters=_make_filters(backwards_compatible=False)
-    )
-    return backwards_compatibility_services_list + services_list
+    ) + await client.services.list(filters=_make_filters(backwards_compatible=False))
+    return services_list
 
 
 async def remove_dynamic_sidecar_stack(
