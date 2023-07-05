@@ -149,11 +149,14 @@ def update_service_params_from_settings(
 
     container_spec = create_service_params["task_template"]["ContainerSpec"]
     # set labels for CPU and Memory limits, for both service and container labels
+    # NOTE: cpu-limit is a float not NanoCPUs!!
     container_spec["Labels"][f"{_SIMCORE_CONTAINER_PREFIX}cpu-limit"] = str(
-        create_service_params["task_template"]["Resources"]["Limits"]["NanoCPUs"]
+        float(create_service_params["task_template"]["Resources"]["Limits"]["NanoCPUs"])
+        / (1 * 10**9)
     )
     create_service_params["labels"][f"{_SIMCORE_CONTAINER_PREFIX}cpu-limit"] = str(
-        create_service_params["task_template"]["Resources"]["Limits"]["NanoCPUs"]
+        float(create_service_params["task_template"]["Resources"]["Limits"]["NanoCPUs"])
+        / (1 * 10**9)
     )
     container_spec["Labels"][f"{_SIMCORE_CONTAINER_PREFIX}memory-limit"] = str(
         create_service_params["task_template"]["Resources"]["Limits"]["MemoryBytes"]
