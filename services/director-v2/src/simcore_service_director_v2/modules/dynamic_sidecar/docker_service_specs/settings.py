@@ -4,7 +4,7 @@ from collections import deque
 from typing import Any, cast
 
 from models_library.boot_options import BootOption, EnvVarKey
-from models_library.docker import _SIMCORE_CONTAINER_PREFIX
+from models_library.docker import _SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX
 from models_library.service_settings_labels import (
     ComposeSpecLabelDict,
     SimcoreServiceLabels,
@@ -150,18 +150,24 @@ def update_service_params_from_settings(
     container_spec = create_service_params["task_template"]["ContainerSpec"]
     # set labels for CPU and Memory limits, for both service and container labels
     # NOTE: cpu-limit is a float not NanoCPUs!!
-    container_spec["Labels"][f"{_SIMCORE_CONTAINER_PREFIX}cpu-limit"] = str(
+    container_spec["Labels"][f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}cpu-limit"] = str(
         float(create_service_params["task_template"]["Resources"]["Limits"]["NanoCPUs"])
         / (1 * 10**9)
     )
-    create_service_params["labels"][f"{_SIMCORE_CONTAINER_PREFIX}cpu-limit"] = str(
+    create_service_params["labels"][
+        f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}cpu-limit"
+    ] = str(
         float(create_service_params["task_template"]["Resources"]["Limits"]["NanoCPUs"])
         / (1 * 10**9)
     )
-    container_spec["Labels"][f"{_SIMCORE_CONTAINER_PREFIX}memory-limit"] = str(
+    container_spec["Labels"][
+        f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}memory-limit"
+    ] = str(
         create_service_params["task_template"]["Resources"]["Limits"]["MemoryBytes"]
     )
-    create_service_params["labels"][f"{_SIMCORE_CONTAINER_PREFIX}memory-limit"] = str(
+    create_service_params["labels"][
+        f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}memory-limit"
+    ] = str(
         create_service_params["task_template"]["Resources"]["Limits"]["MemoryBytes"]
     )
 

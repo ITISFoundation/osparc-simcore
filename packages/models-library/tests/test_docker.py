@@ -8,7 +8,7 @@ from typing import Any
 import pytest
 from faker import Faker
 from models_library.docker import (
-    _SIMCORE_CONTAINER_PREFIX,
+    _SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX,
     DockerGenericTag,
     DockerLabelKey,
     SimcoreServiceDockerLabelKeys,
@@ -117,7 +117,9 @@ def test_simcore_service_docker_label_keys(obj_data: dict[str, Any]):
     assert all(
         isinstance(v, str) for v in exported_dict.values()
     ), "docker labels must be strings!"
-    assert all(key.startswith(_SIMCORE_CONTAINER_PREFIX) for key in exported_dict)
+    assert all(
+        key.startswith(_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX) for key in exported_dict
+    )
     re_imported_docker_label_keys = parse_obj_as(
         SimcoreServiceDockerLabelKeys, exported_dict
     )

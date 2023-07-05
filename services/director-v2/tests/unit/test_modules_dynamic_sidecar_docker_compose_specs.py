@@ -8,7 +8,7 @@ from uuid import uuid4
 
 import pytest
 import yaml
-from models_library.docker import _SIMCORE_CONTAINER_PREFIX
+from models_library.docker import _SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import (
@@ -221,14 +221,14 @@ RAM_LIMIT: int = 1233112423423
 
 EXPECTED_LABELS: list[str] = sorted(
     [
-        f"{_SIMCORE_CONTAINER_PREFIX}product-name={PRODUCT_NAME}",
-        f"{_SIMCORE_CONTAINER_PREFIX}simcore-user-agent={SIMCORE_USER_AGENT}",
-        f"{_SIMCORE_CONTAINER_PREFIX}project-id={PROJECT_ID}",
-        f"{_SIMCORE_CONTAINER_PREFIX}user-id={USER_ID}",
-        f"{_SIMCORE_CONTAINER_PREFIX}node-id={NODE_ID}",
-        f"{_SIMCORE_CONTAINER_PREFIX}swarm-stack-name={SWARM_STACK_NAME}",
-        f"{_SIMCORE_CONTAINER_PREFIX}cpu-limit=0",
-        f"{_SIMCORE_CONTAINER_PREFIX}memory-limit=0",
+        f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}product-name={PRODUCT_NAME}",
+        f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}simcore-user-agent={SIMCORE_USER_AGENT}",
+        f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}project-id={PROJECT_ID}",
+        f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}user-id={USER_ID}",
+        f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}node-id={NODE_ID}",
+        f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}swarm-stack-name={SWARM_STACK_NAME}",
+        f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}cpu-limit=0",
+        f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}memory-limit=0",
     ]
 )
 

@@ -32,24 +32,26 @@ class DockerGenericTag(ConstrainedStr):
     regex: re.Pattern[str] | None = DOCKER_GENERIC_TAG_KEY_RE
 
 
-_SIMCORE_CONTAINER_PREFIX: Final[str] = "io.simcore.container."
+_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX: Final[str] = "io.simcore.runtime."
 _BACKWARDS_COMPATIBILITY_MAP: Final[dict[str, str]] = {
-    "node_id": f"{_SIMCORE_CONTAINER_PREFIX}node-id",
-    "product_name": f"{_SIMCORE_CONTAINER_PREFIX}product-name",
-    "project_id": f"{_SIMCORE_CONTAINER_PREFIX}project-id",
-    "simcore_user_agent": f"{_SIMCORE_CONTAINER_PREFIX}simcore-user-agent",
-    "study_id": f"{_SIMCORE_CONTAINER_PREFIX}project-id",
-    "user_id": f"{_SIMCORE_CONTAINER_PREFIX}user-id",
-    "uuid": f"{_SIMCORE_CONTAINER_PREFIX}node-id",
-    "mem_limit": f"{_SIMCORE_CONTAINER_PREFIX}memory-limit",
-    "swarm_stack_name": f"{_SIMCORE_CONTAINER_PREFIX}swarm-stack-name",
+    "node_id": f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}node-id",
+    "product_name": f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}product-name",
+    "project_id": f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}project-id",
+    "simcore_user_agent": f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}simcore-user-agent",
+    "study_id": f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}project-id",
+    "user_id": f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}user-id",
+    "uuid": f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}node-id",
+    "mem_limit": f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}memory-limit",
+    "swarm_stack_name": f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}swarm-stack-name",
 }
 _UNDEFINED_VALUE_STR: Final[str] = "undefined"
 _UNDEFINED_VALUE_INT: Final[str] = "0"
 
 
 def to_simcore_runtime_docker_label_key(key: str) -> DockerLabelKey:
-    return DockerLabelKey(f"{_SIMCORE_CONTAINER_PREFIX}{key.replace('_', '-').lower()}")
+    return DockerLabelKey(
+        f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}{key.replace('_', '-').lower()}"
+    )
 
 
 class SimcoreServiceDockerLabelKeys(BaseModel):
@@ -58,25 +60,29 @@ class SimcoreServiceDockerLabelKeys(BaseModel):
     In order to create this object in code, please use construct() method!
     """
 
-    user_id: UserID = Field(..., alias=f"{_SIMCORE_CONTAINER_PREFIX}user-id")
-    project_id: ProjectID = Field(..., alias=f"{_SIMCORE_CONTAINER_PREFIX}project-id")
-    node_id: NodeID = Field(..., alias=f"{_SIMCORE_CONTAINER_PREFIX}node-id")
+    user_id: UserID = Field(..., alias=f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}user-id")
+    project_id: ProjectID = Field(
+        ..., alias=f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}project-id"
+    )
+    node_id: NodeID = Field(..., alias=f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}node-id")
 
     product_name: ProductName = Field(
-        ..., alias=f"{_SIMCORE_CONTAINER_PREFIX}product-name"
+        ..., alias=f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}product-name"
     )
     simcore_user_agent: str = Field(
-        ..., alias=f"{_SIMCORE_CONTAINER_PREFIX}simcore-user-agent"
+        ..., alias=f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}simcore-user-agent"
     )
 
     swarm_stack_name: str = Field(
-        ..., alias=f"{_SIMCORE_CONTAINER_PREFIX}swarm-stack-name"
+        ..., alias=f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}swarm-stack-name"
     )
 
     memory_limit: ByteSize = Field(
-        ..., alias=f"{_SIMCORE_CONTAINER_PREFIX}memory-limit"
+        ..., alias=f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}memory-limit"
     )
-    cpu_limit: float = Field(..., alias=f"{_SIMCORE_CONTAINER_PREFIX}cpu-limit")
+    cpu_limit: float = Field(
+        ..., alias=f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}cpu-limit"
+    )
 
     @root_validator(pre=True)
     @classmethod
@@ -90,11 +96,12 @@ class SimcoreServiceDockerLabelKeys(BaseModel):
             # these values were sometimes omitted, so let's provide some defaults
             for key in ["product-name", "simcore-user-agent", "swarm-stack-name"]:
                 mapped_values.setdefault(
-                    f"{_SIMCORE_CONTAINER_PREFIX}{key}", _UNDEFINED_VALUE_STR
+                    f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}{key}", _UNDEFINED_VALUE_STR
                 )
 
             mapped_values.setdefault(
-                f"{_SIMCORE_CONTAINER_PREFIX}memory-limit", _UNDEFINED_VALUE_INT
+                f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}memory-limit",
+                _UNDEFINED_VALUE_INT,
             )
 
             def _convert_nano_cpus_to_cpus(nano_cpu: str) -> str:
@@ -103,7 +110,7 @@ class SimcoreServiceDockerLabelKeys(BaseModel):
                 return _UNDEFINED_VALUE_INT
 
             mapped_values.setdefault(
-                f"{_SIMCORE_CONTAINER_PREFIX}cpu-limit",
+                f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}cpu-limit",
                 _convert_nano_cpus_to_cpus(
                     values.get("nano_cpus_limit", _UNDEFINED_VALUE_INT)
                 ),

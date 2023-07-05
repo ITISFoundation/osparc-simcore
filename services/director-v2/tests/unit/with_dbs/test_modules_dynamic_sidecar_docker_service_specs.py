@@ -10,7 +10,7 @@ import pytest
 import respx
 from fastapi import FastAPI
 from models_library.aiodocker_api import AioDockerServiceSpec
-from models_library.docker import _SIMCORE_CONTAINER_PREFIX
+from models_library.docker import _SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX
 from models_library.service_settings_labels import (
     SimcoreServiceLabels,
     SimcoreServiceSettingsLabel,
@@ -167,14 +167,14 @@ def expected_dynamic_sidecar_spec(
             "service_image": "local/dynamic-sidecar:MOCK",
             "service_port": "8888",
             "type": "main-v2",
-            f"{_SIMCORE_CONTAINER_PREFIX}memory-limit": "8589934592",
-            f"{_SIMCORE_CONTAINER_PREFIX}cpu-limit": "4.0",
-            f"{_SIMCORE_CONTAINER_PREFIX}project-id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-            f"{_SIMCORE_CONTAINER_PREFIX}user-id": "234",
-            f"{_SIMCORE_CONTAINER_PREFIX}node-id": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
-            f"{_SIMCORE_CONTAINER_PREFIX}product-name": "osparc",
-            f"{_SIMCORE_CONTAINER_PREFIX}simcore-user-agent": "python/test",
-            f"{_SIMCORE_CONTAINER_PREFIX}swarm-stack-name": "test_swarm_name",
+            f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}memory-limit": "8589934592",
+            f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}cpu-limit": "4.0",
+            f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}project-id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
+            f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}user-id": "234",
+            f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}node-id": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+            f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}product-name": "osparc",
+            f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}simcore-user-agent": "python/test",
+            f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}swarm-stack-name": "test_swarm_name",
         },
         "name": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
         "networks": [{"Target": "mocked_swarm_network_id"}],
@@ -232,14 +232,14 @@ def expected_dynamic_sidecar_spec(
                 "Image": "local/dynamic-sidecar:MOCK",
                 "Init": True,
                 "Labels": {
-                    f"{_SIMCORE_CONTAINER_PREFIX}memory-limit": "8589934592",
-                    f"{_SIMCORE_CONTAINER_PREFIX}cpu-limit": "4.0",
-                    f"{_SIMCORE_CONTAINER_PREFIX}project-id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-                    f"{_SIMCORE_CONTAINER_PREFIX}user-id": "234",
-                    f"{_SIMCORE_CONTAINER_PREFIX}node-id": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
-                    f"{_SIMCORE_CONTAINER_PREFIX}product-name": "osparc",
-                    f"{_SIMCORE_CONTAINER_PREFIX}simcore-user-agent": "python/test",
-                    f"{_SIMCORE_CONTAINER_PREFIX}swarm-stack-name": "test_swarm_name",
+                    f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}memory-limit": "8589934592",
+                    f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}cpu-limit": "4.0",
+                    f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}project-id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
+                    f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}user-id": "234",
+                    f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}node-id": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                    f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}product-name": "osparc",
+                    f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}simcore-user-agent": "python/test",
+                    f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}swarm-stack-name": "test_swarm_name",
                 },
                 "Mounts": [
                     {

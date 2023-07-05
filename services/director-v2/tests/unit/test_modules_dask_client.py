@@ -45,7 +45,7 @@ from faker import Faker
 from fastapi.applications import FastAPI
 from models_library.api_schemas_storage import LinkType
 from models_library.clusters import ClusterID, NoAuthentication, SimpleAuthentication
-from models_library.docker import _SIMCORE_CONTAINER_PREFIX
+from models_library.docker import _SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -546,14 +546,14 @@ async def test_send_computation_task(
             expected_envs={},
             expected_labels=task_labels
             | {
-                f"{_SIMCORE_CONTAINER_PREFIX}user-id": f"{user_id}",
-                f"{_SIMCORE_CONTAINER_PREFIX}project-id": f"{project_id}",
-                f"{_SIMCORE_CONTAINER_PREFIX}node-id": f"{node_id}",
-                f"{_SIMCORE_CONTAINER_PREFIX}cpu-limit": f"{image_params.fake_tasks[node_id].node_requirements.cpu}",
-                f"{_SIMCORE_CONTAINER_PREFIX}memory-limit": f"{image_params.fake_tasks[node_id].node_requirements.ram}",
-                f"{_SIMCORE_CONTAINER_PREFIX}product-name": f"{comp_run_metadata['product_name']}",
-                f"{_SIMCORE_CONTAINER_PREFIX}simcore-user-agent": f"{comp_run_metadata['simcore_user_agent']}",
-                f"{_SIMCORE_CONTAINER_PREFIX}swarm-stack-name": "undefined-label",
+                f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}user-id": f"{user_id}",
+                f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}project-id": f"{project_id}",
+                f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}node-id": f"{node_id}",
+                f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}cpu-limit": f"{image_params.fake_tasks[node_id].node_requirements.cpu}",
+                f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}memory-limit": f"{image_params.fake_tasks[node_id].node_requirements.ram}",
+                f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}product-name": f"{comp_run_metadata['product_name']}",
+                f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}simcore-user-agent": f"{comp_run_metadata['simcore_user_agent']}",
+                f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}swarm-stack-name": "undefined-label",
             },  # type: ignore
         ),
         metadata=comp_run_metadata,
