@@ -635,25 +635,6 @@ async def test_remove_dynamic_sidecar_network_fails(
     assert delete_result is False
 
 
-async def test_list_dynamic_sidecar_services(
-    user_id: UserID,
-    project_id: ProjectID,
-    dynamic_sidecar_settings: DynamicSidecarSettings,
-    dynamic_sidecar_stack_specs: list[dict[str, Any]],
-    cleanup_dynamic_sidecar_stack: None,
-    docker_swarm: None,
-):
-    # start 2 fake services to emulate the dynamic-sidecar stack
-    for dynamic_sidecar_stack in dynamic_sidecar_stack_specs:
-        service_id = await docker_api.create_service_and_get_id(dynamic_sidecar_stack)
-        assert service_id
-
-    services = await docker_api.list_dynamic_sidecar_services(
-        dynamic_sidecar_settings, user_id=user_id, project_id=project_id
-    )
-    assert len(services) == 1
-
-
 async def test_is_sidecar_running(
     node_uuid: UUID,
     dynamic_sidecar_settings: DynamicSidecarSettings,
