@@ -8,6 +8,7 @@ from aiodocker.utils import clean_filters, clean_map
 from fastapi import status
 from fastapi.encoders import jsonable_encoder
 from models_library.aiodocker_api import AioDockerServiceSpec
+from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
@@ -128,7 +129,7 @@ async def get_dynamic_sidecars_to_observe(
         ] = await client.services.list(
             filters={
                 "label": [
-                    f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}"
+                    f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}={dynamic_sidecar_settings.SWARM_STACK_NAME}"
                 ],
                 "name": [f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}"],
             }

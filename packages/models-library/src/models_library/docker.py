@@ -48,6 +48,10 @@ _UNDEFINED_VALUE_STR: Final[str] = "undefined"
 _UNDEFINED_VALUE_INT: Final[str] = "0"
 
 
+def to_simcore_runtime_docker_label_key(key: str) -> DockerLabelKey:
+    return DockerLabelKey(f"{_SIMCORE_CONTAINER_PREFIX}{key.replace('_', '-').lower()}")
+
+
 class SimcoreServiceDockerLabelKeys(BaseModel):
     """
     Represents the standard label on oSparc created containers (not yet services)
