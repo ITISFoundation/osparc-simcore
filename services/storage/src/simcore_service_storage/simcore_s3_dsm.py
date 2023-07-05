@@ -21,7 +21,7 @@ from models_library.projects_nodes_io import (
     StorageFileID,
 )
 from models_library.users import UserID
-from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pydantic import AnyUrl, ByteSize, NonNegativeInt, parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.utils import ensure_ends_with, logged_gather
@@ -32,6 +32,7 @@ from .constants import (
     APP_CONFIG_KEY,
     APP_DB_ENGINE_KEY,
     DATCORE_ID,
+    EXPAND_DIR_MAX_ITEM_COUNT,
     MAX_CONCURRENT_DB_TASKS,
     MAX_CONCURRENT_S3_TASKS,
     MAX_LINK_CHUNK_BYTE_SIZE,
@@ -115,7 +116,9 @@ class SimcoreS3DataManager(BaseDataManager):
         )
         return data
 
-    async def _expand_directory(self, fmd: FileMetaDataAtDB) -> list[FileMetaData]:
+    async def _expand_directory(
+        self, fmd: FileMetaDataAtDB, max_items_to_include: NonNegativeInt
+    ) -> list[FileMetaData]:
         """
         Scans S3 backend and returns a list S3MetaData entries which get mapped
         to FileMetaData entry.
@@ -123,6 +126,7 @@ class SimcoreS3DataManager(BaseDataManager):
         files_in_folder: list[S3MetaData] = await get_s3_client(self.app).list_files(
             self.simcore_bucket_name,
             prefix=ensure_ends_with(fmd.file_id, "/"),
+            max_files_to_list=max_items_to_include,
         )
         result: list[FileMetaData] = [
             convert_db_to_model(
@@ -156,27 +160,31 @@ class SimcoreS3DataManager(BaseDataManager):
         """
         expand_dirs `False`: returns the one metadata entry for each directory
         expand_dirs `True`: returns all files in each directory (no directories will be included)
-        """
-        # NOTE: expand_dirs will be replaced by pagination in the future
 
-        data: deque[FileMetaData] = deque()
-        accesible_projects_ids = []
+        NOTE: expand_dirs will be replaced by pagination in the future
+        currently only {EXPAND_DIR_MAX_ITEM_COUNT} items will be returned
+        The endpoint produces similar results to what it did previously
+        """
+
+        data: list[FileMetaData] = []
+        accessible_projects_ids = []
         async with self.engine.acquire() as conn, conn.begin():
-            accesible_projects_ids = await get_readable_project_ids(conn, user_id)
-            file_metadatas: list[
+            accessible_projects_ids = await get_readable_project_ids(conn, user_id)
+            file_meta_data: list[
                 FileMetaDataAtDB
             ] = await db_file_meta_data.list_filter_with_partial_file_id(
                 conn,
                 user_id=user_id,
-                project_ids=accesible_projects_ids,
+                project_ids=accessible_projects_ids,
                 file_id_prefix=None,
                 partial_file_id=uuid_filter,
+                only_files=False,
             )
 
-            for fmd in file_metadatas:
+            # adding all the file_meta_data entries before attempting
+            for fmd in file_meta_data:
                 if fmd.is_directory and expand_dirs:
-                    # lists content of the directory
-                    data.extend(await self._expand_directory(fmd))
+                    # skip expanding files
                     continue
 
                 if is_file_entry_valid(fmd):
@@ -190,10 +198,19 @@ class SimcoreS3DataManager(BaseDataManager):
                     updated_fmd = await self._update_database_from_storage(conn, fmd)
                     data.append(convert_db_to_model(updated_fmd))
 
+            # try to expand directories the max number of files to return was not reached
+            for fmd in file_meta_data:
+                if fmd.is_directory and expand_dirs:
+                    if len(data) < EXPAND_DIR_MAX_ITEM_COUNT:
+                        max_items_to_include = EXPAND_DIR_MAX_ITEM_COUNT - len(data)
+                        data.extend(
+                            await self._expand_directory(fmd, max_items_to_include)
+                        )
+
             # now parse the project to search for node/project names
             prj_names_mapping: dict[ProjectID | NodeID, str] = {}
             async for proj_data in db_projects.list_valid_projects_in(
-                conn, accesible_projects_ids
+                conn, accessible_projects_ids
             ):
                 prj_names_mapping |= {proj_data.uuid: proj_data.name} | {
                     NodeID(node_id): node_data.label
@@ -204,7 +221,7 @@ class SimcoreS3DataManager(BaseDataManager):
         #        with information from the projects table!
         # also all this stuff with projects should be done in the client code not here
         # NOTE: sorry for all the FIXMEs here, but this will need further refactoring
-        clean_data: deque[FileMetaData] = deque()
+        clean_data: list[FileMetaData] = []
         for d in data:
             if d.project_id not in prj_names_mapping:
                 continue
@@ -215,7 +232,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 clean_data.append(d)
 
             data = clean_data
-        return list(data)
+        return data
 
     async def get_file(self, user_id: UserID, file_id: StorageFileID) -> FileMetaData:
         async with self.engine.acquire() as conn, conn.begin():
@@ -568,6 +585,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 project_ids=can_read_projects_ids,
                 file_id_prefix=prefix,
                 partial_file_id=None,
+                only_files=True,
             )
             resolved_fmds = []
             for fmd in file_metadatas:
@@ -606,9 +624,8 @@ class SimcoreS3DataManager(BaseDataManager):
             )
             # iterate over all entries to check if there is a file in the S3 backend
             async for fmd in db_file_meta_data.list_valid_uploads(conn):
-                # SEE https://www.peterbe.com/plog/fastest-way-to-find-out-if-a-file-exists-in-s3
-                if not await get_s3_client(self.app).list_files(
-                    self.simcore_bucket_name, prefix=fmd.object_name
+                if not await get_s3_client(self.app).object_exists(
+                    self.simcore_bucket_name, s3_object=fmd.object_name
                 ):
                     # this file does not exist in S3
                     file_ids_to_remove.append(fmd.file_id)

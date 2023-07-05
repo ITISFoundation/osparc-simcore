@@ -180,7 +180,7 @@ async def metrics(tests_session_id: str, tags: dict[str, str]) -> AsyncIterator[
 @pytest.fixture
 def mock_max_items(mocker: MockerFixture) -> None:
     # pylint: disable=protected-access
-    mocker.patch.object(s3_client._list_objects_v2_all_items, "__defaults__", (None,))
+    mocker.patch.object(s3_client._list_objects_v2_paginated, "__defaults__", (None,))
 
 
 @pytest.mark.parametrize("total_queries", [3])

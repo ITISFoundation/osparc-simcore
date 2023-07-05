@@ -71,9 +71,11 @@ async def list_filter_with_partial_file_id(
     project_ids: list[ProjectID],
     file_id_prefix: str | None,
     partial_file_id: str | None,
+    only_files: bool,
 ) -> list[FileMetaDataAtDB]:
     stmt = sa.select(file_meta_data).where(
-        (
+        (file_meta_data.c.is_directory == (not only_files))
+        & (
             (file_meta_data.c.user_id == f"{user_id}")
             | file_meta_data.c.project_id.in_(f"{pid}" for pid in project_ids)
         )
