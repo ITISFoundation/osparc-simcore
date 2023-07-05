@@ -3,6 +3,7 @@
 """
 
 import asyncio
+import contextlib
 import logging
 from itertools import chain
 from typing import Any
@@ -385,17 +386,15 @@ async def _remove_single_service_if_orphan(
                 save_state = False
             # -------------------------------------------
 
-            try:
+            with contextlib.suppress(ServiceWaitingForManualIntervention):
                 await api.stop_dynamic_service(
                     app,
                     service_uuid,
                     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                     save_state,
                 )
-            except ServiceWaitingForManualIntervention:
-                pass
 
-        except (ServiceNotFoundError, DirectorException) as err:
+        except DirectorServiceError as err:
             logger.warning("Error while stopping service: %s", err)
 
 
