@@ -113,7 +113,7 @@ def test_simcore_service_docker_label_keys(obj_data: dict[str, Any]):
     simcore_service_docker_label_keys = SimcoreServiceDockerLabelKeys.parse_obj(
         obj_data
     )
-    exported_dict = simcore_service_docker_label_keys.to_docker_labels()
+    exported_dict = simcore_service_docker_label_keys.to_simcore_runtime_docker_labels()
     assert all(
         isinstance(v, str) for v in exported_dict.values()
     ), "docker labels must be strings!"

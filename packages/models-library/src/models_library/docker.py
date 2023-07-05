@@ -33,7 +33,7 @@ class DockerGenericTag(ConstrainedStr):
 
 
 _SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX: Final[str] = "io.simcore.runtime."
-_BACKWARDS_COMPATIBILITY_MAP: Final[dict[str, str]] = {
+_BACKWARDS_COMPATIBILITY_SIMCORE_RUNTIME_DOCKER_LABELS_MAP: Final[dict[str, str]] = {
     "node_id": f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}node-id",
     "product_name": f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}product-name",
     "project_id": f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}project-id",
@@ -44,8 +44,8 @@ _BACKWARDS_COMPATIBILITY_MAP: Final[dict[str, str]] = {
     "mem_limit": f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}memory-limit",
     "swarm_stack_name": f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}swarm-stack-name",
 }
-_UNDEFINED_VALUE_STR: Final[str] = "undefined"
-_UNDEFINED_VALUE_INT: Final[str] = "0"
+_UNDEFINED_LABEL_VALUE_STR: Final[str] = "undefined"
+_UNDEFINED_LABEL_VALUE_INT: Final[str] = "0"
 
 
 def to_simcore_runtime_docker_label_key(key: str) -> DockerLabelKey:
@@ -89,36 +89,37 @@ class SimcoreServiceDockerLabelKeys(BaseModel):
     def _backwards_compatibility(cls, values: dict[str, Any]) -> dict[str, Any]:
         # NOTE: this is necessary for dy-sidecar and legacy service until they are adjusted
         if mapped_values := {
-            _BACKWARDS_COMPATIBILITY_MAP[k]: v
+            _BACKWARDS_COMPATIBILITY_SIMCORE_RUNTIME_DOCKER_LABELS_MAP[k]: v
             for k, v in values.items()
-            if k in _BACKWARDS_COMPATIBILITY_MAP
+            if k in _BACKWARDS_COMPATIBILITY_SIMCORE_RUNTIME_DOCKER_LABELS_MAP
         }:
             # these values were sometimes omitted, so let's provide some defaults
             for key in ["product-name", "simcore-user-agent", "swarm-stack-name"]:
                 mapped_values.setdefault(
-                    f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}{key}", _UNDEFINED_VALUE_STR
+                    f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}{key}",
+                    _UNDEFINED_LABEL_VALUE_STR,
                 )
 
             mapped_values.setdefault(
                 f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}memory-limit",
-                _UNDEFINED_VALUE_INT,
+                _UNDEFINED_LABEL_VALUE_INT,
             )
 
             def _convert_nano_cpus_to_cpus(nano_cpu: str) -> str:
                 with contextlib.suppress(ValidationError):
                     return f"{parse_obj_as(float, nano_cpu) / (1.0*10**9):.2f}"
-                return _UNDEFINED_VALUE_INT
+                return _UNDEFINED_LABEL_VALUE_INT
 
             mapped_values.setdefault(
                 f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}cpu-limit",
                 _convert_nano_cpus_to_cpus(
-                    values.get("nano_cpus_limit", _UNDEFINED_VALUE_INT)
+                    values.get("nano_cpus_limit", _UNDEFINED_LABEL_VALUE_INT)
                 ),
             )
             return mapped_values
         return values
 
-    def to_docker_labels(self) -> dict[DockerLabelKey, str]:
+    def to_simcore_runtime_docker_labels(self) -> dict[DockerLabelKey, str]:
         """returns a dictionary of strings as required by docker"""
         std_export = jsonable_encoder(self, by_alias=True)
         return {

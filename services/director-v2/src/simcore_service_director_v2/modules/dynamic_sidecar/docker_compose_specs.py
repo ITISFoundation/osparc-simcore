@@ -235,7 +235,9 @@ def _update_container_labels(
             memory_limit=ByteSize(container_limits["memory"]),
             cpu_limit=container_limits["cpu"],
         )
-        docker_labels = [f"{k}={v}" for k, v in label_keys.to_docker_labels().items()]
+        docker_labels = [
+            f"{k}={v}" for k, v in label_keys.to_simcore_runtime_docker_labels().items()
+        ]
 
         for docker_label in docker_labels:
             if docker_label not in labels:

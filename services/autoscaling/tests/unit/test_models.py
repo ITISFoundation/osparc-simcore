@@ -119,7 +119,9 @@ async def test_get_simcore_service_docker_labels(
     osparc_docker_label_keys: SimcoreServiceDockerLabelKeys,
 ):
     service_with_labels = await create_service(
-        task_template, osparc_docker_label_keys.to_docker_labels(), "running"
+        task_template,
+        osparc_docker_label_keys.to_simcore_runtime_docker_labels(),
+        "running",
     )
     assert service_with_labels.Spec
     service_tasks = parse_obj_as(

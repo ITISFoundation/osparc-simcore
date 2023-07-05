@@ -70,7 +70,9 @@ async def test_post_task_log_message(
     )
 
     service_with_labels = await create_service(
-        task_template, osparc_docker_label_keys.to_docker_labels(), "running"
+        task_template,
+        osparc_docker_label_keys.to_simcore_runtime_docker_labels(),
+        "running",
     )
     assert service_with_labels.Spec
     service_tasks = parse_obj_as(
@@ -158,7 +160,9 @@ async def test_post_task_progress_message(
     )
 
     service_with_labels = await create_service(
-        task_template, osparc_docker_label_keys.to_docker_labels(), "running"
+        task_template,
+        osparc_docker_label_keys.to_simcore_runtime_docker_labels(),
+        "running",
     )
     assert service_with_labels.Spec
     service_tasks = parse_obj_as(

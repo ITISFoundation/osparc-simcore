@@ -314,7 +314,7 @@ def compute_task_labels(
         swarm_stack_name=_UNDEFINED_METADATA,  # NOTE: there is currently no need for this label in the comp backend
         memory_limit=node_requirements.ram,
         cpu_limit=node_requirements.cpu,
-    ).to_docker_labels()
+    ).to_simcore_runtime_docker_labels()
     all_labels = standard_simcore_labels | parse_obj_as(
         ContainerLabelsDict,
         {
