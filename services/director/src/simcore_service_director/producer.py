@@ -63,8 +63,7 @@ async def _check_node_uuid_available(
         # not filtering by "swarm_stack_name" label because it's safer
         list_of_running_services_w_uuid = await client.services.list(
             filters={
-                "label": f"{_to_simcore_runtime_docker_label_key('node_id')}="
-                + node_uuid
+                "label": f"{_to_simcore_runtime_docker_label_key('node_id')}={node_uuid}"
             }
         )
     except aiodocker.exceptions.DockerError as err:
@@ -1036,7 +1035,7 @@ async def get_services_details(
                 )
             if study_id:
                 filters.append(
-                    f"{_to_simcore_runtime_docker_label_key('study_id')}=" + study_id
+                    f"{_to_simcore_runtime_docker_label_key('project_id')}=" + study_id
                 )
             list_running_services = await client.services.list(
                 filters={"label": filters}
