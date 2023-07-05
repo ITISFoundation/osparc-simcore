@@ -73,7 +73,7 @@ async def create_network(network_config: dict[str, Any]) -> NetworkId:
             network_name = network_config["Name"]
             # make sure the current error being trapped is network dose not exit
             if f"network with name {network_name} already exists" not in str(e):
-                raise e
+                raise
 
             # Fetch network name if network already exists.
             # The environment is trashed because there seems to be an issue
@@ -89,7 +89,7 @@ async def create_network(network_config: dict[str, Any]) -> NetworkId:
             # finally raise an error if a network cannot be spawned
             # pylint: disable=raise-missing-from
             msg = f"Could not create or recover a network ID for {network_config}"
-            raise DynamicSidecarError(msg)
+            raise DynamicSidecarError(msg) from e
 
 
 async def create_service_and_get_id(
@@ -115,12 +115,6 @@ async def create_service_and_get_id(
         raise DynamicSidecarError(msg)
     service_id: ServiceId = service_start_result["ID"]
     return service_id
-
-
-async def inspect_service(service_id: str) -> dict[str, Any]:
-    async with docker_client() as client:
-        inspect_result: dict[str, Any] = await client.services.inspect(service_id)
-        return inspect_result
 
 
 async def get_dynamic_sidecars_to_observe(

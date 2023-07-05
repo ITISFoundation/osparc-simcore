@@ -448,24 +448,6 @@ async def test_create_service(
     assert service_id
 
 
-async def test_inspect_service(
-    service_spec: dict[str, Any],
-    cleanup_test_service_name: None,
-    docker_swarm: None,
-):
-    service_id = await docker_api.create_service_and_get_id(service_spec)
-    assert service_id
-
-    service_inspect = await docker_api.inspect_service(service_id)
-
-    assert service_inspect["Spec"]["Labels"] == service_spec["labels"]
-    assert service_inspect["Spec"]["Name"] == service_spec["name"]
-    assert (
-        service_inspect["Spec"]["TaskTemplate"]["ContainerSpec"]["Image"]
-        == service_spec["task_template"]["ContainerSpec"]["Image"]
-    )
-
-
 async def test_services_to_observe_exist(
     dynamic_sidecar_service_name: str,
     dynamic_sidecar_service_spec: dict[str, Any],
