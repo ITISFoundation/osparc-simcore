@@ -3,9 +3,12 @@ from copy import deepcopy
 
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.basic_types import BootModeEnum, PortInt
-from models_library.docker import StandardSimcoreDockerLabels
+from models_library.docker import (
+    StandardSimcoreDockerLabels,
+    to_simcore_runtime_docker_label_key,
+)
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize
 from servicelib.json_serialization import json_dumps
 
 from ....core.settings import AppSettings, DynamicSidecarSettings
@@ -14,16 +17,18 @@ from ....models.schemas.dynamic_services import SchedulerData
 from .._namespace import get_compose_namespace
 from ..volumes import DynamicSidecarVolumesPathsResolver
 from ._constants import DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS
-from .settings import update_service_params_from_settings
+from .settings import (
+    extract_service_port_from_settings,
+    update_service_params_from_settings,
+)
 
 log = logging.getLogger(__name__)
 
 
-def extract_service_port_from_compose_start_spec(
-    create_service_params: AioDockerServiceSpec,
+def extract_service_port_service_settings(
+    settings: SimcoreServiceSettingsLabel,
 ) -> PortInt:
-    assert create_service_params.Labels  # nosec
-    return parse_obj_as(PortInt, create_service_params.Labels["service_port"])
+    return extract_service_port_from_settings(settings)
 
 
 def _get_environment_variables(
@@ -241,10 +246,9 @@ def get_dynamic_sidecar_spec(
     create_service_params = {
         "endpoint_spec": {"Ports": ports} if ports else {},
         "labels": {
-            "port": f"{dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT}",
             DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: scheduler_data.as_label_data(),
-            "key": scheduler_data.key,
-            "version": scheduler_data.version,
+            to_simcore_runtime_docker_label_key("key"): scheduler_data.key,
+            to_simcore_runtime_docker_label_key("version"): scheduler_data.version,
         }
         | StandardSimcoreDockerLabels(
             user_id=scheduler_data.user_id,

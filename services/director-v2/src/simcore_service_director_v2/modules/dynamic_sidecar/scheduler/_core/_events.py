@@ -58,7 +58,7 @@ from ...docker_api import (
 )
 from ...docker_compose_specs import assemble_spec
 from ...docker_service_specs import (
-    extract_service_port_from_compose_start_spec,
+    extract_service_port_service_settings,
     get_dynamic_proxy_spec,
     get_dynamic_sidecar_spec,
     merge_settings_before_use,
@@ -250,9 +250,7 @@ class CreateSidecars(DynamicSchedulerEvent):
 
         # update service_port and assign it to the status
         # needed by CreateUserServices action
-        scheduler_data.service_port = extract_service_port_from_compose_start_spec(
-            dynamic_sidecar_service_final_spec
-        )
+        scheduler_data.service_port = extract_service_port_service_settings(settings)
 
         proxy_settings: DynamicSidecarProxySettings = (
             dynamic_sidecar_settings.DYNAMIC_SIDECAR_PROXY_SETTINGS
