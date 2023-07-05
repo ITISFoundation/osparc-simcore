@@ -161,10 +161,8 @@ def expected_dynamic_sidecar_spec(
                     "version": "2.4.5",
                 }
             ).as_label_data(),
-            "key": "simcore/services/dynamic/3dviewer",
-            "version": "2.4.5",
-            "port": "8888",
-            "service_port": "8888",
+            f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}key": "simcore/services/dynamic/3dviewer",
+            f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}version": "2.4.5",
             f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}memory-limit": "8589934592",
             f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}cpu-limit": "4.0",
             f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}project-id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
