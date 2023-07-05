@@ -16,7 +16,6 @@ from .clusters.plugin import setup_clusters
 from .db.plugin import setup_db
 from .db_listener.plugin import setup_db_listener
 from .diagnostics.plugin import setup_diagnostics
-from .director.plugin import setup_director
 from .director_v2.plugin import setup_director_v2
 from .email.plugin import setup_email
 from .exporter.plugin import setup_exporter
@@ -91,7 +90,6 @@ def create_application() -> web.Application:
     setup_login(app)
 
     # interaction with other backend services
-    setup_director(app)
     setup_director_v2(app)
     setup_storage(app)
     setup_catalog(app)
