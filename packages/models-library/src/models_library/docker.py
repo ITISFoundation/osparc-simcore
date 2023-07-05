@@ -18,7 +18,6 @@ from pydantic import (
 )
 
 from .basic_regex import DOCKER_GENERIC_TAG_KEY_RE, DOCKER_LABEL_KEY_REGEX
-from .utils.fastapi_encoders import jsonable_encoder
 
 
 class DockerLabelKey(ConstrainedStr):
@@ -121,10 +120,9 @@ class StandardSimcoreDockerLabels(BaseModel):
 
     def to_simcore_runtime_docker_labels(self) -> dict[DockerLabelKey, str]:
         """returns a dictionary of strings as required by docker"""
-        std_export = jsonable_encoder(self, by_alias=True)
         return {
-            DockerLabelKey(f"{k.replace('_', '-')}"): f"{v}"
-            for k, v in sorted(std_export.items())
+            to_simcore_runtime_docker_label_key(k): f"{v}"
+            for k, v in sorted(self.dict().items())
         }
 
     @classmethod
