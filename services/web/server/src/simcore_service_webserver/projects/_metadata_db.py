@@ -1,18 +1,16 @@
-from simcore_postgres_database.utils_projects_metadata import (
-    ProjectJobMetadata,
-    ProjectJobMetadataNotFoundError,
-    ProjectJobMetadataRepo,
-    ProjectNotFoundError,
-)
-
-assert ProjectJobMetadata  # nosec
-assert ProjectJobMetadataRepo  # nosec
-assert ProjectJobMetadataNotFoundError  # nosec
-assert ProjectNotFoundError  # nosec
+from aiopg.sa.engine import Engine
+from models_library.api_schemas_webserver.projects_metadata import MetadataDict
+from models_library.projects import ProjectID
+from models_library.users import UserID
 
 
-__all__: tuple[str, ...] = (
-    "ProjectJobMetadata",
-    "ProjectJobMetadataRepo",
-    "ProjectJobMetadataNotFoundError",
-)
+async def get_project_metadata(
+    engine: Engine, user_id: UserID, project_uuid: ProjectID
+) -> MetadataDict:
+    raise NotImplementedError
+
+
+async def upsert_project_metadata(
+    engine: Engine, user_id: UserID, project_id: ProjectID, metadata: MetadataDict
+) -> MetadataDict:
+    raise NotImplementedError

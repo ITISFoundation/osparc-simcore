@@ -39,7 +39,8 @@ async def test_custom_metadata_handlers(
     )
     response = await client.get(f"{url}")
 
-    await assert_status(response, expected_cls=web.HTTPNotFound)
+    _, error = await assert_status(response, expected_cls=web.HTTPNotFound)
+    assert "project" in error["errors"]["message"]
 
     # get metadata of an existing project the first time -> empty {}
     url = client.app.router["get_project_custom_metadata"].url_for(
