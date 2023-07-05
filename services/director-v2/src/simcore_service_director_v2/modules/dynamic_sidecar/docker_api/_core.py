@@ -258,7 +258,7 @@ async def _list_docker_services(
         }
         if node_id:
             filters["label"].append(
-                f"{'node_id'  if backwards_compatible else to_simcore_runtime_docker_label_key('node_id')}={node_id}"
+                f"{'uuid'  if backwards_compatible else to_simcore_runtime_docker_label_key('node_id')}={node_id}"
             )
         if return_only_sidecars:
             filters["name"] = [f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}"]
