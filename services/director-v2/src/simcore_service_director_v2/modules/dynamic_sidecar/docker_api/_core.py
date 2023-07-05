@@ -1,7 +1,7 @@
 import json
 import logging
 from collections.abc import Mapping
-from typing import Any
+from typing import Any, Final
 
 import aiodocker
 from aiodocker.utils import clean_filters, clean_map
@@ -13,6 +13,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
+from starlette import status
 from tenacity import TryAgain, retry
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -144,7 +145,7 @@ async def _get_service_latest_task(service_id: str) -> Mapping[str, Any]:
                 filters={"service": f"{service_id}"}
             )
             if not running_services:
-                raise DockerServiceNotFoundError(service_id=service_id)
+                raise DockerServiceNotFoundError(service_id=service_id)  # noqa: TRY301
 
             # The service might have more then one task because the
             # previous might have died out.
@@ -155,7 +156,7 @@ async def _get_service_latest_task(service_id: str) -> Mapping[str, Any]:
             last_task: Mapping[str, Any] = sorted_tasks[-1]
             return last_task
     except GenericDockerError as err:
-        if err.original_exception.status == 404:
+        if err.original_exception.status == status.HTTP_404_NOT_FOUND:
             raise DockerServiceNotFoundError(service_id=service_id) from err
         raise
 
@@ -235,6 +236,9 @@ async def is_dynamic_sidecar_stack_missing(
     return len(stack_services) == 0
 
 
+_NUM_SIDECAR_STACK_SERVICES: Final[int] = 2
+
+
 async def are_sidecar_and_proxy_services_present(
     node_uuid: NodeID, dynamic_sidecar_settings: DynamicSidecarSettings
 ) -> bool:
@@ -244,7 +248,7 @@ async def are_sidecar_and_proxy_services_present(
     stack_services = await _get_dynamic_sidecar_stack_services(
         node_uuid, dynamic_sidecar_settings
     )
-    if len(stack_services) != 2:
+    if len(stack_services) != _NUM_SIDECAR_STACK_SERVICES:
         return False
 
     return True
@@ -377,7 +381,7 @@ async def get_or_create_networks_ids(
             *[_get_id_from_name(client, network) for network in networks]
         )
 
-    return dict(zip(networks, networks_ids))
+    return dict(zip(networks, networks_ids, strict=True))
 
 
 async def get_projects_networks_containers(
@@ -391,7 +395,9 @@ async def get_projects_networks_containers(
         params = {"filters": clean_filters({"label": [f"project_id={project_id}"]})}
         filtered_networks = (
             # pylint:disable=protected-access
-            await client.networks.docker._query_json("networks", params=params)
+            await client.networks.docker._query_json(  # noqa: SLF001
+                "networks", params=params
+            )
         )
 
     if not filtered_networks:
@@ -454,7 +460,7 @@ async def _update_service_spec(
                         include=get_leaf_key_paths(update_in_service_spec),
                     )
 
-                    await client._query_json(  # pylint: disable=protected-access
+                    await client._query_json(  # pylint: disable=protected-access  # noqa: SLF001
                         f"services/{service_id}/update",
                         method="POST",
                         data=json_dumps(clean_map(updated_spec)),
@@ -466,7 +472,7 @@ async def _update_service_spec(
                         and "out of sequence" in e.message
                     ):
                         raise TryAgain from e
-                    raise e
+                    raise
 
 
 async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
