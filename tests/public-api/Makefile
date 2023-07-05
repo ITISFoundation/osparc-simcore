@@ -56,7 +56,7 @@ BRANCH := master
 WORKFLOW := publish-and-test-python-client
 
 .PHONY: install-latest-python-osparc
-install-latest-python-osparc: _check_venv_active ## install the latest python osparc package (the latest built wheels on ITISFoundation/osparc-simcore-clients master)
+install-latest-python-osparc: ## install the latest python osparc package (the latest built wheels on ITISFoundation/osparc-simcore-clients master)
 	@-rm -rf ./osparc_python_wheels && python -m pip uninstall osparc -y && python -m pip uninstall osparc_client -y
 	@run_id=$$(bash $(SCRIPTS_DIR)/gh.bash run list --repo=$(REPO) --branch=$(BRANCH) --workflow=$(WORKFLOW) --limit=1 --json=databaseId --jq=.[].databaseId); \
 	[[ -z "$${run_id}" ]] && { echo "Could not find osparc python package" ; exit 1; };\
