@@ -166,7 +166,6 @@ def expected_dynamic_sidecar_spec(
             "port": "8888",
             "service_image": "local/dynamic-sidecar:MOCK",
             "service_port": "8888",
-            "type": "main-v2",
             f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}memory-limit": "8589934592",
             f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}cpu-limit": "4.0",
             f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}project-id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
@@ -438,8 +437,8 @@ def test_get_dynamic_proxy_spec(
         ) == expected_dynamic_sidecar_spec_model.dict(exclude=exclude_keys)
         assert dynamic_sidecar_spec.Labels
         assert expected_dynamic_sidecar_spec_model.Labels
-        assert sorted(list(dynamic_sidecar_spec.Labels.keys())) == sorted(
-            list(expected_dynamic_sidecar_spec_model.Labels.keys())
+        assert sorted(dynamic_sidecar_spec.Labels.keys()) == sorted(
+            expected_dynamic_sidecar_spec_model.Labels.keys()
         )
 
         assert (
