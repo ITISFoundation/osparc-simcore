@@ -17,7 +17,6 @@ from servicelib.utils import logged_gather
 from simcore_postgres_database.errors import DatabaseError
 from simcore_postgres_database.models.users import UserRole
 
-from .director.director_exceptions import DirectorException, ServiceNotFoundError
 from .director_v2 import api
 from .director_v2.exceptions import (
     DirectorServiceError,
