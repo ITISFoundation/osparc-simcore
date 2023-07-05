@@ -26,12 +26,7 @@ from ....models.schemas.constants import (
     DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
-from ....models.schemas.dynamic_services import (
-    SchedulerData,
-    ServiceId,
-    ServiceState,
-    ServiceType,
-)
+from ....models.schemas.dynamic_services import SchedulerData, ServiceId, ServiceState
 from ....models.schemas.dynamic_services.scheduler import NetworkId
 from ....utils.dict_utils import get_leaf_key_paths, nested_update
 from ..docker_states import TASK_STATES_RUNNING, extract_task_state
@@ -142,17 +137,17 @@ async def get_dynamic_sidecars_to_observe(
 async def _get_service_latest_task(service_id: str) -> Mapping[str, Any]:
     try:
         async with docker_client() as client:
-            running_services = await client.tasks.list(
+            service_associated_tasks = await client.tasks.list(
                 filters={"service": f"{service_id}"}
             )
-            if not running_services:
+            if not service_associated_tasks:
                 raise DockerServiceNotFoundError(service_id=service_id)  # noqa: TRY301
 
             # The service might have more then one task because the
             # previous might have died out.
             # Only interested in the latest task as only one task per
             # service will be running.
-            sorted_tasks = sorted(running_services, key=lambda task: task["UpdatedAt"])  # type: ignore
+            sorted_tasks = sorted(service_associated_tasks, key=lambda task: task["UpdatedAt"])  # type: ignore
 
             last_task: Mapping[str, Any] = sorted_tasks[-1]
             return last_task
@@ -218,8 +213,8 @@ async def _get_dynamic_sidecar_stack_services(
 ) -> list[Mapping]:
     filters = {
         "label": [
-            f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",
-            f"uuid={node_uuid}",
+            f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}={dynamic_sidecar_settings.SWARM_STACK_NAME}",
+            f"{to_simcore_runtime_docker_label_key('node_id')}={node_uuid}",
         ]
     }
     async with docker_client() as client:
@@ -263,8 +258,8 @@ async def remove_dynamic_sidecar_stack(
         services_to_remove = await client.services.list(
             filters={
                 "label": [
-                    f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",
-                    f"uuid={node_uuid}",
+                    f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}={dynamic_sidecar_settings.SWARM_STACK_NAME}",
+                    f"{to_simcore_runtime_docker_label_key('node_id')}={node_uuid}",
                 ]
             }
         )
@@ -300,7 +295,7 @@ async def list_dynamic_sidecar_services(
 ) -> list[dict[str, Any]]:
     service_filters = {
         "label": [
-            f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",
+            f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}={dynamic_sidecar_settings.SWARM_STACK_NAME}",
         ],
         "name": [f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}"],
     }
@@ -323,10 +318,10 @@ async def is_sidecar_running(
         sidecar_service_list = await client.services.list(
             filters={
                 "label": [
-                    f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",
-                    f"type={ServiceType.MAIN.value}",
-                    f"uuid={node_uuid}",
-                ]
+                    f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}={dynamic_sidecar_settings.SWARM_STACK_NAME}",
+                    f"{to_simcore_runtime_docker_label_key('node_id')}={node_uuid}",
+                ],
+                "name": [f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}"],
             }
         )
         if len(sidecar_service_list) != 1:

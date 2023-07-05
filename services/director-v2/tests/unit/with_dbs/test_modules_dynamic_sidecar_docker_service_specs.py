@@ -166,8 +166,6 @@ def expected_dynamic_sidecar_spec(
             "port": "8888",
             "service_image": "local/dynamic-sidecar:MOCK",
             "service_port": "8888",
-            "swarm_stack_name": "test_swarm_name",
-            "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
             "type": "main-v2",
             f"{_SIMCORE_CONTAINER_PREFIX}memory-limit": "8589934592",
             f"{_SIMCORE_CONTAINER_PREFIX}cpu-limit": "4.0",

@@ -30,7 +30,6 @@ from simcore_service_director_v2.models.schemas.constants import (
 from simcore_service_director_v2.models.schemas.dynamic_services import (
     SchedulerData,
     ServiceState,
-    ServiceType,
 )
 from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
     DockerContainerInspect,
@@ -237,7 +236,6 @@ def dynamic_sidecar_stack_specs(
             },
             "labels": {
                 "swarm_stack_name": f"{dynamic_sidecar_settings.SWARM_STACK_NAME}",
-                "type": f"{ServiceType.DEPENDENCY.value}",
                 "uuid": f"{node_uuid}",
                 "user_id": f"{user_id}",
                 "study_id": f"{project_id}",
@@ -250,7 +248,6 @@ def dynamic_sidecar_stack_specs(
             },
             "labels": {
                 "swarm_stack_name": f"{dynamic_sidecar_settings.SWARM_STACK_NAME}",
-                "type": f"{ServiceType.MAIN.value}",
                 "uuid": f"{node_uuid}",
                 "user_id": f"{user_id}",
                 "study_id": f"{project_id}",

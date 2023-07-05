@@ -10,7 +10,7 @@ from models_library.services_resources import (
 from pydantic import ByteSize
 
 from ....core.settings import DynamicSidecarProxySettings, DynamicSidecarSettings
-from ....models.schemas.dynamic_services import SchedulerData, ServiceType
+from ....models.schemas.dynamic_services import SchedulerData
 from ._constants import DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS
 
 
@@ -63,7 +63,6 @@ def get_dynamic_proxy_spec(
         "labels": {
             # TODO: let's use a pydantic model with descriptions
             "io.simcore.zone": f"{dynamic_sidecar_settings.TRAEFIK_SIMCORE_ZONE}",
-            "swarm_stack_name": dynamic_sidecar_settings.SWARM_STACK_NAME,
             "traefik.docker.network": swarm_network_name,
             "traefik.enable": "true",
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.customresponseheaders.Content-Security-Policy": f"frame-ancestors {scheduler_data.request_dns} {scheduler_data.node_uuid}.services.{scheduler_data.request_dns}",
@@ -81,9 +80,7 @@ def get_dynamic_proxy_spec(
             f"traefik.http.routers.{scheduler_data.proxy_service_name}.priority": "10",
             f"traefik.http.routers.{scheduler_data.proxy_service_name}.rule": f"hostregexp(`{scheduler_data.node_uuid}.services.{{host:.+}}`)",
             f"traefik.http.routers.{scheduler_data.proxy_service_name}.middlewares": f"{dynamic_sidecar_settings.SWARM_STACK_NAME}_gzip@docker, {scheduler_data.proxy_service_name}-security-headers",
-            "type": ServiceType.DEPENDENCY.value,
             "dynamic_type": "dynamic-sidecar",  # tagged as dynamic service
-            "uuid": f"{scheduler_data.node_uuid}",  # needed for removal when project is closed
         }
         | SimcoreServiceDockerLabelKeys(
             user_id=scheduler_data.user_id,

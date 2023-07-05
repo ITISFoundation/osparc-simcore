@@ -10,7 +10,7 @@ from servicelib.json_serialization import json_dumps
 
 from ....core.settings import AppSettings, DynamicSidecarSettings
 from ....models.schemas.constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
-from ....models.schemas.dynamic_services import SchedulerData, ServiceType
+from ....models.schemas.dynamic_services import SchedulerData
 from .._namespace import get_compose_namespace
 from ..volumes import DynamicSidecarVolumesPathsResolver
 from ._constants import DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS
@@ -241,12 +241,8 @@ def get_dynamic_sidecar_spec(
     create_service_params = {
         "endpoint_spec": {"Ports": ports} if ports else {},
         "labels": {
-            "type": ServiceType.MAIN.value,  # required to be listed as an interactive service and be properly cleaned up
             "port": f"{dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT}",
             # the following are used for scheduling
-            # TODO: GitHK please take care of removing uuid, swarm_stack_name, need help here
-            "uuid": f"{scheduler_data.node_uuid}",  # also needed for removal when project is closed
-            "swarm_stack_name": dynamic_sidecar_settings.SWARM_STACK_NAME,  # required for listing services with uuid
             DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: scheduler_data.as_label_data(),
             "service_image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,
             "key": scheduler_data.key,

@@ -10,20 +10,6 @@ from models_library.services import VERSION_RE, DynamicServiceKey
 from models_library.users import UserID
 from pydantic import BaseModel, Field
 
-from ....meta import API_VTAG
-
-
-@unique
-class ServiceType(Enum):
-    """
-    Used to filter out services spawned by this service in the stack.
-    The version was added to distinguish from the ones spawned by director-v0
-    These values are attached to the dynamic-sidecar and its relative proxy.
-    """
-
-    MAIN = f"main-{API_VTAG}"
-    DEPENDENCY = f"dependency-{API_VTAG}"
-
 
 class CommonServiceDetails(BaseModel):
     key: DynamicServiceKey = Field(
