@@ -247,8 +247,10 @@ def get_dynamic_sidecar_spec(
         "endpoint_spec": {"Ports": ports} if ports else {},
         "labels": {
             DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: scheduler_data.as_label_data(),
-            to_simcore_runtime_docker_label_key("key"): scheduler_data.key,
-            to_simcore_runtime_docker_label_key("version"): scheduler_data.version,
+            to_simcore_runtime_docker_label_key("service_key"): scheduler_data.key,
+            to_simcore_runtime_docker_label_key(
+                "service_version"
+            ): scheduler_data.version,
         }
         | StandardSimcoreDockerLabels(
             user_id=scheduler_data.user_id,
