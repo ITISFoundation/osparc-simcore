@@ -242,7 +242,6 @@ def get_dynamic_sidecar_spec(
         "endpoint_spec": {"Ports": ports} if ports else {},
         "labels": {
             "port": f"{dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT}",
-            # the following are used for scheduling
             DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: scheduler_data.as_label_data(),
             "service_image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,
             "key": scheduler_data.key,
