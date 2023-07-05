@@ -37,7 +37,7 @@ will start the api-server in development-mode together with a postgres db initia
 - http://127.0.0.1:8000/dev/docs: swagger type of documentation
 
 ## Backwards compatibility of the server API
-The public API is required to be backwards compatible in the sense that a [client](https://github.com/ITISFoundation/osparc-simcore-clients) which is compatible with API version `N` should also be compatible with version `N+1`. Because of this, upgrading the server should never force a user to upgrade their client: The client which they have is already compatible with the new server. Note that
+The public API is required to be backwards compatible in the sense that a [client](https://github.com/ITISFoundation/osparc-simcore-clients) which is compatible with API version `N` should also be compatible with version `N+1`. Because of this, upgrading the server should never force a user to upgrade their client: The client which they have is already compatible with the new server.
 
 ```mermaid
 
