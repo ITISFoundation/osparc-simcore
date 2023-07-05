@@ -40,7 +40,7 @@ from ...core.errors import (
     TaskSchedulingError,
 )
 from ...models.domains.comp_pipelines import CompPipelineAtDB
-from ...models.domains.comp_runs import CompRunsAtDB
+from ...models.domains.comp_runs import CompRunsAtDB, MetadataDict
 from ...models.domains.comp_tasks import CompTaskAtDB, Image
 from ...utils.computations import get_pipeline_state_from_task_states
 from ...utils.scheduler import (
@@ -48,7 +48,6 @@ from ...utils.scheduler import (
     PROCESSING_STATES,
     WAITING_FOR_START_STATES,
     Iteration,
-    get_repository,
 )
 from ..db.repositories.comp_pipelines import CompPipelinesRepository
 from ..db.repositories.comp_runs import CompRunsRepository
@@ -57,9 +56,10 @@ from ..db.repositories.comp_tasks import CompTasksRepository
 logger = logging.getLogger(__name__)
 
 
-@dataclass
+@dataclass(kw_only=True)
 class ScheduledPipelineParams:
     cluster_id: ClusterID
+    metadata: MetadataDict
     mark_for_cancellation: bool = False
 
 
@@ -77,7 +77,12 @@ class BaseCompScheduler(ABC):
     rabbitmq_client: RabbitMQClient
 
     async def run_new_pipeline(
-        self, user_id: UserID, project_id: ProjectID, cluster_id: ClusterID
+        self,
+        user_id: UserID,
+        project_id: ProjectID,
+        cluster_id: ClusterID,
+        product_name: str,
+        simcore_user_agent: str,
     ) -> None:
         """Sets a new pipeline to be scheduled on the computational resources.
         Passing cluster_id=0 will use the default cluster. Passing an existing ID will instruct
@@ -91,17 +96,19 @@ class BaseCompScheduler(ABC):
             )
             return
 
-        runs_repo: CompRunsRepository = get_repository(
-            self.db_engine, CompRunsRepository
-        )
+        runs_repo = CompRunsRepository.instance(self.db_engine)
         new_run: CompRunsAtDB = await runs_repo.create(
             user_id=user_id,
             project_id=project_id,
             cluster_id=cluster_id,
+            metadata={
+                "product_name": product_name,
+                "simcore_user_agent": simcore_user_agent,
+            },
         )
         self.scheduled_pipelines[
             (user_id, project_id, new_run.iteration)
-        ] = ScheduledPipelineParams(cluster_id=cluster_id)
+        ] = ScheduledPipelineParams(cluster_id=cluster_id, metadata=new_run.metadata)
         # ensure the scheduler starts right away
         self._wake_up_scheduler_now()
 
@@ -134,11 +141,12 @@ class BaseCompScheduler(ABC):
         await logged_gather(
             *(
                 self._schedule_pipeline(
-                    user_id,
-                    project_id,
-                    pipeline_params.cluster_id,
-                    iteration,
-                    pipeline_params.mark_for_cancellation,
+                    user_id=user_id,
+                    project_id=project_id,
+                    cluster_id=pipeline_params.cluster_id,
+                    iteration=iteration,
+                    marked_for_stopping=pipeline_params.mark_for_cancellation,
+                    metadata=pipeline_params.metadata,
                 )
                 for (
                     user_id,
@@ -151,9 +159,7 @@ class BaseCompScheduler(ABC):
         )
 
     async def _get_pipeline_dag(self, project_id: ProjectID) -> nx.DiGraph:
-        comp_pipeline_repo: CompPipelinesRepository = get_repository(
-            self.db_engine, CompPipelinesRepository
-        )
+        comp_pipeline_repo = CompPipelinesRepository.instance(self.db_engine)
         pipeline_at_db: CompPipelineAtDB = await comp_pipeline_repo.get_pipeline(
             project_id
         )
@@ -164,9 +170,7 @@ class BaseCompScheduler(ABC):
     async def _get_pipeline_tasks(
         self, project_id: ProjectID, pipeline_dag: nx.DiGraph
     ) -> dict[str, CompTaskAtDB]:
-        comp_tasks_repo: CompTasksRepository = get_repository(
-            self.db_engine, CompTasksRepository
-        )
+        comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
         pipeline_comp_tasks: dict[str, CompTaskAtDB] = {
             f"{t.node_id}": t
             for t in await comp_tasks_repo.list_computational_tasks(project_id)
@@ -201,9 +205,7 @@ class BaseCompScheduler(ABC):
         iteration: PositiveInt,
         run_result: RunningState,
     ) -> None:
-        comp_runs_repo: CompRunsRepository = get_repository(
-            self.db_engine, CompRunsRepository
-        )
+        comp_runs_repo = CompRunsRepository.instance(self.db_engine)
         await comp_runs_repo.set_run_result(
             user_id=user_id,
             project_id=project_id,
@@ -225,9 +227,7 @@ class BaseCompScheduler(ABC):
             tasks[f"{task}"].state = RunningState.ABORTED
         if tasks_to_set_aborted:
             # update the current states back in DB
-            comp_tasks_repo: CompTasksRepository = get_repository(
-                self.db_engine, CompTasksRepository
-            )
+            comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
             await comp_tasks_repo.update_project_tasks_state(
                 project_id,
                 [NodeID(n) for n in tasks_to_set_aborted],
@@ -330,9 +330,11 @@ class BaseCompScheduler(ABC):
     @abstractmethod
     async def _start_tasks(
         self,
+        *,
         user_id: UserID,
         project_id: ProjectID,
         cluster_id: ClusterID,
+        metadata: MetadataDict,
         scheduled_tasks: dict[NodeID, Image],
     ) -> None:
         ...
@@ -357,11 +359,13 @@ class BaseCompScheduler(ABC):
 
     async def _schedule_pipeline(
         self,
+        *,
         user_id: UserID,
         project_id: ProjectID,
         cluster_id: ClusterID,
         iteration: PositiveInt,
         marked_for_stopping: bool,
+        metadata: MetadataDict,
     ) -> None:
         logger.debug(
             "checking run of project [%s:%s] for user [%s]",
@@ -388,7 +392,12 @@ class BaseCompScheduler(ABC):
             else:
                 # let's get the tasks to schedule then
                 await self._schedule_tasks_to_start(
-                    user_id, project_id, cluster_id, comp_tasks, dag
+                    user_id=user_id,
+                    project_id=project_id,
+                    cluster_id=cluster_id,
+                    comp_tasks=comp_tasks,
+                    dag=dag,
+                    metadata=metadata,
                 )
             # 4. Update the run result
             pipeline_result = await self._update_run_result_from_tasks(
@@ -431,9 +440,7 @@ class BaseCompScheduler(ABC):
         comp_tasks: dict[str, CompTaskAtDB],
     ) -> None:
         # get any running task and stop them
-        comp_tasks_repo: CompTasksRepository = get_repository(
-            self.db_engine, CompTasksRepository
-        )
+        comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
         await comp_tasks_repo.mark_project_published_tasks_as_aborted(project_id)
         # stop any remaining running task, these are already submitted
         tasks_to_stop = [
@@ -449,6 +456,7 @@ class BaseCompScheduler(ABC):
         user_id: UserID,
         project_id: ProjectID,
         cluster_id: ClusterID,
+        metadata: MetadataDict,
         comp_tasks: dict[str, CompTaskAtDB],
         dag: nx.DiGraph,
     ):
@@ -476,9 +484,7 @@ class BaseCompScheduler(ABC):
             return
 
         # Change the tasks state to PENDING
-        comp_tasks_repo: CompTasksRepository = get_repository(
-            self.db_engine, CompTasksRepository
-        )
+        comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
         await comp_tasks_repo.update_project_tasks_state(
             project_id,
             list(tasks_ready_to_start.keys()),
@@ -491,9 +497,10 @@ class BaseCompScheduler(ABC):
         results = await asyncio.gather(
             *[
                 self._start_tasks(
-                    user_id,
-                    project_id,
-                    cluster_id,
+                    user_id=user_id,
+                    project_id=project_id,
+                    cluster_id=cluster_id,
+                    metadata=metadata,
                     scheduled_tasks={node_id: task.image},
                 )
                 for node_id, task in tasks_ready_to_start.items()

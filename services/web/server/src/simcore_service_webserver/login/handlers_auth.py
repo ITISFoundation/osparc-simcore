@@ -7,7 +7,7 @@ from models_library.emails import LowerCaseEmailStr
 from pydantic import BaseModel, Field, PositiveInt, SecretStr
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.error_codes import create_error_code
-from servicelib.logging_utils import get_log_record_extra, log_context
+from servicelib.logging_utils import LogExtra, get_log_record_extra, log_context
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.models.users import UserRole
@@ -33,6 +33,7 @@ from ._constants import (
     MAX_2FA_CODE_RESEND,
     MAX_2FA_CODE_TRIALS,
     MSG_2FA_CODE_SENT,
+    MSG_2FA_UNAVAILABLE_OEC,
     MSG_LOGGED_OUT,
     MSG_PHONE_MISSING,
     MSG_UNAUTHORIZED_LOGIN_2FA,
@@ -120,13 +121,11 @@ async def login(request: web.Request):
     # Some roles have login privileges
     has_privileges: Final[bool] = UserRole.USER < UserRole(user["role"])
     if has_privileges or not settings.LOGIN_2FA_REQUIRED:
-        response = await login_granted_response(request, user=user)
-        return response
+        return await login_granted_response(request, user=user)
 
     # no phone
     if not user["phone"]:
-
-        response = envelope_response(
+        return envelope_response(
             # LoginNextPage
             {
                 "name": CODE_PHONE_NUMBER_REQUIRED,
@@ -140,7 +139,6 @@ async def login(request: web.Request):
             },
             status=web.HTTPAccepted.status_code,
         )
-        return response
 
     # create 2FA
     assert user["phone"]  # nosec
@@ -163,7 +161,7 @@ async def login(request: web.Request):
             user_name=user["name"],
         )
 
-        response = envelope_response(
+        return envelope_response(
             # LoginNextPage
             {
                 "name": CODE_2FA_CODE_REQUIRED,
@@ -181,19 +179,20 @@ async def login(request: web.Request):
             },
             status=web.HTTPAccepted.status_code,
         )
-        return response
 
-    except Exception as e:
-        error_code = create_error_code(e)
+    except Exception as exc:
+        error_code = create_error_code(exc)
+        more_extra: LogExtra = get_log_record_extra(user_id=user.get("id")) or {}
         log.exception(
-            "Unexpectedly failed while setting up 2FA code and sending SMS[%s]",
+            "Failed while setting up 2FA code and sending SMS to %s [%s]",
+            mask_phone_number(user.get("phone", "Unknown")),
             f"{error_code}",
-            extra={"error_code": error_code},
+            extra={"error_code": error_code, **more_extra},
         )
         raise web.HTTPServiceUnavailable(
-            reason=f"Currently we cannot use 2FA, please try again later ({error_code})",
+            reason=MSG_2FA_UNAVAILABLE_OEC.format(error_code=error_code),
             content_type=MIMETYPE_APPLICATION_JSON,
-        ) from e
+        ) from exc
 
 
 class LoginTwoFactorAuthBody(InputSchema):
@@ -239,8 +238,7 @@ async def login_2fa(request: web.Request):
     # dispose since code was used
     await delete_2fa_code(request.app, login_2fa_.email)
 
-    response = await login_granted_response(request, user=user)
-    return response
+    return await login_granted_response(request, user=user)
 
 
 class LogoutBody(InputSchema):
