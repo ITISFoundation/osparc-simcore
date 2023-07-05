@@ -193,14 +193,14 @@ class StandardSimcoreDockerLabels(BaseModel):
                 },
                 # modern both dynamic-sidecar services and computational services
                 {
-                    "io.simcore.container.cpu-limit": "2.4",
-                    "io.simcore.container.memory-limit": "1073741824",
-                    "io.simcore.container.node-id": "1f963626-66e1-43f1-a777-33955c08b909",
-                    "io.simcore.container.product-name": "osparc",
-                    "io.simcore.container.project-id": "29f393fc-1410-47b3-b4b9-61dfce21a2a6",
-                    "io.simcore.container.simcore-user-agent": "puppeteer",
-                    "io.simcore.container.swarm-stack-name": "devel-osparc",
-                    "io.simcore.container.user-id": "5",
+                    "io.simcore.runtime.cpu-limit": "2.4",
+                    "io.simcore.runtime.memory-limit": "1073741824",
+                    "io.simcore.runtime.node-id": "1f963626-66e1-43f1-a777-33955c08b909",
+                    "io.simcore.runtime.product-name": "osparc",
+                    "io.simcore.runtime.project-id": "29f393fc-1410-47b3-b4b9-61dfce21a2a6",
+                    "io.simcore.runtime.simcore-user-agent": "puppeteer",
+                    "io.simcore.runtime.swarm-stack-name": "devel-osparc",
+                    "io.simcore.runtime.user-id": "5",
                 },
             ]
         }
