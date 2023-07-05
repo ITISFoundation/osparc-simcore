@@ -1,6 +1,7 @@
 import json
 import logging
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 import aiodocker
 from aiodocker.utils import clean_filters, clean_map
@@ -57,10 +58,8 @@ async def get_swarm_network(dynamic_sidecar_settings: DynamicSidecarSettings) ->
         x for x in all_networks if "swarm" in x["Scope"] and network_name in x["Name"]
     ]
     if not networks or len(networks) > 1:
-        raise DynamicSidecarError(
-            f"Swarm network name (searching for '*{network_name}*') is not configured."
-            f"Found following networks: {networks}"
-        )
+        msg = f"Swarm network name (searching for '*{network_name}*') is not configured.Found following networks: {networks}"
+        raise DynamicSidecarError(msg)
     return networks[0]
 
 
@@ -89,9 +88,8 @@ async def create_network(network_config: dict[str, Any]) -> NetworkId:
 
             # finally raise an error if a network cannot be spawned
             # pylint: disable=raise-missing-from
-            raise DynamicSidecarError(
-                f"Could not create or recover a network ID for {network_config}"
-            )
+            msg = f"Could not create or recover a network ID for {network_config}"
+            raise DynamicSidecarError(msg)
 
 
 async def create_service_and_get_id(
@@ -113,9 +111,8 @@ async def create_service_and_get_id(
         )
 
     if "ID" not in service_start_result:
-        raise DynamicSidecarError(
-            f"Error while starting service: {str(service_start_result)}"
-        )
+        msg = f"Error while starting service: {service_start_result!s}"
+        raise DynamicSidecarError(msg)
     service_id: ServiceId = service_start_result["ID"]
     return service_id
 
@@ -201,17 +198,15 @@ async def get_dynamic_sidecar_placement(
         service_state = task["Status"]["State"]
 
         if service_state not in TASK_STATES_RUNNING:
-            raise TryAgain()
+            raise TryAgain
         return task
 
     task = await _get_task_data_when_service_running(service_id=service_id)
 
     docker_node_id: None | str = task.get("NodeID", None)
     if not docker_node_id:
-        raise DynamicSidecarError(
-            f"Could not find an assigned NodeID for service_id={service_id}. "
-            f"Last task inspect result: {task}"
-        )
+        msg = f"Could not find an assigned NodeID for service_id={service_id}. Last task inspect result: {task}"
+        raise DynamicSidecarError(msg)
 
     return docker_node_id
 
@@ -476,7 +471,7 @@ async def _update_service_spec(
                         e.status == status.HTTP_500_INTERNAL_SERVER_ERROR
                         and "out of sequence" in e.message
                     ):
-                        raise TryAgain() from e
+                        raise TryAgain from e
                     raise e
 
 
