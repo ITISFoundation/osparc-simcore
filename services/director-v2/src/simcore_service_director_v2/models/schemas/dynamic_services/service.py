@@ -1,7 +1,7 @@
 from enum import Enum, unique
 from functools import cached_property, lru_cache, total_ordering
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from models_library.basic_types import PortInt
 from models_library.projects import ProjectID
@@ -42,7 +42,7 @@ class ServiceDetails(CommonServiceDetails):
 
     class Config:
         allow_population_by_field_name = True
-        schema_extra: dict[str, Any] = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "key": "simcore/services/dynamic/3dviewer",
                 "version": "2.4.5",
@@ -158,7 +158,7 @@ class RunningDynamicServiceDetails(ServiceDetails):
 
     class Config(ServiceDetails.Config):
         keep_untouched = (cached_property,)
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "boot_type": "V0",
