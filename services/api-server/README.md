@@ -44,27 +44,27 @@ The public API is required to be backwards compatible in the sense that a [clien
 flowchart LR
   subgraph Client
     direction LR
-    A2(dev branch) .-> B2(master) .-> C2(staging) .-> D2(production)
-    A2(dev branch) ==> B2(master) ==> C2(staging) ==> D2(production)
+    A2(dev branch) .->|"🔙"| B2(master) .->|"🔙"| C2(staging) .->|"🔙"| D2(production)
+    A2(dev branch) ==>|"🔨"| B2(master) ==>|"🔨"| C2(staging) ==>|"🔨"| D2(production)
   end
   subgraph Server
     direction LR
     A1(dev branch) ~~~ B1(master) ~~~ C1(staging) ~~~ D1(production)
-    A1(dev branch) ==> B1(master) ==> C1(staging) ==> D1(production)
+    A1(dev branch) ==>|"🔨"| B1(master) ==>|"🔨"| C1(staging) ==>|"🔨"| D1(production)
   end
 
-  A1 .-> A2
-  B1 .-> B2
-  C1 .-> C2
-  D1 .-> D2
+  A1 .->|"🔙"| A2
+  B1 .->|"🔙"| B2
+  C1 .->|"🔙"| C2
+  D1 .->|"🔙"| D2
 
   A2 ~~~ A1
   B2 ~~~ B1
   C2 ~~~ C1
   D2 ~~~ D1
-
 ```
-In this diagram the development workflow/progress is indicated with full arrows both for the server client (`dev branch`->`master`->`staging`->`production`). To see which client version a given server version is compatible with one can follow the dotted arrows from that server version. E.g. one sees that the server in `staging` is compatible with the client in `staging` and in `production`. Needless to say, to see which versions of the server a given client is compatible with one can follow the dotted lines backwards from the client version. E.g. the client in `master` is seen to be compatible with ther server versions in `master` and in `dev branch`.
+
+In this diagram the development workflow/progress is indicated with 🔨-arrows both for the server client. To see which client version a given server version is compatible with one can follow the backwards 🔙-arrows from that server version. E.g. one sees that the server in `staging` is compatible with the client in `staging` and in `production`. Needless to say, to see which versions of the server a given client is compatible with one can follow the dotted lines backwards from the client version. E.g. the client in `master` is seen to be compatible with ther server versions in `master` and in `dev branch`.
 
 
 ## References
