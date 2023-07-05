@@ -11,11 +11,7 @@ This OAS are the source of truth
 
 from enum import Enum
 
-from _common import (
-    CURRENT_DIR,
-    assert_handler_signature_against_model,
-    create_openapi_specs,
-)
+from _common import assert_handler_signature_against_model
 from fastapi import FastAPI
 from models_library.api_schemas_webserver.resource_usage import ContainerGet
 from models_library.generics import Envelope
@@ -54,5 +50,6 @@ assert_handler_signature_against_model(
 
 
 if __name__ == "__main__":
+    from _common import CURRENT_DIR, create_openapi_specs
 
     create_openapi_specs(app, CURRENT_DIR.parent / "openapi-resource-usage.yaml")

@@ -1,6 +1,4 @@
 # Extra reqs
 
-# has to depend on the base service as well, or it will uninstall some packages
---constraint  ./../../../../services/storage/requirements/_base.txt
 
 fastapi
