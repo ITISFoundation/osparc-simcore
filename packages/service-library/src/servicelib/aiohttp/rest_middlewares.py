@@ -106,8 +106,8 @@ def error_middleware_factory(
                     if not is_enveloped_from_map(payload):
                         payload = wrap_as_envelope(data=payload)
                         err.text = json.dumps(payload)
-                except Exception as err:  # pylint: disable=broad-except
-                    _process_and_raise_unexpected_error(request, err)
+                except Exception as other_error:  # pylint: disable=broad-except
+                    _process_and_raise_unexpected_error(request, other_error)
             raise err
 
         except web.HTTPRedirection as err:
