@@ -1,7 +1,7 @@
 import json
 import warnings
+from dataclasses import asdict
 
-import attr
 from aiohttp import web
 
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -21,7 +21,7 @@ class EnvelopeFactory:
         enveloped = {"data": data, "error": error}
         for key, value in enveloped.items():
             if value is not None and not isinstance(value, dict):
-                enveloped[key] = attr.asdict(value)
+                enveloped[key] = asdict(value)
         self._envelope = enveloped
 
     def as_dict(self) -> dict:
