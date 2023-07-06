@@ -19,7 +19,7 @@ from .utils_models import FromRowMixin
 
 
 class DBProjectNotFoundError(Exception):
-    code = "projects.not_found"
+    ...
 
 
 #
