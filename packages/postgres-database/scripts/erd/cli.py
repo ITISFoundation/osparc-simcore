@@ -21,8 +21,9 @@ import simcore_postgres_database.models
 from simcore_postgres_database.models.base import metadata
 from sqlalchemy_schemadisplay import create_schema_graph
 
+models_folder = Path(simcore_postgres_database.models.__file__).parent
 # imports all models to fill "metadata"
-for p in Path(simcore_postgres_database.models.__file__).glob("*.py"):
+for p in models_folder.glob("*.py"):
     if not p.name.startswith("__"):
         importlib.import_module(
             f"simcore_postgres_database.models.{p.name.removesuffix('.py')}"
