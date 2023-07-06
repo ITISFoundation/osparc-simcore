@@ -184,7 +184,7 @@ async def get_dynamic_sidecar_placement(
         service_state = task["Status"]["State"]
 
         if service_state not in TASK_STATES_RUNNING:
-            raise TryAgain
+            raise TryAgain()
         return task
 
     task = await _get_task_data_when_service_running(service_id=service_id)
@@ -465,7 +465,7 @@ async def _update_service_spec(
                         e.status == status.HTTP_500_INTERNAL_SERVER_ERROR
                         and "out of sequence" in e.message
                     ):
-                        raise TryAgain from e
+                        raise TryAgain() from e
                     raise
 
 
