@@ -83,12 +83,11 @@ def upgrade():
     # ### end Alembic commands ###
 
     # custom
-    update_modified_timestamp_procedure.execute(bind=op.get_context().bind)
-    modified_timestamp_trigger.execute(bind=op.get_context().bind)
+    op.execute(update_modified_timestamp_procedure)
+    op.execute(modified_timestamp_trigger)
 
 
 def downgrade():
-
     # custom
     op.execute(f"DROP TRIGGER IF EXISTS {_TRIGGER_NAME} on {_TABLE_NAME};")
     op.execute(f"DROP FUNCTION {_PROCEDURE_NAME};")

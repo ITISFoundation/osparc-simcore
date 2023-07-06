@@ -27,6 +27,7 @@ from simcore_service_webserver.projects.models import ProjectDict
     ],
 )
 async def test_custom_metadata_handlers(
+    mocked_director_v2_api: None,  # for deletion
     client: TestClient,
     faker: Faker,
     logged_user: UserInfoDict,
@@ -78,7 +79,7 @@ async def test_custom_metadata_handlers(
     response = await client.delete(f"{url}")
     await assert_status(response, expected_cls=web.HTTPNoContent)
 
-    # no metadata -> project not foun d
+    # no metadata -> project not found
     url = client.app.router["get_project_custom_metadata"].url_for(
         project_id=user_project["uuid"]
     )
