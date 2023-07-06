@@ -442,8 +442,10 @@ async def replace_project(request: web.Request):
 
     try:
         new_project = await request.json()
+        # NOTE: this is a temporary fix until proper Model is introduced in ProjectReplace
         # Prune state field (just in case)
         new_project.pop("state", None)
+        new_project.pop("permalink", None)
 
     except json.JSONDecodeError as exc:
         raise web.HTTPBadRequest(reason="Invalid request body") from exc
