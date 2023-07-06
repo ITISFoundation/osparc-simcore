@@ -443,10 +443,12 @@ class CreateUserServices(DynamicSchedulerEvent):
             or scheduler_data.proxy_admin_api_port is None
         ):
             msg = (
-                f"Did not expect None for any of the following:"
-                f" scheduler_data.dynamic_sidecar.dynamic_sidecar_id={scheduler_data.dynamic_sidecar.dynamic_sidecar_id!r} "
-                f"scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id={scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id!r} scheduler_data.dynamic_sidecar.swarm_network_id={scheduler_data.dynamic_sidecar.swarm_network_id!r} scheduler_data.dynamic_sidecar.swarm_network_name={scheduler_data.dynamic_sidecar.swarm_network_name!r} "
-                f"scheduler_data.proxy_admin_api_port={scheduler_data.proxy_admin_api_port!r}"
+                "Did not expect None for any of the following: "
+                f"{scheduler_data.dynamic_sidecar.dynamic_sidecar_id=} "
+                f"{scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id=} "
+                f"{scheduler_data.dynamic_sidecar.swarm_network_id=} "
+                f"{scheduler_data.dynamic_sidecar.swarm_network_name=} "
+                f"{scheduler_data.proxy_admin_api_port=}"
             )
             raise ValueError(msg)
 
