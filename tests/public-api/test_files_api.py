@@ -8,17 +8,16 @@ import time
 from pathlib import Path
 from uuid import UUID
 
+import osparc
 import pytest
-from osparc.api.files_api import FilesApi
-from osparc.models import File
 
 
-def test_upload_file(files_api: FilesApi, tmp_path: Path):
+def test_upload_file(files_api: osparc.FilesApi, tmp_path: Path):
     input_path = tmp_path / "some-text-file.txt"
     input_path.write_text("demo")
 
-    input_file: File = files_api.upload_file(file=input_path)
-    assert isinstance(input_file, File)
+    input_file: osparc.File = files_api.upload_file(file=input_path)
+    assert isinstance(input_file, osparc.File)
     time.sleep(2)  # let time to upload to S3
 
     assert UUID(input_file.id), "Valid uuid ir required"
@@ -41,7 +40,7 @@ def test_upload_file(files_api: FilesApi, tmp_path: Path):
 
 @pytest.mark.parametrize("file_type", ["binary", "text"])
 def test_upload_list_and_download(
-    files_api: FilesApi, tmp_path: Path, file_type: str, faker
+    files_api: osparc.FilesApi, tmp_path: Path, file_type: str, faker
 ):
     input_path = tmp_path / (file_type + ".bin" if file_type == "binary" else ".txt")
 
@@ -52,15 +51,15 @@ def test_upload_list_and_download(
         content = b"\x01" * 1024
         input_path.write_bytes(content)
 
-    input_file: File = files_api.upload_file(file=input_path)
-    assert isinstance(input_file, File)
+    input_file: osparc.File = files_api.upload_file(file=input_path)
+    assert isinstance(input_file, osparc.File)
     time.sleep(2)  # let time to upload to S3 ??? <-- WHY???
 
     assert input_file.filename == input_path.name
 
     myfiles = files_api.list_files()
     assert myfiles
-    assert all(isinstance(f, File) for f in myfiles)
+    assert all(isinstance(f, osparc.File) for f in myfiles)
     assert input_file in myfiles
 
     download_path: str = files_api.download_file(file_id=input_file.id)
