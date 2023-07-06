@@ -28,9 +28,11 @@ qx.Class.define("osparc.component.resourceUsage.OverviewTable", {
     this.base(arguments, model, {
       tableColumnModel: obj => new qx.ui.table.columnmodel.Resize(obj)
     });
+    /*
     const columnModel = this.getTableColumnModel();
     columnModel.getBehavior().setMinWidth(1, 80);
     columnModel.getBehavior().setMinWidth(2, 80);
+    */
   },
 
   statics: {
@@ -73,8 +75,18 @@ qx.Class.define("osparc.component.resourceUsage.OverviewTable", {
   members: {
     __model: null,
 
-    setData: function(data) {
-      console.log("data", data);
+    addData: function(datas) {
+      console.log("data", datas);
+      const newDatas = [];
+      if (datas) {
+        const cols = this.self().COLUMNS;
+        datas.forEach(data => {
+          const newData = [];
+          newData[cols["project"].pos] = data["project_name"] ? data["project_name"] : data["project_uuid"];
+          newDatas.push(newData);
+        });
+      }
+      this.setData(newDatas);
     }
   }
 });

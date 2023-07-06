@@ -65,7 +65,8 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
           break;
         case "page-buttons":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
-            alignX: "center"
+            alignX: "center",
+            alignY: "middle"
           });
           this._add(control);
           break;
@@ -136,7 +137,7 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
 
     __setData: function(data) {
       const table = this.getChildControl("usage-table");
-      table.setData(data);
+      table.addData(data);
     },
 
     __enableButtons:function() {
