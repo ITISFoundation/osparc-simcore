@@ -16,7 +16,7 @@ RUN apt-get update \
 
 
 RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
-  pip --no-cache-dir install --upgrade \
+  pip install --upgrade \
   pip~=23.1  \
   wheel \
   setuptools
@@ -25,5 +25,5 @@ RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
 # devenv
 COPY requirements.txt requirements.txt
 RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
-  pip --no-cache-dir install \
+  pip install \
   -r requirements.txt
