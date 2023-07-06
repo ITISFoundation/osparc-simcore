@@ -21,7 +21,7 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox());
+    this._setLayout(new qx.ui.layout.VBox(15));
 
     const loadingImage = this.getChildControl("loading-image");
     loadingImage.show();
@@ -32,12 +32,14 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
   },
 
   statics: {
-    ITEMS_PER_PAGE: 10,
+    ITEMS_PER_PAGE: 15,
 
     popUpInWindow: function() {
       const title = qx.locale.Manager.tr("Usage Overview");
       const noteEditor = new osparc.component.resourceUsage.Overview();
-      const win = osparc.ui.window.Window.popUpInWindow(noteEditor, title, 800, 550);
+      const viewWidth = 900;
+      const viewHeight = 450;
+      const win = osparc.ui.window.Window.popUpInWindow(noteEditor, title, viewWidth, viewHeight);
       win.center();
       win.open();
       return win;
@@ -55,12 +57,14 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
             source: "@FontAwesome5Solid/paw/14",
             alignX: "center",
             alignY: "middle",
-            minHeight: 200
+            height: (this.self().ITEMS_PER_PAGE*20 + 40)
           });
           this._add(control);
           break;
         case "usage-table":
-          control = new osparc.component.resourceUsage.OverviewTable();
+          control = new osparc.component.resourceUsage.OverviewTable().set({
+            height: (this.self().ITEMS_PER_PAGE*20 + 40)
+          });
           this._add(control);
           break;
         case "page-buttons":
@@ -80,7 +84,8 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
         }
         case "current-page-label": {
           control = new qx.ui.basic.Label().set({
-            font: "text-14"
+            font: "text-14",
+            textAlign: "center"
           });
           const pageButtons = this.getChildControl("page-buttons");
           pageButtons.add(control);
