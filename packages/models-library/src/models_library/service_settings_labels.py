@@ -211,8 +211,7 @@ class PathMappingsLabel(BaseModel):
             path = Path(path_str)
             if not (
                 path in (inputs_path, outputs_path)
-                or state_paths is not None
-                and path in state_paths
+                or (state_paths is not None and path in state_paths)
             ):
                 msg = f"path={path!r} not found in inputs_path={inputs_path!r}, outputs_path={outputs_path!r}, state_paths={state_paths!r}"
                 raise ValueError(msg)
