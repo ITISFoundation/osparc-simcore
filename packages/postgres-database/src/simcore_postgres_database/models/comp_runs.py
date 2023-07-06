@@ -2,6 +2,7 @@
 
 """
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 
 from .base import metadata
@@ -98,5 +99,6 @@ comp_runs = sa.Table(
         nullable=True,
         doc="When the run was finished",
     ),
+    sa.Column("metadata", JSONB, nullable=True, doc="the run optional metadata"),
     sa.UniqueConstraint("project_uuid", "user_id", "iteration"),
 )

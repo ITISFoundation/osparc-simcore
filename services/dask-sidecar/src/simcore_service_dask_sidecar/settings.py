@@ -27,7 +27,7 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
     # dask config ----
 
     DASK_START_AS_SCHEDULER: bool | None = Field(
-        False, description="If this env is set, then the app boots as scheduler"
+        default=False, description="If this env is set, then the app boots as scheduler"
     )
 
     DASK_SCHEDULER_HOST: str | None = Field(
@@ -36,7 +36,7 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     DASK_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
-        False,
+        default=False,
         env=["DASK_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"],
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )

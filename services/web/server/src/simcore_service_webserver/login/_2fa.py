@@ -169,10 +169,11 @@ async def send_email_code(
 #
 
 _FROM, _TO = 3, -1
+_MIN_NUM_DIGITS = 5
 
 
-def mask_phone_number(phn: str) -> str:
-    assert len(phn) > 5  # nosec
+def mask_phone_number(phone: str) -> str:
+    assert len(phone) > _MIN_NUM_DIGITS  # nosec
     # SEE https://github.com/pydantic/pydantic/issues/1551
     # SEE https://en.wikipedia.org/wiki/E.164
-    return phn[:_FROM] + len(phn[_FROM:_TO]) * "X" + phn[_TO:]
+    return phone[:_FROM] + len(phone[_FROM:_TO]) * "X" + phone[_TO:]
