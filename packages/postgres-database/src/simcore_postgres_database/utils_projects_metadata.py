@@ -18,7 +18,7 @@ from .utils_models import FromRowMixin
 #
 
 
-class ProjectNotFoundError(Exception):
+class DBProjectNotFoundError(Exception):
     code = "projects.not_found"
 
 
@@ -64,7 +64,7 @@ class ProjectMetadataRepo:
         row: RowProxy | None = await result.first()
         if row is None:
             msg = f"Project project_uuid={project_uuid!r} not found"
-            raise ProjectNotFoundError(msg)
+            raise DBProjectNotFoundError(msg)
         return ProjectMetadata.from_row(row)
 
     @staticmethod
@@ -92,4 +92,4 @@ class ProjectMetadataRepo:
             return ProjectMetadata.from_row(row)
 
         except ForeignKeyViolation as err:
-            raise ProjectNotFoundError(project_uuid) from err
+            raise DBProjectNotFoundError(project_uuid) from err

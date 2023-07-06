@@ -10,8 +10,8 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from faker import Faker
 from simcore_postgres_database.utils_projects_metadata import (
+    DBProjectNotFoundError,
     ProjectMetadataRepo,
-    ProjectNotFoundError,
 )
 
 
@@ -46,10 +46,10 @@ async def test_projects_metadata_repository(
     # subresource is attached to parent
     user_metadata = {"float": 3.14, "int": 42, "string": "foo", "bool": True}
 
-    with pytest.raises(ProjectNotFoundError):
+    with pytest.raises(DBProjectNotFoundError):
         await ProjectMetadataRepo.get(connection, project_uuid=faker.uuid4())
 
-    with pytest.raises(ProjectNotFoundError):
+    with pytest.raises(DBProjectNotFoundError):
         await ProjectMetadataRepo.upsert(
             connection, project_uuid=faker.uuid4(), custom_metadata=user_metadata
         )
