@@ -47,6 +47,7 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
   },
 
   members: {
+    __prevRequestParams: null,
     __nextRequestParams: null,
 
     _createChildControlImpl: function(id) {
@@ -78,6 +79,7 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
           control = new qx.ui.form.Button(this.tr("Prev")).set({
             allowGrowX: false
           });
+          control.addListener("execute", () => this.__fetchData(this.__getPrevRequest()));
           const pageButtons = this.getChildControl("page-buttons");
           pageButtons.add(control);
           break;
@@ -95,6 +97,7 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
           control = new qx.ui.form.Button(this.tr("Next")).set({
             allowGrowX: false
           });
+          control.addListener("execute", () => this.__fetchData(this.__getNextRequest()));
           const pageButtons = this.getChildControl("page-buttons");
           pageButtons.add(control);
           break;
@@ -103,23 +106,44 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
       return control || this.base(arguments, id);
     },
 
-    __fetchData: function() {
+    __fetchData: function(request) {
       const loadingImage = this.getChildControl("loading-image");
       loadingImage.show();
       const table = this.getChildControl("usage-table");
       table.exclude();
 
-      this.__getNextRequest()
+      if (request === undefined) {
+        request = this.__getNextRequest();
+      }
+      request
         .then(resp => {
           const data = resp["data"];
-          this.__nextRequestParams = resp["_links"]["next"];
           this.__setData(data);
-          this.__enableButtons();
+          this.__prevRequestParams = resp["_links"]["prev"];
+          this.__nextRequestParams = resp["_links"]["next"];
+          this.__enableButtons(resp);
         })
         .finally(() => {
           loadingImage.exclude();
           table.show();
         });
+    },
+
+    __getPrevRequest: function() {
+      const params = {
+        url: {
+          offset: osparc.component.resourceUsage.Overview.ITEMS_PER_PAGE,
+          limit: osparc.component.resourceUsage.Overview.ITEMS_PER_PAGE
+        }
+      };
+      if (this.__prevRequestParams) {
+        params.url.offset = osparc.utils.Utils.getParamFromURL(this.__prevRequestParams, "offset");
+        params.url.limit = osparc.utils.Utils.getParamFromURL(this.__prevRequestParams, "limit");
+      }
+      const options = {
+        resolveWResponse: true
+      };
+      return osparc.data.Resources.fetch("resourceUsage", "getPage", params, undefined, options);
     },
 
     __getNextRequest: function() {
@@ -129,10 +153,9 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
           limit: osparc.component.resourceUsage.Overview.ITEMS_PER_PAGE
         }
       };
-      const nextRequestParams = this.__nextRequestParams;
-      if (nextRequestParams) {
-        params.url.offset = nextRequestParams.offset;
-        params.url.limit = nextRequestParams.limit;
+      if (this.__nextRequestParams) {
+        params.url.offset = osparc.utils.Utils.getParamFromURL(this.__nextRequestParams, "offset");
+        params.url.limit = osparc.utils.Utils.getParamFromURL(this.__nextRequestParams, "limit");
       }
       const options = {
         resolveWResponse: true
@@ -145,10 +168,10 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
       table.addData(data);
     },
 
-    __enableButtons:function() {
-      this.getChildControl("prev-page-button").setEnabled(false);
+    __enableButtons:function(resp) {
+      this.getChildControl("prev-page-button").setEnabled(Boolean(this.__prevRequestParams));
       this.getChildControl("current-page-label").setValue("1");
-      this.getChildControl("next-page-button").setEnabled(false);
+      this.getChildControl("next-page-button").setEnabled(Boolean(this.__nextRequestParams));
     }
   }
 });
