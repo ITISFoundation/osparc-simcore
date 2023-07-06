@@ -65,6 +65,7 @@ class BaseDataManager(ABC):
         file_id: StorageFileID,
         link_type: LinkType,
         file_size_bytes: ByteSize,
+        *,
         is_directory: bool,
     ) -> UploadLinks:
         """creates one or more upload file links if user has the rights to, expects the client to complete/abort upload"""

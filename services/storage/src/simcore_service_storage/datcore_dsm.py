@@ -65,6 +65,7 @@ class DatCoreDataManager(BaseDataManager):
         file_id: StorageFileID,
         link_type: LinkType,
         file_size_bytes: ByteSize,
+        *,
         is_directory: bool,
     ) -> UploadLinks:
         raise NotImplementedError

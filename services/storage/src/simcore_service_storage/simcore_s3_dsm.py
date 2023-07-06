@@ -265,6 +265,7 @@ class SimcoreS3DataManager(BaseDataManager):
         file_id: StorageFileID,
         link_type: LinkType,
         file_size_bytes: ByteSize,
+        *,
         is_directory: bool,
     ) -> UploadLinks:
         async with self.engine.acquire() as conn, conn.begin() as transaction:
