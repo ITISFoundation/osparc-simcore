@@ -4,7 +4,8 @@
     SEE https://docs.aiohttp.org/en/latest/client_advanced.html#persistent-session
 """
 import logging
-from typing import Any, MutableMapping
+from collections.abc import MutableMapping
+from typing import Any
 
 from aiohttp import ClientSession, ClientTimeout, web
 
