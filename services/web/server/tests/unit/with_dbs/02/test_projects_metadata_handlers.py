@@ -22,6 +22,9 @@ from simcore_service_webserver.projects import _crud_delete_utils
 from simcore_service_webserver.projects.models import ProjectDict
 
 
+@pytest.mark.acceptance_test(
+    "For https://github.com/ITISFoundation/osparc-simcore/issues/4313"
+)
 @pytest.mark.parametrize(
     "user_role",
     [
