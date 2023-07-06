@@ -12,7 +12,7 @@ from aiohttp.web_exceptions import HTTPError, HTTPException
 
 from ..json_serialization import json_dumps
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
-from .rest_models import ErrorItemType, ErrorType, LogMessageType
+from .rest_models import ErrorItemType, ErrorType
 
 _ENVELOPE_KEYS = ("data", "error")
 
@@ -44,17 +44,8 @@ def is_enveloped(payload: Mapping | str) -> bool:
 def wrap_as_envelope(
     data: Any = None,
     error: Any = None,
-    as_null: bool = True,
 ) -> dict[str, Any]:
-    """
-    as_null: if True, keys for null values are created and assigned to None
-    """
-    payload = {}
-    if data or as_null:
-        payload["data"] = data
-    if error or as_null:
-        payload["error"] = error
-    return payload
+    return {"data": data, "error": error}
 
 
 def unwrap_envelope(payload: dict[str, Any]) -> tuple:
@@ -121,18 +112,6 @@ def create_error_response(
 
     return http_error_cls(
         reason=reason, text=json_dumps(payload), content_type=MIMETYPE_APPLICATION_JSON
-    )
-
-
-def create_log_response(msg: str, level: str) -> web.Response:
-    """Produces an enveloped response with a log message
-
-    Analogous to  aiohttp's web.json_response
-    """
-    # TODO: DEPRECATE
-    msg = LogMessageType(msg, level)
-    return web.json_response(
-        data={"data": attr.asdict(msg), "error": None}, dumps=json_dumps
     )
 
 
