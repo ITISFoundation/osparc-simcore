@@ -7,9 +7,15 @@ from ._access_rights_db import get_project_owner
 from .exceptions import ProjectInvalidRightsError
 
 
-async def check_project_ownership(
+async def validate_project_ownership(
     app: web.Application, user_id: UserID, project_uuid: ProjectID
 ):
-    async with get_database_engine(app).acquire() as conn:
-        if await get_project_owner(conn, project_uuid=project_uuid) != user_id:
-            raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_uuid)
+    """
+    Raises:
+        ProjectInvalidRightsError: if not project is not owned by user_id
+    """
+    if (
+        await get_project_owner(get_database_engine(app), project_uuid=project_uuid)
+        != user_id
+    ):
+        raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_uuid)

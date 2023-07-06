@@ -18,6 +18,7 @@ from . import (
     _comments_handlers,
     _handlers,
     _handlers_crud,
+    _metadata_handlers,
     _nodes_handlers,
     _ports_handlers,
     _tags_handlers,
@@ -34,7 +35,7 @@ def _create_routes(tag, specs, *handlers_module):
     for mod in handlers_module:
         handlers.update(get_handlers_from_namespace(mod))
 
-    routes = map_handlers_with_operations(
+    return map_handlers_with_operations(
         handlers,
         filter(
             lambda o: tag in o.tags and "snapshot" not in o.path,
@@ -42,8 +43,6 @@ def _create_routes(tag, specs, *handlers_module):
         ),
         strict=False,
     )
-
-    return routes
 
 
 @app_module_setup(
@@ -71,6 +70,7 @@ def setup_projects(app: web.Application) -> bool:
     app.router.add_routes(_handlers.routes)
     app.router.add_routes(_handlers_crud.routes)
     app.router.add_routes(_comments_handlers.routes)
+    app.router.add_routes(_metadata_handlers.routes)
     app.router.add_routes(_ports_handlers.routes)
 
     app.router.add_routes(

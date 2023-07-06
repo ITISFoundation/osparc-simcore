@@ -7,6 +7,8 @@ from simcore_postgres_database.utils_projects_metadata import (
     ProjectMetadataRepo,
 )
 
+from .exceptions import ProjectNotFoundError
+
 
 async def get_project_metadata(engine: Engine, project_uuid: ProjectID) -> MetadataDict:
     """
@@ -14,8 +16,12 @@ async def get_project_metadata(engine: Engine, project_uuid: ProjectID) -> Metad
         ProjectNotFoundError
     """
     async with engine.acquire() as connection:
-        pm = await ProjectMetadataRepo.get(connection, project_uuid=project_uuid)
-        return parse_obj_as(MetadataDict, pm.custom_metadata)
+        try:
+            pm = await ProjectMetadataRepo.get(connection, project_uuid=project_uuid)
+            return parse_obj_as(MetadataDict, pm.custom_metadata)
+
+        except DBProjectNotFoundError as err:
+            raise ProjectNotFoundError(project_uuid=project_uuid) from err
 
 
 async def upsert_project_metadata(
@@ -24,10 +30,14 @@ async def upsert_project_metadata(
     custom_metadata: MetadataDict,
 ) -> MetadataDict:
     async with engine.acquire() as connection:
-        project_metadata = await ProjectMetadataRepo.upsert(
-            connection, project_uuid=project_uuid, custom_metadata=custom_metadata
-        )
-        return parse_obj_as(MetadataDict, project_metadata.custom_metadata)
+        try:
+            pm = await ProjectMetadataRepo.upsert(
+                connection, project_uuid=project_uuid, custom_metadata=custom_metadata
+            )
+            return parse_obj_as(MetadataDict, pm.custom_metadata)
+
+        except DBProjectNotFoundError as err:
+            raise ProjectNotFoundError(project_uuid=project_uuid) from err
 
 
 assert DBProjectNotFoundError  # nosec
