@@ -3,7 +3,7 @@ import logging
 from typing import Any, Callable, Coroutine, cast
 
 from aiohttp import web
-from models_library.api_schemas_webserver.projects_permalink import ProjectPermalink
+from models_library.api_schemas_webserver.permalinks import ProjectPermalink
 from models_library.projects import ProjectID
 
 from .exceptions import PermalinkFactoryError, PermalinkNotAllowedError
