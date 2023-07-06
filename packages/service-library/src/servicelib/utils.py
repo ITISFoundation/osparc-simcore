@@ -112,7 +112,7 @@ async def logged_gather(
             async with semaphore:
                 return await task
 
-        wrapped_tasks = [sem_task(t) for t in tasks]
+        wrapped_tasks = (sem_task(t) for t in tasks)
 
     results: list[Any] = await asyncio.gather(*wrapped_tasks, return_exceptions=True)
 

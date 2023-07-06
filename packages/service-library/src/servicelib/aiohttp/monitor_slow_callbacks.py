@@ -46,4 +46,4 @@ def enable(
 
         return retval
 
-    asyncio.events.Handle._run = instrumented
+    asyncio.events.Handle._run = instrumented  # type: ignore[method-assign]
