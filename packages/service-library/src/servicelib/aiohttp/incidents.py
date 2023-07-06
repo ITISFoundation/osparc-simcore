@@ -1,4 +1,4 @@
-from typing import Any, Callable, Generic, List, Optional, TypeVar
+from typing import Any, Callable, Generic, TypeVar
 
 import attr
 
@@ -20,9 +20,9 @@ class LimitedOrderedStack(Generic[ItemT]):
     """
 
     max_size: int = 100
-    order_by: Optional[Callable[[ItemT], Any]] = None
+    order_by: Callable[[ItemT], Any] | None = None
 
-    _items: List[ItemT] = attr.ib(init=False, default=attr.Factory(list))
+    _items: list[ItemT] = attr.ib(init=False, default=attr.Factory(list))
     _hits: int = attr.ib(init=False, default=0)
 
     def __len__(self) -> int:
@@ -38,13 +38,13 @@ class LimitedOrderedStack(Generic[ItemT]):
         return self._hits
 
     @property
-    def max_item(self) -> Optional[ItemT]:
+    def max_item(self) -> ItemT | None:
         if self._items:
             return self._items[0]
         return None
 
     @property
-    def min_item(self) -> Optional[ItemT]:
+    def min_item(self) -> ItemT | None:
         if self._items:
             return self._items[-1]
         return None

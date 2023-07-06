@@ -25,7 +25,9 @@ kSTART_SENSING_DELAY_SECS = f"{__name__}.start_sensing_delay"
 
 class IncidentsRegistry(LimitedOrderedStack[SlowCallback]):
     def max_delay(self) -> float:
-        delay: float = self.max_item.delay_secs or 0.0
+        delay: float = 0.0
+        if self.max_item:
+            delay = self.max_item.delay_secs
         return delay
 
 
