@@ -70,6 +70,7 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
           break;
         case "page-buttons":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
+            allowGrowX: true,
             alignX: "center",
             alignY: "middle"
           });
@@ -121,7 +122,7 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
           this.__setData(data);
           this.__prevRequestParams = resp["_links"]["prev"];
           this.__nextRequestParams = resp["_links"]["next"];
-          this.__enableButtons(resp);
+          this.__evaluatePageButtons(resp);
         })
         .finally(() => {
           loadingImage.exclude();
@@ -168,9 +169,9 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
       table.addData(data);
     },
 
-    __enableButtons:function(resp) {
+    __evaluatePageButtons:function(resp) {
       this.getChildControl("prev-page-button").setEnabled(Boolean(this.__prevRequestParams));
-      this.getChildControl("current-page-label").setValue("1");
+      this.getChildControl("current-page-label").setValue(((resp["_meta"]["offset"]/this.self().ITEMS_PER_PAGE)+1).toString());
       this.getChildControl("next-page-button").setEnabled(Boolean(this.__nextRequestParams));
     }
   }

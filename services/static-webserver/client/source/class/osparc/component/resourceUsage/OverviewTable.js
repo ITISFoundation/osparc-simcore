@@ -78,7 +78,6 @@ qx.Class.define("osparc.component.resourceUsage.OverviewTable", {
     __model: null,
 
     addData: function(datas) {
-      console.log("data", datas);
       const newDatas = [];
       if (datas) {
         const cols = this.self().COLUMNS;
