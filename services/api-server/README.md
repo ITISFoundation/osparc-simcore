@@ -36,6 +36,16 @@ will start the api-server in development-mode together with a postgres db initia
 - http://127.0.0.1:8000/docs: redoc documentation
 - http://127.0.0.1:8000/dev/docs: swagger type of documentation
 
+
+## Design notes
+
+
+
+
+## Clients
+
+- Python client for osparc-simcore API can be found in https://github.com/ITISFoundation/osparc-simcore-client)
+
 ## References
 
 - [Design patterns for modern web APIs](https://blog.feathersjs.com/design-patterns-for-modern-web-apis-1f046635215) by D. Luecke
@@ -44,6 +54,7 @@ will start the api-server in development-mode together with a postgres db initia
 ## Clients
 
 - [Python client for osparc-simcore API](https://github.com/ITISFoundation/osparc-simcore-clients)
+- https://mermaid.live/
 
 ## Acknowledgments
 
