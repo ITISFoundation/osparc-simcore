@@ -42,13 +42,11 @@ async def _clusters_from_cluster_ids(
     cluster_id_to_cluster: dict[PositiveInt, Cluster] = {}
     async for row in conn.execute(
         sa.select(
-            [
-                clusters,
-                cluster_to_groups.c.gid,
-                cluster_to_groups.c.read,
-                cluster_to_groups.c.write,
-                cluster_to_groups.c.delete,
-            ]
+            clusters,
+            cluster_to_groups.c.gid,
+            cluster_to_groups.c.read,
+            cluster_to_groups.c.write,
+            cluster_to_groups.c.delete,
         )
         .select_from(
             clusters.join(

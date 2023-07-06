@@ -58,7 +58,7 @@ from ...docker_api import (
 )
 from ...docker_compose_specs import assemble_spec
 from ...docker_service_specs import (
-    extract_service_port_from_compose_start_spec,
+    extract_service_port_service_settings,
     get_dynamic_proxy_spec,
     get_dynamic_sidecar_spec,
     merge_settings_before_use,
@@ -250,9 +250,7 @@ class CreateSidecars(DynamicSchedulerEvent):
 
         # update service_port and assign it to the status
         # needed by CreateUserServices action
-        scheduler_data.service_port = extract_service_port_from_compose_start_spec(
-            dynamic_sidecar_service_final_spec
-        )
+        scheduler_data.service_port = extract_service_port_service_settings(settings)
 
         proxy_settings: DynamicSidecarProxySettings = (
             dynamic_sidecar_settings.DYNAMIC_SIDECAR_PROXY_SETTINGS
@@ -376,10 +374,11 @@ class GetStatus(DynamicSchedulerEvent):
         # Extra containers (utilities like forward proxies) can also be present here,
         # these also are expected to be created or running.
 
-        containers_with_error: list[DockerContainerInspect] = []
-        for container_inspect in scheduler_data.dynamic_sidecar.containers_inspect:
-            if container_inspect.status not in _EXPECTED_STATUSES:
-                containers_with_error.append(container_inspect)
+        containers_with_error: list[DockerContainerInspect] = [
+            container_inspect
+            for container_inspect in scheduler_data.dynamic_sidecar.containers_inspect
+            if container_inspect.status not in _EXPECTED_STATUSES
+        ]
 
         if len(containers_with_error) > 0:
             raise UnexpectedContainerStatusError(
@@ -443,7 +442,7 @@ class CreateUserServices(DynamicSchedulerEvent):
             or scheduler_data.dynamic_sidecar.swarm_network_name is None
             or scheduler_data.proxy_admin_api_port is None
         ):
-            raise ValueError(
+            msg = (
                 "Did not expect None for any of the following: "
                 f"{scheduler_data.dynamic_sidecar.dynamic_sidecar_id=} "
                 f"{scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id=} "
@@ -451,6 +450,7 @@ class CreateUserServices(DynamicSchedulerEvent):
                 f"{scheduler_data.dynamic_sidecar.swarm_network_name=} "
                 f"{scheduler_data.proxy_admin_api_port=}"
             )
+            raise ValueError(msg)
 
         # Starts dynamic SIDECAR -------------------------------------
         # creates a docker compose spec given the service key and tag
@@ -489,6 +489,7 @@ class CreateUserServices(DynamicSchedulerEvent):
             project_id=scheduler_data.project_id,
             node_id=scheduler_data.node_uuid,
             simcore_user_agent=scheduler_data.request_simcore_user_agent,
+            swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
         )
 
         logger.debug(
