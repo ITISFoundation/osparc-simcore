@@ -3,7 +3,8 @@ from aiopg.sa.engine import Engine
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from simcore_postgres_database.models.projects import projects
-from simcore_postgres_database.utils_projects_metadata import DBProjectNotFoundError
+
+from .exceptions import ProjectNotFoundError
 
 
 async def get_project_owner(engine: Engine, project_uuid: ProjectID) -> UserID:
@@ -14,5 +15,5 @@ async def get_project_owner(engine: Engine, project_uuid: ProjectID) -> UserID:
 
         owner_id = await connection.scalar(stmt)
         if owner_id is None:
-            raise DBProjectNotFoundError(project_uuid)
+            raise ProjectNotFoundError(project_uuid=project_uuid)
         return owner_id
