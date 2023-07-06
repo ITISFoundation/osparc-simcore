@@ -25,7 +25,7 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
 
     const loadingImage = this.getChildControl("loading-image");
     loadingImage.show();
-    const table = this.getChildControl("table");
+    const table = this.getChildControl("usage-table");
     table.exclude();
 
     this.__fetchData();
@@ -37,7 +37,7 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
     popUpInWindow: function() {
       const title = qx.locale.Manager.tr("Usage Overview");
       const noteEditor = new osparc.component.resourceUsage.Overview();
-      const win = osparc.ui.window.Window.popUpInWindow(noteEditor, title, 325, 256);
+      const win = osparc.ui.window.Window.popUpInWindow(noteEditor, title, 800, 550);
       win.center();
       win.open();
       return win;
@@ -59,7 +59,7 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
           });
           this._add(control);
           break;
-        case "table":
+        case "usage-table":
           control = new osparc.component.resourceUsage.OverviewTable();
           this._add(control);
           break;
@@ -100,7 +100,7 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
     __fetchData: function() {
       const loadingImage = this.getChildControl("loading-image");
       loadingImage.show();
-      const table = this.getChildControl("table");
+      const table = this.getChildControl("usage-table");
       table.exclude();
 
       this.__getNextRequest()
@@ -135,7 +135,7 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
     },
 
     __setData: function(data) {
-      const table = this.getChildControl("table");
+      const table = this.getChildControl("usage-table");
       table.setData(data);
     },
 

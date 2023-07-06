@@ -21,7 +21,7 @@ qx.Class.define("osparc.component.resourceUsage.OverviewTable", {
   construct: function() {
     const cols = this.self().COLUMNS;
     const model = this.__model = new qx.ui.table.model.Simple();
-    const colNames = Object.entries(cols).map(col => col.title);
+    const colNames = Object.values(cols).map(col => col.title);
     console.log(colNames);
     model.setColumns(colNames);
 
@@ -75,8 +75,6 @@ qx.Class.define("osparc.component.resourceUsage.OverviewTable", {
 
     setData: function(data) {
       console.log("data", data);
-      const table = this.getChildControl("table");
-      console.log(table);
     }
   }
 });
