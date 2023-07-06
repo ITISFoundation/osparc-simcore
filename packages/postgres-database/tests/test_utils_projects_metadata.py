@@ -34,6 +34,9 @@ async def fake_project(
     return project
 
 
+@pytest.mark.acceptance_test(
+    "For https://github.com/ITISFoundation/osparc-simcore/issues/4313"
+)
 async def test_projects_metadata_repository(
     connection: SAConnection,
     create_fake_user: Callable[..., Awaitable[RowProxy]],
