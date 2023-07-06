@@ -1,0 +1,93 @@
+paths:
+  /projects/{project_id}/metadata/custom:
+    get:
+      tags:
+      - project
+      summary: Get Project Custom Metadata
+      operationId: get_project_custom_metadata
+      parameters:
+      - required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+        name: project_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ProjectCustomMetadataGet_'
+    put:
+      tags:
+      - project
+      summary: Replace Project Custom Metadata
+      operationId: replace_project_custom_metadata
+      parameters:
+      - required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+        name: project_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectCustomMetadataReplace'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ProjectCustomMetadataGet_'
+components:
+  schemas:
+    Envelope_ProjectCustomMetadataGet_:
+      properties:
+        data:
+          $ref: '#/components/schemas/ProjectCustomMetadataGet'
+        error:
+          title: Error
+      type: object
+      title: Envelope[ProjectCustomMetadataGet]
+    ProjectCustomMetadataGet:
+      properties:
+        projectUuid:
+          type: string
+          format: uuid
+          title: Projectuuid
+        metadata:
+          additionalProperties:
+            anyOf:
+            - type: boolean
+            - type: integer
+            - type: number
+            - type: string
+          type: object
+          title: Metadata
+          description: Custom key-value map
+      type: object
+      required:
+      - projectUuid
+      title: ProjectCustomMetadataGet
+    ProjectCustomMetadataReplace:
+      properties:
+        metadata:
+          additionalProperties:
+            anyOf:
+            - type: boolean
+            - type: integer
+            - type: number
+            - type: string
+          type: object
+          title: Metadata
+      type: object
+      required:
+      - metadata
+      title: ProjectCustomMetadataReplace

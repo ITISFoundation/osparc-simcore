@@ -57,7 +57,7 @@ def _handle_project_exceptions(handler: Handler):
 
 
 @routes.get(
-    f"/{VTAG}/projects/{{project_id}}/custom-metadata",
+    f"/{VTAG}/projects/{{project_id}}/metadata/custom",
     name="get_project_custom_metadata",
 )
 @login_required
@@ -79,7 +79,7 @@ async def get_project_custom_metadata(request: web.Request) -> web.Response:
 
 
 @routes.put(
-    f"/{VTAG}/projects/{{project_id}}/custom-metadata",
+    f"/{VTAG}/projects/{{project_id}}/metadata/custom",
     name="replace_project_custom_metadata",
 )
 @login_required
