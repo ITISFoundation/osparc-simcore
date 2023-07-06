@@ -4,7 +4,7 @@
 import inspect
 import json
 from collections.abc import Mapping
-from typing import Any, Union
+from typing import Any
 
 import attr
 from aiohttp import web, web_exceptions
@@ -15,9 +15,6 @@ from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from .rest_models import ErrorItemType, ErrorType
 
 _ENVELOPE_KEYS = ("data", "error")
-
-
-_DataType = Union[str, dict[str, Any], list[Any]]
 
 
 def is_enveloped_from_map(payload: Mapping) -> bool:
@@ -59,7 +56,7 @@ def unwrap_envelope(payload: dict[str, Any]) -> tuple:
 
 
 def create_data_response(
-    data: _DataType, *, skip_internal_error_details=False, status=web.HTTPOk.status_code
+    data: Any, *, skip_internal_error_details=False, status=web.HTTPOk.status_code
 ) -> web.Response:
     response = None
     try:

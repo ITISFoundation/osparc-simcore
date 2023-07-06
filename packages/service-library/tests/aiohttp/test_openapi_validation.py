@@ -21,7 +21,6 @@ from servicelib.aiohttp.application_keys import APP_OPENAPI_SPECS_KEY
 from servicelib.aiohttp.rest_middlewares import (
     envelope_middleware_factory,
     error_middleware_factory,
-    validate_middleware_factory,
 )
 from servicelib.aiohttp.rest_responses import is_enveloped, unwrap_envelope
 from servicelib.aiohttp.rest_routing import create_routes_from_namespace
@@ -53,7 +52,6 @@ def client(event_loop, aiohttp_client, specs):
 
     # middlewares
     app.middlewares.append(error_middleware_factory(base))
-    app.middlewares.append(validate_middleware_factory(base))
     app.middlewares.append(envelope_middleware_factory(base))
 
     return event_loop.run_until_complete(aiohttp_client(app))
