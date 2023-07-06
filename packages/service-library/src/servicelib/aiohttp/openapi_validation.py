@@ -2,6 +2,7 @@
 
 Based on openapi-core
 """
+# mypy: ignore-errors
 
 import logging
 
@@ -28,6 +29,3 @@ async def validate_request(request: web.Request, spec: OpenApiSpec):
     result = validator.validate(req)
 
     return result.parameters, result.body, result.errors
-
-
-__all__ = ("validate_request", "validate_data")

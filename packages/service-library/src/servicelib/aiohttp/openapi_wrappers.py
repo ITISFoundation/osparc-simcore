@@ -1,7 +1,8 @@
 """ Implements BaseOpenAPIRequest and BaseOpenAPIResponse interfaces for aiohttp
 
 """
-# mypy: ignore
+# mypy: ignore-errors
+
 import logging
 import re
 
@@ -11,7 +12,7 @@ from werkzeug.datastructures import ImmutableMultiDict
 
 log = logging.getLogger(__name__)
 
-CAPTURES = re.compile(r"\(\?P<([_a-zA-Z][_a-zA-Z0-9]+)>(.[^)]+)\)")
+_CAPTURES = re.compile(r"\(\?P<([_a-zA-Z][_a-zA-Z0-9]+)>(.[^)]+)\)")
 PARAMETERS_KEYS = ("path", "query", "header", "cookie")
 PATH_KEY, QUERY_KEY, HEADER_KEY, COOKIE_KEY = PARAMETERS_KEYS
 
@@ -59,7 +60,7 @@ class AiohttpOpenAPIRequest(BaseOpenAPIRequest):
             # TODO: create a test with '/my/tokens/{service}/'
             # TODO: create a test with '/my/tokens/{service:google|facebook}/'
             # TODO: create a test with '/my/tokens/{identifier:\d+}/'
-            for key, value in CAPTURES.findall(re_pattern):
+            for key, value in _CAPTURES.findall(re_pattern):
                 if value == "[^{}/]+":  # = no re in pattern
                     kargs[key] = "{%s}" % (key)
                 else:
