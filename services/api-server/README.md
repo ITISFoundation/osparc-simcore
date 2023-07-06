@@ -37,9 +37,6 @@ will start the api-server in development-mode together with a postgres db initia
 - http://127.0.0.1:8000/dev/docs: swagger type of documentation
 
 
-## Design notes
-
-
 
 
 ## Clients
@@ -51,10 +48,7 @@ will start the api-server in development-mode together with a postgres db initia
 - [Design patterns for modern web APIs](https://blog.feathersjs.com/design-patterns-for-modern-web-apis-1f046635215) by D. Luecke
 - [API Design Guide](https://cloud.google.com/apis/design/) by Google Cloud
 
-## Clients
 
-- [Python client for osparc-simcore API](https://github.com/ITISFoundation/osparc-simcore-clients)
-- https://mermaid.live/
 
 ## Acknowledgments
 
