@@ -75,9 +75,3 @@ async def test_projects_metadata_repository(
     assert got.modified
     assert got2.modified
     assert got.modified < got2.modified
-
-    # list jobs of a study
-    # list all jobs of a user
-    # list projects that are non-jobs
-
-    # DELETE job by deleting project
