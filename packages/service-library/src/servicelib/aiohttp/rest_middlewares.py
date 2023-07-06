@@ -117,7 +117,7 @@ def error_middleware_factory(
         except NotImplementedError as err:
             error_response = create_error_response(
                 err,
-                str(err),
+                f"{err}",
                 web.HTTPNotImplemented,
                 skip_internal_error_details=_is_prod,
             )

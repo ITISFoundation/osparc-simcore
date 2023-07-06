@@ -17,9 +17,9 @@ from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver._constants import APP_SETTINGS_KEY
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.diagnostics._healthcheck import (
+    HEALTH_LATENCY_PROBE,
     HealthCheckFailed,
     assert_healthy_app,
-    kLATENCY_PROBE,
 )
 from simcore_service_webserver.diagnostics.plugin import setup_diagnostics
 from simcore_service_webserver.diagnostics.settings import DiagnosticsSettings
@@ -209,7 +209,7 @@ async def test_diagnose_on_response_delays(client):
         await assert_status(resp, web.HTTPOk)
 
     # monitoring
-    latency_observed = client.app[kLATENCY_PROBE].value()
+    latency_observed = client.app[HEALTH_LATENCY_PROBE].value()
     assert latency_observed > tmax
 
     # diagnostics
