@@ -90,7 +90,7 @@ def get_dynamic_proxy_spec(
             simcore_user_agent=scheduler_data.request_simcore_user_agent,
             swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
             memory_limit=ByteSize(MEMORY_50MB),
-            cpu_limit=float(CPU_10_PERCENT) / (1.0 * 10**9),
+            cpu_limit=float(CPU_10_PERCENT) / 1e9,
         ).to_simcore_runtime_docker_labels(),
         "name": scheduler_data.proxy_service_name,
         "networks": [swarm_network_id, dynamic_sidecar_network_id],
@@ -108,7 +108,7 @@ def get_dynamic_proxy_spec(
                     simcore_user_agent=scheduler_data.request_simcore_user_agent,
                     swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
                     memory_limit=ByteSize(MEMORY_50MB),
-                    cpu_limit=float(CPU_10_PERCENT) / (1.0 * 10**9),
+                    cpu_limit=float(CPU_10_PERCENT) / 1e9,
                 ).to_simcore_runtime_docker_labels(),
                 "Command": [
                     "sh",
