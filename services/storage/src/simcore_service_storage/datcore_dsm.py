@@ -41,7 +41,7 @@ class DatCoreDataManager(BaseDataManager):
         return await datcore_adapter.list_datasets(self.app, api_token, api_secret)
 
     async def list_files_in_dataset(
-        self, user_id: UserID, dataset_id: str, expand_dirs: bool
+        self, user_id: UserID, dataset_id: str, *, expand_dirs: bool
     ) -> list[FileMetaData]:
         api_token, api_secret = await self._get_datcore_tokens(user_id)
         return await datcore_adapter.list_all_files_metadatas_in_dataset(
@@ -49,7 +49,7 @@ class DatCoreDataManager(BaseDataManager):
         )
 
     async def list_files(
-        self, user_id: UserID, expand_dirs: bool, uuid_filter: str = ""
+        self, user_id: UserID, *, expand_dirs: bool, uuid_filter: str = ""
     ) -> list[FileMetaData]:
         api_token, api_secret = await self._get_datcore_tokens(user_id)
         return await datcore_adapter.list_all_datasets_files_metadatas(

@@ -25,7 +25,6 @@ from pydantic import AnyUrl, ByteSize, NonNegativeInt, parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.utils import ensure_ends_with, logged_gather
-from simcore_service_storage.s3_client import S3MetaData
 
 from . import db_file_meta_data, db_projects, db_tokens
 from .constants import (
@@ -64,6 +63,7 @@ from .models import (
     UploadLinks,
 )
 from .s3 import get_s3_client
+from .s3_client import S3MetaData
 from .s3_utils import S3TransferDataCB, update_task_progress
 from .settings import Settings
 from .utils import (
@@ -108,11 +108,13 @@ class SimcoreS3DataManager(BaseDataManager):
             ]
 
     async def list_files_in_dataset(
-        self, user_id: UserID, dataset_id: str, expand_dirs: bool
+        self, user_id: UserID, dataset_id: str, *, expand_dirs: bool
     ) -> list[FileMetaData]:
         # NOTE: expand_dirs will be replaced by pagination in the future
         data: list[FileMetaData] = await self.list_files(
-            user_id, expand_dirs, uuid_filter=ensure_ends_with(dataset_id, "/")
+            user_id,
+            expand_dirs=expand_dirs,
+            uuid_filter=ensure_ends_with(dataset_id, "/"),
         )
         return data
 
@@ -154,11 +156,11 @@ class SimcoreS3DataManager(BaseDataManager):
         ]
         return result
 
-    async def list_files(
-        self, user_id: UserID, expand_dirs: bool, uuid_filter: str = ""
+    async def list_files(  # noqa C901
+        self, user_id: UserID, *, expand_dirs: bool, uuid_filter: str = ""
     ) -> list[FileMetaData]:
         """
-        expand_dirs `False`: returns the one metadata entry for each directory
+        expand_dirs `False`: returns one metadata entry for each directory
         expand_dirs `True`: returns all files in each directory (no directories will be included)
 
         NOTE: expand_dirs will be replaced by pagination in the future
@@ -170,7 +172,7 @@ class SimcoreS3DataManager(BaseDataManager):
         accessible_projects_ids = []
         async with self.engine.acquire() as conn, conn.begin():
             accessible_projects_ids = await get_readable_project_ids(conn, user_id)
-            file_meta_data: list[
+            file_and_directory_meta_data: list[
                 FileMetaDataAtDB
             ] = await db_file_meta_data.list_filter_with_partial_file_id(
                 conn,
@@ -181,31 +183,37 @@ class SimcoreS3DataManager(BaseDataManager):
                 only_files=False,
             )
 
-            # adding all the file_meta_data entries before attempting
-            for fmd in file_meta_data:
-                if fmd.is_directory and expand_dirs:
-                    # skip expanding files
+            # add all the entries from file_meta_data without
+            for metadata in file_and_directory_meta_data:
+                # below checks ensures that directoris either appear as
+                if metadata.is_directory and expand_dirs:
+                    # avoids directory files and does not add any directory entry to the result
                     continue
 
-                if is_file_entry_valid(fmd):
-                    data.append(convert_db_to_model(fmd))
+                if is_file_entry_valid(metadata):
+                    data.append(convert_db_to_model(metadata))
                     continue
                 with suppress(S3KeyNotFoundError):
                     # 1. this was uploaded using the legacy file upload that relied on
                     # a background task checking the S3 backend unreliably, the file eventually
                     # will be uploaded and this will lazily update the database
                     # 2. this is still in upload and the file is missing and it will raise
-                    updated_fmd = await self._update_database_from_storage(conn, fmd)
+                    updated_fmd = await self._update_database_from_storage(
+                        conn, metadata
+                    )
                     data.append(convert_db_to_model(updated_fmd))
 
             # try to expand directories the max number of files to return was not reached
-            for fmd in file_meta_data:
-                if fmd.is_directory and expand_dirs:
-                    if len(data) < EXPAND_DIR_MAX_ITEM_COUNT:
-                        max_items_to_include = EXPAND_DIR_MAX_ITEM_COUNT - len(data)
-                        data.extend(
-                            await self._expand_directory(fmd, max_items_to_include)
-                        )
+            for metadata in file_and_directory_meta_data:
+                if (
+                    expand_dirs
+                    and metadata.is_directory
+                    and len(data) < EXPAND_DIR_MAX_ITEM_COUNT
+                ):
+                    max_items_to_include = EXPAND_DIR_MAX_ITEM_COUNT - len(data)
+                    data.extend(
+                        await self._expand_directory(metadata, max_items_to_include)
+                    )
 
             # now parse the project to search for node/project names
             prj_names_mapping: dict[ProjectID | NodeID, str] = {}
@@ -627,7 +635,7 @@ class SimcoreS3DataManager(BaseDataManager):
             )
             # iterate over all entries to check if there is a file in the S3 backend
             async for fmd in db_file_meta_data.list_valid_uploads(conn):
-                if not await get_s3_client(self.app).object_exists(
+                if not await get_s3_client(self.app).file_exists(
                     self.simcore_bucket_name, s3_object=fmd.object_name
                 ):
                     # this file does not exist in S3

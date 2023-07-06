@@ -64,6 +64,7 @@ async def _list_objects_v2_paginated(
     client: S3Client,
     bucket: S3BucketName,
     prefix: str,
+    *,
     max_total_items: int = _MAX_TOTAL_ITEMS,
     next_continuation_token: NextContinuationToken | None = None,
 ) -> tuple[list[ObjectTypeDef], NextContinuationToken | None]:
@@ -278,14 +279,14 @@ class StorageS3Client:
 
     @s3_exception_handler(_logger)
     async def delete_files_in_path(self, bucket: S3BucketName, *, prefix: str) -> None:
-        """Removes one or more files form a given S3 path.
+        """Removes one or more files from a given S3 path.
 
         # NOTE: the / at the end of the Prefix is VERY important,
         # makes the listing several order of magnitudes faster
         """
 
         # NOTE: deletion of objects is done in batches of max 1000 elements,
-        # the maximum for accepted by the S3 API
+        # the maximum accepted by the S3 API
         while True:
             s3_objects, next_continuation_token = await _list_objects_v2_paginated(
                 self.client,
@@ -374,7 +375,7 @@ class StorageS3Client:
         ]
 
     @s3_exception_handler(_logger)
-    async def object_exists(self, bucket: S3BucketName, *, s3_object: str) -> bool:
+    async def file_exists(self, bucket: S3BucketName, *, s3_object: str) -> bool:
         """Checks if an S3 object exists"""
         # SEE https://www.peterbe.com/plog/fastest-way-to-find-out-if-a-file-exists-in-s3
         s3_objects, _ = await _list_objects_v2_paginated(

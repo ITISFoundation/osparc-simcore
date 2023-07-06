@@ -1232,7 +1232,7 @@ async def test_ensure_expand_dirs_defaults_true(
             location_id=f"{location_id}",
             file_id=urllib.parse.quote("mocked_path", safe=""),
         )
-        .with_query(**{"user_id": user_id})
+        .with_query(user_id=user_id)
     )
     await client.get(f"{get_url}")
 

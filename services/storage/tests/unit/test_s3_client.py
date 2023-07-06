@@ -940,7 +940,7 @@ async def test_list_objects_v2_paginated(
     assert pages_queried == pagination_case.expected_queried_pages
 
 
-async def test_object_exists(
+async def test_file_exists(
     storage_s3_client: StorageS3Client,
     storage_s3_bucket: S3BucketName,
     upload_file_with_aioboto3_managed_transfer: Callable[
@@ -951,14 +951,14 @@ async def test_object_exists(
 
     _, simcore_s3_file_id = await upload_file_with_aioboto3_managed_transfer(FILE_SIZE)
     assert (
-        await storage_s3_client.object_exists(
+        await storage_s3_client.file_exists(
             bucket=storage_s3_bucket, s3_object=simcore_s3_file_id
         )
         is True
     )
 
     assert (
-        await storage_s3_client.object_exists(
+        await storage_s3_client.file_exists(
             bucket=storage_s3_bucket, s3_object="fake-missing-object"
         )
         is False

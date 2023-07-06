@@ -42,14 +42,14 @@ class BaseDataManager(ABC):
 
     @abstractmethod
     async def list_files_in_dataset(
-        self, user_id: UserID, dataset_id: str, expand_dirs: bool
+        self, user_id: UserID, dataset_id: str, *, expand_dirs: bool
     ) -> list[FileMetaData]:
         """returns all the file meta data inside dataset with dataset_id"""
         # NOTE: expand_dirs will be replaced by pagination in the future
 
     @abstractmethod
     async def list_files(
-        self, user_id: UserID, expand_dirs: bool, uuid_filter: str = ""
+        self, user_id: UserID, *, expand_dirs: bool, uuid_filter: str = ""
     ) -> list[FileMetaData]:
         """returns all the file meta data a user has access to (uuid_filter may be used)"""
         # NOTE: expand_dirs will be replaced by pagination in the future
