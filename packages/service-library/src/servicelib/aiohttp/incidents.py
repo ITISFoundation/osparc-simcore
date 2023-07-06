@@ -1,7 +1,8 @@
-from collections.abc import Callable
-from typing import Any, Generic, TypeVar
+from typing import Any, Callable, Generic, TypeVar
 
 import attr
+
+# UTILS ---
 
 ItemT = TypeVar("ItemT")
 
@@ -53,9 +54,7 @@ class LimitedOrderedStack(Generic[ItemT]):
         self._hits += 1
 
         # sort is based on the __lt__ defined in ItemT
-        if self.order_by is not None:
-            self._items = sorted(self._items, key=self.order_by, reverse=True)
-
+        self._items = sorted(self._items, key=self.order_by, reverse=True)
         if len(self._items) > self.max_size:
             self._items.pop()  # min is dropped
 
