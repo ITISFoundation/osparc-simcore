@@ -1,0 +1,4 @@
+  pyparsing
+  pydot
+  SQLAlchemy<2.0
+  sqlalchemy_schemadisplay
