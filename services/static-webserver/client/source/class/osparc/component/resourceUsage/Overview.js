@@ -55,11 +55,11 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
       switch (id) {
         case "loading-image":
           control = new qx.ui.basic.Image().set({
-            source: "@FontAwesome5Solid/paw/14",
+            source: "@FontAwesome5Solid/circle-notch/64",
             alignX: "center",
-            alignY: "middle",
-            height: (this.self().ITEMS_PER_PAGE*20 + 40)
+            alignY: "middle"
           });
+          control.getContentElement().addClass("rotate");
           this._add(control);
           break;
         case "usage-table":
@@ -77,7 +77,8 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
           this._add(control);
           break;
         case "prev-page-button": {
-          control = new qx.ui.form.Button(this.tr("Prev")).set({
+          control = new qx.ui.form.Button().set({
+            icon: "@FontAwesome5Solid/chevron-left/12",
             allowGrowX: false
           });
           control.addListener("execute", () => this.__fetchData(this.__getPrevRequest()));
@@ -88,14 +89,16 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
         case "current-page-label": {
           control = new qx.ui.basic.Label().set({
             font: "text-14",
-            textAlign: "center"
+            textAlign: "center",
+            alignY: "middle"
           });
           const pageButtons = this.getChildControl("page-buttons");
           pageButtons.add(control);
           break;
         }
         case "next-page-button": {
-          control = new qx.ui.form.Button(this.tr("Next")).set({
+          control = new qx.ui.form.Button().set({
+            icon: "@FontAwesome5Solid/chevron-right/12",
             allowGrowX: false
           });
           control.addListener("execute", () => this.__fetchData(this.__getNextRequest()));
