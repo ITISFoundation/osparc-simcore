@@ -399,7 +399,7 @@ async def _create_docker_service_params(
         _to_simcore_runtime_docker_label_key("cpu_limit")
     ] = container_spec["Labels"][
         _to_simcore_runtime_docker_label_key("cpu_limit")
-    ] = f"{float(nano_cpus_limit) / (1 * 10**9)}"
+    ] = f"{float(nano_cpus_limit) / 1e9}"
     docker_params["labels"][
         _to_simcore_runtime_docker_label_key("memory_limit")
     ] = container_spec["Labels"][
