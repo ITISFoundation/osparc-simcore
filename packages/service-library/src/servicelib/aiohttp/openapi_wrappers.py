@@ -1,6 +1,7 @@
 """ Implements BaseOpenAPIRequest and BaseOpenAPIResponse interfaces for aiohttp
 
 """
+# mypy: ignore
 import logging
 import re
 
@@ -62,7 +63,7 @@ class AiohttpOpenAPIRequest(BaseOpenAPIRequest):
                 if value == "[^{}/]+":  # = no re in pattern
                     kargs[key] = "{%s}" % (key)
                 else:
-                    kargs[key] = "{%s:%s}" % (key, value)
+                    kargs[key] = f"{{{key}:{value}}}"
             path_pattern = formatter.format(**kargs)
 
         return path_pattern
@@ -113,7 +114,7 @@ class AiohttpOpenAPIResponse(BaseOpenAPIResponse):
 
     @staticmethod
     async def create(response: web.Response):
-        text = await response.text()
+        text = await response.text
         return AiohttpOpenAPIResponse(response, text)
 
     @property
