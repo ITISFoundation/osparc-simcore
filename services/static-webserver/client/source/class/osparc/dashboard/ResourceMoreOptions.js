@@ -41,7 +41,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
   statics: {
     WIDTH: 715,
-    HEIGHT: 715,
+    HEIGHT: 720,
 
     popUpInWindow: function(moreOpts) {
       const title = qx.locale.Manager.tr("Details");

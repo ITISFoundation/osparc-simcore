@@ -99,6 +99,11 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           control.addListener("execute", () => osparc.desktop.organizations.OrganizationsWindow.openWindow(), this);
           this.getMenu().add(control);
           break;
+        case "usage-overview":
+          control = new qx.ui.menu.Button(this.tr("Usage Overview"));
+          control.addListener("execute", () => osparc.component.resourceUsage.Overview.popUpInWindow(), this);
+          this.getMenu().add(control);
+          break;
         case "clusters":
           control = new qx.ui.menu.Button(this.tr("Clusters"));
           control.exclude();
@@ -156,6 +161,9 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       } else {
         this.getChildControl("preferences");
         this.getChildControl("organizations");
+        if (osparc.data.Permissions.getInstance().canDo("usage.all.read")) {
+          this.getChildControl("usage-overview");
+        }
         this.getChildControl("clusters");
       }
       if (osparc.product.tutorial.Utils.getTutorial()) {
@@ -189,6 +197,9 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           } else {
             this.getChildControl("preferences");
             this.getChildControl("organizations");
+            if (osparc.data.Permissions.getInstance().canDo("usage.all.read")) {
+              this.getChildControl("usage-overview");
+            }
             this.getChildControl("clusters");
           }
           this.getMenu().addSeparator();

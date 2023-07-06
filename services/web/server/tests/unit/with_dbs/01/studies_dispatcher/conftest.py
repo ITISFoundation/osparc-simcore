@@ -25,7 +25,6 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
             "WEBSERVER_CATALOG": "null",
             "WEBSERVER_NOTIFICATIONS": "0",
             "WEBSERVER_DIAGNOSTICS": "null",
-            "WEBSERVER_DIRECTOR": "null",
             "WEBSERVER_EXPORTER": "null",
             "WEBSERVER_GROUPS": "1",
             "WEBSERVER_META_MODELING": "0",

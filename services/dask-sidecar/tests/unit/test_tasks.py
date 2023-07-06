@@ -33,12 +33,13 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputDataSchema,
 )
 from faker import Faker
+from models_library.basic_types import EnvVarKey
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import BootMode
 from models_library.users import UserID
 from packaging import version
-from pydantic import AnyUrl, SecretStr
+from pydantic import AnyUrl, SecretStr, parse_obj_as
 from pytest import FixtureRequest, LogCaptureFixture
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -140,6 +141,7 @@ class ServiceExampleParam:
     expected_output_data: TaskOutputData
     expected_logs: list[str]
     integration_version: version.Version
+    task_envs: dict[EnvVarsDict, str]
 
     def sidecar_params(self) -> dict[str, Any]:
         return {
@@ -150,6 +152,7 @@ class ServiceExampleParam:
             "output_data_keys": self.output_data_keys,
             "log_file_url": self.log_file_url,
             "command": self.command,
+            "task_envs": self.task_envs,
         }
 
 
@@ -183,11 +186,17 @@ def integration_version(request: FixtureRequest) -> version.Version:
 
 
 @pytest.fixture
+def additional_envs(faker: Faker) -> dict[EnvVarKey, str]:
+    return parse_obj_as(dict[EnvVarKey, str], faker.pydict(allowed_types=(str,)))
+
+
+@pytest.fixture
 def sleeper_task(
     integration_version: version.Version,
     file_on_s3_server: Callable[..., AnyUrl],
     s3_remote_file_url: Callable[..., AnyUrl],
     boot_mode: BootMode,
+    additional_envs: dict[EnvVarKey, str],
     faker: Faker,
 ) -> ServiceExampleParam:
     """Creates a console task in an ubuntu distro that checks for the expected files and error in case they are missing"""
@@ -242,6 +251,10 @@ def sleeper_task(
         variable_name="SIMCORE_MEMORY_BYTES_LIMIT",
         variable_value=f"{_DEFAULT_MAX_RESOURCES['RAM']}",
     )
+    for env_name, env_value in additional_envs.items():
+        list_of_bash_commands += _bash_check_env_exist(
+            variable_name=env_name, variable_value=env_value
+        )
 
     # check input files
     list_of_bash_commands += [
@@ -359,6 +372,7 @@ def sleeper_task(
             "This is the file contents of file #'005'",
         ],
         integration_version=integration_version,
+        task_envs=additional_envs,
     )
 
 
@@ -385,6 +399,7 @@ def sidecar_task(
             expected_output_data=TaskOutputData.parse_obj({}),
             expected_logs=[],
             integration_version=integration_version,
+            task_envs={},
         )
 
     return _creator
@@ -437,6 +452,7 @@ def test_run_computational_sidecar_real_fct(
         **sleeper_task.sidecar_params(),
         s3_settings=s3_settings,
         boot_mode=boot_mode,
+        task_labels={},
     )
     mocked_get_integration_version.assert_called_once_with(
         mock.ANY,
@@ -508,6 +524,7 @@ def test_run_multiple_computational_sidecar_dask(
             s3_settings=s3_settings,
             resources={},
             boot_mode=boot_mode,
+            task_labels={},
         )
         for _ in range(NUMBER_OF_TASKS)
     ]
@@ -555,6 +572,7 @@ async def test_run_computational_sidecar_dask(
         s3_settings=s3_settings,
         resources={},
         boot_mode=boot_mode,
+        task_labels={},
     )
 
     worker_name = next(iter(dask_client.scheduler_info()["workers"]))
@@ -631,6 +649,7 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
         s3_settings=s3_settings,
         resources={},
         boot_mode=boot_mode,
+        task_labels={},
     )
     output_data = future.result()
     assert output_data is not None
@@ -669,6 +688,7 @@ def test_failing_service_raises_exception(
         run_computational_sidecar(
             **failing_ubuntu_task.sidecar_params(),
             s3_settings=s3_settings,
+            task_labels={},
         )
 
 
@@ -686,4 +706,5 @@ def test_running_service_that_generates_unexpected_data_raises_exception(
         run_computational_sidecar(
             **sleeper_task_unexpected_output.sidecar_params(),
             s3_settings=s3_settings,
+            task_labels={},
         )

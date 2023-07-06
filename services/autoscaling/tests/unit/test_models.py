@@ -7,7 +7,7 @@ from typing import Any, Awaitable, Callable
 
 import aiodocker
 import pytest
-from models_library.docker import SimcoreServiceDockerLabelKeys
+from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
 from models_library.generated_models.docker_rest_api import Service, Task
 from pydantic import ByteSize, ValidationError, parse_obj_as
 from simcore_service_autoscaling.models import Resources
@@ -107,17 +107,21 @@ async def test_get_simcore_service_docker_labels_from_task_with_missing_labels_r
     assert service_tasks
     assert len(service_tasks) == 1
     with pytest.raises(ValidationError):
-        SimcoreServiceDockerLabelKeys.from_docker_task(service_tasks[0])
+        StandardSimcoreDockerLabels.from_docker_task(service_tasks[0])
 
 
 async def test_get_simcore_service_docker_labels(
     async_docker_client: aiodocker.Docker,
-    create_service: Callable[[dict[str, Any], dict[str, str], str], Awaitable[Service]],
+    create_service: Callable[
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
+    ],
     task_template: dict[str, Any],
-    osparc_docker_label_keys: SimcoreServiceDockerLabelKeys,
+    osparc_docker_label_keys: StandardSimcoreDockerLabels,
 ):
     service_with_labels = await create_service(
-        task_template, osparc_docker_label_keys.to_docker_labels(), "running"
+        task_template,
+        osparc_docker_label_keys.to_simcore_runtime_docker_labels(),
+        "running",
     )
     assert service_with_labels.Spec
     service_tasks = parse_obj_as(
@@ -128,7 +132,7 @@ async def test_get_simcore_service_docker_labels(
     )
     assert service_tasks
     assert len(service_tasks) == 1
-    task_ownership = SimcoreServiceDockerLabelKeys.from_docker_task(service_tasks[0])
+    task_ownership = StandardSimcoreDockerLabels.from_docker_task(service_tasks[0])
     assert task_ownership
     assert task_ownership.user_id == osparc_docker_label_keys.user_id
     assert task_ownership.project_id == osparc_docker_label_keys.project_id

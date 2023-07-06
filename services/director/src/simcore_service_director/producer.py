@@ -62,7 +62,9 @@ async def _check_node_uuid_available(
     try:
         # not filtering by "swarm_stack_name" label because it's safer
         list_of_running_services_w_uuid = await client.services.list(
-            filters={"label": "uuid=" + node_uuid}
+            filters={
+                "label": f"{_to_simcore_runtime_docker_label_key('node_id')}={node_uuid}"
+            }
         )
     except aiodocker.exceptions.DockerError as err:
         log.exception("Error while retrieving services list")
@@ -129,6 +131,13 @@ async def _read_service_settings(
     return settings
 
 
+_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX: str = "io.simcore.runtime."
+
+
+def _to_simcore_runtime_docker_label_key(key: str) -> str:
+    return f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}{key.replace('_', '-').lower()}"
+
+
 # pylint: disable=too-many-branches
 async def _create_docker_service_params(
     app: web.Application,
@@ -165,11 +174,20 @@ async def _create_docker_service_params(
         "Hosts": get_system_extra_hosts_raw(config.EXTRA_HOSTS_SUFFIX),
         "Init": True,
         "Labels": {
-            "user_id": user_id,
-            "study_id": project_id,
-            "node_id": node_uuid,
-            "swarm_stack_name": config.SWARM_STACK_NAME,
-            "simcore_user_agent": request_simcore_user_agent,
+            _to_simcore_runtime_docker_label_key("user_id"): user_id,
+            _to_simcore_runtime_docker_label_key("project_id"): project_id,
+            _to_simcore_runtime_docker_label_key("node_id"): node_uuid,
+            _to_simcore_runtime_docker_label_key(
+                "swarm_stack_name"
+            ): config.SWARM_STACK_NAME,
+            _to_simcore_runtime_docker_label_key(
+                "simcore_user_agent"
+            ): request_simcore_user_agent,
+            _to_simcore_runtime_docker_label_key(
+                "product_name"
+            ): "osparc",  # fixed no legacy available in other products
+            _to_simcore_runtime_docker_label_key("cpu_limit"): "0",
+            _to_simcore_runtime_docker_label_key("memory_limit"): "0",
         },
         "Mounts": [],
     }
@@ -226,11 +244,23 @@ async def _create_docker_service_params(
         },
         "endpoint_spec": {"Mode": "dnsrr"},
         "labels": {
-            "uuid": node_uuid,
-            "study_id": project_id,
-            "user_id": user_id,
-            "type": "main" if main_service else "dependency",
-            "swarm_stack_name": config.SWARM_STACK_NAME,
+            _to_simcore_runtime_docker_label_key("user_id"): user_id,
+            _to_simcore_runtime_docker_label_key("project_id"): project_id,
+            _to_simcore_runtime_docker_label_key("node_id"): node_uuid,
+            _to_simcore_runtime_docker_label_key(
+                "swarm_stack_name"
+            ): config.SWARM_STACK_NAME,
+            _to_simcore_runtime_docker_label_key(
+                "simcore_user_agent"
+            ): request_simcore_user_agent,
+            _to_simcore_runtime_docker_label_key(
+                "product_name"
+            ): "osparc",  # fixed no legacy available in other products
+            _to_simcore_runtime_docker_label_key("cpu_limit"): "0",
+            _to_simcore_runtime_docker_label_key("memory_limit"): "0",
+            _to_simcore_runtime_docker_label_key("type"): "main"
+            if main_service
+            else "dependency",
             "io.simcore.zone": f"{config.TRAEFIK_SIMCORE_ZONE}",
             "traefik.enable": "true" if main_service else "false",
             f"traefik.http.services.{service_name}.loadbalancer.server.port": "8080",
@@ -305,9 +335,13 @@ async def _create_docker_service_params(
 
         # publishing port on the ingress network.
         elif param["name"] == "ports" and param["type"] == "int":  # backward comp
-            docker_params["labels"]["port"] = docker_params["labels"][
+            docker_params["labels"][
+                _to_simcore_runtime_docker_label_key("port")
+            ] = docker_params["labels"][
                 f"traefik.http.services.{service_name}.loadbalancer.server.port"
-            ] = str(param["value"])
+            ] = str(
+                param["value"]
+            )
         # REST-API compatible
         elif param["type"] == "EndpointSpec":
             if "Ports" in param["value"]:
@@ -315,9 +349,13 @@ async def _create_docker_service_params(
                     isinstance(param["value"]["Ports"], list)
                     and "TargetPort" in param["value"]["Ports"][0]
                 ):
-                    docker_params["labels"]["port"] = docker_params["labels"][
+                    docker_params["labels"][
+                        _to_simcore_runtime_docker_label_key("port")
+                    ] = docker_params["labels"][
                         f"traefik.http.services.{service_name}.loadbalancer.server.port"
-                    ] = str(param["value"]["Ports"][0]["TargetPort"])
+                    ] = str(
+                        param["value"]["Ports"][0]["TargetPort"]
+                    )
 
         # placement constraints
         elif param["name"] == "constraints":  # python-API compatible
@@ -357,8 +395,16 @@ async def _create_docker_service_params(
     mem_limit = str(
         docker_params["task_template"]["Resources"]["Limits"]["MemoryBytes"]
     )
-    container_spec["Labels"]["nano_cpus_limit"] = nano_cpus_limit
-    container_spec["Labels"]["mem_limit"] = mem_limit
+    docker_params["labels"][
+        _to_simcore_runtime_docker_label_key("cpu_limit")
+    ] = container_spec["Labels"][
+        _to_simcore_runtime_docker_label_key("cpu_limit")
+    ] = f"{float(nano_cpus_limit) / 1e9}"
+    docker_params["labels"][
+        _to_simcore_runtime_docker_label_key("memory_limit")
+    ] = container_spec["Labels"][
+        _to_simcore_runtime_docker_label_key("memory_limit")
+    ] = mem_limit
 
     # and make the container aware of them via env variables
     resource_limits = {
@@ -428,8 +474,10 @@ async def _get_docker_image_port_mapping(
         target_port = target_ports[0]
     else:
         # if empty no port is published but there might still be an internal port defined
-        if "port" in service["Spec"]["Labels"]:
-            target_port = int(service["Spec"]["Labels"]["port"])
+        if _to_simcore_runtime_docker_label_key("port") in service["Spec"]["Labels"]:
+            target_port = int(
+                service["Spec"]["Labels"][_to_simcore_runtime_docker_label_key("port")]
+            )
     return published_port, target_port
 
 
@@ -454,7 +502,7 @@ async def _pass_port_to_service(
                 port,
                 route,
             )
-            service_url = "http://" + service_name + "/" + route # NOSONAR
+            service_url = "http://" + service_name + "/" + route  # NOSONAR
             query_string = {
                 "hostname": str(config.PUBLISHED_HOST_NAME),
                 "port": str(port),
@@ -481,7 +529,7 @@ async def _create_overlay_network_in_swarm(
         network_config = {
             "Name": network_name,
             "Driver": "overlay",
-            "Labels": {"uuid": node_uuid},
+            "Labels": {_to_simcore_runtime_docker_label_key("node_id"): node_uuid},
         }
         docker_network = await client.networks.create(network_config)
         log.debug(
@@ -508,8 +556,9 @@ async def _remove_overlay_network_of_swarm(
             x
             for x in (await client.networks.list())
             if x["Labels"]
-            and "uuid" in x["Labels"]
-            and x["Labels"]["uuid"] == node_uuid
+            and _to_simcore_runtime_docker_label_key("node_id") in x["Labels"]
+            and x["Labels"][_to_simcore_runtime_docker_label_key("node_id")]
+            == node_uuid
         ]
         log.debug("Found %s networks with uuid %s", len(networks), node_uuid)
         # remove any network in the list (should be only one)
@@ -533,7 +582,6 @@ async def _get_service_state(
     service_name = service["Spec"]["Name"]
     log.debug("Getting service %s state", service_name)
     tasks = await client.tasks.list(filters={"service": service_name})
-
 
     # wait for tasks
     task_started_time = datetime.utcnow()
@@ -945,9 +993,13 @@ async def _get_node_details(
     service_basepath = results[1]
     service_state, service_msg = results[2]
     service_name = service["Spec"]["Name"]
-    service_uuid = service["Spec"]["Labels"]["uuid"]
-    user_id = service["Spec"]["Labels"]["user_id"]
-    project_id = service["Spec"]["Labels"]["study_id"]
+    service_uuid = service["Spec"]["Labels"][
+        _to_simcore_runtime_docker_label_key("node_id")
+    ]
+    user_id = service["Spec"]["Labels"][_to_simcore_runtime_docker_label_key("user_id")]
+    project_id = service["Spec"]["Labels"][
+        _to_simcore_runtime_docker_label_key("project_id")
+    ]
 
     # get the published port
     published_port, target_port = await _get_docker_image_port_mapping(service)
@@ -973,11 +1025,18 @@ async def get_services_details(
 ) -> List[Dict]:
     async with docker_utils.docker_client() as client:  # pylint: disable=not-async-context-manager
         try:
-            filters = ["type=main", f"swarm_stack_name={config.SWARM_STACK_NAME}"]
+            filters = [
+                f"{_to_simcore_runtime_docker_label_key('type')}=main",
+                f"{_to_simcore_runtime_docker_label_key('swarm_stack_name')}={config.SWARM_STACK_NAME}",
+            ]
             if user_id:
-                filters.append("user_id=" + user_id)
+                filters.append(
+                    f"{_to_simcore_runtime_docker_label_key('user_id')}=" + user_id
+                )
             if study_id:
-                filters.append("study_id=" + study_id)
+                filters.append(
+                    f"{_to_simcore_runtime_docker_label_key('project_id')}=" + study_id
+                )
             list_running_services = await client.services.list(
                 filters={"label": filters}
             )
@@ -1004,9 +1063,9 @@ async def get_service_details(app: web.Application, node_uuid: str) -> Dict:
             list_running_services_with_uuid = await client.services.list(
                 filters={
                     "label": [
-                        f"uuid={node_uuid}",
-                        "type=main",
-                        f"swarm_stack_name={config.SWARM_STACK_NAME}",
+                        f"{_to_simcore_runtime_docker_label_key('node_id')}={node_uuid}",
+                        f"{_to_simcore_runtime_docker_label_key('type')}=main",
+                        f"{_to_simcore_runtime_docker_label_key('swarm_stack_name')}={config.SWARM_STACK_NAME}",
                     ]
                 }
             )
@@ -1040,7 +1099,7 @@ async def get_service_details(app: web.Application, node_uuid: str) -> Dict:
 async def _save_service_state(service_host_name: str, session: aiohttp.ClientSession):
     response: ClientResponse
     async with session.post(
-        url=f"http://{service_host_name}/state", # NOSONAR
+        url=f"http://{service_host_name}/state",  # NOSONAR
         timeout=ServicesCommonSettings().director_dynamic_service_save_timeout,
     ) as response:
         try:
@@ -1086,8 +1145,8 @@ async def stop_service(app: web.Application, node_uuid: str, save_state: bool) -
             list_running_services_with_uuid = await client.services.list(
                 filters={
                     "label": [
-                        f"uuid={node_uuid}",
-                        f"swarm_stack_name={config.SWARM_STACK_NAME}",
+                        f"{_to_simcore_runtime_docker_label_key('node_id')}={node_uuid}",
+                        f"{_to_simcore_runtime_docker_label_key('swarm_stack_name')}={config.SWARM_STACK_NAME}",
                     ]
                 }
             )
