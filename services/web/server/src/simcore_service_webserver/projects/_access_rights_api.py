@@ -12,7 +12,7 @@ async def validate_project_ownership(
 ):
     """
     Raises:
-        ProjectInvalidRightsError: if not project is not owned by user_id
+        ProjectInvalidRightsError: if 'user_id' does not own 'project_uuid'
     """
     if (
         await get_project_owner(get_database_engine(app), project_uuid=project_uuid)
