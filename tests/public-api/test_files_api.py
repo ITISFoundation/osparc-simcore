@@ -8,25 +8,16 @@ import time
 from pathlib import Path
 from uuid import UUID
 
-import pkg_resources
+import osparc
 import pytest
 
-try:
-    pkg_resources.require("osparc>=0.5.0")
-    from osparc import osparc_client
 
-    # Use the imported package here
-except pkg_resources.DistributionNotFound:
-    # Package or minimum version not found
-    import osparc as osparc_client
-
-
-def test_upload_file(files_api: osparc_client.FilesApi, tmp_path: Path):
+def test_upload_file(files_api: osparc.FilesApi, tmp_path: Path):
     input_path = tmp_path / "some-text-file.txt"
     input_path.write_text("demo")
 
-    input_file: osparc_client.File = files_api.upload_file(file=input_path)
-    assert isinstance(input_file, osparc_client.File)
+    input_file: osparc.File = files_api.upload_file(file=input_path)
+    assert isinstance(input_file, osparc.File)
     time.sleep(2)  # let time to upload to S3
 
     assert UUID(input_file.id), "Valid uuid ir required"
@@ -49,7 +40,7 @@ def test_upload_file(files_api: osparc_client.FilesApi, tmp_path: Path):
 
 @pytest.mark.parametrize("file_type", ["binary", "text"])
 def test_upload_list_and_download(
-    files_api: osparc_client.FilesApi, tmp_path: Path, file_type: str, faker
+    files_api: osparc.FilesApi, tmp_path: Path, file_type: str, faker
 ):
     input_path = tmp_path / (file_type + ".bin" if file_type == "binary" else ".txt")
 
@@ -60,15 +51,15 @@ def test_upload_list_and_download(
         content = b"\x01" * 1024
         input_path.write_bytes(content)
 
-    input_file: osparc_client.File = files_api.upload_file(file=input_path)
-    assert isinstance(input_file, osparc_client.File)
+    input_file: osparc.File = files_api.upload_file(file=input_path)
+    assert isinstance(input_file, osparc.File)
     time.sleep(2)  # let time to upload to S3 ??? <-- WHY???
 
     assert input_file.filename == input_path.name
 
     myfiles = files_api.list_files()
     assert myfiles
-    assert all(isinstance(f, osparc_client.File) for f in myfiles)
+    assert all(isinstance(f, osparc.File) for f in myfiles)
     assert input_file in myfiles
 
     download_path: str = files_api.download_file(file_id=input_file.id)

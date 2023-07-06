@@ -13,7 +13,7 @@ from pprint import pformat
 from typing import Callable, Iterable, Iterator
 
 import httpx
-import pkg_resources
+import osparc
 import pytest
 from pytest import FixtureRequest
 from pytest_simcore.helpers.typing_docker import UrlStr
@@ -28,16 +28,6 @@ from tenacity import Retrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
-
-try:
-    pkg_resources.require("osparc>=0.5.0")
-    from osparc import osparc_client
-
-    # Use the imported package here
-except pkg_resources.DistributionNotFound:
-    # Package or minimum version not found
-    import osparc as osparc_client
-
 
 _logger = logging.getLogger(__name__)
 
@@ -282,8 +272,8 @@ def services_registry(
 @pytest.fixture(scope="module")
 def api_client(
     registered_user: RegisteredUserDict,
-) -> Iterator[osparc_client.ApiClient]:
-    cfg = osparc_client.Configuration(
+) -> Iterator[osparc.ApiClient]:
+    cfg = osparc.Configuration(
         host=os.environ.get("OSPARC_API_URL", "http://127.0.0.1:8006"),
         username=registered_user["api_key"],
         password=registered_user["api_secret"],
@@ -300,19 +290,19 @@ def api_client(
 
     print("cfg", pformat(as_dict(cfg)))
 
-    with osparc_client.ApiClient(cfg) as api_client:
+    with osparc.ApiClient(cfg) as api_client:
         yield api_client
 
 
 @pytest.fixture(scope="module")
-def files_api(api_client: osparc_client.ApiClient) -> osparc_client.FilesApi:
-    return osparc_client.FilesApi(api_client)
+def files_api(api_client: osparc.ApiClient) -> osparc.FilesApi:
+    return osparc.FilesApi(api_client)
 
 
 @pytest.fixture(scope="module")
 def solvers_api(
-    api_client: osparc_client.ApiClient,
+    api_client: osparc.ApiClient,
     services_registry: dict[ServiceNameStr, ServiceInfoDict],
-) -> osparc_client.SolversApi:
+) -> osparc.SolversApi:
     # services_registry fixture dependency ensures that services are injected in registry
-    return osparc_client.SolversApi(api_client)
+    return osparc.SolversApi(api_client)

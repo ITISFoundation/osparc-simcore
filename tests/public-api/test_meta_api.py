@@ -5,26 +5,17 @@
 # pylint: disable=unused-variable
 
 
-import pkg_resources
+import osparc
 import pytest
 from packaging.version import Version
 
-try:
-    pkg_resources.require("osparc>=0.5.0")
-    from osparc import osparc_client
-
-    # Use the imported package here
-except pkg_resources.DistributionNotFound:
-    # Package or minimum version not found
-    import osparc as osparc_client
-
 
 @pytest.fixture(scope="module")
-def meta_api(api_client: osparc_client.ApiClient) -> osparc_client.MetaApi:
-    return osparc_client.MetaApi(api_client)
+def meta_api(api_client: osparc.ApiClient) -> osparc.MetaApi:
+    return osparc.MetaApi(api_client)
 
 
-def _get_client_report(api_client: osparc_client.ApiClient) -> dict[str, str]:
+def _get_client_report(api_client: osparc.ApiClient) -> dict[str, str]:
     report = {}
     for line in api_client.configuration.to_debug_report().split("\n"):
         key, value = line.split(":", maxsplit=1)
@@ -32,11 +23,9 @@ def _get_client_report(api_client: osparc_client.ApiClient) -> dict[str, str]:
     return report
 
 
-def test_get_service_metadata(
-    meta_api: osparc_client.MetaApi, api_client: osparc_client.ApiClient
-):
+def test_get_service_metadata(meta_api: osparc.MetaApi, api_client: osparc.ApiClient):
     meta = meta_api.get_service_metadata()
-    assert isinstance(meta, osparc_client.Meta)
+    assert isinstance(meta, osparc.Meta)
 
     # client is compatible with this API version
     report = _get_client_report(api_client)
@@ -48,5 +37,5 @@ def test_get_service_metadata(
 
     meta, status_code, headers = meta_api.get_service_metadata_with_http_info()
 
-    assert isinstance(meta, osparc_client.Meta)
+    assert isinstance(meta, osparc.Meta)
     assert status_code == 200
