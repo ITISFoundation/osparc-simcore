@@ -11,7 +11,7 @@ from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_webserver.projects_metadata import (
     ProjectCustomMetadataGet,
-    ProjectCustomMetadataReplace,
+    ProjectCustomMetadataUpdate,
 )
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -71,11 +71,11 @@ async def test_custom_metadata_handlers(
     custom_metadata = {"number": 3.14, "string": "str", "boolean": False}
     custom_metadata["other"] = json.dumps(custom_metadata)
 
-    url = client.app.router["replace_project_custom_metadata"].url_for(
+    url = client.app.router["update_project_custom_metadata"].url_for(
         project_id=user_project["uuid"]
     )
-    response = await client.put(
-        f"{url}", json=ProjectCustomMetadataReplace(metadata=custom_metadata).dict()
+    response = await client.patch(
+        f"{url}", json=ProjectCustomMetadataUpdate(metadata=custom_metadata).dict()
     )
 
     data, _ = await assert_status(response, expected_cls=web.HTTPOk)

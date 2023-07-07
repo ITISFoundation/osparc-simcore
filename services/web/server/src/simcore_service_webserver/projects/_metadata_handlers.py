@@ -16,7 +16,7 @@ import functools
 from aiohttp import web
 from models_library.api_schemas_webserver.projects_metadata import (
     ProjectCustomMetadataGet,
-    ProjectCustomMetadataReplace,
+    ProjectCustomMetadataUpdate,
 )
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -57,7 +57,7 @@ def _handle_project_exceptions(handler: Handler):
 
 
 @routes.get(
-    f"/{VTAG}/projects/{{project_id}}/metadata/custom",
+    f"/{VTAG}/projects/{{project_id}}/metadata",
     name="get_project_custom_metadata",
 )
 @login_required
@@ -78,23 +78,23 @@ async def get_project_custom_metadata(request: web.Request) -> web.Response:
     )
 
 
-@routes.put(
-    f"/{VTAG}/projects/{{project_id}}/metadata/custom",
-    name="replace_project_custom_metadata",
+@routes.patch(
+    f"/{VTAG}/projects/{{project_id}}/metadata",
+    name="update_project_custom_metadata",
 )
 @login_required
 @permission_required("project.update")
 @_handle_project_exceptions
-async def replace_project_custom_metadata(request: web.Request) -> web.Response:
+async def update_project_custom_metadata(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
-    replace = await parse_request_body_as(ProjectCustomMetadataReplace, request)
+    update = await parse_request_body_as(ProjectCustomMetadataUpdate, request)
 
     custom_metadata = await _metadata_api.set_project_custom_metadata(
         request.app,
         user_id=req_ctx.user_id,
         project_uuid=path_params.project_id,
-        value=replace.metadata,
+        value=update.metadata,
     )
 
     return envelope_json_response(

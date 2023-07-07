@@ -16,7 +16,7 @@ from _common import CURRENT_DIR, create_openapi_specs
 from fastapi import Depends, FastAPI, status
 from models_library.api_schemas_webserver.projects_metadata import (
     ProjectCustomMetadataGet,
-    ProjectCustomMetadataReplace,
+    ProjectCustomMetadataUpdate,
 )
 from models_library.generics import Envelope
 from simcore_service_webserver.projects._metadata_handlers import (
@@ -35,7 +35,7 @@ TAGS: list[str | Enum] = ["project"]
 
 
 @app.get(
-    "/projects/{project_id}/metadata/custom",
+    "/projects/{project_id}/metadata",
     response_model=Envelope[ProjectCustomMetadataGet],
     tags=TAGS,
     operation_id="get_project_custom_metadata",
@@ -45,15 +45,15 @@ async def get_project_custom_metadata(params: Annotated[ProjectPathParams, Depen
     ...
 
 
-@app.put(
-    "/projects/{project_id}/metadata/custom",
+@app.patch(
+    "/projects/{project_id}/metadata",
     response_model=Envelope[ProjectCustomMetadataGet],
     tags=TAGS,
-    operation_id="replace_project_custom_metadata",
+    operation_id="update_project_custom_metadata",
     status_code=status.HTTP_200_OK,
 )
-async def replace_project_custom_metadata(
-    params: Annotated[ProjectPathParams, Depends()], body: ProjectCustomMetadataReplace
+async def update_project_custom_metadata(
+    params_: Annotated[ProjectPathParams, Depends()], body_: ProjectCustomMetadataUpdate
 ):
     ...
 

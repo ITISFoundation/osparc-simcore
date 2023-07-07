@@ -17,5 +17,5 @@ class ProjectCustomMetadataGet(OutputSchema):
     )
 
 
-class ProjectCustomMetadataReplace(InputSchema):
+class ProjectCustomMetadataUpdate(InputSchema):
     metadata: MetadataDict
