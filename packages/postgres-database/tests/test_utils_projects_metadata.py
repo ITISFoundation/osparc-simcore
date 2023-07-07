@@ -9,10 +9,8 @@ import pytest
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from faker import Faker
-from simcore_postgres_database.utils_projects_metadata import (
-    DBProjectNotFoundError,
-    ProjectMetadataRepo,
-)
+from simcore_postgres_database import utils_projects_metadata
+from simcore_postgres_database.utils_projects_metadata import DBProjectNotFoundError
 
 
 @pytest.fixture
@@ -50,32 +48,32 @@ async def test_projects_metadata_repository(
     user_metadata = {"float": 3.14, "int": 42, "string": "foo", "bool": True}
 
     with pytest.raises(DBProjectNotFoundError):
-        await ProjectMetadataRepo.get(connection, project_uuid=faker.uuid4())
+        await utils_projects_metadata.get(connection, project_uuid=faker.uuid4())
 
     with pytest.raises(DBProjectNotFoundError):
-        await ProjectMetadataRepo.upsert(
+        await utils_projects_metadata.upsert(
             connection, project_uuid=faker.uuid4(), custom_metadata=user_metadata
         )
 
-    project_metadata = await ProjectMetadataRepo.get(
+    project_metadata = await utils_projects_metadata.get(
         connection, project_uuid=project["uuid"]
     )
     assert project_metadata is not None
     assert project_metadata.custom is None
 
-    got = await ProjectMetadataRepo.upsert(
+    got = await utils_projects_metadata.upsert(
         connection, project_uuid=project["uuid"], custom_metadata=user_metadata
     )
     assert got.custom
     assert user_metadata == got.custom
 
-    project_metadata = await ProjectMetadataRepo.get(
+    project_metadata = await utils_projects_metadata.get(
         connection, project_uuid=project["uuid"]
     )
     assert project_metadata is not None
     assert project_metadata == got
 
-    got_after_update = await ProjectMetadataRepo.upsert(
+    got_after_update = await utils_projects_metadata.upsert(
         connection, project_uuid=project["uuid"], custom_metadata={}
     )
     assert got_after_update.custom == {}
