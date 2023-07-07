@@ -4,9 +4,9 @@
 import inspect
 import json
 from collections.abc import Mapping
+from dataclasses import asdict
 from typing import Any
 
-import attr
 from aiohttp import web, web_exceptions
 from aiohttp.web_exceptions import HTTPError, HTTPException
 
@@ -105,7 +105,7 @@ def create_error_response(
             status=http_error_cls.status_code,
         )
 
-    payload = wrap_as_envelope(error=attr.asdict(error))
+    payload = wrap_as_envelope(error=asdict(error))
 
     return http_error_cls(
         reason=reason, text=json_dumps(payload), content_type=MIMETYPE_APPLICATION_JSON
