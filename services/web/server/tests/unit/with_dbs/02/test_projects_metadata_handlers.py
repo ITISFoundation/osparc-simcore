@@ -65,7 +65,7 @@ async def test_custom_metadata_handlers(
     )
     response = await client.get(f"{url}")
     data, _ = await assert_status(response, expected_cls=web.HTTPOk)
-    assert data["metadata"] == {}
+    assert data["custom"] == {}
 
     # replace metadata
     custom_metadata = {"number": 3.14, "string": "str", "boolean": False}
