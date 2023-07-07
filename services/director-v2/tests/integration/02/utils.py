@@ -304,19 +304,19 @@ async def assert_start_service(
         service_key=service_key,
         service_version=service_version,
     )
-    data = dict(
-        user_id=user_id,
-        project_id=project_id,
-        service_key=service_key,
-        service_version=service_version,
-        service_uuid=service_uuid,
-        can_save=True,
-        basepath=basepath,
-        service_resources=ServiceResourcesDictHelpers.create_jsonable(
+    data = {
+        "user_id": user_id,
+        "project_id": project_id,
+        "service_key": service_key,
+        "service_version": service_version,
+        "service_uuid": service_uuid,
+        "can_save": True,
+        "basepath": basepath,
+        "service_resources": ServiceResourcesDictHelpers.create_jsonable(
             service_resources
         ),
-        product_name=product_name,
-    )
+        "product_name": product_name,
+    }
     headers = {
         X_DYNAMIC_SIDECAR_REQUEST_DNS: director_v2_client.base_url.host,
         X_DYNAMIC_SIDECAR_REQUEST_SCHEME: director_v2_client.base_url.scheme,
@@ -399,7 +399,7 @@ async def assert_retrieve_service(
 
     result = await director_v2_client.post(
         f"/v2/dynamic_services/{service_uuid}:retrieve",
-        json=dict(port_keys=[]),
+        json={"port_keys": []},
         headers=headers,
         follow_redirects=True,
     )
@@ -492,8 +492,7 @@ async def _port_forward_legacy_service(  # pylint: disable=redefined-outer-name
         ports = service_details["Endpoint"]["Ports"]
 
         assert len(ports) == 1, service_details
-        exposed_port = ports[0]["PublishedPort"]
-        return exposed_port
+        return ports[0]["PublishedPort"]
 
 
 async def assert_service_is_ready(  # pylint: disable=redefined-outer-name

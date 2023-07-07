@@ -68,16 +68,15 @@ def package_dir() -> Path:
     return dirpath
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def project_env_devel_environment(
     monkeypatch: MonkeyPatch, project_slug_dir: Path
 ) -> EnvVarsDict:
     env_devel_file = project_slug_dir / ".env-devel"
     assert env_devel_file.exists()
-    envs = setenvs_from_envfile(
+    return setenvs_from_envfile(
         monkeypatch, env_devel_file.read_text(), verbose=True, interpolate=True
     )
-    return envs
 
 
 @pytest.fixture(scope="session")
@@ -171,7 +170,7 @@ def mock_env(
     return env_vars
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 async def client(mock_env: EnvVarsDict) -> Iterable[TestClient]:
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
@@ -182,7 +181,7 @@ async def client(mock_env: EnvVarsDict) -> Iterable[TestClient]:
         yield test_client
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 async def initialized_app(mock_env: EnvVarsDict) -> AsyncIterable[FastAPI]:
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
@@ -190,7 +189,7 @@ async def initialized_app(mock_env: EnvVarsDict) -> AsyncIterable[FastAPI]:
         yield app
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 async def async_client(initialized_app: FastAPI) -> AsyncIterable[httpx.AsyncClient]:
     async with httpx.AsyncClient(
         app=initialized_app,
@@ -200,7 +199,7 @@ async def async_client(initialized_app: FastAPI) -> AsyncIterable[httpx.AsyncCli
         yield client
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def minimal_app(client: TestClient) -> ASGI3App:
     # NOTICE that this app triggers events
     # SEE: https://fastapi.tiangolo.com/advanced/testing-events/

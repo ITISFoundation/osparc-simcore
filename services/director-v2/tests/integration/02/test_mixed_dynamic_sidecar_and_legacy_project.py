@@ -7,6 +7,7 @@ import logging
 import os
 from contextlib import asynccontextmanager
 from typing import Any, AsyncIterable, AsyncIterator, Awaitable, Callable, Iterable
+from unittest import mock
 
 import aiodocker
 import httpx
@@ -14,6 +15,7 @@ import pytest
 import sqlalchemy as sa
 from asgi_lifespan import LifespanManager
 from faker import Faker
+from fastapi import FastAPI
 from models_library.projects import ProjectAtDB
 from models_library.services_resources import ServiceResourcesDict
 from pytest import MonkeyPatch
@@ -178,14 +180,17 @@ async def director_v2_client(
 
     app = init_app(settings)
 
-    async with LifespanManager(app):
-        async with httpx.AsyncClient(app=app, base_url="http://testserver") as client:
-            yield client
+    async with LifespanManager(app), httpx.AsyncClient(
+        app=app, base_url="http://testserver"
+    ) as client:
+        yield client
 
 
 @pytest.fixture
 async def ensure_services_stopped(
-    dy_static_file_server_project: ProjectAtDB, director_v2_client: httpx.AsyncClient
+    dy_static_file_server_project: ProjectAtDB,
+    director_v2_client: httpx.AsyncClient,
+    minimal_app: FastAPI,
 ) -> AsyncIterable[None]:
     yield
     # ensure service cleanup when done testing
@@ -204,7 +209,7 @@ async def ensure_services_stopped(
 
         # pylint: disable=protected-access
         scheduler_interval = (
-            director_v2_client._transport.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS
+            minimal_app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS
         )
         # sleep enough to ensure the observation cycle properly stopped the service
         await asyncio.sleep(2 * scheduler_interval)
@@ -212,7 +217,7 @@ async def ensure_services_stopped(
 
 
 @pytest.fixture
-def mock_sidecars_client(mocker: MockerFixture) -> None:
+def mock_sidecars_client(mocker: MockerFixture) -> mock.Mock:
     class_path = (
         "simcore_service_director_v2.modules.dynamic_sidecar.api_client.SidecarsClient"
     )
@@ -233,7 +238,7 @@ def mock_sidecars_client(mocker: MockerFixture) -> None:
     async def _mocked_context_manger(*args, **kwargs) -> AsyncIterator[None]:
         yield
 
-    mocker.patch(
+    return mocker.patch(
         "simcore_service_director_v2.modules.dynamic_sidecar.api_client._public.periodic_task_result",
         side_effect=_mocked_context_manger,
     )
@@ -251,6 +256,7 @@ async def test_legacy_and_dynamic_sidecar_run(
     mock_sidecars_client: None,
     service_resources: ServiceResourcesDict,
     mocked_service_awaits_manual_interventions: None,
+    minimal_app: FastAPI,
 ):
     """
     The test will start 3 dynamic services in the same project and check
@@ -290,7 +296,7 @@ async def test_legacy_and_dynamic_sidecar_run(
 
         await patch_dynamic_service_url(
             # pylint: disable=protected-access
-            app=director_v2_client._transport.app,
+            app=minimal_app,
             node_uuid=node_id,
         )
 
