@@ -235,6 +235,9 @@ async def test_legacy_and_dynamic_sidecar_run(
     # FIXME: ANE can you instead parametrize this test?
     # why do we need to run all these services at the same time? it would be simpler one by one
 
+    # TODO: SAN: for fixing the last problem here:
+    # it looks like the client does not follow the redirect to the director-v0
+
     await asyncio.gather(
         *(
             assert_start_service(
