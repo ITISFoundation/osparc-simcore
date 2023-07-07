@@ -8,7 +8,7 @@ from ._access_rights_api import validate_project_ownership
 from ._metadata_db import get_project_metadata, upsert_project_metadata
 
 
-async def get_project_custom_metadata(
+async def get_project_metadata(
     app: web.Application, user_id: UserID, project_uuid: ProjectID
 ) -> MetadataDict:
     await validate_project_ownership(app, user_id=user_id, project_uuid=project_uuid)

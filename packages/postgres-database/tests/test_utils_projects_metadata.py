@@ -57,24 +57,28 @@ async def test_projects_metadata_repository(
             connection, project_uuid=faker.uuid4(), custom_metadata=user_metadata
         )
 
-    pm = await ProjectMetadataRepo.get(connection, project_uuid=project["uuid"])
-    assert pm is not None
-    assert pm.custom_metadata is None
+    project_metadata = await ProjectMetadataRepo.get(
+        connection, project_uuid=project["uuid"]
+    )
+    assert project_metadata is not None
+    assert project_metadata.custom is None
 
     got = await ProjectMetadataRepo.upsert(
         connection, project_uuid=project["uuid"], custom_metadata=user_metadata
     )
-    assert got.custom_metadata
-    assert user_metadata == got.custom_metadata
+    assert got.custom
+    assert user_metadata == got.custom
 
-    pm = await ProjectMetadataRepo.get(connection, project_uuid=project["uuid"])
-    assert pm is not None
-    assert pm == got
+    project_metadata = await ProjectMetadataRepo.get(
+        connection, project_uuid=project["uuid"]
+    )
+    assert project_metadata is not None
+    assert project_metadata == got
 
-    got2 = await ProjectMetadataRepo.upsert(
+    got_after_update = await ProjectMetadataRepo.upsert(
         connection, project_uuid=project["uuid"], custom_metadata={}
     )
-    assert got2.custom_metadata == {}
+    assert got_after_update.custom == {}
     assert got.modified
-    assert got2.modified
-    assert got.modified < got2.modified
+    assert got_after_update.modified
+    assert got.modified < got_after_update.modified

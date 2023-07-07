@@ -29,7 +29,7 @@ class DBProjectNotFoundError(Exception):
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ProjectMetadata(FromRowMixin):
-    custom_metadata: dict[str, Any] | None
+    custom: dict[str, Any] | None
     created: datetime.datetime | None
     modified: datetime.datetime | None
 
@@ -76,7 +76,7 @@ class ProjectMetadataRepo:
     ) -> ProjectMetadata:
         data = {
             "project_uuid": f"{project_uuid}",
-            "custom_metadata": custom_metadata,
+            "custom": custom_metadata,
         }
 
         try:

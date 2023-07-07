@@ -54,7 +54,7 @@ def upgrade():
         "projects_metadata",
         sa.Column("project_uuid", sa.String(), nullable=False),
         sa.Column(
-            "custom_metadata",
+            "custom",
             postgresql.JSONB(astext_type=sa.Text()),
             server_default=sa.text("'{}'::jsonb"),
             nullable=False,

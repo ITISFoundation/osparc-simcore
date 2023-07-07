@@ -41,11 +41,11 @@ projects_metadata = sa.Table(
         doc="The project unique identifier is also used to identify the associated job",
     ),
     sa.Column(
-        "custom_metadata",
+        "custom",
         JSONB,
         nullable=False,
         server_default=sa.text("'{}'::jsonb"),
-        doc="Unstructured free json for user to store metadata",
+        doc="Reserved for the user to store custom metadata",
     ),
     # TIME STAMPS ----ß
     column_created_datetime(timezone=True),

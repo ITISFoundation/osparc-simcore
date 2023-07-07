@@ -10,8 +10,8 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_webserver.projects_metadata import (
-    ProjectCustomMetadataGet,
-    ProjectCustomMetadataUpdate,
+    ProjectMetadataGet,
+    ProjectMetadataUpdate,
 )
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -49,7 +49,7 @@ async def test_custom_metadata_handlers(
 
     # get metadata of a non-existing project -> Not found
     invalid_project_id = faker.uuid4()
-    url = client.app.router["get_project_custom_metadata"].url_for(
+    url = client.app.router["get_project_metadata"].url_for(
         project_id=invalid_project_id
     )
     response = await client.get(f"{url}")
@@ -60,7 +60,7 @@ async def test_custom_metadata_handlers(
     assert "project" in error_message.lower()
 
     # get metadata of an existing project the first time -> empty {}
-    url = client.app.router["get_project_custom_metadata"].url_for(
+    url = client.app.router["get_project_metadata"].url_for(
         project_id=user_project["uuid"]
     )
     response = await client.get(f"{url}")
@@ -71,16 +71,16 @@ async def test_custom_metadata_handlers(
     custom_metadata = {"number": 3.14, "string": "str", "boolean": False}
     custom_metadata["other"] = json.dumps(custom_metadata)
 
-    url = client.app.router["update_project_custom_metadata"].url_for(
+    url = client.app.router["update_project_metadata"].url_for(
         project_id=user_project["uuid"]
     )
     response = await client.patch(
-        f"{url}", json=ProjectCustomMetadataUpdate(metadata=custom_metadata).dict()
+        f"{url}", json=ProjectMetadataUpdate(custom=custom_metadata).dict()
     )
 
     data, _ = await assert_status(response, expected_cls=web.HTTPOk)
 
-    assert parse_obj_as(ProjectCustomMetadataGet, data).metadata == custom_metadata
+    assert parse_obj_as(ProjectMetadataGet, data).custom == custom_metadata
 
     # delete project
     url = client.app.router["delete_project"].url_for(project_id=user_project["uuid"])
@@ -96,7 +96,7 @@ async def test_custom_metadata_handlers(
     await _wait_until_deleted()
 
     # no metadata -> project not found
-    url = client.app.router["get_project_custom_metadata"].url_for(
+    url = client.app.router["get_project_metadata"].url_for(
         project_id=user_project["uuid"]
     )
     response = await client.get(f"{url}")

@@ -15,12 +15,12 @@ from typing import Annotated
 from _common import CURRENT_DIR, create_openapi_specs
 from fastapi import Depends, FastAPI, status
 from models_library.api_schemas_webserver.projects_metadata import (
-    ProjectCustomMetadataGet,
-    ProjectCustomMetadataUpdate,
+    ProjectMetadataGet,
+    ProjectMetadataUpdate,
 )
 from models_library.generics import Envelope
 from simcore_service_webserver.projects._metadata_handlers import (
-    ProjectCustomMetadataGet,
+    ProjectMetadataGet,
     ProjectPathParams,
 )
 
@@ -36,24 +36,24 @@ TAGS: list[str | Enum] = ["project"]
 
 @app.get(
     "/projects/{project_id}/metadata",
-    response_model=Envelope[ProjectCustomMetadataGet],
+    response_model=Envelope[ProjectMetadataGet],
     tags=TAGS,
-    operation_id="get_project_custom_metadata",
+    operation_id="get_project_metadata",
     status_code=status.HTTP_200_OK,
 )
-async def get_project_custom_metadata(params: Annotated[ProjectPathParams, Depends()]):
+async def get_project_metadata(_params: Annotated[ProjectPathParams, Depends()]):
     ...
 
 
 @app.patch(
     "/projects/{project_id}/metadata",
-    response_model=Envelope[ProjectCustomMetadataGet],
+    response_model=Envelope[ProjectMetadataGet],
     tags=TAGS,
-    operation_id="update_project_custom_metadata",
+    operation_id="update_project_metadata",
     status_code=status.HTTP_200_OK,
 )
-async def update_project_custom_metadata(
-    params_: Annotated[ProjectPathParams, Depends()], body_: ProjectCustomMetadataUpdate
+async def update_project_metadata(
+    _params: Annotated[ProjectPathParams, Depends()], _body: ProjectMetadataUpdate
 ):
     ...
 

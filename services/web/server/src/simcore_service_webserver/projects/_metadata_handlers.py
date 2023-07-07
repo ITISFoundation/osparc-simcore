@@ -15,8 +15,8 @@ import functools
 
 from aiohttp import web
 from models_library.api_schemas_webserver.projects_metadata import (
-    ProjectCustomMetadataGet,
-    ProjectCustomMetadataUpdate,
+    ProjectMetadataGet,
+    ProjectMetadataUpdate,
 )
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -25,7 +25,7 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.aiohttp.typing_extension import Handler
 from simcore_service_webserver.utils_aiohttp import envelope_json_response
 
-from .._meta import api_version_prefix as VTAG
+from .._meta import api_version_prefix
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from . import _metadata_api
@@ -57,48 +57,44 @@ def _handle_project_exceptions(handler: Handler):
 
 
 @routes.get(
-    f"/{VTAG}/projects/{{project_id}}/metadata",
-    name="get_project_custom_metadata",
+    f"/{api_version_prefix}/projects/{{project_id}}/metadata",
+    name="get_project_metadata",
 )
 @login_required
 @permission_required("project.read")
 @_handle_project_exceptions
-async def get_project_custom_metadata(request: web.Request) -> web.Response:
+async def get_project_metadata(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
-    custom_metadata = await _metadata_api.get_project_custom_metadata(
+    custom_metadata = await _metadata_api.get_project_metadata(
         request.app, user_id=req_ctx.user_id, project_uuid=path_params.project_id
     )
 
     return envelope_json_response(
-        ProjectCustomMetadataGet(
-            project_uuid=path_params.project_id, metadata=custom_metadata
-        )
+        ProjectMetadataGet(project_uuid=path_params.project_id, custom=custom_metadata)
     )
 
 
 @routes.patch(
-    f"/{VTAG}/projects/{{project_id}}/metadata",
-    name="update_project_custom_metadata",
+    f"/{api_version_prefix}/projects/{{project_id}}/metadata",
+    name="update_project_metadata",
 )
 @login_required
 @permission_required("project.update")
 @_handle_project_exceptions
-async def update_project_custom_metadata(request: web.Request) -> web.Response:
+async def update_project_metadata(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
-    update = await parse_request_body_as(ProjectCustomMetadataUpdate, request)
+    update = await parse_request_body_as(ProjectMetadataUpdate, request)
 
     custom_metadata = await _metadata_api.set_project_custom_metadata(
         request.app,
         user_id=req_ctx.user_id,
         project_uuid=path_params.project_id,
-        value=update.metadata,
+        value=update.custom,
     )
 
     return envelope_json_response(
-        ProjectCustomMetadataGet(
-            project_uuid=path_params.project_id, metadata=custom_metadata
-        )
+        ProjectMetadataGet(project_uuid=path_params.project_id, custom=custom_metadata)
     )

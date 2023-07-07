@@ -35,7 +35,7 @@ async def get_project_metadata(engine: Engine, project_uuid: ProjectID) -> Metad
     async with _acquire_and_handle(engine, project_uuid) as connection:
         pm = await ProjectMetadataRepo.get(connection, project_uuid=project_uuid)
         # NOTE: if no metadata in table, it returns None  -- which converts here to --> {}
-        return parse_obj_as(MetadataDict, pm.custom_metadata or {})
+        return parse_obj_as(MetadataDict, pm.custom or {})
 
 
 async def upsert_project_metadata(
@@ -47,4 +47,4 @@ async def upsert_project_metadata(
         pm = await ProjectMetadataRepo.upsert(
             connection, project_uuid=project_uuid, custom_metadata=custom_metadata
         )
-        return parse_obj_as(MetadataDict, pm.custom_metadata)
+        return parse_obj_as(MetadataDict, pm.custom)

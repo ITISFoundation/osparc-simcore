@@ -10,12 +10,12 @@ MetaValueType: TypeAlias = StrictBool | StrictInt | StrictFloat | str
 MetadataDict: TypeAlias = dict[str, MetaValueType]
 
 
-class ProjectCustomMetadataGet(OutputSchema):
+class ProjectMetadataGet(OutputSchema):
     project_uuid: ProjectID
-    metadata: MetadataDict = Field(
+    custom: MetadataDict = Field(
         default_factory=dict, description="Custom key-value map"
     )
 
 
-class ProjectCustomMetadataUpdate(InputSchema):
-    metadata: MetadataDict
+class ProjectMetadataUpdate(InputSchema):
+    custom: MetadataDict
