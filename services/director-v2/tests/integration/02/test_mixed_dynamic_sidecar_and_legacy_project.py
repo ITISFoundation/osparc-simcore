@@ -5,7 +5,7 @@
 import asyncio
 import logging
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterable, AsyncIterator, Awaitable, Callable, Iterable
+from typing import Any, AsyncIterable, AsyncIterator, Awaitable, Callable
 from unittest import mock
 
 import aiodocker
@@ -110,8 +110,8 @@ def uuid_dynamic_sidecar_compose(faker: Faker) -> str:
 
 
 @pytest.fixture
-def user_dict(registered_user: Callable) -> Iterable[dict[str, Any]]:
-    yield registered_user()
+def user_dict(registered_user: Callable) -> dict[str, Any]:
+    return registered_user()
 
 
 @pytest.fixture
