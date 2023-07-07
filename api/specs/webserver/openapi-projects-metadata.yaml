@@ -1,10 +1,10 @@
 paths:
-  /projects/{project_id}/metadata/custom:
+  /projects/{project_id}/metadata:
     get:
       tags:
       - project
-      summary: Get Project Custom Metadata
-      operationId: get_project_custom_metadata
+      summary: Get Project Metadata
+      operationId: get_project_metadata
       parameters:
       - required: true
         schema:
@@ -19,12 +19,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_ProjectCustomMetadataGet_'
-    put:
+                $ref: '#/components/schemas/Envelope_ProjectMetadataGet_'
+    patch:
       tags:
       - project
-      summary: Replace Project Custom Metadata
-      operationId: replace_project_custom_metadata
+      summary: Update Project Metadata
+      operationId: update_project_metadata
       parameters:
       - required: true
         schema:
@@ -37,7 +37,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ProjectCustomMetadataReplace'
+              $ref: '#/components/schemas/ProjectMetadataUpdate'
         required: true
       responses:
         '200':
@@ -45,24 +45,24 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_ProjectCustomMetadataGet_'
+                $ref: '#/components/schemas/Envelope_ProjectMetadataGet_'
 components:
   schemas:
-    Envelope_ProjectCustomMetadataGet_:
+    Envelope_ProjectMetadataGet_:
       properties:
         data:
-          $ref: '#/components/schemas/ProjectCustomMetadataGet'
+          $ref: '#/components/schemas/ProjectMetadataGet'
         error:
           title: Error
       type: object
-      title: Envelope[ProjectCustomMetadataGet]
-    ProjectCustomMetadataGet:
+      title: Envelope[ProjectMetadataGet]
+    ProjectMetadataGet:
       properties:
         projectUuid:
           type: string
           format: uuid
           title: Projectuuid
-        metadata:
+        custom:
           additionalProperties:
             anyOf:
             - type: boolean
@@ -70,15 +70,15 @@ components:
             - type: number
             - type: string
           type: object
-          title: Metadata
+          title: Custom
           description: Custom key-value map
       type: object
       required:
       - projectUuid
-      title: ProjectCustomMetadataGet
-    ProjectCustomMetadataReplace:
+      title: ProjectMetadataGet
+    ProjectMetadataUpdate:
       properties:
-        metadata:
+        custom:
           additionalProperties:
             anyOf:
             - type: boolean
@@ -86,8 +86,8 @@ components:
             - type: number
             - type: string
           type: object
-          title: Metadata
+          title: Custom
       type: object
       required:
-      - metadata
-      title: ProjectCustomMetadataReplace
+      - custom
+      title: ProjectMetadataUpdate

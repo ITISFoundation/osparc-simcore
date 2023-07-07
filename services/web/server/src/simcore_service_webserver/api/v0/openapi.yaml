@@ -6310,12 +6310,12 @@ paths:
                           type: string
                   error:
                     title: Error
-  '/projects/{project_id}/metadata/custom':
+  '/projects/{project_id}/metadata':
     get:
       tags:
         - project
-      summary: Get Project Custom Metadata
-      operationId: get_project_custom_metadata
+      summary: Get Project Metadata
+      operationId: get_project_metadata
       parameters:
         - required: true
           schema:
@@ -6337,7 +6337,7 @@ paths:
                         type: string
                         format: uuid
                         title: Projectuuid
-                      metadata:
+                      custom:
                         additionalProperties:
                           anyOf:
                             - type: boolean
@@ -6345,21 +6345,21 @@ paths:
                             - type: number
                             - type: string
                         type: object
-                        title: Metadata
+                        title: Custom
                         description: Custom key-value map
                     type: object
                     required:
                       - projectUuid
-                    title: ProjectCustomMetadataGet
+                    title: ProjectMetadataGet
                   error:
                     title: Error
                 type: object
-                title: 'Envelope[ProjectCustomMetadataGet]'
-    put:
+                title: 'Envelope[ProjectMetadataGet]'
+    patch:
       tags:
         - project
-      summary: Replace Project Custom Metadata
-      operationId: replace_project_custom_metadata
+      summary: Update Project Metadata
+      operationId: update_project_metadata
       parameters:
         - required: true
           schema:
@@ -6373,7 +6373,7 @@ paths:
           application/json:
             schema:
               properties:
-                metadata:
+                custom:
                   additionalProperties:
                     anyOf:
                       - type: boolean
@@ -6381,11 +6381,11 @@ paths:
                       - type: number
                       - type: string
                   type: object
-                  title: Metadata
+                  title: Custom
               type: object
               required:
-                - metadata
-              title: ProjectCustomMetadataReplace
+                - custom
+              title: ProjectMetadataUpdate
         required: true
       responses:
         '200':
@@ -6393,7 +6393,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1metadata~1custom/get/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1metadata/get/responses/200/content/application~1json/schema'
   '/projects/{project_id}/metadata/ports':
     get:
       tags:
