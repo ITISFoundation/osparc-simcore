@@ -17,6 +17,3 @@ async def get_project_owner(engine: Engine, project_uuid: ProjectID) -> UserID:
         if owner_id is None:
             raise ProjectNotFoundError(project_uuid=project_uuid)
         return owner_id
-
-
-# NOTE: async def get_access_rights_and_user_groups(engine: Engine, user_id: UserID, project_uuid: ProjectID):

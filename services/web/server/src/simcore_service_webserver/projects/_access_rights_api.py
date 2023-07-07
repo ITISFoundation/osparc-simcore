@@ -19,6 +19,3 @@ async def validate_project_ownership(
         != user_id
     ):
         raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_uuid)
-
-
-# NOTE: Move here async def validate_project_permissions(app: web.Application, user_id: UserID, project_uuid: str, permission: PermissionStr
