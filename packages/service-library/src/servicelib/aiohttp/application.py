@@ -52,15 +52,31 @@ def create_safe_application(config: dict | None = None) -> web.Application:
     app[APP_CONFIG_KEY] = config or {}
     app[APP_FIRE_AND_FORGET_TASKS_KEY] = set()
 
+    # Events are triggered as follows
+    # SEE https://docs.aiohttp.org/en/stable/web_advanced.html#aiohttp-web-signals
+    #
+    #  cleanup_ctx[0].setup   ---> begin of cleanup_ctx
+    #  cleanup_ctx[1].setup.
+    #      ...
+    #  on_startup[0].
+    #  on_startup[1].
+    #      ...
+    #  on_shutdown[0].
+    #  on_shutdown[1].
+    #      ...
+    #  cleanup_ctx[1].teardown.
+    #  cleanup_ctx[0].teardown <--- end of cleanup_ctx
+    #  on_cleanup[0].
+    #  on_cleanup[1].
+    #      ...
+    #
     app.on_startup.append(_first_call_on_startup)
-    app.on_cleanup.append(_first_call_on_cleanup)
 
-    # Ensures persistent client session
-    # NOTE: Ensures client session context is run first,
+    # NOTE: Ensures client session context is run first (setup),
     # then any further get_client_sesions will be correctly closed
     app.cleanup_ctx.append(persistent_client_session)
 
-    # Q: Shouldn't this be THE LAST one???
+    app.on_cleanup.append(_first_call_on_cleanup)
     app.on_cleanup.append(_cancel_all_fire_and_forget_registered_tasks)
 
     return app
