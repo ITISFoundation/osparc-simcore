@@ -39,9 +39,8 @@ async def test_create_safe_application(mocker: MockerFixture):
         assert first_call_on_cleanup_spy.called
 
         # What if I add one more background task here??
-        # WARNING: this suggests that we cannot add  background tasks on cleanup!!!
-        # fire_and_forget = asyncio.create_task(asyncio.sleep(100), name="cleanup")
-        # app[APP_FIRE_AND_FORGET_TASKS_KEY].add( fire_and_forget )
+        # WARNING: uncommenting this line suggests that we cannot add f&f tasks on-cleanup callbacks !!!
+        #  app[APP_FIRE_AND_FORGET_TASKS_KEY].add( asyncio.create_task(asyncio.sleep(100), name="cleanup") )
 
     async def _other_cleanup_context(app: web.Application):
         # context seem to start first
@@ -70,6 +69,7 @@ async def test_create_safe_application(mocker: MockerFixture):
     assert len(app.on_cleanup) > 0
     assert len(app.cleanup_ctx) > 0
 
+    # NOTE there are 4 type of different events
     app.on_startup.append(_other_on_startup)
     app.on_shutdown.append(_other_on_shutdown)
     app.on_cleanup.append(_other_on_cleanup)
@@ -109,5 +109,7 @@ async def test_create_safe_application(mocker: MockerFixture):
     assert not pending
     assert done or cancelled
 
-    # will create a new client !!!! POTENTIAL BUG client might remain open!!
+    # will create a new client
+    # WARNING: POTENTIAL BUG
+    #  a client created in a cleanup event might leave client session opened!
     assert get_client_session(app).closed is False
