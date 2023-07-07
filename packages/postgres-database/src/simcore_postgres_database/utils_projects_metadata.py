@@ -76,14 +76,13 @@ async def upsert(
         "project_uuid": f"{project_uuid}",
         "custom": custom_metadata,
     }
+    insert_stmt = pg_insert(projects_metadata).values(**data)
+    upsert_stmt = insert_stmt.on_conflict_do_update(
+        index_elements=[projects_metadata.c.project_uuid],
+        set_=data,
+    ).returning(sa.literal_column("*"))
 
     try:
-        insert_stmt = pg_insert(projects_metadata).values(**data)
-        upsert_stmt = insert_stmt.on_conflict_do_update(
-            index_elements=[projects_metadata.c.project_uuid],
-            set_=data,
-        ).returning(sa.literal_column("*"))
-
         result: ResultProxy = await connection.execute(upsert_stmt)
         row: RowProxy | None = await result.first()
         assert row  # nosec
