@@ -44,7 +44,7 @@ async def get(connection: SAConnection, project_uuid: uuid.UUID) -> ProjectMetad
     get_stmt = (
         sa.select(
             projects.c.uuid,
-            projects_metadata.c.custom_metadata,
+            projects_metadata.c.metadata,
             projects_metadata.c.created,
             projects_metadata.c.modified,
         )
