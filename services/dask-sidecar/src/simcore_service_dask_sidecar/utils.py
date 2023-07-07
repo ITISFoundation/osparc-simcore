@@ -26,7 +26,7 @@ def _nvidia_smi_docker_config(cmd: list[str]) -> dict[str, Any]:
         "OpenStdin": False,
         "HostConfig": {
             "Init": True,
-            "AutoRemove": False,
+            "AutoRemove": True,
         },  # NOTE: The Init parameter shows a weird behavior: no exception thrown when the container fails
     }
 
