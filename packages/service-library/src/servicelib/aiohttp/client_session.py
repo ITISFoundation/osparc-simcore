@@ -54,7 +54,6 @@ async def persistent_client_session(app: web.Application):
     """
     # lazy creation and holds reference to session at this point
     session = get_client_session(app)
-    log.info("Starting session %s", session)
 
     yield
 
