@@ -4,7 +4,6 @@
 
 import asyncio
 import logging
-import os
 from contextlib import asynccontextmanager
 from typing import Any, AsyncIterable, AsyncIterator, Awaitable, Callable, Iterable
 from unittest import mock
@@ -13,18 +12,17 @@ import aiodocker
 import httpx
 import pytest
 import sqlalchemy as sa
-from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI
 from models_library.projects import ProjectAtDB
 from models_library.services_resources import ServiceResourcesDict
 from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
-from simcore_service_director_v2.core.application import init_app
-from simcore_service_director_v2.core.settings import AppSettings
 from utils import (
     assert_all_services_running,
     assert_services_reply_200,
@@ -54,17 +52,43 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
+@pytest.fixture()
+def mock_env(
+    mock_env: EnvVarsDict,
+    monkeypatch: MonkeyPatch,
+    redis_service: RedisSettings,
+    rabbit_service: RabbitSettings,
+    postgres_db: sa.engine.Engine,
+    postgres_host_config: dict[str, str],
+    minio_config: dict[str, Any],
+    storage_service: URL,
+    network_name: str,
+) -> EnvVarsDict:
+    env_vars: EnvVarsDict = {
+        "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
+        "SWARM_STACK_NAME": "test_swarm_name",
+        "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
+        "SC_BOOT_MODE": "production",
+        "DYNAMIC_SIDECAR_EXPOSE_PORT": "true",
+        "PROXY_EXPOSE_PORT": "true",
+        "SIMCORE_SERVICES_NETWORK_NAME": network_name,
+        "DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED": "true",
+        "POSTGRES_HOST": f"{get_localhost_ip()}",
+        "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "false",
+        "COMPUTATIONAL_BACKEND_ENABLED": "false",
+        "R_CLONE_PROVIDER": "MINIO",
+    }
+    setenvs_from_dict(monkeypatch, env_vars)
+    monkeypatch.delenv("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", raising=False)
+    return mock_env | env_vars
+
+
 @pytest.fixture
 def minimal_configuration(
     dy_static_file_server_service: dict,
     dy_static_file_server_dynamic_sidecar_service: dict,
     dy_static_file_server_dynamic_sidecar_compose_spec_service: dict,
-    redis_service: RedisSettings,
-    postgres_db: sa.engine.Engine,
-    postgres_host_config: dict[str, str],
-    rabbit_service: RabbitSettings,
     simcore_services_ready: None,
-    storage_service: URL,
     ensure_swarm_and_networks: None,
 ):
     ...
@@ -129,67 +153,8 @@ async def dy_static_file_server_project(
 
 
 @pytest.fixture
-async def director_v2_client(
-    redis_service: RedisSettings,
-    minimal_configuration: None,
-    minio_config: dict[str, Any],
-    storage_service: URL,
-    network_name: str,
-    monkeypatch: MonkeyPatch,
-) -> AsyncIterable[httpx.AsyncClient]:
-    # Works as below line in docker.compose.yml
-    # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
-
-    registry = os.environ.get("DOCKER_REGISTRY", "local")
-    image_tag = os.environ.get("DOCKER_IMAGE_TAG", "production")
-
-    image_name = f"{registry}/dynamic-sidecar:{image_tag}"
-
-    logger.warning("Patching to: DYNAMIC_SIDECAR_IMAGE=%s", image_name)
-    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", image_name)
-    monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
-    monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
-    monkeypatch.setenv("DYNAMIC_SIDECAR_LOG_LEVEL", "DEBUG")
-
-    monkeypatch.setenv("SC_BOOT_MODE", "production")
-    monkeypatch.setenv("DYNAMIC_SIDECAR_EXPOSE_PORT", "true")
-    monkeypatch.setenv("PROXY_EXPOSE_PORT", "true")
-    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", network_name)
-    monkeypatch.delenv("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", raising=False)
-    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
-
-    monkeypatch.setenv("POSTGRES_HOST", f"{get_localhost_ip()}")
-    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "false")
-    monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "false")
-    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
-    monkeypatch.setenv("S3_ENDPOINT", minio_config["client"]["endpoint"])
-    monkeypatch.setenv("S3_ACCESS_KEY", minio_config["client"]["access_key"])
-    monkeypatch.setenv("S3_SECRET_KEY", minio_config["client"]["secret_key"])
-    monkeypatch.setenv("S3_BUCKET_NAME", minio_config["bucket_name"])
-    monkeypatch.setenv("S3_SECURE", f"{minio_config['client']['secure']}")
-
-    # patch host for dynamic-sidecar, not reachable via localhost
-    # the dynamic-sidecar (running inside a container) will use
-    # this address to reach the rabbit service
-    monkeypatch.setenv("RABBIT_HOST", f"{get_localhost_ip()}")
-
-    monkeypatch.setenv("REDIS_HOST", redis_service.REDIS_HOST)
-    monkeypatch.setenv("REDIS_PORT", f"{redis_service.REDIS_PORT}")
-
-    settings = AppSettings.create_from_envs()
-
-    app = init_app(settings)
-
-    async with LifespanManager(app), httpx.AsyncClient(
-        app=app, base_url="http://testserver"
-    ) as client:
-        yield client
-
-
-@pytest.fixture
 async def ensure_services_stopped(
     dy_static_file_server_project: ProjectAtDB,
-    director_v2_client: httpx.AsyncClient,
     minimal_app: FastAPI,
 ) -> AsyncIterable[None]:
     yield
@@ -246,17 +211,17 @@ def mock_sidecars_client(mocker: MockerFixture) -> mock.Mock:
 
 @pytest.mark.flaky(max_runs=3)
 async def test_legacy_and_dynamic_sidecar_run(
+    minimal_app: FastAPI,
     dy_static_file_server_project: ProjectAtDB,
     user_dict: dict[str, Any],
     services_endpoint: dict[str, URL],
-    director_v2_client: httpx.AsyncClient,
+    async_client: httpx.AsyncClient,
     osparc_product_name: str,
     ensure_services_stopped: None,
     mock_projects_networks_repository: None,
-    mock_sidecars_client: None,
+    mock_sidecars_client: mock.Mock,
     service_resources: ServiceResourcesDict,
     mocked_service_awaits_manual_interventions: None,
-    minimal_app: FastAPI,
 ):
     """
     The test will start 3 dynamic services in the same project and check
@@ -273,7 +238,7 @@ async def test_legacy_and_dynamic_sidecar_run(
     await asyncio.gather(
         *(
             assert_start_service(
-                director_v2_client=director_v2_client,
+                director_v2_client=async_client,
                 # context
                 product_name=osparc_product_name,
                 user_id=user_dict["id"],
@@ -303,13 +268,13 @@ async def test_legacy_and_dynamic_sidecar_run(
     assert len(dy_static_file_server_project.workbench) == 3
 
     await assert_all_services_running(
-        director_v2_client,
+        async_client,
         workbench=dy_static_file_server_project.workbench,
     )
 
     # query the service directly and check if it responding accordingly
     await assert_services_reply_200(
-        director_v2_client=director_v2_client,
+        director_v2_client=async_client,
         workbench=dy_static_file_server_project.workbench,
     )
 
@@ -317,7 +282,7 @@ async def test_legacy_and_dynamic_sidecar_run(
     await asyncio.gather(
         *(
             assert_stop_service(
-                director_v2_client=director_v2_client,
+                director_v2_client=async_client,
                 service_uuid=service_uuid,
             )
             for service_uuid in dy_static_file_server_project.workbench

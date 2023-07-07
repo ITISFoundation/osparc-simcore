@@ -139,7 +139,7 @@ def dynamic_sidecar_docker_image_name() -> str:
     return f"{registry}/dynamic-sidecar:{image_tag}"
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def mock_env(
     monkeypatch: MonkeyPatch, dynamic_sidecar_docker_image_name: str
 ) -> EnvVarsDict:
