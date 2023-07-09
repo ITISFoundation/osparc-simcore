@@ -1,6 +1,5 @@
 import json
 from pathlib import Path
-from typing import Dict
 
 from aiohttp import ClientSession
 from jsonschema import ValidationError
@@ -9,22 +8,22 @@ from yarl import URL
 from .jsonschema_validation import validate_instance
 
 
-def _load_from_path(filepath: Path) -> Dict:
+def _load_from_path(filepath: Path) -> dict:
     with filepath.open() as f:
-        spec_dict = json.load(f)
+        spec_dict: dict = json.load(f)
         return spec_dict
 
 
-async def _load_from_url(session: ClientSession, url: URL) -> Dict:
+async def _load_from_url(session: ClientSession, url: URL) -> dict:
     async with session.get(url) as resp:
         text = await resp.text()
-        spec_dict = json.loads(text)
+        spec_dict: dict = json.loads(text)
         return spec_dict
 
 
 async def create_jsonschema_specs(
     location: Path, session: ClientSession = None
-) -> Dict:
+) -> dict:
     """Loads specs from a given location (url or path),
         validates them and returns a working instance
 

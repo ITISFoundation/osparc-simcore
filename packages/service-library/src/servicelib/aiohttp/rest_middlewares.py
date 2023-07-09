@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 def is_api_request(request: web.Request, api_version: str) -> bool:
     base_path = "/" + api_version.lstrip("/")
-    return request.path.startswith(base_path)
+    return bool(request.path.startswith(base_path))
 
 
 def error_middleware_factory(api_version: str, log_exceptions=True) -> Middleware:
@@ -138,7 +138,7 @@ def error_middleware_factory(api_version: str, log_exceptions=True) -> Middlewar
     # adds identifier (mostly for debugging)
     _middleware_handler.__middleware_name__ = f"{__name__}.error_{api_version}"
 
-    return _middleware_handler
+    return _middleware_handler  # type: ignore[no-any-return]
 
 
 def validate_middleware_factory(api_version: str) -> Middleware:
@@ -167,7 +167,7 @@ def validate_middleware_factory(api_version: str) -> Middleware:
                 request["validated-body"] = body
 
             except OpenAPIError:
-                logger.debug("Failing openAPI specs", exc_info=1)
+                logger.debug("Failing openAPI specs", exc_info=True)
                 raise
 
             response = await handler(request)
@@ -184,7 +184,7 @@ def validate_middleware_factory(api_version: str) -> Middleware:
     # adds identifier (mostly for debugging)
     _middleware_handler.__middleware_name__ = f"{__name__}.validate_{api_version}"
 
-    return _middleware_handler
+    return _middleware_handler  # type: ignore[no-any-return]
 
 
 _ResponseOrBodyData = Union[StreamResponse, _DataType]
@@ -210,7 +210,7 @@ def envelope_middleware_factory(api_version: str) -> MiddlewareFlexible:
             return resp
 
         # NOTE: the return values of this handler
-        resp: _ResponseOrBodyData = await handler(request)
+        resp = await handler(request)
 
         if isinstance(resp, web.FileResponse):
             return resp
@@ -227,7 +227,7 @@ def envelope_middleware_factory(api_version: str) -> MiddlewareFlexible:
     # adds identifier (mostly for debugging)
     _middleware_handler.__middleware_name__ = f"{__name__}.envelope_{api_version}"
 
-    return _middleware_handler
+    return _middleware_handler  # type: ignore[no-any-return]
 
 
 def append_rest_middlewares(

@@ -8,7 +8,7 @@ import asyncio
 import logging
 import os
 from pathlib import Path
-from typing import Any, Awaitable, Coroutine, Optional, Union
+from typing import Any, Awaitable, Coroutine
 
 logger = logging.getLogger(__name__)
 
@@ -23,15 +23,15 @@ def is_production_environ() -> bool:
     return os.environ.get("SC_BUILD_TARGET") == "production"
 
 
-def get_http_client_request_total_timeout() -> Optional[int]:
+def get_http_client_request_total_timeout() -> int | None:
     return int(os.environ.get("HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT", "20")) or None
 
 
-def get_http_client_request_aiohttp_connect_timeout() -> Optional[int]:
+def get_http_client_request_aiohttp_connect_timeout() -> int | None:
     return int(os.environ.get("HTTP_CLIENT_REQUEST_AIOHTTP_CONNECT_TIMEOUT", 0)) or None
 
 
-def get_http_client_request_aiohttp_sock_connect_timeout() -> Optional[int]:
+def get_http_client_request_aiohttp_sock_connect_timeout() -> int | None:
     return (
         int(os.environ.get("HTTP_CLIENT_REQUEST_AIOHTTP_SOCK_CONNECT_TIMEOUT", "5"))
         or None
@@ -45,7 +45,7 @@ def is_osparc_repo_dir(path: Path) -> bool:
     return all(d in got for d in expected)
 
 
-def search_osparc_repo_dir(start: Union[str, Path], max_iterations=8) -> Optional[Path]:
+def search_osparc_repo_dir(start: str | Path, max_iterations=8) -> Path | None:
     """Returns path to root repo dir or None if it does not exists
 
     NOTE: assumes starts is a path within repo
@@ -103,8 +103,7 @@ async def logged_gather(
     :param log: passing the logger gives a chance to identify the origin of the gather call, defaults to current submodule's logger
     :return: list of tasks results and errors e.g. [1, 2, ValueError("task3 went wrong"), 33, "foo"]
     """
-
-    wrapped_tasks = tasks
+    wrapped_tasks: tuple[Awaitable[Any], ...] = tasks
     if max_concurrency > 0:
         semaphore = asyncio.Semaphore(max_concurrency)
 
@@ -112,9 +111,9 @@ async def logged_gather(
             async with semaphore:
                 return await task
 
-        wrapped_tasks = [sem_task(t) for t in tasks]
+        wrapped_tasks = [sem_task(t) for t in tasks]  # type: ignore[assignment]
 
-    results = await asyncio.gather(*wrapped_tasks, return_exceptions=True)
+    results: list = await asyncio.gather(*wrapped_tasks, return_exceptions=True)
 
     error = None
     for i, value in enumerate(results):

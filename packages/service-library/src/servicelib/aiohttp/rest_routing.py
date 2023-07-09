@@ -7,11 +7,11 @@ See tests/test_rest_routing.py for example of usage
 import inspect
 import logging
 from collections import namedtuple
-from typing import Callable, Dict, Iterator, List, Mapping
+from typing import Callable, Iterator, Mapping
 
 from aiohttp import web
 
-from .openapi import OpenApiSpec, get_base_path
+from .openapi import OpenApiSpec, get_base_path  # type: ignore[attr-defined]
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ def has_handler_signature(fun) -> bool:
     )
 
 
-def get_handlers_from_namespace(handlers_nsp) -> Dict:
+def get_handlers_from_namespace(handlers_nsp) -> dict:
     """Gets all handlers in a namespace define by a class or a module"""
     # TODO: Should search for function that are marked as "handlers". Similar to @pytest.fixtures??
     if inspect.ismodule(handlers_nsp):
@@ -61,8 +61,8 @@ def map_handlers_with_operations(
     handlers_map: Mapping[str, Callable],
     operations_it: Iterator[PathOperation],
     *,
-    strict: bool = True
-) -> List[web.RouteDef]:
+    strict: bool = True,
+) -> list[web.RouteDef]:
     """Matches operation ids with handler names and returns a list of routes
 
     :param handlers_map: .See get_handlers_from_namespace
@@ -83,7 +83,7 @@ def map_handlers_with_operations(
         if handler:
             routes.append(web.route(method.upper(), path, handler, name=operation_id))
         elif strict:
-            raise ValueError("Cannot find any handler named {} ".format(operation_id))
+            raise ValueError(f"Cannot find any handler named {operation_id} ")
 
     if handlers and strict:
         raise RuntimeError(
@@ -97,7 +97,7 @@ def map_handlers_with_operations(
 
 def create_routes_from_namespace(
     specs: OpenApiSpec, handlers_nsp, *, strict: bool = True
-) -> List[web.RouteDef]:
+) -> list[web.RouteDef]:
     """Gets *all* available handlers and maps one-to-one to *all* specs routes
 
     :param specs: openapi spec object

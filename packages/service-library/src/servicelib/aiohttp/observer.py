@@ -28,7 +28,8 @@ def setup_observer_registry(app: web.Application):
 
 def _get_registry(app: web.Application) -> defaultdict:
     try:
-        return app[_APP_OBSERVER_EVENTS_REGISTRY_KEY]
+        output: defaultdict = app[_APP_OBSERVER_EVENTS_REGISTRY_KEY]
+        return output
     except KeyError as err:
         raise ObserverRegistryNotFound(
             "Could not find observer registry. TIP: initialize app with setup_observer_registry"

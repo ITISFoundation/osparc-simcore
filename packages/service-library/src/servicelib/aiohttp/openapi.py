@@ -1,10 +1,10 @@
+# type: ignore
 """ Openapi specifications
 
     Facade for openapi functionality
 """
 import warnings
 from pathlib import Path
-from typing import Dict, Tuple
 
 import openapi_core
 import yaml
@@ -37,17 +37,17 @@ def get_base_path(specs: OpenApiSpec) -> str:
     :rtype: str
     """
     # TODO: guarantee this convention is true
-    return "/v" + specs.info.version.split(".")[0]
+    return "/v" + f'{specs.info.version.split(".")[0]}'
 
 
 # TODO: _load_from_* is also found in jsonshema_specs
-def _load_from_path(filepath: Path) -> Tuple[Dict, str]:
+def _load_from_path(filepath: Path) -> tuple[dict, str]:
     with filepath.open() as f:
         spec_dict = yaml.safe_load(f)
         return spec_dict, filepath.as_uri()
 
 
-async def _load_from_url(session: ClientSession, url: URL) -> Tuple[Dict, str]:
+async def _load_from_url(session: ClientSession, url: URL) -> tuple[dict, str]:
     async with session.get(url) as resp:
         text = await resp.text()
         spec_dict = yaml.safe_load(text)
@@ -87,7 +87,9 @@ def create_specs(openapi_path: Path) -> OpenApiSpec:
     with openapi_path.open() as f:
         spec_dict = yaml.safe_load(f)
 
-    spec = openapi_core.create_spec(spec_dict, spec_url=openapi_path.as_uri())
+    spec: OpenApiSpec = openapi_core.create_spec(
+        spec_dict, spec_url=openapi_path.as_uri()
+    )
     return spec
 
 

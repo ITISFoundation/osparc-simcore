@@ -4,7 +4,7 @@ import logging
 from copy import deepcopy
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple, TypedDict
+from typing import Any, Callable, Protocol, TypedDict
 
 from aiohttp import web
 from pydantic import parse_obj_as
@@ -52,7 +52,7 @@ class DependencyError(ApplicationSetupError):
 
 class SetupMetadataDict(TypedDict):
     module_name: str
-    dependencies: List[str]
+    dependencies: list[str]
     config_section: str
     config_enabled: str
 
@@ -62,7 +62,7 @@ class SetupMetadataDict(TypedDict):
 
 def _parse_and_validate_arguments(
     module_name, depends, config_section, config_enabled
-) -> Tuple:
+) -> tuple:
     module_name = module_name.replace(".__init__", "")
     depends = depends or []
 
@@ -80,10 +80,10 @@ def _parse_and_validate_arguments(
 
 
 def _is_addon_enabled_from_config(
-    cfg: Dict[str, Any], dotted_section: str, section
+    cfg: dict[str, Any], dotted_section: str, section
 ) -> bool:
     try:
-        parts: List[str] = dotted_section.split(".")
+        parts: list[str] = dotted_section.split(".")
         # navigates app_config (cfg) searching for section
         searched_config = deepcopy(cfg)
         for part in parts:
@@ -104,12 +104,12 @@ def _is_addon_enabled_from_config(
 def _get_app_settings_and_field_name(
     app: web.Application,
     arg_module_name: str,
-    arg_settings_name: Optional[str],
+    arg_settings_name: str | None,
     setup_func_name: str,
     logger: logging.Logger,
-) -> Tuple[Optional[_ApplicationSettings], Optional[str]]:
+) -> tuple[_ApplicationSettings | None, str | None]:
 
-    app_settings: Optional[_ApplicationSettings] = app.get(APP_SETTINGS_KEY)
+    app_settings: _ApplicationSettings | None = app.get(APP_SETTINGS_KEY)
     settings_field_name = arg_settings_name
 
     if app_settings:
@@ -140,16 +140,16 @@ def app_module_setup(
     module_name: str,
     category: ModuleCategory,
     *,
-    settings_name: Optional[str] = None,
-    depends: Optional[List[str]] = None,
+    settings_name: str | None = None,
+    depends: list[str] | None = None,
     logger: logging.Logger = log,
     # TODO: SEE https://github.com/ITISFoundation/osparc-simcore/issues/2008
     # TODO: - settings_name becomes module_name!!
     # TODO: - plugin base should be aware of setup and settings -> model instead of function?
     # TODO: - depends mechanism will call registered setups List[Union[str, _SetupFunc]]
     # TODO: - deprecate config options
-    config_section: Optional[str] = None,
-    config_enabled: Optional[str] = None,
+    config_section: str | None = None,
+    config_enabled: str | None = None,
 ) -> Callable:
     """Decorator that marks a function as 'a setup function' for a given module in an application
 
@@ -298,10 +298,10 @@ def app_module_setup(
             )
             return completed
 
-        _wrapper.metadata = setup_metadata
-        _wrapper.mark_as_simcore_servicelib_setup_func = True
+        _wrapper.metadata = setup_metadata  # type: ignore[attr-defined]
+        _wrapper.mark_as_simcore_servicelib_setup_func = True  # type: ignore[attr-defined]
         # NOTE: this is added by functools.wraps decorated
-        assert _wrapper.__wrapped__ == setup_func  # nosec
+        assert _wrapper.__wrapped__ == setup_func  # type: ignore[attr-defined] # nosec
 
         return _wrapper
 

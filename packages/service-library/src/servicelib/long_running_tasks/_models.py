@@ -63,4 +63,7 @@ __all__: tuple[str, ...] = (
     "TaskId",
     "TaskResult",
     "TaskStatus",
+    "TaskProgress",
+    "ProgressPercent",
+    "ProgressMessage",
 )

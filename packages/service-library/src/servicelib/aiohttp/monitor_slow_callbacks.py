@@ -1,14 +1,13 @@
 import asyncio.events
 import sys
 import time
-from typing import List
 
 from pyinstrument import Profiler
 
 from .incidents import SlowCallback
 
 
-def enable(slow_duration_secs: float, incidents: List[SlowCallback]) -> None:
+def enable(slow_duration_secs: float, incidents: list[SlowCallback]) -> None:
     """Based in from aiodebug
 
     Patches ``asyncio.events.Handle`` to report an incident every time a callback
@@ -43,4 +42,4 @@ def enable(slow_duration_secs: float, incidents: List[SlowCallback]) -> None:
 
         return retval
 
-    asyncio.events.Handle._run = instrumented
+    asyncio.events.Handle._run = instrumented  # type: ignore[method-assign]

@@ -34,7 +34,7 @@ def get_common_oas_options(is_devel_mode: bool) -> dict[str, Any]:
         # NOTE: for security, only exposed in devel mode
         # Make sure also that this is NOT used in edge services
         # SEE https://sonarcloud.io/project/security_hotspots?id=ITISFoundation_osparc-simcore&pullRequest=3165&hotspots=AYHPqDfX5LRQZ1Ko6y4-
-        servers.append(_OAS_DEVELOPMENT_SERVER)
+        servers.append(_OAS_DEVELOPMENT_SERVER)  # type: ignore[arg-type]
 
     return dict(
         servers=servers,
@@ -146,7 +146,7 @@ def patch_openapi_specs(app_openapi: dict[str, Any]):
 
 def override_fastapi_openapi_method(app: FastAPI):
     # pylint: disable=protected-access
-    app._original_openapi = types.MethodType(copy_func(app.openapi), app)  # type: ignore
+    app._original_openapi = types.MethodType(copy_func(app.openapi), app)
 
     def _custom_openapi_method(self: FastAPI) -> dict:
         """Overrides FastAPI.openapi member function
@@ -154,9 +154,9 @@ def override_fastapi_openapi_method(app: FastAPI):
         """
         # NOTE: see fastapi.applications.py:FastApi.openapi(self) implementation
         if not self.openapi_schema:
-            self.openapi_schema = self._original_openapi()  # type: ignore
+            self.openapi_schema = self._original_openapi()
             patch_openapi_specs(self.openapi_schema)
-
-        return self.openapi_schema
+        output: dict = self.openapi_schema
+        return output
 
     app.openapi = types.MethodType(_custom_openapi_method, app)

@@ -148,7 +148,6 @@ class RabbitMQClient:
     async def _get_channel(self) -> aio_pika.abc.AbstractChannel:
         assert self._connection_pool  # nosec
         async with self._connection_pool.acquire() as connection:
-            connection: aio_pika.RobustConnection
             channel = await connection.channel()
             channel.close_callbacks.add(self._channel_close_callback)
             return channel
@@ -185,7 +184,6 @@ class RabbitMQClient:
 
         assert self._channel_pool  # nosec
         async with self._channel_pool.acquire() as channel:
-            channel: aio_pika.RobustChannel
             _DEFAULT_PREFETCH_VALUE = 10  # this value is set to the default for now
             await channel.set_qos(_DEFAULT_PREFETCH_VALUE)
 
@@ -237,7 +235,8 @@ class RabbitMQClient:
                 exclusive=exclusive_queue,
                 consumer_tag=f"{get_rabbitmq_client_unique_name(self.client_name)}_{exchange_name}",
             )
-            return queue.name
+            output: str = queue.name
+            return output
 
     async def add_topics(
         self,
@@ -248,7 +247,6 @@ class RabbitMQClient:
         assert self._channel_pool  # nosec
 
         async with self._channel_pool.acquire() as channel:
-            channel: aio_pika.RobustChannel
             exchange = await channel.get_exchange(exchange_name)
             queue = await declare_queue(
                 channel, self.client_name, exchange_name, exclusive_queue=True
@@ -266,7 +264,6 @@ class RabbitMQClient:
     ) -> None:
         assert self._channel_pool  # nosec
         async with self._channel_pool.acquire() as channel:
-            channel: aio_pika.RobustChannel
             exchange = await channel.get_exchange(exchange_name)
             queue = await declare_queue(
                 channel, self.client_name, exchange_name, exclusive_queue=True
@@ -282,7 +279,6 @@ class RabbitMQClient:
     ) -> None:
         assert self._channel_pool  # nosec
         async with self._channel_pool.acquire() as channel:
-            channel: aio_pika.RobustChannel
             queue = await channel.get_queue(queue_name)
             # NOTE: we force delete here
             await queue.delete(if_unused=False, if_empty=False)
@@ -296,7 +292,6 @@ class RabbitMQClient:
         assert self._channel_pool  # nosec
         topic = message.routing_key()
         async with self._channel_pool.acquire() as channel:
-            channel: aio_pika.RobustChannel
             exchange = await channel.declare_exchange(
                 exchange_name,
                 aio_pika.ExchangeType.FANOUT

@@ -109,10 +109,10 @@ def setup(
         # add routing paths
         for route in routes:
             app.router.add_route(
-                route.method,  # type: ignore
-                f"{router_prefix}{route.path}",  # type: ignore
-                handler_check_decorator(task_request_context_decorator(route.handler)),  # type: ignore
-                **route.kwargs,  # type: ignore
+                route.method,
+                f"{router_prefix}{route.path}",
+                handler_check_decorator(task_request_context_decorator(route.handler)),
+                **route.kwargs,
             )
 
         # add components to state

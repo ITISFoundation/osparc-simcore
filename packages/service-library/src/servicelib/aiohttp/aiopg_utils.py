@@ -15,7 +15,6 @@
 
 import functools
 import logging
-from typing import Optional
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -100,7 +99,7 @@ class PostgresRetryPolicyUponOperation:
     WAIT_SECS = 2
     ATTEMPTS_COUNT = 3
 
-    def __init__(self, logger: Optional[logging.Logger] = None):
+    def __init__(self, logger: logging.Logger | None = None):
         logger = logger or log
 
         self.kwargs = dict(
@@ -137,8 +136,8 @@ def retry_pg_api(func):
     def total_retry_count():
         return _total_retry_count
 
-    wrapper.retry = _deco_func.retry
-    wrapper.total_retry_count = total_retry_count
+    wrapper.retry = _deco_func.retry  # type: ignore[attr-defined]
+    wrapper.total_retry_count = total_retry_count  # type: ignore[attr-defined]
     return wrapper
 
 

@@ -39,7 +39,7 @@ class AiohttpOpenAPIRequest(BaseOpenAPIRequest):
 
     @property
     def method(self) -> str:
-        return self._request.method.lower()
+        return f"{self._request.method.lower()}"
 
     @property
     def path_pattern(self):
@@ -62,7 +62,7 @@ class AiohttpOpenAPIRequest(BaseOpenAPIRequest):
                 if value == "[^{}/]+":  # = no re in pattern
                     kargs[key] = "{%s}" % (key)
                 else:
-                    kargs[key] = "{%s:%s}" % (key, value)
+                    kargs[key] = f"{{{key}:{value}}}"
             path_pattern = formatter.format(**kargs)
 
         return path_pattern
@@ -101,7 +101,7 @@ class AiohttpOpenAPIRequest(BaseOpenAPIRequest):
     @property
     def mimetype(self) -> str:
         """Read-only property with content part of Content-Type header"""
-        return self._request.content_type
+        return f"{self._request.content_type}"
 
 
 class AiohttpOpenAPIResponse(BaseOpenAPIResponse):
@@ -125,7 +125,7 @@ class AiohttpOpenAPIResponse(BaseOpenAPIResponse):
 
     @property
     def status_code(self) -> int:
-        return self._response.status
+        return int(self._response.status)
 
     @property
     def mimetype(self):

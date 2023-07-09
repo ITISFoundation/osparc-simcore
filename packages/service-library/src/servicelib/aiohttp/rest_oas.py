@@ -7,7 +7,7 @@ from aiohttp import web
 from openapi_core.schema.specs.models import Spec
 
 from .application_keys import APP_OPENAPI_SPECS_KEY
-from .openapi import create_specs
+from .openapi import create_specs  # type: ignore[attr-defined]
 
 
 def set_specs(app: web.Application, specs: Spec) -> Spec:

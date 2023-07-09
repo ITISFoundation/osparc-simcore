@@ -5,7 +5,7 @@ from pathlib import Path
 # https://docs.python.org/3/library/shutil.html#shutil.rmtree
 # https://docs.python.org/3/library/os.html#os.remove
 from aiofiles.os import remove
-from aiofiles.os import wrap as sync_to_async
+from aiofiles.os import wrap as sync_to_async  # type: ignore[attr-defined]
 
 _shutil_rmtree = sync_to_async(shutil.rmtree)
 

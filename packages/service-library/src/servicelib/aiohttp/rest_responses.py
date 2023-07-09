@@ -3,7 +3,7 @@
 """
 import inspect
 import json
-from typing import Any, Dict, List, Mapping, Optional, Tuple, Type, Union
+from typing import Any, Mapping, Union
 
 import attr
 from aiohttp import web, web_exceptions
@@ -16,9 +16,9 @@ from .rest_models import ErrorItemType, ErrorType, LogMessageType
 ENVELOPE_KEYS = ("data", "error")
 OFFSET_PAGINATION_KEYS = ("_meta", "_links")
 
-JsonLikeModel = Union[Dict[str, Any], List[Dict[str, Any]]]
+JsonLikeModel = Union[dict[str, Any], list[dict[str, Any]]]
 
-_DataType = Union[str, Dict[str, Any], List[Any]]
+_DataType = Union[str, dict[str, Any], list[Any]]
 
 
 def is_enveloped_from_map(payload: Mapping) -> bool:
@@ -33,7 +33,7 @@ def is_enveloped_from_text(text: str) -> bool:
     return is_enveloped_from_map(payload)
 
 
-def is_enveloped(payload: Union[Mapping, str]) -> bool:
+def is_enveloped(payload: Mapping | str) -> bool:
     # pylint: disable=isinstance-second-argument-not-valid-type
     if isinstance(payload, Mapping):
         return is_enveloped_from_map(payload)
@@ -43,10 +43,10 @@ def is_enveloped(payload: Union[Mapping, str]) -> bool:
 
 
 def wrap_as_envelope(
-    data: Optional[JsonLikeModel] = None,
-    error: Optional[JsonLikeModel] = None,
+    data: JsonLikeModel | None = None,
+    error: JsonLikeModel | None = None,
     as_null: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     as_null: if True, keys for null values are created and assigned to None
     """
@@ -58,7 +58,7 @@ def wrap_as_envelope(
     return payload
 
 
-def unwrap_envelope(payload: Dict[str, Any]) -> Tuple:
+def unwrap_envelope(payload: dict[str, Any]) -> tuple:
     """
     Safe returns (data, error) tuple from a response payload
     """
@@ -73,10 +73,10 @@ def create_data_response(
 ) -> web.Response:
     response = None
     try:
-        if not is_enveloped(data):
-            payload = wrap_as_envelope(data)
+        if not is_enveloped(data):  # type: ignore[arg-type]
+            payload = wrap_as_envelope(data)  # type: ignore[arg-type]
         else:
-            payload = data
+            payload = data  # type: ignore[assignment]
 
         response = web.json_response(payload, dumps=json_dumps, status=status)
     except (TypeError, ValueError) as err:
@@ -92,9 +92,9 @@ def create_data_response(
 
 
 def create_error_response(
-    errors: Union[List[Exception], Exception],
-    reason: Optional[str] = None,
-    http_error_cls: Type[HTTPError] = web.HTTPInternalServerError,
+    errors: list[Exception] | Exception,
+    reason: str | None = None,
+    http_error_cls: type[HTTPError] = web.HTTPInternalServerError,
     *,
     skip_internal_error_details: bool = False,
 ) -> HTTPError:
@@ -136,15 +136,15 @@ def create_log_response(msg: str, level: str) -> web.Response:
     Analogous to  aiohttp's web.json_response
     """
     # TODO: DEPRECATE
-    msg = LogMessageType(msg, level)
+    message = LogMessageType(msg, level)
     response = web.json_response(
-        data={"data": attr.asdict(msg), "error": None}, dumps=json_dumps
+        data={"data": attr.asdict(message), "error": None}, dumps=json_dumps
     )
     return response
 
 
 # Inverse map from code to HTTPException classes
-def _collect_http_exceptions(exception_cls: Type[HTTPException] = HTTPException):
+def _collect_http_exceptions(exception_cls: type[HTTPException] = HTTPException):
     def _pred(obj) -> bool:
         return (
             inspect.isclass(obj)
@@ -152,7 +152,7 @@ def _collect_http_exceptions(exception_cls: Type[HTTPException] = HTTPException)
             and getattr(obj, "status_code", 0) > 0
         )
 
-    found: List[Tuple[str, Any]] = inspect.getmembers(web_exceptions, _pred)
+    found: list[tuple[str, Any]] = inspect.getmembers(web_exceptions, _pred)
     assert found  # nosec
 
     http_statuses = {cls.status_code: cls for _, cls in found}
@@ -161,12 +161,12 @@ def _collect_http_exceptions(exception_cls: Type[HTTPException] = HTTPException)
     return http_statuses
 
 
-_STATUS_CODE_TO_HTTP_ERRORS: Dict[int, Type[HTTPError]] = _collect_http_exceptions(
+_STATUS_CODE_TO_HTTP_ERRORS: dict[int, type[HTTPError]] = _collect_http_exceptions(
     HTTPError
 )
 
 
-def get_http_error(status_code: int) -> Optional[Type[HTTPError]]:
+def get_http_error(status_code: int) -> type[HTTPError] | None:
     """Returns aiohttp error class corresponding to a 4XX or 5XX status code
 
     NOTICE that any non-error code (i.e. 2XX, 3XX and 4XX) will return None

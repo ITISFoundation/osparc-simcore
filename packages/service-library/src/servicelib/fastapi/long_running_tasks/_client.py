@@ -2,7 +2,7 @@ import asyncio
 import functools
 import logging
 import warnings
-from typing import Any, Awaitable, Callable, Final, Optional
+from typing import Any, Awaitable, Callable, Final
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient, HTTPError
@@ -129,17 +129,19 @@ class Client:
 
     @property
     def _client_configuration(self) -> ClientConfiguration:
-        return self.app.state.long_running_client_configuration
+        output: ClientConfiguration = self.app.state.long_running_client_configuration
+        return output
 
     def _get_url(self, path: str) -> AnyHttpUrl:
-        return parse_obj_as(
+        output: AnyHttpUrl = parse_obj_as(
             AnyHttpUrl,
             f"{self._base_url}{self._client_configuration.router_prefix}{path}",
         )
+        return output
 
     @retry_on_http_errors
     async def get_task_status(
-        self, task_id: TaskId, *, timeout: Optional[PositiveFloat] = None
+        self, task_id: TaskId, *, timeout: PositiveFloat | None = None
     ) -> TaskStatus:
         timeout = timeout or self._client_configuration.default_timeout
         result = await self._async_client.get(
@@ -158,8 +160,8 @@ class Client:
 
     @retry_on_http_errors
     async def get_task_result(
-        self, task_id: TaskId, *, timeout: Optional[PositiveFloat] = None
-    ) -> Optional[Any]:
+        self, task_id: TaskId, *, timeout: PositiveFloat | None = None
+    ) -> Any | None:
         timeout = timeout or self._client_configuration.default_timeout
         result = await self._async_client.get(
             self._get_url(f"/task/{task_id}/result"),
@@ -180,7 +182,7 @@ class Client:
 
     @retry_on_http_errors
     async def cancel_and_delete_task(
-        self, task_id: TaskId, *, timeout: Optional[PositiveFloat] = None
+        self, task_id: TaskId, *, timeout: PositiveFloat | None = None
     ) -> None:
         timeout = timeout or self._client_configuration.default_timeout
         result = await self._async_client.delete(

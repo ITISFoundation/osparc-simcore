@@ -162,7 +162,8 @@ class RedisClientSDK:
                 )
 
     async def lock_value(self, lock_name: str) -> str | None:
-        return await self._client.get(lock_name)
+        output: str | None = await self._client.get(lock_name)
+        return output
 
 
 @dataclass

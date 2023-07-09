@@ -4,7 +4,6 @@ See https://setuptools.readthedocs.io/en/latest/pkg_resources.html
 """
 import pathlib
 from pathlib import Path
-from typing import TextIO
 
 import attr
 import pkg_resources
@@ -26,15 +25,16 @@ class ResourcesFacade:
     def exists(self, resource_name: str) -> bool:
         return pkg_resources.resource_exists(self.package_name, resource_name)
 
-    def stream(self, resource_name: str) -> TextIO:
+    def stream(self, resource_name: str):
         # TODO: check if read-only and if so, rename
-        return pkg_resources.resource_stream(self.package_name, resource_name)
+        output = pkg_resources.resource_stream(self.package_name, resource_name)
+        return output
 
     def listdir(self, resource_name: str) -> str:
-        return pkg_resources.resource_listdir(self.package_name, resource_name)
+        return f"{pkg_resources.resource_listdir(self.package_name, resource_name)}"
 
     def isdir(self, resource_name: str) -> str:
-        return pkg_resources.resource_isdir(self.package_name, resource_name)
+        return f"{pkg_resources.resource_isdir(self.package_name, resource_name)}"
 
     def get_path(self, resource_name: str) -> Path:
         """Returns a path to a resource
