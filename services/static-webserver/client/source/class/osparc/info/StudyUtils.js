@@ -167,8 +167,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       */
     createDescription: function(study, maxHeight) {
       const description = new osparc.ui.markdown.Markdown().set({
-        noMargin: true,
-        maxHeight: maxHeight
+        noMargin: true
       });
       study.bind("description", description, "value", {
         converter: desc => desc ? desc : "Add description"
@@ -247,43 +246,44 @@ qx.Class.define("osparc.info.StudyUtils", {
 
     createExtraInfoGrid: function(extraInfos) {
       const positions = {
-        DESCRIPTION: {
-          column: 0,
-          row: 0,
-          colSpan: 3
-        },
-        THUMBNAIL: {
-          column: 3,
-          row: 0
-        },
         ACCESS_RIGHTS: {
           column: 0,
-          row: 3
+          row: 0
         },
         AUTHOR: {
           column: 1,
-          row: 3
+          row: 0
         },
         CREATED: {
           column: 2,
-          row: 3
+          row: 0
         },
         MODIFIED: {
           column: 3,
-          row: 3
+          row: 0
+        },
+        THUMBNAIL: {
+          column: 4,
+          row: 0,
+          rowSpan: 4
         },
         TAGS: {
           column: 0,
-          row: 6,
+          row: 3,
           colSpan: 2
         },
         QUALITY: {
           column: 2,
-          row: 6
+          row: 3
         },
         CLASSIFIERS: {
           column: 3,
-          row: 6
+          row: 3
+        },
+        DESCRIPTION: {
+          column: 0,
+          row: 6,
+          colSpan: 5
         }
       };
 
@@ -324,7 +324,8 @@ qx.Class.define("osparc.info.StudyUtils", {
           moreInfo.add(extraInfo.view, {
             row: gridInfo.row+1,
             column: gridInfo.column,
-            colSpan: gridInfo.colSpan ? gridInfo.colSpan : 1
+            colSpan: gridInfo.colSpan ? gridInfo.colSpan : 1,
+            rowSpan: gridInfo.rowSpan ? gridInfo.rowSpan : 1
           });
         }
       });
