@@ -1,4 +1,4 @@
-# Extra reqs
+# Extra reqs, besides webserver's
 
 
 fastapi
