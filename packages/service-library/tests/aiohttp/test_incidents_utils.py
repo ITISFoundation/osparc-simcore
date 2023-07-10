@@ -1,10 +1,13 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
 # pylint: disable=protected-access
-import operator
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
-import attr
+
+import operator
+from dataclasses import dataclass
+
 from servicelib.aiohttp.incidents import BaseIncident, LimitedOrderedStack
 
 
@@ -31,7 +34,7 @@ def test_limited_ordered_stack():
 
 
 def test_incidents_stack():
-    @attr.s(auto_attribs=True)
+    @dataclass
     class TestIncident(BaseIncident):
         gravity: int
 

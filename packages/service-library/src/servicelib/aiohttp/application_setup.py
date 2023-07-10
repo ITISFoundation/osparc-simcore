@@ -1,10 +1,11 @@
+import datetime
 import functools
 import inspect
 import logging
+from collections.abc import Callable
 from copy import deepcopy
-from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple, TypedDict
+from typing import Any, Protocol, TypedDict
 
 from aiohttp import web
 from pydantic import parse_obj_as
@@ -36,7 +37,7 @@ class ModuleCategory(Enum):
 # ERRORS ------------------------------------------------------------------
 
 
-class SkipModuleSetup(Exception):
+class SkipModuleSetupError(Exception):
     def __init__(self, *, reason) -> None:
         self.reason = reason
         super().__init__(reason)
@@ -52,7 +53,7 @@ class DependencyError(ApplicationSetupError):
 
 class SetupMetadataDict(TypedDict):
     module_name: str
-    dependencies: List[str]
+    dependencies: list[str]
     config_section: str
     config_enabled: str
 
@@ -62,12 +63,13 @@ class SetupMetadataDict(TypedDict):
 
 def _parse_and_validate_arguments(
     module_name, depends, config_section, config_enabled
-) -> Tuple:
+) -> tuple:
     module_name = module_name.replace(".__init__", "")
     depends = depends or []
 
     if config_section and config_enabled:
-        raise ValueError("Can only set config_section or config_enabled but not both")
+        msg = "Can only set config_section or config_enabled but not both"
+        raise ValueError(msg)
 
     section = config_section or module_name.split(".")[-1]
     if config_enabled is None:
@@ -80,10 +82,10 @@ def _parse_and_validate_arguments(
 
 
 def _is_addon_enabled_from_config(
-    cfg: Dict[str, Any], dotted_section: str, section
+    cfg: dict[str, Any], dotted_section: str, section
 ) -> bool:
     try:
-        parts: List[str] = dotted_section.split(".")
+        parts: list[str] = dotted_section.split(".")
         # navigates app_config (cfg) searching for section
         searched_config = deepcopy(cfg)
         for part in parts:
@@ -93,9 +95,8 @@ def _is_addon_enabled_from_config(
             searched_config = searched_config[part]
 
     except KeyError as ee:
-        raise ApplicationSetupError(
-            f"Cannot find required option '{dotted_section}' in app config's section '{ee}'"
-        ) from ee
+        msg = f"Cannot find required option '{dotted_section}' in app config's section '{ee}'"
+        raise ApplicationSetupError(msg) from ee
 
     assert isinstance(searched_config, bool)  # nosec
     return searched_config
@@ -104,16 +105,14 @@ def _is_addon_enabled_from_config(
 def _get_app_settings_and_field_name(
     app: web.Application,
     arg_module_name: str,
-    arg_settings_name: Optional[str],
+    arg_settings_name: str | None,
     setup_func_name: str,
     logger: logging.Logger,
-) -> Tuple[Optional[_ApplicationSettings], Optional[str]]:
-
-    app_settings: Optional[_ApplicationSettings] = app.get(APP_SETTINGS_KEY)
+) -> tuple[_ApplicationSettings | None, str | None]:
+    app_settings: _ApplicationSettings | None = app.get(APP_SETTINGS_KEY)
     settings_field_name = arg_settings_name
 
     if app_settings:
-
         if not settings_field_name:
             # FIXME: hard-coded WEBSERVER_ temporary
             settings_field_name = f"WEBSERVER_{arg_module_name.split('.')[-1].upper()}"
@@ -121,10 +120,8 @@ def _get_app_settings_and_field_name(
         logger.debug("Checking addon's %s ", f"{settings_field_name=}")
 
         if not hasattr(app_settings, settings_field_name):
-            raise ValueError(
-                f"Invalid option {arg_settings_name=} in module's setup {setup_func_name}. "
-                f"It must be a field in {app_settings.__class__}"
-            )
+            msg = f"Invalid option arg_settings_name={arg_settings_name!r} in module's setup {setup_func_name}. It must be a field in {app_settings.__class__}"
+            raise ValueError(msg)
 
     return app_settings, settings_field_name
 
@@ -140,16 +137,16 @@ def app_module_setup(
     module_name: str,
     category: ModuleCategory,
     *,
-    settings_name: Optional[str] = None,
-    depends: Optional[List[str]] = None,
+    settings_name: str | None = None,
+    depends: list[str] | None = None,
     logger: logging.Logger = log,
     # TODO: SEE https://github.com/ITISFoundation/osparc-simcore/issues/2008
     # TODO: - settings_name becomes module_name!!
     # TODO: - plugin base should be aware of setup and settings -> model instead of function?
     # TODO: - depends mechanism will call registered setups List[Union[str, _SetupFunc]]
     # TODO: - deprecate config options
-    config_section: Optional[str] = None,
-    config_enabled: Optional[str] = None,
+    config_section: str | None = None,
+    config_enabled: str | None = None,
 ) -> Callable:
     """Decorator that marks a function as 'a setup function' for a given module in an application
 
@@ -186,25 +183,24 @@ def app_module_setup(
     )
 
     def _decorate(setup_func: _SetupFunc):
-
         if "setup" not in setup_func.__name__:
             logger.warning("Rename '%s' to contain 'setup'", setup_func.__name__)
 
         # metadata info
         def setup_metadata() -> SetupMetadataDict:
-            return {
-                "module_name": module_name,
-                "dependencies": depends,
-                "config_section": section,
-                "config_enabled": config_enabled,
-            }
+            return SetupMetadataDict(
+                module_name=module_name,
+                dependencies=depends,
+                config_section=section,
+                config_enabled=config_enabled,
+            )
 
         # wrapper
         @functools.wraps(setup_func)
         def _wrapper(app: web.Application, *args, **kargs) -> bool:
             # pre-setup
             head_msg = f"Setup of {module_name}"
-            started = datetime.now()
+            started = datetime.datetime.now(tz=datetime.timezone.utc)
             logger.info(
                 "%s (%s, %s) started ... ",
                 head_msg,
@@ -259,15 +255,13 @@ def app_module_setup(
                     dep for dep in depends if not is_setup_completed(dep, app)
                 ]
                 if uninitialized:
-                    raise DependencyError(
-                        f"Cannot setup app module '{module_name}' because the "
-                        f"following dependencies are still uninitialized: {uninitialized}"
-                    )
+                    msg = f"Cannot setup app module '{module_name}' because the following dependencies are still uninitialized: {uninitialized}"
+                    raise DependencyError(msg)
 
             # execution of setup
             try:
                 if is_setup_completed(module_name, app):
-                    raise SkipModuleSetup(
+                    raise SkipModuleSetupError(
                         reason=f"'{module_name}' was already initialized in {app}."
                         " Setup can only be executed once per app."
                     )
@@ -281,15 +275,15 @@ def app_module_setup(
                 if completed:  # registers completed setup
                     app[APP_SETUP_COMPLETED_KEY].append(module_name)
                 else:
-                    raise SkipModuleSetup(
+                    raise SkipModuleSetupError(
                         reason="Undefined (setup function returned false)"
                     )
 
-            except SkipModuleSetup as exc:
+            except SkipModuleSetupError as exc:
                 logger.info("Skipping '%s' setup: %s", module_name, exc.reason)
                 completed = False
 
-            elapsed = datetime.now() - started
+            elapsed = datetime.datetime.now(tz=datetime.timezone.utc) - started
             logger.info(
                 "%s %s [Elapsed: %3.1f secs]",
                 head_msg,

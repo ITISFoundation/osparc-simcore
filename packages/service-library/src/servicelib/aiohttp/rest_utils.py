@@ -1,13 +1,13 @@
 import json
 import warnings
+from dataclasses import asdict
 
-import attr
 from aiohttp import web
 
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
+from .application_keys import APP_OPENAPI_SPECS_KEY
 from .openapi_validation import PATH_KEY, QUERY_KEY, validate_request
 from .rest_models import ErrorItemType, ErrorType
-from .rest_oas import get_specs
 
 
 class EnvelopeFactory:
@@ -21,7 +21,7 @@ class EnvelopeFactory:
         enveloped = {"data": data, "error": error}
         for key, value in enveloped.items():
             if value is not None and not isinstance(value, dict):
-                enveloped[key] = attr.asdict(value)
+                enveloped[key] = asdict(value)
         self._envelope = enveloped
 
     def as_dict(self) -> dict:
@@ -45,7 +45,7 @@ async def extract_and_validate(request: web.Request):
         DeprecationWarning,
     )
 
-    spec = get_specs(request.app)
+    spec = request.app[APP_OPENAPI_SPECS_KEY]
     params, body, errors = await validate_request(request, spec)
 
     if errors:

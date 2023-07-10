@@ -13,8 +13,8 @@ from models_library.rabbitmq_messages import (
 )
 from pydantic import parse_raw_as
 from servicelib.aiohttp.monitor_services import (
-    SERVICE_STARTED_LABELS,
-    SERVICE_STOPPED_LABELS,
+    MONITOR_SERVICE_STARTED_LABELS,
+    MONITOR_SERVICE_STOPPED_LABELS,
     service_started,
     service_stopped,
 )
@@ -127,11 +127,19 @@ async def _instrumentation_message_parser(app: web.Application, data: bytes) -> 
     rabbit_message = InstrumentationRabbitMessage.parse_raw(data)
     if rabbit_message.metrics == "service_started":
         service_started(
-            app, **{key: rabbit_message.dict()[key] for key in SERVICE_STARTED_LABELS}
+            app,
+            **{
+                key: rabbit_message.dict()[key]
+                for key in MONITOR_SERVICE_STARTED_LABELS
+            },
         )
     elif rabbit_message.metrics == "service_stopped":
         service_stopped(
-            app, **{key: rabbit_message.dict()[key] for key in SERVICE_STOPPED_LABELS}
+            app,
+            **{
+                key: rabbit_message.dict()[key]
+                for key in MONITOR_SERVICE_STOPPED_LABELS
+            },
         )
     return True
 
