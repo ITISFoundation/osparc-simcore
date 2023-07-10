@@ -50,6 +50,11 @@ class SimcoreS3FileID(ConstrainedStr):
 
 
 class SimcoreS3DirectoryID(ConstrainedStr):
+    """
+    A simcore directory has the following structure:
+        `{project_id}/{node_id}/simcore-dir-name/`
+    """
+
     regex: Pattern[str] | None = re.compile(SIMCORE_S3_DIRECTORY_ID_RE)
 
     @staticmethod
