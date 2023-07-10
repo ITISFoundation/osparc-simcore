@@ -24,7 +24,7 @@ from ...models.schemas.jobs import (
     JobID,
     JobInputs,
     JobMetadata,
-    JobMetadataReplace,
+    JobMetadataUpdate,
     JobOutputs,
     JobStatus,
 )
@@ -455,7 +455,7 @@ async def replace_job_custom_metadata(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: JobID,
-    replace: JobMetadataReplace,
+    replace: JobMetadataUpdate,
 ):
     """Changes job's custom metadata"""
     msg = f"Applies {replace=} to Job {_compose_job_resource_name(solver_key, version, job_id)!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4313"

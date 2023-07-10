@@ -120,7 +120,7 @@ class JobOutputs(BaseModel):
 MetaValueType: TypeAlias = StrictBool | StrictInt | StrictFloat | str
 
 
-class JobMetadataReplace(BaseModel):
+class JobMetadataUpdate(BaseModel):
     metadata: dict[str, MetaValueType] = Field(
         default_factory=dict, description="Custom key-value map"
     )
