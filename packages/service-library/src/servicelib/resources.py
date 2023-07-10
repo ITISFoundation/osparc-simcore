@@ -3,14 +3,13 @@
 See https://setuptools.readthedocs.io/en/latest/pkg_resources.html
 """
 import pathlib
+from dataclasses import dataclass
 from pathlib import Path
-from typing import TextIO
 
-import attr
 import pkg_resources
 
 
-@attr.s(frozen=True, auto_attribs=True)
+@dataclass(frozen=True)
 class ResourcesFacade:
     """Facade to access data resources installed with a distribution
 
@@ -26,45 +25,36 @@ class ResourcesFacade:
     def exists(self, resource_name: str) -> bool:
         return pkg_resources.resource_exists(self.package_name, resource_name)
 
-    def stream(self, resource_name: str) -> TextIO:
-        # TODO: check if read-only and if so, rename
-        return pkg_resources.resource_stream(self.package_name, resource_name)
-
-    def listdir(self, resource_name: str) -> str:
+    def listdir(self, resource_name: str) -> list[str]:
         return pkg_resources.resource_listdir(self.package_name, resource_name)
 
-    def isdir(self, resource_name: str) -> str:
+    def isdir(self, resource_name: str) -> bool:
         return pkg_resources.resource_isdir(self.package_name, resource_name)
 
     def get_path(self, resource_name: str) -> Path:
         """Returns a path to a resource
 
-        WARNING: existence of file is not guaranteed. Use resources.exists
+        WARNING: existence of file is not guaranteed
         WARNING: resource files are supposed to be used as read-only!
         """
-        resource_path = pathlib.Path(
+        return pathlib.Path(
             pkg_resources.resource_filename(self.package_name, resource_name)
         )
-        return resource_path
 
     def get_distribution(self):
         """Returns distribution info object"""
         return pkg_resources.get_distribution(self.distribution_name)
 
 
-# TODO: create abc
-@attr.s(auto_attribs=True)
+@dataclass
 class FileResource:
-    """
-    TODO: lazy evaluation of attribs
-    """
-
     name: str
 
 
 class PackageResources:
     def get_configfile(self, name: str) -> FileResource:
-        raise NotImplementedError("Should be implemented in subclass")
+        msg = "Should be implemented in subclass"
+        raise NotImplementedError(msg)
 
 
 # resources env keys
