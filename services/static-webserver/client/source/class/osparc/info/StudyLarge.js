@@ -93,9 +93,7 @@ qx.Class.define("osparc.info.StudyLarge", {
 
       const extraInfo = this.__extraInfo();
       const extraInfoLayout = this.__createExtraInfo(extraInfo);
-      this._add(extraInfoLayout, {
-        flex: 1
-      });
+      this._add(extraInfoLayout);
     },
 
     __createViewWithEdit: function(view, cb) {
