@@ -803,7 +803,6 @@ class SimcoreS3DataManager(BaseDataManager):
             for upload_id, file_id in current_multipart_uploads
             if upload_id not in list_of_valid_upload_ids
         ]
-        # import pdb; pdb.set_trace()
         logger.debug(
             "the following %s was found and will now be aborted",
             f"{list_of_invalid_uploads=}",
