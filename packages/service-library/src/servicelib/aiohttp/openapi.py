@@ -4,7 +4,6 @@
 """
 import warnings
 from pathlib import Path
-from typing import Dict, Tuple
 
 import openapi_core
 import yaml
@@ -41,20 +40,22 @@ def get_base_path(specs: OpenApiSpec) -> str:
 
 
 # TODO: _load_from_* is also found in jsonshema_specs
-def _load_from_path(filepath: Path) -> Tuple[Dict, str]:
+def _load_from_path(filepath: Path) -> tuple[dict, str]:
     with filepath.open() as f:
         spec_dict = yaml.safe_load(f)
         return spec_dict, filepath.as_uri()
 
 
-async def _load_from_url(session: ClientSession, url: URL) -> Tuple[Dict, str]:
+async def _load_from_url(session: ClientSession, url: URL) -> tuple[dict, str]:
     async with session.get(url) as resp:
         text = await resp.text()
         spec_dict = yaml.safe_load(text)
         return spec_dict, str(url)
 
 
-async def create_openapi_specs(location, session: ClientSession = None) -> OpenApiSpec:
+async def create_openapi_specs(
+    location, session: ClientSession | None = None
+) -> OpenApiSpec:
     """Loads specs from a given location (url or path),
         validates them and returns a working instance
 
@@ -71,7 +72,8 @@ async def create_openapi_specs(location, session: ClientSession = None) -> OpenA
     """
     if URL(str(location)).host:
         if session is None:
-            raise ValueError("Client session required in arguments")
+            msg = "Client session required in arguments"
+            raise ValueError(msg)
         spec_dict, spec_url = await _load_from_url(session, URL(location))
     else:
         path = Path(location).expanduser().resolve()  # pylint: disable=no-member
@@ -87,8 +89,7 @@ def create_specs(openapi_path: Path) -> OpenApiSpec:
     with openapi_path.open() as f:
         spec_dict = yaml.safe_load(f)
 
-    spec = openapi_core.create_spec(spec_dict, spec_url=openapi_path.as_uri())
-    return spec
+    return openapi_core.create_spec(spec_dict, spec_url=openapi_path.as_uri())
 
 
 __all__ = (

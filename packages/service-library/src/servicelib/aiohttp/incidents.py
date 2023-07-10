@@ -1,13 +1,11 @@
-from typing import Any, Callable, Generic, TypeVar
-
-import attr
-
-# UTILS ---
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from typing import Any, Generic, TypeVar
 
 ItemT = TypeVar("ItemT")
 
 
-@attr.s(auto_attribs=True)
+@dataclass
 class LimitedOrderedStack(Generic[ItemT]):
     """Container designed only to keep the most
     relevant items (i.e called max) and drop
@@ -22,8 +20,8 @@ class LimitedOrderedStack(Generic[ItemT]):
     max_size: int = 100
     order_by: Callable[[ItemT], Any] | None = None
 
-    _items: list[ItemT] = attr.ib(init=False, default=attr.Factory(list))
-    _hits: int = attr.ib(init=False, default=0)
+    _items: list[ItemT] = field(default_factory=list, init=False)
+    _hits: int = field(default=0, init=False)
 
     def __len__(self) -> int:
         # called also for __bool__
@@ -54,7 +52,11 @@ class LimitedOrderedStack(Generic[ItemT]):
         self._hits += 1
 
         # sort is based on the __lt__ defined in ItemT
-        self._items = sorted(self._items, key=self.order_by, reverse=True)
+        extras: dict[str, Any] = {}
+        if self.order_by is not None:
+            extras["key"] = self.order_by
+        self._items = sorted(self._items, reverse=True, **extras)
+
         if len(self._items) > self.max_size:
             self._items.pop()  # min is dropped
 
@@ -62,11 +64,11 @@ class LimitedOrderedStack(Generic[ItemT]):
 # INCIDENT ISSUES ---
 
 
-@attr.s(auto_attribs=True)
+@dataclass
 class BaseIncident:
     msg: str
 
 
-@attr.s(auto_attribs=True)
+@dataclass
 class SlowCallback(BaseIncident):
     delay_secs: float

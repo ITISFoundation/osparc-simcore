@@ -10,10 +10,10 @@ from ..rest.healthcheck import HealthCheck
 from ..rest.plugin import setup_rest
 from . import _handlers
 from ._healthcheck import (
+    HEALTH_INCIDENTS_REGISTRY,
+    HEALTH_PLUGIN_START_TIME,
     IncidentsRegistry,
     assert_healthy_app,
-    kINCIDENTS_REGISTRY,
-    kPLUGIN_START_TIME,
 )
 from ._monitoring import setup_monitoring
 from .settings import DiagnosticsSettings, get_plugin_settings
@@ -35,7 +35,7 @@ def setup_diagnostics(
     settings: DiagnosticsSettings = get_plugin_settings(app)
 
     incidents_registry = IncidentsRegistry(order_by=attrgetter("delay_secs"))
-    app[kINCIDENTS_REGISTRY] = incidents_registry
+    app[HEALTH_INCIDENTS_REGISTRY] = incidents_registry
 
     monitor_slow_callbacks.enable(
         settings.DIAGNOSTICS_SLOW_DURATION_SECS, incidents_registry
@@ -55,4 +55,4 @@ def setup_diagnostics(
     # adds other diagnostic routes: healthcheck, etc
     app.router.add_routes(_handlers.routes)
 
-    app[kPLUGIN_START_TIME] = time.time()
+    app[HEALTH_PLUGIN_START_TIME] = time.time()
