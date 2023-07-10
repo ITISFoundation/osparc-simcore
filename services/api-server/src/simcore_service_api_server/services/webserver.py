@@ -11,6 +11,11 @@ from cryptography import fernet
 from fastapi import FastAPI, HTTPException
 from httpx import Response
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
+from models_library.api_schemas_webserver.projects_metadata import (
+    ProjectMetadataGet,
+    ProjectMetadataUpdate,
+)
+from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.rest_pagination import Page
 from models_library.utils.fastapi_encoders import jsonable_encoder
@@ -26,6 +31,7 @@ from tenacity.wait import wait_fixed
 
 from ..core.settings import WebServerSettings
 from ..models.pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+from ..models.schemas.jobs import MetaValueType
 from ..models.types import JSON
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
@@ -254,6 +260,29 @@ class AuthSession:
         data = self._get_data_or_raise_http_exception(resp)
         assert data
         assert isinstance(data, list)
+        return data
+
+    async def get_project_metadata(self, project_id: ProjectID) -> ProjectMetadataGet:
+        response = await self.client.get(
+            f"/projects/{project_id}/metadata",
+            cookies=self.session_cookies,
+        )
+        response.raise_for_status()
+        data = Envelope[ProjectMetadataGet].parse_raw(response.text).data
+        assert data  # nosec
+        return data
+
+    async def update_project_metadata(
+        self, project_id: ProjectID, metadata: dict[str, MetaValueType]
+    ) -> ProjectMetadataGet:
+        response = await self.client.patch(
+            f"/projects/{project_id}/metadata",
+            cookies=self.session_cookies,
+            json=jsonable_encoder(ProjectMetadataUpdate(custom=metadata)),
+        )
+        response.raise_for_status()
+        data = Envelope[ProjectMetadataGet].parse_raw(response.text).data
+        assert data  # nosec
         return data
 
 
