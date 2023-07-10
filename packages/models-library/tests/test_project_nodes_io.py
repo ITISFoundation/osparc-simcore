@@ -7,7 +7,6 @@ from typing import Any
 from uuid import uuid4
 
 import pytest
-from faker import Faker
 from models_library.projects_nodes import Node, PortLink
 from models_library.projects_nodes_io import (
     DatCoreFileLink,
@@ -17,15 +16,10 @@ from models_library.projects_nodes_io import (
 )
 from pydantic import ValidationError, parse_obj_as
 
-_FAKER = Faker()
-
 
 @pytest.fixture()
 def minimal_simcore_file_link() -> dict[str, Any]:
-    return dict(
-        store=0,
-        path=f"{uuid4()}/{uuid4()}/file.ext",
-    )
+    return {"store": 0, "path": f"{uuid4()}/{uuid4()}/file.ext"}
 
 
 def test_simcore_file_link_default_label(minimal_simcore_file_link: dict[str, Any]):
@@ -34,7 +28,7 @@ def test_simcore_file_link_default_label(minimal_simcore_file_link: dict[str, An
     assert simcore_file_link.store == minimal_simcore_file_link["store"]
     assert simcore_file_link.path == minimal_simcore_file_link["path"]
     assert simcore_file_link.label == "file.ext"
-    assert simcore_file_link.e_tag == None
+    assert simcore_file_link.e_tag is None
 
 
 def test_simcore_file_link_with_label(minimal_simcore_file_link: dict[str, Any]):
@@ -45,7 +39,7 @@ def test_simcore_file_link_with_label(minimal_simcore_file_link: dict[str, Any])
     assert simcore_file_link.store == minimal_simcore_file_link["store"]
     assert simcore_file_link.path == minimal_simcore_file_link["path"]
     assert simcore_file_link.label == "some new label that is amazing"
-    assert simcore_file_link.e_tag == None
+    assert simcore_file_link.e_tag is None
 
 
 @pytest.mark.parametrize("model_cls", (SimCoreFileLink, DatCoreFileLink))
