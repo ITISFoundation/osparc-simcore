@@ -50,7 +50,7 @@ run: build ## Runs upgrade in a container [WARNING! UNDER DEV. USE CAREFULY]
 		--user=$(shell id -u):$(shell id -g) \
 		--entrypoint=/bin/bash \
 		${IMAGE_NAME} \
-		-c "pip install -e .; python scripts/erd/main.py"
+		-c "pip install -e .; python scripts/erd/cli.py"
 
 
 

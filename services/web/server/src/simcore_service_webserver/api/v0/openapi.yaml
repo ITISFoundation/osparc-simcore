@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: osparc-simcore web API
-  version: 0.23.0
+  version: 0.24.0
   description: API designed for the front-end app
   contact:
     name: IT'IS Foundation
@@ -5800,23 +5800,23 @@ paths:
       parameters:
         - required: true
           schema:
-            title: Project Uuid
             type: string
             format: uuid
+            title: Project Uuid
           name: project_uuid
           in: path
         - required: false
           schema:
-            title: Limit
             type: integer
+            title: Limit
             default: 20
           name: limit
           in: query
         - required: false
           schema:
-            title: Offset
-            minimum: 0
             type: integer
+            minimum: 0
+            title: Offset
             default: 0
           name: offset
           in: query
@@ -5826,16 +5826,16 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[list[models_library.projects_comments.ProjectsCommentsAPI]]'
-                type: object
                 properties:
                   data:
-                    title: Data
-                    type: array
                     items:
                       $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1comments~1%7Bcomment_id%7D/get/responses/200/content/application~1json/schema/properties/data'
+                    type: array
+                    title: Data
                   error:
                     title: Error
+                type: object
+                title: 'Envelope[list[models_library.projects_comments.ProjectsCommentsAPI]]'
     post:
       tags:
         - project
@@ -5845,24 +5845,24 @@ paths:
       parameters:
         - required: true
           schema:
-            title: Project Uuid
             type: string
             format: uuid
+            title: Project Uuid
           name: project_uuid
           in: path
       requestBody:
         content:
           application/json:
             schema:
-              title: _ProjectCommentsBodyParams
-              required:
-                - contents
-              type: object
               properties:
                 contents:
-                  title: Contents
                   type: string
+                  title: Contents
               additionalProperties: false
+              type: object
+              required:
+                - contents
+              title: _ProjectCommentsBodyParams
         required: true
       responses:
         '201':
@@ -5870,18 +5870,18 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[dict[Literal[''comment_id''], pydantic.types.PositiveInt]]'
-                type: object
                 properties:
                   data:
-                    title: Data
-                    type: object
                     additionalProperties:
-                      exclusiveMinimum: true
                       type: integer
+                      exclusiveMinimum: true
                       minimum: 0
+                    type: object
+                    title: Data
                   error:
                     title: Error
+                type: object
+                title: 'Envelope[dict[Literal[''comment_id''], pydantic.types.PositiveInt]]'
   '/projects/{project_uuid}/comments/{comment_id}':
     get:
       tags:
@@ -5892,16 +5892,16 @@ paths:
       parameters:
         - required: true
           schema:
-            title: Project Uuid
             type: string
             format: uuid
+            title: Project Uuid
           name: project_uuid
           in: path
         - required: true
           schema:
-            title: Comment Id
-            exclusiveMinimum: true
             type: integer
+            exclusiveMinimum: true
+            title: Comment Id
             minimum: 0
           name: comment_id
           in: path
@@ -5911,11 +5911,42 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[ProjectsCommentsAPI]'
-                type: object
                 properties:
                   data:
-                    title: ProjectsCommentsAPI
+                    properties:
+                      comment_id:
+                        type: integer
+                        exclusiveMinimum: true
+                        title: Comment Id
+                        description: 'Primary key, identifies the comment'
+                        minimum: 0
+                      project_uuid:
+                        type: string
+                        format: uuid
+                        title: Project Uuid
+                        description: project reference for this table
+                      user_id:
+                        type: integer
+                        exclusiveMinimum: true
+                        title: User Id
+                        description: user reference for this table
+                        minimum: 0
+                      contents:
+                        type: string
+                        title: Contents
+                        description: Contents of the comment
+                      created:
+                        type: string
+                        format: date-time
+                        title: Created
+                        description: Timestamp on creation
+                      modified:
+                        type: string
+                        format: date-time
+                        title: Modified
+                        description: Timestamp with last update
+                    additionalProperties: false
+                    type: object
                     required:
                       - comment_id
                       - project_uuid
@@ -5923,42 +5954,11 @@ paths:
                       - contents
                       - created
                       - modified
-                    type: object
-                    properties:
-                      comment_id:
-                        title: Comment Id
-                        exclusiveMinimum: true
-                        type: integer
-                        description: 'Primary key, identifies the comment'
-                        minimum: 0
-                      project_uuid:
-                        title: Project Uuid
-                        type: string
-                        description: project reference for this table
-                        format: uuid
-                      user_id:
-                        title: User Id
-                        exclusiveMinimum: true
-                        type: integer
-                        description: user reference for this table
-                        minimum: 0
-                      contents:
-                        title: Contents
-                        type: string
-                        description: Contents of the comment
-                      created:
-                        title: Created
-                        type: string
-                        description: Timestamp on creation
-                        format: date-time
-                      modified:
-                        title: Modified
-                        type: string
-                        description: Timestamp with last update
-                        format: date-time
-                    additionalProperties: false
+                    title: ProjectsCommentsAPI
                   error:
                     title: Error
+                type: object
+                title: 'Envelope[ProjectsCommentsAPI]'
     put:
       tags:
         - project
@@ -5968,16 +5968,16 @@ paths:
       parameters:
         - required: true
           schema:
-            title: Project Uuid
             type: string
             format: uuid
+            title: Project Uuid
           name: project_uuid
           in: path
         - required: true
           schema:
-            title: Comment Id
-            exclusiveMinimum: true
             type: integer
+            exclusiveMinimum: true
+            title: Comment Id
             minimum: 0
           name: comment_id
           in: path
@@ -6003,16 +6003,16 @@ paths:
       parameters:
         - required: true
           schema:
-            title: Project Uuid
             type: string
             format: uuid
+            title: Project Uuid
           name: project_uuid
           in: path
         - required: true
           schema:
-            title: Comment Id
-            exclusiveMinimum: true
             type: integer
+            exclusiveMinimum: true
+            title: Comment Id
             minimum: 0
           name: comment_id
           in: path
@@ -6333,6 +6333,90 @@ paths:
                           type: string
                   error:
                     title: Error
+  '/projects/{project_id}/metadata':
+    get:
+      tags:
+        - project
+      summary: Get Project Metadata
+      operationId: get_project_metadata
+      parameters:
+        - required: true
+          schema:
+            type: string
+            format: uuid
+            title: Project Id
+          name: project_id
+          in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    properties:
+                      projectUuid:
+                        type: string
+                        format: uuid
+                        title: Projectuuid
+                      custom:
+                        additionalProperties:
+                          anyOf:
+                            - type: boolean
+                            - type: integer
+                            - type: number
+                            - type: string
+                        type: object
+                        title: Custom
+                        description: Custom key-value map
+                    type: object
+                    required:
+                      - projectUuid
+                    title: ProjectMetadataGet
+                  error:
+                    title: Error
+                type: object
+                title: 'Envelope[ProjectMetadataGet]'
+    patch:
+      tags:
+        - project
+      summary: Update Project Metadata
+      operationId: update_project_metadata
+      parameters:
+        - required: true
+          schema:
+            type: string
+            format: uuid
+            title: Project Id
+          name: project_id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                custom:
+                  additionalProperties:
+                    anyOf:
+                      - type: boolean
+                      - type: integer
+                      - type: number
+                      - type: string
+                  type: object
+                  title: Custom
+              type: object
+              required:
+                - custom
+              title: ProjectMetadataUpdate
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1metadata/get/responses/200/content/application~1json/schema'
   '/projects/{project_id}/metadata/ports':
     get:
       tags:

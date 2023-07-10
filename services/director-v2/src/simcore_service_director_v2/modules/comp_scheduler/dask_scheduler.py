@@ -24,6 +24,7 @@ from models_library.rabbitmq_messages import (
 from models_library.users import UserID
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.comp_tasks import NodeClass
+from simcore_service_director_v2.models.domains.comp_runs import MetadataDict
 
 from ...core.errors import TaskSchedulingError
 from ...core.settings import ComputationalBackendSettings
@@ -37,7 +38,6 @@ from ...utils.dask import (
     parse_output_data,
 )
 from ...utils.dask_client_utils import TaskHandlers
-from ...utils.scheduler import get_repository
 from ..db.repositories.comp_tasks import CompTasksRepository
 from .base_scheduler import BaseCompScheduler
 
@@ -50,9 +50,7 @@ async def _cluster_dask_client(
 ) -> AsyncIterator[DaskClient]:
     cluster: Cluster = scheduler.settings.default_cluster
     if cluster_id != DEFAULT_CLUSTER_ID:
-        clusters_repo: ClustersRepository = get_repository(
-            scheduler.db_engine, ClustersRepository
-        )
+        clusters_repo = ClustersRepository.instance(scheduler.db_engine)
         cluster = await clusters_repo.get_cluster(user_id, cluster_id)
     async with scheduler.dask_clients_pool.acquire(cluster) as client:
         yield client
@@ -73,9 +71,11 @@ class DaskScheduler(BaseCompScheduler):
 
     async def _start_tasks(
         self,
+        *,
         user_id: UserID,
         project_id: ProjectID,
         cluster_id: ClusterID,
+        metadata: MetadataDict,
         scheduled_tasks: dict[NodeID, Image],
     ):
         # now transfer the pipeline to the dask scheduler
@@ -88,6 +88,7 @@ class DaskScheduler(BaseCompScheduler):
                 cluster_id=cluster_id,
                 tasks=scheduled_tasks,
                 callback=self._wake_up_scheduler_now,
+                metadata=metadata,
             )
             logger.debug(
                 "started following tasks (node_id, job_id)[%s] on cluster %s",
@@ -95,9 +96,7 @@ class DaskScheduler(BaseCompScheduler):
                 f"{cluster_id=}",
             )
         # update the database so we do have the correct job_ids there
-        comp_tasks_repo: CompTasksRepository = get_repository(
-            self.db_engine, CompTasksRepository
-        )
+        comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
         await asyncio.gather(
             *[
                 comp_tasks_repo.update_project_task_job_id(project_id, node_id, job_id)
