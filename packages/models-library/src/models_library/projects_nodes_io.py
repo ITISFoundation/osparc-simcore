@@ -53,8 +53,13 @@ class SimcoreS3DirectoryID(ConstrainedStr):
     regex: Pattern[str] | None = re.compile(SIMCORE_S3_DIRECTORY_ID_RE)
 
     @staticmethod
-    def _get_parent(value: str, *, parent_index: int) -> Path:
-        parents: list[Path] = list(Path(value).parents)
+    def _get_parent(os_object: str, *, parent_index: int) -> Path:
+        # NOTE: s3_object, sometimes is a directory, in that case
+        # append a fake file so that the parent count still works
+        if os_object.endswith("/"):
+            os_object += "_fake_file"
+
+        parents: list[Path] = list(Path(os_object).parents)
         if len(parents) < parent_index:
             msg = f"Dos not have enough parents, expected {parent_index} or more"
             raise ValueError(msg)
@@ -70,13 +75,11 @@ class SimcoreS3DirectoryID(ConstrainedStr):
         if "/" in directory_candidate:
             msg = f"Not allowed subdirectory found in '{directory_candidate}'"
             raise ValueError(msg)
-        return value
+        return f"{value}/"
 
     @classmethod
-    def from_simcore_s3_file_id(
-        cls, file_id: SimcoreS3FileID
-    ) -> "SimcoreS3DirectoryID":
-        parent_path: Path = cls._get_parent(file_id, parent_index=4)
+    def from_simcore_s3_object(cls, s3_object: str) -> "SimcoreS3DirectoryID":
+        parent_path: Path = cls._get_parent(s3_object, parent_index=4)
         return parse_obj_as(cls, f"{parent_path}/")
 
 

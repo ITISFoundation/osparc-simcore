@@ -12,7 +12,6 @@ from models_library.projects_nodes_io import (
     DatCoreFileLink,
     SimCoreFileLink,
     SimcoreS3DirectoryID,
-    SimcoreS3FileID,
 )
 from pydantic import ValidationError, parse_obj_as
 
@@ -128,7 +127,10 @@ UUID_0: str = "00000000-0000-0000-0000-000000000000"
 def test_simcore_s3_directory_id():
     # the only allowed path is the following
     result = parse_obj_as(SimcoreS3DirectoryID, f"{UUID_0}/{UUID_0}/ok-simcore-dir/")
-    assert result == f"{UUID_0}/{UUID_0}/ok-simcore-dir"
+    assert result == f"{UUID_0}/{UUID_0}/ok-simcore-dir/"
+
+    # re-parsing must work the same thing works
+    assert parse_obj_as(SimcoreS3DirectoryID, result)
 
     # all below are not allowed
     for invalid_path in (
@@ -143,28 +145,26 @@ def test_simcore_s3_directory_id():
 
 
 @pytest.mark.parametrize(
-    "file_id, expected",
+    "s3_object, expected",
     [
         (
-            parse_obj_as(SimcoreS3FileID, f"{UUID_0}/{UUID_0}/a-dir/a-file"),
-            f"{UUID_0}/{UUID_0}/a-dir",
+            f"{UUID_0}/{UUID_0}/just-a-dir/",
+            f"{UUID_0}/{UUID_0}/just-a-dir/",
         ),
         (
-            parse_obj_as(
-                SimcoreS3FileID, f"{UUID_0}/{UUID_0}/a-dir/another-dir/a-file"
-            ),
-            f"{UUID_0}/{UUID_0}/a-dir",
+            f"{UUID_0}/{UUID_0}/a-dir/a-file",
+            f"{UUID_0}/{UUID_0}/a-dir/",
         ),
         (
-            parse_obj_as(
-                SimcoreS3FileID, f"{UUID_0}/{UUID_0}/a-dir/a/b/c/d/e/f/g/h/file.py"
-            ),
-            f"{UUID_0}/{UUID_0}/a-dir",
+            f"{UUID_0}/{UUID_0}/a-dir/another-dir/a-file",
+            f"{UUID_0}/{UUID_0}/a-dir/",
+        ),
+        (
+            f"{UUID_0}/{UUID_0}/a-dir/a/b/c/d/e/f/g/h/file.py",
+            f"{UUID_0}/{UUID_0}/a-dir/",
         ),
     ],
 )
-def test_simcore_s3_directory_id_from_simcore_s3_file_id(
-    file_id: SimcoreS3FileID, expected: str
-):
-    result = SimcoreS3DirectoryID.from_simcore_s3_file_id(file_id)
+def test_simcore_s3_directory_id_from_simcore_s3_file_id(s3_object: str, expected: str):
+    result = SimcoreS3DirectoryID.from_simcore_s3_object(s3_object)
     assert f"{result}" == expected
