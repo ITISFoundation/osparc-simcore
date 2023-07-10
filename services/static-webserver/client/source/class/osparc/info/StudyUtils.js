@@ -294,7 +294,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       grid.setColumnAlign(3, "left", "middle");
       grid.setRowHeight(2, 10); // spacer
       grid.setRowHeight(5, 10); // spacer
-      const moreInfo = new qx.ui.container.Composite(grid);
+      const moreInfoGrid = new qx.ui.container.Composite(grid);
 
       Object.keys(positions).forEach(key => {
         if (key in extraInfos) {
@@ -315,13 +315,13 @@ qx.Class.define("osparc.info.StudyUtils", {
               }
             }, this);
           }
-          moreInfo.add(titleLayout, {
+          moreInfoGrid.add(titleLayout, {
             row: gridInfo.row,
             column: gridInfo.column,
             colSpan: gridInfo.colSpan ? gridInfo.colSpan : 1
           });
 
-          moreInfo.add(extraInfo.view, {
+          moreInfoGrid.add(extraInfo.view, {
             row: gridInfo.row+1,
             column: gridInfo.column,
             colSpan: gridInfo.colSpan ? gridInfo.colSpan : 1,
@@ -330,7 +330,12 @@ qx.Class.define("osparc.info.StudyUtils", {
         }
       });
 
-      return moreInfo;
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      vBox.add(moreInfoGrid);
+      const scrollContainer = new qx.ui.container.Scroll();
+      scrollContainer.add(vBox);
+
+      return scrollContainer;
     },
 
     /**
