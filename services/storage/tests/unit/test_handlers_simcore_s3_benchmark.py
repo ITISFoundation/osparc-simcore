@@ -180,7 +180,7 @@ async def metrics(tests_session_id: str, tags: dict[str, str]) -> AsyncIterator[
 @pytest.fixture
 def mock_max_items(mocker: MockerFixture) -> None:
     # pylint: disable=protected-access
-    mocker.patch.object(s3_client._list_objects_v2_all_items, "__defaults__", (None,))
+    mocker.patch.object(s3_client._list_objects_v2_paginated, "__defaults__", (None,))
 
 
 @pytest.mark.parametrize("total_queries", [3])
@@ -195,6 +195,7 @@ def mock_max_items(mocker: MockerFixture) -> None:
     ],
 )
 async def test_benchmark_s3_listing(
+    # pylint: disable=too-many-arguments
     mock_max_items: None,
     benchmark_s3_client: StorageS3Client,
     benchmark_s3_settings: S3Settings,

@@ -1,6 +1,7 @@
 import datetime
 import urllib.parse
 from dataclasses import dataclass
+from typing import Final
 from uuid import UUID
 
 from models_library.api_schemas_storage import (
@@ -29,6 +30,8 @@ from pydantic import (
     validate_arguments,
     validator,
 )
+
+UNDEFINED_SIZE: Final[ByteSize] = parse_obj_as(ByteSize, -1)
 
 UploadID = str
 
@@ -107,11 +110,12 @@ class FileMetaData(FileMetaDataGet):
             "file_id": file_id,
             "created_at": now,
             "last_modified": now,
-            "file_size": ByteSize(-1),
+            "file_size": UNDEFINED_SIZE,
             "entity_tag": None,
             "is_soft_link": False,
             "upload_id": None,
             "upload_expires_at": None,
+            "is_directory": False,
         }
         fmd_kwargs.update(**file_meta_data_kwargs)
         return cls.parse_obj(fmd_kwargs)
@@ -179,7 +183,7 @@ class FileUploadQueryParams(StorageQueryParamsBase):
     def when_directory_force_link_type_and_file_size(cls, values):
         if values["is_directory"] is True:
             # sets directory size by default to undefined
-            values["file_size"] = -1
+            values["file_size"] = UNDEFINED_SIZE
             # only 1 link will be returned manged by the uploader
             values["link_type"] = LinkType.S3
         return values

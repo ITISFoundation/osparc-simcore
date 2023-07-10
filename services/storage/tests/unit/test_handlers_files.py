@@ -132,7 +132,7 @@ class SingleLinkParam:
     ],
 )
 async def test_create_upload_file_with_file_size_0_returns_single_link(
-    storage_s3_client,
+    storage_s3_client: StorageS3Client,
     storage_s3_bucket: S3BucketName,
     simcore_file_id: SimcoreS3FileID,
     single_link_param: SingleLinkParam,
@@ -212,7 +212,7 @@ async def test_create_upload_file_with_file_size_0_returns_single_link(
     ],
 )
 async def test_create_upload_file_with_no_file_size_query_returns_v1_structure(
-    storage_s3_client,
+    storage_s3_client: StorageS3Client,
     storage_s3_bucket: S3BucketName,
     simcore_file_id: SimcoreS3FileID,
     single_link_param: SingleLinkParam,
@@ -1070,7 +1070,11 @@ async def populate_directory(
 
 @pytest.fixture
 async def delete_directory(
-    client: TestClient, user_id: UserID, location_id: LocationID
+    client: TestClient,
+    storage_s3_client: StorageS3Client,
+    storage_s3_bucket: S3BucketName,
+    user_id: UserID,
+    location_id: LocationID,
 ) -> Callable[..., Awaitable[None]]:
     async def _dir_remover(directory_file_upload: FileUploadSchema) -> None:
         directory_file_id = directory_file_upload.urls[0].path.strip("/")
@@ -1084,6 +1088,13 @@ async def delete_directory(
         )
         response = await client.delete(f"{delete_url}")
         await assert_status(response, web.HTTPNoContent)
+
+        # NOTE: ensures no more files are left in the directory,
+        # even if one file is left this will detect it
+        files = await storage_s3_client.list_files(
+            bucket=storage_s3_bucket, prefix=directory_file_id
+        )
+        assert len(files) == 0
 
     return _dir_remover
 
@@ -1221,7 +1232,7 @@ async def test_ensure_expand_dirs_defaults_true(
             location_id=f"{location_id}",
             file_id=urllib.parse.quote("mocked_path", safe=""),
         )
-        .with_query(**{"user_id": user_id})
+        .with_query(user_id=user_id)
     )
     await client.get(f"{get_url}")
 

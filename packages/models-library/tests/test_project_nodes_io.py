@@ -3,32 +3,34 @@
 # pylint:disable=redefined-outer-name
 
 from pprint import pformat
-from typing import Any, Dict
+from typing import Any
 from uuid import uuid4
 
 import pytest
 from models_library.projects_nodes import Node, PortLink
-from models_library.projects_nodes_io import DatCoreFileLink, SimCoreFileLink
+from models_library.projects_nodes_io import (
+    DatCoreFileLink,
+    SimCoreFileLink,
+    SimcoreS3DirectoryID,
+)
+from pydantic import ValidationError, parse_obj_as
 
 
 @pytest.fixture()
-def minimal_simcore_file_link() -> Dict[str, Any]:
-    return dict(
-        store=0,
-        path=f"{uuid4()}/{uuid4()}/file.ext",
-    )
+def minimal_simcore_file_link() -> dict[str, Any]:
+    return {"store": 0, "path": f"{uuid4()}/{uuid4()}/file.ext"}
 
 
-def test_simcore_file_link_default_label(minimal_simcore_file_link: Dict[str, Any]):
+def test_simcore_file_link_default_label(minimal_simcore_file_link: dict[str, Any]):
     simcore_file_link = SimCoreFileLink(**minimal_simcore_file_link)
 
     assert simcore_file_link.store == minimal_simcore_file_link["store"]
     assert simcore_file_link.path == minimal_simcore_file_link["path"]
     assert simcore_file_link.label == "file.ext"
-    assert simcore_file_link.e_tag == None
+    assert simcore_file_link.e_tag is None
 
 
-def test_simcore_file_link_with_label(minimal_simcore_file_link: Dict[str, Any]):
+def test_simcore_file_link_with_label(minimal_simcore_file_link: dict[str, Any]):
     old_link = minimal_simcore_file_link
     old_link.update({"label": "some new label that is amazing"})
     simcore_file_link = SimCoreFileLink(**old_link)
@@ -36,7 +38,7 @@ def test_simcore_file_link_with_label(minimal_simcore_file_link: Dict[str, Any])
     assert simcore_file_link.store == minimal_simcore_file_link["store"]
     assert simcore_file_link.path == minimal_simcore_file_link["path"]
     assert simcore_file_link.label == "some new label that is amazing"
-    assert simcore_file_link.e_tag == None
+    assert simcore_file_link.e_tag is None
 
 
 @pytest.mark.parametrize("model_cls", (SimCoreFileLink, DatCoreFileLink))
@@ -117,3 +119,52 @@ def test_store_discriminator():
     assert isinstance(simcore_node.outputs["outFile"], SimCoreFileLink)
     assert rawgraph_node.inputs
     assert isinstance(rawgraph_node.inputs["input_1"], PortLink)
+
+
+UUID_0: str = "00000000-0000-0000-0000-000000000000"
+
+
+def test_simcore_s3_directory_id():
+    # the only allowed path is the following
+    result = parse_obj_as(SimcoreS3DirectoryID, f"{UUID_0}/{UUID_0}/ok-simcore-dir/")
+    assert result == f"{UUID_0}/{UUID_0}/ok-simcore-dir/"
+
+    # re-parsing must work the same thing works
+    assert parse_obj_as(SimcoreS3DirectoryID, result)
+
+    # all below are not allowed
+    for invalid_path in (
+        f"{UUID_0}/{UUID_0}/a-file",
+        f"{UUID_0}/{UUID_0}/a-dir/a-file",
+    ):
+        with pytest.raises(ValidationError):
+            parse_obj_as(SimcoreS3DirectoryID, invalid_path)
+
+    with pytest.raises(ValidationError, match="Not allowed subdirectory found in"):
+        parse_obj_as(SimcoreS3DirectoryID, f"{UUID_0}/{UUID_0}/a-dir/a-subdir/")
+
+
+@pytest.mark.parametrize(
+    "s3_object, expected",
+    [
+        (
+            f"{UUID_0}/{UUID_0}/just-a-dir/",
+            f"{UUID_0}/{UUID_0}/just-a-dir/",
+        ),
+        (
+            f"{UUID_0}/{UUID_0}/a-dir/a-file",
+            f"{UUID_0}/{UUID_0}/a-dir/",
+        ),
+        (
+            f"{UUID_0}/{UUID_0}/a-dir/another-dir/a-file",
+            f"{UUID_0}/{UUID_0}/a-dir/",
+        ),
+        (
+            f"{UUID_0}/{UUID_0}/a-dir/a/b/c/d/e/f/g/h/file.py",
+            f"{UUID_0}/{UUID_0}/a-dir/",
+        ),
+    ],
+)
+def test_simcore_s3_directory_id_from_simcore_s3_file_id(s3_object: str, expected: str):
+    result = SimcoreS3DirectoryID.from_simcore_s3_object(s3_object)
+    assert f"{result}" == expected

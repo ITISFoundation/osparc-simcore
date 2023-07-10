@@ -2,11 +2,10 @@ import datetime
 import json
 import logging
 import urllib.parse
-from collections import deque
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Final, cast
+from typing import Callable, Final, TypeAlias, cast
 
 import aioboto3
 from aiobotocore.session import ClientCreatorContext
@@ -20,14 +19,24 @@ from servicelib.utils import logged_gather
 from settings_library.s3 import S3Settings
 from simcore_service_storage.constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
 from types_aiobotocore_s3 import S3Client
-from types_aiobotocore_s3.type_defs import ObjectTypeDef, PaginatorConfigTypeDef
+from types_aiobotocore_s3.type_defs import (
+    ListObjectsV2OutputTypeDef,
+    ObjectTypeDef,
+    PaginatorConfigTypeDef,
+)
 
+from .constants import EXPAND_DIR_MAX_ITEM_COUNT
 from .models import ETag, MultiPartUploadLinks, S3BucketName, UploadID
 from .s3_utils import compute_num_file_chunks, s3_exception_handler
 
 _logger = logging.getLogger(__name__)
 
-MAX_LIST_OBJECTS_V2_ITEMS: Final[NonNegativeInt] = 1000
+_MAX_TOTAL_ITEMS: Final[NonNegativeInt] = 100
+_PAGE_MAX_ITEMS_UPPER_BOUND: Final[NonNegativeInt] = 1000
+_DELETE_OBJECTS_MAX_ACCEPTED_ELEMENTS: Final[int] = 1000
+
+
+NextContinuationToken: TypeAlias = str
 
 
 @dataclass(frozen=True)
@@ -51,38 +60,45 @@ class S3MetaData:
         )
 
 
-async def _list_objects_v2_all_items(
+async def _list_objects_v2_paginated(
     client: S3Client,
     bucket: S3BucketName,
     prefix: str,
-    max_items: int | None = MAX_LIST_OBJECTS_V2_ITEMS,
-) -> list[ObjectTypeDef]:
-    """
-    Scans the given path in prefix and returns information about the files.
-    If `max_items` is None returns all the items in the dataset.
+    *,
+    max_total_items: int = _MAX_TOTAL_ITEMS,
+    next_continuation_token: NextContinuationToken | None = None,
+) -> tuple[list[ObjectTypeDef], NextContinuationToken | None]:
+    """Returns a list containing all the items in the bucket
+    filtered by the prefix
 
     Keyword Arguments:
-        max_items -- total items to return regardless of pagination
-            (default: {MAX_LIST_OBJECTS_V2_ITEMS})
+        max_total_items -- how many items should the result contain (default: {_MAX_TOTAL_ITEMS})
+        next_continuation_token -- used to fetch more results (default: {None})
+
+    Returns:
+        list[ObjectTypeDef] and the NextContinuationToken
     """
-    # NOTE: code was refactored to behave as before. There are risks
-    # of making storage crash, currently the same limits as before
-    # will apply. At most 1000 elements will be returned.
-    # Pagination will be added in the future starting from here.
 
-    pagination_config: PaginatorConfigTypeDef = {}
-    if max_items is not None:
-        pagination_config["MaxItems"] = max_items
+    # ensuring at most _PAGE_MAX_ITEMS_UPPER_BOUND
+    # items per page at a time can be queried for
+    pagination_bound = min(max_total_items, _PAGE_MAX_ITEMS_UPPER_BOUND)
+    pagination_config: PaginatorConfigTypeDef = {
+        "PageSize": pagination_bound,
+        "MaxItems": pagination_bound,
+    }
+    if next_continuation_token is not None:
+        pagination_config["StartingToken"] = next_continuation_token
 
-    results: deque[ObjectTypeDef] = deque()
+    items_in_page: list[ObjectTypeDef] = []
 
+    page: ListObjectsV2OutputTypeDef
     async for page in client.get_paginator("list_objects_v2").paginate(
         Bucket=bucket, Prefix=prefix, PaginationConfig=pagination_config
     ):
-        for entry in page.get("Contents", []):
-            results.append(entry)
+        items_in_page.extend(page.get("Contents", []))
+        next_continuation_token = page.get("NextContinuationToken", None)
 
-    return list(results)
+    return items_in_page, next_continuation_token
 
 
 @dataclass
@@ -263,18 +279,30 @@ class StorageS3Client:
 
     @s3_exception_handler(_logger)
     async def delete_files_in_path(self, bucket: S3BucketName, *, prefix: str) -> None:
+        """Removes one or more files from a given S3 path.
+
         # NOTE: the / at the end of the Prefix is VERY important,
         # makes the listing several order of magnitudes faster
+        """
 
-        s3_meta_data_list: list[S3MetaData] = await self.list_files(
-            bucket, prefix=prefix
-        )
-        await logged_gather(
-            *[
-                self.delete_file(bucket, s3_meta_data.file_id)
-                for s3_meta_data in s3_meta_data_list
-            ]
-        )
+        # NOTE: deletion of objects is done in batches of max 1000 elements,
+        # the maximum accepted by the S3 API
+        while True:
+            s3_objects, next_continuation_token = await _list_objects_v2_paginated(
+                self.client,
+                bucket=bucket,
+                prefix=prefix,
+                max_total_items=_DELETE_OBJECTS_MAX_ACCEPTED_ELEMENTS,
+            )
+
+            if objects_to_delete := [f["Key"] for f in s3_objects if "Key" in f]:
+                await self.client.delete_objects(
+                    Bucket=bucket,
+                    Delete={"Objects": [{"Key": key} for key in objects_to_delete]},
+                )
+
+            if next_continuation_token is None:
+                break
 
     @s3_exception_handler(_logger)
     async def delete_files_in_project_node(
@@ -283,19 +311,9 @@ class StorageS3Client:
         project_id: ProjectID,
         node_id: NodeID | None = None,
     ) -> None:
-        # NOTE: the / at the end of the Prefix is VERY important,
-        # makes the listing several order of magnitudes faster
-        s3_objects: list[ObjectTypeDef] = await _list_objects_v2_all_items(
-            self.client,
-            bucket=bucket,
-            prefix=f"{project_id}/{node_id}/" if node_id else f"{project_id}/",
+        await self.delete_files_in_path(
+            bucket, prefix=f"{project_id}/{node_id}/" if node_id else f"{project_id}/"
         )
-
-        if objects_to_delete := [f["Key"] for f in s3_objects if "Key" in f]:
-            await self.client.delete_objects(
-                Bucket=bucket,
-                Delete={"Objects": [{"Key": key} for key in objects_to_delete]},
-            )
 
     @s3_exception_handler(_logger)
     async def get_file_metadata(
@@ -335,12 +353,19 @@ class StorageS3Client:
 
     @s3_exception_handler(_logger)
     async def list_files(
-        self, bucket: S3BucketName, *, prefix: str
+        self,
+        bucket: S3BucketName,
+        *,
+        prefix: str,
+        max_files_to_list: int = EXPAND_DIR_MAX_ITEM_COUNT,
     ) -> list[S3MetaData]:
-        # NOTE: adding a / at the end of a folder improves speed by several orders of magnitudes
+        """
+        NOTE: adding a / at the end of a folder improves speed by several orders of magnitudes
+        This endpoint is currently limited to only return EXPAND_DIR_MAX_ITEM_COUNT by default
+        """
 
-        s3_objects: list[ObjectTypeDef] = await _list_objects_v2_all_items(
-            self.client, bucket, prefix
+        s3_objects, _ = await _list_objects_v2_paginated(
+            self.client, bucket, prefix, max_total_items=max_files_to_list
         )
 
         return [
@@ -348,6 +373,15 @@ class StorageS3Client:
             for entry in s3_objects
             if all(k in entry for k in ("Key", "LastModified", "ETag", "Size"))
         ]
+
+    @s3_exception_handler(_logger)
+    async def file_exists(self, bucket: S3BucketName, *, s3_object: str) -> bool:
+        """Checks if an S3 object exists"""
+        # SEE https://www.peterbe.com/plog/fastest-way-to-find-out-if-a-file-exists-in-s3
+        s3_objects, _ = await _list_objects_v2_paginated(
+            self.client, bucket, s3_object, max_total_items=EXPAND_DIR_MAX_ITEM_COUNT
+        )
+        return len(s3_objects) > 0
 
     @s3_exception_handler(_logger)
     async def upload_file(

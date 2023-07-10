@@ -8,19 +8,35 @@
 
 import re
 from pathlib import Path
-from typing import Optional, Pattern, Union
+from typing import TYPE_CHECKING, Pattern, TypeAlias, Union
 from uuid import UUID
 
-from pydantic import AnyUrl, BaseModel, ConstrainedStr, Extra, Field, validator
+from pydantic import (
+    AnyUrl,
+    BaseModel,
+    ConstrainedStr,
+    Extra,
+    Field,
+    parse_obj_as,
+    validator,
+)
 
-from .basic_regex import DATCORE_FILE_ID_RE, SIMCORE_S3_FILE_ID_RE, UUID_RE
+from .basic_regex import (
+    DATCORE_FILE_ID_RE,
+    SIMCORE_S3_DIRECTORY_ID_RE,
+    SIMCORE_S3_FILE_ID_RE,
+    UUID_RE,
+)
 from .services import PROPERTY_KEY_RE
+
+if TYPE_CHECKING:
+    pass
 
 NodeID = UUID
 
 
 class UUIDStr(ConstrainedStr):
-    regex: Optional[Pattern[str]] = re.compile(UUID_RE)
+    regex: Pattern[str] | None = re.compile(UUID_RE)
 
 
 NodeIDStr = UUIDStr
@@ -30,14 +46,53 @@ LocationName = str
 
 
 class SimcoreS3FileID(ConstrainedStr):
-    regex: Optional[Pattern[str]] = re.compile(SIMCORE_S3_FILE_ID_RE)
+    regex: Pattern[str] | None = re.compile(SIMCORE_S3_FILE_ID_RE)
+
+
+class SimcoreS3DirectoryID(ConstrainedStr):
+    """
+    A simcore directory has the following structure:
+        `{project_id}/{node_id}/simcore-dir-name/`
+    """
+
+    regex: Pattern[str] | None = re.compile(SIMCORE_S3_DIRECTORY_ID_RE)
+
+    @staticmethod
+    def _get_parent(os_object: str, *, parent_index: int) -> Path:
+        # NOTE: s3_object, sometimes is a directory, in that case
+        # append a fake file so that the parent count still works
+        if os_object.endswith("/"):
+            os_object += "_fake_file"
+
+        parents: list[Path] = list(Path(os_object).parents)
+        if len(parents) < parent_index:
+            msg = f"Dos not have enough parents, expected {parent_index} or more"
+            raise ValueError(msg)
+        return parents[-parent_index]
+
+    @classmethod
+    def validate(cls, value: str) -> str:
+        value = super().validate(value)
+        value = value.rstrip("/")
+        parent = cls._get_parent(value, parent_index=3)
+
+        directory_candidate = value.strip(f"{parent}")
+        if "/" in directory_candidate:
+            msg = f"Not allowed subdirectory found in '{directory_candidate}'"
+            raise ValueError(msg)
+        return f"{value}/"
+
+    @classmethod
+    def from_simcore_s3_object(cls, s3_object: str) -> "SimcoreS3DirectoryID":
+        parent_path: Path = cls._get_parent(s3_object, parent_index=4)
+        return parse_obj_as(cls, f"{parent_path}/")
 
 
 class DatCoreFileID(ConstrainedStr):
-    regex: Optional[Pattern[str]] = re.compile(DATCORE_FILE_ID_RE)
+    regex: Pattern[str] | None = re.compile(DATCORE_FILE_ID_RE)
 
 
-StorageFileID = Union[SimcoreS3FileID, DatCoreFileID]
+StorageFileID: TypeAlias = Union[SimcoreS3FileID, DatCoreFileID]
 
 
 class PortLink(BaseModel):
@@ -71,7 +126,7 @@ class DownloadLink(BaseModel):
     """I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)"""
 
     download_link: AnyUrl = Field(..., alias="downloadLink")
-    label: Optional[str] = Field(default=None, description="Display name")
+    label: str | None = Field(default=None, description="Display name")
 
     class Config:
         extra = Extra.forbid
@@ -99,12 +154,12 @@ class BaseFileLink(BaseModel):
         description="The path to the file in the storage provider domain",
     )
 
-    label: Optional[str] = Field(
+    label: str | None = Field(
         default=None,
         description="The real file name",
     )
 
-    e_tag: Optional[str] = Field(
+    e_tag: str | None = Field(
         default=None,
         description="Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).",
         alias="eTag",
@@ -122,7 +177,7 @@ class BaseFileLink(BaseModel):
 class SimCoreFileLink(BaseFileLink):
     """I/O port type to hold a link to a file in simcore S3 storage"""
 
-    dataset: Optional[str] = Field(
+    dataset: str | None = Field(
         default=None,
         deprecated=True
         # TODO: Remove with storage refactoring

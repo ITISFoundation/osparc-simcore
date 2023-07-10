@@ -168,7 +168,7 @@ async def upload_file(request: web.Request) -> web.Response:
     Use-case v1.1: if query.link_type=presigned or None, returns a presigned link (limited to a single 5GB file)
     Use-case v1.2: if query.link_type=s3, returns a s3 direct link (limited to a single 5TB file)
 
-    User-case v2: query.is_director is True (query.file_size is forced to -1), returns an s3 path where to upload all the content of the directory
+    User-case v2: query.is_directory is True (query.file_size is forced to -1), returns an s3 path where to upload all the content of the directory
     User-case v2: if query.file_size is defined, returns a FileUploadSchema model, expects client to call "complete_upload" when the file is finished uploading
     Use-case v2.1: if query.file_size == 0 and query.link_type=presigned or None, returns a single presigned link inside FileUploadSchema (limited to a single 5Gb file)
     Use-case v2.2: if query.file_size > 0 and query.link_type=presigned or None, returns 1 or more presigned links depending on the file size (limited to a single 5TB file)
