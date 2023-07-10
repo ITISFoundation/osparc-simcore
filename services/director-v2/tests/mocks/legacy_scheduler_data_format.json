@@ -186,7 +186,7 @@
       "is_service_environment_ready": true,
       "service_removal_state": {
         "can_remove": false,
-        "can_save": null,
+        "can_save": false,
         "was_removed": false
       },
       "wait_for_manual_intervention_after_error": false,

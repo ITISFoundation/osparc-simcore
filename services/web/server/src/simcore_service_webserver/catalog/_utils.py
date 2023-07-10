@@ -1,7 +1,7 @@
 import asyncio
 import logging
+from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
-from typing import Iterator, Mapping
 
 from aiohttp import ClientSession, web
 from aiohttp.client_exceptions import ClientConnectionError, ClientResponseError
@@ -49,7 +49,7 @@ async def make_request_and_envelope_response(
                 resp_data = wrap_as_envelope(data=payload)
 
             except ClientResponseError as err:
-                if 500 <= err.status:
+                if err.status >= 500:
                     raise err
                 resp_data = wrap_as_envelope(error=payload["errors"])
 
