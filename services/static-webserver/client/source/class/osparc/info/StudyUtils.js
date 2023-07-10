@@ -330,12 +330,7 @@ qx.Class.define("osparc.info.StudyUtils", {
         }
       });
 
-      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-      vBox.add(moreInfoGrid);
-      const scrollContainer = new qx.ui.container.Scroll();
-      scrollContainer.add(vBox);
-
-      return scrollContainer;
+      return moreInfoGrid;
     },
 
     /**
