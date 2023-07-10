@@ -209,7 +209,9 @@ qx.Class.define("osparc.info.StudyUtils", {
         tagsContainer.add(noTagsLabel);
         osparc.store.Store.getInstance().getTags().filter(tag => model.getTags().includes(tag.id))
           .forEach(selectedTag => {
-            tagsContainer.remove(noTagsLabel);
+            if (tagsContainer.indexOf(noTagsLabel) > -1) {
+              tagsContainer.remove(noTagsLabel);
+            }
             tagsContainer.add(new osparc.ui.basic.Tag(selectedTag.name, selectedTag.color));
           });
       };
