@@ -23,7 +23,8 @@ from ...models.schemas.jobs import (
     Job,
     JobID,
     JobInputs,
-    JobMetadataDict,
+    JobMetadata,
+    JobMetadataReplace,
     JobOutputs,
     JobStatus,
 )
@@ -431,24 +432,9 @@ async def get_job_output_logfile(
     )
 
 
-@router.post(
-    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/metadata",
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
-)
-async def create_job_custom_metadata(
-    solver_key: SolverKeyId,
-    version: VersionStr,
-    job_id: JobID,
-    metadata: JobMetadataDict,
-):
-    """Attaches custom metadata to a job."""
-    msg = f"Attaches {metadata=} to Job {_compose_job_resource_name(solver_key, version, job_id)!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4313"
-    raise NotImplementedError(msg)
-
-
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/metadata",
-    response_model=JobMetadataDict,
+    response_model=JobMetadata,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_job_custom_metadata(
@@ -458,4 +444,19 @@ async def get_job_custom_metadata(
 ):
     """Gets custom metadata from a job"""
     msg = f"Getting Job metadata {_compose_job_resource_name(solver_key, version, job_id)!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4313"
+    raise NotImplementedError(msg)
+
+
+@router.put(
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/metadata",
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def replace_job_custom_metadata(
+    solver_key: SolverKeyId,
+    version: VersionStr,
+    job_id: JobID,
+    replace: JobMetadataReplace,
+):
+    """Changes job's custom metadata"""
+    msg = f"Applies {replace=} to Job {_compose_job_resource_name(solver_key, version, job_id)!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4313"
     raise NotImplementedError(msg)

@@ -712,9 +712,10 @@ qx.Class.define("osparc.utils.Utils", {
       return parsedFragment;
     },
 
-    getParamFromURL: (url, param) => {
-      const urlParams = new URLSearchParams(url);
-      return urlParams.get(param);
+    getParamFromURL: (urlStr, param) => {
+      const url = new URL(urlStr);
+      const args = new URLSearchParams(url.search);
+      return args.get(param);
     },
 
     hasParamFromURL: (url, param) => {

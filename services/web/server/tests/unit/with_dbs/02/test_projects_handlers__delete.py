@@ -4,7 +4,8 @@
 # pylint: disable=too-many-arguments
 
 
-from typing import Any, Callable, Iterator
+from collections.abc import Callable, Iterator
+from typing import Any
 from unittest import mock
 from unittest.mock import MagicMock, call
 
@@ -129,11 +130,11 @@ async def test_delete_multiple_opened_project_forbidden(
     redis_client,
 ):
     # service in project
-    service = await create_dynamic_service_mock(logged_user["id"], user_project["uuid"])
+    await create_dynamic_service_mock(logged_user["id"], user_project["uuid"])
     # open project in tab1
     client_session_id1 = client_session_id_factory()
     try:
-        sio1 = await socketio_client_factory(client_session_id1)
+        await socketio_client_factory(client_session_id1)
     except SocketConnectionError:
         if user_role != UserRole.ANONYMOUS:
             pytest.fail("socket io connection should not fail")
@@ -151,7 +152,7 @@ async def test_delete_multiple_opened_project_forbidden(
     # delete project in tab2
     client_session_id2 = client_session_id_factory()
     try:
-        sio2 = await socketio_client_factory(client_session_id2)
+        await socketio_client_factory(client_session_id2)
     except SocketConnectionError:
         if user_role != UserRole.ANONYMOUS:
             pytest.fail("socket io connection should not fail")

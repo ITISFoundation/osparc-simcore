@@ -104,7 +104,6 @@ async def logged_gather(
     :return: list of tasks results and errors e.g. [1, 2, ValueError("task3 went wrong"), 33, "foo"]
     """
 
-    wrapped_tasks = tasks
     if max_concurrency > 0:
         semaphore = asyncio.Semaphore(max_concurrency)
 
@@ -113,8 +112,10 @@ async def logged_gather(
                 return await task
 
         wrapped_tasks = [sem_task(t) for t in tasks]
+    else:
+        wrapped_tasks = tasks
 
-    results = await asyncio.gather(*wrapped_tasks, return_exceptions=True)
+    results: list[Any] = await asyncio.gather(*wrapped_tasks, return_exceptions=True)
 
     error = None
     for i, value in enumerate(results):

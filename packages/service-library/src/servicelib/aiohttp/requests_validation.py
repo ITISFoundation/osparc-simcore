@@ -158,7 +158,8 @@ def parse_request_query_parameters_as(
         data = dict(request.query)
         if hasattr(parameters_schema_cls, "parse_obj"):
             return parameters_schema_cls.parse_obj(data)
-        return parse_obj_as(parameters_schema_cls, data)
+        model: ModelClass = parse_obj_as(parameters_schema_cls, data)
+        return model
 
 
 async def parse_request_body_as(
@@ -197,7 +198,7 @@ async def parse_request_body_as(
             # NOTE: model_schema can be 'list[T]' or 'dict[T]' which raise TypeError
             # with issubclass(model_schema, BaseModel)
             assert issubclass(model_schema_cls, BaseModel)  # nosec
-            return model_schema_cls.parse_obj(body)
+            return model_schema_cls.parse_obj(body)  # type: ignore [return-value]
 
         # used for model_schema like 'list[T]' or 'dict[T]'
         return parse_obj_as(model_schema_cls, body)

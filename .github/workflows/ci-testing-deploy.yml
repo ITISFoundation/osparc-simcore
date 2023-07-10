@@ -79,7 +79,6 @@ jobs:
       anything-js: ${{ steps.filter.outputs.anything-js }}
     steps:
       - uses: actions/checkout@v3
-        if: ${{ github.event_name == 'push' }}
       # For pull requests it's not necessary to checkout the code
       - uses: dorny/paths-filter@v2
         id: filter
@@ -1924,6 +1923,8 @@ jobs:
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./ci/github/system-testing/public-api.bash install
       - name: test
         run: ./ci/github/system-testing/public-api.bash test

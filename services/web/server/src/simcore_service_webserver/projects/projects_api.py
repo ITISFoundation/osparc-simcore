@@ -76,8 +76,8 @@ from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import (
     NodeNotFoundError,
     ProjectLockError,
-    ProjectStartsTooManyDynamicNodes,
-    ProjectTooManyProjectOpened,
+    ProjectStartsTooManyDynamicNodesError,
+    ProjectTooManyProjectOpenedError,
 )
 from .lock import get_project_locked_state, is_project_locked, lock_project
 from .models import ProjectDict
@@ -324,7 +324,7 @@ async def add_project_node(
     )
 
     if _is_node_dynamic(service_key):
-        with suppress(ProjectStartsTooManyDynamicNodes):
+        with suppress(ProjectStartsTooManyDynamicNodesError):
             # NOTE: we do not start the service if there are already too many
             await _start_dynamic_service(
                 request,
@@ -624,7 +624,7 @@ async def try_open_project_for_user(
                     )
                     >= max_number_of_studies_per_user
                 ):
-                    raise ProjectTooManyProjectOpened(
+                    raise ProjectTooManyProjectOpenedError(
                         max_num_projects=max_number_of_studies_per_user
                     )
 
@@ -991,7 +991,7 @@ async def run_project_dynamic_services(
         > project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
     ):
         # we cannot start so many services so we are done
-        raise ProjectStartsTooManyDynamicNodes(
+        raise ProjectStartsTooManyDynamicNodesError(
             user_id=user_id, project_uuid=ProjectID(project["uuid"])
         )
 

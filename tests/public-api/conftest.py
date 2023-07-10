@@ -15,7 +15,6 @@ from typing import Callable, Iterable, Iterator
 import httpx
 import osparc
 import pytest
-from osparc.configuration import Configuration
 from pytest import FixtureRequest
 from pytest_simcore.helpers.typing_docker import UrlStr
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
@@ -271,8 +270,10 @@ def services_registry(
 
 
 @pytest.fixture(scope="module")
-def api_client(registered_user: RegisteredUserDict) -> Iterator[osparc.ApiClient]:
-    cfg = Configuration(
+def api_client(
+    registered_user: RegisteredUserDict,
+) -> Iterator[osparc.ApiClient]:
+    cfg = osparc.Configuration(
         host=os.environ.get("OSPARC_API_URL", "http://127.0.0.1:8006"),
         username=registered_user["api_key"],
         password=registered_user["api_secret"],

@@ -1,17 +1,19 @@
 import json
 import logging
-from typing import Any, Mapping
+import warnings
+from collections.abc import Mapping
+from typing import Any, Final
 
 import aiodocker
 from aiodocker.utils import clean_filters, clean_map
-from fastapi import status
 from fastapi.encoders import jsonable_encoder
 from models_library.aiodocker_api import AioDockerServiceSpec
+from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.users import UserID
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
+from starlette import status
 from tenacity import TryAgain, retry
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -23,12 +25,7 @@ from ....models.schemas.constants import (
     DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
-from ....models.schemas.dynamic_services import (
-    SchedulerData,
-    ServiceId,
-    ServiceState,
-    ServiceType,
-)
+from ....models.schemas.dynamic_services import SchedulerData, ServiceId, ServiceState
 from ....models.schemas.dynamic_services.scheduler import NetworkId
 from ....utils.dict_utils import get_leaf_key_paths, nested_update
 from ..docker_states import TASK_STATES_RUNNING, extract_task_state
@@ -57,10 +54,8 @@ async def get_swarm_network(dynamic_sidecar_settings: DynamicSidecarSettings) ->
         x for x in all_networks if "swarm" in x["Scope"] and network_name in x["Name"]
     ]
     if not networks or len(networks) > 1:
-        raise DynamicSidecarError(
-            f"Swarm network name (searching for '*{network_name}*') is not configured."
-            f"Found following networks: {networks}"
-        )
+        msg = f"Swarm network name (searching for '*{network_name}*') is not configured.Found following networks: {networks}"
+        raise DynamicSidecarError(msg)
     return networks[0]
 
 
@@ -74,7 +69,7 @@ async def create_network(network_config: dict[str, Any]) -> NetworkId:
             network_name = network_config["Name"]
             # make sure the current error being trapped is network dose not exit
             if f"network with name {network_name} already exists" not in str(e):
-                raise e
+                raise
 
             # Fetch network name if network already exists.
             # The environment is trashed because there seems to be an issue
@@ -89,9 +84,8 @@ async def create_network(network_config: dict[str, Any]) -> NetworkId:
 
             # finally raise an error if a network cannot be spawned
             # pylint: disable=raise-missing-from
-            raise DynamicSidecarError(
-                f"Could not create or recover a network ID for {network_config}"
-            )
+            msg = f"Could not create or recover a network ID for {network_config}"
+            raise DynamicSidecarError(msg) from e
 
 
 async def create_service_and_get_id(
@@ -113,17 +107,10 @@ async def create_service_and_get_id(
         )
 
     if "ID" not in service_start_result:
-        raise DynamicSidecarError(
-            f"Error while starting service: {str(service_start_result)}"
-        )
+        msg = f"Error while starting service: {service_start_result!s}"
+        raise DynamicSidecarError(msg)
     service_id: ServiceId = service_start_result["ID"]
     return service_id
-
-
-async def inspect_service(service_id: str) -> dict[str, Any]:
-    async with docker_client() as client:
-        inspect_result: dict[str, Any] = await client.services.inspect(service_id)
-        return inspect_result
 
 
 async def get_dynamic_sidecars_to_observe(
@@ -131,15 +118,11 @@ async def get_dynamic_sidecars_to_observe(
 ) -> list[SchedulerData]:
     """called when scheduler is started to discover new services to observe"""
     async with docker_client() as client:
-        running_dynamic_sidecar_services: list[
-            Mapping[str, Any]
-        ] = await client.services.list(
-            filters={
-                "label": [
-                    f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}"
-                ],
-                "name": [f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}"],
-            }
+        running_dynamic_sidecar_services = await _list_docker_services(
+            client,
+            node_id=None,
+            swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+            return_only_sidecars=True,
         )
     return [
         SchedulerData.from_service_inspect(x) for x in running_dynamic_sidecar_services
@@ -149,22 +132,22 @@ async def get_dynamic_sidecars_to_observe(
 async def _get_service_latest_task(service_id: str) -> Mapping[str, Any]:
     try:
         async with docker_client() as client:
-            running_services = await client.tasks.list(
+            service_associated_tasks = await client.tasks.list(
                 filters={"service": f"{service_id}"}
             )
-            if not running_services:
-                raise DockerServiceNotFoundError(service_id=service_id)
+            if not service_associated_tasks:
+                raise DockerServiceNotFoundError(service_id=service_id)  # noqa: TRY301
 
             # The service might have more then one task because the
             # previous might have died out.
             # Only interested in the latest task as only one task per
             # service will be running.
-            sorted_tasks = sorted(running_services, key=lambda task: task["UpdatedAt"])  # type: ignore
+            sorted_tasks = sorted(service_associated_tasks, key=lambda task: task["UpdatedAt"])  # type: ignore
 
             last_task: Mapping[str, Any] = sorted_tasks[-1]
             return last_task
     except GenericDockerError as err:
-        if err.original_exception.status == 404:
+        if err.original_exception.status == status.HTTP_404_NOT_FOUND:
             raise DockerServiceNotFoundError(service_id=service_id) from err
         raise
 
@@ -208,10 +191,8 @@ async def get_dynamic_sidecar_placement(
 
     docker_node_id: None | str = task.get("NodeID", None)
     if not docker_node_id:
-        raise DynamicSidecarError(
-            f"Could not find an assigned NodeID for service_id={service_id}. "
-            f"Last task inspect result: {task}"
-        )
+        msg = f"Could not find an assigned NodeID for service_id={service_id}. Last task inspect result: {task}"
+        raise DynamicSidecarError(msg)
 
     return docker_node_id
 
@@ -222,28 +203,21 @@ async def get_dynamic_sidecar_state(service_id: str) -> tuple[ServiceState, str]
     return service_state, message
 
 
-async def _get_dynamic_sidecar_stack_services(
-    node_uuid: NodeID, dynamic_sidecar_settings: DynamicSidecarSettings
-) -> list[Mapping]:
-    filters = {
-        "label": [
-            f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",
-            f"uuid={node_uuid}",
-        ]
-    }
-    async with docker_client() as client:
-        list_result: list[Mapping] = await client.services.list(filters=filters)
-        return list_result
-
-
 async def is_dynamic_sidecar_stack_missing(
     node_uuid: NodeID, dynamic_sidecar_settings: DynamicSidecarSettings
 ) -> bool:
     """Check if the proxy and the dynamic-sidecar are absent"""
-    stack_services = await _get_dynamic_sidecar_stack_services(
-        node_uuid, dynamic_sidecar_settings
-    )
+    async with docker_client() as client:
+        stack_services = await _list_docker_services(
+            client,
+            node_id=node_uuid,
+            swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+            return_only_sidecars=False,
+        )
     return len(stack_services) == 0
+
+
+_NUM_SIDECAR_STACK_SERVICES: Final[int] = 2
 
 
 async def are_sidecar_and_proxy_services_present(
@@ -252,13 +226,53 @@ async def are_sidecar_and_proxy_services_present(
     """
     The dynamic-sidecar stack always expects to have 2 running services
     """
-    stack_services = await _get_dynamic_sidecar_stack_services(
-        node_uuid, dynamic_sidecar_settings
-    )
-    if len(stack_services) != 2:
+    async with docker_client() as client:
+        stack_services = await _list_docker_services(
+            client,
+            node_id=node_uuid,
+            swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+            return_only_sidecars=False,
+        )
+    if len(stack_services) != _NUM_SIDECAR_STACK_SERVICES:
         return False
 
     return True
+
+
+async def _list_docker_services(
+    client: aiodocker.docker.Docker,
+    *,
+    node_id: NodeID | None,
+    swarm_stack_name: str,
+    return_only_sidecars: bool,
+) -> list[Mapping]:
+    # NOTE: this is here for backward compatibility when first deploying this change.
+    # shall be removed after 1-2 releases without issues
+    # backwards compatibility part
+
+    def _make_filters(*, backwards_compatible: bool) -> Mapping[str, Any]:
+        filters = {
+            "label": [
+                f"{'swarm_stack_name' if backwards_compatible else to_simcore_runtime_docker_label_key('swarm_stack_name')}={swarm_stack_name}",
+            ],
+        }
+        if node_id:
+            filters["label"].append(
+                f"{'uuid'  if backwards_compatible else to_simcore_runtime_docker_label_key('node_id')}={node_id}"
+            )
+        if return_only_sidecars:
+            filters["name"] = [f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}"]
+        return filters
+
+    warnings.warn(
+        "After PR#4453 [https://github.com/ITISFoundation/osparc-simcore/pull/4453] reaches"
+        " production, the backwards compatible code may be removed",
+        stacklevel=2,
+    )
+    services_list: list[Mapping] = await client.services.list(
+        filters=_make_filters(backwards_compatible=True)
+    ) + await client.services.list(filters=_make_filters(backwards_compatible=False))
+    return services_list
 
 
 async def remove_dynamic_sidecar_stack(
@@ -266,14 +280,13 @@ async def remove_dynamic_sidecar_stack(
 ) -> None:
     """Removes all services from the stack, in theory there should only be 2 services"""
     async with docker_client() as client:
-        services_to_remove = await client.services.list(
-            filters={
-                "label": [
-                    f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",
-                    f"uuid={node_uuid}",
-                ]
-            }
+        services_to_remove = await _list_docker_services(
+            client,
+            node_id=node_uuid,
+            swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+            return_only_sidecars=False,
         )
+
         if services_to_remove:
             await logged_gather(
                 *(
@@ -299,41 +312,15 @@ async def remove_dynamic_sidecar_network(network_name: str) -> bool:
         return False
 
 
-async def list_dynamic_sidecar_services(
-    dynamic_sidecar_settings: DynamicSidecarSettings,
-    user_id: UserID | None = None,
-    project_id: ProjectID | None = None,
-) -> list[dict[str, Any]]:
-    service_filters = {
-        "label": [
-            f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",
-        ],
-        "name": [f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}"],
-    }
-    if user_id is not None:
-        service_filters["label"].append(f"user_id={user_id}")
-    if project_id is not None:
-        service_filters["label"].append(f"study_id={project_id}")
-
-    async with docker_client() as client:
-        list_result: list[dict[str, Any]] = await client.services.list(
-            filters=service_filters
-        )
-        return list_result
-
-
 async def is_sidecar_running(
     node_uuid: NodeID, dynamic_sidecar_settings: DynamicSidecarSettings
 ) -> bool:
     async with docker_client() as client:
-        sidecar_service_list = await client.services.list(
-            filters={
-                "label": [
-                    f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",
-                    f"type={ServiceType.MAIN.value}",
-                    f"uuid={node_uuid}",
-                ]
-            }
+        sidecar_service_list = await _list_docker_services(
+            client,
+            node_id=node_uuid,
+            swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+            return_only_sidecars=True,
         )
         if len(sidecar_service_list) != 1:
             return False
@@ -388,7 +375,7 @@ async def get_or_create_networks_ids(
             *[_get_id_from_name(client, network) for network in networks]
         )
 
-    return dict(zip(networks, networks_ids))
+    return dict(zip(networks, networks_ids, strict=True))
 
 
 async def get_projects_networks_containers(
@@ -402,7 +389,9 @@ async def get_projects_networks_containers(
         params = {"filters": clean_filters({"label": [f"project_id={project_id}"]})}
         filtered_networks = (
             # pylint:disable=protected-access
-            await client.networks.docker._query_json("networks", params=params)
+            await client.networks.docker._query_json(  # noqa: SLF001
+                "networks", params=params
+            )
         )
 
     if not filtered_networks:
@@ -465,7 +454,7 @@ async def _update_service_spec(
                         include=get_leaf_key_paths(update_in_service_spec),
                     )
 
-                    await client._query_json(  # pylint: disable=protected-access
+                    await client._query_json(  # pylint: disable=protected-access  # noqa: SLF001
                         f"services/{service_id}/update",
                         method="POST",
                         data=json_dumps(clean_map(updated_spec)),
@@ -477,7 +466,7 @@ async def _update_service_spec(
                         and "out of sequence" in e.message
                     ):
                         raise TryAgain() from e
-                    raise e
+                    raise
 
 
 async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
