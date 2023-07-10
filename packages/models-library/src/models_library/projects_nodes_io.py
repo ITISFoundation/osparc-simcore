@@ -8,7 +8,7 @@
 
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, Pattern, Union
+from typing import TYPE_CHECKING, Pattern, TypeAlias, Union
 from uuid import UUID
 
 from pydantic import (
@@ -92,7 +92,7 @@ class DatCoreFileID(ConstrainedStr):
     regex: Pattern[str] | None = re.compile(DATCORE_FILE_ID_RE)
 
 
-StorageFileID = Union[SimcoreS3FileID, DatCoreFileID]
+StorageFileID: TypeAlias = Union[SimcoreS3FileID, DatCoreFileID]
 
 
 class PortLink(BaseModel):
