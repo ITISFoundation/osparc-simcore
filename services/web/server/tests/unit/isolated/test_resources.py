@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
+import itertools
 from pathlib import Path
 
 import pytest
@@ -11,31 +12,23 @@ from simcore_service_webserver._resources import webserver_resources
 def app_resources(package_dir: Path) -> list[str]:
     resource_names = []
     base = package_dir
-    for name in (webserver_resources.config_folder, "api"):
+    for name in ("api", "templates"):
         folder = base / name
-        resource_names += [str(p.relative_to(base)) for p in folder.rglob("*.y*ml")]
+        resource_names += [
+            f"{p.relative_to(base)}"
+            for p in itertools.chain(folder.rglob("*.y*ml"), folder.rglob("*.jinja2"))
+        ]
 
     assert resource_names
     return resource_names
 
 
-def test_named_resources():
-    exposed = [
-        getattr(webserver_resources, name)
-        for name in dir(webserver_resources)
-        if name.startswith("RESOURCES")
-    ]
-
-    for resource_name in exposed:
-        assert webserver_resources.exists(resource_name)
-        assert webserver_resources.isdir(resource_name)
-        assert webserver_resources.listdir(resource_name)
-
-
-def test_paths(app_resources: list[str]):
+def test_webserver_resources(app_resources: list[str]):
     for resource_name in app_resources:
         assert webserver_resources.get_path(resource_name).exists()
 
+
+def test_paths_might_not_exist():
     some_path = webserver_resources.get_path("fake_resource_name")
     assert some_path
     assert not some_path.exists()

@@ -10,7 +10,7 @@ import pkg_resources
 
 
 @dataclass(frozen=True)
-class ResourcesFacade:
+class DataResourcesFacade:
     """Facade to access data resources installed with a distribution
 
     - Built on top of pkg_resources
@@ -20,16 +20,9 @@ class ResourcesFacade:
 
     package_name: str
     distribution_name: str
-    config_folder: str
 
     def exists(self, resource_name: str) -> bool:
         return pkg_resources.resource_exists(self.package_name, resource_name)
-
-    def listdir(self, resource_name: str) -> list[str]:
-        return pkg_resources.resource_listdir(self.package_name, resource_name)
-
-    def isdir(self, resource_name: str) -> bool:
-        return pkg_resources.resource_isdir(self.package_name, resource_name)
 
     def get_path(self, resource_name: str) -> Path:
         """Returns a path to a resource
@@ -40,21 +33,6 @@ class ResourcesFacade:
         return pathlib.Path(
             pkg_resources.resource_filename(self.package_name, resource_name)
         )
-
-    def get_distribution(self):
-        """Returns distribution info object"""
-        return pkg_resources.get_distribution(self.distribution_name)
-
-
-@dataclass
-class FileResource:
-    name: str
-
-
-class PackageResources:
-    def get_configfile(self, name: str) -> FileResource:
-        msg = "Should be implemented in subclass"
-        raise NotImplementedError(msg)
 
 
 # resources env keys
