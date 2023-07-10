@@ -43,7 +43,6 @@ def app_environment(
             "WEBSERVER_CLUSTERS": "false",
             "WEBSERVER_COMPUTATION": "0",
             "WEBSERVER_DIAGNOSTICS": "null",
-            "WEBSERVER_DIRECTOR": "null",
             "WEBSERVER_DIRECTOR_V2": "null",
             "WEBSERVER_EXPORTER": "null",
             "WEBSERVER_GARBAGE_COLLECTOR": "null",

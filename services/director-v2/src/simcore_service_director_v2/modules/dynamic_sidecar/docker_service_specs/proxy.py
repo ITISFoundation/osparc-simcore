@@ -1,14 +1,16 @@
 from typing import Any
 
+from models_library.docker import StandardSimcoreDockerLabels
 from models_library.services_resources import (
     CPU_10_PERCENT,
     CPU_100_PERCENT,
     MEMORY_50MB,
     MEMORY_250MB,
 )
+from pydantic import ByteSize
 
 from ....core.settings import DynamicSidecarProxySettings, DynamicSidecarSettings
-from ....models.schemas.dynamic_services import SchedulerData, ServiceType
+from ....models.schemas.dynamic_services import SchedulerData
 from ._constants import DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS
 
 
@@ -61,7 +63,6 @@ def get_dynamic_proxy_spec(
         "labels": {
             # TODO: let's use a pydantic model with descriptions
             "io.simcore.zone": f"{dynamic_sidecar_settings.TRAEFIK_SIMCORE_ZONE}",
-            "swarm_stack_name": dynamic_sidecar_settings.SWARM_STACK_NAME,
             "traefik.docker.network": swarm_network_name,
             "traefik.enable": "true",
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.customresponseheaders.Content-Security-Policy": f"frame-ancestors {scheduler_data.request_dns} {scheduler_data.node_uuid}.services.{scheduler_data.request_dns}",
@@ -79,12 +80,18 @@ def get_dynamic_proxy_spec(
             f"traefik.http.routers.{scheduler_data.proxy_service_name}.priority": "10",
             f"traefik.http.routers.{scheduler_data.proxy_service_name}.rule": f"hostregexp(`{scheduler_data.node_uuid}.services.{{host:.+}}`)",
             f"traefik.http.routers.{scheduler_data.proxy_service_name}.middlewares": f"{dynamic_sidecar_settings.SWARM_STACK_NAME}_gzip@docker, {scheduler_data.proxy_service_name}-security-headers",
-            "type": ServiceType.DEPENDENCY.value,
             "dynamic_type": "dynamic-sidecar",  # tagged as dynamic service
-            "study_id": f"{scheduler_data.project_id}",
-            "user_id": f"{scheduler_data.user_id}",
-            "uuid": f"{scheduler_data.node_uuid}",  # needed for removal when project is closed
-        },
+        }
+        | StandardSimcoreDockerLabels(
+            user_id=scheduler_data.user_id,
+            project_id=scheduler_data.project_id,
+            node_id=scheduler_data.node_uuid,
+            product_name=scheduler_data.product_name,
+            simcore_user_agent=scheduler_data.request_simcore_user_agent,
+            swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+            memory_limit=ByteSize(MEMORY_50MB),
+            cpu_limit=float(CPU_10_PERCENT) / 1e9,
+        ).to_simcore_runtime_docker_labels(),
         "name": scheduler_data.proxy_service_name,
         "networks": [swarm_network_id, dynamic_sidecar_network_id],
         "task_template": {
@@ -93,12 +100,16 @@ def get_dynamic_proxy_spec(
                 "Hosts": [],
                 "Image": f"caddy:{proxy_settings.DYNAMIC_SIDECAR_CADDY_VERSION}",
                 "Init": True,
-                "Labels": {
-                    # NOTE: these labels get on the tasks and that is also useful to trace
-                    "study_id": f"{scheduler_data.project_id}",
-                    "user_id": f"{scheduler_data.user_id}",
-                    "uuid": f"{scheduler_data.node_uuid}",
-                },
+                "Labels": StandardSimcoreDockerLabels(
+                    user_id=scheduler_data.user_id,
+                    project_id=scheduler_data.project_id,
+                    node_id=scheduler_data.node_uuid,
+                    product_name=scheduler_data.product_name,
+                    simcore_user_agent=scheduler_data.request_simcore_user_agent,
+                    swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
+                    memory_limit=ByteSize(MEMORY_50MB),
+                    cpu_limit=float(CPU_10_PERCENT) / 1e9,
+                ).to_simcore_runtime_docker_labels(),
                 "Command": [
                     "sh",
                     "-c",

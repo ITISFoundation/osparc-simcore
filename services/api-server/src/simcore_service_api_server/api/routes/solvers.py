@@ -93,7 +93,7 @@ async def list_solvers_releases(
 
 
 @router.get(
-    "releases/page",
+    "/releases/page",
     response_model=LimitOffsetPage[Solver],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )

@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: osparc-simcore web API
-  version: 0.23.0
+  version: 0.24.0
   description: API designed for the front-end app
   contact:
     name: IT'IS Foundation
@@ -6310,6 +6310,90 @@ paths:
                           type: string
                   error:
                     title: Error
+  '/projects/{project_id}/metadata':
+    get:
+      tags:
+        - project
+      summary: Get Project Metadata
+      operationId: get_project_metadata
+      parameters:
+        - required: true
+          schema:
+            type: string
+            format: uuid
+            title: Project Id
+          name: project_id
+          in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    properties:
+                      projectUuid:
+                        type: string
+                        format: uuid
+                        title: Projectuuid
+                      custom:
+                        additionalProperties:
+                          anyOf:
+                            - type: boolean
+                            - type: integer
+                            - type: number
+                            - type: string
+                        type: object
+                        title: Custom
+                        description: Custom key-value map
+                    type: object
+                    required:
+                      - projectUuid
+                    title: ProjectMetadataGet
+                  error:
+                    title: Error
+                type: object
+                title: 'Envelope[ProjectMetadataGet]'
+    patch:
+      tags:
+        - project
+      summary: Update Project Metadata
+      operationId: update_project_metadata
+      parameters:
+        - required: true
+          schema:
+            type: string
+            format: uuid
+            title: Project Id
+          name: project_id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                custom:
+                  additionalProperties:
+                    anyOf:
+                      - type: boolean
+                      - type: integer
+                      - type: number
+                      - type: string
+                  type: object
+                  title: Custom
+              type: object
+              required:
+                - custom
+              title: ProjectMetadataUpdate
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1metadata/get/responses/200/content/application~1json/schema'
   '/projects/{project_id}/metadata/ports':
     get:
       tags:
