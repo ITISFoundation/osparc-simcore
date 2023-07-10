@@ -44,7 +44,7 @@ def get_client_session(app: MutableMapping[str, Any]) -> ClientSession:
             total=get_http_client_request_total_timeout(),
             connect=get_http_client_request_aiohttp_connect_timeout(),
             sock_connect=get_http_client_request_aiohttp_sock_connect_timeout(),
-        )  # type: ignore
+        )
 
         app[APP_CLIENT_SESSION_KEY] = session = ClientSession(
             timeout=timeout_settings,
