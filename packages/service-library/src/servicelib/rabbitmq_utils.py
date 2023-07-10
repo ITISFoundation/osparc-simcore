@@ -13,8 +13,6 @@ from tenacity.wait import wait_fixed
 
 from .logging_utils import log_context
 
-# from .rabbitmq import RabbitMQClient
-
 _logger = logging.getLogger(__file__)
 
 
@@ -84,7 +82,7 @@ async def wait_till_rabbitmq_responsive(url: str) -> bool:
 
 
 async def rpc_register_entries(
-    rabbit_client,  #: RabbitMQClient,
+    rabbit_client,
     entries: dict[str, str],
     handler: Callable[..., Any],
 ) -> None:
