@@ -123,3 +123,57 @@ async def test_create_safe_application(mocker: MockerFixture):
     # leave client session opened!
     with pytest.raises(RuntimeError):
         get_client_session(the_app)
+
+
+async def test_aiohttp_events_order():
+    the_app = web.Application()
+    the_app["events"] = []
+
+    async def _on_startup(_app: web.Application):
+        _app["events"].append("startup")
+
+    async def _on_shutdown(_app: web.Application):
+        _app["events"].append("shutdown")
+
+    async def _on_cleanup(_app: web.Application):
+        _app["events"].append("cleanup")
+
+    async def _cleanup_context(_app: web.Application):
+        _app["events"].append("cleanup_ctx.setup")
+        yield
+        _app["events"].append("cleanup_ctx.teardown")
+
+    the_app.on_startup.append(_on_startup)
+    the_app.on_shutdown.append(_on_shutdown)
+    the_app.on_cleanup.append(_on_cleanup)
+    the_app.cleanup_ctx.append(_cleanup_context)
+
+    server = TestServer(the_app)
+    await server.start_server()
+    await server.close()
+
+    # Events are triggered as follows
+    # SEE https://docs.aiohttp.org/en/stable/web_advanced.html#aiohttp-web-signals
+    #
+    #  cleanup_ctx[0].setup   ---> begin of cleanup_ctx
+    #  cleanup_ctx[1].setup.
+    #      ...
+    #  on_startup[0].
+    #  on_startup[1].
+    #      ...
+    #  on_shutdown[0].
+    #  on_shutdown[1].
+    #      ...
+    #  cleanup_ctx[1].teardown.
+    #  cleanup_ctx[0].teardown <--- end of cleanup_ctx
+    #  on_cleanup[0].
+    #  on_cleanup[1].
+    #      ...
+
+    assert the_app["events"] == [
+        "cleanup_ctx.setup",
+        "startup",
+        "shutdown",
+        "cleanup_ctx.teardown",
+        "cleanup",
+    ]
