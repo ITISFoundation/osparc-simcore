@@ -145,6 +145,7 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
     await asyncio.sleep(1)
     await simcore_s3_dsm.clean_expired_uploads()
 
+    # check the entries were removed
     async with aiopg_engine.acquire() as conn:
         with pytest.raises(FileMetaDataNotFoundError):
             await db_file_meta_data.get(conn, simcore_file_id)
