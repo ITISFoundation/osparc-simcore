@@ -115,6 +115,7 @@ class FileMetaData(FileMetaDataGet):
             "is_soft_link": False,
             "upload_id": None,
             "upload_expires_at": None,
+            "is_directory": False,
         }
         fmd_kwargs.update(**file_meta_data_kwargs)
         return cls.parse_obj(fmd_kwargs)
