@@ -41,7 +41,7 @@ def test_simcore_file_link_with_label(minimal_simcore_file_link: dict[str, Any])
     assert simcore_file_link.e_tag is None
 
 
-@pytest.mark.parametrize("model_cls", (SimCoreFileLink, DatCoreFileLink))
+@pytest.mark.parametrize("model_cls", [SimCoreFileLink, DatCoreFileLink])
 def test_project_nodes_io_model_examples(model_cls, model_cls_examples):
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
@@ -168,3 +168,17 @@ def test_simcore_s3_directory_id():
 def test_simcore_s3_directory_id_from_simcore_s3_file_id(s3_object: str, expected: str):
     result = SimcoreS3DirectoryID.from_simcore_s3_object(s3_object)
     assert f"{result}" == expected
+
+
+def test_simcore_s3_directory_get_parent():
+    # pylint: disable=protected-access
+
+    with pytest.raises(ValueError, match="does not have enough parents, expected 4"):
+        SimcoreS3DirectoryID._get_parent("hello/object", parent_index=4)  # noqa SLF001
+
+    with pytest.raises(ValueError, match="does not have enough parents, expected 4"):
+        SimcoreS3DirectoryID._get_parent("hello/object/", parent_index=4)  # noqa SLF001
+    with pytest.raises(ValueError, match="does not have enough parents, expected 4"):
+        SimcoreS3DirectoryID._get_parent(  # noqa SLF001
+            "/hello/object/", parent_index=4
+        )
