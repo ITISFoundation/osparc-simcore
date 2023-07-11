@@ -45,6 +45,10 @@ paths:
   /email:test:
     $ref: "./openapi-admin.yaml#/paths/~1email:test"
 
+  # ANNOUNCEMENTS ---------------------------------------------------------
+  /announcements:
+    $ref: "./openapi-announcements.yaml#/paths/~1announcements"
+
   # DIAGNOSTICS ---------------------------------------------------------
   /:
     $ref: "./openapi-diagnostics.yaml#/paths/~1"

@@ -1,4 +1,4 @@
 # Extra reqs, besides webserver's
 
-fastapi
+fastapi<0.100
 jsonref
