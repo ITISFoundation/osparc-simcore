@@ -55,10 +55,10 @@ qx.Class.define("osparc.component.notification.RibbonNotifications", {
       const notificationAtom = new qx.ui.basic.Atom().set({
         label: notification.getFullText(),
         icon: notification.getType() === "announcement" ? null : "@FontAwesome5Solid/exclamation-triangle/14",
+        padding: notification.getType() === "announcement" ? 6 : 2,
+        height: notification.getType() === "announcement" ? 30 : 20,
         center: true,
-        padding: 2,
-        gap: 10,
-        height: 20
+        gap: 10
       });
       notificationAtom.getChildControl("label").set({
         textColor: notification.getType() === "announcement" ? "white" : "black",
