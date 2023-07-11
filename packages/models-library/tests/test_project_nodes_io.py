@@ -4,9 +4,9 @@
 
 from pprint import pformat
 from typing import Any
-from uuid import uuid4
 
 import pytest
+from faker import Faker
 from models_library.projects_nodes import Node, PortLink
 from models_library.projects_nodes_io import (
     DatCoreFileLink,
@@ -17,8 +17,8 @@ from pydantic import ValidationError, parse_obj_as
 
 
 @pytest.fixture()
-def minimal_simcore_file_link() -> dict[str, Any]:
-    return {"store": 0, "path": f"{uuid4()}/{uuid4()}/file.ext"}
+def minimal_simcore_file_link(faker: Faker) -> dict[str, Any]:
+    return {"store": 0, "path": f"{faker.uuid4()}/{faker.uuid4()}/file.ext"}
 
 
 def test_simcore_file_link_default_label(minimal_simcore_file_link: dict[str, Any]):
