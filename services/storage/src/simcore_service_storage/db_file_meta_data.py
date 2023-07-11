@@ -88,7 +88,11 @@ async def list_filter_with_partial_file_id(
             if partial_file_id
             else True
         )
-        & (file_meta_data.c.is_directory.is_(False) if only_files else True)
+        & (
+            file_meta_data.c.is_directory.is_(False)  # noqa FBT003
+            if only_files
+            else True
+        )
     )
     return [FileMetaDataAtDB.from_orm(row) async for row in await conn.execute(stmt)]
 
