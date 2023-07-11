@@ -61,6 +61,8 @@ qx.Class.define("osparc.info.StudyLarge", {
     _rebuildLayout: function() {
       this._removeAll();
 
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
+
       const title = osparc.info.StudyUtils.createTitle(this.getStudy()).set({
         font: "text-14"
       });
@@ -84,16 +86,22 @@ qx.Class.define("osparc.info.StudyLarge", {
       if (autoStartButton) {
         titleAndCopyLayout.add(autoStartButton);
       }
-      this._add(titleAndCopyLayout);
+      vBox.add(titleAndCopyLayout);
 
       if (osparc.product.Utils.showStudyPreview() && !this.getStudy().isPipelineEmpty()) {
         const studyThumbnailExplorer = new osparc.dashboard.StudyThumbnailExplorer(this.getStudy().serialize());
-        this._add(studyThumbnailExplorer);
+        vBox.add(studyThumbnailExplorer);
       }
 
       const extraInfo = this.__extraInfo();
       const extraInfoLayout = this.__createExtraInfo(extraInfo);
-      this._add(extraInfoLayout);
+      vBox.add(extraInfoLayout);
+
+      const scrollContainer = new qx.ui.container.Scroll();
+      scrollContainer.add(vBox);
+      this._add(scrollContainer, {
+        flex: 1
+      });
     },
 
     __createViewWithEdit: function(view, cb) {
