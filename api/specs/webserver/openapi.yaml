@@ -23,22 +23,6 @@ servers:
         enum:
           - v0
         default: v0
-tags:
-  - name: activity
-  - name: admin
-  - name: authentication
-  - name: catalog
-  - name: cluster
-  - name: configuration
-  - name: maintenance
-  - name: nih-sparc
-  - name: project
-  - name: publication
-  - name: repository
-  - name: storage
-  - name: tag
-  - name: tasks
-  - name: user
 
 paths:
   # ADMIN -------------
