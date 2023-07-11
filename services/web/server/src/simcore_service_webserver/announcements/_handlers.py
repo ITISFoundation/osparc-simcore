@@ -11,9 +11,9 @@ from ._models import Announcement
 routes = web.RouteTableDef()
 
 
-# TODO: limit number of requests per user or add a soft requirements?
 @routes.get(f"/{api_version_prefix}/announcements", name="list_announcements")
 async def list_announcements(request: web.Request) -> web.Response:
+    """Returns non-expired announcements for current product"""
     product_name = get_product_name(request)
     announcements: list[Announcement] = await _api.list_announcements(
         request.app, product_name=product_name
