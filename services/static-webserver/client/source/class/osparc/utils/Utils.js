@@ -61,7 +61,7 @@ qx.Class.define("osparc.utils.Utils", {
         this.setLocalStorageItem("dontShowAnnouncements", JSON.stringify(oldDontShowAnnouncements));
       },
       isDontShowAnnouncement: function(announcementId) {
-        this.getDontShowAnnouncements().includes(announcementId);
+        return this.getDontShowAnnouncements().includes(announcementId);
       },
 
       serviceToFavs: function(serviceKey) {
