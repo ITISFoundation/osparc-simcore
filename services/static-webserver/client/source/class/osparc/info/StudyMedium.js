@@ -138,7 +138,7 @@ qx.Class.define("osparc.info.StudyMedium", {
 
       extraInfo.push({
         label: this.tr("DESCRIPTION"),
-        view: osparc.info.StudyUtils.createDescription(this.getStudy(), 200)
+        view: osparc.info.StudyUtils.createDescription(this.getStudy())
       });
 
       return extraInfo;
