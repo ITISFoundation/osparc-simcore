@@ -10,6 +10,7 @@ from servicelib.aiohttp.application import create_safe_application
 
 from ._meta import WELCOME_DB_LISTENER_MSG, WELCOME_GC_MSG, WELCOME_MSG, info
 from .activity.plugin import setup_activity
+from .announcements.plugin import setup_announcements
 from .application_settings import setup_settings
 from .catalog.plugin import setup_catalog
 from .clusters.plugin import setup_clusters
@@ -115,6 +116,7 @@ def create_application() -> web.Application:
     setup_scicrunch(app)
     setup_tags(app)
 
+    setup_announcements(app)
     setup_publications(app)
     setup_studies_dispatcher(app)
     setup_exporter(app)

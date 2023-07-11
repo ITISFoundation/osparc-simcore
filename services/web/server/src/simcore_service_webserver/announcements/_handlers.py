@@ -1,10 +1,8 @@
+""" Controler layer to expose to the web rest API
+"""
 from aiohttp import web
 
 from .._meta import api_version_prefix
-
-#
-# API handlers
-#
 from ..utils_aiohttp import envelope_json_response
 from . import _api
 from ._models import Announcement

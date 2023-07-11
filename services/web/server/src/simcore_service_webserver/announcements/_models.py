@@ -1,11 +1,14 @@
 from datetime import datetime
 from typing import Any, ClassVar, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, validator
 
 
+# NOTE: this model is used for BOTH
+# - parse+validate from redis
+# - schema in the response
 class Announcement(BaseModel):
-    id_: str = Field(..., alias="id")
+    id: str  # noqa: A003
     products: list[Literal["osparc", "s4l", "s4llite", "tis"]]
     start: datetime
     end: datetime
@@ -13,6 +16,16 @@ class Announcement(BaseModel):
     description: str
     link: str
     widgets: list[Literal["login", "ribbon", "user-menu"]]
+
+    @validator("end")
+    @classmethod
+    def check_start_before_end(cls, v, values):
+        if start := values.get("start"):
+            end = v
+            if end <= start:
+                msg = f"end={end!r} is not before start={start!r}"
+                raise ValueError(msg)
+        return v
 
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
