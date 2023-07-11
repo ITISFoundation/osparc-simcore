@@ -330,60 +330,67 @@ async def upload_file(
             before_sleep=before_sleep_log(log, logging.WARNING, exc_info=True),
             after=after_log(log, log_level=logging.ERROR),
         ):
-            upload_links = None
-            try:
-                store_id, upload_links = await get_upload_links_from_s3(
-                    user_id=user_id,
-                    store_name=store_name,
-                    store_id=store_id,
-                    s3_object=s3_object,
-                    client_session=session,
-                    link_type=LinkType.S3 if use_rclone else LinkType.PRESIGNED,
-                    file_size=ByteSize(
-                        file_to_upload.stat().st_size
-                        if isinstance(file_to_upload, Path)
-                        else file_to_upload.file_size
-                    ),
-                )
-                # NOTE: in case of rclone upload, there are no multipart uploads, so this remains empty
-                uploaded_parts: list[UploadedPart] = []
-                if use_rclone:
-                    assert r_clone_settings  # nosec
-                    assert isinstance(file_to_upload, Path)  # nosec
-                    await r_clone.sync_local_to_s3(
-                        file_to_upload,
-                        r_clone_settings,
-                        upload_links,
+            with attempt:
+                upload_links = None
+                try:
+                    store_id, upload_links = await get_upload_links_from_s3(
+                        user_id=user_id,
+                        store_name=store_name,
+                        store_id=store_id,
+                        s3_object=s3_object,
+                        client_session=session,
+                        link_type=LinkType.S3 if use_rclone else LinkType.PRESIGNED,
+                        file_size=ByteSize(
+                            file_to_upload.stat().st_size
+                            if isinstance(file_to_upload, Path)
+                            else file_to_upload.file_size
+                        ),
                     )
-                    await progress_bar.update()
-                else:
-                    uploaded_parts = await upload_file_to_presigned_links(
+                    # NOTE: in case of rclone upload, there are no multipart uploads, so this remains empty
+                    uploaded_parts: list[UploadedPart] = []
+                    if use_rclone:
+                        assert r_clone_settings  # nosec
+                        assert isinstance(file_to_upload, Path)  # nosec
+                        await r_clone.sync_local_to_s3(
+                            file_to_upload,
+                            r_clone_settings,
+                            upload_links,
+                        )
+                        await progress_bar.update()
+                    else:
+                        uploaded_parts = await upload_file_to_presigned_links(
+                            session,
+                            upload_links,
+                            file_to_upload,
+                            num_retries=num_retries,
+                            io_log_redirect_cb=io_log_redirect_cb,
+                            progress_bar=progress_bar,
+                        )
+
+                    # complete the upload
+                    e_tag = await _complete_upload(
                         session,
                         upload_links,
-                        file_to_upload,
-                        num_retries=num_retries,
-                        io_log_redirect_cb=io_log_redirect_cb,
-                        progress_bar=progress_bar,
+                        uploaded_parts,
                     )
-
-                # complete the upload
-                e_tag = await _complete_upload(
-                    session,
-                    upload_links,
-                    uploaded_parts,
-                )
-            except (r_clone.RCloneFailedError, exceptions.S3TransferError) as exc:
-                log.error("The upload failed with an unexpected error:", exc_info=True)
-                if upload_links:
-                    await _abort_upload(session, upload_links, reraise_exceptions=False)
-                raise exceptions.S3TransferError from exc
-            except CancelledError:
-                if upload_links:
-                    await _abort_upload(session, upload_links, reraise_exceptions=False)
-                raise
-            if io_log_redirect_cb:
-                await io_log_redirect_cb(f"upload of {file_to_upload} complete.")
-            return store_id, e_tag
+                except (r_clone.RCloneFailedError, exceptions.S3TransferError) as exc:
+                    log.error(
+                        "The upload failed with an unexpected error:", exc_info=True
+                    )
+                    if upload_links:
+                        await _abort_upload(
+                            session, upload_links, reraise_exceptions=False
+                        )
+                    raise exceptions.S3TransferError from exc
+                except CancelledError:
+                    if upload_links:
+                        await _abort_upload(
+                            session, upload_links, reraise_exceptions=False
+                        )
+                    raise
+                if io_log_redirect_cb:
+                    await io_log_redirect_cb(f"upload of {file_to_upload} complete.")
+                return store_id, e_tag
 
 
 async def entry_exists(
