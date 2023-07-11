@@ -75,11 +75,29 @@ qx.Class.define("osparc.component.notification.RibbonNotifications", {
       if (notification.getClosable()) {
         const closeButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/times/12").set({
           backgroundColor: "transparent",
-          textColor: notification.getType() === "announcement" ? "white" : "black"
+          textColor: notification.getType() === "announcement" ? "white" : "black",
+          alignY: "middle"
         });
         closeButton.addListener("tap", () => this.removeNotification(notification), this);
         notificationLayout.add(closeButton);
       }
+
+      if (notification.getType() === "announcement") {
+        const dontShowButton = new qx.ui.form.Button(this.tr("Don't show again")).set({
+          backgroundColor: "transparent",
+          textColor: "strong-text",
+          alignY: "middle",
+          padding: 4,
+          allowGrowX: false,
+          allowGrowY: false
+        });
+        osparc.utils.Utils.addBorder(dontShowButton, 1, qx.theme.manager.Color.getInstance().resolve("strong-text"));
+        dontShowButton.addListener("tap", () => {
+          console.log("Hallo");
+        }, this);
+        notificationLayout.add(dontShowButton);
+      }
+
       return notificationLayout;
     },
 
