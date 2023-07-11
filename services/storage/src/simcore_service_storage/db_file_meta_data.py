@@ -74,7 +74,7 @@ async def list_filter_with_partial_file_id(
     only_files: bool,
 ) -> list[FileMetaDataAtDB]:
     stmt = sa.select(file_meta_data).where(
-        (file_meta_data.c.is_directory == (not only_files))
+        (file_meta_data.c.is_directory.is_not(only_files))
         & (
             (file_meta_data.c.user_id == f"{user_id}")
             | file_meta_data.c.project_id.in_(f"{pid}" for pid in project_ids)
@@ -89,8 +89,6 @@ async def list_filter_with_partial_file_id(
             if partial_file_id
             else True
         )
-        # & (file_meta_data.c.is_directory.is_(True) if only_files else True)
-        # TODO: try to have a test for this one as well!
     )
     return [FileMetaDataAtDB.from_orm(row) async for row in await conn.execute(stmt)]
 
