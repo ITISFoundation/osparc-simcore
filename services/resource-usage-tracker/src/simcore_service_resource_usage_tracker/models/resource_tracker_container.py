@@ -37,7 +37,7 @@ class ContainerScrapedResourceUsageMetric(BaseModel):
     )
     cpu_limit: float = Field(
         None,
-        description="CPU limit set by the runtime, ex. 0.5 means that the container has limit 0.5 CPU shares",
+        description="CPU limit set by the runtime, ex. 3.5 Shares of one CPU cores",
     )
     service_key: ServiceKey
     service_version: ServiceVersion
