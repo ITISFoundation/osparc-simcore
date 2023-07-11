@@ -22,7 +22,7 @@ from models_library.projects_nodes_io import (
     StorageFileID,
 )
 from models_library.users import UserID
-from pydantic import AnyUrl, ByteSize, NonNegativeInt, parse_obj_as
+from pydantic import AnyUrl, ByteSize, parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.utils import ensure_ends_with, logged_gather
@@ -67,6 +67,7 @@ from .s3 import get_s3_client
 from .s3_client import S3MetaData
 from .s3_utils import S3TransferDataCB, update_task_progress
 from .settings import Settings
+from .simcore_s3_dsm_utils import expand_directory, get_simcore_directory
 from .utils import (
     convert_db_to_model,
     download_to_file_or_raise,
@@ -118,44 +119,6 @@ class SimcoreS3DataManager(BaseDataManager):
             uuid_filter=ensure_ends_with(dataset_id, "/"),
         )
         return data
-
-    async def _expand_directory(
-        self, fmd: FileMetaDataAtDB, max_items_to_include: NonNegativeInt
-    ) -> list[FileMetaData]:
-        """
-        Scans S3 backend and returns a list S3MetaData entries which get mapped
-        to FileMetaData entry.
-        """
-        files_in_folder: list[S3MetaData] = await get_s3_client(self.app).list_files(
-            self.simcore_bucket_name,
-            prefix=ensure_ends_with(fmd.file_id, "/"),
-            max_files_to_list=max_items_to_include,
-        )
-        result: list[FileMetaData] = [
-            convert_db_to_model(
-                FileMetaDataAtDB(
-                    location_id=fmd.location_id,
-                    location=fmd.location,
-                    bucket_name=fmd.bucket_name,
-                    object_name=x.file_id,
-                    user_id=fmd.user_id,
-                    # NOTE: to ensure users have a consistent experience the
-                    # `created_at` field is inherited from the last_modified
-                    # coming from S3. This way if a file is created 1 month after the
-                    # creation of the directory, the file's creation date
-                    # will not be 1 month in the passed.
-                    created_at=x.last_modified,
-                    file_id=x.file_id,
-                    file_size=parse_obj_as(ByteSize, x.size),
-                    last_modified=x.last_modified,
-                    entity_tag=x.e_tag,
-                    is_soft_link=False,
-                    is_directory=False,
-                )
-            )
-            for x in files_in_folder
-        ]
-        return result
 
     async def list_files(  # noqa C901
         self, user_id: UserID, *, expand_dirs: bool, uuid_filter: str = ""
@@ -213,7 +176,12 @@ class SimcoreS3DataManager(BaseDataManager):
                 ):
                     max_items_to_include = EXPAND_DIR_MAX_ITEM_COUNT - len(data)
                     data.extend(
-                        await self._expand_directory(metadata, max_items_to_include)
+                        await expand_directory(
+                            self.app,
+                            self.simcore_bucket_name,
+                            metadata,
+                            max_items_to_include,
+                        )
                     )
 
             # now parse the project to search for node/project names
@@ -544,10 +512,11 @@ class SimcoreS3DataManager(BaseDataManager):
         )
         for src_fmd in src_project_files:
             if not src_fmd.node_id or (src_fmd.location_id != self.location_id):
-                raise NotImplementedError(
-                    "This is not foreseen, stem from old decisions"
-                    f", and needs to be implemented if needed. Faulty metadata: {src_fmd=}"
+                msg = (
+                    "This is not foreseen, stem from old decisions, and needs to "
+                    f"be implemented if needed. Faulty metadata: {src_fmd=}"
                 )
+                raise NotImplementedError(msg)
 
             if new_node_id := node_mapping.get(src_fmd.node_id):
                 copy_tasks.append(
@@ -762,8 +731,7 @@ class SimcoreS3DataManager(BaseDataManager):
             # the file_meta_data table; extracting the SimcoreS3DirectoryID from
             # the file path to find it's equivalent
             directory_and_file_ids: list[SimcoreS3FileID] = file_ids + [
-                SimcoreS3FileID(self.__get_simcore_directory(file_id))
-                for file_id in file_ids
+                SimcoreS3FileID(get_simcore_directory(file_id)) for file_id in file_ids
             ]
 
             list_of_known_metadata_entries: list[
@@ -791,7 +759,7 @@ class SimcoreS3DataManager(BaseDataManager):
             file_id = SimcoreS3FileID(urllib.parse.unquote(s3_object_name))
             if (
                 file_id in known_file_names
-                or self.__get_simcore_directory(file_id) in known_directory_names
+                or get_simcore_directory(file_id) in known_directory_names
             ):
                 list_of_valid_upload_ids.append(upload_id)
 
@@ -837,20 +805,24 @@ class SimcoreS3DataManager(BaseDataManager):
             )
 
         fmd = await db_file_meta_data.get(conn, fmd.file_id)
-        if fmd.is_directory is False and s3_metadata:
+        if not fmd.is_directory and s3_metadata:
             fmd.file_size = parse_obj_as(ByteSize, s3_metadata.size)
             fmd.last_modified = s3_metadata.last_modified
             fmd.entity_tag = s3_metadata.e_tag
         fmd.upload_expires_at = None
         fmd.upload_id = None
-        updated_fmd = await db_file_meta_data.upsert(conn, convert_db_to_model(fmd))
+        updated_fmd: FileMetaDataAtDB = await db_file_meta_data.upsert(
+            conn, convert_db_to_model(fmd)
+        )
         return updated_fmd
 
     async def _update_database_from_storage_no_connection(
         self, fmd: FileMetaDataAtDB
     ) -> FileMetaDataAtDB:
         async with self.engine.acquire() as conn:
-            updated_fmd = await self._update_database_from_storage(conn, fmd)
+            updated_fmd: FileMetaDataAtDB = await self._update_database_from_storage(
+                conn, fmd
+            )
         return updated_fmd
 
     async def _copy_file_datcore_s3(
@@ -944,6 +916,7 @@ class SimcoreS3DataManager(BaseDataManager):
         user_id: UserID,
         file_id: StorageFileID,
         upload_id: UploadID | None,
+        *,
         is_directory: bool,
     ) -> FileMetaDataAtDB:
         now = datetime.datetime.utcnow()

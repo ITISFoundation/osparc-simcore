@@ -39,7 +39,7 @@
     "is_service_environment_ready": true,
     "service_removal_state": {
       "can_remove": false,
-      "can_save": null,
+      "can_save": false,
       "was_removed": false
     },
     "dynamic_sidecar_id": "sbig36r7lmciw0qvmbyjq8l87",

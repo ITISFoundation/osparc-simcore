@@ -8,7 +8,7 @@
 
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, Pattern, TypeAlias, Union
+from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias
 from uuid import UUID
 
 from pydantic import (
@@ -36,7 +36,7 @@ NodeID = UUID
 
 
 class UUIDStr(ConstrainedStr):
-    regex: Pattern[str] | None = re.compile(UUID_RE)
+    regex: re.Pattern[str] | None = re.compile(UUID_RE)
 
 
 NodeIDStr = UUIDStr
@@ -46,7 +46,7 @@ LocationName = str
 
 
 class SimcoreS3FileID(ConstrainedStr):
-    regex: Pattern[str] | None = re.compile(SIMCORE_S3_FILE_ID_RE)
+    regex: re.Pattern[str] | None = re.compile(SIMCORE_S3_FILE_ID_RE)
 
 
 class SimcoreS3DirectoryID(ConstrainedStr):
@@ -55,20 +55,24 @@ class SimcoreS3DirectoryID(ConstrainedStr):
         `{project_id}/{node_id}/simcore-dir-name/`
     """
 
-    regex: Pattern[str] | None = re.compile(SIMCORE_S3_DIRECTORY_ID_RE)
+    regex: re.Pattern[str] | None = re.compile(SIMCORE_S3_DIRECTORY_ID_RE)
 
     @staticmethod
-    def _get_parent(os_object: str, *, parent_index: int) -> Path:
+    def _get_parent(s3_object: str, *, parent_index: int) -> str:
         # NOTE: s3_object, sometimes is a directory, in that case
         # append a fake file so that the parent count still works
-        if os_object.endswith("/"):
-            os_object += "_fake_file"
+        if s3_object.endswith("/"):
+            s3_object += "__placeholder_file_when_s3_object_is_a_directory__"
 
-        parents: list[Path] = list(Path(os_object).parents)
-        if len(parents) < parent_index:
-            msg = f"Dos not have enough parents, expected {parent_index} or more"
-            raise ValueError(msg)
-        return parents[-parent_index]
+        parents: list[Path] = list(Path(s3_object).parents)
+        try:
+            return f"{parents[-parent_index]}"
+        except IndexError as err:
+            msg = (
+                f"'{s3_object}' does not have enough parents, "
+                f"expected {parent_index} found {parents}"
+            )
+            raise ValueError(msg) from err
 
     @classmethod
     def validate(cls, value: str) -> str:
@@ -76,7 +80,7 @@ class SimcoreS3DirectoryID(ConstrainedStr):
         value = value.rstrip("/")
         parent = cls._get_parent(value, parent_index=3)
 
-        directory_candidate = value.strip(f"{parent}")
+        directory_candidate = value.strip(parent)
         if "/" in directory_candidate:
             msg = f"Not allowed subdirectory found in '{directory_candidate}'"
             raise ValueError(msg)
@@ -84,15 +88,15 @@ class SimcoreS3DirectoryID(ConstrainedStr):
 
     @classmethod
     def from_simcore_s3_object(cls, s3_object: str) -> "SimcoreS3DirectoryID":
-        parent_path: Path = cls._get_parent(s3_object, parent_index=4)
+        parent_path: str = cls._get_parent(s3_object, parent_index=4)
         return parse_obj_as(cls, f"{parent_path}/")
 
 
 class DatCoreFileID(ConstrainedStr):
-    regex: Pattern[str] | None = re.compile(DATCORE_FILE_ID_RE)
+    regex: re.Pattern[str] | None = re.compile(DATCORE_FILE_ID_RE)
 
 
-StorageFileID: TypeAlias = Union[SimcoreS3FileID, DatCoreFileID]
+StorageFileID: TypeAlias = SimcoreS3FileID | DatCoreFileID
 
 
 class PortLink(BaseModel):
@@ -111,7 +115,7 @@ class PortLink(BaseModel):
 
     class Config:
         extra = Extra.forbid
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 # minimal
                 {
@@ -130,7 +134,7 @@ class DownloadLink(BaseModel):
 
     class Config:
         extra = Extra.forbid
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 # minimal
                 {
@@ -188,7 +192,8 @@ class SimCoreFileLink(BaseFileLink):
     def check_discriminator(cls, v):
         """Used as discriminator to cast to this class"""
         if v != 0:
-            raise ValueError(f"SimCore store identifier must be set to 0, got {v}")
+            msg = f"SimCore store identifier must be set to 0, got {v}"
+            raise ValueError(msg)
         return 0
 
     @validator("label", always=True, pre=True)
@@ -200,7 +205,7 @@ class SimCoreFileLink(BaseFileLink):
 
     class Config:
         extra = Extra.forbid
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "store": 0,
@@ -247,12 +252,13 @@ class DatCoreFileLink(BaseFileLink):
         """Used as discriminator to cast to this class"""
 
         if v != 1:
-            raise ValueError(f"DatCore store must be set to 1, got {v}")
+            msg = f"DatCore store must be set to 1, got {v}"
+            raise ValueError(msg)
         return 1
 
     class Config:
         extra = Extra.forbid
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     # minimal
@@ -273,4 +279,4 @@ class DatCoreFileLink(BaseFileLink):
 
 
 # Bundles all model links to a file vs PortLink
-LinkToFileTypes = Union[SimCoreFileLink, DatCoreFileLink, DownloadLink]
+LinkToFileTypes = SimCoreFileLink | DatCoreFileLink | DownloadLink
