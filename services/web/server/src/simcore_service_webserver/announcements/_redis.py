@@ -21,8 +21,12 @@ async def list_announcements(app: web.Application) -> list[Announcement]:
         try:
             announcements.append(Announcement.parse_raw(item))
         except ValidationError:  # noqa: PERF203
+            #
+            # Announcements are manually stored in redis
+            # w/o guarantees. We validate them here and skip
+            # if fail.
             _logger.exception(
-                "Announcement #%d published in redis is invalid:[=%s]", i, item
+                "Invalid announcement #%d published in redis. Skipping. [=%s]", i, item
             )
 
     return announcements
