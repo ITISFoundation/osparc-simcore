@@ -119,7 +119,7 @@ class SyncProgressLogParser(BaseRCloneLogParser):
             return
 
         to_parse = logs.split("Transferred")[-1]
-        match = re.search(r"(\d+)%", to_parse)
+        match = re.search(r"(\d{1,3})%", to_parse)
         if not match:
             return
 
