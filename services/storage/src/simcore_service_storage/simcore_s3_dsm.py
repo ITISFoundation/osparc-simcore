@@ -511,10 +511,11 @@ class SimcoreS3DataManager(BaseDataManager):
         )
         for src_fmd in src_project_files:
             if not src_fmd.node_id or (src_fmd.location_id != self.location_id):
-                raise NotImplementedError(
-                    "This is not foreseen, stem from old decisions"
-                    f", and needs to be implemented if needed. Faulty metadata: {src_fmd=}"
+                msg = (
+                    "This is not foreseen, stem from old decisions, and needs to "
+                    f"be implemented if needed. Faulty metadata: {src_fmd=}"
                 )
+                raise NotImplementedError(msg)
 
             if new_node_id := node_mapping.get(src_fmd.node_id):
                 copy_tasks.append(
