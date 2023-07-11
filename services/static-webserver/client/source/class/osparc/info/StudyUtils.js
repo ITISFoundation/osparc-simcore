@@ -162,7 +162,7 @@ qx.Class.define("osparc.info.StudyUtils", {
     },
 
     /**
-      * @param study {osparc.data.model.Study} Study Mode
+      * @param study {osparc.data.model.Study} Study Model
       * @param maxHeight {Number} description's maxHeight
       */
     createDescription: function(study, maxHeight) {
@@ -297,7 +297,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       grid.setColumnAlign(3, "left", "middle");
       grid.setRowHeight(2, 10); // spacer
       grid.setRowHeight(5, 10); // spacer
-      const moreInfoGrid = new qx.ui.container.Composite(grid);
+      const moreInfo = new qx.ui.container.Composite(grid);
 
       Object.keys(positions).forEach(key => {
         if (key in extraInfos) {
@@ -318,13 +318,13 @@ qx.Class.define("osparc.info.StudyUtils", {
               }
             }, this);
           }
-          moreInfoGrid.add(titleLayout, {
+          moreInfo.add(titleLayout, {
             row: gridInfo.row,
             column: gridInfo.column,
             colSpan: gridInfo.colSpan ? gridInfo.colSpan : 1
           });
 
-          moreInfoGrid.add(extraInfo.view, {
+          moreInfo.add(extraInfo.view, {
             row: gridInfo.row+1,
             column: gridInfo.column,
             colSpan: gridInfo.colSpan ? gridInfo.colSpan : 1,
@@ -333,7 +333,7 @@ qx.Class.define("osparc.info.StudyUtils", {
         }
       });
 
-      return moreInfoGrid;
+      return moreInfo;
     },
 
     /**
