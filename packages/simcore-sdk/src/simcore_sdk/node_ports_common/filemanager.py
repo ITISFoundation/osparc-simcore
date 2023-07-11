@@ -258,14 +258,14 @@ async def download_path_from_s3(
                 download_s3_link=parse_obj_as(AnyUrl, download_link),
             )
             return local_folder
-        else:
-            return await download_file_from_link(
-                download_link,
-                local_folder,
-                client_session=session,
-                io_log_redirect_cb=io_log_redirect_cb,
-                progress_bar=progress_bar,
-            )
+
+        return await download_file_from_link(
+            download_link,
+            local_folder,
+            client_session=session,
+            io_log_redirect_cb=io_log_redirect_cb,
+            progress_bar=progress_bar,
+        )
 
 
 async def download_file_from_link(
