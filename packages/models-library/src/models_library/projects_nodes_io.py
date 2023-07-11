@@ -8,7 +8,7 @@
 
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, ClassVar, TypeAlias
+from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias
 from uuid import UUID
 
 from pydantic import (
@@ -115,7 +115,7 @@ class PortLink(BaseModel):
 
     class Config:
         extra = Extra.forbid
-        schema_extra: ClassVar[dict] = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 # minimal
                 {
@@ -134,7 +134,7 @@ class DownloadLink(BaseModel):
 
     class Config:
         extra = Extra.forbid
-        schema_extra: ClassVar[dict] = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 # minimal
                 {
@@ -205,7 +205,7 @@ class SimCoreFileLink(BaseFileLink):
 
     class Config:
         extra = Extra.forbid
-        schema_extra: ClassVar[dict] = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "store": 0,
@@ -258,7 +258,7 @@ class DatCoreFileLink(BaseFileLink):
 
     class Config:
         extra = Extra.forbid
-        schema_extra: ClassVar[dict] = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     # minimal
