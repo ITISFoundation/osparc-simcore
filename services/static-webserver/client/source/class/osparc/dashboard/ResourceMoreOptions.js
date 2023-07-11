@@ -539,6 +539,14 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const title = this.tr("Boot Options");
       const icon = "@FontAwesome5Solid/play-circle";
       const servicesBootOpts = new osparc.component.metadata.ServicesInStudyBootOpts(resourceData);
+      servicesBootOpts.addListener("updateService", e => {
+        const updatedData = e.getData();
+        if (osparc.utils.Resources.isStudy(resourceData)) {
+          this.fireDataEvent("updateStudy", updatedData);
+        } else if (osparc.utils.Resources.isTemplate(resourceData)) {
+          this.fireDataEvent("updateTemplate", updatedData);
+        }
+      });
       const page = this.self().createPage(title, servicesBootOpts, icon, id);
       return page;
     },
