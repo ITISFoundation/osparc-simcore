@@ -61,7 +61,7 @@ qx.Class.define("osparc.component.notification.RibbonNotifications", {
         gap: 10
       });
       notificationAtom.getChildControl("label").set({
-        textColor: notification.getType() === "announcement" ? "strong-text" : "black",
+        textColor: notification.getType() === "announcement" ? "white" : "black",
         font: "text-14",
         rich: true,
         wrap: true,
@@ -75,7 +75,7 @@ qx.Class.define("osparc.component.notification.RibbonNotifications", {
       if (notification.getClosable()) {
         const closeButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/times/12").set({
           backgroundColor: "transparent",
-          textColor: notification.getType() === "announcement" ? "strong-text" : "black"
+          textColor: notification.getType() === "announcement" ? "white" : "black"
         });
         closeButton.addListener("tap", () => this.removeNotification(notification), this);
         notificationLayout.add(closeButton);
@@ -96,6 +96,8 @@ qx.Class.define("osparc.component.notification.RibbonNotifications", {
     __updateRibbon: function() {
       this._removeAll();
       const notifications = this.__notifications;
+      // sort notifications
+      notifications.sort((a, _) => (a.getType() === "announcement" ? 1 : -1));
       if (notifications.length) {
         this.show();
         notifications.forEach(notification => {
