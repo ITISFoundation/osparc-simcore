@@ -71,6 +71,7 @@ async def list_filter_with_partial_file_id(
     project_ids: list[ProjectID],
     file_id_prefix: str | None,
     partial_file_id: str | None,
+    only_files: bool,
 ) -> list[FileMetaDataAtDB]:
     stmt = sa.select(file_meta_data).where(
         (
@@ -85,6 +86,11 @@ async def list_filter_with_partial_file_id(
         & (
             file_meta_data.c.file_id.ilike(f"%{partial_file_id}%")
             if partial_file_id
+            else True
+        )
+        & (
+            file_meta_data.c.is_directory.is_(False)  # noqa FBT003
+            if only_files
             else True
         )
     )

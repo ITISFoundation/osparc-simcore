@@ -10,20 +10,25 @@ import asyncio
 import datetime
 import urllib.parse
 from pathlib import Path
-from typing import Awaitable, Callable, Optional
+from typing import Awaitable, Callable, Final
 
 import pytest
 from aiopg.sa.engine import Engine
 from faker import Faker
 from models_library.api_schemas_storage import LinkType
-from models_library.projects_nodes_io import SimcoreS3FileID
+from models_library.projects_nodes_io import SimcoreS3DirectoryID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, parse_obj_as
 from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage import db_file_meta_data
 from simcore_service_storage.exceptions import FileMetaDataNotFoundError
-from simcore_service_storage.models import FileMetaData, S3BucketName
+from simcore_service_storage.models import (
+    FileMetaData,
+    MultiPartUploadLinks,
+    S3BucketName,
+    UploadID,
+)
 from simcore_service_storage.s3_client import StorageS3Client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
@@ -34,6 +39,11 @@ pytest_simcore_ops_services_selection = ["adminer"]
 @pytest.fixture
 def disabled_dsm_cleaner_task(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("STORAGE_CLEANER_INTERVAL_S", "0")
+
+
+@pytest.fixture
+def simcore_directory_id(simcore_file_id: SimcoreS3FileID) -> SimcoreS3FileID:
+    return SimcoreS3FileID(SimcoreS3DirectoryID.from_simcore_s3_object(simcore_file_id))
 
 
 async def test_clean_expired_uploads_aborts_dangling_multipart_uploads(
@@ -74,25 +84,35 @@ async def test_clean_expired_uploads_aborts_dangling_multipart_uploads(
     ids=byte_size_ids,
 )
 @pytest.mark.parametrize("link_type", [LinkType.S3, LinkType.PRESIGNED])
+@pytest.mark.parametrize("is_directory", [True, False])
 async def test_clean_expired_uploads_deletes_expired_pending_uploads(
     disabled_dsm_cleaner_task,
     aiopg_engine: Engine,
     simcore_s3_dsm: SimcoreS3DataManager,
     simcore_file_id: SimcoreS3FileID,
+    simcore_directory_id: SimcoreS3FileID,
     user_id: UserID,
     link_type: LinkType,
     file_size: ByteSize,
+    is_directory: bool,
     storage_s3_client: StorageS3Client,
     storage_s3_bucket: S3BucketName,
 ):
     """In this test we create valid upload links and check that once
     expired they get properly deleted"""
+
+    file_or_directory_id = simcore_directory_id if is_directory else simcore_file_id
+
     await simcore_s3_dsm.create_file_upload_links(
-        user_id, simcore_file_id, link_type, file_size
+        user_id,
+        file_or_directory_id,
+        link_type,
+        file_size,
+        is_directory=is_directory,
     )
     # ensure the database is correctly set up
     async with aiopg_engine.acquire() as conn:
-        fmd = await db_file_meta_data.get(conn, simcore_file_id)
+        fmd = await db_file_meta_data.get(conn, file_or_directory_id)
     assert fmd
     assert fmd.upload_expires_at
     # ensure we have now an upload id IF the link was presigned ONLY
@@ -108,7 +128,7 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
     await simcore_s3_dsm.clean_expired_uploads()
     # check the entries are still the same
     async with aiopg_engine.acquire() as conn:
-        fmd_after_clean = await db_file_meta_data.get(conn, simcore_file_id)
+        fmd_after_clean = await db_file_meta_data.get(conn, file_or_directory_id)
     assert fmd_after_clean == fmd
     assert (
         await storage_s3_client.list_ongoing_multipart_uploads(storage_s3_bucket)
@@ -119,7 +139,7 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
     async with aiopg_engine.acquire() as conn:
         await conn.execute(
             file_meta_data.update()
-            .where(file_meta_data.c.file_id == simcore_file_id)
+            .where(file_meta_data.c.file_id == file_or_directory_id)
             .values(upload_expires_at=datetime.datetime.utcnow())
         )
     await asyncio.sleep(1)
@@ -142,7 +162,7 @@ async def test_clean_expired_uploads_deletes_expired_pending_uploads(
 async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pending_uploads(
     disabled_dsm_cleaner_task,
     upload_file: Callable[
-        [ByteSize, str, Optional[SimcoreS3FileID]],
+        [ByteSize, str, SimcoreS3FileID | None],
         Awaitable[tuple[Path, SimcoreS3FileID]],
     ],
     aiopg_engine: Engine,
@@ -163,7 +183,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
 
     # now create a new link to the VERY SAME FILE UUID
     await simcore_s3_dsm.create_file_upload_links(
-        user_id, file_id, link_type, file_size
+        user_id, file_id, link_type, file_size, is_directory=False
     )
     # ensure the database is correctly set up
     async with aiopg_engine.acquire() as conn:
@@ -218,48 +238,74 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
     [parse_obj_as(ByteSize, "100Mib")],
     ids=byte_size_ids,
 )
+@pytest.mark.parametrize("is_directory", [True, False])
 async def test_clean_expired_uploads_does_not_clean_multipart_upload_on_creation(
     disabled_dsm_cleaner_task,
     aiopg_engine: Engine,
     simcore_s3_dsm: SimcoreS3DataManager,
     simcore_file_id: SimcoreS3FileID,
+    simcore_directory_id: SimcoreS3FileID,
     user_id: UserID,
     file_size: ByteSize,
+    is_directory: bool,
     storage_s3_client: StorageS3Client,
     storage_s3_bucket: S3BucketName,
 ):
     """This test reproduces what create_file_upload_links in dsm does, but running
     the cleaner in between to ensure the cleaner does not break the mechanism"""
+
+    file_or_directory_id = simcore_directory_id if is_directory else simcore_file_id
     later_than_now = datetime.datetime.utcnow() + datetime.timedelta(minutes=5)
     fmd = FileMetaData.from_simcore_node(
         user_id,
-        simcore_file_id,
+        file_or_directory_id,
         storage_s3_bucket,
         simcore_s3_dsm.location_id,
         simcore_s3_dsm.location_name,
         upload_expires_at=later_than_now,
+        is_directory=is_directory,
     )
     # we create the entry in the db
     async with aiopg_engine.acquire() as conn:
         await db_file_meta_data.upsert(conn, fmd)
 
         # ensure the database is correctly set up
-        fmd_in_db = await db_file_meta_data.get(conn, simcore_file_id)
+        fmd_in_db = await db_file_meta_data.get(conn, file_or_directory_id)
     assert fmd_in_db
     assert fmd_in_db.upload_expires_at
     # we create the multipart upload link
-    upload_links = await storage_s3_client.create_multipart_upload_links(
-        storage_s3_bucket, simcore_file_id, file_size, expiration_secs=3600
+
+    # NOTE: generating more that 1 file since the previous implementation of the
+    # _clean_dangling_multipart_uploads was working with 1 file in the directory,
+    # adding multiple files broke it!
+    FILES_IN_DIR: Final[int] = 5
+
+    file_ids_to_upload: set[SimcoreS3FileID] = (
+        {SimcoreS3FileID(f"{file_or_directory_id}file{x}") for x in range(FILES_IN_DIR)}
+        if is_directory
+        else {simcore_file_id}
     )
 
+    upload_links_list: list[MultiPartUploadLinks] = [
+        await storage_s3_client.create_multipart_upload_links(
+            storage_s3_bucket, file_id, file_size, expiration_secs=3600
+        )
+        for file_id in file_ids_to_upload
+    ]
+    started_multipart_uploads_upload_id: set[str] = {
+        x.upload_id for x in upload_links_list
+    }
+    assert len(started_multipart_uploads_upload_id) == len(file_ids_to_upload)
+
     # ensure we have now an upload id
-    all_ongoing_uploads = await storage_s3_client.list_ongoing_multipart_uploads(
-        storage_s3_bucket
-    )
-    assert len(all_ongoing_uploads) == 1
-    ongoing_upload_id, ongoing_file_id = all_ongoing_uploads[0]
-    assert upload_links.upload_id == ongoing_upload_id
-    assert urllib.parse.unquote(ongoing_file_id) == simcore_file_id
+    all_ongoing_uploads: list[
+        tuple[UploadID, SimcoreS3FileID]
+    ] = await storage_s3_client.list_ongoing_multipart_uploads(storage_s3_bucket)
+    assert len(all_ongoing_uploads) == len(file_ids_to_upload)
+
+    for ongoing_upload_id, ongoing_file_id in all_ongoing_uploads:
+        assert ongoing_upload_id in started_multipart_uploads_upload_id
+        assert urllib.parse.unquote(ongoing_file_id) in file_ids_to_upload
 
     # now cleanup, we do not have an explicit upload_id in the database yet
     await simcore_s3_dsm.clean_expired_uploads()
@@ -268,7 +314,7 @@ async def test_clean_expired_uploads_does_not_clean_multipart_upload_on_creation
     all_ongoing_uploads_after_clean = (
         await storage_s3_client.list_ongoing_multipart_uploads(storage_s3_bucket)
     )
-    assert len(all_ongoing_uploads_after_clean) == 1
+    assert len(all_ongoing_uploads_after_clean) == len(file_ids_to_upload)
     assert all_ongoing_uploads == all_ongoing_uploads_after_clean
 
 

@@ -135,3 +135,9 @@ async def logged_gather(
         raise error
 
     return results
+
+
+def ensure_ends_with(input_string: str, char: str) -> str:
+    if not input_string.endswith(char):
+        input_string += char
+    return input_string

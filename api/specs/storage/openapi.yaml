@@ -25,7 +25,7 @@ paths:
       tags:
       - datasets
       summary: Get datasets metadata
-      description: Returns the list of dataset meta-datas
+      description: returns all the top level datasets a user has access to
       operationId: get_datasets_metadata
       parameters:
       - required: true
@@ -54,7 +54,7 @@ paths:
       tags:
       - datasets
       summary: Get Files Metadata
-      description: list of file meta-datas
+      description: returns all the file meta data inside dataset with dataset_id
       operationId: get_files_metadata_dataset
       parameters:
       - required: true
@@ -76,6 +76,17 @@ paths:
           type: integer
           minimum: 0
         name: user_id
+        in: query
+      - description: Automatic directory expansion. This will be replaced by pagination
+          the future
+        required: false
+        schema:
+          title: Expand Dirs
+          type: boolean
+          description: Automatic directory expansion. This will be replaced by pagination
+            the future
+          default: true
+        name: expand_dirs
         in: query
       responses:
         '200':
@@ -151,7 +162,8 @@ paths:
       tags:
       - files
       summary: Get datasets metadata
-      description: list of file meta-datas
+      description: returns all the file meta data a user has access to (uuid_filter
+        may be used)
       operationId: get_files_metadata
       parameters:
       - required: true
@@ -167,6 +179,17 @@ paths:
           default: ''
         name: uuid_filter
         in: query
+      - description: Automatic directory expansion. This will be replaced by pagination
+          the future
+        required: false
+        schema:
+          title: Expand Dirs
+          type: boolean
+          description: Automatic directory expansion. This will be replaced by pagination
+            the future
+          default: true
+        name: expand_dirs
+        in: query
       responses:
         '200':
           description: Successful Response
@@ -179,6 +202,8 @@ paths:
       tags:
       - files
       summary: Get File Metadata
+      description: returns the file meta data of file_id if user_id has the rights
+        to
       operationId: get_file_metadata
       parameters:
       - required: true
@@ -220,7 +245,7 @@ paths:
       tags:
       - files
       summary: Returns download link for requested file
-      description: Returns a presigned link
+      description: creates a download file link if user has the rights to
       operationId: download_file
       parameters:
       - required: true
@@ -265,7 +290,8 @@ paths:
       tags:
       - files
       summary: Returns upload link
-      description: Return upload object
+      description: creates one or more upload file links if user has the rights to,
+        expects the client to complete/abort upload
       operationId: upload_file
       parameters:
       - required: true
@@ -318,6 +344,7 @@ paths:
       tags:
       - files
       summary: Deletes File
+      description: deletes file if user has the rights to
       operationId: delete_file
       parameters:
       - required: true
@@ -352,8 +379,9 @@ paths:
       tags:
       - files
       summary: Abort Upload File
-      description: Asks the server to abort the upload and revert to the last valid
-        version if any
+      description: 'aborts an upload if user has the rights to, and reverts
+
+        to the latest version if available, else will delete the file'
       operationId: abort_upload_file
       parameters:
       - required: true
@@ -388,7 +416,7 @@ paths:
       tags:
       - files
       summary: Complete Upload File
-      description: Asks the server to complete the upload
+      description: completes an upload if the user has the rights to
       operationId: complete_upload_file
       parameters:
       - required: true
@@ -492,6 +520,7 @@ paths:
       tags:
       - health
       summary: returns the status of the services inside
+      description: returns the status of all the external dependencies
       operationId: get_status
       responses:
         '200':
@@ -505,6 +534,7 @@ paths:
       tags:
       - files
       summary: copy file as soft link
+      description: creates and returns a soft link
       operationId: copy_as_soft_link
       parameters:
       - required: true
@@ -543,6 +573,7 @@ paths:
       tags:
       - simcore-s3
       summary: gets or creates the a temporary access
+      description: returns a set of S3 credentials
       operationId: get_or_create_temporary_s3_access
       parameters:
       - required: true
@@ -565,6 +596,7 @@ paths:
       tags:
       - simcore-s3
       summary: copies folders from project
+      description: copies folders from project
       operationId: copy_folders_from_project
       parameters:
       - required: true
@@ -593,6 +625,7 @@ paths:
       tags:
       - simcore-s3
       summary: delete folders from project
+      description: removes folders from a project
       operationId: delete_folders_of_project
       parameters:
       - required: true
@@ -624,6 +657,8 @@ paths:
       tags:
       - simcore-s3
       summary: search for files starting with
+      description: search for files starting with `startswith` in the file_meta_data
+        table
       operationId: search_files_starting_with
       parameters:
       - required: true
@@ -653,6 +688,7 @@ paths:
       tags:
       - tasks
       summary: list current long running tasks
+      description: list current long running tasks
       operationId: list_tasks
       responses:
         '200':
@@ -666,6 +702,7 @@ paths:
       tags:
       - tasks
       summary: gets the status of the task
+      description: gets the status of the task
       operationId: get_task_status
       parameters:
       - required: true
@@ -685,6 +722,7 @@ paths:
       tags:
       - tasks
       summary: cancels and removes the task
+      description: cancels and removes the task
       operationId: cancel_and_delete_task
       parameters:
       - required: true
@@ -701,6 +739,7 @@ paths:
       tags:
       - tasks
       summary: get result of the task
+      description: get result of the task
       operationId: get_task_result
       parameters:
       - required: true
@@ -975,6 +1014,11 @@ components:
           description: If true, this file is a soft link.i.e. is another entry with
             the same object_name
           default: false
+        is_directory:
+          title: Is Directory
+          type: boolean
+          description: if True this is a directory
+          default: false
         upload_id:
           title: Upload Id
           type: string
@@ -1069,6 +1113,11 @@ components:
           type: boolean
           description: If true, this file is a soft link.i.e. is another entry with
             the same object_name
+          default: false
+        is_directory:
+          title: Is Directory
+          type: boolean
+          description: if True this is a directory
           default: false
       additionalProperties: false
     FileUploadCompleteFutureResponse:
