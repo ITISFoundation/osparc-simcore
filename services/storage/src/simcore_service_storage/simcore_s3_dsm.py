@@ -17,7 +17,6 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import (
     LocationID,
     NodeID,
-    SimcoreS3DirectoryID,
     SimcoreS3FileID,
     StorageFileID,
 )
@@ -686,14 +685,6 @@ class SimcoreS3DataManager(BaseDataManager):
                 "pending/incomplete uploads of [%s] removed",
                 [fmd.file_id for fmd in list_of_fmds_to_delete],
             )
-
-    @staticmethod
-    def __get_simcore_directory(file_id: SimcoreS3FileID) -> str:
-        try:
-            directory_id = SimcoreS3DirectoryID.from_simcore_s3_object(file_id)
-        except ValueError:
-            return ""
-        return f"{directory_id}"
 
     async def _clean_dangling_multipart_uploads(self):
         """this method removes any dangling multipart upload that
