@@ -1,7 +1,7 @@
 """refactoring of resource_tracker_container table
 
 Revision ID: cd53975abda2
-Revises: f3285aff5e84
+Revises: a8762d5d43ae
 Create Date: 2023-07-10 17:15:34.126749+00:00
 
 """
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = "cd53975abda2"
-down_revision = "f3285aff5e84"
+down_revision = "a8762d5d43ae"
 branch_labels = None
 depends_on = None
 
