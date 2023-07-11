@@ -41,7 +41,7 @@ qx.Class.define("osparc.AnnouncementsTracker", {
       {
         "id": "TIP_v2",
         "products": ["tis"],
-        "start": "2023-07-22T15:00:00.000Z",
+        "start": "2023-07-10T15:00:00.000Z",
         "end": "2023-08-01T02:00:00.000Z",
         "title": "TIP v2",
         "description": "For more information click <a href='https://itis.swiss/tools-and-systems/ti-planning/' style='color: white' target='_blank'>here</a>",
