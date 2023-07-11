@@ -8,10 +8,10 @@ from settings_library.redis import RedisDatabase, RedisSettings
 
 from ._constants import APP_SETTINGS_KEY
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
-APP_REDIS_CLIENTS_MANAGER = f"{__name__}.redis_clients_manager"
+_APP_REDIS_CLIENTS_MANAGER = f"{__name__}.redis_clients_manager"
 
 
 # SETTINGS --------------------------------------------------------------------------
@@ -31,13 +31,14 @@ async def setup_redis_client(app: web.Application):
     raises builtin ConnectionError
     """
     redis_settings: RedisSettings = get_plugin_settings(app)
-    app[APP_REDIS_CLIENTS_MANAGER] = manager = RedisClientsManager(
+    app[_APP_REDIS_CLIENTS_MANAGER] = manager = RedisClientsManager(
         databases={
             RedisDatabase.RESOURCES,
             RedisDatabase.LOCKS,
             RedisDatabase.VALIDATION_CODES,
             RedisDatabase.SCHEDULED_MAINTENANCE,
             RedisDatabase.USER_NOTIFICATIONS,
+            RedisDatabase.ANNOUNCEMENTS,
         },
         settings=redis_settings,
     )
@@ -50,7 +51,7 @@ async def setup_redis_client(app: web.Application):
 
 
 def _get_redis_client(app: web.Application, database: RedisDatabase) -> RedisClientSDK:
-    redis_client: RedisClientsManager = app[APP_REDIS_CLIENTS_MANAGER]
+    redis_client: RedisClientsManager = app[_APP_REDIS_CLIENTS_MANAGER]
     return redis_client.client(database)
 
 
@@ -90,11 +91,18 @@ def get_redis_user_notifications_client(app: web.Application) -> aioredis.Redis:
     return redis_client
 
 
+def get_redis_announcements_client(app: web.Application) -> aioredis.Redis:
+    redis_client: aioredis.Redis = _get_redis_client(
+        app, RedisDatabase.ANNOUNCEMENTS
+    ).redis
+    return redis_client
+
+
 # PLUGIN SETUP --------------------------------------------------------------------------
 
 
 @app_module_setup(
-    __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_REDIS", logger=log
+    __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_REDIS", logger=_logger
 )
 def setup_redis(app: web.Application):
     app.cleanup_ctx.append(setup_redis_client)
