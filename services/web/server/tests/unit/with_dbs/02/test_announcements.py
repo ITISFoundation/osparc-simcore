@@ -6,17 +6,19 @@
 
 
 import json
-from typing import Any
+from typing import Any, AsyncIterator
 
 import pytest
+import redis.asyncio as aioredis
 import simcore_service_webserver.announcements._models
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from pydantic import BaseModel
+from pydantic import BaseModel, parse_obj_as
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.pydantic_models import iter_model_examples_in_module
+from simcore_service_webserver.announcements._redis import _REDISKEYNAME, Announcement
 
 
 @pytest.fixture
@@ -58,3 +60,24 @@ async def test_list_announcements(client: TestClient):
     assert data == []
 
     # TODO: inject announcement in redis
+
+
+@pytest.fixture
+async def fake_announcements(
+    redis_client: aioredis.Redis, count: int
+) -> AsyncIterator[list[Announcement]]:
+    announcements = parse_obj_as(
+        list[Announcement], Announcement.Config.schema_extra["examples"]
+    )
+    for example in announcements:
+        await redis_client.lpush(_REDISKEYNAME, example)
+
+    yield announcements
+
+    await redis_client.flushall()
+
+
+async def test_list_announcements_for_product_and_not_expired(
+    client: TestClient, fake_announcements: list[Announcement]
+):
+    assert fake_announcements
