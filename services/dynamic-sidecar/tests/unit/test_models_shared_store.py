@@ -1,6 +1,8 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
+import json
+import sys
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -17,6 +19,8 @@ from simcore_service_dynamic_sidecar.models.shared_store import (
     STORE_FILE_NAME,
     SharedStore,
 )
+
+CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
 @pytest.fixture
@@ -105,3 +109,18 @@ async def test_no_concurrency_with_parallel_writes(
         *(replace_list_in_shared_store(f"{x}") for x in range(PARALLEL_CHANGES))
     )
     assert len(shared_store.container_names) == PARALLEL_CHANGES
+
+
+async def test_data_format():
+    MOCKS_DIR = CURRENT_DIR / ".." / "mocks"
+    LEGACY_SHARED_STORE = "legacy_shared_store.json"
+
+    results = await SharedStore.init_from_disk(
+        MOCKS_DIR, store_file_name=LEGACY_SHARED_STORE
+    )
+    # if file is missing it correctly loaded the storage_file
+    assert (MOCKS_DIR / STORE_FILE_NAME).exists() is False
+
+    assert json.loads(results.json()) == json.loads(
+        (MOCKS_DIR / LEGACY_SHARED_STORE).read_text()
+    )
