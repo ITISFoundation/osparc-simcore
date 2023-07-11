@@ -347,7 +347,6 @@ async def get_file_meta_data(
 async def create_upload_file_link_v1(
     client: TestClient, user_id: UserID, location_id: LocationID
 ) -> AsyncIterator[Callable[..., Awaitable[PresignedLink]]]:
-
     file_params: list[tuple[UserID, int, SimcoreS3FileID]] = []
 
     async def _link_creator(file_id: SimcoreS3FileID, **query_kwargs) -> PresignedLink:
@@ -395,7 +394,6 @@ async def create_upload_file_link_v1(
 async def create_upload_file_link_v2(
     client: TestClient, user_id: UserID, location_id: LocationID
 ) -> AsyncIterator[Callable[..., Awaitable[FileUploadSchema]]]:
-
     file_params: list[tuple[UserID, int, SimcoreS3FileID]] = []
 
     async def _link_creator(

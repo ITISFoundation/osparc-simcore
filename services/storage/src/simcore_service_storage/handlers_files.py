@@ -64,6 +64,7 @@ async def get_files_metadata(request: web.Request) -> web.Response:
     dsm = get_dsm_provider(request.app).get(path_params.location_id)
     data: list[FileMetaData] = await dsm.list_files(
         user_id=query_params.user_id,
+        expand_dirs=query_params.expand_dirs,
         uuid_filter=query_params.uuid_filter,
     )
     return web.json_response(
@@ -167,6 +168,7 @@ async def upload_file(request: web.Request) -> web.Response:
     Use-case v1.1: if query.link_type=presigned or None, returns a presigned link (limited to a single 5GB file)
     Use-case v1.2: if query.link_type=s3, returns a s3 direct link (limited to a single 5TB file)
 
+    User-case v2: query.is_directory is True (query.file_size is forced to -1), returns an s3 path where to upload all the content of the directory
     User-case v2: if query.file_size is defined, returns a FileUploadSchema model, expects client to call "complete_upload" when the file is finished uploading
     Use-case v2.1: if query.file_size == 0 and query.link_type=presigned or None, returns a single presigned link inside FileUploadSchema (limited to a single 5Gb file)
     Use-case v2.2: if query.file_size > 0 and query.link_type=presigned or None, returns 1 or more presigned links depending on the file size (limited to a single 5TB file)
@@ -185,8 +187,9 @@ async def upload_file(request: web.Request) -> web.Response:
         file_id=path_params.file_id,
         link_type=query_params.link_type,
         file_size_bytes=query_params.file_size or ByteSize(0),
+        is_directory=query_params.is_directory,
     )
-    if query_params.file_size is None:
+    if query_params.file_size is None and not query_params.is_directory:
         # return v1 response
         assert len(links.urls) == 1  # nosec
         return web.json_response(
