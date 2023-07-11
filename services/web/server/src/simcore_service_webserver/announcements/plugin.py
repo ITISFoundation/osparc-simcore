@@ -9,6 +9,7 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 
 from .._constants import APP_SETTINGS_KEY
 from ..redis import setup_redis
+from . import _handlers
 
 _logger = logging.getLogger(__name__)
 
@@ -23,3 +24,5 @@ def setup_announcements(app: web.Application):
     assert app[APP_SETTINGS_KEY].WEBSERVER_ANNOUNCEMENTS  # nosec
 
     setup_redis(app)
+
+    app.router.add_routes(_handlers.routes)
