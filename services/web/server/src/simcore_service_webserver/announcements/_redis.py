@@ -13,20 +13,32 @@ from ._models import Announcement
 _logger = logging.getLogger(__name__)
 
 
-async def list_announcements(app: web.Application) -> list[Announcement]:
+async def list_announcements(
+    app: web.Application, *, include_with_product_name: str, exclude_expired: bool
+) -> list[Announcement]:
     redis_client: aioredis.Redis = get_redis_announcements_client(app)
     published = await redis_client.get(name="announcements") or []
     announcements = []
     for i, item in enumerate(published):
         try:
-            announcements.append(Announcement.parse_raw(item))
+            model = Announcement.parse_raw(item)
+            # filters
+            if include_with_product_name not in model.products:
+                break
+            if exclude_expired and model.expired():
+                break
+            # OK
+            announcements.append(model)
         except ValidationError:  # noqa: PERF203
             #
-            # Announcements are manually stored in redis
-            # w/o guarantees. We validate them here and skip
-            # if fail.
+            # At this moment `announcements` are manually stored in redis db 6  w/o guarantees
+            # Here we validate them and log a big-fat error if there is something wrong
+            # Invalid announcements are not passed to the front-end
+            #
             _logger.exception(
-                "Invalid announcement #%d published in redis. Skipping. [=%s]", i, item
+                "Invalid announcement #%d published *by hand* in redis. Please check. Skipping. [=%s]",
+                i,
+                item,
             )
 
     return announcements
