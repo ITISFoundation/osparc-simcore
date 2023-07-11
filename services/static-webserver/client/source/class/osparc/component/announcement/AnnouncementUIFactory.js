@@ -102,10 +102,16 @@ qx.Class.define("osparc.component.announcement.AnnouncementUIFactory", {
 
     addRibbonAnnouncement: function() {
       const announcement = this.getAnnouncement();
+
+      if (osparc.utils.Utils.localCache.isDontShowAnnouncement(announcement.getId())) {
+        return;
+      }
+
       let text = announcement.getTitle() + ": ";
       text += announcement.getDescription();
 
       const ribbonNotification = new osparc.component.notification.RibbonNotification(text, "announcement", true);
+      ribbonNotification.announcementId = announcement.getId();
       osparc.component.notification.RibbonNotifications.getInstance().addNotification(ribbonNotification);
     },
 

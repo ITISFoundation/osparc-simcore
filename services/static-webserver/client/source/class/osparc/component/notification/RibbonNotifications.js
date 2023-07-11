@@ -39,14 +39,17 @@ qx.Class.define("osparc.component.notification.RibbonNotifications", {
     __notifications: null,
 
     /**
-     * @param {osparc.component.notification.Notification} notification
+     * @param {osparc.component.notification.RibbonNotification} notification
      */
     addNotification: function(notification) {
       this.__notifications.push(notification);
       this.__updateRibbon();
     },
 
-    createNotificationUI: function(notification) {
+    /**
+     * @param {osparc.component.notification.RibbonNotification} notification
+     */
+    __createNotificationUI: function(notification) {
       const notificationLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5, "center")).set({
         backgroundColor: notification.getType() === "announcement" ? "strong-main" : "warning-yellow-s4l",
         allowGrowX: true
@@ -94,8 +97,9 @@ qx.Class.define("osparc.component.notification.RibbonNotifications", {
         });
         osparc.utils.Utils.addBorder(dontShowButton, 1, qx.theme.manager.Color.getInstance().resolve("strong-text"));
         dontShowButton.addListener("tap", () => {
-          console.log("Hallo");
-        }, this);
+          this.removeNotification(notification);
+          osparc.utils.Utils.localCache.setDontShowAnnouncement(notification.announcementId);
+        });
         notificationLayout.add(dontShowButton);
       }
 
@@ -120,7 +124,7 @@ qx.Class.define("osparc.component.notification.RibbonNotifications", {
       if (notifications.length) {
         this.show();
         notifications.forEach(notification => {
-          const notificationUI = this.createNotificationUI(notification);
+          const notificationUI = this.__createNotificationUI(notification);
           this._add(notificationUI);
         });
       } else {
