@@ -1,6 +1,7 @@
 """ Repository layer using redis
 """
 
+import json
 import logging
 
 import redis.asyncio as aioredis
@@ -12,18 +13,33 @@ from ._models import Announcement
 
 _logger = logging.getLogger(__name__)
 
-_REDISKEYNAME = "announcements"
+_REDIS_KEYNAME = "public"
+#
+# At this moment `announcements` are manually stored in redis db 6  w/o guarantees
+# Here we validate them and log a big-fat error if there is something wrong
+# Invalid announcements are not passed to the front-end
+#
+_MSG_REDIS_ERROR = f"Invalid announcements[{_REDIS_KEYNAME}] in redis. Please check values introduced *by hand*. Skipping"
 
 
 async def list_announcements(
     app: web.Application, *, include_product: str, exclude_expired: bool
 ) -> list[Announcement]:
-    redis_client: aioredis.Redis = get_redis_announcements_client(app)
-    published = await redis_client.get(name=_REDISKEYNAME) or []
+    # get
+    try:
+        redis_client: aioredis.Redis = get_redis_announcements_client(app)
+        stored: str = await redis_client.get(name=_REDIS_KEYNAME) or "[]"
+        published = json.loads(stored)
+    except json.decoder.JSONDecodeError:
+        _logger.exception(_MSG_REDIS_ERROR)
+        return []
+
+    # validate
+    assert isinstance(published, list)
     announcements = []
     for i, item in enumerate(published):
         try:
-            model = Announcement.parse_raw(item)
+            model = Announcement.parse_obj(item)
             # filters
             if include_product not in model.products:
                 break
@@ -32,13 +48,9 @@ async def list_announcements(
             # OK
             announcements.append(model)
         except ValidationError:  # noqa: PERF203
-            #
-            # At this moment `announcements` are manually stored in redis db 6  w/o guarantees
-            # Here we validate them and log a big-fat error if there is something wrong
-            # Invalid announcements are not passed to the front-end
-            #
             _logger.exception(
-                "Invalid announcement #%d published *by hand* in redis. Please check. Skipping. [=%s]",
+                "%s. Check item[%d]=%s",
+                _MSG_REDIS_ERROR,
                 i,
                 item,
             )

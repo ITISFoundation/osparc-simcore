@@ -18,7 +18,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.pydantic_models import iter_model_examples_in_module
-from simcore_service_webserver.announcements._redis import _REDISKEYNAME, Announcement
+from simcore_service_webserver.announcements._redis import _REDIS_KEYNAME, Announcement
 
 
 @pytest.fixture
@@ -64,20 +64,53 @@ async def test_list_announcements(client: TestClient):
 
 @pytest.fixture
 async def fake_announcements(
-    redis_client: aioredis.Redis, count: int
-) -> AsyncIterator[list[Announcement]]:
-    announcements = parse_obj_as(
-        list[Announcement], Announcement.Config.schema_extra["examples"]
-    )
-    for example in announcements:
-        await redis_client.lpush(_REDISKEYNAME, example)
+    redis_client: aioredis.Redis,
+) -> AsyncIterator[list[dict[str, Any]]]:
+    value = """[
+    {
+        "id": "Student_Competition_2023",ff
+        "products": [
+        "s4llite",
+        "osparc"
+        ],
+        "start": "2023-06-22T15:00:00.000Z",
+        "end": "2023-11-01T02:00:00.000Z",
+        "title": "Student Competition 2023",
+        "description": "For more information click <a href='https://zmt.swiss/news-and-events/news/sim4life/s4llite-student-competition-2023/' style='color: white' target='_blank'>here</a>",
+        "link": "https://zmt.swiss/news-and-events/news/sim4life/s4llite-student-competition-2023/",
+        "widgets": [
+        "login",
+        "ribbon"
+        ]
+    },
+    {
+        "id": "TIP_v2",
+        "products": [
+        "tis"
+        ],
+        "start": "2023-07-22T15:00:00.000Z",
+        "end": "2023-08-01T02:00:00.000Z",
+        "title": "TIP v2",
+        "description": "For more information click <a href='https://itis.swiss/tools-and-systems/ti-planning/' style='color: white' target='_blank'>here</a>",
+        "link": "https://itis.swiss/tools-and-systems/ti-planning/",
+        "widgets": [
+        "login",
+        "ribbon",
+        "user-menu"
+        ]
+    }
+]
+"""
+    await redis_client.lpush(_REDIS_KEYNAME, value)
 
-    yield announcements
+    yield json.loads(value)
 
     await redis_client.flushall()
 
 
+@pytest.mark.testit
 async def test_list_announcements_for_product_and_not_expired(
-    client: TestClient, fake_announcements: list[Announcement]
+    client: TestClient, fake_announcements: dict[str, Any]
 ):
     assert fake_announcements
+    parse_obj_as(list[Announcement], fake_announcements)
