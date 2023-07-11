@@ -263,27 +263,29 @@ class AuthSession:
         return data
 
     async def get_project_metadata(self, project_id: ProjectID) -> ProjectMetadataGet:
-        response = await self.client.get(
-            f"/projects/{project_id}/metadata",
-            cookies=self.session_cookies,
-        )
-        response.raise_for_status()
-        data = Envelope[ProjectMetadataGet].parse_raw(response.text).data
-        assert data  # nosec
-        return data
+        with _handle_webserver_api_errors():
+            response = await self.client.get(
+                f"/projects/{project_id}/metadata",
+                cookies=self.session_cookies,
+            )
+            response.raise_for_status()
+            data = Envelope[ProjectMetadataGet].parse_raw(response.text).data
+            assert data  # nosec
+            return data
 
     async def update_project_metadata(
         self, project_id: ProjectID, metadata: dict[str, MetaValueType]
     ) -> ProjectMetadataGet:
-        response = await self.client.patch(
-            f"/projects/{project_id}/metadata",
-            cookies=self.session_cookies,
-            json=jsonable_encoder(ProjectMetadataUpdate(custom=metadata)),
-        )
-        response.raise_for_status()
-        data = Envelope[ProjectMetadataGet].parse_raw(response.text).data
-        assert data  # nosec
-        return data
+        with _handle_webserver_api_errors():
+            response = await self.client.patch(
+                f"/projects/{project_id}/metadata",
+                cookies=self.session_cookies,
+                json=jsonable_encoder(ProjectMetadataUpdate(custom=metadata)),
+            )
+            response.raise_for_status()
+            data = Envelope[ProjectMetadataGet].parse_raw(response.text).data
+            assert data  # nosec
+            return data
 
 
 # MODULES APP SETUP -------------------------------------------------------------
