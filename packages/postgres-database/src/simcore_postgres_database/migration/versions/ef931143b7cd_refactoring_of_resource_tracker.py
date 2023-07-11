@@ -17,10 +17,10 @@ depends_on = None
 
 
 def upgrade():
-    type = postgresql.ENUM(
+    container_classification_enum = postgresql.ENUM(
         "DYNAMIC_SIDECAR", "USER_SERVICE", name="containerclassification"
     )
-    type.create(op.get_bind())
+    container_classification_enum.create(op.get_bind())
 
     op.execute("DELETE FROM resource_tracker_container;")
 
