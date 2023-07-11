@@ -1,6 +1,6 @@
 from mimetypes import guess_type
 from pathlib import Path
-from typing import Optional
+from typing import Any, ClassVar
 from uuid import UUID, uuid3
 
 import aiofiles
@@ -18,18 +18,18 @@ class File(BaseModel):
     # WARNING: from pydantic import File as FileParam
     # NOTE: see https://ant.apache.org/manual/Tasks/checksum.html
 
-    id: UUID = Field(..., description="Resource identifier")
+    id: UUID = Field(..., description="Resource identifier")  # noqa: A003
 
     filename: str = Field(..., description="Name of the file with extension")
-    content_type: Optional[str] = Field(
+    content_type: str | None = Field(
         default=None, description="Guess of type content [EXPERIMENTAL]"
     )
-    checksum: Optional[str] = Field(
+    checksum: str | None = Field(
         None, description="MD5 hash of the file's content [EXPERIMENTAL]"
     )
 
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 # complete
                 {

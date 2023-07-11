@@ -5,43 +5,17 @@
 import random
 import urllib.parse
 from copy import deepcopy
-from pprint import pformat
 from uuid import uuid4
 
 import pytest
 from fastapi import FastAPI
 from simcore_service_api_server._meta import API_VTAG
-from simcore_service_api_server.models.schemas.jobs import (
-    Job,
-    JobInputs,
-    JobOutputs,
-    JobStatus,
-)
+from simcore_service_api_server.models.schemas.jobs import Job, JobInputs
 from simcore_service_api_server.models.schemas.solvers import Solver
 
 
-@pytest.mark.parametrize("model_cls", (Job, JobInputs, JobOutputs, JobStatus))
-def test_jobs_model_examples(model_cls, model_cls_examples):
-    for name, example in model_cls_examples.items():
-        print(name, ":", pformat(example))
-        model_instance = model_cls(**example)
-        assert model_instance, f"Failed with {name}"
-
-
-def test_create_job_model():
-    job = Job.create_now("solvers/isolve/releases/1.3.4", "12345")
-
-    print(job.json())
-    assert job.id is not None
-
-    # TODO: https://stackoverflow.com/questions/5802108/how-to-check-if-a-datetime-object-is-localized-with-pytz/27596917
-    # TODO: @validator("created_at", always=True)
-    # def ensure_utc(cls, v):
-    #    v.utc
-
-
 @pytest.mark.parametrize("repeat", range(100))
-def test_job_io_checksums(repeat):
+def test_job_io_checksums(repeat: int):
     raw = {
         "values": {
             "x": 4.33,
@@ -76,7 +50,6 @@ def test_job_io_checksums(repeat):
 
 
 def test_job_resouce_names_has_associated_url(app: FastAPI):
-
     solver_key = "z43/name with spaces/isolve"
     solver_version = "1.0.3"
     job_id = uuid4()

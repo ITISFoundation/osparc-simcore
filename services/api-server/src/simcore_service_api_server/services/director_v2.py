@@ -102,8 +102,7 @@ class DirectorV2Api(BaseServiceClientApi):
             },
         )
         response.raise_for_status()
-        computation_task = ComputationTaskGet(**response.json())
-        return computation_task
+        return ComputationTaskGet(**response.json())
 
     async def start_computation(
         self,
@@ -128,8 +127,7 @@ class DirectorV2Api(BaseServiceClientApi):
                 },
             )
             response.raise_for_status()
-            computation_task = ComputationTaskGet(**response.json())
-            return computation_task
+            return ComputationTaskGet(**response.json())
 
     async def get_computation(
         self, project_id: UUID, user_id: PositiveInt
@@ -141,8 +139,7 @@ class DirectorV2Api(BaseServiceClientApi):
             },
         )
         response.raise_for_status()
-        computation_task = ComputationTaskGet(**response.json())
-        return computation_task
+        return ComputationTaskGet(**response.json())
 
     async def stop_computation(
         self, project_id: UUID, user_id: PositiveInt
@@ -154,8 +151,7 @@ class DirectorV2Api(BaseServiceClientApi):
             },
         )
 
-        computation_task = ComputationTaskGet(**response.json())
-        return computation_task
+        return ComputationTaskGet(**response.json())
 
     async def delete_computation(self, project_id: UUID, user_id: PositiveInt):
         await self.client.request(

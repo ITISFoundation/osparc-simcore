@@ -12,7 +12,8 @@ How these tests works:
 
 import asyncio
 import json
-from typing import Any, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 import pytest
 from aiohttp import web

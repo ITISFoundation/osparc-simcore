@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: osparc-simcore web API
-  version: 0.23.0
+  version: 0.24.0
   description: API designed for the front-end app
   contact:
     name: IT'IS Foundation
@@ -2019,7 +2019,7 @@ paths:
       tags:
         - storage
       summary: Get datasets metadata
-      description: list of file meta-datas
+      description: returns all the file meta data a user has access to (uuid_filter may be used)
       operationId: get_files_metadata
       parameters:
         - required: true
@@ -2035,6 +2035,15 @@ paths:
             default: ''
           name: uuid_filter
           in: query
+        - description: Automatic directory expansion. This will be replaced by pagination the future
+          required: false
+          schema:
+            title: Expand Dirs
+            type: boolean
+            description: Automatic directory expansion. This will be replaced by pagination the future
+            default: true
+          name: expand_dirs
+          in: query
       responses:
         '200':
           description: Successful Response
@@ -2047,7 +2056,7 @@ paths:
       tags:
         - storage
       summary: Returns download link for requested file
-      description: Returns a presigned link
+      description: creates a download file link if user has the rights to
       operationId: download_file
       parameters:
         - required: true
@@ -2101,7 +2110,7 @@ paths:
       tags:
         - storage
       summary: Returns upload link
-      description: Return upload object
+      description: 'creates one or more upload file links if user has the rights to, expects the client to complete/abort upload'
       operationId: upload_file
       parameters:
         - required: true
@@ -2201,6 +2210,7 @@ paths:
       tags:
         - storage
       summary: Deletes File
+      description: deletes file if user has the rights to
       operationId: delete_file
       parameters:
         - required: true
@@ -2223,7 +2233,7 @@ paths:
       tags:
         - storage
       summary: Complete Upload File
-      description: Asks the server to complete the upload
+      description: completes an upload if the user has the rights to
       operationId: complete_upload_file
       parameters:
         - required: true
@@ -2306,7 +2316,9 @@ paths:
       tags:
         - storage
       summary: Abort Upload File
-      description: Asks the server to abort the upload and revert to the last valid version if any
+      description: |-
+        aborts an upload if user has the rights to, and reverts
+        to the latest version if available, else will delete the file
       operationId: abort_upload_file
       parameters:
         - required: true
@@ -2381,6 +2393,7 @@ paths:
       tags:
         - storage
       summary: Get File Metadata
+      description: returns the file meta data of file_id if user_id has the rights to
       operationId: get_file_metadata
       parameters:
         - required: true
@@ -2436,6 +2449,9 @@ paths:
                       entity_tag:
                         title: Entity Tag
                         type: string
+                      is_directory:
+                        title: Is Directory
+                        type: boolean
                     example:
                       file_uuid: simcore-testing/105/1000/3
                       location_id: '0'
@@ -2447,6 +2463,7 @@ paths:
                       last_modified: '2019-06-19T12:29:03.78852Z'
                       file_size: 73
                       entity_tag: a87ff679a2f3e71d9181a67b7542122c
+                      is_directory: false
                   - title: 'Envelope[FileMetaDataGet]'
                     type: object
                     properties:
@@ -2459,7 +2476,7 @@ paths:
       tags:
         - storage
       summary: Get Files Metadata
-      description: list of file meta-datas
+      description: returns all the file meta data inside dataset with dataset_id
       operationId: get_files_metadata_dataset
       parameters:
         - required: true
@@ -2474,6 +2491,15 @@ paths:
             type: string
           name: dataset_id
           in: path
+        - description: Automatic directory expansion. This will be replaced by pagination the future
+          required: false
+          schema:
+            title: Expand Dirs
+            type: boolean
+            description: Automatic directory expansion. This will be replaced by pagination the future
+            default: true
+          name: expand_dirs
+          in: query
       responses:
         '200':
           description: Successful Response
@@ -2547,6 +2573,11 @@ paths:
                           type: boolean
                           description: 'If true, this file is a soft link.i.e. is another entry with the same object_name'
                           default: false
+                        is_directory:
+                          title: Is Directory
+                          type: boolean
+                          description: if True this is a directory
+                          default: false
                       additionalProperties: false
                   error:
                     title: Error
@@ -2555,7 +2586,7 @@ paths:
       tags:
         - storage
       summary: Get datasets metadata
-      description: Returns the list of dataset meta-datas
+      description: returns all the top level datasets a user has access to
       operationId: get_datasets_metadata
       parameters:
         - required: true
@@ -5777,23 +5808,23 @@ paths:
       parameters:
         - required: true
           schema:
-            title: Project Uuid
             type: string
             format: uuid
+            title: Project Uuid
           name: project_uuid
           in: path
         - required: false
           schema:
-            title: Limit
             type: integer
+            title: Limit
             default: 20
           name: limit
           in: query
         - required: false
           schema:
-            title: Offset
-            minimum: 0
             type: integer
+            minimum: 0
+            title: Offset
             default: 0
           name: offset
           in: query
@@ -5803,16 +5834,16 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[list[models_library.projects_comments.ProjectsCommentsAPI]]'
-                type: object
                 properties:
                   data:
-                    title: Data
-                    type: array
                     items:
                       $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1comments~1%7Bcomment_id%7D/get/responses/200/content/application~1json/schema/properties/data'
+                    type: array
+                    title: Data
                   error:
                     title: Error
+                type: object
+                title: 'Envelope[list[models_library.projects_comments.ProjectsCommentsAPI]]'
     post:
       tags:
         - project
@@ -5822,24 +5853,24 @@ paths:
       parameters:
         - required: true
           schema:
-            title: Project Uuid
             type: string
             format: uuid
+            title: Project Uuid
           name: project_uuid
           in: path
       requestBody:
         content:
           application/json:
             schema:
-              title: _ProjectCommentsBodyParams
-              required:
-                - contents
-              type: object
               properties:
                 contents:
-                  title: Contents
                   type: string
+                  title: Contents
               additionalProperties: false
+              type: object
+              required:
+                - contents
+              title: _ProjectCommentsBodyParams
         required: true
       responses:
         '201':
@@ -5847,18 +5878,18 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[dict[Literal[''comment_id''], pydantic.types.PositiveInt]]'
-                type: object
                 properties:
                   data:
-                    title: Data
-                    type: object
                     additionalProperties:
-                      exclusiveMinimum: true
                       type: integer
+                      exclusiveMinimum: true
                       minimum: 0
+                    type: object
+                    title: Data
                   error:
                     title: Error
+                type: object
+                title: 'Envelope[dict[Literal[''comment_id''], pydantic.types.PositiveInt]]'
   '/projects/{project_uuid}/comments/{comment_id}':
     get:
       tags:
@@ -5869,16 +5900,16 @@ paths:
       parameters:
         - required: true
           schema:
-            title: Project Uuid
             type: string
             format: uuid
+            title: Project Uuid
           name: project_uuid
           in: path
         - required: true
           schema:
-            title: Comment Id
-            exclusiveMinimum: true
             type: integer
+            exclusiveMinimum: true
+            title: Comment Id
             minimum: 0
           name: comment_id
           in: path
@@ -5980,16 +6011,16 @@ paths:
       parameters:
         - required: true
           schema:
-            title: Project Uuid
             type: string
             format: uuid
+            title: Project Uuid
           name: project_uuid
           in: path
         - required: true
           schema:
-            title: Comment Id
-            exclusiveMinimum: true
             type: integer
+            exclusiveMinimum: true
+            title: Comment Id
             minimum: 0
           name: comment_id
           in: path
@@ -6310,6 +6341,90 @@ paths:
                           type: string
                   error:
                     title: Error
+  '/projects/{project_id}/metadata':
+    get:
+      tags:
+        - project
+      summary: Get Project Metadata
+      operationId: get_project_metadata
+      parameters:
+        - required: true
+          schema:
+            type: string
+            format: uuid
+            title: Project Id
+          name: project_id
+          in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    properties:
+                      projectUuid:
+                        type: string
+                        format: uuid
+                        title: Projectuuid
+                      custom:
+                        additionalProperties:
+                          anyOf:
+                            - type: boolean
+                            - type: integer
+                            - type: number
+                            - type: string
+                        type: object
+                        title: Custom
+                        description: Custom key-value map
+                    type: object
+                    required:
+                      - projectUuid
+                    title: ProjectMetadataGet
+                  error:
+                    title: Error
+                type: object
+                title: 'Envelope[ProjectMetadataGet]'
+    patch:
+      tags:
+        - project
+      summary: Update Project Metadata
+      operationId: update_project_metadata
+      parameters:
+        - required: true
+          schema:
+            type: string
+            format: uuid
+            title: Project Id
+          name: project_id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                custom:
+                  additionalProperties:
+                    anyOf:
+                      - type: boolean
+                      - type: integer
+                      - type: number
+                      - type: string
+                  type: object
+                  title: Custom
+              type: object
+              required:
+                - custom
+              title: ProjectMetadataUpdate
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1metadata/get/responses/200/content/application~1json/schema'
   '/projects/{project_id}/metadata/ports':
     get:
       tags:
@@ -7519,6 +7634,98 @@ paths:
             application/json:
               schema:
                 $ref: '#/paths/~1tags/post/responses/200/content/application~1json/schema'
+  /resource-usage/containers:
+    get:
+      tags:
+        - usage
+      summary: Retrieve containers that were running for a user and product taken from context.
+      operationId: list_resource_usage_containers
+      parameters:
+        - required: false
+          schema:
+            type: integer
+            title: Limit
+            default: 20
+          name: limit
+          in: query
+        - required: false
+          schema:
+            type: integer
+            minimum: 0
+            title: Offset
+            default: 0
+          name: offset
+          in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    items:
+                      properties:
+                        project_uuid:
+                          type: string
+                          format: uuid
+                          title: Project Uuid
+                        project_name:
+                          type: string
+                          title: Project Name
+                        node_uuid:
+                          type: string
+                          format: uuid
+                          title: Node Uuid
+                        node_label:
+                          type: string
+                          title: Node Label
+                        service_key:
+                          type: string
+                          pattern: '^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$'
+                          title: Service Key
+                        service_version:
+                          type: string
+                          pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+                          title: Service Version
+                        start_time:
+                          type: string
+                          format: date-time
+                          title: Start Time
+                        duration:
+                          type: number
+                          title: Duration
+                        processors:
+                          type: number
+                          title: Processors
+                        core_hours:
+                          type: number
+                          title: Core Hours
+                        status:
+                          type: string
+                          enum:
+                            - running
+                            - finished
+                          title: ContainerStatus
+                          description: An enumeration.
+                      type: object
+                      required:
+                        - project_uuid
+                        - node_uuid
+                        - service_key
+                        - service_version
+                        - start_time
+                        - duration
+                        - processors
+                        - core_hours
+                        - status
+                      title: ContainerGet
+                    type: array
+                    title: Data
+                  error:
+                    title: Error
+                type: object
+                title: 'Envelope[list[models_library.api_schemas_webserver.resource_usage.ContainerGet]]'
   /publications/service-submission:
     post:
       tags:

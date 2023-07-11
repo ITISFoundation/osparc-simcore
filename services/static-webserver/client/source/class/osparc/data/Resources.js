@@ -209,6 +209,15 @@ qx.Class.define("osparc.data.Resources", {
           }
         }
       },
+      "resourceUsage": {
+        useCache: true,
+        endpoints: {
+          getPage: {
+            method: "GET",
+            url: statics.API + "/resource-usage/containers?offset={offset}&limit={limit}"
+          }
+        }
+      },
       /*
        * NODES
        */
@@ -439,6 +448,18 @@ qx.Class.define("osparc.data.Resources", {
           getOne: {
             method: "GET",
             url: statics.API + "/me"
+          }
+        }
+      },
+      /*
+       * PERMISSIONS
+       */
+      "permissions": {
+        useCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/me/permissions"
           }
         }
       },

@@ -1,13 +1,10 @@
 from typing import (
     Any,
-    Dict,
     Generic,
     ItemsView,
     Iterable,
     Iterator,
     KeysView,
-    List,
-    Optional,
     TypeVar,
     ValuesView,
 )
@@ -20,7 +17,7 @@ DictValue = TypeVar("DictValue")
 
 
 class DictModel(GenericModel, Generic[DictKey, DictValue]):
-    __root__: Dict[DictKey, DictValue]
+    __root__: dict[DictKey, DictValue]
 
     def __getitem__(self, k: DictKey) -> DictValue:
         return self.__root__.__getitem__(k)
@@ -43,7 +40,7 @@ class DictModel(GenericModel, Generic[DictKey, DictValue]):
     def __iter__(self) -> Iterator[DictKey]:
         return self.__root__.__iter__()
 
-    def get(self, key: DictKey, default: Optional[DictValue] = None):
+    def get(self, key: DictKey, default: DictValue | None = None):
         return self.__root__.get(key, default)
 
     def setdefault(self, key: DictKey, default: DictValue):
@@ -57,7 +54,7 @@ DataT = TypeVar("DataT")
 
 
 class ListModel(GenericModel, Generic[DataT]):
-    __root__: List[DataT]
+    __root__: list[DataT]
 
     def __iter__(self):
         return iter(self.__root__)
@@ -70,8 +67,8 @@ class ListModel(GenericModel, Generic[DataT]):
 
 
 class Envelope(GenericModel, Generic[DataT]):
-    data: Optional[DataT] = None
-    error: Optional[Any] = None
+    data: DataT | None = None
+    error: Any | None = None
 
     @classmethod
     def parse_data(cls, obj):

@@ -11,13 +11,14 @@ import re
 import shutil
 import tempfile
 import threading
+from collections.abc import Callable, Iterator
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Iterator, NamedTuple
+from typing import Any, NamedTuple
 from unittest.mock import AsyncMock
 
 import pytest
 from aiohttp.client import ClientSession
-from attr import dataclass
 from models_library.projects_nodes_io import LocationID
 from pydantic.error_wrappers import ValidationError
 from pytest_mock.plugin import MockerFixture
@@ -121,7 +122,7 @@ def file_with_data() -> Iterator[Path]:
     ]
 )
 def this_node_file(request) -> Iterator[Path]:
-    yield request.param
+    return request.param
 
 
 @pytest.fixture
@@ -211,11 +212,10 @@ def e_tag_fixture() -> str:
 
 @pytest.fixture
 async def mock_upload_file(mocker, e_tag):
-    mock = mocker.patch(
+    return mocker.patch(
         "simcore_sdk.node_ports_common.filemanager.upload_file",
         return_value=(simcore_store_id(), e_tag),
     )
-    yield mock
 
 
 @pytest.fixture

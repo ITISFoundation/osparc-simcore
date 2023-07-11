@@ -18,7 +18,7 @@ from ..projects_state import ProjectState
 from ..projects_ui import StudyUI
 from ..utils.common_validators import empty_str_to_none, none_to_empty_str
 from ._base import NOT_REQUIRED, EmptyModel, InputSchema, OutputSchema
-from .projects_permalink import ProjectPermalink
+from .permalinks import ProjectPermalink
 
 
 class ProjectCreateNew(InputSchema):

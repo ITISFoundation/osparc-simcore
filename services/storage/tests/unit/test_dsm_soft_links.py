@@ -26,7 +26,6 @@ pytest_simcore_ops_services_selection = ["adminer"]
 async def output_file(
     user_id: UserID, project_id: str, aiopg_engine: Engine
 ) -> AsyncIterator[FileMetaData]:
-
     node_id = "fd6f9737-1988-341b-b4ac-0614b646fa82"
 
     # pylint: disable=no-value-for-parameter
@@ -76,7 +75,6 @@ def create_resource_uuid(*resource_name_parts) -> uuid.UUID:
 async def test_create_soft_link(
     simcore_s3_dsm: SimcoreS3DataManager, user_id: int, output_file: FileMetaData
 ):
-
     api_file_id = create_resource_uuid(
         output_file.project_id, output_file.node_id, output_file.file_name
     )
