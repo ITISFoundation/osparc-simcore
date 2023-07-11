@@ -12,9 +12,9 @@ from ._common import column_modified_datetime
 from .base import metadata
 
 
-class ContainerType(enum.Enum):
-    DYNAMIC_SIDECAR = "DYNAMIC_SIDECAR"
-    USER_SERVICE = "USER_SERVICE"
+class ContainerClassification(str, enum.Enum):
+    DYNAMIC_SIDECAR = enum.auto()
+    USER_SERVICE = enum.auto()
 
 
 resource_tracker_container = sa.Table(
@@ -122,9 +122,9 @@ resource_tracker_container = sa.Table(
         doc="memory limit in bytes scraped via Prometheus",
     ),
     sa.Column(
-        "type",
-        sa.Enum(ContainerType),
-        doc="Classification of the container type",
+        "classification",
+        sa.Enum(ContainerClassification),
+        doc="Our custom classification of the container type",
     ),
     # ---------------------------
     sa.PrimaryKeyConstraint("container_id", name="resource_tracker_container_pkey"),

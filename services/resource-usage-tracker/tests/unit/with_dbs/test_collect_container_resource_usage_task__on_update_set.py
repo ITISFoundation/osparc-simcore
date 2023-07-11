@@ -79,7 +79,7 @@ def random_promql_output_generator():
                 "container_label_com_docker_compose_version": "1.29.1",
                 "container_label_io_simcore_runtime_product_name": "osparc",
                 "container_label_simcore_service_settings": '[{"name": "ports", "type": "int", "value": 8888}, {"name": "env", "type": "string", "value": ["DISPLAY=:0"]}, {"name": "env", "type": "string", "value": ["SYM_SERVER_HOSTNAME=sym-server_%service_uuid%"]}, {"name": "mount", "type": "object", "value": [{"ReadOnly": true, "Source": "/tmp/.X11-unix", "Target": "/tmp/.X11-unix", "Type": "bind"}]}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}, {"name": "Resources", "type": "Resources", "value": {"Limits": {"NanoCPUs": 4000000000, "MemoryBytes": 17179869184}, "Reservations": {"NanoCPUs": 100000000, "MemoryBytes": 536870912, "GenericResources": [{"DiscreteResourceSpec": {"Kind": "VRAM", "Value": 1}}]}}}]',
-                "container_label__io_simcore_runtime_imcore_user_agent": "puppeteer",
+                "container_label_io_simcore_runtime_imcore_user_agent": "puppeteer",
                 "container_label_io_simcore_runtime_project_id": "46449cc3-7d83-4081-a44e-fc75a0c85f2c",
                 "container_label_io_simcore_runtime_user_id": "43820",
                 "container_label_io_simcore_runtime_node_id": "2b231c38-0ebc-5cc0-1234-1ffe573f54e9",

@@ -60,7 +60,7 @@ def random_resource_tracker_container(**overrides) -> dict[str, Any]:
         user_email=FAKE.email(),
         service_key="simcore/services/dynamic/jupyter-smash",
         service_version="3.0.7",
-        type="USER_SERVICE",
+        classification="USER_SERVICE",
     )
 
     data.update(overrides)
@@ -91,6 +91,7 @@ def resource_tracker_container_db(postgres_db: sa.engine.Engine) -> Iterator[lis
         con.execute(resource_tracker_container.delete())
 
 
+@pytest.mark.testit
 async def test_list_containers(
     mocked_redis_server: None,
     mocked_setup_background_task: mock.Mock,

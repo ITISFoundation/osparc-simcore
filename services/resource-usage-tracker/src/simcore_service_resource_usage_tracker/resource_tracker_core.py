@@ -10,8 +10,8 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKey, ServiceVersion
 from prometheus_api_client import PrometheusConnect
-from pydantic import BaseModel
-from simcore_postgres_database.models.resource_tracker import ContainerType
+from pydantic import BaseModel, ByteSize
+from simcore_postgres_database.models.resource_tracker import ContainerClassification
 from simcore_service_resource_usage_tracker.modules.prometheus import (
     get_prometheus_api_client,
 )
@@ -139,7 +139,7 @@ async def _scrape_container_resource_usage(
             user_id=user_id,
             product_name=product_name,
             project_uuid=project_uuid,
-            memory_limit=memory_limit,
+            memory_limit=ByteSize(memory_limit),
             cpu_limit=cpu_limit,
             service_settings_reservation_additional_info={},
             container_cpu_usage_seconds_total=last_value[1],
@@ -152,7 +152,7 @@ async def _scrape_container_resource_usage(
             user_email=user_email,
             service_key=ServiceKey(service_key),
             service_version=ServiceVersion(service_version),
-            type=ContainerType.USER_SERVICE,
+            classification=ContainerClassification.USER_SERVICE,
         )
 
         data.append(container_resource_usage)

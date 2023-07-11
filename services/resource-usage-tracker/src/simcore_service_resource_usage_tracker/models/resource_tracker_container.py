@@ -8,8 +8,8 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import BaseModel, Field, PositiveInt
-from simcore_postgres_database.models.resource_tracker import ContainerType
+from pydantic import BaseModel, ByteSize, Field, PositiveInt
+from simcore_postgres_database.models.resource_tracker import ContainerClassification
 
 # Scraped from prometheus
 
@@ -31,7 +31,7 @@ class ContainerScrapedResourceUsageMetric(BaseModel):
         {},
         description="Storing additional information about the reservation settings, such as what type of graphic card is used.",
     )
-    memory_limit: int = Field(
+    memory_limit: ByteSize = Field(
         None,
         description="Memory bytes limit set by the runtime, ex. 17179869184 means that the container has limit for 16GB of memory",
     )
@@ -53,7 +53,7 @@ class ContainerScrapedResourceUsageValues(BaseModel):
 
 
 class ContainerScrapedResourceUsageCustom(BaseModel):
-    type: ContainerType
+    classification: ContainerClassification
 
 
 class ContainerScrapedResourceUsage(

@@ -51,7 +51,7 @@ class ResourceTrackerRepository(BaseRepository):
                 instance=data.instance,
                 service_key=data.service_key,
                 service_version=data.service_version,
-                type=data.type,
+                classification=data.classification,
             )
 
             on_update_stmt = insert_stmt.on_conflict_do_update(
