@@ -2,7 +2,6 @@
 # pylint: disable=unused-argument
 
 import json
-import sys
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -19,8 +18,6 @@ from simcore_service_dynamic_sidecar.models.shared_store import (
     STORE_FILE_NAME,
     SharedStore,
 )
-
-CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
 @pytest.fixture
@@ -111,8 +108,8 @@ async def test_no_concurrency_with_parallel_writes(
     assert len(shared_store.container_names) == PARALLEL_CHANGES
 
 
-async def test_data_format():
-    MOCKS_DIR = CURRENT_DIR / ".." / "mocks"
+async def test_init_from_disk_with_legacy_data_format(project_tests_dir: Path):
+    MOCKS_DIR = project_tests_dir / "mocks"
     LEGACY_SHARED_STORE = "legacy_shared_store.json"
 
     results = await SharedStore.init_from_disk(
@@ -121,6 +118,12 @@ async def test_data_format():
     # if file is missing it correctly loaded the storage_file
     assert (MOCKS_DIR / STORE_FILE_NAME).exists() is False
 
+    # ensure object content and disk content are the same
     assert json.loads(results.json()) == json.loads(
         (MOCKS_DIR / LEGACY_SHARED_STORE).read_text()
     )
+
+
+async def test_init_from_disk_no_file_present(tmp_path: Path):
+    await SharedStore.init_from_disk(tmp_path, store_file_name=STORE_FILE_NAME)
+    assert (tmp_path / STORE_FILE_NAME).exists() is True
