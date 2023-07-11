@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Any, ClassVar, Literal
 
+import arrow
 from pydantic import BaseModel, validator
 
 
@@ -9,7 +10,7 @@ from pydantic import BaseModel, validator
 # - schema in the response
 class Announcement(BaseModel):
     id: str  # noqa: A003
-    products: list[Literal["osparc", "s4l", "s4llite", "tis"]]
+    products: list[str]
     start: datetime
     end: datetime
     title: str
@@ -26,6 +27,9 @@ class Announcement(BaseModel):
                 msg = f"end={end!r} is not before start={start!r}"
                 raise ValueError(msg)
         return v
+
+    def expired(self) -> bool:
+        return self.end <= arrow.utcnow().datetime
 
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
