@@ -58,7 +58,7 @@ async def test_push_folder(
     mock_filemanager = mocker.patch(
         "simcore_sdk.node_data.data_manager.filemanager", spec=True
     )
-    mock_filemanager.upload_file.return_value = ""
+    mock_filemanager.upload_path.return_value = ""
     mock_temporary_directory = mocker.patch(
         "simcore_sdk.node_data.data_manager.TemporaryDirectory"
     )
@@ -83,7 +83,7 @@ async def test_push_folder(
     assert progress_bar._continuous_progress_value == pytest.approx(1)
 
     mock_temporary_directory.assert_called_once()
-    mock_filemanager.upload_file.assert_called_once_with(
+    mock_filemanager.upload_path.assert_called_once_with(
         r_clone_settings=None,
         io_log_redirect_cb=None,
         path_to_upload=(test_compression_folder / f"{test_folder.stem}.zip"),
@@ -121,7 +121,7 @@ async def test_push_file(
     mock_filemanager = mocker.patch(
         "simcore_sdk.node_data.data_manager.filemanager", spec=True
     )
-    mock_filemanager.upload_file.return_value = ""
+    mock_filemanager.upload_path.return_value = ""
     mock_temporary_directory = mocker.patch(
         "simcore_sdk.node_data.data_manager.TemporaryDirectory"
     )
@@ -141,7 +141,7 @@ async def test_push_file(
         )
     assert progress_bar._continuous_progress_value == pytest.approx(1)
     mock_temporary_directory.assert_not_called()
-    mock_filemanager.upload_file.assert_called_once_with(
+    mock_filemanager.upload_path.assert_called_once_with(
         r_clone_settings=None,
         io_log_redirect_cb=None,
         path_to_upload=file_path,
