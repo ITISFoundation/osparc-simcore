@@ -12,12 +12,14 @@ from ._models import Announcement
 
 _logger = logging.getLogger(__name__)
 
+_REDISKEYNAME = "announcements"
+
 
 async def list_announcements(
     app: web.Application, *, include_product: str, exclude_expired: bool
 ) -> list[Announcement]:
     redis_client: aioredis.Redis = get_redis_announcements_client(app)
-    published = await redis_client.get(name="announcements") or []
+    published = await redis_client.get(name=_REDISKEYNAME) or []
     announcements = []
     for i, item in enumerate(published):
         try:
