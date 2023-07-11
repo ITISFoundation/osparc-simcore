@@ -89,7 +89,8 @@ qx.Class.define("osparc.component.notification.RibbonNotifications", {
           alignY: "middle",
           padding: 4,
           allowGrowX: false,
-          allowGrowY: false
+          allowGrowY: false,
+          marginLeft: 15
         });
         osparc.utils.Utils.addBorder(dontShowButton, 1, qx.theme.manager.Color.getInstance().resolve("strong-text"));
         dontShowButton.addListener("tap", () => {
