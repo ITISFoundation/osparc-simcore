@@ -28,7 +28,7 @@ async def list_announcements(
     # get
     try:
         redis_client: aioredis.Redis = get_redis_announcements_client(app)
-        stored: str = await redis_client.get(name=_REDIS_KEYNAME) or "[]"
+        stored = await redis_client.get(name=_REDIS_KEYNAME)
         published = json.loads(stored)
     except json.decoder.JSONDecodeError:
         _logger.exception(_MSG_REDIS_ERROR)
