@@ -289,7 +289,7 @@ async def upload_file(
     client_session: ClientSession | None = None,
     r_clone_settings: RCloneSettings | None = None,
     progress_bar: ProgressBarData | None = None,
-) -> tuple[LocationID, ETag]:
+) -> tuple[LocationID, ETag] | None:
     """Uploads a file (potentially in parallel) or a file object (sequential in any case) to S3
 
     :param session: add app[APP_CLIENT_SESSION_KEY] session here otherwise default is opened/closed every call
@@ -321,7 +321,7 @@ async def upload_file(
     if io_log_redirect_cb:
         await io_log_redirect_cb(f"uploading {file_to_upload}, please wait...")
     async with ClientSessionContextManager(client_session) as session:
-        for attempt in AsyncRetrying(
+        async for attempt in AsyncRetrying(
             reraise=True,
             wait=wait_exponential(min=1, max=10),
             stop=stop_after_attempt(num_retries),
@@ -391,6 +391,7 @@ async def upload_file(
                 if io_log_redirect_cb:
                     await io_log_redirect_cb(f"upload of {file_to_upload} complete.")
                 return store_id, e_tag
+    return None
 
 
 async def entry_exists(
