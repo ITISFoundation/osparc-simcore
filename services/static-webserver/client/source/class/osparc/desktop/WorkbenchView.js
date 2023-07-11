@@ -1138,13 +1138,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       let showPage = false;
       let showStopButton = false;
 
+      const sections = [];
       if (
         node.isDynamic() &&
         (node.isUpdatable() || node.isDeprecated() || node.isRetired())
       ) {
         const lifeCycleView = new osparc.component.node.LifeCycleView(node);
         node.addListener("versionChanged", () => this.__populateSecondPanel(node));
-        this.__nodeOptionsPage.add(lifeCycleView);
+        sections.push(lifeCycleView);
         showPage = true;
         showStopButton = true;
       }
@@ -1152,7 +1153,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       if (node.hasBootModes()) {
         const bootOptionsView = new osparc.component.node.BootOptionsView(node);
         node.addListener("bootModeChanged", () => this.__populateSecondPanel(node));
-        this.__nodeOptionsPage.add(bootOptionsView);
+        sections.push(bootOptionsView);
         showPage = true;
         showStopButton = true;
       }
@@ -1163,11 +1164,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       ) {
         const updateResourceLimitsView = new osparc.component.node.UpdateResourceLimitsView(node);
         node.addListener("limitsChanged", () => this.__populateSecondPanel(node));
-        this.__nodeOptionsPage.add(updateResourceLimitsView);
+        sections.push(updateResourceLimitsView);
         showPage = true;
         showStopButton |= node.isDynamic();
       }
 
+      this.__nodeOptionsPage.removeAll();
       if (showPage) {
         const introLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
         const title = new qx.ui.basic.Label(this.tr("Service Options")).set({
@@ -1196,8 +1198,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           introLayout.add(stopButton);
         }
 
-        this.__nodeOptionsPage.addAt(introLayout, 0);
-
+        this.__nodeOptionsPage.add(introLayout);
+        sections.forEach(section => this.__nodeOptionsPage.add(section));
         this.__nodeOptionsPage.getChildControl("button").setVisibility(showPage ? "visible" : "excluded");
       }
 

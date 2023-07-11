@@ -65,17 +65,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
     EXPECTED_S4L_SERVICE_KEYS: {
-      "simcore/services/dynamic/jupyter-smash": {
-        title: "Start Sim4Life lab",
-        description: "Jupyter powered by Sim4Life",
-        newStudyLabel: "New Sim4Life lab project",
-        idToWidget: "startJSmashButton"
-      },
       "simcore/services/dynamic/sim4life-dy": {
         title: "Start Sim4Life",
         description: "New Sim4Life project",
         newStudyLabel: "New Sim4Life project",
         idToWidget: "startS4LButton"
+      },
+      "simcore/services/dynamic/jupyter-smash": {
+        title: "Start Sim4Life lab",
+        description: "Jupyter powered by Sim4Life",
+        newStudyLabel: "New Sim4Life lab project",
+        idToWidget: "startJSmashButton"
       }
     },
     EXPECTED_S4L_LITE_SERVICE_KEYS: {
@@ -507,6 +507,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __addNewS4LServiceButtons: function() {
+      this.__addNewStudyButton();
       const store = osparc.store.Store.getInstance();
       store.getAllServices()
         .then(services => {
