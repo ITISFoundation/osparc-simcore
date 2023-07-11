@@ -40,7 +40,7 @@ from .file_io_utils import (
 )
 from .settings import NodePortsSettings
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 async def _get_location_id_from_location_name(
@@ -79,7 +79,7 @@ async def _complete_upload(
         )
         assert file_upload_complete_response.data  # nosec
     state_url = file_upload_complete_response.data.links.state
-    log.info(
+    _logger.info(
         "completed upload of %s",
         f"{len(parts)} parts, received {file_upload_complete_response.json(indent=2)}",
     )
@@ -91,7 +91,7 @@ async def _complete_upload(
             NodePortsSettings.create_from_envs().NODE_PORTS_MULTIPART_UPLOAD_COMPLETION_TIMEOUT_S
         ),
         retry=retry_if_exception_type(ValueError),
-        before_sleep=before_sleep_log(log, logging.DEBUG),
+        before_sleep=before_sleep_log(_logger, logging.DEBUG),
     ):
         with attempt:
             async with session.post(state_url) as resp:
@@ -101,17 +101,17 @@ async def _complete_upload(
                 )
                 assert future_enveloped.data  # nosec
                 if future_enveloped.data.state == FileUploadCompleteState.NOK:
-                    raise ValueError("upload not ready yet")
+                    msg = "upload not ready yet"
+                    raise ValueError(msg)
             assert future_enveloped.data.e_tag  # nosec
-            log.debug(
+            _logger.debug(
                 "multipart upload completed in %s, received %s",
                 attempt.retry_state.retry_object.statistics,
                 f"{future_enveloped.data.e_tag=}",
             )
             return future_enveloped.data.e_tag
-    raise exceptions.S3TransferError(
-        f"Could not complete the upload of file {upload_links=}"
-    )
+    msg = f"Could not complete the upload of file upload_links={upload_links!r}"
+    raise exceptions.S3TransferError(msg)
 
 
 async def _resolve_location_id(
@@ -208,7 +208,7 @@ async def download_path_from_s3(
     :raises exceptions.StorageInvalidCall
     :return: path to downloaded file
     """
-    log.debug(
+    _logger.debug(
         "Downloading from store %s:id %s, s3 object %s, to %s",
         store_name,
         store_id,
@@ -309,10 +309,10 @@ async def _abort_upload(
         async with session.post(upload_links.links.abort_upload) as resp:
             resp.raise_for_status()
     except ClientError:
-        log.warning("Error while aborting upload", exc_info=True)
+        _logger.warning("Error while aborting upload", exc_info=True)
         if reraise_exceptions:
             raise
-    log.warning("Upload aborted")
+    _logger.warning("Upload aborted")
 
 
 async def upload_path(
@@ -336,7 +336,7 @@ async def upload_path(
     :raises exceptions.NodeportsException
     :return: stored id, S3 entity_tag
     """
-    log.debug(
+    _logger.debug(
         "Uploading %s to %s:%s@%s",
         f"{path_to_upload=}",
         f"{store_id=}",
@@ -400,7 +400,7 @@ async def upload_path(
                 uploaded_parts,
             )
         except (r_clone.RCloneFailedError, exceptions.S3TransferError) as exc:
-            log.error("The upload failed with an unexpected error:", exc_info=True)
+            _logger.exception("The upload failed with an unexpected error:")
             if upload_links:
                 await _abort_upload(session, upload_links, reraise_exceptions=False)
             raise exceptions.S3TransferError from exc
@@ -420,7 +420,7 @@ async def _get_file_meta_data(
     client_session: ClientSession | None = None,
 ) -> FileMetaDataGet:
     async with ClientSessionContextManager(client_session) as session:
-        log.debug("Will request metadata for s3_object=%s", s3_object)
+        _logger.debug("Will request metadata for s3_object=%s", s3_object)
 
         file_metadata: FileMetaDataGet = await storage_client.get_file_metadata(
             session=session,
@@ -428,7 +428,7 @@ async def _get_file_meta_data(
             location_id=store_id,
             user_id=user_id,
         )
-        log.debug(
+        _logger.debug(
             "Result for metadata s3_object=%s, result=%s",
             s3_object,
             f"{file_metadata=}",
@@ -449,7 +449,9 @@ async def entry_exists(
         )
         return bool(file_metadata.file_id == s3_object)
     except exceptions.S3InvalidPathError as err:
-        log.debug("Failed request metadata for s3_object=%s with %s", s3_object, err)
+        _logger.debug(
+            "Failed request metadata for s3_object=%s with %s", s3_object, err
+        )
         return False
 
 
@@ -463,12 +465,12 @@ async def get_file_metadata(
     :raises S3InvalidPathError
     """
     async with ClientSessionContextManager(client_session) as session:
-        log.debug("Will request metadata for s3_object=%s", s3_object)
+        _logger.debug("Will request metadata for s3_object=%s", s3_object)
         file_metadata = await storage_client.get_file_metadata(
             session=session, file_id=s3_object, location_id=store_id, user_id=user_id
         )
 
-    log.debug(
+    _logger.debug(
         "Result for metadata s3_object=%s, result=%s", s3_object, f"{file_metadata=}"
     )
     assert file_metadata.location_id is not None  # nosec
@@ -483,7 +485,7 @@ async def delete_file(
     client_session: ClientSession | None = None,
 ) -> None:
     async with ClientSessionContextManager(client_session) as session:
-        log.debug("Will delete file for s3_object=%s", s3_object)
+        _logger.debug("Will delete file for s3_object=%s", s3_object)
         await storage_client.delete_file(
             session=session, file_id=s3_object, location_id=store_id, user_id=user_id
         )

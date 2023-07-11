@@ -232,7 +232,6 @@ async def sync_s3_to_local(
     *,
     local_directory_path: Path,
     download_s3_link: AnyUrl,
-    # TODO: change this to take AnyURL which is the download_link
 ) -> None:
     """transfer the contents of a path in s3 to a local directory
 
