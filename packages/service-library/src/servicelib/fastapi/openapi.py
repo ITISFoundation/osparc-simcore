@@ -124,6 +124,7 @@ def _patch(node: Any):
             if key in _SKIP:
                 node.pop(key)
                 continue
+
             _patch_node_properties(key, node)
 
             # recursive
