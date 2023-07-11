@@ -8,7 +8,8 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import BaseModel, Field, PositiveInt
+from pydantic import BaseModel, ByteSize, Field, PositiveInt
+from simcore_postgres_database.models.resource_tracker import ContainerClassification
 
 # Scraped from prometheus
 
@@ -26,17 +27,18 @@ class ContainerScrapedResourceUsageMetric(BaseModel):
         None,
         description="Instance label scraped via Prometheus (taken from container labels, ex.: gpu1)",
     )
-    service_settings_reservation_nano_cpus: int | None = Field(
-        None,
-        description="CPU resource limit allocated to a container, ex.500000000 means that the container has limit for 0.5 CPU shares",
-    )
-    service_settings_reservation_memory_bytes: int | None
     service_settings_reservation_additional_info: dict[str, Any] = Field(
         {},
         description="Storing additional information about the reservation settings, such as what type of graphic card is used.",
     )
-    service_settings_limit_nano_cpus: int | None
-    service_settings_limit_memory_bytes: int | None
+    memory_limit: ByteSize = Field(
+        None,
+        description="Memory bytes limit set by the runtime, ex. 17179869184 means that the container has limit for 16GB of memory",
+    )
+    cpu_limit: float = Field(
+        None,
+        description="CPU limit set by the runtime, ex. 3.5 Shares of one CPU cores",
+    )
     service_key: ServiceKey
     service_version: ServiceVersion
 
@@ -50,8 +52,14 @@ class ContainerScrapedResourceUsageValues(BaseModel):
         arbitrary_types_allowed = True
 
 
+class ContainerScrapedResourceUsageCustom(BaseModel):
+    classification: ContainerClassification
+
+
 class ContainerScrapedResourceUsage(
-    ContainerScrapedResourceUsageMetric, ContainerScrapedResourceUsageValues
+    ContainerScrapedResourceUsageMetric,
+    ContainerScrapedResourceUsageValues,
+    ContainerScrapedResourceUsageCustom,
 ):
     ...
 
@@ -60,8 +68,8 @@ class ContainerScrapedResourceUsage(
 
 
 class ContainerGetDB(BaseModel):
-    service_settings_reservation_nano_cpus: int | None
-    service_settings_reservation_memory_bytes: int | None
+    cpu_limit: float
+    memory_limit: int
     prometheus_created: datetime
     prometheus_last_scraped: datetime
     project_uuid: ProjectID
