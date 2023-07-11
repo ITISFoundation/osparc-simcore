@@ -10,5 +10,5 @@ async def list_announcements(
     app: web.Application, *, product_name: str
 ) -> list[Announcement]:
     return await _redis.list_announcements(
-        app, include_with_product_name=product_name, exclude_expired=True
+        app, include_product=product_name, exclude_expired=True
     )

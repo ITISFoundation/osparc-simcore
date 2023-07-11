@@ -14,7 +14,7 @@ _logger = logging.getLogger(__name__)
 
 
 async def list_announcements(
-    app: web.Application, *, include_with_product_name: str, exclude_expired: bool
+    app: web.Application, *, include_product: str, exclude_expired: bool
 ) -> list[Announcement]:
     redis_client: aioredis.Redis = get_redis_announcements_client(app)
     published = await redis_client.get(name="announcements") or []
@@ -23,7 +23,7 @@ async def list_announcements(
         try:
             model = Announcement.parse_raw(item)
             # filters
-            if include_with_product_name not in model.products:
+            if include_product not in model.products:
                 break
             if exclude_expired and model.expired():
                 break
