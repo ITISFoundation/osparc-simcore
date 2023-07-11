@@ -1,8 +1,14 @@
 from enum import Enum
-from typing import Any, ClassVar
+from typing import Any, ClassVar, TypeAlias
 
 from models_library.api_schemas_storage import TableSynchronisation
 from pydantic import BaseModel, Field
+
+# NOTE: storage generates URLs that contain double encoded
+# slashes, and when applying validation via `StorageFileID`
+# it raises an error. Before `StorageFileID`, `str` was the
+# type used in the OpenAPI specs.
+StorageFileIDStr: TypeAlias = str
 
 
 class FileLocation(BaseModel):
