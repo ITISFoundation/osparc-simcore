@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 from time import perf_counter
-from typing import Final, Union
+from typing import Final
 
 import aiofiles
 import pytest
@@ -69,9 +69,8 @@ async def upload_file_part(
 
 
 async def upload_file_to_presigned_link(
-    file: Path, file_upload_link: Union[FileUploadSchema, MultiPartUploadLinks]
+    file: Path, file_upload_link: FileUploadSchema | MultiPartUploadLinks
 ) -> list[UploadedPart]:
-
     file_size = file.stat().st_size
 
     start = perf_counter()

@@ -57,7 +57,7 @@ paths:
       tags:
       - storage
       summary: Get datasets metadata
-      description: Returns the list of dataset meta-datas
+      description: returns all the top level datasets a user has access to
       operationId: get_datasets_metadata
       parameters:
       - required: true
@@ -78,7 +78,8 @@ paths:
       tags:
       - storage
       summary: Get datasets metadata
-      description: list of file meta-datas
+      description: returns all the file meta data a user has access to (uuid_filter
+        may be used)
       operationId: get_files_metadata
       parameters:
       - required: true
@@ -94,6 +95,17 @@ paths:
           default: ''
         name: uuid_filter
         in: query
+      - description: Automatic directory expansion. This will be replaced by pagination
+          the future
+        required: false
+        schema:
+          title: Expand Dirs
+          type: boolean
+          description: Automatic directory expansion. This will be replaced by pagination
+            the future
+          default: true
+        name: expand_dirs
+        in: query
       responses:
         '200':
           description: Successful Response
@@ -106,7 +118,7 @@ paths:
       tags:
       - storage
       summary: Get Files Metadata
-      description: list of file meta-datas
+      description: returns all the file meta data inside dataset with dataset_id
       operationId: get_files_metadata_dataset
       parameters:
       - required: true
@@ -121,6 +133,17 @@ paths:
           type: string
         name: dataset_id
         in: path
+      - description: Automatic directory expansion. This will be replaced by pagination
+          the future
+        required: false
+        schema:
+          title: Expand Dirs
+          type: boolean
+          description: Automatic directory expansion. This will be replaced by pagination
+            the future
+          default: true
+        name: expand_dirs
+        in: query
       responses:
         '200':
           description: Successful Response
@@ -133,6 +156,8 @@ paths:
       tags:
       - storage
       summary: Get File Metadata
+      description: returns the file meta data of file_id if user_id has the rights
+        to
       operationId: get_file_metadata
       parameters:
       - required: true
@@ -162,7 +187,7 @@ paths:
       tags:
       - storage
       summary: Returns download link for requested file
-      description: Returns a presigned link
+      description: creates a download file link if user has the rights to
       operationId: download_file
       parameters:
       - required: true
@@ -196,7 +221,8 @@ paths:
       tags:
       - storage
       summary: Returns upload link
-      description: Return upload object
+      description: creates one or more upload file links if user has the rights to,
+        expects the client to complete/abort upload
       operationId: upload_file
       parameters:
       - required: true
@@ -246,6 +272,7 @@ paths:
       tags:
       - storage
       summary: Deletes File
+      description: deletes file if user has the rights to
       operationId: delete_file
       parameters:
       - required: true
@@ -268,8 +295,9 @@ paths:
       tags:
       - storage
       summary: Abort Upload File
-      description: Asks the server to abort the upload and revert to the last valid
-        version if any
+      description: 'aborts an upload if user has the rights to, and reverts
+
+        to the latest version if available, else will delete the file'
       operationId: abort_upload_file
       parameters:
       - required: true
@@ -292,7 +320,7 @@ paths:
       tags:
       - storage
       summary: Complete Upload File
-      description: Asks the server to complete the upload
+      description: completes an upload if the user has the rights to
       operationId: complete_upload_file
       parameters:
       - required: true
@@ -492,6 +520,9 @@ components:
         entity_tag:
           title: Entity Tag
           type: string
+        is_directory:
+          title: Is Directory
+          type: boolean
       example:
         file_uuid: simcore-testing/105/1000/3
         location_id: '0'
@@ -503,6 +534,7 @@ components:
         last_modified: '2019-06-19T12:29:03.78852Z'
         file_size: 73
         entity_tag: a87ff679a2f3e71d9181a67b7542122c
+        is_directory: false
     FileMetaDataGet:
       title: FileMetaDataGet
       required:
@@ -567,6 +599,11 @@ components:
           type: boolean
           description: If true, this file is a soft link.i.e. is another entry with
             the same object_name
+          default: false
+        is_directory:
+          title: Is Directory
+          type: boolean
+          description: if True this is a directory
           default: false
       additionalProperties: false
     FileUploadCompleteFutureResponse:

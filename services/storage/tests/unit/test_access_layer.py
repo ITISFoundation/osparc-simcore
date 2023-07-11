@@ -28,9 +28,7 @@ async def filemeta_id(
 async def test_access_rights_on_owned_project(
     user_id: UserID, project_id: ProjectID, aiopg_engine: Engine
 ):
-
     async with aiopg_engine.acquire() as conn:
-
         access = await get_project_access_rights(conn, user_id, project_id)
         assert access == AccessRights.all()
 

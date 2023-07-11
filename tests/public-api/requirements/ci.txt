@@ -9,5 +9,7 @@
 # installs base + tests requirements
 --requirement _test.txt
 
+osparc
+
 # installs this repo's packages
 ../../packages/pytest-simcore/
