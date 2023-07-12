@@ -1,7 +1,6 @@
 """ Repository layer using redis
 """
 
-import json
 import logging
 
 import redis.asyncio as aioredis
@@ -13,34 +12,28 @@ from ._models import Announcement
 
 _logger = logging.getLogger(__name__)
 
-_REDIS_KEYNAME = "public"
+_PUBLIC_ANNOUNCEMENTS_REDIS_KEY = "public"
 #
 # At this moment `announcements` are manually stored in redis db 6  w/o guarantees
 # Here we validate them and log a big-fat error if there is something wrong
 # Invalid announcements are not passed to the front-end
 #
-_MSG_REDIS_ERROR = f"Invalid announcements[{_REDIS_KEYNAME}] in redis. Please check values introduced *by hand*. Skipping"
+_MSG_REDIS_ERROR = f"Invalid announcements[{_PUBLIC_ANNOUNCEMENTS_REDIS_KEY}] in redis. Please check values introduced *by hand*. Skipping"
 
 
 async def list_announcements(
     app: web.Application, *, include_product: str, exclude_expired: bool
 ) -> list[Announcement]:
-    # get
-    try:
-        redis_client: aioredis.Redis = get_redis_announcements_client(app)
-        stored = await redis_client.get(name=_REDIS_KEYNAME)
-        published = json.loads(stored)
-    except json.decoder.JSONDecodeError:
-        _logger.exception(_MSG_REDIS_ERROR)
-        return []
+    # get-all
+    redis_client: aioredis.Redis = get_redis_announcements_client(app)
+    items: list[str] = await redis_client.lrange(_PUBLIC_ANNOUNCEMENTS_REDIS_KEY, 0, -1)
 
     # validate
-    assert isinstance(published, list)
     announcements = []
-    for i, item in enumerate(published):
+    for i, item in enumerate(items):
         try:
-            model = Announcement.parse_obj(item)
-            # filters
+            model = Announcement.parse_raw(item)
+            # filter
             if include_product not in model.products:
                 break
             if exclude_expired and model.expired():
