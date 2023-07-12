@@ -202,8 +202,6 @@ async def test_pull_folder(
     )
 
     async with ProgressBarData(steps=1) as progress_bar:
-        # note this wil be pulling the folder as a zipped file
-        # TODO: we need to add a test to also pull the folder via r_clone
         await data_manager.pull(
             user_id,
             project_id,

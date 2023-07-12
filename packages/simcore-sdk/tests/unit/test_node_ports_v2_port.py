@@ -215,7 +215,7 @@ def e_tag_fixture() -> str:
 
 
 @pytest.fixture
-async def mock_upload_file(mocker: MockerFixture, e_tag: str, faker: Faker) -> None:
+async def mock_filemanager(mocker: MockerFixture, e_tag: str, faker: Faker) -> None:
     mocker.patch(
         "simcore_sdk.node_ports_common.filemanager._get_file_meta_data",
         return_value=parse_obj_as(
@@ -232,7 +232,7 @@ async def mock_upload_file(mocker: MockerFixture, e_tag: str, faker: Faker) -> N
 def common_fixtures(
     storage_v0_service_mock: AioResponsesMock,
     mock_download_file: None,
-    mock_upload_file: None,
+    mock_filemanager: None,
     this_node_file: Path,
     another_node_file: Path,
     download_file_folder: Path,
