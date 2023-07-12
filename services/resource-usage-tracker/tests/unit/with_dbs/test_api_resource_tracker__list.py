@@ -46,8 +46,8 @@ def random_resource_tracker_container(**overrides) -> dict[str, Any]:
         user_id=FAKE.pyint(),
         project_uuid=FAKE.uuid4(),
         product_name="osparc",
-        service_settings_reservation_nano_cpus=None,
-        service_settings_reservation_memory_bytes=None,
+        cpu_limit="3.5",
+        memory_limit="17179869184",
         service_settings_reservation_additional_info={},
         container_cpu_usage_seconds_total=FAKE.pyint(),
         prometheus_created=datetime.now(tz=timezone.utc),
@@ -56,12 +56,11 @@ def random_resource_tracker_container(**overrides) -> dict[str, Any]:
         node_uuid=FAKE.uuid4(),
         node_label=FAKE.word(),
         instance="gpu",
-        service_settings_limit_nano_cpus=None,
-        service_settings_limit_memory_bytes=None,
         project_name=FAKE.word(),
         user_email=FAKE.email(),
         service_key="simcore/services/dynamic/jupyter-smash",
         service_version="3.0.7",
+        classification="USER_SERVICE",
     )
 
     data.update(overrides)
@@ -92,7 +91,6 @@ def resource_tracker_container_db(postgres_db: sa.engine.Engine) -> Iterator[lis
         con.execute(resource_tracker_container.delete())
 
 
-@pytest.mark.testit
 async def test_list_containers(
     mocked_redis_server: None,
     mocked_setup_background_task: mock.Mock,

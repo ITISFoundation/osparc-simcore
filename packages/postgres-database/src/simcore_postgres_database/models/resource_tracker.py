@@ -3,12 +3,19 @@
     - Table where we store the resource usage of each container that
     we scrape via resource-usage-tracker service
 """
+import enum
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 
 from ._common import column_modified_datetime
 from .base import metadata
+
+
+class ContainerClassification(str, enum.Enum):
+    DYNAMIC_SIDECAR = enum.auto()
+    USER_SERVICE = enum.auto()
+
 
 resource_tracker_container = sa.Table(
     "resource_tracker_container",
@@ -38,18 +45,6 @@ resource_tracker_container = sa.Table(
         nullable=False,
         doc="product_name label scraped via Prometheus (taken from container labels)",
         index=True,
-    ),
-    sa.Column(
-        "service_settings_reservation_nano_cpus",
-        sa.BigInteger,
-        nullable=True,
-        doc="CPU resource allocated to a container, ex.500000000 means that the container is allocated 0.5 CPU shares",
-    ),
-    sa.Column(
-        "service_settings_reservation_memory_bytes",
-        sa.BigInteger,
-        nullable=True,
-        doc="memory limit in bytes scraped via Prometheus",
     ),
     sa.Column(
         "service_settings_reservation_additional_info",
@@ -91,18 +86,6 @@ resource_tracker_container = sa.Table(
         doc="instance label scraped via Prometheus (taken from container labels, ex.: gpu1)",
     ),
     sa.Column(
-        "service_settings_limit_nano_cpus",
-        sa.BigInteger,
-        nullable=True,
-        doc="CPU resource limit allocated to a container, ex.500000000 means that the container has limit for 0.5 CPU shares",
-    ),
-    sa.Column(
-        "service_settings_limit_memory_bytes",
-        sa.BigInteger,
-        nullable=True,
-        doc="memory limit in bytes scraped via Prometheus",
-    ),
-    sa.Column(
         "project_name",
         sa.String,
         nullable=True,
@@ -125,6 +108,23 @@ resource_tracker_container = sa.Table(
         sa.String,
         nullable=False,
         doc="Service Version (parsed from image label scraped via Prometheus)",
+    ),
+    sa.Column(
+        "cpu_limit",
+        sa.Numeric(precision=3, scale=2),
+        nullable=False,
+        doc="CPU resource allocated to a container, ex.0.5 CPU shares",
+    ),
+    sa.Column(
+        "memory_limit",
+        sa.BigInteger,
+        nullable=False,
+        doc="memory limit in bytes scraped via Prometheus",
+    ),
+    sa.Column(
+        "classification",
+        sa.Enum(ContainerClassification),
+        doc="Our custom classification of the container type",
     ),
     # ---------------------------
     sa.PrimaryKeyConstraint("container_id", name="resource_tracker_container_pkey"),

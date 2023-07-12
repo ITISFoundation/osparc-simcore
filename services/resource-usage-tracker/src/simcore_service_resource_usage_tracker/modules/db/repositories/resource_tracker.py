@@ -39,8 +39,8 @@ class ResourceTrackerRepository(BaseRepository):
                 project_uuid=f"{data.project_uuid}",
                 project_name=data.project_name,
                 product_name=data.product_name,
-                service_settings_reservation_nano_cpus=data.service_settings_reservation_nano_cpus,
-                service_settings_reservation_memory_bytes=data.service_settings_reservation_memory_bytes,
+                cpu_limit=data.cpu_limit,
+                memory_limit=data.memory_limit,
                 service_settings_reservation_additional_info=data.service_settings_reservation_additional_info,
                 container_cpu_usage_seconds_total=data.container_cpu_usage_seconds_total,
                 prometheus_created=data.prometheus_created.datetime,
@@ -49,10 +49,9 @@ class ResourceTrackerRepository(BaseRepository):
                 node_uuid=f"{data.node_uuid}",
                 node_label=data.node_label,
                 instance=data.instance,
-                service_settings_limit_nano_cpus=data.service_settings_limit_nano_cpus,
-                service_settings_limit_memory_bytes=data.service_settings_limit_memory_bytes,
                 service_key=data.service_key,
                 service_version=data.service_version,
+                classification=data.classification,
             )
 
             on_update_stmt = insert_stmt.on_conflict_do_update(
@@ -84,8 +83,8 @@ class ResourceTrackerRepository(BaseRepository):
         async with self.db_engine.begin() as conn:
             query = (
                 sa.select(
-                    resource_tracker_container.c.service_settings_reservation_nano_cpus,
-                    resource_tracker_container.c.service_settings_reservation_memory_bytes,
+                    resource_tracker_container.c.cpu_limit,
+                    resource_tracker_container.c.memory_limit,
                     resource_tracker_container.c.prometheus_created,
                     resource_tracker_container.c.prometheus_last_scraped,
                     resource_tracker_container.c.project_uuid,
@@ -106,7 +105,7 @@ class ResourceTrackerRepository(BaseRepository):
 
             result = await conn.execute(query)
             containers_list = [
-                ContainerGetDB.construct(**row)  # type: ignore[arg-type]
+                ContainerGetDB(**row)  # type: ignore[arg-type]
                 for row in result.fetchall()
             ]
 
