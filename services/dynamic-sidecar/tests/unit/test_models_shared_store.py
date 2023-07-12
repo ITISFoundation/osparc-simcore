@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
+import json
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -105,3 +106,24 @@ async def test_no_concurrency_with_parallel_writes(
         *(replace_list_in_shared_store(f"{x}") for x in range(PARALLEL_CHANGES))
     )
     assert len(shared_store.container_names) == PARALLEL_CHANGES
+
+
+async def test_init_from_disk_with_legacy_data_format(project_tests_dir: Path):
+    MOCKS_DIR = project_tests_dir / "mocks"
+    LEGACY_SHARED_STORE = "legacy_shared_store.json"
+
+    results = await SharedStore.init_from_disk(
+        MOCKS_DIR, store_file_name=LEGACY_SHARED_STORE
+    )
+    # if file is missing it correctly loaded the storage_file
+    assert (MOCKS_DIR / STORE_FILE_NAME).exists() is False
+
+    # ensure object content and disk content are the same
+    assert json.loads(results.json()) == json.loads(
+        (MOCKS_DIR / LEGACY_SHARED_STORE).read_text()
+    )
+
+
+async def test_init_from_disk_no_file_present(tmp_path: Path):
+    await SharedStore.init_from_disk(tmp_path, store_file_name=STORE_FILE_NAME)
+    assert (tmp_path / STORE_FILE_NAME).exists() is True

@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -11,7 +10,8 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKey, ServiceVersion
 from prometheus_api_client import PrometheusConnect
-from pydantic import BaseModel
+from pydantic import BaseModel, ByteSize
+from simcore_postgres_database.models.resource_tracker import ContainerClassification
 from simcore_service_resource_usage_tracker.modules.prometheus import (
     get_prometheus_api_client,
 )
@@ -56,10 +56,6 @@ def _build_cache_key_user_id(fct, *args):
     return f"{fct.__name__}_{args[1]}"
 
 
-def _build_cache_key_project_and_node_id(fct, *args):
-    return f"{fct.__name__}_{args[1]}_{args[2]}"
-
-
 @cached(ttl=_TTL, key_builder=_build_cache_key_user_id)
 async def _get_user_email(
     osparc_repo: UserAndProjectRepository, user_id: int
@@ -68,7 +64,6 @@ async def _get_user_email(
     return user_email
 
 
-@cached(ttl=_TTL, key_builder=_build_cache_key_project_and_node_id)
 async def _get_project_and_node_names(
     osparc_repo: UserAndProjectRepository, project_uuid: ProjectID, node_uuid: NodeID
 ) -> tuple[str | None, str | None]:
@@ -104,35 +99,6 @@ async def _scrape_container_resource_usage(
 
     data: list[ContainerScrapedResourceUsage] = []
     for item in containers_cpu_seconds_usage:
-        # Prepare metric
-        metric: dict[str, Any] = item["metric"]
-        container_label_simcore_service_settings: list[dict[str, Any]] = json.loads(
-            metric["container_label_simcore_service_settings"]
-        )
-        reservation_nano_cpus: int | None = None
-        reservation_memory_bytes: int | None = None
-        limit_nano_cpus: int | None = None
-        limit_memory_bytes: int | None = None
-        for setting in container_label_simcore_service_settings:
-            if setting.get("type") == "Resources":
-                reservation_nano_cpus = (
-                    setting.get("value", {})
-                    .get("Reservations", {})
-                    .get("NanoCPUs", None)
-                )
-                reservation_memory_bytes = (
-                    setting.get("value", {})
-                    .get("Reservations", {})
-                    .get("MemoryBytes", None)
-                )
-                limit_nano_cpus = (
-                    setting.get("value", {}).get("Limits", {}).get("NanoCPUs", None)
-                )
-                limit_memory_bytes = (
-                    setting.get("value", {}).get("Limits", {}).get("MemoryBytes", None)
-                )
-                break
-
         # Prepare values
         values: list[list] = item["values"]
         first_value: list = values[0]
@@ -140,9 +106,18 @@ async def _scrape_container_resource_usage(
         assert len(first_value) == 2  # nosec
         assert len(last_value) == 2  # nosec
 
-        user_id = int(metric["container_label_user_id"])
-        project_uuid = ProjectID(metric["container_label_study_id"])
-        node_uuid = NodeID(metric["container_label_uuid"])
+        # Prepare metric
+        metric: dict[str, Any] = item["metric"]
+
+        memory_limit = int(metric["container_label_io_simcore_runtime_memory_limit"])
+        cpu_limit = float(metric["container_label_io_simcore_runtime_cpu_limit"])
+
+        product_name = metric["container_label_io_simcore_runtime_product_name"]
+        user_id = int(metric["container_label_io_simcore_runtime_user_id"])
+        project_uuid = ProjectID(
+            metric["container_label_io_simcore_runtime_project_id"]
+        )
+        node_uuid = NodeID(metric["container_label_io_simcore_runtime_node_id"])
         user_email, project_info = await asyncio.gather(
             *[
                 _get_user_email(osparc_repo, user_id),
@@ -161,24 +136,23 @@ async def _scrape_container_resource_usage(
 
         container_resource_usage = ContainerScrapedResourceUsage(
             container_id=metric["id"],
-            user_id=metric["container_label_user_id"],
-            product_name=metric["container_label_product_name"],
-            project_uuid=metric["container_label_study_id"],
-            service_settings_reservation_nano_cpus=reservation_nano_cpus,
-            service_settings_reservation_memory_bytes=reservation_memory_bytes,
+            user_id=user_id,
+            product_name=product_name,
+            project_uuid=project_uuid,
+            memory_limit=ByteSize(memory_limit),
+            cpu_limit=cpu_limit,
             service_settings_reservation_additional_info={},
             container_cpu_usage_seconds_total=last_value[1],
             prometheus_created=arrow.get(first_value[0]),
             prometheus_last_scraped=arrow.get(last_value[0]),
-            node_uuid=metric["container_label_uuid"],
+            node_uuid=node_uuid,
             instance=metric.get("instance", None),
-            service_settings_limit_nano_cpus=limit_nano_cpus,
-            service_settings_limit_memory_bytes=limit_memory_bytes,
             project_name=project_name,
             node_label=node_label,
             user_email=user_email,
             service_key=ServiceKey(service_key),
             service_version=ServiceVersion(service_version),
+            classification=ContainerClassification.USER_SERVICE,
         )
 
         data.append(container_resource_usage)
