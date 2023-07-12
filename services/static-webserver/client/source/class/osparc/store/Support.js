@@ -149,12 +149,12 @@ qx.Class.define("osparc.store.Support", {
 
     mailToText: function(email, subject) {
       const color = qx.theme.manager.Color.getInstance().resolve("text");
-      const textLink = `&nbsp&nbsp<a href="mailto:${email}?subject=${subject}" style='color: ${color}' target='_blank'>${email}</a>&nbsp&nbsp`;
+      const textLink = `<a href="mailto:${email}?subject=${subject}" style='color: ${color}' target='_blank'>${email}</a>`;
       return textLink;
     },
 
     getMailToLabel: function(email, subject) {
-      const textLink = this.mailToText(email, subject);
+      const textLink = `&nbsp&nbsp${this.mailToText(email, subject)}&nbsp&nbsp`;
       const mailto = new qx.ui.basic.Label(textLink).set({
         alignX: "center",
         font: "text-14",
