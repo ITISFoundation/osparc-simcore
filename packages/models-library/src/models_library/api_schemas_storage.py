@@ -9,7 +9,8 @@
 import re
 from datetime import datetime
 from enum import Enum
-from typing import Any, Pattern
+from re import Pattern
+from typing import Any, ClassVar
 from uuid import UUID
 
 from models_library.projects_nodes_io import (
@@ -54,24 +55,24 @@ class HealthCheck(BaseModel):
 
 
 # /locations
-
-
 class FileLocation(BaseModel):
     name: LocationName
     id: LocationID
 
     class Config:
         extra = Extra.forbid
-        schema_extra = {
-            "examples": [{"name": "simcore.s3", "id": 0}, {"name": "datcore", "id": 1}]
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [
+                {"name": "simcore.s3", "id": 0},
+                {"name": "datcore", "id": 1},
+            ]
         }
 
 
 FileLocationArray = ListModel[FileLocation]
 
+
 # /locations/{location_id}/datasets
-
-
 class DatasetMetaDataGet(BaseModel):
     dataset_id: UUID | DatCoreDatasetName
     display_name: str
@@ -79,7 +80,7 @@ class DatasetMetaDataGet(BaseModel):
     class Config:
         extra = Extra.forbid
         orm_mode = True
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 # simcore dataset
                 {
@@ -136,7 +137,7 @@ class FileMetaDataGet(BaseModel):
         description="Entity tag (or ETag), represents a specific version of the file, None if invalid upload or datcore",
     )
     is_soft_link: bool = Field(
-        False,
+        default=False,
         description="If true, this file is a soft link."
         "i.e. is another entry with the same object_name",
     )
@@ -152,7 +153,7 @@ class FileMetaDataGet(BaseModel):
     class Config:
         extra = Extra.forbid
         orm_mode = True
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 # typical S3 entry
                 {
@@ -302,18 +303,16 @@ class FoldersBody(BaseModel):
     @root_validator()
     @classmethod
     def ensure_consistent_entries(cls, values):
-        source_node_keys = (
-            NodeID(n) for n in values["source"].get("workbench", {}).keys()
-        )
+        source_node_keys = (NodeID(n) for n in values["source"].get("workbench", {}))
         if set(source_node_keys) != set(values["nodes_map"].keys()):
-            raise ValueError("source project nodes do not fit with nodes_map entries")
+            msg = "source project nodes do not fit with nodes_map entries"
+            raise ValueError(msg)
         destination_node_keys = (
-            NodeID(n) for n in values["destination"].get("workbench", {}).keys()
+            NodeID(n) for n in values["destination"].get("workbench", {})
         )
         if set(destination_node_keys) != set(values["nodes_map"].values()):
-            raise ValueError(
-                "destination project nodes do not fit with nodes_map values"
-            )
+            msg = "destination project nodes do not fit with nodes_map values"
+            raise ValueError(msg)
         return values
 
 
