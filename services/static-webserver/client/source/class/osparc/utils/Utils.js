@@ -347,6 +347,31 @@ qx.Class.define("osparc.utils.Utils", {
       });
     },
 
+    // used for showing it to Guest users
+    createAccountMessage: function() {
+      return new Promise(resolve => {
+        Promise.all([
+          osparc.store.StaticInfo.getInstance().getDisplayName(),
+          osparc.store.Support.getManuals(),
+          osparc.store.VendorInfo.getInstance().getSupportEmail()
+        ])
+          .then(values => {
+            const productName = values[0];
+            const manuals = values[1];
+            const manualLink = (manuals && manuals.length) ? manuals[0].url : "";
+            const supportEmail = values[2];
+            let msg = "";
+            msg += qx.locale.Manager.tr("To use all ");
+            // product
+            const color = qx.theme.manager.Color.getInstance().resolve("text");
+            msg += `<a href=${manualLink} style='color: ${color}' target='_blank'>${productName} features/a>`;
+            msg += qx.locale.Manager.tr(", please send us an e-mail to create an account:");
+            msg += "</br>";
+            resolve(msg + supportEmail);
+          });
+      });
+    },
+
     getNameFromEmail: function(email) {
       return email.split("@")[0];
     },
