@@ -29,6 +29,8 @@ qx.Class.define("osparc.component.announcement.AnnouncementUIFactory", {
   },
 
   members: {
+    __ribbonAnnouncement: null,
+
     __isValid: function(widgetType) {
       const announcement = this.getAnnouncement();
 
@@ -46,6 +48,10 @@ qx.Class.define("osparc.component.announcement.AnnouncementUIFactory", {
     },
 
     __applyAnnouncement: function() {
+      if (this.__ribbonAnnouncement) {
+        osparc.component.notification.RibbonNotifications.getInstance().removeNotification(this.__ribbonAnnouncement);
+        this.__ribbonAnnouncement = null;
+      }
       if (this.__hasRibbonAnnouncement()) {
         this.__addRibbonAnnouncement();
       }
@@ -110,9 +116,9 @@ qx.Class.define("osparc.component.announcement.AnnouncementUIFactory", {
       let text = announcement.getTitle() + ": ";
       text += announcement.getDescription();
 
-      const ribbonNotification = new osparc.component.notification.RibbonNotification(text, "announcement", true);
-      ribbonNotification.announcementId = announcement.getId();
-      osparc.component.notification.RibbonNotifications.getInstance().addNotification(ribbonNotification);
+      const ribbonAnnouncement = this.__ribbonAnnouncement = new osparc.component.notification.RibbonNotification(text, "announcement", true);
+      ribbonAnnouncement.announcementId = announcement.getId();
+      osparc.component.notification.RibbonNotifications.getInstance().addNotification(ribbonAnnouncement);
     },
 
     createUserMenuAnnouncement: function() {
