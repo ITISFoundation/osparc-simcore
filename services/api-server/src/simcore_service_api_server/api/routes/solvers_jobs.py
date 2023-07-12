@@ -480,7 +480,7 @@ async def get_job_custom_metadata(
             )
 
 
-@router.put(
+@router.patch(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/metadata",
     response_model=JobMetadata,
     responses={**_common_error_responses},

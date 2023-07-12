@@ -2,14 +2,15 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import re
 from pathlib import Path
 from typing import TypedDict
 
 import httpx
-import jinja2
 import pytest
 from faker import Faker
 from models_library.basic_regex import UUID_RE_BASE
+from pydantic import parse_file_as
 from respx import MockRouter
 from simcore_service_api_server.models.schemas.jobs import (
     Job,
@@ -26,31 +27,66 @@ class MockedBackendApiDict(TypedDict):
     webserver: MockRouter | None
 
 
+def _as_path_regex(initial_path: str):
+    return (
+        re.sub(rf"({UUID_RE_BASE})", f"(?P<project_id>{UUID_RE_BASE})", initial_path)
+        + "$"
+    )
+
+
 @pytest.fixture
 def mocked_backend(
     mocked_webserver_service_api: MockRouter,
+    mocked_catalog_service_api: MockRouter,
     project_tests_dir: Path,
 ) -> MockedBackendApiDict:
-    mock_name = "delete_project_not_found.json"
-    environment = jinja2.Environment(
-        loader=jinja2.FileSystemLoader(project_tests_dir / "mocks"), autoescape=True
+    mock_name = "for_test_get_and_update_job_metadata.json"
+
+    captures = {
+        c.name: c
+        for c in parse_file_as(
+            list[HttpApiCallCaptureModel], project_tests_dir / "mocks" / mock_name
+        )
+    }
+
+    capture = captures["get_service"]
+    assert capture.host == "catalog"
+    mocked_catalog_service_api.request(
+        method=capture.method,
+        path=capture.path,
+        name=capture.name,
+    ).respond(
+        status_code=capture.status_code,
+        json=capture.response_body,
     )
-    template = environment.get_template(mock_name)
 
-    def _response(request: httpx.Request, project_id: str):
-        capture = HttpApiCallCaptureModel.parse_raw(
-            template.render(project_id=project_id)
+    for name in ("get_project_metadata", "update_project_metadata", "delete_project"):
+        capture = captures[name]
+        assert capture.host == "webserver"
+        capture_path_regex = _as_path_regex(capture.path.removeprefix("/v0"))
+
+        route = mocked_webserver_service_api.request(
+            method=capture.method,
+            path__regex=capture_path_regex,
+            name=capture.name,
         )
-        return httpx.Response(
-            status_code=capture.status_code, json=capture.response_body
-        )
 
-    mocked_webserver_service_api.delete(
-        path__regex=rf"/projects/(?P<project_id>{UUID_RE_BASE})$",
-        name="delete_project",
-    ).mock(side_effect=_response)
+        if name == "get_project_metadata":
+            # SEE https://lundberg.github.io/respx/guide/#iterable
+            route.side_effect = [
+                captures["get_project_metadata"].as_response(),
+                captures["get_project_metadata_1"].as_response(),
+                captures["get_project_metadata_2"].as_response(),
+            ]
+        else:
+            route.respond(
+                status_code=capture.status_code,
+                json=capture.response_body,
+            )
 
-    return MockedBackendApiDict(webserver=mocked_webserver_service_api, catalog=None)
+    return MockedBackendApiDict(
+        webserver=mocked_webserver_service_api, catalog=mocked_catalog_service_api
+    )
 
 
 @pytest.mark.acceptance_test(
@@ -70,8 +106,10 @@ async def test_get_and_update_job_metadata(
         auth=auth,
         json=JobInputs(
             values={
-                "x": 3.14,
-                "n": 42,
+                "x": 4.33,
+                "n": 55,
+                "title": "Temperature",
+                "enabled": True,
             }
         ).dict(),
     )

@@ -427,7 +427,7 @@
   "status_code": 204
  },
  {
-  "name": "get_project_metadata_3",
+  "name": "get_project_metadata_2",
   "description": "<Request('GET', 'http://webserver:8080/v0/projects/767a7355-3062-4ceb-b339-ed67d07d2ed2/metadata')>",
   "method": "GET",
   "host": "webserver",
