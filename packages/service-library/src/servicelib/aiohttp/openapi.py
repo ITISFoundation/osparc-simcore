@@ -2,7 +2,6 @@
 
     Facade for openapi functionality
 """
-import warnings
 from pathlib import Path
 
 import openapi_core
@@ -80,16 +79,6 @@ async def create_openapi_specs(
         spec_dict, spec_url = _load_from_path(path)
 
     return openapi_core.create_spec(spec_dict, spec_url)
-
-
-def create_specs(openapi_path: Path) -> OpenApiSpec:
-    warnings.warn("Use instead create_openapi_specs", category=DeprecationWarning)
-
-    # TODO: spec_from_file and spec_from_url
-    with openapi_path.open() as f:
-        spec_dict = yaml.safe_load(f)
-
-    return openapi_core.create_spec(spec_dict, spec_url=openapi_path.as_uri())
 
 
 __all__ = (
