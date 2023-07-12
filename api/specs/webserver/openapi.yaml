@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: "osparc-simcore web API"
-  version: 0.24.0
+  version: 0.25.0
   description: "API designed for the front-end app"
   contact:
     name: IT'IS Foundation
@@ -23,27 +23,15 @@ servers:
         enum:
           - v0
         default: v0
-tags:
-  - name: activity
-  - name: admin
-  - name: authentication
-  - name: catalog
-  - name: cluster
-  - name: configuration
-  - name: maintenance
-  - name: nih-sparc
-  - name: project
-  - name: publication
-  - name: repository
-  - name: storage
-  - name: tag
-  - name: tasks
-  - name: user
 
 paths:
   # ADMIN -------------
   /email:test:
     $ref: "./openapi-admin.yaml#/paths/~1email:test"
+
+  # ANNOUNCEMENTS ---------------------------------------------------------
+  /announcements:
+    $ref: "./openapi-announcements.yaml#/paths/~1announcements"
 
   # DIAGNOSTICS ---------------------------------------------------------
   /:
