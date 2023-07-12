@@ -28,6 +28,8 @@ from simcore_service_webserver.announcements._redis import (
     Announcement,
 )
 
+_TEXT_FORMAT = "YYYY-MM-DDTHH:mm:ss+00:00"
+
 
 @pytest.fixture
 def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
@@ -75,18 +77,19 @@ async def test_list_empty_announcements(client: TestClient):
     assert data == []
 
 
-async def test_list_one_announcements(
+async def test_list_announcements(
     client: TestClient, push_announcements_in_redis: Callable, faker: Faker
 ):
     assert client.app
 
     # redis one item
+    now = arrow.utcnow()
     expected = [
         {
             "id": "Student_Competition_2023",
             "products": ["s4llite", "osparc"],
-            "start": arrow.utcnow().format(),
-            "end": arrow.utcnow().shift(hours=1).format(),
+            "start": now.format(_TEXT_FORMAT),
+            "end": now.shift(hours=1).format(_TEXT_FORMAT),
             "title": "Student Competition 2023",
             "description": "foo",
             "link": faker.url(),
@@ -109,14 +112,15 @@ async def test_list_announcements_filtered(
     client: TestClient, push_announcements_in_redis: Callable, faker: Faker
 ):
     assert client.app
+    now = arrow.utcnow()
 
     # redis multiple items
     expected = [
         {
             "id": "Student_Competition_2023",
             "products": ["s4llite", "osparc"],
-            "start": arrow.utcnow().format(),
-            "end": arrow.utcnow().shift(hours=1).format(),
+            "start": now.format(_TEXT_FORMAT),
+            "end": now.shift(hours=1).format(_TEXT_FORMAT),
             "title": "Student Competition 2023",
             "description": "foo",
             "link": faker.url(),
@@ -127,8 +131,8 @@ async def test_list_announcements_filtered(
     other_product = {
         "id": "TIP_v2",
         "products": ["tis"],
-        "start": arrow.utcnow().format(),
-        "end": arrow.utcnow().shift(hours=1).format(),
+        "start": now.format(_TEXT_FORMAT),
+        "end": now.shift(hours=1).format(_TEXT_FORMAT),
         "title": "TIP v2",
         "description": faker.text(),
         "link": faker.url(),
@@ -139,12 +143,23 @@ async def test_list_announcements_filtered(
     expired.update(
         {
             "id": "Student_Competition_2022",
-            "start": arrow.utcnow().shift(years=-1).format(),
-            "end": arrow.utcnow().shift(years=-1, hours=1).format(),
+            "start": now.shift(years=-1).format(_TEXT_FORMAT),
+            "end": now.shift(years=-1, hours=1).format(_TEXT_FORMAT),
         }
     )
 
-    await push_announcements_in_redis(values=[*expected, other_product, expired])
+    invalid = deepcopy(expected[0])
+    invalid.update(
+        {
+            "id": "Invalid_item",
+            "start": now.format(),
+            "end": now.shift(hours=-1).format(_TEXT_FORMAT),
+        }
+    )
+
+    await push_announcements_in_redis(
+        values=[*expected, other_product, expired, invalid]
+    )
 
     # checks route defined
     url = client.app.router["list_announcements"].url_for()
@@ -154,9 +169,6 @@ async def test_list_announcements_filtered(
     data, error = await assert_status(response, web.HTTPOk)
     assert error is None
     assert data == expected
-
-    # redis wrong items
-    # redis wrong db type
 
 
 #
@@ -178,7 +190,7 @@ def test_model_examples(
     ), f"Failed {example_name} : {json.dumps(example_data)}"
 
 
-def test_invalid_announcement():
+def test_invalid_announcement(faker: Faker):
     now = arrow.utcnow()
     with pytest.raises(ValidationError):
         Announcement.parse_obj(
@@ -188,14 +200,14 @@ def test_invalid_announcement():
                 "start": now.format(),
                 "end": now.shift(hours=-1).format(),
                 "title": "Student Competition 2023",
-                "description": "For more information click <a href='https://zmt.swiss/news-and-events/news/sim4life/s4llite-student-competition-2023/' style='color: white' target='_blank'>here</a>",
-                "link": "https://zmt.swiss/news-and-events/news/sim4life/s4llite-student-competition-2023/",
+                "description": faker.text(),
+                "link": faker.url(),
                 "widgets": ["login", "ribbon"],
             }
         )
 
 
-def test_announcement_expired():
+def test_announcement_expired(faker: Faker):
     now = arrow.utcnow()
     model = Announcement.parse_obj(
         {
@@ -204,8 +216,8 @@ def test_announcement_expired():
             "start": now.shift(hours=-2).format(),
             "end": now.shift(hours=-1).format(),
             "title": "Student Competition 2023",
-            "description": "For more information click <a href='https://zmt.swiss/news-and-events/news/sim4life/s4llite-student-competition-2023/' style='color: white' target='_blank'>here</a>",
-            "link": "https://zmt.swiss/news-and-events/news/sim4life/s4llite-student-competition-2023/",
+            "description": faker.text(),
+            "link": faker.url(),
             "widgets": ["login", "ribbon"],
         }
     )

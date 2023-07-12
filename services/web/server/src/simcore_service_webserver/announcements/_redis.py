@@ -33,11 +33,11 @@ async def list_announcements(
     for i, item in enumerate(items):
         try:
             model = Announcement.parse_raw(item)
-            # filter
+            # filters
             if include_product not in model.products:
-                break
+                continue
             if exclude_expired and model.expired():
-                break
+                continue
             # OK
             announcements.append(model)
         except ValidationError:  # noqa: PERF203
