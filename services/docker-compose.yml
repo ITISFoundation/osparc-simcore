@@ -262,26 +262,118 @@ services:
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
       &webserver-environment
-      CATALOG_HOST: ${CATALOG_HOST:-catalog}
-      CATALOG_PORT: ${CATALOG_PORT:-8000}
-      DIAGNOSTICS_MAX_AVG_LATENCY: 10
-      DIAGNOSTICS_MAX_TASK_DELAY: 30
-      DIRECTOR_HOST: ${DIRECTOR_HOST:-director}
-      DIRECTOR_PORT: ${DIRECTOR_PORT:-8080}
-      DIRECTOR_V2_HOST: ${DIRECTOR_V2_HOST:-director-v2}
-      DIRECTOR_V2_PORT: ${DIRECTOR_V2_PORT:-8000}
+
+      SWARM_STACK_NAME: ${SWARM_STACK_NAME}
+
+      WEBSERVER_DEV_FEATURES_ENABLED: ${WEBSERVER_DEV_FEATURES_ENABLED}
+
+      WEBSERVER_LOGLEVEL: ${WEBSERVER_LOGLEVEL}
+
+      WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
+      
+      # WEBSERVER_SERVER_HOST
+      
+      WEBSERVER_HOST: ${WEBSERVER_HOST}
+
+      # WEBSERVER_SERVER_PORT
+
+      # WEBSERVER_FRONTEND
+
+      # WEBSERVER_ACTIVITY
+      #
+      # no env vars
+
+      WEBSERVER_CATALOG: ${WEBSERVER_CATALOG}
+
+      # WEBSERVER_DB
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_ENDPOINT: ${POSTGRES_ENDPOINT}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_USER: ${POSTGRES_USER}
+
+      # WEBSERVER_DIAGNOSTICS
+      WEBSERVER_DIAGNOSTICS: ${WEBSERVER_DIAGNOSTICS}
+
+      WEBSERVER_DIRECTOR_V2: ${WEBSERVER_DIRECTOR_V2}
+      
+      WEBSERVER_DIRECTOR: ${WEBSERVER_DIRECTOR}
+
+      # WEBSERVER_EMAIL
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+
+      WEBSERVER_EXPORTER: ${WEBSERVER_EXPORTER}
+      
+      WEBSERVER_GARBAGE_COLLECTOR: ${WEBSERVER_GARBAGE_COLLECTOR}
+
+      # WEBSERVER_INVITATIONS
+      INVITATIONS_HOST: ${INVITATIONS_HOST}
+      INVITATIONS_LOGLEVEL: ${INVITATIONS_LOGLEVEL}
+      INVITATIONS_OSPARC_URL: ${INVITATIONS_OSPARC_URL}
+      INVITATIONS_PASSWORD: ${INVITATIONS_PASSWORD}
+      INVITATIONS_PORT: ${INVITATIONS_PORT}
+      INVITATIONS_SECRET_KEY: ${INVITATIONS_SECRET_KEY}
+      INVITATIONS_USERNAME: ${INVITATIONS_USERNAME}
+
+      WEBSERVER_LOGIN: ${WEBSERVER_LOGIN}
+      
+      # WEBSERVER_REDIS
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+
+      # WEBSERVER_REST
+      #
+      # no env vars
+
+      # WEBSERVER_RESOURCE_MANAGER
+      #
+      # no env vars
+
+      # WEBSERVER_RESOURCE_USAGE_TRACKER
+      #
+      # no env vars
+
+      # WEBSERVER_SCICRUNCH
+      SCICRUNCH_API_KEY: ${SCICRUNCH_API_KEY}
+
+      # WEBSERVER_SESSION
+      SESSION_SECRET_KEY: ${WEBSERVER_SESSION_SECRET_KEY}
+
+      # WEBSERVER_STATICWEB
+      #
+      # no env vars
+
+      # WEBSERVER_STORAGE
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
+      STORAGE_HOST: ${STORAGE_HOST}
+      STORAGE_PORT: ${STORAGE_PORT}
+
+      # WEBSERVER_STUDIES_DISPATCHER
+      WEBSERVER_STUDIES_DISPATCHER: ${WEBSERVER_STUDIES_DISPATCHER}
+
+      # WEBSERVER_TRACING
+      TRACING_ENABLED: ${TRACING_ENABLED}
+      TRACING_ZIPKIN_ENDPOINT: ${TRACING_ZIPKIN_ENDPOINT}
+      TRACING_THRIFT_COMPACT_ENDPOINT: ${TRACING_THRIFT_COMPACT_ENDPOINT}
+
+      WEBSERVER_PROJECTS: ${WEBSERVER_PROJECTS}
+
+      # WEBSERVER_RABBITMQ
+      RABBIT_HOST: ${RABBIT_HOST}
+      RABBIT_PASSWORD: ${RABBIT_PASSWORD}
+      RABBIT_PORT: ${RABBIT_PORT}
+      RABBIT_USER: ${RABBIT_USER}
+
+      # ARBITRARY ENV VARS
+
       # see [https://docs.gunicorn.org/en/stable/settings.html#timeout],
       # since we have the docker healthcheck already, this should be ok
-      GUNICORN_CMD_ARGS: --timeout=180
-      LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
-      STORAGE_HOST: ${STORAGE_HOST:-storage}
-      STORAGE_PORT: ${STORAGE_PORT:-8080}
-      SWARM_STACK_NAME: ${SWARM_STACK_NAME:-simcore}
-      WEBSERVER_DB_LISTENER: 0
-      WEBSERVER_GARBAGE_COLLECTOR: "null"
-      WEBSERVER_LOGLEVEL: ${LOG_LEVEL:-WARNING}
-    env_file:
-      - ../.env
+      GUNICORN_CMD_ARGS: ${WEBSERVER_GUNICORN_CMD_ARGS}
+
+      WEBSERVER_DB_LISTENER: ${WEBSERVER_DB_LISTENER}
+
     deploy:
       placement:
         constraints:
@@ -391,7 +483,9 @@ services:
           cpus: "0.10"
           memory: "100M"
     volumes:
-      - computational_shared_data:${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
+      - type: bind  # verbose volume to avoid problem with env variable resolution https://github.com/docker/compose/issues/3998
+        source: computational_shared_data
+        target: ${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       &sidecar-environment

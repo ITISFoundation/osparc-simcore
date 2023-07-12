@@ -11,7 +11,6 @@ class StudiesDispatcherSettings(BaseCustomSettings):
     STUDIES_ACCESS_ANONYMOUS_ALLOWED: bool = Field(
         False,
         description="If enabled, the study links are accessible to anonymous users",
-        env=["STUDIES_ACCESS_ANONYMOUS_ALLOWED", "WEBSERVER_STUDIES_ACCESS_ENABLED"],
     )
 
     STUDIES_GUEST_ACCOUNT_LIFETIME: timedelta = Field(

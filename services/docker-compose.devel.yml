@@ -102,7 +102,11 @@ services:
       &dev-dask-sidecar-volumes
       - ./dask-sidecar:/devel/services/dask-sidecar
       - ../packages:/devel/packages
-      - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
+      - type: bind  # verbose volume to avoid problem with env variable resolution https://github.com/docker/compose/issues/3998
+        source: ${ETC_HOSTNAME:-/etc/hostname}
+        target: /home/scu/hostname
+        read_only: true
+
     environment:
       SC_BOOT_MODE: debug-ptvsd
       SIDECAR_LOGLEVEL: DEBUG
