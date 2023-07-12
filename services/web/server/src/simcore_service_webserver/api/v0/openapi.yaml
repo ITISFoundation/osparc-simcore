@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: osparc-simcore web API
-  version: 0.24.0
+  version: 0.25.0
   description: API designed for the front-end app
   contact:
     name: IT'IS Foundation
@@ -23,22 +23,6 @@ servers:
         enum:
           - v0
         default: v0
-tags:
-  - name: activity
-  - name: admin
-  - name: authentication
-  - name: catalog
-  - name: cluster
-  - name: configuration
-  - name: maintenance
-  - name: nih-sparc
-  - name: project
-  - name: publication
-  - name: repository
-  - name: storage
-  - name: tag
-  - name: tasks
-  - name: user
 paths:
   '/email:test':
     post:
@@ -134,6 +118,78 @@ paths:
                             type: object
                   error:
                     title: Error
+  /announcements:
+    get:
+      tags:
+        - announcements
+      summary: List Announcements
+      operationId: list_announcements
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    items:
+                      properties:
+                        id:
+                          type: string
+                          title: Id
+                        products:
+                          items:
+                            type: string
+                            enum:
+                              - osparc
+                              - s4l
+                              - s4llite
+                              - tis
+                          type: array
+                          title: Products
+                        start:
+                          type: string
+                          format: date-time
+                          title: Start
+                        end:
+                          type: string
+                          format: date-time
+                          title: End
+                        title:
+                          type: string
+                          title: Title
+                        description:
+                          type: string
+                          title: Description
+                        link:
+                          type: string
+                          title: Link
+                        widgets:
+                          items:
+                            type: string
+                            enum:
+                              - login
+                              - ribbon
+                              - user-menu
+                          type: array
+                          title: Widgets
+                      type: object
+                      required:
+                        - id
+                        - products
+                        - start
+                        - end
+                        - title
+                        - description
+                        - link
+                        - widgets
+                      title: Announcement
+                    type: array
+                    title: Data
+                  error:
+                    title: Error
+                type: object
+                title: 'Envelope[list[simcore_service_webserver.announcements._models.Announcement]]'
   /:
     get:
       tags:
@@ -5888,11 +5944,42 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[ProjectsCommentsAPI]'
-                type: object
                 properties:
                   data:
-                    title: ProjectsCommentsAPI
+                    properties:
+                      comment_id:
+                        type: integer
+                        exclusiveMinimum: true
+                        title: Comment Id
+                        description: 'Primary key, identifies the comment'
+                        minimum: 0
+                      project_uuid:
+                        type: string
+                        format: uuid
+                        title: Project Uuid
+                        description: project reference for this table
+                      user_id:
+                        type: integer
+                        exclusiveMinimum: true
+                        title: User Id
+                        description: user reference for this table
+                        minimum: 0
+                      contents:
+                        type: string
+                        title: Contents
+                        description: Contents of the comment
+                      created:
+                        type: string
+                        format: date-time
+                        title: Created
+                        description: Timestamp on creation
+                      modified:
+                        type: string
+                        format: date-time
+                        title: Modified
+                        description: Timestamp with last update
+                    additionalProperties: false
+                    type: object
                     required:
                       - comment_id
                       - project_uuid
@@ -5900,42 +5987,11 @@ paths:
                       - contents
                       - created
                       - modified
-                    type: object
-                    properties:
-                      comment_id:
-                        title: Comment Id
-                        exclusiveMinimum: true
-                        type: integer
-                        description: 'Primary key, identifies the comment'
-                        minimum: 0
-                      project_uuid:
-                        title: Project Uuid
-                        type: string
-                        description: project reference for this table
-                        format: uuid
-                      user_id:
-                        title: User Id
-                        exclusiveMinimum: true
-                        type: integer
-                        description: user reference for this table
-                        minimum: 0
-                      contents:
-                        title: Contents
-                        type: string
-                        description: Contents of the comment
-                      created:
-                        title: Created
-                        type: string
-                        description: Timestamp on creation
-                        format: date-time
-                      modified:
-                        title: Modified
-                        type: string
-                        description: Timestamp with last update
-                        format: date-time
-                    additionalProperties: false
+                    title: ProjectsCommentsAPI
                   error:
                     title: Error
+                type: object
+                title: 'Envelope[ProjectsCommentsAPI]'
     put:
       tags:
         - project
@@ -5945,16 +6001,16 @@ paths:
       parameters:
         - required: true
           schema:
-            title: Project Uuid
             type: string
             format: uuid
+            title: Project Uuid
           name: project_uuid
           in: path
         - required: true
           schema:
-            title: Comment Id
-            exclusiveMinimum: true
             type: integer
+            exclusiveMinimum: true
+            title: Comment Id
             minimum: 0
           name: comment_id
           in: path
