@@ -171,6 +171,7 @@ async def get_upload_links_from_s3(
     link_type: LinkType,
     client_session: ClientSession | None = None,
     file_size: ByteSize,
+    is_directory: bool,
 ) -> tuple[LocationID, FileUploadSchema]:
     async with ClientSessionContextManager(client_session) as session:
         store_id = await _resolve_location_id(
@@ -183,6 +184,7 @@ async def get_upload_links_from_s3(
             user_id=user_id,
             link_type=link_type,
             file_size=file_size,
+            is_directory=is_directory,
         )
         return (store_id, file_links)
 
@@ -255,7 +257,7 @@ async def download_path_from_s3(
                 r_clone_settings,
                 progress_bar,
                 local_directory_path=local_folder,
-                download_s3_link=parse_obj_as(AnyUrl, download_link),
+                download_s3_link=parse_obj_as(AnyUrl, f"{download_link}"),
             )
             return local_folder
 
@@ -326,7 +328,7 @@ async def upload_path(
     client_session: ClientSession | None = None,
     r_clone_settings: RCloneSettings | None = None,
     progress_bar: ProgressBarData | None = None,
-) -> tuple[LocationID, ETag]:
+) -> tuple[LocationID, ETag | None]:
     """Uploads a file (potentially in parallel) or a file object (sequential in any case) to S3
 
     :param session: add app[APP_CLIENT_SESSION_KEY] session here otherwise default is opened/closed every call
@@ -354,6 +356,10 @@ async def upload_path(
 
     if io_log_redirect_cb:
         await io_log_redirect_cb(f"uploading {path_to_upload}, please wait...")
+
+    # NOTE: when uploading a directory there is no e_tag as this is provided only for
+    # each single file and it makes no sense to have one for directories
+    e_tag: ETag | None = None
     async with ClientSessionContextManager(client_session) as session:
         upload_links = None
         try:
@@ -369,9 +375,8 @@ async def upload_path(
                     if isinstance(path_to_upload, Path)
                     else path_to_upload.file_size
                 ),
+                is_directory=is_directory,
             )
-            # NOTE: in case of S3 upload, there are no multipart uploads, so this remains empty
-            uploaded_parts: list[UploadedPart] = []
             if is_directory:
                 assert r_clone_settings  # nosec
                 assert isinstance(path_to_upload, Path)  # nosec
@@ -384,7 +389,9 @@ async def upload_path(
                 )
             else:
                 # uploading a file
-                uploaded_parts = await upload_file_to_presigned_links(
+                uploaded_parts: list[
+                    UploadedPart
+                ] = await upload_file_to_presigned_links(
                     session,
                     upload_links,
                     path_to_upload,
@@ -392,13 +399,8 @@ async def upload_path(
                     io_log_redirect_cb=io_log_redirect_cb,
                     progress_bar=progress_bar,
                 )
-
-            # complete the upload
-            e_tag = await _complete_upload(
-                session,
-                upload_links,
-                uploaded_parts,
-            )
+                # complete the upload
+                e_tag = await _complete_upload(session, upload_links, uploaded_parts)
         except (r_clone.RCloneFailedError, exceptions.S3TransferError) as exc:
             _logger.exception("The upload failed with an unexpected error:")
             if upload_links:

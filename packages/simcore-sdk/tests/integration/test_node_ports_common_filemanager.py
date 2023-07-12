@@ -5,13 +5,19 @@
 # pylint:disable=protected-access
 
 import filecmp
+from collections.abc import Awaitable, Callable
 from pathlib import Path
-from typing import Any, Awaitable, Callable
+from typing import Any
 from uuid import uuid4
 
 import pytest
 from aiohttp import ClientError
-from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
+from faker import Faker
+from models_library.projects_nodes_io import (
+    LocationID,
+    SimcoreS3DirectoryID,
+    SimcoreS3FileID,
+)
 from models_library.users import UserID
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
@@ -79,7 +85,9 @@ async def test_valid_upload_download(
             progress_bar=progress_bar,
         )
         # pylint: disable=protected-access
-        assert progress_bar._continuous_progress_value == pytest.approx(1)
+        assert progress_bar._continuous_progress_value == pytest.approx(
+            1
+        )  # noqa: SLF001
         assert store_id == s3_simcore_location
         assert e_tag
         get_store_id, get_e_tag = await filemanager.get_file_metadata(
@@ -99,7 +107,9 @@ async def test_valid_upload_download(
             r_clone_settings=optional_r_clone,
             progress_bar=progress_bar,
         )
-        assert progress_bar._continuous_progress_value == pytest.approx(2)
+        assert progress_bar._continuous_progress_value == pytest.approx(
+            2
+        )  # noqa: SLF001
     assert download_file_path.exists()
     assert download_file_path.name == "test.test"
     assert filecmp.cmp(download_file_path, file_path)
@@ -158,14 +168,14 @@ async def test_valid_upload_download_using_file_object(
             r_clone_settings=optional_r_clone,
             progress_bar=progress_bar,
         )
-    assert progress_bar._continuous_progress_value == pytest.approx(1)
+    assert progress_bar._continuous_progress_value == pytest.approx(1)  # noqa: SLF001
     assert download_file_path.exists()
     assert download_file_path.name == "test.test"
     assert filecmp.cmp(download_file_path, file_path)
 
 
 @pytest.fixture
-def mocked_upload_file_raising_exceptions(mocker: MockerFixture):
+def mocked_upload_file_raising_exceptions(mocker: MockerFixture) -> None:
     mocker.patch(
         "simcore_sdk.node_ports_common.filemanager.r_clone.sync_local_to_s3",
         autospec=True,
@@ -304,7 +314,7 @@ async def test_invalid_file_path(
         )
 
     download_folder = Path(tmpdir) / "downloads"
-    with pytest.raises(exceptions.S3InvalidPathError):
+    with pytest.raises(exceptions.S3InvalidPathError):  # noqa: PT012
         async with ProgressBarData(steps=1) as progress_bar:
             await filemanager.download_path_from_s3(
                 user_id=user_id,
@@ -331,8 +341,8 @@ async def test_errors_upon_invalid_file_identifiers(
     assert file_path.exists()
 
     store = s3_simcore_location
-    with pytest.raises(exceptions.S3InvalidPathError):
-        invalid_s3_object: SimcoreS3FileID = ""  # type: ignore
+    with pytest.raises(exceptions.S3InvalidPathError):  # noqa: PT012
+        invalid_s3_object = SimcoreS3FileID("")
         await filemanager.upload_path(
             user_id=user_id,
             store_id=store,
@@ -342,8 +352,8 @@ async def test_errors_upon_invalid_file_identifiers(
             io_log_redirect_cb=None,
         )
 
-    with pytest.raises(exceptions.StorageInvalidCall):
-        invalid_s3_object: SimcoreS3FileID = "file_id"  # type: ignore
+    with pytest.raises(exceptions.StorageInvalidCall):  # noqa: PT012
+        invalid_s3_object = SimcoreS3FileID("")
         await filemanager.upload_path(
             user_id=user_id,
             store_id=store,
@@ -354,9 +364,9 @@ async def test_errors_upon_invalid_file_identifiers(
         )
 
     download_folder = Path(tmpdir) / "downloads"
-    with pytest.raises(exceptions.S3InvalidPathError):
+    with pytest.raises(exceptions.S3InvalidPathError):  # noqa: PT012
         async with ProgressBarData(steps=1) as progress_bar:
-            invalid_path: SimcoreS3FileID = ""  # type: ignore
+            invalid_path = SimcoreS3FileID("")
             await filemanager.download_path_from_s3(
                 user_id=user_id,
                 store_id=store,
@@ -368,7 +378,7 @@ async def test_errors_upon_invalid_file_identifiers(
                 progress_bar=progress_bar,
             )
 
-    with pytest.raises(exceptions.S3InvalidPathError):
+    with pytest.raises(exceptions.S3InvalidPathError):  # noqa: PT012
         async with ProgressBarData(steps=1) as progress_bar:
             await filemanager.download_path_from_s3(
                 user_id=user_id,
@@ -406,7 +416,7 @@ async def test_invalid_store(
         )
 
     download_folder = Path(tmpdir) / "downloads"
-    with pytest.raises(exceptions.S3InvalidStore):
+    with pytest.raises(exceptions.S3InvalidStore):  # noqa: PT012
         async with ProgressBarData(steps=1) as progress_bar:
             await filemanager.download_path_from_s3(
                 user_id=user_id,
@@ -435,7 +445,7 @@ async def test_valid_metadata(
     is_metadata_present = await filemanager.entry_exists(
         user_id=user_id, store_id=s3_simcore_location, s3_object=file_id  # type: ignore
     )
-    assert is_metadata_present == False
+    assert is_metadata_present is False
 
     # now really create the file and upload it
     file_path.write_text("I am a test file")
@@ -525,11 +535,64 @@ async def test_delete_file(
         await filemanager.entry_exists(
             user_id=user_id, store_id=store_id, s3_object=file_id
         )
-        == False
+        is False
     )
 
 
-# TODO: all operations here need to be done also on the directory paths
-# - test rclone asked to upload dir which is a file (should raise error)
-# - test rclone asked to upload a file which is a dir (should raise error)
-# - test to check that rclone support is missing!
+@pytest.mark.parametrize("files_in_folder", [1, 10])
+async def test_upload_path_source_is_a_folder(
+    node_ports_config: None,
+    project_id: str,
+    tmp_path: Path,
+    faker: Faker,
+    user_id: int,
+    s3_simcore_location: LocationID,
+    files_in_folder: int,
+    r_clone_settings: RCloneSettings,
+):
+    source_dir = tmp_path / f"source-{faker.uuid4()}"
+    source_dir.mkdir(parents=True, exist_ok=True)
+
+    download_dir = tmp_path / f"download-{faker.uuid4()}"
+    download_dir.mkdir(parents=True, exist_ok=True)
+
+    for i in range(files_in_folder):
+        (source_dir / f"file-{i}.txt").write_text("1")
+
+    directory_id = SimcoreS3DirectoryID.from_simcore_s3_object(
+        f"{project_id}/{faker.uuid4()}/some-dir-in-node-root/"
+    )
+    s3_object = SimcoreS3FileID(directory_id)
+
+    store_id, e_tag = await filemanager.upload_path(
+        user_id=user_id,
+        store_id=s3_simcore_location,
+        store_name=None,
+        s3_object=s3_object,
+        path_to_upload=source_dir,
+        io_log_redirect_cb=None,
+        r_clone_settings=r_clone_settings,
+    )
+    assert store_id == s3_simcore_location
+    assert e_tag is None
+    assert source_dir.exists()
+
+    async with ProgressBarData(steps=1) as progress_bar:
+        await filemanager.download_path_from_s3(
+            user_id=user_id,
+            store_name=None,
+            store_id=s3_simcore_location,
+            s3_object=s3_object,
+            local_folder=download_dir,
+            io_log_redirect_cb=None,
+            r_clone_settings=r_clone_settings,
+            progress_bar=progress_bar,
+        )
+    assert download_dir.exists()
+
+    # ensure all files in download and source directory are the same
+    file_names: set = {f.name for f in source_dir.glob("*")} & {
+        f.name for f in download_dir.glob("*")
+    }
+    for file_name in file_names:
+        filecmp.cmp(source_dir / file_name, download_dir / file_name, shallow=False)

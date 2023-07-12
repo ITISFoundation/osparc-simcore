@@ -1,7 +1,8 @@
 import logging
 import shutil
+from collections.abc import Callable, Coroutine
 from pathlib import Path
-from typing import Any, Callable, Coroutine
+from typing import Any
 
 from models_library.api_schemas_storage import FileUploadSchema, LinkType
 from models_library.users import UserID
@@ -13,6 +14,7 @@ from yarl import URL
 
 from ..node_ports_common import data_items_utils, filemanager
 from ..node_ports_common.constants import SIMCORE_LOCATION
+from ..node_ports_common.exceptions import NodeportsException
 from ..node_ports_common.file_io_utils import LogRedirectCB
 from .links import DownloadLink, FileLink, ItemConcreteValue, ItemValue, PortLink
 
@@ -140,6 +142,7 @@ async def get_upload_links_from_storage(
         s3_object=s3_object,
         link_type=link_type,
         file_size=file_size,
+        is_directory=False,
     )
     return links
 
@@ -215,10 +218,18 @@ async def push_file_to_store(
     file_base_path: Path | None = None,
     progress_bar: ProgressBarData,
 ) -> FileLink:
+    """
+    :raises exceptions.NodeportsException
+    """
+
     log.debug("file path %s will be uploaded to s3", file)
     s3_object = data_items_utils.create_simcore_file_id(
         file, project_id, node_id, file_base_path=file_base_path
     )
+    if not file.is_file():
+        msg = f"Expected path={file} should be a file"
+        raise NodeportsException(msg)
+
     store_id, e_tag = await filemanager.upload_path(
         user_id=user_id,
         store_id=SIMCORE_LOCATION,

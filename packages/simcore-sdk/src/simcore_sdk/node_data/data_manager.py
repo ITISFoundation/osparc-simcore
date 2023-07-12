@@ -67,7 +67,7 @@ async def push(
     progress_bar: ProgressBarData,
 ) -> None:
     if file_or_folder.is_file():
-        return await _push_file(
+        await _push_file(
             user_id,
             project_id,
             node_uuid,
@@ -76,7 +76,8 @@ async def push(
             io_log_redirect_cb=io_log_redirect_cb,
             progress_bar=progress_bar,
         )
-    # we have a folder, so we create a compressed file
+        return
+    # NOTE: the when pushing the state of the directories, the zipping will be removed
     async with AsyncExitStack() as stack:
         stack.enter_context(log_catch(log))
         stack.enter_context(
@@ -167,7 +168,7 @@ async def pull(
     progress_bar: ProgressBarData,
 ) -> None:
     if file_or_folder.is_file():
-        return await _pull_file(
+        await _pull_file(
             user_id,
             project_id,
             node_uuid,
@@ -177,6 +178,8 @@ async def pull(
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
         )
+        return
+    # NOTE: the when pulling the state of the directories, the zipping will be removed
     # we have a folder, so we need somewhere to extract it to
     async with progress_bar.sub_progress(steps=2) as sub_prog:
         with TemporaryDirectory() as tmp_dir_name:
