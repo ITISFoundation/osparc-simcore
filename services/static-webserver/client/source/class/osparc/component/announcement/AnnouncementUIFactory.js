@@ -46,8 +46,8 @@ qx.Class.define("osparc.component.announcement.AnnouncementUIFactory", {
     },
 
     __applyAnnouncement: function() {
-      if (this.hasRibbonAnnouncement()) {
-        this.addRibbonAnnouncement();
+      if (this.__hasRibbonAnnouncement()) {
+        this.__addRibbonAnnouncement();
       }
     },
 
@@ -55,7 +55,7 @@ qx.Class.define("osparc.component.announcement.AnnouncementUIFactory", {
       return this.__isValid("login");
     },
 
-    hasRibbonAnnouncement: function() {
+    __hasRibbonAnnouncement: function() {
       return this.__isValid("ribbon");
     },
 
@@ -100,7 +100,7 @@ qx.Class.define("osparc.component.announcement.AnnouncementUIFactory", {
       return loginAnnouncement;
     },
 
-    addRibbonAnnouncement: function() {
+    __addRibbonAnnouncement: function() {
       const announcement = this.getAnnouncement();
 
       if (osparc.utils.Utils.localCache.isDontShowAnnouncement(announcement.getId())) {
