@@ -32,7 +32,7 @@ qx.Class.define("osparc.AnnouncementsTracker", {
         osparc.data.Resources.get("announcements")
           .then(announcements => {
             if (announcements && announcements.length) {
-              this.__setAnnouncements([JSON.parse(announcements)]);
+              this.__setAnnouncements(announcements);
             } else {
               this.__setAnnouncements(null);
             }
