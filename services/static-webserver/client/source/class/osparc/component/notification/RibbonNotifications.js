@@ -49,6 +49,16 @@ qx.Class.define("osparc.component.notification.RibbonNotifications", {
     /**
      * @param {osparc.component.notification.RibbonNotification} notification
      */
+    removeNotification: function(notification) {
+      if (this.__notifications.indexOf(notification) > -1) {
+        this.__notifications.remove(notification);
+      }
+      this.__updateRibbon();
+    },
+
+    /**
+     * @param {osparc.component.notification.RibbonNotification} notification
+     */
     __createNotificationUI: function(notification) {
       const notificationLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5, "center")).set({
         backgroundColor: notification.getType() === "announcement" ? "strong-main" : "warning-yellow-s4l",
@@ -104,16 +114,6 @@ qx.Class.define("osparc.component.notification.RibbonNotifications", {
       }
 
       return notificationLayout;
-    },
-
-    /**
-     * @param {osparc.component.notification.Notification} notification
-     */
-    removeNotification: function(notification) {
-      if (this.__notifications.indexOf(notification) > -1) {
-        this.__notifications.remove(notification);
-      }
-      this.__updateRibbon();
     },
 
     __updateRibbon: function() {
