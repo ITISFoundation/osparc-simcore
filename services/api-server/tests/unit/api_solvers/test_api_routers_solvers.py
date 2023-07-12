@@ -31,7 +31,7 @@ async def test_list_solvers(
     # No warnings for ValidationError with the fixture
     assert (
         not warn.called
-    ), f"No warnings expected in this fixture, got {str(warn.call_args)}"
+    ), f"No warnings expected in this fixture, got {warn.call_args!s}"
 
     data = resp.json()
     assert len(data) == 2

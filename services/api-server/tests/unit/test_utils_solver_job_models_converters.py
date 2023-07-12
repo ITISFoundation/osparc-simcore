@@ -75,7 +75,7 @@ def test_job_to_node_inputs_conversion():
             ),
         }
     )
-    for name, value in job_inputs.values.items():
+    for _name, value in job_inputs.values.items():
         assert parse_obj_as(ArgumentTypes, value) == value
 
     node_inputs: InputsDict = {
@@ -92,7 +92,7 @@ def test_job_to_node_inputs_conversion():
         ),
     }
 
-    for name, value in node_inputs.items():
+    for _name, value in node_inputs.items():
         assert parse_obj_as(InputTypes, value) == value
 
     # test transformations in both directions
