@@ -362,7 +362,6 @@ qx.Class.define("osparc.utils.Utils", {
             const supportEmail = values[2];
             let msg = "";
             msg += qx.locale.Manager.tr("To use all ");
-            // product
             const color = qx.theme.manager.Color.getInstance().resolve("text");
             msg += `<a href=${manualLink} style='color: ${color}' target='_blank'>${productName} features/a>`;
             msg += qx.locale.Manager.tr(", please send us an e-mail to create an account:");
