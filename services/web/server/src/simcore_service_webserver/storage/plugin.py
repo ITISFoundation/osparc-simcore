@@ -18,7 +18,7 @@ _logger = logging.getLogger(__name__)
     __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_STORAGE", logger=_logger
 )
 def setup_storage(app: web.Application):
-    assert app[APP_SETTINGS_KEY].WEBSERVER_INVITATIONS  # nosec
+    assert app[APP_SETTINGS_KEY].WEBSERVER_STORAGE  # nosec
 
     setup_rest(app)
     app.router.add_routes(_handlers.routes)

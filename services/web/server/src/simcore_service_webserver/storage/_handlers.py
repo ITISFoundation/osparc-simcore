@@ -5,7 +5,7 @@
 import logging
 from typing import Any, Final, NamedTuple
 
-from aiohttp import ClientResponse, ClientTimeout, web
+from aiohttp import ClientTimeout, web
 from models_library.api_schemas_storage import (
     FileUploadCompleteResponse,
     FileUploadCompletionBody,
@@ -43,10 +43,10 @@ def _get_base_storage_url(app: web.Application) -> URL:
     return URL(settings.base_url)
 
 
-def _get_storage_vtag(app: web.Application) -> str:
+def _get_storage_prefix(app: web.Application) -> str:
     settings: StorageSettings = get_plugin_settings(app)
-    storage_vtag: str = settings.STORAGE_VTAG
-    return storage_vtag
+    storage_prefix: str = settings.STORAGE_VTAG
+    return storage_prefix
 
 
 def _resolve_storage_url(request: web.Request) -> URL:
@@ -56,10 +56,10 @@ def _resolve_storage_url(request: web.Request) -> URL:
     # storage service API endpoint
     endpoint = _get_base_storage_url(request.app)
 
-    BASEPATH_INDEX = 3
+    basepath_index = 3
     # strip basepath from webserver API path (i.e. webserver api version)
     # >>> URL('http://storage:1234/v5/storage/asdf/').raw_parts[3:]
-    suffix = "/".join(request.url.raw_parts[BASEPATH_INDEX:])
+    suffix = "/".join(request.url.raw_parts[basepath_index:])
 
     return (endpoint / suffix).with_query(request.query).update_query(user_id=userid)
 
@@ -84,7 +84,7 @@ async def _forward_request_to_storage(
 
 def _unresolve_storage_url(request: web.Request, storage_url: AnyUrl) -> AnyUrl:
     assert storage_url.path  # nosec
-    prefix = f"/{_get_storage_vtag(request.app)}"
+    prefix = f"/{_get_storage_prefix(request.app)}"
     converted_url = request.url.with_path(
         f"/v0/storage{storage_url.path.removeprefix(prefix)}"
     ).with_scheme(request.headers.get(X_FORWARDED_PROTO, request.url.scheme))
@@ -92,34 +92,13 @@ def _unresolve_storage_url(request: web.Request, storage_url: AnyUrl) -> AnyUrl:
     return converted_url_
 
 
-async def safe_unwrap(
-    resp: ClientResponse,
-) -> tuple[dict[str, Any] | list[dict[str, Any]] | None, dict | None]:
-    resp.raise_for_status()
-
-    payload = await resp.json()
-    if not isinstance(payload, dict):
-        raise web.HTTPException(reason=f"Did not receive a dict: '{payload}'")
-
-    data, error = unwrap_envelope(payload)
-
-    return data, error
-
-
-def extract_link(data: dict | None) -> str:
-    if data is None or "link" not in data:
-        raise web.HTTPException(reason=f"No url found in response: '{data}'")
-
-    return f"{data['link']}"
-
-
 # ---------------------------------------------------------------------
 
-
 routes = web.RouteTableDef()
+_path_prefix = f"/{API_VTAG}/storage/locations"
 
 
-@routes.get(API_VTAG + "/storage/locations", name="get_storage_locations")
+@routes.get(_path_prefix, name="get_storage_locations")
 @login_required
 @permission_required("storage.files.*")
 async def get_storage_locations(request: web.Request) -> web.Response:
@@ -127,9 +106,7 @@ async def get_storage_locations(request: web.Request) -> web.Response:
     return create_data_response(payload, status=status)
 
 
-@routes.get(
-    API_VTAG + "/storage/locations/{location_id}/datasets", name="get_datasets_metadata"
-)
+@routes.get(_path_prefix + "/{location_id}/datasets", name="get_datasets_metadata")
 @login_required
 @permission_required("storage.files.*")
 async def get_datasets_metadata(request: web.Request) -> web.Response:
@@ -143,7 +120,7 @@ async def get_datasets_metadata(request: web.Request) -> web.Response:
 
 
 @routes.get(
-    API_VTAG + "/storage/locations/{location_id}/files/metadata",
+    _path_prefix + "/{location_id}/files/metadata",
     name="get_files_metadata",
 )
 @login_required
@@ -168,7 +145,7 @@ _LIST_ALL_DATASETS_TIMEOUT_S: Final[int] = 60
 
 
 @routes.get(
-    API_VTAG + "/storage/locations/{location_id}/datasets/{dataset_id}/metadata",
+    _path_prefix + "/{location_id}/datasets/{dataset_id}/metadata",
     name="get_files_metadata_dataset",
 )
 @login_required
@@ -196,7 +173,7 @@ async def get_files_metadata_dataset(request: web.Request) -> web.Response:
 
 
 @routes.get(
-    API_VTAG + "/storage/locations/{location_id}/files/{file_id}/metadata",
+    _path_prefix + "/{location_id}/files/{file_id}/metadata",
     name="get_file_metadata",
 )
 @login_required
@@ -213,7 +190,7 @@ async def get_file_metadata(request: web.Request) -> web.Response:
 
 
 @routes.get(
-    API_VTAG + "/storage/locations/{location_id}/files/{file_id}",
+    _path_prefix + "/{location_id}/files/{file_id}",
     name="download_file",
 )
 @login_required
@@ -235,7 +212,7 @@ async def download_file(request: web.Request) -> web.Response:
 
 
 @routes.put(
-    API_VTAG + "/storage/locations/{location_id}/files/{file_id}",
+    _path_prefix + "/{location_id}/files/{file_id}",
     name="upload_file",
 )
 @login_required
@@ -267,7 +244,7 @@ async def upload_file(request: web.Request) -> web.Response:
 
 
 @routes.post(
-    API_VTAG + "/storage/locations/{location_id}/files/{file_id}:complete",
+    _path_prefix + "/{location_id}/files/{file_id}:complete",
     name="complete_upload_file",
 )
 @login_required
@@ -292,7 +269,7 @@ async def complete_upload_file(request: web.Request) -> web.Response:
 
 
 @routes.post(
-    API_VTAG + "/storage/locations/{location_id}/files/{file_id}:abort",
+    _path_prefix + "/{location_id}/files/{file_id}:abort",
     name="abort_upload_file",
 )
 @login_required
@@ -309,8 +286,7 @@ async def abort_upload_file(request: web.Request) -> web.Response:
 
 
 @routes.post(
-    API_VTAG
-    + "/storage/locations/{location_id}/files/{file_id}:complete/futures/{future_id}",
+    _path_prefix + "/{location_id}/files/{file_id}:complete/futures/{future_id}",
     name="is_completed_upload_file",
 )
 @login_required
@@ -328,7 +304,7 @@ async def is_completed_upload_file(request: web.Request) -> web.Response:
 
 
 @routes.delete(
-    API_VTAG + "/storage/locations/{location_id}/files/{file_id}",
+    _path_prefix + "/{location_id}/files/{file_id}",
     name="delete_file",
 )
 @login_required
@@ -345,7 +321,7 @@ async def delete_file(request: web.Request) -> web.Response:
 
 
 @routes.post(
-    API_VTAG + "/storage/locations/{location_id}:sync",
+    _path_prefix + "/{location_id}:sync",
     name="synchronise_meta_data_table",
 )
 @login_required
