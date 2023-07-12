@@ -27,6 +27,5 @@ async def raise_if_migration_not_ready(engine: AsyncEngine):
         )
         head_version_num = get_current_head()
         if version_num != head_version_num:
-            raise DBMigrationError(
-                f"Migration is incomplete, expected {head_version_num} but got {version_num}"
-            )
+            msg = f"Migration is incomplete, expected {head_version_num} but got {version_num}"
+            raise DBMigrationError(msg)
