@@ -13,9 +13,10 @@
 import asyncio
 import sys
 import textwrap
+from collections.abc import AsyncIterator, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncIterator, Callable, Iterator
+from typing import Any
 from unittest import mock
 from unittest.mock import AsyncMock, MagicMock, Mock
 from uuid import uuid4
@@ -33,7 +34,6 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from pydantic import ByteSize, parse_obj_as
-from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_dict import ConfigDict
@@ -68,7 +68,7 @@ CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 
 @pytest.fixture(autouse=True)
 def disable_swagger_doc_generation(
-    monkeypatch: MonkeyPatch, osparc_simcore_root_dir: Path
+    monkeypatch: pytest.MonkeyPatch, osparc_simcore_root_dir: Path
 ):
     """
     by not enabling the swagger documentation, 1.8s per test is gained
@@ -79,7 +79,7 @@ def disable_swagger_doc_generation(
 
 @pytest.fixture(scope="session")
 def docker_compose_file(
-    default_app_cfg: ConfigDict, monkeypatch_session: MonkeyPatch
+    default_app_cfg: ConfigDict, monkeypatch_session: pytest.MonkeyPatch
 ) -> str:
     """Overrides pytest-docker fixture"""
 
@@ -116,7 +116,6 @@ def app_cfg(default_app_cfg: ConfigDict, unused_tcp_port_factory) -> ConfigDict:
 @pytest.fixture
 def app_environment(
     app_cfg: ConfigDict,
-    monkeypatch: MonkeyPatch,
     monkeypatch_setenv_from_app_config: Callable[[ConfigDict], dict[str, str]],
 ) -> EnvVarsDict:
     # WARNING: this fixture is commonly overriden. Check before renaming.
@@ -125,18 +124,17 @@ def app_environment(
 
     override like so:
     @pytest.fixture
-    def app_environment(app_environment: dict[str, str], monkeypatch: MonkeyPatch) -> dict[str, str]:
+    def app_environment(app_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch) -> dict[str, str]:
         monkeypatch.setenv("MODIFIED_ENV", "VALUE")
         return app_environment | {"MODIFIED_ENV":"VALUE"}
     """
     print("+ web_server:")
     cfg = deepcopy(app_cfg)
-    env = monkeypatch_setenv_from_app_config(cfg)
-    return env
+    return monkeypatch_setenv_from_app_config(cfg)
 
 
 @pytest.fixture
-def mocked_send_email(monkeypatch: MonkeyPatch) -> None:
+def mocked_send_email(monkeypatch: pytest.MonkeyPatch) -> None:
     # WARNING: this fixture is commonly overriden. Check before renaming.
     async def _print_mail_to_stdout(
         settings: SMTPSettings, *, sender: str, recipient: str, subject: str, body: str
@@ -196,8 +194,7 @@ def client(
     client connect to web-server
     """
     # WARNING: this fixture is commonly overriden. Check before renaming.
-    cli = event_loop.run_until_complete(aiohttp_client(web_server))
-    return cli
+    return event_loop.run_until_complete(aiohttp_client(web_server))
 
 
 @pytest.fixture(scope="session")
@@ -249,7 +246,7 @@ def catalog_subsystem_mock(
 
 
 @pytest.fixture
-def disable_static_webserver(monkeypatch: MonkeyPatch) -> Callable:
+def disable_static_webserver(monkeypatch: pytest.MonkeyPatch) -> Callable:
     """
     Disables the static-webserver module
     Avoids fecthing and caching index.html pages
@@ -344,11 +341,10 @@ async def storage_subsystem_mock(mocker: MockerFixture) -> MockedStorageSubsyste
 
 @pytest.fixture
 def asyncpg_storage_system_mock(mocker):
-    mocked_method = mocker.patch(
+    return mocker.patch(
         "simcore_service_webserver.login.storage.AsyncpgStorage.delete_user",
         return_value="",
     )
-    return mocked_method
 
 
 @pytest.fixture

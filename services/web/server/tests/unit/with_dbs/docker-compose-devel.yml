@@ -48,7 +48,7 @@ services:
     image: rediscommander/redis-commander:latest
     restart: always
     environment:
-      - REDIS_HOSTS=resources:redis:6379:0,locks:redis:6379:1,validation_codes:redis:6379:2
+      - REDIS_HOSTS=resources:redis:6379:0,locks:redis:6379:1,validation_codes:redis:6379:2,scheduled_maintenance:redis:6379:3,user_notifications:redis:6379:4,announcements:redis:6379:5
     ports:
       - "18081:8081"
 
