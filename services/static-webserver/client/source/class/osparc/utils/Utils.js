@@ -52,6 +52,18 @@ qx.Class.define("osparc.utils.Utils", {
         this.setLocalStorageItem("lastVcsRefUI", vcsRef);
       },
 
+      getDontShowAnnouncements: function() {
+        return this.getLocalStorageItem("dontShowAnnouncements") ? JSON.parse(this.getLocalStorageItem("dontShowAnnouncements")) : [];
+      },
+      setDontShowAnnouncement: function(announcementId) {
+        const oldDontShowAnnouncements = this.getDontShowAnnouncements();
+        oldDontShowAnnouncements.push(announcementId);
+        this.setLocalStorageItem("dontShowAnnouncements", JSON.stringify(oldDontShowAnnouncements));
+      },
+      isDontShowAnnouncement: function(announcementId) {
+        return this.getDontShowAnnouncements().includes(announcementId);
+      },
+
       serviceToFavs: function(serviceKey) {
         let serviceFavs = this.getLocalStorageItem("services");
         if (serviceFavs) {

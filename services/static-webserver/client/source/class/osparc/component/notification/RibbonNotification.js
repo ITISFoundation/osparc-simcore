@@ -31,7 +31,7 @@ qx.Class.define("osparc.component.notification.RibbonNotification", {
 
   properties: {
     type: {
-      check: ["maintenance", "smallWindow"],
+      check: ["maintenance", "smallWindow", "announcement"],
       init: null,
       nullable: false
     },
@@ -63,6 +63,13 @@ qx.Class.define("osparc.component.notification.RibbonNotification", {
         }
         case "smallWindow": {
           fullText += qx.locale.Manager.tr("Oops, your window is a bit small!");
+          const longText = this.getText();
+          if (longText) {
+            fullText += " " + longText;
+          }
+          break;
+        }
+        case "announcement": {
           const longText = this.getText();
           if (longText) {
             fullText += " " + longText;
