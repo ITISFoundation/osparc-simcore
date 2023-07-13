@@ -342,23 +342,23 @@ async def test_errors_upon_invalid_file_identifiers(
 
     store = s3_simcore_location
     with pytest.raises(exceptions.S3InvalidPathError):  # noqa: PT012
-        invalid_s3_object = SimcoreS3FileID("")
+        invalid_s3_path = SimcoreS3FileID("")
         await filemanager.upload_path(
             user_id=user_id,
             store_id=store,
             store_name=None,
-            s3_object=invalid_s3_object,
+            s3_object=invalid_s3_path,
             path_to_upload=file_path,
             io_log_redirect_cb=None,
         )
 
     with pytest.raises(exceptions.StorageInvalidCall):  # noqa: PT012
-        invalid_s3_object = SimcoreS3FileID("")
+        invalid_file_id = SimcoreS3FileID("file_id")
         await filemanager.upload_path(
             user_id=user_id,
             store_id=store,
             store_name=None,
-            s3_object=invalid_s3_object,
+            s3_object=invalid_file_id,
             path_to_upload=file_path,
             io_log_redirect_cb=None,
         )
@@ -366,12 +366,12 @@ async def test_errors_upon_invalid_file_identifiers(
     download_folder = Path(tmpdir) / "downloads"
     with pytest.raises(exceptions.S3InvalidPathError):  # noqa: PT012
         async with ProgressBarData(steps=1) as progress_bar:
-            invalid_path = SimcoreS3FileID("")
+            invalid_s3_path = SimcoreS3FileID("")
             await filemanager.download_path_from_s3(
                 user_id=user_id,
                 store_id=store,
                 store_name=None,
-                s3_object=invalid_path,
+                s3_object=invalid_s3_path,
                 local_folder=download_folder,
                 io_log_redirect_cb=None,
                 r_clone_settings=optional_r_clone,
