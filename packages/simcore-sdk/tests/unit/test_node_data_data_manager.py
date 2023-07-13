@@ -11,6 +11,7 @@ from typing import Callable, Iterator
 import pytest
 from pytest_mock import MockerFixture
 from servicelib.progress_bar import ProgressBarData
+from settings_library.r_clone import RCloneSettings, S3Provider
 from simcore_sdk.node_data import data_manager
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 
@@ -33,6 +34,21 @@ def create_files() -> Iterator[Callable[..., list[Path]]]:
         file_path.unlink()
 
 
+@pytest.fixture
+def r_clone_settings() -> RCloneSettings:
+    return RCloneSettings.parse_obj(
+        {
+            "R_CLONE_S3": {
+                "S3_ENDPOINT": "",
+                "S3_ACCESS_KEY": "",
+                "S3_SECRET_KEY": "",
+                "S3_BUCKET_NAME": "",
+            },
+            "R_CLONE_PROVIDER": S3Provider.MINIO,
+        }
+    )
+
+
 async def test_push_folder(
     user_id: int,
     project_id: str,
@@ -40,6 +56,7 @@ async def test_push_folder(
     mocker: MockerFixture,
     tmpdir: Path,
     create_files: Callable[..., list[Path]],
+    r_clone_settings: RCloneSettings,
 ):
     # create some files
     assert tmpdir.exists()
@@ -79,12 +96,13 @@ async def test_push_folder(
             test_folder,
             io_log_redirect_cb=None,
             progress_bar=progress_bar,
+            r_clone_settings=r_clone_settings,
         )
     assert progress_bar._continuous_progress_value == pytest.approx(1)
 
     mock_temporary_directory.assert_called_once()
     mock_filemanager.upload_path.assert_called_once_with(
-        r_clone_settings=None,
+        r_clone_settings=r_clone_settings,
         io_log_redirect_cb=None,
         path_to_upload=(test_compression_folder / f"{test_folder.stem}.zip"),
         s3_object=f"{project_id}/{node_uuid}/{test_folder.stem}.zip",
@@ -117,6 +135,7 @@ async def test_push_file(
     mocker,
     tmpdir: Path,
     create_files: Callable[..., list[Path]],
+    r_clone_settings: RCloneSettings,
 ):
     mock_filemanager = mocker.patch(
         "simcore_sdk.node_data.data_manager.filemanager", spec=True
@@ -138,6 +157,7 @@ async def test_push_file(
             file_path,
             io_log_redirect_cb=None,
             progress_bar=progress_bar,
+            r_clone_settings=r_clone_settings,
         )
     assert progress_bar._continuous_progress_value == pytest.approx(1)
     mock_temporary_directory.assert_not_called()
