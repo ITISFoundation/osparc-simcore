@@ -3,10 +3,10 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=protected-access
 
+from collections.abc import Callable, Iterator
 from filecmp import cmpfiles
 from pathlib import Path
 from shutil import copy, make_archive, unpack_archive
-from typing import Callable, Iterator
 
 import pytest
 from pytest_mock import MockerFixture

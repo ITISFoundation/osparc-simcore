@@ -5,12 +5,13 @@
 
 import hashlib
 import os
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 from uuid import uuid4
 
 import pytest
 from servicelib.progress_bar import ProgressBarData
+from settings_library.r_clone import RCloneSettings
 from simcore_sdk.node_data import data_manager
 
 pytest_simcore_core_services_selection = [
@@ -133,6 +134,7 @@ async def test_valid_upload_download(
     user_id: int,
     project_id: str,
     node_uuid: str,
+    r_clone_settings: RCloneSettings,
 ):
     async with ProgressBarData(steps=2) as progress_bar:
         await data_manager.push(
@@ -142,6 +144,7 @@ async def test_valid_upload_download(
             file_or_folder=content_path,
             io_log_redirect_cb=None,
             progress_bar=progress_bar,
+            r_clone_settings=r_clone_settings,
         )
         # pylint: disable=protected-access
         assert progress_bar._continuous_progress_value == pytest.approx(1.0)
@@ -182,6 +185,7 @@ async def test_valid_upload_download_saved_to(
     project_id: str,
     node_uuid: str,
     random_tmp_dir_generator: Callable,
+    r_clone_settings: RCloneSettings,
 ):
     async with ProgressBarData(steps=2) as progress_bar:
         await data_manager.push(
@@ -191,6 +195,7 @@ async def test_valid_upload_download_saved_to(
             file_or_folder=content_path,
             io_log_redirect_cb=None,
             progress_bar=progress_bar,
+            r_clone_settings=r_clone_settings,
         )
         # pylint: disable=protected-access
         assert progress_bar._continuous_progress_value == pytest.approx(1)
