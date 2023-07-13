@@ -27,7 +27,7 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
-from .._meta import api_version_prefix
+from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
@@ -43,10 +43,9 @@ from ._schemas import (
 )
 from ._units import can_connect
 
-VTAG = f"/{api_version_prefix}"
-
 _logger = logging.getLogger(__name__)
 
+VTAG = f"/{API_VTAG}"
 routes = RouteTableDef()
 
 
