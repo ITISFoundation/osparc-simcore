@@ -15,8 +15,12 @@ from models_library.projects_nodes_io import StorageFileID
 from pydantic import ValidationError, parse_obj_as
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
-from simcore_sdk.node_ports_common.filemanager import UploadableFileObject
-from simcore_sdk.node_ports_common.filemanager import upload_path as storage_upload_file
+from simcore_sdk.node_ports_common.filemanager import (
+    UploadableFileObject,
+    UploadedFile,
+    UploadedFolder,
+)
+from simcore_sdk.node_ports_common.filemanager import upload_path as storage_upload_path
 from starlette.responses import RedirectResponse
 
 from ..._meta import API_VTAG
@@ -138,7 +142,7 @@ async def upload_file(
     )
 
     # upload to S3 using pre-signed link
-    _, entity_tag = await storage_upload_file(
+    upload_result: UploadedFolder | UploadedFile = await storage_upload_path(
         user_id=user_id,
         store_id=SIMCORE_LOCATION,
         store_name=None,
@@ -148,8 +152,9 @@ async def upload_file(
         path_to_upload=UploadableFileObject(file.file, file.filename, file_size),
         io_log_redirect_cb=None,
     )
+    assert isinstance(upload_result, UploadedFile)
 
-    file_meta.checksum = entity_tag
+    file_meta.checksum = upload_result.etag
     return file_meta
 
 

@@ -1,5 +1,6 @@
 import logging
 from asyncio import CancelledError
+from dataclasses import dataclass
 from pathlib import Path
 
 from aiohttp import ClientError, ClientSession
@@ -317,6 +318,17 @@ async def _abort_upload(
     _logger.warning("Upload aborted")
 
 
+@dataclass
+class UploadedFile:
+    store_id: LocationID
+    etag: ETag
+
+
+@dataclass
+class UploadedFolder:
+    store_id: LocationID
+
+
 async def upload_path(
     *,
     user_id: UserID,
@@ -328,7 +340,7 @@ async def upload_path(
     client_session: ClientSession | None = None,
     r_clone_settings: RCloneSettings | None = None,
     progress_bar: ProgressBarData | None = None,
-) -> tuple[LocationID, ETag | None]:
+) -> UploadedFile | UploadedFolder:
     """Uploads a file (potentially in parallel) or a file object (sequential in any case) to S3
 
     :param session: add app[APP_CLIENT_SESSION_KEY] session here otherwise default is opened/closed every call
@@ -412,7 +424,9 @@ async def upload_path(
             raise
         if io_log_redirect_cb:
             await io_log_redirect_cb(f"upload of {path_to_upload} complete.")
-        return store_id, e_tag
+        return (
+            UploadedFolder(store_id) if e_tag is None else UploadedFile(store_id, e_tag)
+        )
 
 
 async def _get_file_meta_data(

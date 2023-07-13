@@ -25,6 +25,7 @@ from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
 from servicelib.progress_bar import ProgressBarData
 from settings_library.r_clone import RCloneSettings
 from simcore_sdk.node_ports_common import exceptions, filemanager
+from simcore_sdk.node_ports_common.filemanager import UploadedFile, UploadedFolder
 from simcore_sdk.node_ports_common.r_clone import RCloneFailedError
 from yarl import URL
 
@@ -74,7 +75,7 @@ async def test_valid_upload_download(
 
     file_id = create_valid_file_uuid("", file_path)
     async with ProgressBarData(steps=2) as progress_bar:
-        store_id, e_tag = await filemanager.upload_path(
+        upload_result: UploadedFolder | UploadedFile = await filemanager.upload_path(
             user_id=user_id,
             store_id=s3_simcore_location,
             store_name=None,
@@ -84,10 +85,12 @@ async def test_valid_upload_download(
             io_log_redirect_cb=None,
             progress_bar=progress_bar,
         )
+        assert isinstance(upload_result, UploadedFile)
+        store_id, e_tag = upload_result.store_id, upload_result.etag
         # pylint: disable=protected-access
-        assert progress_bar._continuous_progress_value == pytest.approx(
+        assert progress_bar._continuous_progress_value == pytest.approx(  # noqa: SLF001
             1
-        )  # noqa: SLF001
+        )
         assert store_id == s3_simcore_location
         assert e_tag
         get_store_id, get_e_tag = await filemanager.get_file_metadata(
@@ -137,7 +140,7 @@ async def test_valid_upload_download_using_file_object(
 
     file_id = create_valid_file_uuid("", file_path)
     with file_path.open("rb") as file_object:
-        store_id, e_tag = await filemanager.upload_path(
+        upload_result: UploadedFolder | UploadedFile = await filemanager.upload_path(
             user_id=user_id,
             store_id=s3_simcore_location,
             store_name=None,
@@ -148,6 +151,8 @@ async def test_valid_upload_download_using_file_object(
             r_clone_settings=optional_r_clone,
             io_log_redirect_cb=None,
         )
+        assert isinstance(upload_result, UploadedFile)
+        store_id, e_tag = upload_result.store_id, upload_result.etag
     assert store_id == s3_simcore_location
     assert e_tag
     get_store_id, get_e_tag = await filemanager.get_file_metadata(
@@ -243,7 +248,7 @@ async def test_failed_upload_after_valid_upload_keeps_last_valid_state(
     # upload a valid file
     file_path = create_file_of_size(file_size)
     file_id = create_valid_file_uuid("", file_path)
-    store_id, e_tag = await filemanager.upload_path(
+    upload_result: UploadedFolder | UploadedFile = await filemanager.upload_path(
         user_id=user_id,
         store_id=s3_simcore_location,
         store_name=None,
@@ -252,6 +257,8 @@ async def test_failed_upload_after_valid_upload_keeps_last_valid_state(
         r_clone_settings=optional_r_clone,
         io_log_redirect_cb=None,
     )
+    assert isinstance(upload_result, UploadedFile)
+    store_id, e_tag = upload_result.store_id, upload_result.etag
     assert store_id == s3_simcore_location
     assert e_tag
     # check the file is correctly uploaded
@@ -452,7 +459,7 @@ async def test_valid_metadata(
     assert file_path.exists()
 
     file_id = create_valid_file_uuid("", file_path)
-    store_id, e_tag = await filemanager.upload_path(
+    upload_result: UploadedFolder | UploadedFile = await filemanager.upload_path(
         user_id=user_id,
         store_id=s3_simcore_location,
         store_name=None,
@@ -460,6 +467,8 @@ async def test_valid_metadata(
         path_to_upload=file_path,
         io_log_redirect_cb=None,
     )
+    assert isinstance(upload_result, UploadedFile)
+    store_id, e_tag = upload_result.store_id, upload_result.etag
     assert store_id == s3_simcore_location
     assert e_tag
 
@@ -510,7 +519,7 @@ async def test_delete_file(
     assert file_path.exists()
 
     file_id = create_valid_file_uuid("", file_path)
-    store_id, e_tag = await filemanager.upload_path(
+    upload_result: UploadedFolder | UploadedFile = await filemanager.upload_path(
         user_id=user_id,
         store_id=s3_simcore_location,
         store_name=None,
@@ -518,6 +527,8 @@ async def test_delete_file(
         path_to_upload=file_path,
         io_log_redirect_cb=None,
     )
+    assert isinstance(upload_result, UploadedFile)
+    store_id, e_tag = upload_result.store_id, upload_result.etag
     assert store_id == s3_simcore_location
     assert e_tag
 
@@ -564,7 +575,7 @@ async def test_upload_path_source_is_a_folder(
     )
     s3_object = SimcoreS3FileID(directory_id)
 
-    store_id, e_tag = await filemanager.upload_path(
+    upload_result: UploadedFolder | UploadedFile = await filemanager.upload_path(
         user_id=user_id,
         store_id=s3_simcore_location,
         store_name=None,
@@ -573,8 +584,9 @@ async def test_upload_path_source_is_a_folder(
         io_log_redirect_cb=None,
         r_clone_settings=r_clone_settings,
     )
+    assert isinstance(upload_result, UploadedFolder)
+    store_id = upload_result.store_id
     assert store_id == s3_simcore_location
-    assert e_tag is None
     assert source_dir.exists()
 
     async with ProgressBarData(steps=1) as progress_bar:
