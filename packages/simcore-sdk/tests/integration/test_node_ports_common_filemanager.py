@@ -430,20 +430,30 @@ async def test_invalid_store(
             )
 
 
+@pytest.mark.parametrize("is_directory", [False, True])
 async def test_valid_metadata(
     node_ports_config: None,
     tmpdir: Path,
     user_id: int,
     create_valid_file_uuid: Callable[[str, Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
+    r_clone_settings: RCloneSettings,
+    is_directory: bool,
 ):
     # first we go with a non-existing file
-    file_path = Path(tmpdir) / "test.test"
-    file_id = create_valid_file_uuid("", file_path)
+    file_path = Path(tmpdir) / "a-subdir" / "test.test"
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+
+    path_to_upload = file_path.parent if is_directory else file_path
+
+    file_id = create_valid_file_uuid("", path_to_upload)
     assert file_path.exists() is False
 
     is_metadata_present = await filemanager.entry_exists(
-        user_id=user_id, store_id=s3_simcore_location, s3_object=file_id  # type: ignore
+        user_id=user_id,
+        store_id=s3_simcore_location,
+        s3_object=file_id,
+        is_directory=is_directory,
     )
     assert is_metadata_present is False
 
@@ -451,20 +461,24 @@ async def test_valid_metadata(
     file_path.write_text("I am a test file")
     assert file_path.exists()
 
-    file_id = create_valid_file_uuid("", file_path)
+    file_id = create_valid_file_uuid("", path_to_upload)
     store_id, e_tag = await filemanager.upload_path(
         user_id=user_id,
         store_id=s3_simcore_location,
         store_name=None,
         s3_object=file_id,
-        path_to_upload=file_path,
+        path_to_upload=path_to_upload,
         io_log_redirect_cb=None,
+        r_clone_settings=r_clone_settings,
     )
     assert store_id == s3_simcore_location
-    assert e_tag
+    if is_directory:
+        assert e_tag is None
+    else:
+        assert e_tag
 
     is_metadata_present = await filemanager.entry_exists(
-        user_id=user_id, store_id=store_id, s3_object=file_id
+        user_id=user_id, store_id=store_id, s3_object=file_id, is_directory=is_directory
     )
 
     assert is_metadata_present is True

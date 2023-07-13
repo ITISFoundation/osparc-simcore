@@ -443,13 +443,21 @@ async def entry_exists(
     store_id: LocationID,
     s3_object: StorageFileID,
     client_session: ClientSession | None = None,
+    *,
+    is_directory: bool = False,
 ) -> bool:
-    """Returns True if metadata for s3_object is present"""
+    """
+    Returns True if metadata for s3_object is present.
+    Before returning it also checks if the metadata entry is a directory or a file.
+    """
     try:
         file_metadata: FileMetaDataGet = await _get_file_meta_data(
             user_id, store_id, s3_object, client_session
         )
-        return bool(file_metadata.file_id == s3_object)
+        return (
+            file_metadata.file_id == s3_object
+            and file_metadata.is_directory == is_directory
+        )
     except exceptions.S3InvalidPathError as err:
         _logger.debug(
             "Failed request metadata for s3_object=%s with %s", s3_object, err
