@@ -25,6 +25,14 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
 
     this.__studyId = studyId;
 
+    const loadingImage = new qx.ui.basic.Image().set({
+      source: "@FontAwesome5Solid/circle-notch/32",
+      alignX: "center",
+      alignY: "middle"
+    });
+    loadingImage.getContentElement().addClass("rotate");
+    this._add(loadingImage);
+
     const params = {
       url: {
         "studyId": studyId
@@ -45,13 +53,29 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
     createGroupBox: function(label) {
       const box = new qx.ui.groupbox.GroupBox(label);
       box.getChildControl("legend").set({
-        font: "text-14"
+        font: "text-14",
+        padding: 2
       });
       box.getChildControl("frame").set({
-        backgroundColor: "transparent"
+        backgroundColor: "transparent",
+        padding: 2
       });
       box.setLayout(new qx.ui.layout.VBox(10));
       return box;
+    },
+
+    createToolbarRadioButton: function(label, id) {
+      const rButton = new qx.ui.toolbar.RadioButton().set({
+        label,
+        padding: 10,
+        minWidth: 35,
+        center: true
+      });
+      rButton.id = id;
+      rButton.getContentElement().setStyles({
+        "border-radius": "4px"
+      });
+      return rButton;
     }
   },
 
@@ -72,9 +96,9 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
           const box = this.self().createGroupBox(serviceLabel);
           box.exclude();
           if ("CPU" in serviceResources["resources"]) {
-            const opt1 = new qx.ui.form.RadioButton("1");
-            const opt2 = new qx.ui.form.RadioButton("2");
-            const opt3 = new qx.ui.form.RadioButton("4");
+            const opt1 = this.self().createToolbarRadioButton("1", 1);
+            const opt2 = this.self().createToolbarRadioButton("2", 2);
+            const opt3 = this.self().createToolbarRadioButton("4", 4);
 
             const group = new qx.ui.form.RadioGroup(opt1, opt2, opt3);
             group.setSelection([opt2]);
@@ -89,10 +113,10 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
             box.add(cpuBox);
             box.show();
           }
-          if ("CPU" in serviceResources["resources"]) {
-            const opt1 = new qx.ui.form.RadioButton("256");
-            const opt2 = new qx.ui.form.RadioButton("512");
-            const opt3 = new qx.ui.form.RadioButton("1024");
+          if ("RAM" in serviceResources["resources"]) {
+            const opt1 = this.self().createToolbarRadioButton("256 MB", 256);
+            const opt2 = this.self().createToolbarRadioButton("512 MB", 512);
+            const opt3 = this.self().createToolbarRadioButton("1024 MB", 1024);
 
             const group = new qx.ui.form.RadioGroup(opt1, opt2, opt3);
             group.setSelection([opt2]);
@@ -114,10 +138,9 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
     },
 
     __buildNodeResources: function() {
+      const servicesBox = this.self().createGroupBox(this.tr("Select Resources"));
+      servicesBox.exclude();
       if ("workbench" in this.__studyData) {
-        const servicesBox = this.self().createGroupBox(this.tr("Select resources"));
-        servicesBox.exclude();
-        this._add(servicesBox);
         for (const nodeId in this.__studyData["workbench"]) {
           const node = this.__studyData["workbench"][nodeId];
           console.log(node);
@@ -129,6 +152,8 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
           };
           osparc.data.Resources.get("nodesInStudyResources", params)
             .then(serviceResources => {
+              this._removeAll();
+              this._add(servicesBox);
               const serviceGroup = this.createServiceGroup(node["label"], serviceResources);
               if (serviceGroup) {
                 servicesBox.add(serviceGroup);
