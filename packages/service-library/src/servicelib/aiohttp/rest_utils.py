@@ -1,6 +1,9 @@
 import json
 from dataclasses import asdict
 
+from aiohttp import web
+from aiohttp.web import RouteDef, RouteTableDef
+
 
 class EnvelopeFactory:
     """
@@ -23,3 +26,21 @@ class EnvelopeFactory:
         return json.dumps(self.as_dict())
 
     as_data = as_dict
+
+
+def set_default_route_names(routes: RouteTableDef):
+    """Usage:
+
+    set_default_route_names(routes)
+    app.router.add_routes(routes)
+    """
+    for r in routes:
+        if isinstance(r, RouteDef):
+            r.kwargs.setdefault("name", r.handler.__name__)
+
+
+def get_named_routes_as_message(app: web.Application) -> str:
+    return "\n".join(
+        f"\t{name}:{resource}"
+        for name, resource in app.router.named_resources().items()
+    )
