@@ -5,23 +5,11 @@
 from importlib import import_module
 from inspect import getmembers
 from pathlib import Path
-from typing import Any
 
-import openapi_core
 import pytest
 import simcore_service_storage
-import yaml
 from aiohttp.web import RouteTableDef
 from simcore_service_storage._meta import api_vtag
-from simcore_service_storage.resources import storage_resources
-
-
-@pytest.fixture(scope="module")
-def openapi_specs():
-    spec_path: Path = storage_resources.get_path(f"api/{api_vtag}/openapi.yaml")
-    spec_dict: dict[str, Any] = yaml.safe_load(spec_path.read_text())
-    api_specs = openapi_core.create_spec(spec_dict, spec_path.as_uri())
-    return api_specs
 
 
 def _iter_handler_cls():
