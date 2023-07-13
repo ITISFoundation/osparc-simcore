@@ -5,8 +5,9 @@
 
 import json
 import urllib.parse
+from collections.abc import Awaitable, Callable, Iterable, Iterator
 from pathlib import Path
-from typing import Any, Awaitable, Callable, Iterable, Iterator, Optional
+from typing import Any
 from uuid import uuid4
 
 import pytest
@@ -107,10 +108,7 @@ def default_configuration(
     # prepare database with default configuration
     json_configuration = default_configuration_file.read_text()
     create_pipeline(project_id)
-    config_dict = _set_configuration(
-        create_task, project_id, node_uuid, json_configuration
-    )
-    return config_dict
+    return _set_configuration(create_task, project_id, node_uuid, json_configuration)
 
 
 @pytest.fixture()
@@ -165,7 +163,7 @@ def create_store_link(
     return _create
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def create_special_configuration(
     node_ports_config: None,
     create_pipeline: Callable[[str], str],
@@ -175,8 +173,8 @@ def create_special_configuration(
     node_uuid: str,
 ) -> Callable:
     def _create(
-        inputs: Optional[list[tuple[str, str, Any]]] = None,
-        outputs: Optional[list[tuple[str, str, Any]]] = None,
+        inputs: list[tuple[str, str, Any]] | None = None,
+        outputs: list[tuple[str, str, Any]] | None = None,
         project_id: str = project_id,
         node_id: str = node_uuid,
     ) -> tuple[dict, str, str]:
@@ -192,7 +190,7 @@ def create_special_configuration(
     return _create
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def create_2nodes_configuration(
     node_ports_config: None,
     create_pipeline: Callable[[str], str],
@@ -329,7 +327,7 @@ def _assign_config(
                 }
             }
         )
-        if not entry[2] is None:
+        if entry[2] is not None:
             config_dict[port_type].update({entry[0]: entry[2]})
 
 
@@ -340,16 +338,16 @@ async def r_clone_settings_factory(
     async def _factory() -> RCloneSettings:
         client = minio_config["client"]
         settings = RCloneSettings.parse_obj(
-            dict(
-                R_CLONE_S3=dict(
-                    S3_ENDPOINT=client["endpoint"],
-                    S3_ACCESS_KEY=client["access_key"],
-                    S3_SECRET_KEY=client["secret_key"],
-                    S3_BUCKET_NAME=minio_config["bucket_name"],
-                    S3_SECURE=client["secure"],
-                ),
-                R_CLONE_PROVIDER=S3Provider.MINIO,
-            )
+            {
+                "R_CLONE_S3": {
+                    "S3_ENDPOINT": client["endpoint"],
+                    "S3_ACCESS_KEY": client["access_key"],
+                    "S3_SECRET_KEY": client["secret_key"],
+                    "S3_BUCKET_NAME": minio_config["bucket_name"],
+                    "S3_SECURE": client["secure"],
+                },
+                "R_CLONE_PROVIDER": S3Provider.MINIO,
+            }
         )
         if not await is_r_clone_available(settings):
             pytest.skip("rclone not installed")
@@ -368,7 +366,7 @@ async def r_clone_settings(
 
 @pytest.fixture
 def cleanup_file_meta_data(postgres_db: sa.engine.Engine) -> Iterator[None]:
-    yield
+    yield None
     with postgres_db.connect() as conn:
         conn.execute(file_meta_data.delete())
 
@@ -376,5 +374,5 @@ def cleanup_file_meta_data(postgres_db: sa.engine.Engine) -> Iterator[None]:
 @pytest.fixture
 def node_ports_config(
     node_ports_config, simcore_services_ready, cleanup_file_meta_data: None, bucket: str
-):
-    ...
+) -> None:
+    return None
