@@ -21,9 +21,7 @@ Makefile                                  @pcrespov @sanderegg
 /packages/service-library/                @pcrespov
 /packages/settings-library/               @pcrespov @sanderegg
 /requirements/                            @pcrespov @matusdrobuliak66
-/scripts/demo/                            @odeimaiz @pcrespov
 /scripts/json-schema-to-openapi-schema    @sanderegg
-/scripts/template-projects/               @odeimaiz @pcrespov
 /services/agent/                          @GitHK
 /services/api-server/                     @pcrespov
 /services/autoscaling/                    @sanderegg @pcrespov
