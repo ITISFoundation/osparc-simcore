@@ -10,7 +10,7 @@ but adapted to parse&validate path, query and body of an aiohttp's request
 import json.decoder
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import TypeAlias, TypeVar
+from typing import TypeAlias, TypeVar, Union
 
 from aiohttp import web
 from pydantic import BaseModel, ValidationError, parse_obj_as
@@ -20,7 +20,7 @@ from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 ModelClass = TypeVar("ModelClass", bound=BaseModel)
 ModelOrListOrDictType = TypeVar("ModelOrListOrDictType", bound=BaseModel | list | dict)
-UnionOfModelTypes: TypeAlias = type[ModelClass] | type[ModelClass]
+UnionOfModelTypes: TypeAlias = Union[type[ModelClass], type[ModelClass]]  # noqa: UP007
 
 
 @contextmanager
