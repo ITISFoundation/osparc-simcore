@@ -19,6 +19,16 @@ from simcore_service_api_server.core.settings import ApplicationSettings
 
 
 @pytest.fixture
+def solver_key() -> str:
+    return "simcore/services/comp/itis/sleeper"
+
+
+@pytest.fixture
+def solver_version() -> str:
+    return "2.0.0"
+
+
+@pytest.fixture
 def mocked_webserver_service_api(
     app: FastAPI, mocked_webserver_service_api_base: MockRouter, faker: Faker
 ) -> MockRouter:

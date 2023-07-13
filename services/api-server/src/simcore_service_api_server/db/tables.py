@@ -7,7 +7,7 @@ from simcore_postgres_database.models.users import UserRole, UserStatus, users
 metadata: TypeAlias = api_keys.metadata
 
 
-# nopycln: file
+# nopycln: file  # noqa: ERA001
 
 __all__: tuple[str, ...] = (
     "api_keys",

@@ -3,9 +3,10 @@
 # pylint: disable=unused-variable
 
 import urllib.parse
+from collections.abc import Iterator
 from pathlib import Path
 from pprint import pprint
-from typing import Any, Iterator
+from typing import Any
 from zipfile import ZipFile
 
 import arrow
@@ -85,7 +86,7 @@ def presigned_download_link(
     print("generated link", presigned_url)
 
     # SEE also https://gist.github.com/amarjandu/77a7d8e33623bae1e4e5ba40dc043cb9
-    yield parse_obj_as(AnyUrl, presigned_url)
+    return parse_obj_as(AnyUrl, presigned_url)
 
 
 @pytest.fixture
@@ -201,16 +202,6 @@ async def test_solver_logs(
 
     assert resp.url == presigned_download_link
     pprint(dict(resp.headers))
-
-
-@pytest.fixture
-def solver_key() -> str:
-    return "simcore/services/comp/itis/sleeper"
-
-
-@pytest.fixture
-def solver_version() -> str:
-    return "2.0.0"
 
 
 @pytest.mark.acceptance_test(

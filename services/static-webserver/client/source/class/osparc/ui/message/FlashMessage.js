@@ -114,6 +114,7 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
         case "message":
           control = new qx.ui.basic.Label().set({
             font: "text-16",
+            selectable: true,
             rich: true
           });
           this._add(control, {
