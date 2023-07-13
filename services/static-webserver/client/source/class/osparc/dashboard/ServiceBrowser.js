@@ -126,7 +126,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       osparc.utils.Study.createStudyFromService(key, version)
         .then(studyId => {
           const resourceSelector = new osparc.component.study.ResourceSelector(studyId);
-          const win = osparc.ui.window.Window.popUpInWindow(resourceSelector, "Study Options", 400, 500);
+          const win = osparc.ui.window.Window.popUpInWindow(resourceSelector, "Study Options", 400, 400);
           resourceSelector.addListener("startStudy", () => {
             this._hideLoadingPage();
             this._startStudyById(studyId);

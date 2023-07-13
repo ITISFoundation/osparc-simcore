@@ -103,7 +103,7 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
             const group = new qx.ui.form.RadioGroup(opt1, opt2, opt3);
             group.setSelection([opt2]);
 
-            const groupBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+            const groupBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
             groupBox.add(opt1);
             groupBox.add(opt2);
             groupBox.add(opt3);
