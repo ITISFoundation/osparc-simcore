@@ -263,6 +263,8 @@ async def task_restore_state(
                     io_log_redirect_cb=functools.partial(
                         post_sidecar_log_message, app, log_level=logging.INFO
                     ),
+                    # NOTE: interface was broken on purpose, next PR wil fix it
+                    # and will cleanup how rclone is used
                     r_clone_settings=settings.rclone_settings_for_nodeports,
                     progress_bar=root_progress,
                 )
@@ -298,6 +300,8 @@ async def task_save_state(
                     project_id=str(settings.DY_SIDECAR_PROJECT_ID),
                     node_uuid=str(settings.DY_SIDECAR_NODE_ID),
                     file_or_folder=state_path,
+                    # NOTE: interface was broken on purpose, next PR wil fix it
+                    # and will cleanup how rclone is used
                     r_clone_settings=settings.rclone_settings_for_nodeports,
                     archive_exclude_patterns=mounted_volumes.state_exclude,
                     io_log_redirect_cb=functools.partial(

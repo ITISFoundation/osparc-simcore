@@ -62,7 +62,7 @@ async def push(
     *,
     io_log_redirect_cb: LogRedirectCB | None,
     rename_to: str | None = None,
-    r_clone_settings: RCloneSettings | None = None,
+    r_clone_settings: RCloneSettings,
     archive_exclude_patterns: set[str] | None = None,
     progress_bar: ProgressBarData,
 ) -> None:
@@ -130,7 +130,7 @@ async def _pull_file(
     *,
     io_log_redirect_cb: LogRedirectCB | None,
     save_to: Path | None = None,
-    r_clone_settings: RCloneSettings | None,
+    r_clone_settings: RCloneSettings,
     progress_bar: ProgressBarData,
 ) -> None:
     destination_path = file_path if save_to is None else save_to
@@ -164,7 +164,7 @@ async def pull(
     *,
     io_log_redirect_cb: LogRedirectCB | None,
     save_to: Path | None = None,
-    r_clone_settings: RCloneSettings | None,
+    r_clone_settings: RCloneSettings,
     progress_bar: ProgressBarData,
 ) -> None:
     if file_or_folder.is_file():
