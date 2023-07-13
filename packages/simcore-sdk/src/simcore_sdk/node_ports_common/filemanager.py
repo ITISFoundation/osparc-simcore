@@ -461,7 +461,8 @@ async def entry_exists(
         file_metadata: FileMetaDataGet = await _get_file_meta_data(
             user_id, store_id, s3_object, client_session
         )
-        return file_metadata.file_id == s3_object
+        exists: bool = file_metadata.file_id == s3_object
+        return exists
     except exceptions.S3InvalidPathError as err:
         _logger.debug(
             "Failed request metadata for s3_object=%s with %s", s3_object, err
