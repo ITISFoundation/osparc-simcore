@@ -253,8 +253,8 @@ paths:
   /projects/{project_id}/metadata/ports:
     $ref: "./openapi-projects-ports.yaml#/paths/~1projects~1{project_id}~1metadata~1ports"
 
-  /projects/{study_uuid}/tags/{tag_id}:
-    $ref: "./openapi-projects.yaml#/paths/~1projects~1{study_uuid}~1tags~1{tag_id}"
+  /projects/{project_uuid}/tags/{tag_id}:
+    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_uuid}~1tags~1{tag_id}"
 
   # META-PROJECTS -------------------------------------------------------------------------
 

@@ -6564,14 +6564,14 @@ paths:
                           description: 'jsonschema for the port''s value. SEE https://json-schema.org/understanding-json-schema/'
                   error:
                     title: Error
-  '/projects/{study_uuid}/tags/{tag_id}':
+  '/projects/{project_uuid}/tags/{tag_id}':
     parameters:
       - name: tag_id
         in: path
         required: true
         schema:
           type: integer
-      - name: study_uuid
+      - name: project_uuid
         in: path
         required: true
         schema:

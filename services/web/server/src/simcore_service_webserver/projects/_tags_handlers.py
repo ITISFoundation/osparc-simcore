@@ -18,7 +18,7 @@ log = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
 
-@routes.put(f"/{VTAG}/projects/{{project_uuid}}/tags/{{tag_id}}")
+@routes.put(f"/{VTAG}/projects/{{project_uuid}}/tags/{{tag_id}}", name="add_tag")
 @login_required
 @permission_required("project.tag.*")
 async def add_tag(request: web.Request):
@@ -38,7 +38,7 @@ async def add_tag(request: web.Request):
     )
 
 
-@routes.delete(f"/{VTAG}/projects/{{project_uuid}}/tags/{{tag_id}}")
+@routes.delete(f"/{VTAG}/projects/{{project_uuid}}/tags/{{tag_id}}", name="remove_tag")
 @login_required
 @permission_required("project.tag.*")
 async def remove_tag(request: web.Request):
