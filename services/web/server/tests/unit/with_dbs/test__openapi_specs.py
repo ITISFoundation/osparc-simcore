@@ -51,32 +51,35 @@ def app_environment(
 
 @pytest.fixture
 def app(app_environment: EnvVarsDict) -> web.Application:
-
-    app_ = create_application()
+    # Expects that:
     # - routings happen during setup!
-    # - app is NOT started (i.e events are not triggered) but only setup
+    # - all plugins are setup but app is NOT started (i.e events are not triggered)
+    #
+    app_ = create_application()
     print(get_settings(app_).json(indent=1))
     return app_
 
 
-def test_named_api_resources_against_openapi_specs(
-    app: web.Application, openapi_specs: OpenApiSpecs
-):
-    # check whether exposed routes implements openapi.json contract
-
-    expected_routes = set()
-    registered_routes = set()
+@pytest.fixture
+def expected_openapi_entrypoints(openapi_specs: OpenApiSpecs) -> set[Entrypoint]:
+    entrypoints: set[Entrypoint] = set()
 
     # openapi-specifications, i.e. "contract"
     for path, path_obj in openapi_specs.paths.items():
         for operation, operation_obj in path_obj.operations.items():
-            expected_routes.add(
+            entrypoints.add(
                 Entrypoint(
                     method=operation.upper(),
                     path=path,
                     name=operation_obj.operation_id,
                 )
             )
+    return entrypoints
+
+
+@pytest.fixture
+def app_entrypoints(app: web.Application) -> set[Entrypoint]:
+    entrypoints: set[Entrypoint] = set()
 
     # app routes, i.e. "exposed"
     for resource_name, resource in app.router.named_resources().items():
@@ -89,15 +92,23 @@ def test_named_api_resources_against_openapi_specs(
             if route.method == "HEAD":
                 continue
 
-            registered_routes.add(
+            entrypoints.add(
                 Entrypoint(
                     method=route.method,
                     path=resource_path.removeprefix(f"/{VX}"),
                     name=route.name,
                 )
             )
+    return entrypoints
 
-    assert expected_routes == registered_routes
+
+def test_named_api_resources_against_openapi_specs(
+    expected_openapi_entrypoints: set[Entrypoint],
+    app_entrypoints: set[Entrypoint],
+):
+    # check whether exposed routes implements openapi.json contract
+
+    assert app_entrypoints == expected_openapi_entrypoints
 
     # NOTE: missing here is:
     # - input schemas (path, query and body)
