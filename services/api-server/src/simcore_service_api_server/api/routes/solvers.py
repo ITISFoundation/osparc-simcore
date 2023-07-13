@@ -197,7 +197,7 @@ async def get_solver_release(
         solver.url = url_for(
             "get_solver_release", solver_key=solver.id, version=solver.version
         )
-        return solver  # noqa: TRY300
+        return solver
 
     except (
         ValueError,

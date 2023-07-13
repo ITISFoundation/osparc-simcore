@@ -8,9 +8,9 @@ paths:
       parameters:
       - required: true
         schema:
+          title: Project Id
           type: string
           format: uuid
-          title: Project Id
         name: project_id
         in: path
       responses:
@@ -28,9 +28,9 @@ paths:
       parameters:
       - required: true
         schema:
+          title: Project Id
           type: string
           format: uuid
-          title: Project Id
         name: project_id
         in: path
       requestBody:
@@ -49,45 +49,45 @@ paths:
 components:
   schemas:
     Envelope_ProjectMetadataGet_:
+      title: Envelope[ProjectMetadataGet]
+      type: object
       properties:
         data:
           $ref: '#/components/schemas/ProjectMetadataGet'
         error:
           title: Error
-      type: object
-      title: Envelope[ProjectMetadataGet]
     ProjectMetadataGet:
-      properties:
-        projectUuid:
-          type: string
-          format: uuid
-          title: Projectuuid
-        custom:
-          additionalProperties:
-            anyOf:
-            - type: boolean
-            - type: integer
-            - type: number
-            - type: string
-          type: object
-          title: Custom
-          description: Custom key-value map
-      type: object
+      title: ProjectMetadataGet
       required:
       - projectUuid
-      title: ProjectMetadataGet
-    ProjectMetadataUpdate:
+      type: object
       properties:
+        projectUuid:
+          title: Projectuuid
+          type: string
+          format: uuid
         custom:
+          title: Custom
+          type: object
           additionalProperties:
             anyOf:
             - type: boolean
             - type: integer
             - type: number
             - type: string
-          type: object
-          title: Custom
-      type: object
+          description: Custom key-value map
+    ProjectMetadataUpdate:
+      title: ProjectMetadataUpdate
       required:
       - custom
-      title: ProjectMetadataUpdate
+      type: object
+      properties:
+        custom:
+          title: Custom
+          type: object
+          additionalProperties:
+            anyOf:
+            - type: boolean
+            - type: integer
+            - type: number
+            - type: string

@@ -40,8 +40,7 @@ class AppDataMixin:
             return None
         assert isinstance(cls.state_attr_name, str)  # nosec
 
-        obj = getattr(app.state, cls.state_attr_name, None)
-        return obj
+        return getattr(app.state, cls.state_attr_name, None)
 
     @classmethod
     def pop_instance(cls, app: FastAPI):

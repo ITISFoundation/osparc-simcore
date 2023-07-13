@@ -3,8 +3,9 @@
 # pylint: disable=unused-variable
 
 
+from collections.abc import Iterator
 from copy import deepcopy
-from typing import Any, Iterator
+from typing import Any
 
 import pytest
 import respx
@@ -74,7 +75,7 @@ def mocked_webserver_service_api(
 
         # Mocks /projects/{*}/metadata/ports
         assert oas_paths["/projects/{project_id}/metadata/ports"]
-        assert "get" in oas_paths["/projects/{project_id}/metadata/ports"].keys()
+        assert "get" in oas_paths["/projects/{project_id}/metadata/ports"]
         respx_mock.get(
             path__regex=r"/projects/(?P<project_id>[\w-]+)/metadata/ports$",
             name="list_project_metadata_ports",
