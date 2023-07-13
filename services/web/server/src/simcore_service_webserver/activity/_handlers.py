@@ -8,14 +8,14 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from yarl import URL
 
+from .._meta import API_VTAG
 from ..login.decorators import login_required
 from .settings import get_plugin_settings
 
 
 async def query_prometheus(session: aiohttp.ClientSession, url: URL, query: str):
     async with session.get(url.with_query(query=query)) as resp:
-        result = await resp.json()
-        return result
+        return await resp.json()
 
 
 async def get_cpu_usage(session, url, user_id):
@@ -40,6 +40,10 @@ def get_prometheus_result_or_default(result, default):
     return result["data"]["result"]
 
 
+routes = aiohttp.web.RouteTableDef()
+
+
+@routes.get(f"/{API_VTAG}/activity/status", name="get_status")
 @login_required
 async def get_status(request: aiohttp.web.Request):
     session = get_client_session(request.app)
