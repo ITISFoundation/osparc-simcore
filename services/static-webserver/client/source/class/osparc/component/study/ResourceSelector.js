@@ -60,7 +60,7 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
         backgroundColor: "transparent",
         padding: 2
       });
-      box.setLayout(new qx.ui.layout.VBox(10));
+      box.setLayout(new qx.ui.layout.VBox(0));
       return box;
     },
 
