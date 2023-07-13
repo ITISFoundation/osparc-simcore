@@ -24,7 +24,7 @@ Makefile                                  @pcrespov @sanderegg
 /scripts/demo/                            @odeimaiz @pcrespov
 /scripts/json-schema-to-openapi-schema    @sanderegg
 /scripts/template-projects/               @odeimaiz @pcrespov
-/services/agent                           @GitHK
+/services/agent/                          @GitHK
 /services/api-server/                     @pcrespov
 /services/autoscaling/                    @sanderegg @pcrespov
 /services/catalog/                        @pcrespov @sanderegg
@@ -34,7 +34,9 @@ Makefile                                  @pcrespov @sanderegg
 /services/dynamic-sidecar/                @GitHK
 /services/invitations/                    @pcrespov
 /services/migration/                      @pcrespov
-/services/static-webserver                @GitHK
+/services/osparc-gateway-server/          @sanderegg
+/services/resourc-usage-tracker/          @matusdrobuliak66
+/services/static-webserver/               @GitHK
 /services/static-webserver/client/        @odeimaiz
 /services/storage/                        @sanderegg @pcrespov
 /services/web/server/                     @pcrespov @sanderegg @GitHK @matusdrobuliak66
