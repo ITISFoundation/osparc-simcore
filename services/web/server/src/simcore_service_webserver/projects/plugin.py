@@ -7,11 +7,6 @@ import logging
 
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
-from servicelib.aiohttp.rest_routing import (
-    get_handlers_from_namespace,
-    iter_path_operations,
-    map_handlers_with_operations,
-)
 
 from .._constants import APP_SETTINGS_KEY
 from . import (
@@ -28,21 +23,6 @@ from ._projects_access import setup_projects_access
 from .db import setup_projects_db
 
 logger = logging.getLogger(__name__)
-
-
-def _create_routes(tag, specs, *handlers_module):
-    handlers = {}
-    for mod in handlers_module:
-        handlers.update(get_handlers_from_namespace(mod))
-
-    return map_handlers_with_operations(
-        handlers,
-        filter(
-            lambda o: tag in o.tags and "snapshot" not in o.path,
-            iter_path_operations(specs),
-        ),
-        strict=False,
-    )
 
 
 @app_module_setup(
