@@ -3,7 +3,7 @@
 # pylint: disable=unused-variable
 
 import asyncio
-from typing import Awaitable, Callable
+from collections.abc import Awaitable, Callable
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -15,10 +15,6 @@ from simcore_service_webserver.catalog.client import (
     to_backend_service,
 )
 from simcore_service_webserver.catalog.plugin import setup_catalog
-from simcore_service_webserver.rest.plugin import (
-    APP_OPENAPI_SPECS_KEY,
-    load_openapi_specs,
-)
 from yarl import URL
 
 
@@ -29,15 +25,15 @@ def client(
 ):
     app = create_safe_application()
 
-    app[APP_OPENAPI_SPECS_KEY] = load_openapi_specs()
     setup_catalog.__wrapped__(app)
 
-    yield event_loop.run_until_complete(aiohttp_client(app))
+    return event_loop.run_until_complete(aiohttp_client(app))
 
 
 @pytest.fixture
 def mock_api_calls_to_catalog(client, mocker):
-    raise NotImplementedError("TODO: Use aioresponse to emulate catalog responses")
+    msg = "TODO: Use aioresponse to emulate catalog responses"
+    raise NotImplementedError(msg)
 
 
 def test_url_translation():
@@ -65,7 +61,7 @@ def test_catalog_routing(client):
 # TODO: this test shall simply check that Web API calls are redirected correctly
 @pytest.mark.skip(reason="DEV")
 async def test_catalog_api_calls(client, mock_api_calls_to_catalog):
-    client_session = client.app[APP_CLIENT_SESSION_KEY]
+    client.app[APP_CLIENT_SESSION_KEY]
 
     assert await is_catalog_service_responsive(client.app)
     mock_api_calls_to_catalog.assert_called_once()
