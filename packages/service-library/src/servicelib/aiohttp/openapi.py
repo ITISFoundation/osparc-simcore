@@ -3,24 +3,15 @@
     Facade for openapi functionality
 """
 from pathlib import Path
+from typing import TypeAlias
 
 import openapi_core
 import yaml
 from aiohttp import ClientSession
-from openapi_core.schema.exceptions import OpenAPIError, OpenAPIMappingError
 from openapi_core.schema.specs.models import Spec
 from yarl import URL
 
-# Supported version of openapi (last number indicates only editorial changes)
-# TODO: ensure openapi_core.__version__ is up-to-date with OAI_VERSION
-OAI_VERSION = "3.0.2"
-OAI_VERSION_URL = (
-    "https://github.com/OAI/OpenAPI-Specification/blob/master/versions/%s.md"
-    % OAI_VERSION
-)
-
-# alias
-OpenApiSpec = Spec
+OpenApiSpec: TypeAlias = Spec
 
 
 def get_base_path(specs: OpenApiSpec) -> str:
@@ -38,7 +29,6 @@ def get_base_path(specs: OpenApiSpec) -> str:
     return "/v" + specs.info.version.split(".")[0]
 
 
-# TODO: _load_from_* is also found in jsonshema_specs
 def _load_from_path(filepath: Path) -> tuple[dict, str]:
     with filepath.open() as f:
         spec_dict = yaml.safe_load(f)
@@ -85,6 +75,4 @@ __all__ = (
     "get_base_path",
     "create_openapi_specs",
     "OpenApiSpec",
-    "OpenAPIError",
-    "OpenAPIMappingError",
 )

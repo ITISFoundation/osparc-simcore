@@ -16,7 +16,7 @@ from .openapi import OpenApiSpec, get_base_path
 logger = logging.getLogger(__name__)
 
 
-def has_handler_signature(fun) -> bool:
+def has_handler_signature(fun: Callable) -> bool:
     # TODO: last parameter is web.Request or called request?
     return any(
         param.annotation == web.Request
