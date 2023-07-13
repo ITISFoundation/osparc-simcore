@@ -8,9 +8,9 @@ import os
 import shutil
 import subprocess
 import sys
+from collections.abc import Callable
 from pathlib import Path
 from pprint import pformat
-from typing import Callable
 
 import aiopg.sa
 import aiopg.sa.engine as aiopg_sa_engine
@@ -77,13 +77,13 @@ def postgres_service(docker_services, docker_ip, docker_compose_file: Path) -> d
     environ = config["services"]["postgres"]["environment"]
 
     # builds DSN
-    config = dict(
-        user=environ["POSTGRES_USER"],
-        password=environ["POSTGRES_PASSWORD"],
-        host=docker_ip,
-        port=docker_services.port_for("postgres", 5432),
-        database=environ["POSTGRES_DB"],
-    )
+    config = {
+        "user": environ["POSTGRES_USER"],
+        "password": environ["POSTGRES_PASSWORD"],
+        "host": docker_ip,
+        "port": docker_services.port_for("postgres", 5432),
+        "database": environ["POSTGRES_DB"],
+    }
 
     dsn = "postgresql://{user}:{password}@{host}:{port}/{database}".format(**config)
 
@@ -163,8 +163,7 @@ def app(app_environment: EnvVarsDict, migrated_db: None) -> FastAPI:
     - it uses default environ as pg
     - db is started and initialized
     """
-    the_app = init_app()
-    return the_app
+    return init_app()
 
 
 ## FAKE DATA injected at repositories interface ----------------------
@@ -186,12 +185,12 @@ class _ExtendedApiKeysRepository(BaseRepository):
     # pylint: disable=no-value-for-parameter
 
     async def create(self, name: str, *, api_key: str, api_secret: str, user_id: int):
-        values = dict(
-            display_name=name,
-            user_id=user_id,
-            api_key=api_key,
-            api_secret=api_secret,
-        )
+        values = {
+            "display_name": name,
+            "user_id": user_id,
+            "api_key": api_key,
+            "api_secret": api_secret,
+        }
         async with self.db_engine.acquire() as conn:
             _id = await conn.scalar(orm.api_keys.insert().values(**values))
 
@@ -208,24 +207,22 @@ class _ExtendedApiKeysRepository(BaseRepository):
 @pytest.fixture
 async def fake_user_id(app: FastAPI, faker: Faker) -> int:
     # WARNING: created but not deleted upon tear-down, i.e. this is for one use!
-    user_id = await _ExtendedUsersRepository(app.state.engine).create(
+    return await _ExtendedUsersRepository(app.state.engine).create(
         email=faker.email(),
         password=faker.password(),
         name=faker.user_name(),
     )
-    return user_id
 
 
 @pytest.fixture
 async def fake_api_key(app: FastAPI, fake_user_id: int, faker: Faker) -> ApiKeyInDB:
     # WARNING: created but not deleted upon tear-down, i.e. this is for one use!
-    apikey = await _ExtendedApiKeysRepository(app.state.engine).create(
+    return await _ExtendedApiKeysRepository(app.state.engine).create(
         "test-api-key",
         api_key=faker.word(),
         api_secret=faker.password(),
         user_id=fake_user_id,
     )
-    return apikey
 
 
 @pytest.fixture

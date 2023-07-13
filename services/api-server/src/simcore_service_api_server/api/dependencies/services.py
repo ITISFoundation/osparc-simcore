@@ -1,7 +1,7 @@
 """ Dependences with any other services (except webserver)
 
 """
-from typing import Callable
+from collections.abc import Callable
 
 from fastapi import HTTPException, Request, status
 

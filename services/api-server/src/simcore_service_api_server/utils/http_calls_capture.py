@@ -48,6 +48,9 @@ class HttpApiCallCaptureModel(BaseModel):
     def request_desc(self) -> str:
         return f"{self.method} {self.path}"
 
+    def as_response(self) -> httpx.Response:
+        return httpx.Response(status_code=self.status_code, json=self.response_body)
+
 
 def get_captured_as_json(name: str, response: httpx.Response) -> str:
     capture_json: str = HttpApiCallCaptureModel.create_from_response(

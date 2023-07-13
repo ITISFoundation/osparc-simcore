@@ -1,5 +1,5 @@
 import logging
-from typing import AsyncGenerator, Callable
+from collections.abc import AsyncGenerator, Callable
 
 from aiopg.sa import Engine
 from fastapi import Depends

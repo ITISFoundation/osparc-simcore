@@ -9,7 +9,7 @@ from ...models.schemas.jobs import (
     Job,
     JobID,
     JobMetadata,
-    JobMetadataReplace,
+    JobMetadataUpdate,
     JobOutputs,
     JobStatus,
 )
@@ -154,7 +154,7 @@ async def get_study_job_custom_metadata(
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def replace_study_job_custom_metadata(
-    study_id: StudyID, job_id: JobID, replace: JobMetadataReplace
+    study_id: StudyID, job_id: JobID, replace: JobMetadataUpdate
 ):
     """Changes job's custom metadata"""
     msg = f"Attaches metadata={replace.metadata!r} to study_id={study_id!r} job_id={job_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4313"

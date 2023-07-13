@@ -25,8 +25,9 @@ pytest_plugins = [
 def project_env_devel_vars(project_slug_dir: Path) -> EnvVarsDict:
     env_devel_file = project_slug_dir / ".env-devel"
     assert env_devel_file.exists()
-    environ = dotenv_values(env_devel_file, verbose=True, interpolate=True)
-    return environ
+    environs = dotenv_values(env_devel_file, verbose=True, interpolate=True)
+    assert not any(value is None for key, value in environs.items())
+    return environs
 
 
 @pytest.fixture(scope="session")

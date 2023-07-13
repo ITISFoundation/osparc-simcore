@@ -4,9 +4,10 @@
 # pylint: disable=unused-variable
 
 import json
+from collections.abc import AsyncIterator, Iterator
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncIterator, Iterator
+from typing import Any
 
 import aiohttp.test_utils
 import httpx
@@ -62,8 +63,7 @@ def app_environment(
 @pytest.fixture
 def app(app_environment: EnvVarsDict) -> FastAPI:
     """Inits app on a light environment"""
-    the_app = init_app()
-    return the_app
+    return init_app()
 
 
 @pytest.fixture
@@ -80,7 +80,7 @@ async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
         ) as client:
             assert isinstance(client._transport, ASGITransport)
             # rewires location test's app to client.app
-            setattr(client, "app", client._transport.app)
+            client.app = client._transport.app
 
             yield client
 

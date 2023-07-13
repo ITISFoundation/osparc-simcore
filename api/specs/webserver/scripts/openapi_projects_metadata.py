@@ -19,10 +19,7 @@ from models_library.api_schemas_webserver.projects_metadata import (
     ProjectMetadataUpdate,
 )
 from models_library.generics import Envelope
-from simcore_service_webserver.projects._metadata_handlers import (
-    ProjectMetadataGet,
-    ProjectPathParams,
-)
+from simcore_service_webserver.projects._metadata_handlers import ProjectPathParams
 
 app = FastAPI(redoc_url=None)
 
