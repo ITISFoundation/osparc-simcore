@@ -88,7 +88,7 @@ class LoginNextPage(NextPage[CodePageParams]):
     name="auth_resend_2fa_code",
     max_access_count=MAX_2FA_CODE_RESEND,
 )
-@routes.post(f"/{API_VTAG}/auth//auth/login", name="auth_login")
+@routes.post(f"/{API_VTAG}/auth/login", name="auth_login")
 async def login(request: web.Request):
     """Login: user submits an email (identification) and a password
 
@@ -204,7 +204,7 @@ class LoginTwoFactorAuthBody(InputSchema):
     "auth_login_2fa",
     unauthorized_reason=MSG_UNAUTHORIZED_LOGIN_2FA,
 )
-@routes.post(f"/{API_VTAG}/auth//auth/validate-code-login", name="auth_login_2fa")
+@routes.post(f"/{API_VTAG}/auth/validate-code-login", name="auth_login_2fa")
 async def login_2fa(request: web.Request):
     """Login (continuation): Submits 2FA code"""
     product: Product = get_current_product(request)
@@ -247,7 +247,7 @@ class LogoutBody(InputSchema):
     )
 
 
-@routes.post(f"/{API_VTAG}/auth//auth/logout", name="auth_logout")
+@routes.post(f"/{API_VTAG}/auth/logout", name="auth_logout")
 @login_required
 async def logout(request: web.Request) -> web.Response:
     user_id = request.get(RQT_USERID_KEY, -1)
