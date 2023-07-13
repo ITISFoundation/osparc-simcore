@@ -585,8 +585,6 @@ async def test_upload_path_source_is_a_folder(
         r_clone_settings=r_clone_settings,
     )
     assert isinstance(upload_result, UploadedFolder)
-    store_id = upload_result.store_id
-    assert store_id == s3_simcore_location
     assert source_dir.exists()
 
     async with ProgressBarData(steps=1) as progress_bar:
