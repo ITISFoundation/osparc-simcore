@@ -301,6 +301,38 @@ paths:
                     default: null
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
+  /scheduled_maintenance:
+    get:
+      tags:
+        - maintenance
+      summary: Get Scheduled Maintenance
+      operationId: get_scheduled_maintenance
+      responses:
+        '200':
+          description: Maintenance scheduled
+          content:
+            application/json:
+              schema:
+                title: ScheduledMaintenance
+                type: object
+                properties:
+                  start:
+                    title: Start
+                    type: string
+                    description: At what time the Maintenance starts (UTC)
+                  end:
+                    title: End
+                    type: string
+                    description: At what time the Maintenance ends (UTC)
+                  reason:
+                    title: Reason
+                    type: string
+                    description: What the purpose of the Maintenance is
+                additionalProperties: false
+        '204':
+          description: No maintenance scheduled
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
   '/auth/register/invitations:check':
     post:
       tags:
@@ -6406,9 +6438,9 @@ paths:
       parameters:
         - required: true
           schema:
+            title: Project Id
             type: string
             format: uuid
-            title: Project Id
           name: project_id
           in: path
       responses:
@@ -6417,31 +6449,31 @@ paths:
           content:
             application/json:
               schema:
+                title: 'Envelope[ProjectMetadataGet]'
+                type: object
                 properties:
                   data:
+                    title: ProjectMetadataGet
+                    required:
+                      - projectUuid
+                    type: object
                     properties:
                       projectUuid:
+                        title: Projectuuid
                         type: string
                         format: uuid
-                        title: Projectuuid
                       custom:
+                        title: Custom
+                        type: object
                         additionalProperties:
                           anyOf:
                             - type: boolean
                             - type: integer
                             - type: number
                             - type: string
-                        type: object
-                        title: Custom
                         description: Custom key-value map
-                    type: object
-                    required:
-                      - projectUuid
-                    title: ProjectMetadataGet
                   error:
                     title: Error
-                type: object
-                title: 'Envelope[ProjectMetadataGet]'
     patch:
       tags:
         - project
@@ -6450,29 +6482,29 @@ paths:
       parameters:
         - required: true
           schema:
+            title: Project Id
             type: string
             format: uuid
-            title: Project Id
           name: project_id
           in: path
       requestBody:
         content:
           application/json:
             schema:
+              title: ProjectMetadataUpdate
+              required:
+                - custom
+              type: object
               properties:
                 custom:
+                  title: Custom
+                  type: object
                   additionalProperties:
                     anyOf:
                       - type: boolean
                       - type: integer
                       - type: number
                       - type: string
-                  type: object
-                  title: Custom
-              type: object
-              required:
-                - custom
-              title: ProjectMetadataUpdate
         required: true
       responses:
         '200':
@@ -9183,7 +9215,7 @@ paths:
       responses:
         '302':
           description: Opens osparc and starts viewer for selected data
-  '/study/{study_id}':
+  '/study/{id}':
     get:
       tags:
         - nih-sparc
@@ -9196,7 +9228,7 @@ paths:
             title: Study Id
             type: string
             format: uuid
-          name: study_id
+          name: id
           in: path
       responses:
         '302':

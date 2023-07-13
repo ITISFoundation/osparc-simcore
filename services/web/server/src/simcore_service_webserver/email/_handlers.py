@@ -64,7 +64,7 @@ class TestPassed(BaseModel):
 routes = web.RouteTableDef()
 
 
-@routes.post(f"/{API_VTAG}/email:test")
+@routes.post(f"/{API_VTAG}/email:test", name="test_email")
 @login_required
 @permission_required("admin.*")
 async def test_email(request: web.Request):

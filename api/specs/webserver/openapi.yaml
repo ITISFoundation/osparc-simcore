@@ -52,6 +52,9 @@ paths:
   /config:
     $ref: "./openapi-diagnostics.yaml#/paths/~1config"
 
+  /scheduled_maintenance:
+    $ref: "./openapi-diagnostics.yaml#/paths/~1scheduled_maintenance"
+
   # AUTHENTICATION & AUTHORIZATION --------------------------------------
 
   /auth/register/invitations:check:
@@ -366,8 +369,8 @@ paths:
   /view:
     $ref: "./openapi-nih-sparc.yaml#/paths/~1view"
 
-  /study/{study_id}:
-    $ref: "./openapi-nih-sparc.yaml#/paths/~1study~1{study_id}"
+  /study/{id}:
+    $ref: "./openapi-nih-sparc.yaml#/paths/~1study~1{id}"
 
 components:
   responses:
