@@ -241,7 +241,7 @@ async def push_file_to_store(
         io_log_redirect_cb=io_log_redirect_cb,
         progress_bar=progress_bar,
     )
-    assert isinstance(upload_result, UploadedFile)
+    assert isinstance(upload_result, UploadedFile)  # nosec
     log.debug("file path %s uploaded, received ETag %s", file, upload_result.etag)
     return FileLink(
         store=upload_result.store_id, path=s3_object, e_tag=upload_result.etag
