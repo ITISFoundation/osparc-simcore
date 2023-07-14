@@ -375,44 +375,18 @@ async def upload_path(
     async with ClientSessionContextManager(client_session) as session:
         upload_links = None
         try:
-            store_id, upload_links = await get_upload_links_from_s3(
+            store_id, e_tag, upload_links = await _upload_to_s3(
                 user_id=user_id,
-                store_name=store_name,
                 store_id=store_id,
+                store_name=store_name,
                 s3_object=s3_object,
-                client_session=session,
-                link_type=LinkType.S3 if is_directory else LinkType.PRESIGNED,
-                file_size=ByteSize(
-                    path_to_upload.stat().st_size
-                    if isinstance(path_to_upload, Path)
-                    else path_to_upload.file_size
-                ),
+                path_to_upload=path_to_upload,
+                io_log_redirect_cb=io_log_redirect_cb,
+                r_clone_settings=r_clone_settings,
+                progress_bar=progress_bar,
                 is_directory=is_directory,
+                session=session,
             )
-            if is_directory:
-                assert r_clone_settings  # nosec
-                assert isinstance(path_to_upload, Path)  # nosec
-                assert len(upload_links.urls) > 0  # nosec
-                await r_clone.sync_local_to_s3(
-                    r_clone_settings,
-                    progress_bar,
-                    local_directory_path=path_to_upload,
-                    upload_s3_link=upload_links.urls[0],
-                )
-            else:
-                # uploading a file
-                uploaded_parts: list[
-                    UploadedPart
-                ] = await upload_file_to_presigned_links(
-                    session,
-                    upload_links,
-                    path_to_upload,
-                    num_retries=NodePortsSettings.create_from_envs().NODE_PORTS_IO_NUM_RETRY_ATTEMPTS,
-                    io_log_redirect_cb=io_log_redirect_cb,
-                    progress_bar=progress_bar,
-                )
-                # complete the upload
-                e_tag = await _complete_upload(session, upload_links, uploaded_parts)
         except (r_clone.RCloneFailedError, exceptions.S3TransferError) as exc:
             _logger.exception("The upload failed with an unexpected error:")
             if upload_links:
@@ -425,6 +399,59 @@ async def upload_path(
         if io_log_redirect_cb:
             await io_log_redirect_cb(f"upload of {path_to_upload} complete.")
     return UploadedFolder() if e_tag is None else UploadedFile(store_id, e_tag)
+
+
+async def _upload_to_s3(
+    *,
+    user_id: UserID,
+    store_id: LocationID | None,
+    store_name: LocationName | None,
+    s3_object: StorageFileID,
+    path_to_upload: Path | UploadableFileObject,
+    io_log_redirect_cb: LogRedirectCB | None,
+    r_clone_settings: RCloneSettings | None,
+    progress_bar: ProgressBarData,
+    is_directory: bool,
+    session: ClientSession,
+) -> tuple[LocationID, ETag | None, FileUploadSchema]:
+    e_tag: ETag | None = None
+    store_id, upload_links = await get_upload_links_from_s3(
+        user_id=user_id,
+        store_name=store_name,
+        store_id=store_id,
+        s3_object=s3_object,
+        client_session=session,
+        link_type=LinkType.S3 if is_directory else LinkType.PRESIGNED,
+        file_size=ByteSize(
+            path_to_upload.stat().st_size
+            if isinstance(path_to_upload, Path)
+            else path_to_upload.file_size
+        ),
+        is_directory=is_directory,
+    )
+    if is_directory:
+        assert r_clone_settings  # nosec
+        assert isinstance(path_to_upload, Path)  # nosec
+        assert len(upload_links.urls) > 0  # nosec
+        await r_clone.sync_local_to_s3(
+            r_clone_settings,
+            progress_bar,
+            local_directory_path=path_to_upload,
+            upload_s3_link=upload_links.urls[0],
+        )
+    else:
+        # uploading a file
+        uploaded_parts: list[UploadedPart] = await upload_file_to_presigned_links(
+            session,
+            upload_links,
+            path_to_upload,
+            num_retries=NodePortsSettings.create_from_envs().NODE_PORTS_IO_NUM_RETRY_ATTEMPTS,
+            io_log_redirect_cb=io_log_redirect_cb,
+            progress_bar=progress_bar,
+        )
+        # complete the upload
+        e_tag = await _complete_upload(session, upload_links, uploaded_parts)
+    return store_id, e_tag, upload_links
 
 
 async def _get_file_meta_data(
