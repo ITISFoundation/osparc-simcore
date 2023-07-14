@@ -5,7 +5,7 @@
    https://osparc.io
 
    Copyright:
-     2019 IT'IS Foundation, https://itis.swiss
+     2023 IT'IS Foundation, https://itis.swiss
 
    License:
      MIT: https://opensource.org/licenses/MIT
@@ -25,14 +25,7 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
 
     this.__studyId = studyId;
 
-    const loadingImage = new qx.ui.basic.Image().set({
-      source: "@FontAwesome5Solid/circle-notch/32",
-      alignX: "center",
-      alignY: "middle"
-    });
-    loadingImage.getContentElement().addClass("rotate");
-    this._add(loadingImage);
-
+    this.getChildControl("loading-services-resources");
     const params = {
       url: {
         "studyId": studyId
@@ -82,6 +75,27 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
   members: {
     __studyId: null,
     __studyData: null,
+
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "loading-services-resources":
+          control = new qx.ui.basic.Image().set({
+            source: "@FontAwesome5Solid/circle-notch/48",
+            alignX: "center",
+            alignY: "middle",
+            marginTop: 20
+          });
+          control.getContentElement().addClass("rotate");
+          this._add(control);
+          break;
+        case "services-resources-layout":
+          control = this.self().createGroupBox(this.tr("Select Resources"));
+          this._add(control);
+          break;
+      }
+      return control || this.base(arguments, id);
+    },
 
     __buildLayout: function() {
       this.__buildNodeResources();
@@ -138,7 +152,8 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
     },
 
     __buildNodeResources: function() {
-      const servicesBox = this.self().createGroupBox(this.tr("Select Resources"));
+      const loadingImage = this.getChildControl("loading-services-resources");
+      const servicesBox = this.getChildControl("services-resources-layout");
       servicesBox.exclude();
       if ("workbench" in this.__studyData) {
         for (const nodeId in this.__studyData["workbench"]) {
@@ -156,6 +171,7 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
               this._add(servicesBox);
               const serviceGroup = this.createServiceGroup(node["label"], serviceResources);
               if (serviceGroup) {
+                loadingImage.exclude();
                 servicesBox.add(serviceGroup);
                 servicesBox.show();
               }
