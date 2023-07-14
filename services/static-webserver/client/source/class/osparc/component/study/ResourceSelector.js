@@ -175,9 +175,9 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
       const servicesBox = this.getChildControl("services-resources-layout");
       servicesBox.exclude();
       if ("workbench" in this.__studyData) {
+        let lastServiceGroup = null;
         for (const nodeId in this.__studyData["workbench"]) {
           const node = this.__studyData["workbench"][nodeId];
-          console.log(node);
           const params = {
             url: {
               studyId: this.__studyId,
@@ -192,6 +192,13 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
               if (serviceGroup) {
                 loadingImage.exclude();
                 servicesBox.add(serviceGroup);
+                // hide service name if it's a mono-service study
+                if (lastServiceGroup === null) {
+                  serviceGroup.getChildControl("legend").exclude();
+                } else {
+                  lastServiceGroup.getChildControl("legend").show();
+                }
+                lastServiceGroup = serviceGroup;
                 servicesBox.show();
               }
             });
