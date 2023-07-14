@@ -149,7 +149,7 @@ async def _pull_file(
 
 
 def _get_s3_name(path: Path, *, is_archive: bool) -> str:
-    return path.stem if is_archive else f"{path.stem}.zip"
+    return f"{path.stem}.zip" if is_archive else path.stem
 
 
 async def pull(
@@ -227,4 +227,17 @@ async def state_metadata_entry_exists(
         store_id=SIMCORE_LOCATION,
         s3_object=s3_object,
         is_directory=not is_archive,
+    )
+
+
+async def delete_archive(
+    user_id: int, project_id: str, node_uuid: str, path: Path
+) -> None:
+    """removes the .zip state archive from storage"""
+    s3_object = _create_s3_object(
+        project_id, node_uuid, _get_s3_name(path, is_archive=True)
+    )
+    log.debug("Deleting s3_object='%s' is archive", s3_object)
+    await filemanager.delete_file(
+        user_id=user_id, store_id=SIMCORE_LOCATION, s3_object=s3_object
     )

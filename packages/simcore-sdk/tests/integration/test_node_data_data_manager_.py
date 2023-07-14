@@ -161,6 +161,7 @@ async def test_valid_upload_download(
             io_log_redirect_cb=None,
             r_clone_settings=None,
             progress_bar=progress_bar,
+            is_archive=True,
         )
         assert progress_bar._continuous_progress_value == pytest.approx(2.0)
 
@@ -215,9 +216,70 @@ async def test_valid_upload_download_saved_to(
             io_log_redirect_cb=None,
             r_clone_settings=None,
             progress_bar=progress_bar,
+            is_archive=True,
         )
         assert progress_bar._continuous_progress_value == pytest.approx(2)
 
     downloaded_hashes = _get_file_hashes_in_path(new_destination)
 
     assert uploaded_hashes == downloaded_hashes
+
+
+@pytest.mark.parametrize(
+    "content_path",
+    [
+        # pylint: disable=no-member
+        pytest.lazy_fixture("dir_content_one_file_path"),
+        pytest.lazy_fixture("dir_content_multiple_files_path"),
+    ],
+)
+async def test_delete_archive(
+    node_ports_config,
+    content_path: Path,
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
+    random_tmp_dir_generator: Callable,
+    r_clone_settings: RCloneSettings,
+):
+    async with ProgressBarData(steps=2) as progress_bar:
+        await data_manager.push(
+            user_id=user_id,
+            project_id=project_id,
+            node_uuid=node_uuid,
+            source_path=content_path,
+            io_log_redirect_cb=None,
+            progress_bar=progress_bar,
+            r_clone_settings=r_clone_settings,
+        )
+        # pylint: disable=protected-access
+        assert progress_bar._continuous_progress_value == pytest.approx(1)
+
+        assert (
+            await data_manager.state_metadata_entry_exists(
+                user_id=user_id,
+                project_id=project_id,
+                node_uuid=node_uuid,
+                path=content_path,
+                is_archive=True,
+            )
+            is True
+        )
+
+        await data_manager.delete_archive(
+            user_id=user_id,
+            project_id=project_id,
+            node_uuid=node_uuid,
+            path=content_path,
+        )
+
+        assert (
+            await data_manager.state_metadata_entry_exists(
+                user_id=user_id,
+                project_id=project_id,
+                node_uuid=node_uuid,
+                path=content_path,
+                is_archive=True,
+            )
+            is False
+        )

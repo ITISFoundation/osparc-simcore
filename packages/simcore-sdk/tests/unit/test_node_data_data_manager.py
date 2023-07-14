@@ -230,6 +230,7 @@ async def test_pull_folder(
             io_log_redirect_cb=None,
             r_clone_settings=None,
             progress_bar=progress_bar,
+            is_archive=True,
         )
     assert progress_bar._continuous_progress_value == pytest.approx(1)
     mock_temporary_directory.assert_called_once()
@@ -288,6 +289,7 @@ async def test_pull_file(
             io_log_redirect_cb=None,
             r_clone_settings=None,
             progress_bar=progress_bar,
+            is_archive=True,
         )
     assert progress_bar._continuous_progress_value == pytest.approx(1)
     mock_temporary_directory.assert_not_called()
