@@ -11,7 +11,7 @@ IFS=$'\n\t'
 
 
 # Installation instructions from https://rclone.org/docker/
-R_CLONE_VERSION="1.62.1"
+R_CLONE_VERSION="1.62.2"
 mkdir --parents /var/lib/docker-plugins/rclone/config
 mkdir --parents /var/lib/docker-plugins/rclone/cache
 docker plugin install rclone/docker-volume-rclone:amd64-${R_CLONE_VERSION} args="-v" --alias rclone --grant-all-permissions

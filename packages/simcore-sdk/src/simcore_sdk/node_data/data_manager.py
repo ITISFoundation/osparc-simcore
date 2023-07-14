@@ -41,12 +41,12 @@ async def _push_file(
         project_id, node_uuid, rename_to if rename_to else file_path
     )
     log.info("uploading %s to S3 to %s...", file_path.name, s3_object)
-    await filemanager.upload_file(
+    await filemanager.upload_path(
         user_id=user_id,
         store_id=store_id,
         store_name=None,
         s3_object=s3_object,
-        file_to_upload=file_path,
+        path_to_upload=file_path,
         r_clone_settings=r_clone_settings,
         io_log_redirect_cb=io_log_redirect_cb,
         progress_bar=progress_bar,
@@ -58,30 +58,29 @@ async def push(
     user_id: int,
     project_id: str,
     node_uuid: str,
-    file_or_folder: Path,
+    source_path: Path,
     *,
     io_log_redirect_cb: LogRedirectCB | None,
     rename_to: str | None = None,
-    r_clone_settings: RCloneSettings | None = None,
+    r_clone_settings: RCloneSettings,
     archive_exclude_patterns: set[str] | None = None,
     progress_bar: ProgressBarData,
 ) -> None:
-    if file_or_folder.is_file():
-        return await _push_file(
+    if source_path.is_file():
+        await _push_file(
             user_id,
             project_id,
             node_uuid,
-            file_or_folder,
+            source_path,
             rename_to=rename_to,
             io_log_redirect_cb=io_log_redirect_cb,
             progress_bar=progress_bar,
         )
-    # we have a folder, so we create a compressed file
+        return
+    # NOTE: the when pushing the state of the directories, the zipping will be removed
     async with AsyncExitStack() as stack:
         stack.enter_context(log_catch(log))
-        stack.enter_context(
-            log_context(log, logging.INFO, "pushing %s", file_or_folder)
-        )
+        stack.enter_context(log_context(log, logging.INFO, "pushing %s", source_path))
         tmp_dir_name = stack.enter_context(
             TemporaryDirectory()  # pylint: disable=consider-using-with
         )
@@ -90,15 +89,13 @@ async def push(
         )
 
         # compress the files
-        archive_file_path = (
-            Path(tmp_dir_name) / f"{rename_to or file_or_folder.stem}.zip"
-        )
+        archive_file_path = Path(tmp_dir_name) / f"{rename_to or source_path.stem}.zip"
         if io_log_redirect_cb:
             await io_log_redirect_cb(
-                f"archiving {file_or_folder} into {archive_file_path}, please wait..."
+                f"archiving {source_path} into {archive_file_path}, please wait..."
             )
         await archive_dir(
-            dir_to_compress=file_or_folder,
+            dir_to_compress=source_path,
             destination=archive_file_path,
             compress=False,  # disabling compression for faster speeds
             store_relative_path=True,
@@ -107,7 +104,7 @@ async def push(
         )
         if io_log_redirect_cb:
             await io_log_redirect_cb(
-                f"archiving {file_or_folder} into {archive_file_path} completed."
+                f"archiving {source_path} into {archive_file_path} completed."
             )
         await _push_file(
             user_id,
@@ -129,18 +126,20 @@ async def _pull_file(
     *,
     io_log_redirect_cb: LogRedirectCB | None,
     save_to: Path | None = None,
+    r_clone_settings: RCloneSettings,
     progress_bar: ProgressBarData,
 ) -> None:
     destination_path = file_path if save_to is None else save_to
     s3_object = _create_s3_object(project_id, node_uuid, file_path)
     log.info("pulling data from %s to %s...", s3_object, file_path)
-    downloaded_file = await filemanager.download_file_from_s3(
+    downloaded_file = await filemanager.download_path_from_s3(
         user_id=user_id,
         store_id=SIMCORE_LOCATION,
         store_name=None,
         s3_object=s3_object,
         local_folder=destination_path.parent,
         io_log_redirect_cb=io_log_redirect_cb,
+        r_clone_settings=r_clone_settings,
         progress_bar=progress_bar,
     )
     if downloaded_file != destination_path:
@@ -157,36 +156,41 @@ async def pull(
     user_id: int,
     project_id: str,
     node_uuid: str,
-    file_or_folder: Path,
+    destination_path: Path,
     *,
     io_log_redirect_cb: LogRedirectCB | None,
     save_to: Path | None = None,
+    r_clone_settings: RCloneSettings,
     progress_bar: ProgressBarData,
 ) -> None:
-    if file_or_folder.is_file():
-        return await _pull_file(
+    if destination_path.is_file():
+        await _pull_file(
             user_id,
             project_id,
             node_uuid,
-            file_or_folder,
+            destination_path,
             save_to=save_to,
             io_log_redirect_cb=io_log_redirect_cb,
+            r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
         )
+        return
+    # NOTE: the when pulling the state of the directories, the zipping will be removed
     # we have a folder, so we need somewhere to extract it to
     async with progress_bar.sub_progress(steps=2) as sub_prog:
         with TemporaryDirectory() as tmp_dir_name:
-            archive_file = Path(tmp_dir_name) / _get_archive_name(file_or_folder)
+            archive_file = Path(tmp_dir_name) / _get_archive_name(destination_path)
             await _pull_file(
                 user_id,
                 project_id,
                 node_uuid,
                 archive_file,
                 io_log_redirect_cb=io_log_redirect_cb,
+                r_clone_settings=r_clone_settings,
                 progress_bar=sub_prog,
             )
 
-            destination_folder = file_or_folder if save_to is None else save_to
+            destination_folder = destination_path if save_to is None else save_to
             if io_log_redirect_cb:
                 await io_log_redirect_cb(
                     f"unarchiving {archive_file} into {destination_folder}, please wait..."
