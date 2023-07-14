@@ -150,9 +150,9 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
         const serviceResources = servicesResources[mainImageKey];
         if (serviceResources && "resources" in serviceResources) {
           const box = this.self().createGroupBox(serviceLabel);
-          const grid = new qx.ui.layout.Grid(10, 10);
-          grid.setColumnAlign(0, "center", "middle"); // resource name
-          grid.setColumnAlign(1, "center", "middle"); // resource options
+          const grid = new qx.ui.layout.Grid(5, 5);
+          grid.setColumnAlign(0, "right", "middle"); // resource name
+          grid.setColumnAlign(1, "left", "middle"); // resource options
           grid.setColumnFlex(1, 1); // resource options
           const gridLayout = new qx.ui.container.Composite(grid);
           box.add(gridLayout);
