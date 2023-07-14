@@ -152,8 +152,8 @@ async def _pull_file(
     log.info("completed pull of %s.", destination_path)
 
 
-def _get_archive_name(path: Path) -> str:
-    return f"{path.stem}.zip"
+def _get_s3_name(path: Path, *, is_archive: bool) -> str:
+    return path.stem if is_archive else f"{path.stem}.zip"
 
 
 async def pull(
@@ -166,7 +166,10 @@ async def pull(
     save_to: Path | None = None,
     r_clone_settings: RCloneSettings | None,
     progress_bar: ProgressBarData,
+    is_archive: bool,
 ) -> None:
+    # NOTE: the legacy way of storing states was as zip archives
+
     if file_or_folder.is_file():
         await _pull_file(
             user_id,
@@ -183,7 +186,9 @@ async def pull(
     # we have a folder, so we need somewhere to extract it to
     async with progress_bar.sub_progress(steps=2) as sub_prog:
         with TemporaryDirectory() as tmp_dir_name:
-            archive_file = Path(tmp_dir_name) / _get_archive_name(file_or_folder)
+            archive_file = Path(tmp_dir_name) / _get_s3_name(
+                file_or_folder, is_archive=is_archive
+            )
             await _pull_file(
                 user_id,
                 project_id,
@@ -211,16 +216,19 @@ async def pull(
                 )
 
 
-async def exists(
-    user_id: int, project_id: str, node_uuid: str, file_path: Path
+async def state_metadata_entry_exists(
+    user_id: int, project_id: str, node_uuid: str, path: Path, *, is_archive: bool
 ) -> bool:
     """
     :returns True if an entry is present inside the files_metadata else False
     """
-    s3_object = _create_s3_object(project_id, node_uuid, _get_archive_name(file_path))
+    s3_object = _create_s3_object(
+        project_id, node_uuid, _get_s3_name(path, is_archive=is_archive)
+    )
     log.debug("Checking if s3_object='%s' is present", s3_object)
     return await filemanager.entry_exists(
         user_id=user_id,
         store_id=SIMCORE_LOCATION,
         s3_object=s3_object,
+        is_directory=not is_archive,
     )

@@ -221,15 +221,25 @@ async def task_restore_state(
     mounted_volumes: MountedVolumes,
     app: FastAPI,
 ) -> None:
+    # NOTE: while the zip archive exists, it will always
+    # pull and decompress the zip archive.
+    # This ensures that the migration from the legacy format
+    # to the new format went as expected.
+
+    # TODO: this could be a zip or a directory, which takes precedence?
+    # I Would say the directory takes precedence over the zip
+    # if we don't have the zip check if the folder is present, if this one is present us it!
+
     progress.update(message="checking files", percent=0.0)
     # first check if there are files (no max concurrency here, these are just quick REST calls)
-    paths_exists: list[bool] = await logged_gather(
+    archive_metadata_exists: list[bool] = await logged_gather(
         *(
-            data_manager.exists(
+            data_manager.state_metadata_entry_exists(
                 user_id=settings.DY_SIDECAR_USER_ID,
                 project_id=f"{settings.DY_SIDECAR_PROJECT_ID}",
                 node_uuid=f"{settings.DY_SIDECAR_NODE_ID}",
-                file_path=path,
+                path=path,
+                is_archive=True,
             )
             for path in mounted_volumes.disk_state_paths()
         ),
@@ -237,7 +247,9 @@ async def task_restore_state(
     )
     effective_paths: list[Path] = [
         path
-        for path, exists in zip(mounted_volumes.disk_state_paths(), paths_exists)
+        for path, exists in zip(
+            mounted_volumes.disk_state_paths(), archive_metadata_exists, strict=True
+        )
         if exists
     ]
 
@@ -284,6 +296,8 @@ async def task_save_state(
     mounted_volumes: MountedVolumes,
     app: FastAPI,
 ) -> None:
+    # TODO: save the sate here directly to the folder
+    # if the zip is present here, remove it!
     progress.update(message="starting state save", percent=0.0)
     async with ProgressBarData(
         steps=len([mounted_volumes.disk_state_paths()]),
@@ -309,6 +323,8 @@ async def task_save_state(
             ],
             max_concurrency=CONCURRENCY_STATE_SAVE_RESTORE,
         )
+
+    # TODO: only if there were no errors, remove the zip archive!
 
     await post_sidecar_log_message(app, "Finished state saving", log_level=logging.INFO)
     progress.update(message="finished state saving", percent=0.99)

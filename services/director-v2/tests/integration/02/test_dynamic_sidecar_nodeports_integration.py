@@ -621,11 +621,12 @@ async def _fetch_data_via_data_manager(
     save_to.mkdir(parents=True, exist_ok=True)
 
     assert (
-        await data_manager.exists(
+        await data_manager.state_metadata_entry_exists(
             user_id=user_id,
             project_id=project_id,
             node_uuid=service_uuid,
-            file_path=DY_SERVICES_STATE_PATH,
+            path=DY_SERVICES_STATE_PATH,
+            is_archive=True,
         )
         is True
     )
@@ -640,6 +641,7 @@ async def _fetch_data_via_data_manager(
             io_log_redirect_cb=None,
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
+            is_archive=True,
         )
 
     return save_to
