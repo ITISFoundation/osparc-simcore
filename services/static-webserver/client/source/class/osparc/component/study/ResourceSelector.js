@@ -108,7 +108,14 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
         const serviceResources = servicesResources[mainImageKey];
         if (serviceResources && "resources" in serviceResources) {
           const box = this.self().createGroupBox(serviceLabel);
+          const grid = new qx.ui.layout.Grid(10, 10);
+          grid.setColumnAlign(0, "center", "middle"); // resource name
+          grid.setColumnAlign(1, "center", "middle"); // resource options
+          grid.setColumnFlex(1, 1); // resource options
+          const gridLayout = new qx.ui.container.Composite(grid);
+          box.add(gridLayout);
           box.exclude();
+          let i = 0;
           if ("CPU" in serviceResources["resources"]) {
             const opt1 = this.self().createToolbarRadioButton("1", 1);
             const opt2 = this.self().createToolbarRadioButton("2", 2);
@@ -122,10 +129,16 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
             groupBox.add(opt2);
             groupBox.add(opt3);
 
-            const cpuBox = this.self().createGroupBox("CPU");
-            cpuBox.add(groupBox);
-            box.add(cpuBox);
+            gridLayout.add(new qx.ui.basic.Label(this.tr("CPU")), {
+              column: 0,
+              row: i
+            });
+            gridLayout.add(groupBox, {
+              column: 1,
+              row: i
+            });
             box.show();
+            i++;
           }
           if ("RAM" in serviceResources["resources"]) {
             const opt1 = this.self().createToolbarRadioButton("256 MB", 256);
@@ -140,10 +153,16 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
             groupBox.add(opt2);
             groupBox.add(opt3);
 
-            const ramBox = this.self().createGroupBox("RAM");
-            ramBox.add(groupBox);
-            box.add(ramBox);
+            gridLayout.add(new qx.ui.basic.Label(this.tr("RAM")), {
+              column: 0,
+              row: i
+            });
+            gridLayout.add(groupBox, {
+              column: 1,
+              row: i
+            });
             box.show();
+            i++;
           }
           return box;
         }
