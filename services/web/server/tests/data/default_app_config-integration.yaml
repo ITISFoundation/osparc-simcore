@@ -7,10 +7,7 @@ main:
   port: 8080
   studies_access_enabled: true
   testing: true
-activity:
-  enabled: true
-  prometheus_api_version: ${WEBSERVER_PROMETHEUS_API_VERSION}
-  prometheus_url: ${WEBSERVER_PROMETHEUS_URL}
+activity: ${WEBSERVER_ACTIVITY}
 catalog:
   enabled: true
   host: ${CATALOG_HOST}

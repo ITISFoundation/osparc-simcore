@@ -129,6 +129,9 @@ def _default_app_config_for_integration_tests(
     test_environ["SMTP_PROTOCOL"] = "UNENCRYPTED"
     test_environ["WEBSERVER_LOGLEVEL"] = "WARNING"
     test_environ["OSPARC_SIMCORE_REPO_ROOTDIR"] = f"{osparc_simcore_root_dir}"
+    test_environ[
+        "WEBSERVER_ACTIVITY"
+    ] = '{"enabled": true, "prometheus_api_version": "v1", "prometheus_url": "http://prometheus"}'
 
     # NOTE: previously in .env but removed from that file env since the webserver
     # can be configured as GC service as well. In integration tests, we are
