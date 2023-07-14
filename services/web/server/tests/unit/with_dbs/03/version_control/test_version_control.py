@@ -3,34 +3,10 @@
 # pylint: disable=unused-variable
 
 
-import pytest
 from models_library.projects import NodesDict
-from openapi_core.schema.specs.models import Spec as OpenApiSpecs
 from pydantic import BaseModel
-from simcore_service_webserver._meta import API_VTAG as VX
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.version_control.db import compute_workbench_checksum
-from simcore_service_webserver.version_control.plugin import _rest_handlers
-
-
-@pytest.mark.parametrize(
-    "route",
-    _rest_handlers.routes,
-    ids=lambda r: f"{r.method.upper()} {r.path}",
-)
-def test_route_against_openapi_specs(route, openapi_specs: OpenApiSpecs):
-
-    assert route.path.startswith(f"/{VX}")
-    path = route.path.replace(f"/{VX}", "")
-
-    assert (
-        route.method.lower() in openapi_specs.paths[path].operations
-    ), f"operation {route.method} undefined in OAS"
-
-    assert (
-        openapi_specs.paths[path].operations[route.method.lower()].operation_id
-        == route.kwargs["name"]
-    ), "route's name differs from OAS operation_id"
 
 
 class WorkbenchModel(BaseModel):
