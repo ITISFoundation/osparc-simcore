@@ -126,13 +126,30 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       osparc.utils.Study.createStudyFromService(key, version)
         .then(studyId => {
           const resourceSelector = new osparc.component.study.ResourceSelector(studyId);
-          const win = osparc.ui.window.Window.popUpInWindow(resourceSelector, "Study Options", 400, 400);
+          const width = 500;
+          const height = 400;
+          const win = osparc.ui.window.Window.popUpInWindow(resourceSelector, "Study Options", width, height);
           resourceSelector.addListener("startStudy", () => {
+            win.close();
             this._hideLoadingPage();
             this._startStudyById(studyId);
           });
-          resourceSelector.addListener("close", () => {
-            // delete study
+          const deleteStudy = () => {
+            const params = {
+              url: {
+                "studyId": studyId
+              }
+            };
+            osparc.data.Resources.fetch("studies", "delete", params, studyId);
+          };
+          resourceSelector.addListener("cancel", () => {
+            win.close();
+            this._hideLoadingPage();
+            deleteStudy();
+          });
+          win.getChildControl("close-button").addListener("close", () => {
+            this._hideLoadingPage();
+            deleteStudy();
           });
           win.center();
           win.open();
