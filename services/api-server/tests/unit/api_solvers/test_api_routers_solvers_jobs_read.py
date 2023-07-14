@@ -21,16 +21,6 @@ class MockBackendRouters(NamedTuple):
 
 
 @pytest.fixture
-def solver_key() -> str:
-    return "simcore/services/comp/itis/sleeper"
-
-
-@pytest.fixture
-def solver_version() -> str:
-    return "2.0.0"
-
-
-@pytest.fixture
 def mocked_backend(
     mocked_webserver_service_api_base: MockRouter,
     mocked_catalog_service_api_base: MockRouter,

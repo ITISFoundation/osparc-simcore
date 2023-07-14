@@ -3,7 +3,7 @@
 import pytest
 from settings_library.r_clone import RCloneSettings, S3Provider
 from settings_library.utils_r_clone import (
-    _COMMON_ENTRIES,
+    _COMMON_SETTINGS_OPTIONS,
     get_r_clone_config,
     resolve_provider,
 )
@@ -28,7 +28,7 @@ def test_r_clone_config_template_replacement(r_clone_settings: RCloneSettings) -
     assert "{access_key}" not in r_clone_config
     assert "{secret_key}" not in r_clone_config
 
-    for key in _COMMON_ENTRIES:
+    for key in _COMMON_SETTINGS_OPTIONS:
         assert key in r_clone_config
 
 

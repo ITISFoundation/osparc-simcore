@@ -73,6 +73,7 @@ qx.Class.define("osparc.ui.window.Dialog", {
     __buildLayout: function() {
       this.__messageLabel = new qx.ui.basic.Label().set({
         font: "text-14",
+        selectable: true,
         rich: true
       });
       this.add(this.__messageLabel, {

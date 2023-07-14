@@ -58,20 +58,20 @@ async def push(
     user_id: int,
     project_id: str,
     node_uuid: str,
-    file_or_folder: Path,
+    source_path: Path,
     *,
     io_log_redirect_cb: LogRedirectCB | None,
     rename_to: str | None = None,
-    r_clone_settings: RCloneSettings | None = None,
+    r_clone_settings: RCloneSettings,
     archive_exclude_patterns: set[str] | None = None,
     progress_bar: ProgressBarData,
 ) -> None:
-    if file_or_folder.is_file():
+    if source_path.is_file():
         await _push_file(
             user_id,
             project_id,
             node_uuid,
-            file_or_folder,
+            source_path,
             rename_to=rename_to,
             io_log_redirect_cb=io_log_redirect_cb,
             progress_bar=progress_bar,
@@ -80,9 +80,7 @@ async def push(
     # NOTE: the when pushing the state of the directories, the zipping will be removed
     async with AsyncExitStack() as stack:
         stack.enter_context(log_catch(log))
-        stack.enter_context(
-            log_context(log, logging.INFO, "pushing %s", file_or_folder)
-        )
+        stack.enter_context(log_context(log, logging.INFO, "pushing %s", source_path))
         tmp_dir_name = stack.enter_context(
             TemporaryDirectory()  # pylint: disable=consider-using-with
         )
@@ -91,15 +89,13 @@ async def push(
         )
 
         # compress the files
-        archive_file_path = (
-            Path(tmp_dir_name) / f"{rename_to or file_or_folder.stem}.zip"
-        )
+        archive_file_path = Path(tmp_dir_name) / f"{rename_to or source_path.stem}.zip"
         if io_log_redirect_cb:
             await io_log_redirect_cb(
-                f"archiving {file_or_folder} into {archive_file_path}, please wait..."
+                f"archiving {source_path} into {archive_file_path}, please wait..."
             )
         await archive_dir(
-            dir_to_compress=file_or_folder,
+            dir_to_compress=source_path,
             destination=archive_file_path,
             compress=False,  # disabling compression for faster speeds
             store_relative_path=True,
@@ -108,7 +104,7 @@ async def push(
         )
         if io_log_redirect_cb:
             await io_log_redirect_cb(
-                f"archiving {file_or_folder} into {archive_file_path} completed."
+                f"archiving {source_path} into {archive_file_path} completed."
             )
         await _push_file(
             user_id,
@@ -130,7 +126,7 @@ async def _pull_file(
     *,
     io_log_redirect_cb: LogRedirectCB | None,
     save_to: Path | None = None,
-    r_clone_settings: RCloneSettings | None,
+    r_clone_settings: RCloneSettings,
     progress_bar: ProgressBarData,
 ) -> None:
     destination_path = file_path if save_to is None else save_to
@@ -160,22 +156,22 @@ async def pull(
     user_id: int,
     project_id: str,
     node_uuid: str,
-    file_or_folder: Path,
+    destination_path: Path,
     *,
     io_log_redirect_cb: LogRedirectCB | None,
     save_to: Path | None = None,
-    r_clone_settings: RCloneSettings | None,
+    r_clone_settings: RCloneSettings,
     progress_bar: ProgressBarData,
     is_archive: bool,
 ) -> None:
     # NOTE: the legacy way of storing states was as zip archives
 
-    if file_or_folder.is_file():
+    if destination_path.is_file():
         await _pull_file(
             user_id,
             project_id,
             node_uuid,
-            file_or_folder,
+            destination_path,
             save_to=save_to,
             io_log_redirect_cb=io_log_redirect_cb,
             r_clone_settings=r_clone_settings,
@@ -187,7 +183,7 @@ async def pull(
     async with progress_bar.sub_progress(steps=2) as sub_prog:
         with TemporaryDirectory() as tmp_dir_name:
             archive_file = Path(tmp_dir_name) / _get_s3_name(
-                file_or_folder, is_archive=is_archive
+                destination_path, is_archive=is_archive
             )
             await _pull_file(
                 user_id,
@@ -199,7 +195,7 @@ async def pull(
                 progress_bar=sub_prog,
             )
 
-            destination_folder = file_or_folder if save_to is None else save_to
+            destination_folder = destination_path if save_to is None else save_to
             if io_log_redirect_cb:
                 await io_log_redirect_cb(
                     f"unarchiving {archive_file} into {destination_folder}, please wait..."

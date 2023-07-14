@@ -16,6 +16,7 @@ from ..node_ports_common import data_items_utils, filemanager
 from ..node_ports_common.constants import SIMCORE_LOCATION
 from ..node_ports_common.exceptions import NodeportsException
 from ..node_ports_common.file_io_utils import LogRedirectCB
+from ..node_ports_common.filemanager import UploadedFile, UploadedFolder
 from .links import DownloadLink, FileLink, ItemConcreteValue, ItemValue, PortLink
 
 log = logging.getLogger(__name__)
@@ -230,7 +231,7 @@ async def push_file_to_store(
         msg = f"Expected path={file} should be a file"
         raise NodeportsException(msg)
 
-    store_id, e_tag = await filemanager.upload_path(
+    upload_result: UploadedFolder | UploadedFile = await filemanager.upload_path(
         user_id=user_id,
         store_id=SIMCORE_LOCATION,
         store_name=None,
@@ -240,8 +241,11 @@ async def push_file_to_store(
         io_log_redirect_cb=io_log_redirect_cb,
         progress_bar=progress_bar,
     )
-    log.debug("file path %s uploaded, received ETag %s", file, e_tag)
-    return FileLink(store=store_id, path=s3_object, e_tag=e_tag)
+    assert isinstance(upload_result, UploadedFile)  # nosec
+    log.debug("file path %s uploaded, received ETag %s", file, upload_result.etag)
+    return FileLink(
+        store=upload_result.store_id, path=s3_object, e_tag=upload_result.etag
+    )
 
 
 async def pull_file_from_download_link(

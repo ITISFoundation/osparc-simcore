@@ -4,13 +4,14 @@
 # pylint:disable=too-many-arguments
 
 import hashlib
-import os
+import shutil
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 from uuid import uuid4
 
 import pytest
 from servicelib.progress_bar import ProgressBarData
+from settings_library.r_clone import RCloneSettings
 from simcore_sdk.node_data import data_manager
 
 pytest_simcore_core_services_selection = [
@@ -25,17 +26,17 @@ pytest_simcore_ops_services_selection = ["minio", "adminer"]
 # UTILS
 
 
-def _remove_file_or_folder(file_or_folder: Path) -> None:
-    if file_or_folder.is_file():
-        file_or_folder.unlink()
-        assert file_or_folder.exists() is False
-        file_or_folder.touch()
-        assert file_or_folder.exists() is True
+def _remove_path(path: Path) -> None:
+    if path.is_file():
+        path.unlink()
+        assert path.exists() is False
+        path.touch()
+        assert path.exists() is True
     else:
-        os.system(f"rm -rf {file_or_folder}")
-        assert file_or_folder.exists() is False
-        file_or_folder.mkdir(parents=True, exist_ok=True)
-        assert file_or_folder.exists() is True
+        shutil.rmtree(path)
+        assert path.exists() is False
+        path.mkdir(parents=True, exist_ok=True)
+        assert path.exists() is True
 
 
 def _get_file_hashes_in_path(path_to_hash: Path) -> set[tuple[Path, str]]:
@@ -133,28 +134,30 @@ async def test_valid_upload_download(
     user_id: int,
     project_id: str,
     node_uuid: str,
+    r_clone_settings: RCloneSettings,
 ):
     async with ProgressBarData(steps=2) as progress_bar:
         await data_manager.push(
             user_id=user_id,
             project_id=project_id,
             node_uuid=node_uuid,
-            file_or_folder=content_path,
+            source_path=content_path,
             io_log_redirect_cb=None,
             progress_bar=progress_bar,
+            r_clone_settings=r_clone_settings,
         )
         # pylint: disable=protected-access
         assert progress_bar._continuous_progress_value == pytest.approx(1.0)
 
         uploaded_hashes = _get_file_hashes_in_path(content_path)
 
-        _remove_file_or_folder(content_path)
+        _remove_path(content_path)
 
         await data_manager.pull(
             user_id=user_id,
             project_id=project_id,
             node_uuid=node_uuid,
-            file_or_folder=content_path,
+            destination_path=content_path,
             io_log_redirect_cb=None,
             r_clone_settings=None,
             progress_bar=progress_bar,
@@ -182,22 +185,24 @@ async def test_valid_upload_download_saved_to(
     project_id: str,
     node_uuid: str,
     random_tmp_dir_generator: Callable,
+    r_clone_settings: RCloneSettings,
 ):
     async with ProgressBarData(steps=2) as progress_bar:
         await data_manager.push(
             user_id=user_id,
             project_id=project_id,
             node_uuid=node_uuid,
-            file_or_folder=content_path,
+            source_path=content_path,
             io_log_redirect_cb=None,
             progress_bar=progress_bar,
+            r_clone_settings=r_clone_settings,
         )
         # pylint: disable=protected-access
         assert progress_bar._continuous_progress_value == pytest.approx(1)
 
         uploaded_hashes = _get_file_hashes_in_path(content_path)
 
-        _remove_file_or_folder(content_path)
+        _remove_path(content_path)
 
         new_destination = random_tmp_dir_generator(is_file=content_path.is_file())
 
@@ -205,7 +210,7 @@ async def test_valid_upload_download_saved_to(
             user_id=user_id,
             project_id=project_id,
             node_uuid=node_uuid,
-            file_or_folder=content_path,
+            destination_path=content_path,
             save_to=new_destination,
             io_log_redirect_cb=None,
             r_clone_settings=None,

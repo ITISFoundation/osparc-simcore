@@ -636,7 +636,7 @@ async def _fetch_data_via_data_manager(
             user_id=user_id,
             project_id=project_id,
             node_uuid=service_uuid,
-            file_or_folder=DY_SERVICES_STATE_PATH,
+            destination_path=DY_SERVICES_STATE_PATH,
             save_to=save_to,
             io_log_redirect_cb=None,
             r_clone_settings=r_clone_settings,

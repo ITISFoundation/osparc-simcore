@@ -4,9 +4,10 @@ import re
 import shlex
 from abc import abstractmethod
 from asyncio.streams import StreamReader
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncIterator, Final
+from typing import Final
 
 from aiocache import cached
 from aiofiles import tempfile
@@ -19,6 +20,9 @@ from settings_library.utils_r_clone import get_r_clone_config
 
 S3_RETRIES: Final[int] = 3
 S3_PARALLELISM: Final[int] = 5
+
+_S3_CONFIG_KEY_DESTINATION: Final[str] = "s3-destination"
+_S3_CONFIG_KEY_SOURCE: Final[str] = "s3-source"
 
 _logger = logging.getLogger(__name__)
 
@@ -171,9 +175,8 @@ async def _sync_sources(
             "--stats-log-level",
             "NOTICE",
             # frequent polling for faster progress updates
-            # "--stats",
-            # "1s",
-            # "--stats-one-line-date",
+            "--stats",
+            "0.5s",
             "sync",
             shlex.quote(source),
             shlex.quote(destination),
@@ -220,9 +223,9 @@ async def sync_local_to_s3(
         r_clone_settings,
         progress_bar,
         source=f"{local_directory_path}",
-        destination=f"s3-destination:{upload_s3_path}",
+        destination=f"{_S3_CONFIG_KEY_DESTINATION}:{upload_s3_path}",
         local_dir=local_directory_path,
-        s3_config_key="s3-destination",
+        s3_config_key=_S3_CONFIG_KEY_DESTINATION,
     )
 
 
@@ -245,8 +248,8 @@ async def sync_s3_to_local(
     await _sync_sources(
         r_clone_settings,
         progress_bar,
-        source=f"s3-source:{download_s3_path}",
+        source=f"{_S3_CONFIG_KEY_SOURCE}:{download_s3_path}",
         destination=f"{local_directory_path}",
         local_dir=local_directory_path,
-        s3_config_key="s3-source",
+        s3_config_key=_S3_CONFIG_KEY_SOURCE,
     )

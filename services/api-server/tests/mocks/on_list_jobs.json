@@ -1,241 +1,241 @@
 [
-  {
-    "name": "get_service",
-    "description": "<Request('GET', 'http://catalog:8000/v0/services/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/2.0.0?user_id=1')>",
-    "method": "GET",
-    "host": "catalog",
-    "path": "/v0/services/simcore/services/comp/itis/sleeper/2.0.0",
-    "query": "user_id=1",
-    "request_payload": null,
-    "response_body": {
-     "name": "sleeper",
-     "thumbnail": null,
-     "description": "A service which awaits for time to pass.",
-     "deprecated": null,
-     "classifiers": [],
-     "quality": {},
-     "key": "simcore/services/comp/itis/sleeper",
-     "version": "2.0.0",
-     "integration-version": "1.0.0",
-     "type": "computational",
-     "authors": [
-      {
-       "name": "Manuel Guidon",
-       "email": "guidon@foo.com",
-       "affiliation": "Foo dot Com"
-      }
-     ],
-     "contact": "neagu@foo.com",
-     "inputs": {
-      "input_1": {
-       "displayOrder": 1.0,
-       "label": "File with int number",
-       "description": "Pick a file containing only one integer",
-       "type": "data:text/plain",
-       "fileToKeyMap": {
-        "single_number.txt": "input_1"
-       }
-      },
-      "input_2": {
-       "displayOrder": 2.0,
-       "label": "Sleep interval",
-       "description": "Choose an amount of time to sleep",
-       "type": "integer",
-       "defaultValue": 2
-      },
-      "input_3": {
-       "displayOrder": 3.0,
-       "label": "Fail after sleep",
-       "description": "If set to true will cause service to fail after it sleeps",
-       "type": "boolean",
-       "defaultValue": false
-      }
-     },
-     "outputs": {
-      "output_1": {
-       "displayOrder": 1.0,
-       "label": "File containing one random integer",
-       "description": "Integer is generated in range [1-9]",
-       "type": "data:text/plain",
-       "fileToKeyMap": {
-        "single_number.txt": "output_1"
-       }
-      },
-      "output_2": {
-       "displayOrder": 2.0,
-       "label": "Random sleep interval",
-       "description": "Interval is generated in range [1-9]",
-       "type": "integer"
-      }
+ {
+  "name": "get_service",
+  "description": "<Request('GET', 'http://catalog:8000/v0/services/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/2.0.0?user_id=1')>",
+  "method": "GET",
+  "host": "catalog",
+  "path": "/v0/services/simcore/services/comp/itis/sleeper/2.0.0",
+  "query": "user_id=1",
+  "request_payload": null,
+  "response_body": {
+   "name": "sleeper",
+   "thumbnail": null,
+   "description": "A service which awaits for time to pass.",
+   "deprecated": null,
+   "classifiers": [],
+   "quality": {},
+   "key": "simcore/services/comp/itis/sleeper",
+   "version": "2.0.0",
+   "integration-version": "1.0.0",
+   "type": "computational",
+   "authors": [
+    {
+     "name": "William Long",
+     "email": "brownkaren@example.net",
+     "affiliation": "Harris-Wright"
+    }
+   ],
+   "contact": "grayrachel@example.com",
+   "inputs": {
+    "input_1": {
+     "displayOrder": 1.0,
+     "label": "File with int number",
+     "description": "Pick a file containing only one integer",
+     "type": "data:text/plain",
+     "fileToKeyMap": {
+      "single_number.txt": "input_1"
      }
     },
-    "status_code": 200
-   },
-  {
-    "name": "list_projects",
-    "description": "<Request('GET', 'http://webserver:8080/v0/projects?type=user&show_hidden=true&limit=2&offset=0&search=solvers%2Fsimcore%252Fservices%252Fcomp%252Fitis%252Fsleeper%2Freleases%2F2.0.0')>",
-    "method": "GET",
-    "host": "webserver",
-    "path": "/v0/projects",
-    "query": "type=user&show_hidden=true&limit=20&offset=0&search=solvers%2Fsimcore%252Fservices%252Fcomp%252Fitis%252Fsleeper%2Freleases%2F2.0.0",
-    "request_payload": null,
-    "response_body": {
-     "_meta": {
-      "limit": 20,
-      "total": 3,
-      "offset": 0,
-      "count": 2
-     },
-     "_links": {
-      "self": "http://webserver:8080/v0/projects?type=user&show_hidden=true&limit=2&offset=0&search=solvers/simcore%252Fservices%252Fcomp%252Fitis%252Fsleeper/releases/2.0.0",
-      "first": "http://webserver:8080/v0/projects?type=user&show_hidden=true&limit=2&offset=0&search=solvers/simcore%252Fservices%252Fcomp%252Fitis%252Fsleeper/releases/2.0.0",
-      "prev": null,
-      "next": "http://webserver:8080/v0/projects?type=user&show_hidden=true&limit=2&offset=2&search=solvers/simcore%252Fservices%252Fcomp%252Fitis%252Fsleeper/releases/2.0.0",
-      "last": "http://webserver:8080/v0/projects?type=user&show_hidden=true&limit=2&offset=2&search=solvers/simcore%252Fservices%252Fcomp%252Fitis%252Fsleeper/releases/2.0.0"
-     },
-     "data": [
-      {
-       "uuid": "1455d63c-4e8f-4ffe-bdd4-e885f991cd87",
-       "name": "solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.0/jobs/1455d63c-4e8f-4ffe-bdd4-e885f991cd87",
-       "description": "Study associated to solver job:\n{\n  \"id\": \"1455d63c-4e8f-4ffe-bdd4-e885f991cd87\",\n  \"name\": \"solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.0/jobs/1455d63c-4e8f-4ffe-bdd4-e885f991cd87\",\n  \"inputs_checksum\": \"4e16c861276db7f69f7fac76dfd9d65308121d767b7cba56c1003ef6ed38ffec\",\n  \"created_at\": \"2023-06-22T18:42:35.489609\"\n}",
-       "thumbnail": "https://via.placeholder.com/170x120.png",
-       "creationDate": "2023-06-22T18:42:35.506Z",
-       "lastChangeDate": "2023-06-22T18:42:35.506Z",
-       "workbench": {
-        "05c7ed3b-0be1-5077-8065-fb55f5e59ff3": {
-         "key": "simcore/services/comp/itis/sleeper",
-         "version": "2.0.0",
-         "label": "sleeper",
-         "progress": 0.0,
-         "inputs": {
-          "x": 4.33,
-          "n": 55,
-          "title": "Temperature",
-          "enabled": true,
-          "input_file": {
-           "store": 0,
-           "path": "api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
-           "label": "input.txt"
-          }
-         },
-         "inputsUnits": {},
-         "inputNodes": [],
-         "outputs": {},
-         "state": {
-          "modified": true,
-          "dependencies": [],
-          "currentStatus": "NOT_STARTED",
-          "progress": 0.0
-         }
-        }
-       },
-       "prjOwner": "crespo@foo.com",
-       "accessRights": {
-        "3": {
-         "read": true,
-         "write": true,
-         "delete": true
-        }
-       },
-       "tags": [],
-       "classifiers": [],
-       "state": {
-        "locked": {
-         "value": false,
-         "status": "CLOSED"
-        },
-        "state": {
-         "value": "NOT_STARTED"
-        }
-       },
-       "ui": {
-        "workbench": {
-         "05c7ed3b-0be1-5077-8065-fb55f5e59ff3": {
-          "position": {
-           "x": 633,
-           "y": 229
-          }
-         }
-        },
-        "slideshow": {},
-        "currentNodeId": "05c7ed3b-0be1-5077-8065-fb55f5e59ff3",
-        "annotations": {}
-       },
-       "quality": {},
-       "dev": {}
-      },
-      {
-       "uuid": "61d8acda-a560-4d76-ac47-59c56a399d98",
-       "name": "solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.0/jobs/61d8acda-a560-4d76-ac47-59c56a399d98",
-       "description": "Study associated to solver job:\n{\n  \"id\": \"61d8acda-a560-4d76-ac47-59c56a399d98\",\n  \"name\": \"solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.0/jobs/61d8acda-a560-4d76-ac47-59c56a399d98\",\n  \"inputs_checksum\": \"4e16c861276db7f69f7fac76dfd9d65308121d767b7cba56c1003ef6ed38ffec\",\n  \"created_at\": \"2023-06-22T18:42:32.126304\"\n}",
-       "thumbnail": "https://via.placeholder.com/170x120.png",
-       "creationDate": "2023-06-22T18:42:32.201Z",
-       "lastChangeDate": "2023-06-22T18:42:32.201Z",
-       "workbench": {
-        "34805d7e-c2d0-561f-831f-c74a28fc9bd1": {
-         "key": "simcore/services/comp/itis/sleeper",
-         "version": "2.0.0",
-         "label": "sleeper",
-         "progress": 0.0,
-         "inputs": {
-          "x": 4.33,
-          "n": 55,
-          "title": "Temperature",
-          "enabled": true,
-          "input_file": {
-           "store": 0,
-           "path": "api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
-           "label": "input.txt"
-          }
-         },
-         "inputsUnits": {},
-         "inputNodes": [],
-         "outputs": {},
-         "state": {
-          "modified": true,
-          "dependencies": [],
-          "currentStatus": "NOT_STARTED",
-          "progress": 0.0
-         }
-        }
-       },
-       "prjOwner": "crespo@foo.com",
-       "accessRights": {
-        "3": {
-         "read": true,
-         "write": true,
-         "delete": true
-        }
-       },
-       "tags": [],
-       "classifiers": [],
-       "state": {
-        "locked": {
-         "value": false,
-         "status": "CLOSED"
-        },
-        "state": {
-         "value": "NOT_STARTED"
-        }
-       },
-       "ui": {
-        "workbench": {
-         "34805d7e-c2d0-561f-831f-c74a28fc9bd1": {
-          "position": {
-           "x": 633,
-           "y": 229
-          }
-         }
-        },
-        "slideshow": {},
-        "currentNodeId": "34805d7e-c2d0-561f-831f-c74a28fc9bd1",
-        "annotations": {}
-       },
-       "quality": {},
-       "dev": {}
-      }
-     ]
+    "input_2": {
+     "displayOrder": 2.0,
+     "label": "Sleep interval",
+     "description": "Choose an amount of time to sleep",
+     "type": "integer",
+     "defaultValue": 2
     },
-    "status_code": 200
+    "input_3": {
+     "displayOrder": 3.0,
+     "label": "Fail after sleep",
+     "description": "If set to true will cause service to fail after it sleeps",
+     "type": "boolean",
+     "defaultValue": false
+    }
+   },
+   "outputs": {
+    "output_1": {
+     "displayOrder": 1.0,
+     "label": "File containing one random integer",
+     "description": "Integer is generated in range [1-9]",
+     "type": "data:text/plain",
+     "fileToKeyMap": {
+      "single_number.txt": "output_1"
+     }
+    },
+    "output_2": {
+     "displayOrder": 2.0,
+     "label": "Random sleep interval",
+     "description": "Interval is generated in range [1-9]",
+     "type": "integer"
+    }
    }
+  },
+  "status_code": 200
+ },
+ {
+  "name": "list_projects",
+  "description": "<Request('GET', 'http://webserver:8080/v0/projects?type=user&show_hidden=true&limit=2&offset=0&search=solvers%2Fsimcore%252Fservices%252Fcomp%252Fitis%252Fsleeper%2Freleases%2F2.0.0')>",
+  "method": "GET",
+  "host": "webserver",
+  "path": "/v0/projects",
+  "query": "type=user&show_hidden=true&limit=20&offset=0&search=solvers%2Fsimcore%252Fservices%252Fcomp%252Fitis%252Fsleeper%2Freleases%2F2.0.0",
+  "request_payload": null,
+  "response_body": {
+   "_meta": {
+    "limit": 20,
+    "total": 3,
+    "offset": 0,
+    "count": 2
+   },
+   "_links": {
+    "self": "http://webserver:8080/v0/projects?type=user&show_hidden=true&limit=2&offset=0&search=solvers/simcore%252Fservices%252Fcomp%252Fitis%252Fsleeper/releases/2.0.0",
+    "first": "http://webserver:8080/v0/projects?type=user&show_hidden=true&limit=2&offset=0&search=solvers/simcore%252Fservices%252Fcomp%252Fitis%252Fsleeper/releases/2.0.0",
+    "prev": null,
+    "next": "http://webserver:8080/v0/projects?type=user&show_hidden=true&limit=2&offset=2&search=solvers/simcore%252Fservices%252Fcomp%252Fitis%252Fsleeper/releases/2.0.0",
+    "last": "http://webserver:8080/v0/projects?type=user&show_hidden=true&limit=2&offset=2&search=solvers/simcore%252Fservices%252Fcomp%252Fitis%252Fsleeper/releases/2.0.0"
+   },
+   "data": [
+    {
+     "uuid": "1455d63c-4e8f-4ffe-bdd4-e885f991cd87",
+     "name": "solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.0/jobs/1455d63c-4e8f-4ffe-bdd4-e885f991cd87",
+     "description": "Study associated to solver job:\n{\n  \"id\": \"1455d63c-4e8f-4ffe-bdd4-e885f991cd87\",\n  \"name\": \"solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.0/jobs/1455d63c-4e8f-4ffe-bdd4-e885f991cd87\",\n  \"inputs_checksum\": \"4e16c861276db7f69f7fac76dfd9d65308121d767b7cba56c1003ef6ed38ffec\",\n  \"created_at\": \"2023-06-22T18:42:35.489609\"\n}",
+     "thumbnail": "https://via.placeholder.com/170x120.png",
+     "creationDate": "2023-06-22T18:42:35.506Z",
+     "lastChangeDate": "2023-06-22T18:42:35.506Z",
+     "workbench": {
+      "05c7ed3b-0be1-5077-8065-fb55f5e59ff3": {
+       "key": "simcore/services/comp/itis/sleeper",
+       "version": "2.0.0",
+       "label": "sleeper",
+       "progress": 0.0,
+       "inputs": {
+        "x": 4.33,
+        "n": 55,
+        "title": "Temperature",
+        "enabled": true,
+        "input_file": {
+         "store": 0,
+         "path": "api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
+         "label": "input.txt"
+        }
+       },
+       "inputsUnits": {},
+       "inputNodes": [],
+       "outputs": {},
+       "state": {
+        "modified": true,
+        "dependencies": [],
+        "currentStatus": "NOT_STARTED",
+        "progress": 0.0
+       }
+      }
+     },
+     "prjOwner": "mark71@example.org",
+     "accessRights": {
+      "3": {
+       "read": true,
+       "write": true,
+       "delete": true
+      }
+     },
+     "tags": [],
+     "classifiers": [],
+     "state": {
+      "locked": {
+       "value": false,
+       "status": "CLOSED"
+      },
+      "state": {
+       "value": "NOT_STARTED"
+      }
+     },
+     "ui": {
+      "workbench": {
+       "05c7ed3b-0be1-5077-8065-fb55f5e59ff3": {
+        "position": {
+         "x": 633,
+         "y": 229
+        }
+       }
+      },
+      "slideshow": {},
+      "currentNodeId": "05c7ed3b-0be1-5077-8065-fb55f5e59ff3",
+      "annotations": {}
+     },
+     "quality": {},
+     "dev": {}
+    },
+    {
+     "uuid": "61d8acda-a560-4d76-ac47-59c56a399d98",
+     "name": "solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.0/jobs/61d8acda-a560-4d76-ac47-59c56a399d98",
+     "description": "Study associated to solver job:\n{\n  \"id\": \"61d8acda-a560-4d76-ac47-59c56a399d98\",\n  \"name\": \"solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.0/jobs/61d8acda-a560-4d76-ac47-59c56a399d98\",\n  \"inputs_checksum\": \"4e16c861276db7f69f7fac76dfd9d65308121d767b7cba56c1003ef6ed38ffec\",\n  \"created_at\": \"2023-06-22T18:42:32.126304\"\n}",
+     "thumbnail": "https://via.placeholder.com/170x120.png",
+     "creationDate": "2023-06-22T18:42:32.201Z",
+     "lastChangeDate": "2023-06-22T18:42:32.201Z",
+     "workbench": {
+      "34805d7e-c2d0-561f-831f-c74a28fc9bd1": {
+       "key": "simcore/services/comp/itis/sleeper",
+       "version": "2.0.0",
+       "label": "sleeper",
+       "progress": 0.0,
+       "inputs": {
+        "x": 4.33,
+        "n": 55,
+        "title": "Temperature",
+        "enabled": true,
+        "input_file": {
+         "store": 0,
+         "path": "api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
+         "label": "input.txt"
+        }
+       },
+       "inputsUnits": {},
+       "inputNodes": [],
+       "outputs": {},
+       "state": {
+        "modified": true,
+        "dependencies": [],
+        "currentStatus": "NOT_STARTED",
+        "progress": 0.0
+       }
+      }
+     },
+     "prjOwner": "heather83@example.org",
+     "accessRights": {
+      "3": {
+       "read": true,
+       "write": true,
+       "delete": true
+      }
+     },
+     "tags": [],
+     "classifiers": [],
+     "state": {
+      "locked": {
+       "value": false,
+       "status": "CLOSED"
+      },
+      "state": {
+       "value": "NOT_STARTED"
+      }
+     },
+     "ui": {
+      "workbench": {
+       "34805d7e-c2d0-561f-831f-c74a28fc9bd1": {
+        "position": {
+         "x": 633,
+         "y": 229
+        }
+       }
+      },
+      "slideshow": {},
+      "currentNodeId": "34805d7e-c2d0-561f-831f-c74a28fc9bd1",
+      "annotations": {}
+     },
+     "quality": {},
+     "dev": {}
+    }
+   ]
+  },
+  "status_code": 200
+ }
 ]

@@ -28,6 +28,7 @@ from pydantic.error_wrappers import ValidationError
 from pytest_mock.plugin import MockerFixture
 from servicelib.progress_bar import ProgressBarData
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
+from simcore_sdk.node_ports_common.filemanager import UploadedFile
 from simcore_sdk.node_ports_v2 import exceptions
 from simcore_sdk.node_ports_v2.links import (
     DataItemValue,
@@ -224,7 +225,7 @@ async def mock_filemanager(mocker: MockerFixture, e_tag: str, faker: Faker) -> N
     )
     mocker.patch(
         "simcore_sdk.node_ports_common.filemanager.upload_path",
-        return_value=(simcore_store_id(), e_tag),
+        return_value=UploadedFile(simcore_store_id(), e_tag),
     )
 
 
