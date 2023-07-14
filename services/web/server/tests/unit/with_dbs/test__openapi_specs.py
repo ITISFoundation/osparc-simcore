@@ -102,7 +102,7 @@ def app_entrypoints(app: web.Application) -> set[Entrypoint]:
     return entrypoints
 
 
-def test_named_api_resources_against_openapi_specs(
+def test_app_named_resources_against_openapi_specs(
     expected_openapi_entrypoints: set[Entrypoint],
     app_entrypoints: set[Entrypoint],
 ):
