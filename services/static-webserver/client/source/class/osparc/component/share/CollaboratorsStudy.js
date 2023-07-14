@@ -109,6 +109,10 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
   members: {
     __resourceType: null,
 
+    _canIDelete: function() {
+      return osparc.data.model.Study.canIDelete(this._serializedData["accessRights"]);
+    },
+
     _canIWrite: function() {
       return osparc.data.model.Study.canIWrite(this._serializedData["accessRights"]);
     },

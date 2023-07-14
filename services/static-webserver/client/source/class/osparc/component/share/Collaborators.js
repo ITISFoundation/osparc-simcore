@@ -208,7 +208,13 @@ qx.Class.define("osparc.component.share.Collaborators", {
 
     __createAddCollaboratorSection: function() {
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-      vBox.setVisibility(this._canIWrite() ? "visible" : "excluded");
+      if ("uuid" in this._serializedData) {
+        // study
+        vBox.setVisibility(this._canIDelete() ? "visible" : "excluded");
+      } else {
+        // service
+        vBox.setVisibility(this._canIWrite() ? "visible" : "excluded");
+      }
 
       const label = new qx.ui.basic.Label(this.tr("Select from the list below and click Share"));
       vBox.add(label);
@@ -325,6 +331,10 @@ qx.Class.define("osparc.component.share.Collaborators", {
       });
       collaboratorsList.sort(this.self().sortStudyOrServiceCollabs);
       collaboratorsList.forEach(c => this.__collaboratorsModel.append(qx.data.marshal.Json.createModel(c)));
+    },
+
+    _canIDelete: function() {
+      throw new Error("Abstract method called!");
     },
 
     _canIWrite: function() {
