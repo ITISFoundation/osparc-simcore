@@ -424,7 +424,7 @@ async def upload_path(
             raise
         if io_log_redirect_cb:
             await io_log_redirect_cb(f"upload of {path_to_upload} complete.")
-        return UploadedFolder() if e_tag is None else UploadedFile(store_id, e_tag)
+    return UploadedFolder() if e_tag is None else UploadedFile(store_id, e_tag)
 
 
 async def _get_file_meta_data(
