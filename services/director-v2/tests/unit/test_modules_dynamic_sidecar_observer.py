@@ -119,7 +119,7 @@ def _is_observation_task_present(
     )
 
 
-@pytest.mark.parametrize("can_save", [None, False, True])
+@pytest.mark.parametrize("can_save", [False, True])
 async def test_regression_break_endless_loop_cancellation_edge_case(
     disable_observation: None,
     mock_are_sidecar_and_proxy_services_present: None,

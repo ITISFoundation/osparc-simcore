@@ -52,6 +52,18 @@ qx.Class.define("osparc.utils.Utils", {
         this.setLocalStorageItem("lastVcsRefUI", vcsRef);
       },
 
+      getDontShowAnnouncements: function() {
+        return this.getLocalStorageItem("dontShowAnnouncements") ? JSON.parse(this.getLocalStorageItem("dontShowAnnouncements")) : [];
+      },
+      setDontShowAnnouncement: function(announcementId) {
+        const oldDontShowAnnouncements = this.getDontShowAnnouncements();
+        oldDontShowAnnouncements.push(announcementId);
+        this.setLocalStorageItem("dontShowAnnouncements", JSON.stringify(oldDontShowAnnouncements));
+      },
+      isDontShowAnnouncement: function(announcementId) {
+        return this.getDontShowAnnouncements().includes(announcementId);
+      },
+
       serviceToFavs: function(serviceKey) {
         let serviceFavs = this.getLocalStorageItem("services");
         if (serviceFavs) {
@@ -332,6 +344,32 @@ qx.Class.define("osparc.utils.Utils", {
       return new Promise(resolve => {
         osparc.store.VendorInfo.getInstance().getSupportEmail()
           .then(supportEmail => resolve(msg + supportEmail));
+      });
+    },
+
+    // used for showing it to Guest users
+    createAccountMessage: function() {
+      return new Promise(resolve => {
+        Promise.all([
+          osparc.store.StaticInfo.getInstance().getDisplayName(),
+          osparc.store.Support.getManuals(),
+          osparc.store.VendorInfo.getInstance().getSupportEmail()
+        ])
+          .then(values => {
+            const productName = values[0];
+            const manuals = values[1];
+            const manualLink = (manuals && manuals.length) ? manuals[0].url : "";
+            const supportEmail = values[2];
+            const mailto = osparc.store.Support.mailToText(supportEmail, "Request Account " + productName);
+            let msg = "";
+            msg += qx.locale.Manager.tr("To use all ");
+            const color = qx.theme.manager.Color.getInstance().resolve("text");
+            msg += `<a href=${manualLink} style='color: ${color}' target='_blank'>${productName} features</a>`;
+            msg += qx.locale.Manager.tr(", please send us an e-mail to create an account:");
+            msg += "</br>";
+            msg += mailto;
+            resolve(msg);
+          });
       });
     },
 
@@ -712,9 +750,10 @@ qx.Class.define("osparc.utils.Utils", {
       return parsedFragment;
     },
 
-    getParamFromURL: (url, param) => {
-      const urlParams = new URLSearchParams(url);
-      return urlParams.get(param);
+    getParamFromURL: (urlStr, param) => {
+      const url = new URL(urlStr);
+      const args = new URLSearchParams(url.search);
+      return args.get(param);
     },
 
     hasParamFromURL: (url, param) => {

@@ -5,7 +5,14 @@ from fastapi import APIRouter, Depends, status
 from fastapi.responses import RedirectResponse
 
 from ...models.pagination import LimitOffsetPage, LimitOffsetParams
-from ...models.schemas.jobs import Job, JobID, JobMetadataDict, JobOutputs, JobStatus
+from ...models.schemas.jobs import (
+    Job,
+    JobID,
+    JobMetadata,
+    JobMetadataUpdate,
+    JobOutputs,
+    JobStatus,
+)
 from ...models.schemas.studies import StudyID
 from ._common import API_SERVER_DEV_FEATURES_ENABLED, job_output_logfile_responses
 
@@ -128,21 +135,9 @@ async def get_study_job_output_logfile(study_id: StudyID, job_id: JobID):
     raise NotImplementedError(msg)
 
 
-@router.post(
-    "/{study_id}/jobs/{job_id}/metadata",
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
-)
-async def create_study_job_custom_metadata(
-    study_id: StudyID, job_id: JobID, metadata: JobMetadataDict
-):
-    """Attaches custom metadata to a job"""
-    msg = f"Attaches metadata={metadata!r} to study_id={study_id!r} job_id={job_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4313"
-    raise NotImplementedError(msg)
-
-
 @router.get(
     "/{study_id}/jobs/{job_id}/metadata",
-    response_model=JobMetadataDict,
+    response_model=JobMetadata,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_study_job_custom_metadata(
@@ -151,4 +146,16 @@ async def get_study_job_custom_metadata(
 ):
     """Gets custom metadata from a job"""
     msg = f"Gets metadata attached to study_id={study_id!r} job_id={job_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4313"
+    raise NotImplementedError(msg)
+
+
+@router.put(
+    "/{study_id}/jobs/{job_id}/metadata",
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def replace_study_job_custom_metadata(
+    study_id: StudyID, job_id: JobID, replace: JobMetadataUpdate
+):
+    """Changes job's custom metadata"""
+    msg = f"Attaches metadata={replace.metadata!r} to study_id={study_id!r} job_id={job_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4313"
     raise NotImplementedError(msg)

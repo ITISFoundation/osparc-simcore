@@ -23,7 +23,8 @@ from ...models.schemas.jobs import (
     Job,
     JobID,
     JobInputs,
-    JobMetadataDict,
+    JobMetadata,
+    JobMetadataUpdate,
     JobOutputs,
     JobStatus,
 )
@@ -62,6 +63,13 @@ def _compose_job_resource_name(solver_key, solver_version, job_id) -> str:
 #
 # - Similar to docker container's API design (container = job and image = solver)
 #
+
+_common_error_responses = {
+    status.HTTP_404_NOT_FOUND: {
+        "description": "Job not found",
+        "model": ErrorGet,
+    },
+}
 
 
 @router.get(
@@ -431,31 +439,86 @@ async def get_job_output_logfile(
     )
 
 
-@router.post(
-    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/metadata",
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
-)
-async def create_job_custom_metadata(
-    solver_key: SolverKeyId,
-    version: VersionStr,
-    job_id: JobID,
-    metadata: JobMetadataDict,
-):
-    """Attaches custom metadata to a job."""
-    msg = f"Attaches {metadata=} to Job {_compose_job_resource_name(solver_key, version, job_id)!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4313"
-    raise NotImplementedError(msg)
-
-
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/metadata",
-    response_model=JobMetadataDict,
+    response_model=JobMetadata,
+    responses={**_common_error_responses},
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_job_custom_metadata(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: JobID,
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
-    """Gets custom metadata from a job"""
-    msg = f"Getting Job metadata {_compose_job_resource_name(solver_key, version, job_id)!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4313"
-    raise NotImplementedError(msg)
+    """Gets custom metadata from a job
+
+    New in *version 0.5*
+    """
+    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    _logger.debug("Custom metadata for '%s'", job_name)
+
+    try:
+        project_metadata = await webserver_api.get_project_metadata(project_id=job_id)
+        return JobMetadata(
+            job_id=job_id,
+            metadata=project_metadata.custom,
+            url=url_for(
+                "get_job_custom_metadata",
+                solver_key=solver_key,
+                version=version,
+                job_id=job_id,
+            ),
+        )
+
+    except HTTPException as err:
+        if err.status_code == status.HTTP_404_NOT_FOUND:
+            return create_error_json_response(
+                f"Cannot find job={job_name} ",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+
+
+@router.patch(
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/metadata",
+    response_model=JobMetadata,
+    responses={**_common_error_responses},
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def replace_job_custom_metadata(
+    solver_key: SolverKeyId,
+    version: VersionStr,
+    job_id: JobID,
+    update: JobMetadataUpdate,
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
+):
+    """Updates custom metadata from a job
+
+    New in *version 0.5*
+    """
+    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    _logger.debug("Custom metadata for '%s'", job_name)
+
+    try:
+        project_metadata = await webserver_api.update_project_metadata(
+            project_id=job_id, metadata=update.metadata
+        )
+        return JobMetadata(
+            job_id=job_id,
+            metadata=project_metadata.custom,
+            url=url_for(
+                "replace_job_custom_metadata",
+                solver_key=solver_key,
+                version=version,
+                job_id=job_id,
+            ),
+        )
+
+    except HTTPException as err:
+        if err.status_code == status.HTTP_404_NOT_FOUND:
+            return create_error_json_response(
+                f"Cannot find job={job_name} ",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )

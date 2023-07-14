@@ -8,19 +8,35 @@
 
 import re
 from pathlib import Path
-from typing import Optional, Pattern, Union
+from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias
 from uuid import UUID
 
-from pydantic import AnyUrl, BaseModel, ConstrainedStr, Extra, Field, validator
+from pydantic import (
+    AnyUrl,
+    BaseModel,
+    ConstrainedStr,
+    Extra,
+    Field,
+    parse_obj_as,
+    validator,
+)
 
-from .basic_regex import DATCORE_FILE_ID_RE, SIMCORE_S3_FILE_ID_RE, UUID_RE
+from .basic_regex import (
+    DATCORE_FILE_ID_RE,
+    SIMCORE_S3_DIRECTORY_ID_RE,
+    SIMCORE_S3_FILE_ID_RE,
+    UUID_RE,
+)
 from .services import PROPERTY_KEY_RE
+
+if TYPE_CHECKING:
+    pass
 
 NodeID = UUID
 
 
 class UUIDStr(ConstrainedStr):
-    regex: Optional[Pattern[str]] = re.compile(UUID_RE)
+    regex: re.Pattern[str] | None = re.compile(UUID_RE)
 
 
 NodeIDStr = UUIDStr
@@ -30,14 +46,57 @@ LocationName = str
 
 
 class SimcoreS3FileID(ConstrainedStr):
-    regex: Optional[Pattern[str]] = re.compile(SIMCORE_S3_FILE_ID_RE)
+    regex: re.Pattern[str] | None = re.compile(SIMCORE_S3_FILE_ID_RE)
+
+
+class SimcoreS3DirectoryID(ConstrainedStr):
+    """
+    A simcore directory has the following structure:
+        `{project_id}/{node_id}/simcore-dir-name/`
+    """
+
+    regex: re.Pattern[str] | None = re.compile(SIMCORE_S3_DIRECTORY_ID_RE)
+
+    @staticmethod
+    def _get_parent(s3_object: str, *, parent_index: int) -> str:
+        # NOTE: s3_object, sometimes is a directory, in that case
+        # append a fake file so that the parent count still works
+        if s3_object.endswith("/"):
+            s3_object += "__placeholder_file_when_s3_object_is_a_directory__"
+
+        parents: list[Path] = list(Path(s3_object).parents)
+        try:
+            return f"{parents[-parent_index]}"
+        except IndexError as err:
+            msg = (
+                f"'{s3_object}' does not have enough parents, "
+                f"expected {parent_index} found {parents}"
+            )
+            raise ValueError(msg) from err
+
+    @classmethod
+    def validate(cls, value: str) -> str:
+        value = super().validate(value)
+        value = value.rstrip("/")
+        parent = cls._get_parent(value, parent_index=3)
+
+        directory_candidate = value.strip(parent)
+        if "/" in directory_candidate:
+            msg = f"Not allowed subdirectory found in '{directory_candidate}'"
+            raise ValueError(msg)
+        return f"{value}/"
+
+    @classmethod
+    def from_simcore_s3_object(cls, s3_object: str) -> "SimcoreS3DirectoryID":
+        parent_path: str = cls._get_parent(s3_object, parent_index=4)
+        return parse_obj_as(cls, f"{parent_path}/")
 
 
 class DatCoreFileID(ConstrainedStr):
-    regex: Optional[Pattern[str]] = re.compile(DATCORE_FILE_ID_RE)
+    regex: re.Pattern[str] | None = re.compile(DATCORE_FILE_ID_RE)
 
 
-StorageFileID = Union[SimcoreS3FileID, DatCoreFileID]
+StorageFileID: TypeAlias = SimcoreS3FileID | DatCoreFileID
 
 
 class PortLink(BaseModel):
@@ -56,7 +115,7 @@ class PortLink(BaseModel):
 
     class Config:
         extra = Extra.forbid
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 # minimal
                 {
@@ -71,11 +130,11 @@ class DownloadLink(BaseModel):
     """I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)"""
 
     download_link: AnyUrl = Field(..., alias="downloadLink")
-    label: Optional[str] = Field(default=None, description="Display name")
+    label: str | None = Field(default=None, description="Display name")
 
     class Config:
         extra = Extra.forbid
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 # minimal
                 {
@@ -99,12 +158,12 @@ class BaseFileLink(BaseModel):
         description="The path to the file in the storage provider domain",
     )
 
-    label: Optional[str] = Field(
+    label: str | None = Field(
         default=None,
         description="The real file name",
     )
 
-    e_tag: Optional[str] = Field(
+    e_tag: str | None = Field(
         default=None,
         description="Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).",
         alias="eTag",
@@ -122,7 +181,7 @@ class BaseFileLink(BaseModel):
 class SimCoreFileLink(BaseFileLink):
     """I/O port type to hold a link to a file in simcore S3 storage"""
 
-    dataset: Optional[str] = Field(
+    dataset: str | None = Field(
         default=None,
         deprecated=True
         # TODO: Remove with storage refactoring
@@ -133,7 +192,8 @@ class SimCoreFileLink(BaseFileLink):
     def check_discriminator(cls, v):
         """Used as discriminator to cast to this class"""
         if v != 0:
-            raise ValueError(f"SimCore store identifier must be set to 0, got {v}")
+            msg = f"SimCore store identifier must be set to 0, got {v}"
+            raise ValueError(msg)
         return 0
 
     @validator("label", always=True, pre=True)
@@ -145,7 +205,7 @@ class SimCoreFileLink(BaseFileLink):
 
     class Config:
         extra = Extra.forbid
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "store": 0,
@@ -192,12 +252,13 @@ class DatCoreFileLink(BaseFileLink):
         """Used as discriminator to cast to this class"""
 
         if v != 1:
-            raise ValueError(f"DatCore store must be set to 1, got {v}")
+            msg = f"DatCore store must be set to 1, got {v}"
+            raise ValueError(msg)
         return 1
 
     class Config:
         extra = Extra.forbid
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     # minimal
@@ -218,4 +279,4 @@ class DatCoreFileLink(BaseFileLink):
 
 
 # Bundles all model links to a file vs PortLink
-LinkToFileTypes = Union[SimCoreFileLink, DatCoreFileLink, DownloadLink]
+LinkToFileTypes = SimCoreFileLink | DatCoreFileLink | DownloadLink

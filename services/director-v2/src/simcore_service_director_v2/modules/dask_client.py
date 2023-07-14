@@ -303,12 +303,12 @@ class DaskClient:
                 node_id,
                 file_link_type=self.tasks_file_link_type,
             )
-            task_labels = await compute_task_labels(
-                self.app,
+            task_labels = compute_task_labels(
                 user_id=user_id,
                 project_id=project_id,
                 node_id=node_id,
                 metadata=metadata,
+                node_requirements=node_image.node_requirements,
             )
             task_envs = await compute_task_envs(
                 self.app,

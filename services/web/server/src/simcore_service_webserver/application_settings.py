@@ -29,7 +29,6 @@ from ._constants import APP_SETTINGS_KEY
 from ._meta import API_VERSION, API_VTAG, APP_NAME
 from .catalog.settings import CatalogSettings
 from .diagnostics.settings import DiagnosticsSettings
-from .director.settings import DirectorSettings
 from .director_v2.settings import DirectorV2Settings
 from .exporter.settings import ExporterSettings
 from .garbage_collector_settings import GarbageCollectorSettings
@@ -144,9 +143,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_DIRECTOR_V2: DirectorV2Settings | None = Field(
         auto_default_from_env=True, description="director-v2 service client's plugin"
     )
-    WEBSERVER_DIRECTOR: DirectorSettings | None = Field(
-        auto_default_from_env=True, description="director service client's plugin"
-    )
     WEBSERVER_EMAIL: SMTPSettings | None = Field(
         auto_default_from_env=True, description="email plugin"
     )
@@ -207,6 +203,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     # These plugins only require (for the moment) an entry to toggle between enabled/disabled
+    WEBSERVER_ANNOUNCEMENTS: bool = False
     WEBSERVER_CLUSTERS: bool = False
     WEBSERVER_DB_LISTENER: bool = True
     WEBSERVER_NOTIFICATIONS: bool = Field(

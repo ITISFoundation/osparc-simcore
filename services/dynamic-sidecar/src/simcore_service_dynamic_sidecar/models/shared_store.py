@@ -20,7 +20,6 @@ class _StoreMixin(BaseModel):
 
     async def __aenter__(self) -> None:
         await self._persist_lock.acquire()
-        return None
 
     async def __aexit__(self, *args) -> None:
         await self._persist_to_disk()
@@ -74,21 +73,23 @@ class SharedStore(_StoreMixin):
                 self.volume_states[category] = VolumeState(status=status)
 
     @classmethod
-    async def init_from_disk(cls, shared_store_dir: Path) -> "SharedStore":
-        data_file_path = shared_store_dir / STORE_FILE_NAME
+    async def init_from_disk(
+        cls, shared_store_dir: Path, *, store_file_name: "str"
+    ) -> "SharedStore":
+        data_file_path = shared_store_dir / store_file_name
 
         if not data_file_path.exists():
             obj = cls()
             obj.post_init(shared_store_dir)
-            await obj._setup_initial_volume_states()
+            await obj._setup_initial_volume_states()  # noqa SLF001
             return obj
 
         # if the sidecar is started for a second time (usually the container dies)
         # it will load the previous data which was stored
-        async with aiofiles.open(shared_store_dir / STORE_FILE_NAME) as data_file:
+        async with aiofiles.open(shared_store_dir / store_file_name) as data_file:
             file_content = await data_file.read()
 
-        obj = cls.parse_obj(file_content)
+        obj = cls.parse_raw(file_content)
         obj.post_init(shared_store_dir)
         return obj
 
@@ -98,7 +99,7 @@ def setup_shared_store(app: FastAPI) -> None:
         settings: ApplicationSettings = app.state.settings
 
         app.state.shared_store = await SharedStore.init_from_disk(
-            settings.DYNAMIC_SIDECAR_SHARED_STORE_DIR
+            settings.DYNAMIC_SIDECAR_SHARED_STORE_DIR, store_file_name=STORE_FILE_NAME
         )
 
     app.add_event_handler("startup", on_startup)

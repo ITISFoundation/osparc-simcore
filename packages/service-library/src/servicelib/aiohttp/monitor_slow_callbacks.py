@@ -1,14 +1,15 @@
 import asyncio.events
 import sys
 import time
-from typing import List
 
 from pyinstrument import Profiler
 
-from .incidents import SlowCallback
+from .incidents import LimitedOrderedStack, SlowCallback
 
 
-def enable(slow_duration_secs: float, incidents: List[SlowCallback]) -> None:
+def enable(
+    slow_duration_secs: float, incidents: LimitedOrderedStack[SlowCallback]
+) -> None:
     """Based in from aiodebug
 
     Patches ``asyncio.events.Handle`` to report an incident every time a callback
@@ -17,7 +18,7 @@ def enable(slow_duration_secs: float, incidents: List[SlowCallback]) -> None:
     # pylint: disable=protected-access
     from aiodebug.logging_compat import get_logger
 
-    logger = get_logger(__name__)
+    aio_debug_logger = get_logger(__name__)
     _run = asyncio.events.Handle._run
 
     def instrumented(self):
@@ -39,8 +40,10 @@ def enable(slow_duration_secs: float, incidents: List[SlowCallback]) -> None:
                 unicode=True, color=False, show_all=True
             )
             incidents.append(SlowCallback(msg=profiler_result, delay_secs=dt))
-            logger.warning("Executing took %.3f seconds\n%s", dt, profiler_result)
+            aio_debug_logger.warning(
+                "Executing took %.3f seconds\n%s", dt, profiler_result
+            )
 
         return retval
 
-    asyncio.events.Handle._run = instrumented
+    asyncio.events.Handle._run = instrumented  # type: ignore[method-assign]

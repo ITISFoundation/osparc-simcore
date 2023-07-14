@@ -2,7 +2,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from typing import Dict
 from unittest.mock import Mock
 
 import pytest
@@ -11,7 +10,7 @@ from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.application_setup import (
     DependencyError,
     ModuleCategory,
-    SkipModuleSetup,
+    SkipModuleSetupError,
     app_module_setup,
     is_setup_completed,
 )
@@ -27,7 +26,7 @@ def setup_bar(app: web.Application, arg1, *, raise_skip: bool = False):
 @app_module_setup("package.foo", ModuleCategory.ADDON, logger=log)
 def setup_foo(app: web.Application, arg1, kargs=33, *, raise_skip: bool = False):
     if raise_skip:
-        raise SkipModuleSetup(reason="explicit skip")
+        raise SkipModuleSetupError(reason="explicit skip")
     return True
 
 
@@ -51,7 +50,7 @@ def setup_needs_foo(app: web.Application, arg1, kargs=55):
 
 
 @pytest.fixture
-def app_config() -> Dict:
+def app_config() -> dict:
     return {
         "foo": {"enabled": True},
         "bar": {"enabled": False},

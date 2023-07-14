@@ -3,13 +3,15 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=protected-access
 
+from collections.abc import Callable, Iterator
 from filecmp import cmpfiles
 from pathlib import Path
 from shutil import copy, make_archive, unpack_archive
-from typing import Callable, Iterator
 
 import pytest
+from pytest_mock import MockerFixture
 from servicelib.progress_bar import ProgressBarData
+from settings_library.r_clone import RCloneSettings, S3Provider
 from simcore_sdk.node_data import data_manager
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 
@@ -19,7 +21,6 @@ def create_files() -> Iterator[Callable[..., list[Path]]]:
     created_files = []
 
     def _create_files(number: int, folder: Path) -> list[Path]:
-
         for i in range(number):
             file_path = folder / f"{i}.test"
             file_path.write_text(f"I am test file number {i}")
@@ -33,13 +34,29 @@ def create_files() -> Iterator[Callable[..., list[Path]]]:
         file_path.unlink()
 
 
+@pytest.fixture
+def r_clone_settings() -> RCloneSettings:
+    return RCloneSettings.parse_obj(
+        {
+            "R_CLONE_S3": {
+                "S3_ENDPOINT": "",
+                "S3_ACCESS_KEY": "",
+                "S3_SECRET_KEY": "",
+                "S3_BUCKET_NAME": "",
+            },
+            "R_CLONE_PROVIDER": S3Provider.MINIO,
+        }
+    )
+
+
 async def test_push_folder(
     user_id: int,
     project_id: str,
     node_uuid: str,
-    mocker,
+    mocker: MockerFixture,
     tmpdir: Path,
     create_files: Callable[..., list[Path]],
+    r_clone_settings: RCloneSettings,
 ):
     # create some files
     assert tmpdir.exists()
@@ -58,7 +75,7 @@ async def test_push_folder(
     mock_filemanager = mocker.patch(
         "simcore_sdk.node_data.data_manager.filemanager", spec=True
     )
-    mock_filemanager.upload_file.return_value = ""
+    mock_filemanager.upload_path.return_value = ""
     mock_temporary_directory = mocker.patch(
         "simcore_sdk.node_data.data_manager.TemporaryDirectory"
     )
@@ -79,14 +96,15 @@ async def test_push_folder(
             test_folder,
             io_log_redirect_cb=None,
             progress_bar=progress_bar,
+            r_clone_settings=r_clone_settings,
         )
     assert progress_bar._continuous_progress_value == pytest.approx(1)
 
     mock_temporary_directory.assert_called_once()
-    mock_filemanager.upload_file.assert_called_once_with(
-        file_to_upload=(test_compression_folder / f"{test_folder.stem}.zip"),
-        r_clone_settings=None,
+    mock_filemanager.upload_path.assert_called_once_with(
+        r_clone_settings=r_clone_settings,
         io_log_redirect_cb=None,
+        path_to_upload=(test_compression_folder / f"{test_folder.stem}.zip"),
         s3_object=f"{project_id}/{node_uuid}/{test_folder.stem}.zip",
         store_id=SIMCORE_LOCATION,
         store_name=None,
@@ -117,11 +135,12 @@ async def test_push_file(
     mocker,
     tmpdir: Path,
     create_files: Callable[..., list[Path]],
+    r_clone_settings: RCloneSettings,
 ):
     mock_filemanager = mocker.patch(
         "simcore_sdk.node_data.data_manager.filemanager", spec=True
     )
-    mock_filemanager.upload_file.return_value = ""
+    mock_filemanager.upload_path.return_value = ""
     mock_temporary_directory = mocker.patch(
         "simcore_sdk.node_data.data_manager.TemporaryDirectory"
     )
@@ -138,13 +157,14 @@ async def test_push_file(
             file_path,
             io_log_redirect_cb=None,
             progress_bar=progress_bar,
+            r_clone_settings=r_clone_settings,
         )
     assert progress_bar._continuous_progress_value == pytest.approx(1)
     mock_temporary_directory.assert_not_called()
-    mock_filemanager.upload_file.assert_called_once_with(
+    mock_filemanager.upload_path.assert_called_once_with(
         r_clone_settings=None,
         io_log_redirect_cb=None,
-        file_to_upload=file_path,
+        path_to_upload=file_path,
         s3_object=f"{project_id}/{node_uuid}/{file_path.name}",
         store_id=SIMCORE_LOCATION,
         store_name=None,
@@ -193,7 +213,7 @@ async def test_pull_folder(
     mock_filemanager = mocker.patch(
         "simcore_sdk.node_data.data_manager.filemanager", spec=True
     )
-    mock_filemanager.download_file_from_s3.return_value = fake_zipped_folder
+    mock_filemanager.download_path_from_s3.return_value = fake_zipped_folder
     mock_temporary_directory = mocker.patch(
         "simcore_sdk.node_data.data_manager.TemporaryDirectory"
     )
@@ -208,17 +228,19 @@ async def test_pull_folder(
             node_uuid,
             test_folder,
             io_log_redirect_cb=None,
+            r_clone_settings=None,
             progress_bar=progress_bar,
         )
     assert progress_bar._continuous_progress_value == pytest.approx(1)
     mock_temporary_directory.assert_called_once()
-    mock_filemanager.download_file_from_s3.assert_called_once_with(
+    mock_filemanager.download_path_from_s3.assert_called_once_with(
         local_folder=test_compression_folder,
         s3_object=f"{project_id}/{node_uuid}/{test_folder.stem}.zip",
         store_id=SIMCORE_LOCATION,
         store_name=None,
         user_id=user_id,
         io_log_redirect_cb=None,
+        r_clone_settings=None,
         progress_bar=progress_bar._children[0],
     )
 
@@ -252,7 +274,7 @@ async def test_pull_file(
     mock_filemanager = mocker.patch(
         "simcore_sdk.node_data.data_manager.filemanager", spec=True
     )
-    mock_filemanager.download_file_from_s3.return_value = fake_downloaded_file
+    mock_filemanager.download_path_from_s3.return_value = fake_downloaded_file
     mock_temporary_directory = mocker.patch(
         "simcore_sdk.node_data.data_manager.TemporaryDirectory"
     )
@@ -264,16 +286,18 @@ async def test_pull_file(
             node_uuid,
             file_path,
             io_log_redirect_cb=None,
+            r_clone_settings=None,
             progress_bar=progress_bar,
         )
     assert progress_bar._continuous_progress_value == pytest.approx(1)
     mock_temporary_directory.assert_not_called()
-    mock_filemanager.download_file_from_s3.assert_called_once_with(
+    mock_filemanager.download_path_from_s3.assert_called_once_with(
         local_folder=file_path.parent,
         s3_object=f"{project_id}/{node_uuid}/{file_path.name}",
         store_id=SIMCORE_LOCATION,
         store_name=None,
         user_id=user_id,
         io_log_redirect_cb=None,
+        r_clone_settings=None,
         progress_bar=progress_bar,
     )

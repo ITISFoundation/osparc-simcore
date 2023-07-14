@@ -77,12 +77,14 @@ def random_promql_output_generator():
                 "container_label_com_docker_compose_oneoff": "False",
                 "container_label_com_docker_compose_project_working_dir": "/tmp/tmp_3seh6kp",
                 "container_label_com_docker_compose_version": "1.29.1",
-                "container_label_product_name": "osparc",
+                "container_label_io_simcore_runtime_product_name": "osparc",
                 "container_label_simcore_service_settings": '[{"name": "ports", "type": "int", "value": 8888}, {"name": "env", "type": "string", "value": ["DISPLAY=:0"]}, {"name": "env", "type": "string", "value": ["SYM_SERVER_HOSTNAME=sym-server_%service_uuid%"]}, {"name": "mount", "type": "object", "value": [{"ReadOnly": true, "Source": "/tmp/.X11-unix", "Target": "/tmp/.X11-unix", "Type": "bind"}]}, {"name": "constraints", "type": "string", "value": ["node.platform.os == linux"]}, {"name": "Resources", "type": "Resources", "value": {"Limits": {"NanoCPUs": 4000000000, "MemoryBytes": 17179869184}, "Reservations": {"NanoCPUs": 100000000, "MemoryBytes": 536870912, "GenericResources": [{"DiscreteResourceSpec": {"Kind": "VRAM", "Value": 1}}]}}}]',
-                "container_label_simcore_user_agent": "puppeteer",
-                "container_label_study_id": "46449cc3-7d83-4081-a44e-fc75a0c85f2c",
-                "container_label_user_id": "43820",
-                "container_label_uuid": "2b231c38-0ebc-5cc0-1234-1ffe573f54e9",
+                "container_label_io_simcore_runtime_imcore_user_agent": "puppeteer",
+                "container_label_io_simcore_runtime_project_id": "46449cc3-7d83-4081-a44e-fc75a0c85f2c",
+                "container_label_io_simcore_runtime_user_id": "43820",
+                "container_label_io_simcore_runtime_node_id": "2b231c38-0ebc-5cc0-1234-1ffe573f54e9",
+                "container_label_io_simcore_runtime_memory_limit": "17179869184",
+                "container_label_io_simcore_runtime_cpu_limit": "3.5",
                 "id": "/docker/58e1138d51eb5eafd737024d0df0b01ef88f2087e5a3922565c59130d57ac7a3",
                 "image": "registry.osparc.io/simcore/services/dynamic/jupyter-smash:3.0.7",
                 "instance": "gpu1",
@@ -152,21 +154,21 @@ async def test_collect_container_resource_usage_task(
     assert len(db_rows) == 1
 
     assert (
-        random_promql_output_generator["max_float"] == db_rows[0][7]
+        random_promql_output_generator["max_float"] == db_rows[0][5]
     )  # <-- container_cpu_usage_seconds_total
     assert (
         arrow.get(random_promql_output_generator["min_timestamp"]).datetime
-        == db_rows[0][8]
+        == db_rows[0][6]
     )  # <-- prometheus_created
     assert (
         arrow.get(random_promql_output_generator["max_timestamp"]).datetime
-        == db_rows[0][9]
+        == db_rows[0][7]
     )  # <-- prometheus_last_scraped
     assert f"{project_uuid}" == db_rows[0][2]  # <-- project_uuid
     node_uuid_ = list(project_db["workbench"].keys())[0]
-    assert node_uuid_ == db_rows[0][11]  # <-- node_uuid
+    assert node_uuid_ == db_rows[0][9]  # <-- node_uuid
     assert (
-        project_db["workbench"][node_uuid_]["label"] == db_rows[0][12]
+        project_db["workbench"][node_uuid_]["label"] == db_rows[0][10]
     )  # <-- node_label
-    assert project_db["name"] == db_rows[0][16]  # <-- project_name
-    assert user_db["email"] == db_rows[0][17]  # <-- user_email
+    assert project_db["name"] == db_rows[0][12]  # <-- project_name
+    assert user_db["email"] == db_rows[0][13]  # <-- user_email

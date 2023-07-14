@@ -3,8 +3,9 @@
 
 import inspect
 import sys
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, NamedTuple
+from typing import Any, ClassVar, NamedTuple
 
 import yaml
 from fastapi import FastAPI
@@ -27,7 +28,7 @@ class Log(BaseModel):
     )
 
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "message": "Hi there, Mr user",
                 "level": "INFO",
@@ -70,8 +71,8 @@ def create_openapi_specs(
 
     # Removes default response 422
     if drop_fastapi_default_422:
-        for _, method_item in openapi.get("paths", {}).items():
-            for _, param in method_item.items():
+        for method_item in openapi.get("paths", {}).values():
+            for param in method_item.values():
                 # NOTE: If description is like this,
                 # it assumes it is the default HTTPValidationError from fastapi
                 if (e422 := param.get("responses", {}).get("422", None)) and e422.get(

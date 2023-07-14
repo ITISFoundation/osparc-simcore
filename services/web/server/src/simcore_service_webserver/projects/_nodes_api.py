@@ -24,7 +24,7 @@ from pydantic import (
 from .._constants import APP_SETTINGS_KEY, RQT_USERID_KEY
 from ..application_settings import get_settings
 from ..storage.api import get_download_link
-from .exceptions import ProjectStartsTooManyDynamicNodes
+from .exceptions import ProjectStartsTooManyDynamicNodesError
 
 _logger = logging.getLogger(__name__)
 _NODE_START_INTERVAL_S: Final[datetime.timedelta] = datetime.timedelta(seconds=15)
@@ -48,7 +48,7 @@ def check_num_service_per_projects_limit(
     if project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES > 0 and (
         number_of_services >= project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
     ):
-        raise ProjectStartsTooManyDynamicNodes(
+        raise ProjectStartsTooManyDynamicNodesError(
             user_id=user_id, project_uuid=project_uuid
         )
 

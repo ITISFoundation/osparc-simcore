@@ -55,7 +55,7 @@ from .exceptions import (
     ProjectNodeResourcesInsufficientRightsError,
     ProjectNodeResourcesInvalidError,
     ProjectNotFoundError,
-    ProjectStartsTooManyDynamicNodes,
+    ProjectStartsTooManyDynamicNodesError,
 )
 
 log = logging.getLogger(__name__)
@@ -244,7 +244,7 @@ async def start_node(request: web.Request) -> web.Response:
 
         raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
-    except ProjectStartsTooManyDynamicNodes as exc:
+    except ProjectStartsTooManyDynamicNodesError as exc:
         raise web.HTTPConflict(reason=f"{exc}") from exc
 
 

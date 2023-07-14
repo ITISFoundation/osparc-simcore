@@ -7,7 +7,7 @@ See tests/test_rest_routing.py for example of usage
 import inspect
 import logging
 from collections import namedtuple
-from typing import Callable, Dict, Iterator, List, Mapping
+from collections.abc import Callable, Iterator, Mapping
 
 from aiohttp import web
 
@@ -24,20 +24,25 @@ def has_handler_signature(fun) -> bool:
     )
 
 
-def get_handlers_from_namespace(handlers_nsp) -> Dict:
+def get_handlers_from_namespace(handlers_nsp) -> dict:
     """Gets all handlers in a namespace define by a class or a module"""
     # TODO: Should search for function that are marked as "handlers". Similar to @pytest.fixtures??
     if inspect.ismodule(handlers_nsp):
-        predicate = lambda obj: inspect.isfunction(obj) and has_handler_signature(obj)
+
+        def predicate(obj):
+            return inspect.isfunction(obj) and has_handler_signature(obj)
+
     elif hasattr(handlers_nsp, "__class__"):
-        predicate = lambda obj: inspect.ismethod(obj) and has_handler_signature(obj)
+
+        def predicate(obj):
+            return inspect.ismethod(obj) and has_handler_signature(obj)
+
     else:
         raise ValueError(
             "Expected module or class as namespace, got %s" % type(handlers_nsp)
         )
 
-    name_to_handler_map = dict(inspect.getmembers(handlers_nsp, predicate))
-    return name_to_handler_map
+    return dict(inspect.getmembers(handlers_nsp, predicate))
 
 
 PathOperation = namedtuple("PathOperation", "method path operation_id tags")
@@ -49,6 +54,7 @@ def iter_path_operations(specs: OpenApiSpec) -> Iterator[PathOperation]:
     NOTE: prepend API version as basepath to path url, e.g. /v0/my/path for path=/my/path
     """
     base_path = get_base_path(specs)
+    assert base_path.startswith("/v")  # nosec
 
     for url, path in specs.paths.items():
         for method, operation in path.operations.items():
@@ -61,8 +67,8 @@ def map_handlers_with_operations(
     handlers_map: Mapping[str, Callable],
     operations_it: Iterator[PathOperation],
     *,
-    strict: bool = True
-) -> List[web.RouteDef]:
+    strict: bool = True,
+) -> list[web.RouteDef]:
     """Matches operation ids with handler names and returns a list of routes
 
     :param handlers_map: .See get_handlers_from_namespace
@@ -83,21 +89,19 @@ def map_handlers_with_operations(
         if handler:
             routes.append(web.route(method.upper(), path, handler, name=operation_id))
         elif strict:
-            raise ValueError("Cannot find any handler named {} ".format(operation_id))
+            msg = f"Cannot find any handler named {operation_id} "
+            raise ValueError(msg)
 
     if handlers and strict:
-        raise RuntimeError(
-            "{} handlers were not mapped to routes: {}".format(
-                len(handlers), handlers.keys()
-            )
-        )
+        msg = f"{len(handlers)} handlers were not mapped to routes: {handlers.keys()}"
+        raise RuntimeError(msg)
 
     return routes
 
 
 def create_routes_from_namespace(
     specs: OpenApiSpec, handlers_nsp, *, strict: bool = True
-) -> List[web.RouteDef]:
+) -> list[web.RouteDef]:
     """Gets *all* available handlers and maps one-to-one to *all* specs routes
 
     :param specs: openapi spec object
@@ -112,8 +116,6 @@ def create_routes_from_namespace(
     if not handlers and strict:
         raise ValueError("No handlers found in %s" % handlers_nsp)
 
-    routes = map_handlers_with_operations(
+    return map_handlers_with_operations(
         handlers, iter_path_operations(specs), strict=strict
     )
-
-    return routes

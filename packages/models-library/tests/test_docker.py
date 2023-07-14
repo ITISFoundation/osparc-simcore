@@ -8,9 +8,10 @@ from typing import Any
 import pytest
 from faker import Faker
 from models_library.docker import (
+    _SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX,
     DockerGenericTag,
     DockerLabelKey,
-    SimcoreServiceDockerLabelKeys,
+    StandardSimcoreDockerLabels,
 )
 from pydantic import ValidationError, parse_obj_as
 
@@ -107,31 +108,20 @@ def test_docker_generic_tag(image_name: str, valid: bool):
 
 @pytest.mark.parametrize(
     "obj_data",
-    [
-        pytest.param(
-            {
-                "user_id": _faker.pyint(),
-                "project_id": _faker.uuid4(),
-                "node_id": _faker.uuid4(),
-            },
-            id="parse_existing_service_labels",
-        ),
-        pytest.param(
-            {
-                "user_id": _faker.pyint(),
-                "project_id": _faker.uuid4(),
-                "node_id": _faker.uuid4(),
-                "product": "test_p",
-                "simcore_user_agent": "a-test-puppet",
-            },
-            id="parse_new_service_labels",
-        ),
-    ],
+    StandardSimcoreDockerLabels.Config.schema_extra["examples"],
+    ids=str,
 )
 def test_simcore_service_docker_label_keys(obj_data: dict[str, Any]):
-    simcore_service_docker_label_keys = SimcoreServiceDockerLabelKeys.parse_obj(
-        obj_data
+    simcore_service_docker_label_keys = StandardSimcoreDockerLabels.parse_obj(obj_data)
+    exported_dict = simcore_service_docker_label_keys.to_simcore_runtime_docker_labels()
+    assert all(
+        isinstance(v, str) for v in exported_dict.values()
+    ), "docker labels must be strings!"
+    assert all(
+        key.startswith(_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX) for key in exported_dict
     )
-    exported_dict = simcore_service_docker_label_keys.to_docker_labels()
-    assert all(isinstance(v, str) for v in exported_dict.values())
-    assert parse_obj_as(SimcoreServiceDockerLabelKeys, exported_dict)
+    re_imported_docker_label_keys = parse_obj_as(
+        StandardSimcoreDockerLabels, exported_dict
+    )
+    assert re_imported_docker_label_keys
+    assert simcore_service_docker_label_keys == re_imported_docker_label_keys

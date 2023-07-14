@@ -93,7 +93,7 @@ async def list_solvers_releases(
 
 
 @router.get(
-    "releases/page",
+    "/releases/page",
     response_model=LimitOffsetPage[Solver],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
@@ -197,7 +197,7 @@ async def get_solver_release(
         solver.url = url_for(
             "get_solver_release", solver_key=solver.id, version=solver.version
         )
-        return solver  # noqa: TRY300
+        return solver
 
     except (
         ValueError,

@@ -17,7 +17,6 @@ from settings_library.utils_logging import MixinLoggingSettings
 
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
-
     SC_BOOT_MODE: BootModeEnum = Field(
         ...,
         description="boot mode helps determine if in development mode or normal operation",
@@ -94,7 +93,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         ..., description="list of patterns to exclude files when saving states"
     )
     DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
-        False,
+        default=False,
         env=["DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"],
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
@@ -130,8 +129,5 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 @lru_cache
 def get_settings() -> ApplicationSettings:
     """used outside the context of a request"""
-    warnings.warn(
-        "Use instead app.state.settings",
-        DeprecationWarning,
-    )
+    warnings.warn("Use instead app.state.settings", DeprecationWarning, stacklevel=2)
     return cast(ApplicationSettings, ApplicationSettings.create_from_envs())

@@ -100,9 +100,8 @@ class ProjectNodesRepo:
             return [ProjectNode.from_row(r) for r in rows]
         except ForeignKeyViolation as exc:
             # this happens when the project does not exist, as we first check the node exists
-            raise ProjectNodesProjectNotFound(
-                f"Project {self.project_uuid} not found"
-            ) from exc
+            msg = f"Project {self.project_uuid} not found"
+            raise ProjectNodesProjectNotFound(msg) from exc
         except UniqueViolation as exc:
             # this happens if the node already exists on creation
             raise ProjectNodesDuplicateNode(
@@ -125,8 +124,7 @@ class ProjectNodesRepo:
         assert result  # nosec
         rows = await result.fetchall()
         assert rows is not None  # nosec
-        nodes = [ProjectNode.from_row(row) for row in rows]
-        return nodes
+        return [ProjectNode.from_row(row) for row in rows]
 
     async def get(self, connection: SAConnection, *, node_id: uuid.UUID) -> ProjectNode:
         """get a node in the current project
@@ -148,7 +146,8 @@ class ProjectNodesRepo:
         assert result  # nosec
         row = await result.first()
         if row is None:
-            raise ProjectNodesNodeNotFound(f"Node with {node_id} not found")
+            msg = f"Node with {node_id} not found"
+            raise ProjectNodesNodeNotFound(msg)
         assert row  # nosec
         return ProjectNode.from_row(row)
 
@@ -176,7 +175,8 @@ class ProjectNodesRepo:
         result = await connection.execute(update_stmt)
         row = await result.first()
         if not row:
-            raise ProjectNodesNodeNotFound(f"Node with {node_id} not found")
+            msg = f"Node with {node_id} not found"
+            raise ProjectNodesNodeNotFound(msg)
         assert row  # nosec
         return ProjectNode.from_row(row)
 

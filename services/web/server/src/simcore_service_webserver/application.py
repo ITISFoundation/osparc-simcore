@@ -10,13 +10,13 @@ from servicelib.aiohttp.application import create_safe_application
 
 from ._meta import WELCOME_DB_LISTENER_MSG, WELCOME_GC_MSG, WELCOME_MSG, info
 from .activity.plugin import setup_activity
+from .announcements.plugin import setup_announcements
 from .application_settings import setup_settings
 from .catalog.plugin import setup_catalog
 from .clusters.plugin import setup_clusters
 from .db.plugin import setup_db
 from .db_listener.plugin import setup_db_listener
 from .diagnostics.plugin import setup_diagnostics
-from .director.plugin import setup_director
 from .director_v2.plugin import setup_director_v2
 from .email.plugin import setup_email
 from .exporter.plugin import setup_exporter
@@ -91,7 +91,6 @@ def create_application() -> web.Application:
     setup_login(app)
 
     # interaction with other backend services
-    setup_director(app)
     setup_director_v2(app)
     setup_storage(app)
     setup_catalog(app)
@@ -117,6 +116,7 @@ def create_application() -> web.Application:
     setup_scicrunch(app)
     setup_tags(app)
 
+    setup_announcements(app)
     setup_publications(app)
     setup_studies_dispatcher(app)
     setup_exporter(app)

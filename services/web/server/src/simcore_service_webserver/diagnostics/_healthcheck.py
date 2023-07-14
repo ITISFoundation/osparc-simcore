@@ -12,20 +12,22 @@ from .settings import get_plugin_settings
 _logger = logging.getLogger(__name__)
 
 # APP KEYS ---
-kINCIDENTS_REGISTRY = f"{__name__}.incidents_registry"
-kLAST_REQUESTS_AVG_LATENCY = f"{__name__}.last_requests_avg_latency"
-kMAX_AVG_RESP_LATENCY = f"{__name__}.max_avg_response_latency"
-kMAX_TASK_DELAY = f"{__name__}.max_task_delay"
+HEALTH_INCIDENTS_REGISTRY = f"{__name__}.incidents_registry"
+HEALTH_LAST_REQUESTS_AVG_LATENCY = f"{__name__}.last_requests_avg_latency"
+HEALTH_MAX_AVG_RESP_LATENCY = f"{__name__}.max_avg_response_latency"
+HEALTH_MAX_TASK_DELAY = f"{__name__}.max_task_delay"
 
-kLATENCY_PROBE = f"{__name__}.latency_probe"
-kPLUGIN_START_TIME = f"{__name__}.plugin_start_time"
+HEALTH_LATENCY_PROBE = f"{__name__}.latency_probe"
+HEALTH_PLUGIN_START_TIME = f"{__name__}.plugin_start_time"
 
-kSTART_SENSING_DELAY_SECS = f"{__name__}.start_sensing_delay"
+HEALTH_START_SENSING_DELAY_SECS = f"{__name__}.start_sensing_delay"
 
 
 class IncidentsRegistry(LimitedOrderedStack[SlowCallback]):
     def max_delay(self) -> float:
-        delay: float = self.max_item.delay_secs or 0.0
+        delay: float = 0.0
+        if self.max_item:
+            delay = self.max_item.delay_secs
         return delay
 
 
@@ -65,7 +67,7 @@ def is_sensing_enabled(app: web.Application):
     global logged_once  # pylint: disable=global-statement
     settings = get_plugin_settings(app)
 
-    time_elapsed_since_setup = time.time() - app[kPLUGIN_START_TIME]
+    time_elapsed_since_setup = time.time() - app[HEALTH_PLUGIN_START_TIME]
     enabled = time_elapsed_since_setup > settings.DIAGNOSTICS_START_SENSING_DELAY
     if enabled and not logged_once:
         _logger.debug(
@@ -87,7 +89,7 @@ def assert_healthy_app(app: web.Application) -> None:
     settings = get_plugin_settings(app)
 
     # CRITERIA 1:
-    incidents: IncidentsRegistry | None = app.get(kINCIDENTS_REGISTRY)
+    incidents: IncidentsRegistry | None = app.get(HEALTH_INCIDENTS_REGISTRY)
     if incidents:
         if not is_sensing_enabled(app):
             # NOTE: this is the only way to avoid accounting
@@ -111,7 +113,7 @@ def assert_healthy_app(app: web.Application) -> None:
             raise HealthCheckFailed(msg)
 
     # CRITERIA 2: Mean latency of the last N request slower than 1 sec
-    probe: DelayWindowProbe | None = app.get(kLATENCY_PROBE)
+    probe: DelayWindowProbe | None = app.get(HEALTH_LATENCY_PROBE)
     if probe:
         latency = probe.value()
         max_latency_allowed = settings.DIAGNOSTICS_MAX_AVG_LATENCY

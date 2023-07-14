@@ -67,6 +67,9 @@ qx.Class.define("osparc.Application", {
       const threejs = osparc.wrapper.Three.getInstance();
       threejs.init();
 
+      const announcementsTracker = osparc.AnnouncementsTracker.getInstance();
+      announcementsTracker.startTracker();
+
       const webSocket = osparc.wrapper.WebSocket.getInstance();
       webSocket.addListener("connect", () => osparc.io.WatchDog.getInstance().setOnline(true));
       webSocket.addListener("disconnect", () => osparc.io.WatchDog.getInstance().setOnline(false));
@@ -359,7 +362,10 @@ qx.Class.define("osparc.Application", {
         .then(profile => {
           this.__connectWebSocket();
 
-          if ("expirationDate" in profile) {
+          if (osparc.auth.Data.getInstance().isGuest()) {
+            osparc.utils.Utils.createAccountMessage()
+              .then(msg => osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING"));
+          } else if ("expirationDate" in profile) {
             const now = new Date();
             const today = new Date(now.toISOString().slice(0, 10));
             const expirationDay = new Date(profile["expirationDate"]);
@@ -433,6 +439,7 @@ qx.Class.define("osparc.Application", {
 
       osparc.data.PollTasks.getInstance().removeTasks();
       osparc.MaintenanceTracker.getInstance().stopTracker();
+      osparc.AnnouncementsTracker.getInstance().stopTracker();
       osparc.auth.Manager.getInstance().logout();
       if (this.__mainPage) {
         this.__mainPage.closeEditor();

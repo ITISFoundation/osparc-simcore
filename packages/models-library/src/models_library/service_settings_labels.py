@@ -2,10 +2,11 @@
 
 import json
 import re
+from collections.abc import Generator
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Final, Iterator, Literal, TypeAlias
+from typing import Any, ClassVar, Final, Literal, TypeAlias
 
 from pydantic import (
     BaseModel,
@@ -57,7 +58,7 @@ class ContainerSpec(BaseModel):
     )
 
     class Config(_BaseConfig):
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {"Command": ["executable"]},
                 {"Command": ["executable", "subcommand"]},
@@ -102,7 +103,7 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
         return v
 
     class Config(_BaseConfig):
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 # constraints
                 {
@@ -138,8 +139,8 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
                     "value": [
                         {
                             "ReadOnly": True,
-                            "Source": "/tmp/.X11-unix",  # nosec
-                            "Target": "/tmp/.X11-unix",  # nosec
+                            "Source": "/tmp/.X11-unix",  # nosec  # noqa: S108
+                            "Target": "/tmp/.X11-unix",  # nosec  # noqa: S108
                             "Type": "bind",
                         }
                     ],
@@ -201,27 +202,24 @@ class PathMappingsLabel(BaseModel):
             try:
                 parse_obj_as(ByteSize, size_str)
             except ValidationError as e:
-                raise ValueError(
-                    f"Provided size='{size_str}' contains invalid charactes: {str(e)}"
-                ) from e
+                msg = f"Provided size='{size_str}' contains invalid charactes: {e!s}"
+                raise ValueError(msg) from e
 
             inputs_path: Path | None = values.get("inputs_path")
             outputs_path: Path | None = values.get("outputs_path")
             state_paths: list[Path] | None = values.get("state_paths")
             path = Path(path_str)
             if not (
-                path == inputs_path
-                or path == outputs_path
+                path in (inputs_path, outputs_path)
                 or (state_paths is not None and path in state_paths)
             ):
-                raise ValueError(
-                    f"{path=} not found in {inputs_path=}, {outputs_path=}, {state_paths=}"
-                )
+                msg = f"path={path!r} not found in inputs_path={inputs_path!r}, outputs_path={outputs_path!r}, state_paths={state_paths!r}"
+                raise ValueError(msg)
 
         return v
 
     class Config(_BaseConfig):
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "outputs_path": "/tmp/outputs",  # nosec
@@ -276,7 +274,8 @@ class _PortRange(BaseModel):
         upper = v
         lower: PortInt | None = values.get("lower")
         if lower is None or lower >= upper:
-            raise ValueError(f"Condition not satisfied: {lower=} < {upper=}")
+            msg = f"Condition not satisfied: lower={lower!r} < upper={upper!r}"
+            raise ValueError(msg)
         return v
 
 
@@ -288,7 +287,7 @@ class DNSResolver(BaseModel):
 
     class Config(_BaseConfig):
         extra = Extra.allow
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {"address": "1.1.1.1", "port": 53},  # NOSONAR
                 {"address": "ns1.example.com", "port": 53},
@@ -308,9 +307,9 @@ class NATRule(BaseModel):
         description="specify a DNS resolver address and port",
     )
 
-    def iter_tcp_ports(self) -> Iterator[PortInt]:
+    def iter_tcp_ports(self) -> Generator[PortInt, None, None]:
         for port in self.tcp_ports:
-            if type(port) == _PortRange:
+            if isinstance(port, _PortRange):
                 yield from range(port.lower, port.upper + 1)
             else:
                 yield port
@@ -383,13 +382,11 @@ class DynamicSidecarServiceLabels(BaseModel):
     def compose_spec_requires_container_http_entry(cls, v, values) -> str | None:
         v = None if v == "" else v
         if v is None and values.get("compose_spec") is not None:
-            raise ValueError(
-                "Field `container_http_entry` must be defined but is missing"
-            )
+            msg = "Field `container_http_entry` must be defined but is missing"
+            raise ValueError(msg)
         if v is not None and values.get("compose_spec") is None:
-            raise ValueError(
-                "`container_http_entry` not allowed if `compose_spec` is missing"
-            )
+            msg = "`container_http_entry` not allowed if `compose_spec` is missing"
+            raise ValueError(msg)
         return v
 
     @validator("containers_allowed_outgoing_permit_list")
@@ -402,16 +399,14 @@ class DynamicSidecarServiceLabels(BaseModel):
         if compose_spec is None:
             keys = set(v.keys())
             if len(keys) != 1 or DEFAULT_SINGLE_SERVICE_NAME not in keys:
-                raise ValueError(
-                    f"Expected only one entry '{DEFAULT_SINGLE_SERVICE_NAME}' not '{keys.pop()}'"
-                )
+                err_msg = f"Expected only one entry '{DEFAULT_SINGLE_SERVICE_NAME}' not '{keys.pop()}'"
+                raise ValueError(err_msg)
         else:
             containers_in_compose_spec = set(compose_spec["services"].keys())
-            for container in v.keys():
+            for container in v:
                 if container not in containers_in_compose_spec:
-                    raise ValueError(
-                        f"Trying to permit list {container=} which was not found in {compose_spec=}"
-                    )
+                    err_msg = f"Trying to permit list {container=} which was not found in {compose_spec=}"
+                    raise ValueError(err_msg)
 
         return v
 
@@ -424,14 +419,16 @@ class DynamicSidecarServiceLabels(BaseModel):
         compose_spec: dict | None = values.get("compose_spec")
         if compose_spec is None:
             if {DEFAULT_SINGLE_SERVICE_NAME} != v:
-                raise ValueError(
+                err_msg = (
                     f"Expected only 1 entry '{DEFAULT_SINGLE_SERVICE_NAME}' not '{v}'"
                 )
+                raise ValueError(err_msg)
         else:
             containers_in_compose_spec = set(compose_spec["services"].keys())
             for container in v:
                 if container not in containers_in_compose_spec:
-                    raise ValueError(f"{container=} not found in {compose_spec=}")
+                    err_msg = f"{container=} not found in {compose_spec=}"
+                    raise ValueError(err_msg)
         return v
 
     @root_validator
@@ -442,9 +439,10 @@ class DynamicSidecarServiceLabels(BaseModel):
             "containers_allowed_outgoing_permit_list",
         }
         if match_keys & set(values.keys()) != match_keys:
-            raise ValueError(
+            err_msg = (
                 f"Expected the following keys {match_keys} to be present {values=}"
             )
+            raise ValueError(err_msg)
 
         containers_allowed_outgoing_internet = values[
             "containers_allowed_outgoing_internet"
@@ -462,11 +460,12 @@ class DynamicSidecarServiceLabels(BaseModel):
             containers_allowed_outgoing_permit_list.keys()
         )
         if len(common_containers) > 0:
-            raise ValueError(
+            err_msg = (
                 f"Not allowed {common_containers=} detected between "
                 "`containers-allowed-outgoing-permit-list` and "
                 "`containers-allowed-outgoing-internet`."
             )
+            raise ValueError(err_msg)
 
         return values
 
@@ -490,7 +489,7 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
     spec will be generated before starting the service.
     """
 
-    settings: Json[SimcoreServiceSettingsLabel] = Field(
+    settings: Json[SimcoreServiceSettingsLabel] = Field(  # type: ignore
         default_factory=dict,
         alias="simcore.service.settings",
         description=(
@@ -502,7 +501,7 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
 
     class Config(_BaseConfig):
         extra = Extra.allow
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 # WARNING: do not change order. Used in tests!
                 # legacy service
@@ -546,7 +545,7 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                                     "init": True,
                                     "environment": ["DISPLAY=${DISPLAY}"],
                                     "volumes": [
-                                        "/tmp/.X11-unix:/tmp/.X11-unix"  # nosec
+                                        "/tmp/.X11-unix:/tmp/.X11-unix"  # nosec  # noqa: S108
                                     ],
                                 },
                             },

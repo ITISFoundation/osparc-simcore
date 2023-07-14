@@ -59,11 +59,7 @@ async def list_containers(
             container.prometheus_last_scraped - container.prometheus_created
         ).total_seconds() / 60
 
-        _processors = (
-            container.service_settings_reservation_nano_cpus / 1e9
-            if container.service_settings_reservation_nano_cpus
-            else 0.0
-        )
+        _processors = container.cpu_limit
 
         if (
             overall_last_scraped_timestamp - timedelta(minutes=16)

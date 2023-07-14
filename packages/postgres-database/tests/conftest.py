@@ -170,7 +170,7 @@ def create_fake_group(
     """factory to create standard group"""
     created_ids = []
 
-    async def _create_group(conn: SAConnection, **overrides) -> RowProxy:
+    async def _creator(conn: SAConnection, **overrides) -> RowProxy:
         result: ResultProxy = await conn.execute(
             groups.insert()
             .values(**random_group(type=GroupType.STANDARD, **overrides))
@@ -181,7 +181,7 @@ def create_fake_group(
         created_ids.append(group.gid)
         return group
 
-    yield _create_group
+    yield _creator
 
     sync_engine = make_engine(is_async=False)
     assert isinstance(sync_engine, sa.engine.Engine)
@@ -197,9 +197,7 @@ def create_fake_user(
 
     created_ids = []
 
-    async def _create_user(
-        conn, group: RowProxy | None = None, **overrides
-    ) -> RowProxy:
+    async def _creator(conn, group: RowProxy | None = None, **overrides) -> RowProxy:
         user_id = await conn.scalar(
             users.insert().values(**random_user(**overrides)).returning(users.c.id)
         )
@@ -223,7 +221,7 @@ def create_fake_user(
             assert result
         return user
 
-    yield _create_user
+    yield _creator
 
     sync_engine = make_engine(is_async=False)
     assert isinstance(sync_engine, sa.engine.Engine)
@@ -238,7 +236,7 @@ async def create_fake_cluster(
     cluster_ids = []
     assert cluster_to_groups is not None
 
-    async def creator(**overrides) -> int:
+    async def _creator(**overrides) -> int:
         insert_values = {
             "name": "default cluster name",
             "type": ClusterType.ON_PREMISE,
@@ -255,7 +253,7 @@ async def create_fake_cluster(
         assert cluster_id
         return cluster_id
 
-    yield creator
+    yield _creator
 
     # cleanup
     async with pg_engine.acquire() as conn:

@@ -10,7 +10,7 @@
 from enum import Enum
 from typing import TypeAlias
 
-from fastapi import FastAPI, status
+from fastapi import FastAPI, Query, status
 from models_library.api_schemas_storage import (
     FileMetaDataGet,
     FileUploadCompleteFutureResponse,
@@ -72,7 +72,7 @@ async def synchronise_meta_data_table(
     summary="Get datasets metadata",
 )
 async def get_datasets_metadata(location_id: LocationID):
-    """Returns the list of dataset meta-datas"""
+    """returns all the top level datasets a user has access to"""
 
 
 @app.get(
@@ -82,8 +82,17 @@ async def get_datasets_metadata(location_id: LocationID):
     operation_id="get_files_metadata",
     summary="Get datasets metadata",
 )
-async def get_files_metadata(location_id: LocationID, uuid_filter: str = ""):
-    """list of file meta-datas"""
+async def get_files_metadata(
+    location_id: LocationID,
+    uuid_filter: str = "",
+    expand_dirs: bool = Query(
+        True,
+        description=(
+            "Automatic directory expansion. This will be replaced by pagination the future"
+        ),
+    ),
+):
+    """returns all the file meta data a user has access to (uuid_filter may be used)"""
 
 
 @app.get(
@@ -93,8 +102,17 @@ async def get_files_metadata(location_id: LocationID, uuid_filter: str = ""):
     operation_id="get_files_metadata_dataset",
     summary="Get Files Metadata",
 )
-async def get_files_metadata_dataset(location_id: LocationID, dataset_id: str):
-    """list of file meta-datas"""
+async def get_files_metadata_dataset(
+    location_id: LocationID,
+    dataset_id: str,
+    expand_dirs: bool = Query(
+        True,
+        description=(
+            "Automatic directory expansion. This will be replaced by pagination the future"
+        ),
+    ),
+):
+    """returns all the file meta data inside dataset with dataset_id"""
 
 
 @app.get(
@@ -105,7 +123,7 @@ async def get_files_metadata_dataset(location_id: LocationID, dataset_id: str):
     operation_id="get_file_metadata",
 )
 async def get_file_metadata(location_id: LocationID, file_id: StorageFileIDStr):
-    ...
+    """returns the file meta data of file_id if user_id has the rights to"""
 
 
 @app.get(
@@ -120,7 +138,7 @@ async def download_file(
     file_id: StorageFileIDStr,
     link_type: LinkType = LinkType.PRESIGNED,
 ):
-    """Returns a presigned link"""
+    """creates a download file link if user has the rights to"""
 
 
 @app.put(
@@ -137,7 +155,7 @@ async def upload_file(
     link_type: LinkType = LinkType.PRESIGNED,
     is_directory: bool = False,
 ):
-    """Return upload object"""
+    """creates one or more upload file links if user has the rights to, expects the client to complete/abort upload"""
 
 
 @app.delete(
@@ -148,7 +166,7 @@ async def upload_file(
     summary="Deletes File",
 )
 async def delete_file(location_id: LocationID, file_id: StorageFileIDStr):
-    ...
+    """deletes file if user has the rights to"""
 
 
 @app.post(
@@ -158,7 +176,8 @@ async def delete_file(location_id: LocationID, file_id: StorageFileIDStr):
     operation_id="abort_upload_file",
 )
 async def abort_upload_file(location_id: LocationID, file_id: StorageFileIDStr):
-    """Asks the server to abort the upload and revert to the last valid version if any"""
+    """aborts an upload if user has the rights to, and reverts
+    to the latest version if available, else will delete the file"""
 
 
 @app.post(
@@ -173,7 +192,7 @@ async def complete_upload_file(
     location_id: LocationID,
     file_id: StorageFileIDStr,
 ):
-    """Asks the server to complete the upload"""
+    """completes an upload if the user has the rights to"""
 
 
 @app.post(

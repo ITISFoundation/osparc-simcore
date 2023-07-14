@@ -651,7 +651,7 @@ services:
         "--loglevel",
         "verbose",
         "--databases",
-        "5",
+        "6",
         "--appendonly",
         "yes"
       ]

@@ -42,6 +42,9 @@ pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 
+CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
+
 @pytest.fixture
 def mock_datcore_download(mocker, client):
     # Use to mock downloading from DATCore
@@ -365,12 +368,9 @@ async def test_copy_folders_from_valid_project(
             )
 
 
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
-
 def _get_project_with_data() -> list[Project]:
     projects = parse_file_as(
-        list[Project], current_dir / "../data/projects_with_data.json"
+        list[Project], CURRENT_DIR / "../data/projects_with_data.json"
     )
     assert projects
     return projects

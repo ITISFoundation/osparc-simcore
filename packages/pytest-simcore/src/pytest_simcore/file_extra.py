@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable
 
 import pytest
 from faker import Faker
@@ -9,7 +9,7 @@ from pydantic import ByteSize
 @pytest.fixture
 def create_file_of_size(tmp_path: Path, faker: Faker) -> Callable[[ByteSize], Path]:
     # NOTE: cleanup is done by tmp_path fixture
-    def _creator(size: ByteSize, name: Optional[str] = None) -> Path:
+    def _creator(size: ByteSize, name: str | None = None) -> Path:
         file: Path = tmp_path / (name or faker.file_name())
         if not file.parent.exists():
             file.parent.mkdir(parents=True)

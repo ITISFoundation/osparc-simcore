@@ -1,8 +1,9 @@
 import asyncio
 import logging
+from collections.abc import Coroutine
 from contextlib import AsyncExitStack
 from dataclasses import asdict
-from typing import Any, Coroutine, TypeAlias
+from typing import Any, TypeAlias
 
 from aiohttp import web
 from jsonschema import ValidationError as JsonSchemaValidationError
@@ -120,7 +121,7 @@ async def _copy_project_nodes_from_source_project(
     def _mapped_node_id(node: ProjectNode) -> NodeID:
         return NodeID(nodes_map[NodeIDStr(f"{node.node_id}")])
 
-    dst_project_node_creates = {
+    return {
         _mapped_node_id(node): ProjectNodeCreate(
             node_id=_mapped_node_id(node),
             **{
@@ -131,7 +132,6 @@ async def _copy_project_nodes_from_source_project(
         )
         for node in await db.list_project_nodes(ProjectID(source_project["uuid"]))
     }
-    return dst_project_node_creates
 
 
 async def _copy_files_from_source_project(

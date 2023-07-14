@@ -106,6 +106,7 @@ body:
         - Fill up
       value: |
         - [ ] `` make release-staging name=<sprint_name> version=<version> git_sha=<commit_sha>``
+           - `https://github.com/ITISFoundation/osparc-simcore/releases/new?prerelease=1&target=<commit_sha>&tag=staging_<sprint_name><version>&title=Staging%20<sprint_name><version>`
         - [ ] Draft [pre-release](https://github.com/ITISFoundation/osparc-simcore/releases)
         - [ ] Announce
           ```json

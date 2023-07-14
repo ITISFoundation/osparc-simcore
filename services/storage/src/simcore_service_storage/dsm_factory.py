@@ -42,15 +42,17 @@ class BaseDataManager(ABC):
 
     @abstractmethod
     async def list_files_in_dataset(
-        self, user_id: UserID, dataset_id: str
+        self, user_id: UserID, dataset_id: str, *, expand_dirs: bool
     ) -> list[FileMetaData]:
         """returns all the file meta data inside dataset with dataset_id"""
+        # NOTE: expand_dirs will be replaced by pagination in the future
 
     @abstractmethod
     async def list_files(
-        self, user_id: UserID, uuid_filter: str = ""
+        self, user_id: UserID, *, expand_dirs: bool, uuid_filter: str = ""
     ) -> list[FileMetaData]:
         """returns all the file meta data a user has access to (uuid_filter may be used)"""
+        # NOTE: expand_dirs will be replaced by pagination in the future
 
     @abstractmethod
     async def get_file(self, user_id: UserID, file_id: StorageFileID) -> FileMetaData:
@@ -63,6 +65,8 @@ class BaseDataManager(ABC):
         file_id: StorageFileID,
         link_type: LinkType,
         file_size_bytes: ByteSize,
+        *,
+        is_directory: bool,
     ) -> UploadLinks:
         """creates one or more upload file links if user has the rights to, expects the client to complete/abort upload"""
 
@@ -109,7 +113,6 @@ class DataManagerProvider:
         self._builders[location_id] = (builder, dsm_type)
 
     def _create(self, location_id: LocationID, **kwargs) -> BaseDataManager:
-
         builder_and_type = self._builders.get(location_id)
         if not builder_and_type:
             raise ValueError(location_id)

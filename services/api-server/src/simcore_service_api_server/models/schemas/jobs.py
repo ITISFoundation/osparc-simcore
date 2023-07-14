@@ -1,6 +1,6 @@
+import datetime
 import hashlib
-from datetime import datetime
-from typing import Any, TypeAlias
+from typing import Any, ClassVar, TypeAlias
 from uuid import UUID, uuid4
 
 from models_library.projects_state import RunningState
@@ -46,14 +46,12 @@ def _compute_keyword_arguments_checksum(kwargs: KeywordArguments):
     return hashlib.sha256(_dump_str.encode("utf-8")).hexdigest()
 
 
-# JOB INPUTS/OUTPUTS ----------
+# JOB SUB-RESOURCES  ----------
 #
 #  - Wrappers for input/output values
 #  - Input/outputs are defined in service metadata
+#  - custom metadata
 #
-
-
-JobMetadataDict: TypeAlias = dict[str, Any]
 
 
 class JobInputs(BaseModel):
@@ -65,7 +63,7 @@ class JobInputs(BaseModel):
     class Config(BaseConfig):
         frozen = True
         allow_mutation = False
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "values": {
                     "x": 4.33,
@@ -98,7 +96,7 @@ class JobOutputs(BaseModel):
     class Config(BaseConfig):
         frozen = True
         allow_mutation = False
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "job_id": "99d9ac65-9f10-4e2f-a433-b5e412bb037b",
                 "results": {
@@ -116,6 +114,24 @@ class JobOutputs(BaseModel):
 
     def compute_results_checksum(self):
         return _compute_keyword_arguments_checksum(self.results)
+
+
+# Limits metadata values
+MetaValueType: TypeAlias = StrictBool | StrictInt | StrictFloat | str
+
+
+class JobMetadataUpdate(BaseModel):
+    metadata: dict[str, MetaValueType] = Field(
+        default_factory=dict, description="Custom key-value map"
+    )
+
+
+class JobMetadata(BaseModel):
+    job_id: JobID = Field(..., description="Parent Job")
+    metadata: dict[str, MetaValueType] = Field(..., description="Custom key-value map")
+
+    # Links
+    url: HttpUrl | None = Field(..., description="Link to get this resource (self)")
 
 
 # JOBS ----------
@@ -138,7 +154,7 @@ class Job(BaseModel):
     name: RelativeResourceName
 
     inputs_checksum: str = Field(..., description="Input's checksum")
-    created_at: datetime = Field(..., description="Job creation timestamp")
+    created_at: datetime.datetime = Field(..., description="Job creation timestamp")
 
     # parent
     runner_name: RelativeResourceName = Field(
@@ -155,7 +171,7 @@ class Job(BaseModel):
     )
 
     class Config(BaseConfig):
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "id": "f622946d-fd29-35b9-a193-abdd1095167c",
                 "name": "solvers/isolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c",
@@ -190,7 +206,7 @@ class Job(BaseModel):
             id=global_uuid,
             runner_name=parent_name,
             inputs_checksum=inputs_checksum,
-            created_at=datetime.utcnow(),
+            created_at=datetime.datetime.now(tz=datetime.timezone.utc),
             url=None,
             runner_url=None,
             outputs_url=None,
@@ -237,20 +253,20 @@ class JobStatus(BaseModel):
     progress: PercentageInt = Field(default=PercentageInt(0))
 
     # Timestamps on states
-    submitted_at: datetime = Field(
+    submitted_at: datetime.datetime = Field(
         ..., description="Last modification timestamp of the solver job"
     )
-    started_at: datetime | None = Field(
+    started_at: datetime.datetime | None = Field(
         None,
         description="Timestamp that indicate the moment the solver starts execution or None if the event did not occur",
     )
-    stopped_at: datetime | None = Field(
+    stopped_at: datetime.datetime | None = Field(
         None,
         description="Timestamp at which the solver finished or killed execution or None if the event did not occur",
     )
 
     class Config(BaseConfig):
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "job_id": "145beae4-a3a8-4fde-adbb-4e8257c2c083",
                 "state": RunningState.STARTED,

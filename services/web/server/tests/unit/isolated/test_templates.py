@@ -11,7 +11,7 @@ from aiohttp import web
 from aiohttp.test_utils import make_mocked_request
 from aiohttp_jinja2 import render_string
 from faker import Faker
-from simcore_service_webserver._resources import resources
+from simcore_service_webserver._resources import webserver_resources
 from simcore_service_webserver.email.plugin import setup_email
 from simcore_service_webserver.login.utils_email import themed
 
@@ -25,7 +25,7 @@ def app() -> web.Application:
 
 @pytest.mark.parametrize(
     "template_path",
-    list(resources.get_path("templates").rglob("*.jinja2")),
+    list(webserver_resources.get_path("templates").rglob("*.jinja2")),
     ids=lambda p: p.name,
 )
 def test_all_email_templates_include_subject(template_path: Path, app: web.Application):
