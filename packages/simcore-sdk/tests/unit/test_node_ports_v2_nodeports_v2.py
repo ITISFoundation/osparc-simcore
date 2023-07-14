@@ -4,10 +4,12 @@
 # pylint:disable=protected-access
 
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, AsyncIterable, Callable
 
 import pytest
+from pytest_mock import MockFixture
 from servicelib.progress_bar import ProgressBarData
+from simcore_sdk.node_ports_common.filemanager import UploadedFile
 from simcore_sdk.node_ports_v2 import Nodeports, exceptions, ports
 from simcore_sdk.node_ports_v2.ports_mapping import InputsList, OutputsList
 from utils_port_v2 import create_valid_port_mapping
@@ -146,10 +148,12 @@ def e_tag() -> str:
 
 
 @pytest.fixture
-async def mock_upload_file(mocker, e_tag):
+async def mock_upload_path(
+    mocker: MockFixture, e_tag: str
+) -> AsyncIterable[MockFixture]:
     mock = mocker.patch(
-        "simcore_sdk.node_ports_common.filemanager.upload_file",
-        return_value=(0, e_tag),
+        "simcore_sdk.node_ports_common.filemanager.upload_path",
+        return_value=UploadedFile(0, e_tag),
         autospec=True,
     )
     yield mock
@@ -161,7 +165,7 @@ async def test_node_ports_set_file_by_keymap(
     user_id: int,
     project_id: str,
     node_uuid: str,
-    mock_upload_file,
+    mock_upload_path: MockFixture,
 ):
     db_manager = mock_db_manager(default_configuration)
 
