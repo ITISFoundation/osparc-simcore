@@ -119,7 +119,7 @@ async def login(request: web.Request):
     assert user["email"] == login_.email, "db corrupted. Invalid email"  # nosec
 
     # Some roles have login privileges
-    has_privileges: Final[bool] = UserRole.USER < UserRole(user["role"])
+    has_privileges: Final[bool] = UserRole(user["role"]) > UserRole.USER
     if has_privileges or not settings.LOGIN_2FA_REQUIRED:
         return await login_granted_response(request, user=user)
 
@@ -142,8 +142,9 @@ async def login(request: web.Request):
 
     # create 2FA
     assert user["phone"]  # nosec
-    assert settings.LOGIN_2FA_REQUIRED and settings.LOGIN_TWILIO  # nosec
-    assert settings.LOGIN_2FA_REQUIRED and product.twilio_messaging_sid  # nosec
+    assert settings.LOGIN_2FA_REQUIRED  # nosec
+    assert settings.LOGIN_TWILIO  # nosec
+    assert product.twilio_messaging_sid  # nosec
 
     try:
         code = await create_2fa_code(
