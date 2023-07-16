@@ -12,7 +12,6 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient, make_mocked_request
 from faker import Faker
-from pytest import CaptureFixture, MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
@@ -36,7 +35,7 @@ from twilio.base.exceptions import TwilioRestException
 
 
 @pytest.fixture
-def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
+def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
     envs_login = setenvs_from_dict(
         monkeypatch,
         {
@@ -109,7 +108,7 @@ async def test_2fa_code_operations(client: TestClient):
 async def test_workflow_register_and_login_with_2fa(
     client: TestClient,
     db: AsyncpgStorage,
-    capsys: CaptureFixture,
+    capsys: pytest.CaptureFixture,
     fake_user_email: str,
     fake_user_password: str,
     fake_user_phone_number: str,
@@ -299,7 +298,7 @@ async def test_register_phone_fails_with_used_number(
 async def test_send_email_code(
     client: TestClient,
     faker: Faker,
-    capsys: CaptureFixture,
+    capsys: pytest.CaptureFixture,
     mocked_email_core_remove_comments: None,
 ):
     request = make_mocked_request("GET", "/dummy", app=client.app)
