@@ -113,7 +113,6 @@ async def write_to_tmp_file(file_contents: str) -> AsyncIterator[Path]:
 
 
 def _close_transport(proc: Process):
-
     # Closes transport (initialized during 'await proc.communicate(...)' ) and avoids error:
     #
     # Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x7f871d0c7e50>

@@ -272,7 +272,6 @@ async def test_port_key_tracker_add_pending(
 async def test_port_key_tracker_are_pending_ports_uploading(
     port_key_tracker_with_ports: _PortKeyTracker, port_keys: list[str]
 ):
-
     await port_key_tracker_with_ports.move_all_ports_to_uploading()
 
     assert await port_key_tracker_with_ports.are_pending_ports_uploading() is False
@@ -389,7 +388,6 @@ async def test_regression_io_log_redirect_cb(
     setup_outputs_manager(app)
 
     async with TestClient(app):  # runs setup handlers
-
         outputs_manager: OutputsManager = app.state.outputs_manager
         assert outputs_manager.io_log_redirect_cb is not None
 
