@@ -9,7 +9,7 @@ import time
 from asyncio.subprocess import Process
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncIterator, NamedTuple, Optional
+from typing import AsyncIterator, NamedTuple
 
 import aiofiles
 import httpx
@@ -35,7 +35,7 @@ class CommandResult(NamedTuple):
     success: bool
     message: str
     command: str
-    elapsed: Optional[float]
+    elapsed: float | None
 
 
 class _RegistryNotReachableException(Exception):
@@ -130,7 +130,7 @@ def _close_transport(proc: Process):
                 t.close()
 
 
-async def async_command(command: str, timeout: Optional[float] = None) -> CommandResult:
+async def async_command(command: str, timeout: float | None = None) -> CommandResult:
     """
     Does not raise Exception
     """
@@ -214,7 +214,7 @@ async def volumes_fix_permissions(mounted_volumes: MountedVolumes) -> None:
     # NOTE: by creating a hidden file on all mounted volumes
     # the same permissions are ensured and avoids
     # issues when starting the services
-    for volume_path in mounted_volumes.all_disk_paths():
+    for volume_path in mounted_volumes.all_disk_paths_iter():
         hidden_file = volume_path / HIDDEN_FILE_NAME
         hidden_file.write_text(
             f"Directory must not be empty.\nCreated by {__file__}.\n"

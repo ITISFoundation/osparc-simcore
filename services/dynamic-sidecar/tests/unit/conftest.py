@@ -11,7 +11,6 @@ import pytest
 from aiodocker.volumes import DockerVolume
 from async_asgi_testclient import TestClient
 from fastapi import FastAPI
-from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_dynamic_sidecar.core.application import AppState, create_app
 from simcore_service_dynamic_sidecar.core.docker_compose_utils import (
@@ -36,44 +35,13 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
-def mock_registry_service(mocker: MockerFixture) -> AsyncMock:
-    return mocker.patch(
-        "simcore_service_dynamic_sidecar.core.utils._is_registry_reachable",
-        autospec=True,
-    )
-
-
-@pytest.fixture
-def mock_core_rabbitmq(mocker: MockerFixture) -> dict[str, AsyncMock]:
-    """mocks simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQClient member functions"""
-    return {
-        "wait_till_rabbitmq_responsive": mocker.patch(
-            "simcore_service_dynamic_sidecar.core.rabbitmq.wait_till_rabbitmq_responsive",
-            return_value=None,
-            autospec=True,
-        ),
-        "post_log_message": mocker.patch(
-            "simcore_service_dynamic_sidecar.core.rabbitmq._post_rabbit_message",
-            return_value=None,
-            autospec=True,
-        ),
-        "close": mocker.patch(
-            "simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQClient.close",
-            return_value=None,
-            autospec=True,
-        ),
-    }
-
-
-@pytest.fixture
 def app(
     mock_environment: EnvVarsDict,
     mock_registry_service: AsyncMock,
     mock_core_rabbitmq: dict[str, AsyncMock],
 ) -> FastAPI:
     """creates app with registry and rabbitMQ services mocked"""
-    app = create_app()
-    return app
+    return create_app()
 
 
 @pytest.fixture
@@ -111,7 +79,6 @@ async def ensure_external_volumes(
     ] + list(app_state.mounted_volumes.volume_name_state_paths())
 
     async with docker_client() as docker:
-
         volumes = await asyncio.gather(
             *[
                 docker.volumes.create(
@@ -170,7 +137,6 @@ async def ensure_external_volumes(
 
 @pytest.fixture
 async def cleanup_containers(app: FastAPI) -> AsyncIterator[None]:
-
     app_state = AppState(app)
 
     yield

@@ -40,7 +40,7 @@ from ..modules import nodeports
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.outputs import OutputsManager, outputs_watcher_disabled
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 # TASKS
@@ -54,7 +54,7 @@ def _raise_for_errors(
     command_result: CommandResult, docker_compose_command: str
 ) -> None:
     if not command_result.success:
-        logger.warning(
+        _logger.warning(
             "docker-compose %s command finished with errors\n%s",
             docker_compose_command,
             command_result.message,
@@ -67,7 +67,7 @@ def _raise_for_errors(
     stop=stop_after_delay(5 * _MINUTE),
     retry=retry_if_result(lambda result: result.success is False),
     reraise=False,
-    before_sleep=before_sleep_log(logger, logging.WARNING, exc_info=True),
+    before_sleep=before_sleep_log(_logger, logging.WARNING, exc_info=True),
 )
 async def _retry_docker_compose_start(
     compose_spec: str, settings: ApplicationSettings
@@ -83,7 +83,7 @@ async def _retry_docker_compose_start(
     stop=stop_after_delay(5 * _MINUTE),
     retry=retry_if_result(lambda result: result.success is False),
     reraise=False,
-    before_sleep=before_sleep_log(logger, logging.WARNING, exc_info=True),
+    before_sleep=before_sleep_log(_logger, logging.WARNING, exc_info=True),
 )
 async def _retry_docker_compose_down(
     compose_spec: str, settings: ApplicationSettings
@@ -96,7 +96,7 @@ async def _retry_docker_compose_down(
     stop=stop_after_delay(5 * _MINUTE),
     retry=retry_if_result(lambda result: result is False),
     reraise=True,
-    before_sleep=before_sleep_log(logger, logging.WARNING, exc_info=True),
+    before_sleep=before_sleep_log(_logger, logging.WARNING, exc_info=True),
 )
 async def _retry_docker_compose_create(
     compose_spec: str, settings: ApplicationSettings
@@ -136,7 +136,7 @@ async def task_create_service_containers(
             shared_store.compose_spec
         )
 
-    logger.info("Validated compose-spec:\n%s", f"{shared_store.compose_spec}")
+    _logger.info("Validated compose-spec:\n%s", f"{shared_store.compose_spec}")
 
     assert shared_store.compose_spec  # nosec
 
@@ -172,13 +172,15 @@ async def task_create_service_containers(
         await post_sidecar_log_message(
             app, "service containers started", log_level=logging.INFO
         )
-        logger.debug(message)
+        _logger.debug(message)
         for container_name in shared_store.container_names:
             await start_log_fetching(app, container_name)
     else:
         application_health.is_healthy = False
         application_health.error_message = message
-        logger.error("Marked sidecar as unhealthy, see below for details\n:%s", message)
+        _logger.error(
+            "Marked sidecar as unhealthy, see below for details\n:%s", message
+        )
         await post_sidecar_log_message(
             app, "could not start service containers", log_level=logging.ERROR
         )
@@ -193,7 +195,7 @@ async def task_runs_docker_compose_down(
     settings: ApplicationSettings,
 ) -> None:
     if shared_store.compose_spec is None:
-        logger.warning("No compose-spec was found")
+        _logger.warning("No compose-spec was found")
         return
 
     progress.update(message="running docker-compose-down", percent=0.1)
@@ -230,57 +232,74 @@ async def task_restore_state(
     # I Would say the directory takes precedence over the zip
     # if we don't have the zip check if the folder is present, if this one is present us it!
 
-    progress.update(message="checking files", percent=0.0)
-    # first check if there are files (no max concurrency here, these are just quick REST calls)
-    archive_metadata_exists: list[bool] = await logged_gather(
-        *(
-            data_manager.state_metadata_entry_exists(
-                user_id=settings.DY_SIDECAR_USER_ID,
-                project_id=f"{settings.DY_SIDECAR_PROJECT_ID}",
-                node_uuid=f"{settings.DY_SIDECAR_NODE_ID}",
-                path=path,
-                is_archive=True,
-            )
-            for path in mounted_volumes.disk_state_paths()
-        ),
-        reraise=True,
-    )
-    effective_paths: list[Path] = [
-        path
-        for path, exists in zip(
-            mounted_volumes.disk_state_paths(), archive_metadata_exists, strict=True
+    project_id_str = f"{settings.DY_SIDECAR_PROJECT_ID}"
+    node_uuid_str = f"{settings.DY_SIDECAR_NODE_ID}"
+
+    async def _restore_state_folder(state_path: Path) -> None:
+        state_archive_exists = await data_manager.state_metadata_entry_exists(
+            user_id=settings.DY_SIDECAR_USER_ID,
+            project_id=project_id_str,
+            node_uuid=node_uuid_str,
+            path=state_path,
+            is_archive=True,
         )
-        if exists
-    ]
+        state_directory_exists = await data_manager.state_metadata_entry_exists(
+            user_id=settings.DY_SIDECAR_USER_ID,
+            project_id=project_id_str,
+            node_uuid=node_uuid_str,
+            path=state_path,
+            is_archive=False,
+        )
+        if state_archive_exists:
+            await data_manager.pull_legacy_archive(
+                user_id=settings.DY_SIDECAR_USER_ID,
+                project_id=project_id_str,
+                node_uuid=node_uuid_str,
+                destination_path=state_path,
+                io_log_redirect_cb=functools.partial(
+                    post_sidecar_log_message, app, log_level=logging.INFO
+                ),
+                # NOTE: interface was broken on purpose, next PR wil fix it
+                # and will cleanup how rclone is used
+                r_clone_settings=settings.DY_SIDECAR_R_CLONE_SETTINGS,
+                progress_bar=root_progress,
+            )
+        elif state_directory_exists:
+            await data_manager.pull_directory_path(
+                user_id=settings.DY_SIDECAR_USER_ID,
+                project_id=project_id_str,
+                node_uuid=node_uuid_str,
+                destination_path=state_path,
+                io_log_redirect_cb=functools.partial(
+                    post_sidecar_log_message, app, log_level=logging.INFO
+                ),
+                # NOTE: interface was broken on purpose, next PR wil fix it
+                # and will cleanup how rclone is used
+                r_clone_settings=settings.DY_SIDECAR_R_CLONE_SETTINGS,
+                progress_bar=root_progress,
+            )
+        else:
+            _logger.debug("No content previously saved for '%s'", state_path)
 
     progress.update(message="Downloading state", percent=0.05)
+    state_paths = [  # pylint: disable=unnecessary-comprehension # noqa: C416
+        x for x in mounted_volumes.disk_state_paths_iter()
+    ]
     await post_sidecar_log_message(
         app,
-        f"Downloading state files for {effective_paths}...",
+        f"Downloading state files for {state_paths}...",
         log_level=logging.INFO,
     )
     async with ProgressBarData(
-        steps=len(effective_paths),
+        steps=len(state_paths),
         progress_report_cb=functools.partial(
             post_progress_message, app, ProgressType.SERVICE_STATE_PULLING
         ),
     ) as root_progress:
         await logged_gather(
             *(
-                data_manager.pull(
-                    user_id=settings.DY_SIDECAR_USER_ID,
-                    project_id=str(settings.DY_SIDECAR_PROJECT_ID),
-                    node_uuid=str(settings.DY_SIDECAR_NODE_ID),
-                    destination_path=path,
-                    io_log_redirect_cb=functools.partial(
-                        post_sidecar_log_message, app, log_level=logging.INFO
-                    ),
-                    # NOTE: interface was broken on purpose, next PR wil fix it
-                    # and will cleanup how rclone is used
-                    r_clone_settings=settings.rclone_settings_for_nodeports,
-                    progress_bar=root_progress,
-                )
-                for path in effective_paths
+                _restore_state_folder(path)
+                for path in mounted_volumes.disk_state_paths_iter()
             ),
             max_concurrency=CONCURRENCY_STATE_SAVE_RESTORE,
             reraise=True,  # this should raise if there is an issue
@@ -298,37 +317,65 @@ async def task_save_state(
     mounted_volumes: MountedVolumes,
     app: FastAPI,
 ) -> None:
-    # TODO: save the sate here directly to the folder
-    # if the zip is present here, remove it!
+    """
+    Saves the states of the services. If an old service was opened
+    (the .zip archive is present), this one will be removed afterwards.
+    """
+
+    async def _push_and_remove_legacy_archive(
+        state_path: Path, root_progress: ProgressBarData
+    ) -> None:
+        project_id_str = f"{settings.DY_SIDECAR_PROJECT_ID}"
+        node_uuid_str = f"{settings.DY_SIDECAR_NODE_ID}"
+
+        await data_manager.push(
+            user_id=settings.DY_SIDECAR_USER_ID,
+            project_id=project_id_str,
+            node_uuid=node_uuid_str,
+            source_path=state_path,
+            # NOTE: interface was broken on purpose, next PR wil fix it
+            # and will cleanup how rclone is used
+            r_clone_settings=settings.DY_SIDECAR_R_CLONE_SETTINGS,
+            exclude_patterns=mounted_volumes.state_exclude,
+            io_log_redirect_cb=functools.partial(
+                post_sidecar_log_message, app, log_level=logging.INFO
+            ),
+            progress_bar=root_progress,
+        )
+        archive_exists = await data_manager.state_metadata_entry_exists(
+            user_id=settings.DY_SIDECAR_USER_ID,
+            project_id=project_id_str,
+            node_uuid=node_uuid_str,
+            path=state_path,
+            is_archive=True,
+        )
+
+        if not archive_exists:
+            return
+        await data_manager.delete_archive(
+            user_id=settings.DY_SIDECAR_USER_ID,
+            project_id=project_id_str,
+            node_uuid=node_uuid_str,
+            path=state_path,
+        )
+
     progress.update(message="starting state save", percent=0.0)
+    state_paths = [  # pylint: disable=unnecessary-comprehension # noqa: C416
+        x for x in mounted_volumes.disk_state_paths_iter()
+    ]
     async with ProgressBarData(
-        steps=len([mounted_volumes.disk_state_paths()]),
+        steps=len(state_paths),
         progress_report_cb=functools.partial(
             post_progress_message, app, ProgressType.SERVICE_STATE_PUSHING
         ),
     ) as root_progress:
         await logged_gather(
             *[
-                data_manager.push(
-                    user_id=settings.DY_SIDECAR_USER_ID,
-                    project_id=str(settings.DY_SIDECAR_PROJECT_ID),
-                    node_uuid=str(settings.DY_SIDECAR_NODE_ID),
-                    source_path=state_path,
-                    # NOTE: interface was broken on purpose, next PR wil fix it
-                    # and will cleanup how rclone is used
-                    r_clone_settings=settings.rclone_settings_for_nodeports,
-                    archive_exclude_patterns=mounted_volumes.state_exclude,
-                    io_log_redirect_cb=functools.partial(
-                        post_sidecar_log_message, app, log_level=logging.INFO
-                    ),
-                    progress_bar=root_progress,
-                )
-                for state_path in mounted_volumes.disk_state_paths()
+                _push_and_remove_legacy_archive(state_path, root_progress)
+                for state_path in state_paths
             ],
             max_concurrency=CONCURRENCY_STATE_SAVE_RESTORE,
         )
-
-    # TODO: only if there were no errors, remove the zip archive!
 
     await post_sidecar_log_message(app, "Finished state saving", log_level=logging.INFO)
     progress.update(message="finished state saving", percent=0.99)
