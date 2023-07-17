@@ -5,7 +5,6 @@
 # pylint: disable=unused-variable
 
 import asyncio
-import json
 import logging
 import time
 from typing import Coroutine
@@ -76,13 +75,9 @@ SLOW_HANDLER_DELAY_SECS = 2.0  # secs
 @pytest.fixture
 def mock_environment(mock_env_devel_environment: dict[str, str], monkeypatch):
     monkeypatch.setenv("AIODEBUG_SLOW_DURATION_SECS", f"{SLOW_HANDLER_DELAY_SECS / 10}")
-    WEBSERVER_DIAGNOSTICS = {
-        "DIAGNOSTICS_MAX_TASK_DELAY": f"{SLOW_HANDLER_DELAY_SECS}",
-        "DIAGNOSTICS_MAX_AVG_LATENCY": f"{2.0}",
-        "DIAGNOSTICS_START_SENSING_DELAY": f"{0}",
-    }
-
-    monkeypatch.setenv("WEBSERVER_DIAGNOSTICS", json.dumps(WEBSERVER_DIAGNOSTICS))
+    monkeypatch.setenv("DIAGNOSTICS_MAX_TASK_DELAY", f"{SLOW_HANDLER_DELAY_SECS}")
+    monkeypatch.setenv("DIAGNOSTICS_MAX_AVG_LATENCY", f"{2.0}")
+    monkeypatch.setenv("DIAGNOSTICS_START_SENSING_DELAY", f"{0}")
     monkeypatch.setenv("SC_HEALTHCHECK_TIMEOUT", "2m")
 
 
