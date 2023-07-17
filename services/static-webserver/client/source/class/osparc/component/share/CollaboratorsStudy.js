@@ -90,6 +90,25 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
       };
     },
 
+    getOwners: function(studyData) {
+      const owners = [];
+      Object.entries(studyData["accessRights"]).forEach(([key, value]) => {
+        if (value["delete"]) {
+          owners.push(key);
+        }
+      });
+      return owners;
+    },
+
+    // checks that if the user to remove is an owner, there will still be another owner
+    checkRemoveCollaborator: function(studyData, gid) {
+      const ownerGids = this.getOwners(studyData);
+      if (ownerGids.includes(gid.toString())) {
+        return ownerGids.length > 1;
+      }
+      return true;
+    },
+
     removeCollaborator: function(studyData, gid) {
       return delete studyData["accessRights"][gid];
     },
