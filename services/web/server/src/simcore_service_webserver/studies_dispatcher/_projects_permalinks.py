@@ -7,7 +7,7 @@ from models_library.projects import ProjectID, ProjectIDStr
 from pydantic import HttpUrl, parse_obj_as
 from simcore_postgres_database.models.projects import ProjectType, projects
 
-from ..db import get_database_engine
+from ..db.plugin import get_database_engine
 from ..projects.api import ProjectPermalink, register_permalink_factory
 from ..projects.exceptions import PermalinkNotAllowedError, ProjectNotFoundError
 from ..utils_aiohttp import create_url_for_function

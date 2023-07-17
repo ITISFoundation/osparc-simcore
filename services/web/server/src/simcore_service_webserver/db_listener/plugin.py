@@ -7,7 +7,7 @@ import logging
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from ..db import setup_db
+from ..db.plugin import setup_db
 from ..projects.db import setup_projects_db
 from ..rabbitmq import setup_rabbitmq
 from ..socketio.plugin import setup_socketio

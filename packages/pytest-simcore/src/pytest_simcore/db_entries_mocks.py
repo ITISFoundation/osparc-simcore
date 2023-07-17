@@ -3,16 +3,22 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=no-value-for-parameter
 
-from typing import Any, Callable, Iterator
+from typing import Any, AsyncIterator, Awaitable, Callable, Iterator
 from uuid import uuid4
 
+import aiopg.sa
 import pytest
 import sqlalchemy as sa
 from faker import Faker
 from models_library.projects import ProjectAtDB
+from models_library.projects_nodes_io import NodeID
 from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline
 from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
+from simcore_postgres_database.utils_projects_nodes import (
+    ProjectNodeCreate,
+    ProjectNodesRepo,
+)
 
 
 @pytest.fixture()
@@ -55,12 +61,17 @@ def registered_user(
 
 
 @pytest.fixture
-def project(
-    postgres_db: sa.engine.Engine, faker: Faker
-) -> Iterator[Callable[..., ProjectAtDB]]:
+async def project(
+    aiopg_engine: aiopg.sa.engine.Engine, faker: Faker
+) -> AsyncIterator[Callable[..., Awaitable[ProjectAtDB]]]:
     created_project_ids: list[str] = []
 
-    def creator(user: dict[str, Any], **overrides) -> ProjectAtDB:
+    async def creator(
+        user: dict[str, Any],
+        *,
+        project_nodes_overrides: dict[str, Any] | None = None,
+        **project_overrides,
+    ) -> ProjectAtDB:
         project_uuid = uuid4()
         print(f"Created new project with uuid={project_uuid}")
         project_config = {
@@ -73,15 +84,27 @@ def project(
             "thumbnail": "",
             "workbench": {},
         }
-        project_config.update(**overrides)
-        with postgres_db.connect() as con:
-            result = con.execute(
+        project_config.update(**project_overrides)
+        async with aiopg_engine.acquire() as con, con.begin():
+            result = await con.execute(
                 projects.insert()
                 .values(**project_config)
                 .returning(sa.literal_column("*"))
             )
 
-            inserted_project = ProjectAtDB.from_orm(result.first())
+            inserted_project = ProjectAtDB.from_orm(await result.first())
+            project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
+            # NOTE: currently no resources is passed until it becomes necessary
+            default_node_config = {"required_resources": {}}
+            if project_nodes_overrides:
+                default_node_config.update(project_nodes_overrides)
+            await project_nodes_repo.add(
+                con,
+                nodes=[
+                    ProjectNodeCreate(node_id=NodeID(node_id), **default_node_config)
+                    for node_id in inserted_project.workbench
+                ],
+            )
         print(f"--> created {inserted_project=}")
         created_project_ids.append(f"{inserted_project.uuid}")
         return inserted_project
@@ -89,8 +112,10 @@ def project(
     yield creator
 
     # cleanup
-    with postgres_db.connect() as con:
-        con.execute(projects.delete().where(projects.c.uuid.in_(created_project_ids)))
+    async with aiopg_engine.acquire() as con:
+        await con.execute(
+            projects.delete().where(projects.c.uuid.in_(created_project_ids))
+        )
     print(f"<-- delete projects {created_project_ids=}")
 
 

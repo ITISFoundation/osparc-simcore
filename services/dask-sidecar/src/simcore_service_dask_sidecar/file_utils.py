@@ -76,10 +76,6 @@ def _file_chunk_streamer(src: BytesIO, dst: BytesIO):
     return (data, segment_len)
 
 
-# TODO: use filecaching to leverage fsspec local cache of files for future improvements
-# TODO: use unzip from fsspec to simplify code
-
-
 async def _copy_file(
     src_url: AnyUrl,
     dst_url: AnyUrl,
@@ -91,28 +87,26 @@ async def _copy_file(
 ):
     src_storage_kwargs = src_storage_cfg or {}
     dst_storage_kwargs = dst_storage_cfg or {}
-    with fsspec.open(src_url, mode="rb", **src_storage_kwargs) as src_fp:
-        with fsspec.open(dst_url, "wb", **dst_storage_kwargs) as dst_fp:
-            file_size = getattr(src_fp, "size", None)
-            data_read = True
-            total_data_written = 0
-            t = time.process_time()
-            while data_read:
-                (
-                    data_read,
-                    data_written,
-                ) = await asyncio.get_event_loop().run_in_executor(
-                    None, _file_chunk_streamer, src_fp, dst_fp
-                )
-                elapsed_time = time.process_time() - t
-                total_data_written += data_written or 0
-                await log_publishing_cb(
-                    f"{text_prefix}"
-                    f" {100.0 * float(total_data_written or 0)/float(file_size or 1):.1f}%"
-                    f" ({ByteSize(total_data_written).human_readable() if total_data_written else 0} / {ByteSize(file_size).human_readable() if file_size else 'NaN'})"
-                    f" [{ByteSize(total_data_written).to('MB')/elapsed_time:.2f} MBytes/s (avg)]",
-                    logging.DEBUG,
-                )
+    with fsspec.open(src_url, mode="rb", **src_storage_kwargs) as src_fp, fsspec.open(
+        dst_url, "wb", **dst_storage_kwargs
+    ) as dst_fp:
+        file_size = getattr(src_fp, "size", None)
+        data_read = True
+        total_data_written = 0
+        t = time.process_time()
+        while data_read:
+            (data_read, data_written,) = await asyncio.get_event_loop().run_in_executor(
+                None, _file_chunk_streamer, src_fp, dst_fp
+            )
+            elapsed_time = time.process_time() - t
+            total_data_written += data_written or 0
+            await log_publishing_cb(
+                f"{text_prefix}"
+                f" {100.0 * float(total_data_written or 0)/float(file_size or 1):.1f}%"
+                f" ({ByteSize(total_data_written).human_readable() if total_data_written else 0} / {ByteSize(file_size).human_readable() if file_size else 'NaN'})"
+                f" [{ByteSize(total_data_written).to('MB')/elapsed_time:.2f} MBytes/s (avg)]",
+                logging.DEBUG,
+            )
 
 
 _ZIP_MIME_TYPE: Final[str] = "application/zip"
@@ -131,9 +125,8 @@ async def pull_file_from_remote(
         logging.INFO,
     )
     if not dst_path.parent.exists():
-        raise ValueError(
-            f"{dst_path.parent=} does not exist. It must be created by the caller"
-        )
+        msg = f"{dst_path.parent=} does not exist. It must be created by the caller"
+        raise ValueError(msg)
 
     src_mime_type, _ = mimetypes.guess_type(f"{src_url.path}")
     if not target_mime_type:
@@ -183,7 +176,7 @@ async def _push_file_to_http_link(
         asynchronous=True,
     )
     assert dst_url.path  # nosec
-    await fs._put_file(  # pylint: disable=protected-access
+    await fs._put_file(  # pylint: disable=protected-access  # noqa: SLF001
         file_to_upload,
         f"{dst_url}",
         method="PUT",
@@ -232,7 +225,8 @@ async def push_file_to_remote(
     s3_settings: S3Settings | None,
 ) -> None:
     if not src_path.exists():
-        raise ValueError(f"{src_path=} does not exist")
+        msg = f"{src_path=} does not exist"
+        raise ValueError(msg)
     assert dst_url.path  # nosec
     async with aiofiles.tempfile.TemporaryDirectory() as tmp_dir:
         file_to_upload = src_path

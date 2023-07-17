@@ -11,7 +11,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional, TypeAlias
 
-from ..db_models import UserRole
+from ..db.models import UserRole
 
 _logger = logging.getLogger(__name__)
 

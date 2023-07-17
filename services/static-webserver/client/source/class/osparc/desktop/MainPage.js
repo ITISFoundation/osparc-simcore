@@ -59,7 +59,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       store.getAllClassifiers(true),
       store.getTags()
     ]).then(() => {
-      const mainStack = this.__mainStack = this.__createMainStack();
+      const mainStack = this.__createMainStack();
       this._add(mainStack, {
         flex: 1
       });
@@ -74,7 +74,6 @@ qx.Class.define("osparc.desktop.MainPage", {
 
   members: {
     __navBar: null,
-    __mainStack: null,
     __dashboard: null,
     __dashboardLayout: null,
     __loadingPage: null,
@@ -168,14 +167,19 @@ qx.Class.define("osparc.desktop.MainPage", {
         alignX: "center"
       });
 
+      const mainPageHandler = osparc.desktop.MainPageHandler.getInstance();
+      mainPageHandler.setStack(mainStack);
+
       const dashboardLayout = this.__dashboardLayout = this.__createDashboardStack();
-      mainStack.add(dashboardLayout);
+      mainPageHandler.addDashboard(dashboardLayout);
 
       const loadingPage = this.__loadingPage = new osparc.ui.message.Loading();
-      mainStack.add(loadingPage);
+      mainPageHandler.addLoadingPage(loadingPage);
 
       const studyEditor = this.__studyEditor = this.__getStudyEditor();
-      mainStack.add(studyEditor);
+      mainPageHandler.addStudyEditor(studyEditor);
+
+      mainPageHandler.addListener("syncStudyEditor", e => this.__syncStudyEditor(e.getData()));
 
       return mainStack;
     },
@@ -227,20 +231,6 @@ qx.Class.define("osparc.desktop.MainPage", {
 
     __attachHandlers: function() {
       const studyBrowser = this.__dashboard.getStudyBrowser();
-      const templateBrowser = this.__dashboard.getTemplateBrowser();
-      const serviceBrowser = this.__dashboard.getServiceBrowser();
-      [
-        studyBrowser,
-        templateBrowser,
-        serviceBrowser
-      ].forEach(browser => {
-        if (browser) {
-          browser.addListener("startStudy", e => {
-            const startStudyId = e.getData();
-            this.__startStudy(startStudyId);
-          }, this);
-        }
-      });
       studyBrowser.addListener("publishTemplate", e => this.__publishTemplate(e.getData()));
     },
 
@@ -278,7 +268,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         return;
       }
 
-      this.__mainStack.setSelection([this.__dashboardLayout]);
+      osparc.desktop.MainPageHandler.getInstance().showDashboard();
       this.__navBar.show();
       this.__navBar.setStudy(null);
       this.__navBar.setPageContext("dashboard");
@@ -289,42 +279,14 @@ qx.Class.define("osparc.desktop.MainPage", {
     },
 
     __showLoadingPage: function(msg) {
-      this.__loadingPage.setHeader(msg);
-      this.__mainStack.setSelection([this.__loadingPage]);
+      const mainPageHandler = osparc.desktop.MainPageHandler.getInstance();
+      mainPageHandler.setLoadingPageHeader(msg);
+      mainPageHandler.showLoadingPage();
     },
 
     __showStudyEditor: function(studyEditor) {
-      if (this.__studyEditor) {
-        this.__mainStack.remove(this.__studyEditor);
-      }
-
-      this.__studyEditor = studyEditor;
-      this.__mainStack.add(this.__studyEditor);
-      this.__mainStack.setSelection([this.__studyEditor]);
-    },
-
-    __startStudy: function(studyId) {
-      this.__showLoadingPage(this.tr("Loading ") + osparc.product.Utils.getStudyAlias());
-
-      const params = {
-        url: {
-          "studyId": studyId
-        }
-      };
-      osparc.data.Resources.getOne("studies", params)
-        .then(studyData => {
-          if (!studyData) {
-            const msg = this.tr("Study not found");
-            throw new Error(msg);
-          }
-          const pageContext = osparc.data.model.Study.getUiMode(studyData) || "workbench";
-          this.__loadStudy(studyData, pageContext);
-        })
-        .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
-          this.__showDashboard();
-          return;
-        });
+      osparc.desktop.MainPageHandler.getInstance().replaceStudyEditor(studyEditor);
+      osparc.desktop.MainPageHandler.getInstance().showStudyEditor();
     },
 
     __startSnapshot: async function(studyId, snapshotId) {
@@ -368,7 +330,7 @@ qx.Class.define("osparc.desktop.MainPage", {
                 const msg = this.tr("Study not found");
                 throw new Error(msg);
               }
-              this.__loadStudy(studyData);
+              osparc.desktop.MainPageHandler.getInstance().loadStudy(studyData);
             });
         })
         .catch(err => {
@@ -408,39 +370,7 @@ qx.Class.define("osparc.desktop.MainPage", {
             const msg = this.tr("Iteration not found");
             throw new Error(msg);
           }
-          this.__loadStudy(studyData);
-        })
-        .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
-          this.__showDashboard();
-          return;
-        });
-    },
-
-    __loadStudy: function(studyData, pageContext) {
-      let locked = false;
-      let lockedBy = false;
-      if ("state" in studyData && "locked" in studyData["state"]) {
-        locked = studyData["state"]["locked"]["value"];
-        lockedBy = studyData["state"]["locked"]["owner"];
-      }
-      if (locked && lockedBy["user_id"] !== osparc.auth.Data.getInstance().getUserId()) {
-        const msg = this.tr("Study is already open by ") + lockedBy["first_name"];
-        throw new Error(msg);
-      }
-      const store = osparc.store.Store.getInstance();
-      store.getInaccessibleServices(studyData)
-        .then(inaccessibleServices => {
-          if (inaccessibleServices.length) {
-            this.__dashboard.getStudyBrowser().resetSelection();
-            const msg = osparc.utils.Study.getInaccessibleServicesMsg(inaccessibleServices);
-            throw new Error(msg);
-          }
-          this.__showStudyEditor(this.__getStudyEditor());
-          this.__studyEditor.setStudyData(studyData)
-            .then(() => {
-              this.__syncStudyEditor(pageContext);
-            });
+          osparc.desktop.MainPageHandler.getInstance().loadStudy(studyData);
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");

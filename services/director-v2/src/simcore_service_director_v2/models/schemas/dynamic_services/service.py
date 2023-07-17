@@ -1,7 +1,7 @@
 from enum import Enum, unique
 from functools import cached_property, lru_cache, total_ordering
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from models_library.basic_types import PortInt
 from models_library.projects import ProjectID
@@ -9,20 +9,6 @@ from models_library.projects_nodes_io import NodeID
 from models_library.services import VERSION_RE, DynamicServiceKey
 from models_library.users import UserID
 from pydantic import BaseModel, Field
-
-from ....meta import API_VTAG
-
-
-@unique
-class ServiceType(Enum):
-    """
-    Used to filter out services spawned by this service in the stack.
-    The version was added to distinguish from the ones spawned by director-v0
-    These values are attached to the dynamic-sidecar and its relative proxy.
-    """
-
-    MAIN = f"main-{API_VTAG}"
-    DEPENDENCY = f"dependency-{API_VTAG}"
 
 
 class CommonServiceDetails(BaseModel):
@@ -56,7 +42,7 @@ class ServiceDetails(CommonServiceDetails):
 
     class Config:
         allow_population_by_field_name = True
-        schema_extra: dict[str, Any] = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "key": "simcore/services/dynamic/3dviewer",
                 "version": "2.4.5",
@@ -172,7 +158,7 @@ class RunningDynamicServiceDetails(ServiceDetails):
 
     class Config(ServiceDetails.Config):
         keep_untouched = (cached_property,)
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "boot_type": "V0",

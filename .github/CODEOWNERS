@@ -5,7 +5,7 @@
 
 # files and folders recursively
 .codeclimate.yml                          @sanderegg @pcrespov
-.env-*                                    @pcrespov @Surfict @mrnicegyu11
+.env-*                                    @mrnicegyu11 @YuryHrytsuk
 .travis.yml                               @sanderegg
 Makefile                                  @pcrespov @sanderegg
 
@@ -21,20 +21,20 @@ Makefile                                  @pcrespov @sanderegg
 /packages/service-library/                @pcrespov
 /packages/settings-library/               @pcrespov @sanderegg
 /requirements/                            @pcrespov @matusdrobuliak66
-/scripts/demo/                            @odeimaiz @pcrespov
 /scripts/json-schema-to-openapi-schema    @sanderegg
-/scripts/template-projects/               @odeimaiz @pcrespov
-/services/agent                           @GitHK
+/services/agent/                          @GitHK
 /services/api-server/                     @pcrespov
 /services/autoscaling/                    @sanderegg @pcrespov
 /services/catalog/                        @pcrespov @sanderegg
 /services/datcore-adapter/                @sanderegg
 /services/director*/                      @sanderegg @pcrespov @GitHK
-/services/docker-compose*.yml             @sanderegg @Surfict @mrnicegyu11
+/services/docker-compose*.yml             @sanderegg @mrnicegyu11 @YuryHrytsuk
 /services/dynamic-sidecar/                @GitHK
 /services/invitations/                    @pcrespov
 /services/migration/                      @pcrespov
-/services/static-webserver                @GitHK
+/services/osparc-gateway-server/          @sanderegg
+/services/resource-usage-tracker/         @matusdrobuliak66
+/services/static-webserver/               @GitHK
 /services/static-webserver/client/        @odeimaiz
 /services/storage/                        @sanderegg @pcrespov
 /services/web/server/                     @pcrespov @sanderegg @GitHK @matusdrobuliak66

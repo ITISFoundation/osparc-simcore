@@ -13,7 +13,7 @@ from ..utils.client_decorators import handle_errors, handle_retry
 
 logger = logging.getLogger(__name__)
 
-ServiceResources: TypeAlias = dict[str, Any]
+ServiceResourcesDict: TypeAlias = dict[str, Any]
 
 
 def setup(app: FastAPI, settings: CatalogSettings) -> None:
@@ -82,7 +82,7 @@ class CatalogClient:
 
     async def get_service_resources(
         self, user_id: UserID, service_key: ServiceKey, service_version: ServiceVersion
-    ) -> ServiceResources:
+    ) -> ServiceResourcesDict:
         resp = await self.request(
             "GET",
             f"/services/{urllib.parse.quote( service_key, safe='')}/{service_version}/resources",
@@ -90,7 +90,7 @@ class CatalogClient:
         )
         resp.raise_for_status()
         if resp.status_code == status.HTTP_200_OK:
-            json_response: ServiceResources = resp.json()
+            json_response: ServiceResourcesDict = resp.json()
             return json_response
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 

@@ -46,10 +46,8 @@ class DirectoryManifestParams(BaseModel):
     file_entries: list[FileEntryModel] = Field(description="list of file entries")
 
     @classmethod
-    def compose_from_directory(
-        cls, start_path: Path
-    ) -> list["DirectoryManifestParams"]:
-        file_entries = deque()
+    def compose_from_directory(cls, start_path: Path) -> "DirectoryManifestParams":
+        file_entries: deque[FileEntryModel] = deque()
         for file_entry in _get_files_in_dir(start_path):
             full_file_path, relative_file_name = file_entry
             last_modified_date = datetime.datetime.fromtimestamp(
@@ -89,7 +87,7 @@ class SheetFirstDirectoryManifest(BaseXLSXSheet):
 
     def assemble_data_for_template(
         self, template_data: BaseModel
-    ) -> list[tuple[str, dict[str, BaseXLSXCellData]]]:
+    ) -> list[tuple[str, BaseXLSXCellData]]:
         params: DirectoryManifestParams = ensure_correct_instance(
             template_data, DirectoryManifestParams
         )
@@ -97,7 +95,7 @@ class SheetFirstDirectoryManifest(BaseXLSXSheet):
 
         # it is important for cells to be added to the list left to right and top to bottom
         # this is done to ensure styling is applied consistently, read more inside xlsx_base
-        cells = deque()
+        cells: deque[tuple[str, BaseXLSXCellData]] = deque()
 
         # assemble "Additional Metadata x" headers
         # if file_entries is empty this would max function to fail, always concatenate an
@@ -116,7 +114,7 @@ class SheetFirstDirectoryManifest(BaseXLSXSheet):
         for row_index, file_entry in zip(range(2, len(file_entries) + 2), file_entries):
             cells.append((f"A{row_index}", T(file_entry.filename) | Borders.light_grid))
             cells.append(
-                (f"B{row_index}", T(file_entry.timestamp) | Borders.light_grid)
+                (f"B{row_index}", T(f"{file_entry.timestamp}") | Borders.light_grid)
             )
             cells.append(
                 (f"C{row_index}", T(file_entry.description) | Borders.light_grid)

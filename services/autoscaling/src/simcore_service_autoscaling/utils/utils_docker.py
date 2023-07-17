@@ -414,7 +414,14 @@ async def find_node_with_name(
     list_of_nodes = await docker_client.nodes.list(filters={"name": name})
     if not list_of_nodes:
         return None
-    return parse_obj_as(Node, list_of_nodes[0])
+    # note that there might be several nodes with a common_prefixed name. so now we want exact matching
+    list_of_nodes = parse_obj_as(list[Node], list_of_nodes)
+    for node in list_of_nodes:
+        assert node.Description  # nosec
+        if node.Description.Hostname == name:
+            return node
+
+    return None
 
 
 async def tag_node(

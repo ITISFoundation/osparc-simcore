@@ -30,7 +30,6 @@ from simcore_service_director_v2.models.schemas.constants import (
 from simcore_service_director_v2.models.schemas.dynamic_services import (
     SchedulerData,
     ServiceState,
-    ServiceType,
 )
 from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
     DockerContainerInspect,
@@ -237,7 +236,6 @@ def dynamic_sidecar_stack_specs(
             },
             "labels": {
                 "swarm_stack_name": f"{dynamic_sidecar_settings.SWARM_STACK_NAME}",
-                "type": f"{ServiceType.DEPENDENCY.value}",
                 "uuid": f"{node_uuid}",
                 "user_id": f"{user_id}",
                 "study_id": f"{project_id}",
@@ -250,7 +248,6 @@ def dynamic_sidecar_stack_specs(
             },
             "labels": {
                 "swarm_stack_name": f"{dynamic_sidecar_settings.SWARM_STACK_NAME}",
-                "type": f"{ServiceType.MAIN.value}",
                 "uuid": f"{node_uuid}",
                 "user_id": f"{user_id}",
                 "study_id": f"{project_id}",
@@ -448,24 +445,6 @@ async def test_create_service(
     assert service_id
 
 
-async def test_inspect_service(
-    service_spec: dict[str, Any],
-    cleanup_test_service_name: None,
-    docker_swarm: None,
-):
-    service_id = await docker_api.create_service_and_get_id(service_spec)
-    assert service_id
-
-    service_inspect = await docker_api.inspect_service(service_id)
-
-    assert service_inspect["Spec"]["Labels"] == service_spec["labels"]
-    assert service_inspect["Spec"]["Name"] == service_spec["name"]
-    assert (
-        service_inspect["Spec"]["TaskTemplate"]["ContainerSpec"]["Image"]
-        == service_spec["task_template"]["ContainerSpec"]["Image"]
-    )
-
-
 async def test_services_to_observe_exist(
     dynamic_sidecar_service_name: str,
     dynamic_sidecar_service_spec: dict[str, Any],
@@ -654,25 +633,6 @@ async def test_remove_dynamic_sidecar_network_fails(
         simcore_services_network_name
     )
     assert delete_result is False
-
-
-async def test_list_dynamic_sidecar_services(
-    user_id: UserID,
-    project_id: ProjectID,
-    dynamic_sidecar_settings: DynamicSidecarSettings,
-    dynamic_sidecar_stack_specs: list[dict[str, Any]],
-    cleanup_dynamic_sidecar_stack: None,
-    docker_swarm: None,
-):
-    # start 2 fake services to emulate the dynamic-sidecar stack
-    for dynamic_sidecar_stack in dynamic_sidecar_stack_specs:
-        service_id = await docker_api.create_service_and_get_id(dynamic_sidecar_stack)
-        assert service_id
-
-    services = await docker_api.list_dynamic_sidecar_services(
-        dynamic_sidecar_settings, user_id=user_id, project_id=project_id
-    )
-    assert len(services) == 1
 
 
 async def test_is_sidecar_running(

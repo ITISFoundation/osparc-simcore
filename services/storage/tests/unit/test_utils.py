@@ -29,7 +29,6 @@ from simcore_service_storage.utils import (
 
 
 async def test_download_files(tmp_path: Path, httpbin_base_url: HttpUrl):
-
     destination = tmp_path / "data"
     expected_size = MAX_CHUNK_SIZE * 3 + 1000
 

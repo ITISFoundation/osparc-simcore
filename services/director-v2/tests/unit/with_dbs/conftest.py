@@ -7,7 +7,7 @@
 
 import datetime
 import json
-from typing import Any, Callable, Iterator
+from typing import Any, Awaitable, Callable, Iterator
 from uuid import uuid4
 
 import pytest
@@ -44,13 +44,15 @@ def pipeline(
             "state": StateType.NOT_STARTED,
         }
         pipeline_config.update(**pipeline_kwargs)
-        with postgres_db.connect() as conn:
+        with postgres_db.begin() as conn:
             result = conn.execute(
                 comp_pipeline.insert()
                 .values(**pipeline_config)
                 .returning(sa.literal_column("*"))
             )
-            new_pipeline = CompPipelineAtDB.parse_obj(result.first())
+            assert result
+
+            new_pipeline = CompPipelineAtDB.from_orm(result.first())
             created_pipeline_ids.append(f"{new_pipeline.project_id}")
             return new_pipeline
 
@@ -117,7 +119,7 @@ def tasks(
                     .values(**task_config)
                     .returning(sa.literal_column("*"))
                 )
-                new_task = CompTaskAtDB.parse_obj(result.first())
+                new_task = CompTaskAtDB.from_orm(result.first())
                 created_tasks.append(new_task)
             created_task_ids.extend([t.task_id for t in created_tasks if t.task_id])
         return created_tasks
@@ -151,7 +153,7 @@ def runs(postgres_db: sa.engine.Engine) -> Iterator[Callable[..., CompRunsAtDB]]
                 .values(**run_config)
                 .returning(sa.literal_column("*"))
             )
-            new_run = CompRunsAtDB.parse_obj(result.first())
+            new_run = CompRunsAtDB.from_orm(result.first())
             created_run_ids.append(new_run.run_id)
             return new_run
 
@@ -195,12 +197,10 @@ def cluster(
             access_rights_in_db = {}
             for row in conn.execute(
                 sa.select(
-                    [
-                        cluster_to_groups.c.gid,
-                        cluster_to_groups.c.read,
-                        cluster_to_groups.c.write,
-                        cluster_to_groups.c.delete,
-                    ]
+                    cluster_to_groups.c.gid,
+                    cluster_to_groups.c.read,
+                    cluster_to_groups.c.write,
+                    cluster_to_groups.c.delete,
                 )
                 .select_from(clusters.join(cluster_to_groups))
                 .where(clusters.c.id == created_cluster.id)
@@ -234,16 +234,16 @@ def cluster(
 
 
 @pytest.fixture
-def published_project(
+async def published_project(
     registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., ProjectAtDB],
+    project: Callable[..., Awaitable[ProjectAtDB]],
     pipeline: Callable[..., CompPipelineAtDB],
     tasks: Callable[..., list[CompTaskAtDB]],
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
 ) -> PublishedProject:
     user = registered_user()
-    created_project = project(user, workbench=fake_workbench_without_outputs)
+    created_project = await project(user, workbench=fake_workbench_without_outputs)
     return PublishedProject(
         project=created_project,
         pipeline=pipeline(
@@ -255,9 +255,9 @@ def published_project(
 
 
 @pytest.fixture
-def running_project(
+async def running_project(
     registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., ProjectAtDB],
+    project: Callable[..., Awaitable[ProjectAtDB]],
     pipeline: Callable[..., CompPipelineAtDB],
     tasks: Callable[..., list[CompTaskAtDB]],
     runs: Callable[..., CompRunsAtDB],
@@ -265,7 +265,7 @@ def running_project(
     fake_workbench_adjacency: dict[str, Any],
 ) -> RunningProject:
     user = registered_user()
-    created_project = project(user, workbench=fake_workbench_without_outputs)
+    created_project = await project(user, workbench=fake_workbench_without_outputs)
     return RunningProject(
         project=created_project,
         pipeline=pipeline(

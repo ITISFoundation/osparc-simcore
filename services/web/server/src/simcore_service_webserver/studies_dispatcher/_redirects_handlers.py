@@ -28,7 +28,7 @@ from ._projects import (
     get_or_create_project_with_file_and_service,
     get_or_create_project_with_service,
 )
-from ._users import UserInfo, ensure_authentication, get_or_create_user
+from ._users import UserInfo, ensure_authentication, get_or_create_guest_user
 from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -239,8 +239,8 @@ async def get_redirection_to_viewer(request: web.Request):
         )
 
         # Retrieve user or create a temporary guest
-        user = await get_or_create_user(
-            request, is_guest_allowed=viewer.is_guest_allowed
+        user = await get_or_create_guest_user(
+            request, allow_anonymous_or_guest_users=viewer.is_guest_allowed
         )
 
         # Generate one project per user + download_link + viewer
@@ -269,8 +269,8 @@ async def get_redirection_to_viewer(request: web.Request):
             service_version=service_params_.viewer_version,
         )
 
-        user = await get_or_create_user(
-            request, is_guest_allowed=valid_service.is_public
+        user = await get_or_create_guest_user(
+            request, allow_anonymous_or_guest_users=valid_service.is_public
         )
 
         project_id, viewer_id = await get_or_create_project_with_service(
@@ -297,7 +297,13 @@ async def get_redirection_to_viewer(request: web.Request):
             file_size=file_params_.file_size,
         )
 
-        user = await get_or_create_user(request, is_guest_allowed=True)
+        # NOTE: file-only dispatch is reserved to registered users
+        # - Anonymous user rights associated with services, not files
+        # - Front-end viewer for anonymous users cannot render a single file-picker. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4342
+        # - Risk of anonymous users to polute platform with data
+        user = await get_or_create_guest_user(
+            request, allow_anonymous_or_guest_users=False
+        )
 
         project_id, file_picker_id = await get_or_create_project_with_file(
             request.app,

@@ -37,8 +37,8 @@ from ._handlers_crud import ProjectPathParams, RequestContext
 from .exceptions import (
     ProjectInvalidRightsError,
     ProjectNotFoundError,
-    ProjectStartsTooManyDynamicNodes,
-    ProjectTooManyProjectOpened,
+    ProjectStartsTooManyDynamicNodesError,
+    ProjectTooManyProjectOpenedError,
 )
 
 log = logging.getLogger(__name__)
@@ -105,7 +105,7 @@ async def open_project(request: web.Request) -> web.Response:
 
         # user id opened project uuid
         if not query_params.disable_service_auto_start:
-            with contextlib.suppress(ProjectStartsTooManyDynamicNodes):
+            with contextlib.suppress(ProjectStartsTooManyDynamicNodesError):
                 # NOTE: this method raises that exception when the number of dynamic
                 # services in the project is highter than the maximum allowed per project
                 # the project shall still open though.
@@ -148,7 +148,7 @@ async def open_project(request: web.Request) -> web.Response:
         raise web.HTTPServiceUnavailable(
             reason="Unexpected error while starting services."
         ) from exc
-    except ProjectTooManyProjectOpened as exc:
+    except ProjectTooManyProjectOpenedError as exc:
         raise web.HTTPConflict(reason=f"{exc}") from exc
     except ProjectInvalidRightsError as exc:
         raise web.HTTPForbidden(

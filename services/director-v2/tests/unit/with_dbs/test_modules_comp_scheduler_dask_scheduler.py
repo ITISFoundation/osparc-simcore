@@ -10,7 +10,7 @@
 
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Callable, cast
+from typing import Any, Awaitable, Callable, cast
 from unittest import mock
 
 import aiopg
@@ -22,6 +22,7 @@ from dask.distributed import SpecCluster
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import TaskProgressEvent
 from dask_task_models_library.container_tasks.io import TaskOutputData
+from faker import Faker
 from fastapi.applications import FastAPI
 from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB, ProjectID
@@ -249,16 +250,23 @@ def test_scheduler_raises_exception_for_missing_dependencies(
             pass
 
 
+@pytest.fixture
+def simcore_user_agent(faker: Faker) -> str:
+    return faker.pystr()
+
+
 async def test_empty_pipeline_is_not_scheduled(
     with_disabled_scheduler_task: None,
     scheduler: BaseCompScheduler,
     registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., ProjectAtDB],
+    project: Callable[..., Awaitable[ProjectAtDB]],
     pipeline: Callable[..., CompPipelineAtDB],
     aiopg_engine: aiopg.sa.engine.Engine,
+    osparc_product_name: str,
+    simcore_user_agent: str,
 ):
     user = registered_user()
-    empty_project = project(user)
+    empty_project = await project(user)
 
     # the project is not in the comp_pipeline, therefore scheduling it should fail
     with pytest.raises(PipelineNotFoundError):
@@ -266,6 +274,8 @@ async def test_empty_pipeline_is_not_scheduled(
             user_id=user["id"],
             project_id=empty_project.uuid,
             cluster_id=DEFAULT_CLUSTER_ID,
+            product_name=osparc_product_name,
+            simcore_user_agent=simcore_user_agent,
         )
     # create the empty pipeline now
     pipeline(project_id=f"{empty_project.uuid}")
@@ -275,6 +285,8 @@ async def test_empty_pipeline_is_not_scheduled(
         user_id=user["id"],
         project_id=empty_project.uuid,
         cluster_id=DEFAULT_CLUSTER_ID,
+        product_name=osparc_product_name,
+        simcore_user_agent=simcore_user_agent,
     )
     assert len(scheduler.scheduled_pipelines) == 0
     assert (
@@ -295,16 +307,18 @@ async def test_misconfigured_pipeline_is_not_scheduled(
     with_disabled_scheduler_task: None,
     scheduler: BaseCompScheduler,
     registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., ProjectAtDB],
+    project: Callable[..., Awaitable[ProjectAtDB]],
     pipeline: Callable[..., CompPipelineAtDB],
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
     aiopg_engine: aiopg.sa.engine.Engine,
+    osparc_product_name: str,
+    simcore_user_agent: str,
 ):
     """A pipeline which comp_tasks are missing should not be scheduled.
     It shall be aborted and shown as such in the comp_runs db"""
     user = registered_user()
-    sleepers_project = project(user, workbench=fake_workbench_without_outputs)
+    sleepers_project = await project(user, workbench=fake_workbench_without_outputs)
     pipeline(
         project_id=f"{sleepers_project.uuid}",
         dag_adjacency_list=fake_workbench_adjacency,
@@ -314,6 +328,8 @@ async def test_misconfigured_pipeline_is_not_scheduled(
         user_id=user["id"],
         project_id=sleepers_project.uuid,
         cluster_id=DEFAULT_CLUSTER_ID,
+        product_name=osparc_product_name,
+        simcore_user_agent=simcore_user_agent,
     )
     assert len(scheduler.scheduled_pipelines) == 1
     assert (
@@ -359,6 +375,8 @@ async def _assert_start_pipeline(
         user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
         cluster_id=DEFAULT_CLUSTER_ID,
+        product_name="",
+        simcore_user_agent="",
     )
     assert len(scheduler.scheduled_pipelines) == 1, "the pipeline is not scheduled!"
     assert (
@@ -417,11 +435,12 @@ async def _assert_schedule_pipeline_PENDING(
     mocked_dask_client.send_computation_tasks.assert_has_calls(
         calls=[
             mock.call(
-                published_project.project.prj_owner,
+                user_id=published_project.project.prj_owner,
                 project_id=published_project.project.uuid,
                 cluster_id=DEFAULT_CLUSTER_ID,
                 tasks={f"{p.node_id}": p.image},
                 callback=scheduler._wake_up_scheduler_now,
+                metadata=mock.ANY,
             )
             for p in expected_pending_tasks
         ],
@@ -578,6 +597,7 @@ async def test_proper_pipeline_is_scheduled(
             f"{next_pending_task.node_id}": next_pending_task.image,
         },
         callback=scheduler._wake_up_scheduler_now,
+        metadata=mock.ANY,
     )
     mocked_dask_client.send_computation_tasks.reset_mock()
     mocked_dask_client.get_tasks_status.assert_has_calls(
@@ -755,6 +775,8 @@ async def test_handling_of_disconnected_dask_scheduler(
     mocker: MockerFixture,
     published_project: PublishedProject,
     backend_error: SchedulerError,
+    osparc_product_name: str,
+    simcore_user_agent: str,
 ):
     # this will create a non connected backend issue that will trigger re-connection
     mocked_dask_client_send_task = mocker.patch(
@@ -769,6 +791,8 @@ async def test_handling_of_disconnected_dask_scheduler(
         user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
         cluster_id=DEFAULT_CLUSTER_ID,
+        product_name=osparc_product_name,
+        simcore_user_agent=simcore_user_agent,
     )
 
     # since there is no cluster, there is no dask-scheduler,

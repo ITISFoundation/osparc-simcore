@@ -20,7 +20,15 @@ def _format_cli_error(result: Result) -> str:
     return f"Below exception was raised by the cli:\n{tb_message}"
 
 
-def test_process_settings(env: None, cli_runner: CliRunner):
-    result = cli_runner.invoke(main, [])
+def test_process_cli_options(env: None, cli_runner: CliRunner):
+    result = cli_runner.invoke(main, ["--help"])
+    print(result.stdout)
+    assert result.exit_code == 0, _format_cli_error(result)
+
+    result = cli_runner.invoke(main, ["settings"])
+    print(result.stdout)
+    assert result.exit_code == 0, _format_cli_error(result)
+
+    result = cli_runner.invoke(main, ["--version"])
     print(result.stdout)
     assert result.exit_code == 0, _format_cli_error(result)

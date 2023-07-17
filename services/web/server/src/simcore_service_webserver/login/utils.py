@@ -1,8 +1,8 @@
 import logging
 import random
+from dataclasses import asdict
 from typing import Any, cast
 
-import attr
 import passlib.hash
 from aiohttp import web
 from models_library.users import UserID
@@ -13,7 +13,7 @@ from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserRole
 
-from ..db_models import ConfirmationAction, UserRole, UserStatus
+from ..db.models import ConfirmationAction, UserRole, UserStatus
 from ._constants import MSG_ACTIVATION_REQUIRED, MSG_USER_BANNED, MSG_USER_EXPIRED
 
 log = logging.getLogger(__name__)
@@ -102,17 +102,16 @@ def get_client_ip(request: web.Request) -> str:
 def flash_response(
     message: str, level: str = "INFO", *, status: int = web.HTTPOk.status_code
 ) -> web.Response:
-    response = envelope_response(
-        data=attr.asdict(LogMessageType(message, level)),
+    return envelope_response(
+        data=asdict(LogMessageType(message, level)),
         status=status,
     )
-    return response
 
 
 def envelope_response(
     data: Any, *, status: int = web.HTTPOk.status_code
 ) -> web.Response:
-    response = web.json_response(
+    return web.json_response(
         {
             "data": data,
             "error": None,
@@ -120,4 +119,3 @@ def envelope_response(
         dumps=json_dumps,
         status=status,
     )
-    return response

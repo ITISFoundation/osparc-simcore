@@ -4,7 +4,7 @@ from collections import deque
 from contextlib import suppress
 from dataclasses import dataclass
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, Deque, Optional
+from typing import TYPE_CHECKING, Any, Callable, Deque
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ class Context:
     in_queue: asyncio.Queue
     out_queue: asyncio.Queue
     initialized: bool
-    task: Optional[asyncio.Task] = None
+    task: asyncio.Task | None = None
 
 
 _sequential_jobs_contexts: dict[str, Context] = {}
@@ -52,7 +52,7 @@ async def cancel_sequential_workers() -> None:
 # SEE https://peps.python.org/pep-0612/
 #
 def run_sequentially_in_context(
-    target_args: Optional[list[str]] = None,
+    target_args: list[str] | None = None,
 ) -> Callable:
     """All request to function with same calling context will be run sequentially.
 
@@ -91,7 +91,7 @@ def run_sequentially_in_context(
     """
     target_args = [] if target_args is None else target_args
 
-    def decorator(decorated_function: Callable[[Any], Optional[Any]]):
+    def decorator(decorated_function: Callable[[Any], Any | None]):
         def _get_context(args: Any, kwargs: dict) -> Context:
             arg_names = decorated_function.__code__.co_varnames[
                 : decorated_function.__code__.co_argcount
@@ -161,7 +161,7 @@ def run_sequentially_in_context(
                     worker(context.in_queue, context.out_queue)
                 )
 
-            await context.in_queue.put(decorated_function(*args, **kwargs))  # type: ignore
+            await context.in_queue.put(decorated_function(*args, **kwargs))
 
             wrapped_result = await context.out_queue.get()
             if isinstance(wrapped_result, Exception):

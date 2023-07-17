@@ -16,7 +16,6 @@ from sqlalchemy import func
 
 @pytest.fixture
 async def engine(pg_engine: Engine):
-
     async with pg_engine.acquire() as conn:
         await conn.execute(users.insert().values(**random_user(name="A")))
         await conn.execute(users.insert().values(**random_user()))
@@ -34,7 +33,6 @@ async def engine(pg_engine: Engine):
 @pytest.mark.skip(reason="sandbox for dev purposes")
 async def test_insert_user(engine):
     async with engine.acquire() as conn:
-
         # execute + scalar
         res: ResultProxy = await conn.execute(
             users.insert().values(**random_user(name="FOO"))
@@ -84,16 +82,16 @@ async def test_insert_user(engine):
 
 async def test_count_users(engine):
     async with engine.acquire() as conn:
-        users_count = await conn.scalar(sa.select([func.count()]).select_from(users))
+        users_count = await conn.scalar(sa.select(func.count()).select_from(users))
         assert users_count == 3
 
         users_count = await conn.scalar(
-            sa.select([sa.func.count()]).where(users.c.name == "A")
+            sa.select(sa.func.count()).where(users.c.name == "A")
         )
         assert users_count == 1
 
         users_count = await conn.scalar(
-            sa.select([sa.func.count()]).where(users.c.name == "UNKNOWN NAME")
+            sa.select(sa.func.count()).where(users.c.name == "UNKNOWN NAME")
         )
         assert users_count == 0
 

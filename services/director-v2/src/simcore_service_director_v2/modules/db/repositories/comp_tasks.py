@@ -1,21 +1,29 @@
 import asyncio
 import logging
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 
+import aiopg.sa
 import arrow
 import sqlalchemy as sa
+from dask_task_models_library.container_tasks.protocol import ContainerEnvsDict
 from models_library.errors import ErrorDict
 from models_library.function_services_catalog import iter_service_docker_data
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
+from models_library.service_settings_labels import (
+    SimcoreServiceLabels,
+    SimcoreServiceSettingsLabel,
+)
 from models_library.services import ServiceDockerData, ServiceKeyVersion
 from models_library.services_resources import BootMode
 from models_library.users import UserID
+from pydantic import parse_obj_as
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
+from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert
 
@@ -23,7 +31,7 @@ from ....models.domains.comp_tasks import CompTaskAtDB, Image, NodeSchema
 from ....models.schemas.services import NodeRequirements, ServiceExtras
 from ....utils.computations import to_node_class
 from ....utils.db import RUNNING_STATE_TO_DB
-from ...catalog import CatalogClient, ServiceResources
+from ...catalog import CatalogClient, ServiceResourcesDict
 from ...director_v0 import DirectorV0Client
 from ..tables import NodeClass, StateType, comp_tasks
 from ._base import BaseRepository
@@ -76,27 +84,74 @@ def _compute_node_boot_mode(node_resources: dict[str, Any]) -> BootMode:
     raise RuntimeError("No BootMode")
 
 
+def _compute_node_envs(node_labels: SimcoreServiceLabels) -> ContainerEnvsDict:
+    node_envs = {}
+    for service_setting in cast(SimcoreServiceSettingsLabel, node_labels.settings):
+        if service_setting.name == "env":
+            for complete_env in service_setting.value:
+                parts = complete_env.split("=")
+                if len(parts) == 2:
+                    node_envs[parts[0]] = parts[1]
+
+    return node_envs
+
+
 async def _get_node_infos(
     catalog_client: CatalogClient,
     director_client: DirectorV0Client,
     user_id: UserID,
     product_name: str,
     node: ServiceKeyVersion,
-) -> tuple[ServiceDockerData | None, ServiceResources | None, ServiceExtras | None]:
+) -> tuple[ServiceDockerData | None, ServiceExtras | None, SimcoreServiceLabels | None]:
     if to_node_class(node.key) == NodeClass.FRONTEND:
         return (
             _FRONTEND_SERVICES_CATALOG.get(node.key, None),
             None,
             None,
         )
+
     result: tuple[
-        ServiceDockerData, ServiceResources, ServiceExtras
+        ServiceDockerData, ServiceExtras, SimcoreServiceLabels
     ] = await asyncio.gather(
         _get_service_details(catalog_client, user_id, product_name, node),
-        catalog_client.get_service_resources(user_id, node.key, node.version),
         director_client.get_service_extras(node.key, node.version),
+        director_client.get_service_labels(node),
     )
     return result
+
+
+async def _generate_task_image(
+    *,
+    catalog_client: CatalogClient,
+    connection: aiopg.sa.connection.SAConnection,
+    user_id: UserID,
+    project_uuid: ProjectID,
+    node_id: NodeID,
+    node: Node,
+    node_extras: ServiceExtras | None,
+    node_labels: SimcoreServiceLabels | None,
+) -> Image:
+    # aggregates node_details and node_extras into Image
+    data: dict[str, Any] = {
+        "name": node.key,
+        "tag": node.version,
+    }
+    project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
+    project_node = await project_nodes_repo.get(connection, node_id=node_id)
+    node_resources = parse_obj_as(ServiceResourcesDict, project_node.required_resources)
+    if not node_resources:
+        node_resources = await catalog_client.get_service_resources(
+            user_id, node.key, node.version
+        )
+
+    if node_resources:
+        data.update(node_requirements=_compute_node_requirements(node_resources))
+        data.update(boot_mode=_compute_node_boot_mode(node_resources))
+    if node_labels:
+        data.update(envs=_compute_node_envs(node_labels))
+    if node_extras and node_extras.container_spec:
+        data.update(command=node_extras.container_spec.command)
+    return Image.parse_obj(data)
 
 
 async def _generate_tasks_list_from_project(
@@ -106,6 +161,7 @@ async def _generate_tasks_list_from_project(
     published_nodes: list[NodeID],
     user_id: UserID,
     product_name: str,
+    connection: aiopg.sa.connection.SAConnection,
 ) -> list[CompTaskAtDB]:
     list_comp_tasks = []
 
@@ -115,9 +171,14 @@ async def _generate_tasks_list_from_project(
         )  # the service key version is frozen
         for node in project.workbench.values()
     }
+
     key_version_to_node_infos = {
         key_version: await _get_node_infos(
-            catalog_client, director_client, user_id, product_name, key_version
+            catalog_client,
+            director_client,
+            user_id,
+            product_name,
+            key_version,
         )
         for key_version in unique_service_key_versions
     }
@@ -127,30 +188,24 @@ async def _generate_tasks_list_from_project(
         node_key_version = ServiceKeyVersion.construct(
             key=node.key, version=node.version
         )
-        node_details, node_resources, node_extras = key_version_to_node_infos.get(
+        node_details, node_extras, node_labels = key_version_to_node_infos.get(
             node_key_version,
-            (
-                None,
-                None,
-                None,
-            ),
+            (None, None, None),
         )
 
         if not node_details:
             continue
 
-        # aggregates node_details and node_extras into Image
-        data: dict[str, Any] = {
-            "name": node.key,
-            "tag": node.version,
-        }
-
-        if node_resources:
-            data.update(node_requirements=_compute_node_requirements(node_resources))
-            data["boot_mode"] = _compute_node_boot_mode(node_resources)
-        if node_extras and node_extras.container_spec:
-            data.update(command=node_extras.container_spec.command)
-        image = Image.parse_obj(data)
+        image = await _generate_task_image(
+            catalog_client=catalog_client,
+            connection=connection,
+            user_id=user_id,
+            project_uuid=project.uuid,
+            node_id=NodeID(node_id),
+            node=node,
+            node_extras=node_extras,
+            node_labels=node_labels,
+        )
 
         assert node.state is not None  # nosec
         task_state = node.state.current_status
@@ -235,17 +290,18 @@ class CompTasksRepository(BaseRepository):
         product_name: str,
     ) -> list[CompTaskAtDB]:
         # NOTE: really do an upsert here because of issue https://github.com/ITISFoundation/osparc-simcore/issues/2125
-        list_of_comp_tasks_in_project: list[
-            CompTaskAtDB
-        ] = await _generate_tasks_list_from_project(
-            project,
-            catalog_client,
-            director_client,
-            published_nodes,
-            user_id,
-            product_name,
-        )
         async with self.db_engine.acquire() as conn:
+            list_of_comp_tasks_in_project: list[
+                CompTaskAtDB
+            ] = await _generate_tasks_list_from_project(
+                project,
+                catalog_client,
+                director_client,
+                published_nodes,
+                user_id,
+                product_name,
+                conn,
+            )
             # get current tasks
             result = await conn.execute(
                 sa.select(comp_tasks.c.node_id).where(

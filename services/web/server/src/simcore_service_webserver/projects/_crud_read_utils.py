@@ -7,6 +7,8 @@ Read operations are list, get
 from enum import Enum
 
 from aiohttp import web
+from models_library.api_schemas_webserver._base import OutputSchema
+from models_library.api_schemas_webserver.projects import ProjectListItem
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from pydantic import BaseModel, Extra, Field, NonNegativeInt, PositiveInt
@@ -14,10 +16,8 @@ from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
 from ..catalog.client import get_services_for_user_in_product
-from ..rest.schemas_base import OutputSchema
 from . import projects_api
-from ._permalink import update_or_pop_permalink_in_project
-from ._rest_schemas import ProjectListItem
+from ._permalink_api import update_or_pop_permalink_in_project
 from .db import ProjectDBAPI
 from .models import ProjectDict, ProjectTypeAPI
 

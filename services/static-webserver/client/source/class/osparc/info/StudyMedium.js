@@ -20,18 +20,18 @@ qx.Class.define("osparc.info.StudyMedium", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
+    * @param study {osparc.data.model.Study} Study
     */
   construct: function(study) {
     this.base(arguments);
 
     this.set({
-      padding: this.self().PADDING,
+      padding: 0,
       backgroundColor: "background-main"
     });
-    this._setLayout(new qx.ui.layout.VBox(8));
+    this._setLayout(new qx.ui.layout.VBox(20));
 
-    if (study instanceof osparc.data.model.Study) {
+    if (study) {
       this.setStudy(study);
     }
 
@@ -47,85 +47,31 @@ qx.Class.define("osparc.info.StudyMedium", {
     }
   },
 
-  statics: {
-    PADDING: 0,
-    EXTRA_INFO_WIDTH: 220,
-    THUMBNAIL_MIN_WIDTH: 110,
-    THUMBNAIL_MAX_WIDTH: 180
-  },
-
   members: {
-    /**
-      * @param studyData {Object} Serialized Study Object
-      */
-    setStudyData: function(studyData) {
-      const study = new osparc.data.model.Study(studyData, false);
-      this.setStudy(study);
-    },
-
-    checkResize: function(bounds) {
-      this.__rebuildLayout(bounds.width);
-    },
-
     __applyStudy: function() {
       this.__rebuildLayout();
     },
 
-    __rebuildLayout: function(width) {
+    __rebuildLayout: function() {
       this._removeAll();
 
       const nameAndMenuButton = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignY: "middle"
       }));
-      nameAndMenuButton.add(this.__createTitle(), {
+      nameAndMenuButton.add(osparc.info.StudyUtils.createTitle(this.getStudy()), {
         flex: 1
       });
       nameAndMenuButton.add(this.__createMenuButton());
       this._add(nameAndMenuButton);
 
+      const thumbnail = this.__createThumbnail(160, 100);
+      if (thumbnail) {
+        this._add(thumbnail);
+      }
+
       const extraInfo = this.__extraInfo();
       const extraInfoLayout = this.__createExtraInfo(extraInfo);
-
-      const bounds = this.getBounds();
-      let widgetWidth = null;
-      const offset = 10;
-      if (width) {
-        widgetWidth = width - offset;
-      } else if (bounds) {
-        widgetWidth = bounds.width - offset;
-      } else {
-        widgetWidth = 350 - offset;
-      }
-      let thumbnailWidth = widgetWidth - 2*this.self().PADDING;
-      const maxThumbnailHeight = extraInfo.length*20;
-      const slim = widgetWidth < this.self().EXTRA_INFO_WIDTH + this.self().THUMBNAIL_MIN_WIDTH + 2*this.self().PADDING;
-      if (slim) {
-        this._add(extraInfoLayout);
-        thumbnailWidth = Math.min(thumbnailWidth, this.self().THUMBNAIL_MAX_WIDTH);
-        const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
-        if (thumbnail) {
-          this._add(thumbnail);
-        }
-      } else {
-        const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
-          alignX: "center"
-        }));
-        hBox.add(extraInfoLayout);
-        thumbnailWidth -= this.self().EXTRA_INFO_WIDTH;
-        thumbnailWidth = Math.min(thumbnailWidth, this.self().THUMBNAIL_MAX_WIDTH);
-        const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
-        if (thumbnail) {
-          hBox.add(thumbnail, {
-            flex: 1
-          });
-        }
-        this._add(hBox);
-      }
-
-      const description = this.__createDescription();
-      if (description) {
-        this._add(description);
-      }
+      this._add(extraInfoLayout);
     },
 
     __createMenuButton: function() {
@@ -151,33 +97,23 @@ qx.Class.define("osparc.info.StudyMedium", {
 
     __getMoreInfoMenuButton: function() {
       const moreInfoButton = new qx.ui.menu.Button(this.tr("More Info"));
-      moreInfoButton.addListener("execute", () => {
-        this.__openStudyDetails();
-      }, this);
+      moreInfoButton.addListener("execute", () => this.__openStudyDetails(), this);
       return moreInfoButton;
     },
 
     __extraInfo: function() {
       const extraInfo = [{
-        label: this.tr("Author"),
-        view: this.__createOwner(),
-        action: null
+        label: this.tr("AUTHOR"),
+        view: osparc.info.StudyUtils.createOwner(this.getStudy())
       }, {
-        label: this.tr("Creation Date"),
-        view: this.__createCreationDate(),
-        action: null
+        label: this.tr("ACCESS RIGHTS"),
+        view: osparc.info.StudyUtils.createAccessRights(this.getStudy())
       }, {
-        label: this.tr("Last Modified"),
-        view: this.__createLastChangeDate(),
-        action: null
+        label: this.tr("CREATED"),
+        view: osparc.info.StudyUtils.createCreationDate(this.getStudy())
       }, {
-        label: this.tr("Access Rights"),
-        view: this.__createAccessRights(),
-        action: {
-          button: osparc.utils.Utils.getViewButton(),
-          callback: this.__openAccessRights,
-          ctx: this
-        }
+        label: this.tr("MODIFIED"),
+        view: osparc.info.StudyUtils.createLastChangeDate(this.getStudy())
       }];
 
       if (
@@ -185,8 +121,8 @@ qx.Class.define("osparc.info.StudyMedium", {
         osparc.component.metadata.Quality.isEnabled(this.getStudy().getQuality())
       ) {
         extraInfo.push({
-          label: this.tr("Quality"),
-          view: this.__createQuality(),
+          label: this.tr("QUALITY"),
+          view: osparc.info.StudyUtils.createQuality(this.getStudy()),
           action: {
             button: osparc.utils.Utils.getViewButton(),
             callback: this.__openQuality,
@@ -194,52 +130,29 @@ qx.Class.define("osparc.info.StudyMedium", {
           }
         });
       }
+
+      extraInfo.push({
+        label: this.tr("TAGS"),
+        view: osparc.info.StudyUtils.createTags(this.getStudy())
+      });
+
+      extraInfo.push({
+        label: this.tr("DESCRIPTION"),
+        view: osparc.info.StudyUtils.createDescription(this.getStudy())
+      });
+
       return extraInfo;
     },
 
     __createExtraInfo: function(extraInfo) {
-      const moreInfo = osparc.info.StudyUtils.createExtraInfo(extraInfo).set({
-        width: this.self().EXTRA_INFO_WIDTH
-      });
+      const moreInfo = osparc.info.StudyUtils.createExtraInfoVBox(extraInfo);
 
       return moreInfo;
-    },
-
-    __createTitle: function() {
-      return osparc.info.StudyUtils.createTitle(this.getStudy());
-    },
-
-    __createOwner: function() {
-      return osparc.info.StudyUtils.createOwner(this.getStudy());
-    },
-
-    __createCreationDate: function() {
-      return osparc.info.StudyUtils.createCreationDate(this.getStudy());
-    },
-
-    __createLastChangeDate: function() {
-      return osparc.info.StudyUtils.createLastChangeDate(this.getStudy());
-    },
-
-    __createAccessRights: function() {
-      return osparc.info.StudyUtils.createAccessRights(this.getStudy());
-    },
-
-    __createQuality: function() {
-      return osparc.info.StudyUtils.createQuality(this.getStudy());
     },
 
     __createThumbnail: function(maxWidth, maxHeight = 150) {
       if (this.getStudy().getThumbnail()) {
         return osparc.info.StudyUtils.createThumbnail(this.getStudy(), maxWidth, maxHeight);
-      }
-      return null;
-    },
-
-    __createDescription: function() {
-      if (this.getStudy().getDescription()) {
-        const maxHeight = 300;
-        return osparc.info.StudyUtils.createDescription(this.getStudy(), maxHeight);
       }
       return null;
     },

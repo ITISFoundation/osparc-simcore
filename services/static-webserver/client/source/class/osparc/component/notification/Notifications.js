@@ -37,23 +37,40 @@ qx.Class.define("osparc.component.notification.Notifications", {
     },
 
     __newStudyObj: function(userId, studyId) {
+      const study = osparc.product.Utils.getStudyAlias({
+        firstUpperCase: true
+      });
       return {
         "user_id": userId.toString(),
         "category": "STUDY_SHARED",
         "actionable_path": "study/"+studyId,
-        "title": "Study shared",
-        "text": "A study was shared with you",
+        "title": `${study} shared`,
+        "text": `A ${study} was shared with you`,
         "date": new Date().toISOString()
       };
     },
 
     __newTemplateObj: function(userId, templateId) {
+      const template = osparc.product.Utils.getTemplateAlias({
+        firstUpperCase: true
+      });
       return {
         "user_id": userId.toString(),
         "category": "TEMPLATE_SHARED",
         "actionable_path": "template/"+templateId,
-        "title": "Template shared",
-        "text": "A template was shared with you",
+        "title": `${template} shared`,
+        "text": `A ${template} was shared with you`,
+        "date": new Date().toISOString()
+      };
+    },
+
+    __newAnnotationNoteObj: function(userId, studyId) {
+      return {
+        "user_id": userId.toString(),
+        "category": "ANNOTATION_NOTE",
+        "actionable_path": "study/"+studyId,
+        "title": "Note added",
+        "text": "A Note was added for you",
         "date": new Date().toISOString()
       };
     },
@@ -75,6 +92,13 @@ qx.Class.define("osparc.component.notification.Notifications", {
     postNewTemplate: function(userId, templateId) {
       const params = {
         data: this.__newTemplateObj(userId, templateId)
+      };
+      return osparc.data.Resources.fetch("notifications", "post", params);
+    },
+
+    postNewAnnotationNote: function(userId, studyId) {
+      const params = {
+        data: this.__newAnnotationNoteObj(userId, studyId)
       };
       return osparc.data.Resources.fetch("notifications", "post", params);
     }

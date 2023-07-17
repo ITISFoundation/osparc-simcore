@@ -61,69 +61,47 @@ qx.Class.define("osparc.info.StudyLarge", {
     _rebuildLayout: function() {
       this._removeAll();
 
-      const title = this.__createTitle();
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
+
+      const title = osparc.info.StudyUtils.createTitle(this.getStudy()).set({
+        font: "text-14"
+      });
       const titleLayout = this.__createViewWithEdit(title, this.__openTitleEditor);
-      this._add(titleLayout);
+      const button = new qx.ui.form.Button(null, "@FontAwesome5Solid/copy/12").set({
+        label: osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + " Id",
+        toolTipText: "Copy " + osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + " Id"
+      });
+      button.addListener("execute", () => osparc.utils.Utils.copyTextToClipboard(this.getStudy().getUuid()));
+      let autoStartButton = null;
+      if (osparc.product.Utils.showDisableServiceAutoStart() && this.__canIWrite()) {
+        autoStartButton = this.__createDisableServiceAutoStart();
+      }
+
+      const titleAndCopyLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+      titleAndCopyLayout.add(titleLayout);
+      titleAndCopyLayout.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+      titleAndCopyLayout.add(button);
+      if (autoStartButton) {
+        titleAndCopyLayout.add(autoStartButton);
+      }
+      vBox.add(titleAndCopyLayout);
+
+      if (osparc.product.Utils.showStudyPreview() && !this.getStudy().isPipelineEmpty()) {
+        const studyThumbnailExplorer = new osparc.dashboard.StudyThumbnailExplorer(this.getStudy().serialize());
+        vBox.add(studyThumbnailExplorer);
+      }
 
       const extraInfo = this.__extraInfo();
       const extraInfoLayout = this.__createExtraInfo(extraInfo);
+      vBox.add(extraInfoLayout);
 
-
-      const bounds = this.getBounds();
-      const offset = 30;
-      let widgetWidth = bounds ? bounds.width - offset : 500 - offset;
-      let thumbnailWidth = widgetWidth - 2 * osparc.info.CardLarge.PADDING;
-      const maxThumbnailHeight = extraInfo.length*20;
-      const slim = widgetWidth < osparc.info.CardLarge.EXTRA_INFO_WIDTH + osparc.info.CardLarge.THUMBNAIL_MIN_WIDTH + 2 * osparc.info.CardLarge.PADDING - 20;
-      let hBox = null;
-      if (slim) {
-        this._add(extraInfoLayout);
-      } else {
-        hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
-          alignX: "center"
-        }));
-        hBox.add(extraInfoLayout);
-        thumbnailWidth -= osparc.info.CardLarge.EXTRA_INFO_WIDTH;
-      }
-      thumbnailWidth = Math.min(thumbnailWidth - 20, osparc.info.CardLarge.THUMBNAIL_MAX_WIDTH);
-      const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
-      const thumbnailLayout = this.__createViewWithEdit(thumbnail, this.__openThumbnailEditor);
-      thumbnailLayout.getLayout().set({
-        alignX: "center"
+      const scrollContainer = new qx.ui.container.Scroll();
+      scrollContainer.add(vBox);
+      this._add(scrollContainer, {
+        flex: 1
       });
-      if (slim) {
-        this._add(thumbnailLayout);
-      } else {
-        hBox.add(thumbnailLayout, {
-          flex: 1
-        });
-        this._add(hBox);
-      }
-
-      if (osparc.product.Utils.showDisableServiceAutoStart() && this.__canIWrite()) {
-        const autoStart = this.__createDisableServiceAutoStart();
-        this._add(autoStart);
-      }
-
-      if (this.getStudy().getTags().length || this.__canIWrite()) {
-        const tags = this.__createTags();
-        const editInTitle = this.__createViewWithEdit(tags.getChildren()[0], null);
-        tags.addAt(editInTitle, 0);
-        if (this.__canIWrite()) {
-          const editButton = editInTitle.getChildren()[1];
-          editButton.setIcon("@FontAwesome5Solid/eye/12");
-          editButton.addListener("execute", () => this.fireEvent("openTags"), this);
-          osparc.utils.Utils.setIdToWidget(editButton, "editStudyEditTagsBtn");
-        }
-        this._add(tags);
-      }
-
-      if (this.getStudy().getDescription() || this.__canIWrite()) {
-        const description = this.__createDescription();
-        const editInTitle = this.__createViewWithEdit(description.getChildren()[0], this.__openDescriptionEditor);
-        description.addAt(editInTitle, 0);
-        this._add(description);
-      }
     },
 
     __createViewWithEdit: function(view, cb) {
@@ -143,127 +121,105 @@ qx.Class.define("osparc.info.StudyLarge", {
     },
 
     __extraInfo: function() {
-      const extraInfo = [{
-        label: this.tr("Author"),
-        view: this.__createOwner(),
-        action: null
-      }, {
-        label: this.tr("Creation Date"),
-        view: this.__createCreationDate(),
-        action: null
-      }, {
-        label: this.tr("Last Modified"),
-        view: this.__createLastChangeDate(),
-        action: null
-      }, {
-        label: this.tr("Access Rights"),
-        view: this.__createAccessRights(),
-        action: {
-          button: osparc.utils.Utils.getViewButton(),
-          callback: this.isOpenOptions() ? this.__openAccessRights : "openAccessRights",
-          ctx: this
+      const extraInfo = {
+        "AUTHOR": {
+          label: this.tr("AUTHOR"),
+          view: osparc.info.StudyUtils.createOwner(this.getStudy()),
+          action: null
+        },
+        "ACCESS_RIGHTS": {
+          label: this.tr("ACCESS RIGHTS"),
+          view: osparc.info.StudyUtils.createAccessRights(this.getStudy()),
+          action: {
+            button: osparc.utils.Utils.getViewButton(),
+            callback: this.isOpenOptions() ? this.__openAccessRights : "openAccessRights",
+            ctx: this
+          }
+        },
+        "CREATED": {
+          label: this.tr("CREATED"),
+          view: osparc.info.StudyUtils.createCreationDate(this.getStudy()),
+          action: null
+        },
+        "MODIFIED": {
+          label: this.tr("MODIFIED"),
+          view: osparc.info.StudyUtils.createLastChangeDate(this.getStudy()),
+          action: null
+        },
+        "TAGS": {
+          label: this.tr("TAGS"),
+          view: osparc.info.StudyUtils.createTags(this.getStudy()),
+          action: {
+            button: osparc.utils.Utils.getViewButton(),
+            callback: this.isOpenOptions() ? this.__openTagsEditor : "openTags",
+            ctx: this
+          }
+        },
+        "DESCRIPTION": {
+          label: this.tr("DESCRIPTION"),
+          view: osparc.info.StudyUtils.createDescription(this.getStudy()),
+          action: {
+            button: osparc.utils.Utils.getEditButton(),
+            callback: this.__canIWrite() ? this.__openDescriptionEditor : null,
+            ctx: this
+          }
+        },
+        "THUMBNAIL": {
+          label: this.tr("THUMBNAIL"),
+          view: this.__createThumbnail(),
+          action: {
+            button: osparc.utils.Utils.getEditButton(),
+            callback: this.__canIWrite() ? this.__openThumbnailEditor : null,
+            ctx: this
+          }
         }
-      }];
+      };
 
       if (
         osparc.product.Utils.showQuality() &&
         this.getStudy().getQuality() &&
         osparc.component.metadata.Quality.isEnabled(this.getStudy().getQuality())
       ) {
-        extraInfo.push({
-          label: this.tr("Quality"),
-          view: this.__createQuality(),
+        extraInfo["QUALITY"] = {
+          label: this.tr("QUALITY"),
+          view: osparc.info.StudyUtils.createQuality(this.getStudy()),
           action: {
             button: osparc.utils.Utils.getViewButton(),
             callback: this.isOpenOptions() ? this.__openQuality : "openQuality",
             ctx: this
           }
-        });
+        };
       }
 
       if (osparc.product.Utils.showClassifiers()) {
-        extraInfo.push({
-          label: this.tr("Classifiers"),
-          view: this.__createClassifiers(),
+        extraInfo["CLASSIFIERS"] = {
+          label: this.tr("CLASSIFIERS"),
+          view: osparc.info.StudyUtils.createClassifiers(this.getStudy()),
           action: (this.getStudy().getClassifiers().length || this.__canIWrite()) ? {
             button: osparc.utils.Utils.getViewButton(),
             callback: this.isOpenOptions() ? this.__openClassifiers : "openClassifiers",
             ctx: this
           } : null
-        });
+        };
       }
-
-      extraInfo.splice(0, 0, {
-        label: osparc.utils.Utils.capitalize(osparc.product.Utils.getStudyAlias()) + " ID",
-        view: this.__createStudyId(),
-        action: {
-          button: osparc.utils.Utils.getCopyButton(),
-          callback: this.__copyUuidToClipboard,
-          ctx: this
-        }
-      });
 
       return extraInfo;
     },
 
     __createExtraInfo: function(extraInfo) {
-      const moreInfo = osparc.info.StudyUtils.createExtraInfo(extraInfo).set({
-        width: osparc.info.CardLarge.EXTRA_INFO_WIDTH
-      });
-
-      return moreInfo;
-    },
-
-    __createTitle: function() {
-      const title = osparc.info.StudyUtils.createTitle(this.getStudy()).set({
-        font: "text-14"
-      });
-      return title;
+      return osparc.info.StudyUtils.createExtraInfoGrid(extraInfo);
     },
 
     __createStudyId: function() {
       return osparc.info.StudyUtils.createUuid(this.getStudy());
     },
 
-    __createOwner: function() {
-      return osparc.info.StudyUtils.createOwner(this.getStudy());
-    },
-
-    __createCreationDate: function() {
-      return osparc.info.StudyUtils.createCreationDate(this.getStudy());
-    },
-
-    __createLastChangeDate: function() {
-      return osparc.info.StudyUtils.createLastChangeDate(this.getStudy());
-    },
-
-    __createAccessRights: function() {
-      return osparc.info.StudyUtils.createAccessRights(this.getStudy());
-    },
-
-    __createClassifiers: function() {
-      return osparc.info.StudyUtils.createClassifiers(this.getStudy());
-    },
-
-    __createQuality: function() {
-      return osparc.info.StudyUtils.createQuality(this.getStudy());
-    },
-
-    __createThumbnail: function(maxWidth, maxHeight = 160) {
+    __createThumbnail: function(maxWidth = 160, maxHeight = 100) {
       return osparc.info.StudyUtils.createThumbnail(this.getStudy(), maxWidth, maxHeight);
     },
 
     __createDisableServiceAutoStart: function() {
       return osparc.info.StudyUtils.createDisableServiceAutoStart(this.getStudy());
-    },
-
-    __createTags: function() {
-      return osparc.info.StudyUtils.createTags(this.getStudy());
-    },
-
-    __createDescription: function() {
-      const maxHeight = 400;
-      return osparc.info.StudyUtils.createDescription(this.getStudy(), maxHeight);
     },
 
     __openTitleEditor: function() {
@@ -280,13 +236,9 @@ qx.Class.define("osparc.info.StudyLarge", {
       titleEditor.open();
     },
 
-    __copyUuidToClipboard: function() {
-      osparc.utils.Utils.copyTextToClipboard(this.getStudy().getUuid());
-    },
-
     __openAccessRights: function() {
       const permissionsView = osparc.info.StudyUtils.openAccessRights(this.getStudy().serialize());
-      permissionsView.addListener("updateStudy", e => {
+      permissionsView.addListener("updateAccessRights", e => {
         const updatedData = e.getData();
         this.getStudy().setAccessRights(updatedData["accessRights"]);
         this.fireDataEvent("updateStudy", updatedData);
@@ -334,16 +286,7 @@ qx.Class.define("osparc.info.StudyLarge", {
     __openThumbnailEditor: function() {
       const title = this.tr("Edit Thumbnail");
       const oldThumbnail = this.getStudy().getThumbnail();
-      let suggestions = new Set([]);
-      const wb = this.getStudy().getWorkbench();
-      const nodes = wb.getWorkbenchInitData() ? wb.getWorkbenchInitData() : wb.getNodes();
-      Object.values(nodes).forEach(node => {
-        const srvMetadata = osparc.utils.Services.getMetaData(node["key"], node["version"]);
-        if (srvMetadata && srvMetadata["thumbnail"] && !osparc.data.model.Node.isFrontend(node)) {
-          suggestions.add(srvMetadata["thumbnail"]);
-        }
-      });
-      suggestions = Array.from(suggestions);
+      const suggestions = osparc.component.editor.ThumbnailSuggestions.extractThumbanilSuggestions(this.getStudy());
       const thumbnailEditor = new osparc.component.editor.ThumbnailEditor(oldThumbnail, suggestions);
       const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, suggestions.length > 2 ? 500 : 350, suggestions.length ? 280 : 115);
       thumbnailEditor.addListener("updateThumbnail", e => {

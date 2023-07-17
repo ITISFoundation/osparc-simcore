@@ -9,7 +9,11 @@ from fastapi.testclient import TestClient
 
 
 def test_openapi_json_is_in_sync_with_app_oas(
-    disabled_prometheus: None, client: TestClient, project_slug_dir: Path
+    disabled_database: None,
+    disabled_prometheus: None,
+    mocked_redis_server: None,
+    client: TestClient,
+    project_slug_dir: Path,
 ):
     """
     If this test fails, just 'make openapi.json'

@@ -224,7 +224,7 @@ async def sqlalchemy_async_engine(
 
 @pytest.fixture(scope="function")
 def postgres_host_config(
-    postgres_dsn: PostgresTestConfig, monkeypatch
+    postgres_dsn: PostgresTestConfig, monkeypatch: pytest.MonkeyPatch
 ) -> PostgresTestConfig:
     """sets postgres env vars and returns config"""
     monkeypatch.setenv("POSTGRES_USER", postgres_dsn["user"])

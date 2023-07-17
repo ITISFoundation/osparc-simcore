@@ -36,14 +36,48 @@ will start the api-server in development-mode together with a postgres db initia
 - http://127.0.0.1:8000/docs: redoc documentation
 - http://127.0.0.1:8000/dev/docs: swagger type of documentation
 
+
+## Clients
+
+- Python client for osparc-simcore API can be found in https://github.com/ITISFoundation/osparc-simcore-client)
+
+
+## Backwards compatibility of the server API
+The public API is required to be backwards compatible in the sense that a [client](https://github.com/ITISFoundation/osparc-simcore-clients) which is compatible with API version `N` should also be compatible with version `N+1`. Because of this, upgrading the server should never force a user to upgrade their client: The client which they have is already compatible with the new server.
+
+```mermaid
+
+flowchart LR
+  subgraph Client
+    direction LR
+    A2(dev branch) .->|"🔙"| B2(master) .->|"🔙"| C2(staging) .->|"🔙"| D2(production)
+    A2(dev branch) ==>|"🔨"| B2(master) ==>|"🔨"| C2(staging) ==>|"🔨"| D2(production)
+  end
+  subgraph Server
+    direction LR
+    A1(dev branch) ~~~ B1(master) ~~~ C1(staging) ~~~ D1(production)
+    A1(dev branch) ==>|"🔨"| B1(master) ==>|"🔨"| C1(staging) ==>|"🔨"| D1(production)
+  end
+
+  A1 .->|"🔙"| A2
+  B1 .->|"🔙"| B2
+  C1 .->|"🔙"| C2
+  D1 .->|"🔙"| D2
+
+  A2 ~~~ A1
+  B2 ~~~ B1
+  C2 ~~~ C1
+  D2 ~~~ D1
+```
+
+In this diagram the development workflow/progress is indicated with 🔨-arrows both for the server client. To see which client version a given server version is compatible with one can follow the backwards 🔙-arrows from that server version. E.g. one sees that the server in `staging` is compatible with the client in `staging` and in `production`. Needless to say, to see which versions of the server a given client is compatible with one can follow the dotted lines backwards from the client version. E.g. the client in `master` is seen to be compatible with ther server versions in `master` and in `dev branch`.
+
 ## References
 
 - [Design patterns for modern web APIs](https://blog.feathersjs.com/design-patterns-for-modern-web-apis-1f046635215) by D. Luecke
 - [API Design Guide](https://cloud.google.com/apis/design/) by Google Cloud
 
-## Clients
 
-- [Python client for osparc-simcore API](https://github.com/ITISFoundation/osparc-simcore-python-client)
 
 ## Acknowledgments
 

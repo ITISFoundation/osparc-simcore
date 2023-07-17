@@ -1,9 +1,9 @@
-from typing import Any, Dict, Optional, Type, Union
+from typing import Any
 
 from simcore_sdk.node_ports_v2.ports_mapping import InputsList, OutputsList
 
 
-def create_valid_port_config(conf_type: str, **kwargs) -> Dict[str, Any]:
+def create_valid_port_config(conf_type: str, **kwargs) -> dict[str, Any]:
     valid_config = {
         "key": f"some_{conf_type}",
         "label": "some label",
@@ -16,12 +16,11 @@ def create_valid_port_config(conf_type: str, **kwargs) -> Dict[str, Any]:
 
 
 def create_valid_port_mapping(
-    mapping_class: Union[Type[InputsList], Type[OutputsList]],
+    mapping_class: type[InputsList] | type[OutputsList],
     suffix: str,
-    file_to_key: Optional[str] = None,
-) -> Union[InputsList, OutputsList]:
-
-    port_cfgs: Dict[str, Any] = {}
+    file_to_key: str | None = None,
+) -> InputsList | OutputsList:
+    port_cfgs: dict[str, Any] = {}
     for t, v in {
         "integer": 43,
         "number": 45.6,

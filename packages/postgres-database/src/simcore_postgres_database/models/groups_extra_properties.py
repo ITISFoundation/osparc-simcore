@@ -42,6 +42,13 @@ groups_extra_properties = sa.Table(
         "If a user is part of this group, it's "
         "service can access the internet.",
     ),
+    sa.Column(
+        "override_services_specifications",
+        sa.Boolean(),
+        nullable=False,
+        server_default=sa.sql.expression.false(),
+        doc="allows group to override default service specifications.",
+    ),
     # TIME STAMPS ----
     column_created_datetime(timezone=False),
     column_modified_datetime(timezone=False),

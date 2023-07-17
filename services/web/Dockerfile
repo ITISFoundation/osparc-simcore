@@ -13,11 +13,15 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 
 LABEL maintainer=pcrespov
 
-RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=locked \
-  --mount=type=cache,id=baseapt,target=/var/lib/apt,mode=0755,sharing=locked \
+# for docker apt caching to work this needs to be added: [https://vsupalov.com/buildkit-cache-mount-dockerfile/]
+RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
+  echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
+RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
+  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
   set -eux && \
   apt-get update && \
   apt-get install -y --no-install-recommends \
+  libmagic1 \
   gosu \
   && apt-get clean -y \
   # verify that the binary works
@@ -69,13 +73,13 @@ FROM base as build
 
 ENV SC_BUILD_TARGET build
 
-RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=locked \
-  --mount=type=cache,id=baseapt,target=/var/lib/apt,mode=0755,sharing=locked \
+RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
+  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
   set -eux \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
-  build-essential \
-  libmagic1
+  build-essential
+
 
 
 # NOTE: python virtualenv is used here such that installed
@@ -91,10 +95,11 @@ RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
 WORKDIR /build
 
 # install only base 3rd party dependencies
-COPY  --chown=scu:scu services/web/server/requirements/_base.txt requirements_base.txt
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+RUN \
+  --mount=type=bind,source=services/web/server/requirements/_base.txt,target=_base.txt \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip \
   pip install \
-  --requirement requirements_base.txt
+  --requirement _base.txt
 
 # --------------------------Prod-depends-only stage -------------------
 # This stage is for production only dependencies that get partially wiped out afterwards (final docker image concerns)
@@ -107,12 +112,12 @@ FROM build as prod-only-deps
 ENV SC_BUILD_TARGET prod-only-deps
 
 # 2nd party packages
-COPY --chown=scu:scu packages /build/packages
-COPY --chown=scu:scu services/web/server /build/services/web/server
-
 WORKDIR /build/services/web/server
 
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+RUN \
+  --mount=type=bind,source=packages,target=/build/packages,rw \
+  --mount=type=bind,source=services/web/server,target=/build/services/web/server,rw \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip,sharing=private \
   pip install \
   --requirement requirements/prod.txt \
   && pip list -v
@@ -137,16 +142,6 @@ WORKDIR /home/scu
 RUN chown -R scu /home/scu
 # bring installed package without build tools
 COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
-
-# libmagic is requried by the exporter
-RUN --mount=type=cache,id=webprodcache,target=/var/cache/apt,mode=0755,sharing=locked \
-  --mount=type=cache,id=webprodapt,target=/var/lib/apt,mode=0755,sharing=locked \
-  set -eux \
-  && apt-get update \
-  && apt-get install -y --no-install-recommends \
-  libmagic1 \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
 
 # copy docker entrypoint and boot scripts
 COPY --chown=scu:scu services/web/server/docker services/web/server/docker

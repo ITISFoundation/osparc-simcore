@@ -88,7 +88,7 @@ paths:
       - required: true
         schema:
           title: Viewer Key
-          pattern: ^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
           type: string
         name: viewer_key
         in: query
@@ -179,7 +179,7 @@ components:
       properties:
         key:
           title: Key
-          pattern: ^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
           type: string
           description: Service key ID
         title:
@@ -228,7 +228,7 @@ components:
       properties:
         key:
           title: Key
-          pattern: ^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
           type: string
           description: distinctive name for the node based on the docker registry
             path

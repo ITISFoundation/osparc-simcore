@@ -194,10 +194,12 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_PORT=${POSTGRES_PORT}
       - POSTGRES_USER=${POSTGRES_USER}
-      - PROMETHEUS_URL=${PROMETHEUS_URL}
-      - PROMETHEUS_USERNAME=${PROMETHEUS_USERNAME}
-      - PROMETHEUS_PASSWORD=${PROMETHEUS_PASSWORD}
+      - PROMETHEUS_URL=${RESOURCE_USAGE_TRACKER_PROMETHEUS_URL}
+      - PROMETHEUS_USERNAME=${RESOURCE_USAGE_TRACKER_PROMETHEUS_USERNAME}
+      - PROMETHEUS_PASSWORD=${RESOURCE_USAGE_TRACKER_PROMETHEUS_PASSWORD}
       - RESOURCE_USAGE_TRACKER_LOGLEVEL=${LOG_LEVEL:-INFO}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
 
   static-webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
@@ -268,6 +270,9 @@ services:
       DIRECTOR_PORT: ${DIRECTOR_PORT:-8080}
       DIRECTOR_V2_HOST: ${DIRECTOR_V2_HOST:-director-v2}
       DIRECTOR_V2_PORT: ${DIRECTOR_V2_PORT:-8000}
+      # see [https://docs.gunicorn.org/en/stable/settings.html#timeout],
+      # since we have the docker healthcheck already, this should be ok
+      GUNICORN_CMD_ARGS: --timeout=180
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       STORAGE_HOST: ${STORAGE_HOST:-storage}
       STORAGE_PORT: ${STORAGE_PORT:-8080}
@@ -336,6 +341,7 @@ services:
     environment:
       <<: *webserver-environment
       WEBSERVER_GARBAGE_COLLECTOR: '{"GARBAGE_COLLECTOR_INTERVAL_S": 30}'
+      WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS: 60
     env_file:
       - ../.env
       - ../.env-wb-garbage-collector
@@ -485,7 +491,7 @@ services:
       - default # actually needed for the postgres service only
 
   postgres:
-    image: "postgres:14.5-alpine@sha256:db802f226b620fc0b8adbeca7859eb203c8d3c9ce5d84870fadee05dea8f50ce"
+    image: "postgres:14.8-alpine@sha256:150dd39ccb7ae6c7ba6130c3582c39a30bb5d3d22cb08ad0ba37001e3f829abc"
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
@@ -554,7 +560,7 @@ services:
         "--loglevel",
         "verbose",
         "--databases",
-        "5",
+        "6",
         "--appendonly",
         "yes"
       ]

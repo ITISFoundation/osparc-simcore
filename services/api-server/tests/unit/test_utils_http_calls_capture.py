@@ -6,8 +6,10 @@
 
 import asyncio
 import re
+from pathlib import Path
 
 import httpx
+import jinja2
 import respx
 from faker import Faker
 from models_library.basic_regex import UUID_RE_BASE
@@ -20,11 +22,10 @@ async def test_capture_http_call(
 ):
     # CAPTURE
     async with httpx.AsyncClient() as client:
-
         response: httpx.Response = await client.get(f"{httpbin_base_url}/json")
         print(response)
 
-        request: httpx.Request = response.request
+        _request: httpx.Request = response.request
         assert response.request
 
         captured = HttpApiCallCaptureModel.create_from_response(
@@ -39,7 +40,6 @@ async def test_capture_http_call(
             assert_all_called=False,
             assert_all_mocked=True,  # IMPORTANT: KEEP always True!
         ) as respx_mock:
-
             respx_mock.request(
                 method=captured.method,
                 path=captured.path,
@@ -59,10 +59,8 @@ async def test_capture_http_call(
 async def test_capture_http_dynamic_call(
     event_loop: asyncio.AbstractEventLoop, faker: Faker, httpbin_base_url: str
 ):
-
     # CAPTURE
     async with httpx.AsyncClient() as client:
-
         sample_uid = faker.uuid4()  # used during test sampling
 
         response: httpx.Response = await client.post(
@@ -75,7 +73,7 @@ async def test_capture_http_dynamic_call(
         )
         print(response)
 
-        request: httpx.Request = response.request
+        _request: httpx.Request = response.request
         assert response.request
 
         captured = HttpApiCallCaptureModel.create_from_response(
@@ -86,9 +84,9 @@ async def test_capture_http_dynamic_call(
 
         # pattern with named-group
         pattern = rf"(?P<resouce_uid>{UUID_RE_BASE})"
-        match = re.search(pattern, captured.path)
-        assert match
-        assert match.groupdict() == {"resouce_uid": sample_uid}
+        found = re.search(pattern, captured.path)
+        assert found
+        assert found.groupdict() == {"resouce_uid": sample_uid}
 
         # subs_json = re.sub(f"{resource_uid}", pattern, captured.json())
         # new_capture = HttpApiCallCaptureModel.parse_raw(subs_json)
@@ -99,7 +97,6 @@ async def test_capture_http_dynamic_call(
             assert_all_called=True,
             assert_all_mocked=True,  # IMPORTANT: KEEP always True!
         ) as respx_mock:
-
             respx_mock.request(
                 method=captured.method,
                 path__regex=re.sub(
@@ -125,3 +122,24 @@ async def test_capture_http_dynamic_call(
             assert respx_mock[captured.name].called
             assert response.json() == captured.response_body
             assert response.status_code == captured.status_code
+
+
+def test_template_capture(project_tests_dir: Path, faker: Faker):
+    # parse request and search parameters
+    url_path = f"/v0/projects/{faker.uuid4()}"
+    pattern = re.compile(rf"/projects/(?P<project_id>{UUID_RE_BASE})$")
+    found = pattern.search(url_path)
+    assert found
+    context = found.groupdict()
+
+    # get paramters from capture
+    environment = jinja2.Environment(
+        loader=jinja2.FileSystemLoader(project_tests_dir / "mocks"), autoescape=True
+    )
+    template = environment.get_template("delete_project_not_found.json")
+
+    # loads parametrized capture
+    # replace in response and solve
+    capture = HttpApiCallCaptureModel.parse_raw(template.render(context))
+    print(capture.json(indent=1))
+    assert capture.path == url_path

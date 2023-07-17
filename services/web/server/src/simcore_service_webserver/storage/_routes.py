@@ -56,14 +56,14 @@ def create(specs: openapi.Spec) -> list[web.RouteDef]:
     operation_id = specs.paths[path].operations["get"].operation_id
     routes.append(web.get(BASEPATH + path, handle, name=operation_id))
 
+    _FILE_PATH = "/storage/locations/{location_id}/files/{file_id}"
     path, handle = (
-        "/storage/locations/{location_id}/files/{file_id}/metadata",
+        f"{_FILE_PATH}/metadata",
         _handlers.get_file_metadata,
     )
     operation_id = specs.paths[path].operations["get"].operation_id
     routes.append(web.get(BASEPATH + path, handle, name=operation_id))
 
-    _FILE_PATH = "/storage/locations/{location_id}/files/{file_id}"
     path, handle = (
         _FILE_PATH,
         _handlers.download_file,

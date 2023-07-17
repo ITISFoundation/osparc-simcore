@@ -31,7 +31,7 @@ async def test_list_solvers(
     # No warnings for ValidationError with the fixture
     assert (
         not warn.called
-    ), f"No warnings expected in this fixture, got {str(warn.call_args)}"
+    ), f"No warnings expected in this fixture, got {warn.call_args!s}"
 
     data = resp.json()
     assert len(data) == 2
@@ -41,28 +41,24 @@ async def test_list_solvers(
         print(solver.json(indent=1, exclude_unset=True))
 
         # use link to get the same solver
+        assert solver.url
         assert solver.url.host == "api.testserver.io"  # cli.base_url
+        assert solver.url.path
 
         # get_solver_latest_version_by_name
         resp0 = await client.get(solver.url.path)
         assert resp0.status_code == status.HTTP_501_NOT_IMPLEMENTED
-        # assert f"GET {solver.name}:{solver.version}"  in resp0.json()["errors"][0]
         assert f"GET solver {solver.id}" in resp0.json()["errors"][0]
-        # assert Solver(**resp0.json()) == solver
-
         # get_solver
         resp1 = await client.get(f"/v0/solvers/{solver.id}")
         assert resp1.status_code == status.HTTP_501_NOT_IMPLEMENTED
         assert f"GET solver {solver.id}" in resp1.json()["errors"][0]
-        # assert Solver(**resp1.json()) == solver
 
         # get_solver_latest_version_by_name
         resp2 = await client.get(f"/v0/solvers/{solver.id}/latest")
 
         assert resp2.status_code == status.HTTP_501_NOT_IMPLEMENTED
         assert f"GET latest {solver.id}" in resp2.json()["errors"][0]
-
-        # assert Solver(**resp2.json()) == Solver(**resp3.json())
 
 
 async def test_list_solver_ports(
@@ -76,16 +72,19 @@ async def test_list_solver_ports(
     )
     assert resp.status_code == status.HTTP_200_OK
 
-    assert resp.json() == [
-        {
-            "key": "input_1",
-            "kind": "input",
-            "content_schema": {
-                "title": "Sleep interval",
-                "type": "integer",
-                "x_unit": "second",
-                "minimum": 0,
-                "maximum": 5,
+    assert resp.json() == {
+        "total": 1,
+        "items": [
+            {
+                "key": "input_1",
+                "kind": "input",
+                "content_schema": {
+                    "title": "Sleep interval",
+                    "type": "integer",
+                    "x_unit": "second",
+                    "minimum": 0,
+                    "maximum": 5,
+                },
             },
-        }
-    ]
+        ],
+    }

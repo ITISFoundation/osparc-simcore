@@ -243,6 +243,7 @@ async def copy_study_to_account(
             user["id"],
             product_name=product_name,
             force_project_uuid=True,
+            project_nodes=None,
         )
         async for lr_task in copy_data_folders_from_project(
             request.app,

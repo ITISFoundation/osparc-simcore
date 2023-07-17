@@ -79,7 +79,6 @@ jobs:
       anything-js: ${{ steps.filter.outputs.anything-js }}
     steps:
       - uses: actions/checkout@v3
-        if: ${{ github.event_name == 'push' }}
       # For pull requests it's not necessary to checkout the code
       - uses: dorny/paths-filter@v2
         id: filter
@@ -557,6 +556,9 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/api-server.bash test
+      - name: OAS backwards compatibility check
+        if: always()
+        run: ./ci/github/unit-testing/api-server.bash openapi-diff
       - uses: codecov/codecov-action@v3.1.4
         with:
           flags: unittests #optional
@@ -999,7 +1001,7 @@ jobs:
           source .venv/bin/activate && \
           pushd services/resource-usage-tracker && \
           make test-ci-unit
-      - uses: codecov/codecov-action@v3.1.3
+      - uses: codecov/codecov-action@v3.1.4
         with:
           flags: unittests #optional
 
@@ -1074,7 +1076,7 @@ jobs:
           driver: docker-container
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - uses: actions/setup-node@v3.6.0
+      - uses: actions/setup-node@v3.7.0
         with:
           node-version: ${{ matrix.node }}
           cache: "npm"
@@ -1921,6 +1923,8 @@ jobs:
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./ci/github/system-testing/public-api.bash install
       - name: test
         run: ./ci/github/system-testing/public-api.bash test
@@ -2031,7 +2035,7 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "tests/e2e/requirements/requirements.txt"
-      - uses: actions/setup-node@v3.6.0
+      - uses: actions/setup-node@v3.7.0
         with:
           node-version: ${{ matrix.node }}
           cache: "npm"

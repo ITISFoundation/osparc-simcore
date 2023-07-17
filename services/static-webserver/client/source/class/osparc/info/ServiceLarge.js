@@ -179,19 +179,27 @@ qx.Class.define("osparc.info.ServiceLarge", {
 
     __extraInfo: function() {
       const extraInfo = [{
-        label: this.tr("Version"),
+        label: this.tr("KEY"),
+        view: this.__createKey(),
+        action: {
+          button: osparc.utils.Utils.getCopyButton(),
+          callback: this.__copyKeyToClipboard,
+          ctx: this
+        }
+      }, {
+        label: this.tr("VERSION"),
         view: this.__createVersion(),
         action: null
       }, {
-        label: this.tr("Contact"),
+        label: this.tr("CONTACT"),
         view: this.__createContact(),
         action: null
       }, {
-        label: this.tr("Authors"),
+        label: this.tr("AUTHORS"),
         view: this.__createAuthors(),
         action: null
       }, {
-        label: this.tr("Access Rights"),
+        label: this.tr("ACCESS RIGHTS"),
         view: this.__createAccessRights(),
         action: {
           button: osparc.utils.Utils.getViewButton(),
@@ -200,9 +208,12 @@ qx.Class.define("osparc.info.ServiceLarge", {
         }
       }];
 
-      if (this.getService()["classifiers"]) {
+      if (
+        osparc.product.Utils.showClassifiers() &&
+        this.getService()["classifiers"]
+      ) {
         extraInfo.push({
-          label: this.tr("Classifiers"),
+          label: this.tr("CLASSIFIERS"),
           view: this.__createClassifiers(),
           action: {
             button: osparc.utils.Utils.getViewButton(),
@@ -218,7 +229,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
         osparc.component.metadata.Quality.isEnabled(this.getService()["quality"])
       ) {
         extraInfo.push({
-          label: this.tr("Quality"),
+          label: this.tr("QUAILITY"),
           view: this.__createQuality(),
           action: {
             button: osparc.utils.Utils.getViewButton(),
@@ -230,7 +241,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
 
       if (this.getNodeId()) {
         extraInfo.splice(0, 0, {
-          label: this.tr("Service ID"),
+          label: this.tr("SERVICE ID"),
           view: this.__createNodeId(),
           action: {
             button: osparc.utils.Utils.getCopyButton(),
@@ -239,16 +250,6 @@ qx.Class.define("osparc.info.ServiceLarge", {
           }
         });
       }
-
-      extraInfo.splice(1, 0, {
-        label: this.tr("Key"),
-        view: this.__createKey(),
-        action: {
-          button: osparc.utils.Utils.getCopyButton(),
-          callback: this.__copyKeyToClipboard,
-          ctx: this
-        }
-      });
 
       return extraInfo;
     },
@@ -312,7 +313,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
             nodeId: this.getNodeId()
           }
         };
-        promise = osparc.data.Resources.fetch("nodesInStudyResources", "getResources", params);
+        promise = osparc.data.Resources.get("nodesInStudyResources", params);
       } else {
         const params = {
           url: osparc.data.Resources.getServiceUrl(
@@ -320,7 +321,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
             this.getService()["version"]
           )
         };
-        promise = osparc.data.Resources.fetch("serviceResources", "getResources", params);
+        promise = osparc.data.Resources.get("serviceResources", params);
       }
       promise
         .then(serviceResources => {

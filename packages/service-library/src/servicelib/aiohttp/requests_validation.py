@@ -18,8 +18,11 @@ from ..json_serialization import json_dumps
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 ModelClass = TypeVar("ModelClass", bound=BaseModel)
-ModelOrListType = TypeVar("ModelOrListType", bound=Union[BaseModel, list])
+ModelOrListOrDictType = TypeVar(
+    "ModelOrListOrDictType", bound=Union[BaseModel, list, dict]
+)
 UnionOfModelTypes: TypeAlias = Union[type[ModelClass], type[ModelClass]]
+
 
 @contextmanager
 def handle_validation_as_http_error(
@@ -38,7 +41,6 @@ def handle_validation_as_http_error(
     """
 
     try:
-
         yield
 
     except ValidationError as err:
@@ -156,15 +158,16 @@ def parse_request_query_parameters_as(
         data = dict(request.query)
         if hasattr(parameters_schema_cls, "parse_obj"):
             return parameters_schema_cls.parse_obj(data)
-        return parse_obj_as(parameters_schema_cls, data)
+        model: ModelClass = parse_obj_as(parameters_schema_cls, data)
+        return model
 
 
 async def parse_request_body_as(
-    model_schema_cls: type[ModelOrListType],
+    model_schema_cls: type[ModelOrListOrDictType],
     request: web.Request,
     *,
     use_enveloped_error_v1: bool = True,
-) -> ModelOrListType:
+) -> ModelOrListOrDictType:
     """Parses and validates request body against schema
 
     Keyword Arguments:
@@ -195,7 +198,7 @@ async def parse_request_body_as(
             # NOTE: model_schema can be 'list[T]' or 'dict[T]' which raise TypeError
             # with issubclass(model_schema, BaseModel)
             assert issubclass(model_schema_cls, BaseModel)  # nosec
-            return model_schema_cls.parse_obj(body)
+            return model_schema_cls.parse_obj(body)  # type: ignore [return-value]
 
         # used for model_schema like 'list[T]' or 'dict[T]'
         return parse_obj_as(model_schema_cls, body)

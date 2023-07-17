@@ -19,8 +19,9 @@ from simcore_postgres_database.models.projects_to_products import projects_to_pr
 from simcore_postgres_database.webserver_models import ProjectType, projects
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import select
+from sqlalchemy.sql.selectable import Select
 
-from ..db_models import GroupType, groups, study_tags, user_to_groups, users
+from ..db.models import GroupType, groups, study_tags, user_to_groups, users
 from ..users.exceptions import UserNotFoundError
 from ..utils import format_datetime
 from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
@@ -47,7 +48,7 @@ class ProjectAccessRights(Enum):
 def check_project_permissions(
     project: ProjectProxy | ProjectDict,
     user_id: int,
-    user_groups: list[RowProxy],
+    user_groups: list[dict[str, Any]],
     permission: str,
 ) -> None:
     """
@@ -58,7 +59,7 @@ def check_project_permissions(
         return
 
     operations_on_project = set(permission.split("|"))
-    assert set(operations_on_project).issubset(set(PermissionStr.__args__))  # nosec
+    assert set(operations_on_project).issubset(set(PermissionStr.__args__))  # type: ignore[attr-defined] # nosec
 
     #
     # Get primary_gid, standard_gids and everyone_gid for user_id
@@ -247,7 +248,7 @@ class BaseProjectDB:
         self,
         conn: SAConnection,
         *,
-        select_projects_query: str,
+        select_projects_query: Select,
         user_id: int,
         user_groups: list[RowProxy],
         filter_by_services: list[dict] | None = None,

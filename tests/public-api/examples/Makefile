@@ -23,7 +23,7 @@ install-dev: ## installs osparc client from folder for developent
 
 .PHONY: install-ci
 install-ci: ## installs osparc client and dependencies
-	pip install git+https://github.com/ITISFoundation/osparc-simcore-python-client.git
+	pip install git+https://github.com/ITISFoundation/osparc-simcore-clients.git
 	pip install python-dotenv jupytext
 
 

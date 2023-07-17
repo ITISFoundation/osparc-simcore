@@ -7,6 +7,7 @@ _check_venv_active:
 
 .PHONY: install
 install: _check_venv_active
+	@cd ./../../../../services/web/server && make install-dev && cd -
 	pip install -r requirements.txt
 
 

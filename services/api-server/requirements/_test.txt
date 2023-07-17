@@ -4,9 +4,9 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --resolver=backtracking --strip-extras requirements/_test.in
 #
-alembic==1.8.1
+alembic==1.11.1
     # via -r requirements/_test.in
-anyio==3.6.2
+anyio==3.7.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
@@ -25,27 +25,27 @@ aws-sam-translator==1.55.0
     #   cfn-lint
 aws-xray-sdk==2.12.0
     # via moto
-boto3==1.26.147
+boto3==1.26.159
     # via
     #   aws-sam-translator
     #   moto
-boto3-stubs==1.26.147
+boto3-stubs==1.26.159
     # via types-boto3
-botocore==1.29.147
+botocore==1.29.159
     # via
     #   aws-xray-sdk
     #   boto3
     #   moto
     #   s3transfer
-botocore-stubs==1.29.147
+botocore-stubs==1.29.159
     # via boto3-stubs
-certifi==2022.12.7
+certifi==2023.5.7
     # via
     #   -c requirements/_base.txt
     #   httpcore
     #   httpx
     #   requests
-cffi==1.15.0
+cffi==1.15.1
     # via
     #   -c requirements/_base.txt
     #   cryptography
@@ -53,7 +53,7 @@ cfn-lint==0.72.0
     # via
     #   -c requirements/./constraints.txt
     #   moto
-charset-normalizer==2.0.12
+charset-normalizer==3.1.0
     # via
     #   -c requirements/_base.txt
     #   requests
@@ -63,7 +63,7 @@ click==8.1.3
     #   flask
 coverage==7.2.7
     # via pytest-cov
-cryptography==39.0.1
+cryptography==41.0.1
     # via
     #   -c requirements/_base.txt
     #   moto
@@ -79,8 +79,11 @@ ecdsa==0.18.0
     #   python-jose
     #   sshpubkeys
 exceptiongroup==1.1.1
-    # via pytest
-faker==18.10.1
+    # via
+    #   -c requirements/_base.txt
+    #   anyio
+    #   pytest
+faker==18.11.1
     # via -r requirements/_test.in
 flask==2.1.3
     # via
@@ -94,19 +97,19 @@ greenlet==2.0.2
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
-h11==0.12.0
+h11==0.14.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
-httpcore==0.15.0
+httpcore==0.17.2
     # via
     #   -c requirements/_base.txt
     #   httpx
-httpx==0.24.0
+httpx==0.24.1
     # via
     #   -c requirements/_base.txt
     #   respx
-idna==3.3
+idna==3.4
     # via
     #   -c requirements/_base.txt
     #   anyio
@@ -132,11 +135,11 @@ jschema-to-python==1.2.3
     # via cfn-lint
 jsondiff==2.0.0
     # via moto
-jsonpatch==1.32
+jsonpatch==1.33
     # via cfn-lint
 jsonpickle==3.0.1
     # via jschema-to-python
-jsonpointer==2.3
+jsonpointer==2.4
     # via jsonpatch
 jsonschema==3.2.0
     # via
@@ -147,11 +150,11 @@ jsonschema==3.2.0
     #   openapi-spec-validator
 junit-xml==1.9
     # via cfn-lint
-mako==1.2.2
+mako==1.2.4
     # via
     #   -c requirements/_base.txt
     #   alembic
-markupsafe==2.1.1
+markupsafe==2.1.3
     # via
     #   -c requirements/_base.txt
     #   jinja2
@@ -159,7 +162,7 @@ markupsafe==2.1.1
     #   moto
 moto==4.0.1
     # via -r requirements/_test.in
-mypy==1.3.0
+mypy==1.4.0
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
@@ -180,7 +183,7 @@ pbr==5.11.1
     # via
     #   jschema-to-python
     #   sarif-om
-pluggy==1.0.0
+pluggy==1.2.0
     # via pytest
 pyasn1==0.5.0
     # via
@@ -190,13 +193,13 @@ pycparser==2.21
     # via
     #   -c requirements/_base.txt
     #   cffi
-pyparsing==3.0.9
+pyparsing==3.1.0
     # via moto
-pyrsistent==0.18.1
+pyrsistent==0.19.3
     # via
     #   -c requirements/_base.txt
     #   jsonschema
-pytest==7.3.1
+pytest==7.4.0
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -209,7 +212,7 @@ pytest-cov==4.1.0
     # via -r requirements/_test.in
 pytest-docker==1.0.1
     # via -r requirements/_test.in
-pytest-mock==3.10.0
+pytest-mock==3.11.1
     # via -r requirements/_test.in
 pytest-runner==6.0.0
     # via -r requirements/_test.in
@@ -232,7 +235,6 @@ pyyaml==5.4.1
     #   responses
 requests==2.31.0
     # via
-    #   -c requirements/_base.txt
     #   docker
     #   moto
     #   responses
@@ -256,14 +258,14 @@ six==1.16.0
     #   jsonschema
     #   junit-xml
     #   python-dateutil
-sniffio==1.2.0
+sniffio==1.3.0
     # via
     #   -c requirements/_base.txt
     #   anyio
     #   asgi-lifespan
     #   httpcore
     #   httpx
-sqlalchemy==1.4.47
+sqlalchemy==1.4.48
     # via
     #   -r requirements/_test.in
     #   alembic
@@ -286,19 +288,20 @@ types-pyyaml==6.0.12.10
     # via responses
 types-s3transfer==0.6.1
     # via boto3-stubs
-typing-extensions==4.3.0
+typing-extensions==4.6.3
     # via
     #   -c requirements/_base.txt
+    #   alembic
     #   mypy
     #   sqlalchemy2-stubs
-urllib3==1.26.9
+urllib3==1.26.16
     # via
-    #   -c requirements/_base.txt
+    #   -c requirements/../../../requirements/constraints.txt
     #   botocore
     #   docker
     #   requests
     #   responses
-websocket-client==1.5.2
+websocket-client==1.6.0
     # via docker
 werkzeug==2.1.2
     # via

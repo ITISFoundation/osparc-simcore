@@ -10,6 +10,9 @@ from typing import Any
 
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from models_library.projects_nodes_io import NodeID
+from models_library.services_resources import ServiceResourcesDictHelpers
+from simcore_postgres_database.utils_projects_nodes import ProjectNodeCreate
 from simcore_service_webserver.projects._db_utils import DB_EXCLUSIVE_COLUMNS
 from simcore_service_webserver.projects.db import APP_PROJECT_DBAPI, ProjectDBAPI
 from simcore_service_webserver.projects.models import ProjectDict
@@ -68,6 +71,16 @@ async def create_project(
         product_name=product_name,
         force_project_uuid=force_uuid,
         force_as_template=as_template,
+        # NOTE: fake initial resources until more is needed
+        project_nodes={
+            NodeID(node_id): ProjectNodeCreate(
+                node_id=NodeID(node_id),
+                required_resources=ServiceResourcesDictHelpers.Config.schema_extra[
+                    "examples"
+                ][0],
+            )
+            for node_id in project_data.get("workbench", {})
+        },
     )
     try:
         uuidlib.UUID(str(project_data["uuid"]))

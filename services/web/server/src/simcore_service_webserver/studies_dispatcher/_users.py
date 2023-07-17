@@ -50,7 +50,7 @@ async def _get_authorized_user(request: web.Request) -> dict:
     return {}
 
 
-async def _create_temporary_user(request: web.Request):
+async def _create_temporary_guest_user(request: web.Request):
     db: AsyncpgStorage = get_plugin_storage(request.app)
     redis_locks_client: aioredis.Redis = get_redis_lock_manager_client(request.app)
     settings: StudiesDispatcherSettings = get_plugin_settings(app=request.app)
@@ -115,15 +115,23 @@ async def _create_temporary_user(request: web.Request):
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def get_or_create_user(
-    request: web.Request, *, is_guest_allowed: bool
+async def get_or_create_guest_user(
+    request: web.Request, *, allow_anonymous_or_guest_users: bool
 ) -> UserInfo:
     """
+    A user w/o authentication is denoted ANONYMOUS. If allow_anonymous_or_guest_users=True, then
+    these users can be automatically promoted to GUEST. For that, a temporary guest account
+    is created and associated to this user.
+
+    GUEST users are therefore a special user that is un-identified to us (no email/name, etc)
+
+    NOTE that if allow_anonymous_or_guest_users=False, GUEST users are NOT allowed in the system either.
+
     Arguments:
-        is_guest_allowed -- if True, it will create a temporary GUEST account
+        allow_anonymous_or_guest_users -- if True, it will create a temporary GUEST account
 
     Raises:
-        web.HTTPUnauthorized
+        web.HTTPUnauthorized if ANONYMOUS users are not allowed (either w/o auth or as GUEST)
 
     """
     user = None
@@ -134,12 +142,13 @@ async def get_or_create_user(
         # NOTE: covers valid cookie with unauthorized user (e.g. expired guest/banned)
         user = await _get_authorized_user(request)
 
-    if not user and is_guest_allowed:
-        _logger.debug("Creating temporary GUEST user ...")
-        user = await _create_temporary_user(request)
+    if not user and allow_anonymous_or_guest_users:
+        _logger.debug("Anonymous user is accepted as guest...")
+        user = await _create_temporary_guest_user(request)
         is_anonymous_user = True
 
-    if not is_guest_allowed and (not user or user.get("role") == GUEST):
+    if not allow_anonymous_or_guest_users and (not user or user.get("role") == GUEST):
+        # NOTE: if allow_anonymous_users=False then GUEST users are NOT allowed!
         raise web.HTTPUnauthorized(reason=MSG_GUESTS_NOT_ALLOWED)
 
     assert isinstance(user, dict)  # nosec

@@ -1,41 +1,48 @@
-# pylint: disable=redefined-outer-name
-# pylint: disable=unused-argument
-# pylint: disable=unused-variable
-
-from typing import Awaitable, Callable
-from unittest import mock
+from datetime import datetime, timedelta, timezone
 
 import pytest
-import requests_mock
-from fastapi import FastAPI
 from simcore_service_resource_usage_tracker.resource_tracker_core import (
-    collect_service_resource_usage_task,
+    _prepare_prom_query_parameters,
+    _PromQueryParameters,
 )
 
-
-@pytest.fixture
-def minimal_configuration(
-    mocked_prometheus_with_query: requests_mock.Mocker,
-    disabled_tracker_background_task: dict[str, mock.Mock],
-    initialized_app: FastAPI,
-) -> None:
-    assert initialized_app
-    disabled_tracker_background_task["start_task"].assert_called_once()
+_current_timestamp = datetime.now(tz=timezone.utc)
 
 
-@pytest.fixture
-def trigger_collect_service_resource_usage(
-    initialized_app: FastAPI,
-) -> Callable[[], Awaitable[None]]:
-    async def _triggerer() -> None:
-        return await collect_service_resource_usage_task(initialized_app)
-
-    return _triggerer
-
-
-async def test_triggering(
-    minimal_configuration: None,
-    mocked_prometheus_with_query: requests_mock.Mocker,
-    trigger_collect_service_resource_usage: Callable[[], Awaitable[None]],
+@pytest.mark.parametrize(
+    "prometheus_last_scraped_timestamp,current_timestamp,expected",
+    [
+        (
+            _current_timestamp - timedelta(minutes=1),
+            _current_timestamp,
+            1,
+        ),
+        (
+            _current_timestamp - timedelta(minutes=24),
+            _current_timestamp,
+            1,
+        ),
+        (
+            _current_timestamp - timedelta(minutes=49),
+            _current_timestamp,
+            2,
+        ),
+        (
+            _current_timestamp - timedelta(minutes=300),
+            _current_timestamp,
+            12,
+        ),
+    ],
+)
+async def test_prepare_prom_query_parameters(
+    prometheus_last_scraped_timestamp: datetime,
+    current_timestamp: datetime,
+    expected: int,
 ):
-    await trigger_collect_service_resource_usage()
+    data: list[_PromQueryParameters] = _prepare_prom_query_parameters(
+        "osparc.local", prometheus_last_scraped_timestamp, current_timestamp
+    )
+    assert len(data) == expected
+    for current_item, next_item in zip(data, data[1:]):
+        assert current_item.image_regex.startswith("registry.osparc.local")
+        assert current_item.scrape_timestamp < next_item.scrape_timestamp

@@ -54,3 +54,6 @@ MAX_CONCURRENT_DB_TASKS: Final[int] = 2
 # DATA STORAGE MANAGER ----------------------------------
 APP_DSM_KEY = f"{__name__}.DSM"
 APP_S3_KEY = f"{__name__}.S3_CLIENT"
+
+
+EXPAND_DIR_MAX_ITEM_COUNT: Final[int] = 1000

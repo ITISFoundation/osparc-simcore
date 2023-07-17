@@ -21,102 +21,73 @@ qx.Class.define("osparc.info.StudyUtils", {
 
   statics: {
     /**
-      * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
+      * @param study {osparc.data.model.Study} Study Model
       */
     createTitle: function(study) {
       const title = osparc.info.Utils.createTitle();
-      if (study instanceof osparc.data.model.Study) {
-        study.bind("name", title, "value");
-      } else {
-        title.setValue(study["name"]);
-      }
+      study.bind("name", title, "value");
       return title;
     },
 
     /**
-      * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
+      * @param study {osparc.data.model.Study} Study Model
       */
     createUuid: function(study) {
       const uuid = osparc.info.Utils.createId();
-      if (study instanceof osparc.data.model.Study) {
-        study.bind("uuid", uuid, "value");
-        study.bind("uuid", uuid, "toolTipText");
-      } else {
-        uuid.set({
-          value: study["uuid"],
-          toolTipText: study["uuid"]
-        });
-      }
+      study.bind("uuid", uuid, "value");
+      study.bind("uuid", uuid, "toolTipText");
       return uuid;
     },
 
     /**
-      * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
+      * @param study {osparc.data.model.Study} Study Model
       */
     createOwner: function(study) {
       const owner = new qx.ui.basic.Label();
-      if (study instanceof osparc.data.model.Study) {
-        study.bind("prjOwner", owner, "value", {
-          converter: email => {
-            if (email === osparc.auth.Data.getInstance().getEmail()) {
-              return qx.locale.Manager.tr("me");
-            }
-            return osparc.utils.Utils.getNameFromEmail(email);
-          },
-          onUpdate: (source, target) => {
-            target.setToolTipText(source.getPrjOwner());
+      study.bind("prjOwner", owner, "value", {
+        converter: email => {
+          if (email === osparc.auth.Data.getInstance().getEmail()) {
+            return qx.locale.Manager.tr("me");
           }
-        });
-      } else {
-        owner.set({
-          value: osparc.utils.Utils.getNameFromEmail(study["prjOwner"]),
-          toolTipText: study["prjOwner"]
-        });
-      }
+          return osparc.utils.Utils.getNameFromEmail(email);
+        },
+        onUpdate: (source, target) => {
+          target.setToolTipText(source.getPrjOwner());
+        }
+      });
       return owner;
     },
 
     /**
-      * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
+      * @param study {osparc.data.model.Study} Study Model
       */
     createCreationDate: function(study) {
       const creationDate = new qx.ui.basic.Label();
-      if (study instanceof osparc.data.model.Study) {
-        const dateOptions = {
-          converter: date => osparc.utils.Utils.formatDateAndTime(date)
-        };
-        study.bind("creationDate", creationDate, "value", dateOptions);
-      } else {
-        const date = osparc.utils.Utils.formatDateAndTime(new Date(study["creationDate"]));
-        creationDate.setValue(date);
-      }
+      study.bind("creationDate", creationDate, "value", {
+        converter: date => osparc.utils.Utils.formatDateAndTime(date)
+      });
       return creationDate;
     },
 
     /**
-      * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
+      * @param study {osparc.data.model.Study} Study Model
       */
     createLastChangeDate: function(study) {
       const lastChangeDate = new qx.ui.basic.Label();
-      if (study instanceof osparc.data.model.Study) {
-        const dateOptions = {
-          converter: date => osparc.utils.Utils.formatDateAndTime(date)
-        };
-        study.bind("lastChangeDate", lastChangeDate, "value", dateOptions);
-      } else {
-        const date = osparc.utils.Utils.formatDateAndTime(new Date(study["lastChangeDate"]));
-        lastChangeDate.setValue(date);
-      }
+      study.bind("lastChangeDate", lastChangeDate, "value", {
+        converter: date => osparc.utils.Utils.formatDateAndTime(date)
+      });
       return lastChangeDate;
     },
 
     /**
-      * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
+      * @param study {osparc.data.model.Study} Study Model
       */
     createAccessRights: function(study) {
+      const accessRights = new qx.ui.basic.Label();
       let permissions = "";
       const myGID = osparc.auth.Data.getInstance().getGroupId();
-      const ar = (study instanceof osparc.data.model.Study) ? study.getAccessRights() : study["accessRights"];
+      const ar = study.getAccessRights();
       if (myGID in ar) {
         if (ar[myGID]["delete"]) {
           permissions = qx.locale.Manager.tr("Owner");
@@ -126,22 +97,18 @@ qx.Class.define("osparc.info.StudyUtils", {
           permissions = qx.locale.Manager.tr("Viewer");
         }
       }
-      const accessRights = new qx.ui.basic.Label(permissions);
+      accessRights.setValue(permissions);
       return accessRights;
     },
 
     /**
-      * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
+      * @param study {osparc.data.model.Study} Study Model
       */
     createClassifiers: function(study) {
       const nClassifiers = new qx.ui.basic.Label();
-      if (study instanceof osparc.data.model.Study) {
-        study.bind("classifiers", nClassifiers, "value", {
-          converter: classifiers => `(${classifiers.length})`
-        });
-      } else {
-        nClassifiers.setValue(`(${study["classifiers"].length})`);
-      }
+      study.bind("classifiers", nClassifiers, "value", {
+        converter: classifiers => `(${classifiers.length})`
+      });
       return nClassifiers;
     },
 
@@ -167,73 +134,48 @@ qx.Class.define("osparc.info.StudyUtils", {
           tsrLayout.exclude();
         }
       };
-      study.addListener("changeQuality", () => {
-        addStars(study);
-      }, this);
+      study.addListener("changeQuality", () => addStars(study), this);
       addStars(study);
       return tsrLayout;
     },
 
     /**
-      * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
+      * @param study {osparc.data.model.Study} Study Model
       * @param maxWidth {Number} thumbnail's maxWidth
       * @param maxHeight {Number} thumbnail's maxHeight
       */
     createThumbnail: function(study, maxWidth, maxHeight) {
       const thumbnail = osparc.info.Utils.createThumbnail(maxWidth, maxHeight);
       const noThumbnail = "osparc/no_photography_black_24dp.svg";
-      if (study instanceof osparc.data.model.Study) {
-        study.bind("thumbnail", thumbnail, "source", {
-          converter: thumb => thumb ? thumb : noThumbnail,
-          onUpdate: (source, target) => {
-            if (source.getThumbnail() === "") {
-              target.getChildControl("image").set({
-                minWidth: 100,
-                minHeight: 100
-              });
-            }
+      study.bind("thumbnail", thumbnail, "source", {
+        converter: thumb => thumb ? thumb : noThumbnail,
+        onUpdate: (source, target) => {
+          if (source.getThumbnail() === "") {
+            target.getChildControl("image").set({
+              minWidth: 100,
+              minHeight: 100
+            });
           }
-        });
-      } else if (study["thumbnail"]) {
-        thumbnail.set({
-          source: study["thumbnail"]
-        });
-      } else {
-        thumbnail.set({
-          source: noThumbnail,
-          minWidth: 100,
-          minHeight: 100
-        });
-      }
+        }
+      });
       return thumbnail;
     },
 
     /**
-      * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
+      * @param study {osparc.data.model.Study} Study Model
       * @param maxHeight {Number} description's maxHeight
       */
     createDescription: function(study, maxHeight) {
-      const descriptionLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
-        alignY: "middle"
-      }));
-
-      const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Description")).set({
-        font: "text-13"
-      });
-      descriptionLayout.add(label);
-
       const description = new osparc.ui.markdown.Markdown().set({
-        noMargin: true,
-        maxHeight: maxHeight
+        noMargin: true
       });
-      if (study instanceof osparc.data.model.Study) {
-        study.bind("description", description, "value");
-      } else {
-        description.setValue(study["description"]);
+      if (maxHeight) {
+        description.setMaxHeight(maxHeight);
       }
-      descriptionLayout.add(description);
-
-      return descriptionLayout;
+      study.bind("description", description, "value", {
+        converter: desc => desc ? desc : "Add description"
+      });
+      return description;
     },
 
     /**
@@ -261,73 +203,135 @@ qx.Class.define("osparc.info.StudyUtils", {
       * @param study {osparc.data.model.Study} Study Model
       */
     createTags: function(study) {
-      const tagsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
-        alignY: "middle"
-      }));
-
-      const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Tags")).set({
-        font: "text-13"
-      });
-      tagsLayout.add(label);
-
       const tagsContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      tagsContainer.setMarginTop(5);
-      tagsLayout.add(tagsContainer);
 
       const addTags = model => {
         tagsContainer.removeAll();
+        const noTagsLabel = new qx.ui.basic.Label(qx.locale.Manager.tr("Add tags"));
+        tagsContainer.add(noTagsLabel);
         osparc.store.Store.getInstance().getTags().filter(tag => model.getTags().includes(tag.id))
           .forEach(selectedTag => {
+            if (tagsContainer.indexOf(noTagsLabel) > -1) {
+              tagsContainer.remove(noTagsLabel);
+            }
             tagsContainer.add(new osparc.ui.basic.Tag(selectedTag.name, selectedTag.color));
           });
       };
-      study.addListener("changeTags", () => {
-        addTags(study);
-      }, this);
+      study.addListener("changeTags", () => addTags(study), this);
       addTags(study);
 
-      return tagsLayout;
+      return tagsContainer;
     },
 
-    createExtraInfo: function(extraInfos) {
-      const grid = new qx.ui.layout.Grid(8, 5);
+    createExtraInfoVBox: function(extraInfos) {
+      const grid = new qx.ui.layout.Grid(10, 8);
       grid.setColumnAlign(0, "right", "middle");
       grid.setColumnAlign(1, "left", "middle");
-      const moreInfo = new qx.ui.container.Composite(grid).set({
-        allowGrowX: false,
-        alignX: "center",
-        alignY: "middle"
-      });
+      const moreInfo = new qx.ui.container.Composite(grid);
 
-      for (let i=0; i<extraInfos.length; i++) {
-        const extraInfo = extraInfos[i];
-        moreInfo.add(new qx.ui.basic.Label(extraInfo.label).set({
-          font: "text-13"
-        }), {
-          row: i,
+      Object.keys(extraInfos).forEach((key, idx) => {
+        const extraInfo = extraInfos[key];
+
+        const title = new qx.ui.basic.Label(extraInfo.label);
+        moreInfo.add(title, {
+          row: idx,
           column: 0
         });
 
         moreInfo.add(extraInfo.view, {
-          row: i,
+          row: idx,
           column: 1
         });
+      });
 
-        if (extraInfo.action) {
-          extraInfo.action.button.addListener("execute", () => {
-            const cb = extraInfo.action.callback;
-            if (typeof cb === "string") {
-              extraInfo.action.ctx.fireEvent(cb);
-            } else {
-              cb.call(extraInfo.action.ctx);
-            }
-          }, this);
-          moreInfo.add(extraInfo.action.button, {
-            row: i,
-            column: 2
+      return moreInfo;
+    },
+
+    createExtraInfoGrid: function(extraInfos) {
+      const positions = {
+        ACCESS_RIGHTS: {
+          column: 0,
+          row: 0
+        },
+        AUTHOR: {
+          column: 1,
+          row: 0
+        },
+        CREATED: {
+          column: 2,
+          row: 0
+        },
+        MODIFIED: {
+          column: 3,
+          row: 0
+        },
+        THUMBNAIL: {
+          column: 4,
+          row: 0,
+          rowSpan: 4
+        },
+        TAGS: {
+          column: 0,
+          row: 3,
+          colSpan: 2
+        },
+        QUALITY: {
+          column: 2,
+          row: 3
+        },
+        CLASSIFIERS: {
+          column: 3,
+          row: 3
+        },
+        DESCRIPTION: {
+          column: 0,
+          row: 6,
+          colSpan: 5
+        }
+      };
+
+      const grid = new qx.ui.layout.Grid(40, 5);
+      grid.setColumnAlign(0, "left", "middle");
+      grid.setColumnAlign(1, "left", "middle");
+      grid.setColumnAlign(2, "left", "middle");
+      grid.setColumnAlign(3, "left", "middle");
+      grid.setRowHeight(2, 10); // spacer
+      grid.setRowHeight(5, 10); // spacer
+      const moreInfo = new qx.ui.container.Composite(grid);
+
+      Object.keys(positions).forEach(key => {
+        if (key in extraInfos) {
+          const extraInfo = extraInfos[key];
+          const gridInfo = positions[key];
+
+          const titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+          const title = new qx.ui.basic.Label(extraInfo.label);
+          titleLayout.add(title);
+          if (extraInfo.action) {
+            titleLayout.add(extraInfo.action.button);
+            extraInfo.action.button.addListener("execute", () => {
+              const cb = extraInfo.action.callback;
+              if (typeof cb === "string") {
+                extraInfo.action.ctx.fireEvent(cb);
+              } else {
+                cb.call(extraInfo.action.ctx);
+              }
+            }, this);
+          }
+          moreInfo.add(titleLayout, {
+            row: gridInfo.row,
+            column: gridInfo.column,
+            colSpan: gridInfo.colSpan ? gridInfo.colSpan : 1
+          });
+
+          moreInfo.add(extraInfo.view, {
+            row: gridInfo.row+1,
+            column: gridInfo.column,
+            colSpan: gridInfo.colSpan ? gridInfo.colSpan : 1,
+            rowSpan: gridInfo.rowSpan ? gridInfo.rowSpan : 1
           });
         }
-      }
+      });
 
       return moreInfo;
     },

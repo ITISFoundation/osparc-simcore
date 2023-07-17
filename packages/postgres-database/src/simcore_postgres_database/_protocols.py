@@ -16,6 +16,12 @@ class DBConnection(Protocol):
     async def scalar(self, *args, **kwargs):
         ...
 
+    async def execute(self, *args, **kwargs):
+        ...
+
+    async def begin(self):
+        ...
+
 
 class AiopgConnection(Protocol):
     # Prototype to account for aiopg-only (this protocol avoids import <-> installation)

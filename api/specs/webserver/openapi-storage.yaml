@@ -1,597 +1,749 @@
 paths:
   /storage/locations:
     get:
-      summary: Get available storage locations
       tags:
-        - storage
+      - storage
+      summary: Get available storage locations
+      description: Returns the list of available storage locations
       operationId: get_storage_locations
       responses:
-        "200":
-          description: "List of availabe storage locations"
+        '200':
+          description: Successful Response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FileLocationArray"
-        default:
-          $ref: "#/components/responses/DefaultErrorResponse"
-
+                title: Response Get Storage Locations
+                type: array
+                items:
+                  $ref: '#/components/schemas/DatasetMetaData'
   /storage/locations/{location_id}:sync:
     post:
-      summary: Manually triggers the synchronisation of the file meta data table in the database
       tags:
-        - storage
+      - storage
+      summary: Manually triggers the synchronisation of the file meta data table in
+        the database
+      description: Returns an object containing added, changed and removed paths
       operationId: synchronise_meta_data_table
       parameters:
-        - name: location_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: dry_run
-          in: query
-          required: false
-          schema:
-            type: boolean
-            default: true
-        - name: fire_and_forget
-          in: query
-          required: false
-          schema:
-            type: boolean
-            default: false
+      - required: true
+        schema:
+          title: Location Id
+          type: integer
+        name: location_id
+        in: path
+      - required: false
+        schema:
+          title: Dry Run
+          type: boolean
+          default: false
+        name: dry_run
+        in: query
+      - required: false
+        schema:
+          title: Fire And Forget
+          type: boolean
+          default: false
+        name: fire_and_forget
+        in: query
       responses:
-        "200":
-          description: An object containing added, changed and removed paths
+        '200':
+          description: Successful Response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TableSynchronisationEnveloped"
-        default:
-          $ref: "#/components/responses/DefaultErrorResponse"
-
+                $ref: '#/components/schemas/Envelope_TableSynchronisation_'
   /storage/locations/{location_id}/datasets:
     get:
-      summary: Get datasets metadata
       tags:
-        - storage
+      - storage
+      summary: Get datasets metadata
+      description: returns all the top level datasets a user has access to
       operationId: get_datasets_metadata
       parameters:
-        - name: location_id
-          in: path
-          required: true
-          schema:
-            type: string
+      - required: true
+        schema:
+          title: Location Id
+          type: integer
+        name: location_id
+        in: path
       responses:
-        "200":
-          description: "list of dataset meta-datas"
+        '200':
+          description: Successful Response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/DatasetMetaDataArray"
-        default:
-          $ref: "#/components/responses/DefaultErrorResponse"
-
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.storage.schemas.DatasetMetaData__'
   /storage/locations/{location_id}/files/metadata:
     get:
-      summary: Get list of file meta data
       tags:
-        - storage
+      - storage
+      summary: Get datasets metadata
+      description: returns all the file meta data a user has access to (uuid_filter
+        may be used)
       operationId: get_files_metadata
       parameters:
-        - name: location_id
-          in: path
-          required: true
-          schema:
-            type: string
+      - required: true
+        schema:
+          title: Location Id
+          type: integer
+        name: location_id
+        in: path
+      - required: false
+        schema:
+          title: Uuid Filter
+          type: string
+          default: ''
+        name: uuid_filter
+        in: query
+      - description: Automatic directory expansion. This will be replaced by pagination
+          the future
+        required: false
+        schema:
+          title: Expand Dirs
+          type: boolean
+          description: Automatic directory expansion. This will be replaced by pagination
+            the future
+          default: true
+        name: expand_dirs
+        in: query
       responses:
-        "200":
-          description: "list of file meta-datas"
+        '200':
+          description: Successful Response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FileMetaDataArray"
-        default:
-          $ref: "#/components/responses/DefaultErrorResponse"
-
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.storage.schemas.DatasetMetaData__'
   /storage/locations/{location_id}/datasets/{dataset_id}/metadata:
     get:
-      summary: Get Files Metadata
       tags:
-        - storage
+      - storage
+      summary: Get Files Metadata
+      description: returns all the file meta data inside dataset with dataset_id
       operationId: get_files_metadata_dataset
       parameters:
-        - name: location_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: dataset_id
-          in: path
-          required: true
-          schema:
-            type: string
+      - required: true
+        schema:
+          title: Location Id
+          type: integer
+        name: location_id
+        in: path
+      - required: true
+        schema:
+          title: Dataset Id
+          type: string
+        name: dataset_id
+        in: path
+      - description: Automatic directory expansion. This will be replaced by pagination
+          the future
+        required: false
+        schema:
+          title: Expand Dirs
+          type: boolean
+          description: Automatic directory expansion. This will be replaced by pagination
+            the future
+          default: true
+        name: expand_dirs
+        in: query
       responses:
-        "200":
-          description: "list of file meta-datas"
+        '200':
+          description: Successful Response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FileMetaDataArray"
-        default:
-          $ref: "#/components/responses/DefaultErrorResponse"
-
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_storage.FileMetaDataGet__'
+  /storage/locations/{location_id}/files/{file_id}/metadata:
+    get:
+      tags:
+      - storage
+      summary: Get File Metadata
+      description: returns the file meta data of file_id if user_id has the rights
+        to
+      operationId: get_file_metadata
+      parameters:
+      - required: true
+        schema:
+          title: Location Id
+          type: integer
+        name: location_id
+        in: path
+      - required: true
+        schema:
+          title: File Id
+          type: string
+        name: file_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: Response Get File Metadata
+                anyOf:
+                - $ref: '#/components/schemas/FileMetaData'
+                - $ref: '#/components/schemas/Envelope_FileMetaDataGet_'
   /storage/locations/{location_id}/files/{file_id}:
     get:
-      summary: Returns download link for requested file
       tags:
-        - storage
+      - storage
+      summary: Returns download link for requested file
+      description: creates a download file link if user has the rights to
       operationId: download_file
       parameters:
-        - name: file_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: location_id
-          in: path
-          required: true
-          schema:
-            type: string
+      - required: true
+        schema:
+          title: Location Id
+          type: integer
+        name: location_id
+        in: path
+      - required: true
+        schema:
+          title: File Id
+          type: string
+        name: file_id
+        in: path
+      - required: false
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/LinkType'
+          # NOTE: always apply this patch manually
+          # default: PRESIGNED
+        name: link_type
+        in: query
       responses:
-        "200":
-          $ref: "#/components/responses/PresignedLink_200"
-    put:
-      summary: Returns upload link
-      tags:
-        - storage
-      operationId: upload_file
-      parameters:
-        - name: file_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: location_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: file_size
-          in: query
-          required: false
-          schema:
-            type: integer
-            format: int64
-            minimum: 0
-      responses:
-        "200":
-          description: Return upload object
+        '200':
+          description: Successful Response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FileUploadEnveloped"
-          links:
-            CompleteUpload:
-              operationId: complete_upload_file
-              parameters:
-                path.location_id: "$request.path.location_id"
-                path.file_id: "$request.path.file_id"
-                query.user_id: "$request.query.user_id"
-            AbortUpload:
-              operationId: abort_upload_file
-              parameters:
-                path.location_id: "$request.path.location_id"
-                path.file_id: "$request.path.file_id"
-                query.user_id: "$request.query.user_id"
-    delete:
-      summary: Deletes File
+                $ref: '#/components/schemas/Envelope_PresignedLink_'
+    put:
       tags:
-        - storage
+      - storage
+      summary: Returns upload link
+      description: creates one or more upload file links if user has the rights to,
+        expects the client to complete/abort upload
+      operationId: upload_file
+      parameters:
+      - required: true
+        schema:
+          title: Location Id
+          type: integer
+        name: location_id
+        in: path
+      - required: true
+        schema:
+          title: File Id
+          type: string
+        name: file_id
+        in: path
+      - required: true
+        schema:
+          title: File Size
+          type: integer
+        name: file_size
+        in: query
+      - required: false
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/LinkType'
+          # NOTE: always apply this patch manually
+          # default: PRESIGNED
+        name: link_type
+        in: query
+      - required: false
+        schema:
+          title: Is Directory
+          type: boolean
+          default: false
+        name: is_directory
+        in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: Response Upload File
+                anyOf:
+                - $ref: '#/components/schemas/Envelope_FileUploadSchema_'
+                - $ref: '#/components/schemas/Envelope_AnyUrl_'
+    delete:
+      tags:
+      - storage
+      summary: Deletes File
+      description: deletes file if user has the rights to
       operationId: delete_file
       parameters:
-        - name: file_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: location_id
-          in: path
-          required: true
-          schema:
-            type: string
+      - required: true
+        schema:
+          title: Location Id
+          type: integer
+        name: location_id
+        in: path
+      - required: true
+        schema:
+          title: File Id
+          type: string
+        name: file_id
+        in: path
       responses:
-        "204":
-          description: ""
-
+        '204':
+          description: Successful Response
   /storage/locations/{location_id}/files/{file_id}:abort:
     post:
-      summary: Asks the server to abort the upload and revert to the last valid version if any
+      tags:
+      - storage
+      summary: Abort Upload File
+      description: 'aborts an upload if user has the rights to, and reverts
+
+        to the latest version if available, else will delete the file'
       operationId: abort_upload_file
       parameters:
-        - name: file_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: location_id
-          in: path
-          required: true
-          schema:
-            type: string
+      - required: true
+        schema:
+          title: Location Id
+          type: integer
+        name: location_id
+        in: path
+      - required: true
+        schema:
+          title: File Id
+          type: string
+        name: file_id
+        in: path
       responses:
-        "204":
-          description: Abort OK
-        default:
-          $ref: "#/components/responses/DefaultErrorResponse"
-
+        '204':
+          description: Successful Response
   /storage/locations/{location_id}/files/{file_id}:complete:
     post:
-      summary: Asks the server to complete the upload
+      tags:
+      - storage
+      summary: Complete Upload File
+      description: completes an upload if the user has the rights to
       operationId: complete_upload_file
       parameters:
-        - name: file_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: location_id
-          in: path
-          required: true
-          schema:
-            type: string
+      - required: true
+        schema:
+          title: Location Id
+          type: integer
+        name: location_id
+        in: path
+      - required: true
+        schema:
+          title: File Id
+          type: string
+        name: file_id
+        in: path
       requestBody:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - parts
-              properties:
-                parts:
-                  type: array
-                  items:
-                    type: object
-                    required:
-                      - number
-                      - e_tag
-                    properties:
-                      number:
-                        type: integer
-                        minimum: 1
-                      e_tag:
-                        type: string
+              $ref: '#/components/schemas/Envelope_FileUploadCompletionBody_'
+        required: true
       responses:
-        "202":
-          description: Completion of upload is accepted
+        '202':
+          description: Successful Response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FileUploadCompleteEnveloped"
-          links:
-            CompleteUploadStatus:
-              operationId: is_completed_upload_file
-              parameters:
-                path.location_id: "$request.path.location_id"
-                path.file_id: "$request.path.file_id"
-                path.future_id: "$response.body.data.links.state"
-                query.user_id: "$request.query.user_id"
-        default:
-          $ref: "#/components/responses/DefaultErrorResponse"
-
+                $ref: '#/components/schemas/Envelope_FileUploadCompleteResponse_'
   /storage/locations/{location_id}/files/{file_id}:complete/futures/{future_id}:
     post:
+      tags:
+      - storage
       summary: Check for upload completion
+      description: Returns state of upload completion
       operationId: is_completed_upload_file
       parameters:
-        - name: future_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: file_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: location_id
-          in: path
-          required: true
-          schema:
-            type: string
+      - required: true
+        schema:
+          title: Location Id
+          type: integer
+        name: location_id
+        in: path
+      - required: true
+        schema:
+          title: File Id
+          type: string
+        name: file_id
+        in: path
+      - required: true
+        schema:
+          title: Future Id
+          type: string
+        name: future_id
+        in: path
       responses:
-        "200":
-          description: returns state of upload completion
+        '200':
+          description: Successful Response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FileUploadCompleteFutureEnveloped"
-        default:
-          $ref: "#/components/responses/DefaultErrorResponse"
-
-  /storage/locations/{location_id}/files/{file_id}/metadata:
-    get:
-      summary: Get File Metadata
-      tags:
-        - storage
-      operationId: get_file_metadata
-      parameters:
-        - name: file_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: location_id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          $ref: "#/components/responses/FileMetaData_200"
-
+                $ref: '#/components/schemas/Envelope_FileUploadCompleteFutureResponse_'
 components:
-  requestBodies:
-    FileMetaDataBody:
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/FileMetaData"
-
-  responses:
-    FileMetaData_200:
-      description: "Returns file metadata"
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/FileMetaData"
-
-    PresignedLink_200:
-      description: "Returns presigned link"
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/PresignedLink"
-
-    DefaultErrorResponse:
-      $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
-
   schemas:
-    FileLocationEnveloped:
-      type: object
-      required:
-        - data
-      properties:
-        data:
-          $ref: "#/components/schemas/FileLocation"
-        error:
-          nullable: true
-          default: null
-
-    FileLocation:
-      type: object
-      properties:
-        name:
-          type: string
-        id:
-          type: number
-      example:
-        filename: "simcore.s3"
-        id: 0
-
-    FileLocationArray:
-      type: array
-      items:
-        $ref: "#/components/schemas/FileLocation"
-
-    TableSynchronisationEnveloped:
-      type: object
-      required:
-        - data
-        - error
-      properties:
-        data:
-          $ref: "#/components/schemas/TableSynchronisation"
-        error:
-          nullable: true
-          default: null
-
-    TableSynchronisation:
-      type: object
-      required:
-        - removed
-      properties:
-        dry_run:
-          type: boolean
-        fire_and_forget:
-          type: boolean
-        removed:
-          type: array
-          items:
-            type: string
-
-    FileUploadEnveloped:
-      type: object
-      required:
-        - data
-        - error
-      properties:
-        data:
-          $ref: "#/components/schemas/FileUploadSchema"
-        error:
-          nullable: true
-          default: null
-
-    FileUploadSchema:
-      type: object
-      required:
-        - chunk_size
-        - urls
-        - links
-      properties:
-        chunk_size:
-          type: integer
-          format: int64
-          minimum: 0
-        urls:
-          type: array
-          items:
-            type: string
-        links:
-          type: object
-          required:
-            - abort_upload
-            - complete_upload
-          properties:
-            abort_upload:
-              type: string
-            complete_upload:
-              type: string
-
-    FileUploadCompleteEnveloped:
-      type: object
-      required:
-        - data
-        - error
-      properties:
-        data:
-          $ref: "#/components/schemas/FileUploadComplete"
-        error:
-          nullable: true
-          default: null
-
-    FileUploadComplete:
-      type: object
-      required:
-        - links
-      properties:
-        links:
-          type: object
-          required:
-            - state
-          properties:
-            state:
-              type: string
-
-    FileUploadCompleteFutureEnveloped:
-      type: object
-      required:
-        - data
-        - error
-      properties:
-        data:
-          $ref: "#/components/schemas/FileUploadCompleteFuture"
-        error:
-          nullable: true
-          default: null
-
-    FileUploadCompleteFuture:
-      type: object
-      required:
-        - state
-      properties:
-        state:
-          type: string
-          enum:
-            - ok
-            - nok
-        e_tag:
-          type: string
-          nullable: true
-
-    DatasetMetaEnvelope:
-      type: object
-      required:
-        - data
-      properties:
-        data:
-          $ref: "#/components/schemas/DatasetMetaData"
-        error:
-          nullable: true
-          default: null
-
     DatasetMetaData:
+      title: DatasetMetaData
       type: object
       properties:
         dataset_id:
+          title: Dataset Id
           type: string
         display_name:
+          title: Display Name
           type: string
       example:
-        dataset_uuid: "N:id-aaaa"
-        display_name: "simcore-testing"
-
-    DatasetMetaDataArray:
-      type: array
-      items:
-        $ref: "#/components/schemas/DatasetMetaData"
-
-    FileMetaEnvelope:
+        dataset_id: N:id-aaaa
+        display_name: simcore-testing
+    Envelope_AnyUrl_:
+      title: Envelope[AnyUrl]
       type: object
-      required:
-        - data
       properties:
         data:
-          $ref: "#/components/schemas/FileMetaData"
+          title: Data
+          maxLength: 65536
+          minLength: 1
+          type: string
+          format: uri
         error:
-          nullable: true
-          default: null
-
-    # TODO: Rename with suffix *Type
+          title: Error
+    Envelope_FileMetaDataGet_:
+      title: Envelope[FileMetaDataGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/FileMetaDataGet'
+        error:
+          title: Error
+    Envelope_FileUploadCompleteFutureResponse_:
+      title: Envelope[FileUploadCompleteFutureResponse]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/FileUploadCompleteFutureResponse'
+        error:
+          title: Error
+    Envelope_FileUploadCompleteResponse_:
+      title: Envelope[FileUploadCompleteResponse]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/FileUploadCompleteResponse'
+        error:
+          title: Error
+    Envelope_FileUploadCompletionBody_:
+      title: Envelope[FileUploadCompletionBody]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/FileUploadCompletionBody'
+        error:
+          title: Error
+    Envelope_FileUploadSchema_:
+      title: Envelope[FileUploadSchema]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/FileUploadSchema'
+        error:
+          title: Error
+    Envelope_PresignedLink_:
+      title: Envelope[PresignedLink]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/PresignedLink'
+        error:
+          title: Error
+    Envelope_TableSynchronisation_:
+      title: Envelope[TableSynchronisation]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/TableSynchronisation'
+        error:
+          title: Error
+    Envelope_list_models_library.api_schemas_storage.FileMetaDataGet__:
+      title: Envelope[list[models_library.api_schemas_storage.FileMetaDataGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/FileMetaDataGet'
+        error:
+          title: Error
+    Envelope_list_simcore_service_webserver.storage.schemas.DatasetMetaData__:
+      title: Envelope[list[simcore_service_webserver.storage.schemas.DatasetMetaData]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/DatasetMetaData'
+        error:
+          title: Error
     FileMetaData:
+      title: FileMetaData
       type: object
       properties:
         file_uuid:
+          title: File Uuid
           type: string
         location_id:
+          title: Location Id
           type: string
         project_name:
+          title: Project Name
           type: string
         node_name:
+          title: Node Name
           type: string
         file_name:
+          title: File Name
           type: string
         file_id:
+          title: File Id
           type: string
         created_at:
+          title: Created At
           type: string
         last_modified:
+          title: Last Modified
           type: string
         file_size:
+          title: File Size
           type: integer
         entity_tag:
+          title: Entity Tag
           type: string
+        is_directory:
+          title: Is Directory
+          type: boolean
       example:
-        file_uuid: "simcore-testing/105/1000/3"
-        location_id: "0"
-        project_name: "futurology"
-        node_name: "alpha"
-        file_name: "example.txt"
-        file_id: "N:package:e263da07-2d89-45a6-8b0f-61061b913873"
-        created_at: "2019-06-19T12:29:03.308611Z"
-        last_modified: "2019-06-19T12:29:03.78852Z"
+        file_uuid: simcore-testing/105/1000/3
+        location_id: '0'
+        project_name: futurology
+        node_name: alpha
+        file_name: example.txt
+        file_id: N:package:e263da07-2d89-45a6-8b0f-61061b913873
+        created_at: '2019-06-19T12:29:03.308611Z'
+        last_modified: '2019-06-19T12:29:03.78852Z'
         file_size: 73
         entity_tag: a87ff679a2f3e71d9181a67b7542122c
-
-    FileMetaDataArray:
-      type: array
-      items:
-        $ref: "#/components/schemas/FileMetaData"
-
-    PresignedLinkEnveloped:
-      type: object
+        is_directory: false
+    FileMetaDataGet:
+      title: FileMetaDataGet
       required:
-        - data
+      - file_uuid
+      - location_id
+      - file_name
+      - file_id
+      - created_at
+      - last_modified
+      type: object
       properties:
-        data:
-          $ref: "#/components/schemas/PresignedLink"
-        error:
-          nullable: true
-          default: null
-
+        file_uuid:
+          title: File Uuid
+          type: string
+          description: NOT a unique ID, like (api|uuid)/uuid/file_name or DATCORE
+            folder structure
+        location_id:
+          title: Location Id
+          type: integer
+          description: Storage location
+        project_name:
+          title: Project Name
+          type: string
+          description: optional project name, used by frontend to display path
+        node_name:
+          title: Node Name
+          type: string
+          description: optional node name, used by frontend to display path
+        file_name:
+          title: File Name
+          type: string
+          description: Display name for a file
+        file_id:
+          title: File Id
+          anyOf:
+          - pattern: ^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$
+            type: string
+          - pattern: ^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$
+            type: string
+          description: THIS IS the unique ID for the file. either (api|project_id)/node_id/file_name.ext
+            for S3 and N:package:UUID for datcore
+        created_at:
+          title: Created At
+          type: string
+          format: date-time
+        last_modified:
+          title: Last Modified
+          type: string
+          format: date-time
+        file_size:
+          title: File Size
+          type: integer
+          description: File size in bytes (-1 means invalid)
+          default: -1
+        entity_tag:
+          title: Entity Tag
+          type: string
+          description: Entity tag (or ETag), represents a specific version of the
+            file, None if invalid upload or datcore
+        is_soft_link:
+          title: Is Soft Link
+          type: boolean
+          description: If true, this file is a soft link.i.e. is another entry with
+            the same object_name
+          default: false
+        is_directory:
+          title: Is Directory
+          type: boolean
+          description: if True this is a directory
+          default: false
+      additionalProperties: false
+    FileUploadCompleteFutureResponse:
+      title: FileUploadCompleteFutureResponse
+      required:
+      - state
+      type: object
+      properties:
+        state:
+          $ref: '#/components/schemas/FileUploadCompleteState'
+        e_tag:
+          title: E Tag
+          type: string
+    FileUploadCompleteLinks:
+      title: FileUploadCompleteLinks
+      required:
+      - state
+      type: object
+      properties:
+        state:
+          title: State
+          maxLength: 65536
+          minLength: 1
+          type: string
+          format: uri
+    FileUploadCompleteResponse:
+      title: FileUploadCompleteResponse
+      required:
+      - links
+      type: object
+      properties:
+        links:
+          $ref: '#/components/schemas/FileUploadCompleteLinks'
+    FileUploadCompleteState:
+      title: FileUploadCompleteState
+      enum:
+      - ok
+      - nok
+      description: An enumeration.
+    FileUploadCompletionBody:
+      title: FileUploadCompletionBody
+      required:
+      - parts
+      type: object
+      properties:
+        parts:
+          title: Parts
+          type: array
+          items:
+            $ref: '#/components/schemas/UploadedPart'
+    FileUploadLinks:
+      title: FileUploadLinks
+      required:
+      - abort_upload
+      - complete_upload
+      type: object
+      properties:
+        abort_upload:
+          title: Abort Upload
+          maxLength: 65536
+          minLength: 1
+          type: string
+          format: uri
+        complete_upload:
+          title: Complete Upload
+          maxLength: 65536
+          minLength: 1
+          type: string
+          format: uri
+    FileUploadSchema:
+      title: FileUploadSchema
+      required:
+      - chunk_size
+      - urls
+      - links
+      type: object
+      properties:
+        chunk_size:
+          title: Chunk Size
+          type: integer
+        urls:
+          title: Urls
+          type: array
+          items:
+            maxLength: 65536
+            minLength: 1
+            type: string
+            format: uri
+        links:
+          $ref: '#/components/schemas/FileUploadLinks'
+    LinkType:
+      title: LinkType
+      enum:
+      - PRESIGNED
+      - S3
+      type: string
+      description: An enumeration.
+      # NOTE: always apply this patch manually
+      default: PRESIGNED
     PresignedLink:
+      title: PresignedLink
+      required:
+      - link
       type: object
       properties:
         link:
+          title: Link
+          maxLength: 65536
+          minLength: 1
           type: string
-      example:
-        link: "example_link"
+          format: uri
+    TableSynchronisation:
+      title: TableSynchronisation
+      required:
+      - removed
+      type: object
+      properties:
+        dry_run:
+          title: Dry Run
+          type: boolean
+        fire_and_forget:
+          title: Fire And Forget
+          type: boolean
+        removed:
+          title: Removed
+          type: array
+          items:
+            type: string
+    UploadedPart:
+      title: UploadedPart
+      required:
+      - number
+      - e_tag
+      type: object
+      properties:
+        number:
+          title: Number
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        e_tag:
+          title: E Tag
+          type: string

@@ -16,10 +16,19 @@ class StorageSettings(BaseCustomSettings, MixinServiceSettings):
     STORAGE_VTAG: VersionTag = parse_obj_as(VersionTag, "v0")
 
     @cached_property
-    def api_base_url(self) -> str:
-        # http://storage:8080/v0
+    def base_url(self) -> str:
+        # e.g. http://storage:8000
         return self._compose_url(
-            prefix="storage",
+            prefix="STORAGE",
+            port=URLPart.REQUIRED,
+            vtag=URLPart.EXCLUDE,
+        )
+
+    @cached_property
+    def api_base_url(self) -> str:
+        # e.g. http://storage:8080/v0
+        return self._compose_url(
+            prefix="STORAGE",
             port=URLPart.REQUIRED,
             vtag=URLPart.REQUIRED,
         )

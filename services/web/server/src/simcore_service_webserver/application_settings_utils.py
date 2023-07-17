@@ -36,12 +36,6 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
             #     "zipkin_endpoint": f"{getattr(app_settings.WEBSERVER_TRACING, 'TRACING_ZIPKIN_ENDPOINT', None)}",
         },
         "socketio": {"enabled": app_settings.WEBSERVER_SOCKETIO},
-        "director": {
-            "enabled": app_settings.WEBSERVER_DIRECTOR is not None,
-            "host": getattr(app_settings.WEBSERVER_DIRECTOR, "DIRECTOR_HOST", None),
-            "port": getattr(app_settings.WEBSERVER_DIRECTOR, "DIRECTOR_PORT", None),
-            "version": getattr(app_settings.WEBSERVER_DIRECTOR, "DIRECTOR_VTAG", None),
-        },
         "db": {
             "postgres": {
                 "database": getattr(app_settings.WEBSERVER_DB, "POSTGRES_DB", None),
@@ -99,6 +93,9 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
                 "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED",
                 None,
             )
+            else 0,
+            "password_min_length": 12
+            if getattr(app_settings.WEBSERVER_LOGIN, "LOGIN_PASSWORD_MIN_LENGTH", None)
             else 0,
         },
         "smtp": {
@@ -196,12 +193,6 @@ def convert_to_environ_vars(cfg: dict[str, Any]) -> dict[str, Any]:
     if section := cfg.get("tracing"):
         _set_if_disabled("WEBSERVER_TRACING", section)
         # envs["TRACING_ZIPKIN_ENDPOINT"] = section.get("zipkin_endpoint")
-
-    if section := cfg.get("director"):
-        _set_if_disabled("WEBSERVER_DIRECTOR", section)
-        envs["DIRECTOR_HOST"] = section.get("host")
-        envs["DIRECTOR_PORT"] = section.get("port")
-        envs["DIRECTOR_VTAG"] = section.get("version")
 
     if db := cfg.get("db"):
         if section := db.get("postgres"):

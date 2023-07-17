@@ -180,10 +180,21 @@ function getUserAndPass(args) {
   return userPass;
 }
 
+
+function generateString(length) {
+  const characters = "abcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  const charactersLength = characters.length;
+  for (let i=0; i<length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
+}
+
 function __getRandUserAndPass() {
-  const randUser = Math.random().toString(36).substring(7);
+  const randUser = generateString(6);
   const user = 'puppeteer_' + randUser + '@itis.testing';
-  const pass = Math.random().toString(36).substring(7);
+  const pass = generateString(12);
   return {
     user,
     pass

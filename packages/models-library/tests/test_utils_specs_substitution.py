@@ -25,24 +25,24 @@ def service_version() -> str:
 
 
 @pytest.fixture()
-def available_osparc_environments(
+def available_osparc_variables(
     simcore_registry: str,
     service_version: str,
 ) -> dict[str, SubstitutionValue]:
-    osparc_vendor_environments = {
-        "OSPARC_ENVIRONMENT_VENDOR_SECRET_LICENSE_SERVER_HOST": "product_a-server",
-        "OSPARC_ENVIRONMENT_VENDOR_SECRET_LICENSE_SERVER_PRIMARY_PORT": 1,
-        "OSPARC_ENVIRONMENT_VENDOR_SECRET_LICENSE_SERVER_SECONDARY_PORT": 2,
-        "OSPARC_ENVIRONMENT_VENDOR_SECRET_LICENSE_DNS_RESOLVER_IP": "1.1.1.1",
-        "OSPARC_ENVIRONMENT_VENDOR_SECRET_LICENSE_DNS_RESOLVER_PORT": "21",
-        "OSPARC_ENVIRONMENT_VENDOR_SECRET_LICENSE_FILE": "license.txt",
-        "OSPARC_ENVIRONMENT_VENDOR_SECRET_LICENSE_FILE_PRODUCT1": "license-p1.txt",
-        "OSPARC_ENVIRONMENT_VENDOR_SECRET_LICENSE_FILE_PRODUCT2": "license-p2.txt",
-        "OSPARC_ENVIRONMENT_VENDOR_SECRET_LIST": "[1, 2, 3]",
+    osparc_vendor_variables = {
+        "OSPARC_VARIABLE_VENDOR_SECRET_LICENSE_SERVER_HOST": "product_a-server",
+        "OSPARC_VARIABLE_VENDOR_SECRET_LICENSE_SERVER_PRIMARY_PORT": 1,
+        "OSPARC_VARIABLE_VENDOR_SECRET_LICENSE_SERVER_SECONDARY_PORT": 2,
+        "OSPARC_VARIABLE_VENDOR_SECRET_LICENSE_DNS_RESOLVER_IP": "1.1.1.1",
+        "OSPARC_VARIABLE_VENDOR_SECRET_LICENSE_DNS_RESOLVER_PORT": "21",
+        "OSPARC_VARIABLE_VENDOR_SECRET_LICENSE_FILE": "license.txt",
+        "OSPARC_VARIABLE_VENDOR_SECRET_LICENSE_FILE_PRODUCT1": "license-p1.txt",
+        "OSPARC_VARIABLE_VENDOR_SECRET_LICENSE_FILE_PRODUCT2": "license-p2.txt",
+        "OSPARC_VARIABLE_VENDOR_SECRET_LIST": "[1, 2, 3]",
     }
 
     environs = {
-        **osparc_vendor_environments,
+        **osparc_vendor_variables,
         "SIMCORE_REGISTRY": simcore_registry,
         "SERVICE_VERSION": service_version,
         "DISPLAY": "True",
@@ -74,8 +74,8 @@ def available_osparc_environments(
                 "init": True,
                 "environment": [
                     "DISPLAY=${DISPLAY}",
-                    "SOME_LIST=$OSPARC_ENVIRONMENT_VENDOR_SECRET_LIST",
-                    "MY_LICENSE=$OSPARC_ENVIRONMENT_VENDOR_SECRET_LICENSE_FILE",
+                    "SOME_LIST=$OSPARC_VARIABLE_VENDOR_SECRET_LIST",
+                    "MY_LICENSE=$OSPARC_VARIABLE_VENDOR_SECRET_LICENSE_FILE",
                 ],
                 "volumes": ["/tmp/.X11-unix:/tmp/.X11-unix"],
             },
@@ -94,7 +94,7 @@ def available_osparc_environments(
     ],
 )
 def test_substitutions_in_compose_spec(
-    available_osparc_environments: dict[str, SubstitutionValue],
+    available_osparc_variables: dict[str, SubstitutionValue],
     service_name: str,
     service_spec: dict[str, Any],
     expected_service_spec: dict[str, Any],
@@ -103,7 +103,7 @@ def test_substitutions_in_compose_spec(
 
     identifiers_requested = specs_resolver.get_identifiers()
 
-    substitutions = specs_resolver.set_substitutions(available_osparc_environments)
+    substitutions = specs_resolver.set_substitutions(available_osparc_variables)
     assert substitutions is specs_resolver.substitutions
 
     assert set(identifiers_requested) == set(substitutions.keys())
@@ -133,7 +133,7 @@ def test_nothing_to_substitute():
 
 
 def test_no_identifier_present(
-    available_osparc_environments: dict[str, SubstitutionValue]
+    available_osparc_variables: dict[str, SubstitutionValue]
 ):
 
     original_spec = {"x": 33, "y": {"z": True}, "foo": "$UNREGISTERED_ID"}
@@ -141,7 +141,7 @@ def test_no_identifier_present(
     specs_resolver = SpecsSubstitutionsResolver(original_spec, upgrade=False)
 
     assert specs_resolver.get_identifiers() == ["UNREGISTERED_ID"]
-    assert specs_resolver.set_substitutions(available_osparc_environments) == {}
+    assert specs_resolver.set_substitutions(available_osparc_variables) == {}
 
     # no substitutions
     assert specs_resolver.run() == original_spec

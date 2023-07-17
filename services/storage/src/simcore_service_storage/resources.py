@@ -1,10 +1,12 @@
 """ Access to data resources installed with this package
 
 """
-from servicelib.resources import ResourcesFacade
+from servicelib.resources import DataResourcesFacade
 
-resources = ResourcesFacade(
+storage_resources = DataResourcesFacade(
     package_name=__name__,
     distribution_name="simcore-service-storage",
-    config_folder="",
 )
+
+
+__all__: tuple[str, ...] = ("storage_resources",)

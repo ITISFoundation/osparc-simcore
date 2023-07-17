@@ -100,3 +100,4 @@ async def get_project_locked_state(
             PROJECT_REDIS_LOCK_KEY.format(project_uuid)
         ):
             return ProjectLocked.parse_raw(lock_value)
+    return None

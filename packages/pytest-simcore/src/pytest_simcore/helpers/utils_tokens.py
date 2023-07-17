@@ -6,7 +6,7 @@ from functools import reduce
 
 import sqlalchemy as sa
 from servicelib.common_aiopg_utils import DSN
-from simcore_service_webserver.db_models import metadata, tokens, users
+from simcore_service_webserver.db.models import metadata, tokens, users
 from simcore_service_webserver.login.utils import get_random_string
 from sqlalchemy import JSON, String, cast
 from sqlalchemy.sql import and_  # , or_, not_
@@ -49,7 +49,7 @@ async def get_token_from_db(
             token_service=token_service,
             token_data=token_data,
         )
-        stmt = sa.select([tokens]).where(expr)
+        stmt = sa.select(tokens).where(expr)
         result = await conn.execute(stmt)
         row = await result.first()
         return dict(row) if row else None

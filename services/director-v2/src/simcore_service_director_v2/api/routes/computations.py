@@ -212,6 +212,8 @@ async def create_computation(
                 computation.user_id,
                 computation.project_id,
                 computation.cluster_id or DEFAULT_CLUSTER_ID,
+                computation.product_name,
+                computation.simcore_user_agent,
             )
 
         # filter the tasks by the effective pipeline

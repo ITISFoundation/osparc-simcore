@@ -82,9 +82,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUIPreview", {
 
     // overridden
     _addEventListeners: function() {
-      this.addListenerOnce("appear", () => {
-        this._listenToMouseWheel();
-      });
+      this.addListenerOnce("appear", this._listenToMouseWheel, this);
     }
   }
 });

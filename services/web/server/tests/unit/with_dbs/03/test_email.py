@@ -22,7 +22,7 @@ from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict, UserRole
 from settings_library.email import EmailProtocol, SMTPSettings
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver._resources import resources
+from simcore_service_webserver._resources import webserver_resources
 from simcore_service_webserver.email._core import _remove_comments, _render_template
 from simcore_service_webserver.email._handlers import TestFailed, TestPassed
 from simcore_service_webserver.email.plugin import setup_email
@@ -36,11 +36,10 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
             "WEBSERVER_ACTIVITY": "null",
             "WEBSERVER_NOTIFICATIONS": "0",
             "WEBSERVER_DIAGNOSTICS": "null",
-            "WEBSERVER_DIRECTOR": "null",
             "WEBSERVER_EXPORTER": "null",
             "WEBSERVER_GARBAGE_COLLECTOR": "null",
             "WEBSERVER_GROUPS": "1",
-            "WEBSERVER_META_MODELING": "null",
+            "WEBSERVER_META_MODELING": "0",
             "WEBSERVER_PRODUCTS": "1",
             "WEBSERVER_PUBLICATIONS": "0",
             "WEBSERVER_REMOTE_DEBUG": "0",
@@ -152,7 +151,7 @@ class IndexParser(HTMLParser):
 
 @pytest.mark.parametrize(
     "template_path",
-    list(resources.get_path("templates").rglob("*.jinja2")),
+    list(webserver_resources.get_path("templates").rglob("*.jinja2")),
     ids=lambda p: p.name,
 )
 def test_render_templates(template_path: Path):

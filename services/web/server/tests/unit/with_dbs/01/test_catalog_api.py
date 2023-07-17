@@ -18,7 +18,7 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from settings_library.catalog import CatalogSettings
 from simcore_service_webserver.catalog.settings import get_plugin_settings
-from simcore_service_webserver.db_models import UserRole
+from simcore_service_webserver.db.models import UserRole
 
 
 @pytest.fixture

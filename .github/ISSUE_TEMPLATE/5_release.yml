@@ -58,7 +58,7 @@ body:
       description: |
         Changes introduced by this release.
         List links to the PRs associated to every commit in the release. This will automatically create references between PRs and this release that will be very valuable for traceability.
-        TIP: use the autogenerate changelog feature during the draft release. (TIP: use regex replace for better visualization ``\*.+ by (@\w+) in (https:.*)`` -> ``* $2 by $1``)
+        TIP: use the autogenerate changelog feature during the draft release. (TIP: use regex replace for better visualization ``\*.+ by (@[\w-]+) in (https:.*)`` -> ``* $2 by $1``)
     validations:
       required: false
   - type: textarea
@@ -134,12 +134,19 @@ body:
       label: Releasing 🚀
       value: |
         - [ ] Maintenance page up.
+        ```cmd
+        cd /deployment/production/osparc-ops-environments
+        make up-maintenance
+        make down-maintenance
+        ```
+        - [ ] Check hanging sidecars. Helper command to run in director-v2 CLI `simcore-service-director-v2 close-and-save-service <uuid>`
         - [ ] Release by publishing [draft](https://github.com/ITISFoundation/osparc-simcore/releases)
         - [ ] Check release CI
         - [ ] Check deployed
           - [ ] aws deploy
           - [ ] dalco deploy
           - [ ] tip deploy
+        - [ ] Check testing endpoint ex. `https://testing.osparc.speag.com/`
         - [ ] Delete announcement
         - [ ] Check e2e runs
         - [ ] Announce

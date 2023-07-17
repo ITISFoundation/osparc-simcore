@@ -27,11 +27,10 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
         {
             "WEBSERVER_ACTIVITY": "null",
             "WEBSERVER_DIAGNOSTICS": "null",
-            "WEBSERVER_DIRECTOR": "null",
             "WEBSERVER_EXPORTER": "null",
             "WEBSERVER_GARBAGE_COLLECTOR": "null",
             "WEBSERVER_GROUPS": "0",
-            "WEBSERVER_META_MODELING": "null",
+            "WEBSERVER_META_MODELING": "0",
             "WEBSERVER_NOTIFICATIONS": "0",
             "WEBSERVER_PROJECTS": "null",
             "WEBSERVER_PUBLICATIONS": "0",

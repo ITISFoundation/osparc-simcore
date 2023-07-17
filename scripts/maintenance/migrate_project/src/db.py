@@ -1,6 +1,6 @@
 from collections import deque
 from contextlib import contextmanager
-from typing import Any, Deque, Iterator, Optional
+from typing import Any, Deque, Iterator
 from uuid import UUID
 
 import typer
@@ -26,13 +26,13 @@ def db_connection(db_config: DBConfig) -> Iterator[Connection]:
 def _project_uuid_exists_in_destination(
     connection: Connection, project_id: str
 ) -> bool:
-    query = select([projects.c.id]).where(projects.c.uuid == f"{project_id}")
+    query = select(projects.c.id).where(projects.c.uuid == f"{project_id}")
     exists = len(list(connection.execute(query))) > 0
     return exists
 
 
 def _meta_data_exists_in_destination(connection: Connection, file_id: str) -> bool:
-    query = select([file_meta_data.c.file_id]).where(
+    query = select(file_meta_data.c.file_id).where(
         file_meta_data.c.file_id == f"{file_id}"
     )
     exists = len(list(connection.execute(query))) > 0
@@ -41,13 +41,13 @@ def _meta_data_exists_in_destination(connection: Connection, file_id: str) -> bo
 
 def _get_project(connection: Connection, project_uuid: UUID) -> ResultProxy:
     return connection.execute(
-        select([projects]).where(projects.c.uuid == f"{project_uuid}")
+        select(projects).where(projects.c.uuid == f"{project_uuid}")
     )
 
 
 def _get_hidden_project(connection: Connection, prj_owner: int) -> ResultProxy:
     return connection.execute(
-        select([projects]).where(
+        select(projects).where(
             and_(projects.c.prj_owner == prj_owner, projects.c.hidden == True)
         )
     )
@@ -57,7 +57,7 @@ def _get_file_meta_data_without_soft_links(
     connection: Connection, node_uuid: UUID, project_id: UUID
 ) -> ResultProxy:
     return connection.execute(
-        select([file_meta_data]).where(
+        select(file_meta_data).where(
             and_(
                 file_meta_data.c.node_id == f"{node_uuid}",
                 file_meta_data.c.project_id == f"{project_id}",
@@ -90,7 +90,7 @@ def _file_summary(file_meta_data: dict) -> str:
 
 def get_project_and_files_to_migrate(
     project_uuid: UUID,
-    hidden_projects_for_user: Optional[int],
+    hidden_projects_for_user: int | None,
     src_conn: Connection,
     dst_conn: Connection,
 ) -> tuple[Deque, Deque]:

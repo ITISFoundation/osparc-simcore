@@ -2,6 +2,8 @@ import sqlalchemy as sa
 from sqlalchemy.sql import expression, func
 
 from .base import metadata
+from .clusters import clusters
+from .groups import groups
 
 cluster_to_groups = sa.Table(
     "cluster_to_groups",
@@ -10,7 +12,7 @@ cluster_to_groups = sa.Table(
         "cluster_id",
         sa.BigInteger,
         sa.ForeignKey(
-            "clusters.id",
+            clusters.c.id,
             name="fk_cluster_to_groups_id_clusters",
             onupdate="CASCADE",
             ondelete="CASCADE",
@@ -21,7 +23,7 @@ cluster_to_groups = sa.Table(
         "gid",
         sa.BigInteger,
         sa.ForeignKey(
-            "groups.gid",
+            groups.c.gid,
             name="fk_cluster_to_groups_gid_groups",
             onupdate="CASCADE",
             ondelete="CASCADE",

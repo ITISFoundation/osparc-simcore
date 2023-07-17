@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: osparc-simcore web API
-  version: 0.21.0
+  version: 0.25.0
   description: API designed for the front-end app
   contact:
     name: IT'IS Foundation
@@ -23,23 +23,6 @@ servers:
         enum:
           - v0
         default: v0
-tags:
-  - name: activity
-  - name: admin
-  - name: authentication
-  - name: catalog
-  - name: cluster
-  - name: configuration
-  - name: maintenance
-  - name: nih-sparc
-  - name: node
-  - name: project
-  - name: publication
-  - name: repository
-  - name: storage
-  - name: tag
-  - name: tasks
-  - name: user
 paths:
   '/email:test':
     post:
@@ -135,6 +118,78 @@ paths:
                             type: object
                   error:
                     title: Error
+  /announcements:
+    get:
+      tags:
+        - announcements
+      summary: List Announcements
+      operationId: list_announcements
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    items:
+                      properties:
+                        id:
+                          type: string
+                          title: Id
+                        products:
+                          items:
+                            type: string
+                            enum:
+                              - osparc
+                              - s4l
+                              - s4llite
+                              - tis
+                          type: array
+                          title: Products
+                        start:
+                          type: string
+                          format: date-time
+                          title: Start
+                        end:
+                          type: string
+                          format: date-time
+                          title: End
+                        title:
+                          type: string
+                          title: Title
+                        description:
+                          type: string
+                          title: Description
+                        link:
+                          type: string
+                          title: Link
+                        widgets:
+                          items:
+                            type: string
+                            enum:
+                              - login
+                              - ribbon
+                              - user-menu
+                          type: array
+                          title: Widgets
+                      type: object
+                      required:
+                        - id
+                        - products
+                        - start
+                        - end
+                        - title
+                        - description
+                        - link
+                        - widgets
+                      title: Announcement
+                    type: array
+                    title: Data
+                  error:
+                    title: Error
+                type: object
+                title: 'Envelope[list[simcore_service_webserver.announcements._models.Announcement]]'
   /:
     get:
       tags:
@@ -423,7 +478,7 @@ paths:
                       name:
                         title: Name
                         type: string
-                        description: Code name to the front-end page
+                        description: Code name to the front-end page. Ideally a PageStr
                       parameters:
                         title: _PageParams
                         type: object
@@ -545,7 +600,7 @@ paths:
                       name:
                         title: Name
                         type: string
-                        description: Code name to the front-end page
+                        description: Code name to the front-end page. Ideally a PageStr
                       parameters:
                         title: CodePageParams
                         required:
@@ -1044,219 +1099,377 @@ paths:
           description: not enough permissions to delete a key
   /me:
     get:
-      operationId: get_my_profile
       tags:
         - user
+      summary: Get User Profile
+      operationId: get_my_profile
       responses:
         '200':
-          description: current user profile
+          description: Successful Response
           content:
             application/json:
               schema:
+                title: 'Envelope[ProfileGet]'
                 type: object
-                required:
-                  - data
                 properties:
                   data:
-                    allOf:
-                      - $ref: '#/paths/~1me/put/requestBody/content/application~1json/schema/allOf/0'
-                      - type: object
+                    title: ProfileGet
+                    required:
+                      - id
+                      - login
+                      - role
+                    type: object
+                    properties:
+                      first_name:
+                        title: First Name
+                        type: string
+                      last_name:
+                        title: Last Name
+                        type: string
+                      id:
+                        title: Id
+                        exclusiveMinimum: true
+                        type: integer
+                        minimum: 0
+                      login:
+                        title: Login
+                        type: string
+                        format: email
+                      role:
+                        title: Role
+                        enum:
+                          - Anonymous
+                          - Guest
+                          - User
+                          - Tester
+                          - Admin
+                        type: string
+                      groups:
+                        title: AllUsersGroups
+                        type: object
                         properties:
-                          id:
-                            type: integer
-                          login:
-                            type: string
-                            format: email
-                          role:
-                            type: string
-                          groups:
-                            $ref: '#/paths/~1groups/get/responses/200/content/application~1json/schema/properties/data'
-                          gravatar_id:
-                            type: string
-                          expirationDate:
-                            type: string
-                            format: date
-                            description: 'If user has a trial account, it sets the expiration date, otherwise None'
+                          me:
+                            title: UsersGroup
+                            required:
+                              - gid
+                              - label
+                              - description
+                              - accessRights
+                            type: object
+                            properties:
+                              gid:
+                                title: Gid
+                                type: integer
+                                description: the group ID
+                              label:
+                                title: Label
+                                type: string
+                                description: the group name
+                              description:
+                                title: Description
+                                type: string
+                                description: the group description
+                              thumbnail:
+                                title: Thumbnail
+                                maxLength: 65536
+                                minLength: 1
+                                type: string
+                                description: url to the group thumbnail
+                                format: uri
+                              accessRights:
+                                title: GroupAccessRights
+                                required:
+                                  - read
+                                  - write
+                                  - delete
+                                type: object
+                                properties:
+                                  read:
+                                    title: Read
+                                    type: boolean
+                                  write:
+                                    title: Write
+                                    type: boolean
+                                  delete:
+                                    title: Delete
+                                    type: boolean
+                                description: defines acesss rights for the user
+                              inclusionRules:
+                                title: Inclusionrules
+                                type: object
+                                additionalProperties:
+                                  type: string
+                                description: Maps user's column and regular expression
+                          organizations:
+                            title: Organizations
+                            type: array
+                            items:
+                              $ref: '#/paths/~1me/get/responses/200/content/application~1json/schema/properties/data/properties/groups/properties/me'
+                          all:
+                            $ref: '#/paths/~1me/get/responses/200/content/application~1json/schema/properties/data/properties/groups/properties/me'
+                          product:
+                            $ref: '#/paths/~1me/get/responses/200/content/application~1json/schema/properties/data/properties/groups/properties/me'
+                        example:
+                          me:
+                            gid: '27'
+                            label: A user
+                            description: A very special user
+                            accessRights:
+                              read: true
+                              write: true
+                              delete: true
+                          organizations:
+                            - gid: '15'
+                              label: ITIS Foundation
+                              description: The Foundation for Research on Information Technologies in Society
+                              accessRights:
+                                read: true
+                                write: false
+                                delete: false
+                            - gid: '16'
+                              label: Blue Fundation
+                              description: Some foundation
+                              accessRights:
+                                read: true
+                                write: false
+                                delete: false
+                          all:
+                            gid: '0'
+                            label: All
+                            description: Open to all users
+                            accessRights:
+                              read: true
+                              write: false
+                              delete: false
+                      gravatar_id:
+                        title: Gravatar Id
+                        type: string
+                      expirationDate:
+                        title: Expirationdate
+                        type: string
+                        description: 'If user has a trial account, it sets the expiration date, otherwise None'
+                        format: date
                   error:
-                    nullable: true
-                    default: null
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+                    title: Error
     put:
-      operationId: update_my_profile
       tags:
         - user
+      summary: Update My Profile
+      operationId: update_my_profile
       requestBody:
         content:
           application/json:
             schema:
-              allOf:
-                - type: object
-                  properties:
-                    first_name:
-                      type: string
-                    last_name:
-                      type: string
-                  example:
-                    first_name: Pedro
-                    last_name: Crespo
+              title: ProfileUpdate
+              type: object
+              properties:
+                first_name:
+                  title: First Name
+                  type: string
+                last_name:
+                  title: Last Name
+                  type: string
+              example:
+                first_name: Pedro
+                last_name: Crespo
+        required: true
       responses:
         '204':
-          description: updated profile
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          description: Successful Response
   /me/tokens:
     get:
-      summary: List tokens
-      operationId: list_tokens
       tags:
         - user
+      summary: List Tokens
+      operationId: list_tokens
       responses:
         '200':
-          description: list of tokens
+          description: Successful Response
           content:
             application/json:
               schema:
+                title: 'Envelope[list[simcore_service_webserver.users.schemas.Token]]'
                 type: object
-                required:
-                  - data
                 properties:
                   data:
+                    title: Data
                     type: array
                     items:
-                      $ref: '#/paths/~1me~1tokens/post/requestBody/content/application~1json/schema/properties/data'
+                      $ref: '#/paths/~1me~1tokens/post/responses/201/content/application~1json/schema/properties/data'
                   error:
-                    nullable: true
-                    default: null
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+                    title: Error
     post:
-      summary: Create tokens
-      operationId: create_tokens
       tags:
         - user
+      summary: Create Token
+      operationId: create_token
       requestBody:
         content:
           application/json:
             schema:
-              type: object
+              title: TokenCreate
               required:
-                - data
+                - service
+                - token_key
+              type: object
               properties:
-                data:
-                  description: api keys for third party services
-                  type: object
-                  properties:
-                    service:
-                      description: uniquely identifies the service where this token is used
-                      type: string
-                    token_key:
-                      description: basic token key
-                      type: string
-                      format: uuid
-                    token_secret:
-                      type: string
-                      format: uuid
-                  required:
-                    - service
-                    - token_key
-                error:
-                  nullable: true
-                  default: null
+                service:
+                  title: Service
+                  type: string
+                  description: uniquely identifies the service where this token is used
+                token_key:
+                  title: Token Key
+                  type: string
+                  description: basic token key
+                  format: uuid
+                token_secret:
+                  title: Token Secret
+                  type: string
+                  format: uuid
+              description: 'Tokens used to access third-party services connected to osparc (e.g. pennsieve, scicrunch, etc)'
+              example:
+                service: github-api-v1
+                token_key: 5f21abf5-c596-47b7-bfd1-c0e436ef1107
+        required: true
       responses:
         '201':
-          description: token created
+          description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1me~1tokens/post/requestBody/content/application~1json/schema'
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+                title: 'Envelope[Token]'
+                type: object
+                properties:
+                  data:
+                    title: Token
+                    required:
+                      - service
+                      - token_key
+                    type: object
+                    properties:
+                      service:
+                        title: Service
+                        type: string
+                        description: uniquely identifies the service where this token is used
+                      token_key:
+                        title: Token Key
+                        type: string
+                        description: basic token key
+                        format: uuid
+                      token_secret:
+                        title: Token Secret
+                        type: string
+                        format: uuid
+                    description: 'Tokens used to access third-party services connected to osparc (e.g. pennsieve, scicrunch, etc)'
+                    example:
+                      service: github-api-v1
+                      token_key: 5f21abf5-c596-47b7-bfd1-c0e436ef1107
+                  error:
+                    title: Error
   '/me/tokens/{service}':
-    parameters:
-      - name: service
-        in: path
-        required: true
-        schema:
-          type: string
     get:
-      summary: Gets specific token
-      operationId: get_token
       tags:
         - user
+      summary: Get Token
+      operationId: get_token
+      parameters:
+        - required: true
+          schema:
+            title: Service
+            type: string
+          name: service
+          in: path
       responses:
         '200':
-          description: got detailed token
+          description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1me~1tokens/post/requestBody/content/application~1json/schema'
-    put:
-      summary: Updates token
-      operationId: update_token
-      tags:
-        - user
-      responses:
-        '204':
-          description: token has been successfully updated
+                $ref: '#/paths/~1me~1tokens/post/responses/201/content/application~1json/schema'
     delete:
-      summary: Delete token
-      operationId: delete_token
       tags:
         - user
+      summary: Delete Token
+      operationId: delete_token
+      parameters:
+        - required: true
+          schema:
+            title: Service
+            type: string
+          name: service
+          in: path
       responses:
         '204':
-          description: token has been successfully deleted
+          description: Successful Response
   /me/notifications:
     get:
       tags:
         - user
-      summary: List of Notifications for the specific user
-      operationId: get_user_notifications
+      summary: List User Notifications
+      operationId: list_user_notifications
       responses:
         '200':
-          description: List of Notifications
+          description: Successful Response
           content:
             application/json:
               schema:
+                title: 'Envelope[list[simcore_service_webserver.users._notifications.UserNotification]]'
                 type: object
-                required:
-                  - data
                 properties:
                   data:
+                    title: Data
                     type: array
                     items:
-                      allOf:
-                        - $ref: '#/paths/~1me~1notifications/post/requestBody/content/application~1json/schema'
-                        - type: object
-                        - required:
-                            - id
-                            - read
-                          properties:
-                            id:
-                              type: string
-                              description: notification id
-                              example: '123'
-                            read:
-                              type: boolean
-                              description: wether the notification has been read
+                      title: UserNotification
+                      required:
+                        - user_id
+                        - category
+                        - actionable_path
+                        - title
+                        - text
+                        - date
+                        - id
+                        - read
+                      type: object
+                      properties:
+                        user_id:
+                          title: User Id
+                          exclusiveMinimum: true
+                          type: integer
+                          minimum: 0
+                        category:
+                          $ref: '#/paths/~1me~1notifications/post/requestBody/content/application~1json/schema/properties/category'
+                        actionable_path:
+                          title: Actionable Path
+                          type: string
+                        title:
+                          title: Title
+                          type: string
+                        text:
+                          title: Text
+                          type: string
+                        date:
+                          title: Date
+                          type: string
+                          format: date-time
+                        id:
+                          title: Id
+                          type: string
+                        read:
+                          title: Read
+                          type: boolean
                   error:
-                    nullable: true
-                    default: null
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+                    title: Error
     post:
       tags:
         - user
-      summary: Submit a new Notification
-      operationId: post_user_notification
+      summary: Create User Notification
+      operationId: create_user_notification
       requestBody:
-        required: true
-        description: the new notification
         content:
           application/json:
             schema:
-              type: object
+              title: UserNotificationCreate
               required:
                 - user_id
                 - category
@@ -1264,68 +1477,101 @@ paths:
                 - title
                 - text
                 - date
+              type: object
               properties:
                 user_id:
-                  type: string
-                  description: the user that will receive the notification
-                  example: '123'
+                  title: User Id
+                  exclusiveMinimum: true
+                  type: integer
+                  minimum: 0
                 category:
-                  type: string
+                  title: NotificationCategory
                   enum:
                     - NEW_ORGANIZATION
                     - STUDY_SHARED
                     - TEMPLATE_SHARED
-                  description: 'notification type, the frontend will use this to decorate the notification'
-                  example: new_organization
+                    - ANNOTATION_NOTE
+                  type: string
+                  description: An enumeration.
                 actionable_path:
+                  title: Actionable Path
                   type: string
-                  description: the frontend will use this information to trigger an action when the user click on it
-                  example: organization/123
                 title:
+                  title: Title
                   type: string
-                  description: the notification title to show in the frontend
-                  example: New Organization
                 text:
+                  title: Text
                   type: string
-                  description: the notification text to show in the frontend
-                  example: You are now part of Dummy Organization!
                 date:
+                  title: Date
                   type: string
                   format: date-time
-                  description: when it was created
+        required: true
       responses:
         '204':
-          description: Notification registered
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/me/notifications/{id}':
-    parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
+          description: Successful Response
+  '/me/notifications/{notification_id}':
     patch:
       tags:
         - user
-      summary: Update a Notification
-      operationId: update_user_notification
+      summary: Mark Notification As Read
+      operationId: mark_notification_as_read
+      parameters:
+        - required: true
+          schema:
+            title: Notification Id
+            type: string
+          name: notification_id
+          in: path
       requestBody:
         content:
           application/json:
             schema:
-              type: object
+              title: UserNotificationPatch
               required:
                 - read
+              type: object
               properties:
                 read:
+                  title: Read
                   type: boolean
-                  description: notification has been read
+        required: true
       responses:
         '204':
-          description: All good
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          description: Successful Response
+  /me/permissions:
+    get:
+      tags:
+        - user
+      summary: List User Permissions
+      operationId: list_user_permissions
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: 'Envelope[list[simcore_service_webserver.users.schemas.PermissionGet]]'
+                type: object
+                properties:
+                  data:
+                    title: Data
+                    type: array
+                    items:
+                      title: PermissionGet
+                      required:
+                        - name
+                        - allowed
+                      type: object
+                      properties:
+                        name:
+                          title: Name
+                          type: string
+                        allowed:
+                          title: Allowed
+                          type: boolean
+                  error:
+                    title: Error
   /groups:
     get:
       summary: List my groups
@@ -1742,482 +1988,685 @@ paths:
           $ref: '#/components/responses/DefaultErrorResponse'
   /storage/locations:
     get:
-      summary: Get available storage locations
       tags:
         - storage
+      summary: Get available storage locations
+      description: Returns the list of available storage locations
       operationId: get_storage_locations
       responses:
         '200':
-          description: List of availabe storage locations
+          description: Successful Response
           content:
             application/json:
               schema:
+                title: Response Get Storage Locations
                 type: array
                 items:
+                  title: DatasetMetaData
                   type: object
                   properties:
-                    name:
+                    dataset_id:
+                      title: Dataset Id
                       type: string
-                    id:
-                      type: number
+                    display_name:
+                      title: Display Name
+                      type: string
                   example:
-                    filename: simcore.s3
-                    id: 0
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+                    dataset_id: 'N:id-aaaa'
+                    display_name: simcore-testing
   '/storage/locations/{location_id}:sync':
     post:
-      summary: Manually triggers the synchronisation of the file meta data table in the database
       tags:
         - storage
+      summary: Manually triggers the synchronisation of the file meta data table in the database
+      description: 'Returns an object containing added, changed and removed paths'
       operationId: synchronise_meta_data_table
       parameters:
-        - name: location_id
+        - required: true
+          schema:
+            title: Location Id
+            type: integer
+          name: location_id
           in: path
-          required: true
+        - required: false
           schema:
-            type: string
-        - name: dry_run
-          in: query
-          required: false
-          schema:
-            type: boolean
-            default: true
-        - name: fire_and_forget
-          in: query
-          required: false
-          schema:
+            title: Dry Run
             type: boolean
             default: false
+          name: dry_run
+          in: query
+        - required: false
+          schema:
+            title: Fire And Forget
+            type: boolean
+            default: false
+          name: fire_and_forget
+          in: query
       responses:
         '200':
-          description: 'An object containing added, changed and removed paths'
+          description: Successful Response
           content:
             application/json:
               schema:
+                title: 'Envelope[TableSynchronisation]'
                 type: object
-                required:
-                  - data
-                  - error
                 properties:
                   data:
-                    type: object
+                    title: TableSynchronisation
                     required:
                       - removed
+                    type: object
                     properties:
                       dry_run:
+                        title: Dry Run
                         type: boolean
                       fire_and_forget:
+                        title: Fire And Forget
                         type: boolean
                       removed:
+                        title: Removed
                         type: array
                         items:
                           type: string
                   error:
-                    nullable: true
-                    default: null
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+                    title: Error
   '/storage/locations/{location_id}/files/metadata':
     get:
-      summary: Get list of file meta data
       tags:
         - storage
+      summary: Get datasets metadata
+      description: returns all the file meta data a user has access to (uuid_filter may be used)
       operationId: get_files_metadata
       parameters:
-        - name: location_id
-          in: path
-          required: true
+        - required: true
           schema:
-            type: string
-      responses:
-        '200':
-          description: list of file meta-datas
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/paths/~1storage~1locations~1%7Blocation_id%7D~1files~1%7Bfile_id%7D~1metadata/get/responses/200/content/application~1json/schema'
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/storage/locations/{location_id}/files/{file_id}':
-    get:
-      summary: Returns download link for requested file
-      tags:
-        - storage
-      operationId: download_file
-      parameters:
-        - name: file_id
+            title: Location Id
+            type: integer
+          name: location_id
           in: path
-          required: true
+        - required: false
           schema:
+            title: Uuid Filter
             type: string
-        - name: location_id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Returns presigned link
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  link:
-                    type: string
-                example:
-                  link: example_link
-    put:
-      summary: Returns upload link
-      tags:
-        - storage
-      operationId: upload_file
-      parameters:
-        - name: file_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: location_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: file_size
+            default: ''
+          name: uuid_filter
           in: query
+        - description: Automatic directory expansion. This will be replaced by pagination the future
           required: false
           schema:
-            type: integer
-            format: int64
-            minimum: 0
+            title: Expand Dirs
+            type: boolean
+            description: Automatic directory expansion. This will be replaced by pagination the future
+            default: true
+          name: expand_dirs
+          in: query
       responses:
         '200':
-          description: Return upload object
+          description: Successful Response
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - data
-                  - error
-                properties:
-                  data:
-                    type: object
-                    required:
-                      - chunk_size
-                      - urls
-                      - links
-                    properties:
-                      chunk_size:
-                        type: integer
-                        format: int64
-                        minimum: 0
-                      urls:
-                        type: array
-                        items:
-                          type: string
-                      links:
-                        type: object
-                        required:
-                          - abort_upload
-                          - complete_upload
-                        properties:
-                          abort_upload:
-                            type: string
-                          complete_upload:
-                            type: string
-                  error:
-                    nullable: true
-                    default: null
-          links:
-            CompleteUpload:
-              operationId: complete_upload_file
-              parameters:
-                path.location_id: $request.path.location_id
-                path.file_id: $request.path.file_id
-                query.user_id: $request.query.user_id
-            AbortUpload:
-              operationId: abort_upload_file
-              parameters:
-                path.location_id: $request.path.location_id
-                path.file_id: $request.path.file_id
-                query.user_id: $request.query.user_id
-    delete:
-      summary: Deletes File
+                $ref: '#/paths/~1storage~1locations~1%7Blocation_id%7D~1datasets/get/responses/200/content/application~1json/schema'
+  '/storage/locations/{location_id}/files/{file_id}':
+    get:
       tags:
         - storage
+      summary: Returns download link for requested file
+      description: creates a download file link if user has the rights to
+      operationId: download_file
+      parameters:
+        - required: true
+          schema:
+            title: Location Id
+            type: integer
+          name: location_id
+          in: path
+        - required: true
+          schema:
+            title: File Id
+            type: string
+          name: file_id
+          in: path
+        - required: false
+          schema:
+            allOf:
+              - title: LinkType
+                enum:
+                  - PRESIGNED
+                  - S3
+                type: string
+                description: An enumeration.
+                default: PRESIGNED
+          name: link_type
+          in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: 'Envelope[PresignedLink]'
+                type: object
+                properties:
+                  data:
+                    title: PresignedLink
+                    required:
+                      - link
+                    type: object
+                    properties:
+                      link:
+                        title: Link
+                        maxLength: 65536
+                        minLength: 1
+                        type: string
+                        format: uri
+                  error:
+                    title: Error
+    put:
+      tags:
+        - storage
+      summary: Returns upload link
+      description: 'creates one or more upload file links if user has the rights to, expects the client to complete/abort upload'
+      operationId: upload_file
+      parameters:
+        - required: true
+          schema:
+            title: Location Id
+            type: integer
+          name: location_id
+          in: path
+        - required: true
+          schema:
+            title: File Id
+            type: string
+          name: file_id
+          in: path
+        - required: true
+          schema:
+            title: File Size
+            type: integer
+          name: file_size
+          in: query
+        - required: false
+          schema:
+            allOf:
+              - $ref: '#/paths/~1storage~1locations~1%7Blocation_id%7D~1files~1%7Bfile_id%7D/get/parameters/2/schema/allOf/0'
+          name: link_type
+          in: query
+        - required: false
+          schema:
+            title: Is Directory
+            type: boolean
+            default: false
+          name: is_directory
+          in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: Response Upload File
+                anyOf:
+                  - title: 'Envelope[FileUploadSchema]'
+                    type: object
+                    properties:
+                      data:
+                        title: FileUploadSchema
+                        required:
+                          - chunk_size
+                          - urls
+                          - links
+                        type: object
+                        properties:
+                          chunk_size:
+                            title: Chunk Size
+                            type: integer
+                          urls:
+                            title: Urls
+                            type: array
+                            items:
+                              maxLength: 65536
+                              minLength: 1
+                              type: string
+                              format: uri
+                          links:
+                            title: FileUploadLinks
+                            required:
+                              - abort_upload
+                              - complete_upload
+                            type: object
+                            properties:
+                              abort_upload:
+                                title: Abort Upload
+                                maxLength: 65536
+                                minLength: 1
+                                type: string
+                                format: uri
+                              complete_upload:
+                                title: Complete Upload
+                                maxLength: 65536
+                                minLength: 1
+                                type: string
+                                format: uri
+                      error:
+                        title: Error
+                  - title: 'Envelope[AnyUrl]'
+                    type: object
+                    properties:
+                      data:
+                        title: Data
+                        maxLength: 65536
+                        minLength: 1
+                        type: string
+                        format: uri
+                      error:
+                        title: Error
+    delete:
+      tags:
+        - storage
+      summary: Deletes File
+      description: deletes file if user has the rights to
       operationId: delete_file
       parameters:
-        - name: file_id
-          in: path
-          required: true
+        - required: true
           schema:
-            type: string
-        - name: location_id
+            title: Location Id
+            type: integer
+          name: location_id
           in: path
-          required: true
+        - required: true
           schema:
+            title: File Id
             type: string
+          name: file_id
+          in: path
       responses:
         '204':
-          description: ''
+          description: Successful Response
   '/storage/locations/{location_id}/files/{file_id}:complete':
     post:
-      summary: Asks the server to complete the upload
+      tags:
+        - storage
+      summary: Complete Upload File
+      description: completes an upload if the user has the rights to
       operationId: complete_upload_file
       parameters:
-        - name: file_id
-          in: path
-          required: true
+        - required: true
           schema:
-            type: string
-        - name: location_id
+            title: Location Id
+            type: integer
+          name: location_id
           in: path
-          required: true
+        - required: true
           schema:
+            title: File Id
             type: string
+          name: file_id
+          in: path
       requestBody:
         content:
           application/json:
             schema:
+              title: 'Envelope[FileUploadCompletionBody]'
               type: object
-              required:
-                - parts
               properties:
-                parts:
-                  type: array
-                  items:
-                    type: object
-                    required:
-                      - number
-                      - e_tag
-                    properties:
-                      number:
-                        type: integer
-                        minimum: 1
-                      e_tag:
-                        type: string
+                data:
+                  title: FileUploadCompletionBody
+                  required:
+                    - parts
+                  type: object
+                  properties:
+                    parts:
+                      title: Parts
+                      type: array
+                      items:
+                        title: UploadedPart
+                        required:
+                          - number
+                          - e_tag
+                        type: object
+                        properties:
+                          number:
+                            title: Number
+                            exclusiveMinimum: true
+                            type: integer
+                            minimum: 0
+                          e_tag:
+                            title: E Tag
+                            type: string
+                error:
+                  title: Error
+        required: true
       responses:
         '202':
-          description: Completion of upload is accepted
+          description: Successful Response
           content:
             application/json:
               schema:
+                title: 'Envelope[FileUploadCompleteResponse]'
                 type: object
-                required:
-                  - data
-                  - error
                 properties:
                   data:
-                    type: object
+                    title: FileUploadCompleteResponse
                     required:
                       - links
+                    type: object
                     properties:
                       links:
-                        type: object
+                        title: FileUploadCompleteLinks
                         required:
                           - state
+                        type: object
                         properties:
                           state:
+                            title: State
+                            maxLength: 65536
+                            minLength: 1
                             type: string
+                            format: uri
                   error:
-                    nullable: true
-                    default: null
-          links:
-            CompleteUploadStatus:
-              operationId: is_completed_upload_file
-              parameters:
-                path.location_id: $request.path.location_id
-                path.file_id: $request.path.file_id
-                path.future_id: $response.body.data.links.state
-                query.user_id: $request.query.user_id
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+                    title: Error
   '/storage/locations/{location_id}/files/{file_id}:abort':
     post:
-      summary: Asks the server to abort the upload and revert to the last valid version if any
+      tags:
+        - storage
+      summary: Abort Upload File
+      description: |-
+        aborts an upload if user has the rights to, and reverts
+        to the latest version if available, else will delete the file
       operationId: abort_upload_file
       parameters:
-        - name: file_id
-          in: path
-          required: true
+        - required: true
           schema:
-            type: string
-        - name: location_id
+            title: Location Id
+            type: integer
+          name: location_id
           in: path
-          required: true
+        - required: true
           schema:
+            title: File Id
             type: string
+          name: file_id
+          in: path
       responses:
         '204':
-          description: Abort OK
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+          description: Successful Response
   '/storage/locations/{location_id}/files/{file_id}:complete/futures/{future_id}':
     post:
+      tags:
+        - storage
       summary: Check for upload completion
+      description: Returns state of upload completion
       operationId: is_completed_upload_file
       parameters:
-        - name: future_id
-          in: path
-          required: true
+        - required: true
           schema:
-            type: string
-        - name: file_id
+            title: Location Id
+            type: integer
+          name: location_id
           in: path
-          required: true
+        - required: true
           schema:
+            title: File Id
             type: string
-        - name: location_id
+          name: file_id
           in: path
-          required: true
+        - required: true
           schema:
+            title: Future Id
             type: string
+          name: future_id
+          in: path
       responses:
         '200':
-          description: returns state of upload completion
+          description: Successful Response
           content:
             application/json:
               schema:
+                title: 'Envelope[FileUploadCompleteFutureResponse]'
                 type: object
-                required:
-                  - data
-                  - error
                 properties:
                   data:
-                    type: object
+                    title: FileUploadCompleteFutureResponse
                     required:
                       - state
+                    type: object
                     properties:
                       state:
-                        type: string
+                        title: FileUploadCompleteState
                         enum:
                           - ok
                           - nok
+                        description: An enumeration.
                       e_tag:
+                        title: E Tag
                         type: string
-                        nullable: true
                   error:
-                    nullable: true
-                    default: null
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+                    title: Error
   '/storage/locations/{location_id}/files/{file_id}/metadata':
     get:
-      summary: Get File Metadata
       tags:
         - storage
+      summary: Get File Metadata
+      description: returns the file meta data of file_id if user_id has the rights to
       operationId: get_file_metadata
       parameters:
-        - name: file_id
-          in: path
-          required: true
+        - required: true
           schema:
-            type: string
-        - name: location_id
+            title: Location Id
+            type: integer
+          name: location_id
           in: path
-          required: true
+        - required: true
           schema:
+            title: File Id
             type: string
+          name: file_id
+          in: path
       responses:
         '200':
-          description: Returns file metadata
+          description: Successful Response
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  file_uuid:
-                    type: string
-                  location_id:
-                    type: string
-                  project_name:
-                    type: string
-                  node_name:
-                    type: string
-                  file_name:
-                    type: string
-                  file_id:
-                    type: string
-                  created_at:
-                    type: string
-                  last_modified:
-                    type: string
-                  file_size:
-                    type: integer
-                  entity_tag:
-                    type: string
-                example:
-                  file_uuid: simcore-testing/105/1000/3
-                  location_id: '0'
-                  project_name: futurology
-                  node_name: alpha
-                  file_name: example.txt
-                  file_id: 'N:package:e263da07-2d89-45a6-8b0f-61061b913873'
-                  created_at: '2019-06-19T12:29:03.308611Z'
-                  last_modified: '2019-06-19T12:29:03.78852Z'
-                  file_size: 73
-                  entity_tag: a87ff679a2f3e71d9181a67b7542122c
+                title: Response Get File Metadata
+                anyOf:
+                  - title: FileMetaData
+                    type: object
+                    properties:
+                      file_uuid:
+                        title: File Uuid
+                        type: string
+                      location_id:
+                        title: Location Id
+                        type: string
+                      project_name:
+                        title: Project Name
+                        type: string
+                      node_name:
+                        title: Node Name
+                        type: string
+                      file_name:
+                        title: File Name
+                        type: string
+                      file_id:
+                        title: File Id
+                        type: string
+                      created_at:
+                        title: Created At
+                        type: string
+                      last_modified:
+                        title: Last Modified
+                        type: string
+                      file_size:
+                        title: File Size
+                        type: integer
+                      entity_tag:
+                        title: Entity Tag
+                        type: string
+                      is_directory:
+                        title: Is Directory
+                        type: boolean
+                    example:
+                      file_uuid: simcore-testing/105/1000/3
+                      location_id: '0'
+                      project_name: futurology
+                      node_name: alpha
+                      file_name: example.txt
+                      file_id: 'N:package:e263da07-2d89-45a6-8b0f-61061b913873'
+                      created_at: '2019-06-19T12:29:03.308611Z'
+                      last_modified: '2019-06-19T12:29:03.78852Z'
+                      file_size: 73
+                      entity_tag: a87ff679a2f3e71d9181a67b7542122c
+                      is_directory: false
+                  - title: 'Envelope[FileMetaDataGet]'
+                    type: object
+                    properties:
+                      data:
+                        $ref: '#/paths/~1storage~1locations~1%7Blocation_id%7D~1datasets~1%7Bdataset_id%7D~1metadata/get/responses/200/content/application~1json/schema/properties/data/items'
+                      error:
+                        title: Error
   '/storage/locations/{location_id}/datasets/{dataset_id}/metadata':
     get:
-      summary: Get Files Metadata
       tags:
         - storage
+      summary: Get Files Metadata
+      description: returns all the file meta data inside dataset with dataset_id
       operationId: get_files_metadata_dataset
       parameters:
-        - name: location_id
-          in: path
-          required: true
+        - required: true
           schema:
-            type: string
-        - name: dataset_id
+            title: Location Id
+            type: integer
+          name: location_id
           in: path
-          required: true
+        - required: true
           schema:
+            title: Dataset Id
             type: string
+          name: dataset_id
+          in: path
+        - description: Automatic directory expansion. This will be replaced by pagination the future
+          required: false
+          schema:
+            title: Expand Dirs
+            type: boolean
+            description: Automatic directory expansion. This will be replaced by pagination the future
+            default: true
+          name: expand_dirs
+          in: query
       responses:
         '200':
-          description: list of file meta-datas
+          description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1storage~1locations~1%7Blocation_id%7D~1files~1metadata/get/responses/200/content/application~1json/schema'
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+                title: 'Envelope[list[models_library.api_schemas_storage.FileMetaDataGet]]'
+                type: object
+                properties:
+                  data:
+                    title: Data
+                    type: array
+                    items:
+                      title: FileMetaDataGet
+                      required:
+                        - file_uuid
+                        - location_id
+                        - file_name
+                        - file_id
+                        - created_at
+                        - last_modified
+                      type: object
+                      properties:
+                        file_uuid:
+                          title: File Uuid
+                          type: string
+                          description: 'NOT a unique ID, like (api|uuid)/uuid/file_name or DATCORE folder structure'
+                        location_id:
+                          title: Location Id
+                          type: integer
+                          description: Storage location
+                        project_name:
+                          title: Project Name
+                          type: string
+                          description: 'optional project name, used by frontend to display path'
+                        node_name:
+                          title: Node Name
+                          type: string
+                          description: 'optional node name, used by frontend to display path'
+                        file_name:
+                          title: File Name
+                          type: string
+                          description: Display name for a file
+                        file_id:
+                          title: File Id
+                          anyOf:
+                            - pattern: '^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\/(.+)$'
+                              type: string
+                            - pattern: '^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$'
+                              type: string
+                          description: 'THIS IS the unique ID for the file. either (api|project_id)/node_id/file_name.ext for S3 and N:package:UUID for datcore'
+                        created_at:
+                          title: Created At
+                          type: string
+                          format: date-time
+                        last_modified:
+                          title: Last Modified
+                          type: string
+                          format: date-time
+                        file_size:
+                          title: File Size
+                          type: integer
+                          description: File size in bytes (-1 means invalid)
+                          default: -1
+                        entity_tag:
+                          title: Entity Tag
+                          type: string
+                          description: 'Entity tag (or ETag), represents a specific version of the file, None if invalid upload or datcore'
+                        is_soft_link:
+                          title: Is Soft Link
+                          type: boolean
+                          description: 'If true, this file is a soft link.i.e. is another entry with the same object_name'
+                          default: false
+                        is_directory:
+                          title: Is Directory
+                          type: boolean
+                          description: if True this is a directory
+                          default: false
+                      additionalProperties: false
+                  error:
+                    title: Error
   '/storage/locations/{location_id}/datasets':
     get:
-      summary: Get datasets metadata
       tags:
         - storage
+      summary: Get datasets metadata
+      description: returns all the top level datasets a user has access to
       operationId: get_datasets_metadata
       parameters:
-        - name: location_id
-          in: path
-          required: true
+        - required: true
           schema:
-            type: string
+            title: Location Id
+            type: integer
+          name: location_id
+          in: path
       responses:
         '200':
-          description: list of dataset meta-datas
+          description: Successful Response
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    dataset_id:
-                      type: string
-                    display_name:
-                      type: string
-                  example:
-                    dataset_uuid: 'N:id-aaaa'
-                    display_name: simcore-testing
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
+                title: 'Envelope[list[simcore_service_webserver.storage.schemas.DatasetMetaData]]'
+                type: object
+                properties:
+                  data:
+                    title: Data
+                    type: array
+                    items:
+                      $ref: '#/paths/~1storage~1locations/get/responses/200/content/application~1json/schema/items'
+                  error:
+                    title: Error
   '/computations/{project_id}':
     get:
       description: Returns the last computation data
@@ -2359,13 +2808,15 @@ paths:
           in: query
         - required: false
           schema:
-            title: ProjectTypeAPI
-            enum:
-              - all
-              - template
-              - user
-            type: string
-            description: An enumeration.
+            allOf:
+              - title: ProjectTypeAPI
+                enum:
+                  - all
+                  - template
+                  - user
+                type: string
+                description: An enumeration.
+                default: all
           name: type
           in: query
         - description: includes projects marked as hidden in the listing
@@ -2377,6 +2828,24 @@ paths:
             default: false
           name: show_hidden
           in: query
+        - description: 'Comma separated list of fields for ordering. The default sorting order is ascending. To specify descending order for a field, users append a ''desc'' suffix'
+          required: false
+          schema:
+            title: Order By
+            type: string
+            description: 'Comma separated list of fields for ordering. The default sorting order is ascending. To specify descending order for a field, users append a ''desc'' suffix'
+          example: 'foo desc, bar'
+          name: order_by
+          in: query
+        - description: 'Filters to process on the projects list, encoded as JSON'
+          required: false
+          schema:
+            title: Filters
+            type: string
+            description: 'Filters to process on the projects list, encoded as JSON'
+          example: '{"tags": [1, 5], "classifiers": ["foo", "bar"]}'
+          name: filters
+          in: query
         - description: Multi column full text search
           required: false
           schema:
@@ -2384,7 +2853,7 @@ paths:
             maxLength: 25
             type: string
             description: Multi column full text search
-          example: My Project
+          example: My project
           name: search
           in: query
       responses:
@@ -2496,10 +2965,14 @@ paths:
                           type: string
                         thumbnail:
                           title: Thumbnail
-                          maxLength: 2083
-                          minLength: 0
-                          type: string
-                          format: uri
+                          anyOf:
+                            - maxLength: 2083
+                              minLength: 0
+                              type: string
+                              format: uri
+                            - enum:
+                                - ''
+                              type: string
                         creationDate:
                           title: Creationdate
                           pattern: '\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z'
@@ -2744,10 +3217,14 @@ paths:
                         type: string
                       thumbnail:
                         title: Thumbnail
-                        maxLength: 2083
-                        minLength: 0
-                        type: string
-                        format: uri
+                        anyOf:
+                          - maxLength: 2083
+                            minLength: 0
+                            type: string
+                            format: uri
+                          - enum:
+                              - ''
+                            type: string
                       creationDate:
                         title: Creationdate
                         pattern: '\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z'
@@ -5330,7 +5807,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/put/responses/200/content/application~1json/schema'
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/put/requestBody/content/application~1json/schema'
+                  error:
+                    nullable: true
+                    default: null
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
     put:
@@ -5366,17 +5851,238 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - data
-                properties:
-                  data:
-                    $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/put/requestBody/content/application~1json/schema'
-                  error:
-                    nullable: true
-                    default: null
+                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/get/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
+  '/projects/{project_uuid}/comments':
+    get:
+      tags:
+        - project
+        - comments
+      summary: Retrieve all comments for a specific project.
+      operationId: list_project_comments
+      parameters:
+        - required: true
+          schema:
+            type: string
+            format: uuid
+            title: Project Uuid
+          name: project_uuid
+          in: path
+        - required: false
+          schema:
+            type: integer
+            title: Limit
+            default: 20
+          name: limit
+          in: query
+        - required: false
+          schema:
+            type: integer
+            minimum: 0
+            title: Offset
+            default: 0
+          name: offset
+          in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    items:
+                      $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1comments~1%7Bcomment_id%7D/get/responses/200/content/application~1json/schema/properties/data'
+                    type: array
+                    title: Data
+                  error:
+                    title: Error
+                type: object
+                title: 'Envelope[list[models_library.projects_comments.ProjectsCommentsAPI]]'
+    post:
+      tags:
+        - project
+        - comments
+      summary: Create a new comment for a specific project. The request body should contain the comment contents and user information.
+      operationId: create_project_comment
+      parameters:
+        - required: true
+          schema:
+            type: string
+            format: uuid
+            title: Project Uuid
+          name: project_uuid
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                contents:
+                  type: string
+                  title: Contents
+              additionalProperties: false
+              type: object
+              required:
+                - contents
+              title: _ProjectCommentsBodyParams
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    additionalProperties:
+                      type: integer
+                      exclusiveMinimum: true
+                      minimum: 0
+                    type: object
+                    title: Data
+                  error:
+                    title: Error
+                type: object
+                title: 'Envelope[dict[Literal[''comment_id''], pydantic.types.PositiveInt]]'
+  '/projects/{project_uuid}/comments/{comment_id}':
+    get:
+      tags:
+        - project
+        - comments
+      summary: Retrieve a specific comment by its ID within a project.
+      operationId: get_project_comment
+      parameters:
+        - required: true
+          schema:
+            type: string
+            format: uuid
+            title: Project Uuid
+          name: project_uuid
+          in: path
+        - required: true
+          schema:
+            type: integer
+            exclusiveMinimum: true
+            title: Comment Id
+            minimum: 0
+          name: comment_id
+          in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    properties:
+                      comment_id:
+                        type: integer
+                        exclusiveMinimum: true
+                        title: Comment Id
+                        description: 'Primary key, identifies the comment'
+                        minimum: 0
+                      project_uuid:
+                        type: string
+                        format: uuid
+                        title: Project Uuid
+                        description: project reference for this table
+                      user_id:
+                        type: integer
+                        exclusiveMinimum: true
+                        title: User Id
+                        description: user reference for this table
+                        minimum: 0
+                      contents:
+                        type: string
+                        title: Contents
+                        description: Contents of the comment
+                      created:
+                        type: string
+                        format: date-time
+                        title: Created
+                        description: Timestamp on creation
+                      modified:
+                        type: string
+                        format: date-time
+                        title: Modified
+                        description: Timestamp with last update
+                    additionalProperties: false
+                    type: object
+                    required:
+                      - comment_id
+                      - project_uuid
+                      - user_id
+                      - contents
+                      - created
+                      - modified
+                    title: ProjectsCommentsAPI
+                  error:
+                    title: Error
+                type: object
+                title: 'Envelope[ProjectsCommentsAPI]'
+    put:
+      tags:
+        - project
+        - comments
+      summary: Update the contents of a specific comment for a project. The request body should contain the updated comment contents.
+      operationId: update_project_comment
+      parameters:
+        - required: true
+          schema:
+            type: string
+            format: uuid
+            title: Project Uuid
+          name: project_uuid
+          in: path
+        - required: true
+          schema:
+            type: integer
+            exclusiveMinimum: true
+            title: Comment Id
+            minimum: 0
+          name: comment_id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1comments/post/requestBody/content/application~1json/schema'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1comments~1%7Bcomment_id%7D/get/responses/200/content/application~1json/schema'
+    delete:
+      tags:
+        - project
+        - comments
+      summary: Delete a specific comment associated with a project.
+      operationId: delete_project_comment
+      parameters:
+        - required: true
+          schema:
+            type: string
+            format: uuid
+            title: Project Uuid
+          name: project_uuid
+          in: path
+        - required: true
+          schema:
+            type: integer
+            exclusiveMinimum: true
+            title: Comment Id
+            minimum: 0
+          name: comment_id
+          in: path
+      responses:
+        '204':
+          description: Successful Response
   '/projects/{project_id}/nodes/-/services:access':
     get:
       tags:
@@ -5446,6 +6152,112 @@ paths:
                           description: This pair uniquely identifies a services
                   error:
                     title: Error
+  '/projects/{project_id}/nodes/-/preview':
+    get:
+      tags:
+        - project
+      summary: Lists all previews in the node's project
+      operationId: list_project_nodes_previews
+      parameters:
+        - required: true
+          schema:
+            title: Project Id
+            type: string
+            format: uuid
+          name: project_id
+          in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: 'Envelope[list[simcore_service_webserver.projects._nodes_handlers._ProjectNodePreview]]'
+                type: object
+                properties:
+                  data:
+                    title: Data
+                    type: array
+                    items:
+                      $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1preview/get/responses/200/content/application~1json/schema/properties/data'
+                  error:
+                    title: Error
+  '/projects/{project_id}/nodes/{node_id}/preview':
+    get:
+      tags:
+        - project
+      summary: Gets a give node's preview
+      operationId: get_project_node_preview
+      parameters:
+        - required: true
+          schema:
+            title: Project Id
+            type: string
+            format: uuid
+          name: project_id
+          in: path
+        - required: true
+          schema:
+            title: Node Id
+            type: string
+            format: uuid
+          name: node_id
+          in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: 'Envelope[_ProjectNodePreview]'
+                type: object
+                properties:
+                  data:
+                    title: _ProjectNodePreview
+                    required:
+                      - project_id
+                      - node_id
+                    type: object
+                    properties:
+                      project_id:
+                        title: Project Id
+                        type: string
+                        format: uuid
+                      node_id:
+                        title: Node Id
+                        type: string
+                        format: uuid
+                      screenshots:
+                        title: Screenshots
+                        type: array
+                        items:
+                          title: NodeScreenshot
+                          required:
+                            - thumbnail_url
+                            - file_url
+                          type: object
+                          properties:
+                            thumbnail_url:
+                              title: Thumbnail Url
+                              maxLength: 2083
+                              minLength: 1
+                              type: string
+                              format: uri
+                            file_url:
+                              title: File Url
+                              maxLength: 2083
+                              minLength: 1
+                              type: string
+                              format: uri
+                            mimetype:
+                              title: Mimetype
+                              type: string
+                              description: 'File''s media type or None if unknown. SEE https://www.iana.org/assignments/media-types/media-types.xhtml'
+                              example: image/jpeg
+                  error:
+                    title: Error
+        '404':
+          description: Node has no preview
   '/projects/{project_id}/inputs':
     get:
       tags:
@@ -5467,7 +6279,7 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[dict[uuid.UUID, simcore_service_webserver.projects._handlers__ports.ProjectInputGet]]'
+                title: 'Envelope[dict[uuid.UUID, simcore_service_webserver.projects._ports_handlers.ProjectInputGet]]'
                 type: object
                 properties:
                   data:
@@ -5558,7 +6370,7 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[dict[uuid.UUID, simcore_service_webserver.projects._handlers__ports.ProjectOutputGet]]'
+                title: 'Envelope[dict[uuid.UUID, simcore_service_webserver.projects._ports_handlers.ProjectOutputGet]]'
                 type: object
                 properties:
                   data:
@@ -5585,6 +6397,90 @@ paths:
                           type: string
                   error:
                     title: Error
+  '/projects/{project_id}/metadata':
+    get:
+      tags:
+        - project
+      summary: Get Project Metadata
+      operationId: get_project_metadata
+      parameters:
+        - required: true
+          schema:
+            type: string
+            format: uuid
+            title: Project Id
+          name: project_id
+          in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    properties:
+                      projectUuid:
+                        type: string
+                        format: uuid
+                        title: Projectuuid
+                      custom:
+                        additionalProperties:
+                          anyOf:
+                            - type: boolean
+                            - type: integer
+                            - type: number
+                            - type: string
+                        type: object
+                        title: Custom
+                        description: Custom key-value map
+                    type: object
+                    required:
+                      - projectUuid
+                    title: ProjectMetadataGet
+                  error:
+                    title: Error
+                type: object
+                title: 'Envelope[ProjectMetadataGet]'
+    patch:
+      tags:
+        - project
+      summary: Update Project Metadata
+      operationId: update_project_metadata
+      parameters:
+        - required: true
+          schema:
+            type: string
+            format: uuid
+            title: Project Id
+          name: project_id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                custom:
+                  additionalProperties:
+                    anyOf:
+                      - type: boolean
+                      - type: integer
+                      - type: number
+                      - type: string
+                  type: object
+                  title: Custom
+              type: object
+              required:
+                - custom
+              title: ProjectMetadataUpdate
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1metadata/get/responses/200/content/application~1json/schema'
   '/projects/{project_id}/metadata/ports':
     get:
       tags:
@@ -5606,7 +6502,7 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[list[simcore_service_webserver.projects._handlers__ports.ProjectMetadataPortGet]]'
+                title: 'Envelope[list[simcore_service_webserver.projects._ports_handlers.ProjectMetadataPortGet]]'
                 type: object
                 properties:
                   data:
@@ -5636,166 +6532,6 @@ paths:
                           description: 'jsonschema for the port''s value. SEE https://json-schema.org/understanding-json-schema/'
                   error:
                     title: Error
-  '/nodes/{nodeInstanceUUID}/outputUi/{outputKey}':
-    get:
-      tags:
-        - node
-      description: get a json description of the ui for presenting the output within the mainUi and a list of open api json schema objects describing the possible json payloads and responses for the api calls available at this endpoint
-      operationId: get_node_output_ui
-      parameters:
-        - $ref: '#/paths/~1nodes~1%7BnodeInstanceUUID%7D~1iframe/get/parameters/0'
-        - in: path
-          name: outputKey
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Service Information
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  plugin:
-                    type: string
-                  config:
-                    type: object
-        default:
-          description: Unexpected error
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - error
-                properties:
-                  data:
-                    nullable: true
-                    default: null
-                  error:
-                    type: object
-                    required:
-                      - status
-                      - message
-                    properties:
-                      message:
-                        description: Error message
-                        type: string
-                        example: Unexpected error
-                      errors:
-                        type: array
-                        items:
-                          properties:
-                            code:
-                              type: string
-                              description: Server Exception
-                              example: ServiceUUIDNotFoundError
-                      status:
-                        description: Error code
-                        type: integer
-                        example: 404
-  '/nodes/{nodeInstanceUUID}/outputUi/{outputKey}/{apiCall}':
-    post:
-      tags:
-        - node
-      summary: send data back to the output api ... protocol depends on the definition
-      operationId: send_to_node_output_api
-      parameters:
-        - $ref: '#/paths/~1nodes~1%7BnodeInstanceUUID%7D~1iframe/get/parameters/0'
-        - $ref: '#/paths/~1nodes~1%7BnodeInstanceUUID%7D~1outputUi~1%7BoutputKey%7D/get/parameters/1'
-        - in: path
-          name: apiCall
-          required: true
-          schema:
-            type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              oneOf:
-                - description: oa3 json schema description of the request structure
-                  type: object
-                  required:
-                    - start
-                    - count
-                  properties:
-                    start:
-                      type: integer
-                    count:
-                      type: integer
-                    filter:
-                      type: string
-                    orderBy:
-                      type: string
-                - type: object
-                  required:
-                    - key
-                  properties:
-                    key:
-                      type: string
-                - description: |
-                    oa3 json schema description of the request structure.
-                    If no `rootKey` is specified, the first level of the tree is returned.
-                    The `filter` will return any items matching the filter string as well as any
-                    folder items containing matching items further down the tree.
-                  type: object
-                  properties:
-                    rootKey:
-                      type: string
-                    filter:
-                      type: string
-                - type: object
-                  required:
-                    - key
-                  properties:
-                    key:
-                      type: string
-      responses:
-        default:
-          description: node type specific api call according to the node type presented
-          content:
-            application/json:
-              schema:
-                oneOf:
-                  - type: array
-                    items:
-                      type: object
-                      properties:
-                        key:
-                          type: string
-                        label:
-                          type: string
-                        thumbnail:
-                          description: 'data url - https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/Data_URIs'
-                          type: string
-                  - type: object
-                  - type: array
-                    items:
-                      type: object
-                      properties:
-                        key:
-                          type: string
-                        label:
-                          type: string
-                        folder:
-                          type: boolean
-                  - type: object
-  '/nodes/{nodeInstanceUUID}/iframe':
-    get:
-      tags:
-        - node
-      summary: entry point for iframe interaction with the node. This relies on the reverse proxy code.
-      operationId: get_node_output_iframe
-      parameters:
-        - in: path
-          name: nodeInstanceUUID
-          required: true
-          schema:
-            type: string
-      responses:
-        default:
-          description: any response appropriate in the iframe context
   '/projects/{study_uuid}/tags/{tag_id}':
     parameters:
       - name: tag_id
@@ -6812,7 +7548,7 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Envelope[list[simcore_service_webserver.tags_handlers.TagGet]]'
+                title: 'Envelope[list[simcore_service_webserver.tags._handlers.TagGet]]'
                 type: object
                 properties:
                   data:
@@ -6954,6 +7690,98 @@ paths:
             application/json:
               schema:
                 $ref: '#/paths/~1tags/post/responses/200/content/application~1json/schema'
+  /resource-usage/containers:
+    get:
+      tags:
+        - usage
+      summary: Retrieve containers that were running for a user and product taken from context.
+      operationId: list_resource_usage_containers
+      parameters:
+        - required: false
+          schema:
+            type: integer
+            title: Limit
+            default: 20
+          name: limit
+          in: query
+        - required: false
+          schema:
+            type: integer
+            minimum: 0
+            title: Offset
+            default: 0
+          name: offset
+          in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    items:
+                      properties:
+                        project_uuid:
+                          type: string
+                          format: uuid
+                          title: Project Uuid
+                        project_name:
+                          type: string
+                          title: Project Name
+                        node_uuid:
+                          type: string
+                          format: uuid
+                          title: Node Uuid
+                        node_label:
+                          type: string
+                          title: Node Label
+                        service_key:
+                          type: string
+                          pattern: '^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$'
+                          title: Service Key
+                        service_version:
+                          type: string
+                          pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+                          title: Service Version
+                        start_time:
+                          type: string
+                          format: date-time
+                          title: Start Time
+                        duration:
+                          type: number
+                          title: Duration
+                        processors:
+                          type: number
+                          title: Processors
+                        core_hours:
+                          type: number
+                          title: Core Hours
+                        status:
+                          type: string
+                          enum:
+                            - running
+                            - finished
+                          title: ContainerStatus
+                          description: An enumeration.
+                      type: object
+                      required:
+                        - project_uuid
+                        - node_uuid
+                        - service_key
+                        - service_version
+                        - start_time
+                        - duration
+                        - processors
+                        - core_hours
+                        - status
+                      title: ContainerGet
+                    type: array
+                    title: Data
+                  error:
+                    title: Error
+                type: object
+                title: 'Envelope[list[models_library.api_schemas_webserver.resource_usage.ContainerGet]]'
   /publications/service-submission:
     post:
       tags:
@@ -7631,7 +8459,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/put/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/get/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   '/clusters:ping':
@@ -8145,7 +8973,7 @@ paths:
                       properties:
                         key:
                           title: Key
-                          pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+                          pattern: '^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$'
                           type: string
                           description: Service key ID
                         title:
@@ -8302,7 +9130,7 @@ paths:
         - required: true
           schema:
             title: Viewer Key
-            pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+            pattern: '^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$'
             type: string
           name: viewer_key
           in: query
@@ -8342,7 +9170,7 @@ paths:
               properties:
                 key:
                   title: Key
-                  pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+                  pattern: '^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$'
                   type: string
                   description: distinctive name for the node based on the docker registry path
                 version:

@@ -13,11 +13,11 @@ body:
     validations:
       required: true
   - type: input
-    id: commit_sha
+    id: branch_commit_sha
     attributes:
-      label: Commit SHA
+      label: Branching Commit SHA
       description: |
-        Selets the commit from which the release takes placeholder. Check [commits](https://github.com/ITISFoundation/osparc-simcore/commits/master)
+        Select the commit from which the hot-fix branch needs to emerge . Check [commits](https://github.com/ITISFoundation/osparc-simcore/commits/master)
         IMPORTANT: make sure t (i.e. tests passed and images were built and pushed)
       placeholder: e.g. `8d9a27ebb3e64956e6a41f31839748b3f6a27074`
     validations:
@@ -44,29 +44,49 @@ body:
       required: true
   - type: textarea
     attributes:
-      label: "🚑️ Hotfix branch"
-      value: |
-        - [] create hotfix branch [``hotfix_v1_51_x``](https://github.com/ITISFoundation/osparc-simcore/tree/hotfix_v1_51_x) directly in *upstream* repo. **Do not delete hotfix branches** at least until next *full* release takes place.
-        - [] prepare hotfix by applying patches/cherry-picks (see *what changed* section)
-        - [] test hotfix in local deployment
-        - [] push and [check whether CI passed](https://github.com/ITISFoundation/osparc-simcore/actions)
-        - [] check [images in dockerhub](https://registry.hub.docker.com/u/itisfoundation)
-    validations:
-      required: false
-  - type: textarea
-    attributes:
-      label: Changes
+      label: Cherry Picks
       description: |
-        Changes introduced by this release.
+        List of changes to cherry-pick into the hotfix branch.
         List links to the PRs associated to every commit in the release. This will automatically create references between PRs and this release that will be very valuable for traceability.
         TIP: use the autogenerate changelog feature during the draft release.
     validations:
       required: false
   - type: textarea
     attributes:
+      label: "🚑️ Hotfix branch"
+      value: |
+        - [ ] create hotfix branch [``hotfix_v1_51_x``](https://github.com/ITISFoundation/osparc-simcore/tree/hotfix_v1_51_x) directly in *upstream* repo.
+           - WARNING: never push this branch BEFORE the actual release is completed
+           - **Do not delete hotfix branches** at least until next *full* release takes place.
+           - See more [details](https://github.com/ITISFoundation/osparc-simcore/blob/master/docs/releasing-workflow-instructions.md#hotfix-release-hotfix-branch---production)
+        - [ ] prepare hotfix by applying patches/cherry-picks (see *what changed* section)
+        - [ ] test hotfix in local deployment
+        - [ ] push and [check whether CI passed](https://github.com/ITISFoundation/osparc-simcore/actions)
+        - [ ] check [images in dockerhub](https://registry.hub.docker.com/u/itisfoundation)
+    validations:
+      required: false
+  - type: input
+    id: hotfix_commit_sha
+    attributes:
+      label: Hotfix Commit SHA
+      description: |
+        Selects the the head commit of the hotfix branch
+        IMPORTANT: make sure t (i.e. tests passed and images were built and pushed)
+      placeholder: e.g. `d1f2e9ed-3b82-424e-8afa-17940614f042`
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: Changes (for changelog)
+      description: |
+        List of changes in the hotfix branch
+    validations:
+      required: false
+  - type: textarea
+    attributes:
       label: Releasing 🚀
       value: |
-        - ``make release-hotfix version=<version> git_sha=<commit_sha>``
+        - ``make release-hotfix version=<version> git_sha=<hotfix_commit_sha>``
         - [ ] Draft [release notes](https://github.com/ITISFoundation/osparc-simcore/releases) 🚀
         - [ ] No need for maintenance announcement?: Target update of ``<target_service>``
         - [ ] Deploy hot-fix.

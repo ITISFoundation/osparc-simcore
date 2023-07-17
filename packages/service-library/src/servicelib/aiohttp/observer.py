@@ -5,7 +5,7 @@ Allows loose coupling subject and an observer.
 
 import logging
 from collections import defaultdict
-from typing import Callable
+from collections.abc import Callable
 
 from aiohttp import web
 
@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 _APP_OBSERVER_EVENTS_REGISTRY_KEY = "{__name__}.event_registry"
 
 
-class ObserverRegistryNotFound(RuntimeError):
+class ObserverRegistryNotFoundError(RuntimeError):
     ...
 
 
@@ -28,11 +28,11 @@ def setup_observer_registry(app: web.Application):
 
 def _get_registry(app: web.Application) -> defaultdict:
     try:
-        return app[_APP_OBSERVER_EVENTS_REGISTRY_KEY]
+        registry: defaultdict = app[_APP_OBSERVER_EVENTS_REGISTRY_KEY]
+        return registry
     except KeyError as err:
-        raise ObserverRegistryNotFound(
-            "Could not find observer registry. TIP: initialize app with setup_observer_registry"
-        ) from err
+        msg = "Could not find observer registry. TIP: initialize app with setup_observer_registry"
+        raise ObserverRegistryNotFoundError(msg) from err
 
 
 def register_observer(app: web.Application, func: Callable, event: str):

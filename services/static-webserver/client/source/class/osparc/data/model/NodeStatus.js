@@ -115,6 +115,13 @@ qx.Class.define("osparc.data.model.NodeStatus", {
       return true;
     },
 
+    isComputationalRunning(node) {
+      if (node && node.isComputational()) {
+        return ["PUBLISHED", "PENDING", "STARTED"].includes(node.getStatus().getRunning());
+      }
+      return false;
+    },
+
     doesCompNodeNeedRun: function(node) {
       if (node && node.isComputational()) {
         return (

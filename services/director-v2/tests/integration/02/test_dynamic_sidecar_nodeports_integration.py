@@ -264,13 +264,13 @@ def current_user(registered_user: Callable) -> dict[str, Any]:
 @pytest.fixture
 async def current_study(
     current_user: dict[str, Any],
-    project: Callable[..., ProjectAtDB],
+    project: Callable[..., Awaitable[ProjectAtDB]],
     fake_dy_workbench: dict[str, Any],
     async_client: httpx.AsyncClient,
     osparc_product_name: str,
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ) -> ProjectAtDB:
-    project_at_db = project(current_user, workbench=fake_dy_workbench)
+    project_at_db = await project(current_user, workbench=fake_dy_workbench)
 
     # create entries in comp_task table in order to pull output ports
     await create_pipeline(
@@ -610,7 +610,12 @@ async def _fetch_data_from_container(
 
 
 async def _fetch_data_via_data_manager(
-    dir_tag: str, user_id: UserID, project_id: str, service_uuid: str, temp_dir: Path
+    r_clone_settings: RCloneSettings,
+    dir_tag: str,
+    user_id: UserID,
+    project_id: str,
+    service_uuid: str,
+    temp_dir: Path,
 ) -> Path:
     save_to = temp_dir / f"data-manager_{dir_tag}_{uuid4()}"
     save_to.mkdir(parents=True, exist_ok=True)
@@ -630,9 +635,10 @@ async def _fetch_data_via_data_manager(
             user_id=user_id,
             project_id=project_id,
             node_uuid=service_uuid,
-            file_or_folder=DY_SERVICES_STATE_PATH,
+            destination_path=DY_SERVICES_STATE_PATH,
             save_to=save_to,
             io_log_redirect_cb=None,
+            r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
         )
 
@@ -1056,6 +1062,7 @@ async def test_nodeports_integration(
         )
         if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED
         else await _fetch_data_via_data_manager(
+            r_clone_settings=r_clone_settings,
             dir_tag="dy",
             user_id=current_user["id"],
             project_id=str(current_study.uuid),
@@ -1074,6 +1081,7 @@ async def test_nodeports_integration(
         )
         if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED
         else await _fetch_data_via_data_manager(
+            r_clone_settings=r_clone_settings,
             dir_tag="dy_compose_spec",
             user_id=current_user["id"],
             project_id=str(current_study.uuid),

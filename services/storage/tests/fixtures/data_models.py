@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 
-from typing import Any, AsyncIterator, Awaitable, Callable, Optional
+from typing import Any, AsyncIterator, Awaitable, Callable
 
 import pytest
 import sqlalchemy as sa
@@ -70,7 +70,6 @@ async def create_project(
 async def project_id(
     create_project: Callable[[], Awaitable[dict[str, Any]]]
 ) -> ProjectID:
-
     project = await create_project()
     return ProjectID(project["uuid"])
 
@@ -80,11 +79,11 @@ async def create_project_node(
     user_id: UserID, aiopg_engine: Engine, faker: Faker
 ) -> AsyncIterator[Callable[..., Awaitable[NodeID]]]:
     async def _creator(
-        project_id: ProjectID, node_id: Optional[NodeID] = None, **kwargs
+        project_id: ProjectID, node_id: NodeID | None = None, **kwargs
     ) -> NodeID:
         async with aiopg_engine.acquire() as conn:
             result = await conn.execute(
-                sa.select([projects.c.workbench]).where(
+                sa.select(projects.c.workbench).where(
                     projects.c.uuid == f"{project_id}"
                 )
             )

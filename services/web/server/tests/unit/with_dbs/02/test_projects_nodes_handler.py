@@ -16,9 +16,15 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
-from pydantic import NonNegativeFloat, NonNegativeInt
+from models_library.services_resources import (
+    DEFAULT_SINGLE_SERVICE_NAME,
+    ServiceResourcesDict,
+    ServiceResourcesDictHelpers,
+)
+from pydantic import NonNegativeFloat, NonNegativeInt, parse_obj_as
+from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import UserInfoDict
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     ExpectedResponse,
     MockedStorageSubsystem,
@@ -26,7 +32,8 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (
 )
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.projects import projects as projects_db_model
-from simcore_service_webserver.db_models import UserRole
+from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.projects._nodes_handlers import _ProjectNodePreview
 from simcore_service_webserver.projects.models import ProjectDict
 
 
@@ -41,22 +48,28 @@ from simcore_service_webserver.projects.models import ProjectDict
 )
 async def test_get_node_resources(
     client: TestClient,
-    logged_user: UserInfoDict,
     user_project: dict[str, Any],
-    mock_catalog_service_api_responses: None,
-    mocked_director_v2_api: dict[str, mock.MagicMock],
-    mock_orphaned_services,
-    mock_catalog_api: dict[str, mock.Mock],
     expected: type[web.HTTPException],
 ):
     assert client.app
-    project_workbench = user_project["workbench"]
-    for node_id in project_workbench:
+    for node_id in user_project["workbench"]:
         url = client.app.router["get_node_resources"].url_for(
             project_id=user_project["uuid"], node_id=node_id
         )
         response = await client.get(f"{url}")
-        await assert_status(response, expected)
+        data, error = await assert_status(response, expected)
+        if data:
+            assert not error
+            node_resources = parse_obj_as(ServiceResourcesDict, data)
+            assert node_resources
+            assert DEFAULT_SINGLE_SERVICE_NAME in node_resources
+            assert (
+                node_resources
+                == ServiceResourcesDictHelpers.Config.schema_extra["examples"][0]
+            )
+        else:
+            assert not data
+            assert error
 
 
 @pytest.mark.parametrize(
@@ -67,13 +80,11 @@ async def test_get_node_resources(
 )
 async def test_get_wrong_project_raises_not_found_error(
     client: TestClient,
-    logged_user: UserInfoDict,
     user_project: dict[str, Any],
     expected: type[web.HTTPException],
 ):
     assert client.app
-    project_workbench = user_project["workbench"]
-    for node_id in project_workbench:
+    for node_id in user_project["workbench"]:
         url = client.app.router["get_node_resources"].url_for(
             project_id=f"{uuid4()}", node_id=node_id
         )
@@ -89,7 +100,6 @@ async def test_get_wrong_project_raises_not_found_error(
 )
 async def test_get_wrong_node_raises_not_found_error(
     client: TestClient,
-    logged_user: UserInfoDict,
     user_project: dict[str, Any],
     expected: type[web.HTTPException],
 ):
@@ -107,23 +117,147 @@ async def test_get_wrong_node_raises_not_found_error(
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
         (UserRole.GUEST, web.HTTPForbidden),
         (UserRole.USER, web.HTTPForbidden),
-        (UserRole.TESTER, web.HTTPNotImplemented),
+        (UserRole.TESTER, web.HTTPForbidden),
     ],
 )
-async def test_replace_node_resources(
+async def test_replace_node_resources_is_forbidden_by_default(
     client: TestClient,
-    logged_user: UserInfoDict,
     user_project: dict[str, Any],
-    mock_catalog_service_api_responses: None,
     expected: type[web.HTTPException],
 ):
     assert client.app
-    project_workbench = user_project["workbench"]
-    for node_id in project_workbench:
+    for node_id in user_project["workbench"]:
         url = client.app.router["replace_node_resources"].url_for(
             project_id=user_project["uuid"], node_id=node_id
         )
-        response = await client.put(f"{url}", json={})
+        response = await client.put(
+            f"{url}",
+            json=ServiceResourcesDictHelpers.create_jsonable(
+                ServiceResourcesDictHelpers.Config.schema_extra["examples"][0]
+            ),
+        )
+        data, error = await assert_status(response, expected)
+        if data:
+            assert not error
+            node_resources = parse_obj_as(ServiceResourcesDict, data)
+            assert node_resources
+            assert DEFAULT_SINGLE_SERVICE_NAME in node_resources
+            assert (
+                node_resources
+                == ServiceResourcesDictHelpers.Config.schema_extra["examples"][0]
+            )
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPForbidden),
+        (UserRole.USER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk),
+    ],
+)
+async def test_replace_node_resources_is_ok_if_explicitly_authorized(
+    client: TestClient,
+    user_project: dict[str, Any],
+    expected: type[web.HTTPException],
+    with_permitted_override_services_specifications: None,
+):
+    assert client.app
+    for node_id in user_project["workbench"]:
+        url = client.app.router["replace_node_resources"].url_for(
+            project_id=user_project["uuid"], node_id=node_id
+        )
+        response = await client.put(
+            f"{url}",
+            json=ServiceResourcesDictHelpers.create_jsonable(
+                ServiceResourcesDictHelpers.Config.schema_extra["examples"][0]
+            ),
+        )
+        data, error = await assert_status(response, expected)
+        if data:
+            assert not error
+            node_resources = parse_obj_as(ServiceResourcesDict, data)
+            assert node_resources
+            assert DEFAULT_SINGLE_SERVICE_NAME in node_resources
+            assert (
+                node_resources
+                == ServiceResourcesDictHelpers.Config.schema_extra["examples"][0]
+            )
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.TESTER, web.HTTPUnprocessableEntity),
+    ],
+)
+async def test_replace_node_resources_raises_422_if_resource_does_not_validate(
+    client: TestClient,
+    user_project: dict[str, Any],
+    expected: type[web.HTTPException],
+):
+    assert client.app
+    for node_id in user_project["workbench"]:
+        url = client.app.router["replace_node_resources"].url_for(
+            project_id=user_project["uuid"], node_id=node_id
+        )
+        response = await client.put(
+            f"{url}",
+            json=ServiceResourcesDictHelpers.create_jsonable(
+                # NOTE: we apply a different resource set
+                ServiceResourcesDictHelpers.Config.schema_extra["examples"][1]
+            ),
+        )
+        await assert_status(response, expected)
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.TESTER, web.HTTPNotFound),
+    ],
+)
+async def test_replace_node_resources_raises_404_if_wrong_project_id_used(
+    client: TestClient,
+    user_project: dict[str, Any],
+    expected: type[web.HTTPException],
+    faker: Faker,
+):
+    assert client.app
+    for node_id in user_project["workbench"]:
+        url = client.app.router["replace_node_resources"].url_for(
+            project_id=faker.uuid4(), node_id=node_id
+        )
+        response = await client.put(
+            f"{url}",
+            json={},
+        )
+        await assert_status(response, expected)
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.TESTER, web.HTTPNotFound),
+    ],
+)
+async def test_replace_node_resources_raises_404_if_wrong_node_id_used(
+    client: TestClient,
+    user_project: dict[str, Any],
+    expected: type[web.HTTPException],
+    faker: Faker,
+):
+    assert client.app
+    for node_id in user_project["workbench"]:
+        assert node_id
+        url = client.app.router["replace_node_resources"].url_for(
+            project_id=user_project["uuid"], node_id=faker.uuid4()
+        )
+        response = await client.put(
+            f"{url}",
+            json={},
+        )
         await assert_status(response, expected)
 
 
@@ -194,7 +328,7 @@ async def test_create_node(
         create_node_id = data["node_id"]
         with postgres_db.connect() as conn:
             result = conn.execute(
-                sa.select([projects_db_model.c.workbench]).where(
+                sa.select(projects_db_model.c.workbench).where(
                     projects_db_model.c.uuid == user_project["uuid"]
                 )
             )
@@ -272,7 +406,7 @@ async def test_create_and_delete_many_nodes_in_parallel(
     # check that we do have NUM_DY_SERVICES nodes in the project
     with postgres_db.connect() as conn:
         result = conn.execute(
-            sa.select([projects_db_model.c.workbench]).where(
+            sa.select(projects_db_model.c.workbench).where(
                 projects_db_model.c.uuid == user_project["uuid"]
             )
         )
@@ -391,7 +525,7 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
     # check that we do have NUM_DY_SERVICES nodes in the project
     with postgres_db.connect() as conn:
         result = conn.execute(
-            sa.select([projects_db_model.c.workbench]).where(
+            sa.select(projects_db_model.c.workbench).where(
                 projects_db_model.c.uuid == project["uuid"]
             )
         )
@@ -524,7 +658,7 @@ async def test_delete_node(
         # ensure the node is gone
         with postgres_db.connect() as conn:
             result = conn.execute(
-                sa.select([projects_db_model.c.workbench]).where(
+                sa.select(projects_db_model.c.workbench).where(
                     projects_db_model.c.uuid == user_project["uuid"]
                 )
             )
@@ -709,3 +843,54 @@ async def test_stop_node(
         mocked_director_v2_api[
             "director_v2.api.stop_dynamic_service"
         ].assert_not_called()
+
+
+@pytest.fixture
+def app_environment(
+    app_environment: dict[str, str], monkeypatch: MonkeyPatch
+) -> dict[str, str]:
+    # test_read_project_nodes_previews needs WEBSERVER_DEV_FEATURES_ENABLED=1
+    new_envs = setenvs_from_dict(monkeypatch, {"WEBSERVER_DEV_FEATURES_ENABLED": "1"})
+    return app_environment | new_envs
+
+
+@pytest.mark.parametrize("user_role", (UserRole.USER,))
+async def test_read_project_nodes_previews(
+    client: TestClient,
+    user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
+    user_role: UserRole,
+):
+    assert client.app
+    project = await user_project_with_num_dynamic_services(3)
+
+    # LIST all node previews
+    url = client.app.router["list_project_nodes_previews"].url_for(
+        project_id=project["uuid"]
+    )
+    response = await client.get(f"{url}")
+
+    data, error = await assert_status(
+        response,
+        web.HTTPOk,
+    )
+
+    assert not error
+    assert len(data) == 3
+
+    nodes_previews = parse_obj_as(list[_ProjectNodePreview], data)
+
+    # GET node's preview
+    for node_preview in nodes_previews:
+        assert f"{node_preview.project_id}" == project["uuid"]
+
+        url = client.app.router["get_project_node_preview"].url_for(
+            project_id=project["uuid"], node_id=f"{node_preview.node_id}"
+        )
+
+        response = await client.get(f"{url}")
+        data, error = await assert_status(
+            response,
+            web.HTTPOk,
+        )
+
+        assert parse_obj_as(_ProjectNodePreview, data) == node_preview

@@ -129,6 +129,13 @@ pyupgrade: ## upgrades python syntax for newer versions of the language (SEE htt
 pylint: $(REPO_BASE_DIR)/.pylintrc ## runs pylint (python linter) on src and tests folders
 	@pylint --rcfile="$(REPO_BASE_DIR)/.pylintrc" -v $(CURDIR)/src $(CURDIR)/tests
 
+.PHONY: ruff
+ruff: $(REPO_BASE_DIR)/.ruff.toml ## runs ruff (python fast linter) on src and tests folders
+	@ruff check \
+		--config=$(REPO_BASE_DIR)/.ruff.toml \
+		--respect-gitignore \
+		$(CURDIR)/src \
+		$(CURDIR)/tests
 
 .PHONY: mypy
 mypy: $(REPO_BASE_DIR)/scripts/mypy.bash $(REPO_BASE_DIR)/mypy.ini ## runs mypy python static type-checker on this services's code. Use AFTER make install-*

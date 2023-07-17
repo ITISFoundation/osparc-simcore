@@ -318,7 +318,7 @@ class SheetFirstDatasetDescription(BaseXLSXSheet):
 
     def assemble_data_for_template(
         self, template_data: BaseModel
-    ) -> list[tuple[str, dict[str, BaseXLSXCellData]]]:
+    ) -> list[tuple[str, BaseXLSXCellData]]:
         params: DatasetDescriptionParams = ensure_correct_instance(
             template_data, DatasetDescriptionParams
         )

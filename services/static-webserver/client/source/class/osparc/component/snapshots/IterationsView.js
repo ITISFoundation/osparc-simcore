@@ -138,7 +138,6 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
 
       const iterationData = this.__iterations[idx];
       const iteration = new osparc.data.model.Study(iterationData);
-      iteration.buildWorkbench();
       iteration.setReadOnly(true);
       iteration.nodeUpdated(dataUpdate);
       const iterationDataUpdated = iteration.serialize(false);
@@ -171,7 +170,6 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
       if (idx > -1) {
         const iterationData = this.__iterations[idx];
         const iteration = new osparc.data.model.Study(iterationData);
-        iteration.buildWorkbench();
         iteration.setReadOnly(true);
         this.__iterationPreview.setStudy(iteration);
         this.__iterationPreview.loadModel(iteration.getWorkbench());
@@ -221,7 +219,6 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
           }
 
           const study = new osparc.data.model.Study(studyData);
-          study.buildWorkbench();
           study.setReadOnly(true);
           this.__iterationPreview.set({
             study: study

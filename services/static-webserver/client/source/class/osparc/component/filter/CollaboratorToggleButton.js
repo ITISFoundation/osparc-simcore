@@ -91,12 +91,22 @@ qx.Class.define("osparc.component.filter.CollaboratorToggleButton", {
       this.show();
     },
 
+    __filterText: function(text) {
+      const checks = [
+        this.getLabel(),
+        this.getToolTipText()
+      ];
+      if (text) {
+        const includesSome = checks.some(check => (check !== null) && check.toLowerCase().trim().includes(text.toLowerCase()));
+        return !includesSome;
+      }
+      return false;
+    },
+
     _shouldApplyFilter: function(data) {
       if (data.name) {
         // data.name comes lowercased
-        if (!this.getLabel().toLowerCase().includes(data.name)) {
-          return true;
-        }
+        return this.__filterText(data.name);
       }
       return false;
     },

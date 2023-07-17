@@ -2,16 +2,17 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import urllib.parse
+from collections.abc import Iterator
 from pathlib import Path
 from pprint import pprint
-from typing import Any, Iterator
+from typing import Any
 from zipfile import ZipFile
 
 import arrow
 import boto3
 import httpx
 import pytest
-import respx
 from faker import Faker
 from fastapi import FastAPI
 from models_library.services import ServiceDockerData
@@ -20,7 +21,7 @@ from pydantic import AnyUrl, HttpUrl, parse_obj_as
 from respx import MockRouter
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.models.schemas.jobs import Job, JobInputs, JobStatus
-from simcore_service_api_server.plugins.director_v2 import ComputationTaskGet
+from simcore_service_api_server.services.director_v2 import ComputationTaskGet
 from starlette import status
 
 
@@ -85,13 +86,14 @@ def presigned_download_link(
     print("generated link", presigned_url)
 
     # SEE also https://gist.github.com/amarjandu/77a7d8e33623bae1e4e5ba40dc043cb9
-    yield parse_obj_as(AnyUrl, presigned_url)
+    return parse_obj_as(AnyUrl, presigned_url)
 
 
 @pytest.fixture
 def mocked_directorv2_service_api(
     app: FastAPI,
     presigned_download_link: AnyUrl,
+    mocked_directorv2_service_api_base: MockRouter,
     directorv2_service_openapi_specs: dict[str, Any],
 ):
     settings: ApplicationSettings = app.state.settings
@@ -99,41 +101,37 @@ def mocked_directorv2_service_api(
     oas = directorv2_service_openapi_specs
 
     # pylint: disable=not-context-manager
-    with respx.mock(
-        base_url=settings.API_SERVER_DIRECTOR_V2.api_base_url,
-        assert_all_called=False,
-        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
-    ) as respx_mock:
-        # check that what we emulate, actually still exists
-        path = "/v2/computations/{project_id}/tasks/-/logfile"
-        assert path in oas["paths"]
-        assert "get" in oas["paths"][path]
+    respx_mock = mocked_directorv2_service_api_base
+    # check that what we emulate, actually still exists
+    path = "/v2/computations/{project_id}/tasks/-/logfile"
+    assert path in oas["paths"]
+    assert "get" in oas["paths"][path]
 
-        response = oas["paths"][path]["get"]["responses"]["200"]
+    response = oas["paths"][path]["get"]["responses"]["200"]
 
-        assert response["content"]["application/json"]["schema"]["type"] == "array"
-        assert (
-            response["content"]["application/json"]["schema"]["items"]["$ref"]
-            == "#/components/schemas/TaskLogFileGet"
-        )
-        assert {"task_id", "download_link"} == set(
-            oas["components"]["schemas"]["TaskLogFileGet"]["properties"].keys()
-        )
+    assert response["content"]["application/json"]["schema"]["type"] == "array"
+    assert (
+        response["content"]["application/json"]["schema"]["items"]["$ref"]
+        == "#/components/schemas/TaskLogFileGet"
+    )
+    assert {"task_id", "download_link"} == set(
+        oas["components"]["schemas"]["TaskLogFileGet"]["properties"].keys()
+    )
 
-        respx_mock.get(
-            path__regex=r"/computations/(?P<project_id>[\w-]+)/tasks/-/logfile",
-            name="get_computation_logs",  # = operation_id
-        ).respond(
-            status.HTTP_200_OK,
-            json=[
-                {
-                    "task_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                    "download_link": presigned_download_link,
-                }
-            ],
-        )
+    respx_mock.get(
+        path__regex=r"/computations/(?P<project_id>[\w-]+)/tasks/-/logfile",
+        name="get_computation_logs",  # = operation_id
+    ).respond(
+        status.HTTP_200_OK,
+        json=[
+            {
+                "task_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                "download_link": presigned_download_link,
+            }
+        ],
+    )
 
-        yield respx_mock
+    return respx_mock
 
 
 def test_download_presigned_link(
@@ -141,7 +139,7 @@ def test_download_presigned_link(
 ):
     """Cheks that the generation of presigned_download_link works as expected"""
     r = httpx.get(presigned_download_link)
-    pprint(dict(r.headers))
+    ## pprint(dict(r.headers))
     # r.headers looks like:
     # {
     #  'access-control-allow-origin': '*',
@@ -204,16 +202,6 @@ async def test_solver_logs(
 
     assert resp.url == presigned_download_link
     pprint(dict(resp.headers))
-
-
-@pytest.fixture
-def solver_key() -> str:
-    return "simcore/services/comp/itis/isolve"
-
-
-@pytest.fixture
-def solver_version() -> str:
-    return "1.2.3"
 
 
 @pytest.mark.acceptance_test(
@@ -330,7 +318,7 @@ async def test_run_solver_job(
 
     mocked_catalog_service_api.get(
         # path__regex=r"/services/(?P<service_key>[\w-]+)/(?P<service_version>[0-9\.]+)",
-        path="/v0/services/simcore%2Fservices%2Fcomp%2Fitis%2Fisolve/1.2.3",
+        path=f"/v0/services/{urllib.parse.quote_plus(solver_key)}/{solver_version}",
         name="get_service_v0_services__service_key___service_version__get",
     ).respond(
         status.HTTP_200_OK,
@@ -382,47 +370,4 @@ async def test_run_solver_job(
     ].called
 
     job_status = JobStatus.parse_obj(resp.json())
-
-
-@pytest.mark.xfail(reason="Still not implemented")
-@pytest.mark.acceptance_test(
-    "For https://github.com/ITISFoundation/osparc-simcore/issues/4111"
-)
-async def test_delete_solver_job(
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
-    solver_key: str,
-    solver_version: str,
-    faker: Faker,
-):
-
-    # Cannot delete if it does not exists
-    resp = await client.delete(
-        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs/{faker.uuid4()}",
-        auth=auth,
-    )
-    assert resp.status_code == status.HTTP_404_NOT_FOUND
-
-    # Create Job
-    resp = await client.post(
-        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs",
-        auth=auth,
-        json=JobInputs(
-            values={
-                "x": 3.14,
-                "n": 42,
-            }
-        ).dict(),
-    )
-    assert resp.status_code == status.HTTP_200_OK
-    job = Job.parse_obj(resp.json())
-
-    # Delete Job after creation
-    resp = await client.delete(
-        f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs/{job.id}",
-        auth=auth,
-    )
-    assert resp.status_code == status.HTTP_204_NO_CONTENT
-
-    # Run job and try to delete while running
-    # Run a job and delete when finished
+    assert job_status.progress == 0.0

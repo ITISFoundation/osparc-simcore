@@ -1,7 +1,8 @@
 import asyncio
 import logging
 import uuid
-from typing import Any, Awaitable, Coroutine, Optional, cast
+from collections.abc import Awaitable, Coroutine
+from typing import Any, cast
 
 import aiodocker
 from aiodocker.containers import DockerContainer
@@ -16,8 +17,8 @@ def _wrap_async_call(fct: Awaitable[Any]) -> Any:
 
 def _nvidia_smi_docker_config(cmd: list[str]) -> dict[str, Any]:
     return {
-        "Cmd": ["nvidia-smi"] + cmd,
-        "Image": "nvidia/cuda:10.0-base",
+        "Cmd": ["nvidia-smi", *cmd],
+        "Image": "nvidia/cuda:12.2.0-base-ubuntu22.04",
         "AttachStdin": False,
         "AttachStdout": False,
         "AttachStderr": False,
@@ -35,7 +36,7 @@ def num_available_gpus() -> int:
 
     async def async_num_available_gpus() -> int:
         num_gpus = 0
-        container: Optional[DockerContainer] = None
+        container: DockerContainer | None = None
         async with aiodocker.Docker() as docker:
             spec_config = _nvidia_smi_docker_config(["--list-gpus"])
             try:
@@ -78,7 +79,7 @@ def video_memory() -> int:
 
     async def async_video_memory() -> int:
         video_ram: ByteSize = ByteSize(0)
-        container: Optional[DockerContainer] = None
+        container: DockerContainer | None = None
         async with aiodocker.Docker() as docker:
             spec_config = _nvidia_smi_docker_config(
                 [

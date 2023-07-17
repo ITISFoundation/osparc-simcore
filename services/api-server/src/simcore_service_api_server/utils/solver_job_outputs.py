@@ -1,5 +1,5 @@
 import logging
-from typing import TypeAlias, Union
+from typing import TypeAlias
 
 import aiopg
 from fastapi import status
@@ -14,9 +14,9 @@ from simcore_sdk.node_ports_v2 import DBManager, Nodeports
 log = logging.getLogger(__name__)
 
 # ResultsTypes are types used in the job outputs (see ArgumentType)
-ResultsTypes: TypeAlias = Union[
-    StrictFloat, StrictInt, StrictBool, BaseFileLink, str, list, None
-]
+ResultsTypes: TypeAlias = (
+    StrictFloat | StrictInt | StrictBool | BaseFileLink | str | list | None
+)
 
 
 async def get_solver_output_results(

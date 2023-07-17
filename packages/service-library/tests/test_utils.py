@@ -3,13 +3,14 @@
 # pylint:disable=redefined-outer-name
 
 import asyncio
+from copy import copy
 from pathlib import Path
 from random import randint
-from typing import Awaitable, Coroutine, Union
+from typing import Awaitable, Coroutine
 
 import pytest
 from faker import Faker
-from servicelib.utils import fire_and_forget_task, logged_gather
+from servicelib.utils import ensure_ends_with, fire_and_forget_task, logged_gather
 
 
 async def _value_error(uid, *, delay=1):
@@ -56,7 +57,6 @@ def mock_logger(mocker):
 
 
 async def test_logged_gather(event_loop, coros, mock_logger):
-
     with pytest.raises(ValueError) as excinfo:
         await logged_gather(*coros, reraise=True, log=mock_logger)
 
@@ -97,7 +97,7 @@ def print_tree(path: Path, level=0):
 
 
 @pytest.fixture()
-async def coroutine_that_cancels() -> Union[asyncio.Future, Awaitable]:
+async def coroutine_that_cancels() -> asyncio.Future | Awaitable:
     async def _self_cancelling() -> None:
         await asyncio.sleep(0)  # NOTE: this forces a context switch
         raise asyncio.CancelledError("manual cancellation")
@@ -157,3 +157,19 @@ async def test_fire_and_forget_1000s_tasks(faker: Faker):
     assert len(done) == 1000
     assert len(pending) == 0
     assert len(tasks_collection) == 0
+
+
+@pytest.mark.parametrize(
+    "original, termination, expected",
+    [
+        ("hello", "world", "helloworld"),
+        ("first_second", "second", "first_second"),
+        ("some/path", "/", "some/path/"),
+    ],
+)
+def test_ensure_ends_with(original: str, termination: str, expected: str):
+    original_copy = copy(original)
+    terminated_string = ensure_ends_with(original, termination)
+    assert original_copy == original
+    assert terminated_string.endswith(termination)
+    assert terminated_string == expected

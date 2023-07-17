@@ -3,10 +3,12 @@ from typing import Awaitable, Callable
 
 from fastapi import FastAPI
 from servicelib.background_task import start_periodic_task, stop_periodic_task
+from servicelib.redis_utils import exclusive
 from settings_library.prometheus import PrometheusSettings
 
 from .core.settings import ApplicationSettings
-from .resource_tracker_core import collect_service_resource_usage_task
+from .modules.redis import get_redis_client
+from .resource_tracker_core import collect_container_resource_usage_task
 
 _TASK_NAME = "periodic_prometheus_polling"
 
@@ -23,8 +25,12 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
         if not settings:
             _logger.warning("Prometheus API client is de-activated in the settings")
             return
+        lock_key = f"{app.title}:collect_container_resource_usage_task_lock"
+        lock_value = "locked"
         app.state.resource_tracker_task = start_periodic_task(
-            collect_service_resource_usage_task,
+            exclusive(get_redis_client(app), lock_key=lock_key, lock_value=lock_value)(
+                collect_container_resource_usage_task
+            ),
             interval=app_settings.RESOURCE_USAGE_TRACKER_EVALUATION_INTERVAL_SEC,
             task_name=_TASK_NAME,
             app=app,

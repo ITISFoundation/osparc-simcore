@@ -14,6 +14,7 @@ class RedisDatabase(int, Enum):
     VALIDATION_CODES = 2
     SCHEDULED_MAINTENANCE = 3
     USER_NOTIFICATIONS = 4
+    ANNOUNCEMENTS = 5
 
 
 class RedisSettings(BaseCustomSettings):

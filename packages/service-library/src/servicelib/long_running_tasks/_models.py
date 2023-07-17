@@ -1,73 +1,25 @@
-import logging
-import urllib.parse
 from asyncio import Task
 from datetime import datetime
 from typing import Any, Awaitable, Callable, Coroutine
 
-from pydantic import (
-    BaseModel,
-    ConstrainedFloat,
-    Field,
-    PositiveFloat,
-    validate_arguments,
-    validator,
+from models_library.api_schemas_long_running_tasks.base import (
+    ProgressMessage,
+    ProgressPercent,
+    TaskId,
 )
-
-logger = logging.getLogger(__name__)
+from models_library.api_schemas_long_running_tasks.tasks import (
+    TaskGet,
+    TaskProgress,
+    TaskResult,
+    TaskStatus,
+)
+from pydantic import BaseModel, Field, PositiveFloat
 
 TaskName = str
-TaskId = str
+
 TaskType = Callable[..., Coroutine[Any, Any, Any]]
 
-ProgressMessage = str
-
-
-class ProgressPercent(ConstrainedFloat):
-    ge = 0.0
-    le = 1.0
-
-
 ProgressCallback = Callable[[ProgressMessage, ProgressPercent, TaskId], Awaitable[None]]
-
-
-class MarkOptions(BaseModel):
-    unique: bool = False
-
-
-class TaskProgress(BaseModel):
-    """
-    Helps the user to keep track of the progress. Progress is expected to be
-    defined as a float bound between 0.0 and 1.0
-    """
-
-    message: ProgressMessage = Field(default="")
-    percent: ProgressPercent = Field(default=0.0)
-
-    @validate_arguments
-    def update(
-        self,
-        *,
-        message: ProgressMessage | None = None,
-        percent: ProgressPercent | None = None,
-    ) -> None:
-        """`percent` must be between 0.0 and 1.0 otherwise ValueError is raised"""
-        if message:
-            self.message = message
-        if percent:
-            if not (0.0 <= percent <= 1.0):
-                raise ValueError(f"{percent=} must be in range [0.0, 1.0]")
-            self.percent = percent
-
-        logger.debug("Progress update: %s", f"{self}")
-
-    @classmethod
-    def create(cls) -> "TaskProgress":
-        return cls.parse_obj(dict(message="", percent=0.0))
-
-    @validator("percent")
-    @classmethod
-    def round_value_to_3_digit(cls, v):
-        return round(v, 3)
 
 
 class TrackedTask(BaseModel):
@@ -95,30 +47,20 @@ class TrackedTask(BaseModel):
         arbitrary_types_allowed = True
 
 
-class TaskStatus(BaseModel):
-    task_progress: TaskProgress
-    done: bool
-    started: datetime
-
-
-class TaskResult(BaseModel):
-    result: Any | None
-    error: Any | None
-
-
 class ClientConfiguration(BaseModel):
     router_prefix: str
     default_timeout: PositiveFloat
 
 
-class TaskGet(BaseModel):
-    task_id: TaskId
-    task_name: str
-    status_href: str
-    result_href: str
-    abort_href: str
+# explicit export of models for api-schemas
 
-    @validator("task_name")
-    @classmethod
-    def unquote_str(cls, v) -> str:
-        return urllib.parse.unquote(v)
+assert TaskResult  # nosec
+assert TaskGet  # nosec
+assert TaskStatus  # nosec
+
+__all__: tuple[str, ...] = (
+    "TaskGet",
+    "TaskId",
+    "TaskResult",
+    "TaskStatus",
+)

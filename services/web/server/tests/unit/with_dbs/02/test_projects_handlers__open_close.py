@@ -1,15 +1,16 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-# pylint:disable=too-many-statements
-# pylint:disable=too-many-arguments
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-statements
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import asyncio
 import json
 import time
+from collections.abc import Awaitable, Callable, Iterator
 from copy import deepcopy
 from datetime import datetime, timedelta
-from typing import Any, Awaitable, Callable, Iterator
+from typing import Any
 from unittest import mock
 from unittest.mock import call
 
@@ -32,7 +33,6 @@ from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
-from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
 from pytest_simcore.helpers.utils_projects import assert_get_same_project
@@ -43,7 +43,7 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (
 from servicelib.aiohttp.web_exceptions_extension import HTTPLocked
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.products import products
-from simcore_service_webserver.db_models import UserRole
+from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.socketio.messages import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.utils import to_datetime
@@ -56,7 +56,7 @@ API_PREFIX = "/" + API_VERSION
 
 @pytest.fixture
 def app_environment(
-    app_environment: dict[str, str], monkeypatch: MonkeyPatch
+    app_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch
 ) -> dict[str, str]:
     # disable the garbage collector
     monkeypatch.setenv("WEBSERVER_GARBAGE_COLLECTOR", "null")
@@ -70,7 +70,7 @@ def assert_replaced(current_project, update_data):
     modified = [
         "lastChangeDate",
     ]
-    keep = [k for k in update_data.keys() if k not in modified]
+    keep = [k for k in update_data if k not in modified]
 
     assert _extract(current_project, keep) == _extract(update_data, keep)
 
@@ -79,30 +79,34 @@ def assert_replaced(current_project, update_data):
 
 
 async def _list_projects(
-    client,
+    client: TestClient,
     expected: type[web.HTTPException],
     query_parameters: dict | None = None,
 ) -> list[dict[str, Any]]:
+    assert client.app
+
     # GET /v0/projects
     url = client.app.router["list_projects"].url_for()
     assert str(url) == API_PREFIX + "/projects"
     if query_parameters:
         url = url.with_query(**query_parameters)
 
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, expected)
     return data
 
 
 async def _replace_project(
-    client, project_update: dict, expected: type[web.HTTPException]
+    client: TestClient, project_update: dict, expected: type[web.HTTPException]
 ) -> dict:
+    assert client.app
+
     # PUT /v0/projects/{project_id}
     url = client.app.router["replace_project"].url_for(
         project_id=project_update["uuid"]
     )
     assert str(url) == f"{API_PREFIX}/projects/{project_update['uuid']}"
-    resp = await client.put(url, json=project_update)
+    resp = await client.put(f"{url}", json=project_update)
     data, error = await assert_status(resp, expected)
     if not error:
         assert_replaced(current_project=data, update_data=project_update)
@@ -112,7 +116,7 @@ async def _replace_project(
 async def _connect_websocket(
     socketio_client_factory: Callable,
     check_connection: bool,
-    client,
+    client: TestClient,
     client_id: str,
     events: dict[str, Callable] | None = None,
 ) -> socketio.AsyncClient | None:
@@ -129,13 +133,15 @@ async def _connect_websocket(
 
 
 async def _open_project(
-    client,
+    client: TestClient,
     client_id: str,
     project: dict,
     expected: type[web.HTTPException] | list[type[web.HTTPException]],
 ) -> tuple[dict, dict]:
+    assert client.app
+
     url = client.app.router["open_project"].url_for(project_id=project["uuid"])
-    resp = await client.post(url, json=client_id)
+    resp = await client.post(f"{url}", json=client_id)
 
     if isinstance(expected, list):
         for e in expected:
@@ -151,25 +157,30 @@ async def _open_project(
         data, error = await assert_status(resp, expected)
         return data, error
 
-    raise AssertionError("could not open project")
+    msg = "could not open project"
+    raise AssertionError(msg)
 
 
 async def _close_project(
-    client, client_id: str, project: dict, expected: type[web.HTTPException]
+    client: TestClient, client_id: str, project: dict, expected: type[web.HTTPException]
 ):
+    assert client.app
+
     url = client.app.router["close_project"].url_for(project_id=project["uuid"])
-    resp = await client.post(url, json=client_id)
+    resp = await client.post(f"{url}", json=client_id)
     await assert_status(resp, expected)
 
 
 async def _state_project(
-    client,
+    client: TestClient,
     project: dict,
     expected: type[web.HTTPException],
     expected_project_state: ProjectState,
 ):
+    assert client.app
+
     url = client.app.router["get_project_state"].url_for(project_id=project["uuid"])
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, error = await assert_status(resp, expected)
     if not error:
         # the project is locked
@@ -212,11 +223,12 @@ async def _assert_project_state_updated(
         handler.reset_mock()
 
 
-async def _delete_project(client, project: dict) -> ClientResponse:
+async def _delete_project(client: TestClient, project: dict) -> ClientResponse:
+    assert client.app
+
     url = client.app.router["delete_project"].url_for(project_id=project["uuid"])
     assert str(url) == f"{API_PREFIX}/projects/{project['uuid']}"
-    resp = await client.delete(url)
-    return resp
+    return await client.delete(f"{url}")
 
 
 @pytest.mark.parametrize(*standard_role_response())
@@ -230,7 +242,7 @@ async def _delete_project(client, project: dict) -> ClientResponse:
     ],
 )
 async def test_share_project(
-    client,
+    client: TestClient,
     logged_user: dict,
     primary_group: dict[str, str],
     standard_groups: list[dict[str, str]],
@@ -265,7 +277,7 @@ async def test_share_project(
         await assert_get_same_project(client, new_project, expected.ok)
 
     # get another user logged in now
-    user_2 = await log_client_in(
+    await log_client_in(
         client, {"role": user_role.name}, enable_check=user_role != UserRole.ANONYMOUS
     )
     if new_project:
@@ -634,7 +646,7 @@ async def test_open_project_with_large_amount_of_dynamic_services_starts_them_if
 
 @pytest.mark.parametrize(*standard_user_role())
 async def test_open_project_with_deprecated_services_ok_but_does_not_start_dynamic_services(
-    client,
+    client: TestClient,
     logged_user,
     user_project,
     client_session_id_factory: Callable,
@@ -663,7 +675,7 @@ def one_max_open_studies_per_user(
 ) -> Iterator[None]:
     with postgres_db.connect() as conn:
         old_value = conn.scalar(
-            sa.select([products.c.max_open_studies_per_user]).where(
+            sa.select(products.c.max_open_studies_per_user).where(
                 products.c.name == osparc_product_name
             )
         )
@@ -685,7 +697,7 @@ def one_max_open_studies_per_user(
 @pytest.mark.parametrize(*standard_role_response())
 async def test_open_project_more_than_limitation_of_max_studies_open_per_user(
     one_max_open_studies_per_user: None,
-    client,
+    client: TestClient,
     logged_user,
     client_session_id_factory: Callable,
     user_project: ProjectDict,
@@ -715,7 +727,7 @@ async def test_open_project_more_than_limitation_of_max_studies_open_per_user(
 
 @pytest.mark.parametrize(*standard_role_response())
 async def test_close_project(
-    client,
+    client: TestClient,
     logged_user,
     user_project,
     client_session_id_factory: Callable,
@@ -800,7 +812,7 @@ async def test_close_project(
     ],
 )
 async def test_get_active_project(
-    client,
+    client: TestClient,
     logged_user,
     user_project,
     client_session_id_factory: Callable,
@@ -895,8 +907,8 @@ async def test_get_active_project(
     ],
 )
 async def test_project_node_lifetime(
-    client,
-    logged_user,
+    client: TestClient,
+    logged_user: UserInfoDict,
     user_project,
     expected_response_on_Create,
     expected_response_on_Get,
@@ -911,11 +923,12 @@ async def test_project_node_lifetime(
         "simcore_service_webserver.projects._handlers_crud.projects_api.storage_api.delete_data_folders_of_project_node",
         return_value="",
     )
+    assert client.app
 
     # create a new dynamic node...
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
     body = {"service_key": "simcore/services/dynamic/key", "service_version": "1.3.4"}
-    resp = await client.post(url, json=body)
+    resp = await client.post(f"{url}", json=body)
     data, errors = await assert_status(resp, expected_response_on_Create)
     node_id = None
     if resp.status == web.HTTPCreated.status_code:
@@ -936,7 +949,7 @@ async def test_project_node_lifetime(
         "service_key": "simcore/services/comp/key",
         "service_version": "1.3.4",
     }
-    resp = await client.post(url, json=body)
+    resp = await client.post(f"{url}", json=body)
     data, errors = await assert_status(resp, expected_response_on_Create)
     node_id_2 = None
     if resp.status == web.HTTPCreated.status_code:
@@ -960,7 +973,7 @@ async def test_project_node_lifetime(
     mocked_director_v2_api["director_v2.api.get_dynamic_service"].return_value = {
         "service_state": "running"
     }
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, errors = await assert_status(resp, expected_response_on_Get)
     if resp.status == web.HTTPOk.status_code:
         assert "service_state" in data
@@ -975,7 +988,7 @@ async def test_project_node_lifetime(
     mocked_director_v2_api["director_v2.api.get_dynamic_service"].return_value = {
         "service_state": "idle"
     }
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, errors = await assert_status(resp, expected_response_on_Get)
     if resp.status == web.HTTPOk.status_code:
         assert "service_state" in data
@@ -988,7 +1001,7 @@ async def test_project_node_lifetime(
     url = client.app.router["delete_node"].url_for(
         project_id=user_project["uuid"], node_id=node_id
     )
-    resp = await client.delete(url)
+    resp = await client.delete(f"{url}")
     data, errors = await assert_status(resp, expected_response_on_Delete)
     if resp.status == web.HTTPNoContent.status_code:
         mocked_director_v2_api[
@@ -1008,7 +1021,7 @@ async def test_project_node_lifetime(
     url = client.app.router["delete_node"].url_for(
         project_id=user_project["uuid"], node_id=node_id_2
     )
-    resp = await client.delete(url)
+    resp = await client.delete(f"{url}")
     data, errors = await assert_status(resp, expected_response_on_Delete)
     if resp.status == web.HTTPNoContent.status_code:
         mocked_director_v2_api[
@@ -1093,7 +1106,7 @@ async def test_open_shared_project_2_users_locked(
     client_id2 = client_session_id_factory()
 
     # 1. user 1 opens project
-    sio_1 = await _connect_websocket(
+    await _connect_websocket(
         socketio_client_factory,
         user_role != UserRole.ANONYMOUS,
         client_1,
@@ -1105,7 +1118,7 @@ async def test_open_shared_project_2_users_locked(
         locked=ProjectLocked(value=False, status=ProjectStatus.CLOSED),
         state=ProjectRunningState(value=RunningState.NOT_STARTED),
     )
-    for client_id in [client_id1, None]:
+    for _client_id in [client_id1, None]:
         await _state_project(
             client_1,
             shared_project,
@@ -1121,8 +1134,8 @@ async def test_open_shared_project_2_users_locked(
     # now the expected result is that the project is locked and opened by client 1
     owner1 = Owner(
         user_id=logged_user["id"],
-        first_name=(logged_user["name"].split(".") + [""])[0],
-        last_name=(logged_user["name"].split(".") + [""])[1],
+        first_name=([*logged_user["name"].split("."), ""])[0],
+        last_name=([*logged_user["name"].split("."), ""])[1],
     )
     expected_project_state_client_1.locked.value = True
     expected_project_state_client_1.locked.status = ProjectStatus.OPENED
@@ -1145,7 +1158,7 @@ async def test_open_shared_project_2_users_locked(
     user_2 = await log_client_in(
         client_2, {"role": user_role.name}, enable_check=user_role != UserRole.ANONYMOUS
     )
-    sio_2 = await _connect_websocket(
+    await _connect_websocket(
         socketio_client_factory,
         user_role != UserRole.ANONYMOUS,
         client_2,
@@ -1223,8 +1236,8 @@ async def test_open_shared_project_2_users_locked(
         expected_project_state_client_2.locked.status = ProjectStatus.OPENED
         owner2 = Owner(
             user_id=PositiveIntWithExclusiveMinimumRemoved(user_2["id"]),
-            first_name=(user_2["name"].split(".") + [""])[0],
-            last_name=(user_2["name"].split(".") + [""])[1],
+            first_name=([*user_2["name"].split("."), ""])[0],
+            last_name=([*user_2["name"].split("."), ""])[1],
         )
         expected_project_state_client_2.locked.owner = owner2
         expected_project_state_client_1.locked.value = True
@@ -1280,7 +1293,7 @@ async def test_open_shared_project_at_same_time(
         {"client": client_1, "user": logged_user, "client_id": client_id1, "sio": sio_1}
     ]
     # create other clients
-    for i in range(NUMBER_OF_ADDITIONAL_CLIENTS):
+    for _i in range(NUMBER_OF_ADDITIONAL_CLIENTS):
         new_client = client_on_running_server_factory()
         user = await log_client_in(
             new_client,

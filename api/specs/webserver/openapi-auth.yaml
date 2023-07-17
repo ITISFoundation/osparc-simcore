@@ -657,7 +657,7 @@ components:
         name:
           title: Name
           type: string
-          description: Code name to the front-end page
+          description: Code name to the front-end page. Ideally a PageStr
         parameters:
           $ref: '#/components/schemas/CodePageParams'
         code:
@@ -778,7 +778,7 @@ components:
         name:
           title: Name
           type: string
-          description: Code name to the front-end page
+          description: Code name to the front-end page. Ideally a PageStr
         parameters:
           $ref: '#/components/schemas/_PageParams'
         logger:

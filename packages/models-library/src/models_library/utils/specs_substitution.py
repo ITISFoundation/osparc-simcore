@@ -1,14 +1,13 @@
-from typing import Any, TypeAlias
+from typing import Any, TypeAlias, cast
 
 import yaml
-from models_library.utils.string_substitution import (
+from pydantic import StrictBool, StrictFloat, StrictInt
+
+from .string_substitution import (
     SubstitutionsDict,
     TextTemplate,
     substitute_all_legacy_identifiers,
 )
-from pydantic import StrictBool, StrictFloat, StrictInt
-
-from .string_substitution import SubstitutionsDict, TextTemplate
 
 # This constraint on substitution values is to avoid
 # deserialization issues on the TextTemplate substitution!
@@ -72,5 +71,5 @@ class SpecsSubstitutionsResolver:
 
     def run(self) -> dict[str, Any]:
         new_specs_txt: str = self._template.safe_substitute(self._substitutions)
-        new_specs: dict = yaml.safe_load(new_specs_txt)
-        return new_specs
+        new_specs = yaml.safe_load(new_specs_txt)
+        return cast(dict[str, Any], new_specs)

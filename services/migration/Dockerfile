@@ -4,6 +4,9 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 
 LABEL maintainer=sanderegg
 
+# for docker apt caching to work this needs to be added: [https://vsupalov.com/buildkit-cache-mount-dockerfile/]
+RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
+  echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 ENV SC_USER_ID=8004 \
   SC_USER_NAME=scu \
@@ -32,8 +35,8 @@ ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 # --------------------------------------------
 FROM base as build
 
-RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=locked \
-  --mount=type=cache,id=baseapt,target=/var/lib/apt,mode=0755,sharing=locked \
+RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
+  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
   set -eux \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
@@ -50,15 +53,15 @@ RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
   wheel \
   setuptools
 
-WORKDIR /build
+WORKDIR /build/packages/postgres-database
 
 # install only base 3rd party dependencies
-COPY  --chown=scu:scu packages/postgres-database/ .
-RUN pip --quiet \
-  install \
-  -r requirements/prod.txt \
-  && pip freeze
-
+RUN \
+  --mount=type=bind,source=packages/postgres-database,target=/build/packages/postgres-database,rw \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip,sharing=private \
+  pip install \
+  --requirement requirements/prod.txt \
+  && pip list -v
 
 
 # --------------------------------------------
@@ -89,7 +92,7 @@ HEALTHCHECK \
   --interval=5s \
   --timeout=10s \
   --start-period=1ms \
-  --retries=10 \
+  --retries=50 \
   CMD [ "/bin/sh", "/home/scu/services/migration/docker/healthcheck.sh"]
 
 ENTRYPOINT [ "/bin/sh", "services/migration/docker/entrypoint.sh" ]

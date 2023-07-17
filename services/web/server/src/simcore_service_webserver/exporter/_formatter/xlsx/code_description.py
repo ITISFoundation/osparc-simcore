@@ -703,7 +703,7 @@ class SheetCodeDescription(BaseXLSXSheet):
 
     def assemble_data_for_template(
         self, template_data: BaseModel
-    ) -> list[tuple[str, dict[str, BaseXLSXCellData]]]:
+    ) -> list[tuple[str, BaseXLSXCellData]]:
         params: CodeDescriptionParams = ensure_correct_instance(
             template_data, CodeDescriptionParams
         )
@@ -711,7 +711,7 @@ class SheetCodeDescription(BaseXLSXSheet):
 
         # it is important for cells to be added to the list left to right and top to bottom
         # this is done to ensure styling is applied consistently, read more inside xlsx_base
-        cells = deque()
+        cells: deque[tuple[str, BaseXLSXCellData]] = deque()
 
         # assemble "Value x" headers
         max_number_of_headers = max(1, len(code_description.rrid_entires))
@@ -859,13 +859,13 @@ class SheetInputs(BaseXLSXSheet):
 
     def assemble_data_for_template(
         self, template_data: BaseModel
-    ) -> list[tuple[str, dict[str, BaseXLSXCellData]]]:
+    ) -> list[tuple[str, BaseXLSXCellData]]:
         params: CodeDescriptionParams = ensure_correct_instance(
             template_data, CodeDescriptionParams
         )
         intputs: list[InputsEntryModel] = params.inputs
 
-        cells = deque()
+        cells: deque[tuple[str, BaseXLSXCellData]] = deque()
 
         inputs_entry: InputsEntryModel
         for row_index, inputs_entry in zip(range(4, len(intputs) + 4), intputs):
@@ -963,13 +963,13 @@ class SheetOutputs(BaseXLSXSheet):
 
     def assemble_data_for_template(
         self, template_data: BaseModel
-    ) -> list[tuple[str, dict[str, BaseXLSXCellData]]]:
+    ) -> list[tuple[str, BaseXLSXCellData]]:
         params: CodeDescriptionParams = ensure_correct_instance(
             template_data, CodeDescriptionParams
         )
         outputs: list[OutputsEntryModel] = params.outputs
 
-        cells = deque()
+        cells: deque[tuple[str, BaseXLSXCellData]] = deque()
 
         outputs_entry: OutputsEntryModel
         for row_index, outputs_entry in zip(range(4, len(outputs) + 4), outputs):
@@ -1010,7 +1010,7 @@ class SheetOutputs(BaseXLSXSheet):
 
 class SheetTSRRating(BaseXLSXSheet):
     name = "TSR Rating Rubric"
-    cell_styles: list[tuple[str, BaseXLSXCellData]] = [
+    cell_styles: list[tuple[str, BaseXLSXCellData]] | None = [
         ("A1", T("Conformance Level")),
         ("A3", T("Description")),
         ("B1", T("Comprehensive")),

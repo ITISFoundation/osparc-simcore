@@ -11,9 +11,12 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 
 LABEL maintainer="Andrei Neagu <neagu@itis.swiss>"
 
-COPY  --chown=scu:scu scripts/install_rclone.bash .
-RUN  --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=locked \
-  --mount=type=cache,id=baseapt,target=/var/lib/apt,mode=0755,sharing=locked \
+# for docker apt caching to work this needs to be added: [https://vsupalov.com/buildkit-cache-mount-dockerfile/]
+RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
+  echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
+RUN \
+  --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
+  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
   set -eux && \
   apt-get update && \
   apt-get install -y --no-install-recommends\
@@ -23,14 +26,14 @@ RUN  --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=loc
   ca-certificates \
   # required by python-magic
   libmagic1 \
-  && ./install_rclone.bash \
-  && apt-get remove -y\
-  curl \
-  && apt-get autoclean -y\
-  && apt-get autoremove -y\
-  && rm -rf /var/lib/apt/lists/* \
+  && apt-get clean -y\
   # verify that the binary works
   && gosu nobody true
+
+# install RClone, we do it in a separate layer such that the cache is not locked forever, as this seems to take a long time
+RUN \
+  --mount=type=bind,source=scripts/install_rclone.bash,target=install_rclone.bash \
+  ./install_rclone.bash
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 ENV SC_USER_ID=8004 \
@@ -73,8 +76,8 @@ FROM base as build
 
 ENV SC_BUILD_TARGET=build
 
-RUN --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=locked \
-  --mount=type=cache,id=baseapt,target=/var/lib/apt,mode=0755,sharing=locked \
+RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
+  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
   set -eux \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
@@ -95,8 +98,9 @@ WORKDIR /build
 
 # install base 3rd party dependencies
 # NOTE: copies to /build to avoid overwriting later which would invalidate this layer
-COPY --chown=scu:scu services/dynamic-sidecar/requirements/_base.txt .
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+RUN \
+  --mount=type=bind,source=services/dynamic-sidecar/requirements/_base.txt,target=_base.txt \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip \
   pip install -r _base.txt
 
 # copy utility devops scripts
@@ -113,12 +117,12 @@ FROM build as prod-only-deps
 
 ENV SC_BUILD_TARGET prod-only-deps
 
-COPY --chown=scu:scu packages /build/packages
-COPY --chown=scu:scu services/dynamic-sidecar /build/services/dynamic-sidecar
-
 WORKDIR /build/services/dynamic-sidecar
 
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+RUN \
+  --mount=type=bind,source=packages,target=/build/packages,rw \
+  --mount=type=bind,source=services/dynamic-sidecar,target=/build/services/dynamic-sidecar,rw \
+  --mount=type=cache,mode=0755,target=/root/.cache/pip,sharing=private \
   pip install \
   --requirement requirements/prod.txt \
   && pip list -v

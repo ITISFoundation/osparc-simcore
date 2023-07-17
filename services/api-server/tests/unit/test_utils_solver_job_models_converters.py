@@ -75,7 +75,7 @@ def test_job_to_node_inputs_conversion():
             ),
         }
     )
-    for name, value in job_inputs.values.items():
+    for _name, value in job_inputs.values.items():
         assert parse_obj_as(ArgumentTypes, value) == value
 
     node_inputs: InputsDict = {
@@ -92,7 +92,7 @@ def test_job_to_node_inputs_conversion():
         ),
     }
 
-    for name, value in node_inputs.items():
+    for _name, value in node_inputs.items():
         assert parse_obj_as(InputTypes, value) == value
 
     # test transformations in both directions
@@ -212,7 +212,7 @@ def test_create_job_from_project():
 @pytest.mark.skip(reason="TODO: next PR")
 def test_create_jobstatus_from_task():
     from simcore_service_api_server.models.schemas.jobs import JobStatus
-    from simcore_service_api_server.plugins.director_v2 import ComputationTaskGet
+    from simcore_service_api_server.services.director_v2 import ComputationTaskGet
 
     task = ComputationTaskGet.parse_obj({})  # TODO:
     job_status: JobStatus = create_jobstatus_from_task(task)

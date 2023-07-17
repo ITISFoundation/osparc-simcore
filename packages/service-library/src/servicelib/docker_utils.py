@@ -10,4 +10,5 @@ def to_datetime(docker_timestamp: str) -> datetime:
     # 2019-10-12T07:20:50.52Z
     # This is only accepted in RFC 3339 (without T)
     # 2019-10-12 07:20:50.52Z
-    return arrow.get(docker_timestamp).datetime
+    dt: datetime = arrow.get(docker_timestamp).datetime
+    return dt

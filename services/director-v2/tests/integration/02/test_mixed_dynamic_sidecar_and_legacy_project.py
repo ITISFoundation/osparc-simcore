@@ -6,7 +6,7 @@ import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterable, AsyncIterator, Callable, Iterable
+from typing import Any, AsyncIterable, AsyncIterator, Awaitable, Callable, Iterable
 
 import aiodocker
 import httpx
@@ -92,7 +92,7 @@ def user_dict(registered_user: Callable) -> Iterable[dict[str, Any]]:
 async def dy_static_file_server_project(
     minimal_configuration: None,
     user_dict: dict[str, Any],
-    project: Callable,
+    project: Callable[..., Awaitable[ProjectAtDB]],
     dy_static_file_server_service: dict,
     dy_static_file_server_dynamic_sidecar_service: dict,
     dy_static_file_server_dynamic_sidecar_compose_spec_service: dict,
@@ -107,7 +107,7 @@ async def dy_static_file_server_project(
             "label": label,
         }
 
-    return project(
+    return await project(
         user=user_dict,
         workbench={
             uuid_legacy: _assemble_node_data(

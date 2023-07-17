@@ -29,7 +29,7 @@ class Slideshow(_SlideshowRequired, total=False):
 
 
 class Annotation(BaseModel):
-    type: Literal["rect", "text"] = Field(...)
+    type: Literal["note", "rect", "text"] = Field(...)
     color: Color = Field(...)
     attributes: dict = Field(..., description="svg attributes")
 
@@ -37,6 +37,18 @@ class Annotation(BaseModel):
         extra = Extra.forbid
         schema_extra = {
             "examples": [
+                {
+                    "type": "note",
+                    "color": "#FFFF00",
+                    "attributes": {
+                        "x": 415,
+                        "y": 100,
+                        "width": 117,
+                        "height": 26,
+                        "destinataryGid": 4,
+                        "text": "ToDo"
+                    },
+                },
                 {
                     "type": "rect",
                     "color": "#FF0000",

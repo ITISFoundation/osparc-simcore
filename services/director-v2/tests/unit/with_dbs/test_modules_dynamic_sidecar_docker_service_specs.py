@@ -4,12 +4,13 @@
 
 
 import json
-from typing import Any, cast
+from typing import Any, Mapping, cast
 
 import pytest
 import respx
 from fastapi import FastAPI
 from models_library.aiodocker_api import AioDockerServiceSpec
+from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.service_settings_labels import (
     SimcoreServiceLabels,
     SimcoreServiceSettingsLabel,
@@ -132,10 +133,10 @@ def expected_dynamic_sidecar_spec(
                     "key": "simcore/services/dynamic/3dviewer",
                     "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                     "paths_mapping": {
-                        "inputs_path": "/tmp/inputs",
-                        "outputs_path": "/tmp/outputs",
-                        "state_exclude": ["/tmp/strip_me/*", "*.py"],
-                        "state_paths": ["/tmp/save_1", "/tmp_save_2"],
+                        "inputs_path": "/tmp/inputs",  # noqa: S108
+                        "outputs_path": "/tmp/outputs",  # noqa: S108
+                        "state_exclude": ["/tmp/strip_me/*", "*.py"],  # noqa: S108
+                        "state_paths": ["/tmp/save_1", "/tmp_save_2"],  # noqa: S108
                     },
                     "product_name": osparc_product_name,
                     "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
@@ -160,16 +161,16 @@ def expected_dynamic_sidecar_spec(
                     "version": "2.4.5",
                 }
             ).as_label_data(),
-            "key": "simcore/services/dynamic/3dviewer",
-            "version": "2.4.5",
-            "port": "8888",
-            "service_image": "local/dynamic-sidecar:MOCK",
-            "service_port": "8888",
-            "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-            "swarm_stack_name": "test_swarm_name",
-            "type": "main-v2",
-            "user_id": "234",
-            "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+            f"{to_simcore_runtime_docker_label_key('service-key')}": "simcore/services/dynamic/3dviewer",
+            f"{to_simcore_runtime_docker_label_key('service-version')}": "2.4.5",
+            f"{to_simcore_runtime_docker_label_key('memory-limit')}": "8589934592",
+            f"{to_simcore_runtime_docker_label_key('cpu-limit')}": "4.0",
+            f"{to_simcore_runtime_docker_label_key('project-id')}": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
+            f"{to_simcore_runtime_docker_label_key('user-id')}": "234",
+            f"{to_simcore_runtime_docker_label_key('node-id')}": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+            f"{to_simcore_runtime_docker_label_key('product-name')}": "osparc",
+            f"{to_simcore_runtime_docker_label_key('simcore-user-agent')}": "python/test",
+            f"{to_simcore_runtime_docker_label_key('swarm-stack-name')}": "test_swarm_name",
         },
         "name": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
         "networks": [{"Target": "mocked_swarm_network_id"}],
@@ -179,12 +180,14 @@ def expected_dynamic_sidecar_spec(
                     "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                     "DY_SIDECAR_NODE_ID": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                     "DY_SIDECAR_RUN_ID": f"{run_id}",
-                    "DY_SIDECAR_PATH_INPUTS": "/tmp/inputs",
-                    "DY_SIDECAR_PATH_OUTPUTS": "/tmp/outputs",
+                    "DY_SIDECAR_PATH_INPUTS": "/tmp/inputs",  # noqa: S108
+                    "DY_SIDECAR_PATH_OUTPUTS": "/tmp/outputs",  # noqa: S108
                     "DY_SIDECAR_PROJECT_ID": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-                    "DY_SIDECAR_STATE_EXCLUDE": json_dumps({"*.py", "/tmp/strip_me/*"}),
+                    "DY_SIDECAR_STATE_EXCLUDE": json_dumps(
+                        {"*.py", "/tmp/strip_me/*"}  # noqa: S108
+                    ),
                     "DY_SIDECAR_STATE_PATHS": json_dumps(
-                        ["/tmp/save_1", "/tmp_save_2"]
+                        ["/tmp/save_1", "/tmp_save_2"]  # noqa: S108
                     ),
                     "DY_SIDECAR_USER_ID": "234",
                     "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": "False",
@@ -225,11 +228,14 @@ def expected_dynamic_sidecar_spec(
                 "Image": "local/dynamic-sidecar:MOCK",
                 "Init": True,
                 "Labels": {
-                    "mem_limit": "8589934592",
-                    "nano_cpus_limit": "4000000000",
-                    "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-                    "user_id": "234",
-                    "uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                    f"{to_simcore_runtime_docker_label_key('memory-limit')}": "8589934592",
+                    f"{to_simcore_runtime_docker_label_key('cpu-limit')}": "4.0",
+                    f"{to_simcore_runtime_docker_label_key('project-id')}": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
+                    f"{to_simcore_runtime_docker_label_key('user-id')}": "234",
+                    f"{to_simcore_runtime_docker_label_key('node-id')}": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                    f"{to_simcore_runtime_docker_label_key('product-name')}": "osparc",
+                    f"{to_simcore_runtime_docker_label_key('simcore-user-agent')}": "python/test",
+                    f"{to_simcore_runtime_docker_label_key('swarm-stack-name')}": "test_swarm_name",
                 },
                 "Mounts": [
                     {
@@ -315,8 +321,8 @@ def expected_dynamic_sidecar_spec(
                     },
                     {
                         "ReadOnly": True,
-                        "Source": "/tmp/.X11-unix",
-                        "Target": "/tmp/.X11-unix",
+                        "Source": "/tmp/.X11-unix",  # noqa: S108
+                        "Target": "/tmp/.X11-unix",  # noqa: S108
                         "Type": "bind",
                     },
                 ],
@@ -382,8 +388,7 @@ def test_get_dynamic_proxy_spec(
             allow_internet_access=False,
         )
 
-        # NOTE:
-        exclude_keys = {
+        exclude_keys: Mapping[int | str, Any] = {
             "Labels": True,
             "TaskTemplate": {"ContainerSpec": {"Env": True}},
         }
@@ -391,28 +396,46 @@ def test_get_dynamic_proxy_spec(
         # NOTE: some flakiness here
         # state_exclude is a set and does not preserve order
         # when dumping to json it gets converted to a list
+        assert dynamic_sidecar_spec.TaskTemplate
+        assert dynamic_sidecar_spec.TaskTemplate.ContainerSpec
+        assert dynamic_sidecar_spec.TaskTemplate.ContainerSpec.Env
+        assert dynamic_sidecar_spec.TaskTemplate.ContainerSpec.Env[
+            "DY_SIDECAR_STATE_EXCLUDE"
+        ]
+
         dynamic_sidecar_spec.TaskTemplate.ContainerSpec.Env[
             "DY_SIDECAR_STATE_EXCLUDE"
-        ] = sorted(
-            dynamic_sidecar_spec.TaskTemplate.ContainerSpec.Env[
-                "DY_SIDECAR_STATE_EXCLUDE"
-            ]
+        ] = json.dumps(
+            sorted(
+                json.loads(
+                    dynamic_sidecar_spec.TaskTemplate.ContainerSpec.Env[
+                        "DY_SIDECAR_STATE_EXCLUDE"
+                    ]
+                )
+            )
         )
+        assert expected_dynamic_sidecar_spec_model.TaskTemplate.ContainerSpec.Env[
+            "DY_SIDECAR_STATE_EXCLUDE"
+        ]
         expected_dynamic_sidecar_spec_model.TaskTemplate.ContainerSpec.Env[
             "DY_SIDECAR_STATE_EXCLUDE"
-        ] = sorted(
-            expected_dynamic_sidecar_spec_model.TaskTemplate.ContainerSpec.Env[
-                "DY_SIDECAR_STATE_EXCLUDE"
-            ]
+        ] = json.dumps(
+            sorted(
+                json.loads(
+                    expected_dynamic_sidecar_spec_model.TaskTemplate.ContainerSpec.Env[
+                        "DY_SIDECAR_STATE_EXCLUDE"
+                    ]
+                )
+            )
         )
 
         assert dynamic_sidecar_spec.dict(
             exclude=exclude_keys
         ) == expected_dynamic_sidecar_spec_model.dict(exclude=exclude_keys)
-
-        assert (
-            dynamic_sidecar_spec.Labels.keys()
-            == expected_dynamic_sidecar_spec_model.Labels.keys()
+        assert dynamic_sidecar_spec.Labels
+        assert expected_dynamic_sidecar_spec_model.Labels
+        assert sorted(dynamic_sidecar_spec.Labels.keys()) == sorted(
+            expected_dynamic_sidecar_spec_model.Labels.keys()
         )
 
         assert (

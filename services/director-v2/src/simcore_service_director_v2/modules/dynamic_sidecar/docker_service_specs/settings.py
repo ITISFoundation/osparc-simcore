@@ -3,7 +3,9 @@ import logging
 from collections import deque
 from typing import Any, cast
 
+from models_library.basic_types import PortInt
 from models_library.boot_options import BootOption, EnvVarKey
+from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.service_settings_labels import (
     ComposeSpecLabelDict,
     SimcoreServiceLabels,
@@ -72,8 +74,29 @@ def _parse_env_settings(settings: list[str]) -> dict:
     return envs
 
 
+def extract_service_port_from_settings(
+    labels_service_settings: SimcoreServiceSettingsLabel,
+) -> PortInt:
+    param: SimcoreServiceSettingLabelEntry
+    for param in labels_service_settings:
+        # publishing port on the ingress network.
+        if param.name == "ports" and param.setting_type == "int":  # backward comp
+            return PortInt(param.value)
+        # REST-API compatible
+        if (
+            param.setting_type == "EndpointSpec"
+            and "Ports" in param.value
+            and (
+                isinstance(param.value["Ports"], list)
+                and "TargetPort" in param.value["Ports"][0]
+            )
+        ):
+            return PortInt(param.value["Ports"][0]["TargetPort"])
+    msg = "service port not found!"
+    raise ValueError(msg)
+
+
 # pylint: disable=too-many-branches
-# TODO: PC->ANE: i tend to agree with pylint, perhaps we can refactor this together
 def update_service_params_from_settings(
     labels_service_settings: SimcoreServiceSettingsLabel,
     create_service_params: dict[str, Any],
@@ -105,22 +128,6 @@ def update_service_params_from_settings(
                 # NOTE: The Docker REST API reads Reservation when actually it's Reservations
                 create_service_params["task_template"]["Resources"].update(param.value)
 
-        # publishing port on the ingress network.
-        elif param.name == "ports" and param.setting_type == "int":  # backward comp
-            create_service_params["labels"]["port"] = create_service_params["labels"][
-                "service_port"
-            ] = str(param.value)
-        # REST-API compatible
-        elif param.setting_type == "EndpointSpec":
-            if "Ports" in param.value:
-                if (
-                    isinstance(param.value["Ports"], list)
-                    and "TargetPort" in param.value["Ports"][0]
-                ):
-                    create_service_params["labels"]["port"] = create_service_params[
-                        "labels"
-                    ]["service_port"] = str(param.value["Ports"][0]["TargetPort"])
-
         # placement constraints
         elif param.name == "constraints":  # python-API compatible
             create_service_params["task_template"]["Placement"][
@@ -148,11 +155,28 @@ def update_service_params_from_settings(
                 ].extend(mount_settings)
 
     container_spec = create_service_params["task_template"]["ContainerSpec"]
-    # set labels for CPU and Memory limits
-    container_spec["Labels"]["nano_cpus_limit"] = str(
-        create_service_params["task_template"]["Resources"]["Limits"]["NanoCPUs"]
+    # set labels for CPU and Memory limits, for both service and container labels
+    # NOTE: cpu-limit is a float not NanoCPUs!!
+    container_spec["Labels"][
+        f"{to_simcore_runtime_docker_label_key('cpu-limit')}"
+    ] = str(
+        float(create_service_params["task_template"]["Resources"]["Limits"]["NanoCPUs"])
+        / (1 * 10**9)
     )
-    container_spec["Labels"]["mem_limit"] = str(
+    create_service_params["labels"][
+        f"{to_simcore_runtime_docker_label_key('cpu-limit')}"
+    ] = str(
+        float(create_service_params["task_template"]["Resources"]["Limits"]["NanoCPUs"])
+        / (1 * 10**9)
+    )
+    container_spec["Labels"][
+        f"{to_simcore_runtime_docker_label_key('memory-limit')}"
+    ] = str(
+        create_service_params["task_template"]["Resources"]["Limits"]["MemoryBytes"]
+    )
+    create_service_params["labels"][
+        f"{to_simcore_runtime_docker_label_key('memory-limit')}"
+    ] = str(
         create_service_params["task_template"]["Resources"]["Limits"]["MemoryBytes"]
     )
 

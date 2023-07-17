@@ -147,14 +147,18 @@ qx.Class.define("osparc.store.Support", {
       });
     },
 
-    getMailToLabel: function(email, subject) {
+    mailToText: function(email, subject) {
       const color = qx.theme.manager.Color.getInstance().resolve("text");
-      const textLink = `&nbsp&nbsp<a href="mailto:${email}?subject=${subject}" style='color: ${color}' target='_blank'>${email}</a>&nbsp&nbsp`;
-      const mailto = new qx.ui.basic.Label(textLink).set({
+      const textLink = `<center>&nbsp&nbsp<a href="mailto:${email}?subject=${subject}" style='color: ${color}' target='_blank'>${email}</a>&nbsp&nbsp<center>`;
+      return textLink;
+    },
+
+    getMailToLabel: function(email, subject) {
+      const mailto = new qx.ui.basic.Label(this.mailToText(email, subject)).set({
         alignX: "center",
         font: "text-14",
         selectable: true,
-        rich : true
+        rich: true
       });
       return mailto;
     },
@@ -171,8 +175,6 @@ qx.Class.define("osparc.store.Support", {
       const createAccountWindow = new osparc.ui.window.Dialog("Create Account").set({
         maxWidth: 380
       });
-      let message = qx.locale.Manager.tr("Registration is currently only available with an invitation.");
-      message += "<br>";
       Promise.all([
         osparc.store.VendorInfo.getInstance().getVendor(),
         osparc.store.StaticInfo.getInstance().getDisplayName()
@@ -181,18 +183,17 @@ qx.Class.define("osparc.store.Support", {
           const vendor = values[0];
           const displayName = values[1];
           if ("invitation_url" in vendor) {
+            let message = qx.locale.Manager.tr("Registration is currently only available with an invitation.");
+            message += "<br>";
             message += qx.locale.Manager.tr("Please request access to ") + displayName + ":";
             message += "<br>";
             createAccountWindow.setMessage(message);
             const linkLabel = new osparc.ui.basic.LinkLabel(vendor["invitation_url"], vendor["invitation_url"]);
             createAccountWindow.addWidget(linkLabel);
           } else {
-            message += qx.locale.Manager.tr("Please contact:");
-            createAccountWindow.setMessage(message);
-            osparc.store.VendorInfo.getInstance().getSupportEmail()
-              .then(supportEmail => {
-                const mailto = this.getMailToLabel(supportEmail, "Request Account " + displayName);
-                createAccountWindow.addWidget(mailto);
+            osparc.utils.Utils.createAccountMessage()
+              .then(message => {
+                createAccountWindow.setMessage(message);
               });
           }
         });

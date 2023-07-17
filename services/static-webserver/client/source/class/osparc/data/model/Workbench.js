@@ -76,6 +76,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       return this.__workbenchInitData;
     },
 
+    // deserializes the workbenchInitData
     buildWorkbench: function() {
       this.__rootNodes = {};
       this.__edges = {};
@@ -84,6 +85,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       this.__workbenchUIInitData = null;
     },
 
+    // starts the dynamic services
     initWorkbench: function() {
       const allModels = this.getNodes(true);
       const nodes = Object.values(allModels);

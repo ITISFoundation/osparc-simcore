@@ -9,6 +9,7 @@ from models_library.clusters import DEFAULT_CLUSTER_ID, ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import PositiveInt
 from simcore_postgres_database.errors import ForeignKeyViolation
 from sqlalchemy.sql import or_
@@ -16,7 +17,7 @@ from sqlalchemy.sql.elements import literal_column
 from sqlalchemy.sql.expression import desc
 
 from ....core.errors import ClusterNotFoundError, ComputationalRunNotFoundError
-from ....models.domains.comp_runs import CompRunsAtDB
+from ....models.domains.comp_runs import CompRunsAtDB, MetadataDict
 from ....utils.db import RUNNING_STATE_TO_DB
 from ..tables import comp_runs
 from ._base import BaseRepository
@@ -74,10 +75,12 @@ class CompRunsRepository(BaseRepository):
 
     async def create(
         self,
+        *,
         user_id: UserID,
         project_id: ProjectID,
         cluster_id: ClusterID,
         iteration: PositiveInt | None = None,
+        metadata: MetadataDict | None,
     ) -> CompRunsAtDB:
         try:
             async with self.db_engine.acquire() as conn:
@@ -104,6 +107,7 @@ class CompRunsRepository(BaseRepository):
                         iteration=iteration,
                         result=RUNNING_STATE_TO_DB[RunningState.PUBLISHED],
                         started=datetime.datetime.now(tz=datetime.timezone.utc),
+                        metadata=jsonable_encoder(metadata) if metadata else None,
                     )
                     .returning(literal_column("*"))
                 )

@@ -84,7 +84,7 @@ class BaseOrm(Generic[RowUId]):
                 ]
             )
         else:
-            query = sa.select([self._table.c[name] for name in column_names])
+            query = sa.select(*[self._table.c[name] for name in column_names])
 
         return query
 
@@ -210,7 +210,7 @@ class BaseOrm(Generic[RowUId]):
         if offset > 0 or limit is not None:
             # eval total count if pagination options enabled
             total_count = await self._conn.scalar(
-                query.with_only_columns([func.count()])
+                query.with_only_columns(func.count())
                 .select_from(self._table)
                 .order_by(None)
             )

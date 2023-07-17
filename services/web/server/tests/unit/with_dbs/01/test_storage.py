@@ -6,6 +6,7 @@ from urllib.parse import quote
 
 import pytest
 from aiohttp import web
+from faker import Faker
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp.application import create_safe_application
 from simcore_postgres_database.models.users import UserRole
@@ -161,7 +162,7 @@ async def test_get_storage_locations(client, storage_server, logged_user, expect
     url = "/v0/storage/locations"
     assert url.startswith(PREFIX)
 
-    resp = await client.get(url)
+    resp = await client.get(url, params={"user_id": logged_user["id"]})
     data, error = await assert_status(resp, expected)
 
     if not error:
@@ -209,7 +210,7 @@ async def test_get_datasets_metadata(client, storage_server, logged_user, expect
 
     assert url == str(_url)
 
-    resp = await client.get(url)
+    resp = await client.get(url, params={"user_id": logged_user["id"]})
     data, error = await assert_status(resp, expected)
 
     if not error:
@@ -238,7 +239,7 @@ async def test_get_files_metadata_dataset(
 
     assert url == str(_url)
 
-    resp = await client.get(url)
+    resp = await client.get(url, params={"user_id": logged_user["id"]})
     data, error = await assert_status(resp, expected)
 
     if not error:
@@ -255,14 +256,17 @@ async def test_get_files_metadata_dataset(
         (UserRole.TESTER, web.HTTPOk),
     ],
 )
-async def test_storage_file_meta(client, storage_server, logged_user, expected):
+async def test_storage_file_meta(
+    client, storage_server, logged_user, expected, faker: Faker
+):
     # tests redirect of path with quotes in path
-    file_id = "a/b/c/d/e/dat"
-    url = "/v0/storage/locations/0/files/{}/metadata".format(quote(file_id, safe=""))
+    file_id = f"{faker.uuid4()}/{faker.uuid4()}/a/b/c/d/e/dat"
+    quoted_file_id = quote(file_id, safe="")
+    url = f"/v0/storage/locations/0/files/{quoted_file_id}/metadata"
 
     assert url.startswith(PREFIX)
 
-    resp = await client.get(url)
+    resp = await client.get(url, params={"user_id": logged_user["id"]})
     data, error = await assert_status(resp, expected)
 
     if not error:
@@ -288,7 +292,7 @@ async def test_storage_list_filter(client, storage_server, logged_user, expected
 
     assert url.startswith(PREFIX)
 
-    resp = await client.get(url)
+    resp = await client.get(url, params={"user_id": logged_user["id"]})
     data, error = await assert_status(resp, expected)
 
     if not error:

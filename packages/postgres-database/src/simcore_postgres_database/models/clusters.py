@@ -6,8 +6,6 @@ from sqlalchemy.sql import func
 
 from .base import metadata
 
-# FIXME: Needs some endpoint/credentials to access the cluster
-
 
 class ClusterType(Enum):
     AWS = "AWS"

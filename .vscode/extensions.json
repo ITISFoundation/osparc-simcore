@@ -1,10 +1,11 @@
 {
   "recommendations": [
+    "charliermarsh.ruff",
     "eamodio.gitlens",
     "exiasr.hadolint",
     "ms-python.python",
     "njpwerner.autodocstring",
     "samuelcolvin.jinjahtml",
-    "timonwong.shellcheck"
+    "timonwong.shellcheck",
   ]
 }

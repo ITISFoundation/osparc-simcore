@@ -334,7 +334,7 @@ qx.Class.define("osparc.file.FilesTree", {
     },
 
     __populateStudyFiles: function(studyId) {
-      const treeName = "Study Files";
+      const treeName = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + " Files";
       this.__resetTree(treeName);
       let studyModel = this.getModel();
       this.self().addLoadingChild(studyModel);

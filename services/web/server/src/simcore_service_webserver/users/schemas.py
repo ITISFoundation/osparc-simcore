@@ -2,6 +2,7 @@ from datetime import date
 from typing import Any, Literal, Mapping
 from uuid import UUID
 
+from models_library.api_schemas_webserver._base import OutputSchema
 from models_library.basic_types import IdInt
 from models_library.emails import LowerCaseEmailStr
 from pydantic import BaseModel, Field, validator
@@ -11,11 +12,10 @@ from simcore_postgres_database.models.users import UserRole
 from ..groups.schemas import AllUsersGroups
 from ..utils import gravatar_hash
 
+
 #
 # TOKENS resource
 #
-
-
 class Token(BaseModel):
     """
     Tokens used to access third-party services connected to osparc (e.g. pennsieve, scicrunch, etc)
@@ -38,6 +38,10 @@ class Token(BaseModel):
 
 class TokenID(BaseModel):
     __root__: str = Field(..., description="toke identifier")
+
+
+class TokenCreate(Token):
+    ...
 
 
 #
@@ -130,3 +134,15 @@ def convert_user_db_to_schema(
     if expires_at := row[f"{prefix}expires_at"]:
         data["expires_at"] = expires_at
     return data
+
+
+#
+# Permissions
+#
+class Permission(BaseModel):
+    name: str
+    allowed: bool
+
+
+class PermissionGet(Permission, OutputSchema):
+    ...

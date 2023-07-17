@@ -140,7 +140,7 @@ class BaseXLSXSheet:
     name: str | None = None
     # cell style contents, using a list of tuples instead of dict
     # to allow for "duplicate keys"
-    cell_styles: list[tuple[str, dict[str, BaseXLSXCellData]]] | None = None
+    cell_styles: list[tuple[str, BaseXLSXCellData]] | None = None
 
     # used to merge cells via ranges like A1:B2
     cell_merge: set[str] = set()
@@ -160,7 +160,7 @@ class BaseXLSXSheet:
 
     def assemble_data_for_template(
         self, template_data: BaseModel
-    ) -> list[tuple[str, dict[str, BaseXLSXCellData]]]:
+    ) -> list[tuple[str, BaseXLSXCellData]]:
         """
         Expected to be implemented by the user.
         Used to polpulate the sheet before applying the
@@ -216,7 +216,7 @@ class BaseXLSXDocument:
             self.__getattribute__("file_name") if file_name is None else file_name
         )
         self._check_attribute("file_name")
-        self._sheets_by_name: dict[str, Worksheet] = {}
+        self._sheets_by_name: dict[BaseXLSXSheet, Worksheet] = {}
 
     def _get_sheets(self) -> Generator[tuple[str, Any], None, None]:
         for member in inspect.getmembers(self):

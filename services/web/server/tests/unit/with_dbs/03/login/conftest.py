@@ -24,11 +24,10 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
             "WEBSERVER_ACTIVITY": "null",
             "WEBSERVER_NOTIFICATIONS": "0",
             "WEBSERVER_DIAGNOSTICS": "null",
-            "WEBSERVER_DIRECTOR": "null",
             "WEBSERVER_EXPORTER": "null",
             "WEBSERVER_GARBAGE_COLLECTOR": "null",
             "WEBSERVER_GROUPS": "1",
-            "WEBSERVER_META_MODELING": "null",
+            "WEBSERVER_META_MODELING": "0",
             "WEBSERVER_PRODUCTS": "1",
             "WEBSERVER_PUBLICATIONS": "0",
             "WEBSERVER_REMOTE_DEBUG": "0",
@@ -87,6 +86,13 @@ def fake_user_phone_number(faker: Faker) -> str:
 def fake_user_password(faker: Faker) -> str:
     return faker.password(
         length=12, special_chars=True, digits=True, upper_case=True, lower_case=True
+    )
+
+
+@pytest.fixture
+def fake_weak_password(faker: Faker) -> str:
+    return faker.password(
+        length=8, special_chars=True, digits=True, upper_case=True, lower_case=True
     )
 
 

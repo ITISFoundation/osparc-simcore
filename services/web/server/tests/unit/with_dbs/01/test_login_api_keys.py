@@ -14,7 +14,7 @@ from aiohttp.test_utils import TestClient
 from pydantic import BaseModel
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
-from simcore_service_webserver.db_models import UserRole
+from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.login.api_keys_db import prune_expired_api_keys
 from simcore_service_webserver.login.api_keys_handlers import CRUD as ApiKeysCRUD
 from simcore_service_webserver.login.api_keys_handlers import ApiKeyCreate, ApiKeyGet

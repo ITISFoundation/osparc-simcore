@@ -96,13 +96,7 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
                   const moreOpts = new osparc.dashboard.ResourceMoreOptions(serviceData).set({
                     showOpenButton: false
                   });
-                  const title = this.tr("Options");
-                  osparc.ui.window.Window.popUpInWindow(
-                    moreOpts,
-                    title,
-                    osparc.dashboard.ResourceMoreOptions.WIDTH,
-                    osparc.dashboard.ResourceMoreOptions.HEIGHT
-                  );
+                  osparc.dashboard.ResourceMoreOptions.popUpInWindow(moreOpts);
                 }
               });
           });

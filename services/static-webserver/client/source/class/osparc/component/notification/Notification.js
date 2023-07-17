@@ -41,7 +41,12 @@ qx.Class.define("osparc.component.notification.Notification", {
     },
 
     category: {
-      check: ["NEW_ORGANIZATION", "STUDY_SHARED", "TEMPLATE_SHARED"],
+      check: [
+        "NEW_ORGANIZATION",
+        "STUDY_SHARED",
+        "TEMPLATE_SHARED",
+        "ANNOTATION_NOTE"
+      ],
       init: null,
       nullable: false,
       event: "changeCategory"

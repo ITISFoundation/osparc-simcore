@@ -34,15 +34,15 @@ from pytest_simcore.helpers.utils_login import UserInfoDict
 from redis import Redis
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.monitor_services import (
-    SERVICE_STARTED_LABELS,
-    SERVICE_STOPPED_LABELS,
+    MONITOR_SERVICE_STARTED_LABELS,
+    MONITOR_SERVICE_STOPPED_LABELS,
 )
 from servicelib.rabbitmq import RabbitMQClient
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.db import setup_db
+from simcore_service_webserver.db.plugin import setup_db
 from simcore_service_webserver.diagnostics.plugin import setup_diagnostics
 from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.login.plugin import setup_login
@@ -454,9 +454,9 @@ async def test_instrumentation_workflow(
     )
     await rabbitmq_publisher.publish(rabbit_message.channel_name, rabbit_message)
 
-    included_labels = SERVICE_STARTED_LABELS
+    included_labels = MONITOR_SERVICE_STARTED_LABELS
     if metrics_name == "service_stopped":
-        included_labels = SERVICE_STOPPED_LABELS
+        included_labels = MONITOR_SERVICE_STOPPED_LABELS
     await _assert_handler_called(
         mocked_metrics_method,
         mock.call(

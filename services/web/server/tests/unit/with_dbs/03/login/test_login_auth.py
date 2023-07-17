@@ -14,7 +14,7 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser
 from servicelib.aiohttp.rest_responses import unwrap_envelope
 from simcore_service_webserver._constants import APP_SETTINGS_KEY
-from simcore_service_webserver.db_models import UserStatus
+from simcore_service_webserver.db.models import UserStatus
 from simcore_service_webserver.login._constants import (
     MSG_ACTIVATION_REQUIRED,
     MSG_LOGGED_IN,

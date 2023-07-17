@@ -1,17 +1,8 @@
 import asyncio
 import collections
 import logging
-from typing import (
-    Any,
-    Awaitable,
-    Callable,
-    Coroutine,
-    Final,
-    Iterable,
-    NoReturn,
-    Optional,
-    get_args,
-)
+from collections.abc import Awaitable, Callable, Coroutine
+from typing import Any, Final, Generator, NoReturn, Optional, cast, get_args
 from uuid import uuid4
 
 import dask_gateway
@@ -24,13 +15,19 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputData,
     TaskOutputDataSchema,
 )
+from dask_task_models_library.container_tasks.protocol import (
+    ContainerEnvsDict,
+    ContainerLabelsDict,
+)
 from fastapi import FastAPI
 from models_library.clusters import ClusterID
+from models_library.docker import StandardSimcoreDockerLabels
 from models_library.errors import ErrorDict
-from models_library.projects import ProjectID
+from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes_io import NodeID, NodeIDStr
+from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import AnyUrl, ByteSize, ValidationError
+from pydantic import AnyUrl, ByteSize, ValidationError, parse_obj_as
 from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_catch, log_context
 from simcore_sdk import node_ports_v2
@@ -40,6 +37,7 @@ from simcore_sdk.node_ports_common.exceptions import (
 )
 from simcore_sdk.node_ports_v2 import FileLinkType, Port, links, port_utils
 from simcore_sdk.node_ports_v2.links import ItemValue as _NPItemValue
+from simcore_sdk.node_ports_v2.ports_mapping import PortKey
 
 from ..core.errors import (
     ComputationalBackendNotConnectedError,
@@ -48,10 +46,15 @@ from ..core.errors import (
     MissingComputationalResourcesError,
     PortsValidationError,
 )
+from ..models.domains.comp_runs import MetadataDict
 from ..models.domains.comp_tasks import Image
 from ..models.schemas.services import NodeRequirements
+from ..modules.osparc_variables_substitutions import (
+    resolve_and_substitute_session_variables_in_specs,
+    substitute_vendor_secrets_in_specs,
+)
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 ServiceKeyStr = str
 ServiceVersionStr = str
@@ -86,11 +89,14 @@ def generate_dask_job_id(
     return f"{service_key}:{service_version}:userid_{user_id}:projectid_{project_id}:nodeid_{node_id}:uuid_{uuid4()}"
 
 
+_JOB_ID_PARTS: Final[int] = 6
+
+
 def parse_dask_job_id(
     job_id: str,
 ) -> tuple[ServiceKeyStr, ServiceVersionStr, UserID, ProjectID, NodeID]:
     parts = job_id.split(":")
-    assert len(parts) == 6  # nosec
+    assert len(parts) == _JOB_ID_PARTS  # nosec
     return (
         parts[0],
         parts[1],
@@ -119,7 +125,7 @@ async def create_node_ports(
         db_manager = node_ports_v2.DBManager(db_engine)
         return await node_ports_v2.ports(
             user_id=user_id,
-            project_id=f"{project_id}",
+            project_id=ProjectIDStr(f"{project_id}"),
             node_uuid=NodeIDStr(f"{node_id}"),
             db_manager=db_manager,
         )
@@ -144,7 +150,7 @@ async def parse_output_data(
         project_id,
         node_id,
     ) = parse_dask_job_id(job_id)
-    logger.debug(
+    _logger.debug(
         "parsing output %s of dask task for %s:%s of user %s on project '%s' and node '%s'",
         json_dumps(data, indent=2),
         service_key,
@@ -171,7 +177,9 @@ async def parse_output_data(
             value_to_transfer = port_value
 
         try:
-            await (await ports.outputs)[port_key].set_value(value_to_transfer)
+            await (await ports.outputs)[cast(PortKey, port_key)].set_value(
+                value_to_transfer
+            )
         except ValidationError as err:
             ports_errors.extend(_get_port_validation_errors(port_key, err))
 
@@ -180,39 +188,27 @@ async def parse_output_data(
 
 
 async def compute_input_data(
-    app: FastAPI,
-    user_id: UserID,
+    *,
     project_id: ProjectID,
     node_id: NodeID,
     file_link_type: FileLinkType,
-    ports: node_ports_v2.Nodeports | None = None,
+    node_ports: node_ports_v2.Nodeports,
 ) -> TaskInputData:
     """Retrieves values registered to the inputs of project_id/node_id
-
-    - ports is optional because
-
     :raises PortsValidationError: when inputs ports validation fail
     """
-
-    if ports is None:
-        ports = await create_node_ports(
-            db_engine=app.state.engine,
-            user_id=user_id,
-            project_id=project_id,
-            node_id=node_id,
-        )
 
     input_data = {}
 
     ports_errors = []
     port: Port
-    for port in (await ports.inputs).values():
+    for port in (await node_ports.inputs).values():
         try:
             value: _PVType = await port.get_value(file_link_type=file_link_type)
 
             # Mapping _PVType -> PortValue
             if isinstance(value, AnyUrl):
-                logger.debug("Creating file url for %s", f"{port=}")
+                _logger.debug("Creating file url for %s", f"{port=}")
                 input_data[port.key] = FileUrl(
                     url=value,
                     file_mapping=(
@@ -235,31 +231,20 @@ async def compute_input_data(
 
 
 async def compute_output_data_schema(
-    app: FastAPI,
+    *,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
     file_link_type: FileLinkType,
-    ports: node_ports_v2.Nodeports | None = None,
+    node_ports: node_ports_v2.Nodeports,
 ) -> TaskOutputDataSchema:
     """
 
     :raises PortsValidationError
     """
-    if ports is None:
-        # Based on when this function is normally called,
-        # it is very unlikely that NodePorts raise an exception here
-        # This function only needs the outputs but the design of NodePorts
-        # will validate all inputs and outputs.
-        ports = await create_node_ports(
-            db_engine=app.state.engine,
-            user_id=user_id,
-            project_id=project_id,
-            node_id=node_id,
-        )
 
     output_data_schema: dict[str, Any] = {}
-    for port in (await ports.outputs).values():
+    for port in (await node_ports.outputs).values():
         output_data_schema[port.key] = {"required": port.default_value is None}
 
         if port_utils.is_file_type(port.property_type):
@@ -308,6 +293,72 @@ async def compute_service_log_file_upload_link(
     return url
 
 
+_UNDEFINED_METADATA: Final[str] = "undefined-label"
+
+
+def compute_task_labels(
+    *,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    metadata: MetadataDict,
+    node_requirements: NodeRequirements,
+) -> ContainerLabelsDict:
+    product_name = metadata.get("product_name", _UNDEFINED_METADATA)
+    standard_simcore_labels = StandardSimcoreDockerLabels.construct(
+        user_id=user_id,
+        project_id=project_id,
+        node_id=node_id,
+        product_name=product_name,
+        simcore_user_agent=metadata.get("simcore_user_agent", _UNDEFINED_METADATA),
+        swarm_stack_name=_UNDEFINED_METADATA,  # NOTE: there is currently no need for this label in the comp backend
+        memory_limit=node_requirements.ram,
+        cpu_limit=node_requirements.cpu,
+    ).to_simcore_runtime_docker_labels()
+    all_labels = standard_simcore_labels | parse_obj_as(
+        ContainerLabelsDict,
+        {
+            k.lower(): f"{v}"
+            for k, v in metadata.items()
+            if k not in ["product_name", "simcore_user_agent"]
+        },
+    )
+    return all_labels
+
+
+async def compute_task_envs(
+    app: FastAPI,
+    *,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    node_image: Image,
+    metadata: MetadataDict,
+) -> ContainerEnvsDict:
+    product_name = metadata.get("product_name", _UNDEFINED_METADATA)
+    task_envs = node_image.envs
+    if task_envs:
+        vendor_substituted_envs = await substitute_vendor_secrets_in_specs(
+            app,
+            node_image.envs,
+            service_key=ServiceKey(node_image.name),
+            service_version=ServiceVersion(node_image.tag),
+        )
+        resolved_envs = await resolve_and_substitute_session_variables_in_specs(
+            app,
+            vendor_substituted_envs,
+            user_id=user_id,
+            product_name=product_name,
+            project_id=project_id,
+            node_id=node_id,
+        )
+        # NOTE: see https://github.com/ITISFoundation/osparc-simcore/issues/3638
+        # we currently do not validate as we are using illegal docker key names with underscores
+        task_envs = cast(ContainerEnvsDict, resolved_envs)
+
+    return task_envs
+
+
 async def get_service_log_file_download_link(
     user_id: UserID,
     project_id: ProjectID,
@@ -328,9 +379,8 @@ async def get_service_log_file_download_link(
             link_type=file_link_type,
         )
         return value_link
-
     except (S3InvalidPathError, StorageInvalidCall) as err:
-        logger.debug("Log for task %s not found: %s", f"{project_id=}/{node_id=}", err)
+        _logger.debug("Log for task %s not found: %s", f"{project_id=}/{node_id=}", err)
         return None
 
 
@@ -360,7 +410,7 @@ async def clean_task_output_and_log_files_if_invalid(
             user_id, f"{project_id}", f"{node_id}", file_name
         ):
             continue
-        logger.debug("entry %s is invalid, cleaning...", port.key)
+        _logger.debug("entry %s is invalid, cleaning...", port.key)
         await port_utils.delete_target_link(
             user_id, f"{project_id}", f"{node_id}", file_name
         )
@@ -381,7 +431,7 @@ async def _dask_sub_consumer(
     handler: Callable[[str], Awaitable[None]],
 ) -> None:
     async for dask_event in dask_sub:
-        logger.debug(
+        _logger.debug(
             "received dask event '%s' of topic %s",
             dask_event,
             dask_sub.name,
@@ -397,8 +447,8 @@ async def dask_sub_consumer_task(
     handler: Callable[[str], Awaitable[None]],
 ) -> NoReturn:
     while True:
-        with log_catch(logger, reraise=False), log_context(
-            logger, level=logging.DEBUG, msg=f"dask sub task for topic {dask_sub.name}"
+        with log_catch(_logger, reraise=False), log_context(
+            _logger, level=logging.DEBUG, msg=f"dask sub task for topic {dask_sub.name}"
         ):
             await _dask_sub_consumer(dask_sub, handler)
         # we sleep a bit before restarting
@@ -414,14 +464,14 @@ def from_node_reqs_to_dask_resources(
         by_alias=True,
         exclude_none=True,
     )
-    logger.debug("transformed to dask resources: %s", dask_resources)
+    _logger.debug("transformed to dask resources: %s", dask_resources)
     return dask_resources
 
 
 def check_scheduler_is_still_the_same(
     original_scheduler_id: str, client: distributed.Client
 ):
-    logger.debug("current %s", f"{client.scheduler_info()=}")
+    _logger.debug("current %s", f"{client.scheduler_info()=}")
     if "id" not in client.scheduler_info():
         raise ComputationalSchedulerChangedError(
             original_scheduler_id=original_scheduler_id,
@@ -429,7 +479,7 @@ def check_scheduler_is_still_the_same(
         )
     current_scheduler_id = client.scheduler_info()["id"]
     if current_scheduler_id != original_scheduler_id:
-        logger.error("The computational backend changed!")
+        _logger.error("The computational backend changed!")
         raise ComputationalSchedulerChangedError(
             original_scheduler_id=original_scheduler_id,
             current_scheduler_id=current_scheduler_id,
@@ -442,16 +492,16 @@ def check_communication_with_scheduler_is_open(client: distributed.Client):
         and client.scheduler_comm.comm is not None
         and client.scheduler_comm.comm.closed()
     ):
-        raise ComputationalBackendNotConnectedError()
+        raise ComputationalBackendNotConnectedError
 
 
 def check_scheduler_status(client: distributed.Client):
     client_status = client.status
     if client_status not in "running":
-        logger.error(
+        _logger.error(
             "The computational backend is not connected!",
         )
-        raise ComputationalBackendNotConnectedError()
+        raise ComputationalBackendNotConnectedError
 
 
 _LARGE_NUMBER_OF_WORKERS: Final[int] = 10000
@@ -462,6 +512,50 @@ async def check_maximize_workers(cluster: dask_gateway.GatewayCluster | None) ->
         await cluster.scale(_LARGE_NUMBER_OF_WORKERS)
 
 
+def _can_task_run_on_worker(
+    task_resources: dict[str, Any], worker_resources: dict[str, Any]
+) -> bool:
+    def gen_check(
+        task_resources: dict[str, Any], worker_resources: dict[str, Any]
+    ) -> Generator[bool, None, None]:
+        for name, required_value in task_resources.items():
+            if required_value is None:
+                yield True
+            elif worker_has := worker_resources.get(name):
+                yield worker_has >= required_value
+            else:
+                yield False
+
+    return all(gen_check(task_resources, worker_resources))
+
+
+def _cluster_missing_resources(
+    task_resources: dict[str, Any], cluster_resources: dict[str, Any]
+) -> list[str]:
+    return [r for r in task_resources if r not in cluster_resources]
+
+
+def _to_human_readable_resource_values(resources: dict[str, Any]) -> dict[str, Any]:
+    human_readable_resources = {}
+
+    for res_name, res_value in resources.items():
+        if "RAM" in res_name:
+            try:
+                human_readable_resources[res_name] = parse_obj_as(
+                    ByteSize, res_value
+                ).human_readable()
+            except ValidationError:
+                _logger.warning(
+                    "could not parse %s:%s, please check what changed in how Dask prepares resources!",
+                    f"{res_name=}",
+                    res_value,
+                )
+                human_readable_resources[res_name] = res_value
+        else:
+            human_readable_resources[res_name] = res_value
+    return human_readable_resources
+
+
 def check_if_cluster_is_able_to_run_pipeline(
     project_id: ProjectID,
     node_id: NodeID,
@@ -469,41 +563,20 @@ def check_if_cluster_is_able_to_run_pipeline(
     task_resources: dict[str, Any],
     node_image: Image,
     cluster_id: ClusterID,
-):
-    logger.debug("Dask scheduler infos: %s", json_dumps(scheduler_info, indent=2))
+) -> None:
+    _logger.debug("Dask scheduler infos: %s", json_dumps(scheduler_info, indent=2))
     workers = scheduler_info.get("workers", {})
-
-    def can_task_run_on_worker(
-        task_resources: dict[str, Any], worker_resources: dict[str, Any]
-    ) -> bool:
-        def gen_check(
-            task_resources: dict[str, Any], worker_resources: dict[str, Any]
-        ) -> Iterable[bool]:
-            for name, required_value in task_resources.items():
-                if required_value is None:
-                    yield True
-                elif worker_has := worker_resources.get(name):
-                    yield worker_has >= required_value
-                else:
-                    yield False
-
-        return all(gen_check(task_resources, worker_resources))
-
-    def cluster_missing_resources(
-        task_resources: dict[str, Any], cluster_resources: dict[str, Any]
-    ) -> list[str]:
-        return [r for r in task_resources if r not in cluster_resources]
 
     cluster_resources_counter: collections.Counter = collections.Counter()
     can_a_worker_run_task = False
     for worker in workers:
         worker_resources = workers[worker].get("resources", {})
         cluster_resources_counter.update(worker_resources)
-        if can_task_run_on_worker(task_resources, worker_resources):
+        if _can_task_run_on_worker(task_resources, worker_resources):
             can_a_worker_run_task = True
     all_available_resources_in_cluster = dict(cluster_resources_counter)
 
-    logger.debug(
+    _logger.debug(
         "Dask scheduler total available resources in cluster %s: %s, task needed resources %s",
         cluster_id,
         json_dumps(all_available_resources_in_cluster, indent=2),
@@ -514,7 +587,7 @@ def check_if_cluster_is_able_to_run_pipeline(
         return
 
     # check if we have missing resources
-    if missing_resources := cluster_missing_resources(
+    if missing_resources := _cluster_missing_resources(
         task_resources, all_available_resources_in_cluster
     ):
         cluster_resources = (
@@ -535,10 +608,9 @@ def check_if_cluster_is_able_to_run_pipeline(
     raise InsuficientComputationalResourcesError(
         project_id=project_id,
         node_id=node_id,
-        msg=f"Service {node_image.name}:{node_image.tag} cannot be scheduled "
-        f"on cluster {cluster_id}: insuficient resources"
-        f"cluster has '{all_available_resources_in_cluster}', cluster has no worker with the"
-        " necessary computational resources for running the service! TIP: contact oSparc support",
+        msg=f"Insufficient computational resources to run {node_image.name}:{node_image.tag} with {_to_human_readable_resource_values( task_resources)} on cluster {cluster_id}."
+        f"Cluster available workers: {[_to_human_readable_resource_values( worker.get('resources', None)) for worker in workers.values()]}"
+        "TIP: Reduce service required resources or contact oSparc support",
     )
 
 
@@ -548,5 +620,4 @@ async def wrap_client_async_routine(
     """Dask async behavior does not go well with Pylance as it returns
     a union of types. this wrapper makes both mypy and pylance happy"""
     assert client_coroutine  # nosec
-    ret = await client_coroutine
-    return ret
+    return await client_coroutine

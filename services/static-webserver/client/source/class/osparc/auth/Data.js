@@ -87,7 +87,15 @@ qx.Class.define("osparc.auth.Data", {
       check: ["anonymous", "guest", "user", "tester", "admin"],
       init: null,
       nullable: false,
-      event: "changeRole"
+      event: "changeRole",
+      apply: "__applyRole"
+    },
+
+    guest: {
+      check: "Boolean",
+      init: true,
+      nullable: false,
+      event: "changeGuest"
     },
 
     expirationDate: {
@@ -99,6 +107,13 @@ qx.Class.define("osparc.auth.Data", {
   },
 
   members: {
+    __applyRole: function(role) {
+      if (role && ["user", "tester", "admin"].includes(role)) {
+        this.setGuest(false);
+      } else {
+        this.setGuest(true);
+      }
+    },
 
     setToken: function(token) {
       if (token) {

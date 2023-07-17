@@ -16,6 +16,7 @@
 --editable ../../packages/pytest-simcore
 --editable ../../packages/service-library[fastapi]
 --editable ../../packages/settings-library
+--editable ../../packages/postgres-database
 
 # installs current package
 --editable .

@@ -59,7 +59,8 @@ services:
 
   resource-usage-tracker:
     ports:
-      - "8000"
+      - "8009:8000"
+      - "3014:3000"
 
   storage:
     environment:
@@ -70,6 +71,7 @@ services:
 
   webserver:
     environment:
+      - GUNICORN_CMD_ARGS=--timeout=0
       - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
       - REST_SWAGGER_API_DOC_ENABLED=1
     ports:

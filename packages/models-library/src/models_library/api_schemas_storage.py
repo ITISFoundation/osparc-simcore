@@ -9,7 +9,7 @@
 import re
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional, Pattern, Union
+from typing import Any, Pattern
 from uuid import UUID
 
 from models_library.projects_nodes_io import (
@@ -38,19 +38,19 @@ ETag = str
 
 
 class S3BucketName(ConstrainedStr):
-    regex: Optional[Pattern[str]] = re.compile(S3_BUCKET_NAME_RE)
+    regex: Pattern[str] | None = re.compile(S3_BUCKET_NAME_RE)
 
 
 class DatCoreDatasetName(ConstrainedStr):
-    regex: Optional[Pattern[str]] = re.compile(DATCORE_DATASET_NAME_RE)
+    regex: Pattern[str] | None = re.compile(DATCORE_DATASET_NAME_RE)
 
 
 # /
 class HealthCheck(BaseModel):
-    name: Optional[str]
-    status: Optional[str]
-    api_version: Optional[str]
-    version: Optional[str]
+    name: str | None
+    status: str | None
+    api_version: str | None
+    version: str | None
 
 
 # /locations
@@ -73,7 +73,7 @@ FileLocationArray = ListModel[FileLocation]
 
 
 class DatasetMetaDataGet(BaseModel):
-    dataset_id: Union[UUID, DatCoreDatasetName]
+    dataset_id: UUID | DatCoreDatasetName
     display_name: str
 
     class Config:
@@ -115,11 +115,11 @@ class FileMetaDataGet(BaseModel):
         description="NOT a unique ID, like (api|uuid)/uuid/file_name or DATCORE folder structure",
     )
     location_id: LocationID = Field(..., description="Storage location")
-    project_name: Optional[str] = Field(
+    project_name: str | None = Field(
         default=None,
         description="optional project name, used by frontend to display path",
     )
-    node_name: Optional[str] = Field(
+    node_name: str | None = Field(
         default=None,
         description="optional node name, used by frontend to display path",
     )
@@ -131,7 +131,7 @@ class FileMetaDataGet(BaseModel):
     created_at: datetime
     last_modified: datetime
     file_size: ByteSize = Field(-1, description="File size in bytes (-1 means invalid)")
-    entity_tag: Optional[ETag] = Field(
+    entity_tag: ETag | None = Field(
         default=None,
         description="Entity tag (or ETag), represents a specific version of the file, None if invalid upload or datcore",
     )
@@ -140,6 +140,7 @@ class FileMetaDataGet(BaseModel):
         description="If true, this file is a soft link."
         "i.e. is another entry with the same object_name",
     )
+    is_directory: bool = Field(default=False, description="if True this is a directory")
 
     @validator("location_id", pre=True)
     @classmethod
@@ -166,6 +167,21 @@ class FileMetaDataGet(BaseModel):
                     "location_id": 0,
                     "node_name": "JupyterLab Octave",
                     "project_name": "Octave JupyterLab",
+                },
+                # typical directory entry
+                {
+                    "created_at": "2020-06-17 12:28:55.705340",
+                    "entity_tag": "8711cf258714b2de5498f5a5ef48cc7b",
+                    "file_id": "9a759caa-9890-4537-8c26-8edefb7a4d7c/be165f45-ddbf-4911-a04d-bc0b885914ef/workspace",
+                    "file_name": "workspace",
+                    "file_size": -1,
+                    "file_uuid": "9a759caa-9890-4537-8c26-8edefb7a4d7c/be165f45-ddbf-4911-a04d-bc0b885914ef/workspace",
+                    "is_soft_link": False,
+                    "last_modified": "2020-06-22 13:48:13.398000+00:00",
+                    "location_id": 0,
+                    "node_name": None,
+                    "project_name": None,
+                    "is_directory": True,
                 },
                 # api entry (not soft link)
                 {
@@ -240,6 +256,12 @@ class FileUploadSchema(BaseModel):
     links: FileUploadLinks
 
 
+class TableSynchronisation(BaseModel):
+    dry_run: bool | None = None
+    fire_and_forget: bool | None = None
+    removed: list[str]
+
+
 # /locations/{location_id}/files/{file_id}:complete
 class UploadedPart(BaseModel):
     number: PositiveInt
@@ -266,7 +288,7 @@ class FileUploadCompleteState(Enum):
 
 class FileUploadCompleteFutureResponse(BaseModel):
     state: FileUploadCompleteState
-    e_tag: Optional[ETag] = Field(default=None)
+    e_tag: ETag | None = Field(default=None)
 
 
 # /simcore-s3/

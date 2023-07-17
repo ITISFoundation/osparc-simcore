@@ -34,7 +34,7 @@ def _make_list_services_query(
     combine_access_with_and: bool | None = True,
     product_name: str | None = None,
 ) -> Select:
-    query = sa.select([services_meta_data])
+    query = sa.select(services_meta_data)
     if gids or execute_access or write_access:
         logic_operator = and_ if combine_access_with_and else or_
         default = (
@@ -125,7 +125,7 @@ class ServicesRepository(BaseRepository):
                 search_condition &= services_meta_data.c.version.like(f"{major}.%")
 
         query = (
-            sa.select([services_meta_data])
+            sa.select(services_meta_data)
             .where(search_condition)
             .order_by(sa.desc(services_meta_data.c.version))
         )
@@ -177,13 +177,13 @@ class ServicesRepository(BaseRepository):
         write_access: bool | None = None,
         product_name: str | None = None,
     ) -> ServiceMetaDataAtDB | None:
-        query = sa.select([services_meta_data]).where(
+        query = sa.select(services_meta_data).where(
             (services_meta_data.c.key == key)
             & (services_meta_data.c.version == version)
         )
         if gids or execute_access or write_access:
             query = (
-                sa.select([services_meta_data])
+                sa.select(services_meta_data)
                 .select_from(services_meta_data.join(services_access_rights))
                 .where(
                     and_(
@@ -277,7 +277,7 @@ class ServicesRepository(BaseRepository):
         if product_name:
             search_expression &= services_access_rights.c.product_name == product_name
 
-        query = sa.select([services_access_rights]).where(search_expression)
+        query = sa.select(services_access_rights).where(search_expression)
 
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(query):
@@ -292,7 +292,7 @@ class ServicesRepository(BaseRepository):
         """Batch version of get_service_access_rights"""
         service_to_access_rights = defaultdict(list)
         query = (
-            sa.select([services_access_rights])
+            sa.select(services_access_rights)
             .select_from(services_access_rights)
             .where(
                 tuple_(
@@ -385,7 +385,7 @@ class ServicesRepository(BaseRepository):
         # we should instead use semver enabled postgres [https://pgxn.org/dist/semver/doc/semver.html]
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(
-                sa.select([services_specifications]).where(
+                sa.select(services_specifications).where(
                     (services_specifications.c.service_key == key)
                     & (
                         (services_specifications.c.service_version == version)

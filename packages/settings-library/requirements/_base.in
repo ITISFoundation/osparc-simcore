@@ -7,4 +7,5 @@ pydantic>=1.9
 
 
 # extra
+rich
 typer

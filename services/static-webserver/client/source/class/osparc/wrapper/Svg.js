@@ -22,6 +22,7 @@
  * @asset(svg/svg.js)
  * @asset(svg/svg.path.js)
  * @asset(svg/svg.draggable.js)
+ * @asset(svg/svg.foreignobject.js)
  * @ignore(SVG)
  */
 
@@ -132,12 +133,12 @@ qx.Class.define("osparc.wrapper.Svg", {
     },
 
     getRectAttributes: function(rect) {
-      const attrs = rect.node.attributes;
+      const rectAttrs = rect.node.attributes;
       return {
-        x: attrs.x.value,
-        y: attrs.y.value,
-        width: attrs.width ? attrs.width.value : null,
-        height: attrs.height ? attrs.height.value : null
+        x: rectAttrs.x.value,
+        y: rectAttrs.y.value,
+        width: rectAttrs.width ? rectAttrs.width.value : null,
+        height: rectAttrs.height ? rectAttrs.height.value : null
       };
     },
 
@@ -145,7 +146,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       const text = draw.text(label)
         .font({
           fill: color,
-          size: (fontSize ? fontSize : 12) + "px",
+          size: (fontSize ? fontSize : 13) + "px",
           family: "Roboto"
         })
         .style({
@@ -154,6 +155,104 @@ qx.Class.define("osparc.wrapper.Svg", {
         .move(x, y);
       text.back();
       return text;
+    },
+
+    drawAnnotationNote: function(draw, x, y, destinataryName, note) {
+      const lines = note.split("\n");
+      const width = 200;
+      const minHeight = 120;
+      const titleHeight = 26;
+      const padding = 5;
+      const nLines = lines.length;
+      const height = Math.max(minHeight, titleHeight + nLines*18);
+      const trianSize = 25;
+      const yellow = "#FFFF01"; // do not make it pure yellow, svg will change the hex value to a "yellow" string
+      const orange = "#FFA500";
+      x = parseInt(x);
+      y = parseInt(y);
+
+      const gNote = draw.nested().move(x, y);
+      const rect = gNote.rect(width, height)
+        .fill(yellow)
+        .style({
+          cursor: "pointer"
+        });
+      rect.back();
+      gNote.add(rect);
+
+      const trianOrangeCtrls = [
+        [width-trianSize, height-trianSize],
+        [width-trianSize, height],
+        [width, height-trianSize]
+      ];
+      const trianOrange = gNote.polygon(trianOrangeCtrls.join())
+        .fill(orange)
+        .style({
+          cursor: "pointer"
+        })
+        .move(width-trianSize, height-trianSize);
+      trianOrange.back();
+      gNote.add(trianOrange);
+
+      const trianTransparentCtrls = [
+        [width-trianSize, height],
+        [width, height],
+        [width, height-trianSize]
+      ];
+      const colorManager = qx.theme.manager.Color.getInstance();
+      const trianTransparent = gNote.polygon(trianTransparentCtrls.join())
+        .fill(colorManager.resolve("background-main"))
+        .style({
+          cursor: "pointer"
+        })
+        .move(width-trianSize, height-trianSize);
+      trianTransparent.back();
+      colorManager.addListener("changeTheme", () => {
+        const bgColor = colorManager.resolve("background-main");
+        trianTransparent.fill(bgColor);
+      }, this);
+      gNote.add(trianTransparent);
+
+      const separator = gNote.line(0, 0, width-2*padding, 0)
+        .stroke({
+          width: 2,
+          color: orange
+        })
+        .move(padding, titleHeight);
+      separator.back();
+      gNote.add(separator);
+
+      const title = gNote.text(destinataryName)
+        .font({
+          fill: "#000000",
+          size: "14px",
+          family: "Roboto"
+        })
+        .move(padding, padding);
+      title.back();
+      gNote.add(title);
+
+      // size and id are not relevant
+      const fobj = gNote.foreignObject(100, 100).attr({id: "fobj"});
+      fobj.appendChild("div", {
+        id: "mydiv",
+        innerText: note
+      });
+      fobj
+        .attr({
+          width: width-2*padding,
+          height: height-titleHeight-4
+        })
+        .move(padding, padding+titleHeight);
+      const textChild = fobj.getChild(0);
+      textChild.style.overflow = "auto";
+      textChild.style.overflowWrap = "anywhere";
+      textChild.style.fontFamily = "Roboto";
+      textChild.style.fontSize = "13px";
+      gNote.textChild = textChild;
+      gNote.add(fobj);
+
+      return gNote;
     },
 
     drawAnnotationRect: function(draw, width, height, x, y, color) {
@@ -234,8 +333,13 @@ qx.Class.define("osparc.wrapper.Svg", {
       item.remove();
     },
 
-    updateText: function(text, label) {
-      text.text(label);
+    updateText: function(representation, label) {
+      if (representation.type === "text") {
+        representation.text(label);
+      } else if (representation.type === "svg") {
+        // nested
+        representation["textChild"].innerText = label;
+      }
     },
 
     updateTextColor: function(text, color) {
@@ -333,17 +437,15 @@ qx.Class.define("osparc.wrapper.Svg", {
         }
 
         // initialize the script loading
-        const svgPath = "svg/svg.js";
-        const svgDraggablePath = "svg/svg.draggable.js";
-        const svgPathPath = "svg/svg.path.js";
-        const dynLoader = new qx.util.DynamicScriptLoader([
-          svgPath,
-          svgDraggablePath,
-          svgPathPath
-        ]);
-
+        const svgAndPlugins = [
+          "svg/svg.js",
+          "svg/svg.draggable.js",
+          "svg/svg.path.js",
+          "svg/svg.foreignobject.js"
+        ];
+        const dynLoader = new qx.util.DynamicScriptLoader(svgAndPlugins);
         dynLoader.addListenerOnce("ready", () => {
-          console.log(svgPath + " loaded");
+          console.log("svgAndPlugins loaded");
           this.setLibReady(true);
           resolve();
         }, this);

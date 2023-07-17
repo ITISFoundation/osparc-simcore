@@ -11,11 +11,14 @@ from models_library.app_diagnostics import AppStatusCheck
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.utils import logged_gather
 
-from .. import db
 from .._meta import API_VERSION, APP_NAME, api_version_prefix
 from ..catalog.client import is_catalog_service_responsive
+from ..db import plugin
 from ..director_v2 import api as director_v2_api
 from ..login.decorators import login_required
+from ..resource_usage.resource_usage_tracker_client import (
+    is_resource_usage_tracking_service_responsive,
+)
 from ..security.decorators import permission_required
 from ..storage import api as storage_api
 from ..utils import get_task_info, get_tracemalloc_info
@@ -51,7 +54,13 @@ async def get_app_diagnostics(request: web.Request):
 @login_required
 @permission_required("diagnostics.read")
 async def get_app_status(request: web.Request):
-    SERVICES = ("postgres", "storage", "director_v2", "catalog")
+    SERVICES = (
+        "postgres",
+        "storage",
+        "director_v2",
+        "catalog",
+        "resource_usage_tracker",
+    )
 
     def _get_url_for(operation_id, **kwargs):
         return str(
@@ -90,8 +99,8 @@ async def get_app_status(request: web.Request):
 
     async def _check_pg():
         check.services["postgres"] = {
-            "healthy": await db.is_service_responsive(request.app),
-            "pool": db.get_engine_state(request.app),
+            "healthy": await plugin.is_service_responsive(request.app),
+            "pool": plugin.get_engine_state(request.app),
         }
 
     async def _check_storage():
@@ -110,11 +119,17 @@ async def get_app_status(request: web.Request):
             "healthy": await is_catalog_service_responsive(request.app)
         }
 
+    async def _check_resource_usage_tracker():
+        check.services["resource_usage_tracker"] = {
+            "healthy": await is_resource_usage_tracking_service_responsive(request.app)
+        }
+
     await logged_gather(
         _check_pg(),
         _check_storage(),
         _check_director2(),
         _check_catalog(),
+        _check_resource_usage_tracker(),
         log=_logger,
         reraise=False,
     )

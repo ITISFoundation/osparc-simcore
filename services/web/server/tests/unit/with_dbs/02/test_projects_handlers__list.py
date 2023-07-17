@@ -17,7 +17,7 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     standard_role_response,
 )
 from simcore_service_webserver._meta import api_version_prefix
-from simcore_service_webserver.db_models import UserRole
+from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.utils import to_datetime
 from yarl import URL

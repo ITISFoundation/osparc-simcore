@@ -13,6 +13,7 @@ import docker
 import jsonschema
 import pytest
 import tenacity
+from pytest import FixtureRequest
 
 from .helpers.utils_docker import get_localhost_ip
 
@@ -234,7 +235,7 @@ def jupyter_service(docker_registry: str, node_meta_schema: dict) -> dict[str, A
 
 
 @pytest.fixture(scope="session", params=["2.0.4"])
-def dy_static_file_server_version(request):
+def dy_static_file_server_version(request: FixtureRequest):
     return request.param
 
 

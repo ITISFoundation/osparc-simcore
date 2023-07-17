@@ -1,3 +1,5 @@
+from typing import Final
+
 import sqlalchemy as sa
 
 
@@ -20,3 +22,47 @@ def column_modified_datetime(timezone: bool = True) -> sa.Column:
         onupdate=sa.sql.func.now(),
         doc="Timestamp with last row update",
     )
+
+
+def register_modified_datetime_auto_update_trigger(table: sa.Table) -> None:
+    """registers a trigger/procedure couple in order to ensure auto
+    update of the modified timestamp column when a row is modified.
+
+    NOTE: Add a *hard-coded* version in the alembic migration code!!!
+    see [this example](https://github.com/ITISFoundation/osparc-simcore/blob/78bc54e5815e8be5a8ed6a08a7bbe5591bbd2bd9/packages/postgres-database/src/simcore_postgres_database/migration/versions/e0a2557dec27_add_services_limitations.py)
+
+
+    Arguments:
+        table -- the table to add the auto-trigger to
+    """
+
+    TRIGGER_NAME: Final[str] = "auto_update_modified_timestamp"  # NOTE: scoped on table
+    PROCEDURE_NAME: Final[
+        str
+    ] = f"{table.name}_auto_update_modified_timestamp()"  # NOTE: scoped on database
+
+    # TRIGGER
+    modified_timestamp_trigger = sa.DDL(
+        f"""
+    DROP TRIGGER IF EXISTS {TRIGGER_NAME} on {table.name};
+    CREATE TRIGGER {TRIGGER_NAME}
+    BEFORE INSERT OR UPDATE ON {table.name}
+    FOR EACH ROW EXECUTE PROCEDURE {PROCEDURE_NAME};
+        """
+    )
+    # PROCEDURE
+    update_modified_timestamp_procedure = sa.DDL(
+        f"""
+    CREATE OR REPLACE FUNCTION {PROCEDURE_NAME}
+    RETURNS TRIGGER AS $$
+    BEGIN
+    NEW.modified := current_timestamp;
+    RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql;
+        """
+    )
+
+    # REGISTER THEM PROCEDURES/TRIGGERS
+    sa.event.listen(table, "after_create", update_modified_timestamp_procedure)
+    sa.event.listen(table, "after_create", modified_timestamp_trigger)

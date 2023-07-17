@@ -1,49 +1,8 @@
-import json
-import logging
-import types
-from pathlib import Path
-
-import yaml
 from fastapi import FastAPI
-from fastapi.openapi.utils import get_openapi
 from fastapi.routing import APIRoute
-from servicelib.fastapi.openapi import patch_openapi_specs
+from servicelib.fastapi.openapi import override_fastapi_openapi_method
 
-from .redoc import add_vendor_extensions, compose_long_description
-
-logger = logging.getLogger(__name__)
-
-
-def override_openapi_method(app: FastAPI):
-    # TODO: test openapi(*) member does not change interface
-
-    def _custom_openapi_method(zelf: FastAPI):
-        """Overrides FastAPI.openapi member function
-        returns OAS schema with vendor extensions
-        """
-        if not zelf.openapi_schema:
-
-            if zelf.redoc_url:
-                desc = compose_long_description(zelf.description)
-            else:
-                desc = zelf.description
-            openapi_schema = get_openapi(
-                title=zelf.title,
-                version=zelf.version,
-                openapi_version=zelf.openapi_version,
-                description=desc,
-                routes=zelf.routes,
-                tags=zelf.openapi_tags,
-                servers=zelf.servers,
-            )
-
-            add_vendor_extensions(openapi_schema)
-            patch_openapi_specs(openapi_schema)
-            zelf.openapi_schema = openapi_schema
-
-        return zelf.openapi_schema
-
-    app.openapi = types.MethodType(_custom_openapi_method, app)
+override_openapi_method = override_fastapi_openapi_method
 
 
 def use_route_names_as_operation_ids(app: FastAPI) -> None:
@@ -58,14 +17,3 @@ def use_route_names_as_operation_ids(app: FastAPI) -> None:
     for route in app.routes:
         if isinstance(route, APIRoute):
             route.operation_id = route.name
-
-
-def dump_openapi(app: FastAPI, filepath: Path):
-    logger.info("Dumping openapi specs as %s", filepath)
-    with open(filepath, "wt") as fh:
-        if filepath.suffix == ".json":
-            json.dump(app.openapi(), fh, indent=2)
-        elif filepath.suffix in (".yaml", ".yml"):
-            yaml.safe_dump(app.openapi(), fh)
-        else:
-            raise ValueError("invalid")

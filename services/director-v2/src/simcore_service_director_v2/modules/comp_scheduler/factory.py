@@ -7,7 +7,7 @@ from ...core.errors import ConfigurationError
 from ...models.domains.comp_runs import CompRunsAtDB
 from ...modules.dask_clients_pool import DaskClientsPool
 from ...modules.rabbitmq import get_rabbitmq_client
-from ...utils.scheduler import SCHEDULED_STATES, get_repository
+from ...utils.scheduler import SCHEDULED_STATES
 from ..db.repositories.comp_runs import CompRunsRepository
 from .base_scheduler import BaseCompScheduler, ScheduledPipelineParams
 from .dask_scheduler import DaskScheduler
@@ -21,7 +21,7 @@ async def create_from_db(app: FastAPI) -> BaseCompScheduler:
             "Database connection is missing. Please check application configuration."
         )
     db_engine = app.state.engine
-    runs_repository: CompRunsRepository = get_repository(db_engine, CompRunsRepository)
+    runs_repository = CompRunsRepository.instance(db_engine)
 
     # get currently scheduled runs
     runs: list[CompRunsAtDB] = await runs_repository.list(
@@ -44,6 +44,7 @@ async def create_from_db(app: FastAPI) -> BaseCompScheduler:
                 cluster_id=r.cluster_id
                 if r.cluster_id is not None
                 else DEFAULT_CLUSTER_ID,
+                metadata=r.metadata,
                 mark_for_cancellation=False,
             )
             for r in runs

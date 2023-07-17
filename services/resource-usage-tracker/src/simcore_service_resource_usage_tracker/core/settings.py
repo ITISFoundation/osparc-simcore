@@ -8,6 +8,7 @@ from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import BuildTargetEnum, LogLevel, VersionTag
 from settings_library.postgres import PostgresSettings
 from settings_library.prometheus import PrometheusSettings
+from settings_library.redis import RedisSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 from .._meta import API_VERSION, API_VTAG, PROJECT_NAME
@@ -39,6 +40,11 @@ class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     SC_USER_NAME: str | None = None
 
     # RUNTIME  -----------------------------------------------------------
+    MACHINE_FQDN: str = Field(
+        default="osparc-master.speag.com",
+        description="Machine's fully qualified domain name",
+        env=["MACHINE_FQDN"],
+    )
     RESOURCE_USAGE_TRACKER_DEBUG: bool = Field(
         default=False,
         description="Debug mode",
@@ -83,6 +89,8 @@ class MinimalApplicationSettings(_BaseApplicationSettings):
         auto_default_from_env=True
     )
 
+    RESOURCE_USAGE_TRACKER_REDIS: RedisSettings = Field(auto_default_from_env=True)
+
 
 class ApplicationSettings(MinimalApplicationSettings):
     """Web app's environment variables
@@ -91,14 +99,6 @@ class ApplicationSettings(MinimalApplicationSettings):
     """
 
     RESOURCE_USAGE_TRACKER_EVALUATION_INTERVAL_SEC: datetime.timedelta = Field(
-        default=datetime.timedelta(minutes=5),
+        default=datetime.timedelta(minutes=15),
         description="Interval to evaluate the resource usage (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
-    )
-    RESOURCE_USAGE_TRACKER_GRANULARITY_SEC: int = Field(
-        default=60,
-        description="Granularity to fetch data from prometheus. This should be larger than prometheus scraping interval.",
-    )
-    RESOURCE_USAGE_TRACKER_CONTAINER_LABEL_USER_ID_REGEX: str = Field(
-        default=".*",
-        description="Regex for the prometheus timeseries label `CONTAINER_LABEL_USER_ID`.",
     )

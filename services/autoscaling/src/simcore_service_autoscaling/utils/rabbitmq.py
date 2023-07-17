@@ -3,7 +3,7 @@ import itertools
 import logging
 
 from fastapi import FastAPI
-from models_library.docker import SimcoreServiceDockerLabelKeys
+from models_library.docker import StandardSimcoreDockerLabels
 from models_library.generated_models.docker_rest_api import Task
 from models_library.rabbitmq_messages import (
     LoggerRabbitMessage,
@@ -42,7 +42,7 @@ async def progress_tasks_message(
 
 async def post_task_progress_message(app: FastAPI, task: Task, progress: float) -> None:
     with log_catch(logger, reraise=False):
-        simcore_label_keys = SimcoreServiceDockerLabelKeys.from_docker_task(task)
+        simcore_label_keys = StandardSimcoreDockerLabels.from_docker_task(task)
         message = ProgressRabbitMessageNode.construct(
             node_id=simcore_label_keys.node_id,
             user_id=simcore_label_keys.user_id,
@@ -55,7 +55,7 @@ async def post_task_progress_message(app: FastAPI, task: Task, progress: float) 
 
 async def post_task_log_message(app: FastAPI, task: Task, log: str, level: int) -> None:
     with log_catch(logger, reraise=False):
-        simcore_label_keys = SimcoreServiceDockerLabelKeys.from_docker_task(task)
+        simcore_label_keys = StandardSimcoreDockerLabels.from_docker_task(task)
         message = LoggerRabbitMessage.construct(
             node_id=simcore_label_keys.node_id,
             user_id=simcore_label_keys.user_id,

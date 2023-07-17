@@ -20,7 +20,7 @@ from uuid import UUID, uuid4
 
 from aiohttp import web
 from models_library.errors import ErrorDict
-from models_library.projects import Project, ProjectID
+from models_library.projects import Project, ProjectID, ProjectIDStr
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import (
@@ -45,6 +45,10 @@ from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_postgres_database.models.users import UserRole
+from simcore_postgres_database.utils_projects_nodes import (
+    ProjectNodeCreate,
+    ProjectNodesNodeNotFound,
+)
 from simcore_postgres_database.webserver_models import ProjectType
 
 from ..catalog import client as catalog_client
@@ -66,13 +70,14 @@ from ..socketio.messages import (
 from ..storage import api as storage_api
 from ..users.api import UserNameDict, get_user_name, get_user_role
 from ..users.exceptions import UserNotFoundError
-from . import _crud_delete_utils, _nodes_utils
+from . import _crud_delete_utils, _nodes_api
+from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_resources
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import (
     NodeNotFoundError,
     ProjectLockError,
-    ProjectStartsTooManyDynamicNodes,
-    ProjectTooManyProjectOpened,
+    ProjectStartsTooManyDynamicNodesError,
+    ProjectTooManyProjectOpenedError,
 )
 from .lock import get_project_locked_state, is_project_locked, lock_project
 from .models import ProjectDict
@@ -144,7 +149,7 @@ async def update_project_last_change_timestamp(
 ):
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     assert db  # nosec
-    await db.update_project_last_change_timestamp(project_uuid)
+    await db.update_project_last_change_timestamp(ProjectIDStr(f"{project_uuid}"))
 
 
 #
@@ -226,21 +231,21 @@ async def _start_dynamic_service(
             user_id=user_id, project_uuid=f"{project_uuid}", permission="write"
         )
 
-    lock_key = _nodes_utils.get_service_start_lock_key(user_id, project_uuid)
+    lock_key = _nodes_api.get_service_start_lock_key(user_id, project_uuid)
     redis_client_sdk = get_redis_lock_manager_client_sdk(request.app)
     project_settings: ProjectsSettings = get_plugin_settings(request.app)
 
     async with redis_client_sdk.lock_context(
         lock_key,
         blocking=True,
-        blocking_timeout_s=_nodes_utils.get_total_project_dynamic_nodes_creation_interval(
+        blocking_timeout_s=_nodes_api.get_total_project_dynamic_nodes_creation_interval(
             project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
         ),
     ):
         project_running_nodes = await director_v2_api.list_dynamic_services(
             request.app, user_id, f"{project_uuid}"
         )
-        _nodes_utils.check_num_service_per_projects_limit(
+        _nodes_api.check_num_service_per_projects_limit(
             app=request.app,
             number_of_services=len(project_running_nodes),
             user_id=user_id,
@@ -249,13 +254,12 @@ async def _start_dynamic_service(
         service_resources: ServiceResourcesDict = await get_project_node_resources(
             request.app,
             user_id=user_id,
-            project={
-                "workbench": {
-                    f"{node_uuid}": {"key": service_key, "version": service_version}
-                }
-            },
+            project_id=project_uuid,
             node_id=node_uuid,
+            service_key=service_key,
+            service_version=service_version,
         )
+
         await director_v2_api.run_dynamic_service(
             app=request.app,
             product_name=product_name,
@@ -282,7 +286,7 @@ async def add_project_node(
     service_key: str,
     service_version: str,
     service_id: str | None,
-) -> str:
+) -> NodeID:
     log.debug(
         "starting node %s:%s in project %s for user %s",
         service_key,
@@ -291,26 +295,28 @@ async def add_project_node(
         user_id,
         extra=get_log_record_extra(user_id=user_id),
     )
-    node_uuid = service_id if service_id else f"{uuid4()}"
-
-    # ensure the project is up-to-date in the database prior to start any potential service
-    partial_workbench_data: dict[str, Any] = {
-        node_uuid: jsonable_encoder(
-            Node.parse_obj(
-                {
-                    "key": service_key,
-                    "version": service_version,
-                    "label": service_key.split("/")[-1],
-                }
-            ),
-            exclude_unset=True,
-        ),
-    }
+    node_uuid = NodeID(service_id if service_id else f"{uuid4()}")
+    default_resources = await catalog_client.get_service_resources(
+        request.app, user_id, service_key, service_version
+    )
     db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
     assert db  # nosec
-    await db.update_project_workbench(
-        partial_workbench_data, user_id, project["uuid"], product_name
+    await db.add_project_node(
+        user_id,
+        ProjectID(project["uuid"]),
+        ProjectNodeCreate(
+            node_id=node_uuid, required_resources=jsonable_encoder(default_resources)
+        ),
+        Node.parse_obj(
+            {
+                "key": service_key,
+                "version": service_version,
+                "label": service_key.split("/")[-1],
+            }
+        ),
+        product_name,
     )
+
     # also ensure the project is updated by director-v2 since services
     # are due to access comp_tasks at some point see [https://github.com/ITISFoundation/osparc-simcore/issues/3216]
     await director_v2_api.create_or_update_pipeline(
@@ -318,7 +324,7 @@ async def add_project_node(
     )
 
     if _is_node_dynamic(service_key):
-        with suppress(ProjectStartsTooManyDynamicNodes):
+        with suppress(ProjectStartsTooManyDynamicNodesError):
             # NOTE: we do not start the service if there are already too many
             await _start_dynamic_service(
                 request,
@@ -327,7 +333,7 @@ async def add_project_node(
                 product_name=product_name,
                 user_id=user_id,
                 project_uuid=ProjectID(project["uuid"]),
-                node_uuid=NodeID(node_uuid),
+                node_uuid=node_uuid,
             )
 
     return node_uuid
@@ -384,14 +390,9 @@ async def delete_project_node(
     )
 
     # remove the node from the db
-    partial_workbench_data: dict[str, Any] = {
-        node_uuid: None,
-    }
     db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
     assert db  # nosec
-    await db.update_project_workbench(
-        partial_workbench_data, user_id, f"{project_uuid}"
-    )
+    await db.remove_project_node(user_id, project_uuid, NodeID(node_uuid))
     # also ensure the project is updated by director-v2 since services
     product_name = get_product_name(request)
     await director_v2_api.create_or_update_pipeline(
@@ -623,7 +624,7 @@ async def try_open_project_for_user(
                     )
                     >= max_number_of_studies_per_user
                 ):
-                    raise ProjectTooManyProjectOpened(
+                    raise ProjectTooManyProjectOpenedError(
                         max_num_projects=max_number_of_studies_per_user
                     )
 
@@ -896,20 +897,67 @@ async def is_project_node_deprecated(
 
 
 async def get_project_node_resources(
-    app: web.Application, user_id: UserID, project: dict[str, Any], node_id: NodeID
+    app: web.Application,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    service_key: str,
+    service_version: str,
 ) -> ServiceResourcesDict:
-    if project_node := project.get("workbench", {}).get(f"{node_id}"):
-        default_service_resources = await catalog_client.get_service_resources(
-            app, user_id, project_node["key"], project_node["version"]
+    db = ProjectDBAPI.get_from_app_context(app)
+    try:
+        project_node = await db.get_project_node(project_id, node_id)
+        node_resources = parse_obj_as(
+            ServiceResourcesDict, project_node.required_resources
         )
-        return default_service_resources
-    raise NodeNotFoundError(project["uuid"], f"{node_id}")
+        if not node_resources:
+            # get default resources
+            node_resources = await catalog_client.get_service_resources(
+                app, user_id, service_key, service_version
+            )
+        return node_resources
+
+    except ProjectNodesNodeNotFound as exc:
+        raise NodeNotFoundError(f"{project_id}", f"{node_id}") from exc
 
 
-async def set_project_node_resources(
-    app: web.Application, project: dict[str, Any], node_id: NodeID
-):
-    raise NotImplementedError("cannot change resources for now")
+async def update_project_node_resources(
+    app: web.Application,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    service_key: str,
+    service_version: str,
+    product_name: str,
+    resources: ServiceResourcesDict,
+) -> ServiceResourcesDict:
+    db = ProjectDBAPI.get_from_app_context(app)
+    try:
+        # validate the resource are applied to the same container names
+        current_project_node = await db.get_project_node(project_id, node_id)
+        current_resources = parse_obj_as(
+            ServiceResourcesDict, current_project_node.required_resources
+        )
+        if not current_resources:
+            # NOTE: this can happen after the migration
+            # get default resources
+            current_resources = await catalog_client.get_service_resources(
+                app, user_id, service_key, service_version
+            )
+
+        validate_new_service_resources(current_resources, new_resources=resources)
+        set_reservation_same_as_limit(resources)
+
+        project_node = await db.update_project_node(
+            user_id=user_id,
+            project_id=project_id,
+            node_id=node_id,
+            product_name=product_name,
+            required_resources=jsonable_encoder(resources),
+        )
+        return parse_obj_as(ServiceResourcesDict, project_node.required_resources)
+    except ProjectNodesNodeNotFound as exc:
+        raise NodeNotFoundError(f"{project_id}", f"{node_id}") from exc
 
 
 #
@@ -943,7 +991,7 @@ async def run_project_dynamic_services(
         > project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
     ):
         # we cannot start so many services so we are done
-        raise ProjectStartsTooManyDynamicNodes(
+        raise ProjectStartsTooManyDynamicNodesError(
             user_id=user_id, project_uuid=ProjectID(project["uuid"])
         )
 

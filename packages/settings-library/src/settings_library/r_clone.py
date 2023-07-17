@@ -18,7 +18,7 @@ class RCloneSettings(BaseCustomSettings):
     # mechanism. I propose it is added as an extra independent variable in
     # simcore_service_dynamic_idecar.core.settings.Settings instead of here.
     R_CLONE_ENABLED: bool = Field(
-        True,
+        default=True,
         description=(
             "simple way to enable/disable the usage of rclone "
             "in parts of the system where it is optional "

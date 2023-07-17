@@ -4,7 +4,7 @@ from typing import TypedDict
 
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from simcore_service_webserver.db_models import UserRole, UserStatus
+from simcore_service_webserver.db.models import UserRole, UserStatus
 from simcore_service_webserver.login._constants import MSG_LOGGED_IN
 from simcore_service_webserver.login._registration import create_invitation_token
 from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_storage

@@ -46,6 +46,8 @@ async-timeout==4.0.2
     #   aiohttp
     #   aiopg
     #   redis
+asyncpg==0.27.0
+    # via sqlalchemy
 attrs==21.4.0
     # via
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/./constraints.txt
@@ -211,7 +213,7 @@ typing-extensions==4.6.3
     #   pint
     #   pydantic
     #   typer
-urllib3==2.0.2
+urllib3==2.0.3
     # via
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt

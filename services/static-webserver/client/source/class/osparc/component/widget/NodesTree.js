@@ -62,6 +62,13 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       check: "osparc.data.model.Study",
       nullable: false,
       apply: "_applyStudy"
+    },
+
+    simpleNodes: {
+      check: "Boolean",
+      nullable: true,
+      init: false,
+      event: "changeSimpleNodes"
     }
   },
 
@@ -172,6 +179,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       return {
         createItem: () => {
           const nodeTreeItem = new osparc.component.widget.NodeTreeItem();
+          this.bind("simpleNodes", nodeTreeItem, "simpleNode");
           nodeTreeItem.addListener("fullscreenNode", e => this.__openFullscreen(e.getData()));
           nodeTreeItem.addListener("renameNode", e => this._openItemRenamer(e.getData()));
           nodeTreeItem.addListener("infoNode", e => this.__openNodeInfo(e.getData()));

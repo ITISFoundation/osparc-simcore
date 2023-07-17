@@ -10,18 +10,21 @@ import json
 import re
 import urllib.parse
 from pathlib import Path
-from typing import Any, Callable
+from random import choice
+from typing import Any, Awaitable, Callable, Iterator
 
 import httpx
 import pytest
 import respx
 from faker import Faker
 from fastapi import FastAPI
+from models_library.basic_types import VersionStr
 from models_library.clusters import DEFAULT_CLUSTER_ID, Cluster, ClusterID
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import NodeID, NodeState
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
+from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceDockerData
 from models_library.services_resources import (
     ServiceResourcesDict,
@@ -104,23 +107,36 @@ def fake_service_resources() -> ServiceResourcesDict:
 
 
 @pytest.fixture
+def fake_service_labels() -> dict[str, Any]:
+    return choice(SimcoreServiceLabels.Config.schema_extra["examples"])
+
+
+@pytest.fixture
 def mocked_director_service_fcts(
     minimal_app: FastAPI,
     fake_service_details: ServiceDockerData,
     fake_service_extras: ServiceExtras,
-):
+    fake_service_labels: dict[str, Any],
+) -> Iterator[respx.MockRouter]:
     # pylint: disable=not-context-manager
     with respx.mock(
         base_url=minimal_app.state.settings.DIRECTOR_V0.endpoint,
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
+        assert VersionStr.regex
         respx_mock.get(
             re.compile(
-                r"/services/(simcore)%2F(services)%2F(comp|dynamic|frontend)%2F.+/(.+)"
+                r"/services/simcore%2Fservices%2F(comp|dynamic|frontend)%2F[^/]+/\d+.\d+.\d+$"
             ),
             name="get_service",
         ).respond(json={"data": [fake_service_details.dict(by_alias=True)]})
+        respx_mock.get(
+            re.compile(
+                r"/services/simcore%2Fservices%2F(comp|dynamic|frontend)%2F[^/]+/\d+.\d+.\d+/labels"
+            ),
+            name="get_service_labels",
+        ).respond(json={"data": fake_service_labels})
 
         respx_mock.get(
             re.compile(
@@ -137,7 +153,7 @@ def mocked_catalog_service_fcts(
     minimal_app: FastAPI,
     fake_service_details: ServiceDockerData,
     fake_service_resources: ServiceResourcesDict,
-):
+) -> Iterator[respx.MockRouter]:
     def _mocked_service_resources(request) -> httpx.Response:
         return httpx.Response(
             200, json=jsonable_encoder(fake_service_resources, by_alias=True)
@@ -235,11 +251,11 @@ async def test_create_computation(
     product_name: str,
     fake_workbench_without_outputs: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., ProjectAtDB],
+    project: Callable[..., Awaitable[ProjectAtDB]],
     async_client: httpx.AsyncClient,
 ):
     user = registered_user()
-    proj = project(user, workbench=fake_workbench_without_outputs)
+    proj = await project(user, workbench=fake_workbench_without_outputs)
     create_computation_url = httpx.URL("/v2/computations")
     response = await async_client.post(
         create_computation_url,
@@ -259,11 +275,11 @@ async def test_start_computation_without_product_fails(
     product_name: str,
     fake_workbench_without_outputs: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., ProjectAtDB],
+    project: Callable[..., Awaitable[ProjectAtDB]],
     async_client: httpx.AsyncClient,
 ):
     user = registered_user()
-    proj = project(user, workbench=fake_workbench_without_outputs)
+    proj = await project(user, workbench=fake_workbench_without_outputs)
     create_computation_url = httpx.URL("/v2/computations")
     response = await async_client.post(
         create_computation_url,
@@ -283,11 +299,11 @@ async def test_start_computation(
     product_name: str,
     fake_workbench_without_outputs: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., ProjectAtDB],
+    project: Callable[..., Awaitable[ProjectAtDB]],
     async_client: httpx.AsyncClient,
 ):
     user = registered_user()
-    proj = project(user, workbench=fake_workbench_without_outputs)
+    proj = await project(user, workbench=fake_workbench_without_outputs)
     create_computation_url = httpx.URL("/v2/computations")
     response = await async_client.post(
         create_computation_url,
@@ -301,6 +317,49 @@ async def test_start_computation(
         ),
     )
     assert response.status_code == status.HTTP_201_CREATED, response.text
+    mocked_get_service_resources = mocked_catalog_service_fcts["get_service_resources"]
+    # there should be as many calls to the catalog as there are no defined resources by default
+    assert mocked_get_service_resources.call_count == len(
+        fake_workbench_without_outputs
+    )
+
+
+async def test_start_computation_with_project_node_resources_defined(
+    minimal_configuration: None,
+    mocked_director_service_fcts,
+    mocked_catalog_service_fcts,
+    product_name: str,
+    fake_workbench_without_outputs: dict[str, Any],
+    registered_user: Callable[..., dict[str, Any]],
+    project: Callable[..., Awaitable[ProjectAtDB]],
+    async_client: httpx.AsyncClient,
+):
+    user = registered_user()
+    proj = await project(
+        user,
+        project_nodes_overrides={
+            "required_resources": ServiceResourcesDictHelpers.Config.schema_extra[
+                "examples"
+            ][0]
+        },
+        workbench=fake_workbench_without_outputs,
+    )
+    create_computation_url = httpx.URL("/v2/computations")
+    response = await async_client.post(
+        create_computation_url,
+        json=jsonable_encoder(
+            ComputationCreate(
+                user_id=user["id"],
+                project_id=proj.uuid,
+                start_pipeline=True,
+                product_name=product_name,
+            )
+        ),
+    )
+    assert response.status_code == status.HTTP_201_CREATED, response.text
+    mocked_get_service_resources = mocked_catalog_service_fcts["get_service_resources"]
+    # there should be no calls to the catalog as there are resources defined, so no need to call the catalog
+    assert mocked_get_service_resources.call_count == 0
 
 
 async def test_start_computation_with_deprecated_services_raises_406(
@@ -311,11 +370,11 @@ async def test_start_computation_with_deprecated_services_raises_406(
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., ProjectAtDB],
+    project: Callable[..., Awaitable[ProjectAtDB]],
     async_client: httpx.AsyncClient,
 ):
     user = registered_user()
-    proj = project(user, workbench=fake_workbench_without_outputs)
+    proj = await project(user, workbench=fake_workbench_without_outputs)
     create_computation_url = httpx.URL("/v2/computations")
     response = await async_client.post(
         create_computation_url,
@@ -348,12 +407,12 @@ async def test_start_computation_with_forbidden_cluster_raises_403(
     product_name: str,
     fake_workbench_without_outputs: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., ProjectAtDB],
+    project: Callable[..., Awaitable[ProjectAtDB]],
     async_client: httpx.AsyncClient,
     unusable_cluster: ClusterID,
 ):
     user = registered_user()
-    proj = project(user, workbench=fake_workbench_without_outputs)
+    proj = await project(user, workbench=fake_workbench_without_outputs)
     create_computation_url = httpx.URL("/v2/computations")
     response = await async_client.post(
         create_computation_url,
@@ -378,12 +437,12 @@ async def test_start_computation_with_unknown_cluster_raises_406(
     product_name: str,
     fake_workbench_without_outputs: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., ProjectAtDB],
+    project: Callable[..., Awaitable[ProjectAtDB]],
     async_client: httpx.AsyncClient,
     faker: Faker,
 ):
     user = registered_user()
-    proj = project(user, workbench=fake_workbench_without_outputs)
+    proj = await project(user, workbench=fake_workbench_without_outputs)
     create_computation_url = httpx.URL("/v2/computations")
     unknown_cluster_id = faker.pyint(1, 10000)
     response = await async_client.post(
@@ -407,7 +466,7 @@ async def test_get_computation_from_empty_project(
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., ProjectAtDB],
+    project: Callable[..., Awaitable[ProjectAtDB]],
     pipeline: Callable[..., CompPipelineAtDB],
     faker: Faker,
     async_client: httpx.AsyncClient,
@@ -420,7 +479,7 @@ async def test_get_computation_from_empty_project(
     response = await async_client.get(get_computation_url)
     assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
     # create the project
-    proj = project(user, workbench=fake_workbench_without_outputs)
+    proj = await project(user, workbench=fake_workbench_without_outputs)
     get_computation_url = httpx.URL(
         f"/v2/computations/{proj.uuid}?user_id={user['id']}"
     )
@@ -459,13 +518,13 @@ async def test_get_computation_from_not_started_computation_task(
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., ProjectAtDB],
+    project: Callable[..., Awaitable[ProjectAtDB]],
     pipeline: Callable[..., CompPipelineAtDB],
     tasks: Callable[..., list[CompTaskAtDB]],
     async_client: httpx.AsyncClient,
 ):
     user = registered_user()
-    proj = project(user, workbench=fake_workbench_without_outputs)
+    proj = await project(user, workbench=fake_workbench_without_outputs)
     get_computation_url = httpx.URL(
         f"/v2/computations/{proj.uuid}?user_id={user['id']}"
     )
@@ -531,14 +590,14 @@ async def test_get_computation_from_published_computation_task(
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
     registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., ProjectAtDB],
+    project: Callable[..., Awaitable[ProjectAtDB]],
     pipeline: Callable[..., CompPipelineAtDB],
     tasks: Callable[..., list[CompTaskAtDB]],
     runs: Callable[..., CompRunsAtDB],
     async_client: httpx.AsyncClient,
 ):
     user = registered_user()
-    proj = project(user, workbench=fake_workbench_without_outputs)
+    proj = await project(user, workbench=fake_workbench_without_outputs)
     pipeline(
         project_id=proj.uuid,
         dag_adjacency_list=fake_workbench_adjacency,

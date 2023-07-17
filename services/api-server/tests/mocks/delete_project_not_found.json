@@ -1,0 +1,32 @@
+{
+ "name": "DELETE /projects/{{ project_id }}",
+ "description": "<Request('DELETE', 'http://webserver:8080/v0/projects/{{ project_id }}')>",
+ "method": "DELETE",
+ "host": "webserver",
+ "path": "/v0/projects/{{ project_id }}",
+ "query": null,
+ "request_payload": null,
+ "response_body": {
+  "data": null,
+  "error": {
+   "logs": [
+    {
+     "message": "Project {{ project_id }} not found",
+     "level": "ERROR",
+     "logger": "user"
+    }
+   ],
+   "errors": [
+    {
+     "code": "HTTPNotFound",
+     "message": "Project {{ project_id }} not found",
+     "resource": null,
+     "field": null
+    }
+   ],
+   "status": 404,
+   "message": "Project {{ project_id }} not found"
+  }
+ },
+ "status_code": 404
+}

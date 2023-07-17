@@ -1,6 +1,7 @@
 import logging
+from collections.abc import Callable
 from operator import attrgetter
-from typing import Callable
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from httpx import HTTPStatusError
@@ -8,18 +9,18 @@ from pydantic import ValidationError
 from pydantic.errors import PydanticValueError
 from servicelib.error_codes import create_error_code
 
-from ...core.settings import BasicSettings
 from ...models.basic_types import VersionStr
+from ...models.pagination import LimitOffsetPage, LimitOffsetParams, OnePage
 from ...models.schemas.solvers import Solver, SolverKeyId, SolverPort
-from ...plugins.catalog import CatalogApi
+from ...services.catalog import CatalogApi
 from ..dependencies.application import get_product_name, get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
+from ._common import API_SERVER_DEV_FEATURES_ENABLED
 
 _logger = logging.getLogger(__name__)
 
 router = APIRouter()
-settings = BasicSettings.create_from_envs()
 
 ## SOLVERS -----------------------------------------------------------------------------------------
 #
@@ -33,12 +34,15 @@ settings = BasicSettings.create_from_envs()
 
 @router.get("", response_model=list[Solver])
 async def list_solvers(
-    user_id: int = Depends(get_current_user_id),
-    catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
-    url_for: Callable = Depends(get_reverse_url_mapper),
-    product_name: str = Depends(get_product_name),
+    user_id: Annotated[int, Depends(get_current_user_id)],
+    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
+    product_name: Annotated[str, Depends(get_product_name)],
 ):
-    """Lists all available solvers (latest version)"""
+    """Lists all available solvers (latest version)
+
+    SEE get_solvers_page for paginated version of this function
+    """
     solvers: list[Solver] = await catalog_client.list_latest_releases(
         user_id=user_id, product_name=product_name
     )
@@ -51,14 +55,29 @@ async def list_solvers(
     return sorted(solvers, key=attrgetter("id"))
 
 
+@router.get(
+    "/page",
+    response_model=LimitOffsetPage[Solver],
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def get_solvers_page(
+    page_params: Annotated[LimitOffsetParams, Depends()],
+):
+    msg = f"list solvers with pagination={page_params!r}"
+    raise NotImplementedError(msg)
+
+
 @router.get("/releases", response_model=list[Solver], summary="Lists All Releases")
 async def list_solvers_releases(
-    user_id: int = Depends(get_current_user_id),
-    catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
-    url_for: Callable = Depends(get_reverse_url_mapper),
-    product_name: str = Depends(get_product_name),
+    user_id: Annotated[int, Depends(get_current_user_id)],
+    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
+    product_name: Annotated[str, Depends(get_product_name)],
 ):
-    """Lists all released solvers (all released versions)"""
+    """Lists all released solvers i.e. all released versions
+
+    SEE get_solvers_releases_page for a paginated version of this function
+    """
     assert await catalog_client.is_responsive()  # nosec
 
     solvers: list[Solver] = await catalog_client.list_solvers(
@@ -74,22 +93,33 @@ async def list_solvers_releases(
 
 
 @router.get(
+    "/releases/page",
+    response_model=LimitOffsetPage[Solver],
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def get_solvers_releases_page(
+    page_params: Annotated[LimitOffsetParams, Depends()],
+):
+    msg = f"list solvers releases with pagination={page_params!r}"
+    raise NotImplementedError(msg)
+
+
+@router.get(
     "/{solver_key:path}/latest",
     response_model=Solver,
     summary="Get Latest Release of a Solver",
 )
 async def get_solver(
     solver_key: SolverKeyId,
-    user_id: int = Depends(get_current_user_id),
-    catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
-    url_for: Callable = Depends(get_reverse_url_mapper),
-    product_name: str = Depends(get_product_name),
+    user_id: Annotated[int, Depends(get_current_user_id)],
+    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
+    product_name: Annotated[str, Depends(get_product_name)],
 ) -> Solver:
     """Gets latest release of a solver"""
     # IMPORTANT: by adding /latest, we avoid changing the order of this entry in the router list
     # otherwise, {solver_key:path} will override and consume any of the paths that follow.
     try:
-
         solver = await catalog_client.get_latest_release(
             user_id, solver_key, product_name=product_name
         )
@@ -97,7 +127,6 @@ async def get_solver(
             "get_solver_release", solver_key=solver.id, version=solver.version
         )
         assert solver.id == solver_key  # nosec
-
         return solver
 
     except (KeyError, HTTPStatusError, IndexError) as err:
@@ -110,12 +139,15 @@ async def get_solver(
 @router.get("/{solver_key:path}/releases", response_model=list[Solver])
 async def list_solver_releases(
     solver_key: SolverKeyId,
-    user_id: int = Depends(get_current_user_id),
-    catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
-    url_for: Callable = Depends(get_reverse_url_mapper),
-    product_name: str = Depends(get_product_name),
+    user_id: Annotated[int, Depends(get_current_user_id)],
+    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
+    product_name: Annotated[str, Depends(get_product_name)],
 ):
-    """Lists all releases of a given solver"""
+    """Lists all releases of a given (one) solver
+
+    SEE get_solver_releases_page for a paginated version of this function
+    """
     releases: list[Solver] = await catalog_client.list_solver_releases(
         user_id, solver_key, product_name=product_name
     )
@@ -128,18 +160,34 @@ async def list_solver_releases(
     return sorted(releases, key=attrgetter("pep404_version"))
 
 
-@router.get("/{solver_key:path}/releases/{version}", response_model=Solver)
+@router.get(
+    "/{solver_key:path}/releases/page",
+    response_model=LimitOffsetPage[Solver],
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def get_solver_releases_page(
+    solver_key: SolverKeyId,
+    page_params: Annotated[LimitOffsetParams, Depends()],
+):
+    msg = f"list solver {solver_key=} (one) releases with pagination={page_params!r}"
+    raise NotImplementedError(msg)
+
+
+@router.get(
+    "/{solver_key:path}/releases/{version}",
+    response_model=Solver,
+)
 async def get_solver_release(
     solver_key: SolverKeyId,
     version: VersionStr,
-    user_id: int = Depends(get_current_user_id),
-    catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
-    url_for: Callable = Depends(get_reverse_url_mapper),
-    product_name: str = Depends(get_product_name),
+    user_id: Annotated[int, Depends(get_current_user_id)],
+    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
+    product_name: Annotated[str, Depends(get_product_name)],
 ) -> Solver:
     """Gets a specific release of a solver"""
     try:
-        solver = await catalog_client.get_solver(
+        solver = await catalog_client.get_service(
             user_id=user_id,
             name=solver_key,
             version=version,
@@ -149,7 +197,6 @@ async def get_solver_release(
         solver.url = url_for(
             "get_solver_release", solver_key=solver.id, version=solver.version
         )
-
         return solver
 
     except (
@@ -167,29 +214,29 @@ async def get_solver_release(
 
 @router.get(
     "/{solver_key:path}/releases/{version}/ports",
-    response_model=list[SolverPort],
-    include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
+    response_model=OnePage[SolverPort],
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def list_solver_ports(
     solver_key: SolverKeyId,
     version: VersionStr,
-    user_id: int = Depends(get_current_user_id),
-    catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
-    product_name: str = Depends(get_product_name),
+    user_id: Annotated[int, Depends(get_current_user_id)],
+    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    product_name: Annotated[str, Depends(get_product_name)],
 ):
     """Lists inputs and outputs of a given solver
 
     New in *version 0.5.0* (only with API_SERVER_DEV_FEATURES_ENABLED=1)
     """
     try:
-
-        ports = await catalog_client.get_solver_ports(
+        ports = await catalog_client.get_service_ports(
             user_id=user_id,
             name=solver_key,
             version=version,
             product_name=product_name,
         )
-        return ports
+
+        return OnePage[SolverPort](items=ports)
 
     except ValidationError as err:
         error_code = create_error_code(err)

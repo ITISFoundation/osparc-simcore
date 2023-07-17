@@ -9,10 +9,8 @@ import random
 from http import HTTPStatus
 from typing import NamedTuple
 
+import osparc
 import pytest
-from osparc.api.solvers_api import SolversApi
-from osparc.exceptions import ApiException
-from osparc.models import Solver
 from packaging.version import parse as parse_version
 from pytest_simcore.helpers.utils_public_api import ServiceInfoDict, ServiceNameStr
 
@@ -40,8 +38,10 @@ def sleeper_key_and_version(
     return NameTagTuple(repository_name, tag)
 
 
-def test_get_latest_solver(solvers_api: SolversApi):
-    solvers: list[Solver] = solvers_api.list_solvers()  # latest versions of all solvers
+def test_get_latest_solver(solvers_api: osparc.SolversApi):
+    solvers: list[
+        osparc.Solver
+    ] = solvers_api.list_solvers()  # latest versions of all solvers
 
     solver_names = []
     for latest in solvers:
@@ -53,23 +53,23 @@ def test_get_latest_solver(solvers_api: SolversApi):
     assert sorted(solver_names) == sorted(set(solver_names))
 
 
-def test_get_all_releases(solvers_api: SolversApi):
+def test_get_all_releases(solvers_api: osparc.SolversApi):
 
     all_releases: list[
-        Solver
+        osparc.Solver
     ] = solvers_api.list_solvers_releases()  # all release of all solvers
 
     assert all_releases
 
     one_solver = random.choice(all_releases)
-    all_releases_of_given_solver: list[Solver] = solvers_api.list_solver_releases(
-        one_solver.id
-    )
+    all_releases_of_given_solver: list[
+        osparc.Solver
+    ] = solvers_api.list_solver_releases(one_solver.id)
 
-    latest: Solver | None = None
+    latest: osparc.Solver | None = None
     for solver in all_releases_of_given_solver:
         if one_solver.id == solver.id:
-            assert isinstance(solver, Solver)
+            assert isinstance(solver, osparc.Solver)
 
             if not latest:
                 latest = solver
@@ -83,7 +83,7 @@ def test_get_all_releases(solvers_api: SolversApi):
 
 
 def test_get_solver_release(
-    solvers_api: SolversApi, sleeper_key_and_version: NameTagTuple
+    solvers_api: osparc.SolversApi, sleeper_key_and_version: NameTagTuple
 ):
     expected_solver_key, expected_version = sleeper_key_and_version
 
@@ -103,9 +103,9 @@ def test_get_solver_release(
     assert solver == same_solver
 
 
-def test_solvers_not_found(solvers_api: SolversApi):
+def test_solvers_not_found(solvers_api: osparc.SolversApi):
 
-    with pytest.raises(ApiException) as excinfo:
+    with pytest.raises(osparc.ApiException) as excinfo:
         solvers_api.get_solver_release(
             "simcore/services/comp/something-not-in-this-registry",
             "1.4.55",

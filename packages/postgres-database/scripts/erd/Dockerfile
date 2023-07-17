@@ -23,8 +23,7 @@ RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
 
 
 # devenv
+COPY requirements.txt requirements.txt
 RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
   pip install \
-  pyparsing \
-  pydot \
-  sqlalchemy_schemadisplay
+  -r requirements.txt

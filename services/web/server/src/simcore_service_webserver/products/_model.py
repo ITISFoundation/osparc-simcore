@@ -20,7 +20,7 @@ from simcore_postgres_database.models.products import (
     WebFeedback,
 )
 
-from ..db_models import products
+from ..db.models import products
 from ..statics._constants import FRONTEND_APPS_AVAILABLE
 
 log = logging.getLogger(__name__)

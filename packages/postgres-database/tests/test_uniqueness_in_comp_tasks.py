@@ -17,7 +17,6 @@ fake_task = fake_task_factory(first_internal_id=1)
 
 @pytest.fixture
 async def engine(make_engine):
-
     engine = await make_engine()
     sync_engine = make_engine(is_async=False)
     metadata.drop_all(sync_engine)
@@ -38,9 +37,7 @@ async def engine(make_engine):
 
 
 async def test_unique_project_node_pairs(engine):
-
     async with engine.acquire() as conn:
-
         task_id = await conn.scalar(
             comp_tasks.insert().values(**fake_task(project_id="PA", node_id="N1"))
         )
@@ -61,7 +58,7 @@ async def test_unique_project_node_pairs(engine):
         )
 
         task_inputs = await conn.scalar(
-            sa.select([comp_tasks.c.inputs]).where(
+            sa.select(comp_tasks.c.inputs).where(
                 sa.and_(
                     comp_tasks.c.project_id == "PB",
                     comp_tasks.c.node_id == "N2",

@@ -5,12 +5,12 @@ components:
       required:
         - error
       properties:
-        data:      
+        data:
           nullable: true
           default: null
         error:
           $ref: '#/components/schemas/ErrorType'
-          
+
     ErrorType:
       type: object
       required:

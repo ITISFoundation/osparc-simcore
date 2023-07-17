@@ -7,17 +7,7 @@ import json
 import random
 from datetime import timezone
 from pathlib import Path
-from typing import (
-    Any,
-    AsyncIterator,
-    Awaitable,
-    Callable,
-    Final,
-    Iterator,
-    Optional,
-    Union,
-    cast,
-)
+from typing import Any, AsyncIterator, Awaitable, Callable, Final, Iterator, cast
 
 import aiodocker
 import httpx
@@ -31,7 +21,7 @@ from deepdiff import DeepDiff
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
-from models_library.docker import DockerLabelKey, SimcoreServiceDockerLabelKeys
+from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
 from models_library.generated_models.docker_rest_api import (
     Availability,
     Node,
@@ -186,7 +176,6 @@ def service_monitored_labels(
 
 @pytest.fixture
 async def async_client(initialized_app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
-
     async with httpx.AsyncClient(
         app=initialized_app,
         base_url=f"http://{initialized_app.title}.testserver.io",
@@ -218,25 +207,35 @@ async def host_node(
 
 
 @pytest.fixture
-def fake_node(faker: Faker) -> Node:
-    return Node(
-        ID=faker.uuid4(),
-        Version=ObjectVersion(Index=faker.pyint()),
-        CreatedAt=faker.date_time(tzinfo=timezone.utc).isoformat(),
-        UpdatedAt=faker.date_time(tzinfo=timezone.utc).isoformat(),
-        Description=NodeDescription(
-            Hostname=faker.pystr(),
-            Resources=ResourceObject(
-                NanoCPUs=int(9 * 1e9), MemoryBytes=256 * 1024 * 1024 * 1024
+def create_fake_node(faker: Faker) -> Callable[..., Node]:
+    def _creator(**node_overrides) -> Node:
+        default_config = dict(
+            ID=faker.uuid4(),
+            Version=ObjectVersion(Index=faker.pyint()),
+            CreatedAt=faker.date_time(tzinfo=timezone.utc).isoformat(),
+            UpdatedAt=faker.date_time(tzinfo=timezone.utc).isoformat(),
+            Description=NodeDescription(
+                Hostname=faker.pystr(),
+                Resources=ResourceObject(
+                    NanoCPUs=int(9 * 1e9), MemoryBytes=256 * 1024 * 1024 * 1024
+                ),
             ),
-        ),
-        Spec=NodeSpec(
-            Name=None,
-            Labels=None,
-            Role=None,
-            Availability=Availability.drain,
-        ),
-    )
+            Spec=NodeSpec(
+                Name=None,
+                Labels=None,
+                Role=None,
+                Availability=Availability.drain,
+            ),
+        )
+        default_config.update(**node_overrides)
+        return Node(**default_config)
+
+    return _creator
+
+
+@pytest.fixture
+def fake_node(create_fake_node: Callable[..., Node]) -> Node:
+    return create_fake_node()
 
 
 @pytest.fixture
@@ -254,7 +253,7 @@ NUM_CPUS = PositiveInt
 
 @pytest.fixture
 def create_task_reservations() -> Callable[[NUM_CPUS, int], dict[str, Any]]:
-    def _creator(num_cpus: NUM_CPUS, memory: Union[ByteSize, int]) -> dict[str, Any]:
+    def _creator(num_cpus: NUM_CPUS, memory: ByteSize | int) -> dict[str, Any]:
         return {
             "Resources": {
                 "Reservations": {
@@ -269,7 +268,7 @@ def create_task_reservations() -> Callable[[NUM_CPUS, int], dict[str, Any]]:
 
 @pytest.fixture
 def create_task_limits() -> Callable[[NUM_CPUS, int], dict[str, Any]]:
-    def _creator(num_cpus: NUM_CPUS, memory: Union[ByteSize, int]) -> dict[str, Any]:
+    def _creator(num_cpus: NUM_CPUS, memory: ByteSize | int) -> dict[str, Any]:
         return {
             "Resources": {
                 "Limits": {
@@ -288,13 +287,13 @@ async def create_service(
     docker_swarm: None,
     faker: Faker,
 ) -> AsyncIterator[
-    Callable[[dict[str, Any], Optional[dict[str, str]]], Awaitable[Service]]
+    Callable[[dict[str, Any], dict[DockerLabelKey, str] | None], Awaitable[Service]]
 ]:
     created_services = []
 
     async def _creator(
         task_template: dict[str, Any],
-        labels: Optional[dict[str, str]] = None,
+        labels: dict[DockerLabelKey, str] | None = None,
         wait_for_service_state="running",
     ) -> Service:
         service_name = f"pytest_{faker.pystr()}"
@@ -353,6 +352,7 @@ async def create_service(
     await asyncio.gather(
         *(async_docker_client.services.delete(s.ID) for s in created_services)
     )
+
     # wait until all tasks are gone
     @retry(
         retry=retry_if_exception_type(AssertionError),
@@ -613,8 +613,8 @@ def host_memory_total() -> ByteSize:
 @pytest.fixture
 def osparc_docker_label_keys(
     faker: Faker,
-) -> SimcoreServiceDockerLabelKeys:
-    return SimcoreServiceDockerLabelKeys.parse_obj(
+) -> StandardSimcoreDockerLabels:
+    return StandardSimcoreDockerLabels.parse_obj(
         dict(user_id=faker.pyint(), project_id=faker.uuid4(), node_id=faker.uuid4())
     )
 

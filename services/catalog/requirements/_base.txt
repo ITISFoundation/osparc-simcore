@@ -51,7 +51,9 @@ async-timeout==4.0.2
     #   aioredis
     #   redis
 asyncpg==0.27.0
-    # via -r requirements/_base.in
+    # via
+    #   -r requirements/_base.in
+    #   sqlalchemy
 attrs==21.4.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
@@ -74,7 +76,9 @@ email-validator==1.2.1
     #   fastapi
     #   pydantic
 fastapi==0.96.0
-    # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
+    #   -r requirements/_base.in
 frozenlist==1.3.3
     # via
     #   aiohttp

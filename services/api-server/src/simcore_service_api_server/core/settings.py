@@ -2,7 +2,7 @@ from functools import cached_property
 from pathlib import Path
 
 from models_library.basic_types import BootModeEnum, LogLevel
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, parse_obj_as
 from pydantic.class_validators import validator
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt, VersionTag
@@ -52,7 +52,7 @@ class WebServerSettings(BaseCustomSettings, MixinServiceSettings, MixinSessionSe
 class DirectorV2Settings(BaseCustomSettings, MixinServiceSettings):
     DIRECTOR_V2_HOST: str = "director-v2"
     DIRECTOR_V2_PORT: PortInt = DEFAULT_FASTAPI_PORT
-    DIRECTOR_V2_VTAG: VersionTag = "v2"
+    DIRECTOR_V2_VTAG: VersionTag = parse_obj_as(VersionTag, "v2")
 
     @cached_property
     def api_base_url(self) -> str:
@@ -81,12 +81,13 @@ class DirectorV2Settings(BaseCustomSettings, MixinServiceSettings):
 class BasicSettings(BaseCustomSettings, MixinLoggingSettings):
     # DEVELOPMENT
     API_SERVER_DEV_FEATURES_ENABLED: bool = Field(
-        False, env=["API_SERVER_DEV_FEATURES_ENABLED", "FAKE_API_SERVER_ENABLED"]
+        default=False,
+        env=["API_SERVER_DEV_FEATURES_ENABLED", "FAKE_API_SERVER_ENABLED"],
     )
 
     # LOGGING
     LOG_LEVEL: LogLevel = Field(
-        LogLevel.INFO.value,
+        default=LogLevel.INFO.value,
         env=["API_SERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
     )
     API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
@@ -142,9 +143,8 @@ class ApplicationSettings(BasicSettings):
             and (boot_mode := values.get("SC_BOOT_MODE"))
             and boot_mode.is_devel_mode()
         ):
-            raise ValueError(
-                "API_SERVER_DEV_HTTP_CALLS_LOGS_PATH only allowed in devel mode"
-            )
+            msg = "API_SERVER_DEV_HTTP_CALLS_LOGS_PATH only allowed in devel mode"
+            raise ValueError(msg)
         return v
 
 

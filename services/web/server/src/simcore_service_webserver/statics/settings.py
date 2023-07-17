@@ -22,7 +22,7 @@ class ThirdPartyInfoDict(TypedDict):
 THIRD_PARTY_REFERENCES = [
     ThirdPartyInfoDict(
         name="adminer",
-        version="4.8.0",
+        version="4.8.1",
         url="https://www.adminer.org/",
         thumbnail="https://www.adminer.org/static/images/logo.png",
     ),

@@ -5,7 +5,7 @@ import asyncio
 import json
 import logging
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterable, AsyncIterator, Callable
+from typing import Any, AsyncIterable, AsyncIterator, Awaitable, Callable
 from unittest.mock import Mock
 
 import aiodocker
@@ -90,8 +90,8 @@ def user_id(user_db) -> UserID:
 
 
 @pytest.fixture
-def project_id(user_db, project: Callable[..., ProjectAtDB]) -> str:
-    prj = project(user=user_db)
+async def project_id(user_db, project: Callable[..., Awaitable[ProjectAtDB]]) -> str:
+    prj = await project(user=user_db)
     return f"{prj.uuid}"
 
 

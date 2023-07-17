@@ -8,11 +8,21 @@ import logging
 
 from aiohttp import web
 from jsonschema import ValidationError as JsonSchemaValidationError
+from models_library.api_schemas_webserver.projects import (
+    EmptyModel,
+    ProjectCopyOverride,
+    ProjectCreateNew,
+    ProjectGet,
+    ProjectUpdate,
+)
 from models_library.projects import Project, ProjectID
 from models_library.projects_state import ProjectLocked
-from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
+from models_library.rest_pagination import (
+    DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
+    Page,
+)
 from models_library.rest_pagination_utils import paginate_data
-from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import BaseModel, Extra, Field, NonNegativeInt, validator
 from servicelib.aiohttp.long_running_tasks.server import start_long_running_task
@@ -29,25 +39,18 @@ from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
-from .._constants import RQ_PRODUCT_KEY
 from .._meta import api_version_prefix as VTAG
 from ..catalog.client import get_services_for_user_in_product
 from ..director_v2 import api
-from ..login.decorators import RQT_USERID_KEY, login_required
+from ..login.decorators import login_required
 from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
 from ..security.api import check_permission
 from ..security.decorators import permission_required
 from ..users.api import get_user_name
 from . import _crud_create_utils, _crud_read_utils, projects_api
+from ._common_models import ProjectPathParams, RequestContext
 from ._crud_read_utils import OrderDirection, ProjectListFilters, ProjectOrderBy
-from ._permalink import update_or_pop_permalink_in_project
-from ._rest_schemas import (
-    EmptyModel,
-    ProjectCopyOverride,
-    ProjectCreateNew,
-    ProjectGet,
-    ProjectUpdate,
-)
+from ._permalink_api import update_or_pop_permalink_in_project
 from .db import ProjectDBAPI
 from .exceptions import (
     ProjectDeleteError,
@@ -71,22 +74,9 @@ from .utils import (
 RQ_REQUESTED_REPO_PROJECT_UUID_KEY = f"{__name__}.RQT_REQUESTED_REPO_PROJECT_UUID_KEY"
 
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 routes = web.RouteTableDef()
-
-
-class RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
-
-
-class ProjectPathParams(BaseModel):
-    project_id: ProjectID
-
-    class Config:
-        allow_population_by_field_name = True
-        extra = Extra.forbid
 
 
 #
@@ -100,15 +90,15 @@ class _ProjectCreateParams(BaseModel):
         description="Option to create a project from existing template or study: from_study={study_uuid}",
     )
     as_template: bool = Field(
-        False,
+        default=False,
         description="Option to create a template from existing project: as_template=true",
     )
     copy_data: bool = Field(
-        True,
+        default=True,
         description="Option to copy data when creating from an existing template or as a template, defaults to True",
     )
     hidden: bool = Field(
-        False,
+        default=False,
         description="Enables/disables hidden flag. Hidden projects are by default unlisted",
     )
 
@@ -178,7 +168,7 @@ class _ProjectListParams(BaseModel):
         default=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
         description="maximum number of items to return (pagination)",
         ge=1,
-        lt=50,
+        lt=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
     )
     offset: NonNegativeInt = Field(
         default=0, description="index to the first item to return (pagination)"
@@ -201,7 +191,7 @@ class _ProjectListParams(BaseModel):
     search: str | None = Field(
         default=None,
         description="Multi column full text search",
-        max_length=25,
+        max_length=100,
         example="My Project",
     )
 
@@ -222,9 +212,8 @@ class _ProjectListParams(BaseModel):
                 if field_info[1] == OrderDirection.DESC.value:
                     direction = OrderDirection.DESC
                 else:
-                    raise ValueError(
-                        "Field direction in the order_by parameter must contain either 'desc' direction or empty value for 'asc' direction."
-                    )
+                    msg = "Field direction in the order_by parameter must contain either 'desc' direction or empty value for 'asc' direction."
+                    raise ValueError(msg)
 
             parse_fields_with_direction.append(
                 ProjectOrderBy(field=field_name, direction=direction)
@@ -437,8 +426,10 @@ async def replace_project(request: web.Request):
 
     try:
         new_project = await request.json()
+        # NOTE: this is a temporary fix until proper Model is introduced in ProjectReplace
         # Prune state field (just in case)
         new_project.pop("state", None)
+        new_project.pop("permalink", None)
 
     except json.JSONDecodeError as exc:
         raise web.HTTPBadRequest(reason="Invalid request body") from exc

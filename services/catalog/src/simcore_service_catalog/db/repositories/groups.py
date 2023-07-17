@@ -15,7 +15,7 @@ class GroupsRepository(BaseRepository):
         groups_in_db = []
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(
-                sa.select([groups])
+                sa.select(groups)
                 .select_from(
                     user_to_groups.join(groups, user_to_groups.c.gid == groups.c.gid),
                 )
@@ -27,7 +27,7 @@ class GroupsRepository(BaseRepository):
     async def get_everyone_group(self) -> GroupAtDB:
         async with self.db_engine.connect() as conn:
             result = await conn.execute(
-                sa.select([groups]).where(groups.c.type == GroupType.EVERYONE)
+                sa.select(groups).where(groups.c.type == GroupType.EVERYONE)
             )
             row = result.first()
         if not row:
@@ -41,7 +41,7 @@ class GroupsRepository(BaseRepository):
             return cast(
                 Optional[PositiveInt],
                 await conn.scalar(
-                    sa.select([users.c.primary_gid]).where(users.c.email == user_email)
+                    sa.select(users.c.primary_gid).where(users.c.email == user_email)
                 ),
             )
 
@@ -50,7 +50,7 @@ class GroupsRepository(BaseRepository):
             return cast(
                 Optional[PositiveInt],
                 await conn.scalar(
-                    sa.select([groups.c.gid]).where(groups.c.name == affiliation)
+                    sa.select(groups.c.gid).where(groups.c.name == affiliation)
                 ),
             )
 
@@ -59,7 +59,7 @@ class GroupsRepository(BaseRepository):
     ) -> LowerCaseEmailStr | None:
         async with self.db_engine.connect() as conn:
             email = await conn.scalar(
-                sa.select([users.c.email]).where(users.c.primary_gid == gid)
+                sa.select(users.c.email).where(users.c.primary_gid == gid)
             )
             return cast(LowerCaseEmailStr, f"{email}") if email else None
 

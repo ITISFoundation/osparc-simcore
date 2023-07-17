@@ -132,7 +132,8 @@ qx.Class.define("osparc.data.Permissions", {
           "study.nodestree.uuid.read",
           "study.filestree.uuid.read",
           "study.logger.debug.read",
-          "statics.read"
+          "statics.read",
+          "usage.all.read"
         ],
         "admin": []
       };
@@ -246,9 +247,28 @@ qx.Class.define("osparc.data.Permissions", {
         canDo = this.__canRoleDo(this.getRole(), action);
       }
       if (showMsg && !canDo) {
-        osparc.component.message.FlashMessenger.getInstance().logAs("Operation not permitted", "ERROR");
+        let msg = "Operation not permitted";
+        if (["anonymous", "guest"].includes(this.getRole())) {
+          msg = "Please register to use this functionality";
+        }
+        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
       }
       return canDo;
+    },
+
+    checkCanDo: function(action) {
+      return new Promise((resolve, reject) => {
+        osparc.data.Resources.get("permissions")
+          .then(permissions => {
+            const found = permissions.find(permission => permission["name"] === action);
+            if (found) {
+              resolve(found["allowed"]);
+            } else {
+              resolve(false);
+            }
+          })
+          .catch(err => reject(err));
+      });
     },
 
     isTester: function() {

@@ -4,7 +4,7 @@ from aiohttp import web
 from aiopg.sa.result import RowProxy
 from models_library.users import GroupID, UserID
 
-from ..db import get_database_engine
+from ..db.plugin import get_database_engine
 from ..users.api import get_user
 from . import _db
 from ._utils import AccessRightsDict

@@ -1,27 +1,37 @@
 # pylint: disable=too-many-arguments
-# TODO: user_id should be injected every request in api instances, i.e. a new api-instance per request
 
 import logging
 from collections import deque
-from typing import Callable
+from collections.abc import Callable
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import RedirectResponse
+from fastapi_pagination.api import create_page
+from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.clusters import ClusterID
 from models_library.projects_nodes_io import BaseFileLink
 from pydantic.types import PositiveInt
 
-from ...core.settings import BasicSettings
 from ...models.basic_types import VersionStr
-from ...models.domain.projects import NewProjectIn, Project
+from ...models.pagination import LimitOffsetPage, LimitOffsetParams
 from ...models.schemas.files import File
-from ...models.schemas.jobs import ArgumentTypes, Job, JobInputs, JobOutputs, JobStatus
+from ...models.schemas.jobs import (
+    ArgumentTypes,
+    Job,
+    JobID,
+    JobInputs,
+    JobMetadata,
+    JobMetadataUpdate,
+    JobOutputs,
+    JobStatus,
+)
 from ...models.schemas.solvers import Solver, SolverKeyId
-from ...plugins.catalog import CatalogApi
-from ...plugins.director_v2 import DirectorV2Api, DownloadLink, NodeName
-from ...plugins.storage import StorageApi, to_file_api_model
+from ...services.catalog import CatalogApi
+from ...services.director_v2 import DirectorV2Api, DownloadLink, NodeName
+from ...services.storage import StorageApi, to_file_api_model
 from ...utils.solver_job_models_converters import (
     create_job_from_project,
     create_jobstatus_from_task,
@@ -33,12 +43,12 @@ from ..dependencies.authentication import get_current_user_id
 from ..dependencies.database import Engine, get_db_engine
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
-from ._common import JOB_OUTPUT_LOGFILE_RESPONSES
+from ..errors.http_error import ErrorGet, create_error_json_response
+from ._common import API_SERVER_DEV_FEATURES_ENABLED, job_output_logfile_responses
 
 _logger = logging.getLogger(__name__)
 
 router = APIRouter()
-settings = BasicSettings.create_from_envs()
 
 
 def _compose_job_resource_name(solver_key, solver_version, job_id) -> str:
@@ -54,6 +64,13 @@ def _compose_job_resource_name(solver_key, solver_version, job_id) -> str:
 # - Similar to docker container's API design (container = job and image = solver)
 #
 
+_common_error_responses = {
+    status.HTTP_404_NOT_FOUND: {
+        "description": "Job not found",
+        "model": ErrorGet,
+    },
+}
+
 
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs",
@@ -62,15 +79,18 @@ def _compose_job_resource_name(solver_key, solver_version, job_id) -> str:
 async def list_jobs(
     solver_key: SolverKeyId,
     version: VersionStr,
-    user_id: PositiveInt = Depends(get_current_user_id),
-    catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
-    webserver_api: AuthSession = Depends(get_webserver_session),
-    url_for: Callable = Depends(get_reverse_url_mapper),
-    product_name: str = Depends(get_product_name),
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
+    product_name: Annotated[str, Depends(get_product_name)],
 ):
-    """List of all jobs in a specific released solver"""
+    """List of jobs in a specific released solver (limited to 20 jobs)
 
-    solver = await catalog_client.get_solver(
+    SEE get_jobs_page for paginated version of this function
+    """
+
+    solver = await catalog_client.get_service(
         user_id=user_id,
         name=solver_key,
         version=version,
@@ -78,9 +98,10 @@ async def list_jobs(
     )
     _logger.debug("Listing Jobs in Solver '%s'", solver.name)
 
-    projects: list[Project] = await webserver_api.list_projects(solver.name)
+    projects_page = await webserver_api.list_projects(solver.name, limit=20, offset=0)
+
     jobs: deque[Job] = deque()
-    for prj in projects:
+    for prj in projects_page.data:
         job = create_job_from_project(solver_key, version, prj, url_for)
         assert job.id == prj.uuid  # nosec
         assert job.name == prj.name  # nosec
@@ -88,6 +109,54 @@ async def list_jobs(
         jobs.append(job)
 
     return list(jobs)
+
+
+@router.get(
+    "/{solver_key:path}/releases/{version}/jobs/page",
+    response_model=LimitOffsetPage[Job],
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def get_jobs_page(
+    solver_key: SolverKeyId,
+    version: VersionStr,
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    page_params: Annotated[LimitOffsetParams, Depends()],
+    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
+    product_name: Annotated[str, Depends(get_product_name)],
+):
+    """List of jobs on a specific released solver (includes pagination)
+
+
+    Breaking change in *version 0.5*: response model changed from list[Job] to pagination Page[Job].
+    """
+
+    # NOTE: Different entry to keep backwards compatibility with list_jobs.
+    # Eventually use a header with agent version to switch to new interface
+
+    solver = await catalog_client.get_service(
+        user_id=user_id,
+        name=solver_key,
+        version=version,
+        product_name=product_name,
+    )
+    _logger.debug("Listing Jobs in Solver '%s'", solver.name)
+
+    projects_page = await webserver_api.list_projects(
+        solver.name, limit=page_params.limit, offset=page_params.offset
+    )
+
+    jobs: list[Job] = [
+        create_job_from_project(solver_key, version, prj, url_for)
+        for prj in projects_page.data
+    ]
+
+    return create_page(
+        jobs,
+        total=projects_page.meta.total,
+        params=page_params,
+    )
 
 
 @router.post(
@@ -98,11 +167,11 @@ async def create_job(
     solver_key: SolverKeyId,
     version: VersionStr,
     inputs: JobInputs,
-    user_id: PositiveInt = Depends(get_current_user_id),
-    catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
-    webserver_api: AuthSession = Depends(get_webserver_session),
-    url_for: Callable = Depends(get_reverse_url_mapper),
-    product_name: str = Depends(get_product_name),
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
+    product_name: Annotated[str, Depends(get_product_name)],
 ):
     """Creates a job in a specific release with given inputs.
 
@@ -110,7 +179,7 @@ async def create_job(
     """
 
     # ensures user has access to solver
-    solver = await catalog_client.get_solver(
+    solver = await catalog_client.get_service(
         user_id=user_id,
         name=solver_key,
         version=version,
@@ -121,12 +190,8 @@ async def create_job(
     pre_job = Job.create_solver_job(solver=solver, inputs=inputs)
     _logger.debug("Creating Job '%s'", pre_job.name)
 
-    # -> catalog
-    # TODO: validate inputs against solver input schema
-
-    #   -> webserver:  NewProjectIn = Job
-    project_in: NewProjectIn = create_new_project_for_job(solver, pre_job, inputs)
-    new_project: Project = await webserver_api.create_project(project_in)
+    project_in: ProjectCreateNew = create_new_project_for_job(solver, pre_job, inputs)
+    new_project: ProjectGet = await webserver_api.create_project(project_in)
     assert new_project  # nosec
     assert new_project.uuid == pre_job.id  # nosec
 
@@ -150,16 +215,16 @@ async def create_job(
 async def get_job(
     solver_key: SolverKeyId,
     version: VersionStr,
-    job_id: UUID,
-    webserver_api: AuthSession = Depends(get_webserver_session),
-    url_for: Callable = Depends(get_reverse_url_mapper),
+    job_id: JobID,
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
     """Gets job of a given solver"""
+    _logger.debug(
+        "Getting Job '%s'", _compose_job_resource_name(solver_key, version, job_id)
+    )
 
-    job_name = _compose_job_resource_name(solver_key, version, job_id)
-    _logger.debug("Getting Job '%s'", job_name)
-
-    project: Project = await webserver_api.get_project(project_id=job_id)
+    project: ProjectGet = await webserver_api.get_project(project_id=job_id)
 
     job = create_job_from_project(solver_key, version, project, url_for)
     assert job.id == job_id  # nosec
@@ -169,12 +234,31 @@ async def get_job(
 @router.delete(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}",
     status_code=status.HTTP_204_NO_CONTENT,
-    include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
+    responses={status.HTTP_404_NOT_FOUND: {"model": ErrorGet}},
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
-async def delete_job(solver_key: SolverKeyId, version: VersionStr, job_id: UUID):
-    raise NotImplementedError(
-        f"delete job {solver_key=} {version=} {job_id=}.  SEE https://github.com/ITISFoundation/osparc-simcore/issues/4111"
-    )
+async def delete_job(
+    solver_key: SolverKeyId,
+    version: VersionStr,
+    job_id: JobID,
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+):
+    """Deletes an existing solver job
+
+    New in *version 0.5*
+    """
+    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    _logger.debug("Deleting Job '%s'", job_name)
+
+    try:
+        await webserver_api.delete_project(project_id=job_id)
+
+    except HTTPException as err:
+        if err.status_code == status.HTTP_404_NOT_FOUND:
+            return create_error_json_response(
+                f"Cannot find job={job_name} to delete",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
 
 
 @router.post(
@@ -184,11 +268,11 @@ async def delete_job(solver_key: SolverKeyId, version: VersionStr, job_id: UUID)
 async def start_job(
     solver_key: SolverKeyId,
     version: VersionStr,
-    job_id: UUID,
+    job_id: JobID,
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
+    product_name: Annotated[str, Depends(get_product_name)],
     cluster_id: ClusterID | None = None,
-    user_id: PositiveInt = Depends(get_current_user_id),
-    director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
-    product_name: str = Depends(get_product_name),
 ):
     """Starts job job_id created with the solver solver_key:version
 
@@ -209,14 +293,15 @@ async def start_job(
 
 
 @router.post(
-    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}:stop", response_model=Job
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}:stop",
+    response_model=Job,
 )
 async def stop_job(
     solver_key: SolverKeyId,
     version: VersionStr,
-    job_id: UUID,
-    user_id: PositiveInt = Depends(get_current_user_id),
-    director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
+    job_id: JobID,
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ):
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Stopping Job '%s'", job_name)
@@ -235,9 +320,9 @@ async def stop_job(
 async def inspect_job(
     solver_key: SolverKeyId,
     version: VersionStr,
-    job_id: UUID,
-    user_id: PositiveInt = Depends(get_current_user_id),
-    director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
+    job_id: JobID,
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ) -> JobStatus:
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Inspecting Job '%s'", job_name)
@@ -254,16 +339,16 @@ async def inspect_job(
 async def get_job_outputs(
     solver_key: SolverKeyId,
     version: VersionStr,
-    job_id: UUID,
-    user_id: PositiveInt = Depends(get_current_user_id),
-    db_engine: Engine = Depends(get_db_engine),
-    webserver_api: AuthSession = Depends(get_webserver_session),
-    storage_client: StorageApi = Depends(get_api_client(StorageApi)),
+    job_id: JobID,
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    db_engine: Annotated[Engine, Depends(get_db_engine)],
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
 ):
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Get Job '%s' outputs", job_name)
 
-    project: Project = await webserver_api.get_project(project_id=job_id)
+    project: ProjectGet = await webserver_api.get_project(project_id=job_id)
     node_ids = list(project.workbench.keys())
     assert len(node_ids) == 1  # nosec
 
@@ -294,21 +379,20 @@ async def get_job_outputs(
             # TODO: cast against catalog's output port specs
             results[name] = value
 
-    job_outputs = JobOutputs(job_id=job_id, results=results)
-    return job_outputs
+    return JobOutputs(job_id=job_id, results=results)
 
 
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/outputs/logfile",
     response_class=RedirectResponse,
-    responses=JOB_OUTPUT_LOGFILE_RESPONSES,
+    responses=job_output_logfile_responses,
 )
 async def get_job_output_logfile(
     solver_key: SolverKeyId,
     version: VersionStr,
-    job_id: UUID,
-    user_id: PositiveInt = Depends(get_current_user_id),
-    director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
+    job_id: JobID,
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ):
     """Special extra output with persistent logs file for the solver run.
 
@@ -353,3 +437,88 @@ async def get_job_output_logfile(
         detail=f"Log for {solver_key}/releases/{version}/jobs/{job_id} not found."
         "Note that these logs are only available after the job is completed.",
     )
+
+
+@router.get(
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/metadata",
+    response_model=JobMetadata,
+    responses={**_common_error_responses},
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def get_job_custom_metadata(
+    solver_key: SolverKeyId,
+    version: VersionStr,
+    job_id: JobID,
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
+):
+    """Gets custom metadata from a job
+
+    New in *version 0.5*
+    """
+    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    _logger.debug("Custom metadata for '%s'", job_name)
+
+    try:
+        project_metadata = await webserver_api.get_project_metadata(project_id=job_id)
+        return JobMetadata(
+            job_id=job_id,
+            metadata=project_metadata.custom,
+            url=url_for(
+                "get_job_custom_metadata",
+                solver_key=solver_key,
+                version=version,
+                job_id=job_id,
+            ),
+        )
+
+    except HTTPException as err:
+        if err.status_code == status.HTTP_404_NOT_FOUND:
+            return create_error_json_response(
+                f"Cannot find job={job_name} ",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+
+
+@router.patch(
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/metadata",
+    response_model=JobMetadata,
+    responses={**_common_error_responses},
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def replace_job_custom_metadata(
+    solver_key: SolverKeyId,
+    version: VersionStr,
+    job_id: JobID,
+    update: JobMetadataUpdate,
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
+):
+    """Updates custom metadata from a job
+
+    New in *version 0.5*
+    """
+    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    _logger.debug("Custom metadata for '%s'", job_name)
+
+    try:
+        project_metadata = await webserver_api.update_project_metadata(
+            project_id=job_id, metadata=update.metadata
+        )
+        return JobMetadata(
+            job_id=job_id,
+            metadata=project_metadata.custom,
+            url=url_for(
+                "replace_job_custom_metadata",
+                solver_key=solver_key,
+                version=version,
+                job_id=job_id,
+            ),
+        )
+
+    except HTTPException as err:
+        if err.status_code == status.HTTP_404_NOT_FOUND:
+            return create_error_json_response(
+                f"Cannot find job={job_name} ",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )

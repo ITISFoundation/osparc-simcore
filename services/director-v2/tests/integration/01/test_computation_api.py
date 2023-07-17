@@ -179,12 +179,12 @@ async def test_start_empty_computation_is_refused(
     minimal_configuration: None,
     async_client: httpx.AsyncClient,
     registered_user: Callable,
-    project: Callable,
+    project: Callable[..., Awaitable[ProjectAtDB]],
     osparc_product_name: str,
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ):
     user = registered_user()
-    empty_project = project(user)
+    empty_project = await project(user)
     with pytest.raises(
         httpx.HTTPStatusError, match=f"{status.HTTP_422_UNPROCESSABLE_ENTITY}"
     ):
@@ -383,7 +383,7 @@ async def test_run_partial_computation(
     minimal_configuration: None,
     async_client: httpx.AsyncClient,
     registered_user: Callable,
-    project: Callable,
+    project: Callable[..., Awaitable[ProjectAtDB]],
     update_project_workbench_with_comp_tasks: Callable,
     fake_workbench_without_outputs: dict[str, Any],
     params: PartialComputationParams,
@@ -392,7 +392,7 @@ async def test_run_partial_computation(
 ):
     user = registered_user()
     await catalog_ready(user["id"], osparc_product_name)
-    sleepers_project: ProjectAtDB = project(
+    sleepers_project: ProjectAtDB = await project(
         user, workbench=fake_workbench_without_outputs
     )
 
@@ -535,7 +535,7 @@ async def test_run_computation(
     minimal_configuration: None,
     async_client: httpx.AsyncClient,
     registered_user: Callable,
-    project: Callable,
+    project: Callable[..., Awaitable[ProjectAtDB]],
     fake_workbench_without_outputs: dict[str, Any],
     update_project_workbench_with_comp_tasks: Callable,
     fake_workbench_computational_pipeline_details: PipelineDetails,
@@ -545,7 +545,7 @@ async def test_run_computation(
 ):
     user = registered_user()
     await catalog_ready(user["id"], osparc_product_name)
-    sleepers_project = project(user, workbench=fake_workbench_without_outputs)
+    sleepers_project = await project(user, workbench=fake_workbench_without_outputs)
     # send a valid project with sleepers
     task_out = await create_pipeline(
         async_client,
@@ -654,7 +654,7 @@ async def test_abort_computation(
     minimal_configuration: None,
     async_client: httpx.AsyncClient,
     registered_user: Callable,
-    project: Callable,
+    project: Callable[..., Awaitable[ProjectAtDB]],
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_computational_pipeline_details: PipelineDetails,
     osparc_product_name: str,
@@ -667,7 +667,7 @@ async def test_abort_computation(
             node["inputs"].setdefault("in_2", 120)
             if not isinstance(node["inputs"]["in_2"], dict):
                 node["inputs"]["in_2"] = 120
-    sleepers_project = project(user, workbench=fake_workbench_without_outputs)
+    sleepers_project = await project(user, workbench=fake_workbench_without_outputs)
     # send a valid project with sleepers
     task_out = await create_pipeline(
         async_client,
@@ -733,7 +733,7 @@ async def test_update_and_delete_computation(
     minimal_configuration: None,
     async_client: httpx.AsyncClient,
     registered_user: Callable,
-    project: Callable,
+    project: Callable[..., Awaitable[ProjectAtDB]],
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_computational_pipeline_details_not_started: PipelineDetails,
     fake_workbench_computational_pipeline_details: PipelineDetails,
@@ -741,7 +741,7 @@ async def test_update_and_delete_computation(
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ):
     user = registered_user()
-    sleepers_project = project(user, workbench=fake_workbench_without_outputs)
+    sleepers_project = await project(user, workbench=fake_workbench_without_outputs)
     # send a valid project with sleepers
     task_out = await create_pipeline(
         async_client,
@@ -860,14 +860,14 @@ async def test_pipeline_with_no_computational_services_still_create_correct_comp
     minimal_configuration: None,
     async_client: httpx.AsyncClient,
     registered_user: Callable,
-    project: Callable,
+    project: Callable[..., Awaitable[ProjectAtDB]],
     jupyter_service: dict[str, Any],
     osparc_product_name: str,
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ):
     user = registered_user()
     # create a workbench with just a dynamic service
-    project_with_dynamic_node = project(
+    project_with_dynamic_node = await project(
         user,
         workbench={
             "39e92f80-9286-5612-85d1-639fa47ec57d": {
@@ -900,17 +900,17 @@ async def test_pipeline_with_no_computational_services_still_create_correct_comp
     )
 
 
-def test_pipeline_with_control_loop_made_of_dynamic_services_is_allowed(
+async def test_pipeline_with_control_loop_made_of_dynamic_services_is_allowed(
     minimal_configuration: None,
     client: TestClient,
     registered_user: Callable,
-    project: Callable,
+    project: Callable[..., Awaitable[ProjectAtDB]],
     jupyter_service: dict[str, Any],
     osparc_product_name: str,
 ):
     user = registered_user()
     # create a workbench with just 2 dynamic service in a cycle
-    project_with_dynamic_node = project(
+    project_with_dynamic_node = await project(
         user,
         workbench={
             "39e92f80-9286-5612-85d1-639fa47ec57d": {
@@ -969,18 +969,18 @@ def test_pipeline_with_control_loop_made_of_dynamic_services_is_allowed(
     ), f"response code is {response.status_code}, error: {response.text}"
 
 
-def test_pipeline_with_cycle_containing_a_computational_service_is_forbidden(
+async def test_pipeline_with_cycle_containing_a_computational_service_is_forbidden(
     minimal_configuration: None,
     client: TestClient,
     registered_user: Callable,
-    project: Callable,
+    project: Callable[..., Awaitable[ProjectAtDB]],
     sleeper_service: dict[str, Any],
     jupyter_service: dict[str, Any],
     osparc_product_name: str,
 ):
     user = registered_user()
     # create a workbench with just 2 dynamic service in a cycle
-    project_with_cycly_and_comp_service = project(
+    project_with_cycly_and_comp_service = await project(
         user,
         workbench={
             "39e92f80-9286-5612-85d1-639fa47ec57d": {
@@ -1055,7 +1055,7 @@ async def test_burst_create_computations(
     minimal_configuration: None,
     async_client: httpx.AsyncClient,
     registered_user: Callable,
-    project: Callable,
+    project: Callable[..., Awaitable[ProjectAtDB]],
     fake_workbench_without_outputs: dict[str, Any],
     update_project_workbench_with_comp_tasks: Callable,
     fake_workbench_computational_pipeline_details: PipelineDetails,
@@ -1064,8 +1064,8 @@ async def test_burst_create_computations(
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ):
     user = registered_user()
-    sleepers_project = project(user, workbench=fake_workbench_without_outputs)
-    sleepers_project2 = project(user, workbench=fake_workbench_without_outputs)
+    sleepers_project = await project(user, workbench=fake_workbench_without_outputs)
+    sleepers_project2 = await project(user, workbench=fake_workbench_without_outputs)
 
     NUMBER_OF_CALLS = 4
 

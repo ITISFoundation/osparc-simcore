@@ -7,12 +7,11 @@
 """
 import logging
 from datetime import datetime
-from typing import Optional
 
 from aiohttp import web
 from yarl import URL
 
-from ..db_models import ConfirmationAction
+from ..db.models import ConfirmationAction
 from .settings import LoginOptions
 from .storage import AsyncpgStorage, ConfirmationTokenDict
 
@@ -21,13 +20,13 @@ log = logging.getLogger(__name__)
 
 async def validate_confirmation_code(
     code: str, db: AsyncpgStorage, cfg: LoginOptions
-) -> Optional[ConfirmationTokenDict]:
+) -> ConfirmationTokenDict | None:
     """
     Returns None if validation fails
     """
     assert not code.startswith("***"), "forgot .get_secret_value()??"  # nosec
 
-    confirmation: Optional[ConfirmationTokenDict] = await db.get_confirmation(
+    confirmation: ConfirmationTokenDict | None = await db.get_confirmation(
         {"code": code}
     )
     if confirmation and is_confirmation_expired(cfg, confirmation):

@@ -15,7 +15,7 @@ class ProjectsRepository(BaseRepository):
         list_of_published_services: list[ServiceKeyVersion] = []
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(
-                sa.select([projects]).where(
+                sa.select(projects).where(
                     (projects.c.type == ProjectType.TEMPLATE)
                     & (projects.c.published == True)
                 )

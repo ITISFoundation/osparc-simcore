@@ -15,21 +15,22 @@ import simcore_service_dask_sidecar
 from aiobotocore.session import AioBaseClient, get_session
 from faker import Faker
 from pydantic import AnyUrl, parse_obj_as
-from pytest import MonkeyPatch, TempPathFactory
+from pytest import MonkeyPatch
 from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from settings_library.s3 import S3Settings
 from simcore_service_dask_sidecar.file_utils import _s3fs_settings_from_s3_settings
 from yarl import URL
 
 pytest_plugins = [
     "pytest_simcore.aws_services",
+    "pytest_simcore.cli_runner",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
-    "pytest_simcore.monkeypatch_extra",
-    "pytest_simcore.pytest_global_environs",
     "pytest_simcore.repository_paths",
     "pytest_simcore.tmp_path_extra",
 ]
@@ -51,32 +52,50 @@ def installed_package_dir() -> Path:
     return dirpath
 
 
-@pytest.fixture()
-def mock_service_envs(
-    mock_env_devel_environment: dict[str, str | None],
-    monkeypatch: MonkeyPatch,
+@pytest.fixture
+def shared_data_folder(
+    tmp_path: Path,
     mocker: MockerFixture,
-    tmp_path_factory: TempPathFactory,
-) -> None:
-    # Variables directly define inside Dockerfile
-    monkeypatch.setenv("SC_BOOT_MODE", "debug-ptvsd")
+) -> Path:
+    """Emulates shared folder mounted BEFORE app starts"""
+    shared_data_folder = tmp_path / "home/scu/computational_shared_data"
+    shared_data_folder.mkdir(parents=True, exist_ok=True)
 
-    monkeypatch.setenv("SIDECAR_LOGLEVEL", "DEBUG")
-    monkeypatch.setenv(
-        "SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME", "simcore_computational_shared_data"
-    )
-
-    shared_data_folder = tmp_path_factory.mktemp("pytest_comp_shared_data")
     assert shared_data_folder.exists()
-    monkeypatch.setenv("SIDECAR_COMP_SERVICES_SHARED_FOLDER", f"{shared_data_folder}")
+
     mocker.patch(
         "simcore_service_dask_sidecar.computational_sidecar.core.get_computational_shared_data_mount_point",
         return_value=shared_data_folder,
     )
+    return shared_data_folder
 
 
 @pytest.fixture
-def local_cluster(mock_service_envs: None) -> Iterator[distributed.LocalCluster]:
+def app_environment(
+    monkeypatch: MonkeyPatch, env_devel_dict: EnvVarsDict, shared_data_folder: Path
+) -> EnvVarsDict:
+    # configured as worker
+    envs = setenvs_from_dict(
+        monkeypatch,
+        {
+            # .env-devel
+            **env_devel_dict,
+            # Variables directly define inside Dockerfile
+            "SC_BOOT_MODE": "debug-ptvsd",
+            "SIDECAR_LOGLEVEL": "DEBUG",
+            "SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME": "simcore_computational_shared_data",
+            "SIDECAR_COMP_SERVICES_SHARED_FOLDER": f"{shared_data_folder}",
+        },
+    )
+
+    # Variables  passed upon start via services/docker-compose.yml file under dask-sidecar/scheduler
+    monkeypatch.delenv("DASK_START_AS_SCHEDULER", raising=False)
+
+    return envs
+
+
+@pytest.fixture
+def local_cluster(app_environment: EnvVarsDict) -> Iterator[distributed.LocalCluster]:
     print(pformat(dask.config.get("distributed")))
     with distributed.LocalCluster(
         worker_class=distributed.Worker,
@@ -100,7 +119,7 @@ def dask_client(
 
 @pytest.fixture
 async def async_local_cluster(
-    mock_service_envs: None,
+    app_environment: EnvVarsDict,
 ) -> AsyncIterator[distributed.LocalCluster]:
     print(pformat(dask.config.get("distributed")))
     async with distributed.LocalCluster(

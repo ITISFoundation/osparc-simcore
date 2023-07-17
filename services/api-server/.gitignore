@@ -2,4 +2,4 @@
 client
 
 # openapi for development mode
-# openapi-dev.json TODO: activate before merging in master
+openapi-*.json

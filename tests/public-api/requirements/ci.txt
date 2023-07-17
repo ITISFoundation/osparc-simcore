@@ -9,8 +9,7 @@
 # installs base + tests requirements
 --requirement _test.txt
 
-# NOTE: this has to be frozen to specific comment
-osparc @ git+https://github.com/ITISFoundation/osparc-simcore-python-client.git@master
+osparc
 
 # installs this repo's packages
 ../../packages/pytest-simcore/

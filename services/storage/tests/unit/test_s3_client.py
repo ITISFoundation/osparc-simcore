@@ -8,6 +8,7 @@
 import asyncio
 import json
 from contextlib import AsyncExitStack
+from dataclasses import dataclass
 from pathlib import Path
 from random import choice
 from typing import AsyncIterator, Awaitable, Callable, Final
@@ -22,6 +23,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import SimcoreS3FileID
 from pydantic import ByteSize, parse_obj_as
+from pytest_mock import MockFixture
 from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
 from simcore_service_storage.exceptions import (
     S3AccessError,
@@ -29,12 +31,17 @@ from simcore_service_storage.exceptions import (
     S3KeyNotFoundError,
 )
 from simcore_service_storage.models import MultiPartUploadLinks, S3BucketName
-from simcore_service_storage.s3_client import StorageS3Client
+from simcore_service_storage.s3_client import (
+    NextContinuationToken,
+    StorageS3Client,
+    _list_objects_v2_paginated,
+)
 from simcore_service_storage.settings import Settings
 from tests.helpers.file_utils import (
     parametrized_file_size,
     upload_file_to_presigned_link,
 )
+from types_aiobotocore_s3.type_defs import ObjectTypeDef
 
 DEFAULT_EXPIRATION_SECS: Final[int] = 10
 
@@ -854,3 +861,105 @@ async def test_list_files_invalid_bucket_raises(
         await storage_s3_client.list_files(
             S3BucketName("pytestinvalidbucket"), prefix=""
         )
+
+
+@dataclass
+class PaginationCase:
+    total_files: int
+    items_per_page: int
+    expected_queried_pages: int
+    mock_upper_bound: int
+
+
+@pytest.mark.parametrize(
+    "pagination_case",
+    [
+        pytest.param(
+            PaginationCase(
+                total_files=10,
+                items_per_page=2,
+                expected_queried_pages=5,
+                mock_upper_bound=1000,
+            ),
+            id="normal_query",
+        ),
+        pytest.param(
+            PaginationCase(
+                total_files=10,
+                items_per_page=10,
+                expected_queried_pages=5,
+                mock_upper_bound=2,
+            ),
+            id="page_too_big",
+        ),
+    ],
+)
+async def test_list_objects_v2_paginated(
+    mocker: MockFixture,
+    storage_s3_client: StorageS3Client,
+    storage_s3_bucket: S3BucketName,
+    upload_file_with_aioboto3_managed_transfer: Callable[
+        [ByteSize], Awaitable[tuple[Path, SimcoreS3FileID]]
+    ],
+    pagination_case: PaginationCase,
+):
+    mocker.patch(
+        "simcore_service_storage.s3_client._PAGE_MAX_ITEMS_UPPER_BOUND",
+        pagination_case.mock_upper_bound,
+    )
+
+    FILE_SIZE: ByteSize = parse_obj_as(ByteSize, "1")
+
+    # create some files
+    await asyncio.gather(
+        *[
+            upload_file_with_aioboto3_managed_transfer(FILE_SIZE)
+            for _ in range(pagination_case.total_files)
+        ]
+    )
+
+    # fetch all items using pagination
+    listing_requests: list[ObjectTypeDef] = []
+    next_continuation_token: NextContinuationToken | None = None
+    pages_queried: int = 0
+    while True:
+        pages_queried += 1
+        page_items, next_continuation_token = await _list_objects_v2_paginated(
+            client=storage_s3_client.client,
+            bucket=storage_s3_bucket,
+            prefix="",  # all items
+            max_total_items=pagination_case.items_per_page,
+            next_continuation_token=next_continuation_token,
+        )
+        listing_requests.extend(page_items)
+
+        if next_continuation_token is None:
+            break
+
+    assert len(listing_requests) == pagination_case.total_files
+    assert pages_queried == pagination_case.expected_queried_pages
+
+
+async def test_file_exists(
+    storage_s3_client: StorageS3Client,
+    storage_s3_bucket: S3BucketName,
+    upload_file_with_aioboto3_managed_transfer: Callable[
+        [ByteSize], Awaitable[tuple[Path, SimcoreS3FileID]]
+    ],
+):
+    FILE_SIZE: ByteSize = parse_obj_as(ByteSize, "1")
+
+    _, simcore_s3_file_id = await upload_file_with_aioboto3_managed_transfer(FILE_SIZE)
+    assert (
+        await storage_s3_client.file_exists(
+            bucket=storage_s3_bucket, s3_object=simcore_s3_file_id
+        )
+        is True
+    )
+
+    assert (
+        await storage_s3_client.file_exists(
+            bucket=storage_s3_bucket, s3_object="fake-missing-object"
+        )
+        is False
+    )

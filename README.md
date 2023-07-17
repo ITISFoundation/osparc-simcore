@@ -144,7 +144,7 @@ This project is licensed under the terms of the [MIT license](LICENSE).
 ---
 
 <p align="center">
-<image src="https://raw.githubusercontent.com/ITISFoundation/osparc-simcore-python-client/4e8b18494f3191d55f6692a6a605818aeeb83f95/docs/_media/mwl.png" alt="Made with love (and lots of hard work) at www.z43.swiss" width="20%" />
+<image src="https://raw.githubusercontent.com/ITISFoundation/osparc-simcore-clients/4e8b18494f3191d55f6692a6a605818aeeb83f95/docs/_media/mwl.png" alt="Made with love (and lots of hard work) at www.z43.swiss" width="20%" />
 </p>
 
 <!-- ADD REFERENCES BELOW AND KEEP THEM IN ALPHABETICAL ORDER -->

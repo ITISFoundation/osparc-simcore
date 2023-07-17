@@ -14,6 +14,7 @@ class HttpApiCallCaptureModel(BaseModel):
     name: str
     description: str
     method: Literal["GET", "PUT", "POST", "PATCH", "DELETE"]
+    host: str
     path: str
     query: str | None = None
     request_payload: dict[str, Any] | None = None
@@ -30,12 +31,13 @@ class HttpApiCallCaptureModel(BaseModel):
             name=name,
             description=description or f"{request}",
             method=request.method,
+            host=request.url.host,
             path=request.url.path,
             query=request.url.query.decode() or None,
             request_payload=json.loads(request.content.decode())
             if request.content
             else None,
-            response_body=response.json(),
+            response_body=response.json() if response.content else None,
             status_code=response.status_code,
         )
 
@@ -45,6 +47,9 @@ class HttpApiCallCaptureModel(BaseModel):
     @property
     def request_desc(self) -> str:
         return f"{self.method} {self.path}"
+
+    def as_response(self) -> httpx.Response:
+        return httpx.Response(status_code=self.status_code, json=self.response_body)
 
 
 def get_captured_as_json(name: str, response: httpx.Response) -> str:

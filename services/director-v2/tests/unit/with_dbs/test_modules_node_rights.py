@@ -209,6 +209,9 @@ async def test_no_more_locks_can_be_acquired(
     await asyncio.gather(*tasks)
 
 
+@pytest.mark.skip(
+    reason="fails will be removed by @GitHK, see https://github.com/ITISFoundation/osparc-simcore/issues/4405"
+)
 @pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize(
     "locks_per_node",

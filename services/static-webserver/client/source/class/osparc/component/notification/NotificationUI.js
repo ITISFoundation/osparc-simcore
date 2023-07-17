@@ -127,6 +127,9 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
             case "TEMPLATE_SHARED":
               source = "@FontAwesome5Solid/copy/14";
               break;
+            case "ANNOTATION_NOTE":
+              source = "@FontAwesome5Solid/file/14";
+              break;
           }
           return source;
         }
@@ -188,7 +191,8 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
           break;
         }
         case "TEMPLATE_SHARED":
-        case "STUDY_SHARED": {
+        case "STUDY_SHARED":
+        case "ANNOTATION_NOTE": {
           const items = actionablePath.split("/");
           const studyId = items.pop();
           const params = {
@@ -200,15 +204,10 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
             .then(studyData => {
               if (studyData) {
                 const studyDataCopy = osparc.data.model.Study.deepCloneStudyObject(studyData);
-                studyDataCopy["resourceType"] = notification.getCategory() === "STUDY_SHARED" ? "study" : "template";
-                const moreOpts = new osparc.dashboard.ResourceMoreOptions(studyData);
-                const title = this.tr("Options");
-                osparc.ui.window.Window.popUpInWindow(
-                  moreOpts,
-                  title,
-                  osparc.dashboard.ResourceMoreOptions.WIDTH,
-                  osparc.dashboard.ResourceMoreOptions.HEIGHT
-                );
+                studyDataCopy["resourceType"] = notification.getCategory() === "TEMPLATE_SHARED" ? "template" : "study";
+                const moreOpts = new osparc.dashboard.ResourceMoreOptions(studyDataCopy);
+                const win = osparc.dashboard.ResourceMoreOptions.popUpInWindow(moreOpts);
+                moreOpts.addListener("openingStudy", () => win.close());
               }
             });
           break;

@@ -2,12 +2,13 @@ import asyncio
 import logging
 from collections import deque
 from pathlib import Path
+from typing import Any
 
 from aiohttp import web
 from servicelib.pools import non_blocking_process_pool_executor
 
 from ...catalog.client import get_service
-from ...projects.exceptions import ProjectsException
+from ...projects.exceptions import BaseProjectError
 from ...projects.projects_api import get_project_for_user
 from ...scicrunch.db import ResearchResourceRepository
 from ..exceptions import SDSException
@@ -55,7 +56,7 @@ async def create_sds_directory(
             user_id=user_id,
             include_state=True,
         )
-    except ProjectsException as e:
+    except BaseProjectError as e:
         raise SDSException(f"Could not find project {project_id}") from e
 
     _logger.debug("Project data: %s", project_data)
@@ -68,9 +69,9 @@ async def create_sds_directory(
         name=project_data["name"], description=project_data["description"]
     )
 
-    params_code_description = {}
+    params_code_description: dict[str, Any] = {}
 
-    rrid_entires = deque()
+    rrid_entires: deque[RRIDEntry] = deque()
 
     repo = ResearchResourceRepository(app)
     classifiers = project_data["classifiers"]
@@ -116,8 +117,8 @@ async def create_sds_directory(
 
     workbench = project_data["workbench"]
 
-    inputs = deque()
-    outputs = deque()
+    inputs: deque[InputsEntryModel] = deque()
+    outputs: deque[OutputsEntryModel] = deque()
 
     for entry in workbench.values():
         service_key = entry["key"]

@@ -27,3 +27,6 @@ bump2version
 
 # SEE `make pylint`
 pylint
+
+# ultra-fast linter
+ruff

@@ -81,7 +81,7 @@ def give_internet_to_group(
             )
             # this is needed to get the primary_gid correctly
             result = con.execute(
-                sa.select([groups_extra_properties]).where(
+                sa.select(groups_extra_properties).where(
                     groups_extra_properties.c.group_id == group_id
                 )
             )

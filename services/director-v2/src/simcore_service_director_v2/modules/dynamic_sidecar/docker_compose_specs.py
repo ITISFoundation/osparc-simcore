@@ -1,9 +1,9 @@
 import logging
 from copy import deepcopy
-from typing import Any, Optional
+from typing import Any, Optional, TypedDict
 
 from fastapi.applications import FastAPI
-from models_library.docker import SimcoreServiceDockerLabelKeys
+from models_library.docker import DockerGenericTag, StandardSimcoreDockerLabels
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -21,6 +21,7 @@ from models_library.services_resources import (
 )
 from models_library.users import UserID
 from models_library.utils.docker_compose import replace_env_vars_in_compose_spec
+from pydantic import ByteSize
 from servicelib.json_serialization import json_dumps
 from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 from settings_library.docker_registry import RegistrySettings
@@ -118,10 +119,16 @@ def _update_paths_mappings(
         service_content["environment"] = _environment_section.export_as_list(env_vars)
 
 
+class _AssignedLimits(TypedDict):
+    cpu: float
+    memory: int
+
+
 def _update_resource_limits_and_reservations(
     service_resources: ServiceResourcesDict, service_spec: ComposeSpecLabelDict
-) -> None:
+) -> dict[DockerGenericTag, _AssignedLimits]:
     # example: '2.3' -> 2 ; '3.7' -> 3
+    assigned_limits = {}
     docker_compose_major_version: int = int(service_spec["version"].split(".")[0])
     for spec_service_key, spec in service_spec["services"].items():
         if spec_service_key not in service_resources:
@@ -186,6 +193,11 @@ def _update_resource_limits_and_reservations(
         environment.extend(resource_limits)
         spec["environment"] = environment
 
+        assigned_limits[spec_service_key] = _AssignedLimits(
+            cpu=nano_cpu_limits, memory=int(memory.limit)
+        )
+    return assigned_limits
+
 
 def _strip_service_quotas(service_spec: ComposeSpecLabelDict):
     """
@@ -203,18 +215,29 @@ def _update_container_labels(
     node_id: NodeID,
     simcore_user_agent: str,
     product_name: ProductName,
+    swarm_stack_name: str,
+    assigned_limits: dict[DockerGenericTag, _AssignedLimits],
 ) -> None:
-    for spec in service_spec["services"].values():
+    default_limits = _AssignedLimits(memory=0, cpu=0)
+    for spec_service_key, spec in service_spec["services"].items():
         labels: list[str] = spec.setdefault("labels", [])
+        container_limits: _AssignedLimits = assigned_limits.get(
+            spec_service_key, default_limits
+        )
 
-        label_keys = SimcoreServiceDockerLabelKeys(
+        label_keys = StandardSimcoreDockerLabels.construct(
             user_id=user_id,
-            study_id=project_id,
-            uuid=node_id,
+            project_id=project_id,
+            node_id=node_id,
             simcore_user_agent=simcore_user_agent,
             product_name=product_name,
+            swarm_stack_name=swarm_stack_name,
+            memory_limit=ByteSize(container_limits["memory"]),
+            cpu_limit=container_limits["cpu"],
         )
-        docker_labels = [f"{k}={v}" for k, v in label_keys.to_docker_labels().items()]
+        docker_labels = [
+            f"{k}={v}" for k, v in label_keys.to_simcore_runtime_docker_labels().items()
+        ]
 
         for docker_label in docker_labels:
             if docker_label not in labels:
@@ -240,6 +263,7 @@ def assemble_spec(
     project_id: ProjectID,
     node_id: NodeID,
     simcore_user_agent: str,
+    swarm_stack_name: str,
 ) -> str:
     """
     returns a docker-compose spec used by
@@ -285,7 +309,7 @@ def assemble_spec(
 
     _update_paths_mappings(service_spec, paths_mapping)
 
-    _update_resource_limits_and_reservations(
+    assigned_limits = _update_resource_limits_and_reservations(
         service_resources=service_resources, service_spec=service_spec
     )
 
@@ -308,6 +332,8 @@ def assemble_spec(
         node_id=node_id,
         product_name=product_name,
         simcore_user_agent=simcore_user_agent,
+        swarm_stack_name=swarm_stack_name,
+        assigned_limits=assigned_limits,
     )
 
     stringified_service_spec: str = replace_env_vars_in_compose_spec(

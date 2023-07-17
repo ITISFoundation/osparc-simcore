@@ -51,13 +51,7 @@ qx.Class.define("osparc.component.share.ShareePermissions", {
                 infoButton.setAppearance("strong-button");
                 infoButton.addListener("execute", () => {
                   const moreOpts = new osparc.dashboard.ResourceMoreOptions(metaData);
-                  const title = this.tr("Service Info");
-                  osparc.ui.window.Window.popUpInWindow(
-                    moreOpts,
-                    title,
-                    osparc.dashboard.ResourceMoreOptions.WIDTH,
-                    osparc.dashboard.ResourceMoreOptions.HEIGHT
-                  );
+                  osparc.dashboard.ResourceMoreOptions.popUpInWindow(moreOpts);
                 }, this);
                 hBox.add(infoButton);
                 hBox.add(new qx.ui.basic.Label(metaData.name + " : " + metaData.version));

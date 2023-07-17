@@ -42,7 +42,6 @@ async def test_operations_on_group_classifiers(
 ):
     # NOTE: mostly for TDD
     async with pg_engine.acquire() as conn:
-
         # creates a group
         stmt = (
             groups.insert()
@@ -66,9 +65,7 @@ async def test_operations_on_group_classifiers(
 
         # get bundle in one query
         bundle = await conn.scalar(
-            sa.select([group_classifiers.c.bundle]).where(
-                group_classifiers.c.gid == gid
-            )
+            sa.select(group_classifiers.c.bundle).where(group_classifiers.c.gid == gid)
         )
         assert bundle
         assert classifiers_bundle == bundle
@@ -83,7 +80,7 @@ async def test_operations_on_group_classifiers(
 
         groups_count = await conn.scalar(sa.select(func.count(groups.c.gid)))
         classifiers_count = await conn.scalar(
-            sa.select([func.count()]).select_from(group_classifiers)
+            sa.select(func.count()).select_from(group_classifiers)
         )
 
         assert (
@@ -96,8 +93,6 @@ async def test_operations_on_group_classifiers(
 
         # no bundle
         bundle = await conn.scalar(
-            sa.select([group_classifiers.c.bundle]).where(
-                group_classifiers.c.gid == gid
-            )
+            sa.select(group_classifiers.c.bundle).where(group_classifiers.c.gid == gid)
         )
         assert bundle is None

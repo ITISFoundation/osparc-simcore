@@ -6,7 +6,7 @@
 
 import json
 import logging
-from typing import Any, AsyncIterator, Callable, Iterator
+from typing import Any, AsyncIterator, Awaitable, Callable, Iterator
 from unittest import mock
 
 import aiopg.sa
@@ -129,7 +129,7 @@ def comp_task(
 async def test_listen_comp_tasks_task(
     mock_project_subsystem: dict,
     logged_user: UserInfoDict,
-    project: Callable[..., ProjectAtDB],
+    project: Callable[..., Awaitable[ProjectAtDB]],
     pipeline: Callable[..., dict[str, Any]],
     comp_task: Callable[..., dict[str, Any]],
     comp_task_listening_task: None,
@@ -140,7 +140,7 @@ async def test_listen_comp_tasks_task(
     faker: Faker,
 ):
     db_engine: aiopg.sa.Engine = client.app[APP_DB_ENGINE_KEY]
-    some_project = project(logged_user)
+    some_project = await project(logged_user)
     pipeline(project_id=f"{some_project.uuid}")
     task = comp_task(
         project_id=f"{some_project.uuid}",

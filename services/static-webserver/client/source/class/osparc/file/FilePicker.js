@@ -85,13 +85,13 @@ qx.Class.define("osparc.file.FilePicker", {
     getOutputLabel: function(outputs) {
       const outFileValue = osparc.file.FilePicker.getOutput(outputs);
       if (outFileValue) {
-        if ("label" in outFileValue) {
+        if ("label" in outFileValue && outFileValue["label"]) {
           return outFileValue.label;
         }
-        if ("path" in outFileValue) {
+        if ("path" in outFileValue && outFileValue["path"]) {
           return this.self().getFilenameFromPath(outFileValue);
         }
-        if ("downloadLink" in outFileValue) {
+        if ("downloadLink" in outFileValue && outFileValue["downloadLink"]) {
           return osparc.file.FileDownloadLink.extractLabelFromLink(outFileValue["downloadLink"]);
         }
       }
@@ -237,7 +237,7 @@ qx.Class.define("osparc.file.FilePicker", {
       } else if (osparc.file.FilePicker.isOutputDownloadLink(node.getOutputs())) {
         const outFileValue = osparc.file.FilePicker.getOutput(node.getOutputs());
         if (osparc.utils.Utils.isObject(outFileValue) && "downloadLink" in outFileValue) {
-          osparc.utils.Utils.downloadLink(outFileValue["downloadLink"], "GET", null, progressCb, loadedCb);
+          osparc.utils.Utils.downloadLink(outFileValue["downloadLink"], "GET", outFileValue["label"], progressCb, loadedCb);
         }
       }
     },

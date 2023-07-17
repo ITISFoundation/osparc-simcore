@@ -17,9 +17,22 @@ from _common import (
     create_openapi_specs,
 )
 from fastapi import FastAPI, Query, status
+from models_library.api_schemas_webserver.projects import (
+    ProjectCopyOverride,
+    ProjectCreateNew,
+    ProjectGet,
+    ProjectListItem,
+    ProjectReplace,
+    ProjectUpdate,
+    TaskGet,
+)
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
-from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
+from models_library.rest_pagination import (
+    DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
+    Page,
+)
 from pydantic import NonNegativeInt
 from servicelib.aiohttp.long_running_tasks.server import TaskGet
 from simcore_service_webserver.projects._handlers_crud import (
@@ -28,15 +41,6 @@ from simcore_service_webserver.projects._handlers_crud import (
     _ProjectActiveParams,
     _ProjectCreateParams,
     _ProjectListParams,
-)
-from simcore_service_webserver.projects._rest_schemas import (
-    ProjectCopyOverride,
-    ProjectCreateNew,
-    ProjectGet,
-    ProjectListItem,
-    ProjectReplace,
-    ProjectUpdate,
-    TaskGet,
 )
 
 app = FastAPI(redoc_url=None)
@@ -96,7 +100,7 @@ async def list_projects(
         default=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
         description="maximum number of items to return (pagination)",
         ge=1,
-        lt=50,
+        lt=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
     ),
     offset: NonNegativeInt = Query(
         default=0, description="index to the first item to return (pagination)"
@@ -104,6 +108,18 @@ async def list_projects(
     project_type: ProjectTypeAPI = Query(default=ProjectTypeAPI.all, alias="type"),
     show_hidden: bool = Query(
         default=False, description="includes projects marked as hidden in the listing"
+    ),
+    order_by: str
+    | None = Query(
+        default=None,
+        description="Comma separated list of fields for ordering. The default sorting order is ascending. To specify descending order for a field, users append a 'desc' suffix",
+        example="foo desc, bar",
+    ),
+    filters: str
+    | None = Query(
+        default=None,
+        description="Filters to process on the projects list, encoded as JSON",
+        example='{"tags": [1, 5], "classifiers": ["foo", "bar"]}',
     ),
     search: str = Query(
         default=None,

@@ -5,10 +5,11 @@
 
 import contextlib
 import re
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AsyncExitStack
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncIterator, Awaitable, Callable, Final
+from typing import Any, Final
 from unittest import mock
 
 import pytest
@@ -22,7 +23,6 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from pydantic import parse_obj_as
-from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -219,10 +219,9 @@ async def create_template_project(
 @pytest.fixture
 def fake_services():
     def create_fakes(number_services: int) -> list[dict]:
-        fake_services = [{"service_uuid": f"{i}_uuid"} for i in range(number_services)]
-        return fake_services
+        return [{"service_uuid": f"{i}_uuid"} for i in range(number_services)]
 
-    yield create_fakes
+    return create_fakes
 
 
 @pytest.fixture
@@ -235,7 +234,7 @@ async def project_db_cleaner(client):
 async def mocked_director_v2(
     director_v2_service_mock: aioresponses,
 ) -> AsyncIterator[aioresponses]:
-    yield director_v2_service_mock
+    return director_v2_service_mock
 
 
 @pytest.fixture()
@@ -261,7 +260,7 @@ def assert_get_same_project_caller() -> Callable:
 
 @pytest.fixture
 def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: MonkeyPatch
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ) -> EnvVarsDict:
     envs_plugins = setenvs_from_dict(
         monkeypatch,
@@ -369,7 +368,7 @@ def mock_get_total_project_dynamic_nodes_creation_interval(
 ) -> None:
     _VERY_LONG_LOCK_TIMEOUT_S: Final[float] = 300
     mocker.patch(
-        "simcore_service_webserver.projects.projects_api._nodes_utils"
+        "simcore_service_webserver.projects.projects_api._nodes_api"
         ".get_total_project_dynamic_nodes_creation_interval",
         return_value=_VERY_LONG_LOCK_TIMEOUT_S,
     )

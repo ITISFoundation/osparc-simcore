@@ -15,11 +15,13 @@ from servicelib.aiohttp.rest_routing import (
 
 from .._constants import APP_OPENAPI_SPECS_KEY, APP_SETTINGS_KEY
 from . import (
+    _comments_handlers,
     _handlers,
     _handlers_crud,
-    _handlers_project_nodes,
-    _handlers_project_ports,
-    _handlers_project_tags,
+    _metadata_handlers,
+    _nodes_handlers,
+    _ports_handlers,
+    _tags_handlers,
 )
 from ._observer import setup_project_observer_events
 from ._projects_access import setup_projects_access
@@ -33,7 +35,7 @@ def _create_routes(tag, specs, *handlers_module):
     for mod in handlers_module:
         handlers.update(get_handlers_from_namespace(mod))
 
-    routes = map_handlers_with_operations(
+    return map_handlers_with_operations(
         handlers,
         filter(
             lambda o: tag in o.tags and "snapshot" not in o.path,
@@ -41,8 +43,6 @@ def _create_routes(tag, specs, *handlers_module):
         ),
         strict=False,
     )
-
-    return routes
 
 
 @app_module_setup(
@@ -69,14 +69,16 @@ def setup_projects(app: web.Application) -> bool:
 
     app.router.add_routes(_handlers.routes)
     app.router.add_routes(_handlers_crud.routes)
-    app.router.add_routes(_handlers_project_ports.routes)
+    app.router.add_routes(_comments_handlers.routes)
+    app.router.add_routes(_metadata_handlers.routes)
+    app.router.add_routes(_ports_handlers.routes)
 
     app.router.add_routes(
         _create_routes(
             "project",
             specs,
-            _handlers_project_nodes,
-            _handlers_project_tags,
+            _nodes_handlers,
+            _tags_handlers,
         )
     )
 

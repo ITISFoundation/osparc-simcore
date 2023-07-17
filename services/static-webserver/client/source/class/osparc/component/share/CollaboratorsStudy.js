@@ -171,8 +171,7 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
           url: {
             "studyId": this._serializedData["uuid"],
             "gid": gid
-          },
-          data: this._serializedData
+          }
         };
         promises.push(osparc.data.Resources.fetch("studies", "checkShareePermissions", params));
       });

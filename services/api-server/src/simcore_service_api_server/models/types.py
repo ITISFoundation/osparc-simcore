@@ -1,7 +1,7 @@
-from typing import Any, Union
+from typing import Any, TypeAlias
 
-AnyDict = dict[str, Any]
-ListAnyDict = list[AnyDict]
+AnyDict: TypeAlias = dict[str, Any]
+ListAnyDict: TypeAlias = list[AnyDict]
 
 # Represent the type returned by e.g. json.load
-JSON = Union[AnyDict, ListAnyDict]
+JSON: TypeAlias = AnyDict | ListAnyDict

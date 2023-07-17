@@ -95,12 +95,8 @@ qx.Class.define("osparc.component.editor.ThumbnailEditor", {
           break;
         }
         case "scroll-thumbnails": {
+          control = new osparc.component.editor.ThumbnailSuggestions();
           const thumbnailsLayout = this.getChildControl("thumbnails-layout");
-          control = new osparc.component.widget.SlideBar().set({
-            alignX: "center",
-            maxHeight: 170
-          });
-          control.setButtonsWidth(30);
           thumbnailsLayout.add(control);
           break;
         }
@@ -136,16 +132,11 @@ qx.Class.define("osparc.component.editor.ThumbnailEditor", {
     },
 
     __applySuggestions: function(suggestions) {
-      const thumbnailsLayout = this.getChildControl("scroll-thumbnails");
-      thumbnailsLayout.removeAll();
-      suggestions.forEach(suggestion => {
-        const thumbnail = new osparc.ui.basic.Thumbnail(suggestion, 170, 124);
-        thumbnail.addListener("tap", () => {
-          this.setUrl(thumbnail.getChildControl("image").getSource());
-          thumbnailsLayout.getChildren().forEach(thumbnailImg => osparc.utils.Utils.removeBorder(thumbnailImg));
-          osparc.utils.Utils.addBorder(thumbnail, 1, "#007fd4"); // Visual Studio blue
-        });
-        thumbnailsLayout.add(thumbnail);
+      const thumbnailSuggestions = this.getChildControl("scroll-thumbnails");
+      thumbnailSuggestions.setSuggestions(suggestions);
+      thumbnailSuggestions.addListener("thumbnailTapped", e => {
+        const thumbnailData = e.getData();
+        this.setUrl(thumbnailData["source"]);
       });
       this.getChildControl("thumbnails-layout").setVisibility(suggestions.length ? "visible" : "excluded");
     }

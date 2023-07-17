@@ -61,5 +61,6 @@ __all__: tuple[str, ...] = (
     "NotSupportedError",
     "OperationalError",
     "ProgrammingError",
+    "UniqueViolation",
 )
 # nopycln: file

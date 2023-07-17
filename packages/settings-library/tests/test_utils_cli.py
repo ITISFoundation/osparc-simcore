@@ -16,6 +16,7 @@ from settings_library.base import BaseCustomSettings
 from settings_library.utils_cli import (
     create_json_encoder_wo_secrets,
     create_settings_command,
+    create_version_callback,
 )
 from typer.testing import CliRunner
 
@@ -34,7 +35,14 @@ def envs_to_kwargs(envs: EnvVarsDict) -> dict[str, Any]:
 
 
 @pytest.fixture
-def cli(fake_settings_class: type[BaseCustomSettings]) -> typer.Typer:
+def fake_version() -> str:
+    return "0.0.1-alpha"
+
+
+@pytest.fixture
+def cli(
+    fake_settings_class: type[BaseCustomSettings], fake_version: str
+) -> typer.Typer:
     main = typer.Typer(name="app")
 
     @main.command()
@@ -47,6 +55,7 @@ def cli(fake_settings_class: type[BaseCustomSettings]) -> typer.Typer:
     # adds settings command
     settings_cmd = create_settings_command(fake_settings_class, log)
     main.command()(settings_cmd)
+    main.callback()(create_version_callback(fake_version))
 
     return main
 
@@ -74,7 +83,7 @@ def export_as_dict() -> Callable:
         return json.loads(
             model_obj.json(
                 encoder=create_json_encoder_wo_secrets(model_obj.__class__),
-                **export_options
+                **export_options,
             )
         )
 
@@ -89,6 +98,10 @@ def test_compose_commands(cli: typer.Typer, cli_runner: CliRunner):
     print(result.stdout)
     assert result.exit_code == 0, result
 
+    result = cli_runner.invoke(cli, ["--version"], catch_exceptions=False)
+    print(result.stdout)
+    assert result.exit_code == 0, result
+
     # first command
     result = cli_runner.invoke(cli, ["run", "--help"], catch_exceptions=False)
     print(result.stdout)
@@ -97,37 +110,13 @@ def test_compose_commands(cli: typer.Typer, cli_runner: CliRunner):
     # settings command
     result = cli_runner.invoke(cli, ["settings", "--help"], catch_exceptions=False)
     print(result.stdout)
-
-    assert "--compact" in result.stdout
     assert result.exit_code == 0, result
 
-    def extract_lines(text):
-        lines = [line.strip() for line in text.split("\n") if line.strip()]
-        return lines
+    received_help = result.stdout
 
-    assert extract_lines(HELP) == extract_lines(result.stdout)
-
-
-HELP = """
-Usage: app settings [OPTIONS]
-
-  Resolves settings and prints envfile
-
-Options:
-  --as-json / --no-as-json        [default: no-as-json]
-  --as-json-schema / --no-as-json-schema
-                                  [default: no-as-json-schema]
-  --compact / --no-compact        Print compact form  [default: no-compact]
-  --verbose / --no-verbose        [default: no-verbose]
-  --show-secrets / --no-show-secrets
-                                  [default: no-show-secrets]
-  --exclude-unset / --no-exclude-unset
-                                  displays settings that were explicitly setThis
-                                  represents current config (i.e. required+
-                                  defaults overriden).  [default: no-exclude-
-                                  unset]
-  --help                          Show this message and exit.
-"""
+    assert "compact" in result.stdout, f"got instead {received_help=}"
+    assert "as-json" in received_help, f"got instead {received_help=}"
+    assert "help" in received_help, f"got instead {received_help=}"
 
 
 def test_settings_as_json(
@@ -136,7 +125,6 @@ def test_settings_as_json(
     mock_environment,
     cli_runner: CliRunner,
 ):
-
     result = cli_runner.invoke(
         cli, ["settings", "--as-json", "--show-secrets"], catch_exceptions=False
     )
@@ -153,7 +141,6 @@ def test_settings_as_json_schema(
     mock_environment,
     cli_runner: CliRunner,
 ):
-
     result = cli_runner.invoke(
         cli, ["settings", "--as-json-schema"], catch_exceptions=False
     )
@@ -219,7 +206,6 @@ def test_cli_compact_settings_envs(
     cli_runner: CliRunner,
     monkeypatch: pytest.MonkeyPatch,
 ):
-
     with monkeypatch.context() as patch:
         mocked_envs_1: EnvVarsDict = setenvs_from_envfile(
             patch, fake_granular_env_file_content

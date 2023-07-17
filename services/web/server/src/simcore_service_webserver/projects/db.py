@@ -5,10 +5,10 @@
 
 """
 import logging
-import uuid as uuidlib
 from collections import deque
 from contextlib import AsyncExitStack
 from typing import Any
+from uuid import uuid1
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -16,23 +16,45 @@ from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.projects import ProjectID, ProjectIDStr
+from models_library.projects_comments import CommentID, ProjectsCommentsDB
 from models_library.projects_nodes import Node
+from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ValidationError, parse_obj_as
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import get_log_record_extra, log_context
 from simcore_postgres_database.errors import UniqueViolation
+from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.models.projects_to_products import projects_to_products
+from simcore_postgres_database.utils_groups_extra_properties import (
+    GroupExtraPropertiesRepo,
+)
+from simcore_postgres_database.utils_projects_nodes import (
+    ProjectNode,
+    ProjectNodeCreate,
+    ProjectNodesRepo,
+)
 from simcore_postgres_database.webserver_models import ProjectType, projects, users
 from sqlalchemy import desc, func, literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy.sql import and_, select
-from tenacity import AsyncRetrying, TryAgain, retry_if_exception_type
+from sqlalchemy.sql import and_
+from tenacity import TryAgain
+from tenacity._asyncio import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
 
-from ..db_models import study_tags
+from ..db.models import study_tags
 from ..utils import now_str
+from ._comments_db import (
+    create_project_comment,
+    delete_project_comment,
+    get_project_comment,
+    list_project_comments,
+    total_project_comments,
+    update_project_comment,
+)
 from ._db_utils import (
     ANY_USER_ID_SENTINEL,
     BaseProjectDB,
@@ -48,6 +70,7 @@ from .exceptions import (
     NodeNotFoundError,
     ProjectDeleteError,
     ProjectInvalidRightsError,
+    ProjectNodeResourcesInsufficientRightsError,
     ProjectNotFoundError,
 )
 from .models import ProjectDict
@@ -76,14 +99,15 @@ class ProjectDBAPI(BaseProjectDB):
 
     @classmethod
     def get_from_app_context(cls, app: web.Application) -> "ProjectDBAPI":
-        return app[APP_PROJECT_DBAPI]
+        db: "ProjectDBAPI" = app[APP_PROJECT_DBAPI]
+        return db
 
     @classmethod
     def set_once_in_app_context(cls, app: web.Application) -> "ProjectDBAPI":
         if app.get(APP_PROJECT_DBAPI) is None:
-            db = ProjectDBAPI(app)
-            app[APP_PROJECT_DBAPI] = db
-        return app[APP_PROJECT_DBAPI]
+            app[APP_PROJECT_DBAPI] = ProjectDBAPI(app)
+        db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+        return db
 
     @property
     def engine(self) -> Engine:
@@ -93,90 +117,22 @@ class ProjectDBAPI(BaseProjectDB):
         assert self._engine  # nosec
         return self._engine
 
-    #
-    # Project CRUDs
-    #
-
-    async def insert_project(
+    async def _insert_project_in_db(
         self,
-        project: dict[str, Any],
-        user_id: int | None,
-        *,
+        insert_values: ProjectDict,
+        force_project_uuid: bool,
         product_name: str,
-        force_project_uuid: bool = False,
-        force_as_template: bool = False,
-        hidden: bool = False,
-    ) -> dict[str, Any]:
-        """Inserts a new project in the database
+        project_tag_ids: list[int],
+        project_nodes: dict[NodeID, ProjectNodeCreate] | None,
+    ) -> ProjectDict:
+        # Atomic transaction to insert project and update relations
+        #  - Retries insert if UUID collision
+        def _reraise_if_not_unique_uuid_error(err: UniqueViolation):
+            if err.diag.constraint_name != "projects_uuid_key" or force_project_uuid:
+                raise err
 
-        - A valid uuid is automaticaly assigned to the project except if force_project_uuid=False. In the latter case,
-        invalid uuid will raise an exception.
-
-        :raises ProjectInvalidRightsError: assigning project to an unregistered user
-        :raises ValidationError
-        :return: inserted project
-        """
-
-        # pylint: disable=no-value-for-parameter
+        selected_values: ProjectDict = {}
         async with self.engine.acquire() as conn:
-            # TODO: check security of this query with args. Hard-code values?
-            # TODO: check best rollback design. see transaction.begin...
-            # TODO: check if template, otherwise standard (e.g. template-  prefix in uuid)
-            project.update(
-                {
-                    "creationDate": now_str(),
-                    "lastChangeDate": now_str(),
-                }
-            )
-
-            # NOTE: tags are removed in convert_to_db_names so we keep it
-            project_tags = parse_obj_as(list[int], project.get("tags", []).copy())
-            insert_values = convert_to_db_names(project)
-            insert_values.update(
-                {
-                    "type": ProjectType.TEMPLATE.value
-                    if (force_as_template or user_id is None)
-                    else ProjectType.STANDARD.value,
-                    "prj_owner": user_id if user_id else None,
-                }
-            )
-
-            if hidden:
-                insert_values["hidden"] = True
-
-            # validate access_rights. are the gids valid? also ensure prj_owner is in there
-            if user_id:
-                primary_gid = await self._get_user_primary_group_gid(
-                    conn, user_id=user_id
-                )
-                insert_values.setdefault("access_rights", {})
-                insert_values["access_rights"].update(
-                    create_project_access_rights(primary_gid, ProjectAccessRights.OWNER)
-                )
-
-            # ensure we have the minimal amount of data here
-            # All non-default in projects table
-            insert_values.setdefault("name", "New Study")
-            insert_values.setdefault("workbench", {})
-
-            # must be valid uuid
-            try:
-                uuidlib.UUID(str(insert_values.get("uuid")))
-            except ValueError:
-                if force_project_uuid:
-                    raise
-                insert_values["uuid"] = f"{uuidlib.uuid1()}"
-
-            # Atomic transaction to insert project and update relations
-            #  - Retries insert if UUID collision
-            def _reraise_if_not_unique_uuid_error(err: UniqueViolation):
-                if (
-                    err.diag.constraint_name != "projects_uuid_key"
-                    or force_project_uuid
-                ):
-                    raise err
-
-            selected_values: ProjectDict = {}
             async for attempt in AsyncRetrying(retry=retry_if_exception_type(TryAgain)):
                 with attempt:
                     async with conn.begin():
@@ -188,21 +144,11 @@ class ProjectDBAPI(BaseProjectDB):
                                 projects.insert()
                                 .values(**insert_values)
                                 .returning(
-                                    projects.c.id,
-                                    # Parts of ProjectGet
-                                    projects.c.uuid,
-                                    projects.c.name,
-                                    projects.c.description,
-                                    projects.c.thumbnail,
-                                    projects.c.prj_owner,
-                                    projects.c.creation_date,
-                                    projects.c.last_change_date,
-                                    projects.c.workbench,
-                                    projects.c.access_rights,
-                                    projects.c.classifiers,
-                                    projects.c.ui,
-                                    projects.c.quality,
-                                    projects.c.dev,
+                                    *[
+                                        c
+                                        for c in projects.columns
+                                        if c.name not in ["type", "hidden", "published"]
+                                    ]
                                 )
                             )
                             row: RowProxy | None = await result.fetchone()
@@ -215,7 +161,7 @@ class ProjectDBAPI(BaseProjectDB):
                             _reraise_if_not_unique_uuid_error(err)
 
                             # Tries new uuid
-                            insert_values["uuid"] = f"{uuidlib.uuid1()}"
+                            insert_values["uuid"] = f"{uuid1()}"
 
                             # NOTE: Retry is over transaction context
                             # to rollout when a new insert is required
@@ -233,16 +179,113 @@ class ProjectDBAPI(BaseProjectDB):
                         await self._upsert_tags_in_project(
                             conn=conn,
                             project_index_id=project_index,
-                            project_tags=project_tags,
+                            project_tags=project_tag_ids,
                         )
-                        selected_values["tags"] = project_tags
+                        selected_values["tags"] = project_tag_ids
 
+                        # NOTE: this will at some point completely replace workbench in the DB
+                        if selected_values["workbench"]:
+                            project_nodes_repo = ProjectNodesRepo(
+                                project_uuid=project_uuid
+                            )
+                            if project_nodes is None:
+                                project_nodes = {
+                                    NodeID(node_id): ProjectNodeCreate(
+                                        node_id=NodeID(node_id), required_resources={}
+                                    )
+                                    for node_id in selected_values["workbench"]
+                                }
+
+                            nodes = [
+                                project_nodes.get(
+                                    NodeID(node_id),
+                                    ProjectNodeCreate(
+                                        node_id=NodeID(node_id), required_resources={}
+                                    ),
+                                )
+                                for node_id in selected_values["workbench"]
+                            ]
+                            await project_nodes_repo.add(conn, nodes=nodes)
+        return selected_values
+
+    async def insert_project(
+        self,
+        project: dict[str, Any],
+        user_id: int | None,
+        *,
+        product_name: str,
+        force_project_uuid: bool = False,
+        force_as_template: bool = False,
+        hidden: bool = False,
+        project_nodes: dict[NodeID, ProjectNodeCreate] | None,
+    ) -> dict[str, Any]:
+        """Inserts a new project in the database
+
+        - A valid uuid is automaticaly assigned to the project except if force_project_uuid=False. In the latter case,
+        - passing project_nodes=None will auto-generate default ProjectNodeCreate, default resources will then be used.
+        invalid uuid will raise an exception.
+
+        :raises ProjectInvalidRightsError: assigning project to an unregistered user
+        :raises ValidationError
+        :return: inserted project
+        """
+
+        # NOTE: tags are removed in convert_to_db_names so we keep it
+        project_tag_ids = parse_obj_as(list[int], project.get("tags", []).copy())
+        insert_values = convert_to_db_names(project)
+        insert_values.update(
+            {
+                "type": ProjectType.TEMPLATE.value
+                if (force_as_template or user_id is None)
+                else ProjectType.STANDARD.value,
+                "prj_owner": user_id if user_id else None,
+                "hidden": hidden,
+                # NOTE: this is very bad and leads to very weird conversions.
+                # needs to be refactored!!! use arrow (https://github.com/ITISFoundation/osparc-simcore/issues/3797)
+                "creation_date": now_str(),
+                "last_change_date": now_str(),
+            }
+        )
+
+        # validate access_rights. are the gids valid? also ensure prj_owner is in there
+        if user_id:
+            async with self.engine.acquire() as conn:
+                primary_gid = await self._get_user_primary_group_gid(
+                    conn, user_id=user_id
+                )
+            insert_values.setdefault("access_rights", {})
+            insert_values["access_rights"].update(
+                create_project_access_rights(primary_gid, ProjectAccessRights.OWNER)
+            )
+
+        # ensure we have the minimal amount of data here
+        # All non-default in projects table
+        insert_values.setdefault("name", "New Study")
+        insert_values.setdefault("workbench", {})
+
+        # must be valid uuid
+        try:
+            ProjectID(str(insert_values.get("uuid")))
+        except ValueError:
+            if force_project_uuid:
+                raise
+            insert_values["uuid"] = f"{uuid1()}"
+
+        inserted_project = await self._insert_project_in_db(
+            insert_values,
+            force_project_uuid=force_project_uuid,
+            product_name=product_name,
+            project_tag_ids=project_tag_ids,
+            project_nodes=project_nodes,
+        )
+
+        async with self.engine.acquire() as conn:
             # Returns created project with names as in the project schema
             user_email = await self._get_user_email(conn, user_id)
 
-            # Convert to dict parsable by ProjectGet model
-            project_get = convert_to_schema_names(selected_values, user_email)
-            return project_get
+        # Convert to dict parsable by ProjectGet model
+        project_get = convert_to_schema_names(inserted_project, user_email)
+        return project_get
 
     async def upsert_project_linked_product(
         self,
@@ -340,7 +383,7 @@ class ProjectDBAPI(BaseProjectDB):
             )
 
     async def list_projects_uuids(self, user_id: int) -> list[str]:
-        result = deque()
+        result: deque = deque()
         async with self.engine.acquire() as conn:
             async for row in conn.execute(
                 sa.select(projects.c.uuid).where(projects.c.prj_owner == user_id)
@@ -400,7 +443,7 @@ class ProjectDBAPI(BaseProjectDB):
         log.info("Updating project %s for user %s", project_uuid, user_id)
 
         async with self.engine.acquire() as conn:
-            async with conn.begin() as _transaction:
+            async with conn.begin():
                 current_project: dict = await self._get_project(
                     conn,
                     user_id,
@@ -492,13 +535,14 @@ class ProjectDBAPI(BaseProjectDB):
             updated_values = convert_to_db_names(project_data)
             if hidden is not None:
                 updated_values["hidden"] = hidden
-            result = await conn.execute(
+            result: ResultProxy = await conn.execute(
                 # pylint: disable=no-value-for-parameter
                 projects.update()
                 .values(**updated_values)
                 .where(projects.c.uuid == project_uuid)
             )
-            return result.rowcount == 1
+            result_row_count: int = result.rowcount
+            return result_row_count == 1
 
     async def update_project_last_change_timestamp(self, project_uuid: ProjectIDStr):
         async with self.engine.acquire() as conn:
@@ -519,7 +563,7 @@ class ProjectDBAPI(BaseProjectDB):
         )
 
         async with self.engine.acquire() as conn:
-            async with conn.begin() as _transaction:
+            async with conn.begin():
                 project = await self._get_project(
                     conn, user_id, project_uuid, for_update=True
                 )
@@ -560,7 +604,7 @@ class ProjectDBAPI(BaseProjectDB):
             msg=f"Patching project {project_uuid} for user {user_id}",
             extra=get_log_record_extra(user_id=user_id),
         ):
-            async with self.engine.acquire() as conn, conn.begin() as _transaction:
+            async with self.engine.acquire() as conn, conn.begin():
                 current_project: dict = await self._get_project(
                     conn,
                     user_id,
@@ -657,13 +701,80 @@ class ProjectDBAPI(BaseProjectDB):
                     changed_entries,
                 )
 
+    async def add_project_node(
+        self,
+        user_id: UserID,
+        project_id: ProjectID,
+        node: ProjectNodeCreate,
+        old_struct_node: Node,
+        product_name: str,
+    ) -> None:
+        project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
+        async with self.engine.acquire() as conn:
+            await project_nodes_repo.add(conn, nodes=[node])
+        partial_workbench_data: dict[str, Any] = {
+            f"{node.node_id}": jsonable_encoder(
+                old_struct_node,
+                exclude_unset=True,
+            ),
+        }
+        await self.update_project_workbench(
+            partial_workbench_data, user_id, f"{project_id}", product_name
+        )
+
+    async def remove_project_node(
+        self, user_id: UserID, project_id: ProjectID, node_id: NodeID
+    ) -> None:
+        project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
+        async with self.engine.acquire() as conn:
+            await project_nodes_repo.delete(conn, node_id=node_id)
+        partial_workbench_data: dict[str, Any] = {
+            f"{node_id}": None,
+        }
+        await self.update_project_workbench(
+            partial_workbench_data, user_id, f"{project_id}"
+        )
+
+    async def get_project_node(
+        self, project_id: ProjectID, node_id: NodeID
+    ) -> ProjectNode:
+        project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
+        async with self.engine.acquire() as conn:
+            return await project_nodes_repo.get(conn, node_id=node_id)
+
+    async def update_project_node(
+        self,
+        user_id: UserID,
+        project_id: ProjectID,
+        node_id: NodeID,
+        product_name: str,
+        **values,
+    ) -> ProjectNode:
+        project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
+        async with self.engine.acquire() as conn:
+            user_extra_properties = (
+                await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+                    conn, user_id=user_id, product_name=product_name
+                )
+            )
+            if not user_extra_properties.override_services_specifications:
+                raise ProjectNodeResourcesInsufficientRightsError(
+                    "User not allowed to modify node resources! TIP: Ask your administrator or contact support"
+                )
+            return await project_nodes_repo.update(conn, node_id=node_id, **values)
+
+    async def list_project_nodes(self, project_id: ProjectID) -> list[ProjectNode]:
+        project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
+        async with self.engine.acquire() as conn:
+            return await project_nodes_repo.list(conn)
+
     async def node_id_exists(self, node_id: str) -> bool:
         """Returns True if the node id exists in any of the available projects"""
         async with self.engine.acquire() as conn:
             num_entries = await conn.scalar(
                 sa.select(func.count())
-                .select_from(projects)
-                .where(projects.c.workbench.op("->>")(f"{node_id}") != None)
+                .select_from(projects_nodes)
+                .where(projects_nodes.c.node_id == f"{node_id}")
             )
         assert num_entries is not None  # nosec
         assert isinstance(num_entries, int)  # nosec
@@ -671,15 +782,10 @@ class ProjectDBAPI(BaseProjectDB):
 
     async def list_node_ids_in_project(self, project_uuid: str) -> set[str]:
         """Returns a set containing all the node_ids from project with project_uuid"""
-        result = set()
+        repo = ProjectNodesRepo(project_uuid=ProjectID(project_uuid))
         async with self.engine.acquire() as conn:
-            async for row in conn.execute(
-                sa.select([sa.func.json_object_keys(projects.c.workbench)])
-                .select_from(projects)
-                .where(projects.c.uuid == f"{project_uuid}")
-            ):
-                result.update(row.as_tuple())
-        return result
+            list_of_nodes = await repo.list(conn)
+        return {f"{node.node_id}" for node in list_of_nodes}
 
     #
     # Project ACCESS RIGHTS/PERMISSIONS
@@ -709,7 +815,7 @@ class ProjectDBAPI(BaseProjectDB):
         raises ProjectInvalidRightsError
         """
         async with self.engine.acquire() as conn:
-            async with conn.begin() as _transaction:
+            async with conn.begin():
                 project = await self._get_project(
                     conn, user_id, project_uuid, for_update=True
                 )
@@ -764,6 +870,51 @@ class ProjectDBAPI(BaseProjectDB):
                 if tag_id in project["tags"]:
                     project["tags"].remove(tag_id)
                 return convert_to_schema_names(project, user_email)
+
+    #
+    # Project Comments
+    #
+
+    async def create_project_comment(
+        self, project_uuid: ProjectID, user_id: UserID, contents: str
+    ) -> CommentID:
+        async with self.engine.acquire() as conn:
+            return await create_project_comment(conn, project_uuid, user_id, contents)
+
+    async def list_project_comments(
+        self,
+        project_uuid: ProjectID,
+        offset: PositiveInt,
+        limit: int,
+    ) -> list[ProjectsCommentsDB]:
+        async with self.engine.acquire() as conn:
+            return await list_project_comments(conn, project_uuid, offset, limit)
+
+    async def total_project_comments(
+        self,
+        project_uuid: ProjectID,
+    ) -> PositiveInt:
+        async with self.engine.acquire() as conn:
+            return await total_project_comments(conn, project_uuid)
+
+    async def update_project_comment(
+        self,
+        comment_id: CommentID,
+        project_uuid: ProjectID,
+        contents: str,
+    ) -> ProjectsCommentsDB:
+        async with self.engine.acquire() as conn:
+            return await update_project_comment(
+                conn, comment_id, project_uuid, contents
+            )
+
+    async def delete_project_comment(self, comment_id: CommentID) -> None:
+        async with self.engine.acquire() as conn:
+            return await delete_project_comment(conn, comment_id)
+
+    async def get_project_comment(self, comment_id: CommentID) -> ProjectsCommentsDB:
+        async with self.engine.acquire() as conn:
+            return await get_project_comment(conn, comment_id)
 
     #
     # Project HIDDEN column
@@ -821,27 +972,6 @@ class ProjectDBAPI(BaseProjectDB):
                 project_uuid=project_uuid,
                 reason="Project has more than one linked product. This needs manual intervention. Please contact oSparc support.",
             )
-
-    async def make_unique_project_uuid(self) -> str:
-        """Generates a project identifier still not used in database
-
-        WARNING: this method does not guarantee always unique id due to possible race condition
-        (i.e. while client gets this uuid and uses it, another client might have used the same id already)
-
-        :return: project UUID
-        :rtype: str
-        """
-        async with self.engine.acquire() as conn:
-            # TODO: add failure in case of hangs in while loop??
-            while True:
-                project_uuid = str(uuidlib.uuid1())
-                result = await conn.execute(
-                    select(projects).where(projects.c.uuid == project_uuid)
-                )
-                found = await result.first()
-                if not found:
-                    break
-        return project_uuid
 
 
 def setup_projects_db(app: web.Application):

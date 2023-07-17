@@ -25,9 +25,7 @@ from simcore_postgres_database.models.services_consume_filetypes import (
 @pytest.fixture
 def make_table() -> Callable:
     async def _make(connection: SAConnection):
-
         for service in FAKE_FILE_CONSUMER_SERVICES:
-
             await connection.execute(
                 services_meta_data.insert().values(
                     key=service["key"],
@@ -60,7 +58,13 @@ def make_table() -> Callable:
 
 
 @pytest.fixture
-async def connection(connection: SAConnection, make_table: Callable):
+async def connection(
+    pg_engine: sa.engine.Engine, connection: SAConnection, make_table: Callable
+):
+    assert pg_engine
+    # NOTE: do not remove th pg_engine, or the test will fail as pytest
+    # cannot set the parameters in the fixture
+
     # EXTENDS
     await make_table(connection)
     yield connection
@@ -78,6 +82,7 @@ async def test_check_constraint(connection: SAConnection):
 
     error = error_info.value
     assert error.pgcode == "23514"
+    assert error.pgerror
     assert "ck_filetype_is_upper" in error.pgerror
 
 
@@ -109,9 +114,7 @@ async def test_get_supported_filetypes(connection: SAConnection):
 
     stmt = (
         sa.select(
-            [
-                services_consume_filetypes.c.filetype,
-            ]
+            services_consume_filetypes.c.filetype,
         )
         .where(
             services_consume_filetypes.c.service_key
@@ -122,7 +125,8 @@ async def test_get_supported_filetypes(connection: SAConnection):
     )
 
     result: ResultProxy = await connection.execute(stmt)
-    rows: list[RowProxy] = await result.fetchall()
+    rows = await result.fetchall()
+    assert rows is not None
     assert [v for row in rows for v in row.values()] == ["DCM", "S4LCACHEDATA"]
 
 
@@ -131,16 +135,15 @@ async def test_list_supported_filetypes(connection: SAConnection):
 
     stmt = (
         sa.select(
-            [
-                services_consume_filetypes.c.filetype,
-            ]
+            services_consume_filetypes.c.filetype,
         )
         .order_by(services_consume_filetypes.c.filetype)
         .distinct()
     )
 
     result: ResultProxy = await connection.execute(stmt)
-    rows: list[RowProxy] = await result.fetchall()
+    rows = await result.fetchall()
+    assert rows is not None
     assert [v for row in rows for v in row.values()] == list_supported_filetypes()
 
 
@@ -155,11 +158,9 @@ async def test_contraints(connection: SAConnection):
 
     stmt = (
         sa.select(
-            [
-                sa.func.count(services_consume_filetypes.c.service_key).label(
-                    "num_services"
-                ),
-            ]
+            sa.func.count(services_consume_filetypes.c.service_key).label(
+                "num_services"
+            ),
         )
         .where(services_consume_filetypes.c.filetype == "DCM")
         .scalar_subquery()

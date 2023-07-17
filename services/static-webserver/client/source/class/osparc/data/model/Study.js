@@ -65,6 +65,8 @@ qx.Class.define("osparc.data.model.Study", {
     workbench.setStudy(this);
 
     this.setUi(new osparc.data.model.StudyUI(studyData.ui));
+
+    this.__buildWorkbench();
   },
 
   properties: {
@@ -311,7 +313,7 @@ qx.Class.define("osparc.data.model.Study", {
   },
 
   members: {
-    buildWorkbench: function() {
+    __buildWorkbench: function() {
       this.getWorkbench().buildWorkbench();
     },
 
@@ -457,8 +459,12 @@ qx.Class.define("osparc.data.model.Study", {
       return false;
     },
 
-    isPipelineEmtpy: function() {
+    isPipelineEmpty: function() {
       return Object.keys(this.getWorkbench().getNodes()).length === 0;
+    },
+
+    isPipelineMononode: function() {
+      return Object.keys(this.getWorkbench().getNodes()).length === 1;
     },
 
     __applyAccessRights: function(accessRights) {

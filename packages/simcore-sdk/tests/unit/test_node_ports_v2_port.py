@@ -11,18 +11,24 @@ import re
 import shutil
 import tempfile
 import threading
+from collections.abc import Callable, Iterator
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Iterator, NamedTuple
+from typing import Any, NamedTuple
 from unittest.mock import AsyncMock
 
 import pytest
 from aiohttp.client import ClientSession
-from attr import dataclass
+from aioresponses import aioresponses as AioResponsesMock
+from faker import Faker
+from models_library.api_schemas_storage import FileMetaDataGet
 from models_library.projects_nodes_io import LocationID
+from pydantic import parse_obj_as
 from pydantic.error_wrappers import ValidationError
 from pytest_mock.plugin import MockerFixture
 from servicelib.progress_bar import ProgressBarData
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
+from simcore_sdk.node_ports_common.filemanager import UploadedFile
 from simcore_sdk.node_ports_v2 import exceptions
 from simcore_sdk.node_ports_v2.links import (
     DataItemValue,
@@ -121,7 +127,7 @@ def file_with_data() -> Iterator[Path]:
     ]
 )
 def this_node_file(request) -> Iterator[Path]:
-    yield request.param
+    return request.param
 
 
 @pytest.fixture
@@ -174,7 +180,7 @@ async def mock_download_file(
     project_id: str,
     node_uuid: str,
     download_file_folder: Path,
-):
+) -> None:
     async def mock_download_file_from_link(
         download_link: URL,
         local_folder: Path,
@@ -210,23 +216,28 @@ def e_tag_fixture() -> str:
 
 
 @pytest.fixture
-async def mock_upload_file(mocker, e_tag):
-    mock = mocker.patch(
-        "simcore_sdk.node_ports_common.filemanager.upload_file",
-        return_value=(simcore_store_id(), e_tag),
+async def mock_filemanager(mocker: MockerFixture, e_tag: str, faker: Faker) -> None:
+    mocker.patch(
+        "simcore_sdk.node_ports_common.filemanager._get_file_meta_data",
+        return_value=parse_obj_as(
+            FileMetaDataGet, FileMetaDataGet.Config.schema_extra["examples"][0]
+        ),
     )
-    yield mock
+    mocker.patch(
+        "simcore_sdk.node_ports_common.filemanager.upload_path",
+        return_value=UploadedFile(simcore_store_id(), e_tag),
+    )
 
 
 @pytest.fixture
 def common_fixtures(
-    storage_v0_service_mock,
-    mock_download_file,
-    mock_upload_file,
+    storage_v0_service_mock: AioResponsesMock,
+    mock_download_file: None,
+    mock_filemanager: None,
     this_node_file: Path,
     another_node_file: Path,
     download_file_folder: Path,
-):
+) -> None:
     """this module main fixture"""
 
 
