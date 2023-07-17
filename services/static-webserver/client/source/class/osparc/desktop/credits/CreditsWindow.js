@@ -22,7 +22,7 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
     this.base(arguments, "credits", this.tr("Credits"));
 
     const viewWidth = 900;
-    const viewHeight = 500;
+    const viewHeight = 600;
 
     this.set({
       layout: new qx.ui.layout.Grow(),
@@ -69,25 +69,25 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
 
     __getBuyCreditsPage: function() {
       const title = this.tr("Buy Credits");
-      const iconSrc = "@FontAwesome5Solid/list/18";
+      const iconSrc = "@FontAwesome5Solid/dollar-sign/24";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
-      const usageOverview = new osparc.component.resourceUsage.Overview();
+      const usageOverview = new osparc.desktop.credits.BuyCredits();
       page.add(usageOverview);
       return page;
     },
 
     __getTransactionsPage: function() {
       const title = this.tr("Transactions");
-      const iconSrc = "@FontAwesome5Solid/list/18";
+      const iconSrc = "@FontAwesome5Solid/exchange-alt/24";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
-      const usageOverview = new osparc.component.resourceUsage.Overview();
+      const usageOverview = new osparc.desktop.credits.BuyCredits();
       page.add(usageOverview);
       return page;
     },
 
     __getUsageOverviewPage: function() {
       const title = this.tr("Usage Overview");
-      const iconSrc = "@FontAwesome5Solid/list/18";
+      const iconSrc = "@FontAwesome5Solid/list/24";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       const usageOverview = new osparc.component.resourceUsage.Overview();
       page.add(usageOverview);

@@ -31,7 +31,7 @@ qx.Class.define("osparc.component.resourceUsage.Summary", {
   members: {
     __buildLayout: function(data) {
       this.__addTitle();
-      this.__addSimulations(data.simulations);
+      this.__addCredits(data.simulations);
       this.__addComputing(data.computing);
       this.__addButtons();
     },
@@ -44,17 +44,17 @@ qx.Class.define("osparc.component.resourceUsage.Summary", {
       this._add(title);
     },
 
-    __addSimulations: function(simulations) {
+    __addCredits: function(simulations) {
       const simLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
       const title = new qx.ui.basic.Label().set({
-        value: this.tr("Simulations remaining"),
+        value: this.tr("Credits remaining"),
         font: "text-13"
       });
       simLayout.add(title);
 
       const remaining = new qx.ui.basic.Label().set({
-        value: `${simulations.total-simulations.used} of ${simulations.total} simulations`,
+        value: `${simulations.total-simulations.used} of ${simulations.total} credits`,
         font: "text-13"
       });
       simLayout.add(remaining);
@@ -105,26 +105,26 @@ qx.Class.define("osparc.component.resourceUsage.Summary", {
     __addButtons: function() {
       const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
 
-      const topUpBtn = new qx.ui.form.Button().set({
+      const buyCreditsBtn = new qx.ui.form.Button().set({
         label: this.tr("Buy credits")
       });
-      topUpBtn.addListener("execute", () => {
+      buyCreditsBtn.addListener("execute", () => {
         const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow();
         creditsWindow.openBuyCredits();
       }, this);
-      buttonsLayout.add(topUpBtn, {
+      buttonsLayout.add(buyCreditsBtn, {
         flex: 1
       });
 
-      const detailedBtn = new qx.ui.form.Button().set({
-        label: this.tr("Detailed view")
+      const usageOverviewBtn = new qx.ui.form.Button().set({
+        label: this.tr("Detailed")
       });
-      detailedBtn.addListener("execute", () => {
+      usageOverviewBtn.addListener("execute", () => {
         const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow();
         creditsWindow.openUsageOverview();
       }, this);
 
-      buttonsLayout.add(detailedBtn, {
+      buttonsLayout.add(usageOverviewBtn, {
         flex: 1
       });
 
