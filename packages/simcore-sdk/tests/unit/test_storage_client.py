@@ -120,6 +120,7 @@ async def test_get_upload_file_links(
         user_id=user_id,
         link_type=link_type,
         file_size=ByteSize(0),
+        is_directory=False,
     )
     assert isinstance(file_upload_links, FileUploadSchema)
     assert file_upload_links.urls[0].scheme in expected_scheme

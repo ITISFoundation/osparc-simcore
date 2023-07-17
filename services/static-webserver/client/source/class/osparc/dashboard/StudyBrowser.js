@@ -44,38 +44,38 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     EXPECTED_TI_TEMPLATES: {
       "TI": {
         templateLabel: "TI Planning Tool",
-        title: "New TI Plan",
-        description: "Start new TI plan",
-        newStudyLabel: "TI Planning Tool",
+        title: "Classic TI",
+        description: "Start new TI planning",
+        newStudyLabel: "Classic TI",
         idToWidget: "newTIPlanButton"
       },
       "mTI": {
         templateLabel: "mTI Planning Tool",
-        title: "New mTI Plan",
-        description: "Start multiple TI plan",
-        newStudyLabel: "mTI Planning Tool",
+        title: "Multi-channel TI",
+        description: "Start new mcTI planning",
+        newStudyLabel: "Multi-channel TI",
         idToWidget: "newMTIPlanButton"
       },
       "pmTI": {
         templateLabel: "pmTI Planning Tool",
-        title: "New pmTI Plan",
-        description: "Start phase modulated TI plan",
-        newStudyLabel: "pmTI Planning Tool",
+        title: "Phase-modulated TI",
+        description: "Start new pmTI planning",
+        newStudyLabel: "Phase-modulated TI",
         idToWidget: "newPMTIPlanButton"
       }
     },
     EXPECTED_S4L_SERVICE_KEYS: {
-      "simcore/services/dynamic/jupyter-smash": {
-        title: "Start Sim4Life lab",
-        description: "Jupyter powered by Sim4Life",
-        newStudyLabel: "New Sim4Life lab project",
-        idToWidget: "startJSmashButton"
-      },
       "simcore/services/dynamic/sim4life-dy": {
         title: "Start Sim4Life",
         description: "New Sim4Life project",
         newStudyLabel: "New Sim4Life project",
         idToWidget: "startS4LButton"
+      },
+      "simcore/services/dynamic/jupyter-smash": {
+        title: "Start Sim4Life lab",
+        description: "Jupyter powered by Sim4Life",
+        newStudyLabel: "New Sim4Life lab project",
+        idToWidget: "startJSmashButton"
       }
     },
     EXPECTED_S4L_LITE_SERVICE_KEYS: {
@@ -507,6 +507,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __addNewS4LServiceButtons: function() {
+      this.__addNewStudyButton();
       const store = osparc.store.Store.getInstance();
       store.getAllServices()
         .then(services => {

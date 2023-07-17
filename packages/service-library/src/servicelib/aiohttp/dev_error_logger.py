@@ -4,7 +4,7 @@ import traceback
 from aiohttp.web import Application, HTTPError, Request, middleware
 from servicelib.aiohttp.typing_extension import Handler, Middleware
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 _SEP = "|||"
 
@@ -25,12 +25,12 @@ def _middleware_factory() -> Middleware:
             formatted_error = "".join(
                 [f"\n{_SEP}{k}{_SEP}\n{v}" for k, v in fields.items()]
             )
-            logger.debug("Error serialized to client:%s", formatted_error)
-            raise err
+            _logger.debug("Error serialized to client:%s", formatted_error)
+            raise
 
     return middleware_handler
 
 
 def setup_dev_error_logger(app: Application) -> None:
-    logger.info("Setting up dev_error_logger")
+    _logger.info("Setting up dev_error_logger")
     app.middlewares.append(_middleware_factory())

@@ -1,6 +1,7 @@
 import logging
+from collections.abc import Sequence
 from functools import cached_property
-from typing import Final, Sequence, get_args
+from typing import Final, get_args
 
 from pydantic import BaseConfig, BaseSettings, Extra, ValidationError, validator
 from pydantic.error_wrappers import ErrorList, ErrorWrapper
@@ -39,7 +40,7 @@ def create_settings_from_env(field: ModelField):
 
             def _prepend_field_name(ee: ErrorList):
                 if isinstance(ee, ErrorWrapper):
-                    return ErrorWrapper(ee.exc, (field.name,) + ee.loc_tuple())
+                    return ErrorWrapper(ee.exc, (field.name, *ee.loc_tuple()))
                 assert isinstance(ee, Sequence)  # nosec
                 return [_prepend_field_name(e) for e in ee]
 
@@ -65,9 +66,8 @@ class BaseCustomSettings(BaseSettings):
     @classmethod
     def parse_none(cls, v, field: ModelField):
         # WARNING: In nullable fields, envs equal to null or none are parsed as None !!
-        if field.allow_none:
-            if isinstance(v, str) and v.lower() in ("null", "none"):
-                return None
+        if field.allow_none and isinstance(v, str) and v.lower() in ("null", "none"):
+            return None
         return v
 
     class Config(BaseConfig):
@@ -101,15 +101,12 @@ class BaseCustomSettings(BaseSettings):
                     field.required = False  # has a default now
 
             elif issubclass(field_type, BaseSettings):
-                raise ValueError(
-                    f"{cls}.{field.name} of type {field_type} must inherit from BaseCustomSettings"
-                )
+                msg = f"{cls}.{field.name} of type {field_type} must inherit from BaseCustomSettings"
+                raise ValueError(msg)
 
             elif auto_default_from_env:
-                raise ValueError(
-                    "auto_default_from_env=True can only be used in BaseCustomSettings subclasses"
-                    f"but field {cls}.{field.name} is {field_type} "
-                )
+                msg = f"auto_default_from_env=True can only be used in BaseCustomSettings subclassesbut field {cls}.{field.name} is {field_type} "
+                raise ValueError(msg)
 
     @classmethod
     def create_from_envs(cls, **overrides):

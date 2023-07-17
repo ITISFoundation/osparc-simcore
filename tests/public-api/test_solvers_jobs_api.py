@@ -19,13 +19,11 @@ from zipfile import ZipFile
 
 import osparc
 import pytest
-from osparc import FilesApi, SolversApi
-from osparc.models import File, Job, JobInputs, JobOutputs, JobStatus, Solver
 from pytest import TempPathFactory
 from pytest_simcore.helpers.utils_public_api import ServiceInfoDict, ServiceNameStr
 
-OSPARC_CLIENT_VERSION = tuple(map(int, osparc.__version__.split(".")))
-assert OSPARC_CLIENT_VERSION >= (0, 4, 3)
+osparc_VERSION = tuple(map(int, osparc.__version__.split(".")))
+assert osparc_VERSION >= (0, 4, 3)
 
 
 logger = logging.getLogger(__name__)
@@ -33,17 +31,17 @@ logger = logging.getLogger(__name__)
 
 @pytest.fixture(scope="module")
 def sleeper_solver(
-    solvers_api: SolversApi,
+    solvers_api: osparc.SolversApi,
     services_registry: dict[ServiceNameStr, ServiceInfoDict],
-) -> Solver:
+) -> osparc.Solver:
     # this part is tested in test_solvers_api so it becomes a fixture here
 
     sleeper = services_registry["sleeper_service"]
-    solver: Solver = solvers_api.get_solver_release(
+    solver: osparc.Solver = solvers_api.get_solver_release(
         solver_key=sleeper["name"], version=sleeper["version"]
     )
 
-    assert isinstance(solver, Solver)
+    assert isinstance(solver, osparc.Solver)
     assert solver.version == "2.1.1"
 
     # returns Dict[SolverInputSchema] and SolverInputSchema is a schema?
@@ -79,7 +77,9 @@ def sleeper_solver(
 
 
 @pytest.fixture(scope="module")
-def uploaded_input_file(tmp_path_factory: TempPathFactory, files_api: FilesApi) -> File:
+def uploaded_input_file(
+    tmp_path_factory: TempPathFactory, files_api: osparc.FilesApi
+) -> osparc.File:
     basedir: Path = tmp_path_factory.mktemp("uploaded_input_file")
 
     # produce an input file in place
@@ -88,17 +88,17 @@ def uploaded_input_file(tmp_path_factory: TempPathFactory, files_api: FilesApi) 
 
     # upload resource to server
     # server returns a model of the resource: File
-    input_file: File = files_api.upload_file(file=input_path)
-    assert isinstance(input_file, File)
+    input_file: osparc.File = files_api.upload_file(file=input_path)
+    assert isinstance(input_file, osparc.File)
     assert input_file.filename == input_path.name
 
     return input_file
 
 
 def test_list_jobs(
-    solvers_api: SolversApi,
-    sleeper_solver: Solver,
-    uploaded_input_file: File,
+    solvers_api: osparc.SolversApi,
+    sleeper_solver: osparc.Solver,
+    uploaded_input_file: osparc.File,
 ):
     solver = sleeper_solver
 
@@ -111,7 +111,7 @@ def test_list_jobs(
         job = solvers_api.create_job(
             solver.id,
             solver.version,
-            job_inputs=JobInputs(
+            job_inputs=osparc.JobInputs(
                 {
                     "input_1": uploaded_input_file,
                     "input_2": 3 * n,  # sleep time in secs
@@ -120,7 +120,7 @@ def test_list_jobs(
                 }
             ),
         )
-        assert isinstance(job, Job)
+        assert isinstance(job, osparc.Job)
         expected_jobs.append(job)
 
         jobs = solvers_api.list_jobs(solver.id, solver.version)
@@ -130,9 +130,9 @@ def test_list_jobs(
 
 
 def test_create_job(
-    uploaded_input_file: File,
-    solvers_api: SolversApi,
-    sleeper_solver: Solver,
+    uploaded_input_file: osparc.File,
+    solvers_api: osparc.SolversApi,
+    sleeper_solver: osparc.Solver,
 ):
     solver = sleeper_solver
 
@@ -141,7 +141,7 @@ def test_create_job(
     job = solvers_api.create_job(
         solver.id,
         solver.version,
-        JobInputs(
+        osparc.JobInputs(
             {
                 "input_1": uploaded_input_file,
                 "input_2": 1,  # sleep time in secs
@@ -150,7 +150,7 @@ def test_create_job(
             }
         ),
     )
-    assert isinstance(job, Job)
+    assert isinstance(job, osparc.Job)
 
     assert job.id
     assert job == solvers_api.get_job(solver.id, solver.version, job.id)
@@ -160,7 +160,7 @@ def test_create_job(
     job2 = solvers_api.create_job(
         solver.id,
         solver.version,
-        JobInputs(
+        osparc.JobInputs(
             {
                 "input_1": uploaded_input_file,
                 "input_2": 1,
@@ -169,7 +169,7 @@ def test_create_job(
             }
         ),
     )
-    assert isinstance(job2, Job)
+    assert isinstance(job2, osparc.Job)
 
     # in principle, it create separate instances even if has the same inputs
     assert job.id != job2.id
@@ -183,10 +183,10 @@ def test_create_job(
     ),
 )
 def test_run_job(
-    uploaded_input_file: File,
-    files_api: FilesApi,
-    solvers_api: SolversApi,
-    sleeper_solver: Solver,
+    uploaded_input_file: osparc.File,
+    files_api: osparc.FilesApi,
+    solvers_api: osparc.SolversApi,
+    sleeper_solver: osparc.Solver,
     expected_outcome: str,
     tmp_path: Path,
 ):
@@ -197,7 +197,7 @@ def test_run_job(
     job = solvers_api.create_job(
         solver.id,
         solver.version,
-        JobInputs(
+        osparc.JobInputs(
             {
                 "input_1": uploaded_input_file,
                 "input_2": 1,  # sleep time in secs
@@ -208,8 +208,8 @@ def test_run_job(
     )
 
     # start job
-    status: JobStatus = solvers_api.start_job(solver.id, solver.version, job.id)
-    assert isinstance(status, JobStatus)
+    status: osparc.JobStatus = solvers_api.start_job(solver.id, solver.version, job.id)
+    assert isinstance(status, osparc.JobStatus)
 
     assert status.state == "PUBLISHED"
     assert status.progress == 0
@@ -221,8 +221,10 @@ def test_run_job(
     # poll stop time-stamp
     while not status.stopped_at:
         time.sleep(0.5)
-        status: JobStatus = solvers_api.inspect_job(solver.id, solver.version, job.id)
-        assert isinstance(status, JobStatus)
+        status: osparc.JobStatus = solvers_api.inspect_job(
+            solver.id, solver.version, job.id
+        )
+        assert isinstance(status, osparc.JobStatus)
 
         assert 0 <= status.progress <= 100
 
@@ -236,8 +238,10 @@ def test_run_job(
     assert status.submitted_at < status.stopped_at
 
     # check solver outputs
-    outputs: JobOutputs = solvers_api.get_job_outputs(solver.id, solver.version, job.id)
-    assert isinstance(outputs, JobOutputs)
+    outputs: osparc.JobOutputs = solvers_api.get_job_outputs(
+        solver.id, solver.version, job.id
+    )
+    assert isinstance(outputs, osparc.JobOutputs)
     assert outputs.job_id == job.id
     assert len(outputs.results) == 2
 
@@ -259,7 +263,7 @@ def test_run_job(
     assert status.state == expected_outcome
 
     if expected_outcome == "SUCCESS":
-        assert isinstance(output_file, File)
+        assert isinstance(output_file, osparc.File)
         assert isinstance(number, float)
 
         # output file exists
@@ -274,7 +278,7 @@ def test_run_job(
         assert output_file is None or number is None
 
     # download log (Added in on API version 0.4.0 / client version 0.5.0 )
-    if OSPARC_CLIENT_VERSION >= (0, 5, 0):
+    if osparc_VERSION >= (0, 5, 0):
         print("Testing output logfile ...")
         logfile: str = solvers_api.get_job_output_logfile(
             solver.id, solver.version, job.id
@@ -299,15 +303,15 @@ def test_run_job(
 
 
 def test_sugar_syntax_on_solver_setup(
-    solvers_api: SolversApi,
-    sleeper_solver: Solver,
-    uploaded_input_file: File,
+    solvers_api: osparc.SolversApi,
+    sleeper_solver: osparc.Solver,
+    uploaded_input_file: osparc.File,
 ):
     solver = sleeper_solver
     solver_tag = solver.id, solver.version
 
     job = solvers_api.create_job(
-        job_inputs=JobInputs(
+        job_inputs=osparc.JobInputs(
             {
                 "input_1": uploaded_input_file,
                 "input_2": 33,  # sleep time in secs
@@ -317,7 +321,7 @@ def test_sugar_syntax_on_solver_setup(
         ),
         *solver_tag,
     )
-    assert isinstance(job, Job)
+    assert isinstance(job, osparc.Job)
 
     assert job.runner_name == "solvers/{}/releases/{}".format(
         quote_plus(str(solver.id)), solver.version

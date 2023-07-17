@@ -20,7 +20,7 @@ from . import (
 )
 from .constants import APP_OPENAPI_SPECS_KEY
 from .handlers_files import UPLOAD_TASKS_KEY
-from .resources import resources
+from .resources import storage_resources
 
 log = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ def setup_rest(app: web.Application):
     """
     log.debug("Setting up %s ...", __name__)
 
-    spec_path = resources.get_path("api/v0/openapi.yaml")
+    spec_path = storage_resources.get_path("api/v0/openapi.yaml")
     with spec_path.open() as fh:
         spec_dict = yaml.safe_load(fh)
     api_specs = openapi_core.create_spec(spec_dict, spec_path.as_uri())

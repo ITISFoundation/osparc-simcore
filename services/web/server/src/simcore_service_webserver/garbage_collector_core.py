@@ -3,6 +3,7 @@
 """
 
 import asyncio
+import contextlib
 import logging
 from itertools import chain
 from typing import Any
@@ -17,9 +18,11 @@ from servicelib.utils import logged_gather
 from simcore_postgres_database.errors import DatabaseError
 from simcore_postgres_database.models.users import UserRole
 
-from .director.director_exceptions import DirectorException, ServiceNotFoundError
 from .director_v2 import api
-from .director_v2.exceptions import ServiceWaitingForManualIntervention
+from .director_v2.exceptions import (
+    DirectorServiceError,
+    ServiceWaitingForManualIntervention,
+)
 from .garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
 from .garbage_collector_utils import get_new_project_owner_gid, replace_current_owner
 from .projects.db import ProjectDBAPI
@@ -330,7 +333,7 @@ async def _remove_single_service_if_orphan(
                 simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 save_state=False,
             )
-        except (ServiceNotFoundError, DirectorException) as err:
+        except DirectorServiceError as err:
             logger.warning("Error while stopping service: %s", err)
         return
 
@@ -383,17 +386,15 @@ async def _remove_single_service_if_orphan(
                 save_state = False
             # -------------------------------------------
 
-            try:
+            with contextlib.suppress(ServiceWaitingForManualIntervention):
                 await api.stop_dynamic_service(
                     app,
                     service_uuid,
                     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                     save_state,
                 )
-            except ServiceWaitingForManualIntervention:
-                pass
 
-        except (ServiceNotFoundError, DirectorException) as err:
+        except DirectorServiceError as err:
             logger.warning("Error while stopping service: %s", err)
 
 

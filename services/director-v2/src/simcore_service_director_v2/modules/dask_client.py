@@ -12,10 +12,11 @@ import asyncio
 import json
 import logging
 import traceback
+from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass, field
 from http.client import HTTPException
-from typing import Any, Callable, Optional
+from typing import Any
 
 import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
@@ -25,6 +26,15 @@ from dask_task_models_library.container_tasks.io import (
     TaskInputData,
     TaskOutputData,
     TaskOutputDataSchema,
+)
+from dask_task_models_library.container_tasks.protocol import (
+    ContainerCommands,
+    ContainerEnvsDict,
+    ContainerImage,
+    ContainerLabelsDict,
+    ContainerRemoteFct,
+    ContainerTag,
+    LogFileUploadURL,
 )
 from fastapi import FastAPI
 from models_library.clusters import ClusterAuthentication, ClusterID
@@ -49,6 +59,7 @@ from ..core.errors import (
     ComputationalBackendTaskResultsNotReadyError,
 )
 from ..core.settings import AppSettings, ComputationalBackendSettings
+from ..models.domains.comp_runs import MetadataDict
 from ..models.domains.comp_tasks import Image
 from ..models.schemas.clusters import ClusterDetails, Scheduler
 from ..modules.storage import StorageClient
@@ -61,6 +72,8 @@ from ..utils.dask import (
     compute_input_data,
     compute_output_data_schema,
     compute_service_log_file_upload_link,
+    compute_task_envs,
+    compute_task_labels,
     create_node_ports,
     dask_sub_consumer_task,
     from_node_reqs_to_dask_resources,
@@ -73,7 +86,7 @@ from ..utils.dask_client_utils import (
     create_internal_client_based_on_auth,
 )
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 _DASK_TASK_STATUS_RUNNING_STATE_MAP = {
@@ -86,28 +99,10 @@ _DASK_TASK_STATUS_RUNNING_STATE_MAP = {
     "erred": RunningState.FAILED,
 }
 
-DASK_DEFAULT_TIMEOUT_S = 1
+_DASK_DEFAULT_TIMEOUT_S = 1
 
 
-ServiceKey = str
-ServiceVersion = str
-LogFileUploadURL = AnyUrl
-Commands = list[str]
-RemoteFct = Callable[
-    [
-        DockerBasicAuth,
-        ServiceKey,
-        ServiceVersion,
-        TaskInputData,
-        TaskOutputDataSchema,
-        LogFileUploadURL,
-        Commands,
-        Optional[S3Settings],
-        BootMode,
-    ],
-    TaskOutputData,
-]
-UserCallbackInSepThread = Callable[[], None]
+_UserCallbackInSepThread = Callable[[], None]
 
 
 @dataclass
@@ -128,19 +123,19 @@ class DaskClient:
         authentication: ClusterAuthentication,
         tasks_file_link_type: FileLinkType,
     ) -> "DaskClient":
-        logger.info(
+        _logger.info(
             "Initiating connection to %s with auth: %s",
             f"dask-scheduler/gateway at {endpoint}",
             authentication,
         )
         async for attempt in AsyncRetrying(
             reraise=True,
-            before_sleep=before_sleep_log(logger, logging.INFO),
+            before_sleep=before_sleep_log(_logger, logging.INFO),
             wait=wait_fixed(0.3),
             stop=stop_after_attempt(3),
         ):
             with attempt:
-                logger.debug(
+                _logger.debug(
                     "Connecting to %s, attempt %s...",
                     endpoint,
                     attempt.retry_state.attempt_number,
@@ -155,29 +150,30 @@ class DaskClient:
                     settings=settings,
                     tasks_file_link_type=tasks_file_link_type,
                 )
-                logger.info(
+                _logger.info(
                     "Connection to %s succeeded [%s]",
                     f"dask-scheduler/gateway at {endpoint}",
                     json.dumps(attempt.retry_state.retry_object.statistics),
                 )
-                logger.info(
+                _logger.info(
                     "Scheduler info:\n%s",
                     json.dumps(backend.client.scheduler_info(), indent=2),
                 )
                 return instance
         # this is to satisfy pylance
-        raise ValueError("Could not create client")
+        err_msg = "Could not create client"
+        raise ValueError(err_msg)
 
     async def delete(self) -> None:
-        logger.debug("closing dask client...")
+        _logger.debug("closing dask client...")
         for task in self._subscribed_tasks:
             task.cancel()
         await asyncio.gather(*self._subscribed_tasks, return_exceptions=True)
         await self.backend.close()
-        logger.info("dask client properly closed")
+        _logger.info("dask client properly closed")
 
     def register_handlers(self, task_handlers: TaskHandlers) -> None:
-        _EVENT_CONSUMER_MAP = [
+        _event_consumer_map = [
             (self.backend.progress_sub, task_handlers.task_progress_handler),
             (self.backend.logs_sub, task_handlers.task_log_handler),
         ]
@@ -186,29 +182,34 @@ class DaskClient:
                 dask_sub_consumer_task(dask_sub, handler),
                 name=f"{dask_sub.name}_dask_sub_consumer_task",
             )
-            for dask_sub, handler in _EVENT_CONSUMER_MAP
+            for dask_sub, handler in _event_consumer_map
         ]
 
     async def send_computation_tasks(
         self,
+        *,
         user_id: UserID,
         project_id: ProjectID,
         cluster_id: ClusterID,
         tasks: dict[NodeID, Image],
-        callback: UserCallbackInSepThread,
-        remote_fct: RemoteFct | None = None,
+        callback: _UserCallbackInSepThread,
+        remote_fct: ContainerRemoteFct | None = None,
+        metadata: MetadataDict,
     ) -> list[tuple[NodeID, str]]:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
         function that runs container will be started."""
 
-        def _comp_sidecar_fct(
+        def _comp_sidecar_fct(  # noqa: PLR0913
+            *,
             docker_auth: DockerBasicAuth,
-            service_key: str,
-            service_version: str,
+            service_key: ContainerImage,
+            service_version: ContainerTag,
             input_data: TaskInputData,
             output_data_keys: TaskOutputDataSchema,
-            log_file_url: AnyUrl,
-            command: list[str],
+            log_file_url: LogFileUploadURL,
+            command: ContainerCommands,
+            task_envs: ContainerEnvsDict,
+            task_labels: ContainerLabelsDict,
             s3_settings: S3Settings | None,
             boot_mode: BootMode,
         ) -> TaskOutputData:
@@ -217,15 +218,17 @@ class DaskClient:
             from simcore_service_dask_sidecar.tasks import run_computational_sidecar
 
             return run_computational_sidecar(
-                docker_auth,
-                service_key,
-                service_version,
-                input_data,
-                output_data_keys,
-                log_file_url,
-                command,
-                s3_settings,
-                boot_mode,
+                docker_auth=docker_auth,
+                service_key=service_key,
+                service_version=service_version,
+                input_data=input_data,
+                output_data_keys=output_data_keys,
+                log_file_url=log_file_url,
+                command=command,
+                task_envs=task_envs,
+                task_labels=task_labels,
+                s3_settings=s3_settings,
+                boot_mode=boot_mode,
             )
 
         if remote_fct is None:
@@ -254,8 +257,6 @@ class DaskClient:
             # is runnable because we CAN'T. A cluster might auto-scale, the worker(s)
             # might also auto-scale and the gateway does not know that a priori.
             # So, we'll just send the tasks over and see what happens after a while.
-            # TODO: one idea is to do a lazy checking. A cluster might take a few seconds to run a
-            # sidecar, which will then populate the scheduler with resources available on the cluster
             if not self.backend.gateway:
                 check_if_cluster_is_able_to_run_pipeline(
                     project_id=project_id,
@@ -273,7 +274,7 @@ class DaskClient:
                         user_id
                     )
                 except HTTPException as err:
-                    raise ComputationalBackendNoS3AccessError() from err
+                    raise ComputationalBackendNoS3AccessError from err
 
             # This instance is created only once so it can be reused in calls below
             node_ports = await create_node_ports(
@@ -284,19 +285,16 @@ class DaskClient:
             )
             # NOTE: for download there is no need to go with S3 links
             input_data = await compute_input_data(
-                self.app,
-                user_id,
-                project_id,
-                node_id,
-                ports=node_ports,
+                project_id=project_id,
+                node_id=node_id,
+                node_ports=node_ports,
                 file_link_type=FileLinkType.PRESIGNED,
             )
             output_data_keys = await compute_output_data_schema(
-                self.app,
-                user_id,
-                project_id,
-                node_id,
-                ports=node_ports,
+                user_id=user_id,
+                project_id=project_id,
+                node_id=node_id,
+                node_ports=node_ports,
                 file_link_type=self.tasks_file_link_type,
             )
             log_file_url = await compute_service_log_file_upload_link(
@@ -304,6 +302,21 @@ class DaskClient:
                 project_id,
                 node_id,
                 file_link_type=self.tasks_file_link_type,
+            )
+            task_labels = compute_task_labels(
+                user_id=user_id,
+                project_id=project_id,
+                node_id=node_id,
+                metadata=metadata,
+                node_requirements=node_image.node_requirements,
+            )
+            task_envs = await compute_task_envs(
+                self.app,
+                user_id=user_id,
+                project_id=project_id,
+                node_id=node_id,
+                node_image=node_image,
+                metadata=metadata,
             )
 
             try:
@@ -323,6 +336,8 @@ class DaskClient:
                     output_data_keys=output_data_keys,
                     log_file_url=log_file_url,
                     command=node_image.command,
+                    task_envs=task_envs,
+                    task_labels=task_labels,
                     s3_settings=s3_settings,
                     boot_mode=node_image.boot_mode,
                     key=job_id,
@@ -337,7 +352,7 @@ class DaskClient:
                     self.backend.client.publish_dataset(task_future, name=job_id)
                 )
 
-                logger.debug(
+                _logger.debug(
                     "Dask task %s started [%s]",
                     f"{task_future.key=}",
                     f"{node_image.command=}",
@@ -368,7 +383,7 @@ class DaskClient:
         task_statuses = await wrap_client_async_routine(
             self.backend.client.run_on_scheduler(_get_pipeline_statuses)
         )
-        logger.debug("found dask task statuses: %s", f"{task_statuses=}")
+        _logger.debug("found dask task statuses: %s", f"{task_statuses=}")
 
         running_states: list[RunningState] = []
         for job_id in job_ids:
@@ -376,14 +391,16 @@ class DaskClient:
             if dask_status == "erred":
                 # find out if this was a cancellation
                 exception = await wrap_client_async_routine(
-                    distributed.Future(job_id).exception(timeout=DASK_DEFAULT_TIMEOUT_S)
+                    distributed.Future(job_id).exception(
+                        timeout=_DASK_DEFAULT_TIMEOUT_S
+                    )
                 )
 
                 if isinstance(exception, TaskCancelledError):
                     running_states.append(RunningState.ABORTED)
                 else:
                     assert exception  # nosec
-                    logger.warning(
+                    _logger.warning(
                         "Task  %s completed in error:\n%s\nTrace:\n%s",
                         job_id,
                         exception,
@@ -405,7 +422,7 @@ class DaskClient:
         # If the sidecar has already taken the job, then the cancellation must be user-defined.
         # therefore the dask PUB is used, and the dask-sidecar will then let the abort
         # process, and report when it is finished and properly cancelled.
-        logger.debug("cancelling task with %s", f"{job_id=}")
+        _logger.debug("cancelling task with %s", f"{job_id=}")
         try:
             task_future: distributed.Future = await wrap_client_async_routine(
                 self.backend.client.get_dataset(name=job_id)
@@ -417,18 +434,18 @@ class DaskClient:
             )
             await wrap_client_async_routine(cancel_event.set())
             await wrap_client_async_routine(task_future.cancel())
-            logger.debug("Dask task %s cancelled", task_future.key)
+            _logger.debug("Dask task %s cancelled", task_future.key)
         except KeyError:
-            logger.warning("Unknown task cannot be aborted: %s", f"{job_id=}")
+            _logger.warning("Unknown task cannot be aborted: %s", f"{job_id=}")
 
     async def get_task_result(self, job_id: str) -> TaskOutputData:
-        logger.debug("getting result of %s", f"{job_id=}")
+        _logger.debug("getting result of %s", f"{job_id=}")
         try:
             task_future: distributed.Future = await wrap_client_async_routine(
                 self.backend.client.get_dataset(name=job_id)
             )
             return await wrap_client_async_routine(
-                task_future.result(timeout=DASK_DEFAULT_TIMEOUT_S)
+                task_future.result(timeout=_DASK_DEFAULT_TIMEOUT_S)
             )
         except KeyError as exc:
             raise ComputationalBackendTaskNotFoundError(job_id=job_id) from exc
@@ -436,7 +453,7 @@ class DaskClient:
             raise ComputationalBackendTaskResultsNotReadyError from exc
 
     async def release_task_result(self, job_id: str) -> None:
-        logger.debug("releasing results for %s", f"{job_id=}")
+        _logger.debug("releasing results for %s", f"{job_id=}")
         try:
             # first check if the key exists
             await wrap_client_async_routine(
@@ -446,7 +463,7 @@ class DaskClient:
                 self.backend.client.unpublish_dataset(name=job_id)
             )
         except KeyError:
-            logger.warning("Unknown task cannot be unpublished: %s", f"{job_id=}")
+            _logger.warning("Unknown task cannot be unpublished: %s", f"{job_id=}")
 
     async def get_cluster_details(self) -> ClusterDetails:
         check_scheduler_is_still_the_same(
@@ -466,7 +483,7 @@ class DaskClient:
                 used_resources[worker_name] = worker_state.used_resources
             return used_resources
 
-        with log_catch(logger, reraise=False):
+        with log_catch(_logger, reraise=False):
             # NOTE: this runs directly on the dask-scheduler and may rise exceptions
             used_resources_per_worker: dict[
                 str, dict[str, Any]

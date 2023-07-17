@@ -40,4 +40,11 @@ file_meta_data = sa.Table(
     sa.Column(
         "upload_expires_at", sa.DateTime(), nullable=True, doc="Timestamp of expiration"
     ),
+    sa.Column(
+        "is_directory",
+        sa.Boolean(),
+        nullable=False,
+        server_default=sa.text("false"),
+        doc="Set True when file_id is a directory",
+    ),
 )

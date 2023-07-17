@@ -3,16 +3,16 @@
 # pylint: disable=unused-variable
 
 import urllib.parse
+from collections.abc import Iterator
 from pathlib import Path
 from pprint import pprint
-from typing import Any, Iterator
+from typing import Any
 from zipfile import ZipFile
 
 import arrow
 import boto3
 import httpx
 import pytest
-import respx
 from faker import Faker
 from fastapi import FastAPI
 from models_library.services import ServiceDockerData
@@ -86,13 +86,14 @@ def presigned_download_link(
     print("generated link", presigned_url)
 
     # SEE also https://gist.github.com/amarjandu/77a7d8e33623bae1e4e5ba40dc043cb9
-    yield parse_obj_as(AnyUrl, presigned_url)
+    return parse_obj_as(AnyUrl, presigned_url)
 
 
 @pytest.fixture
 def mocked_directorv2_service_api(
     app: FastAPI,
     presigned_download_link: AnyUrl,
+    mocked_directorv2_service_api_base: MockRouter,
     directorv2_service_openapi_specs: dict[str, Any],
 ):
     settings: ApplicationSettings = app.state.settings
@@ -100,41 +101,37 @@ def mocked_directorv2_service_api(
     oas = directorv2_service_openapi_specs
 
     # pylint: disable=not-context-manager
-    with respx.mock(
-        base_url=settings.API_SERVER_DIRECTOR_V2.api_base_url,
-        assert_all_called=False,
-        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
-    ) as respx_mock:
-        # check that what we emulate, actually still exists
-        path = "/v2/computations/{project_id}/tasks/-/logfile"
-        assert path in oas["paths"]
-        assert "get" in oas["paths"][path]
+    respx_mock = mocked_directorv2_service_api_base
+    # check that what we emulate, actually still exists
+    path = "/v2/computations/{project_id}/tasks/-/logfile"
+    assert path in oas["paths"]
+    assert "get" in oas["paths"][path]
 
-        response = oas["paths"][path]["get"]["responses"]["200"]
+    response = oas["paths"][path]["get"]["responses"]["200"]
 
-        assert response["content"]["application/json"]["schema"]["type"] == "array"
-        assert (
-            response["content"]["application/json"]["schema"]["items"]["$ref"]
-            == "#/components/schemas/TaskLogFileGet"
-        )
-        assert {"task_id", "download_link"} == set(
-            oas["components"]["schemas"]["TaskLogFileGet"]["properties"].keys()
-        )
+    assert response["content"]["application/json"]["schema"]["type"] == "array"
+    assert (
+        response["content"]["application/json"]["schema"]["items"]["$ref"]
+        == "#/components/schemas/TaskLogFileGet"
+    )
+    assert {"task_id", "download_link"} == set(
+        oas["components"]["schemas"]["TaskLogFileGet"]["properties"].keys()
+    )
 
-        respx_mock.get(
-            path__regex=r"/computations/(?P<project_id>[\w-]+)/tasks/-/logfile",
-            name="get_computation_logs",  # = operation_id
-        ).respond(
-            status.HTTP_200_OK,
-            json=[
-                {
-                    "task_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                    "download_link": presigned_download_link,
-                }
-            ],
-        )
+    respx_mock.get(
+        path__regex=r"/computations/(?P<project_id>[\w-]+)/tasks/-/logfile",
+        name="get_computation_logs",  # = operation_id
+    ).respond(
+        status.HTTP_200_OK,
+        json=[
+            {
+                "task_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                "download_link": presigned_download_link,
+            }
+        ],
+    )
 
-        yield respx_mock
+    return respx_mock
 
 
 def test_download_presigned_link(
@@ -142,7 +139,7 @@ def test_download_presigned_link(
 ):
     """Cheks that the generation of presigned_download_link works as expected"""
     r = httpx.get(presigned_download_link)
-    pprint(dict(r.headers))
+    ## pprint(dict(r.headers))
     # r.headers looks like:
     # {
     #  'access-control-allow-origin': '*',
@@ -207,17 +204,6 @@ async def test_solver_logs(
     pprint(dict(resp.headers))
 
 
-@pytest.fixture
-def solver_key() -> str:
-    return "simcore/services/comp/itis/sleeper"
-
-
-@pytest.fixture
-def solver_version() -> str:
-    return "2.0.0"
-
-
-@pytest.mark.testit
 @pytest.mark.acceptance_test(
     "New feature https://github.com/ITISFoundation/osparc-simcore/issues/3940"
 )

@@ -18,7 +18,7 @@ class Meta(BaseModel):
                 "name": "simcore_service_foo",
                 "version": "2.4.45",
                 "released": {"v1": "1.3.4", "v2": "2.4.45"},
-                "docs_url": "https://api.osparc.io/doc",
+                "docs_url": "https://api.osparc.io/dev/doc",
                 "docs_dev_url": "https://api.osparc.io/dev/doc",
             }
         }

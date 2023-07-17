@@ -7,13 +7,13 @@
 # pylint:disable=no-name-in-module
 
 
+from collections.abc import Callable
 from random import choice
-from typing import Any, Callable
+from typing import Any
 from unittest import mock
 
 import aiopg
 import aiopg.sa
-import httpx
 import pytest
 from _helpers import PublishedProject, set_comp_task_inputs, set_comp_task_outputs
 from dask_task_models_library.container_tasks.io import (
@@ -21,30 +21,40 @@ from dask_task_models_library.container_tasks.io import (
     FileUrl,
     TaskOutputData,
 )
+from dask_task_models_library.container_tasks.protocol import (
+    ContainerEnvsDict,
+    ContainerLabelsDict,
+)
 from distributed import SpecCluster
 from faker import Faker
+from fastapi import FastAPI
 from models_library.api_schemas_storage import FileUploadLinks, FileUploadSchema
 from models_library.clusters import ClusterID
+from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimCoreFileLink, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize
 from pydantic.networks import AnyUrl
 from pydantic.tools import parse_obj_as
-from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_sdk.node_ports_v2 import FileLinkType
+from simcore_service_director_v2.models.domains.comp_runs import MetadataDict
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
 from simcore_service_director_v2.models.schemas.services import NodeRequirements
 from simcore_service_director_v2.modules.dask_clients_pool import DaskClientsPool
 from simcore_service_director_v2.utils.dask import (
     _LOGS_FILE_NAME,
+    _UNDEFINED_METADATA,
     _to_human_readable_resource_values,
     check_if_cluster_is_able_to_run_pipeline,
     clean_task_output_and_log_files_if_invalid,
     compute_input_data,
     compute_output_data_schema,
+    compute_task_envs,
+    compute_task_labels,
+    create_node_ports,
     from_node_reqs_to_dask_resources,
     generate_dask_job_id,
     parse_dask_job_id,
@@ -269,9 +279,9 @@ async def test_parse_output_data(
 
 
 @pytest.fixture
-def app_with_db(
+def _app_config_with_db(
     mock_env: EnvVarsDict,
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     postgres_host_config: dict[str, str],
 ):
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
@@ -284,9 +294,9 @@ def app_with_db(
 
 
 async def test_compute_input_data(
-    app_with_db: None,
+    _app_config_with_db: None,
     aiopg_engine: aiopg.sa.engine.Engine,
-    async_client: httpx.AsyncClient,
+    initialized_app: FastAPI,
     user_id: UserID,
     published_project: PublishedProject,
     fake_io_schema: dict[str, dict[str, str]],
@@ -316,7 +326,9 @@ async def test_compute_input_data(
 
     # mock the get_value function so we can test it is called correctly
     def return_fake_input_value(*args, **kwargs):
-        for value, value_type in zip(fake_inputs.values(), fake_io_schema.values()):
+        for value, value_type in zip(
+            fake_inputs.values(), fake_io_schema.values(), strict=True
+        ):
             if value_type["type"] == "data:*/*":
                 yield parse_obj_as(AnyUrl, faker.url())
             else:
@@ -327,18 +339,20 @@ async def test_compute_input_data(
         autospec=True,
         side_effect=return_fake_input_value(),
     )
+    node_ports = await create_node_ports(
+        db_engine=initialized_app.state.engine,
+        user_id=user_id,
+        project_id=published_project.project.uuid,
+        node_id=sleeper_task.node_id,
+    )
     computed_input_data = await compute_input_data(
-        async_client._transport.app,
-        user_id,
-        published_project.project.uuid,
-        sleeper_task.node_id,
+        project_id=published_project.project.uuid,
+        node_id=sleeper_task.node_id,
         file_link_type=tasks_file_link_type,
+        node_ports=node_ports,
     )
     mocked_node_ports_get_value_fct.assert_has_calls(
-        [
-            mock.call(mock.ANY, file_link_type=tasks_file_link_type)
-            for n in fake_io_data.keys()
-        ]
+        [mock.call(mock.ANY, file_link_type=tasks_file_link_type) for n in fake_io_data]
     )
     assert computed_input_data.keys() == fake_io_data.keys()
 
@@ -349,13 +363,14 @@ def tasks_file_link_scheme(tasks_file_link_type: FileLinkType) -> tuple:
         return ("s3", "s3a")
     if tasks_file_link_type == FileLinkType.PRESIGNED:
         return ("http", "https")
-    assert False, "unknown file link type, need update of the fixture"
+    pytest.fail("unknown file link type, need update of the fixture")
+    return ("thankspylint",)
 
 
 async def test_compute_output_data_schema(
-    app_with_db: None,
+    _app_config_with_db: None,
     aiopg_engine: aiopg.sa.engine.Engine,
-    async_client: httpx.AsyncClient,
+    initialized_app: FastAPI,
     user_id: UserID,
     published_project: PublishedProject,
     fake_io_schema: dict[str, dict[str, str]],
@@ -370,12 +385,19 @@ async def test_compute_output_data_schema(
         aiopg_engine, sleeper_task.node_id, fake_io_schema, no_outputs
     )
 
+    node_ports = await create_node_ports(
+        db_engine=initialized_app.state.engine,
+        user_id=user_id,
+        project_id=published_project.project.uuid,
+        node_id=sleeper_task.node_id,
+    )
+
     output_schema = await compute_output_data_schema(
-        async_client._transport.app,
-        user_id,
-        published_project.project.uuid,
-        sleeper_task.node_id,
+        user_id=user_id,
+        project_id=published_project.project.uuid,
+        node_id=sleeper_task.node_id,
         file_link_type=tasks_file_link_type,
+        node_ports=node_ports,
     )
     for port_key, port_schema in fake_io_schema.items():
         assert port_key in output_schema
@@ -401,7 +423,7 @@ async def test_clean_task_output_and_log_files_if_invalid(
     published_project: PublishedProject,
     mocked_node_ports_filemanager_fcts: dict[str, mock.MagicMock],
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
-    entry_exists_returns: bool,
+    entry_exists_returns: bool,  # noqa: FBT001
     fake_io_schema: dict[str, dict[str, str]],
     faker: Faker,
 ):
@@ -442,7 +464,7 @@ async def test_clean_task_output_and_log_files_if_invalid(
             store_id=0,
             s3_object=f"{published_project.project.uuid}/{sleeper_task.node_id}/{next(iter(fake_io_schema[key].get('fileToKeyMap', {key:key})))}",
         )
-        for key in fake_outputs.keys()
+        for key in fake_outputs
     ] + [
         mock.call(
             user_id=user_id,
@@ -471,7 +493,7 @@ def test_node_requirements_correctly_convert_to_dask_resources(
     # all the dask resources shall be of type: RESOURCE_NAME: VALUE
     for resource_key, resource_value in dask_resources.items():
         assert isinstance(resource_key, str)
-        assert isinstance(resource_value, (int, float, str, bool))
+        assert isinstance(resource_value, int | float | str | bool)
         assert resource_value is not None
 
 
@@ -501,8 +523,10 @@ def cluster_id(faker: Faker) -> ClusterID:
 
 
 @pytest.fixture
-def app_with_dask_client(
-    app_with_db: None, dask_spec_local_cluster: SpecCluster, monkeypatch: MonkeyPatch
+def _app_config_with_dask_client(
+    _app_config_with_db: None,
+    dask_spec_local_cluster: SpecCluster,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
     monkeypatch.setenv(
@@ -512,18 +536,19 @@ def app_with_dask_client(
 
 
 async def test_check_if_cluster_is_able_to_run_pipeline(
-    app_with_dask_client: None,
+    _app_config_with_dask_client: None,
     project_id: ProjectID,
     node_id: NodeID,
     cluster_id: ClusterID,
     published_project: PublishedProject,
-    async_client: httpx.AsyncClient,
+    initialized_app: FastAPI,
 ):
     sleeper_task: CompTaskAtDB = published_project.tasks[1]
-    app = async_client._transport.app
-    dask_scheduler_settings = app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND
+    dask_scheduler_settings = (
+        initialized_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND
+    )
     default_cluster = dask_scheduler_settings.default_cluster
-    dask_clients_pool = DaskClientsPool.instance(app)
+    dask_clients_pool = DaskClientsPool.instance(initialized_app)
     async with dask_clients_pool.acquire(default_cluster) as dask_client:
         check_if_cluster_is_able_to_run_pipeline(
             project_id=project_id,
@@ -533,3 +558,101 @@ async def test_check_if_cluster_is_able_to_run_pipeline(
             scheduler_info=dask_client.backend.client.scheduler_info(),
             task_resources={},
         )
+
+
+@pytest.mark.parametrize(
+    "run_metadata, expected_additional_task_labels",
+    [
+        (
+            {},
+            {
+                f"{to_simcore_runtime_docker_label_key('product-name')}": _UNDEFINED_METADATA,
+                f"{to_simcore_runtime_docker_label_key('simcore-user-agent')}": _UNDEFINED_METADATA,
+            },
+        ),
+        (
+            {
+                f"{to_simcore_runtime_docker_label_key('product-name')}": "the awesome osparc",
+                "some-crazy-additional-label": "with awesome value",
+            },
+            {
+                f"{to_simcore_runtime_docker_label_key('product-name')}": "the awesome osparc",
+                f"{to_simcore_runtime_docker_label_key('simcore-user-agent')}": _UNDEFINED_METADATA,
+                "some-crazy-additional-label": "with awesome value",
+            },
+        ),
+    ],
+)
+async def test_compute_task_labels(
+    _app_config_with_db: None,
+    published_project: PublishedProject,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    run_metadata: MetadataDict,
+    expected_additional_task_labels: ContainerLabelsDict,
+    initialized_app: FastAPI,
+):
+    sleeper_task = published_project.tasks[1]
+    assert sleeper_task.image
+    assert sleeper_task.image.node_requirements
+    task_labels = compute_task_labels(
+        user_id=user_id,
+        project_id=project_id,
+        node_id=node_id,
+        metadata=run_metadata,
+        node_requirements=sleeper_task.image.node_requirements,
+    )
+    expected_task_labels = {
+        f"{to_simcore_runtime_docker_label_key('user-id')}": f"{user_id}",
+        f"{to_simcore_runtime_docker_label_key('project-id')}": f"{project_id}",
+        f"{to_simcore_runtime_docker_label_key('node-id')}": f"{node_id}",
+        f"{to_simcore_runtime_docker_label_key('swarm-stack-name')}": f"{_UNDEFINED_METADATA}",
+        f"{to_simcore_runtime_docker_label_key('cpu-limit')}": f"{sleeper_task.image.node_requirements.cpu}",
+        f"{to_simcore_runtime_docker_label_key('memory-limit')}": f"{sleeper_task.image.node_requirements.ram}",
+    } | expected_additional_task_labels
+    assert task_labels == expected_task_labels
+
+
+@pytest.mark.parametrize(
+    "run_metadata",
+    [
+        {"product_name": "some amazing product name"},
+    ],
+)
+@pytest.mark.parametrize(
+    "input_task_envs, expected_computed_task_envs",
+    [
+        pytest.param({}, {}, id="empty envs"),
+        pytest.param(
+            {"SOME_FAKE_ENV": "this is my fake value"},
+            {"SOME_FAKE_ENV": "this is my fake value"},
+            id="standard env",
+        ),
+        pytest.param(
+            {"SOME_FAKE_ENV": "this is my $OSPARC_VARIABLE_PRODUCT_NAME value"},
+            {"SOME_FAKE_ENV": "this is my some amazing product name value"},
+            id="substituable env",
+        ),
+    ],
+)
+async def test_compute_task_envs(
+    _app_config_with_db: None,
+    published_project: PublishedProject,
+    initialized_app: FastAPI,
+    run_metadata: MetadataDict,
+    input_task_envs: ContainerEnvsDict,
+    expected_computed_task_envs: ContainerEnvsDict,
+):
+    sleeper_task: CompTaskAtDB = published_project.tasks[1]
+    sleeper_task.image.envs = input_task_envs
+    assert published_project.project.prj_owner is not None
+    task_envs = await compute_task_envs(
+        initialized_app,
+        user_id=published_project.project.prj_owner,
+        project_id=published_project.project.uuid,
+        node_id=sleeper_task.node_id,
+        node_image=sleeper_task.image,
+        metadata=run_metadata,
+    )
+    assert task_envs == expected_computed_task_envs

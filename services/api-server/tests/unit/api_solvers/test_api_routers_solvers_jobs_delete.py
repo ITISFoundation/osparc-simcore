@@ -23,23 +23,13 @@ class MockedBackendApiDict(TypedDict):
 
 
 @pytest.fixture
-def solver_key() -> str:
-    return "simcore/services/comp/itis/sleeper"
-
-
-@pytest.fixture
-def solver_version() -> str:
-    return "2.0.0"
-
-
-@pytest.fixture
 def mocked_backend_services_apis_for_delete_non_existing_project(
     mocked_webserver_service_api: MockRouter,
     project_tests_dir: Path,
 ) -> MockedBackendApiDict:
     mock_name = "delete_project_not_found.json"
     environment = jinja2.Environment(
-        loader=jinja2.FileSystemLoader(project_tests_dir / "mocks")
+        loader=jinja2.FileSystemLoader(project_tests_dir / "mocks"), autoescape=True
     )
     template = environment.get_template(mock_name)
 

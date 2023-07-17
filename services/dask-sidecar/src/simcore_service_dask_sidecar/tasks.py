@@ -11,9 +11,16 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputData,
     TaskOutputDataSchema,
 )
+from dask_task_models_library.container_tasks.protocol import (
+    ContainerCommands,
+    ContainerEnvsDict,
+    ContainerImage,
+    ContainerLabelsDict,
+    ContainerTag,
+    LogFileUploadURL,
+)
 from distributed.worker import logger
 from models_library.services_resources import BootMode
-from pydantic.networks import AnyUrl
 from servicelib.logging_utils import config_all_loggers
 from settings_library.s3 import S3Settings
 
@@ -84,13 +91,16 @@ async def dask_teardown(_worker: distributed.Worker) -> None:
 
 
 async def _run_computational_sidecar_async(
+    *,
     docker_auth: DockerBasicAuth,
-    service_key: str,
-    service_version: str,
+    service_key: ContainerImage,
+    service_version: ContainerTag,
     input_data: TaskInputData,
     output_data_keys: TaskOutputDataSchema,
-    log_file_url: AnyUrl,
-    command: list[str],
+    log_file_url: LogFileUploadURL,
+    command: ContainerCommands,
+    task_envs: ContainerEnvsDict,
+    task_labels: ContainerLabelsDict,
     s3_settings: S3Settings | None,
     boot_mode: BootMode,
 ) -> TaskOutputData:
@@ -117,6 +127,8 @@ async def _run_computational_sidecar_async(
             task_max_resources=task_max_resources,
             task_publishers=task_publishers,
             s3_settings=s3_settings,
+            task_envs=task_envs,
+            task_labels=task_labels,
         ) as sidecar:
             output_data = await sidecar.run(command=command)
         _logger.debug("completed run of sidecar with result %s", f"{output_data=}")
@@ -124,13 +136,16 @@ async def _run_computational_sidecar_async(
 
 
 def run_computational_sidecar(
+    # pylint: disable=too-many-arguments
     docker_auth: DockerBasicAuth,
-    service_key: str,
-    service_version: str,
+    service_key: ContainerImage,
+    service_version: ContainerTag,
     input_data: TaskInputData,
     output_data_keys: TaskOutputDataSchema,
-    log_file_url: AnyUrl,
-    command: list[str],
+    log_file_url: LogFileUploadURL,
+    command: ContainerCommands,
+    task_envs: ContainerEnvsDict,
+    task_labels: ContainerLabelsDict,
     s3_settings: S3Settings | None,
     boot_mode: BootMode = BootMode.CPU,
 ) -> TaskOutputData:
@@ -145,17 +160,18 @@ def run_computational_sidecar(
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
-    result = asyncio.get_event_loop().run_until_complete(
+    return asyncio.get_event_loop().run_until_complete(
         _run_computational_sidecar_async(
-            docker_auth,
-            service_key,
-            service_version,
-            input_data,
-            output_data_keys,
-            log_file_url,
-            command,
-            s3_settings,
-            boot_mode,
+            docker_auth=docker_auth,
+            service_key=service_key,
+            service_version=service_version,
+            input_data=input_data,
+            output_data_keys=output_data_keys,
+            log_file_url=log_file_url,
+            command=command,
+            task_envs=task_envs,
+            task_labels=task_labels,
+            s3_settings=s3_settings,
+            boot_mode=boot_mode,
         )
     )
-    return result

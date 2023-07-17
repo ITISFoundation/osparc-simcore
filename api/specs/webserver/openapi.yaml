@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: "osparc-simcore web API"
-  version: 0.23.0
+  version: 0.25.0
   description: "API designed for the front-end app"
   contact:
     name: IT'IS Foundation
@@ -23,27 +23,15 @@ servers:
         enum:
           - v0
         default: v0
-tags:
-  - name: activity
-  - name: admin
-  - name: authentication
-  - name: catalog
-  - name: cluster
-  - name: configuration
-  - name: maintenance
-  - name: nih-sparc
-  - name: project
-  - name: publication
-  - name: repository
-  - name: storage
-  - name: tag
-  - name: tasks
-  - name: user
 
 paths:
   # ADMIN -------------
   /email:test:
     $ref: "./openapi-admin.yaml#/paths/~1email:test"
+
+  # ANNOUNCEMENTS ---------------------------------------------------------
+  /announcements:
+    $ref: "./openapi-announcements.yaml#/paths/~1announcements"
 
   # DIAGNOSTICS ---------------------------------------------------------
   /:
@@ -256,6 +244,9 @@ paths:
   /projects/{project_id}/outputs:
     $ref: "./openapi-projects-ports.yaml#/paths/~1projects~1{project_id}~1outputs"
 
+  /projects/{project_id}/metadata:
+    $ref: "./openapi-projects-metadata.yaml#/paths/~1projects~1{project_id}~1metadata"
+
   /projects/{project_id}/metadata/ports:
     $ref: "./openapi-projects-ports.yaml#/paths/~1projects~1{project_id}~1metadata~1ports"
 
@@ -305,6 +296,11 @@ paths:
 
   /tags/{tag_id}:
     $ref: "./openapi-tags.yaml#/paths/~1tags~1{tag_id}"
+
+  # RESOURCE USAGE ------------------------------------------------------------------
+
+  /resource-usage/containers:
+    $ref: "./openapi-resource-usage.yaml#/paths/~1resource-usage~1containers"
 
   # PUBLICATIONS -------------------------------------------------------------------------
   /publications/service-submission:

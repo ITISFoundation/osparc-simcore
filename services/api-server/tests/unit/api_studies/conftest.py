@@ -3,13 +3,12 @@
 # pylint: disable=unused-variable
 
 
+from collections.abc import Iterator
 from copy import deepcopy
-from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 import pytest
 import respx
-import yaml
 from faker import Faker
 from fastapi import FastAPI
 from pytest_simcore.helpers.faker_webserver import (
@@ -18,19 +17,6 @@ from pytest_simcore.helpers.faker_webserver import (
 from respx import MockRouter
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.models.schemas.studies import StudyID
-
-
-@pytest.fixture(scope="session")
-def webserver_service_openapi_specs(
-    osparc_simcore_services_dir: Path,
-) -> dict[str, Any]:
-
-    openapi_path = (
-        osparc_simcore_services_dir
-        / "web/server/src/simcore_service_webserver/api/v0/openapi.yaml"
-    )
-    openapi_specs = yaml.safe_load(openapi_path.read_text())
-    return openapi_specs
 
 
 @pytest.fixture
@@ -89,7 +75,7 @@ def mocked_webserver_service_api(
 
         # Mocks /projects/{*}/metadata/ports
         assert oas_paths["/projects/{project_id}/metadata/ports"]
-        assert "get" in oas_paths["/projects/{project_id}/metadata/ports"].keys()
+        assert "get" in oas_paths["/projects/{project_id}/metadata/ports"]
         respx_mock.get(
             path__regex=r"/projects/(?P<project_id>[\w-]+)/metadata/ports$",
             name="list_project_metadata_ports",

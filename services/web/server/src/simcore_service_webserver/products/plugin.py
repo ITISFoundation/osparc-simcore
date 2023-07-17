@@ -19,7 +19,7 @@ from models_library.products import ProductName
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from .._constants import APP_PRODUCTS_KEY, APP_SETTINGS_KEY, RQ_PRODUCT_KEY
-from .._resources import resources
+from .._resources import webserver_resources
 from ._db import ProductRepository
 from ._events import (
     APP_PRODUCTS_TEMPLATES_DIR_KEY,
@@ -80,7 +80,7 @@ def list_products(app: web.Application) -> list[Product]:
 
 async def get_product_template_path(request: web.Request, filename: str) -> Path:
     def _themed(dirname, template) -> Path:
-        path: Path = resources.get_path(os.path.join(dirname, template))
+        path: Path = webserver_resources.get_path(os.path.join(dirname, template))
         return path
 
     async def _get_content(template_name: str):

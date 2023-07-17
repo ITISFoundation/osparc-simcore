@@ -1,5 +1,5 @@
 import urllib.parse
-from typing import Any, Literal
+from typing import Any, ClassVar, Literal
 
 import packaging.version
 from models_library.basic_regex import PUBLIC_VARIABLE_NAME_RE
@@ -37,10 +37,7 @@ class SolverKeyId(ConstrainedStr):
 class Solver(BaseModel):
     """A released solver with a specific version"""
 
-    id: SolverKeyId = Field(
-        ...,
-        description="Solver identifier",
-    )
+    id: SolverKeyId = Field(..., description="Solver identifier")  # noqa: A003
     version: VersionStr = Field(
         ...,
         description="semantic version number of the node",
@@ -58,7 +55,7 @@ class Solver(BaseModel):
 
     class Config:
         extra = Extra.ignore
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "id": "simcore/services/comp/isolve",
                 "version": "2.1.1",

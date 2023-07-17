@@ -3,11 +3,7 @@
   "info": {
     "title": "osparc.io web API",
     "description": "osparc-simcore public API specifications",
-    "version": "0.4.5",
-    "x-logo": {
-      "url": "https://raw.githubusercontent.com/ITISFoundation/osparc-manual/b809d93619512eb60c827b7e769c6145758378d0/_media/osparc-logo.svg",
-      "altText": "osparc-simcore logo"
-    }
+    "version": "0.4.5"
   },
   "paths": {
     "/v0/meta": {
@@ -107,7 +103,7 @@
           "files"
         ],
         "summary": "List Files",
-        "description": "Lists all files stored in the system",
+        "description": "Lists all files stored in the system\n\nSEE get_files_page for a paginated version of this function",
         "operationId": "list_files",
         "responses": {
           "200": {
@@ -222,7 +218,14 @@
             }
           },
           "404": {
-            "description": "File not found"
+            "description": "File not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -266,7 +269,14 @@
             "description": "Successful Response"
           },
           "404": {
-            "description": "File not found"
+            "description": "File not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
           },
           "200": {
             "description": "Returns a arbitrary binary data",
@@ -308,7 +318,7 @@
           "solvers"
         ],
         "summary": "List Solvers",
-        "description": "Lists all available solvers (latest version)",
+        "description": "Lists all available solvers (latest version)\n\nSEE get_solvers_page for paginated version of this function",
         "operationId": "list_solvers",
         "responses": {
           "200": {
@@ -339,7 +349,7 @@
           "solvers"
         ],
         "summary": "Lists All Releases",
-        "description": "Lists all released solvers (all released versions)",
+        "description": "Lists all released solvers i.e. all released versions\n\nSEE get_solvers_releases_page for a paginated version of this function",
         "operationId": "list_solvers_releases",
         "responses": {
           "200": {
@@ -419,7 +429,7 @@
           "solvers"
         ],
         "summary": "List Solver Releases",
-        "description": "Lists all releases of a given solver",
+        "description": "Lists all releases of a given (one) solver\n\nSEE get_solver_releases_page for a paginated version of this function",
         "operationId": "list_solver_releases",
         "parameters": [
           {
@@ -531,7 +541,7 @@
           "solvers"
         ],
         "summary": "List Jobs",
-        "description": "List of jobs in a specific released solver (limited to 20 jobs)",
+        "description": "List of jobs in a specific released solver (limited to 20 jobs)\n\nSEE get_jobs_page for paginated version of this function",
         "operationId": "list_jobs",
         "parameters": [
           {
@@ -1111,6 +1121,20 @@
           }
         }
       },
+      "ErrorGet": {
+        "title": "ErrorGet",
+        "required": [
+          "errors"
+        ],
+        "type": "object",
+        "properties": {
+          "errors": {
+            "title": "Errors",
+            "type": "array",
+            "items": {}
+          }
+        }
+      },
       "File": {
         "title": "File",
         "required": [
@@ -1462,7 +1486,7 @@
             "v1": "1.3.4",
             "v2": "2.4.45"
           },
-          "docs_url": "https://api.osparc.io/doc",
+          "docs_url": "https://api.osparc.io/dev/doc",
           "docs_dev_url": "https://api.osparc.io/dev/doc"
         }
       },

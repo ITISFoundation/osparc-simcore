@@ -1,48 +1,48 @@
 import logging
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
 
-from ...core.settings import BasicSettings
+from ...models.pagination import LimitOffsetPage, LimitOffsetParams, OnePage
 from ...models.schemas.studies import Study, StudyID, StudyPort
 from ...services.webserver import AuthSession
 from ..dependencies.webserver import get_webserver_session
+from ._common import API_SERVER_DEV_FEATURES_ENABLED
 
 _logger = logging.getLogger(__name__)
 router = APIRouter()
-settings = BasicSettings.create_from_envs()
 
 
 @router.get(
     "/",
-    response_model=list[Study],
-    include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
+    response_model=LimitOffsetPage[Study],
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
-async def list_studies(study_id: StudyID):
-    raise NotImplementedError(
-        f"list_studies {study_id=}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
-    )
+async def list_studies(
+    page_params: Annotated[LimitOffsetParams, Depends()],
+):
+    msg = f"list user's studies with pagination={page_params!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
+    raise NotImplementedError(msg)
 
 
 @router.get(
     "/{study_id}",
     response_model=Study,
-    include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_study(study_id: StudyID):
-    raise NotImplementedError(
-        f"get_study {study_id=}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
-    )
+    msg = f"get user's study study_id={study_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
+    raise NotImplementedError(msg)
 
 
 @router.get(
     "/{study_id}/ports",
-    response_model=list[StudyPort],
-    include_in_schema=settings.API_SERVER_DEV_FEATURES_ENABLED,
+    response_model=OnePage[StudyPort],
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def list_study_ports(
     study_id: StudyID,
-    webserver_api: AuthSession = Depends(get_webserver_session),
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
     """Lists metadata on ports of a given study
 
@@ -51,4 +51,5 @@ async def list_study_ports(
     project_ports: list[
         dict[str, Any]
     ] = await webserver_api.get_project_metadata_ports(project_id=study_id)
-    return project_ports
+
+    return OnePage[StudyPort](items=project_ports)  # type: ignore[arg-type]

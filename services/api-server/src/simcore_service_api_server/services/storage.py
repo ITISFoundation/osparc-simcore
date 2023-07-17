@@ -25,17 +25,17 @@ def to_file_api_model(stored_file_meta: StorageFileMetaData) -> File:
     # extracts fields from api/{file_id}/{filename}
     match = _FILE_ID_PATTERN.match(stored_file_meta.file_id or "")
     if not match:
-        raise ValueError(f"Invalid file_id {stored_file_meta.file_id} in file metadata")
+        msg = f"Invalid file_id {stored_file_meta.file_id} in file metadata"
+        raise ValueError(msg)
 
     file_id, filename = match.groups()
 
-    meta = File(
+    return File(
         id=file_id,  # type: ignore
         filename=filename,
         content_type=guess_type(filename)[0] or "application/octet-stream",
         checksum=stored_file_meta.entity_tag,
     )
-    return meta
 
 
 class StorageApi(BaseServiceClientApi):

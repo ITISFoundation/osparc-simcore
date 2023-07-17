@@ -14,7 +14,9 @@
 --requirement ../../../packages/service-library/requirements/_fastapi.in
 
 
+aiocache
 fastapi
+fastapi-pagination
 packaging
 prometheus_api_client
 typer[all]

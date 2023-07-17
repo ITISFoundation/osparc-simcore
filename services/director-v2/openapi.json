@@ -33,7 +33,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/HealthCheckGet"
+                }
               }
             }
           }
@@ -2520,6 +2522,22 @@
               "$ref": "#/components/schemas/ValidationError"
             }
           }
+        }
+      },
+      "HealthCheckGet": {
+        "title": "HealthCheckGet",
+        "required": [
+          "timestamp"
+        ],
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "title": "Timestamp",
+            "type": "string"
+          }
+        },
+        "example": {
+          "timestamp": "simcore_service_directorv2.api.routes.health@2023-07-03T12:59:12.024551+00:00"
         }
       },
       "ImageResources": {

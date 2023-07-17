@@ -12,7 +12,7 @@ import jinja_app_loader
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from .._resources import resources
+from .._resources import webserver_resources
 from . import _handlers
 
 log = logging.getLogger(__name__)
@@ -26,11 +26,10 @@ def setup_email(app: web.Application):
     Email template and helper functions to send emails
     """
 
-    templates_dir = resources.get_path("templates")
+    templates_dir = webserver_resources.get_path("templates")
     if not templates_dir.exists():
-        raise FileNotFoundError(
-            f"Cannot find email templates directory '{templates_dir}'"
-        )
+        msg = f"Cannot find email templates directory '{templates_dir}'"
+        raise FileNotFoundError(msg)
 
     # SEE https://github.com/aio-libs/aiohttp-jinja2
     env = aiohttp_jinja2.setup(app, loader=jinja_app_loader.Loader())

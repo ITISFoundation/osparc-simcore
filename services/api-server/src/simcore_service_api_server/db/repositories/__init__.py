@@ -1,4 +1,4 @@
 from ._base import BaseRepository
 
-# nopycln: file
+assert BaseRepository  # nosec
 __all__: tuple[str, ...] = ("BaseRepository",)

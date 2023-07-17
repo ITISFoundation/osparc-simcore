@@ -1,6 +1,7 @@
+from collections.abc import Awaitable, Callable
 from functools import lru_cache, wraps
 from json import JSONDecodeError
-from typing import Any, Awaitable, Callable
+from typing import Any
 from urllib.parse import quote
 
 from aiohttp import ClientSession, web
@@ -27,8 +28,7 @@ def handle_client_exception(handler: Callable) -> Callable[..., Awaitable[Any]]:
     @wraps(handler)
     async def wrapped(*args, **kwargs):
         try:
-            ret = await handler(*args, **kwargs)
-            return ret
+            return await handler(*args, **kwargs)
         except ClientResponseError as err:
             if err.status == web.HTTPNotFound.status_code:
                 raise exceptions.S3InvalidPathError(
@@ -69,7 +69,8 @@ async def get_storage_locations(
             await response.json()
         )
         if locations_enveloped.data is None:
-            raise exceptions.StorageServerIssue("Storage server is not reponding")
+            msg = "Storage server is not reponding"
+            raise exceptions.StorageServerIssue(msg)
         return locations_enveloped.data
 
 
@@ -99,9 +100,8 @@ async def get_download_file_link(
             presigned_link_enveloped.data is None
             or not presigned_link_enveloped.data.link
         ):
-            raise exceptions.S3InvalidPathError(
-                f"file {location_id}@{file_id} not found"
-            )
+            msg = f"file {location_id}@{file_id} not found"
+            raise exceptions.S3InvalidPathError(msg)
         url: AnyUrl = presigned_link_enveloped.data.link
         return url
 
@@ -115,6 +115,7 @@ async def get_upload_file_links(
     user_id: UserID,
     link_type: LinkType,
     file_size: ByteSize,
+    is_directory: bool,
 ) -> FileUploadSchema:
     """
     :raises exceptions.StorageServerIssue: _description_
@@ -125,6 +126,7 @@ async def get_upload_file_links(
         "user_id": f"{user_id}",
         "link_type": link_type.value,
         "file_size": int(file_size),
+        "is_directory": f"{is_directory}".lower(),
     }
     async with session.put(
         f"{_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}",
@@ -135,7 +137,8 @@ async def get_upload_file_links(
             await response.json()
         )
     if file_upload_links_enveloped.data is None:
-        raise exceptions.StorageServerIssue("Storage server is not reponding")
+        msg = "Storage server is not responding"
+        raise exceptions.StorageServerIssue(msg)
     return file_upload_links_enveloped.data
 
 

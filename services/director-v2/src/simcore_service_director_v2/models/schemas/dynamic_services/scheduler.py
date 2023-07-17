@@ -1,7 +1,6 @@
 import json
 import logging
 import re
-import warnings
 from enum import Enum
 from functools import cached_property
 from typing import Any, Mapping, TypeAlias
@@ -17,15 +16,7 @@ from models_library.service_settings_labels import (
 )
 from models_library.services import RunID
 from models_library.services_resources import ServiceResourcesDict
-from pydantic import (
-    AnyHttpUrl,
-    BaseModel,
-    ConstrainedStr,
-    Extra,
-    Field,
-    parse_obj_as,
-    root_validator,
-)
+from pydantic import AnyHttpUrl, BaseModel, ConstrainedStr, Extra, Field, parse_obj_as
 from servicelib.error_codes import ErrorCodeStr
 from servicelib.exception_utils import DelayedExceptionHandler
 
@@ -161,24 +152,6 @@ class ServiceRemovalState(BaseModel):
     def mark_removed(self) -> None:
         self.can_remove = False
         self.was_removed = True
-
-    @root_validator(pre=True)
-    @classmethod
-    def _can_save_is_no_longer_none(cls, values):
-        warnings.warn(
-            (
-                "Once https://github.com/ITISFoundation/osparc-simcore/issues/4202 "
-                "reaches production this entire root_validator function "
-                "can be safely removed. Please check "
-                "https://github.com/ITISFoundation/osparc-simcore/issues/4204"
-            ),
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        can_save: bool | None = values.get("can_save", None)
-        if can_save is None:
-            values["can_save"] = False
-        return values
 
 
 class DynamicSidecar(BaseModel):

@@ -174,7 +174,7 @@ async def test_service_assigned_env_variables(
     for service in started_services:
         service_uuid = service["service_uuid"]
         list_of_services = client.services.list(
-            filters={"label": "uuid=" + service_uuid}
+            filters={"label": f"io.simcore.runtime.node-id={service_uuid}"}
         )
         assert len(list_of_services) == 1
         docker_service = list_of_services[0]
@@ -219,7 +219,9 @@ async def test_interactive_service_published_port(docker_network, run_services):
 
     client = docker.from_env()
     service_uuid = service["service_uuid"]
-    list_of_services = client.services.list(filters={"label": "uuid=" + service_uuid})
+    list_of_services = client.services.list(
+        filters={"label": f"io.simcore.runtime.node-id={service_uuid}"}
+    )
     assert len(list_of_services) == 1
 
     docker_service = list_of_services[0]
@@ -265,7 +267,7 @@ async def test_interactive_service_in_correct_network(
         client = docker.from_env()
         service_uuid = service["service_uuid"]
         list_of_services = client.services.list(
-            filters={"label": "uuid=" + service_uuid}
+            filters={"label": f"io.simcore.runtime.node-id={service_uuid}"}
         )
         assert list_of_services
         assert len(list_of_services) == 1
@@ -285,7 +287,7 @@ async def test_dependent_services_have_common_network(docker_network, run_servic
         client = docker.from_env()
         service_uuid = service["service_uuid"]
         list_of_services = client.services.list(
-            filters={"label": "uuid=" + service_uuid}
+            filters={"label": f"io.simcore.runtime.node-id={service_uuid}"}
         )
         # there is one dependency per service
         assert len(list_of_services) == 2

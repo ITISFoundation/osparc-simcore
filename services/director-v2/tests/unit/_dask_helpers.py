@@ -10,7 +10,12 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputData,
     TaskOutputDataSchema,
 )
-from pydantic import AnyUrl
+from dask_task_models_library.container_tasks.protocol import (
+    ContainerCommands,
+    ContainerImage,
+    ContainerTag,
+    LogFileUploadURL,
+)
 
 
 class DaskGatewayServer(NamedTuple):
@@ -22,12 +27,12 @@ class DaskGatewayServer(NamedTuple):
 
 def fake_sidecar_fct(
     docker_auth: DockerBasicAuth,
-    service_key: str,
-    service_version: str,
+    service_key: ContainerImage,
+    service_version: ContainerTag,
     input_data: TaskInputData,
     output_data_keys: TaskOutputDataSchema,
-    log_file_url: AnyUrl,
-    command: list[str],
+    log_file_url: LogFileUploadURL,
+    command: ContainerCommands,
     expected_annotations: dict[str, Any],
 ) -> TaskOutputData:
     import time
@@ -48,11 +53,12 @@ def fake_sidecar_fct(
 
 def fake_failing_sidecar_fct(
     docker_auth: DockerBasicAuth,
-    service_key: str,
-    service_version: str,
+    service_key: ContainerImage,
+    service_version: ContainerTag,
     input_data: TaskInputData,
     output_data_keys: TaskOutputDataSchema,
-    log_file_url: AnyUrl,
-    command: list[str],
+    log_file_url: LogFileUploadURL,
+    command: ContainerCommands,
 ) -> TaskOutputData:
-    raise ValueError("sadly we are failing to execute anything cause we are dumb...")
+    err_msg = "sadly we are failing to execute anything cause we are dumb..."
+    raise ValueError(err_msg)

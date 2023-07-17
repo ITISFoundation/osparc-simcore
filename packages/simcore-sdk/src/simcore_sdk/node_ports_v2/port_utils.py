@@ -1,7 +1,8 @@
 import logging
 import shutil
+from collections.abc import Callable, Coroutine
 from pathlib import Path
-from typing import Any, Callable, Coroutine
+from typing import Any
 
 from models_library.api_schemas_storage import FileUploadSchema, LinkType
 from models_library.users import UserID
@@ -13,7 +14,9 @@ from yarl import URL
 
 from ..node_ports_common import data_items_utils, filemanager
 from ..node_ports_common.constants import SIMCORE_LOCATION
+from ..node_ports_common.exceptions import NodeportsException
 from ..node_ports_common.file_io_utils import LogRedirectCB
+from ..node_ports_common.filemanager import UploadedFile, UploadedFolder
 from .links import DownloadLink, FileLink, ItemConcreteValue, ItemValue, PortLink
 
 log = logging.getLogger(__name__)
@@ -140,6 +143,7 @@ async def get_upload_links_from_storage(
         s3_object=s3_object,
         link_type=link_type,
         file_size=file_size,
+        is_directory=False,
     )
     return links
 
@@ -176,18 +180,20 @@ async def pull_file_from_store(
     file_to_key_map: dict[str, str] | None,
     value: FileLink,
     io_log_redirect_cb: LogRedirectCB | None,
+    r_clone_settings: RCloneSettings | None,
     progress_bar: ProgressBarData | None,
 ) -> Path:
     log.debug("pulling file from storage %s", value)
     # do not make any assumption about s3_path, it is a str containing stuff that can be anything depending on the store
     local_path = data_items_utils.create_folder_path(key)
-    downloaded_file = await filemanager.download_file_from_s3(
+    downloaded_file = await filemanager.download_path_from_s3(
         user_id=user_id,
         store_id=value.store,
         store_name=None,
         s3_object=value.path,
         local_folder=local_path,
         io_log_redirect_cb=io_log_redirect_cb,
+        r_clone_settings=r_clone_settings,
         progress_bar=progress_bar or ProgressBarData(steps=1),
     )
     # if a file alias is present use it to rename the file accordingly
@@ -213,22 +219,33 @@ async def push_file_to_store(
     file_base_path: Path | None = None,
     progress_bar: ProgressBarData,
 ) -> FileLink:
+    """
+    :raises exceptions.NodeportsException
+    """
+
     log.debug("file path %s will be uploaded to s3", file)
     s3_object = data_items_utils.create_simcore_file_id(
         file, project_id, node_id, file_base_path=file_base_path
     )
-    store_id, e_tag = await filemanager.upload_file(
+    if not file.is_file():
+        msg = f"Expected path={file} should be a file"
+        raise NodeportsException(msg)
+
+    upload_result: UploadedFolder | UploadedFile = await filemanager.upload_path(
         user_id=user_id,
         store_id=SIMCORE_LOCATION,
         store_name=None,
         s3_object=s3_object,
-        file_to_upload=file,
+        path_to_upload=file,
         r_clone_settings=r_clone_settings,
         io_log_redirect_cb=io_log_redirect_cb,
         progress_bar=progress_bar,
     )
-    log.debug("file path %s uploaded, received ETag %s", file, e_tag)
-    return FileLink(store=store_id, path=s3_object, e_tag=e_tag)
+    assert isinstance(upload_result, UploadedFile)  # nosec
+    log.debug("file path %s uploaded, received ETag %s", file, upload_result.etag)
+    return FileLink(
+        store=upload_result.store_id, path=s3_object, e_tag=upload_result.etag
+    )
 
 
 async def pull_file_from_download_link(
@@ -238,6 +255,7 @@ async def pull_file_from_download_link(
     io_log_redirect_cb: LogRedirectCB | None,
     progress_bar: ProgressBarData | None,
 ) -> Path:
+    # download 1 file from a link
     log.debug(
         "Getting value from download link [%s] with label %s",
         value.download_link,

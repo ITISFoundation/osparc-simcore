@@ -1,8 +1,8 @@
 import logging
 import urllib.parse
+from collections.abc import Callable
 from dataclasses import dataclass
 from operator import attrgetter
-from typing import Callable
 
 from fastapi import FastAPI
 from models_library.emails import LowerCaseEmailStr
@@ -146,8 +146,7 @@ class CatalogApi(BaseServiceClientApi):
 
         response.raise_for_status()
 
-        solver_ports = parse_obj_as(list[SolverPort], response.json())
-        return solver_ports
+        return parse_obj_as(list[SolverPort], response.json())
 
     async def list_latest_releases(
         self, user_id: int, *, product_name: str
@@ -183,8 +182,7 @@ class CatalogApi(BaseServiceClientApi):
         )
 
         # raises IndexError if None
-        latest = sorted(releases, key=attrgetter("pep404_version"))[-1]
-        return latest
+        return sorted(releases, key=attrgetter("pep404_version"))[-1]
 
 
 # MODULES APP SETUP -------------------------------------------------------------

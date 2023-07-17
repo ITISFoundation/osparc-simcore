@@ -1,6 +1,7 @@
 import logging
 
 from fastapi import FastAPI
+from fastapi_pagination import add_pagination as setup_fastapi_pagination
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 
 from .._meta import (
@@ -41,6 +42,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
 
     # PLUGINS SETUP
     setup_api_routes(app)
+    setup_fastapi_pagination(app)
 
     # ERROR HANDLERS
     # ... add here ...

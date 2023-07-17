@@ -15,10 +15,17 @@ from aiodocker import Docker, DockerError
 from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
+from dask_task_models_library.container_tasks.protocol import (
+    ContainerCommands,
+    ContainerEnvsDict,
+    ContainerImage,
+    ContainerLabelsDict,
+    ContainerTag,
+    LogFileUploadURL,
+)
 from models_library.services_resources import BootMode
 from packaging import version
 from pydantic import ByteSize
-from pydantic.networks import AnyUrl
 from servicelib.logging_utils import (
     LogLevelInt,
     LogMessageStr,
@@ -44,33 +51,36 @@ LogPublishingCB = Callable[[LogMessageStr, LogLevelInt], Awaitable[None]]
 
 
 async def create_container_config(
+    *,
     docker_registry: str,
-    service_key: str,
-    service_version: str,
-    command: list[str],
+    image: ContainerImage,
+    tag: ContainerTag,
+    command: ContainerCommands,
     comp_volume_mount_point: str,
     boot_mode: BootMode,
     task_max_resources: dict[str, Any],
+    envs: ContainerEnvsDict,
+    labels: ContainerLabelsDict,
 ) -> DockerContainerConfig:
     nano_cpus_limit = int(task_max_resources.get("CPU", 1) * 1e9)
     memory_limit = ByteSize(task_max_resources.get("RAM", 1024**3))
+    env_variables = [
+        "INPUT_FOLDER=/inputs",
+        "OUTPUT_FOLDER=/outputs",
+        "LOG_FOLDER=/logs",
+        f"SC_COMP_SERVICES_SCHEDULED_AS={boot_mode.value}",
+        f"SIMCORE_NANO_CPUS_LIMIT={nano_cpus_limit}",
+        f"SIMCORE_MEMORY_BYTES_LIMIT={memory_limit}",
+    ]
+    if envs:
+        env_variables += [
+            f"{env_key}={env_value}" for env_key, env_value in envs.items()
+        ]
     config = DockerContainerConfig(
-        Env=[
-            *[
-                f"{name.upper()}_FOLDER=/{name}s"
-                for name in [
-                    "input",
-                    "output",
-                    "log",
-                ]
-            ],
-            f"SC_COMP_SERVICES_SCHEDULED_AS={boot_mode.value}",
-            f"SIMCORE_NANO_CPUS_LIMIT={nano_cpus_limit}",
-            f"SIMCORE_MEMORY_BYTES_LIMIT={memory_limit}",
-        ],
+        Env=env_variables,
         Cmd=command,
-        Image=f"{docker_registry}/{service_key}:{service_version}",
-        Labels={},
+        Image=f"{docker_registry}/{image}:{tag}",
+        Labels=cast(dict[str, str], labels),
         HostConfig=ContainerHostConfig(
             Init=True,
             Binds=[
@@ -172,12 +182,12 @@ async def _parse_and_publish_logs(
 
 async def _parse_container_log_file(
     container: DockerContainer,
-    service_key: str,
-    service_version: str,
+    service_key: ContainerImage,
+    service_version: ContainerTag,
     container_name: str,
     task_publishers: TaskPublisher,
     task_volumes: TaskSharedVolumes,
-    log_file_url: AnyUrl,
+    log_file_url: LogFileUploadURL,
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
 ) -> None:
@@ -220,11 +230,11 @@ async def _parse_container_log_file(
 
 async def _parse_container_docker_logs(
     container: DockerContainer,
-    service_key: str,
-    service_version: str,
+    service_key: ContainerImage,
+    service_version: ContainerTag,
     container_name: str,
     task_publishers: TaskPublisher,
-    log_file_url: AnyUrl,
+    log_file_url: LogFileUploadURL,
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
 ) -> None:
@@ -263,12 +273,12 @@ async def _parse_container_docker_logs(
 
 async def _monitor_container_logs(
     container: DockerContainer,
-    service_key: str,
-    service_version: str,
+    service_key: ContainerImage,
+    service_version: ContainerTag,
     task_publishers: TaskPublisher,
     integration_version: version.Version,
     task_volumes: TaskSharedVolumes,
-    log_file_url: AnyUrl,
+    log_file_url: LogFileUploadURL,
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
 ) -> None:
@@ -313,12 +323,12 @@ async def _monitor_container_logs(
 @contextlib.asynccontextmanager
 async def managed_monitor_container_log_task(
     container: DockerContainer,
-    service_key: str,
-    service_version: str,
+    service_key: ContainerImage,
+    service_version: ContainerTag,
     task_publishers: TaskPublisher,
     integration_version: version.Version,
     task_volumes: TaskSharedVolumes,
-    log_file_url: AnyUrl,
+    log_file_url: LogFileUploadURL,
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
 ) -> AsyncIterator[Awaitable[None]]:
@@ -358,8 +368,8 @@ async def managed_monitor_container_log_task(
 async def pull_image(
     docker_client: Docker,
     docker_auth: DockerBasicAuth,
-    service_key: str,
-    service_version: str,
+    service_key: ContainerImage,
+    service_version: ContainerTag,
     log_publishing_cb: LogPublishingCB,
 ) -> None:
     async for pull_progress in docker_client.images.pull(
@@ -383,8 +393,8 @@ async def pull_image(
 async def get_integration_version(
     docker_client: Docker,
     docker_auth: DockerBasicAuth,
-    service_key: str,
-    service_version: str,
+    service_key: ContainerImage,
+    service_version: ContainerTag,
 ) -> version.Version:
     image_cfg = await docker_client.images.inspect(
         f"{docker_auth.server_address}/{service_key}:{service_version}"

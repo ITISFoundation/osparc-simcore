@@ -33,6 +33,6 @@ def create_router(settings: ApplicationSettings):
     # Web form to upload files at http://localhost:8000/v0/upload-form-view
     # Overcomes limitation of Swagger UI view
     # NOTE: As of 2020-10-07, Swagger UI doesn't support multiple file uploads in the same form field
-    # router.get("/upload-multiple-view")(files.files_upload_multiple_view)
+    # as router.get("/upload-multiple-view")(files.files_upload_multiple_view)
 
     return router

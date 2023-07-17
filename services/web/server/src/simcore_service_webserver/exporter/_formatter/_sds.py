@@ -8,7 +8,7 @@ from aiohttp import web
 from servicelib.pools import non_blocking_process_pool_executor
 
 from ...catalog.client import get_service
-from ...projects.exceptions import ProjectsException
+from ...projects.exceptions import BaseProjectError
 from ...projects.projects_api import get_project_for_user
 from ...scicrunch.db import ResearchResourceRepository
 from ..exceptions import SDSException
@@ -56,7 +56,7 @@ async def create_sds_directory(
             user_id=user_id,
             include_state=True,
         )
-    except ProjectsException as e:
+    except BaseProjectError as e:
         raise SDSException(f"Could not find project {project_id}") from e
 
     _logger.debug("Project data: %s", project_data)

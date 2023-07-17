@@ -1,17 +1,8 @@
 import asyncio
 import collections
 import logging
-from typing import (
-    Any,
-    Awaitable,
-    Callable,
-    Coroutine,
-    Final,
-    Iterable,
-    NoReturn,
-    Optional,
-    get_args,
-)
+from collections.abc import Awaitable, Callable, Coroutine
+from typing import Any, Final, Generator, NoReturn, Optional, cast, get_args
 from uuid import uuid4
 
 import dask_gateway
@@ -24,11 +15,17 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputData,
     TaskOutputDataSchema,
 )
+from dask_task_models_library.container_tasks.protocol import (
+    ContainerEnvsDict,
+    ContainerLabelsDict,
+)
 from fastapi import FastAPI
 from models_library.clusters import ClusterID
+from models_library.docker import StandardSimcoreDockerLabels
 from models_library.errors import ErrorDict
-from models_library.projects import ProjectID
+from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes_io import NodeID, NodeIDStr
+from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, ValidationError, parse_obj_as
 from servicelib.json_serialization import json_dumps
@@ -40,6 +37,7 @@ from simcore_sdk.node_ports_common.exceptions import (
 )
 from simcore_sdk.node_ports_v2 import FileLinkType, Port, links, port_utils
 from simcore_sdk.node_ports_v2.links import ItemValue as _NPItemValue
+from simcore_sdk.node_ports_v2.ports_mapping import PortKey
 
 from ..core.errors import (
     ComputationalBackendNotConnectedError,
@@ -48,8 +46,13 @@ from ..core.errors import (
     MissingComputationalResourcesError,
     PortsValidationError,
 )
+from ..models.domains.comp_runs import MetadataDict
 from ..models.domains.comp_tasks import Image
 from ..models.schemas.services import NodeRequirements
+from ..modules.osparc_variables_substitutions import (
+    resolve_and_substitute_session_variables_in_specs,
+    substitute_vendor_secrets_in_specs,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -86,11 +89,14 @@ def generate_dask_job_id(
     return f"{service_key}:{service_version}:userid_{user_id}:projectid_{project_id}:nodeid_{node_id}:uuid_{uuid4()}"
 
 
+_JOB_ID_PARTS: Final[int] = 6
+
+
 def parse_dask_job_id(
     job_id: str,
 ) -> tuple[ServiceKeyStr, ServiceVersionStr, UserID, ProjectID, NodeID]:
     parts = job_id.split(":")
-    assert len(parts) == 6  # nosec
+    assert len(parts) == _JOB_ID_PARTS  # nosec
     return (
         parts[0],
         parts[1],
@@ -119,7 +125,7 @@ async def create_node_ports(
         db_manager = node_ports_v2.DBManager(db_engine)
         return await node_ports_v2.ports(
             user_id=user_id,
-            project_id=f"{project_id}",
+            project_id=ProjectIDStr(f"{project_id}"),
             node_uuid=NodeIDStr(f"{node_id}"),
             db_manager=db_manager,
         )
@@ -171,7 +177,9 @@ async def parse_output_data(
             value_to_transfer = port_value
 
         try:
-            await (await ports.outputs)[port_key].set_value(value_to_transfer)
+            await (await ports.outputs)[cast(PortKey, port_key)].set_value(
+                value_to_transfer
+            )
         except ValidationError as err:
             ports_errors.extend(_get_port_validation_errors(port_key, err))
 
@@ -180,33 +188,21 @@ async def parse_output_data(
 
 
 async def compute_input_data(
-    app: FastAPI,
-    user_id: UserID,
+    *,
     project_id: ProjectID,
     node_id: NodeID,
     file_link_type: FileLinkType,
-    ports: node_ports_v2.Nodeports | None = None,
+    node_ports: node_ports_v2.Nodeports,
 ) -> TaskInputData:
     """Retrieves values registered to the inputs of project_id/node_id
-
-    - ports is optional because
-
     :raises PortsValidationError: when inputs ports validation fail
     """
-
-    if ports is None:
-        ports = await create_node_ports(
-            db_engine=app.state.engine,
-            user_id=user_id,
-            project_id=project_id,
-            node_id=node_id,
-        )
 
     input_data = {}
 
     ports_errors = []
     port: Port
-    for port in (await ports.inputs).values():
+    for port in (await node_ports.inputs).values():
         try:
             value: _PVType = await port.get_value(file_link_type=file_link_type)
 
@@ -235,31 +231,20 @@ async def compute_input_data(
 
 
 async def compute_output_data_schema(
-    app: FastAPI,
+    *,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
     file_link_type: FileLinkType,
-    ports: node_ports_v2.Nodeports | None = None,
+    node_ports: node_ports_v2.Nodeports,
 ) -> TaskOutputDataSchema:
     """
 
     :raises PortsValidationError
     """
-    if ports is None:
-        # Based on when this function is normally called,
-        # it is very unlikely that NodePorts raise an exception here
-        # This function only needs the outputs but the design of NodePorts
-        # will validate all inputs and outputs.
-        ports = await create_node_ports(
-            db_engine=app.state.engine,
-            user_id=user_id,
-            project_id=project_id,
-            node_id=node_id,
-        )
 
     output_data_schema: dict[str, Any] = {}
-    for port in (await ports.outputs).values():
+    for port in (await node_ports.outputs).values():
         output_data_schema[port.key] = {"required": port.default_value is None}
 
         if port_utils.is_file_type(port.property_type):
@@ -308,6 +293,72 @@ async def compute_service_log_file_upload_link(
     return url
 
 
+_UNDEFINED_METADATA: Final[str] = "undefined-label"
+
+
+def compute_task_labels(
+    *,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    metadata: MetadataDict,
+    node_requirements: NodeRequirements,
+) -> ContainerLabelsDict:
+    product_name = metadata.get("product_name", _UNDEFINED_METADATA)
+    standard_simcore_labels = StandardSimcoreDockerLabels.construct(
+        user_id=user_id,
+        project_id=project_id,
+        node_id=node_id,
+        product_name=product_name,
+        simcore_user_agent=metadata.get("simcore_user_agent", _UNDEFINED_METADATA),
+        swarm_stack_name=_UNDEFINED_METADATA,  # NOTE: there is currently no need for this label in the comp backend
+        memory_limit=node_requirements.ram,
+        cpu_limit=node_requirements.cpu,
+    ).to_simcore_runtime_docker_labels()
+    all_labels = standard_simcore_labels | parse_obj_as(
+        ContainerLabelsDict,
+        {
+            k.lower(): f"{v}"
+            for k, v in metadata.items()
+            if k not in ["product_name", "simcore_user_agent"]
+        },
+    )
+    return all_labels
+
+
+async def compute_task_envs(
+    app: FastAPI,
+    *,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    node_image: Image,
+    metadata: MetadataDict,
+) -> ContainerEnvsDict:
+    product_name = metadata.get("product_name", _UNDEFINED_METADATA)
+    task_envs = node_image.envs
+    if task_envs:
+        vendor_substituted_envs = await substitute_vendor_secrets_in_specs(
+            app,
+            node_image.envs,
+            service_key=ServiceKey(node_image.name),
+            service_version=ServiceVersion(node_image.tag),
+        )
+        resolved_envs = await resolve_and_substitute_session_variables_in_specs(
+            app,
+            vendor_substituted_envs,
+            user_id=user_id,
+            product_name=product_name,
+            project_id=project_id,
+            node_id=node_id,
+        )
+        # NOTE: see https://github.com/ITISFoundation/osparc-simcore/issues/3638
+        # we currently do not validate as we are using illegal docker key names with underscores
+        task_envs = cast(ContainerEnvsDict, resolved_envs)
+
+    return task_envs
+
+
 async def get_service_log_file_download_link(
     user_id: UserID,
     project_id: ProjectID,
@@ -328,7 +379,6 @@ async def get_service_log_file_download_link(
             link_type=file_link_type,
         )
         return value_link
-
     except (S3InvalidPathError, StorageInvalidCall) as err:
         _logger.debug("Log for task %s not found: %s", f"{project_id=}/{node_id=}", err)
         return None
@@ -442,7 +492,7 @@ def check_communication_with_scheduler_is_open(client: distributed.Client):
         and client.scheduler_comm.comm is not None
         and client.scheduler_comm.comm.closed()
     ):
-        raise ComputationalBackendNotConnectedError()
+        raise ComputationalBackendNotConnectedError
 
 
 def check_scheduler_status(client: distributed.Client):
@@ -451,7 +501,7 @@ def check_scheduler_status(client: distributed.Client):
         _logger.error(
             "The computational backend is not connected!",
         )
-        raise ComputationalBackendNotConnectedError()
+        raise ComputationalBackendNotConnectedError
 
 
 _LARGE_NUMBER_OF_WORKERS: Final[int] = 10000
@@ -467,7 +517,7 @@ def _can_task_run_on_worker(
 ) -> bool:
     def gen_check(
         task_resources: dict[str, Any], worker_resources: dict[str, Any]
-    ) -> Iterable[bool]:
+    ) -> Generator[bool, None, None]:
         for name, required_value in task_resources.items():
             if required_value is None:
                 yield True
@@ -570,5 +620,4 @@ async def wrap_client_async_routine(
     """Dask async behavior does not go well with Pylance as it returns
     a union of types. this wrapper makes both mypy and pylance happy"""
     assert client_coroutine  # nosec
-    ret = await client_coroutine
-    return ret
+    return await client_coroutine

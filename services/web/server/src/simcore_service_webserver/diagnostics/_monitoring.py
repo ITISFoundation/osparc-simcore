@@ -10,7 +10,7 @@ from servicelib.aiohttp.monitoring import get_collector_registry
 from servicelib.aiohttp.monitoring import setup_monitoring as service_lib_setup
 
 from .. import _meta
-from ._healthcheck import DelayWindowProbe, is_sensing_enabled, kLATENCY_PROBE
+from ._healthcheck import HEALTH_LATENCY_PROBE, DelayWindowProbe, is_sensing_enabled
 
 _logger = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ async def exit_middleware_cb(request: web.Request, _response: web.StreamResponse
     if not str(request.path).startswith("/socket.io") and is_sensing_enabled(
         request.app
     ):
-        request.app[kLATENCY_PROBE].observe(resp_time_secs)
+        request.app[HEALTH_LATENCY_PROBE].observe(resp_time_secs)
 
 
 def setup_monitoring(app: web.Application):
@@ -61,6 +61,6 @@ def setup_monitoring(app: web.Application):
     )
 
     # on-the fly stats
-    app[kLATENCY_PROBE] = DelayWindowProbe()
+    app[HEALTH_LATENCY_PROBE] = DelayWindowProbe()
 
     return True

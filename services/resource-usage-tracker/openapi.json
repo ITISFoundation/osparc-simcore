@@ -44,10 +44,274 @@
           }
         }
       }
+    },
+    "/v1/usage/containers": {
+      "get": {
+        "tags": [
+          "resource-usage-tracker"
+        ],
+        "summary": "List Containers",
+        "description": "Returns a list of tracked containers for a given user and product",
+        "operationId": "list_containers",
+        "parameters": [
+          {
+            "required": false,
+            "schema": {
+              "title": "Limit",
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer",
+              "default": 20
+            },
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "Offset",
+              "minimum": 0,
+              "type": "integer",
+              "default": 0
+            },
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "exclusiveMinimum": true,
+              "type": "integer",
+              "minimum": 0
+            },
+            "name": "user_id",
+            "in": "query"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Product Name",
+              "type": "string"
+            },
+            "name": "product_name",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LimitOffsetPage_ContainerGet_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "ContainerGet": {
+        "title": "ContainerGet",
+        "required": [
+          "project_uuid",
+          "node_uuid",
+          "service_key",
+          "service_version",
+          "start_time",
+          "duration",
+          "processors",
+          "core_hours",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "project_uuid": {
+            "title": "Project Uuid",
+            "type": "string",
+            "format": "uuid"
+          },
+          "project_name": {
+            "title": "Project Name",
+            "type": "string"
+          },
+          "node_uuid": {
+            "title": "Node Uuid",
+            "type": "string",
+            "format": "uuid"
+          },
+          "node_label": {
+            "title": "Node Label",
+            "type": "string"
+          },
+          "service_key": {
+            "title": "Service Key",
+            "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+            "type": "string"
+          },
+          "service_version": {
+            "title": "Service Version",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "type": "string"
+          },
+          "start_time": {
+            "title": "Start Time",
+            "type": "string",
+            "format": "date-time"
+          },
+          "duration": {
+            "title": "Duration",
+            "type": "number"
+          },
+          "processors": {
+            "title": "Processors",
+            "type": "number"
+          },
+          "core_hours": {
+            "title": "Core Hours",
+            "type": "number"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ContainerStatus"
+          }
+        }
+      },
+      "ContainerStatus": {
+        "title": "ContainerStatus",
+        "enum": [
+          "running",
+          "finished"
+        ],
+        "type": "string",
+        "description": "An enumeration."
+      },
+      "HTTPValidationError": {
+        "title": "HTTPValidationError",
+        "type": "object",
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            }
+          }
+        }
+      },
+      "LimitOffsetPage_ContainerGet_": {
+        "title": "LimitOffsetPage[ContainerGet]",
+        "required": [
+          "items",
+          "total",
+          "links"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "title": "Items",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContainerGet"
+            }
+          },
+          "total": {
+            "title": "Total",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "limit": {
+            "title": "Limit",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "links": {
+            "$ref": "#/components/schemas/Links"
+          }
+        }
+      },
+      "Links": {
+        "title": "Links",
+        "type": "object",
+        "properties": {
+          "first": {
+            "title": "First",
+            "type": "string",
+            "example": "/api/v1/users?limit=1&offset1"
+          },
+          "last": {
+            "title": "Last",
+            "type": "string",
+            "example": "/api/v1/users?limit=1&offset1"
+          },
+          "self": {
+            "title": "Self",
+            "type": "string",
+            "example": "/api/v1/users?limit=1&offset1"
+          },
+          "next": {
+            "title": "Next",
+            "type": "string",
+            "example": "/api/v1/users?limit=1&offset1"
+          },
+          "prev": {
+            "title": "Prev",
+            "type": "string",
+            "example": "/api/v1/users?limit=1&offset1"
+          }
+        }
+      },
+      "ValidationError": {
+        "title": "ValidationError",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "loc": {
+            "title": "Location",
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        }
+      },
       "_Meta": {
         "title": "_Meta",
         "required": [

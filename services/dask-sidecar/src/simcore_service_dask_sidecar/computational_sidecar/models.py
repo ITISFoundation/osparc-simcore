@@ -1,5 +1,3 @@
-from typing import Optional
-
 from packaging import version
 from pydantic import BaseModel, ByteSize, Field, validator
 
@@ -21,7 +19,7 @@ class ContainerHostConfig(BaseModel):
         description="Run an init inside the container that forwards signals and reaps processes. This field is omitted if empty, and the default (as configured on the daemon) is used",
     )
     memory: ByteSize = Field(..., alias="Memory", description="Memory limit in bytes")
-    memory_swap: Optional[ByteSize] = Field(
+    memory_swap: ByteSize | None = Field(
         default=None,
         alias="MemorySwap",
         description="Total memory limit (memory + swap). Set as -1 to enable unlimited swap.",
@@ -42,7 +40,8 @@ class ContainerHostConfig(BaseModel):
     @classmethod
     def ensure_memory_swap_cannot_be_unlimited_nor_smaller_than_memory(cls, v, values):
         if v < values["memory"]:
-            raise ValueError("Memory swap cannot be set to a smaller value than memory")
+            msg = "Memory swap cannot be set to a smaller value than memory"
+            raise ValueError(msg)
         return v
 
 

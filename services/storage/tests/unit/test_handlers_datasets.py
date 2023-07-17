@@ -17,6 +17,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, parse_obj_as
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
 from tests.helpers.file_utils import parametrized_file_size
@@ -101,3 +102,29 @@ async def test_get_datasets_metadata(
     assert len(list_datasets) == 1
     dataset = list_datasets[0]
     assert dataset.dataset_id == project_id
+
+
+async def test_ensure_expand_dirs_defaults_true(
+    mocker: MockerFixture,
+    client: TestClient,
+    user_id: UserID,
+    project_id: ProjectID,
+    location_id: int,
+):
+    mocked_object = mocker.patch(
+        "simcore_service_storage.simcore_s3_dsm.SimcoreS3DataManager.list_files_in_dataset",
+        autospec=True,
+    )
+
+    assert client.app
+    url = (
+        client.app.router["get_files_metadata_dataset"]
+        .url_for(location_id=f"{location_id}", dataset_id=f"{project_id}")
+        .with_query(user_id=user_id)
+    )
+    await client.get(f"{url}")
+
+    assert len(mocked_object.call_args_list) == 1
+    call_args_list = mocked_object.call_args_list[0]
+    assert "expand_dirs" in call_args_list.kwargs
+    assert call_args_list.kwargs["expand_dirs"] is True

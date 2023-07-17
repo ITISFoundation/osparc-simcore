@@ -171,8 +171,9 @@ qx.Class.define("osparc.component.node.UpdateResourceLimitsView", {
           this.fireEvent("limitsChanged");
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong Updating the limits"), "ERROR");
           console.error(err);
+          const msg = err.message || this.tr("Something went wrong updating the limits");
+          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
         })
         .finally(() => {
           this.__saveBtn.setFetching(false);

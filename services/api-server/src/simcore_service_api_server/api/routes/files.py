@@ -1,10 +1,9 @@
 import asyncio
+import datetime
 import io
 import logging
-from collections import deque
-from datetime import datetime
 from textwrap import dedent
-from typing import IO, Deque
+from typing import IO, Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
@@ -16,44 +15,55 @@ from models_library.projects_nodes_io import StorageFileID
 from pydantic import ValidationError, parse_obj_as
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
-from simcore_sdk.node_ports_common.filemanager import UploadableFileObject
-from simcore_sdk.node_ports_common.filemanager import upload_file as storage_upload_file
+from simcore_sdk.node_ports_common.filemanager import (
+    UploadableFileObject,
+    UploadedFile,
+    UploadedFolder,
+)
+from simcore_sdk.node_ports_common.filemanager import upload_path as storage_upload_path
 from starlette.responses import RedirectResponse
 
 from ..._meta import API_VTAG
+from ...models.pagination import LimitOffsetPage, LimitOffsetParams
 from ...models.schemas.files import File
 from ...services.storage import StorageApi, StorageFileMetaData, to_file_api_model
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
+from ..errors.http_error import ErrorGet
+from ._common import API_SERVER_DEV_FEATURES_ENABLED
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 router = APIRouter()
-
 
 ## FILES ---------------------------------------------------------------------------------
 #
 # - WARNING: the order of the router-decorated functions MATTER
-# - TODO: pagination ?
 # - TODO: extend :search as https://cloud.google.com/apis/design/custom_methods ?
 #
 #
 
-common_error_responses = {
-    status.HTTP_404_NOT_FOUND: {"description": "File not found"},
+_common_error_responses = {
+    status.HTTP_404_NOT_FOUND: {
+        "description": "File not found",
+        "model": ErrorGet,
+    },
 }
 
 
 @router.get("", response_model=list[File])
 async def list_files(
-    storage_client: StorageApi = Depends(get_api_client(StorageApi)),
-    user_id: int = Depends(get_current_user_id),
+    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
+    user_id: Annotated[int, Depends(get_current_user_id)],
 ):
-    """Lists all files stored in the system"""
+    """Lists all files stored in the system
+
+    SEE get_files_page for a paginated version of this function
+    """
 
     stored_files: list[StorageFileMetaData] = await storage_client.list_files(user_id)
 
     # Adapts storage API model to API model
-    files_meta: Deque = deque()
+    all_files: list[File] = []
     for stored_file_meta in stored_files:
         try:
             assert stored_file_meta.file_id  # nosec
@@ -61,7 +71,7 @@ async def list_files(
             file_meta: File = to_file_api_model(stored_file_meta)
 
         except (ValidationError, ValueError, AttributeError) as err:
-            logger.warning(
+            _logger.warning(
                 "Skipping corrupted entry in storage '%s' (%s)"
                 "TIP: check this entry in file_meta_data table.",
                 stored_file_meta.file_uuid,
@@ -69,9 +79,26 @@ async def list_files(
             )
 
         else:
-            files_meta.append(file_meta)
+            all_files.append(file_meta)
 
-    return list(files_meta)
+    return all_files
+
+
+@router.get(
+    "/page",
+    response_model=LimitOffsetPage[File],
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def get_files_page(
+    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
+    user_id: Annotated[int, Depends(get_current_user_id)],
+    page_params: Annotated[LimitOffsetParams, Depends()],
+):
+    assert storage_client  # nosec
+    assert user_id  # nosec
+
+    msg = f"get_files_page of user_id={user_id!r} with page_params={page_params!r}. SEE https://github.com/ITISFoundation/osparc-issues/issues/952"
+    raise NotImplementedError(msg)
 
 
 def _get_spooled_file_size(file_io: IO) -> int:
@@ -85,9 +112,9 @@ def _get_spooled_file_size(file_io: IO) -> int:
 @cancel_on_disconnect
 async def upload_file(
     request: Request,
-    file: UploadFile = FileParam(...),
-    content_length: str | None = Header(None),
-    user_id: int = Depends(get_current_user_id),
+    file: Annotated[UploadFile, FileParam(...)],
+    user_id: Annotated[int, Depends(get_current_user_id)],
+    content_length: str | None = Header(None),  # noqa: B008
 ):
     """Uploads a single file to the system"""
     # TODO: For the moment we upload file here and re-upload to S3
@@ -103,9 +130,11 @@ async def upload_file(
     )
     # assign file_id.
     file_meta: File = await File.create_from_uploaded(
-        file, file_size=file_size, created_at=datetime.utcnow().isoformat()
+        file,
+        file_size=file_size,
+        created_at=datetime.datetime.now(datetime.timezone.utc).isoformat(),
     )
-    logger.debug(
+    _logger.debug(
         "Assigned id: %s of %s bytes (content-length), real size %s bytes",
         file_meta,
         content_length,
@@ -113,22 +142,22 @@ async def upload_file(
     )
 
     # upload to S3 using pre-signed link
-    _, entity_tag = await storage_upload_file(
+    upload_result: UploadedFolder | UploadedFile = await storage_upload_path(
         user_id=user_id,
         store_id=SIMCORE_LOCATION,
         store_name=None,
         s3_object=parse_obj_as(
             StorageFileID, f"api/{file_meta.id}/{file_meta.filename}"
         ),
-        file_to_upload=UploadableFileObject(file.file, file.filename, file_size),
+        path_to_upload=UploadableFileObject(file.file, file.filename, file_size),
         io_log_redirect_cb=None,
     )
+    assert isinstance(upload_result, UploadedFile)
 
-    file_meta.checksum = entity_tag
+    file_meta.checksum = upload_result.etag
     return file_meta
 
 
-# DISABLED @router.post(":upload-multiple", response_model=list[FileMetadata])
 # MaG suggested a single function that can upload one or multiple files instead of having
 # two of them. Tried something like upload_file( files: Union[list[UploadFile], File] ) but it
 # produces an error in the generated openapi.json
@@ -138,14 +167,14 @@ async def upload_file(
 #
 async def upload_files(files: list[UploadFile] = FileParam(...)):
     """Uploads multiple files to the system"""
-    raise NotImplementedError()
+    raise NotImplementedError
 
 
-@router.get("/{file_id}", response_model=File, responses={**common_error_responses})
+@router.get("/{file_id}", response_model=File, responses={**_common_error_responses})
 async def get_file(
     file_id: UUID,
-    storage_client: StorageApi = Depends(get_api_client(StorageApi)),
-    user_id: int = Depends(get_current_user_id),
+    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
+    user_id: Annotated[int, Depends(get_current_user_id)],
 ):
     """Gets metadata for a given file resource"""
 
@@ -154,28 +183,45 @@ async def get_file(
             user_id, file_id
         )
         if not stored_files:
-            raise ValueError("Not found in storage")
+            msg = "Not found in storage"
+            raise ValueError(msg)  # noqa: TRY301
 
         stored_file_meta = stored_files[0]
         assert stored_file_meta.file_id  # nosec
 
         # Adapts storage API model to API model
-        file_meta = to_file_api_model(stored_file_meta)
-        return file_meta
+        return to_file_api_model(stored_file_meta)
 
     except (ValueError, ValidationError) as err:
-        logger.debug("File %d not found: %s", file_id, err)
+        _logger.debug("File %d not found: %s", file_id, err)
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
             detail=f"File with identifier {file_id} not found",
         ) from err
 
 
+@router.delete(
+    "/{file_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={**_common_error_responses},
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def delete_file(
+    file_id: UUID,
+    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
+    user_id: Annotated[int, Depends(get_current_user_id)],
+):
+    assert storage_client  # nsoec
+
+    msg = f"delete file {file_id=} of {user_id=}. SEE https://github.com/ITISFoundation/osparc-issues/issues/952"
+    raise NotImplementedError(msg)
+
+
 @router.get(
     "/{file_id}/content",
     response_class=RedirectResponse,
     responses={
-        **common_error_responses,
+        **_common_error_responses,
         200: {
             "content": {
                 "application/octet-stream": {
@@ -189,8 +235,8 @@ async def get_file(
 )
 async def download_file(
     file_id: UUID,
-    storage_client: StorageApi = Depends(get_api_client(StorageApi)),
-    user_id: int = Depends(get_current_user_id),
+    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
+    user_id: Annotated[int, Depends(get_current_user_id)],
 ):
     # NOTE: application/octet-stream is defined as "arbitrary binary data" in RFC 2046,
     # gets meta
@@ -201,7 +247,7 @@ async def download_file(
         user_id, file_meta.id, file_meta.filename
     )
 
-    logger.info("Downloading %s to %s ...", file_meta, presigned_download_link)
+    _logger.info("Downloading %s to %s ...", file_meta, presigned_download_link)
     return RedirectResponse(presigned_download_link)
 
 

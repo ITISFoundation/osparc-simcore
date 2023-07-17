@@ -6,15 +6,14 @@
 import hashlib
 from typing import TypedDict
 
+import osparc
 import pytest
-from osparc import ApiClient, UsersApi
-from osparc.models import Profile, ProfileUpdate, UserRoleEnum
 from pytest_simcore.helpers.utils_public_api import RegisteredUserDict
 
 
 @pytest.fixture(scope="module")
-def users_api(api_client: ApiClient) -> UsersApi:
-    return UsersApi(api_client)
+def users_api(api_client: osparc.ApiClient) -> osparc.UsersApi:
+    return osparc.UsersApi(api_client)
 
 
 class GroupDict(TypedDict):
@@ -33,7 +32,7 @@ class ProfileDict(TypedDict):
     first_name: str
     last_name: str
     email: str
-    role: UserRoleEnum
+    role: osparc.UserRoleEnum
     groups: ProfileGroupsDict
     gravatar_id: str
 
@@ -49,7 +48,7 @@ def expected_profile(registered_user: RegisteredUserDict) -> ProfileDict:
             "first_name": first_name,
             "last_name": registered_user["last_name"],
             "login": email,
-            "role": UserRoleEnum.USER,
+            "role": osparc.UserRoleEnum.USER,
             "groups": {
                 "all": {
                     "gid": "1",
@@ -74,18 +73,20 @@ def expected_profile(registered_user: RegisteredUserDict) -> ProfileDict:
     )
 
 
-def test_get_user(users_api: UsersApi, expected_profile: ProfileDict):
-    user: Profile = users_api.get_my_profile()
+def test_get_user(users_api: osparc.UsersApi, expected_profile: ProfileDict):
+    user: osparc.Profile = users_api.get_my_profile()
 
     assert user.login == expected_profile["login"]
     # NOTE: cannot predict gid! assert user.to_dict() == expected_profile
 
 
-def test_update_user(users_api: UsersApi):
-    before: Profile = users_api.get_my_profile()
+def test_update_user(users_api: osparc.UsersApi):
+    before: osparc.Profile = users_api.get_my_profile()
     assert before.first_name != "Richard"
 
-    after: Profile = users_api.update_my_profile(ProfileUpdate(first_name="Richard"))
+    after: osparc.Profile = users_api.update_my_profile(
+        osparc.ProfileUpdate(first_name="Richard")
+    )
     assert after != before
     assert after.first_name == "Richard"
     assert after == users_api.get_my_profile()

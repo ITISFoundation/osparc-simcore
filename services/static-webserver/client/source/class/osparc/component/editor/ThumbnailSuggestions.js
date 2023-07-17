@@ -35,6 +35,7 @@ qx.Class.define("osparc.component.editor.ThumbnailSuggestions", {
   },
 
   events: {
+    "thumbnailAdded": "qx.event.type.Event",
     "thumbnailTapped": "qx.event.type.Data"
   },
 
@@ -72,10 +73,7 @@ qx.Class.define("osparc.component.editor.ThumbnailSuggestions", {
         const srvMetadata = osparc.utils.Services.getMetaData(node.getKey(), node.getVersion());
         if (srvMetadata && srvMetadata["thumbnail"] && !osparc.data.model.Node.isFrontend(node)) {
           const nodeId = node.getNodeId();
-          if (!(nodeId in this.__thumbnailsPerNode)) {
-            this.__thumbnailsPerNode[nodeId] = [];
-          }
-          this.__thumbnailsPerNode[nodeId].push({
+          this.__addThumbnail(nodeId, {
             type: "serviceImage",
             thumbnailUrl: srvMetadata["thumbnail"],
             fileUrl: srvMetadata["thumbnail"]
@@ -84,13 +82,27 @@ qx.Class.define("osparc.component.editor.ThumbnailSuggestions", {
       });
     },
 
+    __addThumbnail: function(nodeId, thumbnailData) {
+      if (!(nodeId in this.__thumbnailsPerNode)) {
+        this.__thumbnailsPerNode[nodeId] = [];
+      }
+      this.__thumbnailsPerNode[nodeId].push(thumbnailData);
+      this.fireEvent("thumbnailAdded");
+    },
+
+    __setThumbnails: function(nodeId, thumbnailsData) {
+      this.__thumbnailsPerNode[nodeId] = thumbnailsData;
+      this.fireEvent("thumbnailAdded");
+    },
+
     addWorkbenchUIPreviewToSuggestions: function() {
       // make it first in the list
-      this.__thumbnailsPerNode["0000-workbenchUIPreview"] = [{
+      this.__setThumbnails("0000-workbenchUIPreview", [{
         type: "workbenchUIPreview",
         thumbnailUrl: osparc.product.Utils.getWorkbenhUIPreviewPath(),
         fileUrl: osparc.product.Utils.getWorkbenhUIPreviewPath()
-      }];
+      }]);
+
       const themeManager = qx.theme.manager.Meta.getInstance();
       themeManager.addListener("changeTheme", () => this.addWorkbenchUIPreviewToSuggestions());
     },
@@ -100,11 +112,8 @@ qx.Class.define("osparc.component.editor.ThumbnailSuggestions", {
         const nodeId = previewsPerNode["node_id"];
         const previews = previewsPerNode["screenshots"];
         if (previews && previews.length) {
-          if (!(nodeId in this.__thumbnailsPerNode)) {
-            this.__thumbnailsPerNode[nodeId] = [];
-          }
           previews.forEach(preview => {
-            this.__thumbnailsPerNode[nodeId].push({
+            this.__addThumbnail(nodeId, {
               type: preview["mimetype"],
               thumbnailUrl: preview["thumbnail_url"],
               fileUrl: preview["file_url"]

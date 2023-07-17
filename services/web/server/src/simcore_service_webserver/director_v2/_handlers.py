@@ -9,6 +9,10 @@ from models_library.users import UserID
 from pydantic import BaseModel, Field, ValidationError, parse_obj_as
 from pydantic.types import NonNegativeInt
 from servicelib.aiohttp.rest_responses import create_error_response, get_http_error
+from servicelib.common_headers import (
+    UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+    X_SIMCORE_USER_AGENT,
+)
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
@@ -56,11 +60,16 @@ async def start_computation(request: web.Request) -> web.Response:
         force_restart = bool(body.get("force_restart", force_restart))
         cluster_id = body.get("cluster_id")
 
+    simcore_user_agent = request.headers.get(
+        X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+    )
+
     options = {
         "start_pipeline": True,
         "subgraph": list(subgraph),  # sets are not natively json serializable
         "force_restart": force_restart,
         "cluster_id": cluster_id,
+        "simcore_user_agent": simcore_user_agent,
     }
 
     try:

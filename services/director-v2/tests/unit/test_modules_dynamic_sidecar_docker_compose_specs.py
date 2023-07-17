@@ -8,6 +8,7 @@ from uuid import uuid4
 
 import pytest
 import yaml
+from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import (
@@ -213,14 +214,23 @@ PROJECT_ID: ProjectID = uuid4()
 NODE_ID: NodeID = uuid4()
 SIMCORE_USER_AGENT: str = "a-puppet"
 PRODUCT_NAME: str = "osparc"
+SWARM_STACK_NAME: str = "mystackname"
+CPU_LIMIT: float = 4.0
+RAM_LIMIT: int = 1233112423423
 
-EXPECTED_LABELS: list[str] = [
-    f"product_name={PRODUCT_NAME}",
-    f"simcore_user_agent={SIMCORE_USER_AGENT}",
-    f"study_id={PROJECT_ID}",
-    f"user_id={USER_ID}",
-    f"uuid={NODE_ID}",
-]
+
+EXPECTED_LABELS: list[str] = sorted(
+    [
+        f"{to_simcore_runtime_docker_label_key('product-name')}={PRODUCT_NAME}",
+        f"{to_simcore_runtime_docker_label_key('simcore-user-agent')}={SIMCORE_USER_AGENT}",
+        f"{to_simcore_runtime_docker_label_key('project-id')}={PROJECT_ID}",
+        f"{to_simcore_runtime_docker_label_key('user-id')}={USER_ID}",
+        f"{to_simcore_runtime_docker_label_key('node-id')}={NODE_ID}",
+        f"{to_simcore_runtime_docker_label_key('swarm-stack-name')}={SWARM_STACK_NAME}",
+        f"{to_simcore_runtime_docker_label_key('cpu-limit')}=0",
+        f"{to_simcore_runtime_docker_label_key('memory-limit')}=0",
+    ]
+)
 
 
 @pytest.mark.parametrize(
@@ -247,6 +257,13 @@ async def test_update_container_labels(
     service_spec: dict[str, Any], expected_result: dict[str, Any]
 ):
     docker_compose_specs._update_container_labels(
-        service_spec, USER_ID, PROJECT_ID, NODE_ID, SIMCORE_USER_AGENT, PRODUCT_NAME
+        service_spec,
+        USER_ID,
+        PROJECT_ID,
+        NODE_ID,
+        SIMCORE_USER_AGENT,
+        PRODUCT_NAME,
+        SWARM_STACK_NAME,
+        {},
     )
     assert service_spec == expected_result

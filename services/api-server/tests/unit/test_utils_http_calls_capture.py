@@ -22,11 +22,10 @@ async def test_capture_http_call(
 ):
     # CAPTURE
     async with httpx.AsyncClient() as client:
-
         response: httpx.Response = await client.get(f"{httpbin_base_url}/json")
         print(response)
 
-        request: httpx.Request = response.request
+        _request: httpx.Request = response.request
         assert response.request
 
         captured = HttpApiCallCaptureModel.create_from_response(
@@ -41,7 +40,6 @@ async def test_capture_http_call(
             assert_all_called=False,
             assert_all_mocked=True,  # IMPORTANT: KEEP always True!
         ) as respx_mock:
-
             respx_mock.request(
                 method=captured.method,
                 path=captured.path,
@@ -61,10 +59,8 @@ async def test_capture_http_call(
 async def test_capture_http_dynamic_call(
     event_loop: asyncio.AbstractEventLoop, faker: Faker, httpbin_base_url: str
 ):
-
     # CAPTURE
     async with httpx.AsyncClient() as client:
-
         sample_uid = faker.uuid4()  # used during test sampling
 
         response: httpx.Response = await client.post(
@@ -77,7 +73,7 @@ async def test_capture_http_dynamic_call(
         )
         print(response)
 
-        request: httpx.Request = response.request
+        _request: httpx.Request = response.request
         assert response.request
 
         captured = HttpApiCallCaptureModel.create_from_response(
@@ -101,7 +97,6 @@ async def test_capture_http_dynamic_call(
             assert_all_called=True,
             assert_all_mocked=True,  # IMPORTANT: KEEP always True!
         ) as respx_mock:
-
             respx_mock.request(
                 method=captured.method,
                 path__regex=re.sub(
@@ -130,7 +125,6 @@ async def test_capture_http_dynamic_call(
 
 
 def test_template_capture(project_tests_dir: Path, faker: Faker):
-
     # parse request and search parameters
     url_path = f"/v0/projects/{faker.uuid4()}"
     pattern = re.compile(rf"/projects/(?P<project_id>{UUID_RE_BASE})$")
@@ -140,7 +134,7 @@ def test_template_capture(project_tests_dir: Path, faker: Faker):
 
     # get paramters from capture
     environment = jinja2.Environment(
-        loader=jinja2.FileSystemLoader(project_tests_dir / "mocks")
+        loader=jinja2.FileSystemLoader(project_tests_dir / "mocks"), autoescape=True
     )
     template = environment.get_template("delete_project_not_found.json")
 

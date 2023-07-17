@@ -63,6 +63,7 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
             "project.template.create",
             "project.classifier.*",
             "project.tag.*",
+            "resource-usage.read",
             "user.profile.update",
             "user.apikey.*",
             "user.notifications.update",

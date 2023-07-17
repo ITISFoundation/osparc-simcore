@@ -2,6 +2,7 @@ import datetime
 from contextlib import suppress
 from typing import Any
 
+from dask_task_models_library.container_tasks.protocol import ContainerEnvsDict
 from models_library.basic_regex import VERSION_RE
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
@@ -41,6 +42,9 @@ class Image(BaseModel):
             "run",
         ],
         description="command to run container. Can override using ContainerSpec service labels",
+    )
+    envs: ContainerEnvsDict = Field(
+        default_factory=dict, description="The environment to use to run the service"
     )
 
     @validator("node_requirements", pre=True, always=True)

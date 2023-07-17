@@ -15,11 +15,19 @@ from models_library.clusters import ClusterID
 from models_library.projects_nodes_io import BaseFileLink
 from pydantic.types import PositiveInt
 
-from ...core.settings import BasicSettings
 from ...models.basic_types import VersionStr
 from ...models.pagination import LimitOffsetPage, LimitOffsetParams
 from ...models.schemas.files import File
-from ...models.schemas.jobs import ArgumentTypes, Job, JobInputs, JobOutputs, JobStatus
+from ...models.schemas.jobs import (
+    ArgumentTypes,
+    Job,
+    JobID,
+    JobInputs,
+    JobMetadata,
+    JobMetadataUpdate,
+    JobOutputs,
+    JobStatus,
+)
 from ...models.schemas.solvers import Solver, SolverKeyId
 from ...services.catalog import CatalogApi
 from ...services.director_v2 import DirectorV2Api, DownloadLink, NodeName
@@ -36,10 +44,9 @@ from ..dependencies.database import Engine, get_db_engine
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
 from ..errors.http_error import ErrorGet, create_error_json_response
-from ._common import JOB_OUTPUT_LOGFILE_RESPONSES
+from ._common import API_SERVER_DEV_FEATURES_ENABLED, job_output_logfile_responses
 
 _logger = logging.getLogger(__name__)
-_settings = BasicSettings.create_from_envs()
 
 router = APIRouter()
 
@@ -57,6 +64,13 @@ def _compose_job_resource_name(solver_key, solver_version, job_id) -> str:
 # - Similar to docker container's API design (container = job and image = solver)
 #
 
+_common_error_responses = {
+    status.HTTP_404_NOT_FOUND: {
+        "description": "Job not found",
+        "model": ErrorGet,
+    },
+}
+
 
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs",
@@ -71,7 +85,10 @@ async def list_jobs(
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
 ):
-    """List of jobs in a specific released solver (limited to 20 jobs)"""
+    """List of jobs in a specific released solver (limited to 20 jobs)
+
+    SEE get_jobs_page for paginated version of this function
+    """
 
     solver = await catalog_client.get_service(
         user_id=user_id,
@@ -97,7 +114,7 @@ async def list_jobs(
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/page",
     response_model=LimitOffsetPage[Job],
-    include_in_schema=_settings.API_SERVER_DEV_FEATURES_ENABLED,
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_jobs_page(
     solver_key: SolverKeyId,
@@ -198,7 +215,7 @@ async def create_job(
 async def get_job(
     solver_key: SolverKeyId,
     version: VersionStr,
-    job_id: UUID,
+    job_id: JobID,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
@@ -218,12 +235,12 @@ async def get_job(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}",
     status_code=status.HTTP_204_NO_CONTENT,
     responses={status.HTTP_404_NOT_FOUND: {"model": ErrorGet}},
-    include_in_schema=_settings.API_SERVER_DEV_FEATURES_ENABLED,
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def delete_job(
     solver_key: SolverKeyId,
     version: VersionStr,
-    job_id: UUID,
+    job_id: JobID,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
     """Deletes an existing solver job
@@ -251,7 +268,7 @@ async def delete_job(
 async def start_job(
     solver_key: SolverKeyId,
     version: VersionStr,
-    job_id: UUID,
+    job_id: JobID,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     product_name: Annotated[str, Depends(get_product_name)],
@@ -276,12 +293,13 @@ async def start_job(
 
 
 @router.post(
-    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}:stop", response_model=Job
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}:stop",
+    response_model=Job,
 )
 async def stop_job(
     solver_key: SolverKeyId,
     version: VersionStr,
-    job_id: UUID,
+    job_id: JobID,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ):
@@ -302,7 +320,7 @@ async def stop_job(
 async def inspect_job(
     solver_key: SolverKeyId,
     version: VersionStr,
-    job_id: UUID,
+    job_id: JobID,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ) -> JobStatus:
@@ -321,7 +339,7 @@ async def inspect_job(
 async def get_job_outputs(
     solver_key: SolverKeyId,
     version: VersionStr,
-    job_id: UUID,
+    job_id: JobID,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     db_engine: Annotated[Engine, Depends(get_db_engine)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
@@ -367,12 +385,12 @@ async def get_job_outputs(
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/outputs/logfile",
     response_class=RedirectResponse,
-    responses=JOB_OUTPUT_LOGFILE_RESPONSES,
+    responses=job_output_logfile_responses,
 )
 async def get_job_output_logfile(
     solver_key: SolverKeyId,
     version: VersionStr,
-    job_id: UUID,
+    job_id: JobID,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ):
@@ -419,3 +437,88 @@ async def get_job_output_logfile(
         detail=f"Log for {solver_key}/releases/{version}/jobs/{job_id} not found."
         "Note that these logs are only available after the job is completed.",
     )
+
+
+@router.get(
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/metadata",
+    response_model=JobMetadata,
+    responses={**_common_error_responses},
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def get_job_custom_metadata(
+    solver_key: SolverKeyId,
+    version: VersionStr,
+    job_id: JobID,
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
+):
+    """Gets custom metadata from a job
+
+    New in *version 0.5*
+    """
+    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    _logger.debug("Custom metadata for '%s'", job_name)
+
+    try:
+        project_metadata = await webserver_api.get_project_metadata(project_id=job_id)
+        return JobMetadata(
+            job_id=job_id,
+            metadata=project_metadata.custom,
+            url=url_for(
+                "get_job_custom_metadata",
+                solver_key=solver_key,
+                version=version,
+                job_id=job_id,
+            ),
+        )
+
+    except HTTPException as err:
+        if err.status_code == status.HTTP_404_NOT_FOUND:
+            return create_error_json_response(
+                f"Cannot find job={job_name} ",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+
+
+@router.patch(
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/metadata",
+    response_model=JobMetadata,
+    responses={**_common_error_responses},
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def replace_job_custom_metadata(
+    solver_key: SolverKeyId,
+    version: VersionStr,
+    job_id: JobID,
+    update: JobMetadataUpdate,
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
+):
+    """Updates custom metadata from a job
+
+    New in *version 0.5*
+    """
+    job_name = _compose_job_resource_name(solver_key, version, job_id)
+    _logger.debug("Custom metadata for '%s'", job_name)
+
+    try:
+        project_metadata = await webserver_api.update_project_metadata(
+            project_id=job_id, metadata=update.metadata
+        )
+        return JobMetadata(
+            job_id=job_id,
+            metadata=project_metadata.custom,
+            url=url_for(
+                "replace_job_custom_metadata",
+                solver_key=solver_key,
+                version=version,
+                job_id=job_id,
+            ),
+        )
+
+    except HTTPException as err:
+        if err.status_code == status.HTTP_404_NOT_FOUND:
+            return create_error_json_response(
+                f"Cannot find job={job_name} ",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )

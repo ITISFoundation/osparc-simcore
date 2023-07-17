@@ -9,7 +9,7 @@ from typing import Any, Awaitable, Callable
 import aiodocker
 from faker import Faker
 from fastapi import FastAPI
-from models_library.docker import DockerLabelKey, SimcoreServiceDockerLabelKeys
+from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
 from models_library.generated_models.docker_rest_api import Service, Task
 from models_library.rabbitmq_messages import (
     LoggerRabbitMessage,
@@ -54,9 +54,11 @@ async def test_post_task_log_message(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     mocker: MockerFixture,
     async_docker_client: aiodocker.Docker,
-    create_service: Callable[[dict[str, Any], dict[str, str], str], Awaitable[Service]],
+    create_service: Callable[
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
+    ],
     task_template: dict[str, Any],
-    osparc_docker_label_keys: SimcoreServiceDockerLabelKeys,
+    osparc_docker_label_keys: StandardSimcoreDockerLabels,
     faker: Faker,
 ):
     mocked_message_handler = mocker.AsyncMock(return_value=True)
@@ -68,7 +70,9 @@ async def test_post_task_log_message(
     )
 
     service_with_labels = await create_service(
-        task_template, osparc_docker_label_keys.to_docker_labels(), "running"
+        task_template,
+        osparc_docker_label_keys.to_simcore_runtime_docker_labels(),
+        "running",
     )
     assert service_with_labels.Spec
     service_tasks = parse_obj_as(
@@ -140,9 +144,11 @@ async def test_post_task_progress_message(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     mocker: MockerFixture,
     async_docker_client: aiodocker.Docker,
-    create_service: Callable[[dict[str, Any], dict[str, str], str], Awaitable[Service]],
+    create_service: Callable[
+        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
+    ],
     task_template: dict[str, Any],
-    osparc_docker_label_keys: SimcoreServiceDockerLabelKeys,
+    osparc_docker_label_keys: StandardSimcoreDockerLabels,
     faker: Faker,
 ):
     mocked_message_handler = mocker.AsyncMock(return_value=True)
@@ -154,7 +160,9 @@ async def test_post_task_progress_message(
     )
 
     service_with_labels = await create_service(
-        task_template, osparc_docker_label_keys.to_docker_labels(), "running"
+        task_template,
+        osparc_docker_label_keys.to_simcore_runtime_docker_labels(),
+        "running",
     )
     assert service_with_labels.Spec
     service_tasks = parse_obj_as(

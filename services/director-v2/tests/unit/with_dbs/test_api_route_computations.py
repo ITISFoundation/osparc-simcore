@@ -10,18 +10,21 @@ import json
 import re
 import urllib.parse
 from pathlib import Path
-from typing import Any, Awaitable, Callable
+from random import choice
+from typing import Any, Awaitable, Callable, Iterator
 
 import httpx
 import pytest
 import respx
 from faker import Faker
 from fastapi import FastAPI
+from models_library.basic_types import VersionStr
 from models_library.clusters import DEFAULT_CLUSTER_ID, Cluster, ClusterID
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import NodeID, NodeState
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
+from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceDockerData
 from models_library.services_resources import (
     ServiceResourcesDict,
@@ -104,23 +107,36 @@ def fake_service_resources() -> ServiceResourcesDict:
 
 
 @pytest.fixture
+def fake_service_labels() -> dict[str, Any]:
+    return choice(SimcoreServiceLabels.Config.schema_extra["examples"])
+
+
+@pytest.fixture
 def mocked_director_service_fcts(
     minimal_app: FastAPI,
     fake_service_details: ServiceDockerData,
     fake_service_extras: ServiceExtras,
-):
+    fake_service_labels: dict[str, Any],
+) -> Iterator[respx.MockRouter]:
     # pylint: disable=not-context-manager
     with respx.mock(
         base_url=minimal_app.state.settings.DIRECTOR_V0.endpoint,
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
+        assert VersionStr.regex
         respx_mock.get(
             re.compile(
-                r"/services/(simcore)%2F(services)%2F(comp|dynamic|frontend)%2F.+/(.+)"
+                r"/services/simcore%2Fservices%2F(comp|dynamic|frontend)%2F[^/]+/\d+.\d+.\d+$"
             ),
             name="get_service",
         ).respond(json={"data": [fake_service_details.dict(by_alias=True)]})
+        respx_mock.get(
+            re.compile(
+                r"/services/simcore%2Fservices%2F(comp|dynamic|frontend)%2F[^/]+/\d+.\d+.\d+/labels"
+            ),
+            name="get_service_labels",
+        ).respond(json={"data": fake_service_labels})
 
         respx_mock.get(
             re.compile(
@@ -137,7 +153,7 @@ def mocked_catalog_service_fcts(
     minimal_app: FastAPI,
     fake_service_details: ServiceDockerData,
     fake_service_resources: ServiceResourcesDict,
-):
+) -> Iterator[respx.MockRouter]:
     def _mocked_service_resources(request) -> httpx.Response:
         return httpx.Response(
             200, json=jsonable_encoder(fake_service_resources, by_alias=True)

@@ -49,17 +49,17 @@ def setup_rest(app: web.Application):
 
     # version check
     base_path = openapi.get_base_path(specs)
+    assert base_path.startswith("/v")  # nosec
+
     major, *_ = specs.info.version
 
     if f"/v{major}" != base_path:
-        raise ValueError(
-            f"REST API basepath {base_path} does not fit openapi.yml version {specs.info.version}"
-        )
+        msg = f"REST API basepath {base_path} does not fit openapi.yml version {specs.info.version}"
+        raise ValueError(msg)
 
     if api_version_prefix != f"v{major}":
-        raise ValueError(
-            f"__version__.api_version_prefix {api_version_prefix} does not fit openapi.yml version {specs.info.version}"
-        )
+        msg = f"__version__.api_version_prefix {api_version_prefix} does not fit openapi.yml version {specs.info.version}"
+        raise ValueError(msg)
 
     app[HealthCheck.__name__] = HealthCheck(app)
     log.debug("Setup %s", f"{app[HealthCheck.__name__]=}")

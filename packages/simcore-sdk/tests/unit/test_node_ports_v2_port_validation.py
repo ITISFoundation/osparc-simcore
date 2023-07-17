@@ -79,7 +79,6 @@ def test_validate_port_content():
 
 
 def test_validate_port_content_fails():
-
     with pytest.raises(PortUnitError) as err_info:
         value, unit = validate_port_content(
             "port_1",

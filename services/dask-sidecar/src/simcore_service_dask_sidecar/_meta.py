@@ -27,4 +27,4 @@ APP_STARTED_BANNER_MSG = rf"""
 
 
 def print_banner() -> None:
-    print(APP_STARTED_BANNER_MSG, flush=True)
+    print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201

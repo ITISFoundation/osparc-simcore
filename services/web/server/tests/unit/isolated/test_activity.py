@@ -3,13 +3,16 @@
 # pylint:disable=redefined-outer-name
 
 import importlib
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
+from typing import Any
 
 import pytest
 import yaml
 from aiohttp import web
 from aiohttp.client_exceptions import ClientConnectionError
+from aiohttp.test_utils import TestClient
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver.activity import handlers
@@ -21,7 +24,7 @@ from simcore_service_webserver.session.plugin import setup_session
 
 
 @pytest.fixture
-def mocked_login_required(mocker):
+def mocked_login_required(mocker: MockerFixture):
     mock = mocker.patch(
         "simcore_service_webserver.login.decorators.login_required", lambda h: h
     )
@@ -30,8 +33,9 @@ def mocked_login_required(mocker):
 
 
 @pytest.fixture
-def mocked_monitoring(mocker, activity_data):
-    prometheus_data = activity_data.get("prometheus")
+def mocked_monitoring(mocker: MockerFixture, activity_data: dict[str, Any]) -> None:
+    prometheus_data: dict[str, Any] = activity_data["prometheus"]
+
     cpu_ret = prometheus_data.get("cpu_return")
     mocker.patch(
         "simcore_service_webserver.activity.handlers.get_cpu_usage",
@@ -61,8 +65,8 @@ def mocked_monitoring_down(mocker):
 
 
 @pytest.fixture
-def app_config(fake_data_dir: Path, osparc_simcore_root_dir: Path):
-    with open(fake_data_dir / "test_activity_config.yml") as fh:
+def app_config(fake_data_dir: Path, osparc_simcore_root_dir: Path) -> dict[str, Any]:
+    with Path.open(fake_data_dir / "test_activity_config.yml") as fh:
         content = fh.read()
         config = content.replace(
             "${OSPARC_SIMCORE_REPO_ROOTDIR}", str(osparc_simcore_root_dir)
@@ -74,8 +78,8 @@ def app_config(fake_data_dir: Path, osparc_simcore_root_dir: Path):
 @pytest.fixture
 def client(
     event_loop,
-    aiohttp_client,
-    app_config,
+    aiohttp_client: Callable,
+    app_config: dict[str, Any],
     mock_orphaned_services,
     monkeypatch_setenv_from_app_config: Callable,
 ):
@@ -89,11 +93,10 @@ def client(
     setup_rest(app)
     assert setup_activity(app)
 
-    cli = event_loop.run_until_complete(aiohttp_client(app))
-    return cli
+    return event_loop.run_until_complete(aiohttp_client(app))
 
 
-async def test_has_login_required(client):
+async def test_has_login_required(client: TestClient):
     resp = await client.get("/v0/activity/status")
     await assert_status(resp, web.HTTPUnauthorized)
 

@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 
 import asyncio
+import logging
 from contextlib import AsyncExitStack
 from unittest.mock import Mock
 
@@ -12,6 +13,7 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient, make_mocked_request
 from faker import Faker
 from pytest import CaptureFixture, MonkeyPatch
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import NewUser, parse_link, parse_test_marks
@@ -27,8 +29,10 @@ from simcore_service_webserver.login._2fa import (
     get_redis_validation_code_client,
     send_email_code,
 )
+from simcore_service_webserver.login._constants import MSG_2FA_UNAVAILABLE_OEC
 from simcore_service_webserver.login.storage import AsyncpgStorage
 from simcore_service_webserver.products.plugin import get_current_product
+from twilio.base.exceptions import TwilioRestException
 
 
 @pytest.fixture
@@ -65,7 +69,7 @@ def postgres_db(postgres_db: sa.engine.Engine):
 
 
 @pytest.fixture
-def mocked_twilio_service(mocker) -> dict[str, Mock]:
+def mocked_twilio_service(mocker: MockerFixture) -> dict[str, Mock]:
     return {
         "send_sms_code_for_registration": mocker.patch(
             "simcore_service_webserver.login.handlers_registration.send_sms_code",
@@ -101,7 +105,7 @@ async def test_2fa_code_operations(client: TestClient):
     assert await get_2fa_code(client.app, email) is None
 
 
-@pytest.mark.acceptance_test
+@pytest.mark.acceptance_test()
 async def test_workflow_register_and_login_with_2fa(
     client: TestClient,
     db: AsyncpgStorage,
@@ -322,3 +326,56 @@ async def test_send_email_code(
     assert parsed_context["code"] == f"{code}"
     assert parsed_context["name"] == user_name.capitalize()
     assert parsed_context["support_email"] == support_email
+
+
+async def test_2fa_sms_failure_during_login(
+    client: TestClient,
+    fake_user_email: str,
+    fake_user_password: str,
+    fake_user_phone_number: str,
+    caplog: pytest.LogCaptureFixture,
+    mocker: MockerFixture,
+):
+    assert client.app
+
+    # Mocks error in graylog https://monitoring.osparc.io/graylog/search/649e7619ce6e0838a96e9bf1?q=%222FA%22&rangetype=relative&from=172800
+    mocker.patch(
+        "simcore_service_webserver.login.handlers_auth.send_sms_code",
+        autospec=True,
+        side_effect=TwilioRestException(
+            status=400,
+            uri="https://www.twilio.com/doc",
+            msg="Unable to create record: A 'From' phone number is required",
+        ),
+    )
+
+    # A registered user ...
+    async with NewUser(
+        params={
+            "email": fake_user_email,
+            "password": fake_user_password,
+            "phone": fake_user_phone_number,
+        },
+        app=client.app,
+    ):
+        # ... logs in, but fails to send SMS !
+        with caplog.at_level(logging.ERROR):
+            url = client.app.router["auth_login"].url_for()
+            response = await client.post(
+                f"{url}",
+                json={
+                    "email": fake_user_email,
+                    "password": fake_user_password,
+                },
+            )
+
+            # Expects failure:
+            #    HTTPServiceUnavailable: Currently we cannot use 2FA, please try again later (OEC:140558738809344)
+            data, error = await assert_status(response, web.HTTPServiceUnavailable)
+            assert not data
+            assert error["errors"][0]["message"].startswith(
+                MSG_2FA_UNAVAILABLE_OEC[:10]
+            )
+
+            # Expects logs like 'Failed while setting up 2FA code and sending SMS to 157XXXXXXXX3 [OEC:140392495277888]'
+            assert f"{fake_user_phone_number[:3]}" in caplog.text

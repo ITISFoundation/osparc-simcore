@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any
+from typing import Any, ClassVar
 
 from models_library.api_schemas_storage import TableSynchronisation
 from pydantic import BaseModel, Field
@@ -10,7 +10,7 @@ class FileLocation(BaseModel):
     id: float | None = None
 
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "name": "simcore.s3",
                 "id": 0,
@@ -56,7 +56,7 @@ class DatasetMetaData(BaseModel):
     display_name: str | None = None
 
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "dataset_id": "N:id-aaaa",
                 "display_name": "simcore-testing",
@@ -114,9 +114,10 @@ class FileMetaData(BaseModel):
     last_modified: str | None = None
     file_size: int | None = None
     entity_tag: str | None = None
+    is_directory: bool | None = None
 
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "file_uuid": "simcore-testing/105/1000/3",
                 "location_id": "0",
@@ -128,6 +129,7 @@ class FileMetaData(BaseModel):
                 "last_modified": "2019-06-19T12:29:03.78852Z",
                 "file_size": 73,
                 "entity_tag": "a87ff679a2f3e71d9181a67b7542122c",
+                "is_directory": False,
             }
         }
 
@@ -145,7 +147,7 @@ class PresignedLink(BaseModel):
     link: str | None = None
 
     class Config:
-        schema_extra = {"example": {"link": "example_link"}}
+        schema_extra: ClassVar[dict[str, Any]] = {"example": {"link": "example_link"}}
 
 
 class PresignedLinkEnveloped(BaseModel):

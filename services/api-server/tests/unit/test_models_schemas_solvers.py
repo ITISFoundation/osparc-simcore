@@ -3,25 +3,12 @@
 # pylint: disable=unused-variable
 
 from operator import attrgetter
-from pprint import pformat
 
-import pytest
-from simcore_service_api_server.models.schemas.solvers import (
-    Solver,
-    SolverPort,
-    Version,
-)
+from faker import Faker
+from simcore_service_api_server.models.schemas.solvers import Solver, Version
 
 
-@pytest.mark.parametrize("model_cls", (Solver, SolverPort))
-def test_solvers_model_examples(model_cls, model_cls_examples):
-    for name, example in model_cls_examples.items():
-        print(name, ":", pformat(example))
-        model_instance = model_cls(**example)
-        assert model_instance, f"Failed with {name}"
-
-
-def test_solvers_sorting_by_name_and_version(faker):
+def test_solvers_sorting_by_name_and_version(faker: Faker):
     # SEE https://packaging.pypa.io/en/latest/version.html
 
     # have a solver

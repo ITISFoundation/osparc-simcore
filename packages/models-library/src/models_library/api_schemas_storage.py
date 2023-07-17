@@ -140,6 +140,7 @@ class FileMetaDataGet(BaseModel):
         description="If true, this file is a soft link."
         "i.e. is another entry with the same object_name",
     )
+    is_directory: bool = Field(default=False, description="if True this is a directory")
 
     @validator("location_id", pre=True)
     @classmethod
@@ -166,6 +167,21 @@ class FileMetaDataGet(BaseModel):
                     "location_id": 0,
                     "node_name": "JupyterLab Octave",
                     "project_name": "Octave JupyterLab",
+                },
+                # typical directory entry
+                {
+                    "created_at": "2020-06-17 12:28:55.705340",
+                    "entity_tag": "8711cf258714b2de5498f5a5ef48cc7b",
+                    "file_id": "9a759caa-9890-4537-8c26-8edefb7a4d7c/be165f45-ddbf-4911-a04d-bc0b885914ef/workspace",
+                    "file_name": "workspace",
+                    "file_size": -1,
+                    "file_uuid": "9a759caa-9890-4537-8c26-8edefb7a4d7c/be165f45-ddbf-4911-a04d-bc0b885914ef/workspace",
+                    "is_soft_link": False,
+                    "last_modified": "2020-06-22 13:48:13.398000+00:00",
+                    "location_id": 0,
+                    "node_name": None,
+                    "project_name": None,
+                    "is_directory": True,
                 },
                 # api entry (not soft link)
                 {

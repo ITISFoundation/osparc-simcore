@@ -1,5 +1,3 @@
-from typing import Optional
-
 from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
@@ -12,7 +10,7 @@ class ComputationGet(ComputationTask):
     url: AnyHttpUrl = Field(
         ..., description="the link where to get the status of the task"
     )
-    stop_url: Optional[AnyHttpUrl] = Field(
+    stop_url: AnyHttpUrl | None = Field(
         None, description="the link where to stop the task"
     )
 
@@ -20,22 +18,23 @@ class ComputationGet(ComputationTask):
 class ComputationCreate(BaseModel):
     user_id: UserID
     project_id: ProjectID
-    start_pipeline: Optional[bool] = Field(
+    start_pipeline: bool | None = Field(
         default=False,
         description="if True the computation pipeline will start right away",
     )
     product_name: str
-    subgraph: Optional[list[NodeID]] = Field(
+    subgraph: list[NodeID] | None = Field(
         default=None,
         description="An optional set of nodes that must be executed, if empty the whole pipeline is executed",
     )
-    force_restart: Optional[bool] = Field(
+    force_restart: bool | None = Field(
         default=False, description="if True will force re-running all dependent nodes"
     )
-    cluster_id: Optional[ClusterID] = Field(
+    cluster_id: ClusterID | None = Field(
         default=None,
         description="the computation shall use the cluster described by its id, 0 is the default cluster",
     )
+    simcore_user_agent: str = ""
 
     @validator("product_name", always=True)
     @classmethod
@@ -50,7 +49,7 @@ class ComputationStop(BaseModel):
 
 
 class ComputationDelete(ComputationStop):
-    force: Optional[bool] = Field(
+    force: bool | None = Field(
         False,
         description="if True then the pipeline will be removed even if it is running",
     )
@@ -58,6 +57,6 @@ class ComputationDelete(ComputationStop):
 
 class TaskLogFileGet(BaseModel):
     task_id: NodeID
-    download_link: Optional[AnyUrl] = Field(
+    download_link: AnyUrl | None = Field(
         None, description="Presigned link for log file or None if still not available"
     )

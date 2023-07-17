@@ -22,12 +22,16 @@ from prometheus_client.registry import CollectorRegistry
 #
 
 
-kSERVICE_STARTED = f"{__name__}.services_started"
-kSERVICE_STOPPED = f"{__name__}.services_stopped"
+MONITOR_SERVICE_STARTED = f"{__name__}.services_started"
+MONITOR_SERVICE_STOPPED = f"{__name__}.services_stopped"
 
-SERVICE_STARTED_LABELS: list[str] = ["service_key", "service_tag", "simcore_user_agent"]
+MONITOR_SERVICE_STARTED_LABELS: list[str] = [
+    "service_key",
+    "service_tag",
+    "simcore_user_agent",
+]
 
-SERVICE_STOPPED_LABELS: list[str] = [
+MONITOR_SERVICE_STOPPED_LABELS: list[str] = [
     "service_key",
     "service_tag",
     "result",
@@ -38,19 +42,19 @@ SERVICE_STOPPED_LABELS: list[str] = [
 def add_instrumentation(
     app: web.Application, reg: CollectorRegistry, app_name: str
 ) -> None:
-    app[kSERVICE_STARTED] = Counter(
+    app[MONITOR_SERVICE_STARTED] = Counter(
         name="services_started_total",
         documentation="Counts the services started",
-        labelnames=SERVICE_STARTED_LABELS,
+        labelnames=MONITOR_SERVICE_STARTED_LABELS,
         namespace="simcore",
         subsystem=app_name,
         registry=reg,
     )
 
-    app[kSERVICE_STOPPED] = Counter(
+    app[MONITOR_SERVICE_STOPPED] = Counter(
         name="services_stopped_total",
         documentation="Counts the services stopped",
-        labelnames=SERVICE_STOPPED_LABELS,
+        labelnames=MONITOR_SERVICE_STOPPED_LABELS,
         namespace="simcore",
         subsystem=app_name,
         registry=reg,
@@ -69,7 +73,7 @@ def service_started(
     service_tag: str,
     simcore_user_agent: str,
 ) -> None:
-    app[kSERVICE_STARTED].labels(
+    app[MONITOR_SERVICE_STARTED].labels(
         service_key=service_key,
         service_tag=service_tag,
         simcore_user_agent=simcore_user_agent,
@@ -84,7 +88,7 @@ def service_stopped(
     simcore_user_agent: str,
     result: ServiceResult | str,
 ) -> None:
-    app[kSERVICE_STOPPED].labels(
+    app[MONITOR_SERVICE_STOPPED].labels(
         service_key=service_key,
         service_tag=service_tag,
         simcore_user_agent=simcore_user_agent,

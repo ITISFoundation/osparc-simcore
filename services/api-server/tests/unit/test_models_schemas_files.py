@@ -7,14 +7,13 @@
 import hashlib
 import tempfile
 from pathlib import Path
-from pprint import pformat
-from typing import Any
 from uuid import uuid4
 
 import pytest
 from fastapi import UploadFile
 from models_library.api_schemas_storage import FileMetaDataGet as StorageFileMetaData
 from models_library.basic_types import MD5Str
+from models_library.projects_nodes_io import StorageFileID
 from pydantic import ValidationError, parse_obj_as
 from simcore_service_api_server.models.schemas.files import File
 from simcore_service_api_server.services.storage import to_file_api_model
@@ -53,7 +52,7 @@ async def test_create_filemetadata_from_starlette_uploadfile(
     # WARNING: upload is a wrapper around a file handler that can actually be in memory as well
 
     # in file
-    with open(mock_filepath, "rb") as fh:
+    with Path.open(mock_filepath, "rb") as fh:
         upload = UploadFile(file=fh, filename=mock_filepath.name)
 
         assert upload.file.tell() == 0
@@ -79,11 +78,12 @@ async def test_create_filemetadata_from_starlette_uploadfile(
 
 
 def test_convert_between_file_models():
-
     storage_file_meta = StorageFileMetaData(
         **StorageFileMetaData.Config.schema_extra["examples"][1]
     )
-    storage_file_meta.file_id = f"api/{uuid4()}/extensionless"
+    storage_file_meta.file_id = parse_obj_as(
+        StorageFileID, f"api/{uuid4()}/extensionless"
+    )
     apiserver_file_meta = to_file_api_model(storage_file_meta)
 
     assert apiserver_file_meta.id
@@ -92,22 +92,11 @@ def test_convert_between_file_models():
     assert apiserver_file_meta.checksum == storage_file_meta.entity_tag
 
     with pytest.raises(ValueError):
-        storage_file_meta.file_id = f"{uuid4()}/{uuid4()}/foo.txt"
+        storage_file_meta.file_id = parse_obj_as(
+            StorageFileID, f"{uuid4()}/{uuid4()}/foo.txt"
+        )
         to_file_api_model(storage_file_meta)
 
     with pytest.raises(ValidationError):
-        storage_file_meta.file_id = "api/NOTUUID/foo.txt"
+        storage_file_meta.file_id = parse_obj_as(StorageFileID, "api/NOTUUID/foo.txt")
         to_file_api_model(storage_file_meta)
-
-
-@pytest.mark.parametrize("model_cls", (File,))
-def test_file_model_examples(model_cls: type, model_cls_examples: dict[str, Any]):
-    for name, example in model_cls_examples.items():
-        print(name, ":", pformat(example))
-
-        model_instance = model_cls(**example)
-
-        assert model_instance, f"Failed with {name}"
-        print(name, ":", model_instance)
-
-        assert model_instance.content_type is not None

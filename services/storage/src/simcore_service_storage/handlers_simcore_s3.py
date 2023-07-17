@@ -40,6 +40,8 @@ routes = RouteTableDef()
 
 @routes.post(f"/{api_vtag}/simcore-s3:access", name="get_or_create_temporary_s3_access")
 async def get_or_create_temporary_s3_access(request: web.Request) -> web.Response:
+    # NOTE: the name of the method is not accurate, these are not temporary at all
+    # it returns the credentials of the s3 backend!
     query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
     log.debug(
         "received call to get_or_create_temporary_s3_access with %s",

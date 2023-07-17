@@ -1,6 +1,12 @@
 import copy
+import importlib
 import inspect
-from typing import Any, Iterator, NamedTuple
+import itertools
+import pkgutil
+from collections.abc import Iterator
+from contextlib import suppress
+from types import ModuleType
+from typing import Any, NamedTuple
 
 import pytest
 from pydantic import BaseModel
@@ -29,6 +35,21 @@ class ModelExample(NamedTuple):
     example_data: Any
 
 
+def walk_model_examples_in_package(package: ModuleType) -> Iterator[ModelExample]:
+    """Walks recursively all sub-modules and collects BaseModel.Config examples"""
+    assert inspect.ismodule(package)
+
+    yield from itertools.chain(
+        *(
+            iter_model_examples_in_module(importlib.import_module(submodule.name))
+            for submodule in pkgutil.walk_packages(
+                package.__path__,
+                package.__name__ + ".",
+            )
+        )
+    )
+
+
 def iter_model_examples_in_module(module: object) -> Iterator[ModelExample]:
     """Iterates on all examples defined as BaseModelClass.Config.schema_extra["example"]
 
@@ -37,7 +58,7 @@ def iter_model_examples_in_module(module: object) -> Iterator[ModelExample]:
 
         @pytest.mark.parametrize(
             "model_cls, example_name, example_data",
-            iter_examples(simcore_service_webserver.storage_schemas),
+            iter_model_examples_in_module(simcore_service_webserver.storage_schemas),
         )
         def test_model_examples(
             model_cls: type[BaseModel], example_name: int, example_data: Any
@@ -45,17 +66,27 @@ def iter_model_examples_in_module(module: object) -> Iterator[ModelExample]:
             print(example_name, ":", json.dumps(example_data))
             assert model_cls.parse_obj(example_data)
     """
+
+    def _is_model_cls(obj) -> bool:
+        with suppress(TypeError):
+            # NOTE: issubclass( dict[models_library.services.ConstrainedStrValue, models_library.services.ServiceInput] ) raises TypeError
+            return (
+                obj is not BaseModel
+                and inspect.isclass(obj)
+                and issubclass(obj, BaseModel)
+            )
+        return False
+
     assert inspect.ismodule(module)
 
-    for model_name, model_cls in inspect.getmembers(
-        module, lambda obj: inspect.isclass(obj) and issubclass(obj, BaseModel)
-    ):
+    for model_name, model_cls in inspect.getmembers(module, _is_model_cls):
         assert model_name  # nosec
         if (
-            (config_cls := getattr(model_cls, "Config"))
+            (config_cls := model_cls.Config)
             and inspect.isclass(config_cls)
             and is_strict_inner(model_cls, config_cls)
             and (schema_extra := getattr(config_cls, "schema_extra", {}))
+            and isinstance(schema_extra, dict)
         ):
             if "example" in schema_extra:
                 yield ModelExample(

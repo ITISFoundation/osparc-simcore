@@ -1,67 +1,34 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-import io
-import logging
+import itertools
 from pathlib import Path
-from typing import List
 
 import pytest
-
-# under test
-from simcore_service_webserver._resources import resources
-
-log = logging.getLogger(__name__)
+from simcore_service_webserver._resources import webserver_resources
 
 
 @pytest.fixture
-def app_resources(package_dir: Path) -> List[str]:
+def app_resources(package_dir: Path) -> list[str]:
     resource_names = []
     base = package_dir
-    for name in (resources.config_folder, "api"):
+    for name in ("api", "templates"):
         folder = base / name
-        resource_names += [str(p.relative_to(base)) for p in folder.rglob("*.y*ml")]
+        resource_names += [
+            f"{p.relative_to(base)}"
+            for p in itertools.chain(folder.rglob("*.y*ml"), folder.rglob("*.jinja2"))
+        ]
 
+    assert resource_names
     return resource_names
 
 
-# ------------------------------------------------------------------------------
-
-
-def test_resource_io_utils(app_resources: List[str]):
-
-    assert not resources.exists("fake_resource_name")
-
+def test_webserver_resources(app_resources: list[str]):
     for resource_name in app_resources:
-        # existence
-        assert resources.exists(resource_name)
-
-        # context management
-        ostream = None
-        with resources.stream(resource_name) as ostream:
-            assert isinstance(ostream, io.IOBase)
-            assert ostream.read()
-
-        assert ostream.closed
+        assert webserver_resources.get_path(resource_name).exists()
 
 
-def test_named_resources():
-    exposed = [
-        getattr(resources, name)
-        for name in dir(resources)
-        if name.startswith("RESOURCES")
-    ]
-
-    for resource_name in exposed:
-        assert resources.exists(resource_name)
-        assert resources.isdir(resource_name)
-        assert resources.listdir(resource_name)
-
-
-def test_paths(app_resources: List[str]):
-    for resource_name in app_resources:
-        assert resources.get_path(resource_name).exists()
-
-    # WARNING!
-    some_path = resources.get_path("fake_resource_name")
-    assert some_path and not some_path.exists()
+def test_paths_might_not_exist():
+    some_path = webserver_resources.get_path("fake_resource_name")
+    assert some_path
+    assert not some_path.exists()

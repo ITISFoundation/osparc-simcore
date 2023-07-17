@@ -31,7 +31,6 @@ pytest_plugins = [
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
-    "pytest_simcore.monkeypatch_extra",
     "pytest_simcore.repository_paths",
     "pytest_simcore.tmp_path_extra",
 ]
@@ -75,7 +74,6 @@ def shared_data_folder(
 def app_environment(
     monkeypatch: MonkeyPatch, env_devel_dict: EnvVarsDict, shared_data_folder: Path
 ) -> EnvVarsDict:
-
     # configured as worker
     envs = setenvs_from_dict(
         monkeypatch,

@@ -20,6 +20,12 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputData,
     TaskOutputDataSchema,
 )
+from dask_task_models_library.container_tasks.protocol import (
+    ContainerEnvsDict,
+    ContainerImage,
+    ContainerLabelsDict,
+    ContainerTag,
+)
 from models_library.services_resources import BootMode
 from packaging import version
 from pydantic import ValidationError
@@ -50,8 +56,8 @@ CONTAINER_WAIT_TIME_SECS = 2
 @dataclass
 class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
     docker_auth: DockerBasicAuth
-    service_key: str
-    service_version: str
+    service_key: ContainerImage
+    service_version: ContainerTag
     input_data: TaskInputData
     output_data_keys: TaskOutputDataSchema
     log_file_url: AnyUrl
@@ -59,6 +65,8 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
     task_max_resources: dict[str, float]
     task_publishers: TaskPublisher
     s3_settings: S3Settings | None
+    task_envs: ContainerEnvsDict
+    task_labels: ContainerLabelsDict
 
     async def _write_input_data(
         self,
@@ -194,12 +202,14 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
             )
             config = await create_container_config(
                 docker_registry=self.docker_auth.server_address,
-                service_key=self.service_key,
-                service_version=self.service_version,
+                image=self.service_key,
+                tag=self.service_version,
                 command=command,
                 comp_volume_mount_point=f"{computational_shared_data_mount_point}/{run_id}",
                 boot_mode=self.boot_mode,
                 task_max_resources=self.task_max_resources,
+                envs=self.task_envs,
+                labels=self.task_labels,
             )
             await self._write_input_data(task_volumes, integration_version)
 
@@ -208,41 +218,38 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                 docker_client,
                 config,
                 name=f"{self.service_key.split(sep='/')[-1]}_{run_id}",
-            ) as container:
-                async with managed_monitor_container_log_task(
-                    container=container,
-                    service_key=self.service_key,
-                    service_version=self.service_version,
-                    task_publishers=self.task_publishers,
-                    integration_version=integration_version,
-                    task_volumes=task_volumes,
-                    log_file_url=self.log_file_url,
-                    log_publishing_cb=self._publish_sidecar_log,
-                    s3_settings=self.s3_settings,
-                ):
-                    await container.start()
-                    await self._publish_sidecar_log(
-                        f"Container started as '{container.id}' on {socket.gethostname()}..."
-                    )
-                    # wait until the container finished, either success or fail or timeout
-                    while (container_data := await container.show())["State"][
-                        "Running"
-                    ]:
-                        await asyncio.sleep(CONTAINER_WAIT_TIME_SECS)
-                    if container_data["State"]["ExitCode"] > os.EX_OK:
-                        raise ServiceRuntimeError(
-                            service_key=self.service_key,
-                            service_version=self.service_version,
-                            container_id=container.id,
-                            exit_code=container_data["State"]["ExitCode"],
-                            service_logs=await cast(
-                                Coroutine,
-                                container.log(
-                                    stdout=True, stderr=True, tail=20, follow=False
-                                ),
+            ) as container, managed_monitor_container_log_task(
+                container=container,
+                service_key=self.service_key,
+                service_version=self.service_version,
+                task_publishers=self.task_publishers,
+                integration_version=integration_version,
+                task_volumes=task_volumes,
+                log_file_url=self.log_file_url,
+                log_publishing_cb=self._publish_sidecar_log,
+                s3_settings=self.s3_settings,
+            ):
+                await container.start()
+                await self._publish_sidecar_log(
+                    f"Container started as '{container.id}' on {socket.gethostname()}..."
+                )
+                # wait until the container finished, either success or fail or timeout
+                while (container_data := await container.show())["State"]["Running"]:
+                    await asyncio.sleep(CONTAINER_WAIT_TIME_SECS)
+                if container_data["State"]["ExitCode"] > os.EX_OK:
+                    raise ServiceRuntimeError(
+                        service_key=self.service_key,
+                        service_version=self.service_version,
+                        container_id=container.id,
+                        exit_code=container_data["State"]["ExitCode"],
+                        service_logs=await cast(
+                            Coroutine,
+                            container.log(
+                                stdout=True, stderr=True, tail=20, follow=False
                             ),
-                        )
-                    await self._publish_sidecar_log("Container ran successfully.")
+                        ),
+                    )
+                await self._publish_sidecar_log("Container ran successfully.")
 
             # POST-PROCESSING
             results = await self._retrieve_output_data(
