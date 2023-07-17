@@ -242,6 +242,20 @@ qx.Class.define("osparc.component.share.Collaborators", {
       vBox.add(label);
 
       const rolesLayout = osparc.data.Roles.createRolesResourceInfo();
+      // OM: XXXXXXXXXXXXXXXXXXXXX
+      if (osparc.utils.Resources.isStudy(this._serializedData)) {
+        const leaveButton = new qx.ui.form.Button(this.tr("Leave Study")).set({
+          allowGrowX: false
+        });
+        leaveButton.addListener("execute", () => {
+          const myGid = osparc.auth.Data.getInstance().getGroupId();
+          if (osparc.component.share.CollaboratorsStudy.checkRemoveCollaborator(this._serializedData, myGid)) {
+            console.log("delete member", myGid);
+            // this._deleteMember({gid: myGid});
+          }
+        }, this);
+        rolesLayout.addAt(leaveButton, 0);
+      }
       vBox.add(rolesLayout);
 
       const collaboratorsUIList = new qx.ui.form.List().set({
