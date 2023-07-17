@@ -23,13 +23,23 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
 
     this._setLayout(new qx.ui.layout.VBox(20));
 
-    this.__nCredits = 1;
-
     this.__buildLayout();
+
+    this.initNCredits();
+  },
+
+  properties: {
+    nCredits: {
+      check: "Number",
+      init: 1,
+      nullable: false,
+      event: "changeNCredits",
+      apply: "__applyNCredits"
+    }
   },
 
   members: {
-    __nCredits: null,
+    __creditPrice: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -59,6 +69,23 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       this.getChildControl("credit-selector");
       this.getChildControl("summary-view");
       this.getChildControl("buy-button");
+    },
+
+    __applyNCredits: function(nCredits) {
+      let creditPrice = 0;
+      if (nCredits > 0) {
+        creditPrice = 5;
+      }
+      if (nCredits > 10) {
+        creditPrice = 4;
+      }
+      if (nCredits > 100) {
+        creditPrice = 3;
+      }
+      if (nCredits > 1000) {
+        creditPrice = 2;
+      }
+      this.__creditPrice = creditPrice;
     },
 
     __getCreditOffersView: function() {
@@ -120,34 +147,26 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         label: this.tr("-"),
         width: 25
       });
+      minBtn.addListener("execute", () => this.setNCredits(this.getNCredits()-1));
       layout.add(minBtn);
 
       const nCreditsField = new qx.ui.form.TextField().set({
-        value: this.__nCredits.toString(),
         width: 100,
         textAlign: "center",
         font: "text-14"
       });
+      this.bind("nCredits", nCreditsField, "value", {
+        converter: val => val.toString()
+      });
+      nCreditsField.addListener("changeValue", e => this.setNCredits(parseInt(e.getData())));
       layout.add(nCreditsField);
-
-      const updateCredits = () => {
-        nCreditsField.setValue(this.__nCredits.toString());
-      };
 
       const moreBtn = new qx.ui.form.Button().set({
         label: this.tr("+"),
         width: 25
       });
+      moreBtn.addListener("execute", () => this.setNCredits(this.getNCredits()+1));
       layout.add(moreBtn);
-
-      minBtn.addListener("execute", () => {
-        this.__nCredits--;
-        updateCredits();
-      });
-      moreBtn.addListener("execute", () => {
-        this.__nCredits++;
-        updateCredits();
-      });
 
       return layout;
     },
