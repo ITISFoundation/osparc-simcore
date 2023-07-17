@@ -196,7 +196,7 @@ async def download_path_from_s3(
     store_name: LocationName | None,
     store_id: LocationID | None,
     s3_object: StorageFileID,
-    local_folder: Path,
+    local_path: Path,
     io_log_redirect_cb: LogRedirectCB | None,
     client_session: ClientSession | None = None,
     r_clone_settings: RCloneSettings | None,
@@ -216,7 +216,7 @@ async def download_path_from_s3(
         store_name,
         store_id,
         s3_object,
-        local_folder,
+        local_path,
     )
 
     async with ClientSessionContextManager(client_session) as session:
@@ -257,14 +257,14 @@ async def download_path_from_s3(
             await r_clone.sync_s3_to_local(
                 r_clone_settings,
                 progress_bar,
-                local_directory_path=local_folder,
+                local_directory_path=local_path,
                 download_s3_link=parse_obj_as(AnyUrl, f"{download_link}"),
             )
-            return local_folder
+            return local_path
 
         return await download_file_from_link(
             download_link,
-            local_folder,
+            local_path,
             client_session=session,
             io_log_redirect_cb=io_log_redirect_cb,
             progress_bar=progress_bar,
@@ -312,7 +312,7 @@ async def _abort_upload(
         async with session.post(upload_links.links.abort_upload) as resp:
             resp.raise_for_status()
     except ClientError:
-        _logger.warning("Error while aborting upload", exc_info=True)
+        _logger.warning("Error while aborting uplupload_pathoad", exc_info=True)
         if reraise_exceptions:
             raise
     _logger.warning("Upload aborted")
@@ -340,6 +340,8 @@ async def upload_path(
     client_session: ClientSession | None = None,
     r_clone_settings: RCloneSettings | None = None,
     progress_bar: ProgressBarData | None = None,
+    # TODO: this needs to be finished, use
+    exclude_patterns: set[str] | None = None,
 ) -> UploadedFile | UploadedFolder:
     """Uploads a file (potentially in parallel) or a file object (sequential in any case) to S3
 

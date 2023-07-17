@@ -191,7 +191,7 @@ async def pull_file_from_store(
         store_id=value.store,
         store_name=None,
         s3_object=value.path,
-        local_folder=local_path,
+        local_path=local_path,
         io_log_redirect_cb=io_log_redirect_cb,
         r_clone_settings=r_clone_settings,
         progress_bar=progress_bar or ProgressBarData(steps=1),
