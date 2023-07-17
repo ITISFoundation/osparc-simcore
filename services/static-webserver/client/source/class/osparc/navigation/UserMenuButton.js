@@ -93,11 +93,6 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           osparc.utils.Utils.setIdToWidget(control, "userMenuPreferencesBtn");
           this.getMenu().add(control);
           break;
-        case "usage-overview":
-          control = new qx.ui.menu.Button(this.tr("Usage overview"));
-          control.addListener("execute", () => osparc.component.usage.Detailed.popUpInWindow());
-          this.getMenu().add(control);
-          break;
         case "organizations":
           control = new qx.ui.menu.Button(this.tr("Organizations"));
           osparc.desktop.organizations.OrganizationsWindow.evaluateOrganizationsButton(control);

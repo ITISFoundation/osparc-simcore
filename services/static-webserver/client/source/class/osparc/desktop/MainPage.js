@@ -207,7 +207,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       window.addEventListener("resize", () => fitResourceCards());
       const dashboardLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       if (osparc.utils.Utils.isDevelEnv()) {
-        const usageOverview = new osparc.component.usage.Overview();
+        const usageOverview = new osparc.component.resourceUsage.Summary();
         usageOverview.set({
           maxWidth: 210,
           minWidth: 210,
