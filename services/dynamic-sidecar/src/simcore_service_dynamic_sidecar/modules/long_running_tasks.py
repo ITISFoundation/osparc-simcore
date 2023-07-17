@@ -480,7 +480,8 @@ async def task_containers_restart(
     async with app.state.container_restart_lock:
         progress.update(message="starting containers restart", percent=0.0)
         if shared_store.compose_spec is None:
-            raise RuntimeError("No spec for docker-compose command was found")
+            msg = "No spec for docker-compose command was found"
+            raise RuntimeError(msg)
 
         for container_name in shared_store.container_names:
             await stop_log_fetching(app, container_name)
