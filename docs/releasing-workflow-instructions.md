@@ -144,6 +144,9 @@ A bug was found in version 1.2.0 of the simcore stack. The team decides to fix i
     # develop the fix here, git commit, git push, have someone review your code
 
     git commit -m "this is my awsome fix for this problematic issue"
+
+
+    # WARNING: never push this branch BEFORE the actual release is completed. pcrespov did it and the release CI job could not push images!!
     git push --set-upstream origin/hotfix_v1_4_x
 
     # - NO NEED to pull request
