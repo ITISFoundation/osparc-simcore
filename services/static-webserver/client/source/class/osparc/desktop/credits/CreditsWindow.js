@@ -20,11 +20,15 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
 
   construct: function() {
     this.base(arguments, "credits", this.tr("Credits"));
+
+    const viewWidth = 900;
+    const viewHeight = 450;
+
     this.set({
       layout: new qx.ui.layout.Grow(),
       modal: true,
-      width: 550,
-      height: 660,
+      width: viewWidth,
+      height: viewHeight,
       showMaximize: false,
       showMinimize: false,
       resizable: false,

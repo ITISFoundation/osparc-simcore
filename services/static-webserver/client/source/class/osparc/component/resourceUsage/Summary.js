@@ -108,6 +108,10 @@ qx.Class.define("osparc.component.resourceUsage.Summary", {
       const topUpBtn = new qx.ui.form.Button().set({
         label: this.tr("Buy credits")
       });
+      topUpBtn.addListener("execute", () => {
+        const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow();
+        creditsWindow.openBuyCredits();
+      }, this);
       buttonsLayout.add(topUpBtn, {
         flex: 1
       });
@@ -115,6 +119,11 @@ qx.Class.define("osparc.component.resourceUsage.Summary", {
       const detailedBtn = new qx.ui.form.Button().set({
         label: this.tr("Detailed view")
       });
+      detailedBtn.addListener("execute", () => {
+        const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow();
+        creditsWindow.openUsageOverview();
+      }, this);
+
       buttonsLayout.add(detailedBtn, {
         flex: 1
       });
