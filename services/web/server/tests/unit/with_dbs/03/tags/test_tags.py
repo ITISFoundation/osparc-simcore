@@ -4,7 +4,8 @@
 # pylint: disable=too-many-arguments
 
 
-from typing import Any, AsyncIterator, Callable, Iterator
+from collections.abc import AsyncIterator, Callable, Iterator
+from typing import Any
 
 import pytest
 import sqlalchemy as sa
@@ -48,7 +49,7 @@ def fake_tags(faker: Faker) -> list[dict[str, Any]]:
 async def test_tags_to_studies(
     client: TestClient,
     logged_user: UserInfoDict,
-    user_project,
+    user_project: ProjectDict,
     expected: type[web.HTTPException],
     fake_tags: dict[str, Any],
     catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
