@@ -674,7 +674,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_FileMetaDataGet_'
-  /:
+  /v0/futures/:
     get:
       tags:
         - tasks
@@ -688,7 +688,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_TaskGet_'
-  '/{task_id}':
+  '/v0/futures/{task_id}':
     get:
       tags:
         - tasks
@@ -725,7 +725,7 @@ paths:
       responses:
         '204':
           description: Successful Response
-  '/{task_id}/result':
+  '/v0/futures/{task_id}/result':
     get:
       tags:
         - tasks

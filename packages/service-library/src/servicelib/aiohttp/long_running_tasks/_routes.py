@@ -11,7 +11,7 @@ from ...long_running_tasks._task import TrackedTask
 from ...mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ._dependencies import get_task_context, get_tasks_manager
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
 

@@ -356,7 +356,7 @@ async def search_files_starting_with(user_id: UserID, startswith: str = ""):
 
 
 @app.get(
-    "/",
+    f"/{api_vtag}/futures/",
     response_model=Envelope[TaskGet],
     tags=TAGS_TASKS,
     summary="list current long running tasks",
@@ -367,7 +367,7 @@ async def list_tasks():
 
 
 @app.get(
-    "/{task_id}",
+    f"/{api_vtag}/futures/{{task_id}}",
     response_model=Envelope[TaskStatus],
     tags=TAGS_TASKS,
     summary="gets the status of the task",
@@ -378,7 +378,7 @@ async def get_task_status(task_id: TaskId):
 
 
 @app.get(
-    "/{task_id}/result",
+    f"/{api_vtag}/futures/{{task_id}}/result",
     response_model=Any,
     tags=TAGS_TASKS,
     summary="get result of the task",
@@ -389,7 +389,7 @@ async def get_task_result(task_id: TaskId):
 
 
 @app.delete(
-    "/{task_id}",
+    f"/{api_vtag}/futures/{{task_id}}",
     status_code=status.HTTP_204_NO_CONTENT,
     tags=TAGS_TASKS,
     summary="cancels and removes the task",
