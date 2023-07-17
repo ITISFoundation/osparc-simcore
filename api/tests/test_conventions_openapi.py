@@ -30,7 +30,7 @@ assert non_converted_yamls
 
 @pytest.mark.parametrize("path", non_converted_yamls)
 def test_openapi_envelope_required_fields(path: Path):
-    with open(path) as file_stream:
+    with Path.open(path) as file_stream:
         oas_dict = yaml.safe_load(file_stream)
         for key, value in oas_dict.items():
             if "Envelope" in key:
@@ -59,15 +59,10 @@ def test_versioning_and_basepath(openapi_path: Path):
     with openapi_path.open() as f:
         oas_dict = yaml.safe_load(f)
 
-    # version in specs info is M.m.n
-    version_in_info = [int(i) for i in oas_dict["info"]["version"].split(".")]
-
     # basepath in servers must also be as '/v0'
     for server in oas_dict["servers"]:
         kwargs = {
             key: value["default"] for key, value in server.get("variables", {}).items()
         }
         url = URL(server["url"].format(**kwargs))
-        assert url.path == "/v%d" % version_in_info[0], (
-            "Wrong basepath in server: %s" % server
-        )
+        assert url.path == "/", "Wrong basepath in server: %s" % server
