@@ -106,7 +106,7 @@ qx.Class.define("osparc.component.resourceUsage.Summary", {
       const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
 
       const topUpBtn = new qx.ui.form.Button().set({
-        label: this.tr("Top up")
+        label: this.tr("Buy credits")
       });
       buttonsLayout.add(topUpBtn, {
         flex: 1
