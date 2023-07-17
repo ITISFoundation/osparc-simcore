@@ -25,7 +25,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
 
     this._add(this.__createIntroText());
     this._add(this.__getMemberInvitation());
-    this._add(osparc.data.Roles.createRolesOrgInfo());
+    this._add(this.__getRolesToolbar());
     this._add(this.__getMembersFilter());
     this._add(this.__getMembersList(), {
       flex: 1
@@ -127,6 +127,10 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       hBox.add(addBtn);
 
       return hBox;
+    },
+
+    __getRolesToolbar: function() {
+      return osparc.data.Roles.createRolesOrgInfo();
     },
 
     __getMembersFilter: function() {
