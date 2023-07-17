@@ -142,12 +142,12 @@ class PhoneConfirmationBody(InputSchema):
     code: SecretStr
 
 
+@routes.post("/auth/validate-code-register", name="auth_phone_confirmation")
 @global_rate_limit_route(number_of_requests=5, interval_seconds=MINUTE)
 @session_access_required(
     name="auth_phone_confirmation",
     unauthorized_reason=MSG_UNAUTHORIZED_PHONE_CONFIRMATION,
 )
-@routes.post("/auth/validate-code-register", name="auth_phone_confirmation")
 async def phone_confirmation(request: web.Request):
     product: Product = get_current_product(request)
     settings: LoginSettingsForProduct = get_plugin_settings(

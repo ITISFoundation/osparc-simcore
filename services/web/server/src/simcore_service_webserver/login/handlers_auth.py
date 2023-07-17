@@ -76,6 +76,7 @@ class LoginNextPage(NextPage[CodePageParams]):
     reason: str = Field(deprecated=True)
 
 
+@routes.post(f"/{API_VTAG}/auth/login", name="auth_login")
 @on_success_grant_session_access_to(
     name="auth_register_phone",
     max_access_count=MAX_2FA_CODE_TRIALS,
@@ -88,7 +89,6 @@ class LoginNextPage(NextPage[CodePageParams]):
     name="auth_resend_2fa_code",
     max_access_count=MAX_2FA_CODE_RESEND,
 )
-@routes.post(f"/{API_VTAG}/auth/login", name="auth_login")
 async def login(request: web.Request):
     """Login: user submits an email (identification) and a password
 
@@ -201,11 +201,11 @@ class LoginTwoFactorAuthBody(InputSchema):
     code: SecretStr
 
 
+@routes.post(f"/{API_VTAG}/auth/validate-code-login", name="auth_login_2fa")
 @session_access_required(
     "auth_login_2fa",
     unauthorized_reason=MSG_UNAUTHORIZED_LOGIN_2FA,
 )
-@routes.post(f"/{API_VTAG}/auth/validate-code-login", name="auth_login_2fa")
 async def login_2fa(request: web.Request):
     """Login (continuation): Submits 2FA code"""
     product: Product = get_current_product(request)
