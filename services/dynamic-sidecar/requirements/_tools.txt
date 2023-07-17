@@ -65,6 +65,8 @@ pyyaml==5.4.1
     # via
     #   -c requirements/_base.txt
     #   pre-commit
+ruff==0.0.278
+    # via -r requirements/../../../requirements/devenv.txt
 tomli==2.0.1
     # via
     #   -c requirements/_test.txt
@@ -83,7 +85,9 @@ virtualenv==20.23.0
 wheel==0.40.0
     # via pip-tools
 wrapt==1.15.0
-    # via astroid
+    # via
+    #   -c requirements/_test.txt
+    #   astroid
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
