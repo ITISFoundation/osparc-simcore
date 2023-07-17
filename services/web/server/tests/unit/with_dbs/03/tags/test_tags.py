@@ -98,7 +98,7 @@ async def test_tags_to_studies(
 
     # Remove tag1 from project
     url = client.app.router["remove_tag"].url_for(
-        study_uuid=user_project.get("uuid"), tag_id=str(added_tags[1].get("id"))
+        project_uuid=user_project.get("uuid"), tag_id=str(added_tags[1].get("id"))
     )
     resp = await client.delete(f"{url}")
     await assert_status(resp, expected)
