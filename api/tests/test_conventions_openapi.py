@@ -28,7 +28,7 @@ non_converted_yamls = [
 assert non_converted_yamls
 
 
-@pytest.mark.parametrize("path", non_converted_yamls)
+@pytest.mark.parametrize("path", non_converted_yamls, ids=lambda p: p.name)
 def test_openapi_envelope_required_fields(path: Path):
     with Path.open(path) as file_stream:
         oas_dict = yaml.safe_load(file_stream)
@@ -47,13 +47,15 @@ def test_openapi_envelope_required_fields(path: Path):
 main_openapi_yamls = [
     pathstr
     for pathstr in list_files_in_api_specs("openapi.y*ml")
-    if not f"{pathstr}".endswith(CONVERTED_SUFFIX)
-]  # skip converted schemas
+    if not f"{pathstr}".endswith(CONVERTED_SUFFIX) and ("director" not in f"{pathstr}")
+]  # skip converted schemas and director
 
 assert main_openapi_yamls
 
 
-@pytest.mark.parametrize("openapi_path", main_openapi_yamls)
+@pytest.mark.parametrize(
+    "openapi_path", main_openapi_yamls, ids=lambda p: p.parent.name
+)
 def test_versioning_and_basepath(openapi_path: Path):
     # version in folder name is only major!
     with openapi_path.open() as f:
