@@ -67,7 +67,7 @@ async def test_tags_to_studies(
 
         # Add tag to study
         url = client.app.router["add_tag"].url_for(
-            study_uuid=user_project.get("uuid"), tag_id=str(added_tag.get("id"))
+            project_uuid=user_project.get("uuid"), tag_id=str(added_tag.get("id"))
         )
         resp = await client.put(f"{url}")
         data, _ = await assert_status(resp, expected)

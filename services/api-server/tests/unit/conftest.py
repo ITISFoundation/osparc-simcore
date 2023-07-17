@@ -218,11 +218,10 @@ def mocked_directorv2_service_api_base(
 
         assert openapi
         assert (
-            openapi["paths"]["/v0/"]["get"]["operationId"]
-            == "check_service_health__get"
+            openapi["paths"]["/"]["get"]["operationId"] == "check_service_health__get"
         )
 
-        respx_mock.get(path="/v0/", name="check_service_health__get").respond(
+        respx_mock.get(path="/", name="check_service_health__get").respond(
             status.HTTP_200_OK,
             json=openapi["components"]["schemas"]["HealthCheckGet"]["example"],
         )
@@ -256,7 +255,7 @@ def mocked_webserver_service_api_base(
 
         # healthcheck_readiness_probe, healthcheck_liveness_probe
         response_body = {
-            "data": openapi["paths"]["/"]["get"]["responses"]["200"]["content"][
+            "data": openapi["paths"]["/v0/"]["get"]["responses"]["200"]["content"][
                 "application/json"
             ]["schema"]["properties"]["data"]["example"]
         }
