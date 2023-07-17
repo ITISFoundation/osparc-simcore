@@ -33,7 +33,7 @@ Makefile                                  @pcrespov @sanderegg
 /services/invitations/                    @pcrespov
 /services/migration/                      @pcrespov
 /services/osparc-gateway-server/          @sanderegg
-/services/resourc-usage-tracker/          @matusdrobuliak66
+/services/resource-usage-tracker/         @matusdrobuliak66
 /services/static-webserver/               @GitHK
 /services/static-webserver/client/        @odeimaiz
 /services/storage/                        @sanderegg @pcrespov
