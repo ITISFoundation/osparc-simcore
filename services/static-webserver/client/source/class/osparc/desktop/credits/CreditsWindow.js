@@ -69,7 +69,7 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
 
     __getBuyCreditsPage: function() {
       const title = this.tr("Buy Credits");
-      const iconSrc = "@FontAwesome5Solid/dollar-sign/24";
+      const iconSrc = "@FontAwesome5Solid/dollar-sign/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       const usageOverview = new osparc.desktop.credits.BuyCredits();
       page.add(usageOverview);
@@ -78,7 +78,7 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
 
     __getTransactionsPage: function() {
       const title = this.tr("Transactions");
-      const iconSrc = "@FontAwesome5Solid/exchange-alt/24";
+      const iconSrc = "@FontAwesome5Solid/exchange-alt/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       const usageOverview = new osparc.desktop.credits.BuyCredits();
       page.add(usageOverview);
@@ -87,7 +87,7 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
 
     __getUsageOverviewPage: function() {
       const title = this.tr("Usage Overview");
-      const iconSrc = "@FontAwesome5Solid/list/24";
+      const iconSrc = "@FontAwesome5Solid/list/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       const usageOverview = new osparc.component.resourceUsage.Overview();
       page.add(usageOverview);
