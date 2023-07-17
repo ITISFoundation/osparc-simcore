@@ -22,7 +22,7 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
     this.base(arguments, "credits", this.tr("Credits"));
 
     const viewWidth = 900;
-    const viewHeight = 450;
+    const viewHeight = 500;
 
     this.set({
       layout: new qx.ui.layout.Grow(),
@@ -35,7 +35,7 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
       appearance: "service-window"
     });
 
-    const tabViews = this.___tabsView = new qx.ui.tabview.TabView().set({
+    const tabViews = this.__tabsView = new qx.ui.tabview.TabView().set({
       barPosition: "left",
       contentPadding: 0
     });
