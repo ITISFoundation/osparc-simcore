@@ -11,7 +11,6 @@ from faker import Faker
 from openapi_core.schema.specs.models import Spec as OpenApiSpecs
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from simcore_service_webserver._meta import API_VTAG as VX
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application_settings import get_settings
 
@@ -95,7 +94,7 @@ def app_entrypoints(app: web.Application) -> set[Entrypoint]:
             entrypoints.add(
                 Entrypoint(
                     method=route.method,
-                    path=resource_path.removeprefix(f"/{VX}"),
+                    path=resource_path,
                     name=route.name,
                 )
             )

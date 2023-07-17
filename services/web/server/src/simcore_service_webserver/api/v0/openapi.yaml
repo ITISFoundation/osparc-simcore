@@ -10,21 +10,15 @@ info:
     name: MIT
     url: 'https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE'
 servers:
-  - description: API server
-    url: /v0
   - description: Development server
-    url: 'http://{host}:{port}/{basePath}'
+    url: 'http://{host}:{port}'
     variables:
       host:
         default: localhost
       port:
         default: '8001'
-      basePath:
-        enum:
-          - v0
-        default: v0
 paths:
-  '/email:test':
+  '/v0/email:test':
     post:
       tags:
         - admin
@@ -118,7 +112,7 @@ paths:
                             type: object
                   error:
                     title: Error
-  /announcements:
+  /v0/announcements:
     get:
       tags:
         - announcements
@@ -190,7 +184,7 @@ paths:
                     title: Error
                 type: object
                 title: 'Envelope[list[simcore_service_webserver.announcements._models.Announcement]]'
-  /:
+  /v0/:
     get:
       tags:
         - maintenance
@@ -227,7 +221,7 @@ paths:
                     default: null
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  /health:
+  /v0/health:
     get:
       tags:
         - maintenance
@@ -239,10 +233,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1/get/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1/get/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  /status:
+  /v0/status:
     get:
       tags:
         - maintenance
@@ -251,7 +245,7 @@ paths:
       responses:
         '200':
           description: returns app status check
-  /status/diagnostics:
+  /v0/status/diagnostics:
     get:
       tags:
         - maintenance
@@ -259,7 +253,7 @@ paths:
       responses:
         '200':
           description: returns app diagnostics report
-  '/status/{service_name}':
+  '/v0/status/{service_name}':
     get:
       tags:
         - maintenance
@@ -273,7 +267,7 @@ paths:
       responses:
         '200':
           description: returns status of connected service
-  /config:
+  /v0/config:
     get:
       summary: Front end runtime configuration
       operationId: get_config
@@ -301,7 +295,7 @@ paths:
                     default: null
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  /scheduled_maintenance:
+  /v0/scheduled_maintenance:
     get:
       tags:
         - maintenance
@@ -333,7 +327,7 @@ paths:
           description: No maintenance scheduled
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/auth/register/invitations:check':
+  '/v0/auth/register/invitations:check':
     post:
       tags:
         - authentication
@@ -376,7 +370,7 @@ paths:
                     additionalProperties: false
                   error:
                     title: Error
-  /auth/register:
+  /v0/auth/register:
     post:
       tags:
         - authentication
@@ -420,8 +414,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema'
-  '/auth/two_factor:resend':
+                $ref: '#/paths/~1v0~1auth~1logout/post/responses/200/content/application~1json/schema'
+  '/v0/auth/two_factor:resend':
     post:
       tags:
         - authentication
@@ -457,14 +451,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1auth~1logout/post/responses/200/content/application~1json/schema'
         '401':
           description: unauthorized reset due to invalid token code
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/401/content/application~1json/schema'
-  /auth/verify-phone-number:
+                $ref: '#/paths/~1v0~1auth~1login/post/responses/401/content/application~1json/schema'
+  /v0/auth/verify-phone-number:
     post:
       tags:
         - authentication
@@ -544,7 +538,7 @@ paths:
                       using a path+query in the fragment of the URL
                   error:
                     title: Error
-  /auth/validate-code-register:
+  /v0/auth/validate-code-register:
     post:
       tags:
         - authentication
@@ -583,8 +577,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema'
-  /auth/login:
+                $ref: '#/paths/~1v0~1auth~1logout/post/responses/200/content/application~1json/schema'
+  /v0/auth/login:
     post:
       tags:
         - authentication
@@ -682,7 +676,7 @@ paths:
                         title: Logs
                         type: array
                         items:
-                          $ref: '#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema/properties/data'
+                          $ref: '#/paths/~1v0~1auth~1logout/post/responses/200/content/application~1json/schema/properties/data'
                         description: log messages
                       errors:
                         title: Errors
@@ -717,7 +711,7 @@ paths:
                         description: HTTP error code
                   error:
                     title: Error
-  /auth/validate-code-login:
+  /v0/auth/validate-code-login:
     post:
       tags:
         - authentication
@@ -751,14 +745,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1auth~1logout/post/responses/200/content/application~1json/schema'
         '401':
           description: unauthorized reset due to invalid token code
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/401/content/application~1json/schema'
-  /auth/logout:
+                $ref: '#/paths/~1v0~1auth~1login/post/responses/401/content/application~1json/schema'
+  /v0/auth/logout:
     post:
       tags:
         - authentication
@@ -819,7 +813,7 @@ paths:
                       logger: user-logger
                   error:
                     title: Error
-  /auth/reset-password:
+  /v0/auth/reset-password:
     post:
       tags:
         - authentication
@@ -846,14 +840,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1auth~1logout/post/responses/200/content/application~1json/schema'
         '503':
           description: Service Unavailable
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/401/content/application~1json/schema'
-  '/auth/reset-password/{code}':
+                $ref: '#/paths/~1v0~1auth~1login/post/responses/401/content/application~1json/schema'
+  '/v0/auth/reset-password/{code}':
     post:
       tags:
         - authentication
@@ -895,14 +889,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1auth~1logout/post/responses/200/content/application~1json/schema'
         '401':
           description: unauthorized reset due to invalid token code
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/401/content/application~1json/schema'
-  /auth/change-email:
+                $ref: '#/paths/~1v0~1auth~1login/post/responses/401/content/application~1json/schema'
+  /v0/auth/change-email:
     post:
       tags:
         - authentication
@@ -930,20 +924,20 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1auth~1logout/post/responses/200/content/application~1json/schema'
         '401':
           description: unauthorized user. Login required
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/401/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1auth~1login/post/responses/401/content/application~1json/schema'
         '503':
           description: unable to send confirmation email
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/401/content/application~1json/schema'
-  /auth/change-password:
+                $ref: '#/paths/~1v0~1auth~1login/post/responses/401/content/application~1json/schema'
+  /v0/auth/change-password:
     post:
       tags:
         - authentication
@@ -984,26 +978,26 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1auth~1logout/post/responses/200/content/application~1json/schema'
         '401':
           description: unauthorized user. Login required
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/401/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1auth~1login/post/responses/401/content/application~1json/schema'
         '409':
           description: mismatch between new and confirmation passwords
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/401/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1auth~1login/post/responses/401/content/application~1json/schema'
         '422':
           description: current password is invalid
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1login/post/responses/401/content/application~1json/schema'
-  '/auth/confirmation/{code}':
+                $ref: '#/paths/~1v0~1auth~1login/post/responses/401/content/application~1json/schema'
+  '/v0/auth/confirmation/{code}':
     get:
       tags:
         - authentication
@@ -1023,10 +1017,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1auth~1logout/post/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1auth~1logout/post/responses/200/content/application~1json/schema'
         3XX:
           description: redirection to specific ui application page
-  /auth/api-keys:
+  /v0/auth/api-keys:
     get:
       tags:
         - authentication
@@ -1120,7 +1114,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/paths/~1auth~1api-keys/post/requestBody/content/application~1json/schema'
+              $ref: '#/paths/~1v0~1auth~1api-keys/post/requestBody/content/application~1json/schema'
         required: true
       responses:
         '204':
@@ -1129,7 +1123,7 @@ paths:
           description: requires login to  delete a key
         '403':
           description: not enough permissions to delete a key
-  /me:
+  /v0/me:
     get:
       tags:
         - user
@@ -1236,11 +1230,11 @@ paths:
                             title: Organizations
                             type: array
                             items:
-                              $ref: '#/paths/~1me/get/responses/200/content/application~1json/schema/properties/data/properties/groups/properties/me'
+                              $ref: '#/paths/~1v0~1me/get/responses/200/content/application~1json/schema/properties/data/properties/groups/properties/me'
                           all:
-                            $ref: '#/paths/~1me/get/responses/200/content/application~1json/schema/properties/data/properties/groups/properties/me'
+                            $ref: '#/paths/~1v0~1me/get/responses/200/content/application~1json/schema/properties/data/properties/groups/properties/me'
                           product:
-                            $ref: '#/paths/~1me/get/responses/200/content/application~1json/schema/properties/data/properties/groups/properties/me'
+                            $ref: '#/paths/~1v0~1me/get/responses/200/content/application~1json/schema/properties/data/properties/groups/properties/me'
                         example:
                           me:
                             gid: '27'
@@ -1308,7 +1302,7 @@ paths:
       responses:
         '204':
           description: Successful Response
-  /me/tokens:
+  /v0/me/tokens:
     get:
       tags:
         - user
@@ -1327,7 +1321,7 @@ paths:
                     title: Data
                     type: array
                     items:
-                      $ref: '#/paths/~1me~1tokens/post/responses/201/content/application~1json/schema/properties/data'
+                      $ref: '#/paths/~1v0~1me~1tokens/post/responses/201/content/application~1json/schema/properties/data'
                   error:
                     title: Error
     post:
@@ -1398,7 +1392,7 @@ paths:
                       token_key: 5f21abf5-c596-47b7-bfd1-c0e436ef1107
                   error:
                     title: Error
-  '/me/tokens/{service}':
+  '/v0/me/tokens/{service}':
     get:
       tags:
         - user
@@ -1417,7 +1411,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1me~1tokens/post/responses/201/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1me~1tokens/post/responses/201/content/application~1json/schema'
     delete:
       tags:
         - user
@@ -1433,7 +1427,7 @@ paths:
       responses:
         '204':
           description: Successful Response
-  /me/notifications:
+  /v0/me/notifications:
     get:
       tags:
         - user
@@ -1470,7 +1464,7 @@ paths:
                           type: integer
                           minimum: 0
                         category:
-                          $ref: '#/paths/~1me~1notifications/post/requestBody/content/application~1json/schema/properties/category'
+                          $ref: '#/paths/~1v0~1me~1notifications/post/requestBody/content/application~1json/schema/properties/category'
                         actionable_path:
                           title: Actionable Path
                           type: string
@@ -1542,7 +1536,7 @@ paths:
       responses:
         '204':
           description: Successful Response
-  '/me/notifications/{notification_id}':
+  '/v0/me/notifications/{notification_id}':
     patch:
       tags:
         - user
@@ -1571,7 +1565,7 @@ paths:
       responses:
         '204':
           description: Successful Response
-  /me/permissions:
+  /v0/me/permissions:
     get:
       tags:
         - user
@@ -1604,7 +1598,7 @@ paths:
                           type: boolean
                   error:
                     title: Error
-  /groups:
+  /v0/groups:
     get:
       summary: List my groups
       operationId: list_groups
@@ -1624,15 +1618,15 @@ paths:
                     type: object
                     properties:
                       me:
-                        $ref: '#/paths/~1groups/post/requestBody/content/application~1json/schema'
+                        $ref: '#/paths/~1v0~1groups/post/requestBody/content/application~1json/schema'
                       organizations:
                         type: array
                         items:
-                          $ref: '#/paths/~1groups/post/requestBody/content/application~1json/schema'
+                          $ref: '#/paths/~1v0~1groups/post/requestBody/content/application~1json/schema'
                       all:
-                        $ref: '#/paths/~1groups/post/requestBody/content/application~1json/schema'
+                        $ref: '#/paths/~1v0~1groups/post/requestBody/content/application~1json/schema'
                       product:
-                        $ref: '#/paths/~1groups/post/requestBody/content/application~1json/schema'
+                        $ref: '#/paths/~1v0~1groups/post/requestBody/content/application~1json/schema'
                   error:
                     nullable: true
                     default: null
@@ -1665,7 +1659,7 @@ paths:
                   type: string
                   format: uri
                 accessRights:
-                  $ref: '#/paths/~1groups~1%7Bgid%7D~1users~1%7Buid%7D/patch/requestBody/content/application~1json/schema/properties/accessRights'
+                  $ref: '#/paths/~1v0~1groups~1%7Bgid%7D~1users~1%7Buid%7D/patch/requestBody/content/application~1json/schema/properties/accessRights'
               required:
                 - gid
                 - label
@@ -1695,13 +1689,13 @@ paths:
                   - data
                 properties:
                   data:
-                    $ref: '#/paths/~1groups/post/requestBody/content/application~1json/schema'
+                    $ref: '#/paths/~1v0~1groups/post/requestBody/content/application~1json/schema'
                   error:
                     nullable: true
                     default: null
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/groups/{gid}':
+  '/v0/groups/{gid}':
     parameters:
       - name: gid
         in: path
@@ -1719,7 +1713,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1groups/post/responses/201/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1groups/post/responses/201/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
     patch:
@@ -1733,14 +1727,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/paths/~1groups/post/requestBody/content/application~1json/schema'
+              $ref: '#/paths/~1v0~1groups/post/requestBody/content/application~1json/schema'
       responses:
         '200':
           description: the modified group
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1groups/post/responses/201/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1groups/post/responses/201/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
     delete:
@@ -1753,7 +1747,7 @@ paths:
           description: group has been successfully deleted
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/groups/{gid}/users':
+  '/v0/groups/{gid}/users':
     parameters:
       - name: gid
         in: path
@@ -1778,7 +1772,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/paths/~1groups~1%7Bgid%7D~1users~1%7Buid%7D/get/responses/200/content/application~1json/schema/properties/data'
+                      $ref: '#/paths/~1v0~1groups~1%7Bgid%7D~1users~1%7Buid%7D/get/responses/200/content/application~1json/schema/properties/data'
                   error:
                     nullable: true
                     default: null
@@ -1816,7 +1810,7 @@ paths:
           description: user successfully added
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/groups/{gid}/users/{uid}':
+  '/v0/groups/{gid}/users/{uid}':
     parameters:
       - name: gid
         in: path
@@ -1874,7 +1868,7 @@ paths:
                           gravatar_id: a1af5c6ecc38e81f29695f01d6ceb540
                           id: '1'
                           gid: '3'
-                      - $ref: '#/paths/~1groups~1%7Bgid%7D~1users~1%7Buid%7D/patch/requestBody/content/application~1json/schema/properties/accessRights'
+                      - $ref: '#/paths/~1v0~1groups~1%7Bgid%7D~1users~1%7Buid%7D/patch/requestBody/content/application~1json/schema/properties/accessRights'
                   error:
                     nullable: true
                     default: null
@@ -1925,7 +1919,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1groups~1%7Bgid%7D~1users~1%7Buid%7D/get/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1groups~1%7Bgid%7D~1users~1%7Buid%7D/get/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
     delete:
@@ -1938,7 +1932,7 @@ paths:
           description: successfully removed user
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/groups/{gid}/classifiers':
+  '/v0/groups/{gid}/classifiers':
     get:
       parameters:
         - name: gid
@@ -1964,7 +1958,7 @@ paths:
           description: got a bundle with all information about classifiers
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/groups/sparc/classifiers/scicrunch-resources/{rrid}':
+  '/v0/groups/sparc/classifiers/scicrunch-resources/{rrid}':
     parameters:
       - name: rrid
         in: path
@@ -1999,7 +1993,7 @@ paths:
           description: scircrunch.org service is not reachable
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/groups/sparc/classifiers/scicrunch-resources:search':
+  '/v0/groups/sparc/classifiers/scicrunch-resources:search':
     get:
       parameters:
         - name: guess_name
@@ -2018,7 +2012,7 @@ paths:
           description: scircrunch.org service is not reachable
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  /storage/locations:
+  /v0/storage/locations:
     get:
       tags:
         - storage
@@ -2046,7 +2040,7 @@ paths:
                   example:
                     dataset_id: 'N:id-aaaa'
                     display_name: simcore-testing
-  '/storage/locations/{location_id}:sync':
+  '/v0/storage/locations/{location_id}:sync':
     post:
       tags:
         - storage
@@ -2102,7 +2096,7 @@ paths:
                           type: string
                   error:
                     title: Error
-  '/storage/locations/{location_id}/files/metadata':
+  '/v0/storage/locations/{location_id}/files/metadata':
     get:
       tags:
         - storage
@@ -2138,8 +2132,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1storage~1locations~1%7Blocation_id%7D~1datasets/get/responses/200/content/application~1json/schema'
-  '/storage/locations/{location_id}/files/{file_id}':
+                $ref: '#/paths/~1v0~1storage~1locations~1%7Blocation_id%7D~1datasets/get/responses/200/content/application~1json/schema'
+  '/v0/storage/locations/{location_id}/files/{file_id}':
     get:
       tags:
         - storage
@@ -2222,7 +2216,7 @@ paths:
         - required: false
           schema:
             allOf:
-              - $ref: '#/paths/~1storage~1locations~1%7Blocation_id%7D~1files~1%7Bfile_id%7D/get/parameters/2/schema/allOf/0'
+              - $ref: '#/paths/~1v0~1storage~1locations~1%7Blocation_id%7D~1files~1%7Bfile_id%7D/get/parameters/2/schema/allOf/0'
           name: link_type
           in: query
         - required: false
@@ -2316,7 +2310,7 @@ paths:
       responses:
         '204':
           description: Successful Response
-  '/storage/locations/{location_id}/files/{file_id}:complete':
+  '/v0/storage/locations/{location_id}/files/{file_id}:complete':
     post:
       tags:
         - storage
@@ -2399,7 +2393,7 @@ paths:
                             format: uri
                   error:
                     title: Error
-  '/storage/locations/{location_id}/files/{file_id}:abort':
+  '/v0/storage/locations/{location_id}/files/{file_id}:abort':
     post:
       tags:
         - storage
@@ -2424,7 +2418,7 @@ paths:
       responses:
         '204':
           description: Successful Response
-  '/storage/locations/{location_id}/files/{file_id}:complete/futures/{future_id}':
+  '/v0/storage/locations/{location_id}/files/{file_id}:complete/futures/{future_id}':
     post:
       tags:
         - storage
@@ -2476,7 +2470,7 @@ paths:
                         type: string
                   error:
                     title: Error
-  '/storage/locations/{location_id}/files/{file_id}/metadata':
+  '/v0/storage/locations/{location_id}/files/{file_id}/metadata':
     get:
       tags:
         - storage
@@ -2556,10 +2550,10 @@ paths:
                     type: object
                     properties:
                       data:
-                        $ref: '#/paths/~1storage~1locations~1%7Blocation_id%7D~1datasets~1%7Bdataset_id%7D~1metadata/get/responses/200/content/application~1json/schema/properties/data/items'
+                        $ref: '#/paths/~1v0~1storage~1locations~1%7Blocation_id%7D~1datasets~1%7Bdataset_id%7D~1metadata/get/responses/200/content/application~1json/schema/properties/data/items'
                       error:
                         title: Error
-  '/storage/locations/{location_id}/datasets/{dataset_id}/metadata':
+  '/v0/storage/locations/{location_id}/datasets/{dataset_id}/metadata':
     get:
       tags:
         - storage
@@ -2669,7 +2663,7 @@ paths:
                       additionalProperties: false
                   error:
                     title: Error
-  '/storage/locations/{location_id}/datasets':
+  '/v0/storage/locations/{location_id}/datasets':
     get:
       tags:
         - storage
@@ -2696,10 +2690,10 @@ paths:
                     title: Data
                     type: array
                     items:
-                      $ref: '#/paths/~1storage~1locations/get/responses/200/content/application~1json/schema/items'
+                      $ref: '#/paths/~1v0~1storage~1locations/get/responses/200/content/application~1json/schema/items'
                   error:
                     title: Error
-  '/computations/{project_id}':
+  '/v0/computations/{project_id}':
     get:
       description: Returns the last computation data
       tags:
@@ -2737,14 +2731,14 @@ paths:
                     default: null
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/computations/{project_id}:start':
+  '/v0/computations/{project_id}:start':
     post:
       description: Starts the pipeline(s) of a given (meta) project
       tags:
         - computations
       operationId: start_computation
       parameters:
-        - $ref: '#/paths/~1computations~1%7Bproject_id%7D/get/parameters/0'
+        - $ref: '#/paths/~1v0~1computations~1%7Bproject_id%7D/get/parameters/0'
       requestBody:
         required: false
         content:
@@ -2796,20 +2790,20 @@ paths:
                     default: null
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/computations/{project_id}:stop':
+  '/v0/computations/{project_id}:stop':
     post:
       description: Stops (all) pipeline(s) of a given (meta) project
       tags:
         - computations
       operationId: stop_computation
       parameters:
-        - $ref: '#/paths/~1computations~1%7Bproject_id%7D/get/parameters/0'
+        - $ref: '#/paths/~1v0~1computations~1%7Bproject_id%7D/get/parameters/0'
       responses:
         '204':
           description: Succesffully stopped the pipeline
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  /projects:
+  /v0/projects:
     get:
       tags:
         - project
@@ -3035,12 +3029,12 @@ paths:
                             type: string
                           default: []
                         state:
-                          $ref: '#/paths/~1projects~1active/get/responses/200/content/application~1json/schema/properties/data/properties/state'
+                          $ref: '#/paths/~1v0~1projects~1active/get/responses/200/content/application~1json/schema/properties/data/properties/state'
                         ui:
                           title: Ui
                           anyOf:
-                            - $ref: '#/paths/~1projects~1active/get/responses/200/content/application~1json/schema/properties/data/properties/ui/anyOf/0'
-                            - $ref: '#/paths/~1projects~1%7Bproject_id%7D/put/requestBody/content/application~1json/schema/properties/ui'
+                            - $ref: '#/paths/~1v0~1projects~1active/get/responses/200/content/application~1json/schema/properties/data/properties/ui/anyOf/0'
+                            - $ref: '#/paths/~1v0~1projects~1%7Bproject_id%7D/put/requestBody/content/application~1json/schema/properties/ui'
                         quality:
                           title: Quality
                           type: object
@@ -3049,7 +3043,7 @@ paths:
                           title: Dev
                           type: object
                         permalink:
-                          $ref: '#/paths/~1projects~1active/get/responses/200/content/application~1json/schema/properties/data/properties/permalink'
+                          $ref: '#/paths/~1v0~1projects~1active/get/responses/200/content/application~1json/schema/properties/data/properties/permalink'
                 additionalProperties: false
                 description: Paginated response model of ItemTs
     post:
@@ -3140,7 +3134,7 @@ paths:
                       items:
                         type: string
                     ui:
-                      $ref: '#/paths/~1projects~1%7Bproject_id%7D/put/requestBody/content/application~1json/schema/properties/ui'
+                      $ref: '#/paths/~1v0~1projects~1%7Bproject_id%7D/put/requestBody/content/application~1json/schema/properties/ui'
                 - title: ProjectCopyOverride
                   required:
                     - name
@@ -3200,7 +3194,7 @@ paths:
                         type: string
                   error:
                     title: Error
-  /projects/active:
+  /v0/projects/active:
     get:
       tags:
         - project
@@ -3382,7 +3376,7 @@ paths:
                             type: object
                             properties: {}
                             additionalProperties: false
-                          - $ref: '#/paths/~1projects~1%7Bproject_id%7D/put/requestBody/content/application~1json/schema/properties/ui'
+                          - $ref: '#/paths/~1v0~1projects~1%7Bproject_id%7D/put/requestBody/content/application~1json/schema/properties/ui'
                       quality:
                         title: Quality
                         type: object
@@ -3408,7 +3402,7 @@ paths:
                             type: boolean
                   error:
                     title: Error
-  '/projects/{project_id}':
+  '/v0/projects/{project_id}':
     get:
       tags:
         - project
@@ -3428,7 +3422,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1active/get/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1projects~1active/get/responses/200/content/application~1json/schema'
     put:
       tags:
         - project
@@ -3526,7 +3520,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1active/get/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1projects~1active/get/responses/200/content/application~1json/schema'
     delete:
       tags:
         - project
@@ -3568,7 +3562,7 @@ paths:
                   title: Permalink
                   type: object
                 ui:
-                  $ref: '#/paths/~1projects~1%7Bproject_id%7D/put/requestBody/content/application~1json/schema/properties/ui'
+                  $ref: '#/paths/~1v0~1projects~1%7Bproject_id%7D/put/requestBody/content/application~1json/schema/properties/ui'
         required: true
       responses:
         '200':
@@ -3576,8 +3570,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1active/get/responses/200/content/application~1json/schema'
-  '/projects/{project_id}:open':
+                $ref: '#/paths/~1v0~1projects~1active/get/responses/200/content/application~1json/schema'
+  '/v0/projects/{project_id}:open':
     parameters:
       - name: project_id
         in: path
@@ -5426,13 +5420,13 @@ paths:
                       - type: object
                         properties:
                           state:
-                            $ref: '#/paths/~1projects~1%7Bproject_id%7D~1state/get/responses/200/content/application~1json/schema/properties/data'
+                            $ref: '#/paths/~1v0~1projects~1%7Bproject_id%7D~1state/get/responses/200/content/application~1json/schema/properties/data'
                   error:
                     nullable: true
                     default: null
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_id}/state':
+  '/v0/projects/{project_id}/state':
     parameters:
       - name: project_id
         in: path
@@ -5483,7 +5477,7 @@ paths:
                     default: null
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_id}:xport':
+  '/v0/projects/{project_id}:xport':
     parameters:
       - name: project_id
         in: path
@@ -5505,7 +5499,7 @@ paths:
                 format: binary
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_id}:close':
+  '/v0/projects/{project_id}:close':
     parameters:
       - name: project_id
         in: path
@@ -5523,13 +5517,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/paths/~1projects~1%7Bproject_id%7D%3Aopen/post/requestBody/content/application~1json/schema'
+              $ref: '#/paths/~1v0~1projects~1%7Bproject_id%7D%3Aopen/post/requestBody/content/application~1json/schema'
       responses:
         '204':
           description: project succesfuly closed
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_id}/nodes':
+  '/v0/projects/{project_id}/nodes':
     parameters:
       - name: project_id
         in: path
@@ -5589,7 +5583,7 @@ paths:
                     default: null
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_id}/nodes/{node_id}':
+  '/v0/projects/{project_id}/nodes/{node_id}':
     parameters:
       - name: project_id
         in: path
@@ -5704,7 +5698,7 @@ paths:
           description: node has been successfully deleted from project
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_id}/nodes/{node_id}:retrieve':
+  '/v0/projects/{project_id}/nodes/{node_id}:retrieve':
     parameters:
       - name: project_id
         in: path
@@ -5750,7 +5744,7 @@ paths:
                         description: amount of transferred bytes
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_id}/nodes/{node_id}:start':
+  '/v0/projects/{project_id}/nodes/{node_id}:start':
     parameters:
       - name: project_id
         in: path
@@ -5772,7 +5766,7 @@ paths:
           description: started service (needs to be long running though)
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_id}/nodes/{node_id}:stop':
+  '/v0/projects/{project_id}/nodes/{node_id}:stop':
     parameters:
       - name: project_id
         in: path
@@ -5794,7 +5788,7 @@ paths:
           description: stopped service
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_id}/nodes/{node_id}:restart':
+  '/v0/projects/{project_id}/nodes/{node_id}:restart':
     parameters:
       - name: project_id
         in: path
@@ -5816,7 +5810,7 @@ paths:
           description: Restarts containers started by the dynamic-sidecar
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_id}/nodes/{node_id}/resources':
+  '/v0/projects/{project_id}/nodes/{node_id}/resources':
     parameters:
       - name: project_id
         in: path
@@ -5844,7 +5838,7 @@ paths:
                   - data
                 properties:
                   data:
-                    $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/put/requestBody/content/application~1json/schema'
+                    $ref: '#/paths/~1v0~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/put/requestBody/content/application~1json/schema'
                   error:
                     nullable: true
                     default: null
@@ -5883,10 +5877,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/get/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/get/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_uuid}/comments':
+  '/v0/projects/{project_uuid}/comments':
     get:
       tags:
         - project
@@ -5925,7 +5919,7 @@ paths:
                 properties:
                   data:
                     items:
-                      $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1comments~1%7Bcomment_id%7D/get/responses/200/content/application~1json/schema/properties/data'
+                      $ref: '#/paths/~1v0~1projects~1%7Bproject_uuid%7D~1comments~1%7Bcomment_id%7D/get/responses/200/content/application~1json/schema/properties/data'
                     type: array
                     title: Data
                   error:
@@ -5978,7 +5972,7 @@ paths:
                     title: Error
                 type: object
                 title: 'Envelope[dict[Literal[''comment_id''], pydantic.types.PositiveInt]]'
-  '/projects/{project_uuid}/comments/{comment_id}':
+  '/v0/projects/{project_uuid}/comments/{comment_id}':
     get:
       tags:
         - project
@@ -6081,7 +6075,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1comments/post/requestBody/content/application~1json/schema'
+              $ref: '#/paths/~1v0~1projects~1%7Bproject_uuid%7D~1comments/post/requestBody/content/application~1json/schema'
         required: true
       responses:
         '200':
@@ -6089,7 +6083,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1comments~1%7Bcomment_id%7D/get/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1projects~1%7Bproject_uuid%7D~1comments~1%7Bcomment_id%7D/get/responses/200/content/application~1json/schema'
     delete:
       tags:
         - project
@@ -6115,7 +6109,7 @@ paths:
       responses:
         '204':
           description: Successful Response
-  '/projects/{project_id}/nodes/-/services:access':
+  '/v0/projects/{project_id}/nodes/-/services:access':
     get:
       tags:
         - project
@@ -6184,7 +6178,7 @@ paths:
                           description: This pair uniquely identifies a services
                   error:
                     title: Error
-  '/projects/{project_id}/nodes/-/preview':
+  '/v0/projects/{project_id}/nodes/-/preview':
     get:
       tags:
         - project
@@ -6211,10 +6205,10 @@ paths:
                     title: Data
                     type: array
                     items:
-                      $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1preview/get/responses/200/content/application~1json/schema/properties/data'
+                      $ref: '#/paths/~1v0~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1preview/get/responses/200/content/application~1json/schema/properties/data'
                   error:
                     title: Error
-  '/projects/{project_id}/nodes/{node_id}/preview':
+  '/v0/projects/{project_id}/nodes/{node_id}/preview':
     get:
       tags:
         - project
@@ -6290,7 +6284,7 @@ paths:
                     title: Error
         '404':
           description: Node has no preview
-  '/projects/{project_id}/inputs':
+  '/v0/projects/{project_id}/inputs':
     get:
       tags:
         - project
@@ -6380,8 +6374,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1inputs/get/responses/200/content/application~1json/schema'
-  '/projects/{project_id}/outputs':
+                $ref: '#/paths/~1v0~1projects~1%7Bproject_id%7D~1inputs/get/responses/200/content/application~1json/schema'
+  '/v0/projects/{project_id}/outputs':
     get:
       tags:
         - project
@@ -6429,7 +6423,7 @@ paths:
                           type: string
                   error:
                     title: Error
-  '/projects/{project_id}/metadata':
+  '/v0/projects/{project_id}/metadata':
     get:
       tags:
         - project
@@ -6512,8 +6506,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1metadata/get/responses/200/content/application~1json/schema'
-  '/projects/{project_id}/metadata/ports':
+                $ref: '#/paths/~1v0~1projects~1%7Bproject_id%7D~1metadata/get/responses/200/content/application~1json/schema'
+  '/v0/projects/{project_id}/metadata/ports':
     get:
       tags:
         - project
@@ -6564,7 +6558,7 @@ paths:
                           description: 'jsonschema for the port''s value. SEE https://json-schema.org/understanding-json-schema/'
                   error:
                     title: Error
-  '/projects/{project_uuid}/tags/{tag_id}':
+  '/v0/projects/{project_uuid}/tags/{tag_id}':
     parameters:
       - name: tag_id
         in: path
@@ -6587,7 +6581,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1%7Bproject_id%7D%3Aopen/post/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1projects~1%7Bproject_id%7D%3Aopen/post/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
     delete:
@@ -6601,10 +6595,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1%7Bproject_id%7D%3Aopen/post/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1projects~1%7Bproject_id%7D%3Aopen/post/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{project_uuid}/checkpoint/{ref_id}/iterations':
+  '/v0/projects/{project_uuid}/checkpoint/{ref_id}/iterations':
     get:
       tags:
         - meta-projects
@@ -6812,7 +6806,7 @@ paths:
                         type:
                           title: Error Type
                           type: string
-  '/projects/{project_uuid}/checkpoint/{ref_id}/iterations/{iter_id}':
+  '/v0/projects/{project_uuid}/checkpoint/{ref_id}/iterations/{iter_id}':
     get:
       tags:
         - meta-projects
@@ -6845,7 +6839,7 @@ paths:
       responses:
         '200':
           description: Successful Response
-  '/projects/{project_uuid}/checkpoint/{ref_id}/iterations/-/results':
+  '/v0/projects/{project_uuid}/checkpoint/{ref_id}/iterations/-/results':
     get:
       tags:
         - meta-projects
@@ -6906,14 +6900,14 @@ paths:
                 type: object
                 properties:
                   _meta:
-                    $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1checkpoint~1%7Bref_id%7D~1iterations/get/responses/200/content/application~1json/schema/properties/_meta'
+                    $ref: '#/paths/~1v0~1projects~1%7Bproject_uuid%7D~1checkpoint~1%7Bref_id%7D~1iterations/get/responses/200/content/application~1json/schema/properties/_meta'
                   _links:
-                    $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1checkpoint~1%7Bref_id%7D~1iterations/get/responses/200/content/application~1json/schema/properties/_links'
+                    $ref: '#/paths/~1v0~1projects~1%7Bproject_uuid%7D~1checkpoint~1%7Bref_id%7D~1iterations/get/responses/200/content/application~1json/schema/properties/_links'
                   data:
                     title: Data
                     type: array
                     items:
-                      $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1checkpoint~1%7Bref_id%7D~1iterations/get/responses/200/content/application~1json/schema/properties/data/items'
+                      $ref: '#/paths/~1v0~1projects~1%7Bproject_uuid%7D~1checkpoint~1%7Bref_id%7D~1iterations/get/responses/200/content/application~1json/schema/properties/data/items'
         '404':
           description: This project has no iterations.Only meta-project have iterations and they must be explicitly created.
         '422':
@@ -6921,8 +6915,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1checkpoint~1%7Bref_id%7D~1iterations/get/responses/422/content/application~1json/schema'
-  '/projects/{project_uuid}/checkpoint/{ref_id}/iterations/{iter_id}/results':
+                $ref: '#/paths/~1v0~1projects~1%7Bproject_uuid%7D~1checkpoint~1%7Bref_id%7D~1iterations/get/responses/422/content/application~1json/schema'
+  '/v0/projects/{project_uuid}/checkpoint/{ref_id}/iterations/{iter_id}/results':
     get:
       tags:
         - meta-projects
@@ -6955,7 +6949,7 @@ paths:
       responses:
         '200':
           description: Successful Response
-  /repos/projects:
+  /v0/repos/projects:
     get:
       tags:
         - repository
@@ -7112,7 +7106,7 @@ paths:
                         type:
                           title: Error Type
                           type: string
-  '/repos/projects/{project_uuid}/checkpoints':
+  '/v0/repos/projects/{project_uuid}/checkpoints':
     get:
       tags:
         - repository
@@ -7164,20 +7158,20 @@ paths:
                 type: object
                 properties:
                   _meta:
-                    $ref: '#/paths/~1repos~1projects/get/responses/200/content/application~1json/schema/properties/_meta'
+                    $ref: '#/paths/~1v0~1repos~1projects/get/responses/200/content/application~1json/schema/properties/_meta'
                   _links:
-                    $ref: '#/paths/~1repos~1projects/get/responses/200/content/application~1json/schema/properties/_links'
+                    $ref: '#/paths/~1v0~1repos~1projects/get/responses/200/content/application~1json/schema/properties/_links'
                   data:
                     title: Data
                     type: array
                     items:
-                      $ref: '#/paths/~1repos~1projects~1%7Bproject_uuid%7D~1checkpoints/post/responses/201/content/application~1json/schema/properties/data'
+                      $ref: '#/paths/~1v0~1repos~1projects~1%7Bproject_uuid%7D~1checkpoints/post/responses/201/content/application~1json/schema/properties/data'
         '422':
           description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1repos~1projects/get/responses/422/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1repos~1projects/get/responses/422/content/application~1json/schema'
     post:
       tags:
         - repository
@@ -7275,8 +7269,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1repos~1projects/get/responses/422/content/application~1json/schema'
-  '/repos/projects/{project_uuid}/checkpoints/HEAD':
+                $ref: '#/paths/~1v0~1repos~1projects/get/responses/422/content/application~1json/schema'
+  '/v0/repos/projects/{project_uuid}/checkpoints/HEAD':
     get:
       tags:
         - repository
@@ -7299,14 +7293,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1repos~1projects~1%7Bproject_uuid%7D~1checkpoints/post/responses/201/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1repos~1projects~1%7Bproject_uuid%7D~1checkpoints/post/responses/201/content/application~1json/schema'
         '422':
           description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1repos~1projects/get/responses/422/content/application~1json/schema'
-  '/repos/projects/{project_uuid}/checkpoints/{ref_id}':
+                $ref: '#/paths/~1v0~1repos~1projects/get/responses/422/content/application~1json/schema'
+  '/v0/repos/projects/{project_uuid}/checkpoints/{ref_id}':
     get:
       tags:
         - repository
@@ -7340,13 +7334,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1repos~1projects~1%7Bproject_uuid%7D~1checkpoints/post/responses/201/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1repos~1projects~1%7Bproject_uuid%7D~1checkpoints/post/responses/201/content/application~1json/schema'
         '422':
           description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1repos~1projects/get/responses/422/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1repos~1projects/get/responses/422/content/application~1json/schema'
     patch:
       tags:
         - repository
@@ -7393,14 +7387,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1repos~1projects~1%7Bproject_uuid%7D~1checkpoints/post/responses/201/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1repos~1projects~1%7Bproject_uuid%7D~1checkpoints/post/responses/201/content/application~1json/schema'
         '422':
           description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1repos~1projects/get/responses/422/content/application~1json/schema'
-  '/repos/projects/{project_uuid}/checkpoints/{ref_id}:checkout':
+                $ref: '#/paths/~1v0~1repos~1projects/get/responses/422/content/application~1json/schema'
+  '/v0/repos/projects/{project_uuid}/checkpoints/{ref_id}:checkout':
     post:
       tags:
         - repository
@@ -7436,14 +7430,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1repos~1projects~1%7Bproject_uuid%7D~1checkpoints/post/responses/201/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1repos~1projects~1%7Bproject_uuid%7D~1checkpoints/post/responses/201/content/application~1json/schema'
         '422':
           description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1repos~1projects/get/responses/422/content/application~1json/schema'
-  '/repos/projects/{project_uuid}/checkpoints/{ref_id}/workbench/view':
+                $ref: '#/paths/~1v0~1repos~1projects/get/responses/422/content/application~1json/schema'
+  '/v0/repos/projects/{project_uuid}/checkpoints/{ref_id}/workbench/view':
     get:
       tags:
         - repository
@@ -7520,14 +7514,14 @@ paths:
                         default: {}
                     description: A view (i.e. read-only and visual) of the project's workbench
                   error:
-                    $ref: '#/paths/~1repos~1projects~1%7Bproject_uuid%7D~1checkpoints/post/responses/201/content/application~1json/schema/properties/error'
+                    $ref: '#/paths/~1v0~1repos~1projects~1%7Bproject_uuid%7D~1checkpoints/post/responses/201/content/application~1json/schema/properties/error'
         '422':
           description: Validation Error
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1repos~1projects/get/responses/422/content/application~1json/schema'
-  /activity/status:
+                $ref: '#/paths/~1v0~1repos~1projects/get/responses/422/content/application~1json/schema'
+  /v0/activity/status:
     get:
       operationId: get_status
       tags:
@@ -7568,7 +7562,7 @@ paths:
                     default: null
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  /tags:
+  /v0/tags:
     get:
       tags:
         - tag
@@ -7587,7 +7581,7 @@ paths:
                     title: Data
                     type: array
                     items:
-                      $ref: '#/paths/~1tags/post/responses/200/content/application~1json/schema/properties/data'
+                      $ref: '#/paths/~1v0~1tags/post/responses/200/content/application~1json/schema/properties/data'
                   error:
                     title: Error
     post:
@@ -7668,7 +7662,7 @@ paths:
                             type: boolean
                   error:
                     title: Error
-  '/tags/{tag_id}':
+  '/v0/tags/{tag_id}':
     delete:
       tags:
         - tag
@@ -7721,8 +7715,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1tags/post/responses/200/content/application~1json/schema'
-  /resource-usage/containers:
+                $ref: '#/paths/~1v0~1tags/post/responses/200/content/application~1json/schema'
+  /v0/resource-usage/containers:
     get:
       tags:
         - usage
@@ -7814,7 +7808,7 @@ paths:
                     title: Error
                 type: object
                 title: 'Envelope[list[models_library.api_schemas_webserver.resource_usage.ContainerGet]]'
-  /publications/service-submission:
+  /v0/publications/service-submission:
     post:
       tags:
         - publication
@@ -7839,7 +7833,7 @@ paths:
           description: Submission has been registered
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  /catalog/dags:
+  /v0/catalog/dags:
     get:
       tags:
         - catalog
@@ -7869,7 +7863,7 @@ paths:
           description: Validation Error
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/catalog/dags/{dag_id}':
+  '/v0/catalog/dags/{dag_id}':
     parameters:
       - in: path
         name: dag_id
@@ -7905,7 +7899,7 @@ paths:
           description: Successfully deleted
         '422':
           description: Validation Error
-  /catalog/services:
+  /v0/catalog/services:
     get:
       tags:
         - catalog
@@ -7916,7 +7910,7 @@ paths:
           description: Returns list of services from the catalog
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/catalog/services/{service_key}/{service_version}':
+  '/v0/catalog/services/{service_key}/{service_version}':
     parameters:
       - in: path
         name: service_key
@@ -7958,7 +7952,7 @@ paths:
           description: Returns modified service
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/catalog/services/{service_key}/{service_version}/inputs':
+  '/v0/catalog/services/{service_key}/{service_version}/inputs':
     get:
       tags:
         - catalog
@@ -8148,7 +8142,7 @@ paths:
                 type: object
           description: Validation Error
       summary: List Service Inputs
-  '/catalog/services/{service_key}/{service_version}/inputs/{input_key}':
+  '/v0/catalog/services/{service_key}/{service_version}/inputs/{input_key}':
     get:
       tags:
         - catalog
@@ -8180,16 +8174,16 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/200/content/application~1json/schema'
           description: Successful Response
         '422':
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/422/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/422/content/application~1json/schema'
           description: Validation Error
       summary: Get Service Input
-  '/catalog/services/{service_key}/{service_version}/inputs:match':
+  '/v0/catalog/services/{service_key}/{service_version}/inputs:match':
     get:
       tags:
         - catalog
@@ -8246,10 +8240,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/422/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/422/content/application~1json/schema'
           description: Validation Error
       summary: Get Compatible Inputs Given Source Output
-  '/catalog/services/{service_key}/{service_version}/outputs':
+  '/v0/catalog/services/{service_key}/{service_version}/outputs':
     get:
       tags:
         - catalog
@@ -8275,7 +8269,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/paths/~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1outputs~1%7Boutput_key%7D/get/responses/200/content/application~1json/schema'
+                  $ref: '#/paths/~1v0~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1outputs~1%7Boutput_key%7D/get/responses/200/content/application~1json/schema'
                 title: Response List Service Outputs Catalog Services  Service Key   Service Version  Outputs Get
                 type: array
           description: Successful Response
@@ -8283,10 +8277,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/422/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/422/content/application~1json/schema'
           description: Validation Error
       summary: List Service Outputs
-  '/catalog/services/{service_key}/{service_version}/outputs/{output_key}':
+  '/v0/catalog/services/{service_key}/{service_version}/outputs/{output_key}':
     get:
       tags:
         - catalog
@@ -8384,7 +8378,7 @@ paths:
                     type: string
                   widget:
                     allOf:
-                      - $ref: '#/paths/~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/200/content/application~1json/schema/properties/widget/allOf/0'
+                      - $ref: '#/paths/~1v0~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/200/content/application~1json/schema/properties/widget/allOf/0'
                     deprecated: true
                     description: custom widget to use instead of the default one determined from the data-type
                     title: Widget
@@ -8401,10 +8395,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/422/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/422/content/application~1json/schema'
           description: Validation Error
       summary: Get Service Output
-  '/catalog/services/{service_key}/{service_version}/outputs:match':
+  '/v0/catalog/services/{service_key}/{service_version}/outputs:match':
     get:
       tags:
         - catalog
@@ -8461,10 +8455,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/422/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/422/content/application~1json/schema'
           description: Validation Error
       summary: Get Compatible Outputs Given Target Input
-  '/catalog/services/{service_key}/{service_version}/resources':
+  '/v0/catalog/services/{service_key}/{service_version}/resources':
     get:
       tags:
         - catalog
@@ -8491,10 +8485,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/get/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1projects~1%7Bproject_id%7D~1nodes~1%7Bnode_id%7D~1resources/get/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/clusters:ping':
+  '/v0/clusters:ping':
     post:
       summary: test connectivity with cluster
       operationId: ping_cluster_handler
@@ -8515,9 +8509,9 @@ paths:
                 authentication:
                   description: Dask gateway authentication
                   anyOf:
-                    - $ref: '#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/0'
-                    - $ref: '#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/1'
-                    - $ref: '#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/2'
+                    - $ref: '#/paths/~1v0~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/0'
+                    - $ref: '#/paths/~1v0~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/1'
+                    - $ref: '#/paths/~1v0~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/2'
               required:
                 - endpoint
                 - authentication
@@ -8527,7 +8521,7 @@ paths:
           description: connectivity is OK
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  /clusters:
+  /v0/clusters:
     get:
       summary: List my clusters
       operationId: list_clusters_handler
@@ -8546,7 +8540,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/paths/~1clusters/post/responses/201/content/application~1json/schema/properties/data'
+                      $ref: '#/paths/~1v0~1clusters/post/responses/201/content/application~1json/schema/properties/data'
                   error:
                     nullable: true
                     default: null
@@ -8671,15 +8665,15 @@ paths:
                       authentication:
                         description: Dask gateway authentication
                         anyOf:
-                          - $ref: '#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/0'
-                          - $ref: '#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/1'
-                          - $ref: '#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/2'
+                          - $ref: '#/paths/~1v0~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/0'
+                          - $ref: '#/paths/~1v0~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/1'
+                          - $ref: '#/paths/~1v0~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/2'
                       accessRights:
                         type: object
                         description: object containing the GroupID as key and read/write/execution permissions as value
                         x-patternProperties:
                           ^\S+$:
-                            $ref: '#/paths/~1clusters~1%7Bcluster_id%7D/patch/requestBody/content/application~1json/schema/properties/accessRights/x-patternProperties/%5E%5CS%2B%24'
+                            $ref: '#/paths/~1v0~1clusters~1%7Bcluster_id%7D/patch/requestBody/content/application~1json/schema/properties/accessRights/x-patternProperties/%5E%5CS%2B%24'
                     required:
                       - id
                       - name
@@ -8707,7 +8701,7 @@ paths:
                     default: null
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/clusters/{cluster_id}':
+  '/v0/clusters/{cluster_id}':
     parameters:
       - name: cluster_id
         in: path
@@ -8725,7 +8719,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1clusters/post/responses/201/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1clusters/post/responses/201/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
     patch:
@@ -8766,9 +8760,9 @@ paths:
                 authentication:
                   description: Dask gateway authentication
                   anyOf:
-                    - $ref: '#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/0'
-                    - $ref: '#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/1'
-                    - $ref: '#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/2'
+                    - $ref: '#/paths/~1v0~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/0'
+                    - $ref: '#/paths/~1v0~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/1'
+                    - $ref: '#/paths/~1v0~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/2'
                 accessRights:
                   type: object
                   description: object containing the GroupID as key and read/write/execution permissions as value
@@ -8797,7 +8791,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1clusters/post/responses/201/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1clusters/post/responses/201/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
     delete:
@@ -8810,7 +8804,7 @@ paths:
           description: cluster has been successfully deleted
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/clusters/{cluster_id}:ping':
+  '/v0/clusters/{cluster_id}:ping':
     parameters:
       - name: cluster_id
         in: path
@@ -8827,7 +8821,7 @@ paths:
           description: connectivity is OK
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/clusters/{cluster_id}/details':
+  '/v0/clusters/{cluster_id}/details':
     parameters:
       - name: cluster_id
         in: path
@@ -8872,7 +8866,7 @@ paths:
                     default: null
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  /tasks:
+  /v0/tasks:
     get:
       operationId: list_tasks
       tags:
@@ -8905,7 +8899,7 @@ paths:
                     error:
                       nullable: true
                       default: null
-  '/tasks/{task_id}':
+  '/v0/tasks/{task_id}':
     parameters:
       - name: task_id
         in: path
@@ -8958,7 +8952,7 @@ paths:
           description: Task was successfully aborted
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/tasks/{task_id}/result':
+  '/v0/tasks/{task_id}/result':
     parameters:
       - name: task_id
         in: path
@@ -8974,7 +8968,7 @@ paths:
           description: Retrieve the task result and returns directly its HTTP code
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  /services:
+  /v0/services:
     get:
       tags:
         - nih-sparc
@@ -9047,7 +9041,7 @@ paths:
                         view_url: 'https://host.com/view?viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=1.2.3'
                   error:
                     title: Error
-  /viewers:
+  /v0/viewers:
     get:
       tags:
         - nih-sparc
@@ -9117,7 +9111,7 @@ paths:
                         A viewer can be dispatched using the view_url and appending the
                   error:
                     title: Error
-  /viewers/default:
+  /v0/viewers/default:
     get:
       tags:
         - nih-sparc
@@ -9144,7 +9138,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1viewers/get/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1v0~1viewers/get/responses/200/content/application~1json/schema'
   /view:
     get:
       tags:
