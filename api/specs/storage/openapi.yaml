@@ -683,7 +683,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_FileMetaDataGet_'
-  /v0/futures/:
+  /v0/futures:
     get:
       tags:
       - tasks

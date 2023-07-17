@@ -356,7 +356,7 @@ async def search_files_starting_with(user_id: UserID, startswith: str = ""):
 
 
 @app.get(
-    f"/{api_vtag}/futures/",
+    f"/{api_vtag}/futures",
     response_model=Envelope[TaskGet],
     tags=TAGS_TASKS,
     summary="list current long running tasks",
