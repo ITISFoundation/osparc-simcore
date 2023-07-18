@@ -218,7 +218,7 @@ def convert_to_environ_vars(cfg: dict[str, Any]) -> dict[str, Any]:
         envs["RESOURCE_MANAGER_RESOURCE_TTL_S"] = section.get(
             "resource_deletion_timeout_seconds"
         )
-        envs["WEBSERVER_GARBAGE_COLLECTION_INTERVAL_SECONDS"] = section.get(
+        envs["GARBAGE_COLLECTOR_INTERVAL_S"] = section.get(
             "garbage_collection_interval_seconds"
         )
 

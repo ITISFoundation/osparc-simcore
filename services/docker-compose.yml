@@ -315,7 +315,6 @@ services:
 
       # WEBSERVER_GARBAGE_COLLECTOR
       WEBSERVER_GARBAGE_COLLECTOR: ${WEBSERVER_GARBAGE_COLLECTOR}
-      GARBAGE_COLLECTOR_INTERVAL_S: ${GARBAGE_COLLECTOR_INTERVAL_S}
 
       # WEBSERVER_INVITATIONS
       INVITATIONS_HOST: ${INVITATIONS_HOST}
@@ -412,6 +411,7 @@ services:
     networks:
       - default
       - interactive_services_subnet
+
   wb-db-event-listener:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true

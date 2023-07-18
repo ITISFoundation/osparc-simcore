@@ -95,7 +95,7 @@ services:
     volumes: *webserver-volumes-dev
     environment:
       <<: *webserver-environment-dev
-      WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS: 15
+      RESOURCE_MANAGER_RESOURCE_TTL_S: 15
 
   dask-sidecar:
     volumes:
