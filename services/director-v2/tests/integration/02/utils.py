@@ -12,7 +12,7 @@ import aiodocker
 import httpx
 from fastapi import FastAPI
 from models_library.basic_types import PortInt
-from models_library.projects import Node
+from models_library.projects import Node, NodesDict
 from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import (
     ServiceResourcesDict,
@@ -324,9 +324,10 @@ async def assert_start_service(
     }
 
     result = await director_v2_client.post(
-        "/v2/dynamic_services", json=data, headers=headers, follow_redirects=True
+        "/v2/dynamic_services", json=data, headers=headers, follow_redirects=False
     )
     result.raise_for_status()
+
     assert result.status_code == httpx.codes.CREATED, result.text
 
 
@@ -364,7 +365,7 @@ async def _get_service_state(
 
 async def assert_all_services_running(
     director_v2_client: httpx.AsyncClient,
-    workbench: dict[str, Node],
+    workbench: NodesDict,
 ) -> None:
     async for attempt in AsyncRetrying(
         reraise=True,
@@ -520,7 +521,7 @@ async def assert_service_is_ready(  # pylint: disable=redefined-outer-name
 
 async def assert_services_reply_200(
     director_v2_client: httpx.AsyncClient,
-    workbench: dict[str, Node],
+    workbench: NodesDict,
 ) -> None:
     print("Giving dy-proxies some time to start")
     await asyncio.sleep(PROXY_BOOT_TIME)
