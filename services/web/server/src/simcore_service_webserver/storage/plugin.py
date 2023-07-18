@@ -5,20 +5,20 @@
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_keys import APP_OPENAPI_SPECS_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from . import _routes
+from .._constants import APP_SETTINGS_KEY
+from ..rest.plugin import setup_rest
+from . import _handlers
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @app_module_setup(
-    __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_STORAGE", logger=log
+    __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_STORAGE", logger=_logger
 )
 def setup_storage(app: web.Application):
+    assert app[APP_SETTINGS_KEY].WEBSERVER_STORAGE  # nosec
 
-    specs = app[APP_OPENAPI_SPECS_KEY]  # validated openapi specs
-
-    routes = _routes.create(specs)
-    app.router.add_routes(routes)
+    setup_rest(app)
+    app.router.add_routes(_handlers.routes)

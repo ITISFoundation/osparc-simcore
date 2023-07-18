@@ -5,16 +5,15 @@
 # pylint: disable=unused-variable
 
 import random
+from collections.abc import AsyncIterator, Callable
 from contextlib import AsyncExitStack
 from copy import deepcopy
-from typing import Any, AsyncIterator, Callable
+from typing import Any
 
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from aiohttp.web_routedef import AbstractRouteDef
 from faker import Faker
-from openapi_core.schema.specs.models import Spec as OpenApiSpecs
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, NewUser, UserInfoDict
 from pytest_simcore.helpers.utils_webserver_unit_with_db import (
@@ -26,7 +25,6 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db.plugin import setup_db
-from simcore_service_webserver.groups import _handlers
 from simcore_service_webserver.groups._db import (
     _DEFAULT_GROUP_OWNER_ACCESS_RIGHTS,
     _DEFAULT_GROUP_READ_ACCESS_RIGHTS,
@@ -75,47 +73,9 @@ def client(
     setup_users(app)
     setup_groups(app)
 
-    client = event_loop.run_until_complete(
+    return event_loop.run_until_complete(
         aiohttp_client(app, server_kwargs={"port": port, "host": "localhost"})
     )
-    return client
-
-
-# --------------------------------------------------------------------------
-
-
-@pytest.mark.parametrize(
-    "route",
-    _handlers.routes,
-    ids=lambda r: f"{r.method.upper()} {r.path}",
-)
-def test_route_in_openapi_specs(route: AbstractRouteDef, openapi_specs: OpenApiSpecs):
-
-    assert route.path.startswith(f"/{API_VTAG}")
-    path = route.path.replace(f"/{API_VTAG}", "")
-
-    assert path in openapi_specs.paths
-
-    assert (
-        route.method.lower() in openapi_specs.paths[path].operations
-    ), f"operation {route.method=} for {path=} undefined in OAS"
-
-    assert (
-        openapi_specs.paths[path].operations[route.method.lower()].operation_id
-        == route.kwargs["name"]
-    ), "route's name differs from OAS operation_id"
-
-
-def test_openapi_specs_in_routes(openapi_specs: OpenApiSpecs):
-    registered_operation_ids = [r.kwargs["name"] for r in _handlers.routes]
-
-    for url, path in openapi_specs.paths.items():
-        for method, operation in path.operations.items():
-            assert method == operation.http_method
-            if "groups" in operation.tags:
-                assert (
-                    operation.operation_id in registered_operation_ids
-                ), f"{operation.http_method.upper()} {url}: {operation.tags=}, {operation.operation_id=}"
 
 
 def _assert_group(group: dict[str, str]):
@@ -132,7 +92,7 @@ def _assert__group_user(
     actual_user: dict,
 ):
     assert "first_name" in actual_user
-    parts = expected_user["name"].split(".") + [""]
+    parts = [*expected_user["name"].split("."), ""]
     assert actual_user["first_name"] == parts[0]
     assert "last_name" in actual_user
     assert actual_user["last_name"] == parts[1]
@@ -420,7 +380,7 @@ async def test_add_remove_users_from_group(
             list_of_users = data
 
             # now we should have all the users in the group + the owner
-            all_created_users = created_users_list + [logged_user]
+            all_created_users = [*created_users_list, logged_user]
             assert len(list_of_users) == len(all_created_users)
             for actual_user in list_of_users:
 

@@ -26,9 +26,9 @@ from ._abc import get_project_run_policy
 from ._core_computations import ComputationsApi
 from .exceptions import DirectorServiceError
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
-# TODO: make it cheaper by /computations/{project_id}/state. First trial shows
+
 routes = web.RouteTableDef()
 
 
@@ -37,7 +37,7 @@ class RequestContext(BaseModel):
     product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore
 
 
-@routes.post(f"/{VTAG}/computations/{{project_id}}:start")
+@routes.post(f"/{VTAG}/computations/{{project_id}}:start", name="start_computation")
 @login_required
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
@@ -80,7 +80,7 @@ async def start_computation(request: web.Request) -> web.Response:
             running_project_ids,
             project_vc_commits,
         ) = await run_policy.get_or_create_runnable_projects(request, project_id)
-        log.debug(
+        _logger.debug(
             "Project %s will start %d variants: %s",
             f"{project_id=}",
             len(running_project_ids),
@@ -128,7 +128,7 @@ async def start_computation(request: web.Request) -> web.Response:
         )
 
 
-@routes.post(f"/{VTAG}/computations/{{project_id}}:stop")
+@routes.post(f"/{VTAG}/computations/{{project_id}}:stop", name="stop_computation")
 @login_required
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
@@ -144,7 +144,7 @@ async def stop_computation(request: web.Request) -> web.Response:
         project_ids: list[ProjectID] = await run_policy.get_runnable_projects_ids(
             request, project_id
         )
-        log.debug("Project %s will stop %d variants", project_id, len(project_ids))
+        _logger.debug("Project %s will stop %d variants", project_id, len(project_ids))
 
         await asyncio.gather(
             *[computations.stop(pid, req_ctx.user_id) for pid in project_ids]
@@ -169,7 +169,7 @@ class ComputationTaskGet(BaseModel):
     cluster_id: ClusterID | None
 
 
-@routes.get(f"/{VTAG}/computations/{{project_id}}")
+@routes.get(f"/{VTAG}/computations/{{project_id}}", name="get_computation")
 @login_required
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
@@ -185,7 +185,7 @@ async def get_computation(request: web.Request) -> web.Response:
         project_ids: list[ProjectID] = await run_policy.get_runnable_projects_ids(
             request, project_id
         )
-        log.debug("Project %s will get %d variants", project_id, len(project_ids))
+        _logger.debug("Project %s will get %d variants", project_id, len(project_ids))
         list_computation_tasks = parse_obj_as(
             list[ComputationTaskGet],
             await asyncio.gather(

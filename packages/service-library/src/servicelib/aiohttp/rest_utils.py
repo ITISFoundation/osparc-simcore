@@ -1,13 +1,8 @@
 import json
-import warnings
 from dataclasses import asdict
 
 from aiohttp import web
-
-from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
-from .application_keys import APP_OPENAPI_SPECS_KEY
-from .openapi_validation import PATH_KEY, QUERY_KEY, validate_request
-from .rest_models import ErrorItemType, ErrorType
+from aiohttp.web import RouteDef, RouteTableDef
 
 
 class EnvelopeFactory:
@@ -33,30 +28,19 @@ class EnvelopeFactory:
     as_data = as_dict
 
 
-async def extract_and_validate(request: web.Request):
-    """
-        Extracts validated parameters in path, query and body
+def set_default_route_names(routes: RouteTableDef):
+    """Usage:
 
-    Can raise '400 Bad Request': indicates that the server could not understand the request due to invalid syntax
-    See https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
+    set_default_route_names(routes)
+    app.router.add_routes(routes)
     """
-    warnings.warn(
-        "extract_and_validate is deprecated. Use instead servicelib.rest_utils.extract_and_validate",
-        DeprecationWarning,
+    for r in routes:
+        if isinstance(r, RouteDef):
+            r.kwargs.setdefault("name", r.handler.__name__)
+
+
+def get_named_routes_as_message(app: web.Application) -> str:
+    return "\n".join(
+        f"\t{name}:{resource}"
+        for name, resource in app.router.named_resources().items()
     )
-
-    spec = request.app[APP_OPENAPI_SPECS_KEY]
-    params, body, errors = await validate_request(request, spec)
-
-    if errors:
-        error = ErrorType(
-            errors=[ErrorItemType.from_error(err) for err in errors],
-            status=web.HTTPBadRequest.status_code,
-        )
-        raise web.HTTPBadRequest(
-            reason="Failed request validation against API specs",
-            text=EnvelopeFactory(error=error).as_text(),
-            content_type=MIMETYPE_APPLICATION_JSON,
-        )
-
-    return params[PATH_KEY], params[QUERY_KEY], body

@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import logging
-from typing import AsyncIterable, Awaitable, Callable
+from collections.abc import AsyncIterable, Awaitable, Callable
 from uuid import uuid4
 
 import pytest
@@ -16,7 +16,7 @@ from yarl import URL
 logger = logging.getLogger(__name__)
 
 
-@pytest.fixture()
+@pytest.fixture
 def client_session_id_factory() -> Callable[[], str]:
     def _create() -> str:
         return str(uuid4())
@@ -24,7 +24,7 @@ def client_session_id_factory() -> Callable[[], str]:
     return _create
 
 
-@pytest.fixture()
+@pytest.fixture
 def socketio_url_factory(client) -> Callable[[TestClient | None], str]:
     def _create(client_override: TestClient | None = None) -> str:
         SOCKET_IO_PATH = "/socket.io/"
@@ -33,7 +33,7 @@ def socketio_url_factory(client) -> Callable[[TestClient | None], str]:
     return _create
 
 
-@pytest.fixture()
+@pytest.fixture
 async def security_cookie_factory(
     client: TestClient,
 ) -> Callable[[TestClient | None], Awaitable[str]]:
@@ -44,17 +44,16 @@ async def security_cookie_factory(
         assert data
         assert not error
 
-        cookie = (
+        return (
             resp.request_info.headers["Cookie"]
             if "Cookie" in resp.request_info.headers
             else ""
         )
-        return cookie
 
     return _create
 
 
-@pytest.fixture()
+@pytest.fixture
 async def socketio_client_factory(
     socketio_url_factory: Callable,
     security_cookie_factory: Callable,
