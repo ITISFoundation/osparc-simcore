@@ -44,8 +44,6 @@ sqlalchemy<2.0
 # FIXME: minio 7.1.0 does not delete objects. SEE
 minio==7.0.4
 
-# Pyyaml build not working as expected https://github.com/yaml/pyyaml/issues/601
-Cython<3.0
 
 #
 # Compatibility/coordination -----------------------------------------------------------------------------------------
