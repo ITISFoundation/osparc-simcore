@@ -3,7 +3,7 @@ import starlette.routing
 from fastapi.applications import FastAPI
 from fastapi.routing import APIRouter
 from openapi_spec_validator import validate_spec
-from openapi_spec_validator.exceptions import OpenAPIValidationError
+from openapi_spec_validator.exceptions import OpenAPISpecValidatorError
 from servicelib.fastapi.openapi import (
     override_fastapi_openapi_method,
     redefine_operation_id_in_router,
@@ -24,7 +24,7 @@ def test_naming_operation_id(app: FastAPI):
 def test_exclusive_min_openapi_issue(app: FastAPI):
     # Tests patched issues is still unresolved https://github.com/tiangolo/fastapi/issues/240
     # When this test fails, remove patch
-    with pytest.raises(OpenAPIValidationError):
+    with pytest.raises(OpenAPISpecValidatorError):
         validate_spec(app.openapi())
 
 
@@ -39,7 +39,8 @@ def test_overriding_openapi_method(app: FastAPI):
 
     # override patches should now work
     openapi = app.openapi()
-    assert openapi and isinstance(openapi, dict)
+    assert openapi
+    assert isinstance(openapi, dict)
 
     validate_spec(openapi)
 
