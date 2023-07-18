@@ -206,7 +206,9 @@ async def test_valid_upload_download_saved_to(
             r_clone_settings=r_clone_settings,
         )
         # pylint: disable=protected-access
-        assert progress_bar._continuous_progress_value == pytest.approx(1)
+        assert progress_bar._continuous_progress_value == pytest.approx(  # noqa: SLF001
+            1
+        )
 
         uploaded_hashes = _get_file_hashes_in_path(content_path)
 
@@ -224,7 +226,9 @@ async def test_valid_upload_download_saved_to(
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
         )
-        assert progress_bar._continuous_progress_value == pytest.approx(2)
+        assert progress_bar._continuous_progress_value == pytest.approx(  # noqa: SLF001
+            2
+        )
 
     downloaded_hashes = _get_file_hashes_in_path(new_destination)
 
@@ -272,7 +276,9 @@ async def test_delete_archive(
         )
 
         # pylint: disable=protected-access
-        assert progress_bar._continuous_progress_value == pytest.approx(1)
+        assert progress_bar._continuous_progress_value == pytest.approx(  # noqa: SLF001
+            1
+        )
 
         assert (
             await data_manager.state_metadata_entry_exists(
