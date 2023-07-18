@@ -478,16 +478,18 @@ async def test_valid_metadata(
         io_log_redirect_cb=None,
         r_clone_settings=r_clone_settings,
     )
-    assert isinstance(upload_result, UploadedFile)
-    store_id, e_tag = upload_result.store_id, upload_result.etag
-    assert store_id == s3_simcore_location
     if is_directory:
-        assert e_tag is None
+        assert isinstance(upload_result, UploadedFolder)
     else:
-        assert e_tag
+        assert isinstance(upload_result, UploadedFile)
+        assert upload_result.store_id == s3_simcore_location
+        assert upload_result.etag
 
     is_metadata_present = await filemanager.entry_exists(
-        user_id=user_id, store_id=store_id, s3_object=file_id, is_directory=is_directory
+        user_id=user_id,
+        store_id=s3_simcore_location,
+        s3_object=file_id,
+        is_directory=is_directory,
     )
 
     assert is_metadata_present is True
