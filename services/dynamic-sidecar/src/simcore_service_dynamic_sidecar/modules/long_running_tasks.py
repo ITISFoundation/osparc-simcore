@@ -6,6 +6,7 @@ from typing import Final
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import ProgressType
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
+from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from simcore_sdk.node_data import data_manager
@@ -223,14 +224,15 @@ async def task_restore_state(
     mounted_volumes: MountedVolumes,
     app: FastAPI,
 ) -> None:
-    # NOTE: while the zip archive exists, it will always
-    # pull and decompress the zip archive.
-    # This ensures that the migration from the legacy format
-    # to the new format went as expected.
-
-    # TODO: this could be a zip or a directory, which takes precedence?
-    # I Would say the directory takes precedence over the zip
-    # if we don't have the zip check if the folder is present, if this one is present us it!
+    # NOTE: the legacy data format was a zip file
+    # this method will maintain retro compatibility.
+    # The legacy archive is always downloaded and decompressed
+    # if found. If the `task_save_state` is successful the legacy
+    # archive will be removed.
+    # When the legacy archive is detected it will have precedence
+    # over the new format.
+    # NOTE: this implies that the legacy format will always be decompressed
+    # until it is not removed.
 
     project_id_str = f"{settings.DY_SIDECAR_PROJECT_ID}"
     node_uuid_str = f"{settings.DY_SIDECAR_NODE_ID}"
@@ -251,19 +253,17 @@ async def task_restore_state(
             is_archive=False,
         )
         if state_archive_exists:
-            await data_manager.pull_legacy_archive(
-                user_id=settings.DY_SIDECAR_USER_ID,
-                project_id=project_id_str,
-                node_uuid=node_uuid_str,
-                destination_path=state_path,
-                io_log_redirect_cb=functools.partial(
-                    post_sidecar_log_message, app, log_level=logging.INFO
-                ),
-                # NOTE: interface was broken on purpose, next PR wil fix it
-                # and will cleanup how rclone is used
-                r_clone_settings=settings.DY_SIDECAR_R_CLONE_SETTINGS,
-                progress_bar=root_progress,
-            )
+            with log_context(_logger, logging.INFO, "restoring legacy data archive"):
+                await data_manager.pull_legacy_archive(
+                    user_id=settings.DY_SIDECAR_USER_ID,
+                    project_id=project_id_str,
+                    node_uuid=node_uuid_str,
+                    destination_path=state_path,
+                    io_log_redirect_cb=functools.partial(
+                        post_sidecar_log_message, app, log_level=logging.INFO
+                    ),
+                    progress_bar=root_progress,
+                )
         elif state_directory_exists:
             await data_manager.pull_directory_path(
                 user_id=settings.DY_SIDECAR_USER_ID,
@@ -273,8 +273,6 @@ async def task_restore_state(
                 io_log_redirect_cb=functools.partial(
                     post_sidecar_log_message, app, log_level=logging.INFO
                 ),
-                # NOTE: interface was broken on purpose, next PR wil fix it
-                # and will cleanup how rclone is used
                 r_clone_settings=settings.DY_SIDECAR_R_CLONE_SETTINGS,
                 progress_bar=root_progress,
             )
@@ -318,8 +316,9 @@ async def task_save_state(
     app: FastAPI,
 ) -> None:
     """
-    Saves the states of the services. If an old service was opened
-    (the .zip archive is present), this one will be removed afterwards.
+    Saves the states of the service.
+    If a legacy archive is detected, it will be removed after
+    saving the new format.
     """
 
     async def _push_and_remove_legacy_archive(
@@ -352,12 +351,14 @@ async def task_save_state(
 
         if not archive_exists:
             return
-        await data_manager.delete_legacy_archive(
-            user_id=settings.DY_SIDECAR_USER_ID,
-            project_id=project_id_str,
-            node_uuid=node_uuid_str,
-            path=state_path,
-        )
+
+        with log_context(_logger, logging.INFO, "removing legacy data archive"):
+            await data_manager.delete_legacy_archive(
+                user_id=settings.DY_SIDECAR_USER_ID,
+                project_id=project_id_str,
+                node_uuid=node_uuid_str,
+                path=state_path,
+            )
 
     progress.update(message="starting state save", percent=0.0)
     state_paths = [  # pylint: disable=unnecessary-comprehension # noqa: C416
