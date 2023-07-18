@@ -63,6 +63,7 @@ pytest_plugins = [
     "pytest_simcore.cli_runner",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
+    "pytest_simcore.environment_configs",
     "pytest_simcore.file_extra",
     "pytest_simcore.httpbin_service",
     "pytest_simcore.monkeypatch_extra",

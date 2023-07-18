@@ -7,35 +7,34 @@ from datetime import timedelta
 from pprint import pformat
 from typing import Any
 
-import attr
 import pytest
 from aiohttp import web
-from aiohttp.test_utils import TestClient
+from aiohttp.test_utils import TestClient, make_mocked_request
 from pydantic import BaseModel
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_login import UserInfoDict
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
+from simcore_service_webserver._constants import RQT_USERID_KEY
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.login.api_keys_db import prune_expired_api_keys
-from simcore_service_webserver.login.api_keys_handlers import CRUD as ApiKeysCRUD
-from simcore_service_webserver.login.api_keys_handlers import ApiKeyCreate, ApiKeyGet
+from simcore_service_webserver.login.api_keys_handlers import (
+    ApiKeyCreate,
+    ApiKeyGet,
+    ApiKeyRepo,
+)
 
 
 @pytest.fixture()
-async def fake_user_api_keys(client, logged_user):
+async def fake_user_api_keys(client: TestClient, logged_user):
     names = ["foo", "bar", "beta", "alpha"]
 
-    @attr.s(auto_attribs=True)
-    class Adapter:
-        app: web.Application
-        userid: int
+    mock_request = make_mocked_request(method="GET", path="/foo", app=client.app)
+    mock_request[RQT_USERID_KEY] = logged_user["id"]
 
-        def get(self, *_args):
-            return self.userid
-
-    crud = ApiKeysCRUD(Adapter(client.app, logged_user["id"]))
+    repo = ApiKeyRepo(mock_request)
 
     for name in names:
-        await crud.create(
+        await repo.create(
             ApiKeyCreate(display_name=name, expiration=None),
             api_key=f"{name}-key",
             api_secret=f"{name}-secret",
@@ -44,7 +43,7 @@ async def fake_user_api_keys(client, logged_user):
     yield names
 
     for name in names:
-        await crud.delete_api_key(name)
+        await repo.delete(name)
 
 
 USER_ACCESS_PARAMETERS = [
@@ -60,7 +59,11 @@ USER_ACCESS_PARAMETERS = [
     USER_ACCESS_PARAMETERS,
 )
 async def test_list_api_keys(
-    client, logged_user, user_role, expected, disable_gc_manual_guest_users
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_role: UserRole,
+    expected,
+    disable_gc_manual_guest_users: None,
 ):
     resp = await client.get("/v0/auth/api-keys")
     data, errors = await assert_status(resp, expected)
@@ -71,7 +74,11 @@ async def test_list_api_keys(
 
 @pytest.mark.parametrize("user_role,expected", USER_ACCESS_PARAMETERS)
 async def test_create_api_keys(
-    client, logged_user, user_role, expected, disable_gc_manual_guest_users
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_role: UserRole,
+    expected,
+    disable_gc_manual_guest_users: None,
 ):
     resp = await client.post("/v0/auth/api-keys", json={"display_name": "foo"})
 
@@ -99,12 +106,12 @@ async def test_create_api_keys(
     ],
 )
 async def test_delete_api_keys(
-    client,
+    client: TestClient,
     fake_user_api_keys,
-    logged_user,
-    user_role,
+    logged_user: UserInfoDict,
+    user_role: UserRole,
     expected,
-    disable_gc_manual_guest_users,
+    disable_gc_manual_guest_users: None,
 ):
     resp = await client.delete("/v0/auth/api-keys", json={"display_name": "foo"})
     await assert_status(resp, expected)
@@ -116,7 +123,11 @@ async def test_delete_api_keys(
 
 @pytest.mark.parametrize("user_role,expected", USER_ACCESS_PARAMETERS)
 async def test_create_api_key_with_expiration(
-    client: TestClient, logged_user, user_role, expected, disable_gc_manual_guest_users
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_role: UserRole,
+    expected,
+    disable_gc_manual_guest_users: None,
 ):
     assert client.app
 
@@ -150,7 +161,7 @@ async def test_create_api_key_with_expiration(
 
 @pytest.mark.parametrize(
     "model_cls",
-    (ApiKeyCreate, ApiKeyGet),
+    [ApiKeyCreate, ApiKeyGet],
 )
 def test_api_keys_model_examples(
     model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]

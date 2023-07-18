@@ -47,7 +47,7 @@ class _PathParam(BaseModel):
     code: SecretStr
 
 
-@routes.get("/auth/confirmation/{code}", name="auth_confirmation")
+@routes.get("/v0/auth/confirmation/{code}", name="auth_confirmation")
 async def validate_confirmation_and_redirect(request: web.Request):
     """Handles email confirmation by checking a code passed as query parameter
 
@@ -142,12 +142,12 @@ class PhoneConfirmationBody(InputSchema):
     code: SecretStr
 
 
+@routes.post("/v0/auth/validate-code-register", name="auth_phone_confirmation")
 @global_rate_limit_route(number_of_requests=5, interval_seconds=MINUTE)
 @session_access_required(
     name="auth_phone_confirmation",
     unauthorized_reason=MSG_UNAUTHORIZED_PHONE_CONFIRMATION,
 )
-@routes.post("/auth/validate-code-register", name="auth_phone_confirmation")
 async def phone_confirmation(request: web.Request):
     product: Product = get_current_product(request)
     settings: LoginSettingsForProduct = get_plugin_settings(
@@ -181,8 +181,7 @@ async def phone_confirmation(request: web.Request):
                 content_type=MIMETYPE_APPLICATION_JSON,
             ) from err
 
-        response = await login_granted_response(request, user=user)
-        return response
+        return await login_granted_response(request, user=user)
 
     # fails because of invalid or no code
     raise web.HTTPUnauthorized(
@@ -199,7 +198,7 @@ class ResetPasswordConfirmation(InputSchema):
     )
 
 
-@routes.post("/auth/reset-password/{code}", name="auth_reset_password_allowed")
+@routes.post("/v0/auth/reset-password/{code}", name="auth_reset_password_allowed")
 async def reset_password(request: web.Request):
     """Changes password using a token code without being logged in
 
@@ -230,8 +229,7 @@ async def reset_password(request: web.Request):
         )
         await db.delete_confirmation(confirmation)
 
-        response = flash_response(MSG_PASSWORD_CHANGED)
-        return response
+        return flash_response(MSG_PASSWORD_CHANGED)
 
     raise web.HTTPUnauthorized(
         reason=MSG_PASSWORD_CHANGE_NOT_ALLOWED.format(

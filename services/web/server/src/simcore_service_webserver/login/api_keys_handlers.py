@@ -1,7 +1,7 @@
 import logging
 import uuid as uuidlib
-from copy import deepcopy
 from datetime import timedelta
+from typing import Any, ClassVar, TypedDict
 
 import simcore_postgres_database.webserver_models as orm
 import sqlalchemy as sa
@@ -38,7 +38,7 @@ class ApiKeyCreate(BaseModel):
     )
 
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "display_name": "test-api-forever",
@@ -57,7 +57,7 @@ class ApiKeyGet(BaseModel):
     api_secret: str
 
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {"display_name": "myapi", "api_key": "key", "api_secret": "secret"},
             ]
@@ -69,22 +69,29 @@ class ApiKeyGet(BaseModel):
 #
 
 
-def generate_api_credentials() -> dict[str, str]:
-    credentials: dict = dict.fromkeys(("api_key", "api_secret"), "")
-    for name in deepcopy(credentials):
-        value = get_random_string(20)
-        credentials[name] = str(uuidlib.uuid5(uuidlib.NAMESPACE_DNS, value))
-    return credentials
+class ApiCredentials(TypedDict):
+    api_key: str
+    api_secret: str
 
 
-class CRUD:
+def _get_random_uuid_string() -> str:
+    return uuidlib.uuid5(uuidlib.NAMESPACE_DNS, get_random_string(20)).hex
+
+
+def generate_api_credentials() -> ApiCredentials:
+    return ApiCredentials(
+        api_key=_get_random_uuid_string(), api_secret=_get_random_uuid_string()
+    )
+
+
+class ApiKeyRepo:
     # pylint: disable=no-value-for-parameter
 
     def __init__(self, request: web.Request):
         self.engine = request.app[APP_DB_ENGINE_KEY]
         self.user_id: int = request.get(RQT_USERID_KEY, -1)
 
-    async def list_api_key_names(self):
+    async def list_names(self):
         async with self.engine.acquire() as conn:
             stmt = sa.select(
                 [
@@ -93,8 +100,7 @@ class CRUD:
             ).where(orm.api_keys.c.user_id == self.user_id)
 
             result: ResultProxy = await conn.execute(stmt)
-            listed = [r.display_name for r in await result.fetchall()]
-            return listed
+            return [r.display_name for r in await result.fetchall()]
 
     async def create(
         self,
@@ -119,10 +125,9 @@ class CRUD:
             )
 
             result: ResultProxy = await conn.execute(stmt)
-            created = [r.id for r in await result.fetchall()]
-            return created
+            return [r.id for r in await result.fetchall()]
 
-    async def delete_api_key(self, name: str):
+    async def delete(self, name: str):
         async with self.engine.acquire() as conn:
             stmt = orm.api_keys.delete().where(
                 sa.and_(
@@ -141,32 +146,25 @@ class CRUD:
 routes = RouteTableDef()
 
 
-@login_required
 @routes.get("/v0/auth/api-keys", name="list_api_keys")
+@login_required
 async def list_api_keys(request: web.Request):
-    """
-    GET /auth/api-keys
-    """
     await check_permission(request, "user.apikey.*")
 
-    crud = CRUD(request)
-    names = await crud.list_api_key_names()
-    return names
+    crud = ApiKeyRepo(request)
+    return await crud.list_names()
 
 
-@login_required
 @routes.post("/v0/auth/api-keys", name="create_api_key")
+@login_required
 async def create_api_key(request: web.Request):
-    """
-    POST /auth/api-keys
-    """
     await check_permission(request, "user.apikey.*")
 
     api_key = await parse_request_body_as(ApiKeyCreate, request)
     credentials = generate_api_credentials()
     try:
-        crud = CRUD(request)
-        await crud.create(api_key, **credentials)
+        repo = ApiKeyRepo(request)
+        await repo.create(api_key, **credentials)
     except DatabaseError as err:
         raise web.HTTPBadRequest(
             reason="Invalid API key name: already exists",
@@ -180,20 +178,17 @@ async def create_api_key(request: web.Request):
     ).dict(**RESPONSE_MODEL_POLICY)
 
 
-@login_required
 @routes.delete("/v0/auth/api-keys", name="delete_api_key")
+@login_required
 async def delete_api_key(request: web.Request):
-    """
-    DELETE /auth/api-keys
-    """
     await check_permission(request, "user.apikey.*")
 
     body = await request.json()
     display_name = body.get("display_name")
 
     try:
-        crud = CRUD(request)
-        await crud.delete_api_key(display_name)
+        repo = ApiKeyRepo(request)
+        await repo.delete(display_name)
     except DatabaseError as err:
         log.warning(
             "Failed to delete API key %s. Ignoring error", display_name, exc_info=err

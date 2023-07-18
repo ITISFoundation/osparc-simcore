@@ -7,11 +7,12 @@
 
 import asyncio
 import random
+from collections.abc import AsyncIterable, AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from copy import deepcopy
 from datetime import datetime, timezone
 from itertools import repeat
-from typing import Any, AsyncIterable, AsyncIterator, Callable
+from typing import Any
 from unittest.mock import MagicMock, Mock
 
 import aiopg.sa
@@ -91,10 +92,9 @@ def client(
     setup_groups(app)
     setup_redis(app)
 
-    client = event_loop.run_until_complete(
+    return event_loop.run_until_complete(
         aiohttp_client(app, server_kwargs={"port": port, "host": "localhost"})
     )
-    return client
 
 
 @pytest.fixture
@@ -211,9 +211,6 @@ async def test_update_profile(
 
 
 # Test CRUD on tokens --------------------------------------------
-# TODO: template for CRUD testing?
-# TODO: create parametrize fixture with resource_name
-
 RESOURCE_NAME = "tokens"
 PREFIX = f"/{API_VERSION}/me/{RESOURCE_NAME}"
 
@@ -236,8 +233,8 @@ async def test_create_token(
 ):
     assert client.app
 
-    url = client.app.router["create_tokens"].url_for()
-    assert "/v0/me/tokens" == str(url)
+    url = client.app.router["create_token"].url_for()
+    assert str(url) == "/v0/me/tokens"
 
     token = {
         "service": "pennsieve",
@@ -273,7 +270,7 @@ async def test_read_token(
     assert client.app
     # list all
     url = f"{client.app.router['list_tokens'].url_for()}"
-    assert "/v0/me/tokens" == str(url)
+    assert str(url) == "/v0/me/tokens"
 
     resp = await client.get(url)
     data, error = await assert_status(resp, expected)

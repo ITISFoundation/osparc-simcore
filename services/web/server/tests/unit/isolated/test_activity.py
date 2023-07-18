@@ -15,7 +15,7 @@ from aiohttp.test_utils import TestClient
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp.application import create_safe_application
-from simcore_service_webserver.activity import handlers
+from simcore_service_webserver.activity import _handlers
 from simcore_service_webserver.activity.plugin import setup_activity
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.rest.plugin import setup_rest
@@ -28,7 +28,7 @@ def mocked_login_required(mocker: MockerFixture):
     mock = mocker.patch(
         "simcore_service_webserver.login.decorators.login_required", lambda h: h
     )
-    importlib.reload(handlers)
+    importlib.reload(_handlers)
     return mock
 
 
@@ -38,19 +38,19 @@ def mocked_monitoring(mocker: MockerFixture, activity_data: dict[str, Any]) -> N
 
     cpu_ret = prometheus_data.get("cpu_return")
     mocker.patch(
-        "simcore_service_webserver.activity.handlers.get_cpu_usage",
+        "simcore_service_webserver.activity._handlers.get_cpu_usage",
         return_value=cpu_ret,
     )
 
     mem_ret = prometheus_data.get("memory_return")
     mocker.patch(
-        "simcore_service_webserver.activity.handlers.get_memory_usage",
+        "simcore_service_webserver.activity._handlers.get_memory_usage",
         return_value=mem_ret,
     )
 
     labels_ret = prometheus_data.get("labels_return")
     mocker.patch(
-        "simcore_service_webserver.activity.handlers.get_container_metric_for_labels",
+        "simcore_service_webserver.activity._handlers.get_container_metric_for_labels",
         return_value=labels_ret,
     )
 
@@ -58,7 +58,7 @@ def mocked_monitoring(mocker: MockerFixture, activity_data: dict[str, Any]) -> N
 @pytest.fixture
 def mocked_monitoring_down(mocker):
     mocker.patch(
-        "simcore_service_webserver.activity.handlers.query_prometheus",
+        "simcore_service_webserver.activity._handlers.query_prometheus",
         side_effect=ClientConnectionError,
     )
     return mocker
