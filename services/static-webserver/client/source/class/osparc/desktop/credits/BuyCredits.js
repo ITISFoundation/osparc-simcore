@@ -246,12 +246,25 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       const savingLabel = new qx.ui.basic.Label("0 %").set({
         font: "text-14"
       });
-      this.bind("totalPrice", savingLabel, "value", {
-        converter: totalPrice => ((this.getNCredits()*5-totalPrice)/totalPrice).toFixed(2) + " %"
-      });
       layout.add(savingLabel, {
         row,
         column: 1
+      });
+      this.addListener("changeTotalPrice", e => {
+        const totalPrice = e.getData();
+        const oneCreditPrice = 5;
+        const saving = this.getNCredits()*oneCreditPrice - totalPrice;
+        if (saving > 0) {
+          savingLabel.set({
+            value: "-" + saving.toFixed(2) + " $",
+            textColor: "failed-red"
+          });
+        } else {
+          savingLabel.set({
+            value: "0 $",
+            textColor: "text"
+          });
+        }
       });
       row++;
 
