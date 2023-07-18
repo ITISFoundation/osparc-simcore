@@ -16,6 +16,7 @@ from typing import (
 )
 
 import aiodocker
+import arrow
 import pytest
 import respx
 import traitlets.config
@@ -82,8 +83,8 @@ def dynamic_sidecar_port() -> PortInt:
 
 
 @pytest.fixture
-def run_id(faker: Faker) -> RunID:
-    return faker.uuid4(cast_to=None)
+def run_id() -> RunID:
+    return arrow.utcnow().isoformat()
 
 
 @pytest.fixture

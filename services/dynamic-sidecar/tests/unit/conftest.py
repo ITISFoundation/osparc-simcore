@@ -118,7 +118,7 @@ async def ensure_external_volumes(
                     {
                         "Labels": {
                             "source": source,
-                            "run_id": f"{app_state.settings.DY_SIDECAR_RUN_ID}",
+                            "run_id": app_state.settings.DY_SIDECAR_RUN_ID,
                         }
                     }
                 )
@@ -136,7 +136,7 @@ async def ensure_external_volumes(
         #     "CreatedAt": "2022-06-23T03:22:08+02:00",
         #     "Driver": "local",
         #     "Labels": {
-        #         "run_id": "f7c1bd87-4da5-4709-9471-3d60c8a70639",
+        #         "run_id": "2023-07-18T14:17:35.789984+00:00",
         #         "source": "dy-sidecar_e3e70682-c209-4cac-a29f-6fbed82c07cd_data_dir_2"
         #     },
         #     "Mountpoint": "/var/lib/docker/volumes/22bfd79a50eb9097d45cc946736cb66f3670a2fadccb62a77ffbe5e1d88f0034/_data",

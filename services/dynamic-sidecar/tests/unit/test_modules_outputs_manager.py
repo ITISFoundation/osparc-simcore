@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import AsyncIterator, Iterator
 from unittest.mock import AsyncMock
 
+import arrow
 import pytest
 from async_asgi_testclient import TestClient
 from faker import Faker
@@ -367,7 +368,7 @@ async def test_regression_io_log_redirect_cb(
         monkeypatch.setenv(mock_empty_str, "")
 
     mounted_volumes = MountedVolumes(
-        run_id=faker.uuid4(cast_to=None),
+        run_id=arrow.utcnow().isoformat(),
         node_id=faker.uuid4(cast_to=None),
         inputs_path=Path("/"),
         outputs_path=Path("/"),

@@ -17,7 +17,7 @@ class VolumeNotFoundError(BaseDynamicSidecarError):
         self, source_label: str, run_id: RunID, volumes: list[dict[str, Any]]
     ) -> None:
         super().__init__(
-            f"Expected 1 got {len(volumes)} volumes labels with {source_label=}, {run_id=!s}: "
+            f"Expected 1 got {len(volumes)} volumes labels with {source_label=}, {run_id=}: "
             f"Found {' '.join(v.get('Name', 'UNKNOWN') for v in volumes)}",
             status=404,
         )

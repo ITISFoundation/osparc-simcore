@@ -7,8 +7,7 @@ NOTE: to dump json-schema from CLI use
 import re
 from datetime import datetime
 from enum import Enum
-from typing import Any, Final
-from uuid import UUID
+from typing import Any, Final, TypeAlias
 
 from pydantic import (
     BaseModel,
@@ -115,7 +114,7 @@ class ServiceVersion(ConstrainedStr):
         frozen = True
 
 
-RunID = UUID
+RunID: TypeAlias = str
 
 
 class ServiceType(str, Enum):

@@ -7,6 +7,7 @@ from typing import AsyncIterator, Iterable, Iterator
 from uuid import uuid4
 
 import aiodocker
+import arrow
 import pytest
 import simcore_service_agent
 from aiodocker.volumes import DockerVolume
@@ -58,7 +59,7 @@ def node_uuid() -> str:
 
 @pytest.fixture
 def run_id() -> str:
-    return f"{uuid4()}"
+    return arrow.utcnow().isoformat()
 
 
 @pytest.fixture

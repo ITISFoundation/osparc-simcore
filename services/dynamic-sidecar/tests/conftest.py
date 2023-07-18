@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 from typing import Iterable, Iterator
 
+import arrow
 import pytest
 import simcore_service_dynamic_sidecar
 from faker import Faker
@@ -119,8 +120,8 @@ def node_id(faker: Faker) -> NodeID:
 
 
 @pytest.fixture
-def run_id(faker: Faker) -> RunID:
-    return faker.uuid4(cast_to=None)
+def run_id() -> RunID:
+    return arrow.utcnow().isoformat()
 
 
 @pytest.fixture
@@ -174,7 +175,7 @@ def mock_environment(
 
     envs["DY_SIDECAR_USER_ID"] = f"{user_id}"
     envs["DY_SIDECAR_PROJECT_ID"] = f"{project_id}"
-    envs["DY_SIDECAR_RUN_ID"] = f"{run_id}"
+    envs["DY_SIDECAR_RUN_ID"] = run_id
     envs["DY_SIDECAR_NODE_ID"] = f"{node_id}"
     envs["DY_SIDECAR_PATH_INPUTS"] = f"{inputs_dir}"
     envs["DY_SIDECAR_PATH_OUTPUTS"] = f"{outputs_dir}"
