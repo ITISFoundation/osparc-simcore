@@ -89,13 +89,13 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
 
     __applyNCredits: function(nCredits) {
       let creditPrice = 5;
-      if (nCredits > 10) {
+      if (nCredits >= 10) {
         creditPrice = 4;
       }
-      if (nCredits > 100) {
+      if (nCredits >= 100) {
         creditPrice = 3;
       }
-      if (nCredits > 1000) {
+      if (nCredits >= 1000) {
         creditPrice = 2;
       }
       this.setCreditPrice(creditPrice);
@@ -270,14 +270,14 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
 
       const vatTitle = new qx.ui.basic.Label().set({
         value: "VAT 7%",
-        font: "text-14"
+        font: "text-13"
       });
       layout.add(vatTitle, {
         row,
         column: 0
       });
       const vatLabel = new qx.ui.basic.Label().set({
-        font: "text-14"
+        font: "text-13"
       });
       this.bind("totalPrice", vatLabel, "value", {
         converter: totalPrice => (totalPrice*0.07).toFixed(2) + " $"
@@ -298,6 +298,24 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         appearance: "strong-button",
         maxWidth: 150,
         center: true
+      });
+      buyBtn.addListener("execute", () => {
+        const nCredits = this.getNCredits();
+        const totalPrice = this.getTotalPrice();
+        const title = "3rd party payment gateway";
+        const paymentGateway = new osparc.desktop.credits.PaymentGateway().set({
+          nCredits,
+          totalPrice
+        });
+        const win = osparc.ui.window.Window.popUpInWindow(paymentGateway, title, 400, 400);
+        win.center();
+        win.open();
+        paymentGateway.addListener("paymentSuccessful", () => {
+          console.log("paymentSuccessful");
+        });
+        paymentGateway.addListener("paymentFailed", () => {
+          console.log("paymentFailed");
+        });
       });
       return buyBtn;
     }
