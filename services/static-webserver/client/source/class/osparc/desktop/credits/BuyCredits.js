@@ -310,7 +310,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             nCredits,
             totalPrice
           });
-          const win = osparc.ui.window.Window.popUpInWindow(paymentGateway, title, 300, 400);
+          const win = osparc.ui.window.Window.popUpInWindow(paymentGateway, title, 320, 400);
           win.center();
           win.open();
           paymentGateway.addListener("paymentSuccessful", () => {

@@ -71,8 +71,11 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
       const title = this.tr("Buy Credits");
       const iconSrc = "@FontAwesome5Solid/dollar-sign/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
-      const usageOverview = new osparc.desktop.credits.BuyCredits();
-      page.add(usageOverview);
+      const buyCredits = new osparc.desktop.credits.BuyCredits();
+      buyCredits.set({
+        margin: 10
+      });
+      page.add(buyCredits);
       return page;
     },
 
@@ -80,8 +83,11 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
       const title = this.tr("Transactions");
       const iconSrc = "@FontAwesome5Solid/exchange-alt/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
-      const usageOverview = new osparc.desktop.credits.BuyCredits();
-      page.add(usageOverview);
+      const buyCredits = new osparc.desktop.credits.BuyCredits();
+      buyCredits.set({
+        margin: 10
+      });
+      page.add(buyCredits);
       return page;
     },
 
@@ -90,6 +96,9 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
       const iconSrc = "@FontAwesome5Solid/list/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       const usageOverview = new osparc.component.resourceUsage.Overview();
+      usageOverview.set({
+        margin: 10
+      });
       page.add(usageOverview);
       return page;
     },

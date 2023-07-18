@@ -21,9 +21,7 @@ qx.Class.define("osparc.desktop.credits.PaymentGateway", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(10));
-
-    this.sePadding(10);
+    this._setLayout(new qx.ui.layout.VBox(5));
 
     this.getChildControl("url-field");
     this.getChildControl("header-logo");
@@ -82,8 +80,8 @@ qx.Class.define("osparc.desktop.credits.PaymentGateway", {
           break;
         case "header-logo": {
           control = new qx.ui.basic.Image("osparc/s4l_logo.png").set({
-            width: 160,
-            height: 80,
+            width: 120,
+            height: 60,
             alignX: "center",
             scale: true
           });
@@ -94,11 +92,6 @@ qx.Class.define("osparc.desktop.credits.PaymentGateway", {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
             padding: 10
           });
-          const s4lTitle = new qx.ui.basic.Label().set({
-            value: this.tr("Sim4Life credits"),
-            font: "text-16"
-          });
-          control.add(s4lTitle);
 
           const hbox1 = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
           const creditsTitle = new qx.ui.basic.Label().set({
