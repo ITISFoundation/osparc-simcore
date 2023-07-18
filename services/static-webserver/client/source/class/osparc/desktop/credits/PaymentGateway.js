@@ -37,33 +37,32 @@ qx.Class.define("osparc.desktop.credits.PaymentGateway", {
       event: "changeUrl"
     },
 
-    paymentStatus: {
-      check: [null, true, false],
-      init: null,
-      nullable: false,
-      apply: "__applyPaymentStatus"
-    },
-
     nCredits: {
       check: "Number",
       init: 1,
       nullable: false,
-      event: "changeNCredits",
-      apply: "__updateMessage"
+      event: "changeNCredits"
     },
 
     totalPrice: {
       check: "Number",
       init: null,
       nullable: false,
-      event: "changeTotalPrice",
-      apply: "__updateMessage"
+      event: "changeTotalPrice"
+    },
+
+    paymentStatus: {
+      check: [null, true, false],
+      init: null,
+      nullable: false,
+      apply: "__applyPaymentStatus"
     }
   },
 
   events: {
     "paymentSuccessful": "qx.event.type.Data",
-    "paymentFailed": "qx.event.type.Data"
+    "paymentFailed": "qx.event.type.Data",
+    "close": "qx.event.type.Event"
   },
 
   members: {
@@ -90,10 +89,14 @@ qx.Class.define("osparc.desktop.credits.PaymentGateway", {
         }
         case "header-message": {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+            alignX: "center",
             padding: 10
           });
 
-          const hbox1 = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+          const hbox1 = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
+            alignX: "center",
+            maxWidth: 200
+          });
           const creditsTitle = new qx.ui.basic.Label().set({
             value: this.tr("Number of credits:"),
             font: "text-14"
@@ -110,7 +113,10 @@ qx.Class.define("osparc.desktop.credits.PaymentGateway", {
           hbox1.add(creditsLabel);
           control.add(hbox1);
 
-          const hbox2 = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+          const hbox2 = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
+            alignX: "center",
+            maxWidth: 200
+          });
           const totalTitle = new qx.ui.basic.Label().set({
             value: this.tr("Total"),
             font: "text-14"
@@ -149,25 +155,41 @@ qx.Class.define("osparc.desktop.credits.PaymentGateway", {
         }
         case "payment-successful": {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
-            alignX: "center",
-            maxWidth: 400
+            padding: 10
           });
-          const label = new qx.ui.basic.Label().set({
-            value: "Payment Successful"
+
+          const label = new qx.ui.basic.Atom().set({
+            label: "Payment Successful",
+            icon: "@FontAwesome5Solid/check/12",
+            font: "text-18",
+            alignX: "center"
           });
           control.add(label);
+
+          const closeButton = new qx.ui.form.Button("Close");
+          closeButton.addListener("execute", () => this.fireEvent("close"));
+          control.add(closeButton);
+
           this.getChildControl("content-stack").add(control);
           break;
         }
         case "payment-failed": {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
-            alignX: "center",
-            maxWidth: 400
+            padding: 10
           });
-          const label = new qx.ui.basic.Label().set({
-            value: "Payment failed"
+
+          const label = new qx.ui.basic.Atom().set({
+            label: "Payment failed",
+            icon: "@FontAwesome5Solid/times/12",
+            font: "text-18",
+            alignX: "center"
           });
           control.add(label);
+
+          const closeButton = new qx.ui.form.Button("Close");
+          closeButton.addListener("execute", () => this.fireEvent("close"));
+          control.add(closeButton);
+
           this.getChildControl("content-stack").add(control);
           break;
         }
@@ -192,7 +214,7 @@ qx.Class.define("osparc.desktop.credits.PaymentGateway", {
     },
 
     __getCreditCardForm: function() {
-      const groupBox = new qx.ui.groupbox.GroupBox("Complete purchase");
+      const groupBox = new qx.ui.groupbox.GroupBox("Pay by Credit Card");
       groupBox.getChildControl("legend").set({
         font: "text-14"
       });
@@ -205,50 +227,121 @@ qx.Class.define("osparc.desktop.credits.PaymentGateway", {
       grid.setColumnAlign(0, "left", "middle");
       groupBox.setLayout(grid);
 
+      let row = 0;
+
       // name
-      const nameLabel = new qx.ui.basic.Label("Name:");
+      const nameLabel = new qx.ui.basic.Label("Name");
       groupBox.add(nameLabel, {
-        row: 0,
+        row,
         column: 0
       });
+      row++;
 
       const nameTextfield = new qx.ui.form.TextField();
       groupBox.add(nameTextfield, {
-        row: 0,
-        column: 1
+        row,
+        column: 0,
+        colSpan: 4
       });
+      row++;
 
-      // gender
-      const genderLabel = new qx.ui.basic.Label("Gender:");
-      groupBox.add(genderLabel, {
-        row: 1,
+      // number
+      const numberLabel = new qx.ui.basic.Label("Number");
+      groupBox.add(numberLabel, {
+        row,
+        column: 0
+      });
+      row++;
+
+      const numberTextfield = new qx.ui.form.TextField();
+      groupBox.add(numberTextfield, {
+        row,
+        column: 0,
+        colSpan: 4
+      });
+      row++;
+
+      const edLabel = new qx.ui.basic.Label("Expiration date");
+      groupBox.add(edLabel, {
+        row,
+        column: 0
+      });
+      const cvvLabel = new qx.ui.basic.Label("CVV");
+      groupBox.add(cvvLabel, {
+        row,
+        column: 2
+      });
+      row++;
+
+      const edMSelectBox = new qx.ui.form.SelectBox().set({
+        maxWidth: 100
+      });
+      [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "Movember",
+        "December"
+      ].forEach(month => {
+        const dummyItem = new qx.ui.form.ListItem(month, null, month);
+        edMSelectBox.add(dummyItem);
+      });
+      groupBox.add(edMSelectBox, {
+        row,
         column: 0
       });
 
-      const genderSelectBox = new qx.ui.form.SelectBox();
-      const dummyItem = new qx.ui.form.ListItem("-please select-", null, "X");
-      genderSelectBox.add(dummyItem);
-      const maleItem = new qx.ui.form.ListItem("male", null, "M");
-      genderSelectBox.add(maleItem);
-      const femaleItem = new qx.ui.form.ListItem("female", null, "F");
-      genderSelectBox.add(femaleItem);
-      groupBox.add(genderSelectBox, {
-        row: 1,
+      const edDSelectBox = new qx.ui.form.SelectBox().set({
+        maxWidth: 40
+      });
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31].forEach(day => {
+        const dummyItem = new qx.ui.form.ListItem(day.toString(), null, day);
+        edDSelectBox.add(dummyItem);
+      });
+      groupBox.add(edDSelectBox, {
+        row,
         column: 1
       });
+
+      const cvvTextfield = new qx.ui.form.TextField();
+      groupBox.add(cvvTextfield, {
+        row,
+        column: 2
+      });
+      row++;
 
       // serialize button
-      const sendButton = new qx.ui.form.Button("Send");
-      groupBox.add(sendButton, {
-        row: 3,
+      const buyBtn = new osparc.ui.form.FetchButton().set({
+        label: this.tr("Buy"),
+        font: "text-16",
+        appearance: "strong-button",
+        maxWidth: 150,
+        center: true
+      });
+      groupBox.add(buyBtn, {
+        row,
         column: 0
+      });
+      buyBtn.addListener("execute", () => {
+        buyBtn.setFetching(true);
+        setTimeout(() => {
+          buyBtn.setFetching(false);
+          if (this.getNCredits() === 42) {
+            this.setPaymentStatus(false);
+          } else {
+            this.setPaymentStatus(true);
+          }
+        }, 3000);
       });
 
       return groupBox;
-    },
-
-    __updateMessage: function() {
-      console.log("updateMessage");
     }
   }
 });

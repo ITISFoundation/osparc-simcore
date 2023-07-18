@@ -310,15 +310,20 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             nCredits,
             totalPrice
           });
-          const win = osparc.ui.window.Window.popUpInWindow(paymentGateway, title, 320, 400);
+          const win = osparc.ui.window.Window.popUpInWindow(paymentGateway, title, 320, 445);
           win.center();
           win.open();
           paymentGateway.addListener("paymentSuccessful", () => {
-            console.log("paymentSuccessful");
+            let msg = "Payment Successful";
+            msg += "You now have " + nCredits + " more credits";
+            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO");
           });
           paymentGateway.addListener("paymentFailed", () => {
-            console.log("paymentFailed");
+            let msg = "Payment Failed";
+            msg += "Please try again";
+            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
           });
+          paymentGateway.addListener("close", () => win.close());
         }, 1000);
       });
       return buyBtn;
