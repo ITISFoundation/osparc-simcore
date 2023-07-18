@@ -442,7 +442,6 @@ push-version: tag-version
 	## upgrading tools to latest version in $(shell python3 --version)
 	$@/bin/pip3 --quiet install --upgrade \
 		pip~=23.1 \
-		cython<3.0.0 \
 		wheel \
 		setuptools
 	@$@/bin/pip3 list --verbose
