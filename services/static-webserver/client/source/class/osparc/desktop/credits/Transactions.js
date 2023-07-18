@@ -44,14 +44,14 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
       table.setColumnWidth(1, 100);
       this._add(table);
 
+      this.__rawData = [];
       const welcome = [
-        [
-          osparc.utils.Utils.formatDateAndTime(new Date()),
-          10,
-          "Welcome to Sim4Life"
-        ]
+        osparc.utils.Utils.formatDateAndTime(new Date()),
+        10,
+        "Welcome to Sim4Life"
       ];
-      table.setData(welcome);
+      this.__rawData.push(welcome);
+      table.setData(this.__rawData);
     },
 
     addRow: function(nCredits, comment) {
@@ -60,7 +60,8 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
         nCredits ? nCredits : "",
         comment ? comment : ""
       ];
-      this.__table.setData(newData);
+      this.__rawData.push(newData);
+      this.__table.setData(this.__rawData);
     }
   }
 });
