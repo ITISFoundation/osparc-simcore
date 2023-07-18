@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_base.txt --strip-extras requirements/_base.in
 #
-aio-pika==9.1.4
+aio-pika==9.1.2
     # via -r requirements/_base.in
 aiodebug==2.3.0
     # via -r requirements/_base.in

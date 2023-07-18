@@ -2,7 +2,9 @@ import logging
 import os
 import re
 import socket
-from typing import Any, Callable, Final, Pattern
+from collections.abc import Callable
+from re import Pattern
+from typing import Any, Final
 
 import aio_pika
 from pydantic import ConstrainedStr, parse_obj_as
@@ -120,5 +122,4 @@ async def declare_queue(
     if not exclusive_queue:
         # NOTE: setting a name will ensure multiple instance will take their data here
         queue_parameters |= {"name": exchange_name}
-    queue = await channel.declare_queue(**queue_parameters)
-    return queue
+    return await channel.declare_queue(**queue_parameters)
