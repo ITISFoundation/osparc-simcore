@@ -286,7 +286,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     # HELPERS  --------------------------------------------------------
 
     def is_enabled(self, field_name: str) -> bool:
-        return bool(getattr(self, field_name, None))
+        return bool(
+            getattr(self, field_name, None)
+        )  # should we also check `self.field_name.enabled == False`?
 
     def _get_disabled_public_plugins(self) -> list[str]:
         plugins_disabled = []
