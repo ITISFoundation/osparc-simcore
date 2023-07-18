@@ -632,7 +632,7 @@ async def _fetch_data_via_data_manager(
     )
 
     async with ProgressBarData(steps=1) as progress_bar:
-        await data_manager.pull(
+        await data_manager.pull_directory_path(
             user_id=user_id,
             project_id=project_id,
             node_uuid=service_uuid,
@@ -641,7 +641,6 @@ async def _fetch_data_via_data_manager(
             io_log_redirect_cb=None,
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
-            is_archive=True,
         )
 
     return save_to
