@@ -80,6 +80,7 @@ click==8.1.3
     # via
     #   typer
     #   uvicorn
+cython==0.29.36
 cryptography==39.0.1
     # via
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
