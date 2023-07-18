@@ -1,36 +1,40 @@
 
-# https://github.com/yaml/pyyaml/issues/601#issuecomment-1639515060
+# pyyaml is broken with cython 3!
+
+# SEE https://stackoverflow.com/questions/76708329/docker-compose-no-longer-building-image-attributeerror-cython-sources
+# SEE https://github.com/yaml/pyyaml/issues/724
+# SEE: https://github.com/yaml/pyyaml/issues/601#issuecomment-1639515060
 cython<3.0.0
 pyyaml==5.4.1
 
-# NOTE: docker-compose dependencies ofr 1.29.2
-#
+# NOTE:
+# docker-compose==1.29.1
 # ├── distro [required: >=1.5.0,<2, installed: 1.8.0]
 # ├── docker [required: >=5, installed: 6.1.3]
 # │   ├── packaging [required: >=14.0, installed: 23.1]
 # │   ├── requests [required: >=2.26.0, installed: 2.31.0]
 # │   │   ├── certifi [required: >=2017.4.17, installed: 2023.5.7]
-# │   │   ├── charset-normalizer [required: >=2,<4, installed: 3.1.0]
+# │   │   ├── charset-normalizer [required: >=2,<4, installed: 3.2.0]
 # │   │   ├── idna [required: >=2.5,<4, installed: 3.4]
-# │   │   └── urllib3 [required: >=1.21.1,<3, installed: 1.26.16]
-# │   ├── urllib3 [required: >=1.26.0, installed: 1.26.16]
+# │   │   └── urllib3 [required: >=1.21.1,<3, installed: 2.0.3]
+# │   ├── urllib3 [required: >=1.26.0, installed: 2.0.3]
 # │   └── websocket-client [required: >=0.32.0, installed: 0.59.0]
 # │       └── six [required: Any, installed: 1.16.0]
 # ├── dockerpty [required: >=0.4.1,<1, installed: 0.4.1]
 # │   └── six [required: >=1.3.0, installed: 1.16.0]
 # ├── docopt [required: >=0.6.1,<1, installed: 0.6.2]
 # ├── jsonschema [required: >=2.5.1,<4, installed: 3.2.0]
-# │   ├── attrs [required: >=17.4.0, installed: 21.4.0]
+# │   ├── attrs [required: >=17.4.0, installed: 23.1.0]
 # │   ├── pyrsistent [required: >=0.14.0, installed: 0.19.3]
 # │   ├── setuptools [required: Any, installed: 68.0.0]
 # │   └── six [required: >=1.11.0, installed: 1.16.0]
 # ├── python-dotenv [required: >=0.13.0,<1, installed: 0.21.1]
-# ├── PyYAML [required: >=3.10,<6, installed: 5.4.1] <----------------------------------
+# ├── PyYAML [required: >=3.10,<6, installed: 5.4.1] <----
 # ├── requests [required: >=2.20.0,<3, installed: 2.31.0]
 # │   ├── certifi [required: >=2017.4.17, installed: 2023.5.7]
-# │   ├── charset-normalizer [required: >=2,<4, installed: 3.1.0]
+# │   ├── charset-normalizer [required: >=2,<4, installed: 3.2.0]
 # │   ├── idna [required: >=2.5,<4, installed: 3.4]
-# │   └── urllib3 [required: >=1.21.1,<3, installed: 1.26.16]
+# │   └── urllib3 [required: >=1.21.1,<3, installed: 2.0.3]
 # ├── texttable [required: >=0.9.0,<2, installed: 1.6.7]
 # └── websocket-client [required: >=0.32.0,<1, installed: 0.59.0]
 #     └── six [required: Any, installed: 1.16.0]

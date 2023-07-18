@@ -151,7 +151,7 @@ paramiko==2.11.0
     # via
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   docker
-pint==0.19.2
+pint==0.22
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 psutil==5.9.1
     # via -r requirements/_base.in
