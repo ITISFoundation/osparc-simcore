@@ -328,7 +328,7 @@ async def task_save_state(
         project_id_str = f"{settings.DY_SIDECAR_PROJECT_ID}"
         node_uuid_str = f"{settings.DY_SIDECAR_NODE_ID}"
 
-        await data_manager.push(
+        await data_manager.push_directory(
             user_id=settings.DY_SIDECAR_USER_ID,
             project_id=project_id_str,
             node_uuid=node_uuid_str,
@@ -352,7 +352,7 @@ async def task_save_state(
 
         if not archive_exists:
             return
-        await data_manager.delete_archive(
+        await data_manager.delete_legacy_archive(
             user_id=settings.DY_SIDECAR_USER_ID,
             project_id=project_id_str,
             node_uuid=node_uuid_str,

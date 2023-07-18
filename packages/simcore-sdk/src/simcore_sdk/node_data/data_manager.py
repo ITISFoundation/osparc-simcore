@@ -22,7 +22,7 @@ def _create_s3_object(
     return parse_obj_as(StorageFileID, f"{project_id}/{node_uuid}/{file_name}")
 
 
-async def push(
+async def push_directory(
     user_id: int,
     project_id: str,
     node_uuid: str,
@@ -60,17 +60,19 @@ async def pull_directory_path(
     destination_path: Path,
     *,
     io_log_redirect_cb: LogRedirectCB | None,
+    save_to: Path | None = None,
     r_clone_settings: RCloneSettings,
     progress_bar: ProgressBarData,
 ) -> None:
+    save_to_path = destination_path if save_to is None else save_to
     s3_object = _create_s3_object(project_id, node_uuid, destination_path)
-    _logger.info("pulling data from %s to %s...", s3_object, destination_path)
+    _logger.info("pulling data from %s to %s...", s3_object, save_to_path)
     await filemanager.download_path_from_s3(
         user_id=user_id,
         store_id=SIMCORE_LOCATION,
         store_name=None,
         s3_object=s3_object,
-        local_path=destination_path,
+        local_path=save_to_path,
         io_log_redirect_cb=io_log_redirect_cb,
         r_clone_settings=r_clone_settings,
         progress_bar=progress_bar,
@@ -84,7 +86,6 @@ async def pull_legacy_archive(
     destination_path: Path,
     *,
     io_log_redirect_cb: LogRedirectCB | None,
-    r_clone_settings: RCloneSettings,
     progress_bar: ProgressBarData,
 ) -> None:
     # NOTE: the legacy way of storing states was as zip archives
@@ -103,7 +104,7 @@ async def pull_legacy_archive(
                 s3_object=s3_object,
                 local_path=archive_file.parent,
                 io_log_redirect_cb=io_log_redirect_cb,
-                r_clone_settings=r_clone_settings,
+                r_clone_settings=None,
                 progress_bar=sub_prog,
             )
             _logger.info("completed pull of %s.", destination_path)
@@ -142,7 +143,7 @@ async def state_metadata_entry_exists(
     )
 
 
-async def delete_archive(
+async def delete_legacy_archive(
     user_id: int, project_id: str, node_uuid: str, path: Path
 ) -> None:
     """removes the .zip state archive from storage"""

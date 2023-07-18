@@ -6,7 +6,7 @@
 from collections.abc import Callable, Iterator
 from filecmp import cmpfiles
 from pathlib import Path
-from shutil import copy, make_archive, unpack_archive
+from shutil import copy, make_archive
 
 import pytest
 from pytest_mock import MockerFixture
@@ -61,27 +61,16 @@ async def test_push_folder(
     # create some files
     assert tmpdir.exists()
 
-    # create a folder to compress from
+    # create a folder to upload
     test_folder = Path(tmpdir) / "test_folder"
     test_folder.mkdir()
     assert test_folder.exists()
-
-    # create a folder to compress in
-    test_compression_folder = Path(tmpdir) / "test_compression_folder"
-    test_compression_folder.mkdir()
-    assert test_compression_folder.exists()
 
     # mocks
     mock_filemanager = mocker.patch(
         "simcore_sdk.node_data.data_manager.filemanager", spec=True
     )
     mock_filemanager.upload_path.return_value = ""
-    mock_temporary_directory = mocker.patch(
-        "simcore_sdk.node_data.data_manager.TemporaryDirectory"
-    )
-    mock_temporary_directory.return_value.__enter__.return_value = (
-        test_compression_folder
-    )
 
     files_number = 10
     create_files(files_number, test_folder)
@@ -89,7 +78,7 @@ async def test_push_folder(
     for file_path in test_folder.glob("**/*"):
         assert file_path.exists()
     async with ProgressBarData(steps=1) as progress_bar:
-        await data_manager.push(
+        await data_manager.push_directory(
             user_id,
             project_id,
             node_uuid,
@@ -100,32 +89,17 @@ async def test_push_folder(
         )
     assert progress_bar._continuous_progress_value == pytest.approx(1)
 
-    mock_temporary_directory.assert_called_once()
     mock_filemanager.upload_path.assert_called_once_with(
         r_clone_settings=r_clone_settings,
         io_log_redirect_cb=None,
-        path_to_upload=(test_compression_folder / f"{test_folder.stem}.zip"),
-        s3_object=f"{project_id}/{node_uuid}/{test_folder.stem}.zip",
+        path_to_upload=test_folder,
+        s3_object=f"{project_id}/{node_uuid}/{test_folder.stem}",
         store_id=SIMCORE_LOCATION,
         store_name=None,
         user_id=user_id,
-        progress_bar=progress_bar._children[0],
+        progress_bar=progress_bar,
+        exclude_patterns=None,
     )
-
-    archive_file = test_compression_folder / f"{test_folder.stem}.zip"
-    assert archive_file.exists()
-
-    # create control folder
-    control_folder = Path(tmpdir) / "control_folder"
-    control_folder.mkdir()
-    assert control_folder.exists()
-    unpack_archive(f"{archive_file}", extract_dir=control_folder)
-    matchs, mismatchs, errors = cmpfiles(
-        test_folder, control_folder, [x.name for x in test_folder.glob("**/*")]
-    )
-    assert len(matchs) == files_number
-    assert not mismatchs
-    assert not errors
 
 
 async def test_push_file(
@@ -150,7 +124,7 @@ async def test_push_file(
 
     # test push file by file
     async with ProgressBarData(steps=1) as progress_bar:
-        await data_manager.push(
+        await data_manager.push_directory(
             user_id,
             project_id,
             node_uuid,
@@ -162,7 +136,7 @@ async def test_push_file(
     assert progress_bar._continuous_progress_value == pytest.approx(1)
     mock_temporary_directory.assert_not_called()
     mock_filemanager.upload_path.assert_called_once_with(
-        r_clone_settings=None,
+        r_clone_settings=r_clone_settings,
         io_log_redirect_cb=None,
         path_to_upload=file_path,
         s3_object=f"{project_id}/{node_uuid}/{file_path.name}",
@@ -170,11 +144,12 @@ async def test_push_file(
         store_name=None,
         user_id=user_id,
         progress_bar=progress_bar,
+        exclude_patterns=None,
     )
     mock_filemanager.reset_mock()
 
 
-async def test_pull_folder(
+async def test_pull_legacy_archive(
     user_id: int,
     project_id: str,
     node_uuid: str,
@@ -222,24 +197,22 @@ async def test_pull_folder(
     )
 
     async with ProgressBarData(steps=1) as progress_bar:
-        await data_manager.pull(
+        await data_manager.pull_legacy_archive(
             user_id,
             project_id,
             node_uuid,
             test_folder,
             io_log_redirect_cb=None,
-            r_clone_settings=None,
             progress_bar=progress_bar,
-            is_archive=True,
         )
     assert progress_bar._continuous_progress_value == pytest.approx(1)
     mock_temporary_directory.assert_called_once()
     mock_filemanager.download_path_from_s3.assert_called_once_with(
-        local_folder=test_compression_folder,
+        user_id=user_id,
+        local_path=test_compression_folder,
         s3_object=f"{project_id}/{node_uuid}/{test_folder.stem}.zip",
         store_id=SIMCORE_LOCATION,
         store_name=None,
-        user_id=user_id,
         io_log_redirect_cb=None,
         r_clone_settings=None,
         progress_bar=progress_bar._children[0],
@@ -255,13 +228,14 @@ async def test_pull_folder(
     assert not errors
 
 
-async def test_pull_file(
+async def test_pull_directory_path(
     user_id: int,
     project_id: str,
     node_uuid: str,
     mocker,
     tmpdir: Path,
     create_files: Callable[..., list[Path]],
+    r_clone_settings: RCloneSettings,
 ):
     file_path = create_files(1, Path(tmpdir))[0]
     assert file_path.exists()
@@ -269,37 +243,30 @@ async def test_pull_file(
 
     fake_download_folder = Path(tmpdir) / "download_folder"
     fake_download_folder.mkdir()
-    fake_downloaded_file = fake_download_folder / file_path.name
-    copy(file_path, fake_downloaded_file)
 
     mock_filemanager = mocker.patch(
         "simcore_sdk.node_data.data_manager.filemanager", spec=True
     )
-    mock_filemanager.download_path_from_s3.return_value = fake_downloaded_file
-    mock_temporary_directory = mocker.patch(
-        "simcore_sdk.node_data.data_manager.TemporaryDirectory"
-    )
+    mock_filemanager.download_path_from_s3.return_value = fake_download_folder
 
     async with ProgressBarData(steps=1) as progress_bar:
-        await data_manager.pull(
+        await data_manager.pull_directory_path(
             user_id,
             project_id,
             node_uuid,
-            file_path,
+            fake_download_folder,
             io_log_redirect_cb=None,
-            r_clone_settings=None,
+            r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
-            is_archive=True,
         )
     assert progress_bar._continuous_progress_value == pytest.approx(1)
-    mock_temporary_directory.assert_not_called()
     mock_filemanager.download_path_from_s3.assert_called_once_with(
-        local_folder=file_path.parent,
-        s3_object=f"{project_id}/{node_uuid}/{file_path.name}",
+        local_path=fake_download_folder,
+        s3_object=f"{project_id}/{node_uuid}/{fake_download_folder.name}",
         store_id=SIMCORE_LOCATION,
         store_name=None,
         user_id=user_id,
         io_log_redirect_cb=None,
-        r_clone_settings=None,
+        r_clone_settings=r_clone_settings,
         progress_bar=progress_bar,
     )
