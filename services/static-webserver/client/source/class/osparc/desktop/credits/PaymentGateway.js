@@ -60,8 +60,8 @@ qx.Class.define("osparc.desktop.credits.PaymentGateway", {
   },
 
   events: {
-    "paymentSuccessful": "qx.event.type.Data",
-    "paymentFailed": "qx.event.type.Data",
+    "paymentSuccessful": "qx.event.type.Event",
+    "paymentFailed": "qx.event.type.Event",
     "close": "qx.event.type.Event"
   },
 
@@ -334,8 +334,10 @@ qx.Class.define("osparc.desktop.credits.PaymentGateway", {
         setTimeout(() => {
           buyBtn.setFetching(false);
           if (this.getNCredits() === 42) {
+            this.fireEvent("paymentFailed");
             this.setPaymentStatus(false);
           } else {
+            this.fireEvent("paymentSuccessful");
             this.setPaymentStatus(true);
           }
         }, 3000);

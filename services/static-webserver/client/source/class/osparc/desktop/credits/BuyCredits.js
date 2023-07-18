@@ -54,6 +54,11 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     }
   },
 
+  events: {
+    "transactionSuccessful": "qx.event.type.Data",
+    "transactionFailed": "qx.event.type.Event"
+  },
+
   members: {
     __creditPrice: null,
 
@@ -315,13 +320,17 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
           win.open();
           paymentGateway.addListener("paymentSuccessful", () => {
             let msg = "Payment Successful";
+            msg += "<br>";
             msg += "You now have " + nCredits + " more credits";
             osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO");
+            this.fireDataEvent("transactionSuccessful", nCredits);
           });
           paymentGateway.addListener("paymentFailed", () => {
             let msg = "Payment Failed";
+            msg += "<br>";
             msg += "Please try again";
             osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+            this.fireEvent("transactionFailed");
           });
           paymentGateway.addListener("close", () => win.close());
         }, 1000);
