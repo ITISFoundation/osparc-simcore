@@ -215,7 +215,7 @@ def convert_to_environ_vars(cfg: dict[str, Any]) -> dict[str, Any]:
     if section := cfg.get("resource_manager"):
         _set_if_disabled("WEBSERVER_RESOURCE_MANAGER", section)
 
-        envs["WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS"] = section.get(
+        envs["RESOURCE_MANAGER_RESOURCE_TTL_S"] = section.get(
             "resource_deletion_timeout_seconds"
         )
         envs["WEBSERVER_GARBAGE_COLLECTION_INTERVAL_SECONDS"] = section.get(
