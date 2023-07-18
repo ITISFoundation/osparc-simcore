@@ -26,6 +26,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     this.__buildLayout();
 
     this.initNCredits();
+    this.initCreditPrice();
   },
 
   properties: {
@@ -35,6 +36,21 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       nullable: false,
       event: "changeNCredits",
       apply: "__applyNCredits"
+    },
+
+    creditPrice: {
+      check: "Number",
+      init: 5,
+      nullable: false,
+      event: "changeCreditPrice",
+      apply: "__applyCreditPrice"
+    },
+
+    totalPrice: {
+      check: "Number",
+      init: null,
+      nullable: false,
+      event: "changeTotalPrice"
     }
   },
 
@@ -72,10 +88,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     },
 
     __applyNCredits: function(nCredits) {
-      let creditPrice = 0;
-      if (nCredits > 0) {
-        creditPrice = 5;
-      }
+      let creditPrice = 5;
       if (nCredits > 10) {
         creditPrice = 4;
       }
@@ -85,7 +98,12 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       if (nCredits > 1000) {
         creditPrice = 2;
       }
-      this.__creditPrice = creditPrice;
+      this.setCreditPrice(creditPrice);
+      this.setTotalPrice(creditPrice * nCredits);
+    },
+
+    __applyCreditPrice: function(creditPrice) {
+      this.setTotalPrice(creditPrice * this.getNCredits());
     },
 
     __getCreditOffersView: function() {
@@ -176,41 +194,86 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       grid.setColumnAlign(0, "right", "middle");
       const layout = new qx.ui.container.Composite(grid);
 
-      const label1 = new qx.ui.basic.Label().set({
+      let row = 0;
+      const totalPriceTitle = new qx.ui.basic.Label().set({
         value: "Total price",
         font: "text-16"
       });
-      layout.add(label1, {
-        row: 0,
+      layout.add(totalPriceTitle, {
+        row,
         column: 0
       });
+      const totalPriceLabel = new qx.ui.basic.Label().set({
+        font: "text-16"
+      });
+      this.bind("totalPrice", totalPriceLabel, "value", {
+        converter: totalPrice => totalPrice + " $"
+      });
+      layout.add(totalPriceLabel, {
+        row,
+        column: 1
+      });
+      row++;
 
-      const label2 = new qx.ui.basic.Label().set({
+      const creditPriceTitle = new qx.ui.basic.Label().set({
         value: "Credit price",
         font: "text-14"
       });
-      layout.add(label2, {
-        row: 1,
+      layout.add(creditPriceTitle, {
+        row,
         column: 0
       });
+      const creditPriceLabel = new qx.ui.basic.Label().set({
+        font: "text-14"
+      });
+      this.bind("creditPrice", creditPriceLabel, "value", {
+        converter: nCredits => nCredits + " $"
+      });
+      layout.add(creditPriceLabel, {
+        row,
+        column: 1
+      });
+      row++;
 
-      const label3 = new qx.ui.basic.Label().set({
+      const savingTitle = new qx.ui.basic.Label().set({
         value: "Saving",
         font: "text-14"
       });
-      layout.add(label3, {
-        row: 2,
+      layout.add(savingTitle, {
+        row,
         column: 0
       });
+      const savingLabel = new qx.ui.basic.Label("0 %").set({
+        font: "text-14"
+      });
+      this.bind("totalPrice", savingLabel, "value", {
+        converter: totalPrice => ((this.getNCredits()*5-totalPrice)/totalPrice).toFixed(2) + " %"
+      });
+      layout.add(savingLabel, {
+        row,
+        column: 1
+      });
+      row++;
 
-      const label4 = new qx.ui.basic.Label().set({
+      const vatTitle = new qx.ui.basic.Label().set({
         value: "VAT 7%",
         font: "text-14"
       });
-      layout.add(label4, {
-        row: 3,
+      layout.add(vatTitle, {
+        row,
         column: 0
       });
+      const vatLabel = new qx.ui.basic.Label().set({
+        font: "text-14"
+      });
+      this.bind("totalPrice", vatLabel, "value", {
+        converter: totalPrice => (totalPrice*0.07).toFixed(2) + " $"
+      });
+      layout.add(vatLabel, {
+        row,
+        column: 1
+      });
+      row++;
 
       return layout;
     },
