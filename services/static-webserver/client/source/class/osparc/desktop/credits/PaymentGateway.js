@@ -23,12 +23,22 @@ qx.Class.define("osparc.desktop.credits.PaymentGateway", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
+    this.sePadding(10);
+
     this.getChildControl("url-field");
     this.getChildControl("header-logo");
+    this.getChildControl("header-message");
     this.initPaymentStatus();
   },
 
   properties: {
+    url: {
+      check: "Number",
+      init: null,
+      nullable: false,
+      event: "changeUrl"
+    },
+
     paymentStatus: {
       check: [null, true, false],
       init: null,
@@ -48,7 +58,8 @@ qx.Class.define("osparc.desktop.credits.PaymentGateway", {
       check: "Number",
       init: null,
       nullable: false,
-      event: "__updateMessage"
+      event: "changeTotalPrice",
+      apply: "__updateMessage"
     }
   },
 
@@ -70,16 +81,61 @@ qx.Class.define("osparc.desktop.credits.PaymentGateway", {
           this._add(control);
           break;
         case "header-logo": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
-            alignX: "center",
-            maxWidth: 400
-          });
-          const image = new qx.ui.basic.Image("osparc/s4l_logo.png").set({
-            maxWidth: 200,
+          control = new qx.ui.basic.Image("osparc/s4l_logo.png").set({
+            width: 160,
+            height: 80,
             alignX: "center",
             scale: true
           });
-          control.add(image);
+          this._add(control);
+          break;
+        }
+        case "header-message": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+            padding: 10
+          });
+          const s4lTitle = new qx.ui.basic.Label().set({
+            value: this.tr("Sim4Life credits"),
+            font: "text-16"
+          });
+          control.add(s4lTitle);
+
+          const hbox1 = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+          const creditsTitle = new qx.ui.basic.Label().set({
+            value: this.tr("Number of credits:"),
+            font: "text-14"
+          });
+          hbox1.add(creditsTitle);
+          hbox1.add(new qx.ui.core.Spacer(), {
+            flex: 1
+          });
+          const creditsLabel = new qx.ui.basic.Label().set({
+            value: this.tr("Sim4Life credits"),
+            font: "text-16"
+          });
+          this.bind("nCredits", creditsLabel, "value");
+          hbox1.add(creditsLabel);
+          control.add(hbox1);
+
+          const hbox2 = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+          const totalTitle = new qx.ui.basic.Label().set({
+            value: this.tr("Total"),
+            font: "text-14"
+          });
+          hbox2.add(totalTitle);
+          hbox2.add(new qx.ui.core.Spacer(), {
+            flex: 1
+          });
+          const totalLabel = new qx.ui.basic.Label().set({
+            value: this.tr("Sim4Life credits"),
+            font: "text-16"
+          });
+          this.bind("totalPrice", totalLabel, "value", {
+            converter: val => val + " $"
+          });
+          hbox2.add(totalLabel);
+          control.add(hbox2);
+
           this._add(control);
           break;
         }
@@ -94,10 +150,7 @@ qx.Class.define("osparc.desktop.credits.PaymentGateway", {
             alignX: "center",
             maxWidth: 400
           });
-          const label = new qx.ui.basic.Label().set({
-            value: "Pay"
-          });
-          control.add(label);
+          control.add(this.__getCreditCardForm());
           this.getChildControl("content-stack").add(control);
           break;
         }
@@ -143,6 +196,62 @@ qx.Class.define("osparc.desktop.credits.PaymentGateway", {
           break;
       }
       this.getChildControl("content-stack").setSelection([page]);
+    },
+
+    __getCreditCardForm: function() {
+      const groupBox = new qx.ui.groupbox.GroupBox("Complete purchase");
+      groupBox.getChildControl("legend").set({
+        font: "text-14"
+      });
+      groupBox.getChildControl("frame").set({
+        backgroundColor: "transparent"
+      });
+
+      const grid = new qx.ui.layout.Grid();
+      grid.setSpacing(5);
+      grid.setColumnAlign(0, "left", "middle");
+      groupBox.setLayout(grid);
+
+      // name
+      const nameLabel = new qx.ui.basic.Label("Name:");
+      groupBox.add(nameLabel, {
+        row: 0,
+        column: 0
+      });
+
+      const nameTextfield = new qx.ui.form.TextField();
+      groupBox.add(nameTextfield, {
+        row: 0,
+        column: 1
+      });
+
+      // gender
+      const genderLabel = new qx.ui.basic.Label("Gender:");
+      groupBox.add(genderLabel, {
+        row: 1,
+        column: 0
+      });
+
+      const genderSelectBox = new qx.ui.form.SelectBox();
+      const dummyItem = new qx.ui.form.ListItem("-please select-", null, "X");
+      genderSelectBox.add(dummyItem);
+      const maleItem = new qx.ui.form.ListItem("male", null, "M");
+      genderSelectBox.add(maleItem);
+      const femaleItem = new qx.ui.form.ListItem("female", null, "F");
+      genderSelectBox.add(femaleItem);
+      groupBox.add(genderSelectBox, {
+        row: 1,
+        column: 1
+      });
+
+      // serialize button
+      const sendButton = new qx.ui.form.Button("Send");
+      groupBox.add(sendButton, {
+        row: 3,
+        column: 0
+      });
+
+      return groupBox;
     },
 
     __updateMessage: function() {

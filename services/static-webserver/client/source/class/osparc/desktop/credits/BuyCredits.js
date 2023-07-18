@@ -292,7 +292,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     },
 
     __getBuyButton: function() {
-      const buyBtn = new qx.ui.form.Button().set({
+      const buyBtn = new osparc.ui.form.FetchButton().set({
         label: this.tr("Buy credits"),
         font: "text-16",
         appearance: "strong-button",
@@ -300,22 +300,26 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         center: true
       });
       buyBtn.addListener("execute", () => {
-        const nCredits = this.getNCredits();
-        const totalPrice = this.getTotalPrice();
-        const title = "3rd party payment gateway";
-        const paymentGateway = new osparc.desktop.credits.PaymentGateway().set({
-          nCredits,
-          totalPrice
-        });
-        const win = osparc.ui.window.Window.popUpInWindow(paymentGateway, title, 400, 400);
-        win.center();
-        win.open();
-        paymentGateway.addListener("paymentSuccessful", () => {
-          console.log("paymentSuccessful");
-        });
-        paymentGateway.addListener("paymentFailed", () => {
-          console.log("paymentFailed");
-        });
+        buyBtn.setFetching(true);
+        setTimeout(() => {
+          buyBtn.setFetching(false);
+          const nCredits = this.getNCredits();
+          const totalPrice = this.getTotalPrice();
+          const title = "3rd party payment gateway";
+          const paymentGateway = new osparc.desktop.credits.PaymentGateway().set({
+            nCredits,
+            totalPrice
+          });
+          const win = osparc.ui.window.Window.popUpInWindow(paymentGateway, title, 300, 400);
+          win.center();
+          win.open();
+          paymentGateway.addListener("paymentSuccessful", () => {
+            console.log("paymentSuccessful");
+          });
+          paymentGateway.addListener("paymentFailed", () => {
+            console.log("paymentFailed");
+          });
+        }, 1000);
       });
       return buyBtn;
     }
