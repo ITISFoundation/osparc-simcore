@@ -2,4 +2,4 @@
 
 docker
 tenacity
-pyyaml>=5.3,7         # Vulnerable
+pyyaml>=5.3         # Vulnerable
