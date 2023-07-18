@@ -31,7 +31,7 @@ qx.Class.define("osparc.desktop.credits.PaymentGateway", {
 
   properties: {
     url: {
-      check: "Number",
+      check: "String",
       init: null,
       nullable: false,
       event: "changeUrl"
@@ -71,10 +71,10 @@ qx.Class.define("osparc.desktop.credits.PaymentGateway", {
       switch (id) {
         case "url-field":
           control = new qx.ui.form.TextField().set({
-            value: "https://www.3rdparty.service.payment.io",
-            backgroundColor: "white",
-            enabled: false
+            textColor: "black",
+            backgroundColor: "white"
           });
+          this.bind("url", control, "value");
           this._add(control);
           break;
         case "header-logo": {

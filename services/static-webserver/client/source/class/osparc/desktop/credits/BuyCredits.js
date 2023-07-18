@@ -312,6 +312,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
           const totalPrice = this.getTotalPrice();
           const title = "3rd party payment gateway";
           const paymentGateway = new osparc.desktop.credits.PaymentGateway().set({
+            url: "https://www.paymentservice.io?user_id=2&session_id=1234567890&token=5678",
             nCredits,
             totalPrice
           });

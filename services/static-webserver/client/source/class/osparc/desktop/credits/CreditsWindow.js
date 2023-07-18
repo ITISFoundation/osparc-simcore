@@ -66,6 +66,7 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
     __buyCreditsPage: null,
     __transactionsPage: null,
     __usageOverviewPage: null,
+    __transactions: null,
 
     __getBuyCreditsPage: function() {
       const title = this.tr("Buy Credits");
@@ -75,6 +76,13 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
       buyCredits.set({
         margin: 10
       });
+      buyCredits.addListener("transactionSuccessful", e => {
+        const nCredits = e.getData();
+        this.__transactions.addRow(nCredits);
+      });
+      buyCredits.addListener("transactionFailed", () => {
+        this.__transactions.addRow(null, "Transaction failed");
+      });
       page.add(buyCredits);
       return page;
     },
@@ -83,11 +91,11 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
       const title = this.tr("Transactions");
       const iconSrc = "@FontAwesome5Solid/exchange-alt/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
-      const buyCredits = new osparc.desktop.credits.BuyCredits();
-      buyCredits.set({
+      const transactions = this.__transactions = new osparc.desktop.credits.Transactions();
+      transactions.set({
         margin: 10
       });
-      page.add(buyCredits);
+      page.add(transactions);
       return page;
     },
 
