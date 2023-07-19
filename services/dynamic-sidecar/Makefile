@@ -30,3 +30,10 @@ openapi.json: .env ## Creates OAS document openapi.json
 .PHONY: run-github-action-locally
 run-github-action-locally:  ## runs "unit-test-dynamic-sidecar" defined int github workflow locally
 	@make github-workflow-job job=unit-test-dynamic-sidecar
+
+# WARNING: tmp using --no-build-isolation due to: https://github.com/yaml/pyyaml/issues/724#issuecomment-1638636728
+install-dev install-prod install-ci: _check_venv_active ## install app in development/production or CI mode
+	# Installing in $(subst install-,,$@) mode
+	pip-sync \
+		--pip-args --no-build-isolation \
+		requirements/$(subst install-,,$@).txt

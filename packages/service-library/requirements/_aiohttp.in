@@ -10,6 +10,6 @@ aiopg[sa]
 aiozipkin
 attrs
 jsonschema
-openapi-core==0.12.0     # frozen until https://github.com/ITISFoundation/osparc-simcore/pull/1396 is CLOSED
+openapi-core
 prometheus_client
 werkzeug
