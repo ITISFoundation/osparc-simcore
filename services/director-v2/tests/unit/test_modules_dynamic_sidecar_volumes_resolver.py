@@ -35,7 +35,7 @@ def state_paths() -> list[Path]:
 
 @pytest.fixture
 def run_id() -> RunID:
-    return arrow.utcnow().isoformat()
+    return f"{arrow.utcnow().int_timestamp}"
 
 
 @pytest.fixture
@@ -133,7 +133,7 @@ async def test_unique_name_creation_and_removal(faker: Faker):
     unique_volume_name = DynamicSidecarVolumesPathsResolver.source(
         path=Path("/some/random/path/to/a/workspace/folder"),
         node_uuid=faker.uuid4(cast_to=None),
-        run_id=arrow.utcnow().isoformat(),
+        run_id=f"{arrow.utcnow().int_timestamp}",
     )
 
     await assert_creation_and_removal(unique_volume_name)
@@ -141,7 +141,7 @@ async def test_unique_name_creation_and_removal(faker: Faker):
 
 def test_volumes_get_truncated_as_expected(faker: Faker):
     node_uuid = faker.uuid4(cast_to=None)
-    run_id = arrow.utcnow().isoformat()
+    run_id = f"{arrow.utcnow().int_timestamp}"
     assert node_uuid != run_id
     unique_volume_name = DynamicSidecarVolumesPathsResolver.source(
         path=Path(

@@ -121,7 +121,7 @@ def node_id(faker: Faker) -> NodeID:
 
 @pytest.fixture
 def run_id() -> RunID:
-    return arrow.utcnow().isoformat()
+    return f"{arrow.utcnow().int_timestamp}"
 
 
 @pytest.fixture

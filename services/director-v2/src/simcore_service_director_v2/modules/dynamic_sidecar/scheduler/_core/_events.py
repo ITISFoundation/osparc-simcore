@@ -185,7 +185,7 @@ class CreateSidecars(DynamicSchedulerEvent):
 
         # Each time a new dynamic-sidecar service is created
         # generate a new `run_id` to avoid resource collisions
-        scheduler_data.run_id = arrow.utcnow().isoformat()
+        scheduler_data.run_id = f"{arrow.utcnow().int_timestamp}"
 
         # WARNING: do NOT log, this structure has secrets in the open
         # If you want to log, please use an obfuscator

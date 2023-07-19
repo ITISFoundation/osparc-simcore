@@ -59,7 +59,7 @@ def node_uuid() -> str:
 
 @pytest.fixture
 def run_id() -> str:
-    return arrow.utcnow().isoformat()
+    return f"{arrow.utcnow().int_timestamp}"
 
 
 @pytest.fixture

@@ -84,7 +84,7 @@ def dynamic_sidecar_port() -> PortInt:
 
 @pytest.fixture
 def run_id() -> RunID:
-    return arrow.utcnow().isoformat()
+    return f"{arrow.utcnow().int_timestamp}"
 
 
 @pytest.fixture
