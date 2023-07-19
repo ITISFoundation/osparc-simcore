@@ -42,7 +42,7 @@ def skip_if_r_clone_is_missing() -> None:  # noqa: PT004
 
 
 @pytest.fixture
-def mock_async_command(mocker: MockerFixture) -> Mock:
+def mock_async_r_clone_command(mocker: MockerFixture) -> Mock:
     mock = Mock()
 
     original_async_command = r_clone._async_r_clone_command  # noqa: SLF001
@@ -52,7 +52,7 @@ def mock_async_command(mocker: MockerFixture) -> Mock:
         return await original_async_command(*cmd, cwd=cwd)
 
     mocker.patch(
-        "simcore_sdk.node_ports_common.r_clone._async_command",
+        "simcore_sdk.node_ports_common.r_clone._async_r_clone_command",
         side_effect=_mock_async_command,
     )
 
@@ -61,13 +61,13 @@ def mock_async_command(mocker: MockerFixture) -> Mock:
 
 async def test_is_r_clone_available_cached(
     r_clone_settings: RCloneSettings,
-    mock_async_command: Mock,
+    mock_async_r_clone_command: Mock,
     skip_if_r_clone_is_missing: None,
 ) -> None:
     for _ in range(3):
         result = await r_clone.is_r_clone_available(r_clone_settings)
         assert type(result) is bool
-    assert mock_async_command.call_count == 1
+    assert mock_async_r_clone_command.call_count == 1
 
     assert await r_clone.is_r_clone_available(None) is False
 
