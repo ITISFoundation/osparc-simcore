@@ -445,7 +445,7 @@ async def _upload_to_s3(  # noqa: PLR0913
         )
     else:
         # uploading a file
-        uploaded_parts: list[UploadedPart] = await upload_file_to_presigned_links(
+        uploaded_parts = await upload_file_to_presigned_links(
             session,
             upload_links,
             path_to_upload,
