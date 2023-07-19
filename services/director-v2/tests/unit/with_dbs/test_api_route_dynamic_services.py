@@ -305,6 +305,7 @@ def test_create_dynamic_services(
         "/v2/dynamic_services",
         headers=dynamic_sidecar_headers,
         json=json.loads(post_data.json()),
+        follow_redirects=False,
     )
     assert (
         response.status_code == exp_status_code
