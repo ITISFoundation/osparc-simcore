@@ -264,14 +264,6 @@ def disable_rabbitmq(mocker) -> None:
 
 
 @pytest.fixture
-def disable_postgres(mocker) -> None:
-    def mock_setup(app: FastAPI, *args, **kwargs) -> None:
-        app.state.engine = AsyncMock()
-
-    mocker.patch("simcore_service_director_v2.modules.db.setup", side_effect=mock_setup)
-
-
-@pytest.fixture
 def mocked_service_awaits_manual_interventions(mocker: MockerFixture) -> None:
     module_base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler"
     mocker.patch(

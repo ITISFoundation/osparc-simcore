@@ -14,6 +14,7 @@ from typing import (
     Iterator,
     Mapping,
 )
+from unittest import mock
 
 import aiodocker
 import pytest
@@ -25,6 +26,7 @@ from dask_gateway_server.app import DaskGateway
 from dask_gateway_server.backends.local import UnsafeLocalBackend
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
+from fastapi import FastAPI
 from models_library.basic_types import PortInt
 from models_library.clusters import ClusterID
 from models_library.generated_models.docker_rest_api import (
@@ -55,6 +57,14 @@ from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.vo
     DockerVersion,
 )
 from yarl import URL
+
+
+@pytest.fixture(autouse=True)
+def disable_postgres(mocker) -> None:
+    def mock_setup(app: FastAPI, *args, **kwargs) -> None:
+        app.state.engine = mock.AsyncMock()
+
+    mocker.patch("simcore_service_director_v2.modules.db.setup", side_effect=mock_setup)
 
 
 @pytest.fixture
