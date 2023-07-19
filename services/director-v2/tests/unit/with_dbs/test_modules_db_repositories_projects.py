@@ -41,6 +41,10 @@ def mock_env(
             "S3_ENDPOINT": "http://172.17.0.1:9001",
             "S3_SECRET_KEY": "12345678",
             "S3_SECURE": "False",
+            "POSTGRES_HOST": postgres_host_config["host"],
+            "POSTGRES_USER": postgres_host_config["user"],
+            "POSTGRES_PASSWORD": postgres_host_config["password"],
+            "POSTGRES_DB": postgres_host_config["database"],
         }
     )
     setenvs_from_dict(monkeypatch, env_vars)
