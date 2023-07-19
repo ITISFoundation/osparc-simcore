@@ -82,10 +82,12 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
           totalPrice
         } = e.getData();
         this.__transactions.addRow(nCredits, totalPrice);
-      });
+        this.openTransactions();
+      }, this);
       buyCredits.addListener("transactionFailed", () => {
         this.__transactions.addRow(null, null, "Transaction failed");
-      });
+        this.openTransactions();
+      }, this);
       page.add(buyCredits);
       return page;
     },
