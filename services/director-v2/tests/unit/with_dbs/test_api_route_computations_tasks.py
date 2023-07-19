@@ -49,8 +49,6 @@ def mock_env(
     monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
     monkeypatch.setenv("S3_SECURE", "false")
 
-    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "True")
-
 
 @pytest.fixture
 def client(async_client: httpx.AsyncClient, mocker) -> httpx.AsyncClient:

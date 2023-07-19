@@ -64,6 +64,7 @@ def mock_events(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def mock_env(
+    disable_postgres: None,
     docker_swarm: None,
     mock_env: EnvVarsDict,
     monkeypatch: MonkeyPatch,
@@ -79,11 +80,6 @@ def mock_env(
             "S3_SECRET_KEY": "secret_key",
             "S3_BUCKET_NAME": "bucket_name",
             "S3_SECURE": "false",
-            "DIRECTOR_V2_POSTGRES_ENABLED": "false",
-            "POSTGRES_HOST": "test",
-            "POSTGRES_USER": "test",
-            "POSTGRES_PASSWORD": "test",
-            "POSTGRES_DB": "test",
         },
     )
 

@@ -134,6 +134,7 @@ def user_id(faker: Faker) -> UserID:
 
 @pytest.fixture
 def _minimal_dask_config(
+    disable_postgres: None,
     mock_env: EnvVarsDict,
     project_env_devel_environment: dict[str, Any],
     monkeypatch: pytest.MonkeyPatch,
@@ -143,7 +144,6 @@ def _minimal_dask_config(
     monkeypatch.setenv("POSTGRES_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V0_ENABLED", "0")
-    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_CATALOG", "null")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "0")

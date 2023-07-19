@@ -284,7 +284,6 @@ def _app_config_with_db(
     monkeypatch: pytest.MonkeyPatch,
     postgres_host_config: dict[str, str],
 ):
-    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
     monkeypatch.setenv("S3_ENDPOINT", "endpoint")
     monkeypatch.setenv("S3_ACCESS_KEY", "access_key")

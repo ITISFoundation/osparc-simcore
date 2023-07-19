@@ -36,7 +36,6 @@ def mock_env(
     env_vars = mock_env.copy()
     env_vars.update(
         {
-            "DIRECTOR_V2_POSTGRES_ENABLED": "true",
             "S3_ACCESS_KEY": "12345678",
             "S3_BUCKET_NAME": "simcore",
             "S3_ENDPOINT": "http://172.17.0.1:9001",

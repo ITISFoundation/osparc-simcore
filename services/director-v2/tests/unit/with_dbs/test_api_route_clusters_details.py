@@ -40,7 +40,6 @@ def clusters_config(
     monkeypatch: MonkeyPatch,
     dask_spec_local_cluster: SpecCluster,
 ):
-    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
     monkeypatch.setenv("S3_ENDPOINT", "endpoint")

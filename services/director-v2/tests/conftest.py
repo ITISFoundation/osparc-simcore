@@ -162,8 +162,11 @@ def mock_env(
         "REGISTRY_USER": "test",
         "REGISTRY_PW": "test",
         "REGISTRY_SSL": "false",
+        "POSTGRES_HOST": "test",
+        "POSTGRES_USER": "test",
+        "POSTGRES_PASSWORD": "test",
+        "POSTGRES_DB": "test",
         "R_CLONE_PROVIDER": "MINIO",
-        "DIRECTOR_V2_POSTGRES_ENABLED": "false",
         "SC_BOOT_MODE": "production",
     }
     setenvs_from_dict(monkeypatch, env_vars)
@@ -258,6 +261,14 @@ def disable_rabbitmq(mocker) -> None:
     mocker.patch(
         "simcore_service_director_v2.modules.rabbitmq.setup", side_effect=mock_setup
     )
+
+
+@pytest.fixture
+def disable_postgres(mocker) -> None:
+    def mock_setup(app: FastAPI, *args, **kwargs) -> None:
+        app.state.engine = AsyncMock()
+
+    mocker.patch("simcore_service_director_v2.modules.db.setup", side_effect=mock_setup)
 
 
 @pytest.fixture

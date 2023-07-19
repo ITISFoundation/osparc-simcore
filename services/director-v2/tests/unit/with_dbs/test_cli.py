@@ -44,7 +44,6 @@ def minimal_configuration(
     monkeypatch: pytest.MonkeyPatch,
 ):
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
-    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
     monkeypatch.setenv("S3_ENDPOINT", "endpoint")
     monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
