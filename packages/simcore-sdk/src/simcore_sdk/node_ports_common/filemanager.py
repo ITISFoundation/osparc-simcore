@@ -61,7 +61,9 @@ async def _complete_upload(
     session: ClientSession,
     upload_links: FileUploadSchema,
     parts: list[UploadedPart],
-) -> ETag:
+    *,
+    is_directory: bool,
+) -> ETag | None:
     """completes a potentially multipart upload in AWS
     NOTE: it can take several minutes to finish, see [AWS documentation](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html)
     it can take several minutes
@@ -104,6 +106,10 @@ async def _complete_upload(
                 if future_enveloped.data.state == FileUploadCompleteState.NOK:
                     msg = "upload not ready yet"
                     raise ValueError(msg)
+            if is_directory:
+                assert future_enveloped.data.e_tag is None  # nosec
+                return None
+
             assert future_enveloped.data.e_tag  # nosec
             _logger.debug(
                 "multipart upload completed in %s, received %s",
@@ -403,7 +409,7 @@ async def upload_path(
     return UploadedFolder() if e_tag is None else UploadedFile(store_id, e_tag)
 
 
-async def _upload_to_s3(
+async def _upload_to_s3(  # noqa: PLR0913
     *,
     user_id: UserID,
     store_id: LocationID | None,
@@ -417,7 +423,6 @@ async def _upload_to_s3(
     session: ClientSession,
     exclude_patterns: set[str] | None,
 ) -> tuple[LocationID, ETag | None, FileUploadSchema]:
-    e_tag: ETag | None = None
     store_id, upload_links = await get_upload_links_from_s3(
         user_id=user_id,
         store_name=store_name,
@@ -432,6 +437,8 @@ async def _upload_to_s3(
         ),
         is_directory=is_directory,
     )
+
+    uploaded_parts: list[UploadedPart] = []
     if is_directory:
         assert r_clone_settings  # nosec
         assert isinstance(path_to_upload, Path)  # nosec
@@ -453,8 +460,10 @@ async def _upload_to_s3(
             io_log_redirect_cb=io_log_redirect_cb,
             progress_bar=progress_bar,
         )
-        # complete the upload
-        e_tag = await _complete_upload(session, upload_links, uploaded_parts)
+    # complete the upload
+    e_tag = await _complete_upload(
+        session, upload_links, uploaded_parts, is_directory=is_directory
+    )
     return store_id, e_tag, upload_links
 
 
