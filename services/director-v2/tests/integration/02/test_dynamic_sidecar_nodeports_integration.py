@@ -626,7 +626,7 @@ async def _fetch_data_via_data_manager(
             project_id=project_id,
             node_uuid=service_uuid,
             path=DY_SERVICES_STATE_PATH,
-            is_archive=True,
+            is_archive=False,
         )
         is True
     )
