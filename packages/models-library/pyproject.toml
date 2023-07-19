@@ -16,13 +16,21 @@ classifiers = [
     "Natural Language :: English",
     "Programming Language :: Python :: 3.10",
 ]
-dependencies = [
-    "pytest>=3.5.0",
-]
 dynamic = ["version", "dependencies", "optional-dependencies"]
 license = { text = "MIT license" }
 readme = "README.md"
+
 [tool.setuptools.dynamic]
 version = { file = ["VERSION"] }
-dependencies = { file = ["requirements/_base.in"]}
-optional-dependencies.test = { file = ["requirements/_test.txt"] }
+dependencies = { file = ["./requirements/_base.in"]}
+optional-dependencies.test = { file = ["./requirements/_test.txt"] }
+
+[tool.distutils.bdist_wheel]
+universal = true
+
+[tool.pytest.ini_options]
+asyncio-mode = "auto"
+markers = [
+  "diagnostics: can be used to run diagnostics against deployed data (e.g. database, registry etc)"
+  "testit: marks test to run during development"
+]
