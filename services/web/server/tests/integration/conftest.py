@@ -72,10 +72,12 @@ def webserver_environ(
     #   version tha loads only the subsystems under test. For that reason,
     #   the test webserver is built-up in webserver_service fixture that runs
     #   on the host.
+    EXCLUDED_SERVICES = ["dask-scheduler"]
     services_with_published_ports = [
         name
         for name in core_services
         if "ports" in simcore_docker_compose["services"][name]
+        and name not in EXCLUDED_SERVICES
     ]
     for name in services_with_published_ports:
         host_key = f"{name.upper().replace('-', '_')}_HOST"
