@@ -137,6 +137,7 @@ pyyaml==6.0.1
     #   jsonschema-spec
 referencing==0.29.3
     # via
+    #   -c requirements/././constraints.txt
     #   jsonschema
     #   jsonschema-spec
     #   jsonschema-specifications

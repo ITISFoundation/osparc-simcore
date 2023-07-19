@@ -102,8 +102,9 @@ redis==4.6.0
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
-referencing==0.30.0
+referencing==0.29.3
     # via
+    #   -c requirements/./constraints.txt
     #   jsonschema
     #   jsonschema-specifications
 rich==13.4.2
