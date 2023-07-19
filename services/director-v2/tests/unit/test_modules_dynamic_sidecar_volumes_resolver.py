@@ -145,7 +145,7 @@ def test_volumes_get_truncated_as_expected(faker: Faker):
     assert node_uuid != run_id
     unique_volume_name = DynamicSidecarVolumesPathsResolver.source(
         path=Path(
-            f"/home/user/a-{'-'.join(['very' for _ in range(31)])}-long-home-path/workspace"
+            f"/home/user/a-{'-'.join(['very' for _ in range(34)])}-long-home-path/workspace"
         ),
         node_uuid=node_uuid,
         run_id=run_id,
