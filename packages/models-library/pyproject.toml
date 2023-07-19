@@ -31,6 +31,6 @@ universal = true
 [tool.pytest.ini_options]
 asyncio-mode = "auto"
 markers = [
-  "diagnostics: can be used to run diagnostics against deployed data (e.g. database, registry etc)"
-  "testit: marks test to run during development"
+  "diagnostics: can be used to run diagnostics against deployed data (e.g. database, registry etc)",
+  "testit: marks test to run during development",
 ]
