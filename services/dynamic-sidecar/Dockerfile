@@ -94,6 +94,7 @@ RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
   wheel \
   setuptools
 
+
 WORKDIR /build
 
 # install base 3rd party dependencies
@@ -101,7 +102,9 @@ WORKDIR /build
 RUN \
   --mount=type=bind,source=services/dynamic-sidecar/requirements/_base.txt,target=_base.txt \
   --mount=type=cache,mode=0755,target=/root/.cache/pip \
-  pip install -r _base.txt
+  pip install \
+  --no-build-isolation \
+  --requirement _base.txt
 
 # copy utility devops scripts
 COPY --chown=scu:scu services/dynamic-sidecar/scripts/Makefile /home/scu
@@ -124,6 +127,7 @@ RUN \
   --mount=type=bind,source=services/dynamic-sidecar,target=/build/services/dynamic-sidecar,rw \
   --mount=type=cache,mode=0755,target=/root/.cache/pip,sharing=private \
   pip install \
+  --no-build-isolation \
   --requirement requirements/prod.txt \
   && pip list -v
 
