@@ -59,8 +59,9 @@ from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.vo
 from yarl import URL
 
 
+# NOTE: this fixture is in autouse mode since all the tests in this subfolder are without database access
 @pytest.fixture(autouse=True)
-def disable_postgres(mocker) -> None:
+def _disable_postgres(mocker) -> None:
     def mock_setup(app: FastAPI, *args, **kwargs) -> None:
         app.state.engine = mock.AsyncMock()
 

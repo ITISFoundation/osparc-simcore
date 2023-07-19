@@ -134,7 +134,6 @@ def user_id(faker: Faker) -> UserID:
 
 @pytest.fixture
 def _minimal_dask_config(
-    disable_postgres: None,
     mock_env: EnvVarsDict,
     project_env_devel_environment: dict[str, Any],
     monkeypatch: pytest.MonkeyPatch,

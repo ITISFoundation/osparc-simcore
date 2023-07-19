@@ -18,7 +18,6 @@ from simcore_service_director_v2.modules.catalog import CatalogClient
 
 @pytest.fixture
 def minimal_catalog_config(
-    disable_postgres: None,
     project_env_devel_environment: EnvVarsDict,
     monkeypatch: MonkeyPatch,
 ) -> None:
