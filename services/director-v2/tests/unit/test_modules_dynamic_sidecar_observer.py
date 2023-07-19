@@ -64,6 +64,7 @@ def mock_events(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def mock_env(
+    disable_postgres: None,
     docker_swarm: None,
     mock_env: EnvVarsDict,
     monkeypatch: MonkeyPatch,

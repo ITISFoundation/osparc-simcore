@@ -12,7 +12,9 @@ from simcore_service_director_v2.modules.storage import StorageClient
 
 
 @pytest.fixture
-def minimal_storage_config(project_env_devel_environment, monkeypatch):
+def minimal_storage_config(
+    disable_postgres: None, project_env_devel_environment, monkeypatch
+):
     """set a minimal configuration for testing the director connection only"""
     monkeypatch.setenv("DIRECTOR_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "false")

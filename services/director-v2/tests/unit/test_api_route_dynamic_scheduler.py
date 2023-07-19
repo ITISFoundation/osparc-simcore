@@ -31,6 +31,7 @@ from starlette.testclient import TestClient
 @pytest.fixture
 def mock_env(
     disable_rabbitmq: None,
+    disable_postgres: None,
     mock_env: EnvVarsDict,
     monkeypatch: MonkeyPatch,
     docker_swarm: None,

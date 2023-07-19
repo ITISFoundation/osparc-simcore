@@ -38,6 +38,7 @@ from starlette.testclient import TestClient
 
 @pytest.fixture
 def minimal_dask_config(
+    disable_postgres: None,
     mock_env: EnvVarsDict,
     project_env_devel_environment: dict[str, Any],
     monkeypatch: MonkeyPatch,
