@@ -64,10 +64,12 @@ qx.Class.define("osparc.component.resourceUsage.Summary", {
       simLayout.add(remaining);
 
       const progress = new qx.ui.indicator.ProgressBar().set({
-        height: 8,
-        value: simulations.total-simulations.used
+        height: 8
       });
       store.bind("credits", progress, "maximum");
+      store.bind("credits", progress, "value", {
+        converter: val => val-simulations.used
+      });
       progress.getChildControl("progress").set({
         backgroundColor: "strong-main"
       });

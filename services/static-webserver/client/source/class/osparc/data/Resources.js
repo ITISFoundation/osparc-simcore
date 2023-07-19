@@ -1095,7 +1095,7 @@ qx.Class.define("osparc.data.Resources", {
           resolve({
             simulations: {
               total: 10,
-              used:  2
+              used:  4
             },
             computing: {
               total: 3600000000,
