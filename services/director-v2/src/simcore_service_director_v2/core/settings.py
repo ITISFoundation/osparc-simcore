@@ -439,13 +439,6 @@ class DynamicServicesSettings(BaseCustomSettings):
     )
 
 
-class PGSettings(PostgresSettings):
-    DIRECTOR_V2_POSTGRES_ENABLED: bool = Field(
-        True,
-        description="Enables/Disables connection with service",
-    )
-
-
 class ComputationalBackendSettings(BaseCustomSettings):
     COMPUTATIONAL_BACKEND_ENABLED: bool = Field(
         True,
@@ -567,7 +560,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 
     DYNAMIC_SERVICES: DynamicServicesSettings = Field(auto_default_from_env=True)
 
-    POSTGRES: PGSettings = Field(auto_default_from_env=True)
+    POSTGRES: PostgresSettings = Field(auto_default_from_env=True)
 
     REDIS: RedisSettings = Field(auto_default_from_env=True)
 

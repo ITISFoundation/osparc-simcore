@@ -146,8 +146,7 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
     if settings.DIRECTOR_V2_CATALOG:
         catalog.setup(app, settings.DIRECTOR_V2_CATALOG)
 
-    if settings.POSTGRES.DIRECTOR_V2_POSTGRES_ENABLED:
-        db.setup(app, settings.POSTGRES)
+    db.setup(app, settings.POSTGRES)
 
     if settings.DYNAMIC_SERVICES.DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED:
         dynamic_services.setup(app, settings.DYNAMIC_SERVICES)
