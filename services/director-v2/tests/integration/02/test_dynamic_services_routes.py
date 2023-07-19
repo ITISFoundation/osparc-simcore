@@ -61,6 +61,7 @@ pytest_simcore_ops_services_selection = [
 
 @pytest.fixture
 def minimal_configuration(
+    mock_env: EnvVarsDict,
     redis_settings: RedisSettings,
     postgres_db,
     postgres_host_config: dict[str, str],
