@@ -155,8 +155,8 @@ async def running_interactive_services_post(
     service_basepath: str,
 ) -> web.Response:
     # NOTE: servicelib is not present here
-    request_simcore_user_agent=request.headers.get("X-Simcore-User-Agent", "")
-    log.error(
+    request_simcore_user_agent = request.headers.get("X-Simcore-User-Agent", "")
+    log.debug(
         "Client does running_interactive_services_post request %s with user_id %s, project_id %s, service %s:%s, service_uuid %s, service_basepath %s, request_simcore_user_agent %s",
         request,
         user_id,
@@ -165,7 +165,7 @@ async def running_interactive_services_post(
         service_tag,
         service_uuid,
         service_basepath,
-        request_simcore_user_agent
+        request_simcore_user_agent,
     )
     try:
         service = await producer.start_service(

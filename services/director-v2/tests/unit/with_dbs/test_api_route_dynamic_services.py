@@ -86,7 +86,9 @@ def dynamic_sidecar_headers() -> dict[str, str]:
 
 
 @pytest.fixture(scope="function")
-def mock_env(disable_rabbitmq: None, monkeypatch: MonkeyPatch) -> None:
+def mock_env(
+    disable_postgres: None, disable_rabbitmq: None, monkeypatch: MonkeyPatch
+) -> None:
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
 
@@ -118,7 +120,6 @@ def mock_env(disable_rabbitmq: None, monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setenv("POSTGRES_USER", "mocked_user")
     monkeypatch.setenv("POSTGRES_PASSWORD", "mocked_password")
     monkeypatch.setenv("POSTGRES_DB", "mocked_db")
-    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "false")
 
     monkeypatch.setenv("SC_BOOT_MODE", "production")
 
