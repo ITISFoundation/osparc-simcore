@@ -340,7 +340,6 @@ async def upload_path(
     client_session: ClientSession | None = None,
     r_clone_settings: RCloneSettings | None = None,
     progress_bar: ProgressBarData | None = None,
-    # TODO: this needs to be finished, use
     exclude_patterns: set[str] | None = None,
 ) -> UploadedFile | UploadedFolder:
     """Uploads a file (potentially in parallel) or a file object (sequential in any case) to S3
@@ -352,6 +351,7 @@ async def upload_path(
     :raises exceptions.NodeportsException
     :return: stored id, S3 entity_tag
     """
+    _ = exclude_patterns  # TODO: properly use this one
     _logger.debug(
         "Uploading %s to %s:%s@%s",
         f"{path_to_upload=}",
