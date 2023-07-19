@@ -3,7 +3,6 @@
 # pylint: disable=unused-argument
 
 import subprocess
-from collections.abc import Iterable
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -35,18 +34,18 @@ def r_clone_settings(
 
 
 @pytest.fixture
-def skip_if_r_clone_is_missing() -> None:
+def skip_if_r_clone_is_missing() -> None:  # noqa: PT004
     try:
-        subprocess.check_output(["rclone", "--version"])
+        subprocess.check_output(["rclone", "--version"])  # noqa: S603, S607
     except Exception:  # pylint: disable=broad-except
         pytest.skip("rclone is not installed")
 
 
 @pytest.fixture
-def mock_async_command(mocker: MockerFixture) -> Iterable[Mock]:
+def mock_async_command(mocker: MockerFixture) -> Mock:
     mock = Mock()
 
-    original_async_command = r_clone._async_command
+    original_async_command = r_clone._async_command  # noqa: SLF001
 
     async def _mock_async_command(*cmd: str, cwd: str | None = None) -> str:
         mock()
@@ -57,7 +56,7 @@ def mock_async_command(mocker: MockerFixture) -> Iterable[Mock]:
         side_effect=_mock_async_command,
     )
 
-    yield mock
+    return mock
 
 
 async def test_is_r_clone_available_cached(
@@ -75,13 +74,13 @@ async def test_is_r_clone_available_cached(
 
 async def test__config_file(faker: Faker) -> None:
     text_to_write = faker.text()
-    async with r_clone._config_file(text_to_write) as file_name:
+    async with r_clone._config_file(text_to_write) as file_name:  # noqa: SLF001
         assert text_to_write == Path(file_name).read_text()
     assert Path(file_name).exists() is False
 
 
 async def test__async_command_ok() -> None:
-    await r_clone._async_command("ls", "-la")
+    await r_clone._async_command("ls", "-la")  # noqa: SLF001
 
 
 @pytest.mark.parametrize(
@@ -93,7 +92,7 @@ async def test__async_command_ok() -> None:
 )
 async def test__async_command_error(cmd: list[str]) -> None:
     with pytest.raises(r_clone.RCloneFailedError) as exe_info:
-        await r_clone._async_command(*cmd)
+        await r_clone._async_command(*cmd)  # noqa: SLF001
     assert (
         f"{exe_info.value}"
         == f"Command {' '.join(cmd)} finished with exception:\n/bin/sh: 1: {cmd[0]}: not found\n"
@@ -184,17 +183,15 @@ async def test__get_exclude_filter(
         "rclone",
         "--dry-run",
         "--copy-links",
-        *r_clone._get_exclude_filters(exclude_patterns),
+        *r_clone._get_exclude_filters(exclude_patterns),  # noqa: SLF001
         "lsf",
         "--absolute",
         "--files-only",
         "--recursive",
         f"{exclude_patterns_validation_dir}",
     ]
-    ls_result = await r_clone._async_command(*command)
+    ls_result = await r_clone._async_command(*command)  # noqa: SLF001
     relative_files_paths: set[Path] = {
         Path(x.lstrip("/")) for x in ls_result.split("\n") if x
     }
     assert relative_files_paths == expected_result
-
-    # parse and extact file names
