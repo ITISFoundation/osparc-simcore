@@ -496,8 +496,12 @@ async def test_valid_metadata(
 
 
 @pytest.mark.parametrize(
-    "fct",
-    [filemanager.entry_exists, filemanager.delete_file, filemanager.get_file_metadata],
+    "fct, extra_kwargs",
+    [
+        (filemanager.entry_exists, {"is_directory": False}),
+        (filemanager.delete_file, {}),
+        (filemanager.get_file_metadata, {}),
+    ],
 )
 async def test_invalid_call_raises_exception(
     node_ports_config: None,
@@ -506,6 +510,7 @@ async def test_invalid_call_raises_exception(
     create_valid_file_uuid: Callable[[str, Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
     fct: Callable[[int, str, str, Any | None], Awaitable],
+    extra_kwargs: dict[str, Any],
 ):
     file_path = Path(tmpdir) / "test.test"
     file_id = create_valid_file_uuid("", file_path)
@@ -513,13 +518,13 @@ async def test_invalid_call_raises_exception(
 
     with pytest.raises(exceptions.StorageInvalidCall):
         await fct(
-            user_id=None, store_id=s3_simcore_location, s3_object=file_id  # type: ignore
+            user_id=None, store_id=s3_simcore_location, s3_object=file_id, **extra_kwargs  # type: ignore
         )
     with pytest.raises(exceptions.StorageInvalidCall):
-        await fct(user_id=user_id, store_id=None, s3_object=file_id)  # type: ignore
+        await fct(user_id=user_id, store_id=None, s3_object=file_id, **extra_kwargs)  # type: ignore
     with pytest.raises(exceptions.StorageInvalidCall):
         await fct(
-            user_id=user_id, store_id=s3_simcore_location, s3_object="bing"  # type: ignore
+            user_id=user_id, store_id=s3_simcore_location, s3_object="bing", **extra_kwargs  # type: ignore
         )
 
 
@@ -549,7 +554,7 @@ async def test_delete_file(
     assert e_tag
 
     is_metadata_present = await filemanager.entry_exists(
-        user_id=user_id, store_id=store_id, s3_object=file_id
+        user_id=user_id, store_id=store_id, s3_object=file_id, is_directory=False
     )
     assert is_metadata_present is True
 
@@ -560,7 +565,7 @@ async def test_delete_file(
     # check that it disappeared
     assert (
         await filemanager.entry_exists(
-            user_id=user_id, store_id=store_id, s3_object=file_id
+            user_id=user_id, store_id=store_id, s3_object=file_id, is_directory=False
         )
         is False
     )

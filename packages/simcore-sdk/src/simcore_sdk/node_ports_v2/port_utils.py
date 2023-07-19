@@ -158,7 +158,10 @@ async def target_link_exists(
         Path(file_name), project_id, node_id
     )
     return await filemanager.entry_exists(
-        user_id=user_id, store_id=SIMCORE_LOCATION, s3_object=s3_object
+        user_id=user_id,
+        store_id=SIMCORE_LOCATION,
+        s3_object=s3_object,
+        is_directory=False,
     )
 
 
