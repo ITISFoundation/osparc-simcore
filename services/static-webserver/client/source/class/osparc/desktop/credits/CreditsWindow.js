@@ -77,11 +77,14 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
         margin: 10
       });
       buyCredits.addListener("transactionSuccessful", e => {
-        const nCredits = e.getData();
-        this.__transactions.addRow(nCredits);
+        const {
+          nCredits,
+          totalPrice
+        } = e.getData();
+        this.__transactions.addRow(nCredits, totalPrice);
       });
       buyCredits.addListener("transactionFailed", () => {
-        this.__transactions.addRow(null, "Transaction failed");
+        this.__transactions.addRow(null, null, "Transaction failed");
       });
       page.add(buyCredits);
       return page;

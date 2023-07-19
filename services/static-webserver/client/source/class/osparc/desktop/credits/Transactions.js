@@ -34,6 +34,7 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
       tableModel.setColumns([
         this.tr("Date"),
         this.tr("Credits"),
+        this.tr("Price"),
         this.tr("Comment")
       ]);
 
@@ -48,16 +49,18 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
       const welcome = [
         osparc.utils.Utils.formatDateAndTime(new Date()),
         10,
+        0,
         "Welcome to Sim4Life"
       ];
       this.__rawData.push(welcome);
       table.setData(this.__rawData);
     },
 
-    addRow: function(nCredits, comment) {
+    addRow: function(nCredits, price, comment) {
       const newData = [
         osparc.utils.Utils.formatDateAndTime(new Date()),
-        nCredits ? nCredits : "",
+        nCredits ? nCredits : 0,
+        price ? price : 0,
         comment ? comment : ""
       ];
       this.__rawData.push(newData);
