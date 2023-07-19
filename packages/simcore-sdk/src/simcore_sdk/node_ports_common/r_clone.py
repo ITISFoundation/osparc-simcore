@@ -142,6 +142,20 @@ class DebugLogParser(BaseRCloneLogParser):
         _logger.debug("|>>>| %s |", logs)
 
 
+def _get_exclude_filters(exclude_patterns: set[str] | None) -> list[str]:
+    if exclude_patterns is None:
+        return []
+
+    exclude_options: list[str] = []
+    for entry in exclude_patterns:
+        exclude_options.append("--exclude")
+        # NOTE: in rclone ** is the equivalent of * in unix
+        # for details about rclone filters https://rclone.org/filtering/
+        exclude_options.append(entry.replace("*", "**"))
+
+    return exclude_options
+
+
 async def _sync_sources(
     r_clone_settings: RCloneSettings,
     progress_bar: ProgressBarData,
@@ -150,6 +164,7 @@ async def _sync_sources(
     destination: str,
     local_dir: Path,
     s3_config_key: str,
+    exclude_patterns: set[str] | None,
     s3_retries: int = S3_RETRIES,
     s3_parallelism: int = S3_PARALLELISM,
     debug_progress: bool = False,
@@ -180,6 +195,8 @@ async def _sync_sources(
             "sync",
             shlex.quote(source),
             shlex.quote(destination),
+            # filter options
+            *_get_exclude_filters(exclude_patterns),
             "--progress",
             "--copy-links",
             "--verbose",
@@ -209,6 +226,7 @@ async def sync_local_to_s3(
     *,
     local_directory_path: Path,
     upload_s3_link: AnyUrl,
+    exclude_patterns: set[str] | None = None,
 ) -> None:
     """transfer the contents of a local directory to an s3 path
 
@@ -226,6 +244,7 @@ async def sync_local_to_s3(
         destination=f"{_S3_CONFIG_KEY_DESTINATION}:{upload_s3_path}",
         local_dir=local_directory_path,
         s3_config_key=_S3_CONFIG_KEY_DESTINATION,
+        exclude_patterns=exclude_patterns,
     )
 
 
@@ -235,6 +254,7 @@ async def sync_s3_to_local(
     *,
     local_directory_path: Path,
     download_s3_link: AnyUrl,
+    exclude_patterns: set[str] | None = None,
 ) -> None:
     """transfer the contents of a path in s3 to a local directory
 
@@ -252,4 +272,5 @@ async def sync_s3_to_local(
         destination=f"{local_directory_path}",
         local_dir=local_directory_path,
         s3_config_key=_S3_CONFIG_KEY_SOURCE,
+        exclude_patterns=exclude_patterns,
     )

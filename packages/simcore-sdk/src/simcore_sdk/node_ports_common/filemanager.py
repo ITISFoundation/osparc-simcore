@@ -351,7 +351,6 @@ async def upload_path(
     :raises exceptions.NodeportsException
     :return: stored id, S3 entity_tag
     """
-    _ = exclude_patterns  # TODO: properly use this one
     _logger.debug(
         "Uploading %s to %s:%s@%s",
         f"{path_to_upload=}",
@@ -388,6 +387,7 @@ async def upload_path(
                 progress_bar=progress_bar,
                 is_directory=is_directory,
                 session=session,
+                exclude_patterns=exclude_patterns,
             )
         except (r_clone.RCloneFailedError, exceptions.S3TransferError) as exc:
             _logger.exception("The upload failed with an unexpected error:")
@@ -415,6 +415,7 @@ async def _upload_to_s3(
     progress_bar: ProgressBarData,
     is_directory: bool,
     session: ClientSession,
+    exclude_patterns: set[str] | None,
 ) -> tuple[LocationID, ETag | None, FileUploadSchema]:
     e_tag: ETag | None = None
     store_id, upload_links = await get_upload_links_from_s3(
@@ -440,6 +441,7 @@ async def _upload_to_s3(
             progress_bar,
             local_directory_path=path_to_upload,
             upload_s3_link=upload_links.urls[0],
+            exclude_patterns=exclude_patterns,
         )
     else:
         # uploading a file

@@ -3,8 +3,8 @@
 # pylint: disable=unused-argument
 
 import subprocess
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable, Optional
 from unittest.mock import Mock
 
 import pytest
@@ -48,7 +48,7 @@ def mock_async_command(mocker: MockerFixture) -> Iterable[Mock]:
 
     original_async_command = r_clone._async_command
 
-    async def _mock_async_command(*cmd: str, cwd: Optional[str] = None) -> str:
+    async def _mock_async_command(*cmd: str, cwd: str | None = None) -> str:
         mock()
         return await original_async_command(*cmd, cwd=cwd)
 
@@ -98,3 +98,103 @@ async def test__async_command_error(cmd: list[str]) -> None:
         f"{exe_info.value}"
         == f"Command {' '.join(cmd)} finished with exception:\n/bin/sh: 1: {cmd[0]}: not found\n"
     )
+
+
+@pytest.fixture
+def exclude_patterns_validation_dir(tmp_path: Path, faker: Faker) -> Path:
+    """Directory with well known structure"""
+    base_dir = tmp_path / "exclude_patterns_validation_dir"
+    base_dir.mkdir()
+    (base_dir / "empty").mkdir()
+    (base_dir / "d1").mkdir()
+    (base_dir / "d1" / "f1").write_text(faker.text())
+    (base_dir / "d1" / "f2.txt").write_text(faker.text())
+    (base_dir / "d1" / "sd1").mkdir()
+    (base_dir / "d1" / "sd1" / "f1").write_text(faker.text())
+    (base_dir / "d1" / "sd1" / "f2.txt").write_text(faker.text())
+
+    return base_dir
+
+
+EMPTY_SET: set[Path] = set()
+ALL_ITEMS_SET: set[Path] = {
+    Path("d1/f2.txt"),
+    Path("d1/f1"),
+    Path("d1/sd1/f1"),
+    Path("d1/sd1/f2.txt"),
+}
+
+
+# + /exclude_patterns_validation_dir
+#  + empty
+#  + d1
+#   - f2.txt
+#   + sd1
+#    - f2.txt
+#    - f1
+#   - f1
+@pytest.mark.parametrize(
+    "exclude_patterns, expected_result",
+    [
+        pytest.param({"/d1*"}, EMPTY_SET),
+        pytest.param(
+            {"/d1/sd1*"},
+            {
+                Path("d1/f2.txt"),
+                Path("d1/f1"),
+            },
+        ),
+        pytest.param(
+            {"d1*"},
+            EMPTY_SET,
+        ),
+        pytest.param(
+            {"*d1*"},
+            EMPTY_SET,
+        ),
+        pytest.param(
+            {"*.txt"},
+            {Path("d1/f1"), Path("d1/sd1/f1")},
+        ),
+        pytest.param(
+            {"/absolute/path/does/not/exist*"},
+            ALL_ITEMS_SET,
+        ),
+        pytest.param(
+            {"/../../this/is/ignored*"},
+            ALL_ITEMS_SET,
+        ),
+        pytest.param(
+            {"*relative/path/does/not/exist"},
+            ALL_ITEMS_SET,
+        ),
+        pytest.param(
+            None,
+            ALL_ITEMS_SET,
+        ),
+    ],
+)
+async def test__get_exclude_filter(
+    skip_if_r_clone_is_missing: None,
+    exclude_patterns_validation_dir: Path,
+    exclude_patterns: set[str] | None,
+    expected_result: set[Path],
+):
+    command: list[str] = [
+        "rclone",
+        "--dry-run",
+        "--copy-links",
+        *r_clone._get_exclude_filters(exclude_patterns),
+        "lsf",
+        "--absolute",
+        "--files-only",
+        "--recursive",
+        f"{exclude_patterns_validation_dir}",
+    ]
+    ls_result = await r_clone._async_command(*command)
+    relative_files_paths: set[Path] = {
+        Path(x.lstrip("/")) for x in ls_result.split("\n") if x
+    }
+    assert relative_files_paths == expected_result
+
+    # parse and extact file names
