@@ -53,17 +53,21 @@ qx.Class.define("osparc.component.resourceUsage.Summary", {
       });
       simLayout.add(title);
 
+      const store = osparc.store.Store.getInstance();
+      store.setCredits(simulations.total);
       const remaining = new qx.ui.basic.Label().set({
-        value: `${simulations.total-simulations.used} of ${simulations.total} credits`,
         font: "text-13"
+      });
+      store.bind("credits", remaining, "value", {
+        converter: val => `${val-simulations.used} of ${val} credits`
       });
       simLayout.add(remaining);
 
       const progress = new qx.ui.indicator.ProgressBar().set({
         height: 8,
-        maximum: simulations.total,
         value: simulations.total-simulations.used
       });
+      store.bind("credits", progress, "maximum");
       progress.getChildControl("progress").set({
         backgroundColor: "strong-main"
       });

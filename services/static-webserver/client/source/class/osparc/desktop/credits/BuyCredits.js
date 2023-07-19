@@ -324,6 +324,8 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             msg += "<br>";
             msg += "You now have " + nCredits + " more credits";
             osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO");
+            const store = osparc.store.Store.getInstance();
+            store.setCredits(store.getCredits() + nCredits);
             this.fireDataEvent("transactionSuccessful", {
               nCredits,
               totalPrice
