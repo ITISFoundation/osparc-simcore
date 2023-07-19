@@ -504,6 +504,3 @@ async def test_state_open_and_close(
     # check files are the same as the ones previously generated
     for state_dir_path, expected_content_dir_path in expected_contents_paths.items():
         _assert_same_directory_content(state_dir_path, expected_content_dir_path)
-
-
-# TODO: attach to CI since it's missing
