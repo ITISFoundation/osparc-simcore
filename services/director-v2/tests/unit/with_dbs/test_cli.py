@@ -44,6 +44,7 @@ def minimal_configuration(
     monkeypatch: pytest.MonkeyPatch,
 ):
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
+    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
     monkeypatch.setenv("S3_ENDPOINT", "endpoint")
     monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
@@ -173,15 +174,24 @@ def test_project_save_state_ok(
     mock_save_service_state: None,
     cli_runner: CliRunner,
     project_at_db: ProjectAtDB,
+    capsys: pytest.CaptureFixture,
 ):
-    result = cli_runner.invoke(main, ["project-save-state", f"{project_at_db.uuid}"])
+    with capsys.disabled() as _disabled:
+        # NOTE: without this, the test does not pass see https://github.com/pallets/click/issues/824
+        # also see this https://github.com/Stranger6667/pytest-click/issues/27 when using log-cli-level=DEBUG
+        result = cli_runner.invoke(
+            main, ["project-save-state", f"{project_at_db.uuid}"]
+        )
     print(result.stdout)
     assert result.exit_code == os.EX_OK, _format_cli_error(result)
     assert result.stdout.endswith(f"Save complete for project {project_at_db.uuid}\n")
     for node_uuid, node_content in project_at_db.workbench.items():
         assert f"Saving state for {node_uuid} {node_content.label}" in result.stdout
 
-    assert f"Saving project '{project_at_db.uuid}' - '{project_at_db.name}'"
+    assert (
+        f"Saving project '{project_at_db.uuid}' - '{project_at_db.name}'"
+        in result.stdout
+    )
 
 
 def test_project_save_state_retry_3_times_and_fails(
@@ -189,12 +199,18 @@ def test_project_save_state_retry_3_times_and_fails(
     mock_save_service_state_as_failing: None,
     cli_runner: CliRunner,
     project_at_db: ProjectAtDB,
+    capsys: pytest.CaptureFixture,
 ):
-    result = cli_runner.invoke(main, ["project-save-state", f"{project_at_db.uuid}"])
+    with capsys.disabled() as _disabled:
+        # NOTE: without this, the test does not pass see https://github.com/pallets/click/issues/824
+        # also see this https://github.com/Stranger6667/pytest-click/issues/27 when using log-cli-level=DEBUG
+        result = cli_runner.invoke(
+            main, ["project-save-state", f"{project_at_db.uuid}"]
+        )
     print(result.stdout)
     assert result.exit_code == 1, _format_cli_error(result)
     assert "The following nodes failed to save:" in result.stdout
-    for node_uuid in project_at_db.workbench.keys():
+    for node_uuid in project_at_db.workbench:
         assert (
             result.stdout.count(f"Attempting to save {node_uuid}")
             == DEFAULT_NODE_SAVE_ATTEMPTS
