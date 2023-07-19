@@ -31,7 +31,7 @@ pytest_simcore_ops_services_selection = ["minio", "adminer"]
 # UTILS
 
 
-def _remove_path(path: Path) -> None:
+def _empty_path(path: Path) -> None:
     if path.is_file():
         path.unlink()
         assert path.exists() is False
@@ -160,7 +160,7 @@ async def test_valid_upload_download(
 
         uploaded_hashes = _get_file_hashes_in_path(content_path)
 
-        _remove_path(content_path)
+        _empty_path(content_path)
 
         await data_manager.pull_directory_path(
             user_id=user_id,
@@ -212,7 +212,7 @@ async def test_valid_upload_download_saved_to(
 
         uploaded_hashes = _get_file_hashes_in_path(content_path)
 
-        _remove_path(content_path)
+        _empty_path(content_path)
 
         new_destination = random_tmp_dir_generator(is_file=content_path.is_file())
 

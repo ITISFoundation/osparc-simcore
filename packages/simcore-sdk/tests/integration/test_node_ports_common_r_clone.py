@@ -362,14 +362,14 @@ async def test_raises_error_if_local_directory_path_is_a_file(
     file_path = await _create_file_of_size(
         tmp_path, name=f"test{faker.uuid4()}.bin", file_size=ByteSize(1)
     )
-    with pytest.raises(r_clone.RCloneFileFoundError):
+    with pytest.raises(r_clone.RCloneDirectoryNotFoundError):
         await r_clone.sync_local_to_s3(
             r_clone_settings=AsyncMock(),
             progress_bar=AsyncMock(),
             local_directory_path=file_path,
             upload_s3_link=AsyncMock(),
         )
-    with pytest.raises(r_clone.RCloneFileFoundError):
+    with pytest.raises(r_clone.RCloneDirectoryNotFoundError):
         await r_clone.sync_s3_to_local(
             r_clone_settings=AsyncMock(),
             progress_bar=AsyncMock(),

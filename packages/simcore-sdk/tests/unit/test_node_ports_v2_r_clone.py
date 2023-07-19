@@ -45,7 +45,7 @@ def skip_if_r_clone_is_missing() -> None:  # noqa: PT004
 def mock_async_command(mocker: MockerFixture) -> Mock:
     mock = Mock()
 
-    original_async_command = r_clone._async_command  # noqa: SLF001
+    original_async_command = r_clone._async_r_clone_command  # noqa: SLF001
 
     async def _mock_async_command(*cmd: str, cwd: str | None = None) -> str:
         mock()
@@ -80,7 +80,7 @@ async def test__config_file(faker: Faker) -> None:
 
 
 async def test__async_command_ok() -> None:
-    await r_clone._async_command("ls", "-la")  # noqa: SLF001
+    await r_clone._async_r_clone_command("ls", "-la")  # noqa: SLF001
 
 
 @pytest.mark.parametrize(
@@ -92,7 +92,7 @@ async def test__async_command_ok() -> None:
 )
 async def test__async_command_error(cmd: list[str]) -> None:
     with pytest.raises(r_clone.RCloneFailedError) as exe_info:
-        await r_clone._async_command(*cmd)  # noqa: SLF001
+        await r_clone._async_r_clone_command(*cmd)  # noqa: SLF001
     assert (
         f"{exe_info.value}"
         == f"Command {' '.join(cmd)} finished with exception:\n/bin/sh: 1: {cmd[0]}: not found\n"
@@ -190,7 +190,7 @@ async def test__get_exclude_filter(
         "--recursive",
         f"{exclude_patterns_validation_dir}",
     ]
-    ls_result = await r_clone._async_command(*command)  # noqa: SLF001
+    ls_result = await r_clone._async_r_clone_command(*command)  # noqa: SLF001
     relative_files_paths: set[Path] = {
         Path(x.lstrip("/")) for x in ls_result.split("\n") if x
     }

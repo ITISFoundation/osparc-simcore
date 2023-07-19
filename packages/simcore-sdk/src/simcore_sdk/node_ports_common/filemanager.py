@@ -122,7 +122,7 @@ async def _complete_upload(
 
 
 async def _resolve_location_id(
-    client_session: ClientSession | None,
+    client_session: ClientSession,
     user_id: UserID,
     store_name: LocationName | None,
     store_id: LocationID | None,
@@ -132,10 +132,9 @@ async def _resolve_location_id(
         raise exceptions.NodeportsException(msg)
 
     if store_name is not None:
-        async with ClientSessionContextManager(client_session) as session:
-            store_id = await _get_location_id_from_location_name(
-                user_id, store_name, session
-            )
+        store_id = await _get_location_id_from_location_name(
+            user_id, store_name, client_session
+        )
     assert store_id is not None  # nosec
     return store_id
 
@@ -156,9 +155,7 @@ async def get_download_link_from_s3(
     :raises exceptions.StorageServerIssue
     """
     async with ClientSessionContextManager(client_session) as session:
-        store_id = await _resolve_location_id(
-            client_session, user_id, store_name, store_id
-        )
+        store_id = await _resolve_location_id(session, user_id, store_name, store_id)
         file_link = await storage_client.get_download_file_link(
             session=session,
             file_id=s3_object,
@@ -181,9 +178,7 @@ async def get_upload_links_from_s3(
     is_directory: bool,
 ) -> tuple[LocationID, FileUploadSchema]:
     async with ClientSessionContextManager(client_session) as session:
-        store_id = await _resolve_location_id(
-            client_session, user_id, store_name, store_id
-        )
+        store_id = await _resolve_location_id(session, user_id, store_name, store_id)
         file_links = await storage_client.get_upload_file_links(
             session=session,
             file_id=s3_object,
@@ -226,9 +221,7 @@ async def download_path_from_s3(
     )
 
     async with ClientSessionContextManager(client_session) as session:
-        store_id = await _resolve_location_id(
-            client_session, user_id, store_name, store_id
-        )
+        store_id = await _resolve_location_id(session, user_id, store_name, store_id)
         file_meta_data: FileMetaDataGet = await _get_file_meta_data(
             user_id=user_id,
             s3_object=s3_object,
@@ -527,14 +520,11 @@ async def get_file_metadata(
     """
     :raises S3InvalidPathError
     """
-    async with ClientSessionContextManager(client_session) as session:
-        _logger.debug("Will request metadata for s3_object=%s", s3_object)
-        file_metadata = await storage_client.get_file_metadata(
-            session=session, file_id=s3_object, location_id=store_id, user_id=user_id
-        )
-
-    _logger.debug(
-        "Result for metadata s3_object=%s, result=%s", s3_object, f"{file_metadata=}"
+    file_metadata: FileMetaDataGet = await _get_file_meta_data(
+        user_id=user_id,
+        store_id=store_id,
+        s3_object=s3_object,
+        client_session=client_session,
     )
     assert file_metadata.location_id is not None  # nosec
     assert file_metadata.entity_tag is not None  # nosec
