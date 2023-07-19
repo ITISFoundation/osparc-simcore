@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "simcore-models-library"
+authors = [
+  {name = "Pedro Crespo-Valero (pcrespov)"},
+  {name = "Sylvain Anderegg (sanderegg)"},
+]
+description="Core service library for simcore pydantic models"
+requires-python = "~=3.10"
+classifiers = [
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3.10",
+]
+dependencies = [
+    "pytest>=3.5.0",
+]
+dynamic = ["version", "dependencies", "optional-dependencies"]
+license = { text = "MIT license" }
+readme = "README.md"
+[tool.setuptools.dynamic]
+version = { file = ["VERSION"] }
+dependencies = { file = ["requirements/_base.in"]}
+optional-dependencies.test = { file = ["requirements/_test.txt"] }
