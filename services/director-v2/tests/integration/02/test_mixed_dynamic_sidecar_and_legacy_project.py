@@ -4,8 +4,9 @@
 
 import asyncio
 import logging
+from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterable, AsyncIterator, Awaitable, Callable
+from typing import Any
 from unittest import mock
 
 import aiodocker
@@ -16,7 +17,6 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.projects import ProjectAtDB
 from models_library.services_resources import ServiceResourcesDict
-from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
@@ -55,7 +55,7 @@ pytest_simcore_ops_services_selection = [
 @pytest.fixture()
 def mock_env(
     mock_env: EnvVarsDict,
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     redis_service: RedisSettings,
     rabbit_service: RabbitSettings,
     postgres_db: sa.engine.Engine,
@@ -232,12 +232,6 @@ async def test_legacy_and_dynamic_sidecar_run(
     - dy-static-file-server-dynamic-sidecar  (sidecared w/ std config)
     - dy-static-file-server-dynamic-sidecar-compose (sidecared w/ docker-compose)
     """
-    # FIXME: ANE can you instead parametrize this test?
-    # why do we need to run all these services at the same time? it would be simpler one by one
-
-    # TODO: SAN: for fixing the last problem here:
-    # it looks like the client does not follow the redirect to the director-v0
-
     await asyncio.gather(
         *(
             assert_start_service(
@@ -262,9 +256,11 @@ async def test_legacy_and_dynamic_sidecar_run(
         if is_legacy(node):
             continue
 
+        # NOTE: it seems the minimal_app fixture does not contain the actual data
+        # so we use the one in the async_client??? very strange
         await patch_dynamic_service_url(
             # pylint: disable=protected-access
-            app=minimal_app,
+            app=async_client._transport.app,  # noqa: SLF001 # type: ignore
             node_uuid=node_id,
         )
 

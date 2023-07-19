@@ -158,7 +158,6 @@ async def director_v2_client(
 
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "false")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "false")
-    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "true")
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
     monkeypatch.setenv("S3_ENDPOINT", "endpoint")
     monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
