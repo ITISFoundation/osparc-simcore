@@ -159,7 +159,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         [1000, 2]
       ].forEach(pair => {
         const creditsLabel = new qx.ui.basic.Label().set({
-          value: pair[0].toString(),
+          value: "> " + pair[0],
           font: "text-14"
         });
         layout.add(creditsLabel, {

@@ -209,8 +209,8 @@ qx.Class.define("osparc.desktop.MainPage", {
       if (osparc.utils.Utils.isDevelEnv()) {
         const usageOverview = new osparc.component.resourceUsage.Summary();
         usageOverview.set({
-          maxWidth: 210,
-          minWidth: 210,
+          maxWidth: 280,
+          minWidth: 280,
           marginTop: 5,
           padding: 10
         });
