@@ -387,11 +387,8 @@ services:
       GUNICORN_CMD_ARGS: ${WEBSERVER_GUNICORN_CMD_ARGS}
 
       WEBSERVER_DB_LISTENER: ${WEBSERVER_DB_LISTENER}
-
       WEBSERVER_ANNOUNCEMENTS: ${WEBSERVER_ANNOUNCEMENTS}
-
       WEBSERVER_NOTIFICATIONS: ${WEBSERVER_NOTIFICATIONS}
-
       WEBSERVER_CLUSTERS: ${WEBSERVER_CLUSTERS}
       WEBSERVER_GROUPS: ${WEBSERVER_GROUPS}
       WEBSERVER_META_MODELING: ${WEBSERVER_META_MODELING}
@@ -512,9 +509,7 @@ services:
           cpus: "0.10"
           memory: "100M"
     volumes:
-      - type: bind  # verbose volume to avoid problem with env variable resolution https://github.com/docker/compose/issues/3998
-        source: computational_shared_data
-        target: ${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
+      - computational_shared_data:${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       &sidecar-environment
