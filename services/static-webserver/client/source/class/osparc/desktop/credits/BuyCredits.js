@@ -129,11 +129,13 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     __getCreditOffersView: function() {
       const grid = new qx.ui.layout.Grid(15, 10);
       grid.setColumnAlign(0, "right", "middle");
-      const layout = new qx.ui.container.Composite(grid);
+      const layout = new qx.ui.container.Composite(grid).set({
+        padding: 5,
+        backgroundColor: "background-main-3"
+      });
 
       let row = 0;
       const creditsTitle = new qx.ui.basic.Label(this.tr("Credits")).set({
-        backgroundColor: "blue",
         font: "text-16"
       });
       layout.add(creditsTitle, {
@@ -142,7 +144,6 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       });
 
       const pricePerCreditTitle = new qx.ui.basic.Label(this.tr("Price/Credit")).set({
-        backgroundColor: "blue",
         font: "text-16"
       });
       layout.add(pricePerCreditTitle, {
@@ -158,7 +159,6 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         [1000, 2]
       ].forEach(pair => {
         const creditsLabel = new qx.ui.basic.Label().set({
-          backgroundColor: "red",
           value: pair[0].toString(),
           font: "text-14"
         });
@@ -168,7 +168,6 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         });
 
         const pricePerCreditLabel = new qx.ui.basic.Label().set({
-          backgroundColor: "red",
           value: pair[1] + " $",
           alignX: "center",
           font: "text-14"
@@ -343,7 +342,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             let msg = "Payment Successful";
             msg += "<br>";
             msg += "You now have " + nCredits + " more credits";
-            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO", null, 60000);
+            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO", null, 10000);
             const store = osparc.store.Store.getInstance();
             store.setCredits(store.getCredits() + nCredits);
             this.fireDataEvent("transactionSuccessful", {
@@ -355,7 +354,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             let msg = "Payment Failed";
             msg += "<br>";
             msg += "Please try again";
-            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR", null, 60000);
+            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR", null, 10000);
           });
           paymentGateway.addListener("close", () => win.close());
         }, 1000);
@@ -375,7 +374,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       layout.add(label1);
 
       const label2 = new qx.ui.basic.Label().set({
-        value: "They can be used for:<br>- using the GUI<br>- modeling<br>- running solvers<br>- transfer data<br>- import VIP models?<br>-collaboration?",
+        value: "They can be used for:<br>- using the GUI<br>- modeling<br>- running solvers<br>- transfer data<br>- import VIP models?<br>- collaboration?",
         font: "text-16",
         rich: true,
         wrap: true
