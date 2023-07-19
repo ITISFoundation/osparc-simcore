@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import logging
 import uuid
 from collections.abc import Awaitable, Coroutine
@@ -67,7 +68,8 @@ def num_available_gpus() -> int:
             finally:
                 if container is not None:
                     # ensure container is removed
-                    await container.delete()
+                    with contextlib.suppress(aiodocker.exceptions.DockerError):
+                        await container.delete()
 
             return num_gpus
 
@@ -118,7 +120,8 @@ def video_memory() -> int:
             finally:
                 if container is not None:
                     # ensure container is removed
-                    await container.delete()
+                    with contextlib.suppress(aiodocker.exceptions.DockerError):
+                        await container.delete()
 
             return video_ram
 
