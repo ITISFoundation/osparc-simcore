@@ -21,7 +21,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(20));
+    this._setLayout(new qx.ui.layout.HBox(80));
 
     this.__buildLayout();
 
@@ -55,8 +55,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
   },
 
   events: {
-    "transactionSuccessful": "qx.event.type.Data",
-    "transactionFailed": "qx.event.type.Event"
+    "transactionSuccessful": "qx.event.type.Data"
   },
 
   members: {
@@ -65,21 +64,35 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "left-side":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(20));
+          this._add(control);
+          break;
+        case "right-side":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(20));
+          this._add(control, {
+            flex: 1
+          });
+          break;
         case "credit-offers-view":
           control = this.__getCreditOffersView();
-          this._add(control);
+          this.getChildControl("left-side").add(control);
           break;
         case "credit-selector":
           control = this.__getCreditSelector();
-          this._add(control);
+          this.getChildControl("left-side").add(control);
           break;
         case "summary-view":
           control = this.__getSummaryView();
-          this._add(control);
+          this.getChildControl("left-side").add(control);
           break;
         case "buy-button":
           control = this.__getBuyButton();
-          this._add(control);
+          this.getChildControl("left-side").add(control);
+          break;
+        case "credits-explanation":
+          control = this.__getCreditsExplanation();
+          this.getChildControl("right-side").add(control);
           break;
       }
       return control || this.base(arguments, id);
@@ -90,6 +103,8 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       this.getChildControl("credit-selector");
       this.getChildControl("summary-view");
       this.getChildControl("buy-button");
+
+      this.getChildControl("credits-explanation");
     },
 
     __applyNCredits: function(nCredits) {
@@ -118,6 +133,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
 
       let row = 0;
       const creditsTitle = new qx.ui.basic.Label(this.tr("Credits")).set({
+        backgroundColor: "blue",
         font: "text-16"
       });
       layout.add(creditsTitle, {
@@ -125,7 +141,8 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         column: 0
       });
 
-      const pricePerCreditTitle = new qx.ui.basic.Label(this.tr("Credit price")).set({
+      const pricePerCreditTitle = new qx.ui.basic.Label(this.tr("Price/Credit")).set({
+        backgroundColor: "blue",
         font: "text-16"
       });
       layout.add(pricePerCreditTitle, {
@@ -141,6 +158,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         [1000, 2]
       ].forEach(pair => {
         const creditsLabel = new qx.ui.basic.Label().set({
+          backgroundColor: "red",
           value: pair[0].toString(),
           font: "text-14"
         });
@@ -150,7 +168,9 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         });
 
         const pricePerCreditLabel = new qx.ui.basic.Label().set({
+          backgroundColor: "red",
           value: pair[1] + " $",
+          alignX: "center",
           font: "text-14"
         });
         layout.add(pricePerCreditLabel, {
@@ -323,7 +343,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             let msg = "Payment Successful";
             msg += "<br>";
             msg += "You now have " + nCredits + " more credits";
-            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO");
+            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO", null, 60000);
             const store = osparc.store.Store.getInstance();
             store.setCredits(store.getCredits() + nCredits);
             this.fireDataEvent("transactionSuccessful", {
@@ -335,13 +355,42 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             let msg = "Payment Failed";
             msg += "<br>";
             msg += "Please try again";
-            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-            this.fireEvent("transactionFailed");
+            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR", null, 60000);
           });
           paymentGateway.addListener("close", () => win.close());
         }, 1000);
       });
       return buyBtn;
+    },
+
+    __getCreditsExplanation: function() {
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20));
+
+      const label1 = new qx.ui.basic.Label().set({
+        value: "Here we explain what you can run/do with credits.",
+        font: "text-16",
+        rich: true,
+        wrap: true
+      });
+      layout.add(label1);
+
+      const label2 = new qx.ui.basic.Label().set({
+        value: "They can be used for:<br>- using the GUI<br>- modeling<br>- running solvers<br>- transfer data<br>- import VIP models?<br>-collaboration?",
+        font: "text-16",
+        rich: true,
+        wrap: true
+      });
+      layout.add(label2);
+
+      const label3 = new qx.ui.basic.Label().set({
+        value: "<i>If something goes wrong you won't be charged</i>",
+        font: "text-16",
+        rich: true,
+        wrap: true
+      });
+      layout.add(label3);
+
+      return layout;
     }
   }
 });
