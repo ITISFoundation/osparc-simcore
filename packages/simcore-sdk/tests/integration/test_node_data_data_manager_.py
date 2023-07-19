@@ -243,7 +243,7 @@ async def test_valid_upload_download_saved_to(
         pytest.lazy_fixture("dir_content_multiple_files_path"),
     ],
 )
-async def test_delete_archive(
+async def test_delete_legacy_archive(
     node_ports_config,
     content_path: Path,
     user_id: int,
@@ -253,11 +253,9 @@ async def test_delete_archive(
     temp_dir: Path,
 ):
     async with ProgressBarData(steps=2) as progress_bar:
-        # NOTE: it is no longer push a legacy archive
-        # generating a fake entry for it
-
+        # NOTE: legacy archives can no longer be crated
         # generating a "legacy style archive"
-        archive_into_dir = temp_dir / f"archive-dir-{uuid4()}"
+        archive_into_dir = temp_dir / f"legacy-archive-dir-{uuid4()}"
         archive_into_dir.mkdir(parents=True, exist_ok=True)
         legacy_archive_name = archive_into_dir / f"{content_path.stem}.zip"
         _zip_directory(dir_to_compress=content_path, destination=legacy_archive_name)
