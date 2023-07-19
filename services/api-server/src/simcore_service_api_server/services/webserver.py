@@ -60,7 +60,6 @@ def _handle_webserver_api_errors():
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from exc
 
     except httpx.HTTPStatusError as exc:
-
         resp = exc.response
         if resp.is_server_error:
             _logger.exception(
@@ -217,28 +216,50 @@ class AuthSession:
         data: JSON | None = self._get_data_or_raise_http_exception(resp)
         return ProjectGet.parse_obj(data)
 
-    async def list_projects(
-        self, solver_name: str, limit: int, offset: int
-    ) -> Page[ProjectGet]:
+    async def _page_projects(
+        self, *, limit: int, offset: int, show_hidden: bool, search: str | None = None
+    ):
         assert 1 <= limit <= MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE  # nosec
         assert offset >= 0  # nosec
+
+        optional: dict[str, Any] = {}
+        if search is not None:
+            optional["search"] = search
+
         with _handle_webserver_api_errors():
             resp = await self.client.get(
                 "/projects",
                 params={
                     "type": "user",
-                    "show_hidden": True,
+                    "show_hidden": show_hidden,
                     "limit": limit,
                     "offset": offset,
-                    # WARNING: better way to match jobs with projects (Next PR if this works fine!)
-                    "search": urllib.parse.quote(solver_name, safe=""),
-                    # WARNING: search text has a limit that I needed to increas for the example!
+                    **optional,
                 },
                 cookies=self.session_cookies,
             )
             resp.raise_for_status()
 
             return Page[ProjectGet].parse_raw(resp.text)
+
+    async def list_projects(
+        self, solver_name: str, limit: int, offset: int
+    ) -> Page[ProjectGet]:
+        return await self._page_projects(
+            limit=limit,
+            offset=offset,
+            show_hidden=True,
+            # WARNING: better way to match jobs with projects (Next PR if this works fine!)
+            # WARNING: search text has a limit that I needed to increase for the example!
+            search=urllib.parse.quote(solver_name, safe=""),
+        )
+
+    async def list_user_projects(self, limit: int, offset: int):
+        return await self._page_projects(
+            limit=limit,
+            offset=offset,
+            show_hidden=False,  # TODO: needs BETTER concept to discriminate which of the studies are actually jobs
+        )
 
     async def delete_project(self, project_id: ProjectID) -> None:
         resp = await self.client.delete(

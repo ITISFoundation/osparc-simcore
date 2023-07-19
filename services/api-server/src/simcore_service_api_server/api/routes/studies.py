@@ -2,6 +2,7 @@ import logging
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
+from fastapi_pagination.api import create_page
 
 from ...models.pagination import LimitOffsetPage, LimitOffsetParams, OnePage
 from ...models.schemas.studies import Study, StudyID, StudyPort
@@ -20,9 +21,27 @@ router = APIRouter()
 )
 async def list_studies(
     page_params: Annotated[LimitOffsetParams, Depends()],
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
-    msg = f"list user's studies with pagination={page_params!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
-    raise NotImplementedError(msg)
+    projects_page = await webserver_api.list_user_projects(
+        limit=page_params.limit, offset=page_params.offset
+    )
+
+    studies: list[Study] = [
+        Study.construct(
+            uid=prj.uuid,
+            title=prj.name,
+            description=prj.description,
+            _fields_set={"uid", "title", "description"},
+        )
+        for prj in projects_page.data
+    ]
+
+    return create_page(
+        studies,
+        total=projects_page.meta.total,
+        params=page_params,
+    )
 
 
 @router.get(

@@ -26,7 +26,7 @@ async def test_list_study_ports(
     assert resp.json() == {"items": fake_study_ports, "total": len(fake_study_ports)}
 
 
-@pytest.mark.xfail(reason="Still not implemented")
+# @pytest.mark.xfail(reason="Still not implemented")
 @pytest.mark.acceptance_test(
     "Implements https://github.com/ITISFoundation/osparc-simcore/issues/4177"
 )
@@ -40,7 +40,7 @@ async def test_studies_workflow(
     resp = await client.get("/v0/studies", auth=auth)
     assert resp.status_code == status.HTTP_200_OK
 
-    studies = parse_obj_as(list[Study], resp.json())
+    studies = parse_obj_as(list[Study], resp.json()["items"])
     assert len(studies) == 1
     assert studies[0].uid == study_id
 
