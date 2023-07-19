@@ -345,11 +345,18 @@ async def assert_start_service(
     }
 
     response = await director_v2_client.post(
-        "/v2/dynamic_services", json=data, headers=headers, follow_redirects=False
+        "/v2/dynamic_services",
+        json=data,
+        headers=headers,
+        follow_redirects=False,
+        timeout=30,
     )
-    response.raise_for_status()
+
     if response.status_code == httpx.codes.TEMPORARY_REDIRECT:
-        await _handle_redirection(response, method="POST", json=data, headers=headers)
+        response = await _handle_redirection(
+            response, method="POST", json=data, headers=headers, timeout=30
+        )
+    response.raise_for_status()
 
     assert response.status_code == httpx.codes.CREATED, response.text
 
@@ -363,9 +370,10 @@ async def get_service_data(
     response = await director_v2_client.get(
         f"/v2/dynamic_services/{service_uuid}", follow_redirects=False
     )
-    response.raise_for_status()
+
     if response.status_code == httpx.codes.TEMPORARY_REDIRECT:
         response = await _handle_redirection(response, method="GET")
+    response.raise_for_status()
     assert response.status_code == httpx.codes.OK, response.text
     payload = response.json()
     return payload["data"] if is_legacy(node_data) else payload
@@ -416,14 +424,22 @@ async def assert_retrieve_service(
         X_SIMCORE_USER_AGENT: "",
     }
 
-    result = await director_v2_client.post(
+    response = await director_v2_client.post(
         f"/v2/dynamic_services/{service_uuid}:retrieve",
         json={"port_keys": []},
         headers=headers,
-        follow_redirects=True,
+        follow_redirects=False,
     )
-    assert result.status_code == httpx.codes.OK, result.text
-    json_result = result.json()
+    if response.status_code == httpx.codes.TEMPORARY_REDIRECT:
+        response = await _handle_redirection(
+            response,
+            method="POST",
+            json={"port_keys": []},
+            headers=headers,
+        )
+    response.raise_for_status()
+    assert response.status_code == httpx.codes.OK, response.text
+    json_result = response.json()
     print(f"{service_uuid}:retrieve result ", json_result)
 
     size_bytes = json_result["data"]["size_bytes"]
@@ -434,11 +450,13 @@ async def assert_retrieve_service(
 async def assert_stop_service(
     director_v2_client: httpx.AsyncClient, service_uuid: str
 ) -> None:
-    result = await director_v2_client.delete(
-        f"/v2/dynamic_services/{service_uuid}", follow_redirects=True
+    response = await director_v2_client.delete(
+        f"/v2/dynamic_services/{service_uuid}", follow_redirects=False
     )
-    assert result.status_code == httpx.codes.NO_CONTENT
-    assert result.text == ""
+    if response.status_code == httpx.codes.TEMPORARY_REDIRECT:
+        response = await _handle_redirection(response, method="DELETE")
+    assert response.status_code == httpx.codes.NO_CONTENT
+    assert response.text == ""
 
 
 async def _inspect_service_and_print_logs(
