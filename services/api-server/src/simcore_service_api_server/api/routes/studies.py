@@ -3,6 +3,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
 from fastapi_pagination.api import create_page
+from models_library.api_schemas_webserver.projects import ProjectGet
 
 from ...models.pagination import LimitOffsetPage, LimitOffsetParams, OnePage
 from ...models.schemas.studies import Study, StudyID, StudyPort
@@ -12,6 +13,15 @@ from ._common import API_SERVER_DEV_FEATURES_ENABLED
 
 _logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+def _create_study_from_project(project: ProjectGet) -> Study:
+    return Study.construct(
+        uid=project.uuid,
+        title=project.name,
+        description=project.description,
+        _fields_set={"uid", "title", "description"},
+    )
 
 
 @router.get(
@@ -28,13 +38,7 @@ async def list_studies(
     )
 
     studies: list[Study] = [
-        Study.construct(
-            uid=prj.uuid,
-            title=prj.name,
-            description=prj.description,
-            _fields_set={"uid", "title", "description"},
-        )
-        for prj in projects_page.data
+        _create_study_from_project(prj) for prj in projects_page.data
     ]
 
     return create_page(
@@ -49,9 +53,13 @@ async def list_studies(
     response_model=Study,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
-async def get_study(study_id: StudyID):
-    msg = f"get user's study study_id={study_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
-    raise NotImplementedError(msg)
+async def get_study(
+    study_id: StudyID,
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+):
+    # FIXME: cannot be a project associated to a job! or a template!!!
+    project: ProjectGet = await webserver_api.get_project(project_id=study_id)
+    return _create_study_from_project(project)
 
 
 @router.get(
