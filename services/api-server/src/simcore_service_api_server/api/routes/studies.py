@@ -1,18 +1,26 @@
 import logging
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 from fastapi_pagination.api import create_page
 from models_library.api_schemas_webserver.projects import ProjectGet
 
 from ...models.pagination import LimitOffsetPage, LimitOffsetParams, OnePage
 from ...models.schemas.studies import Study, StudyID, StudyPort
-from ...services.webserver import AuthSession
+from ...services.webserver import AuthSession, ProjectNotFoundError
 from ..dependencies.webserver import get_webserver_session
+from ..errors.http_error import ErrorGet, create_error_json_response
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
 
 _logger = logging.getLogger(__name__)
 router = APIRouter()
+
+_common_error_responses = {
+    status.HTTP_404_NOT_FOUND: {
+        "description": "Study not found",
+        "model": ErrorGet,
+    },
+}
 
 
 def _create_study_from_project(project: ProjectGet) -> Study:
@@ -51,20 +59,29 @@ async def list_studies(
 @router.get(
     "/{study_id}",
     response_model=Study,
+    responses={**_common_error_responses},
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_study(
     study_id: StudyID,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
-    # FIXME: cannot be a project associated to a job! or a template!!!
-    project: ProjectGet = await webserver_api.get_project(project_id=study_id)
-    return _create_study_from_project(project)
+    try:
+        # FIXME: cannot be a project associated to a job! or a template!!!
+        project: ProjectGet = await webserver_api.get_project(project_id=study_id)
+        return _create_study_from_project(project)
+
+    except ProjectNotFoundError:
+        return create_error_json_response(
+            f"Cannot find study={study_id!r}.",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
 
 
 @router.get(
     "/{study_id}/ports",
     response_model=OnePage[StudyPort],
+    responses={**_common_error_responses},
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def list_study_ports(
@@ -75,8 +92,15 @@ async def list_study_ports(
 
     New in *version 0.5.0* (only with API_SERVER_DEV_FEATURES_ENABLED=1)
     """
-    project_ports: list[
-        dict[str, Any]
-    ] = await webserver_api.get_project_metadata_ports(project_id=study_id)
+    try:
+        project_ports: list[
+            dict[str, Any]
+        ] = await webserver_api.get_project_metadata_ports(project_id=study_id)
 
-    return OnePage[StudyPort](items=project_ports)  # type: ignore[arg-type]
+        return OnePage[StudyPort](items=project_ports)  # type: ignore[arg-type]
+
+    except ProjectNotFoundError:
+        return create_error_json_response(
+            f"Cannot find study={study_id!r}.",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
