@@ -3,3 +3,4 @@ pydantic
 typer[all]
 rich
 requests
+arrow
