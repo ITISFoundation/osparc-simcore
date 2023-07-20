@@ -28,31 +28,27 @@ qx.Class.define("osparc.component.resourceUsage.CreditsLeft", {
       .catch(err => console.error(err));
   },
 
-  members: {
-    __buildLayout: function(data) {
-      this.__addCredits(data.credits);
-    },
-
-    __addCredits: function(credits) {
+  statics: {
+    createCreditsLeftInidcator: function() {
       const store = osparc.store.Store.getInstance();
-      store.setCredits(credits.left);
 
-      const progress = new qx.ui.indicator.ProgressBar().set({
+      const progressBar = new qx.ui.indicator.ProgressBar().set({
         maximum: 1,
-        maxHeight: 20,
-        maxWidth: 50,
+        width: 50,
+        height: 20,
+        allowGrowY: false,
         alignY:"middle",
         cursor: "pointer"
       });
       const logBase = (n, base) => Math.log(n) / Math.log(base);
-      store.bind("credits", progress, "value", {
+      store.bind("credits", progressBar, "value", {
         converter: val => {
           let normalized = logBase(val, 10000) + 0.01;
           normalized = Math.min(Math.max(normalized, 0), 1);
           return normalized;
         }
       });
-      progress.bind("value", progress.getChildControl("progress"), "backgroundColor", {
+      progressBar.bind("value", progressBar.getChildControl("progress"), "backgroundColor", {
         converter: val => {
           if (val > 0.4) {
             return "strong-main";
@@ -62,16 +58,29 @@ qx.Class.define("osparc.component.resourceUsage.CreditsLeft", {
           return "danger-red";
         }
       });
-      store.bind("credits", progress, "toolTipText", {
-        converter: val => val + "credits left"
+      store.bind("credits", progressBar, "toolTipText", {
+        converter: val => val + " credits left"
       });
+      return progressBar;
+    }
+  },
 
-      progress.addListener("tap", () => {
+  members: {
+    __buildLayout: function(data) {
+      this.__addCredits(data.credits);
+    },
+
+    __addCredits: function(credits) {
+      const store = osparc.store.Store.getInstance();
+      store.setCredits(credits.left);
+
+      const progressBar = this.self().createCreditsLeftInidcator();
+      progressBar.addListener("tap", () => {
         const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow();
         creditsWindow.openBuyCredits();
       }, this);
 
-      this._add(progress);
+      this._add(progressBar);
     },
 
     __addButtons: function() {

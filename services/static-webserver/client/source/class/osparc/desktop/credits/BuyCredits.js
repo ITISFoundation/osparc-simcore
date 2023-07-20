@@ -74,6 +74,10 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             flex: 1
           });
           break;
+        case "credits-left-view":
+          control = this.__getCreditsLeftView();
+          this.getChildControl("left-side").add(control);
+          break;
         case "credit-offers-view":
           control = this.__getCreditOffersView();
           this.getChildControl("left-side").add(control);
@@ -99,6 +103,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     },
 
     __buildLayout: function() {
+      this.getChildControl("credits-left-view");
       this.getChildControl("credit-offers-view");
       this.getChildControl("credit-selector");
       this.getChildControl("summary-view");
@@ -124,6 +129,23 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
 
     __applyCreditPrice: function(creditPrice) {
       this.setTotalPrice(creditPrice * this.getNCredits());
+    },
+
+    __getCreditsLeftView: function() {
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const creditsLabel = new qx.ui.basic.Label().set({
+        font: "text-14"
+      });
+      const store = osparc.store.Store.getInstance();
+      store.bind("credits", creditsLabel, "value", {
+        converter: val => "You have " + val + " credits left"
+      });
+      layout.add(creditsLabel);
+
+      const progressBar = osparc.component.resourceUsage.CreditsLeft.createCreditsLeftInidcator();
+      layout.add(progressBar);
+
+      return layout;
     },
 
     __getCreditOffersView: function() {
