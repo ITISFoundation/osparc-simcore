@@ -4,8 +4,12 @@
 #
 #    pip-compile --output-file=requirements/_base.txt --strip-extras requirements/_base.in
 #
-aio-pika==9.1.4
-    # via -r requirements/_base.in
+aio-pika==9.1.2
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_base.in
 aiodebug==2.3.0
     # via -r requirements/_base.in
 aiodocker==0.21.0
