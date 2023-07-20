@@ -11,7 +11,7 @@ This OAS are the source of truth
 
 from typing import Annotated
 
-from _common import CURRENT_DIR, create_openapi_specs
+from _common import CURRENT_DIR, create_and_save_openapi_specs
 from fastapi import APIRouter, Depends, FastAPI, status
 from models_library.api_schemas_webserver.projects_metadata import (
     ProjectMetadataGet,
@@ -51,7 +51,7 @@ async def update_project_metadata(
 
 
 if __name__ == "__main__":
-    create_openapi_specs(
+    create_and_save_openapi_specs(
         FastAPI(routes=router.routes),
         CURRENT_DIR.parent / "openapi-projects-metadata.yaml",
     )

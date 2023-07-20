@@ -12,7 +12,7 @@ This OAS are the source of truth
 from _common import (
     CURRENT_DIR,
     assert_handler_signature_against_model,
-    create_openapi_specs,
+    create_and_save_openapi_specs,
 )
 from fastapi import APIRouter, FastAPI, status
 from models_library.generics import Envelope
@@ -81,7 +81,7 @@ assert_handler_signature_against_model(get_project_node_preview, _NodePathParams
 
 
 if __name__ == "__main__":
-    create_openapi_specs(
+    create_and_save_openapi_specs(
         FastAPI(routes=router.routes),
         CURRENT_DIR.parent / "openapi-projects-nodes.yaml",
     )

@@ -63,6 +63,6 @@ for m in (
     app.include_router(m.router)
 
 if __name__ == "__main__":
-    from _common import CURRENT_DIR, create_openapi_specs
+    from _common import create_and_save_openapi_specs
 
-    create_openapi_specs(app, CURRENT_DIR.parent / "openapi-main.yaml")
+    create_and_save_openapi_specs(app, "openapi.yaml")

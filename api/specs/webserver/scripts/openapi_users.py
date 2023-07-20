@@ -126,8 +126,8 @@ async def list_user_permissions():
 
 
 if __name__ == "__main__":
-    from _common import CURRENT_DIR, create_openapi_specs
+    from _common import CURRENT_DIR, create_and_save_openapi_specs
 
-    create_openapi_specs(
+    create_and_save_openapi_specs(
         FastAPI(routes=router.routes), CURRENT_DIR.parent / "openapi-users.yaml"
     )

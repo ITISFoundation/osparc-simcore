@@ -55,7 +55,7 @@ class Error(BaseModel):
     status: int | None = Field(None, description="HTTP error code")
 
 
-def create_openapi_specs(
+def create_and_save_openapi_specs(
     app: FastAPI, file_path: Path, *, drop_fastapi_default_422: bool = True
 ):
     override_fastapi_openapi_method(app)

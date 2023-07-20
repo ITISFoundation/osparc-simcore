@@ -12,7 +12,7 @@ This OAS are the source of truth
 from _common import (
     CURRENT_DIR,
     assert_handler_signature_against_model,
-    create_openapi_specs,
+    create_and_save_openapi_specs,
 )
 from fastapi import APIRouter, FastAPI, Query, status
 from models_library.api_schemas_webserver.projects import (
@@ -192,6 +192,6 @@ assert_handler_signature_against_model(delete_project, ProjectPathParams)
 
 
 if __name__ == "__main__":
-    create_openapi_specs(
+    create_and_save_openapi_specs(
         FastAPI(routes=router.routes), CURRENT_DIR.parent / "openapi-projects-crud.yaml"
     )

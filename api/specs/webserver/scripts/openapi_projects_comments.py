@@ -13,7 +13,7 @@ from typing import Literal
 from _common import (
     CURRENT_DIR,
     assert_handler_signature_against_model,
-    create_openapi_specs,
+    create_and_save_openapi_specs,
 )
 from fastapi import APIRouter, FastAPI
 from models_library.generics import Envelope
@@ -119,7 +119,7 @@ assert_handler_signature_against_model(
 
 
 if __name__ == "__main__":
-    create_openapi_specs(
+    create_and_save_openapi_specs(
         FastAPI(routes=router.routes),
         CURRENT_DIR.parent / "openapi-projects-comments.yaml",
     )
