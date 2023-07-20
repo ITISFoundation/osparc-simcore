@@ -24,6 +24,7 @@ _common_error_responses = {
 
 
 def _create_study_from_project(project: ProjectGet) -> Study:
+    assert isinstance(project, ProjectGet)  # nosec
     return Study.construct(
         uid=project.uuid,
         title=project.name,
@@ -33,7 +34,7 @@ def _create_study_from_project(project: ProjectGet) -> Study:
 
 
 @router.get(
-    "/",
+    "",
     response_model=LimitOffsetPage[Study],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
