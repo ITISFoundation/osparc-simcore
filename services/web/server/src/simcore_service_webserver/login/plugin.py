@@ -10,7 +10,6 @@ from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
 
 from .._constants import (
-    APP_OPENAPI_SPECS_KEY,
     APP_PUBLIC_CONFIG_PER_PRODUCT,
     APP_SETTINGS_KEY,
     INDEX_RESOURCE_NAME,
@@ -23,8 +22,15 @@ from ..invitations.plugin import setup_invitations
 from ..products.plugin import ProductName, list_products, setup_products
 from ..redis import setup_redis
 from ..rest.plugin import setup_rest
+from . import (
+    api_keys_handlers,
+    handlers_2fa,
+    handlers_auth,
+    handlers_change,
+    handlers_confirmation,
+    handlers_registration,
+)
 from ._constants import APP_LOGIN_SETTINGS_PER_PRODUCT_KEY
-from .routes import create_routes
 from .settings import (
     APP_LOGIN_OPTIONS_KEY,
     LoginOptions,
@@ -100,12 +106,13 @@ async def _resolve_login_settings_per_product(app: web.Application):
                     app_login_settings=app_login_settings,
                     product_login_settings=product.login_settings,
                 )
-            except ValidationError as err:
+            except ValidationError as err:  # noqa: PERF203
                 errors[product.name] = err
 
         if errors:
             msg = "\n".join([f"{n}: {e}" for n, e in errors.items()])
-            raise ValueError(f"Invalid product.login_settings:\n{msg}")
+            error_msg = f"Invalid product.login_settings:\n{msg}"
+            raise ValueError(error_msg)
 
     # store in app
     app[APP_LOGIN_SETTINGS_PER_PRODUCT_KEY] = login_settings_per_product
@@ -148,9 +155,13 @@ def setup_login(app: web.Application):
     setup_invitations(app)
 
     # routes
-    specs = app[APP_OPENAPI_SPECS_KEY]
-    routes = create_routes(specs)
-    app.router.add_routes(routes)
+
+    app.router.add_routes(handlers_auth.routes)
+    app.router.add_routes(handlers_confirmation.routes)
+    app.router.add_routes(handlers_registration.routes)
+    app.router.add_routes(handlers_change.routes)
+    app.router.add_routes(handlers_2fa.routes)
+    app.router.add_routes(api_keys_handlers.routes)
 
     _setup_login_options(app)
     setup_login_storage(app)

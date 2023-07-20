@@ -40,7 +40,7 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     ExpectedResponse,
     standard_role_response,
 )
-from servicelib.aiohttp.web_exceptions_extension import HTTPLocked
+from servicelib.aiohttp.web_exceptions_extension import HTTPLockedError
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.products import products
 from simcore_service_webserver.db.models import UserRole
@@ -1169,7 +1169,7 @@ async def test_open_shared_project_2_users_locked(
         client_2,
         client_id2,
         shared_project,
-        expected.locked if user_role != UserRole.GUEST else HTTPLocked,
+        expected.locked if user_role != UserRole.GUEST else HTTPLockedError,
     )
     expected_project_state_client_2 = deepcopy(expected_project_state_client_1)
     expected_project_state_client_2.locked.status = ProjectStatus.OPENED
@@ -1229,7 +1229,7 @@ async def test_open_shared_project_2_users_locked(
         client_2,
         client_id2,
         shared_project,
-        expected.ok if user_role != UserRole.GUEST else HTTPLocked,
+        expected.ok if user_role != UserRole.GUEST else HTTPLockedError,
     )
     if not any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST]):
         expected_project_state_client_2.locked.value = True
@@ -1319,7 +1319,7 @@ async def test_open_shared_project_at_same_time(
             shared_project,
             [
                 expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
-                expected.locked if user_role != UserRole.GUEST else HTTPLocked,
+                expected.locked if user_role != UserRole.GUEST else HTTPLockedError,
             ],
         )
         for c in clients

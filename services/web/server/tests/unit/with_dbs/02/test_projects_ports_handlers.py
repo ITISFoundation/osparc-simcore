@@ -10,40 +10,15 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.projects_nodes import Node, NodeID
-from openapi_core.schema.specs.models import Spec as OpenApiSpecs
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.faker_webserver import (
     PROJECTS_METADATA_PORTS_RESPONSE_BODY_DATA,
 )
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
-from simcore_service_webserver._meta import API_VTAG as VX
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.projects import _ports_handlers
 from simcore_service_webserver.projects.models import ProjectDict
 from yarl import URL
-
-
-@pytest.mark.parametrize(
-    "route",
-    _ports_handlers.routes,
-    ids=lambda r: f"{r.method.upper()} {r.path}",
-)
-def test_route_against_openapi_specs(route, openapi_specs: OpenApiSpecs):
-
-    assert route.path.startswith(f"/{VX}")
-    path = route.path.replace(f"/{VX}", "")
-
-    assert path in openapi_specs.paths
-
-    assert (
-        route.method.lower() in openapi_specs.paths[path].operations
-    ), f"operation {route.method=} for {path=} undefined in OAS"
-
-    assert (
-        openapi_specs.paths[path].operations[route.method.lower()].operation_id
-        == route.kwargs["name"]
-    ), "route's name differs from OAS operation_id"
 
 
 @pytest.fixture

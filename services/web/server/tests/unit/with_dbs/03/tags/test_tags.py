@@ -4,7 +4,8 @@
 # pylint: disable=too-many-arguments
 
 
-from typing import Any, AsyncIterator, Callable, Iterator
+from collections.abc import AsyncIterator, Callable, Iterator
+from typing import Any
 
 import pytest
 import sqlalchemy as sa
@@ -19,17 +20,14 @@ from models_library.projects_state import (
     RunningState,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from openapi_core.schema.specs.models import Spec as OpenApiSpecs
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_projects import assert_get_same_project
 from pytest_simcore.helpers.utils_tags import create_tag, delete_tag
 from simcore_postgres_database.models.tags import tags
-from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.db.plugin import get_database_engine
 from simcore_service_webserver.projects.models import ProjectDict
-from simcore_service_webserver.tags import _handlers
 
 
 @pytest.fixture
@@ -37,25 +35,6 @@ def _clean_tags_table(postgres_db: sa.engine.Engine) -> Iterator[None]:
     yield
     with postgres_db.connect() as conn:
         conn.execute(tags.delete())
-
-
-@pytest.mark.parametrize(
-    "route",
-    _handlers.routes,
-    ids=lambda r: f"{r.method.upper()} {r.path}",
-)
-def test_tags_route_against_openapi_specs(route, openapi_specs: OpenApiSpecs):
-    assert route.path.startswith(f"/{api_version_prefix}")
-    path = route.path.replace(f"/{api_version_prefix}", "")
-
-    assert (
-        route.method.lower() in openapi_specs.paths[path].operations
-    ), f"operation {route.method} undefined in OAS"
-
-    assert (
-        openapi_specs.paths[path].operations[route.method.lower()].operation_id
-        == route.kwargs["name"]
-    ), "route's name differs from OAS operation_id"
 
 
 @pytest.fixture
@@ -70,7 +49,7 @@ def fake_tags(faker: Faker) -> list[dict[str, Any]]:
 async def test_tags_to_studies(
     client: TestClient,
     logged_user: UserInfoDict,
-    user_project,
+    user_project: ProjectDict,
     expected: type[web.HTTPException],
     fake_tags: dict[str, Any],
     catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
@@ -89,7 +68,7 @@ async def test_tags_to_studies(
 
         # Add tag to study
         url = client.app.router["add_tag"].url_for(
-            study_uuid=user_project.get("uuid"), tag_id=str(added_tag.get("id"))
+            project_uuid=user_project.get("uuid"), tag_id=str(added_tag.get("id"))
         )
         resp = await client.put(f"{url}")
         data, _ = await assert_status(resp, expected)
@@ -120,7 +99,7 @@ async def test_tags_to_studies(
 
     # Remove tag1 from project
     url = client.app.router["remove_tag"].url_for(
-        study_uuid=user_project.get("uuid"), tag_id=str(added_tags[1].get("id"))
+        project_uuid=user_project.get("uuid"), tag_id=str(added_tags[1].get("id"))
     )
     resp = await client.delete(f"{url}")
     await assert_status(resp, expected)

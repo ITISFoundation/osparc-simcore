@@ -7,7 +7,6 @@ from servicelib.aiohttp.application_keys import (
     APP_CONFIG_KEY,
     APP_DB_ENGINE_KEY,
     APP_FIRE_AND_FORGET_TASKS_KEY,
-    APP_OPENAPI_SPECS_KEY,
     APP_SETTINGS_KEY,
 )
 from servicelib.request_keys import RQT_USERID_KEY
@@ -36,7 +35,6 @@ __all__: tuple[str, ...] = (
     "APP_CONFIG_KEY",
     "APP_DB_ENGINE_KEY",
     "APP_FIRE_AND_FORGET_TASKS_KEY",
-    "APP_OPENAPI_SPECS_KEY",
     "APP_SETTINGS_KEY",
     "RQT_USERID_KEY",
 )

@@ -55,7 +55,10 @@ body:
     attributes:
       label: "🚑️ Hotfix branch"
       value: |
-        - [ ] create hotfix branch [``hotfix_v1_51_x``](https://github.com/ITISFoundation/osparc-simcore/tree/hotfix_v1_51_x) directly in *upstream* repo. **Do not delete hotfix branches** at least until next *full* release takes place.
+        - [ ] create hotfix branch [``hotfix_v1_51_x``](https://github.com/ITISFoundation/osparc-simcore/tree/hotfix_v1_51_x) directly in *upstream* repo.
+           - WARNING: never push this branch BEFORE the actual release is completed
+           - **Do not delete hotfix branches** at least until next *full* release takes place.
+           - See more [details](https://github.com/ITISFoundation/osparc-simcore/blob/master/docs/releasing-workflow-instructions.md#hotfix-release-hotfix-branch---production)
         - [ ] prepare hotfix by applying patches/cherry-picks (see *what changed* section)
         - [ ] test hotfix in local deployment
         - [ ] push and [check whether CI passed](https://github.com/ITISFoundation/osparc-simcore/actions)

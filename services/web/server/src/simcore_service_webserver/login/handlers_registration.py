@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, timedelta
-from typing import Literal
+from typing import Any, ClassVar, Literal
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
@@ -62,8 +62,7 @@ log = logging.getLogger(__name__)
 
 
 def _get_user_name(email: str) -> str:
-    username = email.split("@")[0]
-    return username
+    return email.split("@")[0]
 
 
 routes = RouteTableDef()
@@ -79,11 +78,11 @@ class InvitationInfo(InputSchema):
     )
 
 
-@global_rate_limit_route(number_of_requests=30, interval_seconds=MINUTE)
 @routes.post(
     f"/{API_VTAG}/auth/register/invitations:check",
     name="auth_check_registration_invitation",
 )
+@global_rate_limit_route(number_of_requests=30, interval_seconds=MINUTE)
 async def check_registration_invitation(request: web.Request):
     """
     Decrypts invitation and extracts associated email or
@@ -124,7 +123,7 @@ class RegisterBody(InputSchema):
     )
 
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "email": "foo@mymail.com",
@@ -252,19 +251,17 @@ async def register(request: web.Request):
                 reason=f"{MSG_CANT_SEND_MAIL} [{error_code}]"
             ) from err
 
-        response = flash_response(
+        return flash_response(
             "You are registered successfully! To activate your account, please, "
             f"click on the verification link in the email we sent you to {registration.email}.",
             "INFO",
         )
-        return response
 
     # No confirmation required: authorize login
     assert not settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED  # nosec
     assert not settings.LOGIN_2FA_REQUIRED  # nosec
 
-    response = await login_granted_response(request=request, user=user)
-    return response
+    return await login_granted_response(request=request, user=user)
 
 
 class RegisterPhoneBody(InputSchema):
@@ -284,6 +281,7 @@ class RegisterPhoneNextPage(NextPage[_PageParams]):
     message: str
 
 
+@routes.post(f"/{API_VTAG}/auth/verify-phone-number", name="auth_register_phone")
 @session_access_required(
     name="auth_register_phone",
     unauthorized_reason=MSG_UNAUTHORIZED_REGISTER_PHONE,
@@ -296,7 +294,6 @@ class RegisterPhoneNextPage(NextPage[_PageParams]):
     name="auth_resend_2fa_code",
     max_access_count=MAX_2FA_CODE_RESEND,
 )
-@routes.post(f"/{API_VTAG}/auth/verify-phone-number", name="auth_register_phone")
 async def register_phone(request: web.Request):
     """
     Submits phone registration
@@ -318,12 +315,11 @@ async def register_phone(request: web.Request):
     registration = await parse_request_body_as(RegisterPhoneBody, request)
 
     try:
-        assert settings.LOGIN_2FA_REQUIRED and settings.LOGIN_TWILIO  # nosec
+        assert settings.LOGIN_2FA_REQUIRED
+        assert settings.LOGIN_TWILIO
         if not product.twilio_messaging_sid:
-            raise ValueError(
-                f"Messaging SID is not configured in {product}. "
-                "Update product's twilio_messaging_sid in database."
-            )
+            msg = f"Messaging SID is not configured in {product}. Update product's twilio_messaging_sid in database."
+            raise ValueError(msg)
 
         if await db.get_user({"phone": registration.phone}):
             raise web.HTTPUnauthorized(
@@ -349,7 +345,7 @@ async def register_phone(request: web.Request):
             phone_number=mask_phone_number(registration.phone)
         )
 
-        response = envelope_response(
+        return envelope_response(
             # RegisterPhoneNextPage
             data={
                 "name": CODE_2FA_CODE_REQUIRED,
@@ -362,7 +358,6 @@ async def register_phone(request: web.Request):
             },
             status=web.HTTPAccepted.status_code,
         )
-        return response
 
     except web.HTTPException:
         raise

@@ -2,14 +2,15 @@
 
 """
 import logging
+from pathlib import Path
 
-import openapi_core
-import yaml
 from aiohttp import web
-from aiohttp.web import RouteDef, RouteTableDef
 from aiohttp_swagger import setup_swagger
-from servicelib.aiohttp.openapi import get_base_path
 from servicelib.aiohttp.rest_middlewares import append_rest_middlewares
+from servicelib.aiohttp.rest_utils import (
+    get_named_routes_as_message,
+    set_default_route_names,
+)
 
 from . import (
     handlers_datasets,
@@ -18,17 +19,11 @@ from . import (
     handlers_locations,
     handlers_simcore_s3,
 )
-from .constants import APP_OPENAPI_SPECS_KEY
+from ._meta import api_vtag
 from .handlers_files import UPLOAD_TASKS_KEY
 from .resources import storage_resources
 
-log = logging.getLogger(__name__)
-
-
-def set_default_names(routes: RouteTableDef):
-    for r in routes:
-        if isinstance(r, RouteDef):
-            r.kwargs.setdefault("name", r.handler.__name__)
+_logger = logging.getLogger(__name__)
 
 
 def setup_rest(app: web.Application):
@@ -42,18 +37,11 @@ def setup_rest(app: web.Application):
     IMPORTANT: this is a critical subsystem. Any failure should stop
     the system startup. It CANNOT be simply disabled & continue
     """
-    log.debug("Setting up %s ...", __name__)
+    _logger.debug("Setting up %s ...", __name__)
 
-    spec_path = storage_resources.get_path("api/v0/openapi.yaml")
-    with spec_path.open() as fh:
-        spec_dict = yaml.safe_load(fh)
-    api_specs = openapi_core.create_spec(spec_dict, spec_path.as_uri())
-
-    # validated openapi specs
-    app[APP_OPENAPI_SPECS_KEY] = api_specs
+    spec_path: Path = storage_resources.get_path("api/v0/openapi.yaml")
 
     # Connects handlers
-
     for routes in [
         handlers_health.routes,
         handlers_locations.routes,
@@ -61,27 +49,21 @@ def setup_rest(app: web.Application):
         handlers_files.routes,
         handlers_simcore_s3.routes,
     ]:
-        set_default_names(routes)
+        set_default_route_names(routes)
         app.router.add_routes(routes)
+
+    _logger.debug("routes: %s", get_named_routes_as_message(app))
+
     # prepare container for upload tasks
     app[UPLOAD_TASKS_KEY] = {}
 
-    log.debug(
-        "routes:\n %s",
-        "\n".join(
-            f"\t{name}:{resource}"
-            for name, resource in app.router.named_resources().items()
-        ),
-    )
-
     # Enable error, validation and envelop middleware on API routes
-    base_path = get_base_path(api_specs)
-    append_rest_middlewares(app, base_path)
+    append_rest_middlewares(app, api_version=f"/{api_vtag}")
 
     # Adds swagger doc UI
     setup_swagger(
         app,
         swagger_url="/dev/doc",
-        swagger_from_file=str(spec_path),
+        swagger_from_file=f"{spec_path}",
         ui_version=3,
     )

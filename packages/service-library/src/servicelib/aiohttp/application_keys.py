@@ -19,7 +19,6 @@ from typing import Final
 # web.Application keys, i.e. app[APP_*_KEY]
 #
 APP_CONFIG_KEY: Final[str] = f"{__name__ }.config"
-APP_OPENAPI_SPECS_KEY: Final[str] = f"{__name__ }.openapi_specs"
 APP_SETTINGS_KEY: Final[str] = f"{__name__ }.settings"
 
 APP_DB_ENGINE_KEY: Final[str] = f"{__name__ }.db_engine"
