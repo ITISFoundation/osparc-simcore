@@ -30,6 +30,8 @@ Page = _FastApiLimitOffsetPage.with_custom_options(
         DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, ge=1, le=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
     )
 )
+# NOTE: Renamed to make shorter clients name models
+Page.__name__ = "Page"
 
 PaginationParams: TypeAlias = LimitOffsetParams
 

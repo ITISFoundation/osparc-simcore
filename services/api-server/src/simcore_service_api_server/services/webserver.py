@@ -264,7 +264,7 @@ class AuthSession:
         return await self._page_projects(
             limit=limit,
             offset=offset,
-            show_hidden=False,  # TODO: needs BETTER concept to discriminate which of the studies are actually jobs
+            show_hidden=False,
         )
 
     async def delete_project(self, project_id: ProjectID) -> None:
