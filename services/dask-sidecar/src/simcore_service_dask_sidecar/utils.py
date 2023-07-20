@@ -1,5 +1,4 @@
 import asyncio
-import contextlib
 import logging
 import uuid
 from collections.abc import Awaitable, Coroutine
@@ -27,7 +26,7 @@ def _nvidia_smi_docker_config(cmd: list[str]) -> dict[str, Any]:
         "OpenStdin": False,
         "HostConfig": {
             "Init": True,
-            "AutoRemove": True,
+            "AutoRemove": False,  # NOTE: this cannot be True as we need the logs of the container before removing it
         },  # NOTE: The Init parameter shows a weird behavior: no exception thrown when the container fails
     }
 
@@ -67,9 +66,7 @@ def num_available_gpus() -> int:
                 )
             finally:
                 if container is not None:
-                    # ensure container is removed
-                    with contextlib.suppress(aiodocker.exceptions.DockerError):
-                        await container.delete()
+                    await container.delete(v=True, force=True)
 
             return num_gpus
 
@@ -119,9 +116,7 @@ def video_memory() -> int:
                 )
             finally:
                 if container is not None:
-                    # ensure container is removed
-                    with contextlib.suppress(aiodocker.exceptions.DockerError):
-                        await container.delete()
+                    await container.delete(v=True, force=True)
 
             return video_ram
 
