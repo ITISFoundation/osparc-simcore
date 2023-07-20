@@ -21,91 +21,57 @@ qx.Class.define("osparc.component.resourceUsage.CreditsLeft", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(12));
+    this._setLayout(new qx.ui.layout.HBox());
 
-    osparc.data.Resources.dummy.getUsageOverview()
+    osparc.data.Resources.dummy.getCreditsLeft()
       .then(data => this.__buildLayout(data))
       .catch(err => console.error(err));
   },
 
   members: {
     __buildLayout: function(data) {
-      this.__addTitle();
-      this.__addCredits(data.simulations);
-      this.__addComputing(data.computing);
-      this.__addButtons();
+      this.__addCredits(data.credits);
     },
 
-    __addTitle: function() {
-      const title = new qx.ui.basic.Label().set({
-        value: "Usage Overview",
-        font: "text-14"
-      });
-      this._add(title);
-    },
-
-    __addCredits: function(simulations) {
-      const simLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-
-      const title = new qx.ui.basic.Label().set({
-        value: this.tr("Credits remaining"),
-        font: "text-13"
-      });
-      simLayout.add(title);
-
+    __addCredits: function(credits) {
       const store = osparc.store.Store.getInstance();
-      store.setCredits(simulations.total);
-      const remaining = new qx.ui.basic.Label().set({
-        font: "text-13"
-      });
-      store.bind("credits", remaining, "value", {
-        converter: val => `${val-simulations.used} of ${val} credits`
-      });
-      simLayout.add(remaining);
+      store.setCredits(credits.left);
 
       const progress = new qx.ui.indicator.ProgressBar().set({
-        height: 8
+        maximum: 1,
+        maxHeight: 20,
+        maxWidth: 50,
+        alignY:"middle",
+        cursor: "pointer"
       });
-      store.bind("credits", progress, "maximum");
+      const logBase = (n, base) => Math.log(n) / Math.log(base);
       store.bind("credits", progress, "value", {
-        converter: val => val-simulations.used
+        converter: val => {
+          let normalized = logBase(val, 10000) + 0.01;
+          normalized = Math.min(Math.max(normalized, 0), 1);
+          return normalized;
+        }
       });
-      progress.getChildControl("progress").set({
-        backgroundColor: "strong-main"
+      progress.bind("value", progress.getChildControl("progress"), "backgroundColor", {
+        converter: val => {
+          if (val > 0.4) {
+            return "strong-main";
+          } else if (val > 0.1) {
+            return "warning-yellow";
+          }
+          return "danger-red";
+        }
       });
-      simLayout.add(progress);
-
-      this._add(simLayout);
-    },
-
-    __addComputing: function(computing) {
-      const compLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-
-      const title = new qx.ui.basic.Label().set({
-        value: this.tr("Computational hours remaining"),
-        font: "text-13"
+      store.bind("credits", progress, "toolTipText", {
+        converter: val => val + "credits left"
       });
-      compLayout.add(title);
 
-      const compTotal = Math.round(computing.total/(60*60*1000));
-      const compUsed = Math.round(computing.used/(60*60*1000));
-      const remaining = new qx.ui.basic.Label().set({
-        value: `${compTotal-compUsed} of ${compTotal} CPU hours`,
-        font: "text-13"
-      });
-      compLayout.add(remaining);
+      progress.addListener("tap", () => {
+        const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow();
+        creditsWindow.openBuyCredits();
+      }, this);
 
-      const progress = new qx.ui.indicator.ProgressBar().set({
-        height: 8,
-        maximum: computing.total,
-        value: computing.total-computing.used
-      });
-      progress.getChildControl("progress").set({
-        backgroundColor: "strong-main"
-      });
-      compLayout.add(progress);
-
-      this._add(compLayout);
+      this._add(progress);
     },
 
     __addButtons: function() {
@@ -114,10 +80,6 @@ qx.Class.define("osparc.component.resourceUsage.CreditsLeft", {
       const buyCreditsBtn = new qx.ui.form.Button().set({
         label: this.tr("Buy credits")
       });
-      buyCreditsBtn.addListener("execute", () => {
-        const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow();
-        creditsWindow.openBuyCredits();
-      }, this);
       buttonsLayout.add(buyCreditsBtn, {
         flex: 1
       });

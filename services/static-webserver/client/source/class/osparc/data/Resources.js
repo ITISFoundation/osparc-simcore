@@ -1090,17 +1090,11 @@ qx.Class.define("osparc.data.Resources", {
     },
 
     dummy: {
-      getUsageOverview: function() {
+      getCreditsLeft: function() {
         return new Promise(resolve => {
           resolve({
-            simulations: {
-              total: 10,
-              used:  4
-            },
-            computing: {
-              total: 3600000000,
-              used:  22320000,
-              unit: "ms"
+            credits: {
+              left: 10
             }
           });
         });
