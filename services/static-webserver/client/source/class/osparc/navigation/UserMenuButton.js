@@ -163,9 +163,10 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
         this.getChildControl("log-in");
       } else {
         this.getChildControl("preferences");
-        if (osparc.utils.Utils.isDevelEnv()) {
-          this.getChildControl("usage-overview");
-        }
+        const usageOverview = this.getChildControl("usage-overview");
+        usageOverview.exclude();
+        osparc.utils.Utils.isDevelopmentPlatform()
+          .then(isDevel => isDevel && osparc.product.Utils.isProduct("s4l") ? usageOverview.show() : usageOverview.exclude());
         this.getChildControl("organizations");
         if (osparc.data.Permissions.getInstance().canDo("usage.all.read")) {
           this.getChildControl("usage-overview");

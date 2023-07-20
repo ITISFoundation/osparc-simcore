@@ -132,9 +132,10 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       this.getChildControl("read-only-info");
 
       // right-items
-      if (osparc.utils.Utils.isDevelEnv()) {
-        this.getChildControl("credits-left");
-      }
+      const creditsLeft = this.getChildControl("credits-left");
+      creditsLeft.exclude();
+      osparc.utils.Utils.isDevelopmentPlatform()
+        .then(isDevel => isDevel && osparc.product.Utils.isProduct("s4l") ? creditsLeft.show() : creditsLeft.exclude());
       this.getChildControl("tasks-button");
       this.getChildControl("notifications-button");
       this.getChildControl("expiration-icon");
