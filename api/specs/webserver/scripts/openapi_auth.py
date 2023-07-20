@@ -7,11 +7,10 @@
 # pylint: disable=too-many-arguments
 
 
-from enum import Enum
-from typing import Any, Optional, Union
+from typing import Any
 
 from _common import Error, Log
-from fastapi import FastAPI, status
+from fastapi import APIRouter, FastAPI, status
 from models_library.generics import Envelope
 from pydantic import BaseModel, Field, confloat
 from simcore_service_webserver.login.api_keys_handlers import ApiKeyCreate, ApiKeyGet
@@ -39,58 +38,53 @@ from simcore_service_webserver.login.handlers_registration import (
     RegisterPhoneNextPage,
 )
 
-app = FastAPI(redoc_url=None)
+router = APIRouter(
+    tags=[
+        "authentication",
+    ]
+)
 
-TAGS: list[Union[str, Enum]] = [
-    "authentication",
-]
 
-
-@app.post(
+@router.post(
     "/auth/register/invitations:check",
     response_model=Envelope[InvitationInfo],
-    tags=TAGS,
     operation_id="auth_check_registration_invitation",
 )
 async def check_registration_invitation(check: InvitationCheck):
     """Check invitation and returns associated email or None"""
 
 
-@app.post(
+@router.post(
     "/auth/register",
     response_model=Envelope[Log],
-    tags=TAGS,
     operation_id="auth_register",
 )
 async def register(registration: RegisterBody):
     """User registration"""
 
 
-@app.post(
+@router.post(
     "/auth/verify-phone-number",
     response_model=Envelope[RegisterPhoneNextPage],
-    tags=TAGS,
     operation_id="auth_register_phone",
 )
 async def register_phone(registration: RegisterPhoneBody):
     """user tries to verify phone number for 2 Factor Authentication when registering"""
 
 
-@app.post(
+@router.post(
     "/auth/validate-code-register",
     response_model=Envelope[Log],
-    tags=TAGS,
     operation_id="auth_phone_confirmation",
 )
 async def phone_confirmation(confirmation: PhoneConfirmationBody):
     """user enters 2 Factor Authentication code when registering"""
 
 
-@app.post(
+@router.post(
     "/auth/login",
     response_model=Envelope[LoginNextPage],
     status_code=status.HTTP_201_CREATED,
-    tags=TAGS,
     operation_id="auth_login",
     responses={
         # status.HTTP_503_SERVICE_UNAVAILABLE
@@ -104,10 +98,9 @@ async def login(authentication: LoginBody):
     """user logs in"""
 
 
-@app.post(
+@router.post(
     "/auth/validate-code-login",
     response_model=Envelope[Log],
-    tags=TAGS,
     operation_id="auth_login_2fa",
     responses={
         status.HTTP_401_UNAUTHORIZED: {
@@ -120,10 +113,9 @@ async def login_2fa(authentication: LoginTwoFactorAuthBody):
     """user enters 2 Factor Authentication code when login in"""
 
 
-@app.post(
+@router.post(
     "/auth/two_factor:resend",
     response_model=Envelope[Log],
-    tags=TAGS,
     operation_id="auth_resend_2fa_code",
     responses={
         status.HTTP_401_UNAUTHORIZED: {
@@ -136,20 +128,18 @@ async def resend_2fa_code(resend: Resend2faBody):
     """Resends 2FA either via email or sms"""
 
 
-@app.post(
+@router.post(
     "/auth/logout",
     response_model=Envelope[Log],
-    tags=TAGS,
     operation_id="auth_logout",
 )
 async def logout(data: LogoutBody):
     """user logout"""
 
 
-@app.post(
+@router.post(
     "/auth/reset-password",
     response_model=Envelope[Log],
-    tags=TAGS,
     operation_id="auth_reset_password",
     responses={status.HTTP_503_SERVICE_UNAVAILABLE: {"model": Envelope[Error]}},
 )
@@ -157,10 +147,9 @@ async def reset_password(data: ResetPasswordBody):
     """a non logged-in user requests a password reset"""
 
 
-@app.post(
+@router.post(
     "/auth/reset-password/{code}",
     response_model=Envelope[Log],
-    tags=TAGS,
     operation_id="auth_reset_password_allowed",
     responses={
         status.HTTP_401_UNAUTHORIZED: {
@@ -173,10 +162,9 @@ async def reset_password_allowed(code: str, data: ResetPasswordConfirmation):
     """changes password using a token code without being logged in"""
 
 
-@app.post(
+@router.post(
     "/auth/change-email",
     response_model=Envelope[Log],
-    tags=TAGS,
     operation_id="auth_change_email",
     responses={
         status.HTTP_401_UNAUTHORIZED: {
@@ -198,16 +186,15 @@ class PasswordCheckSchema(BaseModel):
         ...,
         description="The strength of the password ranges from 0 (extremely weak) and 1 (extremely strong)",
     )
-    rating: Optional[str] = Field(
+    rating: str | None = Field(
         None, description="Human readable rating from infinitely weak to very strong"
     )
-    improvements: Optional[Any] = None
+    improvements: Any | None = None
 
 
-@app.post(
+@router.post(
     "/auth/change-password",
     response_model=Envelope[Log],
-    tags=TAGS,
     operation_id="auth_change_password",
     responses={
         status.HTTP_401_UNAUTHORIZED: {
@@ -228,10 +215,9 @@ async def change_password(data: ChangePasswordBody):
     """logged in user changes password"""
 
 
-@app.get(
+@router.get(
     "/auth/confirmation/{code}",
     response_model=Envelope[Log],
-    tags=TAGS,
     operation_id="auth_confirmation",
     responses={
         "3XX": {
@@ -243,9 +229,8 @@ async def email_confirmation(code: str):
     """email link sent to user to confirm an action"""
 
 
-@app.get(
+@router.get(
     "/auth/api-keys",
-    tags=TAGS,
     operation_id="list_api_keys",
     responses={
         status.HTTP_200_OK: {
@@ -267,9 +252,8 @@ async def list_api_keys(code: str):
     """lists display names of API keys by this user"""
 
 
-@app.post(
+@router.post(
     "/auth/api-keys",
-    tags=TAGS,
     operation_id="create_api_key",
     responses={
         status.HTTP_200_OK: {
@@ -291,9 +275,8 @@ async def create_api_key(data: ApiKeyCreate):
     """creates API keys to access public API"""
 
 
-@app.delete(
+@router.delete(
     "/auth/api-keys",
-    tags=TAGS,
     operation_id="delete_api_key",
     status_code=status.HTTP_204_NO_CONTENT,
     responses={
@@ -313,7 +296,8 @@ async def delete_api_key(data: ApiKeyCreate):
 
 
 if __name__ == "__main__":
-
     from _common import CURRENT_DIR, create_openapi_specs
 
-    create_openapi_specs(app, CURRENT_DIR.parent / "openapi-auth.yaml")
+    create_openapi_specs(
+        FastAPI(routes=router.routes), CURRENT_DIR.parent / "openapi-auth.yaml"
+    )

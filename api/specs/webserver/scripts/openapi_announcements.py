@@ -7,23 +7,20 @@
 # pylint: disable=too-many-arguments
 
 
-from enum import Enum
-
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 from models_library.generics import Envelope
 from simcore_service_webserver.announcements._handlers import Announcement
 
-app = FastAPI(redoc_url=None)
+router = APIRouter(
+    tags=[
+        "announcements",
+    ]
+)
 
-TAGS: list[str | Enum] = [
-    "announcements",
-]
 
-
-@app.get(
+@router.get(
     "/announcements",
     response_model=Envelope[list[Announcement]],
-    tags=TAGS,
     operation_id="list_announcements",
 )
 async def list_announcements():
@@ -33,4 +30,6 @@ async def list_announcements():
 if __name__ == "__main__":
     from _common import CURRENT_DIR, create_openapi_specs
 
-    create_openapi_specs(app, CURRENT_DIR.parent / "openapi-announcements.yaml")
+    create_openapi_specs(
+        FastAPI(routes=router.routes), CURRENT_DIR.parent / "openapi-announcements.yaml"
+    )

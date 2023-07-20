@@ -8,8 +8,6 @@ This OAS are the source of truth
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-
-from enum import Enum
 from typing import Literal
 
 from _common import (
@@ -17,7 +15,7 @@ from _common import (
     assert_handler_signature_against_model,
     create_openapi_specs,
 )
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_comments import CommentID, ProjectsCommentsAPI
@@ -28,9 +26,7 @@ from simcore_service_webserver.projects._comments_handlers import (
     _ProjectCommentsWithCommentPathParams,
 )
 
-app = FastAPI(redoc_url=None)
-
-TAGS: list[str | Enum] = ["project", "comments"]
+router = APIRouter(tags=["project", "comments"])
 
 
 #
@@ -38,10 +34,9 @@ TAGS: list[str | Enum] = ["project", "comments"]
 #
 
 
-@app.post(
+@router.post(
     "/projects/{project_uuid}/comments",
     response_model=Envelope[dict[Literal["comment_id"], CommentID]],
-    tags=TAGS,
     operation_id="create_project_comment",
     summary="Create a new comment for a specific project. The request body should contain the comment contents and user information.",
     status_code=201,
@@ -57,10 +52,9 @@ assert_handler_signature_against_model(
 )
 
 
-@app.get(
+@router.get(
     "/projects/{project_uuid}/comments",
     response_model=Envelope[list[ProjectsCommentsAPI]],
-    tags=TAGS,
     operation_id="list_project_comments",
     summary="Retrieve all comments for a specific project.",
 )
@@ -75,10 +69,9 @@ assert_handler_signature_against_model(
 )
 
 
-@app.put(
+@router.put(
     "/projects/{project_uuid}/comments/{comment_id}",
     response_model=Envelope[ProjectsCommentsAPI],
-    tags=TAGS,
     operation_id="update_project_comment",
     summary="Update the contents of a specific comment for a project. The request body should contain the updated comment contents.",
 )
@@ -95,9 +88,8 @@ assert_handler_signature_against_model(
 )
 
 
-@app.delete(
+@router.delete(
     "/projects/{project_uuid}/comments/{comment_id}",
-    tags=TAGS,
     operation_id="delete_project_comment",
     summary="Delete a specific comment associated with a project.",
     status_code=204,
@@ -111,10 +103,9 @@ assert_handler_signature_against_model(
 )
 
 
-@app.get(
+@router.get(
     "/projects/{project_uuid}/comments/{comment_id}",
     response_model=Envelope[ProjectsCommentsAPI],
-    tags=TAGS,
     operation_id="get_project_comment",
     summary="Retrieve a specific comment by its ID within a project.",
 )
@@ -128,5 +119,7 @@ assert_handler_signature_against_model(
 
 
 if __name__ == "__main__":
-
-    create_openapi_specs(app, CURRENT_DIR.parent / "openapi-projects-comments.yaml")
+    create_openapi_specs(
+        FastAPI(routes=router.routes),
+        CURRENT_DIR.parent / "openapi-projects-comments.yaml",
+    )

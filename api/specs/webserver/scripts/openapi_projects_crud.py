@@ -9,14 +9,12 @@ This OAS are the source of truth
 # pylint: disable=too-many-arguments
 
 
-from enum import Enum
-
 from _common import (
     CURRENT_DIR,
     assert_handler_signature_against_model,
     create_openapi_specs,
 )
-from fastapi import FastAPI, Query, status
+from fastapi import APIRouter, FastAPI, Query, status
 from models_library.api_schemas_webserver.projects import (
     ProjectCopyOverride,
     ProjectCreateNew,
@@ -43,11 +41,11 @@ from simcore_service_webserver.projects._crud_handlers import (
     _ProjectListParams,
 )
 
-app = FastAPI(redoc_url=None)
-
-TAGS: list[str | Enum] = [
-    "project",
-]
+router = APIRouter(
+    tags=[
+        "project",
+    ]
+)
 
 
 #
@@ -55,12 +53,11 @@ TAGS: list[str | Enum] = [
 #
 
 
-@app.post(
+@router.post(
     "/projects",
     response_model=Envelope[TaskGet],
     summary="Creates a new project or copies an existing one",
     status_code=status.HTTP_201_CREATED,
-    tags=TAGS,
     operation_id="create_project",
 )
 async def create_project(
@@ -89,10 +86,9 @@ async def create_project(
 assert_handler_signature_against_model(create_project, _ProjectCreateParams)
 
 
-@app.get(
+@router.get(
     "/projects",
     response_model=Page[ProjectListItem],
-    tags=TAGS,
     operation_id="list_projects",
 )
 async def list_projects(
@@ -135,10 +131,9 @@ async def list_projects(
 assert_handler_signature_against_model(list_projects, _ProjectListParams)
 
 
-@app.get(
+@router.get(
     "/projects/active",
     response_model=Envelope[ProjectGet],
-    tags=TAGS,
     operation_id="get_active_project",
 )
 async def get_active_project(client_session_id: str):
@@ -148,10 +143,9 @@ async def get_active_project(client_session_id: str):
 assert_handler_signature_against_model(get_active_project, _ProjectActiveParams)
 
 
-@app.get(
+@router.get(
     "/projects/{project_id}",
     response_model=Envelope[ProjectGet],
-    tags=TAGS,
     operation_id="get_project",
 )
 async def get_project(project_id: ProjectID):
@@ -161,10 +155,9 @@ async def get_project(project_id: ProjectID):
 assert_handler_signature_against_model(get_project, ProjectPathParams)
 
 
-@app.put(
+@router.put(
     "/projects/{project_id}",
     response_model=Envelope[ProjectGet],
-    tags=TAGS,
     operation_id="replace_project",
 )
 async def replace_project(project_id: ProjectID, replace: ProjectReplace):
@@ -174,10 +167,9 @@ async def replace_project(project_id: ProjectID, replace: ProjectReplace):
 assert_handler_signature_against_model(replace_project, ProjectPathParams)
 
 
-@app.patch(
+@router.patch(
     "/projects/{project_id}",
     response_model=Envelope[ProjectGet],
-    tags=TAGS,
     operation_id="update_project",
 )
 async def update_project(project_id: ProjectID, update: ProjectUpdate):
@@ -187,9 +179,8 @@ async def update_project(project_id: ProjectID, update: ProjectUpdate):
 assert_handler_signature_against_model(update_project, ProjectPathParams)
 
 
-@app.delete(
+@router.delete(
     "/projects/{project_id}",
-    tags=TAGS,
     operation_id="delete_project",
     status_code=status.HTTP_204_NO_CONTENT,
 )
@@ -201,5 +192,6 @@ assert_handler_signature_against_model(delete_project, ProjectPathParams)
 
 
 if __name__ == "__main__":
-
-    create_openapi_specs(app, CURRENT_DIR.parent / "openapi-projects-crud.yaml")
+    create_openapi_specs(
+        FastAPI(routes=router.routes), CURRENT_DIR.parent / "openapi-projects-crud.yaml"
+    )

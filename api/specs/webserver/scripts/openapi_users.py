@@ -7,10 +7,9 @@
 # pylint: disable=too-many-arguments
 
 
-from enum import Enum
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, status
+from fastapi import APIRouter, Depends, FastAPI, status
 from models_library.generics import Envelope
 from simcore_service_webserver.users._handlers import (
     _NotificationPathParams,
@@ -29,100 +28,85 @@ from simcore_service_webserver.users.schemas import (
     TokenCreate,
 )
 
-# from simcore_service_webserver.users._handlers import
-
-app = FastAPI(redoc_url=None)
-
-TAGS: list[str | Enum] = [
-    "user",
-]
+router = APIRouter(tags=["user"])
 
 
-@app.get(
+@router.get(
     "/me",
     response_model=Envelope[ProfileGet],
-    tags=TAGS,
     operation_id="get_my_profile",
 )
 async def get_user_profile():
     ...
 
 
-@app.put(
+@router.put(
     "/me",
     status_code=status.HTTP_204_NO_CONTENT,
-    tags=TAGS,
     operation_id="update_my_profile",
 )
 async def update_my_profile(profile: ProfileUpdate):
     ...
 
 
-@app.get(
+@router.get(
     "/me/tokens",
     response_model=Envelope[list[Token]],
-    tags=TAGS,
     operation_id="list_tokens",
 )
 async def list_tokens():
     ...
 
 
-@app.post(
+@router.post(
     "/me/tokens",
     response_model=Envelope[Token],
     status_code=status.HTTP_201_CREATED,
-    tags=TAGS,
     operation_id="create_token",
 )
 async def create_token(token: TokenCreate):
     ...
 
 
-@app.get(
+@router.get(
     "/me/tokens/{service}",
     response_model=Envelope[Token],
-    tags=TAGS,
     operation_id="get_token",
 )
 async def get_token(params: Annotated[_TokenPathParams, Depends()]):
     ...
 
 
-@app.delete(
+@router.delete(
     "/me/tokens/{service}",
     status_code=status.HTTP_204_NO_CONTENT,
-    tags=TAGS,
     operation_id="delete_token",
 )
 async def delete_token(params: Annotated[_TokenPathParams, Depends()]):
     ...
 
 
-@app.get(
+@router.get(
     "/me/notifications",
     response_model=Envelope[list[UserNotification]],
-    tags=TAGS,
     operation_id="list_user_notifications",
 )
 async def list_user_notifications():
     ...
 
 
-@app.post(
+@router.post(
     "/me/notifications",
     status_code=status.HTTP_204_NO_CONTENT,
-    tags=TAGS,
     operation_id="create_user_notification",
 )
 async def create_user_notification(notification: UserNotificationCreate):
     ...
 
 
-@app.patch(
+@router.patch(
     "/me/notifications/{notification_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    tags=TAGS,
     operation_id="mark_notification_as_read",
 )
 async def mark_notification_as_read(
@@ -132,10 +116,9 @@ async def mark_notification_as_read(
     ...
 
 
-@app.get(
+@router.get(
     "/me/permissions",
     response_model=Envelope[list[PermissionGet]],
-    tags=TAGS,
     operation_id="list_user_permissions",
 )
 async def list_user_permissions():
@@ -145,4 +128,6 @@ async def list_user_permissions():
 if __name__ == "__main__":
     from _common import CURRENT_DIR, create_openapi_specs
 
-    create_openapi_specs(app, CURRENT_DIR.parent / "openapi-users.yaml")
+    create_openapi_specs(
+        FastAPI(routes=router.routes), CURRENT_DIR.parent / "openapi-users.yaml"
+    )

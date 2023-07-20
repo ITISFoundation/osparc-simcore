@@ -7,10 +7,9 @@
 # pylint: disable=too-many-arguments
 
 
-from enum import Enum
 from typing import TypeAlias
 
-from fastapi import FastAPI, Query, status
+from fastapi import APIRouter, FastAPI, Query, status
 from models_library.api_schemas_storage import (
     FileMetaDataGet,
     FileUploadCompleteFutureResponse,
@@ -26,11 +25,7 @@ from models_library.projects_nodes_io import LocationID
 from pydantic import AnyUrl, ByteSize
 from simcore_service_webserver.storage.schemas import DatasetMetaData, FileMetaData
 
-app = FastAPI(redoc_url=None)
-
-TAGS: list[str | Enum] = [
-    "storage",
-]
+router = APIRouter(tags=["storage"])
 
 
 # NOTE: storage generates URLs that contain double encoded
@@ -40,10 +35,9 @@ TAGS: list[str | Enum] = [
 StorageFileIDStr: TypeAlias = str
 
 
-@app.get(
+@router.get(
     "/storage/locations",
     response_model=list[DatasetMetaData],
-    tags=TAGS,
     operation_id="get_storage_locations",
     summary="Get available storage locations",
 )
@@ -51,10 +45,9 @@ async def get_storage_locations():
     """Returns the list of available storage locations"""
 
 
-@app.post(
+@router.post(
     "/storage/locations/{location_id}:sync",
     response_model=Envelope[TableSynchronisation],
-    tags=TAGS,
     operation_id="synchronise_meta_data_table",
     summary="Manually triggers the synchronisation of the file meta data table in the database",
 )
@@ -64,10 +57,9 @@ async def synchronise_meta_data_table(
     """Returns an object containing added, changed and removed paths"""
 
 
-@app.get(
+@router.get(
     "/storage/locations/{location_id}/datasets",
     response_model=Envelope[list[DatasetMetaData]],
-    tags=TAGS,
     operation_id="get_datasets_metadata",
     summary="Get datasets metadata",
 )
@@ -75,10 +67,9 @@ async def get_datasets_metadata(location_id: LocationID):
     """returns all the top level datasets a user has access to"""
 
 
-@app.get(
+@router.get(
     "/storage/locations/{location_id}/files/metadata",
     response_model=Envelope[list[DatasetMetaData]],
-    tags=TAGS,
     operation_id="get_files_metadata",
     summary="Get datasets metadata",
 )
@@ -95,10 +86,9 @@ async def get_files_metadata(
     """returns all the file meta data a user has access to (uuid_filter may be used)"""
 
 
-@app.get(
+@router.get(
     "/storage/locations/{location_id}/datasets/{dataset_id}/metadata",
     response_model=Envelope[list[FileMetaDataGet]],
-    tags=TAGS,
     operation_id="get_files_metadata_dataset",
     summary="Get Files Metadata",
 )
@@ -115,10 +105,9 @@ async def get_files_metadata_dataset(
     """returns all the file meta data inside dataset with dataset_id"""
 
 
-@app.get(
+@router.get(
     "/storage/locations/{location_id}/files/{file_id}/metadata",
     response_model=FileMetaData | Envelope[FileMetaDataGet],
-    tags=TAGS,
     summary="Get File Metadata",
     operation_id="get_file_metadata",
 )
@@ -126,10 +115,9 @@ async def get_file_metadata(location_id: LocationID, file_id: StorageFileIDStr):
     """returns the file meta data of file_id if user_id has the rights to"""
 
 
-@app.get(
+@router.get(
     "/storage/locations/{location_id}/files/{file_id}",
     response_model=Envelope[PresignedLink],
-    tags=TAGS,
     operation_id="download_file",
     summary="Returns download link for requested file",
 )
@@ -141,10 +129,9 @@ async def download_file(
     """creates a download file link if user has the rights to"""
 
 
-@app.put(
+@router.put(
     "/storage/locations/{location_id}/files/{file_id}",
     response_model=Envelope[FileUploadSchema] | Envelope[AnyUrl],
-    tags=TAGS,
     operation_id="upload_file",
     summary="Returns upload link",
 )
@@ -158,10 +145,9 @@ async def upload_file(
     """creates one or more upload file links if user has the rights to, expects the client to complete/abort upload"""
 
 
-@app.delete(
+@router.delete(
     "/storage/locations/{location_id}/files/{file_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    tags=TAGS,
     operation_id="delete_file",
     summary="Deletes File",
 )
@@ -169,10 +155,9 @@ async def delete_file(location_id: LocationID, file_id: StorageFileIDStr):
     """deletes file if user has the rights to"""
 
 
-@app.post(
+@router.post(
     "/storage/locations/{location_id}/files/{file_id}:abort",
     status_code=status.HTTP_204_NO_CONTENT,
-    tags=TAGS,
     operation_id="abort_upload_file",
 )
 async def abort_upload_file(location_id: LocationID, file_id: StorageFileIDStr):
@@ -180,11 +165,10 @@ async def abort_upload_file(location_id: LocationID, file_id: StorageFileIDStr):
     to the latest version if available, else will delete the file"""
 
 
-@app.post(
+@router.post(
     "/storage/locations/{location_id}/files/{file_id}:complete",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=Envelope[FileUploadCompleteResponse],
-    tags=TAGS,
     operation_id="complete_upload_file",
 )
 async def complete_upload_file(
@@ -195,10 +179,9 @@ async def complete_upload_file(
     """completes an upload if the user has the rights to"""
 
 
-@app.post(
+@router.post(
     "/storage/locations/{location_id}/files/{file_id}:complete/futures/{future_id}",
     response_model=Envelope[FileUploadCompleteFutureResponse],
-    tags=TAGS,
     summary="Check for upload completion",
     operation_id="is_completed_upload_file",
 )
@@ -211,4 +194,6 @@ async def is_completed_upload_file(
 if __name__ == "__main__":
     from _common import CURRENT_DIR, create_openapi_specs
 
-    create_openapi_specs(app, CURRENT_DIR.parent / "openapi-storage.yaml")
+    create_openapi_specs(
+        FastAPI(routes=router.routes), CURRENT_DIR.parent / "openapi-storage.yaml"
+    )

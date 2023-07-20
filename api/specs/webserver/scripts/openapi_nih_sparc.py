@@ -7,9 +7,8 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from enum import Enum
 
-from fastapi import FastAPI, status
+from fastapi import APIRouter, FastAPI, status
 from fastapi.responses import RedirectResponse
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
@@ -20,27 +19,25 @@ from simcore_service_webserver.studies_dispatcher._rest_handlers import (
     Viewer,
 )
 
-app = FastAPI(redoc_url=None)
+router = APIRouter(
+    tags=[
+        "nih-sparc",
+    ]
+)
 
-TAGS: list[str | Enum] = [
-    "nih-sparc",
-]
 
-
-@app.get(
+@router.get(
     "/services",
     response_model=Envelope[list[ServiceGet]],
-    tags=TAGS,
     operation_id="list_services",
 )
 async def list_services():
     """Returns a list latest version of services"""
 
 
-@app.get(
+@router.get(
     "/viewers",
     response_model=Envelope[list[Viewer]],
-    tags=TAGS,
     operation_id="list_viewers",
 )
 async def list_viewers(file_type: str | None = None):
@@ -52,10 +49,9 @@ async def list_viewers(file_type: str | None = None):
     """
 
 
-@app.get(
+@router.get(
     "/viewers/default",
     response_model=Envelope[list[Viewer]],
-    tags=TAGS,
     operation_id="list_default_viewers",
 )
 async def list_default_viewers(file_type: str | None = None):
@@ -69,12 +65,11 @@ async def list_default_viewers(file_type: str | None = None):
     """
 
 
-@app.get(
+@router.get(
     "/view",
     response_class=RedirectResponse,
     response_description="Opens osparc and starts viewer for selected data",
     status_code=status.HTTP_302_FOUND,
-    tags=TAGS,
     operation_id="get_redirection_to_viewer",
 )
 async def get_redirection_to_viewer(
@@ -88,9 +83,8 @@ async def get_redirection_to_viewer(
     """Opens a viewer in osparc for data in the NIH-sparc portal"""
 
 
-@app.get(
+@router.get(
     "/study/{id}",
-    tags=TAGS,
     response_class=RedirectResponse,
     response_description="Opens osparc and opens a copy of publised study",
     status_code=status.HTTP_302_FOUND,
@@ -101,7 +95,8 @@ async def get_redirection_to_study_page(id: ProjectID):
 
 
 if __name__ == "__main__":
-
     from _common import CURRENT_DIR, create_openapi_specs
 
-    create_openapi_specs(app, CURRENT_DIR.parent / "openapi-nih-sparc.yaml")
+    create_openapi_specs(
+        FastAPI(routes=router.routes), CURRENT_DIR.parent / "openapi-nih-sparc.yaml"
+    )
