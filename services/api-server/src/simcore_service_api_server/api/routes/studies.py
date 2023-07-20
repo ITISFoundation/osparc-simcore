@@ -6,10 +6,11 @@ from fastapi_pagination.api import create_page
 from models_library.api_schemas_webserver.projects import ProjectGet
 
 from ...models.pagination import OnePage, Page, PaginationParams
+from ...models.schemas.errors import ErrorGet
 from ...models.schemas.studies import Study, StudyID, StudyPort
 from ...services.webserver import AuthSession, ProjectNotFoundError
 from ..dependencies.webserver import get_webserver_session
-from ..errors.http_error import ErrorGet, create_error_json_response
+from ..errors.http_error import create_error_json_response
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
 
 _logger = logging.getLogger(__name__)
