@@ -386,7 +386,6 @@ services:
       # see [https://docs.gunicorn.org/en/stable/settings.html#timeout],
       # since we have the docker healthcheck already, this should be ok
       GUNICORN_CMD_ARGS: ${WEBSERVER_GUNICORN_CMD_ARGS}
-
       WEBSERVER_DB_LISTENER: ${WEBSERVER_DB_LISTENER}
       WEBSERVER_ANNOUNCEMENTS: ${WEBSERVER_ANNOUNCEMENTS}
       WEBSERVER_NOTIFICATIONS: ${WEBSERVER_NOTIFICATIONS}
@@ -436,7 +435,16 @@ services:
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
-      <<: *webserver-environment
+      DIRECTOR_HOST: ${DIRECTOR_HOST}
+      DIRECTOR_PORT: ${DIRECTOR_PORT}
+      DIRECTOR_V2_HOST: ${DIRECTOR_V2_HOST}
+      DIRECTOR_V2_PORT: ${DIRECTOR_V2_PORT}
+      # see [https://docs.gunicorn.org/en/stable/settings.html#timeout],
+      # since we have the docker healthcheck already, this should be ok
+      GUNICORN_CMD_ARGS: ${WEBSERVER_GUNICORN_CMD_ARGS}
+      LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
+      SWARM_STACK_NAME: ${SWARM_STACK_NAME}
+      WEBSERVER_LOGLEVEL: ${LOG_LEVEL}
       WEBSERVER_DB_LISTENER: 1
       WEBSERVER_SOCKETIO: 1
     env_file:
@@ -458,7 +466,19 @@ services:
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
-      <<: *webserver-environment
+      DIRECTOR_HOST: ${DIRECTOR_HOST}
+      DIRECTOR_PORT: ${DIRECTOR_PORT}
+      DIRECTOR_V2_HOST: ${DIRECTOR_V2_HOST}
+      DIRECTOR_V2_PORT: ${DIRECTOR_V2_PORT}
+      # see [https://docs.gunicorn.org/en/stable/settings.html#timeout],
+      # since we have the docker healthcheck already, this should be ok
+      GUNICORN_CMD_ARGS: ${WEBSERVER_GUNICORN_CMD_ARGS}
+      LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
+      STORAGE_HOST: ${STORAGE_HOST}
+      STORAGE_PORT: ${STORAGE_PORT}
+      SWARM_STACK_NAME: ${SWARM_STACK_NAME}
+      WEBSERVER_DB_LISTENER: 0
+      WEBSERVER_LOGLEVEL: ${LOG_LEVEL}
       WEBSERVER_GARBAGE_COLLECTOR: '{"GARBAGE_COLLECTOR_INTERVAL_S": 30}'
       RESOURCE_MANAGER_RESOURCE_TTL_S: 60
     env_file:
