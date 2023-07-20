@@ -5,22 +5,15 @@
 """
 
 import logging
+from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Iterator, Literal
+from typing import Literal
 
 from aiohttp import web
 from models_library.basic_types import IdInt
 from models_library.emails import LowerCaseEmailStr
-from pydantic import (
-    BaseModel,
-    Field,
-    Json,
-    PositiveInt,
-    ValidationError,
-    parse_raw_as,
-    validator,
-)
+from pydantic import BaseModel, Field, Json, PositiveInt, ValidationError, validator
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.confirmations import ConfirmationAction
 from yarl import URL
@@ -31,11 +24,7 @@ from ..invitations.plugin import (
     is_service_invitation_code,
     validate_invitation_url,
 )
-from ._confirmation import (
-    get_expiration_date,
-    is_confirmation_expired,
-    validate_confirmation_code,
-)
+from ._confirmation import is_confirmation_expired, validate_confirmation_code
 from ._constants import MSG_EMAIL_EXISTS, MSG_INVITATIONS_CONTACT_SUFFIX
 from .settings import LoginOptions
 from .storage import AsyncpgStorage, BaseConfirmationTokenDict, ConfirmationTokenDict
@@ -87,7 +76,6 @@ async def check_other_registrations(
     db: AsyncpgStorage,
     cfg: LoginOptions,
 ) -> None:
-
     if user := await db.get_user({"email": email}):
         # An account already registered with this email
         #
@@ -150,12 +138,11 @@ async def create_invitation_token(
             "trial_account_days": trial_days,
         }
     )
-    confirmation = await db.create_confirmation(
+    return await db.create_confirmation(
         user_id=user_id,
         action=ConfirmationAction.INVITATION.name,
         data=data_model.json(),
     )
-    return confirmation
 
 
 @contextmanager
@@ -283,25 +270,3 @@ def get_invitation_url(
     # https://some-web-url.io/#/registration/?invitation={code}
     # NOTE: Uniform encoding in front-end fragments https://github.com/ITISFoundation/osparc-simcore/issues/1975
     return origin.with_fragment(f"/registration/?invitation={code}")
-
-
-def get_confirmation_info(
-    cfg: LoginOptions, confirmation: ConfirmationTokenDict
-) -> ConfirmationTokenInfoDict:
-    """
-    Extends ConfirmationTokenDict by adding extra info and
-    deserializing action's data entry
-    """
-    info: ConfirmationTokenInfoDict = ConfirmationTokenInfoDict(**confirmation)
-
-    action = ConfirmationAction(confirmation["action"])
-    if (data_type := ACTION_TO_DATA_TYPE[action]) and (data := confirmation["data"]):
-        info["data"] = parse_raw_as(data_type, data)
-
-    # extra
-    info["expires"] = get_expiration_date(cfg, confirmation)
-
-    if confirmation["action"] == ConfirmationAction.INVITATION.name:
-        info["url"] = f"{get_invitation_url(confirmation)}"
-
-    return info

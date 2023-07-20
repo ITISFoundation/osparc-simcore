@@ -26,10 +26,6 @@ from simcore_service_webserver.login._constants import (
     MSG_PASSWORD_MISMATCH,
     MSG_WEAK_PASSWORD,
 )
-from simcore_service_webserver.login._registration import (
-    InvitationData,
-    get_confirmation_info,
-)
 from simcore_service_webserver.login.settings import (
     LoginOptions,
     LoginSettingsForProduct,
@@ -223,8 +219,6 @@ async def test_registration_invitation_stays_valid_if_once_tried_with_weak_passw
     async with NewInvitation(client) as f:
         confirmation = f.confirmation
         assert confirmation
-
-        print(get_confirmation_info(login_options, confirmation))
 
         url = client.app.router["auth_register"].url_for()
 
@@ -454,8 +448,6 @@ async def test_registration_with_invitation(
         confirmation = f.confirmation
         assert confirmation
 
-        print(get_confirmation_info(login_options, confirmation))
-
         url = client.app.router["auth_register"].url_for()
 
         response = await client.post(
@@ -526,12 +518,6 @@ async def test_registraton_with_invitation_for_trial_account(
         client, guest_email=faker.email(), trial_days=TRIAL_DAYS
     ) as invitation:
         assert invitation.confirmation
-
-        # checks that invitation is correct
-        info = get_confirmation_info(login_options, invitation.confirmation)
-        print(info)
-        assert info["data"]
-        assert isinstance(info["data"], InvitationData)
 
         # (3) use register using the invitation code
         url = client.app.router["auth_register"].url_for()
