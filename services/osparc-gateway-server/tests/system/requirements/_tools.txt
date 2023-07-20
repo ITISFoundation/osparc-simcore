@@ -80,7 +80,7 @@ typing-extensions==4.7.1
     # via
     #   -c requirements/_test.txt
     #   astroid
-virtualenv==20.24.0
+virtualenv==20.24.1
     # via pre-commit
 wheel==0.40.0
     # via pip-tools

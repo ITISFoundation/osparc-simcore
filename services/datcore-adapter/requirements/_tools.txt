@@ -81,7 +81,7 @@ typing-extensions==4.4.0
     # via
     #   -c requirements/_base.txt
     #   astroid
-virtualenv==20.24.0
+virtualenv==20.24.1
     # via pre-commit
 watchdog==3.0.0
     # via -r requirements/_tools.in

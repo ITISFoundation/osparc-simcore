@@ -6,6 +6,7 @@
 #
 aio-pika==9.1.4
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
 aioboto3==11.2.0

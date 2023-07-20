@@ -27,19 +27,19 @@ aws-sam-translator==1.55.0
     #   cfn-lint
 aws-xray-sdk==2.12.0
     # via moto
-boto3==1.28.6
+boto3==1.28.7
     # via
     #   aws-sam-translator
     #   moto
-boto3-stubs==1.28.5
+boto3-stubs==1.28.7
     # via types-boto3
-botocore==1.31.6
+botocore==1.31.7
     # via
     #   aws-xray-sdk
     #   boto3
     #   moto
     #   s3transfer
-botocore-stubs==1.31.6
+botocore-stubs==1.31.7
     # via boto3-stubs
 certifi==2023.5.7
     # via

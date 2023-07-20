@@ -116,8 +116,9 @@ pyyaml==6.0.1
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/requirements.in
-referencing==0.30.0
+referencing==0.29.3
     # via
+    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   jsonschema
     #   jsonschema-specifications
 rich==13.4.2

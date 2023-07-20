@@ -70,7 +70,7 @@ greenlet==2.0.2
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
-hypothesis==6.81.2
+hypothesis==6.82.0
     # via -r requirements/_test.in
 icdiff==2.0.6
     # via pytest-icdiff
