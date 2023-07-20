@@ -17,6 +17,7 @@ from pydantic.types import PositiveInt
 
 from ...models.basic_types import VersionStr
 from ...models.pagination import Page, PaginationParams
+from ...models.schemas.errors import ErrorGet
 from ...models.schemas.files import File
 from ...models.schemas.jobs import (
     ArgumentTypes,
@@ -43,7 +44,7 @@ from ..dependencies.authentication import get_current_user_id
 from ..dependencies.database import Engine, get_db_engine
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
-from ..errors.http_error import ErrorGet, create_error_json_response
+from ..errors.http_error import create_error_json_response
 from ._common import API_SERVER_DEV_FEATURES_ENABLED, job_output_logfile_responses
 
 _logger = logging.getLogger(__name__)

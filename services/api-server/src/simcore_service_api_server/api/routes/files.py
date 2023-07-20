@@ -25,11 +25,11 @@ from starlette.responses import RedirectResponse
 
 from ..._meta import API_VTAG
 from ...models.pagination import Page, PaginationParams
+from ...models.schemas.errors import ErrorGet
 from ...models.schemas.files import File
 from ...services.storage import StorageApi, StorageFileMetaData, to_file_api_model
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
-from ..errors.http_error import ErrorGet
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
 
 _logger = logging.getLogger(__name__)
