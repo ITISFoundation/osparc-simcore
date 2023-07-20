@@ -213,7 +213,7 @@ def mock_sidecars_client(mocker: MockerFixture) -> mock.Mock:
 @pytest.mark.flaky(max_runs=3)
 async def test_legacy_and_dynamic_sidecar_run(
     minimal_app: FastAPI,
-    catalog_ready: Callable[[UserID, str], Awaitable[None]],
+    wait_for_catalog_service: Callable[[UserID, str], Awaitable[None]],
     dy_static_file_server_project: ProjectAtDB,
     user_dict: dict[str, Any],
     services_endpoint: dict[str, URL],
@@ -234,7 +234,7 @@ async def test_legacy_and_dynamic_sidecar_run(
     - dy-static-file-server-dynamic-sidecar  (sidecared w/ std config)
     - dy-static-file-server-dynamic-sidecar-compose (sidecared w/ docker-compose)
     """
-    await catalog_ready(user_dict["id"], osparc_product_name)
+    await wait_for_catalog_service(user_dict["id"], osparc_product_name)
     await asyncio.gather(
         *(
             assert_start_service(

@@ -378,7 +378,7 @@ class PartialComputationParams:
     ],
 )
 async def test_run_partial_computation(
-    catalog_ready: Callable[[UserID, str], Awaitable[None]],
+    wait_for_catalog_service: Callable[[UserID, str], Awaitable[None]],
     minimal_configuration: None,
     async_client: httpx.AsyncClient,
     registered_user: Callable,
@@ -390,7 +390,7 @@ async def test_run_partial_computation(
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ):
     user = registered_user()
-    await catalog_ready(user["id"], osparc_product_name)
+    await wait_for_catalog_service(user["id"], osparc_product_name)
     sleepers_project: ProjectAtDB = await project(
         user, workbench=fake_workbench_without_outputs
     )
@@ -530,7 +530,7 @@ async def test_run_partial_computation(
 
 
 async def test_run_computation(
-    catalog_ready: Callable[[UserID, str], Awaitable[None]],
+    wait_for_catalog_service: Callable[[UserID, str], Awaitable[None]],
     minimal_configuration: None,
     async_client: httpx.AsyncClient,
     registered_user: Callable,
@@ -543,7 +543,7 @@ async def test_run_computation(
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ):
     user = registered_user()
-    await catalog_ready(user["id"], osparc_product_name)
+    await wait_for_catalog_service(user["id"], osparc_product_name)
     sleepers_project = await project(user, workbench=fake_workbench_without_outputs)
     # send a valid project with sleepers
     task_out = await create_pipeline(
