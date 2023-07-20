@@ -6,8 +6,9 @@ import json
 import logging
 import os
 import urllib.parse
+from collections.abc import AsyncIterator, Iterator
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Iterator, NamedTuple
+from typing import Any, NamedTuple
 from uuid import UUID
 
 import pytest
@@ -16,7 +17,6 @@ from fastapi import FastAPI
 from httpx import URL, QueryParams
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
-from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx import MockRouter
@@ -67,7 +67,7 @@ def minimal_config(
     disable_rabbitmq: None,
     mock_env: EnvVarsDict,
     postgres_host_config: dict[str, str],
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """set a minimal configuration for testing the director connection only"""
     monkeypatch.setenv("SC_BOOT_MODE", "default")
@@ -85,9 +85,9 @@ def dynamic_sidecar_headers() -> dict[str, str]:
     }
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def mock_env(
-    disable_postgres: None, disable_rabbitmq: None, monkeypatch: MonkeyPatch
+    disable_postgres: None, disable_rabbitmq: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
@@ -160,10 +160,10 @@ async def mock_retrieve_features(
             service_name = "service_name"
 
             # pylint: disable=protected-access
-            dynamic_sidecar_scheduler._scheduler._inverse_search_mapping[
+            dynamic_sidecar_scheduler._scheduler._inverse_search_mapping[  # noqa: SLF001
                 node_uuid
             ] = service_name
-            dynamic_sidecar_scheduler._scheduler._to_observe[
+            dynamic_sidecar_scheduler._scheduler._to_observe[  # noqa: SLF001
                 service_name
             ] = scheduler_data_from_http_request
 
@@ -184,8 +184,12 @@ async def mock_retrieve_features(
 
             yield respx_mock
 
-            dynamic_sidecar_scheduler._scheduler._inverse_search_mapping.pop(node_uuid)
-            dynamic_sidecar_scheduler._scheduler._to_observe.pop(service_name)
+            dynamic_sidecar_scheduler._scheduler._inverse_search_mapping.pop(
+                node_uuid
+            )  # noqa: SLF001
+            dynamic_sidecar_scheduler._scheduler._to_observe.pop(
+                service_name
+            )  # noqa: SLF001
 
 
 @pytest.fixture
@@ -301,6 +305,7 @@ def test_create_dynamic_services(
         "/v2/dynamic_services",
         headers=dynamic_sidecar_headers,
         json=json.loads(post_data.json()),
+        follow_redirects=False,
     )
     assert (
         response.status_code == exp_status_code
@@ -366,7 +371,7 @@ def test_get_service_status(
 ):
     url = URL(f"/v2/dynamic_services/{service['node_uuid']}")
 
-    response = client.get(str(url), allow_redirects=False)
+    response = client.get(str(url), follow_redirects=False)
     assert (
         response.status_code == exp_status_code
     ), f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
@@ -433,7 +438,7 @@ def test_delete_service(
     if can_save is not None:
         url = url.copy_with(params={"can_save": can_save})
 
-    response = client.delete(str(url), allow_redirects=False)
+    response = client.delete(str(url), follow_redirects=False)
     assert (
         response.status_code == exp_status_code
     ), f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
@@ -491,7 +496,7 @@ def test_delete_service_waiting_for_manual_intervention(
 
     # mark service as failed and waiting for human intervention
     node_uuid = UUID(service["node_uuid"])
-    scheduler_data = dynamic_sidecar_scheduler._scheduler.get_scheduler_data(  # pylint: disable=protected-access
+    scheduler_data = dynamic_sidecar_scheduler._scheduler.get_scheduler_data(  # pylint: disable=protected-access  # noqa: SLF001
         node_uuid
     )
     scheduler_data.dynamic_sidecar.status.update_failing_status("failed")
@@ -499,7 +504,7 @@ def test_delete_service_waiting_for_manual_intervention(
 
     # check response
     url = URL(f"/v2/dynamic_services/{node_uuid}")
-    stop_response = client.delete(str(url), allow_redirects=False)
+    stop_response = client.delete(str(url), follow_redirects=False)
     assert stop_response.json()["errors"][0] == "waiting_for_intervention"
 
 
@@ -546,7 +551,7 @@ def test_retrieve(
     is_legacy: bool,
 ) -> None:
     url = URL(f"/v2/dynamic_services/{service['node_uuid']}:retrieve")
-    response = client.post(str(url), json=dict(port_keys=[]), allow_redirects=False)
+    response = client.post(str(url), json={"port_keys": []}, follow_redirects=False)
     assert (
         response.status_code == exp_status_code
     ), f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
