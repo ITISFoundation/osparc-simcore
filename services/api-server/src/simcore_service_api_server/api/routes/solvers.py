@@ -10,7 +10,7 @@ from pydantic.errors import PydanticValueError
 from servicelib.error_codes import create_error_code
 
 from ...models.basic_types import VersionStr
-from ...models.pagination import LimitOffsetPage, LimitOffsetParams, OnePage
+from ...models.pagination import OnePage, Page, PaginationParams
 from ...models.schemas.solvers import Solver, SolverKeyId, SolverPort
 from ...services.catalog import CatalogApi
 from ..dependencies.application import get_product_name, get_reverse_url_mapper
@@ -57,11 +57,11 @@ async def list_solvers(
 
 @router.get(
     "/page",
-    response_model=LimitOffsetPage[Solver],
+    response_model=Page[Solver],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_solvers_page(
-    page_params: Annotated[LimitOffsetParams, Depends()],
+    page_params: Annotated[PaginationParams, Depends()],
 ):
     msg = f"list solvers with pagination={page_params!r}"
     raise NotImplementedError(msg)
@@ -94,11 +94,11 @@ async def list_solvers_releases(
 
 @router.get(
     "/releases/page",
-    response_model=LimitOffsetPage[Solver],
+    response_model=Page[Solver],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_solvers_releases_page(
-    page_params: Annotated[LimitOffsetParams, Depends()],
+    page_params: Annotated[PaginationParams, Depends()],
 ):
     msg = f"list solvers releases with pagination={page_params!r}"
     raise NotImplementedError(msg)
@@ -162,12 +162,12 @@ async def list_solver_releases(
 
 @router.get(
     "/{solver_key:path}/releases/page",
-    response_model=LimitOffsetPage[Solver],
+    response_model=Page[Solver],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_solver_releases_page(
     solver_key: SolverKeyId,
-    page_params: Annotated[LimitOffsetParams, Depends()],
+    page_params: Annotated[PaginationParams, Depends()],
 ):
     msg = f"list solver {solver_key=} (one) releases with pagination={page_params!r}"
     raise NotImplementedError(msg)

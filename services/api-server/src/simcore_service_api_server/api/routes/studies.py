@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, status
 from fastapi_pagination.api import create_page
 from models_library.api_schemas_webserver.projects import ProjectGet
 
-from ...models.pagination import LimitOffsetPage, LimitOffsetParams, OnePage
+from ...models.pagination import OnePage, Page, PaginationParams
 from ...models.schemas.studies import Study, StudyID, StudyPort
 from ...services.webserver import AuthSession, ProjectNotFoundError
 from ..dependencies.webserver import get_webserver_session
@@ -35,13 +35,17 @@ def _create_study_from_project(project: ProjectGet) -> Study:
 
 @router.get(
     "",
-    response_model=LimitOffsetPage[Study],
+    response_model=Page[Study],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def list_studies(
-    page_params: Annotated[LimitOffsetParams, Depends()],
+    page_params: Annotated[PaginationParams, Depends()],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
+    """
+
+    New in *version 0.5.0* (only with API_SERVER_DEV_FEATURES_ENABLED=1)
+    """
     projects_page = await webserver_api.list_user_projects(
         limit=page_params.limit, offset=page_params.offset
     )
@@ -67,8 +71,11 @@ async def get_study(
     study_id: StudyID,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
+    """
+
+    New in *version 0.5.0* (only with API_SERVER_DEV_FEATURES_ENABLED=1)
+    """
     try:
-        # FIXME: cannot be a project associated to a job! or a template!!!
         project: ProjectGet = await webserver_api.get_project(project_id=study_id)
         return _create_study_from_project(project)
 

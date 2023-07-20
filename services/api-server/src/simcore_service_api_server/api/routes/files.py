@@ -24,7 +24,7 @@ from simcore_sdk.node_ports_common.filemanager import upload_path as storage_upl
 from starlette.responses import RedirectResponse
 
 from ..._meta import API_VTAG
-from ...models.pagination import LimitOffsetPage, LimitOffsetParams
+from ...models.pagination import Page, PaginationParams
 from ...models.schemas.files import File
 from ...services.storage import StorageApi, StorageFileMetaData, to_file_api_model
 from ..dependencies.authentication import get_current_user_id
@@ -86,13 +86,13 @@ async def list_files(
 
 @router.get(
     "/page",
-    response_model=LimitOffsetPage[File],
+    response_model=Page[File],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_files_page(
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
     user_id: Annotated[int, Depends(get_current_user_id)],
-    page_params: Annotated[LimitOffsetParams, Depends()],
+    page_params: Annotated[PaginationParams, Depends()],
 ):
     assert storage_client  # nosec
     assert user_id  # nosec

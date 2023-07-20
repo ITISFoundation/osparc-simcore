@@ -7,10 +7,12 @@ Usage:
 """
 
 from collections.abc import Sequence
-from typing import Any, ClassVar, Generic, TypeVar
+from typing import Any, ClassVar, Generic, TypeAlias, TypeVar
 
 from fastapi_pagination.limit_offset import LimitOffsetParams
-from fastapi_pagination.links.limit_offset import LimitOffsetPage
+from fastapi_pagination.links.limit_offset import (
+    LimitOffsetPage as _FastApiLimitOffsetPage,
+)
 from models_library.rest_pagination import (
     DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
@@ -18,8 +20,18 @@ from models_library.rest_pagination import (
 from pydantic import Field, NonNegativeInt, validator
 from pydantic.generics import GenericModel
 
-_NOT_REQUIRED = Field(None)
+from ._utils_pydantic import NOT_REQUIRED
+
 T = TypeVar("T")
+
+# NOTE: same pagination limits and defaults as web-server
+Page = _FastApiLimitOffsetPage.with_custom_options(
+    limit=Field(
+        DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, ge=1, le=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+    )
+)
+
+PaginationParams: TypeAlias = LimitOffsetParams
 
 
 class OnePage(GenericModel, Generic[T]):
@@ -32,7 +44,7 @@ class OnePage(GenericModel, Generic[T]):
     """
 
     items: Sequence[T]
-    total: NonNegativeInt = _NOT_REQUIRED
+    total: NonNegativeInt = NOT_REQUIRED
 
     @validator("total", pre=True)
     @classmethod
@@ -62,18 +74,9 @@ class OnePage(GenericModel, Generic[T]):
         }
 
 
-# NOTE: same pagination limits and defaults as web-server
-LimitOffsetPage = LimitOffsetPage.with_custom_options(
-    limit=Field(
-        DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, ge=1, le=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
-    )
-)
-
-assert LimitOffsetParams  # nosec
-
 __all__: tuple[str, ...] = (
-    "LimitOffsetPage",
-    "LimitOffsetParams",
+    "PaginationParams",
     "MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE",
     "OnePage",
+    "Page",
 )

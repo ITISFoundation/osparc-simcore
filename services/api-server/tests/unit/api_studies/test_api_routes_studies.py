@@ -61,7 +61,7 @@ def mocked_backend(
 @pytest.mark.acceptance_test(
     "Implements https://github.com/ITISFoundation/osparc-simcore/issues/4177"
 )
-async def test_studies_workflow(
+async def test_studies_read_workflow(
     client: httpx.AsyncClient,
     auth: httpx.BasicAuth,
     mocked_backend: MockRouter,

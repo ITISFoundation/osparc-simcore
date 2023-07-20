@@ -16,7 +16,7 @@ from models_library.projects_nodes_io import BaseFileLink
 from pydantic.types import PositiveInt
 
 from ...models.basic_types import VersionStr
-from ...models.pagination import LimitOffsetPage, LimitOffsetParams
+from ...models.pagination import Page, PaginationParams
 from ...models.schemas.files import File
 from ...models.schemas.jobs import (
     ArgumentTypes,
@@ -113,14 +113,14 @@ async def list_jobs(
 
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/page",
-    response_model=LimitOffsetPage[Job],
+    response_model=Page[Job],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_jobs_page(
     solver_key: SolverKeyId,
     version: VersionStr,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
-    page_params: Annotated[LimitOffsetParams, Depends()],
+    page_params: Annotated[PaginationParams, Depends()],
     catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
