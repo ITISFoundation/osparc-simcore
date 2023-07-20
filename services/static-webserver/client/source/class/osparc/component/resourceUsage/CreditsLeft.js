@@ -37,8 +37,7 @@ qx.Class.define("osparc.component.resourceUsage.CreditsLeft", {
         width: 50,
         height: 20,
         allowGrowY: false,
-        alignY:"middle",
-        cursor: "pointer"
+        alignY:"middle"
       });
       const logBase = (n, base) => Math.log(n) / Math.log(base);
       store.bind("credits", progressBar, "value", {
@@ -75,6 +74,9 @@ qx.Class.define("osparc.component.resourceUsage.CreditsLeft", {
       store.setCredits(credits.left);
 
       const progressBar = this.self().createCreditsLeftInidcator();
+      progressBar.set({
+        cursor: "pointer"
+      });
       progressBar.addListener("tap", () => {
         const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow();
         creditsWindow.openBuyCredits();
