@@ -58,6 +58,15 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     "transactionSuccessful": "qx.event.type.Data"
   },
 
+  statics: {
+    CREDIT_PRICES: [
+      [1, 3],
+      [10, 2.5],
+      [100, 2],
+      [1000, 1.5]
+    ]
+  },
+
   members: {
     __creditPrice: null,
 
@@ -113,15 +122,16 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     },
 
     __applyNCredits: function(nCredits) {
-      let creditPrice = 5;
-      if (nCredits >= 10) {
-        creditPrice = 4;
+      let creditPrice = this.self().CREDIT_PRICES[0][1];
+
+      if (nCredits >= this.self().CREDIT_PRICES[1][0]) {
+        creditPrice = this.self().CREDIT_PRICES[1][1];
       }
-      if (nCredits >= 100) {
-        creditPrice = 3;
+      if (nCredits >= this.self().CREDIT_PRICES[2][0]) {
+        creditPrice = this.self().CREDIT_PRICES[2][1];
       }
-      if (nCredits >= 1000) {
-        creditPrice = 2;
+      if (nCredits >= this.self().CREDIT_PRICES[3][0]) {
+        creditPrice = this.self().CREDIT_PRICES[3][1];
       }
       this.setCreditPrice(creditPrice);
       this.setTotalPrice(creditPrice * nCredits);
@@ -174,12 +184,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       });
       row++;
 
-      [
-        [1, 5],
-        [10, 4],
-        [100, 3],
-        [1000, 2]
-      ].forEach(pair => {
+      this.self().CREDIT_PRICES.forEach(pair => {
         const creditsLabel = new qx.ui.basic.Label().set({
           value: "> " + pair[0],
           font: "text-14"
@@ -298,7 +303,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       });
       this.addListener("changeTotalPrice", e => {
         const totalPrice = e.getData();
-        const oneCreditPrice = 5;
+        const oneCreditPrice = this.self().CREDIT_PRICES[0][1];
         const saving = this.getNCredits()*oneCreditPrice - totalPrice;
         if (saving > 0) {
           savingLabel.set({
@@ -315,7 +320,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       row++;
 
       const vatTitle = new qx.ui.basic.Label().set({
-        value: "VAT 7%",
+        value: "VAT 7.7%",
         font: "text-13"
       });
       layout.add(vatTitle, {
@@ -326,7 +331,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         font: "text-13"
       });
       this.bind("totalPrice", vatLabel, "value", {
-        converter: totalPrice => (totalPrice*0.07).toFixed(2) + " $"
+        converter: totalPrice => (totalPrice*0.077).toFixed(2) + " $"
       });
       layout.add(vatLabel, {
         row,
