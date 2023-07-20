@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.resourceUsage.Summary", {
+qx.Class.define("osparc.component.resourceUsage.CreditsLeft", {
   extend: qx.ui.core.Widget,
 
   construct: function() {

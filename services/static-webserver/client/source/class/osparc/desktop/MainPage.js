@@ -206,22 +206,9 @@ qx.Class.define("osparc.desktop.MainPage", {
       fitResourceCards();
       window.addEventListener("resize", () => fitResourceCards());
       const dashboardLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      if (osparc.utils.Utils.isDevelEnv()) {
-        const usageOverview = new osparc.component.resourceUsage.Summary();
-        usageOverview.set({
-          maxWidth: 280,
-          minWidth: 280,
-          marginTop: 5,
-          padding: 10
-        });
-        dashboardLayout.add(usageOverview, {
-          flex: 1
-        });
-      } else {
-        dashboardLayout.add(new qx.ui.core.Widget(), {
-          flex: 1
-        });
-      }
+      dashboardLayout.add(new qx.ui.core.Widget(), {
+        flex: 1
+      });
       dashboardLayout.add(dashboard);
       dashboardLayout.add(new qx.ui.core.Widget(), {
         flex: 1
