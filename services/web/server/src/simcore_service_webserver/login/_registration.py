@@ -8,7 +8,6 @@ import logging
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Literal
 
 from aiohttp import web
 from models_library.basic_types import IdInt
@@ -54,7 +53,7 @@ class InvitationData(BaseModel):
 
 
 class _InvitationValidator(BaseModel):
-    action: Literal[ConfirmationAction.INVITATION]
+    action: ConfirmationAction
     data: Json[InvitationData]  # pylint: disable=unsubscriptable-object
 
     @validator("action", pre=True)
