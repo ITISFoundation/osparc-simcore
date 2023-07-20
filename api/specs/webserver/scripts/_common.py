@@ -55,9 +55,7 @@ class Error(BaseModel):
     status: int | None = Field(None, description="HTTP error code")
 
 
-def create_and_save_openapi_specs(
-    app: FastAPI, file_path: Path, *, drop_fastapi_default_422: bool = True
-):
+def create_openapi_specs(app: FastAPI, *, drop_fastapi_default_422: bool = True):
     override_fastapi_openapi_method(app)
     openapi = app.openapi()
 
@@ -79,10 +77,17 @@ def create_and_save_openapi_specs(
                     "description"
                 ) == "Validation Error":
                     param.get("responses", {}).pop("422", None)
+    return openapi
 
+
+def create_and_save_openapi_specs(
+    app: FastAPI, file_path: Path, *, drop_fastapi_default_422: bool = True
+):
+    openapi = create_openapi_specs(
+        app=app, drop_fastapi_default_422=drop_fastapi_default_422
+    )
     with file_path.open("wt") as fh:
         yaml.safe_dump(openapi, fh, indent=1, sort_keys=False)
-
     print("Saved OAS to", file_path)
 
 

@@ -38,11 +38,7 @@ from simcore_service_webserver.login.handlers_registration import (
     RegisterPhoneNextPage,
 )
 
-router = APIRouter(
-    tags=[
-        "authentication",
-    ]
-)
+router = APIRouter(tags=["auth"])
 
 
 @router.post(

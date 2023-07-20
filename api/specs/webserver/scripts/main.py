@@ -7,27 +7,27 @@
 # pylint: disable=too-many-arguments
 
 
-from fastapi import FastAPI
+import json
+from pathlib import Path
 
-from . import (
-    openapi_admin,
-    openapi_announcements,
-    openapi_auth,
-    openapi_nih_sparc,
-    openapi_projects_comments,
-    openapi_projects_crud,
-    openapi_projects_metadata,
-    openapi_projects_nodes,
-    openapi_projects_ports,
-    openapi_resource_usage,
-    openapi_storage,
-    openapi_tags,
-    openapi_users,
-)
+import openapi_admin
+import openapi_announcements
+import openapi_auth
+import openapi_nih_sparc
+import openapi_projects_comments
+import openapi_projects_crud
+import openapi_projects_metadata
+import openapi_projects_nodes
+import openapi_projects_ports
+import openapi_resource_usage
+import openapi_storage
+import openapi_tags
+import openapi_users
+from fastapi import FastAPI
 
 app = FastAPI(
     title="osparc-simcore web API",
-    version="0.18.0",
+    version="0.25.0",
     description="API designed for the front-end app",
     contact={"name": "IT'IS Foundation", "email": "support@simcore.io"},
     license={
@@ -63,6 +63,7 @@ for m in (
     app.include_router(m.router)
 
 if __name__ == "__main__":
-    from _common import create_and_save_openapi_specs
+    from _common import create_openapi_specs
 
-    create_and_save_openapi_specs(app, "openapi.yaml")
+    oas_path = Path("openapi.json")
+    oas_path.write_text(json.dumps(create_openapi_specs(app), indent=1))
