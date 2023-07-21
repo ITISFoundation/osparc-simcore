@@ -117,45 +117,52 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       this.resetSelection();
     },
 
-    _createStudyFromService: function(key, version) {
+    _createStudyFromService: async function(key, version) {
       if (!this._checkLoggedIn()) {
         return;
       }
 
+      const isDevel = osparc.utils.Utils.isDevelopmentPlatform();
+      const isDevelAndS4L = isDevel && osparc.product.Utils.isProduct("s4l");
       this._showLoadingPage(this.tr("Creating Study"));
       osparc.utils.Study.createStudyFromService(key, version)
         .then(studyId => {
-          const resourceSelector = new osparc.component.study.ResourceSelector(studyId);
-          const title = osparc.product.Utils.getStudyAlias({
-            firstUpperCase: true
-          }) + this.tr(" Options");
-          const width = 500;
-          const height = 400;
-          const win = osparc.ui.window.Window.popUpInWindow(resourceSelector, title, width, height);
-          resourceSelector.addListener("startStudy", () => {
-            win.close();
+          if (isDevelAndS4L) {
+            const resourceSelector = new osparc.component.study.ResourceSelector(studyId);
+            const title = osparc.product.Utils.getStudyAlias({
+              firstUpperCase: true
+            }) + this.tr(" Options");
+            const width = 500;
+            const height = 400;
+            const win = osparc.ui.window.Window.popUpInWindow(resourceSelector, title, width, height);
+            resourceSelector.addListener("startStudy", () => {
+              win.close();
+              this._hideLoadingPage();
+              this._startStudyById(studyId);
+            });
+            const deleteStudy = () => {
+              const params = {
+                url: {
+                  "studyId": studyId
+                }
+              };
+              osparc.data.Resources.fetch("studies", "delete", params, studyId);
+            };
+            resourceSelector.addListener("cancel", () => {
+              win.close();
+              this._hideLoadingPage();
+              deleteStudy();
+            });
+            win.getChildControl("close-button").addListener("close", () => {
+              this._hideLoadingPage();
+              deleteStudy();
+            });
+            win.center();
+            win.open();
+          } else {
             this._hideLoadingPage();
             this._startStudyById(studyId);
-          });
-          const deleteStudy = () => {
-            const params = {
-              url: {
-                "studyId": studyId
-              }
-            };
-            osparc.data.Resources.fetch("studies", "delete", params, studyId);
-          };
-          resourceSelector.addListener("cancel", () => {
-            win.close();
-            this._hideLoadingPage();
-            deleteStudy();
-          });
-          win.getChildControl("close-button").addListener("close", () => {
-            this._hideLoadingPage();
-            deleteStudy();
-          });
-          win.center();
-          win.open();
+          }
         })
         .catch(err => {
           this._hideLoadingPage();
