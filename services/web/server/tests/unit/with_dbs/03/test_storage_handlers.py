@@ -1,5 +1,8 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
+
 
 import json
 from typing import Any
@@ -13,9 +16,22 @@ from models_library.api_schemas_storage import (
 )
 from pydantic import AnyUrl, ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from servicelib.aiohttp.rest_responses import wrap_as_envelope
 from simcore_postgres_database.models.users import UserRole
+
+
+@pytest.fixture
+def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            "WEBSERVER_DB_LISTENER": "0",
+            "WEBSERVER_GARBAGE_COLLECTOR": "null",
+        },
+    )
 
 
 @pytest.fixture
@@ -24,7 +40,7 @@ def mock_request_storage(mocker: MockerFixture, expected_response: Any) -> None:
         return (wrap_as_envelope(data=expected_response), 200)
 
     mocker.patch(
-        "simcore_service_webserver.storage._handlers._request_storage",
+        "simcore_service_webserver.storage._handlers._forward_request_to_storage",
         autospec=True,
         side_effect=_resp,
     )

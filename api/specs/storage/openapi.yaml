@@ -10,9 +10,7 @@ info:
     url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
   version: 0.3.0
 servers:
-- url: /v0
-  description: 'Default server: requests directed to serving url'
-- url: http://{host}:{port}/v0
+- url: http://{host}:{port}
   description: 'Development server: can configure any base url'
   variables:
     host:
@@ -683,7 +681,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_FileMetaDataGet_'
-  /:
+  /v0/futures:
     get:
       tags:
       - tasks
@@ -697,7 +695,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_TaskGet_'
-  /{task_id}:
+  /v0/futures/{task_id}:
     get:
       tags:
       - tasks
@@ -734,7 +732,7 @@ paths:
       responses:
         '204':
           description: Successful Response
-  /{task_id}/result:
+  /v0/futures/{task_id}/result:
     get:
       tags:
       - tasks

@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 from openapi_spec_validator import validate_spec
-from openapi_spec_validator.exceptions import OpenAPIValidationError
+from openapi_spec_validator.exceptions import OpenAPISpecValidatorError
 from utils import is_openapi_schema, list_files_in_api_specs, load_specs
 
 # NOTE: parametrizing tests per file makes more visible which file failed
@@ -12,11 +12,12 @@ from utils import is_openapi_schema, list_files_in_api_specs, load_specs
 @pytest.mark.parametrize(
     "spec_file_path",
     list_files_in_api_specs("*.json") + list_files_in_api_specs("*.y*ml"),
+    ids=lambda o: o.name,
 )
 def test_valid_openapi_specs(spec_file_path: Path):
     specs = load_specs(spec_file_path)
     if is_openapi_schema(specs):
         try:
             validate_spec(specs, spec_url=spec_file_path.as_uri())
-        except OpenAPIValidationError as err:
+        except OpenAPISpecValidatorError as err:
             pytest.fail(f"Failed validating {spec_file_path}:\n{err.message}")

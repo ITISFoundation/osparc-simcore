@@ -42,9 +42,6 @@ MAX_CONCURRENT_S3_TASKS: Final[int] = 4
 
 
 # REST API ----------------------------
-APP_OPENAPI_SPECS_KEY = (
-    application_keys.APP_OPENAPI_SPECS_KEY
-)  # app-storage-key for openapi specs object
 MAX_CONCURRENT_REST_CALLS: Final[int] = 10
 
 # DATABASE ----------------------------

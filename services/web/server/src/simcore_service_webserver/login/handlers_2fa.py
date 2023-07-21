@@ -61,11 +61,11 @@ class Resend2faBody(InputSchema):
     via: Literal["SMS", "Email"] = "SMS"
 
 
+@routes.post("/v0/auth/two_factor:resend", name="auth_resend_2fa_code")
 @session_access_required(
     name="auth_resend_2fa_code",
     one_time_access=False,
 )
-@routes.post("/v0/auth/two_factor:resend", name="auth_resend_2fa_code")
 async def resend_2fa_code(request: web.Request):
     """Resends 2FA code via SMS/Email"""
     product: Product = get_current_product(request)

@@ -15,7 +15,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
-from servicelib.aiohttp.web_exceptions_extension import HTTPLocked
+from servicelib.aiohttp.web_exceptions_extension import HTTPLockedError
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
@@ -33,7 +33,7 @@ from ..products.plugin import Product, get_current_product
 from ..security.decorators import permission_required
 from ..users import api
 from . import projects_api
-from ._handlers_crud import ProjectPathParams, RequestContext
+from ._common_models import ProjectPathParams, RequestContext
 from .exceptions import (
     ProjectInvalidRightsError,
     ProjectNotFoundError,
@@ -93,7 +93,7 @@ async def open_project(request: web.Request) -> web.Response:
             app=request.app,
             max_number_of_studies_per_user=product.max_open_studies_per_user,
         ):
-            raise HTTPLocked(reason="Project is locked, try later")
+            raise HTTPLockedError(reason="Project is locked, try later")
 
         # the project can be opened, let's update its product links
         await projects_api.update_project_linked_product(

@@ -32,6 +32,7 @@ REPEAT_COUNT: Final[PositiveInt] = STEPS + 1
 
 @pytest.fixture
 def mock_env(
+    disable_postgres: None,
     mock_env: EnvVarsDict,
     monkeypatch: MonkeyPatch,
 ) -> None:

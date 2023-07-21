@@ -35,8 +35,8 @@ routes = web.RouteTableDef()
 
 
 class _RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[pydantic-alias]
+    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[pydantic-alias]
 
 
 def _handle_users_exceptions(handler: Handler):
@@ -96,11 +96,11 @@ async def list_tokens(request: web.Request) -> web.Response:
     return envelope_json_response(all_tokens)
 
 
-@routes.post(f"/{API_VTAG}/me/tokens", name="create_tokens")
+@routes.post(f"/{API_VTAG}/me/tokens", name="create_token")
 @login_required
 @_handle_tokens_errors
 @permission_required("user.tokens.*")
-async def create_tokens(request: web.Request) -> web.Response:
+async def create_token(request: web.Request) -> web.Response:
     req_ctx = _RequestContext.parse_obj(request)
     token_create = await parse_request_body_as(TokenCreate, request)
     await _tokens.create_token(request.app, req_ctx.user_id, token_create)

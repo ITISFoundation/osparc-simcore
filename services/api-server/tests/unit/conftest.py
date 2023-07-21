@@ -255,7 +255,7 @@ def mocked_webserver_service_api_base(
 
         # healthcheck_readiness_probe, healthcheck_liveness_probe
         response_body = {
-            "data": openapi["paths"]["/"]["get"]["responses"]["200"]["content"][
+            "data": openapi["paths"]["/v0/"]["get"]["responses"]["200"]["content"][
                 "application/json"
             ]["schema"]["properties"]["data"]["example"]
         }

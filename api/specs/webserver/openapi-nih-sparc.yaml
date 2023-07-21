@@ -125,7 +125,7 @@ paths:
       responses:
         '302':
           description: Opens osparc and starts viewer for selected data
-  /study/{study_id}:
+  /study/{id}:
     get:
       tags:
       - nih-sparc
@@ -138,7 +138,7 @@ paths:
           title: Study Id
           type: string
           format: uuid
-        name: study_id
+        name: id
         in: path
       responses:
         '302':

@@ -6,7 +6,6 @@
 from pathlib import Path
 
 import pytest
-from pytest import MonkeyPatch
 
 from .helpers.typing_env import EnvVarsDict
 from .helpers.utils_envs import load_dotenv, setenvs_from_dict
@@ -16,13 +15,11 @@ from .helpers.utils_envs import load_dotenv, setenvs_from_dict
 def env_devel_dict(env_devel_file: Path) -> EnvVarsDict:
     assert env_devel_file.exists()
     assert env_devel_file.name == ".env-devel"
-    envs = load_dotenv(env_devel_file, verbose=True, interpolate=True)
-    return envs
+    return load_dotenv(env_devel_file, verbose=True, interpolate=True)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def mock_env_devel_environment(
-    env_devel_dict: EnvVarsDict, monkeypatch: MonkeyPatch
+    env_devel_dict: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ) -> EnvVarsDict:
-    envs = setenvs_from_dict(monkeypatch, env_devel_dict)
-    return envs
+    return setenvs_from_dict(monkeypatch, env_devel_dict)

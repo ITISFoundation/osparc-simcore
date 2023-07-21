@@ -4,7 +4,8 @@
 import asyncio
 import logging
 import urllib.parse
-from typing import Any, AsyncGenerator
+from collections.abc import AsyncGenerator
+from typing import Any
 
 from aiohttp import ClientError, ClientSession, ClientTimeout, web
 from models_library.api_schemas_storage import (
@@ -92,9 +93,7 @@ async def get_project_total_size_simcore_s3(
                 assert list_of_files_enveloped.data is not None  # nosec
             for file_metadata in list_of_files_enveloped.data:
                 project_size_bytes += file_metadata.file_size
-        project_size = parse_obj_as(ByteSize, project_size_bytes)
-
-        return project_size
+        return parse_obj_as(ByteSize, project_size_bytes)
 
 
 async def copy_data_folders_from_project(
@@ -172,14 +171,12 @@ async def is_healthy(app: web.Application) -> bool:
 async def get_app_status(app: web.Application) -> dict[str, Any]:
     client, api_endpoint = _get_storage_client(app)
 
-    data = {}
     async with client.get(
         url=api_endpoint / "status",
     ) as resp:
-        payload = await resp.json()
-        data = payload["data"]
-
-    return data
+        data: dict[str, Any] = (await resp.json())["data"]
+        assert isinstance(data, dict)  # nosec
+        return data
 
 
 async def get_download_link(
@@ -205,4 +202,5 @@ async def get_download_link(
         download: PresignedLink = (
             Envelope[PresignedLink].parse_obj(await response.json()).data
         )
-        return parse_obj_as(HttpUrl, download.link)
+        link: HttpUrl = parse_obj_as(HttpUrl, download.link)
+        return link

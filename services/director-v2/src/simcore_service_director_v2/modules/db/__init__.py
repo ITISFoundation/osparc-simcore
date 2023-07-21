@@ -4,10 +4,7 @@ from settings_library.postgres import PostgresSettings
 from .events import close_db_connection, connect_to_db
 
 
-def setup(app: FastAPI, settings: PostgresSettings):
-    if not settings:
-        settings = PostgresSettings()
-
+def setup(app: FastAPI, settings: PostgresSettings) -> None:
     async def on_startup() -> None:
         await connect_to_db(app, settings)
 

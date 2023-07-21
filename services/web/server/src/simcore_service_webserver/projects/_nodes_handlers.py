@@ -38,7 +38,7 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserRole
 
 from .._constants import APP_SETTINGS_KEY, MSG_UNDER_DEVELOPMENT
-from .._meta import api_version_prefix as VTAG
+from .._meta import API_VTAG as VTAG
 from ..catalog import client as catalog_client
 from ..director_v2 import api
 from ..director_v2.exceptions import DirectorServiceError
@@ -47,7 +47,7 @@ from ..security.decorators import permission_required
 from ..users.api import get_user_role
 from ..utils_aiohttp import envelope_json_response
 from . import projects_api
-from ._handlers_crud import ProjectPathParams, RequestContext
+from ._common_models import ProjectPathParams, RequestContext
 from ._nodes_api import NodeScreenshot, fake_screenshots_factory
 from .db import ProjectDBAPI
 from .exceptions import (
@@ -86,7 +86,7 @@ class _CreateNodeBody(BaseModel):
     service_id: str | None = None
 
 
-@routes.post(f"/{VTAG}/projects/{{project_id}}/nodes")
+@routes.post(f"/{VTAG}/projects/{{project_id}}/nodes", name="create_node")
 @login_required
 @permission_required("project.node.create")
 @_handle_project_nodes_exceptions
@@ -130,7 +130,7 @@ class _NodePathParams(ProjectPathParams):
     node_id: NodeID
 
 
-@routes.get(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}")
+@routes.get(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}", name="get_node")
 @login_required
 @permission_required("project.node.read")
 @_handle_project_nodes_exceptions
@@ -182,6 +182,7 @@ async def get_node(request: web.Request) -> web.Response:
         raise
 
 
+@routes.delete(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}", name="delete_node")
 @login_required
 @permission_required("project.node.delete")
 @_handle_project_nodes_exceptions
@@ -205,7 +206,9 @@ async def delete_node(request: web.Request) -> web.Response:
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
-@routes.post(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:retrieve")
+@routes.post(
+    f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:retrieve", name="retrieve_node"
+)
 @login_required
 @permission_required("project.node.read")
 @_handle_project_nodes_exceptions
@@ -225,7 +228,9 @@ async def retrieve_node(request: web.Request) -> web.Response:
     )
 
 
-@routes.post(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:start")
+@routes.post(
+    f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:start", name="start_node"
+)
 @login_required
 @permission_required("project.update")
 @_handle_project_nodes_exceptions
@@ -265,7 +270,9 @@ async def _stop_dynamic_service_with_progress(
         raise
 
 
-@routes.post(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:stop")
+@routes.post(
+    f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:stop", name="stop_node"
+)
 @login_required
 @permission_required("project.update")
 @_handle_project_nodes_exceptions
@@ -299,7 +306,9 @@ async def stop_node(request: web.Request) -> web.Response:
     )
 
 
-@routes.post(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:restart")
+@routes.post(
+    f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:restart", name="restart_node"
+)
 @login_required
 @permission_required("project.node.read")
 @_handle_project_nodes_exceptions
@@ -318,7 +327,10 @@ async def restart_node(request: web.Request) -> web.Response:
 #
 
 
-@routes.get(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}/resources")
+@routes.get(
+    f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}/resources",
+    name="get_node_resources",
+)
 @login_required
 @permission_required("project.node.read")
 @_handle_project_nodes_exceptions
@@ -346,7 +358,10 @@ async def get_node_resources(request: web.Request) -> web.Response:
     return envelope_json_response(resources)
 
 
-@routes.put(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}/resources")
+@routes.put(
+    f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}/resources",
+    name="replace_node_resources",
+)
 @login_required
 @permission_required("project.node.update")
 @_handle_project_nodes_exceptions
