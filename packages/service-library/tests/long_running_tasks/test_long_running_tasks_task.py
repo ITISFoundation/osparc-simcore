@@ -8,7 +8,7 @@ import asyncio
 import urllib.parse
 from collections.abc import AsyncIterator
 from datetime import datetime
-from typing import Final
+from typing import Any, Final
 
 import pytest
 from faker import Faker
@@ -30,16 +30,11 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-_RETRY_PARAMS = {
+_RETRY_PARAMS: dict[str, Any] = {
     "reraise": True,
     "wait": wait_fixed(0.1),
     "stop": stop_after_delay(60),
-    "retry": retry_if_exception_type(
-        (
-            BaseException,  # retry when pytest reports `Failed: DID NOT RAISE``
-            AssertionError,
-        )
-    ),
+    "retry": retry_if_exception_type(AssertionError),
 }
 
 
@@ -83,45 +78,37 @@ async def tasks_manager() -> AsyncIterator[TasksManager]:
     await tasks_manager.close()
 
 
-async def test_unchecked_task_is_auto_removed(tasks_manager: TasksManager):
+@pytest.mark.parametrize("check_task_presence_before", [True, False])
+async def test_task_is_auto_removed(
+    tasks_manager: TasksManager, check_task_presence_before: bool
+):
     task_id = start_task(
         tasks_manager,
         a_background_task,
         raise_when_finished=False,
         total_sleep=10 * TEST_CHECK_STALE_INTERVAL_S,
     )
-    await asyncio.sleep(2 * TEST_CHECK_STALE_INTERVAL_S + 1)
+
+    if check_task_presence_before:
+        # immediately after starting the task is still there
+        task_status = tasks_manager.get_task_status(task_id, with_task_context=None)
+        assert task_status
+
+    # wait for task to be automatically removed
+    # meaning no calls via the manager methods are received
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
-            with pytest.raises(TaskNotFoundError):
-                tasks_manager.get_task_status(task_id, with_task_context=None)
-            with pytest.raises(TaskNotFoundError):
-                tasks_manager.get_task_result(task_id, with_task_context=None)
-            with pytest.raises(TaskNotFoundError):
-                tasks_manager.get_task_result_old(task_id)
+            for tasks in tasks_manager._tasks_groups.values():  # noqa: SLF001
+                if task_id in tasks:
+                    msg = "wait till no element is found any longer"
+                    raise AssertionError(msg)
 
-
-async def test_checked_once_task_is_auto_removed(tasks_manager: TasksManager):
-    task_id = start_task(
-        tasks_manager,
-        a_background_task,
-        raise_when_finished=False,
-        total_sleep=10 * TEST_CHECK_STALE_INTERVAL_S,
-    )
-    # check once (different branch in code)
-    tasks_manager.get_task_status(task_id, with_task_context=None)
-    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
-        with attempt:
-            # to detect a stale task, you must not call get status,
-            # we need to sleep before retrying in order to detect it
-            await asyncio.sleep(2 * TEST_CHECK_STALE_INTERVAL_S + 1)
-
-            with pytest.raises(TaskNotFoundError):
-                tasks_manager.get_task_status(task_id, with_task_context=None)
-            with pytest.raises(TaskNotFoundError):
-                tasks_manager.get_task_result(task_id, with_task_context=None)
-            with pytest.raises(TaskNotFoundError):
-                tasks_manager.get_task_result_old(task_id)
+    with pytest.raises(TaskNotFoundError):
+        tasks_manager.get_task_status(task_id, with_task_context=None)
+    with pytest.raises(TaskNotFoundError):
+        tasks_manager.get_task_result(task_id, with_task_context=None)
+    with pytest.raises(TaskNotFoundError):
+        tasks_manager.get_task_result_old(task_id)
 
 
 async def test_checked_task_is_not_auto_removed(tasks_manager: TasksManager):
@@ -193,7 +180,9 @@ async def test_start_multiple_not_unique_tasks(tasks_manager: TasksManager):
 
 
 def test_get_task_id():
-    assert TasksManager._create_task_id("") != TasksManager._create_task_id("")
+    obj1 = TasksManager._create_task_id("")  # noqa: SLF001
+    obj2 = TasksManager._create_task_id("")  # noqa: SLF001
+    assert obj1 != obj2
 
 
 async def test_get_status(tasks_manager: TasksManager):
