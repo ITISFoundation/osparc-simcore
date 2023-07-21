@@ -6,8 +6,9 @@
 
 import asyncio
 import urllib.parse
+from collections.abc import AsyncIterator
 from datetime import datetime
-from typing import AsyncIterator, Final
+from typing import Final
 
 import pytest
 from faker import Faker
@@ -29,12 +30,17 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-_RETRY_PARAMS = dict(
-    reraise=True,
-    wait=wait_fixed(0.1),
-    stop=stop_after_delay(60),
-    retry=retry_if_exception_type(AssertionError),
-)
+_RETRY_PARAMS = {
+    "reraise": True,
+    "wait": wait_fixed(0.1),
+    "stop": stop_after_delay(60),
+    "retry": retry_if_exception_type(
+        (
+            BaseException,  # retry when pytest reports `Failed: DID NOT RAISE``
+            AssertionError,
+        )
+    ),
+}
 
 
 async def a_background_task(
@@ -47,7 +53,8 @@ async def a_background_task(
         await asyncio.sleep(1)
         task_progress.update(percent=ProgressPercent((i + 1) / total_sleep))
     if raise_when_finished:
-        raise RuntimeError("raised this error as instructed")
+        msg = "raised this error as instructed"
+        raise RuntimeError(msg)
 
     return 42
 
@@ -59,7 +66,8 @@ async def fast_background_task(task_progress: TaskProgress) -> int:
 
 async def failing_background_task(task_progress: TaskProgress):
     """this task does nothing and returns a constant"""
-    raise RuntimeError("failing asap")
+    msg = "failing asap"
+    raise RuntimeError(msg)
 
 
 TEST_CHECK_STALE_INTERVAL_S: Final[float] = 1
@@ -364,7 +372,7 @@ async def test_list_tasks(tasks_manager: TasksManager):
     NUM_TASKS = 10
     task_ids = []
     for _ in range(NUM_TASKS):
-        task_ids.append(
+        task_ids.append(  # noqa: PERF401
             start_task(
                 tasks_manager=tasks_manager,
                 task=a_background_task,
