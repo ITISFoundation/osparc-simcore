@@ -23,18 +23,9 @@ router = APIRouter(
 @router.get(
     "/groups",
     response_model=Envelope[AllUsersGroups],
-    operation_id="list_services",
+    operation_id="list_groups",
 )
 async def list_groups():
-    ...
-
-
-@router.get(
-    "/groups/{gid}",
-    response_model=Envelope[UsersGroup],
-    operation_id="list_services",
-)
-async def get_group(gid: GroupID):
     ...
 
 
@@ -51,6 +42,15 @@ async def create_group():
 @router.get(
     "/groups/{gid}",
     response_model=Envelope[UsersGroup],
+    operation_id="get_group",
+)
+async def get_group(gid: GroupID):
+    ...
+
+
+@router.patch(
+    "/groups/{gid}",
+    response_model=Envelope[UsersGroup],
     operation_id="update_group",
 )
 async def update_group(gid: GroupID, _update: UsersGroup):
@@ -58,7 +58,7 @@ async def update_group(gid: GroupID, _update: UsersGroup):
     ...
 
 
-@router.get(
+@router.delete(
     "/groups/{gid}",
     status_code=status.HTTP_204_NO_CONTENT,
     operation_id="delete_group",
@@ -81,7 +81,10 @@ async def get_group_users(gid: GroupID):
     status_code=status.HTTP_204_NO_CONTENT,
     operation_id="add_group_user",
 )
-async def add_group_user(gid: GroupID, _new: GroupUser):
+async def add_group_user(
+    gid: GroupID,
+    _new: GroupUser,
+):
     ...
 
 
@@ -90,7 +93,10 @@ async def add_group_user(gid: GroupID, _new: GroupUser):
     response_model=Envelope[GroupUser],
     operation_id="get_group_user",
 )
-async def get_group_user(gid: GroupID, uid: UserID):
+async def get_group_user(
+    gid: GroupID,
+    uid: UserID,
+):
     ...
 
 
@@ -99,7 +105,11 @@ async def get_group_user(gid: GroupID, uid: UserID):
     response_model=Envelope[GroupUser],
     operation_id="update_group_user",
 )
-async def update_group_user(gid: GroupID, uid: UserID, _update: GroupUser):
+async def update_group_user(
+    gid: GroupID,
+    uid: UserID,
+    _update: GroupUser,
+):
     # FIXME: update type
     ...
 
@@ -122,7 +132,8 @@ async def delete_group_user(
     operation_id="get_group_classifiers",
 )
 async def get_group_classifiers(
-    gid: GroupID, _query: Annotated[_ClassifiersQuery, Depends()]
+    gid: GroupID,
+    _query: Annotated[_ClassifiersQuery, Depends()],
 ):
     ...
 
@@ -148,7 +159,7 @@ async def add_scicrunch_resource(rrid: str):
 @router.get(
     "groups/sparc/classifiers/scicrunch-resources:search",
     response_model=Envelope[list[ResourceHit]],
-    operation_id="add_scicrunch_resource",
+    operation_id="search_scicrunch_resources",
 )
 async def search_scicrunch_resources(guess_name: str):
     ...
