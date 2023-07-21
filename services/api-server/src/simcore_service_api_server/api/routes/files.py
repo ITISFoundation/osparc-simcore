@@ -3,7 +3,7 @@ import datetime
 import io
 import logging
 from textwrap import dedent
-from typing import IO, Annotated
+from typing import IO, Annotated, Final
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
@@ -42,7 +42,7 @@ router = APIRouter()
 #
 #
 
-_common_error_responses = {
+_COMMON_ERROR_RESPONSES: Final[dict] = {
     status.HTTP_404_NOT_FOUND: {
         "description": "File not found",
         "model": ErrorGet,
@@ -170,7 +170,7 @@ async def upload_files(files: list[UploadFile] = FileParam(...)):
     raise NotImplementedError
 
 
-@router.get("/{file_id}", response_model=File, responses={**_common_error_responses})
+@router.get("/{file_id}", response_model=File, responses={**_COMMON_ERROR_RESPONSES})
 async def get_file(
     file_id: UUID,
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
@@ -203,7 +203,7 @@ async def get_file(
 @router.delete(
     "/{file_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    responses={**_common_error_responses},
+    responses={**_COMMON_ERROR_RESPONSES},
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def delete_file(
@@ -221,7 +221,7 @@ async def delete_file(
     "/{file_id}/content",
     response_class=RedirectResponse,
     responses={
-        **_common_error_responses,
+        **_COMMON_ERROR_RESPONSES,
         200: {
             "content": {
                 "application/octet-stream": {

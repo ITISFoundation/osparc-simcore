@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated, Any
+from typing import Annotated, Any, Final
 
 from fastapi import APIRouter, Depends, status
 from fastapi_pagination.api import create_page
@@ -16,7 +16,7 @@ from ._common import API_SERVER_DEV_FEATURES_ENABLED
 _logger = logging.getLogger(__name__)
 router = APIRouter()
 
-_common_error_responses = {
+_COMMON_ERROR_RESPONSES: Final[dict] = {
     status.HTTP_404_NOT_FOUND: {
         "description": "Study not found",
         "model": ErrorGet,
@@ -65,7 +65,7 @@ async def list_studies(
 @router.get(
     "/{study_id}",
     response_model=Study,
-    responses={**_common_error_responses},
+    responses={**_COMMON_ERROR_RESPONSES},
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_study(
@@ -90,7 +90,7 @@ async def get_study(
 @router.get(
     "/{study_id}/ports",
     response_model=OnePage[StudyPort],
-    responses={**_common_error_responses},
+    responses={**_COMMON_ERROR_RESPONSES},
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def list_study_ports(

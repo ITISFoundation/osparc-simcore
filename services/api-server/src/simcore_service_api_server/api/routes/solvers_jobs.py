@@ -3,7 +3,7 @@
 import logging
 from collections import deque
 from collections.abc import Callable
-from typing import Annotated
+from typing import Annotated, Final
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
@@ -65,7 +65,7 @@ def _compose_job_resource_name(solver_key, solver_version, job_id) -> str:
 # - Similar to docker container's API design (container = job and image = solver)
 #
 
-_common_error_responses = {
+_COMMON_ERROR_RESPONSES: Final[dict] = {
     status.HTTP_404_NOT_FOUND: {
         "description": "Job not found",
         "model": ErrorGet,
@@ -443,7 +443,7 @@ async def get_job_output_logfile(
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/metadata",
     response_model=JobMetadata,
-    responses={**_common_error_responses},
+    responses={**_COMMON_ERROR_RESPONSES},
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_job_custom_metadata(
@@ -484,7 +484,7 @@ async def get_job_custom_metadata(
 @router.patch(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/metadata",
     response_model=JobMetadata,
-    responses={**_common_error_responses},
+    responses={**_COMMON_ERROR_RESPONSES},
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def replace_job_custom_metadata(
