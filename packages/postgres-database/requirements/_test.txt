@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-aiohttp==3.8.4
+aiohttp==3.8.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   pytest-aiohttp
@@ -20,7 +20,7 @@ attrs==23.1.0
     # via
     #   aiohttp
     #   pytest-docker
-charset-normalizer==3.1.0
+charset-normalizer==3.2.0
     # via
     #   -c requirements/_migration.txt
     #   aiohttp
@@ -28,11 +28,11 @@ coverage==7.2.7
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-exceptiongroup==1.1.1
+exceptiongroup==1.1.2
     # via pytest
-faker==18.10.1
+faker==19.1.0
     # via -r requirements/_test.in
-frozenlist==1.3.3
+frozenlist==1.4.0
     # via
     #   aiohttp
     #   aiosignal
@@ -53,7 +53,7 @@ multidict==6.0.4
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-mypy==1.3.0
+mypy==1.4.1
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
@@ -61,14 +61,14 @@ packaging==23.1
     # via
     #   -c requirements/_migration.txt
     #   pytest
-pluggy==1.0.0
+pluggy==1.2.0
     # via pytest
 psycopg2-binary==2.9.6
     # via
     #   -c requirements/_base.txt
     #   aiopg
     #   sqlalchemy
-pytest==7.3.1
+pytest==7.4.0
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -78,11 +78,11 @@ pytest==7.3.1
     #   pytest-instafail
 pytest-aiohttp==1.0.4
     # via -r requirements/_test.in
-pytest-asyncio==0.21.0
+pytest-asyncio==0.21.1
     # via pytest-aiohttp
 pytest-cov==4.1.0
     # via -r requirements/_test.in
-pytest-docker==1.0.1
+pytest-docker==2.0.0
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in
@@ -98,21 +98,21 @@ six==1.16.0
     # via
     #   -c requirements/_migration.txt
     #   python-dateutil
-sqlalchemy==1.4.48
+sqlalchemy==1.4.49
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -c requirements/_migration.txt
     #   -r requirements/_test.in
     #   aiopg
-sqlalchemy2-stubs==0.0.2a34
+sqlalchemy2-stubs==0.0.2a35
     # via sqlalchemy
 tomli==2.0.1
     # via
     #   coverage
     #   mypy
     #   pytest
-typing-extensions==4.6.3
+typing-extensions==4.7.1
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_migration.txt

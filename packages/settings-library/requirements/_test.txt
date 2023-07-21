@@ -8,7 +8,7 @@ coverage==7.2.7
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-exceptiongroup==1.1.1
+exceptiongroup==1.1.2
     # via pytest
 iniconfig==2.0.0
     # via pytest
@@ -16,9 +16,9 @@ packaging==23.1
     # via
     #   pytest
     #   pytest-sugar
-pluggy==1.0.0
+pluggy==1.2.0
     # via pytest
-pytest==7.3.1
+pytest==7.4.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -29,7 +29,7 @@ pytest-cov==4.1.0
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in
-pytest-mock==3.10.0
+pytest-mock==3.11.1
     # via -r requirements/_test.in
 pytest-runner==6.0.0
     # via -r requirements/_test.in

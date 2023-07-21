@@ -6,6 +6,7 @@
 #
 aio-pika==9.1.4
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
 aioboto3==11.2.0
@@ -246,7 +247,7 @@ pytest-asyncio==0.21.1
     # via pytest-aiohttp
 pytest-cov==4.1.0
     # via -r requirements/_test.in
-pytest-docker==1.0.1
+pytest-docker==2.0.0
     # via -r requirements/_test.in
 pytest-icdiff==0.6
     # via -r requirements/_test.in
