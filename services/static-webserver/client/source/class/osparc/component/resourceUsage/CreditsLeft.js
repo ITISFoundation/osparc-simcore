@@ -27,7 +27,7 @@ qx.Class.define("osparc.component.resourceUsage.CreditsLeft", {
   },
 
   statics: {
-    createCreditsLeftInidcator: function() {
+    createCreditsLeftInidcator: function(supportTap = false) {
       const store = osparc.store.Store.getInstance();
 
       const progressBar = new qx.ui.indicator.ProgressBar().set({
@@ -58,6 +58,17 @@ qx.Class.define("osparc.component.resourceUsage.CreditsLeft", {
       store.bind("credits", progressBar, "toolTipText", {
         converter: val => val + " credits left"
       });
+
+      if (supportTap) {
+        progressBar.set({
+          cursor: "pointer"
+        });
+        progressBar.addListener("tap", () => {
+          const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow();
+          creditsWindow.openBuyCredits();
+        }, this);
+      }
+
       return progressBar;
     }
   },
@@ -68,15 +79,7 @@ qx.Class.define("osparc.component.resourceUsage.CreditsLeft", {
     },
 
     __addCredits: function() {
-      const progressBar = this.self().createCreditsLeftInidcator();
-      progressBar.set({
-        cursor: "pointer"
-      });
-      progressBar.addListener("tap", () => {
-        const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow();
-        creditsWindow.openBuyCredits();
-      }, this);
-
+      const progressBar = this.self().createCreditsLeftInidcator(true);
       this._add(progressBar);
     },
 

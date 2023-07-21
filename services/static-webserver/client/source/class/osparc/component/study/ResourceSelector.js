@@ -155,6 +155,10 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
           control = this.self().createGroupBox(this.tr("Select Resources"));
           this.getChildControl("left-main-layout").add(control);
           break;
+        case "buttons-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+          this.getChildControl("right-main-layout").add(control);
+          break;
         case "open-button":
           control = new qx.ui.form.Button(this.tr("Open")).set({
             appearance: "strong-button",
@@ -164,7 +168,7 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
             width: 70,
             center: true
           });
-          this.getChildControl("right-main-layout").addAt(control);
+          this.getChildControl("buttons-layout").add(control);
           break;
         case "cancel-button":
           control = new qx.ui.form.Button(this.tr("Cancel")).set({
@@ -174,10 +178,14 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
             width: 70,
             center: true
           });
-          this.getChildControl("right-main-layout").addAt(control);
+          this.getChildControl("buttons-layout").add(control);
+          break;
+        case "credits-left":
+          control = osparc.component.resourceUsage.CreditsLeft.createCreditsLeftInidcator();
+          this.getChildControl("right-main-layout").add(control);
           break;
         case "summary-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
           this.getChildControl("right-main-layout").add(control);
           break;
         case "summary-label":
@@ -249,7 +257,7 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
             buttons.forEach(btn => btn.addListener("changeValue", e => {
               if (e.getData()) {
                 this.getChildControl("summary-label").set({
-                  value: serviceLabel + ": " + btn.info.credits
+                  value: serviceLabel + ": " + btn.info.price
                 });
               }
             }));
@@ -300,6 +308,8 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
 
       const cancelButton = this.getChildControl("cancel-button");
       cancelButton.addListener("execute", () => this.fireEvent("cancel"));
+
+      this.getChildControl("credits-left");
 
       const summaryLayout = this.getChildControl("summary-layout");
       summaryLayout.add(new qx.ui.basic.Label(this.tr("Total Credits/h:")).set({
