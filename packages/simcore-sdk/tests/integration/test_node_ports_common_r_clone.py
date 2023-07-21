@@ -6,8 +6,9 @@ import filecmp
 import os
 import re
 import urllib.parse
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Final
+from typing import Final
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
@@ -16,7 +17,6 @@ import aiofiles
 import pytest
 from faker import Faker
 from pydantic import AnyUrl, ByteSize, parse_obj_as
-from pytest import FixtureRequest
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from settings_library.r_clone import RCloneSettings
@@ -44,7 +44,7 @@ WAIT_FOR_S3_BACKEND_TO_UPDATE: Final[float] = 1.0
         "öä$äö2-34 no extension",
     ]
 )
-def file_name(request: FixtureRequest) -> str:
+def file_name(request: pytest.FixtureRequest) -> str:
     return request.param  # type: ignore
 
 
