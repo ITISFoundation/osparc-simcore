@@ -157,7 +157,7 @@ async def add_scicrunch_resource(rrid: str):
 
 
 @router.get(
-    "groups/sparc/classifiers/scicrunch-resources:search",
+    "/groups/sparc/classifiers/scicrunch-resources:search",
     response_model=Envelope[list[ResourceHit]],
     operation_id="search_scicrunch_resources",
 )
