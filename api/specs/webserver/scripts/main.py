@@ -12,6 +12,7 @@ import json
 import openapi_admin
 import openapi_announcements
 import openapi_auth
+import openapi_groups
 import openapi_nih_sparc
 import openapi_projects_comments
 import openapi_projects_crud
@@ -60,6 +61,7 @@ for m in (
     openapi_storage,
     openapi_tags,
     openapi_users,
+    openapi_groups,
 ):
     app.include_router(m.router)
 

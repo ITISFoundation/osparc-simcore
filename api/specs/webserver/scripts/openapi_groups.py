@@ -1,12 +1,16 @@
-from fastapi import APIRouter, status
+from typing import Annotated, Any
+
+from fastapi import APIRouter, Depends, status
 from models_library.generics import Envelope
-from models_library.users import GroupID
+from models_library.users import GroupID, UserID
 from simcore_service_webserver._meta import API_VTAG
+from simcore_service_webserver.groups._handlers import _ClassifiersQuery
 from simcore_service_webserver.groups.schemas import (
     AllUsersGroups,
     GroupUser,
     UsersGroup,
 )
+from simcore_service_webserver.scicrunch.models import ResearchResource, ResourceHit
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",
@@ -50,6 +54,7 @@ async def create_group():
     operation_id="update_group",
 )
 async def update_group(gid: GroupID, _update: UsersGroup):
+    # FIXME: update type
     ...
 
 
@@ -71,17 +76,79 @@ async def get_group_users(gid: GroupID):
     ...
 
 
-#   /v0/groups/{gid}/users:
-#     $ref: "./openapi-groups.yaml#/paths/~1groups~1{gid}~1users"
+@router.post(
+    "/groups/{gid}/users",
+    status_code=status.HTTP_204_NO_CONTENT,
+    operation_id="add_group_user",
+)
+async def add_group_user(gid: GroupID, _new: GroupUser):
+    ...
 
-#   /v0/groups/{gid}/users/{uid}:
-#     $ref: "./openapi-groups.yaml#/paths/~1groups~1{gid}~1users~1{uid}"
 
-#   /v0/groups/{gid}/classifiers:
-#     $ref: "./openapi-groups.yaml#/paths/~1groups~1{gid}~1classifiers"
+@router.get(
+    "/groups/{gid}/users/{uid}",
+    response_model=Envelope[GroupUser],
+    operation_id="get_group_user",
+)
+async def get_group_user(gid: GroupID, uid: UserID):
+    ...
 
-#   /v0/groups/sparc/classifiers/scicrunch-resources/{rrid}:
-#     $ref: "./openapi-groups.yaml#/paths/~1groups~1sparc~1classifiers~1scicrunch-resources~1{rrid}"
 
-#   /v0/groups/sparc/classifiers/scicrunch-resources:search:
-#     $ref: "./openapi-groups.yaml#/paths/~1groups~1sparc~1classifiers~1scicrunch-resources:search"
+@router.patch(
+    "/groups/{gid}/users/{uid}",
+    response_model=Envelope[GroupUser],
+    operation_id="update_group_user",
+)
+async def update_group_user(gid: GroupID, uid: UserID, _update: GroupUser):
+    # FIXME: update type
+    ...
+
+
+@router.delete(
+    "/groups/{gid}/users/{uid}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    operation_id="delete_group_user",
+)
+async def delete_group_user(
+    gid: GroupID,
+    uid: UserID,
+):
+    ...
+
+
+@router.get(
+    "/groups/{gid}/classifiers",
+    response_model=Envelope[dict[str, Any]],
+    operation_id="get_group_classifiers",
+)
+async def get_group_classifiers(
+    gid: GroupID, _query: Annotated[_ClassifiersQuery, Depends()]
+):
+    ...
+
+
+@router.get(
+    "/groups/sparc/classifiers/scicrunch-resources/{rrid}",
+    response_model=Envelope[ResearchResource],
+    operation_id="get_scicrunch_resource",
+)
+async def get_scicrunch_resource(rrid: str):
+    ...
+
+
+@router.post(
+    "/groups/sparc/classifiers/scicrunch-resources/{rrid}",
+    response_model=Envelope[ResearchResource],
+    operation_id="add_scicrunch_resource",
+)
+async def add_scicrunch_resource(rrid: str):
+    ...
+
+
+@router.get(
+    "groups/sparc/classifiers/scicrunch-resources:search",
+    response_model=Envelope[list[ResourceHit]],
+    operation_id="add_scicrunch_resource",
+)
+async def search_scicrunch_resources(guess_name: str):
+    ...

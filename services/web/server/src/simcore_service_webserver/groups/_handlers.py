@@ -41,8 +41,7 @@ def _handle_groups_exceptions(handler: Handler):
     @functools.wraps(handler)
     async def wrapper(request: web.Request) -> web.StreamResponse:
         try:
-            response = await handler(request)
-            return response
+            return await handler(request)
 
         except UserNotFoundError as exc:
             raise web.HTTPNotFound(reason=f"User {exc.uid} not found") from exc
@@ -54,7 +53,7 @@ def _handle_groups_exceptions(handler: Handler):
             raise web.HTTPNotFound(reason=f"User not found in group {exc.gid}") from exc
 
         except UserInsufficientRightsError as exc:
-            raise web.HTTPForbidden() from exc
+            raise web.HTTPForbidden from exc
 
     return wrapper
 
@@ -152,7 +151,7 @@ async def delete_group(request: web.Request):
     gid = request.match_info["gid"]
 
     await api.delete_user_group(request.app, user_id, gid)
-    raise web.HTTPNoContent()
+    raise web.HTTPNoContent
 
 
 @routes.get(f"/{API_VTAG}/groups/{{gid}}/users", name="get_group_users")
@@ -196,7 +195,7 @@ async def add_group_user(request: web.Request):
         new_user_id=new_user_id,
         new_user_email=new_user_email,
     )
-    raise web.HTTPNoContent()
+    raise web.HTTPNoContent
 
 
 @routes.get(f"/{API_VTAG}/groups/{{gid}}/users/{{uid}}", name="get_group_user")
@@ -210,7 +209,9 @@ async def get_group_user(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     gid = request.match_info["gid"]
     the_user_id_in_group = request.match_info["uid"]
-    return await api.get_user_in_group(request.app, user_id, gid, the_user_id_in_group)
+    user = await api.get_user_in_group(request.app, user_id, gid, the_user_id_in_group)
+    assert parse_obj_as(GroupUser, user)  # nosec
+    return user
 
 
 @routes.patch(f"/{API_VTAG}/groups/{{gid}}/users/{{uid}}", name="update_group_user")
@@ -225,13 +226,15 @@ async def update_group_user(request: web.Request):
     gid = request.match_info["gid"]
     the_user_id_in_group = request.match_info["uid"]
     new_values_for_user_in_group = await request.json()
-    return await api.update_user_in_group(
+    user = await api.update_user_in_group(
         request.app,
         user_id,
         gid,
         the_user_id_in_group,
         new_values_for_user_in_group,
     )
+    assert parse_obj_as(GroupUser, user)  # nosec
+    return user
 
 
 @routes.delete(f"/{API_VTAG}/groups/{{gid}}/users/{{uid}}", name="delete_group_user")
@@ -243,7 +246,12 @@ async def delete_group_user(request: web.Request):
     gid = request.match_info["gid"]
     the_user_id_in_group = request.match_info["uid"]
     await api.delete_user_in_group(request.app, user_id, gid, the_user_id_in_group)
-    raise web.HTTPNoContent()
+    raise web.HTTPNoContent
+
+
+#
+# Classifiers
+#
 
 
 class _GroupsParams(BaseModel):
