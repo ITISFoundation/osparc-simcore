@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_aiohttp.txt --strip-extras requirements/_aiohttp.in
 #
-aiohttp==3.8.4
+aiohttp==3.8.5
     # via
     #   -c requirements/./../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/./../../../packages/settings-library/requirements/../../../requirements/constraints.txt
@@ -43,7 +43,7 @@ charset-normalizer==3.2.0
     # via
     #   aiohttp
     #   requests
-click==8.1.5
+click==8.1.6
     # via typer
 dnspython==2.4.0
     # via email-validator
@@ -80,7 +80,7 @@ jsonschema-spec==0.2.3
     # via
     #   openapi-core
     #   openapi-spec-validator
-jsonschema-specifications==2023.6.1
+jsonschema-specifications==2023.7.1
     # via
     #   jsonschema
     #   openapi-schema-validator
@@ -137,6 +137,7 @@ pyyaml==6.0.1
     #   jsonschema-spec
 referencing==0.29.3
     # via
+    #   -c requirements/././constraints.txt
     #   jsonschema
     #   jsonschema-spec
     #   jsonschema-specifications
@@ -146,7 +147,7 @@ rfc3339-validator==0.1.4
     # via openapi-schema-validator
 rich==13.4.2
     # via -r requirements/./../../../packages/settings-library/requirements/_base.in
-rpds-py==0.8.11
+rpds-py==0.9.2
     # via
     #   jsonschema
     #   referencing
@@ -173,7 +174,7 @@ typing-extensions==4.7.1
     #   asgiref
     #   pydantic
     #   typer
-urllib3==2.0.3
+urllib3==2.0.4
     # via
     #   -c requirements/./../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/./../../../packages/settings-library/requirements/../../../requirements/constraints.txt
