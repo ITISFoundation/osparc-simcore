@@ -38,7 +38,7 @@ class BaseRCloneError(PydanticErrorMixin, RuntimeError):
 
 
 class RCloneFailedError(BaseRCloneError):
-    msg_template: str = "Command {command} finished with exception:\n{stdout}"
+    msg_template: str = "Command {command} finished with exception:\n{stdout}\n{stderr}"
 
 
 class RCloneFileFoundError(BaseRCloneError):
@@ -87,10 +87,10 @@ async def _async_command(
     if r_clone_log_parsers:
         await asyncio.wait([_read_stream(proc.stdout, r_clone_log_parsers)])
 
-    stdout, _ = await proc.communicate()
+    stdout, stderr = await proc.communicate()
     decoded_stdout = stdout.decode()
     if proc.returncode != 0:
-        raise RCloneFailedError(command=str_cmd, stdout=decoded_stdout)
+        raise RCloneFailedError(command=str_cmd, stdout=decoded_stdout, stderr=stderr)
 
     _logger.debug("'%s' result:\n%s", str_cmd, decoded_stdout)
     return decoded_stdout
