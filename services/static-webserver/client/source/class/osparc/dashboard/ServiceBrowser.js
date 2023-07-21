@@ -112,8 +112,6 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     },
 
     __itemClicked: function(card) {
-      // const key = card.getUuid();
-      // this._createStudyFromService(key, null);
       const serviceData = card.getResourceData();
       this._openDetailsView(serviceData);
       this.resetSelection();
@@ -127,8 +125,34 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       this._showLoadingPage(this.tr("Creating Study"));
       osparc.utils.Study.createStudyFromService(key, version)
         .then(studyId => {
-          this._hideLoadingPage();
-          this._startStudyById(studyId);
+          const resourceSelector = new osparc.component.study.ResourceSelector(studyId);
+          const width = 500;
+          const height = 400;
+          const win = osparc.ui.window.Window.popUpInWindow(resourceSelector, "Study Options", width, height);
+          resourceSelector.addListener("startStudy", () => {
+            win.close();
+            this._hideLoadingPage();
+            this._startStudyById(studyId);
+          });
+          const deleteStudy = () => {
+            const params = {
+              url: {
+                "studyId": studyId
+              }
+            };
+            osparc.data.Resources.fetch("studies", "delete", params, studyId);
+          };
+          resourceSelector.addListener("cancel", () => {
+            win.close();
+            this._hideLoadingPage();
+            deleteStudy();
+          });
+          win.getChildControl("close-button").addListener("close", () => {
+            this._hideLoadingPage();
+            deleteStudy();
+          });
+          win.center();
+          win.open();
         })
         .catch(err => {
           this._hideLoadingPage();
