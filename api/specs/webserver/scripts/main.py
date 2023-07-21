@@ -66,4 +66,6 @@ if __name__ == "__main__":
     from _common import create_openapi_specs
 
     oas_path = Path("openapi.json")
-    oas_path.write_text(json.dumps(create_openapi_specs(app), indent=1))
+    oas_path.write_text(
+        json.dumps(create_openapi_specs(app, remove_main_sections=False), indent=1)
+    )

@@ -55,13 +55,19 @@ class Error(BaseModel):
     status: int | None = Field(None, description="HTTP error code")
 
 
-def create_openapi_specs(app: FastAPI, *, drop_fastapi_default_422: bool = True):
+def create_openapi_specs(
+    app: FastAPI,
+    *,
+    drop_fastapi_default_422: bool = True,
+    remove_main_sections: bool = True,
+):
     override_fastapi_openapi_method(app)
     openapi = app.openapi()
 
     # Remove these sections
-    for section in ("info", "openapi"):
-        openapi.pop(section, None)
+    if remove_main_sections:
+        for section in ("info", "openapi"):
+            openapi.pop(section, None)
 
     schemas = openapi["components"]["schemas"]
     for section in ("HTTPValidationError", "ValidationError"):
