@@ -55,9 +55,21 @@ async def get_scheduled_maintenance():
 
 
 @router.get(
+    "/status",
+    summary="checks status of self and connected services",
+    response_model=Envelope[AppStatusCheck],
+    response_description="returns app status check",
+    operation_id="get_app_status",
+)
+async def get_app_status():
+    ...
+
+
+@router.get(
     "/status/diagnostics",
     response_model=Envelope[StatusDiagnosticsGet],
     operation_id="get_app_diagnostics",
+    response_description="returns app diagnostics report",
 )
 async def get_app_diagnostics(
     _query: Annotated[StatusDiagnosticsQueryParam, Depends()]
@@ -66,9 +78,11 @@ async def get_app_diagnostics(
 
 
 @router.get(
-    "/status",
+    "/status/{service_name}",
+    summary="returns status of connected service",
     response_model=Envelope[AppStatusCheck],
-    operation_id="get_app_status",
+    response_description="returns app status check",
+    operation_id="get_service_status",
 )
-async def get_app_status():
+async def get_service_status(service_name: str):
     ...

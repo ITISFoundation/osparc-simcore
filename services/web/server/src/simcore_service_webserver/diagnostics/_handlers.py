@@ -165,4 +165,4 @@ async def get_service_status(request: web.Request):
             status = await storage_api.get_app_status(request.app)
             return envelope_json_response(status)
 
-    raise web.HTTPNotFound()
+    raise web.HTTPNotFound
