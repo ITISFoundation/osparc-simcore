@@ -17,9 +17,9 @@ coverage==7.2.7
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-exceptiongroup==1.1.1
+exceptiongroup==1.1.2
     # via pytest
-faker==18.10.1
+faker==19.1.0
     # via -r requirements/_test.in
 h11==0.14.0
     # via
@@ -46,15 +46,15 @@ packaging==23.0
     #   -c requirements/_base.txt
     #   pytest
     #   pytest-sugar
-pluggy==1.0.0
+pluggy==1.2.0
     # via pytest
-pytest==7.3.1
+pytest==7.4.0
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-sugar
-pytest-asyncio==0.21.0
+pytest-asyncio==0.21.1
     # via -r requirements/_test.in
 pytest-cov==4.1.0
     # via -r requirements/_test.in
