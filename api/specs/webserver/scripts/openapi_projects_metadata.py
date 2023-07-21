@@ -18,9 +18,10 @@ from models_library.api_schemas_webserver.projects_metadata import (
     ProjectMetadataUpdate,
 )
 from models_library.generics import Envelope
+from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.projects._metadata_handlers import ProjectPathParams
 
-router = APIRouter(tags=["project"])
+router = APIRouter(prefix=f"/{API_VTAG}", tags=["project"])
 
 
 #

@@ -14,15 +14,17 @@ from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.services import ServiceKey, ServiceKeyVersion
 from pydantic import HttpUrl, PositiveInt
+from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.studies_dispatcher._rest_handlers import (
     ServiceGet,
     Viewer,
 )
 
 router = APIRouter(
+    prefix=f"/{API_VTAG}",
     tags=[
         "nih-sparc",
-    ]
+    ],
 )
 
 

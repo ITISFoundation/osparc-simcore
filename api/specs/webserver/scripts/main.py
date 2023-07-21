@@ -8,7 +8,6 @@
 
 
 import json
-from pathlib import Path
 
 import openapi_admin
 import openapi_announcements
@@ -23,7 +22,9 @@ import openapi_resource_usage
 import openapi_storage
 import openapi_tags
 import openapi_users
+import yaml
 from fastapi import FastAPI
+from simcore_service_webserver._resources import webserver_resources
 
 app = FastAPI(
     title="osparc-simcore web API",
@@ -65,7 +66,13 @@ for m in (
 if __name__ == "__main__":
     from _common import create_openapi_specs
 
-    oas_path = Path("openapi.json")
-    oas_path.write_text(
-        json.dumps(create_openapi_specs(app, remove_main_sections=False), indent=1)
-    )
+    openapi = create_openapi_specs(app, remove_main_sections=False)
+
+    # .yaml
+    oas_path = webserver_resources.get_path("/api/v0/openapi.yaml")
+    with oas_path.open("wt") as fh:
+        yaml.safe_dump(openapi, stream=fh, sort_keys=False)
+
+    # .json
+    oas_path = oas_path.with_suffix(".json")
+    oas_path.write_text(json.dumps(openapi, indent=1))

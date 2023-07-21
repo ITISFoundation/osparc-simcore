@@ -13,6 +13,7 @@ from _common import Error, Log
 from fastapi import APIRouter, FastAPI, status
 from models_library.generics import Envelope
 from pydantic import BaseModel, Field, confloat
+from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.login.api_keys_handlers import ApiKeyCreate, ApiKeyGet
 from simcore_service_webserver.login.handlers_2fa import Resend2faBody
 from simcore_service_webserver.login.handlers_auth import (
@@ -38,7 +39,7 @@ from simcore_service_webserver.login.handlers_registration import (
     RegisterPhoneNextPage,
 )
 
-router = APIRouter(tags=["auth"])
+router = APIRouter(prefix=f"/{API_VTAG}", tags=["auth"])
 
 
 @router.post(

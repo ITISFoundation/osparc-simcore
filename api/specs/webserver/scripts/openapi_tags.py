@@ -9,9 +9,10 @@
 
 from fastapi import APIRouter, FastAPI, status
 from models_library.generics import Envelope
+from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.tags._handlers import TagCreate, TagGet, TagUpdate
 
-router = APIRouter(tags=["tags"])
+router = APIRouter(prefix=f"/{API_VTAG}", tags=["tags"])
 
 
 @router.post(

@@ -33,6 +33,7 @@ from models_library.rest_pagination import (
 )
 from pydantic import NonNegativeInt
 from servicelib.aiohttp.long_running_tasks.server import TaskGet
+from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.projects._crud_handlers import (
     ProjectPathParams,
     ProjectTypeAPI,
@@ -42,9 +43,10 @@ from simcore_service_webserver.projects._crud_handlers import (
 )
 
 router = APIRouter(
+    prefix=f"/{API_VTAG}",
     tags=[
         "project",
-    ]
+    ],
 )
 
 

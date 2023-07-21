@@ -19,11 +19,12 @@ from models_library.api_schemas_webserver.resource_usage import ContainerGet
 from models_library.generics import Envelope
 from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE
 from pydantic import NonNegativeInt
+from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.resource_usage._containers_handlers import (
     _ListContainersPathParams,
 )
 
-router = APIRouter(tags=["usage"])
+router = APIRouter(prefix=f"/{API_VTAG}", tags=["usage"])
 
 
 #

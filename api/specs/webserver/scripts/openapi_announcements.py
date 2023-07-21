@@ -9,12 +9,14 @@
 
 from fastapi import APIRouter, FastAPI
 from models_library.generics import Envelope
+from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.announcements._handlers import Announcement
 
 router = APIRouter(
+    prefix=f"/{API_VTAG}",
     tags=[
         "announcements",
-    ]
+    ],
 )
 
 

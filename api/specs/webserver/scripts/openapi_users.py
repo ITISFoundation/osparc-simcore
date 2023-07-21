@@ -11,6 +11,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, FastAPI, status
 from models_library.generics import Envelope
+from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.users._handlers import (
     _NotificationPathParams,
     _TokenPathParams,
@@ -28,7 +29,7 @@ from simcore_service_webserver.users.schemas import (
     TokenCreate,
 )
 
-router = APIRouter(tags=["user"])
+router = APIRouter(prefix=f"/{API_VTAG}", tags=["user"])
 
 
 @router.get(

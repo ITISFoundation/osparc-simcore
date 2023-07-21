@@ -11,12 +11,14 @@ from typing import Union
 
 from fastapi import APIRouter, FastAPI, Header
 from models_library.generics import Envelope
+from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.email._handlers import TestEmail, TestFailed, TestPassed
 
 router = APIRouter(
+    prefix=f"/{API_VTAG}",
     tags=[
         "admin",
-    ]
+    ],
 )
 
 
