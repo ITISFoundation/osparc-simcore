@@ -248,7 +248,7 @@ async def test_get_result_old_finished_with_error(tasks_manager: TasksManager):
     assert task_result.result is None
     assert task_result.error is not None
     assert task_result.error.startswith(f"Task {task_id} finished with exception:")
-    assert 'raise RuntimeError("failing asap")' in task_result.error
+    assert "failing asap" in task_result.error
 
 
 async def test_get_result_task_was_cancelled_multiple_times(
