@@ -181,7 +181,9 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
           this.getChildControl("buttons-layout").add(control);
           break;
         case "credits-left":
-          control = osparc.component.resourceUsage.CreditsLeft.createCreditsLeftInidcator();
+          control = osparc.component.resourceUsage.CreditsLeft.createCreditsLeftInidcator(true).set({
+            backgroundColor: "background-main"
+          });
           this.getChildControl("right-main-layout").add(control);
           break;
         case "summary-layout":
