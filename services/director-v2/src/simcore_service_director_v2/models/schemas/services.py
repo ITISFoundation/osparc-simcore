@@ -1,13 +1,8 @@
-from typing import Any
+from typing import Any, ClassVar
 
-from models_library.basic_regex import UUID_RE
-from models_library.basic_types import PortInt
 from models_library.service_settings_labels import ContainerSpec
-from models_library.services import SERVICE_KEY_RE, VERSION_RE, ServiceDockerData
 from pydantic import BaseModel, Field, validator
 from pydantic.types import ByteSize, NonNegativeInt
-
-from .dynamic_services import ServiceState
 
 
 class ServiceBuildDetails(BaseModel):
@@ -47,7 +42,7 @@ class NodeRequirements(BaseModel):
         return v
 
     class Config:
-        schema_extra: dict[str, Any] = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {"CPU": 1.0, "RAM": 4194304},
                 {"CPU": 1.0, "GPU": 1, "RAM": 4194304},
@@ -65,7 +60,7 @@ class ServiceExtras(BaseModel):
     container_spec: ContainerSpec | None = None
 
     class Config:
-        schema_extra: dict[str, Any] = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {"node_requirements": node_example}
                 for node_example in NodeRequirements.Config.schema_extra["examples"]
@@ -94,71 +89,3 @@ class ServiceExtras(BaseModel):
                 for node_example in NodeRequirements.Config.schema_extra["examples"]
             ]
         }
-
-
-class ServiceExtrasEnveloped(BaseModel):
-    data: ServiceExtras
-
-
-class RunningServiceDetails(BaseModel):
-    published_port: PortInt | None = Field(
-        None,
-        description="The ports where the service provides its interface on the docker swarm",
-        deprecated=True,
-    )
-    entry_point: str = Field(
-        ...,
-        description="The entry point where the service provides its interface",
-    )
-    service_uuid: str = Field(
-        ..., regex=UUID_RE, description="The node UUID attached to the service"
-    )
-    service_key: str = Field(
-        ...,
-        regex=SERVICE_KEY_RE.pattern,
-        description="distinctive name for the node based on the docker registry path",
-        example=[
-            "simcore/services/comp/itis/sleeper",
-            "simcore/services/dynamic/3dviewer",
-        ],
-    )
-    service_version: str = Field(
-        ...,
-        regex=VERSION_RE,
-        description="service version number",
-        example=["1.0.0", "0.0.1"],
-    )
-    service_host: str = Field(..., description="service host name within the network")
-    service_port: PortInt = Field(
-        80, description="port to access the service within the network"
-    )
-    service_basepath: str = Field(
-        ...,
-        description="the service base entrypoint where the service serves its contents",
-    )
-    service_state: ServiceState = Field(
-        ...,
-        description=(
-            "the service state"
-            " * 'pending' - The service is waiting for resources to start"
-            " * 'pulling' - The service is being pulled from the registry"
-            " * 'starting' - The service is starting"
-            " * 'running' - The service is running"
-            " * 'complete' - The service completed"
-            " * 'failed' - The service failed to start"
-            " * 'stopping' - The service is stopping"
-        ),
-    )
-    service_message: str = Field(..., description="the service message")
-
-
-class RunningServicesDetailsArray(BaseModel):
-    __root__: list[RunningServiceDetails]
-
-
-class RunningServicesDetailsArrayEnveloped(BaseModel):
-    data: RunningServicesDetailsArray
-
-
-class ServicesArrayEnveloped(BaseModel):
-    data: list[ServiceDockerData]

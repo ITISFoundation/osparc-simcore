@@ -2,11 +2,11 @@
 # pylint:disable=unused-argument
 
 import asyncio
-from typing import Any, AsyncIterator, Awaitable, Final
+from collections.abc import AsyncIterator, Awaitable
+from typing import Any, Final
 
 import pytest
 from pydantic import NonNegativeInt, ValidationError
-from pytest import LogCaptureFixture
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq_errors import (
     RemoteMethodNotRegisteredError,
@@ -48,10 +48,9 @@ async def rabbit_replier(
 
 
 async def add_me(*, x: Any, y: Any) -> Any:
-    result = x + y
+    return x + y
     # NOTE: types are not enforced
     # result's type will on the caller side will be the one it has here
-    return result
 
 
 class CustomClass:
@@ -296,7 +295,8 @@ async def test_replier_handler_raises_error(
     namespace: RPCNamespace,
 ):
     async def _raising_error() -> None:
-        raise RuntimeError("failed as requested")
+        msg = "failed as requested"
+        raise RuntimeError(msg)
 
     await rabbit_replier.rpc_register_handler(
         namespace, RPCMethodName(_raising_error.__name__), _raising_error
@@ -306,14 +306,17 @@ async def test_replier_handler_raises_error(
         await rabbit_requester.rpc_request(
             namespace, RPCMethodName(_raising_error.__name__)
         )
-    assert "failed as requested" == f"{exec_info.value}"
+    assert f"{exec_info.value}" == "failed as requested"
 
 
+# WARNING: This test fails with aio-pika==9.1.4
+# FAILED tests/rabbitmq/test_rabbitmq_rpc.py::test_replier_responds_with_not_locally_defined_object_instance - AttributeError: Can't pickle local object 'test_replier_responds_with_not_locally_defined_object_instance.<locals>._replier_scope.<locals>.Custom'
+#
 async def test_replier_responds_with_not_locally_defined_object_instance(
     rabbit_requester: RabbitMQClient,
     rabbit_replier: RabbitMQClient,
     namespace: RPCNamespace,
-    caplog: LogCaptureFixture,
+    caplog: pytest.LogCaptureFixture,
 ):
     async def _replier_scope() -> None:
         class Custom:

@@ -2,13 +2,8 @@ import logging
 
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
-from servicelib.aiohttp.rest_routing import (
-    iter_path_operations,
-    map_handlers_with_operations,
-)
 
-from .._constants import APP_OPENAPI_SPECS_KEY
-from ._handlers import rest_handler_functions
+from . import _handlers
 
 _logger = logging.getLogger(__name__)
 
@@ -22,13 +17,6 @@ _logger = logging.getLogger(__name__)
 def setup_exporter(app: web.Application) -> bool:
 
     # Rest-API routes: maps handlers with routes tags with "viewer" based on OAS operation_id
-
-    specs = app[APP_OPENAPI_SPECS_KEY]
-    rest_routes = map_handlers_with_operations(
-        rest_handler_functions,
-        filter(lambda op: "exporter" in op.tags, iter_path_operations(specs)),
-        strict=True,
-    )
-    app.router.add_routes(rest_routes)
+    app.router.add_routes(_handlers.routes)
 
     return True

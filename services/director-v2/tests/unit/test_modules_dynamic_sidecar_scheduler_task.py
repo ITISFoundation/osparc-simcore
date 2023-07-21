@@ -42,6 +42,7 @@ SCHEDULER_INTERVAL_SECONDS: Final[float] = 0.1
 
 @pytest.fixture
 def mock_env(
+    disable_postgres: None,
     disable_rabbitmq: None,
     mock_env: EnvVarsDict,
     monkeypatch: MonkeyPatch,

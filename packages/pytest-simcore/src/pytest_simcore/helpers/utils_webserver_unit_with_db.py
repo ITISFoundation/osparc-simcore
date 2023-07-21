@@ -2,7 +2,7 @@ from typing import NamedTuple
 from unittest import mock
 
 from aiohttp import web
-from servicelib.aiohttp.web_exceptions_extension import HTTPLocked
+from servicelib.aiohttp.web_exceptions_extension import HTTPLockedError
 from simcore_postgres_database.models.users import UserRole
 
 
@@ -25,7 +25,7 @@ class ExpectedResponse(NamedTuple):
         type[web.HTTPUnauthorized] | type[web.HTTPForbidden] | type[web.HTTPNotFound]
     )
     forbidden: (type[web.HTTPUnauthorized] | type[web.HTTPForbidden])
-    locked: type[web.HTTPUnauthorized] | type[web.HTTPForbidden] | type[HTTPLocked]
+    locked: type[web.HTTPUnauthorized] | type[web.HTTPForbidden] | type[HTTPLockedError]
     accepted: (
         type[web.HTTPUnauthorized] | type[web.HTTPForbidden] | type[web.HTTPAccepted]
     )
@@ -91,7 +91,7 @@ def standard_role_response() -> tuple[str, list[tuple[UserRole, ExpectedResponse
                     no_content=web.HTTPNoContent,
                     not_found=web.HTTPNotFound,
                     forbidden=web.HTTPForbidden,
-                    locked=HTTPLocked,
+                    locked=HTTPLockedError,
                     accepted=web.HTTPAccepted,
                     unprocessable=web.HTTPUnprocessableEntity,
                     not_acceptable=web.HTTPNotAcceptable,
@@ -106,7 +106,7 @@ def standard_role_response() -> tuple[str, list[tuple[UserRole, ExpectedResponse
                     no_content=web.HTTPNoContent,
                     not_found=web.HTTPNotFound,
                     forbidden=web.HTTPForbidden,
-                    locked=HTTPLocked,
+                    locked=HTTPLockedError,
                     accepted=web.HTTPAccepted,
                     unprocessable=web.HTTPUnprocessableEntity,
                     not_acceptable=web.HTTPNotAcceptable,

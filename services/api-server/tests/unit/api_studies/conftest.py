@@ -56,9 +56,10 @@ def mocked_webserver_service_api(
     ) as respx_mock:
 
         # Mocks /health
-        assert oas_paths["/health"]
+        assert oas_paths["/v0/health"]
         assert (
-            oas_paths["/health"]["get"]["operationId"] == "healthcheck_liveness_probe"
+            oas_paths["/v0/health"]["get"]["operationId"]
+            == "healthcheck_liveness_probe"
         )
         # 'http://webserver:8080/v0/health'
         respx_mock.get("/health", name="healthcheck_liveness_probe").respond(
@@ -74,8 +75,8 @@ def mocked_webserver_service_api(
         )
 
         # Mocks /projects/{*}/metadata/ports
-        assert oas_paths["/projects/{project_id}/metadata/ports"]
-        assert "get" in oas_paths["/projects/{project_id}/metadata/ports"]
+        assert oas_paths["/v0/projects/{project_id}/metadata/ports"]
+        assert "get" in oas_paths["/v0/projects/{project_id}/metadata/ports"]
         respx_mock.get(
             path__regex=r"/projects/(?P<project_id>[\w-]+)/metadata/ports$",
             name="list_project_metadata_ports",
