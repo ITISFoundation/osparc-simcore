@@ -4,7 +4,7 @@
 
 import subprocess
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Iterable
 from unittest.mock import Mock
 
 import pytest
@@ -48,7 +48,7 @@ def mock_async_command(mocker: MockerFixture) -> Iterable[Mock]:
 
     original_async_command = r_clone._async_command
 
-    async def _mock_async_command(*cmd: str, cwd: Optional[str] = None) -> str:
+    async def _mock_async_command(*cmd: str, cwd: str | None = None) -> str:
         mock()
         return await original_async_command(*cmd, cwd=cwd)
 
@@ -96,5 +96,5 @@ async def test__async_command_error(cmd: list[str]) -> None:
         await r_clone._async_command(*cmd)
     assert (
         f"{exe_info.value}"
-        == f"Command {' '.join(cmd)} finished with exception:\n/bin/sh: 1: {cmd[0]}: not found\n"
+        == f"Command {' '.join(cmd)} finished with exit code=127:\n/bin/sh: 1: {cmd[0]}: not found\n\nNone"
     )
