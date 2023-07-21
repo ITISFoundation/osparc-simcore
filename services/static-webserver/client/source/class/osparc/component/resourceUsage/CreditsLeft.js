@@ -23,9 +23,7 @@ qx.Class.define("osparc.component.resourceUsage.CreditsLeft", {
 
     this._setLayout(new qx.ui.layout.HBox());
 
-    osparc.data.Resources.dummy.getCreditsLeft()
-      .then(data => this.__buildLayout(data))
-      .catch(err => console.error(err));
+    this.__buildLayout();
   },
 
   statics: {
@@ -65,14 +63,11 @@ qx.Class.define("osparc.component.resourceUsage.CreditsLeft", {
   },
 
   members: {
-    __buildLayout: function(data) {
-      this.__addCredits(data.credits);
+    __buildLayout: function() {
+      this.__addCredits();
     },
 
-    __addCredits: function(credits) {
-      const store = osparc.store.Store.getInstance();
-      store.setCredits(credits.left);
-
+    __addCredits: function() {
       const progressBar = this.self().createCreditsLeftInidcator();
       progressBar.set({
         cursor: "pointer"
