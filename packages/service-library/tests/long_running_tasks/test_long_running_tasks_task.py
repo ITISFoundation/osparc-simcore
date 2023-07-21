@@ -25,6 +25,7 @@ from servicelib.long_running_tasks._models import (
     TaskStatus,
 )
 from servicelib.long_running_tasks._task import TasksManager, start_task
+from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -34,7 +35,7 @@ _RETRY_PARAMS: dict[str, Any] = {
     "reraise": True,
     "wait": wait_fixed(0.1),
     "stop": stop_after_delay(60),
-    "retry": retry_if_exception_type(AssertionError),
+    "retry": retry_if_exception_type((AssertionError, TryAgain)),
 }
 
 
@@ -101,7 +102,7 @@ async def test_task_is_auto_removed(
             for tasks in tasks_manager._tasks_groups.values():  # noqa: SLF001
                 if task_id in tasks:
                     msg = "wait till no element is found any longer"
-                    raise AssertionError(msg)
+                    raise TryAgain(msg)
 
     with pytest.raises(TaskNotFoundError):
         tasks_manager.get_task_status(task_id, with_task_context=None)
