@@ -101,7 +101,10 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           break;
         case "usage-overview":
           control = new qx.ui.menu.Button(this.tr("Usage Overview"));
-          control.addListener("execute", () => osparc.component.resourceUsage.Overview.popUpInWindow(), this);
+          control.addListener("execute", () => {
+            const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow();
+            creditsWindow.openUsageOverview();
+          }, this);
           this.getMenu().add(control);
           break;
         case "clusters":
@@ -160,6 +163,10 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
         this.getChildControl("log-in");
       } else {
         this.getChildControl("preferences");
+        const usageOverview = this.getChildControl("usage-overview");
+        usageOverview.exclude();
+        osparc.utils.Utils.isDevelopmentPlatform()
+          .then(isDevel => isDevel && osparc.product.Utils.isProduct("s4l") ? usageOverview.show() : usageOverview.exclude());
         this.getChildControl("organizations");
         if (osparc.data.Permissions.getInstance().canDo("usage.all.read")) {
           this.getChildControl("usage-overview");
