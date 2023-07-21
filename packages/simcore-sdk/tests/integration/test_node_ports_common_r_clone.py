@@ -145,6 +145,7 @@ async def _upload_local_dir_to_s3(
             progress_bar,
             local_directory_path=source_dir,
             upload_s3_link=s3_directory_link,
+            debug_logs=True,
         )
     if check_progress:
         # NOTE: a progress of 1 is always sent ny the progress bar
@@ -168,6 +169,7 @@ async def _download_from_s3_to_local_dir(
             progress_bar,
             local_directory_path=destination_dir,
             download_s3_link=s3_directory_link,
+            debug_logs=True,
         )
 
 
@@ -368,6 +370,7 @@ async def test_raises_error_if_local_directory_path_is_a_file(
             progress_bar=AsyncMock(),
             local_directory_path=file_path,
             upload_s3_link=AsyncMock(),
+            debug_logs=True,
         )
     with pytest.raises(r_clone.RCloneFileFoundError):
         await r_clone.sync_s3_to_local(
@@ -375,4 +378,5 @@ async def test_raises_error_if_local_directory_path_is_a_file(
             progress_bar=AsyncMock(),
             local_directory_path=file_path,
             download_s3_link=AsyncMock(),
+            debug_logs=True,
         )
