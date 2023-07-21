@@ -27,6 +27,7 @@ async def test_scicrunch_resolves_all_valid_rrids(
     # which is an open API (no auth required). Any change in the responses of that
     # service might cause a failure on this test
     # This tests checks some of the structure "deduced" from the responses so far.
+    # - Old problems: https://github.com/ITISFoundation/osparc-simcore/issues/3043
 
     async with ClientSession(timeout=ClientTimeout(total=30)) as client:
         resolved_items: list[ResolvedItem] = await resolve_rrid(
