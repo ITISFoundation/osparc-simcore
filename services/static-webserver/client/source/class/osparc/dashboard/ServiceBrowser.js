@@ -126,9 +126,12 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       osparc.utils.Study.createStudyFromService(key, version)
         .then(studyId => {
           const resourceSelector = new osparc.component.study.ResourceSelector(studyId);
+          const title = osparc.product.Utils.getStudyAlias({
+            firstUpperCase: true
+          }) + this.tr(" Options");
           const width = 500;
           const height = 400;
-          const win = osparc.ui.window.Window.popUpInWindow(resourceSelector, "Study Options", width, height);
+          const win = osparc.ui.window.Window.popUpInWindow(resourceSelector, title, width, height);
           resourceSelector.addListener("startStudy", () => {
             win.close();
             this._hideLoadingPage();
