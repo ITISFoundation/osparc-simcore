@@ -44,6 +44,33 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
   },
 
   statics: {
+    getMachineInfo: function(machineId) {
+      switch (machineId) {
+        case "sm":
+          return {
+            id: "sm",
+            title: qx.locale.Manager.tr("Small"),
+            resources: {},
+            price: 4
+          };
+        case "md":
+          return {
+            id: "md",
+            title: qx.locale.Manager.tr("Medium"),
+            resources: {},
+            price: 7
+          };
+        case "lg":
+          return {
+            id: "lg",
+            title: qx.locale.Manager.tr("Large"),
+            resources: {},
+            price: 10
+          };
+      }
+      return null;
+    },
+
     createGroupBox: function(label) {
       const box = new qx.ui.groupbox.GroupBox(label);
       box.getChildControl("legend").set({
@@ -54,18 +81,38 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
         backgroundColor: "transparent",
         padding: 2
       });
-      box.setLayout(new qx.ui.layout.VBox(0));
+      box.setLayout(new qx.ui.layout.VBox(5));
       return box;
     },
 
-    createToolbarRadioButton: function(label, id) {
-      const rButton = new qx.ui.toolbar.RadioButton().set({
-        label,
+    createMachineToggleButton: function(machineInfo) {
+      const toFixedIfNecessary = (value, dp) => Number(parseFloat(value).toFixed(dp));
+      const rButton = new qx.ui.form.ToggleButton().set({
         padding: 10,
-        minWidth: 35,
+        minWidth: 120,
+        maxWidth: 120,
         center: true
       });
-      rButton.id = id;
+      // eslint-disable-next-line no-underscore-dangle
+      rButton._setLayout(new qx.ui.layout.VBox(5));
+      rButton.info = machineInfo;
+      // eslint-disable-next-line no-underscore-dangle
+      rButton._add(new qx.ui.basic.Label().set({
+        value: machineInfo.title,
+        font: "text-16"
+      }));
+      Object.keys(machineInfo.resources).forEach(resourceKey => {
+        // eslint-disable-next-line no-underscore-dangle
+        rButton._add(new qx.ui.basic.Label().set({
+          value: resourceKey + ": " + toFixedIfNecessary(machineInfo.resources[resourceKey]),
+          font: "text-12"
+        }));
+      });
+      // eslint-disable-next-line no-underscore-dangle
+      rButton._add(new qx.ui.basic.Label().set({
+        value: qx.locale.Manager.tr("Credits/h") + ": " + machineInfo.price,
+        font: "text-14"
+      }));
       rButton.getContentElement().setStyles({
         "border-radius": "4px"
       });
@@ -133,13 +180,17 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
           this.getChildControl("right-main-layout").add(control);
           break;
+        case "summary-label":
+          control = new qx.ui.basic.Label();
+          this.getChildControl("summary-layout").add(control);
+          break;
       }
       return control || this.base(arguments, id);
     },
 
     __buildLayout: function() {
-      this.__buildLeftColumn();
       this.__buildRightColumn();
+      this.__buildLeftColumn();
     },
 
     createServiceGroup: function(serviceLabel, servicesResources) {
@@ -149,84 +200,62 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
         const mainImageKey = imageKeys.length > 1 ? imageKeys[1] : imageKeys[0];
         const serviceResources = servicesResources[mainImageKey];
         if (serviceResources && "resources" in serviceResources) {
-          const box = this.self().createGroupBox(serviceLabel);
-          const grid = new qx.ui.layout.Grid(5, 5);
-          grid.setColumnAlign(0, "right", "middle"); // resource name
-          grid.setColumnAlign(1, "left", "middle"); // resource options
-          grid.setColumnFlex(1, 1); // resource options
-          const gridLayout = new qx.ui.container.Composite(grid);
-          box.add(gridLayout);
-          box.exclude();
-          let i = 0;
+          const machinesLayout = this.self().createGroupBox(serviceLabel);
+          machinesLayout.setLayout(new qx.ui.layout.HBox(5));
+          machinesLayout.exclude();
+
+          const smInfo = this.self().getMachineInfo("sm");
+          const mdInfo = this.self().getMachineInfo("md");
+          const lgInfo = this.self().getMachineInfo("lg");
           if ("CPU" in serviceResources["resources"]) {
-            const opt1 = this.self().createToolbarRadioButton("1", 1);
-            const opt2 = this.self().createToolbarRadioButton("2", 2);
-            const opt3 = this.self().createToolbarRadioButton("4", 4);
-
-            const group = new qx.ui.form.RadioGroup(opt1, opt2, opt3);
-            group.setSelection([opt2]);
-
-            const groupBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-            groupBox.add(opt1);
-            groupBox.add(opt2);
-            groupBox.add(opt3);
-
-            gridLayout.add(new qx.ui.basic.Label(this.tr("CPU")), {
-              column: 0,
-              row: i
-            });
-            gridLayout.add(groupBox, {
-              column: 1,
-              row: i
-            });
-            box.show();
-            i++;
+            const lgValue = serviceResources["resources"]["CPU"]["limit"];
+            smInfo["resources"]["CPU"] = lgValue/4;
+            mdInfo["resources"]["CPU"] = lgValue/2;
+            lgInfo["resources"]["CPU"] = lgValue;
           }
           if ("RAM" in serviceResources["resources"]) {
-            const opt1 = this.self().createToolbarRadioButton("256 MB", 256);
-            const opt2 = this.self().createToolbarRadioButton("512 MB", 512);
-            const opt3 = this.self().createToolbarRadioButton("1024 MB", 1024);
-
-            const group = new qx.ui.form.RadioGroup(opt1, opt2, opt3);
-            group.setSelection([opt2]);
-
-            const groupBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-            groupBox.add(opt1);
-            groupBox.add(opt2);
-            groupBox.add(opt3);
-
-            gridLayout.add(new qx.ui.basic.Label(this.tr("RAM")), {
-              column: 0,
-              row: i
-            });
-            gridLayout.add(groupBox, {
-              column: 1,
-              row: i
-            });
-            box.show();
-            i++;
+            const lgValue = serviceResources["resources"]["RAM"]["limit"];
+            smInfo["resources"]["RAM"] = osparc.utils.Utils.bytesToGB(lgValue/4);
+            mdInfo["resources"]["RAM"] = osparc.utils.Utils.bytesToGB(lgValue/2);
+            lgInfo["resources"]["RAM"] = osparc.utils.Utils.bytesToGB(lgValue);
           }
           if ("VRAM" in serviceResources["resources"]) {
-            const opt1 = this.self().createToolbarRadioButton("1", 1);
-
-            const group = new qx.ui.form.RadioGroup(opt1);
-            group.setSelection([opt1]);
-
-            const groupBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-            groupBox.add(opt1);
-
-            gridLayout.add(new qx.ui.basic.Label(this.tr("VRAM")), {
-              column: 0,
-              row: i
-            });
-            gridLayout.add(groupBox, {
-              column: 1,
-              row: i
-            });
-            box.show();
-            i++;
+            const lgValue = serviceResources["resources"]["VRAM"]["limit"];
+            smInfo["resources"]["VRAM"] = lgValue;
+            mdInfo["resources"]["VRAM"] = lgValue;
+            lgInfo["resources"]["VRAM"] = lgValue;
           }
-          return box;
+          if (Object.keys(lgInfo["resources"]).length) {
+            const buttons = [];
+            const largeButton = this.self().createMachineToggleButton(lgInfo);
+            [
+              this.self().createMachineToggleButton(smInfo),
+              this.self().createMachineToggleButton(mdInfo),
+              largeButton
+            ].forEach(btn => {
+              buttons.push(btn);
+              machinesLayout.add(btn);
+            });
+            machinesLayout.show();
+
+            const buttonSelected = button => {
+              buttons.forEach(btn => {
+                if (btn !== button) {
+                  btn.setValue(false);
+                }
+              });
+            };
+            buttons.forEach(btn => btn.addListener("execute", () => buttonSelected(btn)));
+            buttons.forEach(btn => btn.addListener("changeValue", e => {
+              if (e.getData()) {
+                this.getChildControl("summary-label").set({
+                  value: serviceLabel + ": " + btn.info.credits
+                });
+              }
+            }));
+            largeButton.execute();
+          }
+          return machinesLayout;
         }
       }
       return null;
@@ -241,7 +270,6 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
       const servicesBox = this.getChildControl("services-resources-layout");
       servicesBox.exclude();
       if ("workbench" in this.__studyData) {
-        let lastServiceGroup = null;
         for (const nodeId in this.__studyData["workbench"]) {
           const node = this.__studyData["workbench"][nodeId];
           const params = {
@@ -259,13 +287,6 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
               if (serviceGroup) {
                 loadingImage.exclude();
                 servicesBox.add(serviceGroup);
-                // hide service name if it's a mono-service study
-                if (lastServiceGroup === null) {
-                  serviceGroup.getChildControl("legend").exclude();
-                } else {
-                  lastServiceGroup.getChildControl("legend").show();
-                }
-                lastServiceGroup = serviceGroup;
                 servicesBox.show();
               }
             });
@@ -281,9 +302,10 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
       cancelButton.addListener("execute", () => this.fireEvent("cancel"));
 
       const summaryLayout = this.getChildControl("summary-layout");
-      summaryLayout.add(new qx.ui.basic.Label(this.tr("Credits summary:")).set({
+      summaryLayout.add(new qx.ui.basic.Label(this.tr("Total Credits/h:")).set({
         font: "text-14"
       }));
+      this.getChildControl("summary-label");
     }
   }
 });

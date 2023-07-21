@@ -755,7 +755,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             const title = osparc.product.Utils.getStudyAlias({
               firstUpperCase: true
             }) + this.tr(" Options");
-            const width = 500;
+            const width = 550;
             const height = 400;
             const win = osparc.ui.window.Window.popUpInWindow(resourceSelector, title, width, height);
             resourceSelector.addListener("startStudy", () => {
@@ -776,7 +776,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               this._hideLoadingPage();
               deleteStudy();
             });
-            win.getChildControl("close-button").addListener("close", () => {
+            win.getChildControl("close-button").addListener("execute", () => {
               this._hideLoadingPage();
               deleteStudy();
             });
