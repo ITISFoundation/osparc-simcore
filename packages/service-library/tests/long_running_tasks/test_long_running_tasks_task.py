@@ -110,9 +110,12 @@ async def test_checked_once_task_is_auto_removed(tasks_manager: TasksManager):
     )
     # check once (different branch in code)
     tasks_manager.get_task_status(task_id, with_task_context=None)
-    await asyncio.sleep(2 * TEST_CHECK_STALE_INTERVAL_S + 1)
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
+            # to detect a stale task, you must not call get status,
+            # we need to sleep before retrying in order to detect it
+            await asyncio.sleep(2 * TEST_CHECK_STALE_INTERVAL_S + 1)
+
             with pytest.raises(TaskNotFoundError):
                 tasks_manager.get_task_status(task_id, with_task_context=None)
             with pytest.raises(TaskNotFoundError):
