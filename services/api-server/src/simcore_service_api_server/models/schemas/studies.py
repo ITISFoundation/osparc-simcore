@@ -2,9 +2,9 @@ from typing import TypeAlias
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.utils.pydantic_tools_extension import FieldNotRequired
 from pydantic import BaseModel, Field
 
-from .._utils_pydantic import NOT_REQUIRED
 from .solvers import SolverPort
 
 StudyID: TypeAlias = ProjectID
@@ -13,8 +13,8 @@ StudyID: TypeAlias = ProjectID
 # OUTPUT
 class Study(BaseModel):  # StudyGet
     uid: StudyID
-    title: str = NOT_REQUIRED
-    description: str = NOT_REQUIRED
+    title: str = FieldNotRequired()
+    description: str = FieldNotRequired()
 
 
 class StudyPort(SolverPort):
