@@ -18,7 +18,7 @@ from simcore_service_webserver._constants import APP_SETTINGS_KEY
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.diagnostics._healthcheck import (
     HEALTH_LATENCY_PROBE,
-    HealthCheckFailed,
+    HealthCheckError,
     assert_healthy_app,
 )
 from simcore_service_webserver.diagnostics.plugin import setup_diagnostics
@@ -213,7 +213,7 @@ async def test_diagnose_on_response_delays(client):
     assert latency_observed > tmax
 
     # diagnostics
-    with pytest.raises(HealthCheckFailed):
+    with pytest.raises(HealthCheckError):
         assert_healthy_app(client.app)
 
 

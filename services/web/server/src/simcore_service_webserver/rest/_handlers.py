@@ -2,10 +2,13 @@
 
 
 """
+import datetime
 import logging
 from typing import Any
 
 from aiohttp import web
+from models_library.utils.pydantic_tools_extension import FieldNotRequired
+from pydantic import BaseModel, parse_raw_as
 
 from .._constants import APP_PUBLIC_CONFIG_PER_PRODUCT, APP_SETTINGS_KEY
 from .._meta import API_VTAG
@@ -13,7 +16,7 @@ from ..login.decorators import login_required
 from ..products.plugin import get_product_name
 from ..redis import get_redis_scheduled_maintenance_client
 from ..utils_aiohttp import envelope_json_response
-from .healthcheck import HealthCheck, HealthCheckFailed
+from .healthcheck import HealthCheck, HealthCheckError
 
 _logger = logging.getLogger(__name__)
 
@@ -34,9 +37,9 @@ async def healthcheck_liveness_probe(request: web.Request):
     try:
         # if slots append get too delayed, just timeout
         health_report = await healthcheck.run(request.app)
-    except HealthCheckFailed as err:
+    except HealthCheckError as err:
         _logger.warning("%s", err)
-        raise web.HTTPServiceUnavailable(reason="unhealthy")
+        raise web.HTTPServiceUnavailable(reason="unhealthy") from err
 
     return web.json_response(data={"data": health_report})
 
@@ -81,6 +84,12 @@ async def get_config(request: web.Request):
     return envelope_json_response(app_public_config | product_public_config)
 
 
+class _ScheduledMaintenanceGet(BaseModel):
+    start: datetime.datetime = FieldNotRequired()
+    end: datetime.datetime = FieldNotRequired()
+    reason: str = FieldNotRequired()
+
+
 @routes.get(f"/{API_VTAG}/scheduled_maintenance", name="get_scheduled_maintenance")
 @login_required
 async def get_scheduled_maintenance(request: web.Request):
@@ -93,6 +102,7 @@ async def get_scheduled_maintenance(request: web.Request):
     #  {"start": "2023-01-20T09:00:00.000Z", "end": "2023-01-20T10:30:00.000Z", "reason": "Release ResistanceIsFutile2"}
     # NOTE: datetime is UTC (Canary islands / UK)
     if maintenance_str := await redis_client.get(hash_key):
+        assert parse_raw_as(_ScheduledMaintenanceGet, maintenance_str)  # nosec
         return web.json_response(data={"data": maintenance_str})
 
     response = web.json_response(status=web.HTTPNoContent.status_code)

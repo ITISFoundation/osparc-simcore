@@ -9,7 +9,7 @@ from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq_utils import wait_till_rabbitmq_responsive
 
 from .rabbitmq_settings import RabbitSettings, get_plugin_settings
-from .rest.healthcheck import HealthCheck, HealthCheckFailed
+from .rest.healthcheck import HealthCheck, HealthCheckError
 
 _logger = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ _logger = logging.getLogger(__name__)
 async def _on_healthcheck_async_adapter(app: web.Application) -> None:
     rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
     if not rabbit_client.healthy:
-        raise HealthCheckFailed(
+        raise HealthCheckError(
             "RabbitMQ client is in a bad state! TIP: check if network was cut between server and clients?"
         )
 

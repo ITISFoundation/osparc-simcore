@@ -11,7 +11,7 @@ import tracemalloc
 from collections import OrderedDict
 from datetime import datetime
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, TypedDict, cast
 
 import orjson
 from models_library.basic_types import SHA1Str
@@ -67,9 +67,7 @@ def now() -> datetime:
 
 
 def format_datetime(snapshot: datetime) -> str:
-    # return snapshot.strftime(DATETIME_FORMAT)
     # TODO: this fullfills datetime schema!!!
-    # 'pattern': '\\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\\d)T(2[0-3]|1\\d|0?[1-9])(:(\\d|[0-5]\\d)){2}(\\.\\d{3})?Z',
 
     # FIXME: ensure snapshot is ZULU time!
     return "{}Z".format(snapshot.isoformat(timespec="milliseconds"))
@@ -93,7 +91,21 @@ def to_datetime(snapshot: str) -> datetime:
 #   - https://tech.gadventures.com/hunting-for-memory-leaks-in-asyncio-applications-3614182efaf7
 
 
-def get_task_info(task: asyncio.Task) -> dict:
+class StackInfoDict(TypedDict):
+    f_code: str
+    f_lineno: str
+
+
+class TaskInfoDict(TypedDict):
+    txt: str
+    type: str
+    done: bool
+    cancelled: bool
+    stack: list[StackInfoDict]
+    exception: str | None
+
+
+def get_task_info(task: asyncio.Task) -> TaskInfoDict:
     def _format_frame(f):
         keys = ["f_code", "f_lineno"]
         return OrderedDict([(k, str(getattr(f, k))) for k in keys])
@@ -109,13 +121,12 @@ def get_task_info(task: asyncio.Task) -> dict:
 
     if not task.done():
         info["stack"] = [_format_frame(x) for x in task.get_stack()]
+    elif task.cancelled():
+        info["cancelled"] = True
     else:
-        if task.cancelled():
-            info["cancelled"] = True
-        else:
-            # WARNING: raise if not done or cancelled
-            exc = task.exception()
-            info["exception"] = f"{type(exc)}: {str(exc)}" if exc else None
+        # WARNING: raise if not done or cancelled
+        exc = task.exception()
+        info["exception"] = f"{type(exc)}: {exc!s}" if exc else None
     return info
 
 

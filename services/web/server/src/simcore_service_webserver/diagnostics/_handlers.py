@@ -8,7 +8,10 @@ from typing import Any
 
 from aiohttp import ClientError, ClientSession, web
 from models_library.app_diagnostics import AppStatusCheck
+from models_library.utils.pydantic_tools_extension import FieldNotRequired
+from pydantic import BaseModel, parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
+from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.utils import logged_gather
 
 from .._meta import API_VERSION, APP_NAME, api_version_prefix
@@ -21,12 +24,21 @@ from ..resource_usage.resource_usage_tracker_client import (
 )
 from ..security.decorators import permission_required
 from ..storage import api as storage_api
-from ..utils import get_task_info, get_tracemalloc_info
+from ..utils import TaskInfoDict, get_task_info, get_tracemalloc_info
 from ..utils_aiohttp import envelope_json_response
 
 _logger = logging.getLogger(__name__)
 
 routes = web.RouteTableDef()
+
+
+class StatusDiagnosticsQueryParam(BaseModel):
+    top_tracemalloc: int = FieldNotRequired()
+
+
+class StatusDiagnosticsGet(BaseModel):
+    loop_tasks: list[TaskInfoDict]
+    top_tracemalloc: list[str]
 
 
 @routes.get(f"/{api_version_prefix}/status/diagnostics", name="get_app_diagnostics")
@@ -43,10 +55,15 @@ async def get_app_diagnostics(request: web.Request):
     }
 
     # allocated memory
-    if request.query.get("top_tracemalloc", False):
-        top = int(request.query["top_tracemalloc"])
-        data.update(top_tracemalloc=get_tracemalloc_info(top))
+    query_params = parse_request_query_parameters_as(
+        StatusDiagnosticsQueryParam, request
+    )
+    if query_params.top_tracemalloc is not None:
+        data.update(
+            top_tracemalloc=get_tracemalloc_info(top=query_params.top_tracemalloc)
+        )
 
+    assert parse_obj_as(StatusDiagnosticsGet, data)  # nosec
     return envelope_json_response(data)
 
 

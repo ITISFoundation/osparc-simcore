@@ -7,12 +7,11 @@
 # pylint: disable=too-many-arguments
 
 
-import json
-
 import openapi_admin
 import openapi_announcements
 import openapi_auth
 import openapi_computations
+import openapi_diagnostics
 import openapi_groups
 import openapi_nih_sparc
 import openapi_projects_comments
@@ -52,6 +51,9 @@ for m in (
     openapi_admin,
     openapi_announcements,
     openapi_auth,
+    openapi_computations,
+    openapi_diagnostics,
+    openapi_groups,
     openapi_nih_sparc,
     openapi_projects_comments,
     openapi_projects_crud,
@@ -62,8 +64,6 @@ for m in (
     openapi_storage,
     openapi_tags,
     openapi_users,
-    openapi_groups,
-    openapi_computations,
 ):
     app.include_router(m.router)
 
@@ -78,5 +78,5 @@ if __name__ == "__main__":
         yaml.safe_dump(openapi, stream=fh, sort_keys=False)
 
     # .json
-    oas_path = oas_path.with_suffix(".json")
-    oas_path.write_text(json.dumps(openapi, indent=1, sort_keys=False))
+    # oas_path = oas_path.with_suffix(".json")
+    # oas_path.write_text(json.dumps(openapi, indent=1, sort_keys=False))

@@ -46,7 +46,7 @@ Taken from https://docs.docker.com/engine/reference/builder/#healthcheck
 
 import asyncio
 import inspect
-from typing import Any, Awaitable, Callable, TypeAlias
+from typing import Any, Awaitable, Callable, TypeAlias, TypedDict
 
 from aiohttp import web
 from aiosignal import Signal
@@ -58,11 +58,17 @@ _HealthCheckSlot = Callable[[web.Application], Awaitable[None]]
 _HealthCheckSignal: TypeAlias = Signal[_HealthCheckSlot]
 
 
-class HealthCheckFailed(RuntimeError):
+class HealthCheckError(RuntimeError):
     """Failed a health check
 
     NOTE: not the same as unhealthy. Check module's doc
     """
+
+
+class HealthInfoDict(TypedDict, total=True):
+    name: str
+    version: str
+    api_version: str
 
 
 class HealthCheck:
@@ -86,14 +92,14 @@ class HealthCheck:
         return self._on_healthcheck
 
     @staticmethod
-    def get_app_info(app: web.Application):
+    def get_app_info(app: web.Application) -> HealthInfoDict:
         """Minimal (header) health report is information about the app"""
         settings = app[APP_SETTINGS_KEY]
-        return {
-            "name": settings.APP_NAME,
-            "version": settings.API_VERSION,
-            "api_version": settings.API_VERSION,
-        }
+        return HealthInfoDict(
+            name=settings.APP_NAME,
+            version=settings.API_VERSION,
+            api_version=settings.API_VERSION,
+        )
 
     async def run(self, app: web.Application) -> dict[str, Any]:
         """Runs all registered checks to determine the service health.
@@ -117,4 +123,4 @@ class HealthCheck:
             return heath_report
 
         except asyncio.TimeoutError as err:
-            raise HealthCheckFailed("Service is slowing down") from err
+            raise HealthCheckError("Service is slowing down") from err
