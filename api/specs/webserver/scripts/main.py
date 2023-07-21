@@ -75,4 +75,4 @@ if __name__ == "__main__":
 
     # .json
     oas_path = oas_path.with_suffix(".json")
-    oas_path.write_text(json.dumps(openapi, indent=1))
+    oas_path.write_text(json.dumps(openapi, indent=1, sort_keys=False))

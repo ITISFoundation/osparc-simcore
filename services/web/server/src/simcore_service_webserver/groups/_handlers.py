@@ -32,6 +32,7 @@ from .exceptions import (
     UserInGroupNotFoundError,
     UserInsufficientRightsError,
 )
+from .schemas import AllUsersGroups, GroupUser, UsersGroup
 
 _logger = logging.getLogger(__name__)
 
@@ -92,6 +93,7 @@ async def list_groups(request: web.Request):
                 product_gid=product.group_id,
             )
 
+    assert parse_obj_as(AllUsersGroups, result)  # nosec
     return result
 
 
@@ -104,7 +106,9 @@ async def get_group(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     gid = request.match_info["gid"]
 
-    return await api.get_user_group(request.app, user_id, gid)
+    group = await api.get_user_group(request.app, user_id, gid)
+    assert parse_obj_as(UsersGroup, group)  # nosec
+    return group
 
 
 @routes.post(f"/{API_VTAG}/groups", name="create_group")
@@ -117,6 +121,7 @@ async def create_group(request: web.Request):
     new_group = await request.json()
 
     created_group = await api.create_user_group(request.app, user_id, new_group)
+    assert parse_obj_as(UsersGroup, created_group)  # nosec
     raise web.HTTPCreated(
         text=json.dumps({"data": created_group}), content_type=MIMETYPE_APPLICATION_JSON
     )
@@ -131,7 +136,11 @@ async def update_group(request: web.Request):
     gid = request.match_info["gid"]
     new_group_values = await request.json()
 
-    return await api.update_user_group(request.app, user_id, gid, new_group_values)
+    updated_group = await api.update_user_group(
+        request.app, user_id, gid, new_group_values
+    )
+    assert parse_obj_as(UsersGroup, updated_group)  # nosec
+    return update_group
 
 
 @routes.delete(f"/{API_VTAG}/groups/{{gid}}", name="delete_group")
@@ -154,7 +163,9 @@ async def get_group_users(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     gid = request.match_info["gid"]
 
-    return await api.list_users_in_group(request.app, user_id, gid)
+    group_user = await api.list_users_in_group(request.app, user_id, gid)
+    assert parse_obj_as(list[GroupUser], group_user)  # nosec
+    return group_user
 
 
 @routes.post(f"/{API_VTAG}/groups/{{gid}}/users", name="add_group_user")
