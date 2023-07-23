@@ -1,11 +1,13 @@
 import json
 import logging
 import re
+from collections.abc import Mapping
 from enum import Enum
 from functools import cached_property
-from typing import Any, Mapping, TypeAlias
+from typing import Any, TypeAlias
 from uuid import UUID
 
+from models_library.api_schemas_directorv2.service import CommonServiceDetails
 from models_library.basic_types import PortInt
 from models_library.generated_models.docker_rest_api import ContainerState, Status2
 from models_library.projects_nodes_io import NodeID
@@ -27,7 +29,6 @@ from ..constants import (
     REGEX_DY_SERVICE_PROXY,
     REGEX_DY_SERVICE_SIDECAR,
 )
-from .service import CommonServiceDetails
 
 TEMPORARY_PORT_NUMBER = 65_534
 
@@ -98,7 +99,7 @@ class Status(BaseModel):
     @classmethod
     def create_as_initially_ok(cls) -> "Status":
         # the service is initially ok when started
-        initial_state = cls(current=DynamicSidecarStatus.OK, info="")
+        initial_state: "Status" = cls(current=DynamicSidecarStatus.OK, info="")
         return initial_state
 
 
@@ -430,29 +431,29 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         # This constructor method sets current product
         names_helper = DynamicSidecarNamesHelper.make(service.node_uuid)
 
-        obj_dict = dict(
-            service_name=names_helper.service_name_dynamic_sidecar,
-            hostname=names_helper.service_name_dynamic_sidecar,
-            port=port,
-            node_uuid=service.node_uuid,
-            project_id=service.project_id,
-            user_id=service.user_id,
-            key=service.key,
-            version=service.version,
-            service_resources=service.service_resources,
-            product_name=service.product_name,
-            paths_mapping=simcore_service_labels.paths_mapping,
-            compose_spec=json.dumps(simcore_service_labels.compose_spec),
-            container_http_entry=simcore_service_labels.container_http_entry,
-            restart_policy=simcore_service_labels.restart_policy,
-            dynamic_sidecar_network_name=names_helper.dynamic_sidecar_network_name,
-            simcore_traefik_zone=names_helper.simcore_traefik_zone,
-            request_dns=request_dns,
-            request_scheme=request_scheme,
-            proxy_service_name=names_helper.proxy_service_name,
-            request_simcore_user_agent=request_simcore_user_agent,
-            dynamic_sidecar={"service_removal_state": {"can_save": can_save}},
-        )
+        obj_dict = {
+            "service_name": names_helper.service_name_dynamic_sidecar,
+            "hostname": names_helper.service_name_dynamic_sidecar,
+            "port": port,
+            "node_uuid": service.node_uuid,
+            "project_id": service.project_id,
+            "user_id": service.user_id,
+            "key": service.key,
+            "version": service.version,
+            "service_resources": service.service_resources,
+            "product_name": service.product_name,
+            "paths_mapping": simcore_service_labels.paths_mapping,
+            "compose_spec": json.dumps(simcore_service_labels.compose_spec),
+            "container_http_entry": simcore_service_labels.container_http_entry,
+            "restart_policy": simcore_service_labels.restart_policy,
+            "dynamic_sidecar_network_name": names_helper.dynamic_sidecar_network_name,
+            "simcore_traefik_zone": names_helper.simcore_traefik_zone,
+            "request_dns": request_dns,
+            "request_scheme": request_scheme,
+            "proxy_service_name": names_helper.proxy_service_name,
+            "request_simcore_user_agent": request_simcore_user_agent,
+            "dynamic_sidecar": {"service_removal_state": {"can_save": can_save}},
+        }
         if run_id:
             obj_dict["run_id"] = run_id
         return cls.parse_obj(obj_dict)

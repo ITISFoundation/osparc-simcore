@@ -1,14 +1,15 @@
-from enum import Enum, unique
-from functools import cached_property, lru_cache, total_ordering
+from functools import cached_property
 from pathlib import Path
 from typing import Any, ClassVar
 
-from models_library.basic_types import PortInt
-from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID
-from models_library.services import VERSION_RE, DynamicServiceKey
-from models_library.users import UserID
 from pydantic import BaseModel, Field
+
+from ..basic_types import PortInt
+from ..projects import ProjectID
+from ..projects_nodes_io import NodeID
+from ..services import VERSION_RE, DynamicServiceKey
+from ..services_enums import ServiceBootType, ServiceState
+from ..users import UserID
 
 
 class CommonServiceDetails(BaseModel):
@@ -51,46 +52,6 @@ class ServiceDetails(CommonServiceDetails):
                 "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                 "basepath": "/x/75c7f3f4-18f9-4678-8610-54a2ade78eaa",
             }
-        }
-
-
-@unique
-class ServiceBootType(str, Enum):
-    V0 = "V0"
-    V2 = "V2"
-
-
-@total_ordering
-@unique
-class ServiceState(Enum):
-    PENDING = "pending"
-    PULLING = "pulling"
-    STARTING = "starting"
-    RUNNING = "running"
-    COMPLETE = "complete"
-    FAILED = "failed"
-    STOPPING = "stopping"
-
-    def __lt__(self, other):
-        if self.__class__ is other.__class__:
-            comparison_order = ServiceState.comparison_order()
-            self_index = comparison_order[self]
-            other_index = comparison_order[other]
-            return self_index < other_index
-        return NotImplemented
-
-    @staticmethod
-    @lru_cache(maxsize=2)
-    def comparison_order() -> dict["ServiceState", int]:
-        """States are comparable to supportmin() on a list of ServiceState"""
-        return {
-            ServiceState.FAILED: 0,
-            ServiceState.PENDING: 1,
-            ServiceState.PULLING: 2,
-            ServiceState.STARTING: 3,
-            ServiceState.RUNNING: 4,
-            ServiceState.STOPPING: 5,
-            ServiceState.COMPLETE: 6,
         }
 
 
