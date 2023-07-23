@@ -24,7 +24,7 @@ router = APIRouter(
     operation_id="healthcheck_readiness_probe",
 )
 async def healthcheck_readiness_probe():
-    """Readiness probe: "Check if the container is ready to receive traffic" """
+    """Readiness probe: check if the container is ready to receive traffic"""
 
 
 @router.get(
@@ -33,11 +33,12 @@ async def healthcheck_readiness_probe():
     operation_id="healthcheck_liveness_probe",
 )
 async def healthcheck_liveness_probe():
-    """Liveness probe: "Check if the container is alive" """
+    """Liveness probe: check if the container is alive"""
 
 
 @router.get(
     "/config",
+    summary="Front end runtime configuration",
     response_model=Envelope[dict[str, Any]],
     operation_id="get_config",
 )
@@ -51,14 +52,14 @@ async def get_config():
     operation_id="get_scheduled_maintenance",
 )
 async def get_scheduled_maintenance():
-    """Returns app and products configs"""
+    ...
 
 
 @router.get(
     "/status",
     summary="checks status of self and connected services",
     response_model=Envelope[AppStatusCheck],
-    response_description="returns app status check",
+    response_description="Returns app status check",
     operation_id="get_app_status",
 )
 async def get_app_status():
@@ -69,7 +70,7 @@ async def get_app_status():
     "/status/diagnostics",
     response_model=Envelope[StatusDiagnosticsGet],
     operation_id="get_app_diagnostics",
-    response_description="returns app diagnostics report",
+    response_description="Returns app diagnostics report",
 )
 async def get_app_diagnostics(
     _query: Annotated[StatusDiagnosticsQueryParam, Depends()]
@@ -79,9 +80,8 @@ async def get_app_diagnostics(
 
 @router.get(
     "/status/{service_name}",
-    summary="returns status of connected service",
     response_model=Envelope[AppStatusCheck],
-    response_description="returns app status check",
+    response_description="Returns app status check",
     operation_id="get_service_status",
 )
 async def get_service_status(service_name: str):
