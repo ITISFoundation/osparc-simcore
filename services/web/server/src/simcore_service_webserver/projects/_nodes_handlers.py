@@ -345,7 +345,7 @@ async def get_node_resources(request: web.Request) -> web.Response:
     if f"{path_params.node_id}" not in project["workbench"]:
         raise NodeNotFoundError(f"{path_params.project_id}", f"{path_params.node_id}")
 
-    resources = await projects_api.get_project_node_resources(
+    resources: ServiceResourcesDict = await projects_api.get_project_node_resources(
         request.app,
         user_id=req_ctx.user_id,
         project_id=path_params.project_id,

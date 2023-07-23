@@ -7,7 +7,11 @@ from ..basic_types import PortInt
 from ..projects_nodes import NodeID
 from ..services import ServiceKey, ServicePortKey, ServiceVersion
 from ..services_enums import ServiceState
+from ..services_resources import ServiceResourcesDict
 from ._base import InputSchema, OutputSchema
+
+assert ServiceResourcesDict  # nosec
+__all__: tuple[str, ...] = ("ServiceResourcesDict",)
 
 
 class NodeCreate(InputSchema):

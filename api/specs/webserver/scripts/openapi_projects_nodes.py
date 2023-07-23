@@ -1,8 +1,3 @@
-""" Helper script to automatically generate OAS
-
-This OAS are the source of truth
-"""
-
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
@@ -15,6 +10,11 @@ from _common import (
     create_and_save_openapi_specs,
 )
 from fastapi import APIRouter, FastAPI, status
+from models_library.api_schemas_long_running_tasks.tasks import TaskGet
+from models_library.api_schemas_webserver.projects_nodes import (
+    NodeGetIdle,
+    ServiceResourcesDict,
+)
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -22,6 +22,11 @@ from models_library.users import GroupID
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.projects._crud_handlers import ProjectPathParams
 from simcore_service_webserver.projects._nodes_handlers import (
+    NodeCreate,
+    NodeCreated,
+    NodeGet,
+    NodeRetrieve,
+    NodeRetrieved,
     _NodePathParams,
     _ProjectGroupAccess,
     _ProjectNodePreview,
@@ -34,16 +39,112 @@ router = APIRouter(
     ],
 )
 
+# projects/*/nodes COLLECTION -------------------------
+
+
+@router.post(
+    "/projects/{project_id}/nodes",
+    response_model=Envelope[NodeCreated],
+    status_code=status.HTTP_201_CREATED,
+    operation_id="create_node",
+)
+def create_node(project_id: str, body: NodeCreate):
+    ...
+
+
+@router.get(
+    "/projects/{project_id}/nodes/{node_id}",
+    operation_id="get_node",
+    response_model=Envelope[NodeGet],
+    responses={"idle": {"model": NodeGetIdle}},
+)
+def get_node(
+    project_id: str,
+    node_id: str,
+):
+    pass
+
+
+@router.delete(
+    "/projects/{project_id}/nodes/{node_id}",
+    operation_id="delete_node",
+    response_model=None,
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_node(project_id: str, node_id: str):
+    pass
+
+
+@router.post(
+    "/projects/{project_id}/nodes/{node_id}:retrieve",
+    operation_id="retrieve_node",
+    response_model=Envelope[NodeRetrieved],
+)
+def retrieve_node(project_id: str, node_id: str, _retrieve: NodeRetrieve):
+    ...
+
+
+@router.post(
+    "/projects/{project_id}/nodes/{node_id}:start",
+    operation_id="retrieve_node",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
+)
+def start_node(project_id: str, node_id: str):
+    ...
+
+
+@router.post(
+    "/projects/{project_id}/nodes/{node_id}:stop",
+    operation_id="stop_node",
+    response_model=Envelope[TaskGet],
+)
+def stop_node(project_id: str, node_id: str):
+    ...
+
+
+@router.post(
+    "/projects/{project_id}/nodes/{node_id}:restart",
+    response_model=None,
+    operation_id="restart_node",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def restart_node(project_id: str, node_id: str):
+    """Note that it has only effect on nodes associated to dynamic services"""
+
 
 #
-# API entrypoints
+# projects/*/nodes/*/resources  COLLECTION -------------------------
+#
+
+
+@router.get(
+    "/projects/{project_id}/nodes/{node_id}/resources",
+    response_model=Envelope[ServiceResourcesDict],
+    operation_id="get_node_resources",
+)
+def get_node_resources(project_id: str, node_id: str):
+    pass
+
+
+@router.put(
+    "/projects/{project_id}/nodes/{node_id}/resources",
+    response_model=Envelope[ServiceResourcesDict],
+    operation_id="replace_node_resources",
+)
+def replace_node_resources(project_id: str, node_id: str, _new: ServiceResourcesDict):
+    pass
+
+
+#
+# projects/*/nodes/-/services
 #
 
 
 @router.get(
     "/projects/{project_id}/nodes/-/services:access",
-    response_model=Envelope[_ProjectGroupAccess],
     operation_id="get_project_services_access_for_gid",
+    response_model=Envelope[_ProjectGroupAccess],
     summary="Check whether provided group has access to the project services",
 )
 async def get_project_services_access_for_gid(project_id: ProjectID, for_gid: GroupID):
@@ -53,6 +154,11 @@ async def get_project_services_access_for_gid(project_id: ProjectID, for_gid: Gr
 assert_handler_signature_against_model(
     get_project_services_access_for_gid, ProjectPathParams
 )
+
+
+#
+# projects/*/nodes/-/preview
+#
 
 
 @router.get(
