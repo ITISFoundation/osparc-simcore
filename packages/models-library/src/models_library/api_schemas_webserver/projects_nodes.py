@@ -2,9 +2,10 @@ from typing import Literal
 
 from pydantic import Field
 
+from ..api_schemas_directorv2.dynamic_services import RetrieveDataOut
 from ..basic_types import PortInt
 from ..projects_nodes import NodeID
-from ..services import ServiceKey, ServiceVersion
+from ..services import ServiceKey, ServicePortKey, ServiceVersion
 from ..services_enums import ServiceState
 from ._base import InputSchema, OutputSchema
 
@@ -76,3 +77,11 @@ class NodeGet(OutputSchema):
 class NodeGetIdle(OutputSchema):
     service_state: Literal["idle"]
     service_uuid: NodeID
+
+
+class NodeRetrieve(InputSchema):
+    port_keys: list[ServicePortKey] = []
+
+
+class NodeRetrieved(OutputSchema, RetrieveDataOut):
+    ...
