@@ -1,8 +1,3 @@
-""" Helper script to automatically generate OAS
-
-This OAS are the source of truth
-"""
-
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
@@ -44,7 +39,7 @@ async def get_project_inputs(project_id: ProjectID):
     operation_id="update_project_inputs",
 )
 async def update_project_inputs(
-    project_id: ProjectID, updates: list[ProjectInputUpdate]
+    project_id: ProjectID, _updates: list[ProjectInputUpdate]
 ):
     """New in version *0.10*"""
 
