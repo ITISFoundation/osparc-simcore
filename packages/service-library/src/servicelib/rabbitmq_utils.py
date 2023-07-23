@@ -84,7 +84,7 @@ async def wait_till_rabbitmq_responsive(url: str) -> bool:
 
 
 async def rpc_register_entries(
-    rabbit_client: "RabbitMQClient",
+    rabbit_client,
     entries: dict[str, str],
     handler: Callable[..., Any],
 ) -> None:
@@ -97,7 +97,7 @@ async def rpc_register_entries(
     """
     await rabbit_client.rpc_register_handler(
         RPCNamespace.from_entries(entries),
-        method_name=handler.__name__,
+        method_name=RPCMethodName(handler.__name__),
         handler=handler,
     )
 
