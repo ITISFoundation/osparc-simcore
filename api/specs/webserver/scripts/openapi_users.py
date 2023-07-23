@@ -46,7 +46,7 @@ async def get_user_profile():
     status_code=status.HTTP_204_NO_CONTENT,
     operation_id="update_my_profile",
 )
-async def update_my_profile(profile: ProfileUpdate):
+async def update_my_profile(_profile: ProfileUpdate):
     ...
 
 
@@ -65,7 +65,7 @@ async def list_tokens():
     status_code=status.HTTP_201_CREATED,
     operation_id="create_token",
 )
-async def create_token(token: TokenCreate):
+async def create_token(_token: TokenCreate):
     ...
 
 
@@ -74,7 +74,7 @@ async def create_token(token: TokenCreate):
     response_model=Envelope[Token],
     operation_id="get_token",
 )
-async def get_token(params: Annotated[_TokenPathParams, Depends()]):
+async def get_token(_params: Annotated[_TokenPathParams, Depends()]):
     ...
 
 
@@ -83,7 +83,7 @@ async def get_token(params: Annotated[_TokenPathParams, Depends()]):
     status_code=status.HTTP_204_NO_CONTENT,
     operation_id="delete_token",
 )
-async def delete_token(params: Annotated[_TokenPathParams, Depends()]):
+async def delete_token(_params: Annotated[_TokenPathParams, Depends()]):
     ...
 
 
@@ -101,7 +101,7 @@ async def list_user_notifications():
     status_code=status.HTTP_204_NO_CONTENT,
     operation_id="create_user_notification",
 )
-async def create_user_notification(notification: UserNotificationCreate):
+async def create_user_notification(_notification: UserNotificationCreate):
     ...
 
 
@@ -111,8 +111,8 @@ async def create_user_notification(notification: UserNotificationCreate):
     operation_id="mark_notification_as_read",
 )
 async def mark_notification_as_read(
-    params: Annotated[_NotificationPathParams, Depends()],
-    notification: UserNotificationPatch,
+    _params: Annotated[_NotificationPathParams, Depends()],
+    _notification: UserNotificationPatch,
 ):
     ...
 
