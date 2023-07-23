@@ -37,7 +37,7 @@ class DictModel(GenericModel, Generic[DictKey, DictValue]):
     def update(self, *s: Iterable[tuple[DictKey, DictValue]]) -> None:
         return self.__root__.update(*s)
 
-    def __iter__(self) -> Iterator[DictKey]:
+    def __iter__(self) -> Iterator[DictKey]:  # type: ignore
         return self.__root__.__iter__()
 
     def get(self, key: DictKey, default: DictValue | None = None):

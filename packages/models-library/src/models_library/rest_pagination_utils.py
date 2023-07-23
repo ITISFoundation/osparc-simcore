@@ -1,5 +1,7 @@
 from math import ceil
-from typing import Any, Dict, List, Protocol, TypedDict, Union, runtime_checkable
+from typing import Any, Protocol, TypedDict, Union, runtime_checkable
+
+from pydantic import AnyHttpUrl
 
 from .rest_pagination import PageLinks, PageMetaInfoLimitOffset
 
@@ -29,23 +31,25 @@ class _StarletteURL(Protocol):
 _URLType = Union[_YarlURL, _StarletteURL]
 
 
-def _replace_query(url: _URLType, query: Dict[str, Any]):
+def _replace_query(url: _URLType, query: dict[str, Any]) -> AnyHttpUrl:
     """This helper function ensures query replacement works with both"""
+    new_url: _URLType | _StarletteURL
     if isinstance(url, _YarlURL):
         new_url = url.update_query(query)
     else:
         new_url = url.replace_query_params(**query)
-    return f"{new_url}"
+    output: AnyHttpUrl = AnyHttpUrl(f"{new_url}")
+    return output
 
 
 class PageDict(TypedDict):
     _meta: Any
     _links: Any
-    data: List[Any]
+    data: list[Any]
 
 
 def paginate_data(
-    chunk: List[Any],
+    chunk: list[Any],
     *,
     request_url: _URLType,
     total: int,

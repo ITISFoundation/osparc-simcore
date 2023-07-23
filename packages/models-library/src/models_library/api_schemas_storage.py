@@ -131,7 +131,9 @@ class FileMetaDataGet(BaseModel):
     )
     created_at: datetime
     last_modified: datetime
-    file_size: ByteSize = Field(-1, description="File size in bytes (-1 means invalid)")
+    file_size: ByteSize | int = Field(
+        -1, description="File size in bytes (-1 means invalid)"
+    )
     entity_tag: ETag | None = Field(
         default=None,
         description="Entity tag (or ETag), represents a specific version of the file, None if invalid upload or datcore",

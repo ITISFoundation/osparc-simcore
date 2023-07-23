@@ -95,6 +95,8 @@ jobs:
               - 'packages/postgres-database/**'
               - 'packages/pytest-simcore/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             postgres-database:
               - 'packages/postgres-database/**'
               - 'packages/pytest-simcore/**'
@@ -1387,6 +1389,8 @@ jobs:
         run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/models-library.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/models-library.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/models-library.bash test
       - uses: codecov/codecov-action@v3.1.4
