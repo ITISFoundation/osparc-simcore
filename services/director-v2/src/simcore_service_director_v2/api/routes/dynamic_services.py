@@ -1,6 +1,7 @@
 import asyncio
 import logging
-from typing import Coroutine, cast
+from collections.abc import Coroutine
+from typing import cast
 
 import httpx
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
@@ -298,7 +299,7 @@ async def service_restart_containers(
     try:
         await scheduler.restart_containers(node_uuid)
     except DynamicSidecarNotFoundError as error:
-        raise LegacyServiceIsNotSupportedError() from error
+        raise LegacyServiceIsNotSupportedError from error
 
     return NoContentResponse()
 

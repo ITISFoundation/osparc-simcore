@@ -1,7 +1,7 @@
 from fastapi import APIRouter
+from models_library.api_schemas_directorv2.meta import Meta, VersionStr
 
 from ...meta import API_VERSION, API_VTAG
-from ...models.schemas.meta import Meta, VersionStr
 
 router = APIRouter()
 
