@@ -273,7 +273,7 @@ def _progress_enabled_zip_write_handler(
     # Replace original write() with a wrapper to track progress
     assert zip_file_handler.fp  # nosec
     old_write_method = zip_file_handler.fp.write
-    zip_file_handler.fp.write = types.MethodType(  # type: ignore
+    zip_file_handler.fp.write = types.MethodType(  # type: ignore[assignment]
         partial(_write_with_progress, old_write_method, pbar=progress_bar),
         zip_file_handler.fp,
     )
