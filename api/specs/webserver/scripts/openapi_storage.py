@@ -1,6 +1,3 @@
-""" Helper script to generate OAS automatically
-"""
-
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
@@ -26,7 +23,10 @@ from pydantic import AnyUrl, ByteSize
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.storage.schemas import DatasetMetaData, FileMetaData
 
-router = APIRouter(prefix=f"/{API_VTAG}", tags=["storage"])
+router = APIRouter(
+    prefix=f"/{API_VTAG}",
+    tags=["storage"],
+)
 
 
 # NOTE: storage generates URLs that contain double encoded
