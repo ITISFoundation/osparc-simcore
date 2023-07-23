@@ -7,7 +7,9 @@ from functools import cached_property
 from typing import Any, TypeAlias
 from uuid import UUID
 
-from models_library.api_schemas_directorv2.service import CommonServiceDetails
+from models_library.api_schemas_directorv2.dynamic_services_service import (
+    CommonServiceDetails,
+)
 from models_library.basic_types import PortInt
 from models_library.generated_models.docker_rest_api import ContainerState, Status2
 from models_library.projects_nodes_io import NodeID
@@ -22,7 +24,7 @@ from pydantic import AnyHttpUrl, BaseModel, ConstrainedStr, Extra, Field, parse_
 from servicelib.error_codes import ErrorCodeStr
 from servicelib.exception_utils import DelayedExceptionHandler
 
-from ..constants import (
+from .constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
     DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,

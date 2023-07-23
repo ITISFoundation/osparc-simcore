@@ -2,6 +2,10 @@ import logging
 from copy import deepcopy
 
 from models_library.aiodocker_api import AioDockerServiceSpec
+from models_library.api_schemas_directorv2.constants import (
+    DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
+)
+from models_library.api_schemas_directorv2.dynamic_services import SchedulerData
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.docker import (
     StandardSimcoreDockerLabels,
@@ -12,8 +16,6 @@ from pydantic import ByteSize
 from servicelib.json_serialization import json_dumps
 
 from ....core.settings import AppSettings, DynamicSidecarSettings
-from ....models.schemas.constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
-from ....models.schemas.dynamic_services import SchedulerData
 from .._namespace import get_compose_namespace
 from ..volumes import DynamicSidecarVolumesPathsResolver
 from ._constants import DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS

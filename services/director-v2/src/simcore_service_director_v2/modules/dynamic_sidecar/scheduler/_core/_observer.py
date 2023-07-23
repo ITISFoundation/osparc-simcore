@@ -6,17 +6,17 @@ from copy import deepcopy
 from math import floor
 
 from fastapi import FastAPI
+from models_library.api_schemas_directorv2.dynamic_services import (
+    DynamicSidecarStatus,
+    SchedulerData,
+    ServiceName,
+)
 from servicelib.error_codes import create_error_code
 
 from .....core.settings import (
     DynamicServicesSchedulerSettings,
     DynamicServicesSettings,
     DynamicSidecarSettings,
-)
-from .....models.schemas.dynamic_services import (
-    DynamicSidecarStatus,
-    SchedulerData,
-    ServiceName,
 )
 from ...docker_api import (
     are_sidecar_and_proxy_services_present,

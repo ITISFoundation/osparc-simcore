@@ -3,16 +3,16 @@ import logging
 from typing import Final
 
 from fastapi import FastAPI
-from models_library.projects_nodes_io import NodeID
-from servicelib.fastapi.long_running_tasks.client import ProgressCallback
-
-from .....core.settings import DynamicServicesSchedulerSettings, DynamicSidecarSettings
-from .....models.schemas.dynamic_services import (
+from models_library.api_schemas_directorv2.dynamic_services import (
     DynamicSidecarStatus,
     RunningDynamicServiceDetails,
     SchedulerData,
     ServiceState,
 )
+from models_library.projects_nodes_io import NodeID
+from servicelib.fastapi.long_running_tasks.client import ProgressCallback
+
+from .....core.settings import DynamicServicesSchedulerSettings, DynamicSidecarSettings
 from ...api_client import SidecarsClient, get_sidecars_client
 from ...docker_api import (
     get_dynamic_sidecar_state,

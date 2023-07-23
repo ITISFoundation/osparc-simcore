@@ -1,21 +1,25 @@
-from models_library.api_schemas_webserver._base import OutputSchema
-from models_library.basic_types import PortInt
-from models_library.projects_nodes import NodeID
-from models_library.services import ServiceKey, ServiceVersion
-from pydantic import BaseModel, Field
+from typing import Literal
+
+from pydantic import Field
+
+from ..basic_types import PortInt
+from ..projects_nodes import NodeID
+from ..services import ServiceKey, ServiceVersion
+from ..services_enums import ServiceState
+from ._base import InputSchema, OutputSchema
 
 
-class _CreateNodeBody(BaseModel):
+class NodeCreate(InputSchema):
     service_key: ServiceKey
     service_version: ServiceVersion
     service_id: str | None = None
 
 
-class _NodeCreated(BaseModel):
+class NodeCreated(OutputSchema):
     node_id: NodeID
 
 
-class _NodeGet(OutputSchema):
+class NodeGet(OutputSchema):
     published_port: PortInt = Field(
         ...,
         description="The ports where the service provides its interface",
@@ -67,3 +71,8 @@ class _NodeGet(OutputSchema):
     user_id: str = Field(
         ..., description="the user that started the service", example="123"
     )
+
+
+class NodeGetIdle(OutputSchema):
+    service_state: Literal["idle"]
+    service_uuid: NodeID

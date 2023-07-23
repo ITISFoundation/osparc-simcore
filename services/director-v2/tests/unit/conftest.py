@@ -27,6 +27,10 @@ from dask_gateway_server.backends.local import UnsafeLocalBackend
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
 from fastapi import FastAPI
+from models_library.api_schemas_directorv2.constants import (
+    DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
+)
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceCreate
 from models_library.basic_types import PortInt
 from models_library.clusters import ClusterID
 from models_library.generated_models.docker_rest_api import (
@@ -41,12 +45,6 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.s3 import S3Settings
 from simcore_sdk.node_ports_v2 import FileLinkType
 from simcore_service_director_v2.core.settings import AppSettings
-from simcore_service_director_v2.models.domains.dynamic_services import (
-    DynamicServiceCreate,
-)
-from simcore_service_director_v2.models.schemas.constants import (
-    DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
-)
 from simcore_service_director_v2.models.schemas.dynamic_services import (
     SchedulerData,
     ServiceDetails,

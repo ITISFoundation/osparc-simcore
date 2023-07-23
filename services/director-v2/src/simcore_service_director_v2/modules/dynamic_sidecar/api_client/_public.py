@@ -5,6 +5,7 @@ from typing import Any, Coroutine, Final
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient
+from models_library.api_schemas_directorv2.dynamic_services import SchedulerData
 from models_library.basic_types import PortInt
 from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkAlias
@@ -23,7 +24,6 @@ from servicelib.logging_utils import log_context, log_decorator
 from servicelib.utils import logged_gather
 
 from ....core.settings import DynamicSidecarSettings
-from ....models.schemas.dynamic_services import SchedulerData
 from ....modules.dynamic_sidecar.docker_api import get_or_create_networks_ids
 from ..errors import EntrypointContainerNotFoundError
 from ._errors import BaseClientHTTPError, UnexpectedStatusError

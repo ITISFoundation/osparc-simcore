@@ -6,6 +6,15 @@ from typing import Any, Final
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.aiodocker_api import AioDockerServiceSpec
+from models_library.api_schemas_directorv2.dynamic_services import (
+    DynamicSidecarStatus,
+    SchedulerData,
+)
+from models_library.api_schemas_directorv2.scheduler import (
+    DockerContainerInspect,
+    DockerStatus,
+    NetworkId,
+)
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeIDStr
@@ -30,12 +39,6 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from .....core.settings import DynamicSidecarProxySettings, DynamicSidecarSettings
-from .....models.schemas.dynamic_services import DynamicSidecarStatus, SchedulerData
-from .....models.schemas.dynamic_services.scheduler import (
-    DockerContainerInspect,
-    DockerStatus,
-    NetworkId,
-)
 from .....utils.db import get_repository
 from .....utils.dict_utils import nested_update
 from ....catalog import CatalogClient

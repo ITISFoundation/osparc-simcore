@@ -12,6 +12,7 @@ import respx
 from click.testing import Result
 from faker import Faker
 from fastapi import status
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes_io import NodeID
 from pytest_mock.plugin import MockerFixture
@@ -20,9 +21,6 @@ from servicelib.long_running_tasks._models import ProgressCallback
 from simcore_service_director_v2.cli import DEFAULT_NODE_SAVE_ATTEMPTS, main
 from simcore_service_director_v2.cli._close_and_save_service import (
     ThinDV2LocalhostClient,
-)
-from simcore_service_director_v2.models.domains.dynamic_services import (
-    DynamicServiceGet,
 )
 from simcore_service_director_v2.models.schemas.dynamic_services import (
     RunningDynamicServiceDetails,

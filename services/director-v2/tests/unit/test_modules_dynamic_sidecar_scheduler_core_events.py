@@ -7,6 +7,11 @@ from typing import Final, Iterable
 
 import pytest
 from fastapi import FastAPI
+from models_library.api_schemas_directorv2.dynamic_services_scheduler import (
+    ContainerState,
+    DockerContainerInspect,
+    DockerStatus,
+)
 from pydantic import PositiveFloat, PositiveInt
 from pytest import LogCaptureFixture, MonkeyPatch
 from pytest_mock import MockerFixture
@@ -14,11 +19,6 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from servicelib.exception_utils import _SKIPS_MESSAGE
 from simcore_service_director_v2.models.schemas.dynamic_services import SchedulerData
-from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
-    ContainerState,
-    DockerContainerInspect,
-    DockerStatus,
-)
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client import (
     BaseClientHTTPError,
 )

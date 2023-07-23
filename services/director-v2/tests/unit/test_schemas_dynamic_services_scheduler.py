@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Iterator
 
 import pytest
-from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
+from models_library.api_schemas_directorv2.dynamic_services_scheduler import (
     SchedulerData,
 )
 
