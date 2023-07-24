@@ -16,6 +16,11 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from hypothesis import strategies as st
+from models_library.api_schemas_webserver.clusters import (
+    ClusterCreate,
+    ClusterPatch,
+    ClusterPing,
+)
 from models_library.clusters import CLUSTER_ADMIN_RIGHTS, Cluster, SimpleAuthentication
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -25,11 +30,6 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (  # nopycln: im
 )
 from simcore_postgres_database.models.clusters import ClusterType
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.director_v2._models import (
-    ClusterCreate,
-    ClusterPatch,
-    ClusterPing,
-)
 from simcore_service_webserver.director_v2.exceptions import (
     ClusterAccessForbidden,
     ClusterNotFoundError,
