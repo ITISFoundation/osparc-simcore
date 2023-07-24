@@ -151,7 +151,7 @@ qx.Class.define("osparc.info.StudyLarge", {
           label: this.tr("ACCESS RIGHTS"),
           view: osparc.info.StudyUtils.createAccessRights(this.getStudy()),
           action: {
-            button: osparc.utils.Utils.getViewButton(),
+            button: osparc.utils.Utils.getEditButton(),
             callback: this.isOpenOptions() ? this.__openAccessRights : "openAccessRights",
             ctx: this
           }
@@ -170,7 +170,7 @@ qx.Class.define("osparc.info.StudyLarge", {
           label: this.tr("TAGS"),
           view: osparc.info.StudyUtils.createTags(this.getStudy()),
           action: {
-            button: osparc.utils.Utils.getViewButton(),
+            button: osparc.utils.Utils.getEditButton(),
             callback: this.isOpenOptions() ? this.__openTagsEditor : "openTags",
             ctx: this
           }
@@ -206,7 +206,7 @@ qx.Class.define("osparc.info.StudyLarge", {
           label: this.tr("QUALITY"),
           view: osparc.info.StudyUtils.createQuality(this.getStudy()),
           action: {
-            button: osparc.utils.Utils.getViewButton(),
+            button: osparc.utils.Utils.getEditButton(),
             callback: this.isOpenOptions() ? this.__openQuality : "openQuality",
             ctx: this
           }
@@ -218,7 +218,7 @@ qx.Class.define("osparc.info.StudyLarge", {
           label: this.tr("CLASSIFIERS"),
           view: osparc.info.StudyUtils.createClassifiers(this.getStudy()),
           action: (this.getStudy().getClassifiers().length || this.__canIWrite()) ? {
-            button: osparc.utils.Utils.getViewButton(),
+            button: osparc.utils.Utils.getEditButton(),
             callback: this.isOpenOptions() ? this.__openClassifiers : "openClassifiers",
             ctx: this
           } : null

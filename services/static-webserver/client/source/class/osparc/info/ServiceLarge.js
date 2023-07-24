@@ -202,7 +202,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
         label: this.tr("ACCESS RIGHTS"),
         view: this.__createAccessRights(),
         action: {
-          button: osparc.utils.Utils.getViewButton(),
+          button: osparc.utils.Utils.getEditButton(),
           callback: this.isOpenOptions() ? this.__openAccessRights : "openAccessRights",
           ctx: this
         }
@@ -216,7 +216,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
           label: this.tr("CLASSIFIERS"),
           view: this.__createClassifiers(),
           action: {
-            button: osparc.utils.Utils.getViewButton(),
+            button: osparc.utils.Utils.getEditButton(),
             callback: this.isOpenOptions() ? this.__openClassifiers : "openClassifiers",
             ctx: this
           }
@@ -232,7 +232,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
           label: this.tr("QUAILITY"),
           view: this.__createQuality(),
           action: {
-            button: osparc.utils.Utils.getViewButton(),
+            button: osparc.utils.Utils.getEditButton(),
             callback: this.isOpenOptions() ? this.__openQuality : "openQuality",
             ctx: this
           }

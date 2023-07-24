@@ -124,7 +124,7 @@ qx.Class.define("osparc.info.StudyMedium", {
           label: this.tr("QUALITY"),
           view: osparc.info.StudyUtils.createQuality(this.getStudy()),
           action: {
-            button: osparc.utils.Utils.getViewButton(),
+            button: osparc.utils.Utils.getEditButton(),
             callback: this.__openQuality,
             ctx: this
           }
