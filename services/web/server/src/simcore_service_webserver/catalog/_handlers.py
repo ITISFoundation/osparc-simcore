@@ -13,11 +13,10 @@ from aiohttp.web import Request, RouteTableDef
 from models_library.api_schemas_webserver.catalog import (
     ServiceGet,
     ServiceInputKey,
-    ServiceKey,
     ServiceOutputKey,
     ServiceUpdate,
-    ServiceVersion,
 )
+from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
