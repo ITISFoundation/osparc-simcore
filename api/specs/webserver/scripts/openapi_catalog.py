@@ -59,7 +59,7 @@ def create_catalog_dag(
 
 @router.put(
     "/catalog/dags/{dag_id}",
-    operation_id="create_catalog_dag",
+    operation_id="replace_catalog_dag",
     response_model=Envelope[DAGOut],
 )
 def replace_catalog_dag(dag_id: int, _new: DAGIn):

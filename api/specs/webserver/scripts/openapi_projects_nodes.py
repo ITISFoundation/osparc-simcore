@@ -12,7 +12,11 @@ from _common import (
 from fastapi import APIRouter, FastAPI, status
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_webserver.projects_nodes import (
-    NodeGetIdle,
+    NodeCreate,
+    NodeCreated,
+    NodeGet,
+    NodeRetrieve,
+    NodeRetrieved,
     ServiceResourcesDict,
 )
 from models_library.generics import Envelope
@@ -22,11 +26,6 @@ from models_library.users import GroupID
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.projects._crud_handlers import ProjectPathParams
 from simcore_service_webserver.projects._nodes_handlers import (
-    NodeCreate,
-    NodeCreated,
-    NodeGet,
-    NodeRetrieve,
-    NodeRetrieved,
     _NodePathParams,
     _ProjectGroupAccess,
     _ProjectNodePreview,
@@ -56,7 +55,7 @@ def create_node(project_id: str, body: NodeCreate):
     "/projects/{project_id}/nodes/{node_id}",
     operation_id="get_node",
     response_model=Envelope[NodeGet],
-    responses={"idle": {"model": NodeGetIdle}},
+    # responses={"idle": {"model": NodeGetIdle}}, TODO: check this variant
 )
 def get_node(
     project_id: str,
@@ -86,7 +85,7 @@ def retrieve_node(project_id: str, node_id: str, _retrieve: NodeRetrieve):
 
 @router.post(
     "/projects/{project_id}/nodes/{node_id}:start",
-    operation_id="retrieve_node",
+    operation_id="start_node",
     status_code=status.HTTP_204_NO_CONTENT,
     response_model=None,
 )

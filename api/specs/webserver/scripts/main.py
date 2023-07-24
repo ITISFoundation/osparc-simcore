@@ -6,26 +6,44 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+import importlib
 
-import openapi_admin
-import openapi_announcements
-import openapi_auth
-import openapi_computations
-import openapi_diagnostics
-import openapi_groups
-import openapi_nih_sparc
-import openapi_projects_comments
-import openapi_projects_crud
-import openapi_projects_metadata
-import openapi_projects_nodes
-import openapi_projects_ports
-import openapi_resource_usage
-import openapi_storage
-import openapi_tags
-import openapi_users
 import yaml
 from fastapi import FastAPI
 from simcore_service_webserver._resources import webserver_resources
+
+openapi_modules = [
+    importlib.import_module(name)
+    for name in (
+        "openapi_activity",
+        "openapi_admin",
+        "openapi_announcements",
+        "openapi_auth",
+        "openapi_catalog",
+        "openapi_cluster",
+        "openapi_computations",
+        "openapi_diagnostics",
+        # "openapi_exporter",
+        "openapi_groups",
+        # "openapi_metamodeling",
+        "openapi_nih_sparc",
+        "openapi_projects_comments",
+        "openapi_projects_crud",
+        "openapi_projects_metadata",
+        "openapi_projects_nodes",
+        "openapi_projects_ports",
+        # "openapi_projects_tags",
+        # "openapi_projects",
+        # "openapi_publications",
+        "openapi_resource_usage",
+        "openapi_storage",
+        "openapi_tags",
+        # "openapi_tasks",
+        "openapi_users",
+        # "openapi_version_control",
+    )
+]
+
 
 app = FastAPI(
     title="osparc-simcore web API",
@@ -48,24 +66,8 @@ app = FastAPI(
         },
     ],
 )
-for m in (
-    openapi_admin,
-    openapi_announcements,
-    openapi_auth,
-    openapi_computations,
-    openapi_diagnostics,
-    openapi_groups,
-    openapi_nih_sparc,
-    openapi_projects_comments,
-    openapi_projects_crud,
-    openapi_projects_metadata,
-    openapi_projects_nodes,
-    openapi_projects_ports,
-    openapi_resource_usage,
-    openapi_storage,
-    openapi_tags,
-    openapi_users,
-):
+
+for m in openapi_modules:
     app.include_router(m.router)
 
 if __name__ == "__main__":

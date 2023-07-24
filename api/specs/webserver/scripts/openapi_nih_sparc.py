@@ -31,9 +31,9 @@ router = APIRouter(
 @router.get(
     "/services",
     response_model=Envelope[list[ServiceGet]],
-    operation_id="list_services",
+    operation_id="list_latest_services",
 )
-async def list_services():
+async def list_latest_services():
     """Returns a list latest version of services"""
 
 
