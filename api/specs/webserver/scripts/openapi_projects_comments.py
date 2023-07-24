@@ -27,7 +27,13 @@ from simcore_service_webserver.projects._comments_handlers import (
     _ProjectCommentsWithCommentPathParams,
 )
 
-router = APIRouter(prefix=f"/{API_VTAG}", tags=["project", "comments"])
+router = APIRouter(
+    prefix=f"/{API_VTAG}",
+    tags=[
+        "projects",
+        "comments",
+    ],
+)
 
 
 #

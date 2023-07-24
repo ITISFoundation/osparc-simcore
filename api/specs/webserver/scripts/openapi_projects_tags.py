@@ -11,6 +11,7 @@ router = APIRouter(
     prefix=f"/{API_VTAG}",
     tags=[
         "projects",
+        "tags",
     ],
 )
 

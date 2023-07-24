@@ -34,7 +34,8 @@ from simcore_service_webserver.projects._nodes_handlers import (
 router = APIRouter(
     prefix=f"/{API_VTAG}",
     tags=[
-        "project",
+        "projects",
+        "nodes",
     ],
 )
 
