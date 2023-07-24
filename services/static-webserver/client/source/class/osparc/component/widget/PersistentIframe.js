@@ -29,6 +29,10 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
   },
 
   statics: {
+    getZoomLabel: function(maximize) {
+      return maximize ? "Restore" : "Maximize";
+    },
+
     getZoomIcon: function(maximize) {
       const iconURL = maximize ? "window-restore" : "window-maximize";
       return osparc.theme.common.Image.URLS[iconURL]+"/20";
