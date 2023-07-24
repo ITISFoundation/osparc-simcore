@@ -37,11 +37,6 @@ paths:
   /v0/projects/{project_id}:close:
     $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1close"
 
-  /v0/projects/{project_uuid}/comments:
-    $ref: "./openapi-projects-comments.yaml#/paths/~1projects~1{project_uuid}~1comments"
-
-  /v0/projects/{project_uuid}/comments/{comment_id}:
-    $ref: "./openapi-projects-comments.yaml#/paths/~1projects~1{project_uuid}~1comments~1{comment_id}"
 
   /v0/projects/{project_id}/nodes/-/services:access:
     $ref: "./openapi-projects-nodes.yaml#/paths/~1projects~1{project_id}~1nodes~1-~1services:access"
