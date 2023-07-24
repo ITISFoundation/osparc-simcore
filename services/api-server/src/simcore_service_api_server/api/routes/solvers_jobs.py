@@ -3,7 +3,7 @@
 import logging
 from collections import deque
 from collections.abc import Callable
-from typing import Annotated
+from typing import Annotated, Final
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
@@ -16,7 +16,8 @@ from models_library.projects_nodes_io import BaseFileLink
 from pydantic.types import PositiveInt
 
 from ...models.basic_types import VersionStr
-from ...models.pagination import LimitOffsetPage, LimitOffsetParams
+from ...models.pagination import Page, PaginationParams
+from ...models.schemas.errors import ErrorGet
 from ...models.schemas.files import File
 from ...models.schemas.jobs import (
     ArgumentTypes,
@@ -43,7 +44,7 @@ from ..dependencies.authentication import get_current_user_id
 from ..dependencies.database import Engine, get_db_engine
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
-from ..errors.http_error import ErrorGet, create_error_json_response
+from ..errors.http_error import create_error_json_response
 from ._common import API_SERVER_DEV_FEATURES_ENABLED, job_output_logfile_responses
 
 _logger = logging.getLogger(__name__)
@@ -64,7 +65,7 @@ def _compose_job_resource_name(solver_key, solver_version, job_id) -> str:
 # - Similar to docker container's API design (container = job and image = solver)
 #
 
-_common_error_responses = {
+_COMMON_ERROR_RESPONSES: Final[dict] = {
     status.HTTP_404_NOT_FOUND: {
         "description": "Job not found",
         "model": ErrorGet,
@@ -113,14 +114,14 @@ async def list_jobs(
 
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/page",
-    response_model=LimitOffsetPage[Job],
+    response_model=Page[Job],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_jobs_page(
     solver_key: SolverKeyId,
     version: VersionStr,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
-    page_params: Annotated[LimitOffsetParams, Depends()],
+    page_params: Annotated[PaginationParams, Depends()],
     catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
@@ -442,7 +443,7 @@ async def get_job_output_logfile(
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/metadata",
     response_model=JobMetadata,
-    responses={**_common_error_responses},
+    responses={**_COMMON_ERROR_RESPONSES},
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_job_custom_metadata(
@@ -483,7 +484,7 @@ async def get_job_custom_metadata(
 @router.patch(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/metadata",
     response_model=JobMetadata,
-    responses={**_common_error_responses},
+    responses={**_COMMON_ERROR_RESPONSES},
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def replace_job_custom_metadata(

@@ -1,0 +1,619 @@
+[
+  {
+    "name": "get_me",
+    "description": "<Request('GET', 'http://webserver:8080/v0/me')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": "/v0/me",
+    "query": null,
+    "request_payload": null,
+    "response_body": {
+      "data": {
+        "first_name": "collins",
+        "last_name": "drew",
+        "id": 1,
+        "login": "collinsdrew@example.com",
+        "role": "User",
+        "groups": {
+          "me": {
+            "gid": 3,
+            "label": "collinsdrew",
+            "description": "primary group",
+            "thumbnail": null,
+            "accessRights": {
+              "read": true,
+              "write": false,
+              "delete": false
+            },
+            "inclusionRules": {}
+          },
+          "organizations": [
+            {
+              "gid": 2,
+              "label": "osparc",
+              "description": "osparc product group",
+              "thumbnail": null,
+              "accessRights": {
+                "read": false,
+                "write": false,
+                "delete": false
+              },
+              "inclusionRules": {}
+            }
+          ],
+          "all": {
+            "gid": 1,
+            "label": "Everyone",
+            "description": "all users",
+            "thumbnail": null,
+            "accessRights": {
+              "read": true,
+              "write": false,
+              "delete": false
+            },
+            "inclusionRules": {}
+          }
+        },
+        "gravatar_id": "aa33f6ec77ea434c2ea4fb92d0fd379e"
+      }
+    },
+    "status_code": 200
+  },
+  {
+    "name": "list_projects",
+    "description": "<Request('GET', 'http://webserver:8080/v0/projects?type=user&show_hidden=false&limit=20&offset=0')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": "/v0/projects",
+    "query": "type=user&show_hidden=false&limit=20&offset=0",
+    "request_payload": null,
+    "response_body": {
+      "_meta": {
+        "limit": 20,
+        "total": 1,
+        "offset": 0,
+        "count": 1
+      },
+      "_links": {
+        "self": "http://webserver:8080/v0/projects?type=user&show_hidden=false&limit=20&offset=0",
+        "first": "http://webserver:8080/v0/projects?type=user&show_hidden=false&limit=20&offset=0",
+        "prev": null,
+        "next": null,
+        "last": "http://webserver:8080/v0/projects?type=user&show_hidden=false&limit=20&offset=0"
+      },
+      "data": [
+        {
+          "uuid": "25531b1a-2565-11ee-ab43-02420a000031",
+          "name": "Brett Montoya",
+          "description": "",
+          "thumbnail": "",
+          "creationDate": "2023-07-18T12:18:04.314Z",
+          "lastChangeDate": "2023-07-20T20:02:42.535Z",
+          "workbench": {
+            "deea006c-a223-4103-b46e-7b677428de9f": {
+              "key": "simcore/services/frontend/file-picker",
+              "version": "1.0.0",
+              "label": "File Picker",
+              "progress": 0.0,
+              "thumbnail": null,
+              "inputs": {},
+              "inputsUnits": {},
+              "inputNodes": [],
+              "outputs": {},
+              "parent": null
+            },
+            "3e700053-3d10-4089-90f7-f0865167c5b2": {
+              "key": "simcore/services/frontend/parameter/integer",
+              "version": "1.0.0",
+              "label": "Integer Parameter",
+              "thumbnail": null,
+              "runHash": null,
+              "inputs": {},
+              "inputsUnits": {},
+              "inputNodes": [],
+              "outputs": {
+                "out_1": 1
+              },
+              "parent": null
+            },
+            "60d76eed-2e50-42e7-8c2d-580566b2f4c6": {
+              "key": "simcore/services/frontend/parameter/boolean",
+              "version": "1.0.0",
+              "label": "Boolean Parameter",
+              "thumbnail": null,
+              "runHash": null,
+              "inputs": {},
+              "inputsUnits": {},
+              "inputNodes": [],
+              "outputs": {
+                "out_1": true
+              },
+              "parent": null
+            },
+            "09e17caa-a538-40d4-9b8e-9a221b8367d3": {
+              "key": "simcore/services/frontend/iterator-consumer/probe/integer",
+              "version": "1.0.0",
+              "label": "Integer probe",
+              "thumbnail": null,
+              "inputs": {
+                "in_1": 0
+              },
+              "inputsUnits": {},
+              "inputNodes": [],
+              "parent": null
+            }
+          },
+          "prjOwner": "watsonchelsea@example.org",
+          "accessRights": {
+            "3": {
+              "read": true,
+              "write": true,
+              "delete": true
+            }
+          },
+          "tags": [],
+          "classifiers": [],
+          "state": {
+            "locked": {
+              "value": false,
+              "status": "CLOSED"
+            },
+            "state": {
+              "value": "UNKNOWN"
+            }
+          },
+          "ui": {
+            "workbench": {
+              "09e17caa-a538-40d4-9b8e-9a221b8367d3": {
+                "position": {
+                  "x": 540,
+                  "y": 240
+                }
+              },
+              "3e700053-3d10-4089-90f7-f0865167c5b2": {
+                "position": {
+                  "x": 180,
+                  "y": 280
+                }
+              },
+              "60d76eed-2e50-42e7-8c2d-580566b2f4c6": {
+                "position": {
+                  "x": 180,
+                  "y": 360
+                }
+              },
+              "deea006c-a223-4103-b46e-7b677428de9f": {
+                "position": {
+                  "x": 160,
+                  "y": 120
+                }
+              }
+            },
+            "slideshow": {},
+            "currentNodeId": "25531b1a-2565-11ee-ab43-02420a000031",
+            "mode": "workbench"
+          },
+          "quality": {
+            "enabled": true,
+            "tsr_target": {
+              "r01": {
+                "level": 4,
+                "references": ""
+              },
+              "r02": {
+                "level": 4,
+                "references": ""
+              },
+              "r03": {
+                "level": 4,
+                "references": ""
+              },
+              "r04": {
+                "level": 4,
+                "references": ""
+              },
+              "r05": {
+                "level": 4,
+                "references": ""
+              },
+              "r06": {
+                "level": 4,
+                "references": ""
+              },
+              "r07": {
+                "level": 4,
+                "references": ""
+              },
+              "r08": {
+                "level": 4,
+                "references": ""
+              },
+              "r09": {
+                "level": 4,
+                "references": ""
+              },
+              "r10": {
+                "level": 4,
+                "references": ""
+              }
+            },
+            "annotations": {
+              "vandv": "",
+              "limitations": "",
+              "certificationLink": "",
+              "certificationStatus": "Uncertified"
+            },
+            "tsr_current": {
+              "r01": {
+                "level": 0,
+                "references": ""
+              },
+              "r02": {
+                "level": 0,
+                "references": ""
+              },
+              "r03": {
+                "level": 0,
+                "references": ""
+              },
+              "r04": {
+                "level": 0,
+                "references": ""
+              },
+              "r05": {
+                "level": 0,
+                "references": ""
+              },
+              "r06": {
+                "level": 0,
+                "references": ""
+              },
+              "r07": {
+                "level": 0,
+                "references": ""
+              },
+              "r08": {
+                "level": 0,
+                "references": ""
+              },
+              "r09": {
+                "level": 0,
+                "references": ""
+              },
+              "r10": {
+                "level": 0,
+                "references": ""
+              }
+            }
+          },
+          "dev": {}
+        }
+      ]
+    },
+    "status_code": 200
+  },
+  {
+    "name": "get_project",
+    "description": "<Request('GET', 'http://webserver:8080/v0/projects/25531b1a-2565-11ee-ab43-02420a000031')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": "/v0/projects/25531b1a-2565-11ee-ab43-02420a000031",
+    "query": null,
+    "request_payload": null,
+    "response_body": {
+      "data": {
+        "uuid": "25531b1a-2565-11ee-ab43-02420a000031",
+        "name": "Tracy Sullivan",
+        "description": "This is an interesting study",
+        "thumbnail": "",
+        "creationDate": "2023-07-18T12:18:04.314Z",
+        "lastChangeDate": "2023-07-20T20:04:05.607Z",
+        "workbench": {
+          "deea006c-a223-4103-b46e-7b677428de9f": {
+            "key": "simcore/services/frontend/file-picker",
+            "version": "1.0.0",
+            "label": "File Picker",
+            "progress": 0.0,
+            "thumbnail": null,
+            "inputs": {},
+            "inputsUnits": {},
+            "inputNodes": [],
+            "outputs": {},
+            "parent": null
+          },
+          "3e700053-3d10-4089-90f7-f0865167c5b2": {
+            "key": "simcore/services/frontend/parameter/integer",
+            "version": "1.0.0",
+            "label": "Integer Parameter",
+            "thumbnail": null,
+            "runHash": null,
+            "inputs": {},
+            "inputsUnits": {},
+            "inputNodes": [],
+            "outputs": {
+              "out_1": 1
+            },
+            "parent": null
+          },
+          "60d76eed-2e50-42e7-8c2d-580566b2f4c6": {
+            "key": "simcore/services/frontend/parameter/boolean",
+            "version": "1.0.0",
+            "label": "Boolean Parameter",
+            "thumbnail": null,
+            "runHash": null,
+            "inputs": {},
+            "inputsUnits": {},
+            "inputNodes": [],
+            "outputs": {
+              "out_1": true
+            },
+            "parent": null
+          },
+          "09e17caa-a538-40d4-9b8e-9a221b8367d3": {
+            "key": "simcore/services/frontend/iterator-consumer/probe/integer",
+            "version": "1.0.0",
+            "label": "Integer probe",
+            "thumbnail": null,
+            "inputs": {
+              "in_1": 0
+            },
+            "inputsUnits": {},
+            "inputNodes": [],
+            "parent": null
+          }
+        },
+        "prjOwner": "rromero@example.org",
+        "accessRights": {
+          "3": {
+            "read": true,
+            "write": true,
+            "delete": true
+          }
+        },
+        "tags": [],
+        "classifiers": [],
+        "state": {
+          "locked": {
+            "value": false,
+            "status": "CLOSED"
+          },
+          "state": {
+            "value": "UNKNOWN"
+          }
+        },
+        "ui": {
+          "workbench": {
+            "09e17caa-a538-40d4-9b8e-9a221b8367d3": {
+              "position": {
+                "x": 540,
+                "y": 240
+              }
+            },
+            "3e700053-3d10-4089-90f7-f0865167c5b2": {
+              "position": {
+                "x": 180,
+                "y": 280
+              }
+            },
+            "60d76eed-2e50-42e7-8c2d-580566b2f4c6": {
+              "position": {
+                "x": 180,
+                "y": 360
+              }
+            },
+            "deea006c-a223-4103-b46e-7b677428de9f": {
+              "position": {
+                "x": 160,
+                "y": 120
+              }
+            }
+          },
+          "slideshow": {},
+          "currentNodeId": "25531b1a-2565-11ee-ab43-02420a000031",
+          "mode": "workbench"
+        },
+        "quality": {
+          "enabled": true,
+          "tsr_target": {
+            "r01": {
+              "level": 4,
+              "references": ""
+            },
+            "r02": {
+              "level": 4,
+              "references": ""
+            },
+            "r03": {
+              "level": 4,
+              "references": ""
+            },
+            "r04": {
+              "level": 4,
+              "references": ""
+            },
+            "r05": {
+              "level": 4,
+              "references": ""
+            },
+            "r06": {
+              "level": 4,
+              "references": ""
+            },
+            "r07": {
+              "level": 4,
+              "references": ""
+            },
+            "r08": {
+              "level": 4,
+              "references": ""
+            },
+            "r09": {
+              "level": 4,
+              "references": ""
+            },
+            "r10": {
+              "level": 4,
+              "references": ""
+            }
+          },
+          "annotations": {
+            "vandv": "",
+            "limitations": "",
+            "certificationLink": "",
+            "certificationStatus": "Uncertified"
+          },
+          "tsr_current": {
+            "r01": {
+              "level": 0,
+              "references": ""
+            },
+            "r02": {
+              "level": 0,
+              "references": ""
+            },
+            "r03": {
+              "level": 0,
+              "references": ""
+            },
+            "r04": {
+              "level": 0,
+              "references": ""
+            },
+            "r05": {
+              "level": 0,
+              "references": ""
+            },
+            "r06": {
+              "level": 0,
+              "references": ""
+            },
+            "r07": {
+              "level": 0,
+              "references": ""
+            },
+            "r08": {
+              "level": 0,
+              "references": ""
+            },
+            "r09": {
+              "level": 0,
+              "references": ""
+            },
+            "r10": {
+              "level": 0,
+              "references": ""
+            }
+          }
+        },
+        "dev": {}
+      }
+    },
+    "status_code": 200
+  },
+  {
+    "name": "get_invalid_project",
+    "description": "<Request('GET', 'http://webserver:8080/v0/projects/15531b1a-2565-11ee-ab43-02420a000031')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": "/v0/projects/15531b1a-2565-11ee-ab43-02420a000031",
+    "query": null,
+    "request_payload": null,
+    "response_body": {
+      "data": null,
+      "error": {
+        "logs": [
+          {
+            "message": "Project 15531b1a-2565-11ee-ab43-02420a000031 not found",
+            "level": "ERROR",
+            "logger": "user"
+          }
+        ],
+        "errors": [
+          {
+            "code": "HTTPNotFound",
+            "message": "Project 15531b1a-2565-11ee-ab43-02420a000031 not found",
+            "resource": null,
+            "field": null
+          }
+        ],
+        "status": 404,
+        "message": "Project 15531b1a-2565-11ee-ab43-02420a000031 not found"
+      }
+    },
+    "status_code": 404
+  },
+  {
+    "name": "get_project_ports",
+    "description": "<Request('GET', 'http://webserver:8080/v0/projects/25531b1a-2565-11ee-ab43-02420a000031/metadata/ports')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": "/v0/projects/25531b1a-2565-11ee-ab43-02420a000031/metadata/ports",
+    "query": null,
+    "request_payload": null,
+    "response_body": {
+      "data": [
+        {
+          "key": "3e700053-3d10-4089-90f7-f0865167c5b2",
+          "kind": "input",
+          "content_schema": {
+            "title": "Integer Parameter",
+            "type": "integer",
+            "description": "Parameter of type integer"
+          }
+        },
+        {
+          "key": "60d76eed-2e50-42e7-8c2d-580566b2f4c6",
+          "kind": "input",
+          "content_schema": {
+            "title": "Boolean Parameter",
+            "type": "boolean",
+            "description": "Parameter of type boolean"
+          }
+        },
+        {
+          "key": "09e17caa-a538-40d4-9b8e-9a221b8367d3",
+          "kind": "output",
+          "content_schema": {
+            "title": "Integer probe",
+            "type": "integer",
+            "description": "Captures integer values attached to it",
+            "default": 0
+          }
+        }
+      ]
+    },
+    "status_code": 200
+  },
+  {
+    "name": "get_invalid_project_ports",
+    "description": "<Request('GET', 'http://webserver:8080/v0/projects/15531b1a-2565-11ee-ab43-02420a000031/metadata/ports')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": "/v0/projects/15531b1a-2565-11ee-ab43-02420a000031/metadata/ports",
+    "query": null,
+    "request_payload": null,
+    "response_body": {
+      "data": null,
+      "error": {
+        "logs": [
+          {
+            "message": "Project '15531b1a-2565-11ee-ab43-02420a000031' not found",
+            "level": "ERROR",
+            "logger": "user"
+          }
+        ],
+        "errors": [
+          {
+            "code": "HTTPNotFound",
+            "message": "Project '15531b1a-2565-11ee-ab43-02420a000031' not found",
+            "resource": null,
+            "field": null
+          }
+        ],
+        "status": 404,
+        "message": "Project '15531b1a-2565-11ee-ab43-02420a000031' not found"
+      }
+    },
+    "status_code": 404
+  }
+]
