@@ -10,11 +10,13 @@ from ._constants import (
 
 
 def get_tasks_manager(app: web.Application) -> TasksManager:
-    return app[APP_LONG_RUNNING_TASKS_MANAGER_KEY]
+    output: TasksManager = app[APP_LONG_RUNNING_TASKS_MANAGER_KEY]
+    return output
 
 
 def get_task_context(request: web.Request) -> dict[str, Any]:
-    return request[RQT_LONG_RUNNING_TASKS_CONTEXT_KEY]
+    output: dict[str, Any] = request[RQT_LONG_RUNNING_TASKS_CONTEXT_KEY]
+    return output
 
 
 def create_task_name_from_request(request: web.Request) -> str:

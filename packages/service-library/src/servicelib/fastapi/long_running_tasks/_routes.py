@@ -9,7 +9,7 @@ from ._dependencies import get_tasks_manager
 router = APIRouter(prefix="/task")
 
 
-@router.get("", response_model=list[TaskGet])
+@router.get("", response_model=list[TaskGet])  # type: ignore
 @cancel_on_disconnect
 async def list_tasks(
     request: Request, tasks_manager: TasksManager = Depends(get_tasks_manager)
@@ -27,7 +27,7 @@ async def list_tasks(
     ]
 
 
-@router.get(
+@router.get(  # type: ignore
     "/{task_id}",
     responses={
         status.HTTP_404_NOT_FOUND: {"description": "Task does not exist"},
@@ -43,7 +43,7 @@ async def get_task_status(
     return tasks_manager.get_task_status(task_id=task_id, with_task_context=None)
 
 
-@router.get(
+@router.get(  # type: ignore
     "/{task_id}/result",
     responses={
         status.HTTP_400_BAD_REQUEST: {
@@ -76,7 +76,7 @@ async def get_task_result(
         raise
 
 
-@router.delete(
+@router.delete(  # type: ignore
     "/{task_id}",
     summary="Cancel and deletes a task",
     response_model=None,
