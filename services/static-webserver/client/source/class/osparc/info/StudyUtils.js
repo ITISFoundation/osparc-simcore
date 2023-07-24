@@ -247,6 +247,24 @@ qx.Class.define("osparc.info.StudyUtils", {
       return moreInfo;
     },
 
+    titleWithEditLayout: function(data) {
+      const titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      const title = new qx.ui.basic.Label(data.label);
+      titleLayout.add(title);
+      if (data.action) {
+        titleLayout.add(data.action.button);
+        data.action.button.addListener("execute", () => {
+          const cb = data.action.callback;
+          if (typeof cb === "string") {
+            data.action.ctx.fireEvent(cb);
+          } else {
+            cb.call(data.action.ctx);
+          }
+        }, this);
+      }
+      return titleLayout;
+    },
+
     createExtraInfoGrid: function(extraInfos) {
       const positions = {
         ACCESS_RIGHTS: {
@@ -304,20 +322,7 @@ qx.Class.define("osparc.info.StudyUtils", {
           const extraInfo = extraInfos[key];
           const gridInfo = positions[key];
 
-          const titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-          const title = new qx.ui.basic.Label(extraInfo.label);
-          titleLayout.add(title);
-          if (extraInfo.action) {
-            titleLayout.add(extraInfo.action.button);
-            extraInfo.action.button.addListener("execute", () => {
-              const cb = extraInfo.action.callback;
-              if (typeof cb === "string") {
-                extraInfo.action.ctx.fireEvent(cb);
-              } else {
-                cb.call(extraInfo.action.ctx);
-              }
-            }, this);
-          }
+          const titleLayout = this.titleWithEditLayout(extraInfo);
           moreInfo.add(titleLayout, {
             row: gridInfo.row,
             column: gridInfo.column,
