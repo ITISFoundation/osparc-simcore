@@ -110,6 +110,8 @@ jobs:
               - 'packages/pytest-simcore/**'
               - 'packages/service-library/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             settings-library:
               - 'packages/pytest-simcore/**'
               - 'packages/settings-library/**'
@@ -1300,6 +1302,8 @@ jobs:
         run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/service-library.bash install_all
+      - name: typecheck
+        run: ./ci/github/unit-testing/service-library.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/service-library.bash test_all
       - uses: codecov/codecov-action@v3.1.4
