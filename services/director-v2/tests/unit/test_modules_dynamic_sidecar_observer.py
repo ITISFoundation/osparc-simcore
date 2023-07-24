@@ -34,9 +34,9 @@ def disable_observation(mocker: MockerFixture) -> None:  # noqa: PT004
 
 
 @pytest.fixture
-def mock_are_sidecar_and_proxy_services_present(
+def mock_are_sidecar_and_proxy_services_present(  # noqa: PT004
     mocker: MockerFixture,
-) -> None:  # noqa: PT004
+) -> None:
     mocker.patch(
         "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._observer.are_sidecar_and_proxy_services_present",
         autospec=True,
