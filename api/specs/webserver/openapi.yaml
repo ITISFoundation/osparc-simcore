@@ -138,18 +138,6 @@ paths:
   /v0/catalog/services/{service_key}/{service_version}/resources:
     $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version_resources"
 
-  # CLUSTER -------------------------------------------------------------------------
-  /v0/clusters:ping:
-    $ref: "./openapi-clusters.yaml#/paths/director_v2_clusters_ping"
-  /v0/clusters:
-    $ref: "./openapi-clusters.yaml#/paths/~1clusters"
-  /v0/clusters/{cluster_id}:
-    $ref: "./openapi-clusters.yaml#/paths/~1clusters~1{cluster_id}"
-  /v0/clusters/{cluster_id}:ping:
-    $ref: "./openapi-clusters.yaml#/paths/director_v2_clusters_cluster_id_ping"
-  /v0/clusters/{cluster_id}/details:
-    $ref: "./openapi-clusters.yaml#/paths/director_v2_clusters_cluster_id_details"
-
   # TASKS --------------------------------------------------------------------------
   /v0/tasks:
     $ref: "./openapi-tasks.yaml#/paths/~1tasks"
