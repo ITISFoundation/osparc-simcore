@@ -90,19 +90,19 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
       };
     },
 
-    getOwners: function(studyData) {
-      const owners = [];
+    __getDeleters: function(studyData) {
+      const deleters = [];
       Object.entries(studyData["accessRights"]).forEach(([key, value]) => {
         if (value["delete"]) {
-          owners.push(key);
+          deleters.push(key);
         }
       });
-      return owners;
+      return deleters;
     },
 
     // checks that if the user to remove is an owner, there will still be another owner
     checkRemoveCollaborator: function(studyData, gid) {
-      const ownerGids = this.getOwners(studyData);
+      const ownerGids = this.__getDeleters(studyData);
       if (ownerGids.includes(gid.toString())) {
         return ownerGids.length > 1;
       }
