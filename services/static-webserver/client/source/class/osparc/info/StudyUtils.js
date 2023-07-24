@@ -267,44 +267,37 @@ qx.Class.define("osparc.info.StudyUtils", {
 
     createExtraInfoGrid: function(extraInfos) {
       const positions = {
-        ACCESS_RIGHTS: {
+        THUMBNAIL: {
           column: 0,
-          row: 0
-        },
-        AUTHOR: {
-          column: 1,
-          row: 0
+          row: 0*3
         },
         CREATED: {
-          column: 2,
-          row: 0
+          column: 0,
+          row: 1*3
         },
         MODIFIED: {
-          column: 3,
-          row: 0
+          column: 0,
+          row: 2*3
         },
-        THUMBNAIL: {
-          column: 4,
-          row: 0,
-          rowSpan: 4
+        ACCESS_RIGHTS: {
+          column: 0,
+          row: 3*3
+        },
+        AUTHOR: {
+          column: 0,
+          row: 4*3
         },
         TAGS: {
           column: 0,
-          row: 3,
-          colSpan: 2
+          row: 5*3
         },
         QUALITY: {
-          column: 2,
-          row: 3
+          column: 0,
+          row: 6*3
         },
         CLASSIFIERS: {
-          column: 3,
-          row: 3
-        },
-        DESCRIPTION: {
           column: 0,
-          row: 6,
-          colSpan: 5
+          row: 7*3
         }
       };
 
@@ -313,8 +306,13 @@ qx.Class.define("osparc.info.StudyUtils", {
       grid.setColumnAlign(1, "left", "middle");
       grid.setColumnAlign(2, "left", "middle");
       grid.setColumnAlign(3, "left", "middle");
-      grid.setRowHeight(2, 10); // spacer
-      grid.setRowHeight(5, 10); // spacer
+      grid.setRowHeight(1*3-1, 10); // spacer
+      grid.setRowHeight(2*3-1, 10); // spacer
+      grid.setRowHeight(3*3-1, 10); // spacer
+      grid.setRowHeight(4*3-1, 10); // spacer
+      grid.setRowHeight(5*3-1, 10); // spacer
+      grid.setRowHeight(6*3-1, 10); // spacer
+      grid.setRowHeight(7*3-1, 10); // spacer
       const moreInfo = new qx.ui.container.Composite(grid);
 
       Object.keys(positions).forEach(key => {

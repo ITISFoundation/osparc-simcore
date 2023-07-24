@@ -88,14 +88,34 @@ qx.Class.define("osparc.info.StudyLarge", {
       }
       vBox.add(titleAndCopyLayout);
 
+      const mainHBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
+      const leftVBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      mainHBox.add(leftVBox, {
+        flex: 1
+      });
+      const rightVBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
+      mainHBox.add(rightVBox);
+      vBox.add(mainHBox);
+
       if (osparc.product.Utils.showStudyPreview() && !this.getStudy().isPipelineEmpty()) {
-        const studyThumbnailExplorer = new osparc.dashboard.StudyThumbnailExplorer(this.getStudy().serialize());
-        vBox.add(studyThumbnailExplorer);
+        leftVBox.add(new osparc.dashboard.StudyThumbnailExplorer(this.getStudy().serialize()));
+        leftVBox.add(new qx.ui.core.Spacer(15, 15));
       }
+      const descInfo = {
+        label: this.tr("DESCRIPTION"),
+        view: osparc.info.StudyUtils.createDescription(this.getStudy()),
+        action: {
+          button: osparc.utils.Utils.getEditButton(),
+          callback: this.__canIWrite() ? this.__openDescriptionEditor : null,
+          ctx: this
+        }
+      };
+      leftVBox.add(osparc.info.StudyUtils.titleWithEditLayout(descInfo));
+      leftVBox.add(descInfo.view);
 
       const extraInfo = this.__extraInfo();
       const extraInfoLayout = this.__createExtraInfo(extraInfo);
-      vBox.add(extraInfoLayout);
+      rightVBox.add(extraInfoLayout);
 
       const scrollContainer = new qx.ui.container.Scroll();
       scrollContainer.add(vBox);
@@ -155,6 +175,7 @@ qx.Class.define("osparc.info.StudyLarge", {
             ctx: this
           }
         },
+        /*
         "DESCRIPTION": {
           label: this.tr("DESCRIPTION"),
           view: osparc.info.StudyUtils.createDescription(this.getStudy()),
@@ -164,6 +185,7 @@ qx.Class.define("osparc.info.StudyLarge", {
             ctx: this
           }
         },
+        */
         "THUMBNAIL": {
           label: this.tr("THUMBNAIL"),
           view: this.__createThumbnail(),
