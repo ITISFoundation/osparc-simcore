@@ -67,9 +67,10 @@ qx.Class.define("osparc.info.StudyLarge", {
         font: "text-14"
       });
       const titleLayout = this.__createViewWithEdit(title, this.__openTitleEditor);
+      const text = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + " Id";
       const button = new qx.ui.form.Button(null, "@FontAwesome5Solid/copy/12").set({
-        label: osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + " Id",
-        toolTipText: "Copy " + osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + " Id"
+        label: text,
+        toolTipText: "Copy " + text
       });
       button.addListener("execute", () => osparc.utils.Utils.copyTextToClipboard(this.getStudy().getUuid()));
       let autoStartButton = null;
