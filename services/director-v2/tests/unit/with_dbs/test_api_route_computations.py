@@ -70,7 +70,6 @@ def minimal_configuration(
     mocked_rabbit_mq_client: None,
 ):
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
-    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "1")
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")

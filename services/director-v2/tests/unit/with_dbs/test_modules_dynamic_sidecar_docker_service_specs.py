@@ -31,7 +31,9 @@ from simcore_service_director_v2.utils.dict_utils import nested_update
 
 
 @pytest.fixture
-def mock_env(monkeypatch: MonkeyPatch, mock_env: EnvVarsDict) -> EnvVarsDict:
+def mock_env(
+    monkeypatch: MonkeyPatch, mock_env: EnvVarsDict, disable_postgres: None
+) -> EnvVarsDict:
     """overrides unit/conftest:mock_env fixture"""
     env_vars = mock_env.copy()
     env_vars.update(

@@ -313,7 +313,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
-    _createStudyFromService: function() {
+    _createStudyFromService: async function() {
       throw new Error("Abstract method called!");
     },
 

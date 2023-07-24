@@ -29,8 +29,7 @@ async def get_service_base_url(
 
 @log_decorator(logger=logger)
 def get_services_client(request: Request) -> ServicesClient:
-    client = ServicesClient.instance(request.app)
-    return client
+    return ServicesClient.instance(request.app)
 
 
 def get_dynamic_services_settings(request: Request) -> DynamicServicesSettings:

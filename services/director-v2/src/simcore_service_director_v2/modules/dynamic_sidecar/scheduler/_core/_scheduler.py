@@ -247,11 +247,11 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes
                 return
 
             if scheduler_data.node_uuid in self._inverse_search_mapping:
-                raise DynamicSidecarError(
-                    "node_uuids at a global level collided. A running "
-                    f"service for node {scheduler_data.node_uuid} already exists. "
-                    "Please checkout other projects which may have this issue."
+                msg = (
+                    f"node_uuids at a global level collided. A running service for node {scheduler_data.node_uuid} already exists."
+                    " Please checkout other projects which may have this issue."
                 )
+                raise DynamicSidecarError(msg)
 
             self._inverse_search_mapping[
                 scheduler_data.node_uuid

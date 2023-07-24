@@ -23,7 +23,7 @@ _logger = logging.getLogger(__name__)
 def setup_catalog(app: web.Application):
     # ensures routes are names that corresponds to function names
     for route_def in _handlers.routes:
-        route_def.kwargs["name"] = route_def.handler.__name__  # type: ignore
+        route_def.kwargs["name"] = route_def.handler.__name__
 
     app.add_routes(_handlers.routes)
 

@@ -38,7 +38,7 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserRole
 
 from .._constants import APP_SETTINGS_KEY, MSG_UNDER_DEVELOPMENT
-from .._meta import api_version_prefix as VTAG
+from .._meta import API_VTAG as VTAG
 from ..catalog import client as catalog_client
 from ..director_v2 import api
 from ..director_v2.exceptions import DirectorServiceError
@@ -47,7 +47,7 @@ from ..security.decorators import permission_required
 from ..users.api import get_user_role
 from ..utils_aiohttp import envelope_json_response
 from . import projects_api
-from ._handlers_crud import ProjectPathParams, RequestContext
+from ._common_models import ProjectPathParams, RequestContext
 from ._nodes_api import NodeScreenshot, fake_screenshots_factory
 from .db import ProjectDBAPI
 from .exceptions import (

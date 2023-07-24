@@ -123,7 +123,7 @@ async def fake_screenshots_factory(
             file_url = await get_download_link(request.app, user_id, filelink)
             screenshots.append(
                 NodeScreenshot(
-                    thumbnail_url=f"https://placehold.co/170x120?text={text}",
+                    thumbnail_url=f"https://placehold.co/170x120?text={text}",  # type: ignore[arg-type]
                     file_url=file_url,
                 )
             )
@@ -148,16 +148,16 @@ async def fake_screenshots_factory(
         screenshots = [
             *(
                 NodeScreenshot(
-                    thumbnail_url=f"https://picsum.photos/seed/{node_id.int + n}/170/120",
-                    file_url=f"https://picsum.photos/seed/{node_id.int + n}/500",
+                    thumbnail_url=f"https://picsum.photos/seed/{node_id.int + n}/170/120",  # type: ignore[arg-type]
+                    file_url=f"https://picsum.photos/seed/{node_id.int + n}/500",  # type: ignore[arg-type]
                     mimetype="image/jpeg",
                 )
                 for n in range(count)
             ),
             *(
                 NodeScreenshot(
-                    thumbnail_url=f"https://placehold.co/170x120?text={text}",
-                    file_url=f"https://placehold.co/500x500?text={text}",
+                    thumbnail_url=f"https://placehold.co/170x120?text={text}",  # type: ignore[arg-type]
+                    file_url=f"https://placehold.co/500x500?text={text}",  # type: ignore[arg-type]
                     mimetype="image/svg+xml",
                 )
                 for n in range(count)
