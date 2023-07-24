@@ -45,12 +45,13 @@ router = APIRouter()
     reraise=False,
     before_sleep=before_sleep_log(_logger, logging.WARNING, exc_info=True),
 )
-def _retry_toggle_observation(
+def _toggle_observation_succeeded(
     dynamic_sidecars_scheduler: DynamicSidecarsScheduler,
     node_uuid: NodeID,
     *,
     is_disabled: bool,
 ) -> bool:
+    # returns True if the `toggle_observation` operation succeeded
     return dynamic_sidecars_scheduler.toggle_observation(node_uuid, is_disabled)
 
 
@@ -66,7 +67,7 @@ async def update_service_observation(
         DynamicSidecarsScheduler, Depends(get_dynamic_sidecar_scheduler)
     ],
 ) -> NoContentResponse:
-    if _retry_toggle_observation(
+    if _toggle_observation_succeeded(
         dynamic_sidecars_scheduler=dynamic_sidecars_scheduler,
         node_uuid=node_uuid,
         is_disabled=observation_item.is_disabled,

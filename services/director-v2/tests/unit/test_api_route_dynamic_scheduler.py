@@ -56,7 +56,7 @@ def dynamic_sidecar_scheduler(client: TestClient) -> DynamicSidecarsScheduler:
 
 
 @pytest.fixture
-def mock_apply_apply_observation_cycle(mocker: MockerFixture) -> None:  # noqa: PT004
+def mock_apply_observation_cycle(mocker: MockerFixture) -> None:  # noqa: PT004
     module_base = (
         "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._observer"
     )
@@ -126,7 +126,7 @@ async def test_update_service_observation_node_not_found(
 
 
 async def test_update_service_observation(
-    mock_apply_apply_observation_cycle: None,
+    mock_apply_observation_cycle: None,
     mock_sidecar_api: None,
     client: TestClient,
     observed_service: SchedulerData,
@@ -182,7 +182,7 @@ async def test_update_service_observation(
     ],
 )
 async def test_409_response(
-    mock_apply_apply_observation_cycle: None,
+    mock_apply_observation_cycle: None,
     mock_scheduler_service_shutdown_tasks: None,
     client: TestClient,
     observed_service: SchedulerData,
