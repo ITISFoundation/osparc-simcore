@@ -13,12 +13,15 @@ from aiohttp.web import Request
 from models_library.api_schemas_webserver.catalog import (
     ServiceInputGet,
     ServiceInputKey,
-    ServiceKey,
     ServiceOutputGet,
     ServiceOutputKey,
+)
+from models_library.services import (
+    ServiceInput,
+    ServiceKey,
+    ServiceOutput,
     ServiceVersion,
 )
-from models_library.services import ServiceInput, ServiceOutput
 from models_library.users import UserID
 from pint import UnitRegistry
 from pydantic import BaseModel

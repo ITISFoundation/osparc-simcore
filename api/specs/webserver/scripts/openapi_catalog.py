@@ -1,14 +1,24 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
-from models_library.api_schemas_catalog.schemas.services import ServiceGet
+from models_library.api_schemas_webserver.catalog import (
+    DAGIn,
+    DAGOut,
+    ServiceGet,
+    ServiceInputGet,
+    ServiceInputKey,
+    ServiceOutputGet,
+    ServiceOutputKey,
+    ServiceResourcesGet,
+    ServiceUpdate,
+)
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.catalog._handlers import (
+    ServicePathParams,
     _FromServiceOutputParams,
     _ServiceInputsPathParams,
     _ServiceOutputsPathParams,
-    _ServicePathParams,
     _ToServiceInputsParams,
 )
 
@@ -19,10 +29,15 @@ router = APIRouter(
     ],
 )
 
+#
+# /catalog/dags/* COLLECTION
+#
+
 
 @router.get(
     "/catalog/dags",
-    response_model=None,
+    response_model=Envelope[list[DAGOut]],
+    operation_id="list_catalog_dags",
 )
 def list_catalog_dags():
     pass
@@ -30,10 +45,12 @@ def list_catalog_dags():
 
 @router.post(
     "/catalog/dags",
-    response_model=None,
+    operation_id="create_catalog_dag",
+    response_model=Envelope[DAGOut],
+    status_code=status.HTTP_201_CREATED,
 )
 def create_catalog_dag(
-    _add: CatalogDagsPostRequest = None,
+    _add: DAGIn,
 ):
     """
     Creates a new dag in catalog
@@ -42,165 +59,136 @@ def create_catalog_dag(
 
 @router.put(
     "/catalog/dags/{dag_id}",
-    response_model=None,
+    operation_id="create_catalog_dag",
+    response_model=Envelope[DAGOut],
 )
-def replace_catalog_dag(dag_id: int, _new: CatalogDagsDagIdPutRequest = None):
+def replace_catalog_dag(dag_id: int, _new: DAGIn):
     """
     Replaces a dag in catalog
     """
 
 
-@router.delete("/catalog/dags/{dag_id}", response_model=None, tags=["catalog"])
-def delete_catalog_dag(dag_id: int) -> None:
+@router.delete(
+    "/catalog/dags/{dag_id}",
+    operation_id="delete_catalog_dag",
+    response_model=None,
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_catalog_dag(dag_id: int):
     """
     Deletes an existing dag
     """
 
 
+#
+# /catalog/services/* COLLECTION
+#
+
+
 @router.get(
     "/catalog/services",
+    operation_id="list_services",
     response_model=Envelope[list[ServiceGet]],
-    operation_id="list_services_handler",
 )
-def list_services_handler():
+def list_services():
     pass
 
 
 @router.get(
     "/catalog/services/{service_key}/{service_version}",
-    response_model=ServiceGet,
+    response_model=Envelope[ServiceGet],
+    operation_id="get_service",
 )
-def get_service_handler(_params: Annotated[_ServicePathParams, Depends()]):
+def get_service(_path_params: Annotated[ServicePathParams, Depends()]):
     ...
 
 
 @router.patch(
     "/catalog/services/{service_key}/{service_version}",
-    response_model=None,
+    response_model=Envelope[ServiceGet],
+    operation_id="update_service",
 )
-def update_service_handler(
-    _params: Annotated[_ServicePathParams, Depends()],
-    _update: CatalogServicesServiceKeyServiceVersionPatchRequest = None,
+def update_service(
+    _path_params: Annotated[ServicePathParams, Depends()],
+    _update: ServiceUpdate,
 ):
-    """
-    Update Service
-    """
+    ...
 
 
 @router.get(
     "/catalog/services/{service_key}/{service_version}/inputs",
-    response_model=CatalogServicesServiceKeyServiceVersionInputsGetResponse,
-    responses={
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {
-            "model": CatalogServicesServiceKeyServiceVersionInputsGetResponse1
-        }
-    },
+    response_model=Envelope[list[ServiceInputGet]],
+    operation_id="list_service_inputs",
 )
-def list_service_inputs_handler(
-    _params: Annotated[_ServicePathParams, Depends()],
+def list_service_inputs(
+    _path_params: Annotated[ServicePathParams, Depends()],
 ):
-    """
-    List Service Inputs
-    """
+    ...
 
 
 @router.get(
     "/catalog/services/{service_key}/{service_version}/inputs/{input_key}",
-    response_model=CatalogServicesServiceKeyServiceVersionInputsInputKeyGetResponse,
-    responses={
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {
-            "model": CatalogServicesServiceKeyServiceVersionInputsInputKeyGetResponse1
-        }
-    },
+    response_model=Envelope[ServiceInputGet],
+    operation_id="get_service_input",
 )
-def get_service_input_handler(
-    _params: Annotated[_ServiceInputsPathParams, Depends()],
+def get_service_input(
+    _path_params: Annotated[_ServiceInputsPathParams, Depends()],
 ):
-    """
-    Get Service Input
-    """
+    ...
 
 
 @router.get(
     "/catalog/services/{service_key}/{service_version}/inputs:match",
-    response_model=List[constr(regex=r"^[-_a-zA-Z0-9]+$")],
-    responses={
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {
-            "model": CatalogServicesServiceKeyServiceVersionInputsMatchGetResponse
-        }
-    },
+    response_model=Envelope[list[ServiceInputKey]],
+    operation_id="get_compatible_inputs_given_source_output",
 )
-def get_compatible_inputs_given_source_output_handler(
-    _params: Annotated[_ServicePathParams, Depends()],
-    _qparams: Annotated[_FromServiceOutputParams, Depends()],
+def get_compatible_inputs_given_source_output(
+    _path_params: Annotated[ServicePathParams, Depends()],
+    _query_params: Annotated[_FromServiceOutputParams, Depends()],
 ):
-    """
-    Get Compatible Inputs Given Source Output
-    """
+    ...
 
 
 @router.get(
     "/catalog/services/{service_key}/{service_version}/outputs",
-    response_model=List[CatalogServicesServiceKeyServiceVersionOutputsGetResponse],
-    responses={
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {
-            "model": CatalogServicesServiceKeyServiceVersionOutputsGetResponse1
-        }
-    },
+    response_model=Envelope[list[ServiceOutputKey]],
+    operation_id="list_service_outputs",
 )
-def list_service_outputs_handler(
-    _params: Annotated[_ServicePathParams, Depends()],
+def list_service_outputs(
+    _path_params: Annotated[ServicePathParams, Depends()],
 ):
-    """
-    List Service Outputs
-    """
+    ...
 
 
 @router.get(
     "/catalog/services/{service_key}/{service_version}/outputs/{output_key}",
-    response_model=CatalogServicesServiceKeyServiceVersionOutputsOutputKeyGetResponse,
-    responses={
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {
-            "model": CatalogServicesServiceKeyServiceVersionOutputsOutputKeyGetResponse1
-        }
-    },
+    response_model=Envelope[list[ServiceOutputGet]],
+    operation_id="get_service_output",
 )
-def get_service_output_handler(
-    _params: Annotated[_ServiceOutputsPathParams, Depends()],
+def get_service_output(
+    _path_params: Annotated[_ServiceOutputsPathParams, Depends()],
 ):
-    """
-    Get Service Output
-    """
+    ...
 
 
 @router.get(
     "/catalog/services/{service_key}/{service_version}/outputs:match",
-    response_model=List[constr(regex=r"^[-_a-zA-Z0-9]+$")],
-    responses={
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {
-            "model": CatalogServicesServiceKeyServiceVersionOutputsMatchGetResponse
-        }
-    },
+    response_model=Envelope[list[ServiceOutputKey]],
+    operation_id="get_compatible_outputs_given_target_input",
 )
-def get_compatible_outputs_given_target_input_handler(
-    _params: Annotated[_ServicePathParams, Depends()],
-    _qparams: Annotated[_ToServiceInputsParams, Depends()],
+def get_compatible_outputs_given_target_input(
+    _path_params: Annotated[ServicePathParams, Depends()],
+    _query_params: Annotated[_ToServiceInputsParams, Depends()],
 ):
-    """
-    Get Compatible Outputs Given Target Input
-    """
+    ...
 
 
 @router.get(
     "/catalog/services/{service_key}/{service_version}/resources",
-    response_model=CatalogServicesServiceKeyServiceVersionResourcesGetResponse,
-    responses={
-        "default": {
-            "model": CatalogServicesServiceKeyServiceVersionResourcesGetResponse1
-        }
-    },
+    response_model=ServiceResourcesGet,
+    operation_id="get_service_resources",
 )
-def get_service_resources_handler(
-    _params: Annotated[_ServicePathParams, Depends()],
+def get_service_resources(
+    _params: Annotated[ServicePathParams, Depends()],
 ):
     ...

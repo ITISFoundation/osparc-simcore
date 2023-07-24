@@ -13,7 +13,7 @@ from pint import PintError, UnitRegistry
 from pydantic import Extra, Field
 from pydantic.main import BaseModel
 
-from ..api_schemas_catalog.schemas import services
+from ..api_schemas_catalog.schemas import dag, services
 from ._base import InputSchema, OutputSchema
 
 ServiceInputKey: TypeAlias = ServicePortKey
@@ -66,6 +66,18 @@ class ServiceGet(services.ServiceGet, OutputSchema):
 
 
 class ServiceUpdate(services.ServiceUpdate, InputSchema):
+    ...
+
+
+class ServiceResourcesGet(services.ServiceResourcesGet, OutputSchema):
+    ...
+
+
+class DAGIn(dag.DAGIn, InputSchema):
+    ...
+
+
+class DAGOut(dag.DAGOut, OutputSchema):
     ...
 
 

@@ -33,19 +33,8 @@ from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import client
-from ._api import (
-    CatalogRequestContext,
-    get_compatible_inputs_given_source_output,
-    get_compatible_outputs_given_target_input,
-    get_service,
-    get_service_input,
-    get_service_output,
-    list_service_inputs,
-    list_service_outputs,
-    list_services,
-    update_service,
-)
+from . import _api, client
+from ._api import CatalogRequestContext
 
 _logger = logging.getLogger(__name__)
 
@@ -71,13 +60,13 @@ class ServicePathParams(BaseModel):
         return v
 
 
-@routes.get(f"{VTAG}/catalog/services")
+@routes.get(f"{VTAG}/catalog/services", name="list_services")
 @login_required
 @permission_required("services.catalog.*")
-async def list_services_handler(request: Request):
+async def list_services(request: Request):
     req_ctx = CatalogRequestContext.create(request)
 
-    data_array = await list_services(
+    data_array = await _api.list_services(
         request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
@@ -89,22 +78,29 @@ async def list_services_handler(request: Request):
     return envelope_json_response(data_array)
 
 
-@routes.get(f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}")
+@routes.get(
+    f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}", name="get_service"
+)
 @login_required
 @permission_required("services.catalog.*")
-async def get_service_handler(request: Request):
+async def get_service(request: Request):
     ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
 
-    data = await get_service(path_params.service_key, path_params.service_version, ctx)
+    data = await _api.get_service(
+        path_params.service_key, path_params.service_version, ctx
+    )
     assert parse_obj_as(ServiceGet, data) is not None  # nosec
     return envelope_json_response(data)
 
 
-@routes.patch(f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}")
+@routes.patch(
+    f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}",
+    name="update_service",
+)
 @login_required
 @permission_required("services.catalog.*")
-async def update_service_handler(request: Request):
+async def update_service(request: Request):
     ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
     update_data: dict[str, Any] = await request.json(loads=orjson.loads)
@@ -112,7 +108,7 @@ async def update_service_handler(request: Request):
     assert parse_obj_as(ServiceUpdate, update_data) is not None  # nosec
 
     # Evaluate and return validated model
-    data = await update_service(
+    data = await _api.update_service(
         path_params.service_key,
         path_params.service_version,
         update_data,
@@ -123,15 +119,18 @@ async def update_service_handler(request: Request):
     return envelope_json_response(data)
 
 
-@routes.get(f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}/inputs")
+@routes.get(
+    f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}/inputs",
+    name="list_service_inputs",
+)
 @login_required
 @permission_required("services.catalog.*")
-async def list_service_inputs_handler(request: Request):
+async def list_service_inputs(request: Request):
     ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
 
     # Evaluate and return validated model
-    response_model = await list_service_inputs(
+    response_model = await _api.list_service_inputs(
         path_params.service_key, path_params.service_version, ctx
     )
 
@@ -144,16 +143,17 @@ class _ServiceInputsPathParams(ServicePathParams):
 
 
 @routes.get(
-    f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}/inputs/{{input_key}}"
+    f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}/inputs/{{input_key}}",
+    name="get_service_input",
 )
 @login_required
 @permission_required("services.catalog.*")
-async def get_service_input_handler(request: Request):
+async def get_service_input(request: Request):
     ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(_ServiceInputsPathParams, request)
 
     # Evaluate and return validated model
-    response_model = await get_service_input(
+    response_model = await _api.get_service_input(
         path_params.service_key,
         path_params.service_version,
         path_params.input_key,
@@ -170,16 +170,19 @@ class _FromServiceOutputParams(BaseModel):
     from_output_key: ServiceOutputKey = Field(..., alias="fromOutput")
 
 
-@routes.get(f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}/inputs:match")
+@routes.get(
+    f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}/inputs:match",
+    name="get_compatible_inputs_given_source_output",
+)
 @login_required
 @permission_required("services.catalog.*")
-async def get_compatible_inputs_given_source_output_handler(request: Request):
+async def get_compatible_inputs_given_source_output(request: Request):
     ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
     query_params = parse_request_query_parameters_as(_FromServiceOutputParams, request)
 
     # Evaluate and return validated model
-    data = await get_compatible_inputs_given_source_output(
+    data = await _api.get_compatible_inputs_given_source_output(
         path_params.service_key,
         path_params.service_version,
         query_params.from_service_key,
@@ -193,15 +196,16 @@ async def get_compatible_inputs_given_source_output_handler(request: Request):
 
 @routes.get(
     f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}/outputs",
+    name="list_service_outputs",
 )
 @login_required
 @permission_required("services.catalog.*")
-async def list_service_outputs_handler(request: Request):
+async def list_service_outputs(request: Request):
     ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
 
     # Evaluate and return validated model
-    response_model = await list_service_outputs(
+    response_model = await _api.list_service_outputs(
         path_params.service_key, path_params.service_version, ctx
     )
 
@@ -214,16 +218,17 @@ class _ServiceOutputsPathParams(ServicePathParams):
 
 
 @routes.get(
-    f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}/outputs/{{output_key}}"
+    f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}/outputs/{{output_key}}",
+    name="get_service_output",
 )
 @login_required
 @permission_required("services.catalog.*")
-async def get_service_output_handler(request: Request):
+async def get_service_output(request: Request):
     ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(_ServiceOutputsPathParams, request)
 
     # Evaluate and return validated model
-    response_model = await get_service_output(
+    response_model = await _api.get_service_output(
         path_params.service_key,
         path_params.service_version,
         path_params.output_key,
@@ -241,11 +246,12 @@ class _ToServiceInputsParams(BaseModel):
 
 
 @routes.get(
-    f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}/outputs:match"
+    f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}/outputs:match",
+    name="get_compatible_outputs_given_target_input",
 )
 @login_required
 @permission_required("services.catalog.*")
-async def get_compatible_outputs_given_target_input_handler(request: Request):
+async def get_compatible_outputs_given_target_input(request: Request):
     """
     Filters outputs of this service that match a given service input
 
@@ -255,7 +261,7 @@ async def get_compatible_outputs_given_target_input_handler(request: Request):
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
     query_params = parse_request_query_parameters_as(_ToServiceInputsParams, request)
 
-    data = await get_compatible_outputs_given_target_input(
+    data = await _api.get_compatible_outputs_given_target_input(
         path_params.service_key,
         path_params.service_version,
         query_params.to_service_key,
@@ -267,10 +273,13 @@ async def get_compatible_outputs_given_target_input_handler(request: Request):
     return envelope_json_response(data)
 
 
-@routes.get(f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}/resources")
+@routes.get(
+    f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}/resources",
+    name="get_service_resources",
+)
 @login_required
 @permission_required("services.catalog.*")
-async def get_service_resources_handler(request: Request):
+async def get_service_resources(request: Request):
     """
     Filters outputs of this service that match a given service input
 
