@@ -1,4 +1,4 @@
-from typing import TypeAlias
+from typing import Any, ClassVar, TypeAlias
 
 from models_library.clusters import (
     CLUSTER_ADMIN_RIGHTS,
@@ -130,7 +130,7 @@ class ClusterCreate(BaseCluster):
         return v
 
     class Config(BaseCluster.Config):
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "name": "My awesome cluster",
@@ -176,7 +176,7 @@ class ClusterPatch(BaseCluster):
     )
 
     class Config(BaseCluster.Config):
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "name": "Changing the name of my cluster",
