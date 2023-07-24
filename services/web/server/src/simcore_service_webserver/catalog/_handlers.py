@@ -10,11 +10,12 @@ from typing import Any, Final
 
 import orjson
 from aiohttp.web import Request, RouteTableDef
+from models_library.api_schemas_catalog.schemas.services import ServiceGet
 from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
-from pydantic import BaseModel, Extra, Field, validator
+from pydantic import BaseModel, Extra, Field, parse_obj_as, validator
 from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
@@ -77,6 +78,8 @@ async def list_services_handler(request: Request):
         unit_registry=req_ctx.unit_registry,
     )
 
+    assert parse_obj_as(list[ServiceGet], data_array) is not None  # nosec
+
     return envelope_json_response(data_array)
 
 
@@ -88,7 +91,7 @@ async def get_service_handler(request: Request):
     path_params = parse_request_path_parameters_as(_ServicePathParams, request)
 
     data = await get_service(path_params.service_key, path_params.service_version, ctx)
-
+    assert parse_obj_as(data, ServiceGet) is not None
     return envelope_json_response(data)
 
 
