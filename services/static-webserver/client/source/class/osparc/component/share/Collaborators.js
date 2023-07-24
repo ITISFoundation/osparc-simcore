@@ -317,16 +317,28 @@ qx.Class.define("osparc.component.share.Collaborators", {
     __getLeaveStudyButton: function() {
       if (osparc.utils.Resources.isStudy(this._serializedData)) {
         const myGid = osparc.auth.Data.getInstance().getGroupId();
-        const leaveButton = new qx.ui.form.Button(this.tr("Leave Study")).set({
+        const leaveButton = new qx.ui.form.Button(this.tr("Leave") + " " + osparc.product.Utils.getStudyAlias({
+          firstUpperCase: true
+        })).set({
           allowGrowX: false,
           visibility: Object.keys(this._serializedData["accessRights"]).includes(myGid.toString()) ? "visible" : "excluded"
         });
         leaveButton.addListener("execute", () => {
-          if (osparc.component.share.CollaboratorsStudy.checkRemoveCollaborator(this._serializedData, myGid)) {
-            // OM: XXXXXXXXXXXXXXXXXXXXX
-            // this._deleteMember({gid: myGid});
-            console.log("delete member", myGid);
+          let msg = this._serializedData["name"] + " " + this.tr("will no longer be listed.");
+          if (!osparc.component.share.CollaboratorsStudy.checkRemoveCollaborator(this._serializedData, myGid)) {
+            msg += "<br>";
+            msg += this.tr("If you remove yourself, there won't be any other Owners.");
           }
+          const win = new osparc.ui.window.Confirmation(msg).set({
+            confirmText: this.tr("Leave"),
+            confirmAction: "delete"
+          });
+          win.open();
+          win.addListener("close", () => {
+            if (win.getConfirmed()) {
+              this._deleteMember({gid: myGid});
+            }
+          }, this);
         }, this);
         return leaveButton;
       }
