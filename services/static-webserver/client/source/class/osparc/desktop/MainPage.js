@@ -55,6 +55,12 @@ qx.Class.define("osparc.desktop.MainPage", {
     osparc.MaintenanceTracker.getInstance().startTracker();
 
     const store = osparc.store.Store.getInstance();
+
+    osparc.data.Resources.dummy.getCreditsLeft()
+      .then(credits => store.setCredits(credits.left))
+      .catch(err => console.error(err));
+    setInterval(() => store.setCredits(store.getCredits()-1), 60000);
+
     Promise.all([
       store.getAllClassifiers(true),
       store.getTags()

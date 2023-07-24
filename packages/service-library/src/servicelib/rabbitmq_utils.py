@@ -2,7 +2,9 @@ import logging
 import os
 import re
 import socket
-from typing import Any, Callable, Final, Pattern
+from collections.abc import Callable
+from re import Pattern
+from typing import Any, Final
 
 import aio_pika
 from pydantic import ConstrainedStr, parse_obj_as
@@ -82,7 +84,7 @@ async def wait_till_rabbitmq_responsive(url: str) -> bool:
 
 
 async def rpc_register_entries(
-    rabbit_client: "RabbitMQClient",
+    rabbit_client,
     entries: dict[str, str],
     handler: Callable[..., Any],
 ) -> None:
@@ -95,7 +97,7 @@ async def rpc_register_entries(
     """
     await rabbit_client.rpc_register_handler(
         RPCNamespace.from_entries(entries),
-        method_name=handler.__name__,
+        method_name=RPCMethodName(handler.__name__),
         handler=handler,
     )
 
@@ -120,5 +122,4 @@ async def declare_queue(
     if not exclusive_queue:
         # NOTE: setting a name will ensure multiple instance will take their data here
         queue_parameters |= {"name": exchange_name}
-    queue = await channel.declare_queue(**queue_parameters)
-    return queue
+    return await channel.declare_queue(**queue_parameters)

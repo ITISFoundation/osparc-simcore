@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class _HandlerWithRequestArg(Protocol):
     __name__: str
 
-    async def __call__(self, request: Request, *args: Any) -> Any:
+    async def __call__(self, request: Request, *args: Any, **kwargs: Any) -> Any:
         ...
 
 

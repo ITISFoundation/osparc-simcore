@@ -5,14 +5,15 @@ import json
 import logging
 import os
 import urllib.parse
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator
+from typing import Any
 
 import aiodocker
 import httpx
 from fastapi import FastAPI
 from models_library.basic_types import PortInt
-from models_library.projects import Node
+from models_library.projects import Node, NodesDict
 from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import (
     ServiceResourcesDict,
@@ -179,9 +180,8 @@ async def _get_service_published_port(service_name: str, target_port: int) -> Po
                     if p.get("TargetPort") == target_port
                 )
             except StopIteration as e:
-                raise RuntimeError(
-                    f"Cannot find {target_port} in {ports=} for {service_name=}"
-                ) from e
+                msg = f"Cannot find {target_port} in ports={ports!r} for service_name={service_name!r}"
+                raise RuntimeError(msg) from e
         else:
             assert len(ports) == 1, f"number of ports in {service_name=} is not 1!"
             published_port = ports[0]["PublishedPort"]
@@ -222,8 +222,12 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
 
     # pylint: disable=protected-access
     scheduler: DynamicSidecarsScheduler = app.state.dynamic_sidecar_scheduler
-    service_name = scheduler._scheduler._inverse_search_mapping[NodeID(node_uuid)]
-    scheduler_data: SchedulerData = scheduler._scheduler._to_observe[service_name]
+    service_name = scheduler._scheduler._inverse_search_mapping[  # noqa: SLF001
+        NodeID(node_uuid)
+    ]
+    scheduler_data: SchedulerData = scheduler._scheduler._to_observe[  # noqa: SLF001
+        service_name
+    ]
 
     sidecar_settings: DynamicSidecarSettings = (
         app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
@@ -247,7 +251,7 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
         )
         assert proxy_published_port is not None, f"{sidecar_settings.json()=}"
 
-        async with scheduler._scheduler._lock:
+        async with scheduler._scheduler._lock:  # noqa: SLF001
             localhost_ip = get_localhost_ip()
 
             # use prot forwarded address for dy-sidecar
@@ -288,6 +292,23 @@ async def _get_service_resources(
         return parse_obj_as(ServiceResourcesDict, response.json())
 
 
+async def _handle_redirection(
+    redirection_response: httpx.Response, *, method: str, **kwargs
+) -> httpx.Response:
+    """since we are in a test environment with a test server, a real client must be used in order to get to an external server
+    i.e. the async_client used with the director test server is unable to follow redirects
+    """
+    assert (
+        redirection_response.next_request
+    ), f"no redirection set in {redirection_response}"
+    async with httpx.AsyncClient() as real_client:
+        response = await real_client.request(
+            method, f"{redirection_response.next_request.url}", **kwargs
+        )
+        response.raise_for_status()
+        return response
+
+
 async def assert_start_service(
     director_v2_client: httpx.AsyncClient,
     product_name: str,
@@ -304,30 +325,40 @@ async def assert_start_service(
         service_key=service_key,
         service_version=service_version,
     )
-    data = dict(
-        user_id=user_id,
-        project_id=project_id,
-        service_key=service_key,
-        service_version=service_version,
-        service_uuid=service_uuid,
-        can_save=True,
-        basepath=basepath,
-        service_resources=ServiceResourcesDictHelpers.create_jsonable(
+    data = {
+        "user_id": user_id,
+        "project_id": project_id,
+        "service_key": service_key,
+        "service_version": service_version,
+        "service_uuid": service_uuid,
+        "can_save": True,
+        "basepath": basepath,
+        "service_resources": ServiceResourcesDictHelpers.create_jsonable(
             service_resources
         ),
-        product_name=product_name,
-    )
+        "product_name": product_name,
+    }
     headers = {
         X_DYNAMIC_SIDECAR_REQUEST_DNS: director_v2_client.base_url.host,
         X_DYNAMIC_SIDECAR_REQUEST_SCHEME: director_v2_client.base_url.scheme,
         X_SIMCORE_USER_AGENT: "",
     }
 
-    result = await director_v2_client.post(
-        "/v2/dynamic_services", json=data, headers=headers, follow_redirects=True
+    response = await director_v2_client.post(
+        "/v2/dynamic_services",
+        json=data,
+        headers=headers,
+        follow_redirects=False,
+        timeout=30,
     )
-    result.raise_for_status()
-    assert result.status_code == httpx.codes.CREATED, result.text
+
+    if response.status_code == httpx.codes.TEMPORARY_REDIRECT:
+        response = await _handle_redirection(
+            response, method="POST", json=data, headers=headers, timeout=30
+        )
+    response.raise_for_status()
+
+    assert response.status_code == httpx.codes.CREATED, response.text
 
 
 async def get_service_data(
@@ -339,17 +370,13 @@ async def get_service_data(
     response = await director_v2_client.get(
         f"/v2/dynamic_services/{service_uuid}", follow_redirects=False
     )
+
     if response.status_code == httpx.codes.TEMPORARY_REDIRECT:
-        # NOTE: so we have a redirect, and it seems the director_v2_client does not like it at all
-        #  moving from the testserver to the director in this GET call
-        # which is why we use a DIFFERENT httpx client for this... (sic).
-        # This actually works well when running inside the swarm... WTF???
-        assert response.next_request
-        response = httpx.get(f"{response.next_request.url}")
+        response = await _handle_redirection(response, method="GET")
+    response.raise_for_status()
     assert response.status_code == httpx.codes.OK, response.text
     payload = response.json()
-    data = payload["data"] if is_legacy(node_data) else payload
-    return data
+    return payload["data"] if is_legacy(node_data) else payload
 
 
 async def _get_service_state(
@@ -364,7 +391,7 @@ async def _get_service_state(
 
 async def assert_all_services_running(
     director_v2_client: httpx.AsyncClient,
-    workbench: dict[str, Node],
+    workbench: NodesDict,
 ) -> None:
     async for attempt in AsyncRetrying(
         reraise=True,
@@ -397,14 +424,22 @@ async def assert_retrieve_service(
         X_SIMCORE_USER_AGENT: "",
     }
 
-    result = await director_v2_client.post(
+    response = await director_v2_client.post(
         f"/v2/dynamic_services/{service_uuid}:retrieve",
-        json=dict(port_keys=[]),
+        json={"port_keys": []},
         headers=headers,
-        follow_redirects=True,
+        follow_redirects=False,
     )
-    assert result.status_code == httpx.codes.OK, result.text
-    json_result = result.json()
+    if response.status_code == httpx.codes.TEMPORARY_REDIRECT:
+        response = await _handle_redirection(
+            response,
+            method="POST",
+            json={"port_keys": []},
+            headers=headers,
+        )
+    response.raise_for_status()
+    assert response.status_code == httpx.codes.OK, response.text
+    json_result = response.json()
     print(f"{service_uuid}:retrieve result ", json_result)
 
     size_bytes = json_result["data"]["size_bytes"]
@@ -415,11 +450,13 @@ async def assert_retrieve_service(
 async def assert_stop_service(
     director_v2_client: httpx.AsyncClient, service_uuid: str
 ) -> None:
-    result = await director_v2_client.delete(
-        f"/v2/dynamic_services/{service_uuid}", follow_redirects=True
+    response = await director_v2_client.delete(
+        f"/v2/dynamic_services/{service_uuid}", follow_redirects=False
     )
-    assert result.status_code == httpx.codes.NO_CONTENT
-    assert result.text == ""
+    if response.status_code == httpx.codes.TEMPORARY_REDIRECT:
+        response = await _handle_redirection(response, method="DELETE")
+    assert response.status_code == httpx.codes.NO_CONTENT
+    assert response.text == ""
 
 
 async def _inspect_service_and_print_logs(
@@ -492,8 +529,7 @@ async def _port_forward_legacy_service(  # pylint: disable=redefined-outer-name
         ports = service_details["Endpoint"]["Ports"]
 
         assert len(ports) == 1, service_details
-        exposed_port = ports[0]["PublishedPort"]
-        return exposed_port
+        return ports[0]["PublishedPort"]
 
 
 async def assert_service_is_ready(  # pylint: disable=redefined-outer-name
@@ -521,7 +557,7 @@ async def assert_service_is_ready(  # pylint: disable=redefined-outer-name
 
 async def assert_services_reply_200(
     director_v2_client: httpx.AsyncClient,
-    workbench: dict[str, Node],
+    workbench: NodesDict,
 ) -> None:
     print("Giving dy-proxies some time to start")
     await asyncio.sleep(PROXY_BOOT_TIME)

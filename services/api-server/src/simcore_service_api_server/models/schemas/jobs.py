@@ -15,9 +15,9 @@ from pydantic import (
     validator,
 )
 
-from ...models.config import BaseConfig
 from ...models.schemas.files import File
 from ...models.schemas.solvers import Solver
+from .._utils_pydantic import BaseConfig
 from ..api_resources import (
     RelativeResourceName,
     compose_resource_name,

@@ -27,7 +27,7 @@ _OAS_DEVELOPMENT_SERVER = {
 
 def get_common_oas_options(is_devel_mode: bool) -> dict[str, Any]:
     """common OAS options for FastAPI constructor"""
-    servers = [
+    servers: list[dict[str, Any]] = [
         _OAS_DEFAULT_SERVER,
     ]
     if is_devel_mode:
@@ -89,9 +89,9 @@ def _patch_node_properties(key: str, node: dict):
         node[new_key] = node[key]
         node.pop(key)
 
-    # SEE fastapi ISSUE: https://github.com/tiangolo/fastapi/issues/240 (test_openap.py::test_exclusive_min_openapi_issue )
     # SEE openapi-standard: https://swagger.io/docs/specification/data-models/data-types/#range
     if node_type := node.get("type"):
+        # SEE fastapi ISSUE: https://github.com/tiangolo/fastapi/issues/240 (test_openap.py::test_exclusive_min_openapi_issue )
         if key == "exclusiveMinimum":
             cast_to_python = _SCHEMA_TO_PYTHON_TYPES[node_type]
             node["minimum"] = cast_to_python(node[key])
@@ -147,7 +147,9 @@ def patch_openapi_specs(app_openapi: dict[str, Any]):
 
 def override_fastapi_openapi_method(app: FastAPI):
     # pylint: disable=protected-access
-    app._original_openapi = types.MethodType(copy_func(app.openapi), app)
+    app._original_openapi = types.MethodType(
+        copy_func(app.openapi), app
+    )  # noqa: SLF001
 
     def _custom_openapi_method(self: FastAPI) -> dict:
         """Overrides FastAPI.openapi member function
@@ -158,6 +160,7 @@ def override_fastapi_openapi_method(app: FastAPI):
             self.openapi_schema = self._original_openapi()
             patch_openapi_specs(self.openapi_schema)
 
-        return self.openapi_schema
+        output: dict = self.openapi_schema
+        return output
 
     app.openapi = types.MethodType(_custom_openapi_method, app)

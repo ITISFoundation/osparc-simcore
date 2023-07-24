@@ -1,20 +1,11 @@
 from collections.abc import Callable
-from typing import Any
 
 from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-
-class ErrorGet(BaseModel):
-    # We intentionally keep it open until more restrictive policy is implemented
-    # Check use cases:
-    #   - https://github.com/ITISFoundation/osparc-issues/issues/958
-    #   - https://github.com/ITISFoundation/osparc-simcore/issues/2520
-    #   - https://github.com/ITISFoundation/osparc-simcore/issues/2446
-    errors: list[Any]
+from ...models.schemas.errors import ErrorGet
 
 
 def create_error_json_response(*errors, status_code: int) -> JSONResponse:
