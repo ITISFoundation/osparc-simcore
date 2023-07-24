@@ -90,6 +90,25 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
       };
     },
 
+    __getDeleters: function(studyData) {
+      const deleters = [];
+      Object.entries(studyData["accessRights"]).forEach(([key, value]) => {
+        if (value["delete"]) {
+          deleters.push(key);
+        }
+      });
+      return deleters;
+    },
+
+    // checks that if the user to remove is an owner, there will still be another owner
+    checkRemoveCollaborator: function(studyData, gid) {
+      const ownerGids = this.__getDeleters(studyData);
+      if (ownerGids.includes(gid.toString())) {
+        return ownerGids.length > 1;
+      }
+      return true;
+    },
+
     removeCollaborator: function(studyData, gid) {
       return delete studyData["accessRights"][gid];
     },
@@ -108,6 +127,10 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
 
   members: {
     __resourceType: null,
+
+    _canIDelete: function() {
+      return osparc.data.model.Study.canIDelete(this._serializedData["accessRights"]);
+    },
 
     _canIWrite: function() {
       return osparc.data.model.Study.canIWrite(this._serializedData["accessRights"]);
@@ -193,11 +216,15 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
     },
 
     _deleteMember: function(collaborator, item) {
-      item.setEnabled(false);
+      if (item) {
+        item.setEnabled(false);
+      }
       const success = this.self().removeCollaborator(this._serializedData, collaborator["gid"]);
       if (!success) {
         osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
-        item.setEnabled(true);
+        if (item) {
+          item.setEnabled(true);
+        }
       }
 
       const params = {
@@ -216,7 +243,11 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
           console.error(err);
         })
-        .finally(() => item.setEnabled(true));
+        .finally(() => {
+          if (item) {
+            item.setEnabled(true);
+          }
+        });
     },
 
     __make: function(collboratorGId, newAccessRights, successMsg, failureMsg, item) {
