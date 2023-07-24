@@ -242,18 +242,8 @@ qx.Class.define("osparc.component.share.Collaborators", {
       vBox.add(label);
 
       const rolesLayout = osparc.data.Roles.createRolesResourceInfo();
-      // OM: XXXXXXXXXXXXXXXXXXXXX
-      if (osparc.utils.Resources.isStudy(this._serializedData)) {
-        const leaveButton = new qx.ui.form.Button(this.tr("Leave Study")).set({
-          allowGrowX: false
-        });
-        leaveButton.addListener("execute", () => {
-          const myGid = osparc.auth.Data.getInstance().getGroupId();
-          if (osparc.component.share.CollaboratorsStudy.checkRemoveCollaborator(this._serializedData, myGid)) {
-            console.log("delete member", myGid);
-            // this._deleteMember({gid: myGid});
-          }
-        }, this);
+      const leaveButton = this.__getLeaveStudyButton();
+      if (leaveButton) {
         rolesLayout.addAt(leaveButton, 0);
       }
       vBox.add(rolesLayout);
@@ -322,6 +312,25 @@ qx.Class.define("osparc.component.share.Collaborators", {
           this.__collaborators = Object.assign(this.__collaborators, potentialCollaborators);
           this._reloadCollaboratorsList();
         });
+    },
+
+    __getLeaveStudyButton: function() {
+      if (osparc.utils.Resources.isStudy(this._serializedData)) {
+        const myGid = osparc.auth.Data.getInstance().getGroupId();
+        const leaveButton = new qx.ui.form.Button(this.tr("Leave Study")).set({
+          allowGrowX: false,
+          visibility: Object.keys(this._serializedData["accessRights"]).includes(myGid) ? "visible" : "excluded"
+        });
+        leaveButton.addListener("execute", () => {
+          if (osparc.component.share.CollaboratorsStudy.checkRemoveCollaborator(this._serializedData, myGid)) {
+            // OM: XXXXXXXXXXXXXXXXXXXXX
+            // this._deleteMember({gid: myGid});
+            console.log("delete member", myGid);
+          }
+        }, this);
+        return leaveButton;
+      }
+      return null;
     },
 
     _reloadCollaboratorsList: function() {
