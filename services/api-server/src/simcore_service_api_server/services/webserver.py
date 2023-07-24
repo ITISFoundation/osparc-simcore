@@ -20,6 +20,7 @@ from models_library.projects import ProjectID
 from models_library.rest_pagination import Page
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ValidationError
+from pydantic.errors import PydanticErrorMixin
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
 from servicelib.error_codes import create_error_code
 from starlette import status
@@ -36,6 +37,10 @@ from ..models.types import JSON
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
 _logger = logging.getLogger(__name__)
+
+
+class ProjectNotFoundError(PydanticErrorMixin, ValueError):
+    code = "webserver.project_not_found"
 
 
 @contextmanager
@@ -60,7 +65,6 @@ def _handle_webserver_api_errors():
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from exc
 
     except httpx.HTTPStatusError as exc:
-
         resp = exc.response
         if resp.is_server_error:
             _logger.exception(
@@ -174,8 +178,33 @@ class AuthSession:
 
         return self._get_data_or_raise_http_exception(resp)
 
-    # PROJECTS resource ---
+    async def _page_projects(
+        self, *, limit: int, offset: int, show_hidden: bool, search: str | None = None
+    ):
+        assert 1 <= limit <= MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE  # nosec
+        assert offset >= 0  # nosec
 
+        optional: dict[str, Any] = {}
+        if search is not None:
+            optional["search"] = search
+
+        with _handle_webserver_api_errors():
+            resp = await self.client.get(
+                "/projects",
+                params={
+                    "type": "user",
+                    "show_hidden": show_hidden,
+                    "limit": limit,
+                    "offset": offset,
+                    **optional,
+                },
+                cookies=self.session_cookies,
+            )
+            resp.raise_for_status()
+
+            return Page[ProjectGet].parse_raw(resp.text)
+
+    # PROJECTS resource ---
     async def create_project(self, project: ProjectCreateNew) -> ProjectGet:
         # POST /projects --> 202
         resp = await self.client.post(
@@ -209,36 +238,34 @@ class AuthSession:
         return ProjectGet.parse_obj(data)
 
     async def get_project(self, project_id: UUID) -> ProjectGet:
-        resp = await self.client.get(
+        response = await self.client.get(
             f"/projects/{project_id}",
             cookies=self.session_cookies,
         )
+        if response.status_code == status.HTTP_404_NOT_FOUND:
+            raise ProjectNotFoundError(project_id=project_id)
 
-        data: JSON | None = self._get_data_or_raise_http_exception(resp)
+        data: JSON | None = self._get_data_or_raise_http_exception(response)
         return ProjectGet.parse_obj(data)
 
     async def list_projects(
         self, solver_name: str, limit: int, offset: int
     ) -> Page[ProjectGet]:
-        assert 1 <= limit <= MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE  # nosec
-        assert offset >= 0  # nosec
-        with _handle_webserver_api_errors():
-            resp = await self.client.get(
-                "/projects",
-                params={
-                    "type": "user",
-                    "show_hidden": True,
-                    "limit": limit,
-                    "offset": offset,
-                    # WARNING: better way to match jobs with projects (Next PR if this works fine!)
-                    "search": urllib.parse.quote(solver_name, safe=""),
-                    # WARNING: search text has a limit that I needed to increas for the example!
-                },
-                cookies=self.session_cookies,
-            )
-            resp.raise_for_status()
+        return await self._page_projects(
+            limit=limit,
+            offset=offset,
+            show_hidden=True,
+            # WARNING: better way to match jobs with projects (Next PR if this works fine!)
+            # WARNING: search text has a limit that I needed to increase for the example!
+            search=urllib.parse.quote(solver_name, safe=""),
+        )
 
-            return Page[ProjectGet].parse_raw(resp.text)
+    async def list_user_projects(self, limit: int, offset: int):
+        return await self._page_projects(
+            limit=limit,
+            offset=offset,
+            show_hidden=False,
+        )
 
     async def delete_project(self, project_id: ProjectID) -> None:
         resp = await self.client.delete(
@@ -253,12 +280,15 @@ class AuthSession:
         maps GET "/projects/{study_id}/metadata/ports", unenvelopes
         and returns data
         """
-        resp = await self.client.get(
+        response = await self.client.get(
             f"/projects/{project_id}/metadata/ports",
             cookies=self.session_cookies,
         )
-        data = self._get_data_or_raise_http_exception(resp)
-        assert data
+        if response.status_code == status.HTTP_404_NOT_FOUND:
+            raise ProjectNotFoundError(project_id=project_id)
+
+        data = self._get_data_or_raise_http_exception(response)
+        assert data is not None
         assert isinstance(data, list)
         return data
 
