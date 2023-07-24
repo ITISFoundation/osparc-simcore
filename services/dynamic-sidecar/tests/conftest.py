@@ -9,7 +9,6 @@ import sys
 from pathlib import Path
 from typing import Iterable, Iterator
 
-import arrow
 import pytest
 import simcore_service_dynamic_sidecar
 from faker import Faker
@@ -121,7 +120,7 @@ def node_id(faker: Faker) -> NodeID:
 
 @pytest.fixture
 def run_id() -> RunID:
-    return f"{arrow.utcnow().int_timestamp}"
+    return RunID.create_run_id()
 
 
 @pytest.fixture

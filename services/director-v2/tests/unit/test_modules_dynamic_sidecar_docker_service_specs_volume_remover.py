@@ -1,9 +1,9 @@
 # pylint: disable=redefined-outer-name
 
+import contextlib
 from pathlib import Path
 from typing import AsyncIterator
 
-import arrow
 import pytest
 from aiodocker import Docker, DockerError
 from aiodocker.volumes import DockerVolume
@@ -70,7 +70,7 @@ def node_uuid(faker: Faker) -> str:
 
 @pytest.fixture
 def run_id() -> RunID:
-    return f"{arrow.utcnow().int_timestamp}"
+    return RunID.create_run_id()
 
 
 @pytest.fixture
@@ -109,10 +109,8 @@ async def unused_volume(
 
     yield volume
 
-    try:
+    with contextlib.suppress(DockerError):
         await volume.delete()
-    except DockerError:
-        pass
 
 
 @pytest.fixture

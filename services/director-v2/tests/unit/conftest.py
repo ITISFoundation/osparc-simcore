@@ -17,7 +17,6 @@ from typing import (
 from unittest import mock
 
 import aiodocker
-import arrow
 import pytest
 import respx
 import traitlets.config
@@ -94,7 +93,7 @@ def dynamic_sidecar_port() -> PortInt:
 
 @pytest.fixture
 def run_id() -> RunID:
-    return f"{arrow.utcnow().int_timestamp}"
+    return RunID.create_run_id()
 
 
 @pytest.fixture

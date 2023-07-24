@@ -7,8 +7,9 @@ NOTE: to dump json-schema from CLI use
 import re
 from datetime import datetime
 from enum import Enum
-from typing import Any, Final, TypeAlias
+from typing import Any, Final
 
+import arrow
 from pydantic import (
     BaseModel,
     ConstrainedStr,
@@ -116,7 +117,12 @@ class ServiceVersion(ConstrainedStr):
 
 # The run_id will contain an integer timestamp or the
 # in the previous version a UUID.
-RunID: TypeAlias = str
+class RunID(str):
+    __slots__ = ()
+
+    @classmethod
+    def create_run_id(cls) -> "RunID":
+        return cls(arrow.utcnow().int_timestamp)
 
 
 class ServiceType(str, Enum):

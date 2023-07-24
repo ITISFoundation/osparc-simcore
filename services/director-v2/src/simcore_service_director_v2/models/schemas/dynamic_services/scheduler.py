@@ -6,7 +6,6 @@ from functools import cached_property
 from typing import Any, Mapping, TypeAlias
 from uuid import UUID
 
-import arrow
 from models_library.basic_types import PortInt
 from models_library.generated_models.docker_rest_api import ContainerState, Status2
 from models_library.projects_nodes_io import NodeID
@@ -336,7 +335,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         description="Name of the current dynamic-sidecar being observed",
     )
     run_id: RunID = Field(
-        default_factory=lambda: f"{arrow.utcnow().int_timestamp}",
+        default_factory=RunID.create_run_id,
         description=(
             "Uniquely identify the dynamic sidecar session (a.k.a. 2 "
             "subsequent exact same services will have a different run_id)"

@@ -4,7 +4,6 @@
 from typing import AsyncIterable, AsyncIterator
 
 import aiodocker
-import arrow
 import pytest
 import yaml
 from models_library.services import RunID
@@ -27,7 +26,7 @@ def volume_name() -> str:
 
 @pytest.fixture
 def run_id() -> RunID:
-    return f"{arrow.utcnow().int_timestamp}"
+    return RunID.create_run_id()
 
 
 @pytest.fixture

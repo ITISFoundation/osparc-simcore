@@ -1,17 +1,18 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
+import contextlib
 import logging
 from pathlib import Path
-from typing import AsyncIterator, Iterable, Iterator
+from typing import AsyncIterator, Iterable
 from uuid import uuid4
 
 import aiodocker
-import arrow
 import pytest
 import simcore_service_agent
 from aiodocker.volumes import DockerVolume
 from models_library.basic_types import BootModeEnum
+from models_library.services import RunID
 from moto.server import ThreadedMotoServer
 from pydantic import HttpUrl, parse_obj_as
 from pytest import LogCaptureFixture, MonkeyPatch
@@ -58,8 +59,8 @@ def node_uuid() -> str:
 
 
 @pytest.fixture
-def run_id() -> str:
-    return f"{arrow.utcnow().int_timestamp}"
+def run_id() -> RunID:
+    return RunID.create_run_id()
 
 
 @pytest.fixture
@@ -87,7 +88,7 @@ async def unused_volume(
     swarm_stack_name: str,
     study_id: str,
     node_uuid: str,
-    run_id: str,
+    run_id: RunID,
     unused_volume_path: Path,
 ) -> AsyncIterator[DockerVolume]:
     async with aiodocker.Docker() as docker_client:
@@ -110,10 +111,8 @@ async def unused_volume(
 
         yield volume
 
-        try:
+        with contextlib.suppress(aiodocker.DockerError):
             await volume.delete()
-        except aiodocker.DockerError:
-            pass
 
 
 @pytest.fixture
@@ -121,7 +120,7 @@ async def used_volume(
     swarm_stack_name: str,
     study_id: str,
     node_uuid: str,
-    run_id: str,
+    run_id: RunID,
     used_volume_path: Path,
 ) -> AsyncIterator[DockerVolume]:
     async with aiodocker.Docker() as docker_client:
@@ -157,7 +156,7 @@ async def used_volume(
 
 
 @pytest.fixture
-def env(
+def env(  # noqa: PT004
     monkeypatch: MonkeyPatch,
     mocked_s3_server_url: HttpUrl,
     bucket: str,
@@ -189,9 +188,9 @@ def caplog_info_debug(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
 
 
 @pytest.fixture(scope="module")
-def mocked_s3_server_url(mocked_s3_server: ThreadedMotoServer) -> Iterator[HttpUrl]:
+def mocked_s3_server_url(mocked_s3_server: ThreadedMotoServer) -> HttpUrl:
     # pylint: disable=protected-access
-    endpoint_url = parse_obj_as(
-        HttpUrl, f"http://{mocked_s3_server._ip_address}:{mocked_s3_server._port}"
+    return parse_obj_as(
+        HttpUrl,
+        f"http://{mocked_s3_server._ip_address}:{mocked_s3_server._port}",  # noqa: SLF001
     )
-    yield endpoint_url

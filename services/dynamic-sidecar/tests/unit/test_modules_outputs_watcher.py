@@ -13,10 +13,10 @@ from typing import AsyncIterable, AsyncIterator, Awaitable, Final, Iterator
 from unittest.mock import AsyncMock
 
 import aiofiles
-import arrow
 import pytest
 from aiofiles import os
 from faker import Faker
+from models_library.services import RunID
 from pydantic import (
     ByteSize,
     NonNegativeFloat,
@@ -62,7 +62,7 @@ UPLOAD_DURATION: Final[PositiveFloat] = TICK_INTERVAL * 10
 @pytest.fixture
 def mounted_volumes(faker: Faker, tmp_path: Path) -> Iterator[MountedVolumes]:
     mounted_volumes = MountedVolumes(
-        run_id=f"{arrow.utcnow().int_timestamp}",
+        run_id=RunID.create_run_id(),
         node_id=faker.uuid4(cast_to=None),
         inputs_path=tmp_path / "inputs",
         outputs_path=tmp_path / "outputs",

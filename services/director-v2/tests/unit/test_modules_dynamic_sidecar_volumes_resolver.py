@@ -7,7 +7,6 @@ from typing import Any, Callable
 from uuid import UUID
 
 import aiodocker
-import arrow
 import pytest
 from faker import Faker
 from models_library.projects import ProjectID
@@ -35,7 +34,7 @@ def state_paths() -> list[Path]:
 
 @pytest.fixture
 def run_id() -> RunID:
-    return f"{arrow.utcnow().int_timestamp}"
+    return RunID.create_run_id()
 
 
 @pytest.fixture
@@ -133,7 +132,7 @@ async def test_unique_name_creation_and_removal(faker: Faker):
     unique_volume_name = DynamicSidecarVolumesPathsResolver.source(
         path=Path("/some/random/path/to/a/workspace/folder"),
         node_uuid=faker.uuid4(cast_to=None),
-        run_id=f"{arrow.utcnow().int_timestamp}",
+        run_id=RunID.create_run_id(),
     )
 
     await assert_creation_and_removal(unique_volume_name)
@@ -141,7 +140,7 @@ async def test_unique_name_creation_and_removal(faker: Faker):
 
 def test_volumes_get_truncated_as_expected(faker: Faker):
     node_uuid = faker.uuid4(cast_to=None)
-    run_id = f"{arrow.utcnow().int_timestamp}"
+    run_id = RunID.create_run_id()
     assert node_uuid != run_id
     unique_volume_name = DynamicSidecarVolumesPathsResolver.source(
         path=Path(
