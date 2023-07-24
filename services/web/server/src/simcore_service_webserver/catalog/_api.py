@@ -10,6 +10,14 @@ from typing import Any
 
 from aiohttp import web
 from aiohttp.web import Request
+from models_library.api_schemas_webserver.catalog import (
+    ServiceInputGet,
+    ServiceInputKey,
+    ServiceKey,
+    ServiceOutputGet,
+    ServiceOutputKey,
+    ServiceVersion,
+)
 from models_library.services import ServiceInput, ServiceOutput
 from models_library.users import UserID
 from pint import UnitRegistry
@@ -19,16 +27,7 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
 from . import client
-from ._schemas import (
-    ServiceInputGet,
-    ServiceInputKey,
-    ServiceKey,
-    ServiceOutputGet,
-    ServiceOutputKey,
-    ServiceVersion,
-    replace_service_input_outputs,
-)
-from ._units import can_connect
+from ._units import can_connect, replace_service_input_outputs
 
 _logger = logging.getLogger(__name__)
 

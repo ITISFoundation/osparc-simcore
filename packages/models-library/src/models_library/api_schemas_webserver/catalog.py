@@ -1,19 +1,20 @@
-from typing import Any, TypeAlias
+from dataclasses import dataclass
+from typing import Any, ClassVar, TypeAlias
 
 import orjson
 from models_library.services import (
+    BaseServiceIOModel,
     ServiceInput,
-    ServiceKey,
     ServiceOutput,
     ServicePortKey,
-    ServiceVersion,
 )
 from models_library.utils.change_case import snake_to_camel
-from pint import UnitRegistry
+from pint import PintError, UnitRegistry
 from pydantic import Extra, Field
 from pydantic.main import BaseModel
 
-from ._units import UnitHtmlFormat, get_html_formatted_unit
+from ..api_schemas_catalog.schemas import services
+from ._base import InputSchema, OutputSchema
 
 ServiceInputKey: TypeAlias = ServicePortKey
 ServiceOutputKey: TypeAlias = ServicePortKey
@@ -25,7 +26,49 @@ def json_dumps(v, *, default=None) -> str:
     return dump
 
 
-#####
+def get_unit_name(port: BaseServiceIOModel) -> str | None:
+    unit: str | None = port.unit
+    if port.property_type == "ref_contentSchema":
+        assert port.content_schema is not None  # nosec
+        # NOTE: content schema might not be resolved (i.e. has $ref!! )
+        unit = port.content_schema.get("x_unit", unit)
+        if unit:
+            # WARNING: has a special format for prefix. tmp direct replace here
+            unit = unit.replace("-", "")
+        elif port.content_schema.get("type") in ("object", "array", None):
+            # these objects might have unit in its fields
+            raise NotImplementedError
+    return unit
+
+
+@dataclass
+class UnitHtmlFormat:
+    short: str
+    long: str
+
+
+def get_html_formatted_unit(
+    port: BaseServiceIOModel, ureg: UnitRegistry
+) -> UnitHtmlFormat | None:
+    try:
+        unit_name = get_unit_name(port)
+        if unit_name is None:
+            return None
+
+        q = ureg.Quantity(unit_name)
+        return UnitHtmlFormat(short=f"{q.units:~H}", long=f"{q.units:H}")
+    except (PintError, NotImplementedError):
+        return None
+
+
+class ServiceGet(services.ServiceGet, OutputSchema):
+    ...
+
+
+class ServiceUpdate(services.ServiceUpdate, InputSchema):
+    ...
+
+
 #
 #  API models specifics to front-end needs
 #
@@ -35,6 +78,8 @@ def json_dumps(v, *, default=None) -> str:
 #  - warning with couplings! Add example to ensure that API model maintain
 #    backwards compatibility
 #   - schema samples could have multiple schemas to tests backwards compatibility
+
+
 class _BaseCommonApiExtension(BaseModel):
     unit_long: str | None = Field(
         None,
@@ -59,7 +104,7 @@ class ServiceInputGet(ServiceInput, _BaseCommonApiExtension):
     )
 
     class Config(_BaseCommonApiExtension.Config):
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "displayOrder": 2,
                 "label": "Sleep Time",
@@ -118,7 +163,7 @@ class ServiceOutputGet(ServiceOutput, _BaseCommonApiExtension):
     )
 
     class Config(_BaseCommonApiExtension.Config):
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "displayOrder": 2,
                 "label": "Time Slept",
@@ -156,36 +201,3 @@ class ServiceOutputGet(ServiceOutput, _BaseCommonApiExtension):
             )
 
         return port
-
-
-#######################
-# Helper functions
-#
-
-
-def replace_service_input_outputs(
-    service: dict[str, Any],
-    *,
-    unit_registry: UnitRegistry | None = None,
-    **export_options,
-):
-    """Thin wrapper to replace i/o ports in returned service model"""
-    # This is a fast solution until proper models are available for the web API
-
-    for input_key in service["inputs"]:
-        new_input = ServiceInputGet.from_catalog_service_api_model(
-            service, input_key, unit_registry
-        )
-        service["inputs"][input_key] = new_input.dict(**export_options)
-
-    for output_key in service["outputs"]:
-        new_output = ServiceOutputGet.from_catalog_service_api_model(
-            service, output_key, unit_registry
-        )
-        service["outputs"][output_key] = new_output.dict(**export_options)
-
-
-assert ServiceKey  # nosec
-assert ServiceVersion  # nosec
-
-__all__: tuple[str, ...] = ("ServiceKey", "ServiceVersion")

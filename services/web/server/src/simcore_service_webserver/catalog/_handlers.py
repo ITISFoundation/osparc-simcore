@@ -10,7 +10,14 @@ from typing import Any, Final
 
 import orjson
 from aiohttp.web import Request, RouteTableDef
-from models_library.api_schemas_catalog.schemas.services import ServiceGet
+from models_library.api_schemas_webserver.catalog import (
+    ServiceGet,
+    ServiceInputKey,
+    ServiceKey,
+    ServiceOutputKey,
+    ServiceUpdate,
+    ServiceVersion,
+)
 from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
@@ -39,7 +46,6 @@ from ._api import (
     list_services,
     update_service,
 )
-from ._schemas import ServiceInputKey, ServiceKey, ServiceOutputKey, ServiceVersion
 
 _logger = logging.getLogger(__name__)
 
@@ -48,7 +54,7 @@ VTAG: Final[str] = f"/{API_VTAG}"
 routes = RouteTableDef()
 
 
-class _ServicePathParams(BaseModel):
+class ServicePathParams(BaseModel):
     service_key: ServiceKey
     service_version: ServiceVersion
 
@@ -88,10 +94,10 @@ async def list_services_handler(request: Request):
 @permission_required("services.catalog.*")
 async def get_service_handler(request: Request):
     ctx = CatalogRequestContext.create(request)
-    path_params = parse_request_path_parameters_as(_ServicePathParams, request)
+    path_params = parse_request_path_parameters_as(ServicePathParams, request)
 
     data = await get_service(path_params.service_key, path_params.service_version, ctx)
-    assert parse_obj_as(data, ServiceGet) is not None
+    assert parse_obj_as(ServiceGet, data) is not None  # nosec
     return envelope_json_response(data)
 
 
@@ -100,8 +106,10 @@ async def get_service_handler(request: Request):
 @permission_required("services.catalog.*")
 async def update_service_handler(request: Request):
     ctx = CatalogRequestContext.create(request)
-    path_params = parse_request_path_parameters_as(_ServicePathParams, request)
+    path_params = parse_request_path_parameters_as(ServicePathParams, request)
     update_data: dict[str, Any] = await request.json(loads=orjson.loads)
+
+    assert parse_obj_as(ServiceUpdate, update_data) is not None  # nosec
 
     # Evaluate and return validated model
     data = await update_service(
@@ -111,6 +119,7 @@ async def update_service_handler(request: Request):
         ctx,
     )
 
+    assert parse_obj_as(ServiceGet, data) is not None  # nosec
     return envelope_json_response(data)
 
 
@@ -119,7 +128,7 @@ async def update_service_handler(request: Request):
 @permission_required("services.catalog.*")
 async def list_service_inputs_handler(request: Request):
     ctx = CatalogRequestContext.create(request)
-    path_params = parse_request_path_parameters_as(_ServicePathParams, request)
+    path_params = parse_request_path_parameters_as(ServicePathParams, request)
 
     # Evaluate and return validated model
     response_model = await list_service_inputs(
@@ -130,7 +139,7 @@ async def list_service_inputs_handler(request: Request):
     return envelope_json_response(data)
 
 
-class _ServiceInputsPathParams(_ServicePathParams):
+class _ServiceInputsPathParams(ServicePathParams):
     input_key: ServiceInputKey
 
 
@@ -166,7 +175,7 @@ class _FromServiceOutputParams(BaseModel):
 @permission_required("services.catalog.*")
 async def get_compatible_inputs_given_source_output_handler(request: Request):
     ctx = CatalogRequestContext.create(request)
-    path_params = parse_request_path_parameters_as(_ServicePathParams, request)
+    path_params = parse_request_path_parameters_as(ServicePathParams, request)
     query_params = parse_request_query_parameters_as(_FromServiceOutputParams, request)
 
     # Evaluate and return validated model
@@ -189,7 +198,7 @@ async def get_compatible_inputs_given_source_output_handler(request: Request):
 @permission_required("services.catalog.*")
 async def list_service_outputs_handler(request: Request):
     ctx = CatalogRequestContext.create(request)
-    path_params = parse_request_path_parameters_as(_ServicePathParams, request)
+    path_params = parse_request_path_parameters_as(ServicePathParams, request)
 
     # Evaluate and return validated model
     response_model = await list_service_outputs(
@@ -200,7 +209,7 @@ async def list_service_outputs_handler(request: Request):
     return envelope_json_response(data)
 
 
-class _ServiceOutputsPathParams(_ServicePathParams):
+class _ServiceOutputsPathParams(ServicePathParams):
     output_key: ServiceOutputKey
 
 
@@ -243,7 +252,7 @@ async def get_compatible_outputs_given_target_input_handler(request: Request):
     Returns compatible output port of a connected node for a given input
     """
     ctx = CatalogRequestContext.create(request)
-    path_params = parse_request_path_parameters_as(_ServicePathParams, request)
+    path_params = parse_request_path_parameters_as(ServicePathParams, request)
     query_params = parse_request_query_parameters_as(_ToServiceInputsParams, request)
 
     data = await get_compatible_outputs_given_target_input(
@@ -268,7 +277,7 @@ async def get_service_resources_handler(request: Request):
     Returns compatible output port of a connected node for a given input
     """
     ctx = CatalogRequestContext.create(request)
-    path_params = parse_request_path_parameters_as(_ServicePathParams, request)
+    path_params = parse_request_path_parameters_as(ServicePathParams, request)
     service_resources: ServiceResourcesDict = await client.get_service_resources(
         request.app,
         user_id=ctx.user_id,
