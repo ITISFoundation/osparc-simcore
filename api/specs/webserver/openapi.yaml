@@ -10,8 +10,10 @@ info:
     name: MIT
     url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
 servers:
-  - description: Development server
-    url: http://{host}:{port}
+  - url: ""
+    description: 'Default server: requests directed to serving url'
+  - url: http://{host}:{port}
+    description: Development server
     variables:
       host:
         default: "localhost"
@@ -19,155 +21,6 @@ servers:
         default: "8001"
 
 paths:
-  # ADMIN -------------
-  /v0/email:test:
-    $ref: "./openapi-admin.yaml#/paths/~1email:test"
-
-  # ANNOUNCEMENTS ---------------------------------------------------------
-  /v0/announcements:
-    $ref: "./openapi-announcements.yaml#/paths/~1announcements"
-
-  # DIAGNOSTICS ---------------------------------------------------------
-  /v0/:
-    $ref: "./openapi-diagnostics.yaml#/paths/~1"
-
-  /v0/health:
-    $ref: "./openapi-diagnostics.yaml#/paths/~1health"
-
-  /v0/status:
-    $ref: "./openapi-diagnostics.yaml#/paths/~1status"
-
-  /v0/status/diagnostics:
-    $ref: "./openapi-diagnostics.yaml#/paths/~1status~1diagnostics"
-
-  /v0/status/{service_name}:
-    $ref: "./openapi-diagnostics.yaml#/paths/~1status~1{service_name}"
-
-  /v0/config:
-    $ref: "./openapi-diagnostics.yaml#/paths/~1config"
-
-  /v0/scheduled_maintenance:
-    $ref: "./openapi-diagnostics.yaml#/paths/~1scheduled_maintenance"
-
-  # AUTHENTICATION & AUTHORIZATION --------------------------------------
-
-  /v0/auth/register/invitations:check:
-    $ref: "./openapi-auth.yaml#/paths/~1auth~1register~1invitations:check"
-
-  /v0/auth/register:
-    $ref: "./openapi-auth.yaml#/paths/~1auth~1register"
-
-  /v0/auth/two_factor:resend:
-    $ref: "./openapi-auth.yaml#/paths/~1auth~1two_factor:resend"
-
-  /v0/auth/verify-phone-number:
-    $ref: "./openapi-auth.yaml#/paths/~1auth~1verify-phone-number"
-
-  /v0/auth/validate-code-register:
-    $ref: "./openapi-auth.yaml#/paths/~1auth~1validate-code-register"
-
-  /v0/auth/login:
-    $ref: "./openapi-auth.yaml#/paths/~1auth~1login"
-
-  /v0/auth/validate-code-login:
-    $ref: "./openapi-auth.yaml#/paths/~1auth~1validate-code-login"
-
-  /v0/auth/logout:
-    $ref: "./openapi-auth.yaml#/paths/~1auth~1logout"
-
-  /v0/auth/reset-password:
-    $ref: "./openapi-auth.yaml#/paths/~1auth~1reset-password"
-
-  /v0/auth/reset-password/{code}:
-    $ref: "./openapi-auth.yaml#/paths/~1auth~1reset-password~1{code}"
-
-  /v0/auth/change-email:
-    $ref: "./openapi-auth.yaml#/paths/~1auth~1change-email"
-
-  /v0/auth/change-password:
-    $ref: "./openapi-auth.yaml#/paths/~1auth~1change-password"
-
-  /v0/auth/confirmation/{code}:
-    $ref: "./openapi-auth.yaml#/paths/~1auth~1confirmation~1{code}"
-
-  /v0/auth/api-keys:
-    $ref: "./openapi-auth.yaml#/paths/~1auth~1api-keys"
-
-  # USER SETTINGS ------------------------------------------------------------------
-
-  /v0/me:
-    $ref: "./openapi-users.yaml#/paths/~1me"
-
-  /v0/me/tokens:
-    $ref: "./openapi-users.yaml#/paths/~1me~1tokens"
-
-  /v0/me/tokens/{service}:
-    $ref: "./openapi-users.yaml#/paths/~1me~1tokens~1{service}"
-
-  /v0/me/notifications:
-    $ref: "./openapi-users.yaml#/paths/~1me~1notifications"
-
-  /v0/me/notifications/{notification_id}:
-    $ref: "./openapi-users.yaml#/paths/~1me~1notifications~1{notification_id}"
-
-  /v0/me/permissions:
-    $ref: "./openapi-users.yaml#/paths/~1me~1permissions"
-
-  # GROUP SETTINGS ------------------------------------------------------------------
-
-  /v0/groups:
-    $ref: "./openapi-groups.yaml#/paths/~1groups"
-
-  /v0/groups/{gid}:
-    $ref: "./openapi-groups.yaml#/paths/~1groups~1{gid}"
-
-  /v0/groups/{gid}/users:
-    $ref: "./openapi-groups.yaml#/paths/~1groups~1{gid}~1users"
-
-  /v0/groups/{gid}/users/{uid}:
-    $ref: "./openapi-groups.yaml#/paths/~1groups~1{gid}~1users~1{uid}"
-
-  /v0/groups/{gid}/classifiers:
-    $ref: "./openapi-groups.yaml#/paths/~1groups~1{gid}~1classifiers"
-
-  /v0/groups/sparc/classifiers/scicrunch-resources/{rrid}:
-    $ref: "./openapi-groups.yaml#/paths/~1groups~1sparc~1classifiers~1scicrunch-resources~1{rrid}"
-
-  /v0/groups/sparc/classifiers/scicrunch-resources:search:
-    $ref: "./openapi-groups.yaml#/paths/~1groups~1sparc~1classifiers~1scicrunch-resources:search"
-
-  # DATA STORAGE SERVICES ----------------------------------------------------------
-
-  /v0/storage/locations:
-    $ref: "./openapi-storage.yaml#/paths/~1storage~1locations"
-
-  /v0/storage/locations/{location_id}:sync:
-    $ref: "./openapi-storage.yaml#/paths/~1storage~1locations~1{location_id}:sync"
-
-  /v0/storage/locations/{location_id}/files/metadata:
-    $ref: "./openapi-storage.yaml#/paths/~1storage~1locations~1{location_id}~1files~1metadata"
-
-  /v0/storage/locations/{location_id}/files/{file_id}:
-    $ref: "./openapi-storage.yaml#/paths/~1storage~1locations~1{location_id}~1files~1{file_id}"
-
-  /v0/storage/locations/{location_id}/files/{file_id}:complete:
-    $ref: "./openapi-storage.yaml#/paths/~1storage~1locations~1{location_id}~1files~1{file_id}:complete"
-
-  /v0/storage/locations/{location_id}/files/{file_id}:abort:
-    $ref: "./openapi-storage.yaml#/paths/~1storage~1locations~1{location_id}~1files~1{file_id}:abort"
-
-  /v0/storage/locations/{location_id}/files/{file_id}:complete/futures/{future_id}:
-    $ref: "./openapi-storage.yaml#/paths/~1storage~1locations~1{location_id}~1files~1{file_id}:complete~1futures~1{future_id}"
-
-  /v0/storage/locations/{location_id}/files/{file_id}/metadata:
-    $ref: "./openapi-storage.yaml#/paths/~1storage~1locations~1{location_id}~1files~1{file_id}~1metadata"
-
-  /v0/storage/locations/{location_id}/datasets/{dataset_id}/metadata:
-    $ref: "./openapi-storage.yaml#/paths/~1storage~1locations~1{location_id}~1datasets~1{dataset_id}~1metadata"
-
-  /v0/storage/locations/{location_id}/datasets:
-    $ref: "./openapi-storage.yaml#/paths/~1storage~1locations~1{location_id}~1datasets"
-
   # SERVICES ------------------------------------------------------------------------
   /v0/computations/{project_id}:
     $ref: "./openapi-computations.yaml#/paths/computations_project_id"
@@ -177,15 +30,6 @@ paths:
     $ref: "./openapi-computations.yaml#/paths/computations_project_id_stop"
 
   # PROJECT SERVICES -----------------------------------------------------------------
-
-  /v0/projects:
-    $ref: "./openapi-projects-crud.yaml#/paths/~1projects"
-
-  /v0/projects/active:
-    $ref: "./openapi-projects-crud.yaml#/paths/~1projects~1active"
-
-  /v0/projects/{project_id}:
-    $ref: "./openapi-projects-crud.yaml#/paths/~1projects~1{project_id}"
 
   /v0/projects/{project_id}:open:
     $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1open"
@@ -198,27 +42,6 @@ paths:
 
   /v0/projects/{project_id}:close:
     $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1close"
-
-  /v0/projects/{project_id}/nodes:
-    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1nodes"
-
-  /v0/projects/{project_id}/nodes/{node_id}:
-    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1nodes~1{node_id}"
-
-  /v0/projects/{project_id}/nodes/{node_id}:retrieve:
-    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1nodes~1{node_id}~1retrieve"
-
-  /v0/projects/{project_id}/nodes/{node_id}:start:
-    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1nodes~1{node_id}~1start"
-
-  /v0/projects/{project_id}/nodes/{node_id}:stop:
-    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1nodes~1{node_id}~1stop"
-
-  /v0/projects/{project_id}/nodes/{node_id}:restart:
-    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1nodes~1{node_id}~1restart"
-
-  /v0/projects/{project_id}/nodes/{node_id}/resources:
-    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1nodes~1{node_id}~1resources"
 
   /v0/projects/{project_uuid}/comments:
     $ref: "./openapi-projects-comments.yaml#/paths/~1projects~1{project_uuid}~1comments"
@@ -235,17 +58,8 @@ paths:
   /v0/projects/{project_id}/nodes/{node_id}/preview:
     $ref: "./openapi-projects-nodes.yaml#/paths/~1projects~1{project_id}~1nodes~1{node_id}~1preview"
 
-  /v0/projects/{project_id}/inputs:
-    $ref: "./openapi-projects-ports.yaml#/paths/~1projects~1{project_id}~1inputs"
-
-  /v0/projects/{project_id}/outputs:
-    $ref: "./openapi-projects-ports.yaml#/paths/~1projects~1{project_id}~1outputs"
-
   /v0/projects/{project_id}/metadata:
     $ref: "./openapi-projects-metadata.yaml#/paths/~1projects~1{project_id}~1metadata"
-
-  /v0/projects/{project_id}/metadata/ports:
-    $ref: "./openapi-projects-ports.yaml#/paths/~1projects~1{project_id}~1metadata~1ports"
 
   /v0/projects/{project_uuid}/tags/{tag_id}:
     $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_uuid}~1tags~1{tag_id}"
@@ -282,10 +96,6 @@ paths:
 
   "/v0/repos/projects/{project_uuid}/checkpoints/{ref_id}/workbench/view":
     $ref: "./openapi-version-control.yaml#/paths/~1repos~1projects~1{project_uuid}~1checkpoints~1{ref_id}~1workbench~1view"
-
-  # ACTIVITY -------------------------------------------------------------------------
-  /v0/activity/status:
-    $ref: "./openapi-activity.yaml#/paths/~1activity~1status"
 
   # TAGS -------------------------------------------------------------------------
   /v0/tags:
