@@ -153,7 +153,7 @@ async def test_regression_break_endless_loop_cancellation_edge_case(
     )
 
     # requires an extra pass to remove the service
-    for _ in range(2):
+    for _ in range(3):
         await _apply_observation_cycle(
             dynamic_sidecar_scheduler, scheduler_data_from_http_request
         )
