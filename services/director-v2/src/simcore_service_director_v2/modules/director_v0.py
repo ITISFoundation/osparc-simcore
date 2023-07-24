@@ -9,17 +9,11 @@ from typing import Any, cast
 
 import httpx
 import yarl
-from fastapi import FastAPI, HTTPException, Request, Response, status
-from fastapi.datastructures import URL
+from fastapi import FastAPI, HTTPException, status
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
-from models_library.services import (
-    ServiceDockerData,
-    ServiceKey,
-    ServiceKeyVersion,
-    ServiceVersion,
-)
+from models_library.services import ServiceKey, ServiceKeyVersion, ServiceVersion
 from models_library.users import UserID
 from servicelib.logging_utils import log_decorator
 
@@ -74,52 +68,14 @@ class DirectorV0Client:
 
     @handle_errors("Director", logger)
     @handle_retry(logger)
-    async def request(self, method: str, tail_path: str, **kwargs) -> httpx.Response:
+    async def _request(self, method: str, tail_path: str, **kwargs) -> httpx.Response:
         return await self.client.request(method, tail_path, **kwargs)
-
-    async def forward(self, request: Request, response: Response) -> Response:
-        assert self.client.base_url.path.startswith("/v0")  # nosec
-        # SEE https://github.com/ITISFoundation/osparc-simcore/issues/4332
-        # WARNING: assert self.client.base_url.host != request.base_url.hostname  # nosec
-        url_tail = URL(
-            path=request.url.path.replace("/v0", ""),
-            fragment=request.url.fragment,
-        )
-        body: bytes = await request.body()
-
-        resp = await self.client.request(
-            request.method,
-            str(url_tail),
-            params=dict(request.query_params),
-            content=body,
-            headers=dict(request.headers),
-        )
-
-        # Prepared response
-        response.body = resp.content
-        response.status_code = resp.status_code
-        response.headers.update(resp.headers)
-
-        # NOTE: the response is NOT validated!
-        return response
-
-    @log_decorator(logger=logger)
-    async def get_service_details(
-        self, service: ServiceKeyVersion
-    ) -> ServiceDockerData:
-        resp = await self.request(
-            "GET", f"/services/{urllib.parse.quote_plus(service.key)}/{service.version}"
-        )
-        if resp.status_code == status.HTTP_200_OK:
-            data = cast(list[dict[str, Any]], unenvelope_or_raise_error(resp))
-            return ServiceDockerData.parse_obj(data[0])
-        raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     @log_decorator(logger=logger)
     async def get_service_extras(
         self, service_key: ServiceKey, service_version: ServiceVersion
     ) -> ServiceExtras:
-        resp = await self.request(
+        resp = await self._request(
             "GET",
             f"/service_extras/{urllib.parse.quote_plus(service_key)}/{service_version}",
         )
@@ -131,7 +87,9 @@ class DirectorV0Client:
     async def get_running_service_details(
         self, service_uuid: NodeID
     ) -> RunningDynamicServiceDetails:
-        resp = await self.request("GET", f"running_interactive_services/{service_uuid}")
+        resp = await self._request(
+            "GET", f"running_interactive_services/{service_uuid}"
+        )
         if resp.status_code == status.HTTP_200_OK:
             return RunningDynamicServiceDetails.parse_obj(
                 unenvelope_or_raise_error(resp)
@@ -142,7 +100,7 @@ class DirectorV0Client:
     async def get_service_labels(
         self, service: ServiceKeyVersion
     ) -> SimcoreServiceLabels:
-        resp = await self.request(
+        resp = await self._request(
             "GET",
             f"services/{urllib.parse.quote_plus(service.key)}/{service.version}/labels",
         )
@@ -162,7 +120,7 @@ class DirectorV0Client:
             query_params["study_id"] = f"{project_id}"
         request_url = yarl.URL("running_interactive_services").with_query(query_params)
 
-        resp = await self.request("GET", str(request_url))
+        resp = await self._request("GET", str(request_url))
         resp.raise_for_status()
 
         if resp.status_code == status.HTTP_200_OK:

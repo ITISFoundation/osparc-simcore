@@ -17,7 +17,8 @@ from ..projects_nodes import HttpUrlWithCustomMinLength
 from ..projects_state import ProjectState
 from ..projects_ui import StudyUI
 from ..utils.common_validators import empty_str_to_none, none_to_empty_str
-from ._base import NOT_REQUIRED, EmptyModel, InputSchema, OutputSchema
+from ..utils.pydantic_tools_extension import FieldNotRequired
+from ._base import EmptyModel, InputSchema, OutputSchema
 from .permalinks import ProjectPermalink
 
 
@@ -65,7 +66,7 @@ class ProjectGet(OutputSchema):
     ui: EmptyModel | StudyUI | None
     quality: dict[str, Any] = {}
     dev: dict | None
-    permalink: ProjectPermalink = NOT_REQUIRED
+    permalink: ProjectPermalink = FieldNotRequired()
 
     _empty_description = validator("description", allow_reuse=True, pre=True)(
         none_to_empty_str
@@ -103,15 +104,15 @@ class ProjectReplace(InputSchema):
 
 
 class ProjectUpdate(InputSchema):
-    name: str = NOT_REQUIRED
-    description: str = NOT_REQUIRED
-    thumbnail: HttpUrlWithCustomMinLength = NOT_REQUIRED
-    workbench: NodesDict = NOT_REQUIRED
-    access_rights: dict[GroupIDStr, AccessRights] = NOT_REQUIRED
-    tags: list[int] = NOT_REQUIRED
-    classifiers: list[ClassifierID] = NOT_REQUIRED
+    name: str = FieldNotRequired()
+    description: str = FieldNotRequired()
+    thumbnail: HttpUrlWithCustomMinLength = FieldNotRequired()
+    workbench: NodesDict = FieldNotRequired()
+    access_rights: dict[GroupIDStr, AccessRights] = FieldNotRequired()
+    tags: list[int] = FieldNotRequired()
+    classifiers: list[ClassifierID] = FieldNotRequired()
     ui: StudyUI | None = None
-    quality: dict[str, Any] = NOT_REQUIRED
+    quality: dict[str, Any] = FieldNotRequired()
 
 
 __all__: tuple[str, ...] = (

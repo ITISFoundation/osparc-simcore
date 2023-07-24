@@ -31,6 +31,7 @@ from starlette.testclient import TestClient
 @pytest.fixture
 def mock_env(
     disable_rabbitmq: None,
+    disable_postgres: None,
     mock_env: EnvVarsDict,
     monkeypatch: MonkeyPatch,
     docker_swarm: None,
@@ -41,12 +42,6 @@ def mock_env(
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "false")
 
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
-
-    monkeypatch.setenv("POSTGRES_HOST", "mocked_host")
-    monkeypatch.setenv("POSTGRES_USER", "mocked_user")
-    monkeypatch.setenv("POSTGRES_PASSWORD", "mocked_password")
-    monkeypatch.setenv("POSTGRES_DB", "mocked_db")
-    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "false")
 
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
     monkeypatch.setenv("S3_ENDPOINT", "endpoint")

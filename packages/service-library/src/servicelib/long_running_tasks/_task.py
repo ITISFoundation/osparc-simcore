@@ -138,7 +138,7 @@ class TasksManager:
         return len(managed_tasks_ids) > 0
 
     def list_tasks(self, with_task_context: TaskContext | None) -> list[TrackedTask]:
-        tasks = []
+        tasks: list[TrackedTask] = []
         for task_group in self._tasks_groups.values():
             if not with_task_context:
                 tasks.extend(task_group.values())
@@ -206,11 +206,11 @@ class TasksManager:
         done = task.done()
 
         return TaskStatus.parse_obj(
-            dict(
-                task_progress=tracked_task.task_progress,
-                done=done,
-                started=tracked_task.started,
-            )
+            {
+                "task_progress": tracked_task.task_progress,
+                "done": done,
+                "started": tracked_task.started,
+            }
         )
 
     def get_task_result(
@@ -245,6 +245,7 @@ class TasksManager:
         if not tracked_task.task.done():
             raise TaskNotCompletedError(task_id=task_id)
 
+        error: TaskExceptionError | TaskCancelledError
         try:
             exception = tracked_task.task.exception()
             if exception is not None:
@@ -430,3 +431,17 @@ def start_task(
     )
 
     return tracked_task.task_id
+
+
+__all__: tuple[str, ...] = (
+    "TaskAlreadyRunningError",
+    "TaskCancelledError",
+    "TaskId",
+    "TasksManager",
+    "TaskProgress",
+    "TaskProtocol",
+    "TaskStatus",
+    "TaskResult",
+    "TrackedTask",
+    "TaskResult",
+)

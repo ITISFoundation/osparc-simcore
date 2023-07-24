@@ -8,7 +8,7 @@ coverage==7.2.7
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-exceptiongroup==1.1.1
+exceptiongroup==1.1.2
     # via
     #   -c requirements/_base.txt
     #   pytest
@@ -21,11 +21,11 @@ packaging==23.1
     #   -c requirements/_base.txt
     #   pytest
     #   pytest-sugar
-pluggy==1.0.0
+pluggy==1.2.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-pytest==7.3.1
+pytest==7.4.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
