@@ -1,8 +1,6 @@
-from models_library.api_schemas_catalog.services_specifications import (
-    ServiceSpecifications,
-)
-from models_library.services import ServiceKey, ServiceVersion
-from models_library.users import GroupID
+from ...services import ServiceKey, ServiceVersion
+from ...users import GroupID
+from ..schemas.services_specifications import ServiceSpecifications
 
 
 class ServiceSpecificationsAtDB(ServiceSpecifications):
