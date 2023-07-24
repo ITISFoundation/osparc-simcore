@@ -61,24 +61,29 @@ def get_html_formatted_unit(
         return None
 
 
-class ServiceGet(services.ServiceGet, OutputSchema):
-    ...
+class ServiceGet(services.ServiceGet):
+    class Config(OutputSchema.Config):
+        ...
 
 
-class ServiceUpdate(services.ServiceUpdate, InputSchema):
-    ...
+class ServiceUpdate(services.ServiceUpdate):
+    class Config(InputSchema.Config):
+        ...
 
 
-class ServiceResourcesGet(services.ServiceResourcesGet, OutputSchema):
-    ...
+class ServiceResourcesGet(services.ServiceResourcesGet):
+    class Config(OutputSchema.Config):
+        ...
 
 
 class DAGIn(dag.DAGIn, InputSchema):
-    ...
+    class Config(InputSchema.Config):
+        ...
 
 
 class DAGOut(dag.DAGOut, OutputSchema):
-    ...
+    class Config(OutputSchema.Config):
+        ...
 
 
 #

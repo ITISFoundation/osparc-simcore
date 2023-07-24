@@ -87,5 +87,6 @@ class NodeRetrieve(InputSchema):
     port_keys: list[ServicePortKey] = []
 
 
-class NodeRetrieved(OutputSchema, RetrieveDataOut):
-    ...
+class NodeRetrieved(RetrieveDataOut):
+    class Config(OutputSchema.Config):
+        ...
