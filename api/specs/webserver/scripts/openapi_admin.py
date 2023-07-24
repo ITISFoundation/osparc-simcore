@@ -28,7 +28,7 @@ router = APIRouter(
     operation_id="test_email",
 )
 async def test_email(
-    test: TestEmail, x_simcore_products_name: str | None = Header(default=None)
+    _test: TestEmail, x_simcore_products_name: str | None = Header(default=None)
 ):
     # X-Simcore-Products-Name
     ...
