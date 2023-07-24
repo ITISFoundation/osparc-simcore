@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import RedirectResponse
 
-from ...models.pagination import LimitOffsetPage, LimitOffsetParams
+from ...models.pagination import Page, PaginationParams
 from ...models.schemas.jobs import (
     Job,
     JobID,
@@ -28,12 +28,12 @@ router = APIRouter()
 
 @router.get(
     "/{study_id:uuid}/jobs",
-    response_model=LimitOffsetPage[Job],
+    response_model=Page[Job],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def list_study_jobs(
     study_id: StudyID,
-    page_params: Annotated[LimitOffsetParams, Depends()],
+    page_params: Annotated[PaginationParams, Depends()],
 ):
     msg = f"list study jobs study_id={study_id!r} with pagination={page_params!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
     raise NotImplementedError(msg)
