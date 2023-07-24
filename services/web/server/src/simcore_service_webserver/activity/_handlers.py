@@ -3,6 +3,8 @@ from collections import defaultdict
 
 import aiohttp
 import aiohttp.web
+from models_library.api_schemas_webserver.activity import ActivityStatusDict
+from pydantic import parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
@@ -43,9 +45,9 @@ def get_prometheus_result_or_default(result, default):
 routes = aiohttp.web.RouteTableDef()
 
 
-@routes.get(f"/{API_VTAG}/activity/status", name="get_status")
+@routes.get(f"/{API_VTAG}/activity/status", name="get_activity_status")
 @login_required
-async def get_status(request: aiohttp.web.Request):
+async def get_activity_status(request: aiohttp.web.Request):
     session = get_client_session(request.app)
     user_id = request.get(RQT_USERID_KEY, -1)
 
@@ -93,4 +95,5 @@ async def get_status(request: aiohttp.web.Request):
     if not res:
         raise aiohttp.web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
+    assert parse_obj_as(ActivityStatusDict, res) is not None  # nosec
     return dict(res)

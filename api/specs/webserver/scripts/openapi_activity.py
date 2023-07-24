@@ -1,15 +1,7 @@
-
-from typing import Annotated, Any
-
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
+from models_library.api_schemas_webserver.activity import ActivityStatusDict
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.diagnostics._handlers import (
-    AppStatusCheck,
-    StatusDiagnosticsGet,
-    StatusDiagnosticsQueryParam,
-)
-from simcore_service_webserver.rest.healthcheck import HealthInfoDict
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",
@@ -19,13 +11,10 @@ router = APIRouter(
 )
 
 
-
-
 @router.get(
-    '/activity/status',
-    response_model=ActivityStatusGetResponse,
-    responses={'default': {'model': ActivityStatusGetResponse1}},
-
+    "/activity/status",
+    response_model=Envelope[ActivityStatusDict],
+    operation_id="get_activity_status",
 )
-def get_status() -> Union[ActivityStatusGetResponse, ActivityStatusGetResponse1]:
+def get_activity_status():
     pass

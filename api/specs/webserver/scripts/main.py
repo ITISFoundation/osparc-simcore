@@ -37,6 +37,7 @@ app = FastAPI(
         "url": "https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE",
     },
     servers=[
+        {"description": "API web-server", "url": ""},
         {
             "description": "Development server",
             "url": "http://{host}:{port}",
