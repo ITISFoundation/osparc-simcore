@@ -9,7 +9,7 @@ import httpx
 import pytest
 from pydantic import parse_file_as, parse_obj_as
 from respx import MockRouter
-from simcore_service_api_server.models.pagination import LimitOffsetPage
+from simcore_service_api_server.models.pagination import Page
 from simcore_service_api_server.models.schemas.jobs import Job
 from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
 from starlette import status
@@ -72,7 +72,6 @@ async def test_list_solver_jobs(
     solver_version: str,
     mocked_backend: MockBackendRouters,
 ):
-
     # list jobs (w/o pagination)
     resp = await client.get(
         f"/v0/solvers/{solver_key}/releases/{solver_version}/jobs", auth=auth
@@ -88,7 +87,7 @@ async def test_list_solver_jobs(
     )
     assert resp.status_code == status.HTTP_200_OK
 
-    jobs_page = parse_obj_as(LimitOffsetPage[Job], resp.json())
+    jobs_page = parse_obj_as(Page[Job], resp.json())
 
     assert jobs_page.items == jobs
 

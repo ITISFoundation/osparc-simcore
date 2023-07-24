@@ -54,7 +54,6 @@ def mocked_webserver_service_api(
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
-
         # Mocks /health
         assert oas_paths["/v0/health"]
         assert (
@@ -77,12 +76,5 @@ def mocked_webserver_service_api(
         # Mocks /projects/{*}/metadata/ports
         assert oas_paths["/v0/projects/{project_id}/metadata/ports"]
         assert "get" in oas_paths["/v0/projects/{project_id}/metadata/ports"]
-        respx_mock.get(
-            path__regex=r"/projects/(?P<project_id>[\w-]+)/metadata/ports$",
-            name="list_project_metadata_ports",
-        ).respond(
-            200,
-            json={"data": fake_study_ports},
-        )
 
         yield respx_mock
