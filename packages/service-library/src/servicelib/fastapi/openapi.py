@@ -62,7 +62,7 @@ def redefine_operation_id_in_router(router: APIRouter, operation_id_prefix: str)
 
 # https://swagger.io/docs/specification/data-models/data-types/#numbers
 _SCHEMA_TO_PYTHON_TYPES = {"integer": int, "number": float}
-_SKIP = (
+_POP_VALUES_OF = (
     "examples",
     # SEE openapi-standard: https://swagger.io/docs/specification/adding-examples/
     # - exampleS are Dicts and not Lists
@@ -82,6 +82,7 @@ def _remove_named_groups(regex: str) -> str:
 
 
 def _patch_node_properties(key: str, node: dict):
+
     # Validation for URL is broken in the context of the license entry
     # this helps to bypass validation and then replace with the correct value
     if isinstance(key, str) and key.startswith("__PLACEHOLDER___KEY_"):
@@ -121,7 +122,7 @@ def _patch_node_properties(key: str, node: dict):
 def _patch(node: Any):
     if isinstance(node, dict):
         for key in list(node.keys()):
-            if key in _SKIP:
+            if key in _POP_VALUES_OF:
                 node.pop(key)
                 continue
 
