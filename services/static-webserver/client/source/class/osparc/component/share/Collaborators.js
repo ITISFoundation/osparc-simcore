@@ -208,12 +208,12 @@ qx.Class.define("osparc.component.share.Collaborators", {
 
     __createAddCollaboratorSection: function() {
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-      if ("uuid" in this._serializedData) {
-        // study
-        vBox.setVisibility(this._canIDelete() ? "visible" : "excluded");
-      } else {
+      if (osparc.utils.Resources.isService(this._serializedData)) {
         // service
         vBox.setVisibility(this._canIWrite() ? "visible" : "excluded");
+      } else {
+        // study or template
+        vBox.setVisibility(this._canIDelete() ? "visible" : "excluded");
       }
 
       const label = new qx.ui.basic.Label(this.tr("Select from the list below and click Share"));
@@ -348,7 +348,7 @@ qx.Class.define("osparc.component.share.Collaborators", {
             collaborator["name"] = osparc.utils.Utils.firstsUp(collaborator["first_name"], collaborator["last_name"]);
           }
           collaborator["accessRights"] = aceessRights[gid];
-          collaborator["showOptions"] = this._canIWrite();
+          collaborator["showOptions"] = osparc.utils.Resources.isService(this._serializedData) ? this._canIWrite() : this._canIDelete();
           collaboratorsList.push(collaborator);
         }
       });
