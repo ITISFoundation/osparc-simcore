@@ -466,7 +466,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       switch (newCtxt) {
         case "workbench":
           this.__viewsStack.setSelection([this.__workbenchView]);
-          this.__workbenchView.nodeSelected(this.getStudy().getUi().getCurrentNodeId());
+          if (this.getStudy() && this.getStudy().getUi()) {
+            this.__workbenchView.nodeSelected(this.getStudy().getUi().getCurrentNodeId());
+          }
           break;
         case "guided":
         case "app":

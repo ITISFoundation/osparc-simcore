@@ -94,7 +94,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
 
     subtitleMD: {
       check : "String",
-      apply : "__applySubtitleMD",
+      apply : "_applySubtitleMD",
       nullable : true
     },
 
@@ -231,7 +231,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
       label.setValue(value);
     },
 
-    __applySubtitleMD: function(value) {
+    _applySubtitleMD: function(value) {
       if ([null, undefined, ""].includes(value)) {
         return;
       }
