@@ -319,7 +319,7 @@ qx.Class.define("osparc.component.share.Collaborators", {
         const myGid = osparc.auth.Data.getInstance().getGroupId();
         const leaveButton = new qx.ui.form.Button(this.tr("Leave Study")).set({
           allowGrowX: false,
-          visibility: Object.keys(this._serializedData["accessRights"]).includes(myGid) ? "visible" : "excluded"
+          visibility: Object.keys(this._serializedData["accessRights"]).includes(myGid.toString()) ? "visible" : "excluded"
         });
         leaveButton.addListener("execute", () => {
           if (osparc.component.share.CollaboratorsStudy.checkRemoveCollaborator(this._serializedData, myGid)) {
