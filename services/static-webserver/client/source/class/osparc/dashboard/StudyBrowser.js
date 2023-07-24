@@ -362,6 +362,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.invalidateStudies();
         this.reloadResources();
       }, this);
+
+      qx.event.message.Bus.subscribe("reloadStudies", () => {
+        this.invalidateStudies();
+        this.reloadResources();
+      }, this);
     },
 
     reloadStudy: function(studyId) {
