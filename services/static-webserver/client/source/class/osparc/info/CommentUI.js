@@ -25,18 +25,25 @@ qx.Class.define("osparc.info.CommentUI", {
   construct: function(comment) {
     this.base(arguments);
 
+    this.__comment = comment;
+
     const layout = new qx.ui.layout.Grid(8, 5);
     layout.setColumnWidth(0, 32);
     layout.setColumnFlex(1, 1);
     this._setLayout(layout);
     this.setPadding(5);
 
-    this.__comment = comment;
 
     this.__buildLayout();
   },
 
   members: {
+    __comment: null,
+
+    __isMyComment: function() {
+      return this.__comment && osparc.auth.Data.getInstance().getUserId() === this.__comment["user_id"];
+    },
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
