@@ -31,6 +31,10 @@ qx.Class.define("osparc.info.StudyLarge", {
     } else if (study instanceof Object) {
       const studyModel = new osparc.data.model.Study(study);
       this.setStudy(studyModel);
+
+      if ("resourceType" in study) {
+        this.__isTemplate = study["resourceType"] === "template";
+      }
     }
 
     if (openOptions !== undefined) {
@@ -54,6 +58,8 @@ qx.Class.define("osparc.info.StudyLarge", {
   },
 
   members: {
+    __isTemplate: null,
+
     __canIWrite: function() {
       return osparc.data.model.Study.canIWrite(this.getStudy().getAccessRights());
     },
@@ -67,7 +73,10 @@ qx.Class.define("osparc.info.StudyLarge", {
         font: "text-14"
       });
       const titleLayout = this.__createViewWithEdit(title, this.__openTitleEditor);
-      const text = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + " Id";
+      let text = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + " Id";
+      if (this.__isTemplate) {
+        text = osparc.product.Utils.getTemplateAlias({firstUpperCase: true}) + " Id";
+      }
       const button = new qx.ui.form.Button(null, "@FontAwesome5Solid/copy/12").set({
         label: text,
         toolTipText: "Copy " + text
