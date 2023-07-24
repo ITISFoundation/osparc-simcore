@@ -114,6 +114,8 @@ class ServiceVersion(ConstrainedStr):
         frozen = True
 
 
+# The run_id will contain an integer timestamp or the
+# in the previous version a UUID.
 RunID: TypeAlias = str
 
 
