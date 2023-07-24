@@ -21,13 +21,7 @@ servers:
         default: "8001"
 
 paths:
-  # SERVICES ------------------------------------------------------------------------
-  /v0/computations/{project_id}:
-    $ref: "./openapi-computations.yaml#/paths/computations_project_id"
-  /v0/computations/{project_id}:start:
-    $ref: "./openapi-computations.yaml#/paths/computations_project_id_start"
-  /v0/computations/{project_id}:stop:
-    $ref: "./openapi-computations.yaml#/paths/computations_project_id_stop"
+
 
   # PROJECT SERVICES -----------------------------------------------------------------
 
@@ -113,30 +107,6 @@ paths:
   /v0/publications/service-submission:
     $ref: "./openapi-publications.yaml#/paths/~1publications~1service-submission"
 
-  # CATALOG -------------------------------------------------------------------------
-  /v0/catalog/dags:
-    $ref: "./openapi-catalog.yaml#/paths/~1catalog~1dags"
-  /v0/catalog/dags/{dag_id}:
-    $ref: "./openapi-catalog.yaml#/paths/~1catalog~1dags~1{dag_id}"
-
-  /v0/catalog/services:
-    $ref: "./openapi-catalog.yaml#/paths/catalog_services"
-  /v0/catalog/services/{service_key}/{service_version}:
-    $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version"
-  /v0/catalog/services/{service_key}/{service_version}/inputs:
-    $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version_inputs"
-  /v0/catalog/services/{service_key}/{service_version}/inputs/{input_key}:
-    $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version_inputs_input_key"
-  /v0/catalog/services/{service_key}/{service_version}/inputs:match:
-    $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version_inputs_match"
-  /v0/catalog/services/{service_key}/{service_version}/outputs:
-    $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version_outputs"
-  /v0/catalog/services/{service_key}/{service_version}/outputs/{output_key}:
-    $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version_outputs_output_key"
-  /v0/catalog/services/{service_key}/{service_version}/outputs:match:
-    $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version_outputs_match"
-  /v0/catalog/services/{service_key}/{service_version}/resources:
-    $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version_resources"
 
   # TASKS --------------------------------------------------------------------------
   /v0/tasks:
@@ -147,28 +117,3 @@ paths:
 
   /v0/tasks/{task_id}/result:
     $ref: "./openapi-tasks.yaml#/paths/~1tasks~1{task_id}~1result"
-
-  # SPARC -------------------------------------------------------------------------
-  /v0/services:
-    $ref: "./openapi-nih-sparc.yaml#/paths/~1services"
-
-  /v0/viewers:
-    $ref: "./openapi-nih-sparc.yaml#/paths/~1viewers"
-
-  /v0/viewers/default:
-    $ref: "./openapi-nih-sparc.yaml#/paths/~1viewers~1default"
-
-  /view:
-    $ref: "./openapi-nih-sparc.yaml#/paths/~1view"
-
-  /study/{id}:
-    $ref: "./openapi-nih-sparc.yaml#/paths/~1study~1{id}"
-
-components:
-  responses:
-    DefaultErrorResponse:
-      description: Default http error response body
-      content:
-        application/json:
-          schema:
-            $ref: "./components/schemas/error.yaml#/ErrorEnveloped"
