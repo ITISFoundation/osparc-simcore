@@ -14,7 +14,7 @@ bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
 cfgv==3.3.1
     # via pre-commit
-click==8.1.5
+click==8.1.6
     # via
     #   -c requirements/_base.txt
     #   black
@@ -25,7 +25,7 @@ distlib==0.3.7
     # via virtualenv
 filelock==3.12.2
     # via virtualenv
-identify==2.5.24
+identify==2.5.25
     # via pre-commit
 isort==5.12.0
     # via
@@ -48,7 +48,7 @@ packaging==23.1
     #   build
 pathspec==0.11.1
     # via black
-pip-tools==7.0.0
+pip-tools==7.1.0
     # via -r requirements/../../../requirements/devenv.txt
 platformdirs==3.9.1
     # via
@@ -83,7 +83,7 @@ typing-extensions==4.7.1
     # via
     #   -c requirements/_base.txt
     #   astroid
-virtualenv==20.24.0
+virtualenv==20.24.1
     # via pre-commit
 wheel==0.40.0
     # via pip-tools

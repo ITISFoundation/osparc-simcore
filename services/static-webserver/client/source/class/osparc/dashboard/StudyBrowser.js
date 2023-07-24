@@ -743,13 +743,49 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __newStudyFromServiceBtnClicked: function(button, key, version, newStudyLabel) {
+    __newStudyFromServiceBtnClicked: async function(button, key, version, newStudyLabel) {
+      const isDevel = osparc.utils.Utils.isDevelopmentPlatform();
+      const isDevelAndS4L = isDevel && osparc.product.Utils.isProduct("s4l");
       button.setValue(false);
       this._showLoadingPage(this.tr("Creating ") + osparc.product.Utils.getStudyAlias());
       osparc.utils.Study.createStudyFromService(key, version, this._resourcesList, newStudyLabel)
         .then(studyId => {
-          this._hideLoadingPage();
-          this._startStudyById(studyId);
+          if (isDevelAndS4L) {
+            const resourceSelector = new osparc.component.study.ResourceSelector(studyId);
+            const title = osparc.product.Utils.getStudyAlias({
+              firstUpperCase: true
+            }) + this.tr(" Options");
+            const width = 550;
+            const height = 400;
+            const win = osparc.ui.window.Window.popUpInWindow(resourceSelector, title, width, height);
+            resourceSelector.addListener("startStudy", () => {
+              win.close();
+              this._hideLoadingPage();
+              this._startStudyById(studyId);
+            });
+            const deleteStudy = () => {
+              const params = {
+                url: {
+                  "studyId": studyId
+                }
+              };
+              osparc.data.Resources.fetch("studies", "delete", params, studyId);
+            };
+            resourceSelector.addListener("cancel", () => {
+              win.close();
+              this._hideLoadingPage();
+              deleteStudy();
+            });
+            win.getChildControl("close-button").addListener("execute", () => {
+              this._hideLoadingPage();
+              deleteStudy();
+            });
+            win.center();
+            win.open();
+          } else {
+            this._hideLoadingPage();
+            this._startStudyById(studyId);
+          }
         })
         .catch(err => {
           this._hideLoadingPage();

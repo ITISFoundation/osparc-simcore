@@ -24,11 +24,11 @@ coverage==7.2.7
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-exceptiongroup==1.1.1
+exceptiongroup==1.1.2
     # via pytest
-execnet==1.9.0
+execnet==2.0.2
     # via pytest-xdist
-faker==18.10.1
+faker==19.1.0
     # via -r requirements/_test.in
 h11==0.12.0
     # via
@@ -57,11 +57,11 @@ packaging==23.1
     # via
     #   pytest
     #   pytest-sugar
-pluggy==1.0.0
+pluggy==1.2.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-pytest==7.3.1
+pytest==7.4.0
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -71,7 +71,7 @@ pytest==7.3.1
     #   pytest-mock
     #   pytest-sugar
     #   pytest-xdist
-pytest-asyncio==0.21.0
+pytest-asyncio==0.21.1
     # via -r requirements/_test.in
 pytest-cov==4.1.0
     # via -r requirements/_test.in
@@ -79,7 +79,7 @@ pytest-icdiff==0.6
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in
-pytest-mock==3.10.0
+pytest-mock==3.11.1
     # via -r requirements/_test.in
 pytest-runner==6.0.0
     # via -r requirements/_test.in

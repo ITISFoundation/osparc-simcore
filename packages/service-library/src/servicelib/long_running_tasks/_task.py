@@ -206,11 +206,11 @@ class TasksManager:
         done = task.done()
 
         return TaskStatus.parse_obj(
-            dict(
-                task_progress=tracked_task.task_progress,
-                done=done,
-                started=tracked_task.started,
-            )
+            {
+                "task_progress": tracked_task.task_progress,
+                "done": done,
+                "started": tracked_task.started,
+            }
         )
 
     def get_task_result(

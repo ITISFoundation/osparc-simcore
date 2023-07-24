@@ -30,7 +30,7 @@ from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _comments_api, projects_api
-from ._handlers_crud import RequestContext
+from ._common_models import RequestContext
 from .exceptions import ProjectNotFoundError
 
 _logger = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ def _handle_project_comments_exceptions(handler: Handler):
         try:
             return await handler(request)
 
-        except (ProjectNotFoundError) as exc:
+        except ProjectNotFoundError as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
 
     return wrapper

@@ -33,7 +33,7 @@ from ..products.plugin import Product, get_current_product
 from ..security.decorators import permission_required
 from ..users import api
 from . import projects_api
-from ._handlers_crud import ProjectPathParams, RequestContext
+from ._common_models import ProjectPathParams, RequestContext
 from .exceptions import (
     ProjectInvalidRightsError,
     ProjectNotFoundError,

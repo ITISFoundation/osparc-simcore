@@ -26,7 +26,7 @@ distlib==0.3.7
     # via virtualenv
 filelock==3.12.2
     # via virtualenv
-identify==2.5.24
+identify==2.5.25
     # via pre-commit
 isort==5.12.0
     # via
@@ -87,7 +87,7 @@ typing-extensions==4.7.1
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   astroid
-virtualenv==20.24.0
+virtualenv==20.24.1
     # via pre-commit
 watchdog==3.0.0
     # via -r requirements/_tools.in
