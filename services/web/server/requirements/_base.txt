@@ -30,7 +30,7 @@ aiofiles==0.8.0
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
-aiohttp==3.8.3
+aiohttp==3.8.5
     # via
     #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -240,9 +240,7 @@ openapi-core==0.12.0
 openapi-schema-validator==0.2.3
     # via openapi-spec-validator
 openapi-spec-validator==0.4.0
-    # via
-    #   -c requirements/../../../../packages/simcore-sdk/requirements/./constraints.txt
-    #   openapi-core
+    # via openapi-core
 openpyxl==3.0.9
     # via -r requirements/_base.in
 orjson==3.7.2
