@@ -89,7 +89,7 @@ qx.Class.define("osparc.ui.list.ListItemWithMenu", {
         return;
       }
 
-      this.__setSubtitle();
+      this._setSubtitle();
 
       this._getInfoButton();
 
@@ -99,7 +99,7 @@ qx.Class.define("osparc.ui.list.ListItemWithMenu", {
       }
     },
 
-    __setSubtitle: function() {
+    _setSubtitle: function() {
       const accessRights = this.getAccessRights();
       const subtitle = this.getChildControl("contact");
       if (

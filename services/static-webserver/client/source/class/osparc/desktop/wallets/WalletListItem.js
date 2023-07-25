@@ -74,6 +74,21 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
     },
 
     // overridden
+    _setSubtitle: function() {
+      const accessRights = this.getAccessRights();
+      const subtitle = this.getChildControl("contact");
+      if (accessRights["delete"]) {
+        subtitle.setValue(osparc.data.Roles.WALLET[3].longLabel);
+      } else if (accessRights["write"]) {
+        subtitle.setValue(osparc.data.Roles.WALLET[2].longLabel);
+      } else if (accessRights["read"]) {
+        subtitle.setValue(osparc.data.Roles.WALLET[1].longLabel);
+      } else {
+        subtitle.setValue(osparc.data.Roles.WALLET[0].longLabel);
+      }
+    },
+
+    // overridden
     _getOptionsMenu: function() {
       let menu = null;
       const accessRights = this.getAccessRights();
