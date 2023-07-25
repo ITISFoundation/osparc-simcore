@@ -24,7 +24,7 @@ from ._core import (
     list_repos_safe,
     update_checkpoint_safe,
 )
-from ._rest_handlers_base import handle_request_errors
+from ._handlers_base import handle_request_errors
 from .db import VersionControlRepository
 from .models import (
     HEAD,
@@ -38,7 +38,7 @@ from .models import (
     WorkbenchViewApiModel,
 )
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @validate_arguments
@@ -331,4 +331,4 @@ async def _view_project_workbench_handler(request: web.Request):
 # WARNING: changes in handlers naming will have an effect
 # since they are in sync with operation_id  (checked in tests)
 rename_routes_as_handler_function(routes, prefix=__name__)
-logger.debug("Routes collected in  %s:\n %s", __name__, get_routes_view(routes))
+_logger.debug("Routes collected in  %s:\n %s", __name__, get_routes_view(routes))

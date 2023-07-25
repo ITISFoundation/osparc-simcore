@@ -1,5 +1,6 @@
 import logging
 from functools import wraps
+from typing import Any
 
 from aiohttp import web
 from pydantic.error_wrappers import ValidationError
@@ -9,7 +10,7 @@ from servicelib.json_serialization import json_dumps
 from ..projects.exceptions import ProjectNotFoundError
 from .errors import InvalidParameterError, NoCommitError, NotFoundError
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def handle_request_errors(handler: Handler) -> Handler:
@@ -20,17 +21,17 @@ def handle_request_errors(handler: Handler) -> Handler:
     @wraps(handler)
     async def wrapped(request: web.Request):
         try:
-            resp = await handler(request)
-            return resp
+            response: Any = await handler(request)
+            return response
 
         except KeyError as err:
             # NOTE: handles required request.match_info[*] or request.query[*]
-            logger.debug(err, exc_info=True)
+            _logger.debug(err, exc_info=True)
             raise web.HTTPBadRequest(reason=f"Expected parameter {err}") from err
 
         except ValidationError as err:
             #  NOTE: pydantic.validate_arguments parses and validates -> ValidationError
-            logger.debug(err, exc_info=True)
+            _logger.debug(err, exc_info=True)
             raise web.HTTPUnprocessableEntity(
                 text=json_dumps({"error": err.errors()}),
                 content_type="application/json",
@@ -43,7 +44,7 @@ def handle_request_errors(handler: Handler) -> Handler:
             raise web.HTTPNotFound(reason=str(err)) from err
 
         except ProjectNotFoundError as err:
-            logger.debug(err, exc_info=True)
+            _logger.debug(err, exc_info=True)
             raise web.HTTPNotFound(
                 reason=f"Project not found {err.project_uuid} or not accessible. Skipping snapshot"
             ) from err
