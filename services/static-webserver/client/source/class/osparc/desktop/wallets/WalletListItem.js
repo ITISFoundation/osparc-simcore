@@ -53,9 +53,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
           this.getChildControl("credits-layout").addAt(control, 0);
           break;
         case "credits-label":
-          control = new qx.ui.basic.Label().set({
-            textAlign: "right"
-          });
+          control = new qx.ui.basic.Label();
           this.getChildControl("credits-layout").addAt(control, 1);
           break;
       }
