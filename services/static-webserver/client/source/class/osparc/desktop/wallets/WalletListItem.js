@@ -37,7 +37,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
     _getOptionsMenu: function() {
       let menu = null;
       const accessRights = this.getAccessRights();
-      if (accessRights.getWrite()) {
+      if (accessRights["write"]) {
         const optionsMenu = this.getChildControl("options");
         optionsMenu.show();
 
@@ -45,13 +45,13 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
           position: "bottom-right"
         });
 
-        if (accessRights.getWrite()) {
+        if (accessRights["write"]) {
           const editWalletButton = new qx.ui.menu.Button(this.tr("Edit details..."));
           editWalletButton.addListener("execute", () => this.fireDataEvent("openEditWallet", this.getKey()));
           menu.add(editWalletButton);
         }
 
-        if (accessRights.getDelete()) {
+        if (accessRights["delete"]) {
           const deleteWalletButton = new qx.ui.menu.Button(this.tr("Delete"));
           this.bind("showDeleteButton", deleteWalletButton, "visibility", {
             converter: show => show ? "visible" : "excluded"

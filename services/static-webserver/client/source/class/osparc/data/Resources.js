@@ -1077,9 +1077,9 @@ qx.Class.define("osparc.data.Resources", {
         const store = osparc.store.Store.getInstance();
         osparc.data.Resources.dummy.getWallets()
           .then(walletsData => {
-            if (walletsData && walletsData.length) {
+            if (walletsData && "wallets" in walletsData && walletsData["wallets"].length) {
               const wallets = [];
-              walletsData.forEach(walletData => {
+              walletsData["wallets"].forEach(walletData => {
                 const wallet = new osparc.data.model.Wallet(walletData);
                 wallets.push(wallet);
               });
@@ -1101,7 +1101,7 @@ qx.Class.define("osparc.data.Resources", {
             wallets: [{
               id: 1,
               label: "My Wallet",
-              descrtiption: "Personal Wallet",
+              description: "Personal Wallet",
               accessRights: {
                 delete: false,
                 write: true,
@@ -1109,12 +1109,11 @@ qx.Class.define("osparc.data.Resources", {
               },
               credits: {
                 left: 10
-              },
-              nMembers: 1
+              }
             }, {
               id: 2,
               label: "Our Wallet",
-              descrtiption: "Organization wide Wallet",
+              description: "Organization wide Wallet",
               accessRights: {
                 delete: false,
                 write: false,
@@ -1122,8 +1121,7 @@ qx.Class.define("osparc.data.Resources", {
               },
               credits: {
                 left: 1000
-              },
-              nMembers: 8
+              }
             }]
           });
         });

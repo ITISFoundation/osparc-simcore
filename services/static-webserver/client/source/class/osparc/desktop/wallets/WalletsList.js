@@ -41,7 +41,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
       this._add(this.__getCreateWalletSection());
     }
 
-    this.reloadWallets();
+    this.loadWallets();
   },
 
   events: {
@@ -59,7 +59,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
 
   statics: {
     sortWallets: function(a, b) {
-      const sorted = osparc.component.share.Collaborators.sortByAccessRights(a, b);
+      const sorted = osparc.component.share.Collaborators.sortByAccessRights(a.getAccessRights(), b.getAccessRights());
       if (sorted !== 0) {
         return sorted;
       }
@@ -126,13 +126,14 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
       walletsCtrl.setDelegate({
         createItem: () => new osparc.desktop.wallets.WalletListItem(),
         bindItem: (ctrl, item, id) => {
-          ctrl.bindProperty("gid", "key", null, item, id);
-          ctrl.bindProperty("gid", "model", null, item, id);
+          ctrl.bindProperty("walletId", "key", null, item, id);
+          ctrl.bindProperty("walletId", "model", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("label", "title", null, item, id);
           ctrl.bindProperty("description", "subtitle", null, item, id);
-          ctrl.bindProperty("nMembers", "contact", null, item, id);
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
+          // set credits last so that the contact field is filled with that information
+          ctrl.bindProperty("credits", "contact", null, item, id);
         },
         configureItem: item => {
           item.subscribeToFilterGroup("walletsList");
@@ -166,18 +167,15 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
       }
     },
 
-    reloadWallets: function() {
+    loadWallets: function() {
       this.__walletsUIList.resetSelection();
       const walletsModel = this.__walletsModel;
       walletsModel.removeAll();
 
-      osparc.data.Resources.dummy.getWallets()
-        .then(async resp => {
-          const walletsList = resp["wallets"];
-          walletsList.sort(this.self().sortWallets);
-          walletsList.forEach(wallet => walletsModel.append(qx.data.marshal.Json.createModel(wallet)));
-          this.setWalletsLoaded(true);
-        });
+      const store = osparc.store.Store.getInstance();
+      store.getWallets().sort(this.self().sortWallets);
+      store.getWallets().forEach(wallet => walletsModel.append(wallet));
+      this.setWalletsLoaded(true);
     },
 
     __openEditWallet: function(walletId) {
@@ -188,7 +186,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
 
       const newWallet = false;
       const walletEditor = new osparc.desktop.wallets.WalletEditor(newWallet);
-      wallet.bind("gid", walletEditor, "gid");
+      wallet.bind("walletId", walletEditor, "walletId");
       wallet.bind("label", walletEditor, "label");
       wallet.bind("description", walletEditor, "description");
       wallet.bind("thumbnail", walletEditor, "thumbnail", {
@@ -227,12 +225,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
           };
           osparc.data.Resources.fetch("wallets", "delete", params)
             .then(() => {
-              osparc.store.Store.getInstance().reset("wallets");
-              // reload "profile", "wallets" are part of the information in this endpoint
-              osparc.data.Resources.getOne("profile", {}, null, false)
-                .then(() => {
-                  this.reloadWallets();
-                });
+              osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Wallet successfully deleted"), "INFO");
             })
             .catch(err => {
               osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong deleting ") + name, "ERROR");
@@ -262,12 +255,6 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
         .then(() => {
           osparc.component.message.FlashMessenger.getInstance().logAs(name + this.tr(" successfully created"));
           button.setFetching(false);
-          osparc.store.Store.getInstance().reset("wallets");
-          // reload "profile", "wallets" are part of the information in this endpoint
-          osparc.data.Resources.getOne("profile", {}, null, false)
-            .then(() => {
-              this.reloadWallets();
-            });
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong creating ") + name, "ERROR");
@@ -297,8 +284,6 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
           osparc.component.message.FlashMessenger.getInstance().logAs(name + this.tr(" successfully edited"));
           button.setFetching(false);
           win.close();
-          osparc.store.Store.getInstance().reset("wallets");
-          this.reloadWallets();
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing ") + name, "ERROR");

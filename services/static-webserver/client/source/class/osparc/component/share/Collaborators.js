@@ -43,9 +43,7 @@ qx.Class.define("osparc.component.share.Collaborators", {
   },
 
   statics: {
-    sortByAccessRights: function(a, b) {
-      const aAccessRights = a["accessRights"];
-      const bAccessRights = b["accessRights"];
+    sortByAccessRights: function(aAccessRights, bAccessRights) {
       if (aAccessRights["delete"] !== bAccessRights["delete"]) {
         return bAccessRights["delete"] - aAccessRights["delete"];
       }
@@ -64,7 +62,7 @@ qx.Class.define("osparc.component.share.Collaborators", {
       let sorted = null;
       if ("delete" in aAccessRights) {
         // studies
-        sorted = this.self().sortByAccessRights(a, b);
+        sorted = this.self().sortByAccessRights(aAccessRights, bAccessRights);
       } else if ("write_access" in aAccessRights) {
         // services
         if (aAccessRights["write_access"] !== bAccessRights["write_access"]) {

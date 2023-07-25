@@ -37,7 +37,7 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
     __walletModel: null,
     __titleLayout: null,
     __walletListItem: null,
-    __membersList: null,
+    // __membersList: null,
 
     setCurrentWallet: function(walletModel) {
       if (walletModel === null) {
@@ -51,10 +51,10 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
       walletModel.bind("thumbnail", walletListItem, "thumbnail");
       walletModel.bind("label", walletListItem, "title");
       walletModel.bind("description", walletListItem, "subtitle");
-      walletModel.bind("nMembers", walletListItem, "contact");
+      walletModel.bind("credits", walletListItem, "contact");
       walletModel.bind("accessRights", walletListItem, "accessRights");
 
-      this.__membersList.setCurrentWallet(walletModel);
+      // this.__membersList.setCurrentWallet(walletModel);
     },
 
     __getTitleLayout: function() {
@@ -92,7 +92,7 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
 
       const newWallet = false;
       const walletEditor = new osparc.desktop.wallets.WalletEditor(newWallet);
-      wallet.bind("gid", walletEditor, "gid");
+      wallet.bind("walletId", walletEditor, "walletId");
       wallet.bind("label", walletEditor, "label");
       wallet.bind("description", walletEditor, "description");
       wallet.bind("thumbnail", walletEditor, "thumbnail", {

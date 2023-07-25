@@ -40,9 +40,8 @@ qx.Class.define("osparc.desktop.wallets.WalletsView", {
       });
 
       walletDetails.addListener("backToWallets", () => {
-        this.getChildControl("title").setValue(this.tr("Wallets"));
-        this.__stack.setSelection([walletsPage]);
-        walletsPage.reloadWallets();
+        this.setSelection([walletsPage]);
+        walletsPage.loadWallets();
       });
     },
 
@@ -50,8 +49,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsView", {
       const openWalletDetails = walletId2 => {
         const walletModel = this.__walletsList.getWalletModel(walletId2);
         this.__walletDetails.setCurrentWallet(walletModel);
-        this.getChildControl("title").setValue(this.tr("Wallet details"));
-        this.__stack.setSelection([this.__walletDetails]);
+        this.setSelection([this.__walletDetails]);
       };
       if (this.__walletsList.isWalletsLoaded()) {
         openWalletDetails(walletId);
