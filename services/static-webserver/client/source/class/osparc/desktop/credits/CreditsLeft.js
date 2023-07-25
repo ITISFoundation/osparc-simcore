@@ -59,7 +59,7 @@ qx.Class.define("osparc.desktop.credits.CreditsLeft", {
         }
       });
       wallet.bind("credits", progressBar, "toolTipText", {
-        converter: val => val + " credits left"
+        converter: val => wallet.getLabel() + ": " + val + " credits left"
       });
 
       if (supportTap) {
