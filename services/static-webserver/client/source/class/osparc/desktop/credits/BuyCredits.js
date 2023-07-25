@@ -152,7 +152,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       });
       layout.add(creditsLabel);
 
-      const progressBar = osparc.component.resourceUsage.CreditsLeft.createCreditsLeftInidcator();
+      const progressBar = osparc.desktop.credits.CreditsLeft.createCreditsLeftInidcator();
       layout.add(progressBar);
 
       return layout;
