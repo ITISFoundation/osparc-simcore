@@ -1,15 +1,7 @@
+from typing import Annotated
 
-from typing import Annotated, Any
-
-from fastapi import APIRouter, Depends
-from models_library.generics import Envelope
+from fastapi import APIRouter, File, status
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.diagnostics._handlers import (
-    AppStatusCheck,
-    StatusDiagnosticsGet,
-    StatusDiagnosticsQueryParam,
-)
-from simcore_service_webserver.rest.healthcheck import HealthInfoDict
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",
@@ -19,14 +11,13 @@ router = APIRouter(
 )
 
 
-
 @router.post(
-    '/publications/service-submission',
-    response_model=None,
-    responses={'default': {'model': PublicationsServiceSubmissionPostResponse}},
+    "/publications/service-submission",
+    status_code=status.HTTP_204_NO_CONTENT,
 )
-def service_submission() -> Union[None, PublicationsServiceSubmissionPostResponse]:
+def service_submission(
+    _file: Annotated[bytes, File(description="metadata.json submission file")]
+):
     """
-    Submits a new service candidate
+    Submits files with new service candidate
     """
-    pass
