@@ -35,11 +35,19 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
 
     getZoomIcon: function(maximize) {
       const iconURL = maximize ? "window-restore" : "window-maximize";
-      return osparc.theme.common.Image.URLS[iconURL]+"/20";
+      return osparc.theme.common.Image.URLS[iconURL] + "/20";
     },
 
     getMaximizeWidgetId: function(maximize) {
       return maximize ? "restoreBtn" : "maximizeBtn";
+    },
+
+    createToolbarButton: function() {
+      return new qx.ui.form.Button().set({
+        zIndex: 20,
+        backgroundColor: "transparent",
+        decorator: null
+      });
     },
 
     HIDDEN_TOP: -10000
@@ -89,16 +97,13 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
       });
       const iframeEl = this._getIframeElement();
       iframeEl.setAttribute("allow", "clipboard-write");
-      const reloadButton = this.__reloadButton = new qx.ui.form.Button().set({
+      const reloadButton = this.__reloadButton = this.self().createToolbarButton().set({
         label: this.tr("Reload"),
         icon: "@FontAwesome5Solid/redo-alt/14",
-        zIndex: 20,
         paddingLeft: 8,
         paddingRight: 4,
         paddingTop: 6,
-        paddingBottom: 6,
-        backgroundColor: "transparent",
-        decorator: null
+        paddingBottom: 6
       });
       reloadButton.addListener("execute", e => {
         this.fireEvent("restart");
@@ -107,12 +112,9 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
       appRoot.add(reloadButton, {
         top: this.self().HIDDEN_TOP
       });
-      const zoomButton = this.__zoomButton = new qx.ui.form.Button().set({
+      const zoomButton = this.__zoomButton = this.self().createToolbarButton().set({
         label: this.self().getZoomLabel(false),
-        icon: this.self().getZoomIcon(false),
-        zIndex: 20,
-        backgroundColor: "transparent",
-        decorator: null
+        icon: this.self().getZoomIcon(false)
       });
       osparc.utils.Utils.setIdToWidget(zoomButton, this.self().getMaximizeWidgetId(false));
       appRoot.add(zoomButton, {
@@ -197,9 +199,10 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
           height: divSize.height - this.getToolbarHeight()
         });
 
+        const rightOffest = this.hasState("maximized") ? 90 : 100;
         this.__reloadButton.setLayoutProperties({
           top: (divPos.top - iframeParentPos.top),
-          right: (iframeParentPos.right - iframeParentPos.left - divPos.right) + 35
+          right: (iframeParentPos.right - iframeParentPos.left - divPos.right) + rightOffest
         });
         this.__zoomButton.setLayoutProperties({
           top: (divPos.top - iframeParentPos.top),

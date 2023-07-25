@@ -212,11 +212,10 @@ qx.Class.define("osparc.ui.message.Loading", {
 
     __createMaximizeButton: function(showMaximizeButton) {
       const maximize = false;
-      const maxButton = this.__maxButton = new qx.ui.form.Button().set({
+      const maxButton = this.__maxButton = osparc.component.widget.PersistentIframe.createToolbarButton(maximize).set({
         label: osparc.component.widget.PersistentIframe.getZoomLabel(maximize),
         icon: osparc.component.widget.PersistentIframe.getZoomIcon(maximize),
-        visibility: showMaximizeButton ? "visible" : "excluded",
-        decorator: null
+        visibility: showMaximizeButton ? "visible" : "excluded"
       });
       osparc.utils.Utils.setIdToWidget(maxButton, osparc.component.widget.PersistentIframe.getMaximizeWidgetId(maximize));
       maxButton.addListener("execute", () => this.maximizeIFrame(!this.hasState("maximized")), this);
