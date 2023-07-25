@@ -54,26 +54,9 @@ qx.Class.define("osparc.desktop.MainPage", {
     osparc.WindowSizeTracker.getInstance().startTracker();
     osparc.MaintenanceTracker.getInstance().startTracker();
 
-    const store = osparc.store.Store.getInstance();
+    osparc.data.Resources.dummy.addWalletsToStore();
 
-    osparc.data.Resources.dummy.getWallets()
-      .then(walletsData => {
-        if (walletsData && walletsData.length) {
-          const wallets = [];
-          walletsData.forEach((walletData, idx) => {
-            const wallet = new osparc.data.model.Wallet(walletData);
-            wallets.push(wallet);
-          });
-          store.setWallets(wallets);
-          store.setCurrentWallet(wallets[0]);
-          setInterval(() => {
-            store.getWallets().forEach(wallet => {
-              wallet.setCredits(wallet.getCredits()-1);
-            });
-          }, 60000);
-        }
-      })
-      .catch(err => console.error(err));
+    const store = osparc.store.Store.getInstance();
 
     Promise.all([
       store.getAllClassifiers(true),
