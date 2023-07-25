@@ -95,10 +95,12 @@ def _wrap_and_add_routes(
     # add routing paths
     for route in _routes.routes:
         app.router.add_route(
-            method=route.method,  # type: ignore
-            path=f"{router_prefix}{route.path}",  # type: ignore
-            handler=handler_check_decorator(task_request_context_decorator(route.handler)),  # type: ignore
-            **route.kwargs,  # type: ignore
+            method=route.method,
+            path=f"{router_prefix}{route.path}",
+            handler=handler_check_decorator(
+                task_request_context_decorator(route.handler)
+            ),
+            **route.kwargs,
         )
 
 

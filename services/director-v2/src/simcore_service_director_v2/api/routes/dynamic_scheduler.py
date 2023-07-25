@@ -1,6 +1,9 @@
+import logging
+from typing import Annotated, Final
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from models_library.projects_nodes import NodeID
-from pydantic import BaseModel
+from pydantic import BaseModel, PositiveInt
 from servicelib.fastapi.long_running_tasks.client import (
     ProgressMessage,
     ProgressPercent,
@@ -13,10 +16,19 @@ from servicelib.fastapi.long_running_tasks.server import (
     get_tasks_manager,
     start_task,
 )
+from tenacity import retry
+from tenacity.before_sleep import before_sleep_log
+from tenacity.retry import retry_if_result
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_random_exponential
 
 from ...modules.dynamic_sidecar.scheduler import DynamicSidecarsScheduler
 from ...utils.routes import NoContentResponse
 from ..dependencies.dynamic_sidecar import get_dynamic_sidecar_scheduler
+
+_logger = logging.getLogger(__name__)
+
+_MINUTE: Final[PositiveInt] = 60
 
 
 class ObservationItem(BaseModel):
@@ -24,6 +36,23 @@ class ObservationItem(BaseModel):
 
 
 router = APIRouter()
+
+
+@retry(
+    wait=wait_random_exponential(max=10),
+    stop=stop_after_delay(1 * _MINUTE),
+    retry=retry_if_result(lambda result: result is False),
+    reraise=False,
+    before_sleep=before_sleep_log(_logger, logging.WARNING, exc_info=True),
+)
+def _toggle_observation_succeeded(
+    dynamic_sidecars_scheduler: DynamicSidecarsScheduler,
+    node_uuid: NodeID,
+    *,
+    is_disabled: bool,
+) -> bool:
+    # returns True if the `toggle_observation` operation succeeded
+    return dynamic_sidecars_scheduler.toggle_observation(node_uuid, is_disabled)
 
 
 @router.patch(
@@ -34,12 +63,14 @@ router = APIRouter()
 async def update_service_observation(
     node_uuid: NodeID,
     observation_item: ObservationItem,
-    dynamic_sidecars_scheduler: DynamicSidecarsScheduler = Depends(
-        get_dynamic_sidecar_scheduler
-    ),
+    dynamic_sidecars_scheduler: Annotated[
+        DynamicSidecarsScheduler, Depends(get_dynamic_sidecar_scheduler)
+    ],
 ) -> NoContentResponse:
-    if dynamic_sidecars_scheduler.toggle_observation(
-        node_uuid, observation_item.is_disabled
+    if _toggle_observation_succeeded(
+        dynamic_sidecars_scheduler=dynamic_sidecars_scheduler,
+        node_uuid=node_uuid,
+        is_disabled=observation_item.is_disabled,
     ):
         return NoContentResponse()
 
@@ -62,10 +93,10 @@ async def update_service_observation(
 )
 async def delete_service_containers(
     node_uuid: NodeID,
-    tasks_manager: TasksManager = Depends(get_tasks_manager),
-    dynamic_sidecars_scheduler: DynamicSidecarsScheduler = Depends(
-        get_dynamic_sidecar_scheduler
-    ),
+    tasks_manager: Annotated[TasksManager, Depends(get_tasks_manager)],
+    dynamic_sidecars_scheduler: Annotated[
+        DynamicSidecarsScheduler, Depends(get_dynamic_sidecar_scheduler)
+    ],
 ):
     async def _task_remove_service_containers(
         task_progress: TaskProgress, node_uuid: NodeID
@@ -80,13 +111,12 @@ async def delete_service_containers(
         )
 
     try:
-        task_id = start_task(
+        return start_task(
             tasks_manager,
             task=_task_remove_service_containers,
             unique=True,
             node_uuid=node_uuid,
         )
-        return task_id
     except TaskAlreadyRunningError as e:
         raise HTTPException(status.HTTP_409_CONFLICT, detail=f"{e}") from e
 
@@ -104,10 +134,10 @@ async def delete_service_containers(
 )
 async def save_service_state(
     node_uuid: NodeID,
-    tasks_manager: TasksManager = Depends(get_tasks_manager),
-    dynamic_sidecars_scheduler: DynamicSidecarsScheduler = Depends(
-        get_dynamic_sidecar_scheduler
-    ),
+    tasks_manager: Annotated[TasksManager, Depends(get_tasks_manager)],
+    dynamic_sidecars_scheduler: Annotated[
+        DynamicSidecarsScheduler, Depends(get_dynamic_sidecar_scheduler)
+    ],
 ):
     async def _task_save_service_state(
         task_progress: TaskProgress,
@@ -123,13 +153,12 @@ async def save_service_state(
         )
 
     try:
-        task_id = start_task(
+        return start_task(
             tasks_manager,
             task=_task_save_service_state,
             unique=True,
             node_uuid=node_uuid,
         )
-        return task_id
     except TaskAlreadyRunningError as e:
         raise HTTPException(status.HTTP_409_CONFLICT, detail=f"{e}") from e
 
@@ -147,10 +176,10 @@ async def save_service_state(
 )
 async def push_service_outputs(
     node_uuid: NodeID,
-    tasks_manager: TasksManager = Depends(get_tasks_manager),
-    dynamic_sidecars_scheduler: DynamicSidecarsScheduler = Depends(
-        get_dynamic_sidecar_scheduler
-    ),
+    tasks_manager: Annotated[TasksManager, Depends(get_tasks_manager)],
+    dynamic_sidecars_scheduler: Annotated[
+        DynamicSidecarsScheduler, Depends(get_dynamic_sidecar_scheduler)
+    ],
 ):
     async def _task_push_service_outputs(
         task_progress: TaskProgress, node_uuid: NodeID
@@ -165,13 +194,12 @@ async def push_service_outputs(
         )
 
     try:
-        task_id = start_task(
+        return start_task(
             tasks_manager,
             task=_task_push_service_outputs,
             unique=True,
             node_uuid=node_uuid,
         )
-        return task_id
     except TaskAlreadyRunningError as e:
         raise HTTPException(status.HTTP_409_CONFLICT, detail=f"{e}") from e
 
@@ -189,10 +217,10 @@ async def push_service_outputs(
 )
 async def delete_service_docker_resources(
     node_uuid: NodeID,
-    tasks_manager: TasksManager = Depends(get_tasks_manager),
-    dynamic_sidecars_scheduler: DynamicSidecarsScheduler = Depends(
-        get_dynamic_sidecar_scheduler
-    ),
+    tasks_manager: Annotated[TasksManager, Depends(get_tasks_manager)],
+    dynamic_sidecars_scheduler: Annotated[
+        DynamicSidecarsScheduler, Depends(get_dynamic_sidecar_scheduler)
+    ],
 ):
     async def _task_cleanup_service_docker_resources(
         task_progress: TaskProgress, node_uuid: NodeID
@@ -202,12 +230,11 @@ async def delete_service_docker_resources(
         )
 
     try:
-        task_id = start_task(
+        return start_task(
             tasks_manager,
             task=_task_cleanup_service_docker_resources,
             unique=True,
             node_uuid=node_uuid,
         )
-        return task_id
     except TaskAlreadyRunningError as e:
         raise HTTPException(status.HTTP_409_CONFLICT, detail=f"{e}") from e
