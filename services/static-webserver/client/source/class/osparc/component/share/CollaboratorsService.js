@@ -118,9 +118,15 @@ qx.Class.define("osparc.component.share.CollaboratorsService", {
     },
 
     _deleteMember: function(collaborator, item) {
+      if (item) {
+        item.setEnabled(false);
+      }
       const success = this.self().removeCollaborator(this._serializedData, collaborator["gid"]);
       if (!success) {
         osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
+        if (item) {
+          item.setEnabled(true);
+        }
       }
 
       const params = {
@@ -139,6 +145,11 @@ qx.Class.define("osparc.component.share.CollaboratorsService", {
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
           console.error(err);
+        })
+        .finally(() => {
+          if (item) {
+            item.setEnabled(true);
+          }
         });
     },
 
