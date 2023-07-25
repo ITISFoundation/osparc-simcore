@@ -103,7 +103,8 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
         paddingLeft: 8,
         paddingRight: 4,
         paddingTop: 6,
-        paddingBottom: 6
+        paddingBottom: 6,
+        gap: 10
       });
       reloadButton.addListener("execute", e => {
         this.fireEvent("restart");
