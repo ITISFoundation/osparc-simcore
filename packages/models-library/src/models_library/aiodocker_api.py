@@ -12,7 +12,7 @@ from .utils.converters import to_snake_case
 
 class AioDockerContainerSpec(ContainerSpec):
     Env: dict[str, str | None] | None = Field(  # type: ignore
-        None,
+        default=None,
         description="aiodocker expects here a dictionary and re-convert it back internally`.\n",
     )
 
@@ -37,7 +37,7 @@ class AioDockerResources1(Resources1):
         None, description="Define resources reservation.", alias="Reservations"
     )
 
-    class Config:
+    class Config(Resources1.Config):  # type: ignore
         allow_population_by_field_name = True
 
 
@@ -55,6 +55,6 @@ class AioDockerTaskSpec(TaskSpec):
 class AioDockerServiceSpec(ServiceSpec):
     TaskTemplate: AioDockerTaskSpec | None = None
 
-    class Config:
+    class Config(ServiceSpec.Config):  # type: ignore
         alias_generator = to_snake_case
         allow_population_by_field_name = True

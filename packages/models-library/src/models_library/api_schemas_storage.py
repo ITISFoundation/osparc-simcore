@@ -132,7 +132,7 @@ class FileMetaDataGet(BaseModel):
     created_at: datetime
     last_modified: datetime
     file_size: ByteSize | int = Field(
-        -1, description="File size in bytes (-1 means invalid)"
+        default=-1, description="File size in bytes (-1 means invalid)"
     )
     entity_tag: ETag | None = Field(
         default=None,

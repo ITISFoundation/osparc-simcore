@@ -57,7 +57,7 @@ def _eval_defaults(
         default = column.default.arg
 
     if include_server_defaults and column.server_default:
-        assert column.server_default.is_server_default  # type: ignore  #  nosec
+        assert column.server_default.is_server_default  # type: ignore  # nosec
         #
         # FIXME: Map server's DefaultClauses to correct values
         #   Heuristics based on test against all our tables
