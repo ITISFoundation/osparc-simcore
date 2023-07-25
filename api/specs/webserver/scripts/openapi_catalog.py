@@ -1,9 +1,7 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends
 from models_library.api_schemas_webserver.catalog import (
-    DAGIn,
-    DAGOut,
     ServiceGet,
     ServiceInputGet,
     ServiceInputKey,
@@ -28,56 +26,6 @@ router = APIRouter(
         "catalog",
     ],
 )
-
-#
-# /catalog/dags/* COLLECTION
-#
-
-
-@router.get(
-    "/catalog/dags",
-    response_model=Envelope[list[DAGOut]],
-    operation_id="list_catalog_dags",
-)
-def list_catalog_dags():
-    pass
-
-
-@router.post(
-    "/catalog/dags",
-    operation_id="create_catalog_dag",
-    response_model=Envelope[DAGOut],
-    status_code=status.HTTP_201_CREATED,
-)
-def create_catalog_dag(
-    _add: DAGIn,
-):
-    """
-    Creates a new dag in catalog
-    """
-
-
-@router.put(
-    "/catalog/dags/{dag_id}",
-    operation_id="replace_catalog_dag",
-    response_model=Envelope[DAGOut],
-)
-def replace_catalog_dag(dag_id: int, _new: DAGIn):
-    """
-    Replaces a dag in catalog
-    """
-
-
-@router.delete(
-    "/catalog/dags/{dag_id}",
-    operation_id="delete_catalog_dag",
-    response_model=None,
-    status_code=status.HTTP_204_NO_CONTENT,
-)
-def delete_catalog_dag(dag_id: int):
-    """
-    Deletes an existing dag
-    """
 
 
 #
