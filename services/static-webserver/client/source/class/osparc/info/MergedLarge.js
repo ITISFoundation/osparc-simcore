@@ -286,7 +286,20 @@ qx.Class.define("osparc.info.MergedLarge", {
 
     __createDescription: function() {
       const maxHeight = 400;
-      return osparc.info.StudyUtils.createDescriptionMD(this.getStudy(), maxHeight);
+      const descriptionLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
+        alignY: "middle"
+      }));
+
+      const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Description")).set({
+        font: "text-13"
+      });
+      descriptionLayout.add(label);
+
+      const description = osparc.info.StudyUtils.createDescriptionMD(this.getStudy(), maxHeight);
+      description.setValue(this.getStudy().getDescription());
+      descriptionLayout.add(description);
+
+      return descriptionLayout;
     },
 
     __createResources: function() {
