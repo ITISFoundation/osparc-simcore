@@ -78,7 +78,7 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
         this.__titleLayout.remove(this.__walletListItem);
       }
       const walletListItem = this.__walletListItem = new osparc.desktop.wallets.WalletListItem();
-      walletListItem.getChildControl("options").exclude();
+      walletListItem.getChildControl("options").hide();
       walletListItem.addListener("openEditWallet", () => this.__openEditWallet());
       this.__titleLayout.add(walletListItem, {
         flex: 1

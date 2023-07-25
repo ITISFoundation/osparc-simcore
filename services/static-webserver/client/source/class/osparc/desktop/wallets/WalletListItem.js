@@ -36,7 +36,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       switch (id) {
         case "credits-indicator": {
           control = osparc.desktop.credits.CreditsLeft.createCreditsLeftInidcator().set({
-            merginLeft: 10,
+            marginLeft: 10,
             maxHeight: 40
           });
           this._add(control, {

@@ -83,7 +83,7 @@ qx.Class.define("osparc.ui.list.ListItemWithMenu", {
 
     __applyAccessRights: function(value) {
       const optionsMenu = this.getChildControl("options");
-      optionsMenu.exclude();
+      optionsMenu.hide();
 
       if (value === null) {
         return;
@@ -131,7 +131,7 @@ qx.Class.define("osparc.ui.list.ListItemWithMenu", {
 
     __applyShowOptions: function(value) {
       const optionsMenu = this.getChildControl("options");
-      optionsMenu.setVisibility(value ? "visible" : "excluded");
+      optionsMenu.setVisibility(value ? "visible" : "hidden");
     }
   }
 });
