@@ -183,7 +183,7 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
           break;
         case "credits-left": {
           const store = osparc.store.Store.getInstance();
-          control = osparc.desktop.credits.CreditsLeft.createCreditsLeftInidcator(store.getCurrentWallet(), true).set({
+          control = new osparc.desktop.credits.CreditsIndicator(store.getCurrentWallet(), true).set({
             backgroundColor: "background-main"
           });
           this.getChildControl("right-main-layout").add(control);

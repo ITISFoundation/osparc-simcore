@@ -1108,7 +1108,7 @@ qx.Class.define("osparc.data.Resources", {
                 read: true
               },
               credits: {
-                left: 10
+                left: 1
               }
             }, {
               id: 2,

@@ -25,7 +25,6 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
       maximum: 1,
       width: 50,
       maxHeight: 20,
-      padding: 5,
       allowGrowY: false,
       alignY:"middle"
     });
@@ -63,6 +62,14 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
       nullable: true,
       event: "changeWallet",
       apply: "__applyWallet"
+    },
+
+    credits: {
+      check: "Number",
+      init: 0,
+      nullable: false,
+      event: "changeCredits",
+      apply: "__applyCredits"
     }
   },
 
@@ -78,18 +85,27 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
 
   members: {
     __applyWallet: function(wallet) {
-      wallet.bind("credits", this, "value", {
-        converter: val => {
-          if (val <= 0) {
-            this.setBackgroundColor("danger-red");
-          } else {
-            this.self().convertCreditsToIndicatorValue(val);
-          }
-        }
-      });
+      wallet.bind("credits", this, "credits");
+
       wallet.bind("credits", this, "toolTipText", {
         converter: val => wallet.getLabel() + ": " + val + " credits left"
       });
+    },
+
+    __applyCredits: function(credits) {
+      this.setValue(this.self().convertCreditsToIndicatorValue(credits));
+
+      if (credits <= 0) {
+        this.setBackgroundColor("danger-red");
+      } else {
+        this.resetBackgroundColor();
+      }
+
+      let tttext = credits + " " + this.tr("credits left");
+      if (this.getWallet()) {
+        tttext = this.getWallet().getLabel() + ": " + tttext;
+      }
+      this.setToolTipText(tttext);
     }
   }
 });

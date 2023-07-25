@@ -47,7 +47,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
           });
           break;
         case "credits-indicator":
-          control = osparc.desktop.credits.CreditsLeft.createCreditsLeftInidcator().set({
+          control = new osparc.desktop.credits.CreditsIndicator().set({
             maxHeight: 40
           });
           this.getChildControl("credits-layout").addAt(control, 0);
@@ -63,8 +63,8 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
 
     __applyCredits: function(credits) {
       const creditsIndicator = this.getChildControl("credits-indicator");
-      const val = osparc.desktop.credits.CreditsLeft.convertCreditsToIndicatorValue(credits);
-      creditsIndicator.setValue(val);
+      const val = osparc.desktop.credits.CreditsIndicator.convertCreditsToIndicatorValue(credits);
+      creditsIndicator.setCredits(val);
 
       this.getChildControl("credits-label").set({
         value: credits + this.tr(" credits")
