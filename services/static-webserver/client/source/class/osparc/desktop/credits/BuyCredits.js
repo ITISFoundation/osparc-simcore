@@ -147,7 +147,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         font: "text-14"
       });
       const store = osparc.store.Store.getInstance();
-      store.bind("credits", creditsLabel, "value", {
+      store.getCurrentWallet().bind("credits", creditsLabel, "value", {
         converter: val => "You have " + val + " credits left"
       });
       layout.add(creditsLabel);

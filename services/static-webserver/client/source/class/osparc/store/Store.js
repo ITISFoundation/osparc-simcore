@@ -117,11 +117,6 @@ qx.Class.define("osparc.store.Store", {
       init: null,
       event: "changeCurrentWallet"
     },
-    credits: {
-      check: "Number",
-      init: 10,
-      event: "changeClusters"
-    },
     permissions: {
       check: "Array",
       init: []

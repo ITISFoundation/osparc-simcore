@@ -28,8 +28,6 @@ qx.Class.define("osparc.desktop.credits.CreditsLeft", {
 
   statics: {
     createCreditsLeftInidcator: function(supportTap = false) {
-      const store = osparc.store.Store.getInstance();
-
       const progressBar = new qx.ui.indicator.ProgressBar().set({
         maximum: 1,
         width: 50,
@@ -37,27 +35,37 @@ qx.Class.define("osparc.desktop.credits.CreditsLeft", {
         allowGrowY: false,
         alignY:"middle"
       });
-      const logBase = (n, base) => Math.log(n) / Math.log(base);
-      store.bind("credits", progressBar, "value", {
-        converter: val => {
-          let normalized = logBase(val, 10000) + 0.01;
-          normalized = Math.min(Math.max(normalized, 0), 1);
-          return normalized;
-        }
-      });
-      progressBar.bind("value", progressBar.getChildControl("progress"), "backgroundColor", {
-        converter: val => {
-          if (val > 0.4) {
-            return "strong-main";
-          } else if (val > 0.1) {
-            return "warning-yellow";
+
+      const bindProgressToWallet = wallet => {
+        const logBase = (n, base) => Math.log(n) / Math.log(base);
+        wallet.bind("credits", progressBar, "value", {
+          converter: val => {
+            let normalized = logBase(val, 10000) + 0.01;
+            normalized = Math.min(Math.max(normalized, 0), 1);
+            return normalized;
           }
-          return "danger-red";
-        }
-      });
-      store.bind("credits", progressBar, "toolTipText", {
-        converter: val => val + " credits left"
-      });
+        });
+        progressBar.bind("value", progressBar.getChildControl("progress"), "backgroundColor", {
+          converter: val => {
+            if (val > 0.4) {
+              return "strong-main";
+            } else if (val > 0.1) {
+              return "warning-yellow";
+            }
+            return "danger-red";
+          }
+        });
+        wallet.bind("credits", progressBar, "toolTipText", {
+          converter: val => val + " credits left"
+        });
+      };
+
+      const store = osparc.store.Store.getInstance();
+      if (store.getCurrentWallet()) {
+        bindProgressToWallet(store.getCurrentWallet());
+      } else {
+        store.addListener("changeCurrentWallet", () => bindProgressToWallet(store.getCurrentWallet()));
+      }
 
       if (supportTap) {
         progressBar.set({
