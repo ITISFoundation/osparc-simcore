@@ -4,8 +4,21 @@
 # pylint: disable=too-many-arguments
 
 
-from fastapi import APIRouter
+from typing import Annotated
+
+from fastapi import APIRouter, Depends
+from models_library.generics import Envelope
+from models_library.projects import ProjectID
+from models_library.rest_pagination import Page, PageQueryParameters
 from simcore_service_webserver._meta import API_VTAG
+from simcore_service_webserver.version_control.models import (
+    CheckpointAnnotations,
+    CheckpointApiModel,
+    CheckpointNew,
+    RefID,
+    RepoApiModel,
+    WorkbenchViewApiModel,
+)
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",
@@ -15,150 +28,74 @@ router = APIRouter(
 )
 
 
-@router.get(
-    "/repos/projects",
-    response_model=ReposProjectsGetResponse,
-    responses={"422": {"model": ReposProjectsGetResponse1}},
-)
-def simcore_service_webserver_version_control_handlers__list_repos_handler(
-    offset: Optional[int] = 0, limit: Optional[conint(ge=1, le=50)] = 20
-) -> Union[ReposProjectsGetResponse, ReposProjectsGetResponse1]:
-    """
-    List Repos
-    """
-    pass
+@router.get("/repos/projects", response_model=Page[RepoApiModel])
+def list_repos(_query_params: Annotated[PageQueryParameters, Depends()]):
+    ...
 
 
 @router.get(
     "/repos/projects/{project_uuid}/checkpoints",
-    response_model=ReposProjectsProjectUuidCheckpointsGetResponse,
-    responses={"422": {"model": ReposProjectsProjectUuidCheckpointsGetResponse1}},
+    response_model=Page[CheckpointApiModel],
 )
-def simcore_service_webserver_version_control_handlers__list_checkpoints_handler(
-    project_uuid: UUID,
-    offset: Optional[int] = 0,
-    limit: Optional[conint(ge=1, le=50)] = 20,
-) -> Union[
-    ReposProjectsProjectUuidCheckpointsGetResponse,
-    ReposProjectsProjectUuidCheckpointsGetResponse1,
-]:
-    """
-    List Checkpoints
-    """
-    pass
+def list_checkpoints(
+    project_uuid: ProjectID, _query_params: Annotated[PageQueryParameters, Depends()]
+):
+    ...
 
 
 @router.post(
     "/repos/projects/{project_uuid}/checkpoints",
-    response_model=None,
-    responses={
-        "201": {"model": ReposProjectsProjectUuidCheckpointsPostResponse},
-        "422": {"model": ReposProjectsProjectUuidCheckpointsPostResponse1},
-    },
+    response_model=Envelope[CheckpointApiModel],
 )
-def simcore_service_webserver_version_control_handlers__create_checkpoint_handler(
-    project_uuid: UUID, body: ReposProjectsProjectUuidCheckpointsPostRequest = ...
-) -> Union[
-    None,
-    ReposProjectsProjectUuidCheckpointsPostResponse,
-    ReposProjectsProjectUuidCheckpointsPostResponse1,
-]:
-    """
-    Create Checkpoint
-    """
-    pass
+def create_checkpoint(project_uuid: ProjectID, _new: CheckpointNew):
+    ...
 
 
 @router.get(
     "/repos/projects/{project_uuid}/checkpoints/HEAD",
-    response_model=ReposProjectsProjectUuidCheckpointsHEADGetResponse,
-    responses={"422": {"model": ReposProjectsProjectUuidCheckpointsHEADGetResponse1}},
+    response_model=Envelope[CheckpointApiModel],
 )
-def simcore_service_webserver_version_control_handlers__get_checkpoint_handler_head(
-    project_uuid: UUID,
-) -> Union[
-    ReposProjectsProjectUuidCheckpointsHEADGetResponse,
-    ReposProjectsProjectUuidCheckpointsHEADGetResponse1,
-]:
+def get_head_checkpoint(
+    project_uuid: ProjectID,
+):
     """
     Gets HEAD (i.e. current) checkpoint
     """
-    pass
 
 
 @router.get(
     "/repos/projects/{project_uuid}/checkpoints/{ref_id}",
-    response_model=ReposProjectsProjectUuidCheckpointsRefIdGetResponse,
-    responses={"422": {"model": ReposProjectsProjectUuidCheckpointsRefIdGetResponse1}},
+    response_model=Envelope[CheckpointApiModel],
 )
-def simcore_service_webserver_version_control_handlers__get_checkpoint_handler(
-    ref_id: Any, project_uuid: UUID = ...
-) -> Union[
-    ReposProjectsProjectUuidCheckpointsRefIdGetResponse,
-    ReposProjectsProjectUuidCheckpointsRefIdGetResponse1,
-]:
-    """
-    Get Checkpoint
-    """
-    pass
+def get_checkpoint(ref_id: RefID, project_uuid: ProjectID):
+    ...
 
 
 @router.patch(
     "/repos/projects/{project_uuid}/checkpoints/{ref_id}",
-    response_model=ReposProjectsProjectUuidCheckpointsRefIdPatchResponse,
-    responses={
-        "422": {"model": ReposProjectsProjectUuidCheckpointsRefIdPatchResponse1}
-    },
+    response_model=Envelope[CheckpointApiModel],
 )
-def simcore_service_webserver_version_control_handlers__update_checkpoint_annotations_handler(
-    ref_id: Any,
-    project_uuid: UUID = ...,
-    body: ReposProjectsProjectUuidCheckpointsRefIdPatchRequest = ...,
-) -> Union[
-    ReposProjectsProjectUuidCheckpointsRefIdPatchResponse,
-    ReposProjectsProjectUuidCheckpointsRefIdPatchResponse1,
-]:
+def update_checkpoint(
+    ref_id: RefID,
+    project_uuid: ProjectID,
+    _update: CheckpointAnnotations,
+):
     """
     Update Checkpoint Annotations
     """
-    pass
 
 
 @router.get(
     "/repos/projects/{project_uuid}/checkpoints/{ref_id}/workbench/view",
-    response_model=ReposProjectsProjectUuidCheckpointsRefIdWorkbenchViewGetResponse,
-    responses={
-        "422": {
-            "model": ReposProjectsProjectUuidCheckpointsRefIdWorkbenchViewGetResponse1
-        }
-    },
+    response_model=Envelope[WorkbenchViewApiModel],
 )
-def simcore_service_webserver_version_control_handlers__view_project_workbench_handler(
-    ref_id: Any, project_uuid: UUID = ...
-) -> Union[
-    ReposProjectsProjectUuidCheckpointsRefIdWorkbenchViewGetResponse,
-    ReposProjectsProjectUuidCheckpointsRefIdWorkbenchViewGetResponse1,
-]:
-    """
-    View Project Workbench
-    """
-    pass
+def view_project_workbench(ref_id: RefID, project_uuid: ProjectID):
+    ...
 
 
 @router.post(
     "/repos/projects/{project_uuid}/checkpoints/{ref_id}:checkout",
-    response_model=ReposProjectsProjectUuidCheckpointsRefIdCheckoutPostResponse,
-    responses={
-        "422": {"model": ReposProjectsProjectUuidCheckpointsRefIdCheckoutPostResponse1}
-    },
+    response_model=Envelope[CheckpointApiModel],
 )
-def simcore_service_webserver_version_control_handlers__checkout_handler(
-    ref_id: Any, project_uuid: UUID = ...
-) -> Union[
-    ReposProjectsProjectUuidCheckpointsRefIdCheckoutPostResponse,
-    ReposProjectsProjectUuidCheckpointsRefIdCheckoutPostResponse1,
-]:
-    """
-    Checkout
-    """
-    pass
+def checkout(ref_id: RefID, project_uuid: ProjectID):
+    ...

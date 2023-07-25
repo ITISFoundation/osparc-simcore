@@ -40,7 +40,7 @@ openapi_modules = [
         "openapi_tags",
         # "openapi_tasks",
         "openapi_users",
-        # "openapi_version_control",
+        "openapi_version_control",
     )
 ]
 
