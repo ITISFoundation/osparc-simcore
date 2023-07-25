@@ -5,6 +5,7 @@
 
 
 from fastapi import APIRouter
+from fastapi.responses import FileResponse
 from simcore_service_webserver._meta import API_VTAG
 
 router = APIRouter(
@@ -18,11 +19,10 @@ router = APIRouter(
 
 @router.post(
     "/projects/{project_id}:xport",
-    response_model=bytes,
-    responses={"default": {"model": ProjectsProjectIdXportPostResponse}},
+    response_class=FileResponse,
+    operation_id="export_project",
 )
-def export_project(project_id: str) -> bytes | ProjectsProjectIdXportPostResponse:
+def export_project(project_id: str):
     """
     creates an archive of the project and downloads it
     """
-    pass

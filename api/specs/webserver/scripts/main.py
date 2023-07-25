@@ -23,7 +23,7 @@ openapi_modules = [
         "openapi_cluster",
         "openapi_computations",
         "openapi_diagnostics",
-        # "openapi_exporter",
+        "openapi_exporter",
         "openapi_groups",
         # "openapi_metamodeling",
         "openapi_nih_sparc",
