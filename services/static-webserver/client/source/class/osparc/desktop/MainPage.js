@@ -56,10 +56,10 @@ qx.Class.define("osparc.desktop.MainPage", {
 
     const store = osparc.store.Store.getInstance();
 
-    osparc.data.Resources.dummy.getCreditsLeft()
-      .then(data => {
-        if (data && "credits" in data) {
-          store.setCredits(data["credits"]["left"]);
+    osparc.data.Resources.dummy.getWallets()
+      .then(wallets => {
+        if (wallets && wallets.length) {
+          store.setCurrentWallet(wallets[0]);
         }
       })
       .catch(err => console.error(err));

@@ -1085,7 +1085,10 @@ qx.Class.define("osparc.data.Resources", {
                 write: true,
                 read: true
               },
-              nMembers: 5
+              nMembers: 1,
+              credits: {
+                left: 10
+              }
             }, {
               id: 2,
               label: "Our Wallet",
@@ -1095,18 +1098,11 @@ qx.Class.define("osparc.data.Resources", {
                 write: false,
                 read: true
               },
-              nMembers: 8
+              nMembers: 8,
+              credits: {
+                left: 1000
+              }
             }]
-          });
-        });
-      },
-
-      getCreditsLeft: function() {
-        return new Promise(resolve => {
-          resolve({
-            credits: {
-              left: 10
-            }
           });
         });
       },
