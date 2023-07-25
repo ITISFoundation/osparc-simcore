@@ -215,8 +215,8 @@ class PathMappingsLabel(BaseModel):
             ):
                 msg = f"path={path!r} not found in inputs_path={inputs_path!r}, outputs_path={outputs_path!r}, state_paths={state_paths!r}"
                 raise ValueError(msg)
-
-        return f"{v}"
+        output: str | None = v
+        return output
 
     class Config(_BaseConfig):
         schema_extra: ClassVar[dict[str, Any]] = {
@@ -273,7 +273,7 @@ class _PortRange(BaseModel):
     def lower_less_than_upper(cls, v, values) -> PortInt:
         upper = v
         lower: PortInt | None = values.get("lower")
-        if lower is None or lower > upper:
+        if lower is None or lower >= upper:
             msg = f"Condition not satisfied: lower={lower!r} < upper={upper!r}"
             raise ValueError(msg)
         return PortInt(v)
