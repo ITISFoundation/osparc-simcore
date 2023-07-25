@@ -12,6 +12,7 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 
 LABEL maintainer=sanderegg
 
+ENV DOCKER_VERSION="5:24.0.5-1~debian.10~buster"
 # for docker apt caching to work this needs to be added: [https://vsupalov.com/buildkit-cache-mount-dockerfile/]
 RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
   echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
@@ -32,11 +33,10 @@ RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
   # only the cli is needed and we remove the unnecessary stuff again
-  docker-ce-cli \
+  docker-ce-cli=${DOCKER_VERSION} \
   && apt-get remove -y\
   ca-certificates \
   curl \
-  gnupg \
   lsb-release \
   && apt-get clean -y\
   # verify that the binary works

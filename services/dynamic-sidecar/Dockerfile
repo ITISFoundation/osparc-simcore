@@ -11,6 +11,7 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 
 LABEL maintainer="Andrei Neagu <neagu@itis.swiss>"
 
+ENV DOCKER_VERSION="5:24.0.5-1~debian.10~buster"
 # for docker apt caching to work this needs to be added: [https://vsupalov.com/buildkit-cache-mount-dockerfile/]
 RUN rm -f /etc/apt/apt.conf.d/docker-clean && \
   echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
@@ -21,6 +22,16 @@ RUN \
   apt-get update && \
   apt-get install -y --no-install-recommends\
   curl \
+  gnupg \
+  lsb-release \
+  && mkdir -p /etc/apt/keyrings \
+  && curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg \
+  && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
+  $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends \
+  docker-ce-cli=${DOCKER_VERSION} \
+  docker-compose-plugin \
   gosu \
   libcap2-bin \
   ca-certificates \
