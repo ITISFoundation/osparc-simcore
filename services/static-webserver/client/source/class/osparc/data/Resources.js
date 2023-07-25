@@ -1089,7 +1089,7 @@ qx.Class.define("osparc.data.Resources", {
                 store.getWallets().forEach(wallet => {
                   wallet.setCredits(wallet.getCredits()-1);
                 });
-              }, 60000);
+              }, 30000);
             }
           })
           .catch(err => console.error(err));
@@ -1108,7 +1108,7 @@ qx.Class.define("osparc.data.Resources", {
                 read: true
               },
               credits: {
-                left: 1
+                left: 10
               }
             }, {
               id: 2,
