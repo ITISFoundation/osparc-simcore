@@ -133,22 +133,22 @@ class DockerContainerInspect(BaseModel):
 
 class ServiceRemovalState(BaseModel):
     can_remove: bool = Field(
-        False,
+        default=False,
         description="when True, marks the service as ready to be removed",
     )
     can_save: bool = Field(
-        False,
+        default=False,
         description="when True, saves the internal state and upload outputs of the service",
     )
     was_removed: bool = Field(
-        False,
+        default=False,
         description=(
             "Will be True when the removal finished. Used primarily "
             "to cancel retrying long running operations."
         ),
     )
 
-    def mark_to_remove(self, can_save: bool) -> None:
+    def mark_to_remove(self, *, can_save: bool) -> None:
         self.can_remove = True
         self.can_save = can_save
 
@@ -164,7 +164,7 @@ class DynamicSidecar(BaseModel):
     )
 
     is_ready: bool = Field(
-        False,
+        default=False,
         scription=(
             "is True while the health check on the dynamic-sidecar is responding. "
             "Meaning that the dynamic-sidecar is reachable and can accept requests"
@@ -181,7 +181,7 @@ class DynamicSidecar(BaseModel):
         return self.was_compose_spec_submitted or len(self.containers_inspect) > 0
 
     was_compose_spec_submitted: bool = Field(
-        False,
+        default=False,
         description="if the docker-compose spec was already submitted this fields is True",
     )
 
@@ -193,14 +193,14 @@ class DynamicSidecar(BaseModel):
     was_dynamic_sidecar_started: bool = False
     is_healthy: bool = False
     were_containers_created: bool = Field(
-        False,
+        default=False,
         description=(
             "when True no longer will the Docker api "
             "be used to check if the services were started"
         ),
     )
     is_project_network_attached: bool = Field(
-        False,
+        default=False,
         description=(
             "When True, all containers were in running state and project "
             "networks were attached. Waiting for the container sto be in "
@@ -209,7 +209,7 @@ class DynamicSidecar(BaseModel):
     )
 
     is_service_environment_ready: bool = Field(
-        False,
+        default=False,
         description=(
             "True when the environment setup required by the "
             "dynamic-sidecars created services was completed."
@@ -227,37 +227,40 @@ class DynamicSidecar(BaseModel):
     )
 
     wait_for_manual_intervention_after_error: bool = Field(
-        False,
+        default=False,
         description=(
             "Marks the sidecar as untouchable since there was an error and "
             "important data might be lost. awaits for manual intervention."
         ),
     )
     wait_for_manual_intervention_logged: bool = Field(
-        False, description="True if a relative message was logged"
+        default=False, description="True if a relative message was logged"
     )
     were_state_and_outputs_saved: bool = Field(
-        False,
+        default=False,
         description="set True if the dy-sidecar saves the state and uploads the outputs",
     )
 
     # below had already been validated and
     # used only to start the proxy
     dynamic_sidecar_id: ServiceId | None = Field(
-        None, description="returned by the docker engine; used for starting the proxy"
+        default=None,
+        description="returned by the docker engine; used for starting the proxy",
     )
     dynamic_sidecar_network_id: NetworkId | None = Field(
-        None, description="returned by the docker engine; used for starting the proxy"
+        default=None,
+        description="returned by the docker engine; used for starting the proxy",
     )
     swarm_network_id: NetworkId | None = Field(
-        None, description="returned by the docker engine; used for starting the proxy"
+        default=None,
+        description="returned by the docker engine; used for starting the proxy",
     )
     swarm_network_name: str | None = Field(
-        None, description="used for starting the proxy"
+        default=None, description="used for starting the proxy"
     )
 
     docker_node_id: str | None = Field(
-        None,
+        default=None,
         description=(
             "contains node id of the docker node where all services "
             "and created containers are started"
@@ -265,7 +268,7 @@ class DynamicSidecar(BaseModel):
     )
 
     inspect_error_handler: DelayedExceptionHandler = Field(
-        DelayedExceptionHandler(delay_for=0),
+        default=DelayedExceptionHandler(delay_for=0),
         description=(
             "Set when the dy-sidecar can no longer be reached by the "
             "director-v2. If it will be possible to reach the dy-sidecar again, "
@@ -375,7 +378,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     )
 
     service_port: PortInt = Field(
-        TEMPORARY_PORT_NUMBER,
+        default=TEMPORARY_PORT_NUMBER,
         description=(
             "port where the service is exposed defined by the service; "
             "NOTE: temporary default because it will be changed once the service "
@@ -397,7 +400,9 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         ...,
         description="used as label to filter out the metrics from the cAdvisor prometheus metrics",
     )
-    proxy_service_name: str = Field(None, description="service name given to the proxy")
+    proxy_service_name: str = Field(
+        default=None, description="service name given to the proxy"
+    )
     proxy_admin_api_port: PortInt | None = Field(
         default=None, description="used as the admin endpoint API port"
     )
@@ -407,7 +412,8 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         """get the endpoint where the proxy's admin API is exposed"""
         assert self.proxy_admin_api_port  # nosec
         url: AnyHttpUrl = parse_obj_as(
-            AnyHttpUrl, f"http://{self.proxy_service_name}:{self.proxy_admin_api_port}"
+            AnyHttpUrl,
+            f"http://{self.proxy_service_name}:{self.proxy_admin_api_port}",  # nosec  # NOSONAR
         )
         return url
 
