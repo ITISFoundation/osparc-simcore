@@ -27,6 +27,7 @@ openapi_modules = [
         "openapi_exporter",
         "openapi_groups",
         # "openapi_metamodeling",
+        "openapi_nih_sparc_redirections",
         "openapi_nih_sparc",
         "openapi_projects_comments",
         "openapi_projects_crud",
