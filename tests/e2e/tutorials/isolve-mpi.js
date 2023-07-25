@@ -1,4 +1,4 @@
-// node isolve-mpi.js [url] [user] [password] [--demo]
+// node isolve-mpi.js [url] [--user user] [--pass password] [--demo]
 
 const utils = require('../utils/utils');
 const tutorialBase = require('./tutorialBase');

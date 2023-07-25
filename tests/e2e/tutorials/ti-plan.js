@@ -1,4 +1,4 @@
-// node ti-plan.js [url] [user] [password] [timeout] [--demo]
+// node ti-plan.js [url] [--user user] [--pass password] [--start_timeout timeout] [--demo]
 
 const utils = require('../utils/utils');
 const tutorialBase = require('./tutorialBase');

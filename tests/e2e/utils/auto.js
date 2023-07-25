@@ -192,7 +192,7 @@ async function dashboardOpenService(page, serviceName) {
     }
     const firstChildId = '[osparc-test-id="' + children[idx] + '"]';
     await utils.waitAndClick(page, firstChildId);
-    await __openResource();
+    await __openResource(page);
     return true;
   }
   console.log("Creating New Study from service: no service found");
