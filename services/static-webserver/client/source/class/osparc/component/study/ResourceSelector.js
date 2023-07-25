@@ -181,12 +181,14 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
           });
           this.getChildControl("buttons-layout").add(control);
           break;
-        case "credits-left":
-          control = osparc.desktop.credits.CreditsLeft.createCreditsLeftInidcator(true).set({
+        case "credits-left": {
+          const store = osparc.store.Store.getInstance();
+          control = osparc.desktop.credits.CreditsLeft.createCreditsLeftInidcator(store.getCurrentWallet(), true).set({
             backgroundColor: "background-main"
           });
           this.getChildControl("right-main-layout").add(control);
           break;
+        }
         case "summary-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
           this.getChildControl("right-main-layout").add(control);
