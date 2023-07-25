@@ -25,7 +25,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
 
     this._add(this.__createIntroText());
     this._add(this.__getMemberInvitation());
-    this._add(osparc.data.Roles.createRolesOrgInfo());
+    this._add(this.__getRolesToolbar());
     this._add(this.__getMembersFilter());
     this._add(this.__getMembersList(), {
       flex: 1
@@ -129,6 +129,10 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       return hBox;
     },
 
+    __getRolesToolbar: function() {
+      return osparc.data.Roles.createRolesOrgInfo();
+    },
+
     __getMembersFilter: function() {
       const filter = new osparc.component.filter.TextFilter("text", "organizationMembersList").set({
         allowStretchX: true,
@@ -207,9 +211,9 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         return;
       }
 
-      const canWrite = orgModel.getAccessRights().getWrite();
+      const canDelete = orgModel.getAccessRights().getDelete();
       this.__memberInvitation.set({
-        visibility: canWrite ? "visible" : "excluded"
+        visibility: canDelete ? "visible" : "excluded"
       });
 
       const params = {
@@ -223,7 +227,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
           members.forEach(member => {
             member["thumbnail"] = osparc.utils.Avatar.getUrl(member["login"], 32);
             member["name"] = osparc.utils.Utils.firstsUp(member["first_name"], member["last_name"]);
-            member["showOptions"] = canWrite;
+            member["showOptions"] = canDelete;
             membersList.push(member);
           });
           membersList.sort(this.self().sortOrgMembers);

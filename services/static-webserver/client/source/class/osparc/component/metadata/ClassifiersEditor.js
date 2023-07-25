@@ -144,7 +144,7 @@ qx.Class.define("osparc.component.metadata.ClassifiersEditor", {
     __saveClassifiers: function(saveBtn) {
       saveBtn.setFetching(true);
 
-      if ("uuid" in this.__studyData) {
+      if (osparc.utils.Resources.isStudy(this._serializedData) || osparc.utils.Resources.isTemplate(this._serializedData)) {
         this.__studyData["classifiers"] = this.__classifiersTree.getCheckedClassifierIDs();
         const params = {
           url: {

@@ -168,6 +168,7 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
             width: 70,
             center: true
           });
+          osparc.utils.Utils.setIdToWidget(control, "openWithResources");
           this.getChildControl("buttons-layout").add(control);
           break;
         case "cancel-button":
