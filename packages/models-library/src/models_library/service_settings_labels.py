@@ -215,8 +215,8 @@ class PathMappingsLabel(BaseModel):
             ):
                 msg = f"path={path!r} not found in inputs_path={inputs_path!r}, outputs_path={outputs_path!r}, state_paths={state_paths!r}"
                 raise ValueError(msg)
-
-        return v
+        output: str | None = v
+        return output
 
     class Config(_BaseConfig):
         schema_extra: ClassVar[dict[str, Any]] = {
@@ -276,7 +276,7 @@ class _PortRange(BaseModel):
         if lower is None or lower >= upper:
             msg = f"Condition not satisfied: lower={lower!r} < upper={upper!r}"
             raise ValueError(msg)
-        return v
+        return PortInt(v)
 
 
 class DNSResolver(BaseModel):
@@ -310,7 +310,7 @@ class NATRule(BaseModel):
     def iter_tcp_ports(self) -> Generator[PortInt, None, None]:
         for port in self.tcp_ports:
             if isinstance(port, _PortRange):
-                yield from range(port.lower, port.upper + 1)
+                yield from (PortInt(i) for i in range(port.lower, port.upper + 1))
             else:
                 yield port
 
@@ -387,7 +387,7 @@ class DynamicSidecarServiceLabels(BaseModel):
         if v is not None and values.get("compose_spec") is None:
             msg = "`container_http_entry` not allowed if `compose_spec` is missing"
             raise ValueError(msg)
-        return v
+        return f"{v}" if v else v
 
     @validator("containers_allowed_outgoing_permit_list")
     @classmethod

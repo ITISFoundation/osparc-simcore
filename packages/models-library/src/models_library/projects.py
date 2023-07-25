@@ -121,13 +121,13 @@ class Project(BaseProjectModel):
     )
 
     # Timestamps
-    creation_date: DateTimeStr = Field(
+    creation_date: DateTimeStr = Field(  # type: ignore[assignment]
         ...,
         description="project creation date",
         examples=["2018-07-01T11:13:43Z"],
         alias="creationDate",
     )
-    last_change_date: DateTimeStr = Field(
+    last_change_date: DateTimeStr = Field(  # type: ignore[assignment]
         ...,
         description="last save date",
         examples=["2018-07-01T11:13:43Z"],
