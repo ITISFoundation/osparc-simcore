@@ -31,15 +31,14 @@ class _StarletteURL(Protocol):
 _URLType = Union[_YarlURL, _StarletteURL]
 
 
-def _replace_query(url: _URLType, query: dict[str, Any]) -> AnyHttpUrl:
+def _replace_query(url: _URLType, query: dict[str, Any]) -> str:
     """This helper function ensures query replacement works with both"""
     new_url: _URLType | _StarletteURL
     if isinstance(url, _YarlURL):
         new_url = url.update_query(query)
     else:
         new_url = url.replace_query_params(**query)
-    output: AnyHttpUrl = AnyHttpUrl(f"{new_url}")
-    return output
+    return f"{new_url}"
 
 
 class PageDict(TypedDict):
@@ -72,21 +71,31 @@ def paginate_data(
             total=total, count=len(chunk), limit=limit, offset=offset
         ),
         _links=PageLinks(
-            self=_replace_query(request_url, {"offset": offset, "limit": limit}),
-            first=_replace_query(request_url, {"offset": 0, "limit": limit}),
-            prev=_replace_query(
-                request_url, {"offset": max(offset - limit, 0), "limit": limit}
+            self=AnyHttpUrl(
+                _replace_query(request_url, {"offset": offset, "limit": limit})
+            ),
+            first=AnyHttpUrl(
+                _replace_query(request_url, {"offset": 0, "limit": limit})
+            ),
+            prev=AnyHttpUrl(
+                _replace_query(
+                    request_url, {"offset": max(offset - limit, 0), "limit": limit}
+                )
             )
             if offset > 0
             else None,
-            next=_replace_query(
-                request_url,
-                {"offset": min(offset + limit, last_page * limit), "limit": limit},
+            next=AnyHttpUrl(
+                _replace_query(
+                    request_url,
+                    {"offset": min(offset + limit, last_page * limit), "limit": limit},
+                )
             )
             if offset < (last_page * limit)
             else None,
-            last=_replace_query(
-                request_url, {"offset": last_page * limit, "limit": limit}
+            last=AnyHttpUrl(
+                _replace_query(
+                    request_url, {"offset": last_page * limit, "limit": limit}
+                )
             ),
         ),
         data=chunk,
