@@ -10,6 +10,7 @@ import importlib
 
 import yaml
 from fastapi import FastAPI
+from fastapi.routing import APIRoute
 from simcore_service_webserver._resources import webserver_resources
 
 openapi_modules = [
@@ -67,11 +68,17 @@ app = FastAPI(
     ],
 )
 
-for m in openapi_modules:
-    app.include_router(m.router)
 
 if __name__ == "__main__":
     from _common import create_openapi_specs
+
+    for module in openapi_modules:
+        # enforces operation_id == handler function name
+        for route in module.router.routes:
+            if isinstance(route, APIRoute) and route.operation_id is None:
+                route.operation_id = route.endpoint.__name__
+        #
+        app.include_router(module.router)
 
     openapi = create_openapi_specs(app, remove_main_sections=False)
 
