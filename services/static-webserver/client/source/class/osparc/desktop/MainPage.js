@@ -57,13 +57,23 @@ qx.Class.define("osparc.desktop.MainPage", {
     const store = osparc.store.Store.getInstance();
 
     osparc.data.Resources.dummy.getWallets()
-      .then(wallets => {
-        if (wallets && wallets.length) {
+      .then(walletsData => {
+        if (walletsData && walletsData.length) {
+          const wallets = [];
+          walletsData.forEach((walletData, idx) => {
+            const wallet = new osparc.data.model.Wallet(walletData);
+            wallets.push(wallet);
+          });
+          store.setWallets(wallets);
           store.setCurrentWallet(wallets[0]);
+          setInterval(() => {
+            store.getWallets().forEach(wallet => {
+              wallet.setCredits(wallet.getCredits()-1);
+            });
+          }, 60000);
         }
       })
       .catch(err => console.error(err));
-    setInterval(() => store.setCredits(store.getCredits()-1), 60000);
 
     Promise.all([
       store.getAllClassifiers(true),

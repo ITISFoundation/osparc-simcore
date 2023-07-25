@@ -1085,10 +1085,10 @@ qx.Class.define("osparc.data.Resources", {
                 write: true,
                 read: true
               },
-              nMembers: 1,
               credits: {
                 left: 10
-              }
+              },
+              nMembers: 1
             }, {
               id: 2,
               label: "Our Wallet",
@@ -1098,10 +1098,10 @@ qx.Class.define("osparc.data.Resources", {
                 write: false,
                 read: true
               },
-              nMembers: 8,
               credits: {
                 left: 1000
-              }
+              },
+              nMembers: 8
             }]
           });
         });
