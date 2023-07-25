@@ -34,10 +34,11 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "credits-indicator": {
-          control = osparc.desktop.credits.CreditsLeft.createCreditsLeftInidcator().set({
+        case "credits-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
             marginLeft: 10,
-            maxHeight: 40
+            alignY: "middle",
+            width: 100
           });
           this._add(control, {
             row: 0,
@@ -45,7 +46,18 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
             rowSpan: 2
           });
           break;
-        }
+        case "credits-indicator":
+          control = osparc.desktop.credits.CreditsLeft.createCreditsLeftInidcator().set({
+            maxHeight: 40
+          });
+          this.getChildControl("credits-layout").addAt(control, 0);
+          break;
+        case "credits-label":
+          control = new qx.ui.basic.Label().set({
+            textAlign: "right"
+          });
+          this.getChildControl("credits-layout").addAt(control, 1);
+          break;
       }
 
       return control || this.base(arguments, id);
@@ -55,6 +67,10 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       const creditsIndicator = this.getChildControl("credits-indicator");
       const val = osparc.desktop.credits.CreditsLeft.convertCreditsToIndicatorValue(credits);
       creditsIndicator.setValue(val);
+
+      this.getChildControl("credits-label").set({
+        value: credits + this.tr(" credits")
+      });
     },
 
     // overridden

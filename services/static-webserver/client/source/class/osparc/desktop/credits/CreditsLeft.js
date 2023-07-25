@@ -24,7 +24,7 @@ qx.Class.define("osparc.desktop.credits.CreditsLeft", {
     this._setLayout(new qx.ui.layout.VBox(3));
 
     this.set({
-      padding: 4
+      padding: 5
     });
 
     this.__buildLayout();
