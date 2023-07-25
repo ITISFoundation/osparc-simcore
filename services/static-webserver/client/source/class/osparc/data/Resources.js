@@ -1073,6 +1073,34 @@ qx.Class.define("osparc.data.Resources", {
     },
 
     dummy: {
+      getWallets: function() {
+        return new Promise(resolve => {
+          resolve({
+            wallets: [{
+              id: 1,
+              label: "My Wallet",
+              descrtiption: "Personal Wallet",
+              accessRights: {
+                delete: false,
+                write: true,
+                read: true
+              },
+              nMembers: 5
+            }, {
+              id: 2,
+              label: "Our Wallet",
+              descrtiption: "Organization wide Wallet",
+              accessRights: {
+                delete: false,
+                write: false,
+                read: true
+              },
+              nMembers: 8
+            }]
+          });
+        });
+      },
+
       getCreditsLeft: function() {
         return new Promise(resolve => {
           resolve({

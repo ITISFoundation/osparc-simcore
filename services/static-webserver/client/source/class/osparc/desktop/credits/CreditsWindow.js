@@ -40,6 +40,9 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
       contentPadding: 0
     });
 
+    const walletsPage = this.__walletsPage = this.__getWalletsPage();
+    tabViews.add(walletsPage);
+
     const buyCreditsPage = this.__buyCreditsPage = this.__getBuyCreditsPage();
     tabViews.add(buyCreditsPage);
 
@@ -63,10 +66,23 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
 
   members: {
     __tabsView: null,
+    __walletsPage: null,
     __buyCreditsPage: null,
     __transactionsPage: null,
     __usageOverviewPage: null,
     __transactions: null,
+
+    __getWalletsPage: function() {
+      const title = this.tr("Wallets");
+      const iconSrc = "@FontAwesome5Solid/folder/22";
+      const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
+      const walletsView = new osparc.desktop.wallets.WalletsView();
+      walletsView.set({
+        margin: 10
+      });
+      page.add(walletsView);
+      return page;
+    },
 
     __getBuyCreditsPage: function() {
       const title = this.tr("Buy Credits");
