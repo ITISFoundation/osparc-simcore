@@ -132,8 +132,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
           ctrl.bindProperty("label", "title", null, item, id);
           ctrl.bindProperty("description", "subtitle", null, item, id);
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
-          // set credits last so that the contact field is filled with that information
-          ctrl.bindProperty("credits", "contact", null, item, id);
+          ctrl.bindProperty("credits", "credits", null, item, id);
         },
         configureItem: item => {
           item.subscribeToFilterGroup("walletsList");

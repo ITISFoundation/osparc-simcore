@@ -51,7 +51,7 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
       walletModel.bind("thumbnail", walletListItem, "thumbnail");
       walletModel.bind("label", walletListItem, "title");
       walletModel.bind("description", walletListItem, "subtitle");
-      walletModel.bind("credits", walletListItem, "contact");
+      walletModel.bind("credits", walletListItem, "credits");
       walletModel.bind("accessRights", walletListItem, "accessRights");
 
       // this.__membersList.setCurrentWallet(walletModel);
@@ -79,7 +79,6 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
       }
       const walletListItem = this.__walletListItem = new osparc.desktop.wallets.WalletListItem();
       walletListItem.getChildControl("options").exclude();
-      walletListItem.setShowDeleteButton(false);
       walletListItem.addListener("openEditWallet", () => this.__openEditWallet());
       this.__titleLayout.add(walletListItem, {
         flex: 1

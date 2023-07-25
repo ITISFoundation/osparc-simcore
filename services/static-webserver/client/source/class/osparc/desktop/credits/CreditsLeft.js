@@ -31,6 +31,14 @@ qx.Class.define("osparc.desktop.credits.CreditsLeft", {
   },
 
   statics: {
+    convertCreditsToIndicatorValue: function(credits) {
+      const logBase = (n, base) => Math.log(n) / Math.log(base);
+
+      let normalized = logBase(credits, 10000) + 0.01;
+      normalized = Math.min(Math.max(normalized, 0), 1);
+      return normalized;
+    },
+
     createCreditsLeftInidcator: function(wallet, supportTap = false) {
       const progressBar = new qx.ui.indicator.ProgressBar().set({
         maximum: 1,
@@ -40,14 +48,15 @@ qx.Class.define("osparc.desktop.credits.CreditsLeft", {
         alignY:"middle"
       });
 
-      const logBase = (n, base) => Math.log(n) / Math.log(base);
-      wallet.bind("credits", progressBar, "value", {
-        converter: val => {
-          let normalized = logBase(val, 10000) + 0.01;
-          normalized = Math.min(Math.max(normalized, 0), 1);
-          return normalized;
-        }
-      });
+      if (wallet) {
+        wallet.bind("credits", progressBar, "value", {
+          converter: val => osparc.desktop.credits.CreditsLeft.convertCreditsToIndicatorValue(val)
+        });
+        wallet.bind("credits", progressBar, "toolTipText", {
+          converter: val => wallet.getLabel() + ": " + val + " credits left"
+        });
+      }
+
       progressBar.bind("value", progressBar.getChildControl("progress"), "backgroundColor", {
         converter: val => {
           if (val > 0.4) {
@@ -57,9 +66,6 @@ qx.Class.define("osparc.desktop.credits.CreditsLeft", {
           }
           return "danger-red";
         }
-      });
-      wallet.bind("credits", progressBar, "toolTipText", {
-        converter: val => wallet.getLabel() + ": " + val + " credits left"
       });
 
       if (supportTap) {

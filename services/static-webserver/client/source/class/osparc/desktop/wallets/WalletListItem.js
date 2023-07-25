@@ -19,20 +19,44 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
   extend: osparc.ui.list.ListItemWithMenu,
 
   properties: {
-    showDeleteButton: {
-      check: "Boolean",
-      init: true,
-      nullable: false,
-      event: "changeShowDeleteButton"
+    credits: {
+      check: "Number",
+      apply: "__applyCredits",
+      nullable: false
     }
   },
 
   events: {
-    "openEditWallet": "qx.event.type.Data",
-    "deleteWallet": "qx.event.type.Data"
+    "openEditWallet": "qx.event.type.Data"
   },
 
   members: {
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "credits-indicator": {
+          control = osparc.desktop.credits.CreditsLeft.createCreditsLeftInidcator().set({
+            merginLeft: 10,
+            maxHeight: 40
+          });
+          this._add(control, {
+            row: 0,
+            column: 4,
+            rowSpan: 2
+          });
+          break;
+        }
+      }
+
+      return control || this.base(arguments, id);
+    },
+
+    __applyCredits: function(credits) {
+      const creditsIndicator = this.getChildControl("credits-indicator");
+      const val = osparc.desktop.credits.CreditsLeft.convertCreditsToIndicatorValue(credits);
+      creditsIndicator.setValue(val);
+    },
+
     // overridden
     _getOptionsMenu: function() {
       let menu = null;
@@ -50,16 +74,6 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
           editWalletButton.addListener("execute", () => this.fireDataEvent("openEditWallet", this.getKey()));
           menu.add(editWalletButton);
         }
-
-        if (accessRights["delete"]) {
-          const deleteWalletButton = new qx.ui.menu.Button(this.tr("Delete"));
-          this.bind("showDeleteButton", deleteWalletButton, "visibility", {
-            converter: show => show ? "visible" : "excluded"
-          });
-          deleteWalletButton.addListener("execute", () => this.fireDataEvent("deleteWallet", this.getKey()));
-          menu.add(deleteWalletButton);
-        }
-        optionsMenu.setMenu(menu);
       }
       return menu;
     },
