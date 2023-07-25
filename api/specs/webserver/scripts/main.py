@@ -32,7 +32,7 @@ openapi_modules = [
         "openapi_projects_metadata",
         "openapi_projects_nodes",
         "openapi_projects_ports",
-        # "openapi_projects_tags",
+        "openapi_projects_tags",
         # "openapi_projects",
         # "openapi_publications",
         "openapi_resource_usage",

@@ -5,6 +5,9 @@
 
 
 from fastapi import APIRouter
+from models_library.api_schemas_webserver.projects import ProjectGet
+from models_library.generics import Envelope
+from models_library.projects import ProjectID
 from simcore_service_webserver._meta import API_VTAG
 
 router = APIRouter(
@@ -17,30 +20,28 @@ router = APIRouter(
 
 
 @router.put(
-    "/projects/{study_uuid}/tags/{tag_id}",
-    response_model=ProjectsStudyUuidTagsTagIdPutResponse,
-    responses={"default": {"model": ProjectsStudyUuidTagsTagIdPutResponse1}},
+    "/projects/{project_uuid}/tags/{tag_id}",
+    response_model=Envelope[ProjectGet],
+    operation_id="add_tag",
 )
 def add_tag(
-    tag_id: int, study_uuid: str = ...
-) -> ProjectsStudyUuidTagsTagIdPutResponse | ProjectsStudyUuidTagsTagIdPutResponse1:
+    project_uuid: ProjectID,
+    tag_id: int,
+):
     """
     Links an existing label with an existing study
     """
-    pass
 
 
 @router.delete(
-    "/projects/{study_uuid}/tags/{tag_id}",
-    response_model=ProjectsStudyUuidTagsTagIdDeleteResponse,
-    responses={"default": {"model": ProjectsStudyUuidTagsTagIdDeleteResponse1}},
+    "/projects/{project_uuid}/tags/{tag_id}",
+    response_model=Envelope[ProjectGet],
+    operation_id="remove_tag",
 )
 def remove_tag(
-    tag_id: int, study_uuid: str = ...
-) -> (
-    ProjectsStudyUuidTagsTagIdDeleteResponse | ProjectsStudyUuidTagsTagIdDeleteResponse1
+    project_uuid: ProjectID,
+    tag_id: int,
 ):
     """
     Removes an existing link between a label and a study
     """
-    pass
