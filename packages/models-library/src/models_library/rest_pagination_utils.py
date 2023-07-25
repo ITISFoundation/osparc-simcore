@@ -1,7 +1,7 @@
 from math import ceil
 from typing import Any, Protocol, TypedDict, Union, runtime_checkable
 
-from pydantic import AnyHttpUrl
+from pydantic import AnyHttpUrl, parse_obj_as
 
 from .rest_pagination import PageLinks, PageMetaInfoLimitOffset
 
@@ -71,31 +71,37 @@ def paginate_data(
             total=total, count=len(chunk), limit=limit, offset=offset
         ),
         _links=PageLinks(
-            self=AnyHttpUrl(
-                _replace_query(request_url, {"offset": offset, "limit": limit})
+            self=(
+                parse_obj_as(
+                    AnyHttpUrl,
+                    _replace_query(request_url, {"offset": offset, "limit": limit}),
+                )
             ),
-            first=AnyHttpUrl(
-                _replace_query(request_url, {"offset": 0, "limit": limit})
+            first=parse_obj_as(
+                AnyHttpUrl, _replace_query(request_url, {"offset": 0, "limit": limit})
             ),
-            prev=AnyHttpUrl(
+            prev=parse_obj_as(
+                AnyHttpUrl,
                 _replace_query(
                     request_url, {"offset": max(offset - limit, 0), "limit": limit}
-                )
+                ),
             )
             if offset > 0
             else None,
-            next=AnyHttpUrl(
+            next=parse_obj_as(
+                AnyHttpUrl,
                 _replace_query(
                     request_url,
                     {"offset": min(offset + limit, last_page * limit), "limit": limit},
-                )
+                ),
             )
             if offset < (last_page * limit)
             else None,
-            last=AnyHttpUrl(
+            last=parse_obj_as(
+                AnyHttpUrl,
                 _replace_query(
                     request_url, {"offset": last_page * limit, "limit": limit}
-                )
+                ),
             ),
         ),
         data=chunk,
