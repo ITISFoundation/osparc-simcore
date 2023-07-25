@@ -63,14 +63,13 @@ qx.Class.define("osparc.info.MergedLarge", {
 
       const extraInfo = this.__extraInfo();
       const extraInfoLayout = this.__createExtraInfo(extraInfo);
-      this._add(extraInfoLayout);
 
       const bounds = this.getBounds();
       const offset = 30;
       const widgetWidth = bounds ? bounds.width - offset : 500 - offset;
       let thumbnailWidth = widgetWidth - 2 * osparc.info.CardLarge.PADDING;
       const maxThumbnailHeight = extraInfo.length*20;
-      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
+      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
         alignX: "center"
       }));
       hBox.add(extraInfoLayout);
@@ -218,7 +217,7 @@ qx.Class.define("osparc.info.MergedLarge", {
     },
 
     __createExtraInfo: function(extraInfo) {
-      const moreInfo = osparc.info.StudyUtils.createExtraInfoGrid(extraInfo).set({
+      const moreInfo = osparc.info.StudyUtils.createExtraInfoVBox(extraInfo).set({
         width: osparc.info.CardLarge.EXTRA_INFO_WIDTH
       });
 
