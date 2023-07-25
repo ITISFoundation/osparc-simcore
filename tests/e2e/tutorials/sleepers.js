@@ -1,4 +1,4 @@
-// node sleepers.js [url] [user] [password] [--demo]
+// node sleepers.js [url] [--user user] [--pass password] [--demo]
 
 const utils = require('../utils/utils');
 const tutorialBase = require('./tutorialBase');

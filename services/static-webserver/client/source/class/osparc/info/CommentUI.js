@@ -25,18 +25,26 @@ qx.Class.define("osparc.info.CommentUI", {
   construct: function(comment) {
     this.base(arguments);
 
-    const layout = new qx.ui.layout.Grid(8, 5);
-    layout.setColumnWidth(0, 32);
-    layout.setColumnFlex(1, 1);
+    this.__comment = comment;
+
+    const isMyComment = this.__isMyComment();
+    const layout = new qx.ui.layout.Grid(12, 5);
+    layout.setColumnWidth(isMyComment ? 2 : 0, 32); // thumbnail
+    layout.setColumnFlex(isMyComment ? 0 : 2, 1); // message content
+    layout.setColumnAlign(isMyComment ? 0 : 2, isMyComment ? "right" : "left", "top"); // message content
     this._setLayout(layout);
     this.setPadding(5);
-
-    this.__comment = comment;
 
     this.__buildLayout();
   },
 
   members: {
+    __comment: null,
+
+    __isMyComment: function() {
+      return this.__comment && osparc.auth.Data.getInstance().getUserId() === this.__comment["user_id"];
+    },
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -56,7 +64,7 @@ qx.Class.define("osparc.info.CommentUI", {
           });
           this._add(control, {
             row: 0,
-            column: 0,
+            column: this.__isMyComment() ? 2 : 0,
             rowSpan: 2
           });
           break;
@@ -71,11 +79,11 @@ qx.Class.define("osparc.info.CommentUI", {
           break;
         case "last-updated":
           control = new qx.ui.basic.Label().set({
-            font: "text-13"
+            font: "text-12"
           });
           this._add(control, {
-            row: 0,
-            column: 2
+            row: 1,
+            column: 1
           });
           break;
         case "comment-content":
@@ -85,9 +93,9 @@ qx.Class.define("osparc.info.CommentUI", {
             wrap: true
           });
           this._add(control, {
-            row: 1,
-            column: 1,
-            colSpan: 2
+            row: 0,
+            column: this.__isMyComment() ? 0 : 2,
+            rowSpan: 2
           });
           break;
       }
