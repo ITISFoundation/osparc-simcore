@@ -286,7 +286,7 @@ qx.Class.define("osparc.info.MergedLarge", {
 
     __createDescription: function() {
       const maxHeight = 400;
-      return osparc.info.StudyUtils.createDescription(this.getStudy(), maxHeight);
+      return osparc.info.StudyUtils.createDescriptionMD(this.getStudy(), maxHeight);
     },
 
     __createResources: function() {

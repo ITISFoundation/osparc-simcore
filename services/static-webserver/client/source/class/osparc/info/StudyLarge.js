@@ -113,7 +113,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       }
       const descInfo = {
         label: this.tr("DESCRIPTION"),
-        view: osparc.info.StudyUtils.createDescription(this.getStudy()),
+        view: osparc.info.StudyUtils.createDescriptionMD(this.getStudy()),
         action: {
           button: osparc.utils.Utils.getEditButton(),
           callback: this.__canIWrite() ? this.__openDescriptionEditor : null,
@@ -188,7 +188,7 @@ qx.Class.define("osparc.info.StudyLarge", {
         /*
         "DESCRIPTION": {
           label: this.tr("DESCRIPTION"),
-          view: osparc.info.StudyUtils.createDescription(this.getStudy()),
+          view: osparc.info.StudyUtils.createDescriptionMD(this.getStudy()),
           action: {
             button: osparc.utils.Utils.getEditButton(),
             callback: this.__canIWrite() ? this.__openDescriptionEditor : null,

@@ -165,7 +165,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       * @param study {osparc.data.model.Study} Study Model
       * @param maxHeight {Number} description's maxHeight
       */
-    createDescription: function(study, maxHeight) {
+    createDescriptionMD: function(study, maxHeight) {
       const description = new osparc.ui.markdown.Markdown().set({
         noMargin: true
       });
