@@ -73,7 +73,7 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
   members: {
     __iframe: null,
     __syncScheduled: null,
-    __restartButton: null,
+    __reloadButton: null,
     __zoomButton: null,
 
     // override
@@ -89,7 +89,9 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
       });
       const iframeEl = this._getIframeElement();
       iframeEl.setAttribute("allow", "clipboard-write");
-      const restartButton = this.__restartButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/redo-alt/14").set({
+      const reloadButton = this.__reloadButton = new qx.ui.form.Button().set({
+        label: this.tr("Reload"),
+        icon: "@FontAwesome5Solid/redo-alt/14",
         zIndex: 20,
         paddingLeft: 8,
         paddingRight: 4,
@@ -98,14 +100,15 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
         backgroundColor: "transparent",
         decorator: null
       });
-      restartButton.addListener("execute", e => {
+      reloadButton.addListener("execute", e => {
         this.fireEvent("restart");
       }, this);
-      osparc.utils.Utils.setIdToWidget(restartButton, "iFrameRestartBtn");
-      appRoot.add(restartButton, {
+      osparc.utils.Utils.setIdToWidget(reloadButton, "iFrameRestartBtn");
+      appRoot.add(reloadButton, {
         top: this.self().HIDDEN_TOP
       });
-      const zoomButton = this.__zoomButton = new qx.ui.form.Button(null).set({
+      const zoomButton = this.__zoomButton = new qx.ui.form.Button().set({
+        label: this.self().getZoomLabel(false),
         icon: this.self().getZoomIcon(false),
         zIndex: 20,
         backgroundColor: "transparent",
@@ -126,7 +129,7 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
         iframe.setLayoutProperties({
           top: this.self().HIDDEN_TOP
         });
-        restartButton.setLayoutProperties({
+        reloadButton.setLayoutProperties({
           top: this.self().HIDDEN_TOP
         });
         zoomButton.setLayoutProperties({
@@ -163,7 +166,10 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
         this.removeState("maximized");
       }
       const actionButton = this.__zoomButton;
-      actionButton.setIcon(this.self().getZoomIcon(maximize));
+      actionButton.set({
+        label: this.self().getZoomLabel(maximize),
+        icon: this.self().getZoomIcon(maximize)
+      });
       osparc.utils.Utils.setIdToWidget(actionButton, this.self().getMaximizeWidgetId(maximize));
       qx.event.message.Bus.getInstance().dispatchByName("maximizeIframe", this.hasState("maximized"));
     },
@@ -191,7 +197,7 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
           height: divSize.height - this.getToolbarHeight()
         });
 
-        this.__restartButton.setLayoutProperties({
+        this.__reloadButton.setLayoutProperties({
           top: (divPos.top - iframeParentPos.top),
           right: (iframeParentPos.right - iframeParentPos.left - divPos.right) + 35
         });
@@ -200,7 +206,7 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
           right: (iframeParentPos.right - iframeParentPos.left - divPos.right)
         });
 
-        this.__restartButton.setVisibility(this.isShowToolbar() ? "visible" : "excluded");
+        this.__reloadButton.setVisibility(this.isShowToolbar() ? "visible" : "excluded");
         this.__zoomButton.setVisibility(this.isShowToolbar() ? "visible" : "excluded");
       }, 0);
     },
