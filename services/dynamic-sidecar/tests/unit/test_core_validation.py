@@ -117,7 +117,9 @@ def test_inject_backend_networking(
     """
     parsed_compose_spec = parse_compose_spec(incoming_compose_file)
     parsed_compose_spec["networks"] = networks
-    _connect_user_services(parsed_compose_spec, allow_internet_access)
+    _connect_user_services(
+        parsed_compose_spec, allow_internet_access=allow_internet_access
+    )
     assert DEFAULT_USER_SERVICES_NETWORK_NAME in parsed_compose_spec["networks"]
     assert (
         DEFAULT_USER_SERVICES_NETWORK_NAME
