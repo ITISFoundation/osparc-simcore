@@ -180,11 +180,15 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
 
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       const store = osparc.store.Store.getInstance();
+      let defaultWallet = null;
       store.getWallets().forEach(wallet => {
         if (myGid in wallet.getAccessRights() && wallet.getAccessRights()[myGid]["write"]) {
           const sbItem = new qx.ui.form.ListItem(wallet.getName());
           sbItem.walletId = wallet.getWalletId();
           walletSelector.add(sbItem);
+          if (defaultWallet === null) {
+            defaultWallet = sbItem;
+          }
         }
       });
 
@@ -195,6 +199,10 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
           this.setWallet(found);
         }
       });
+
+      if (defaultWallet) {
+        walletSelector.setSelection([defaultWallet]);
+      }
 
       return walletSelector;
     },

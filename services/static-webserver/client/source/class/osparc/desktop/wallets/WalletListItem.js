@@ -94,7 +94,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
 
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       this.getChildControl("buy-credits-button").set({
-        visibility: (myGid in accessRights) && accessRights[myGid]["write"] ? "visible" : "hidden"
+        visibility: accessRights && (myGid in accessRights) && accessRights[myGid]["write"] ? "visible" : "hidden"
       });
     },
 

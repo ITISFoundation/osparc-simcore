@@ -49,6 +49,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsView", {
       });
 
       walletsPage.addListener("buyCredits", e => this.fireDataEvent("buyCredits", e.getData()));
+      walletDetails.addListener("buyCredits", e => this.fireDataEvent("buyCredits", e.getData()));
     },
 
     openWalletDetails: function(walletId) {

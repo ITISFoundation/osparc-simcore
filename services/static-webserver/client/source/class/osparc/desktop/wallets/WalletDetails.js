@@ -30,7 +30,8 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
   },
 
   events: {
-    "backToWallets": "qx.event.type.Event"
+    "backToWallets": "qx.event.type.Event",
+    "buyCredits": "qx.event.type.Data"
   },
 
   members: {
@@ -49,10 +50,12 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
       walletModel.bind("walletId", walletListItem, "key");
       walletModel.bind("walletId", walletListItem, "model");
       walletModel.bind("thumbnail", walletListItem, "thumbnail");
-      walletModel.bind("label", walletListItem, "title");
+      walletModel.bind("name", walletListItem, "title");
       walletModel.bind("description", walletListItem, "subtitle");
       walletModel.bind("credits", walletListItem, "credits");
       walletModel.bind("accessRights", walletListItem, "accessRights");
+
+      walletListItem.addListener("buyCredits", e => this.fireDataEvent("buyCredits", e.getData()));
 
       // this.__membersList.setCurrentWallet(walletModel);
     },
@@ -92,7 +95,7 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
       const newWallet = false;
       const walletEditor = new osparc.desktop.wallets.WalletEditor(newWallet);
       wallet.bind("walletId", walletEditor, "walletId");
-      wallet.bind("label", walletEditor, "label");
+      wallet.bind("name", walletEditor, "name");
       wallet.bind("description", walletEditor, "description");
       wallet.bind("thumbnail", walletEditor, "thumbnail", {
         converter: val => val ? val : ""
@@ -113,7 +116,7 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
           "walletId": walletId
         },
         data: {
-          "label": name,
+          "name": name,
           "description": description,
           "thumbnail": thumbnail || null
         }

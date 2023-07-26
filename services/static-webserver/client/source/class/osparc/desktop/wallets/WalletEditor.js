@@ -40,11 +40,11 @@ qx.Class.define("osparc.desktop.wallets.WalletEditor", {
       event: "changeWalletId"
     },
 
-    label: {
+    name: {
       check: "String",
       init: "",
       nullable: false,
-      event: "changeLabel"
+      event: "changeName"
     },
 
     description: {
@@ -79,8 +79,8 @@ qx.Class.define("osparc.desktop.wallets.WalletEditor", {
             placeholder: this.tr("Title"),
             height: 35
           });
-          this.bind("label", control, "value");
-          control.bind("value", this, "label");
+          this.bind("name", control, "value");
+          control.bind("value", this, "name");
           this._add(control);
           break;
         }
