@@ -30,6 +30,13 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
   },
 
   properties: {
+    wallet: {
+      check: "osparc.data.model.Wallet",
+      init: null,
+      nullable: false,
+      apply: "__applyWallet"
+    },
+
     nCredits: {
       check: "Number",
       init: 1,
@@ -125,10 +132,10 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       return control || this.base(arguments, id);
     },
 
-    setSelectedWallet: function(walletId) {
+    __applyWallet: function(wallet) {
       const walletSelector = this.getChildControl("wallet-selector");
       walletSelector.getSelectables().forEach(selectable => {
-        if (selectable.walletId === parseInt(walletId)) {
+        if (selectable.walletId === wallet.getWalletId()) {
           walletSelector.setSelection([selectable]);
         }
       });

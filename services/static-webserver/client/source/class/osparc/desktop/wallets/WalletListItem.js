@@ -92,23 +92,27 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
     _applyAccessRights: function(accessRights) {
       this.base(arguments, accessRights);
 
+      const myGid = osparc.auth.Data.getInstance().getGroupId();
       this.getChildControl("buy-credits-button").set({
-        visibility: accessRights["write"] ? "visible" : "hidden"
+        visibility: (myGid in accessRights) && accessRights[myGid]["write"] ? "visible" : "hidden"
       });
     },
 
     // overridden
     _setSubtitle: function() {
       const accessRights = this.getAccessRights();
+      const myGid = osparc.auth.Data.getInstance().getGroupId();
       const subtitle = this.getChildControl("contact");
-      if (accessRights["delete"]) {
-        subtitle.setValue(osparc.data.Roles.WALLET[3].longLabel);
-      } else if (accessRights["write"]) {
-        subtitle.setValue(osparc.data.Roles.WALLET[2].longLabel);
-      } else if (accessRights["read"]) {
-        subtitle.setValue(osparc.data.Roles.WALLET[1].longLabel);
-      } else {
-        subtitle.setValue(osparc.data.Roles.WALLET[0].longLabel);
+      if (myGid in accessRights) {
+        if (accessRights[myGid]["delete"]) {
+          subtitle.setValue(osparc.data.Roles.WALLET[3].longLabel);
+        } else if (accessRights[myGid]["write"]) {
+          subtitle.setValue(osparc.data.Roles.WALLET[2].longLabel);
+        } else if (accessRights[myGid]["read"]) {
+          subtitle.setValue(osparc.data.Roles.WALLET[1].longLabel);
+        } else {
+          subtitle.setValue(osparc.data.Roles.WALLET[0].longLabel);
+        }
       }
     },
 
@@ -116,7 +120,8 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
     _getOptionsMenu: function() {
       let menu = null;
       const accessRights = this.getAccessRights();
-      if (accessRights["write"]) {
+      const myGid = osparc.auth.Data.getInstance().getGroupId();
+      if ((myGid in accessRights) && accessRights[myGid]["write"]) {
         const optionsMenu = this.getChildControl("options");
         optionsMenu.show();
 
@@ -124,11 +129,9 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
           position: "bottom-right"
         });
 
-        if (accessRights["write"]) {
-          const editWalletButton = new qx.ui.menu.Button(this.tr("Edit details..."));
-          editWalletButton.addListener("execute", () => this.fireDataEvent("openEditWallet", this.getKey()));
-          menu.add(editWalletButton);
-        }
+        const editWalletButton = new qx.ui.menu.Button(this.tr("Edit details..."));
+        editWalletButton.addListener("execute", () => this.fireDataEvent("openEditWallet", this.getKey()));
+        menu.add(editWalletButton);
       }
       return menu;
     },

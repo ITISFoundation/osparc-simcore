@@ -68,14 +68,20 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
 
   statics: {
     sortWallets: function(a, b) {
-      const sorted = osparc.component.share.Collaborators.sortByAccessRights(a.getAccessRights(), b.getAccessRights());
-      if (sorted !== 0) {
-        return sorted;
+      const aAccessRights = a.getAccessRights();
+      const bAccessRights = b.getAccessRights();
+      const myGid = osparc.auth.Data.getInstance().getGroupId();
+      if (myGid in aAccessRights && myGid in bAccessRights) {
+        const sorted = osparc.component.share.Collaborators.sortByAccessRights(aAccessRights[myGid], bAccessRights[myGid]);
+        if (sorted !== 0) {
+          return sorted;
+        }
+        if (("name" in a) && ("name" in b)) {
+          return a["name"].localeCompare(b["name"]);
+        }
+        return 0;
       }
-      if (("label" in a) && ("label" in b)) {
-        return a["label"].localeCompare(b["label"]);
-      }
-      return 0;
+      return -1;
     }
   },
 

@@ -103,7 +103,7 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
 
       let tttext = credits + " " + this.tr("credits left");
       if (this.getWallet()) {
-        tttext = this.getWallet().getLabel() + ": " + tttext;
+        tttext = this.getWallet().getName() + ": " + tttext;
       }
       this.setToolTipText(tttext);
     }

@@ -86,7 +86,11 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
         const {
           walletId
         } = e.getData();
-        this.__buyCredits.setSelectedWallet(walletId);
+        const store = osparc.store.Store.getInstance();
+        const found = store.getWallets().find(wallet => wallet.getWalletId() === parseInt(walletId));
+        if (found) {
+          this.__buyCredits.setWallet(found);
+        }
       });
       page.add(walletsView);
       return page;
