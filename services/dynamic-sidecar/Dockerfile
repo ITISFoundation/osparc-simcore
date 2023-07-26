@@ -40,6 +40,10 @@ RUN \
   ca-certificates \
   # required by python-magic
   libmagic1 \
+  && apt-get remove -y\
+  ca-certificates \
+  gnupg \
+  lsb-release \
   && apt-get clean -y\
   # verify that the binary works
   && gosu nobody true
