@@ -252,7 +252,7 @@ class BaseCompScheduler(ABC):
                 task.copy(update={"state": backend_state}),
             )
             for task, backend_state in zip(
-                processing_tasks, tasks_backend_status, strict=True
+                processing_tasks, tasks_backend_status, strict=False
             )
             if task.state is not backend_state
         ]
