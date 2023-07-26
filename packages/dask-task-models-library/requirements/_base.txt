@@ -12,7 +12,7 @@ attrs==23.1.0
     # via
     #   jsonschema
     #   referencing
-certifi==2023.5.7
+certifi==2023.7.22
     # via httpcore
 click==8.1.6
     # via
@@ -22,11 +22,11 @@ cloudpickle==2.2.1
     # via
     #   dask
     #   distributed
-dask==2023.7.0
+dask==2023.7.1
     # via
     #   -r requirements/_base.in
     #   distributed
-distributed==2023.7.0
+distributed==2023.7.1
     # via dask
 dnspython==2.4.0
     # via email-validator
