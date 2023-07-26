@@ -123,9 +123,8 @@ class BaseCompScheduler(ABC):
                 if u_id == user_id and p_id == project_id
             }
             if not possible_iterations:
-                raise SchedulerError(
-                    f"There are no pipeline scheduled for {user_id}:{project_id}"
-                )
+                msg = f"There are no pipeline scheduled for {user_id}:{project_id}"
+                raise SchedulerError(msg)
             iteration = max(possible_iterations)
 
         # mark the scheduled pipeline for stopping
@@ -177,10 +176,11 @@ class BaseCompScheduler(ABC):
             if (f"{t.node_id}" in list(pipeline_dag.nodes()))
         }
         if len(pipeline_comp_tasks) != len(pipeline_dag.nodes()):
-            raise InvalidPipelineError(
-                f"{project_id}"
-                f"The tasks defined for {project_id} do not contain all the tasks defined in the pipeline [{list(pipeline_dag.nodes)}]! Please check."
+            msg = (
+                f"{project_id}The tasks defined for {project_id} do not contain all"
+                f" the tasks defined in the pipeline [{list(pipeline_dag.nodes)}]! Please check."
             )
+            raise InvalidPipelineError(msg)
         return pipeline_comp_tasks
 
     async def _update_run_result_from_tasks(
@@ -251,7 +251,9 @@ class BaseCompScheduler(ABC):
                 task,
                 task.copy(update={"state": backend_state}),
             )
-            for task, backend_state in zip(processing_tasks, tasks_backend_status)
+            for task, backend_state in zip(
+                processing_tasks, tasks_backend_status, strict=True
+            )
             if task.state is not backend_state
         ]
 
@@ -508,7 +510,7 @@ class BaseCompScheduler(ABC):
             return_exceptions=True,
         )
         # Handling errors raised when _start_tasks(...)
-        for r, t in zip(results, tasks_ready_to_start):
+        for r, t in zip(results, tasks_ready_to_start, strict=True):
             if isinstance(r, TaskSchedulingError):
                 logger.error(
                     "Project '%s''s task '%s' could not be scheduled due to the following: %s",
@@ -527,10 +529,8 @@ class BaseCompScheduler(ABC):
                 )
             elif isinstance(
                 r,
-                (
-                    ComputationalBackendNotConnectedError,
-                    ComputationalSchedulerChangedError,
-                ),
+                ComputationalBackendNotConnectedError
+                | ComputationalSchedulerChangedError,
             ):
                 logger.error(
                     "Issue with computational backend: %s. Tasks are set back "
