@@ -3,16 +3,15 @@
 # pylint: disable=unused-variable
 
 import asyncio
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 import pytest
 import respx
 from fastapi import status
+from httpx import Response
 from models_library.service_settings_labels import SimcoreServiceLabels
-from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from requests import Response
 from simcore_service_director_v2.models.domains.dynamic_services import (
     DynamicServiceCreate,
 )
@@ -29,11 +28,11 @@ from starlette.testclient import TestClient
 
 
 @pytest.fixture
-def mock_env(
+def mock_env(  # noqa: PT004
     disable_rabbitmq: None,
     disable_postgres: None,
     mock_env: EnvVarsDict,
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     docker_swarm: None,
 ) -> None:
     monkeypatch.setenv("SC_BOOT_MODE", "default")
@@ -57,13 +56,23 @@ def dynamic_sidecar_scheduler(client: TestClient) -> DynamicSidecarsScheduler:
 
 
 @pytest.fixture
-async def mock_sidecar_api(scheduler_data: SchedulerData) -> AsyncIterator[None]:
+def mock_apply_observation_cycle(mocker: MockerFixture) -> None:  # noqa: PT004
+    module_base = (
+        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._observer"
+    )
+    mocker.patch(f"{module_base}._apply_observation_cycle", autospec=True)
+
+
+@pytest.fixture
+async def mock_sidecar_api(  # noqa: PT004
+    scheduler_data: SchedulerData,
+) -> AsyncIterator[None]:
     with respx.mock(
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
         respx_mock.get(f"{scheduler_data.endpoint}/health", name="is_healthy").respond(
-            json=dict(is_healthy=True)
+            json={"is_healthy": True}
         )
 
         yield
@@ -89,13 +98,13 @@ async def observed_service(
         can_save,
     )
     # pylint:disable=protected-access
-    return dynamic_sidecar_scheduler._scheduler.get_scheduler_data(
+    return dynamic_sidecar_scheduler._scheduler.get_scheduler_data(  # noqa: SLF001
         dynamic_service_create.node_uuid
     )
 
 
 @pytest.fixture
-def mock_scheduler_service_shutdown_tasks(mocker: MockerFixture) -> None:
+def mock_scheduler_service_shutdown_tasks(mocker: MockerFixture) -> None:  # noqa: PT004
     module_base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._events_utils"
     mocker.patch(f"{module_base}.service_push_outputs", autospec=True)
     mocker.patch(f"{module_base}.service_remove_containers", autospec=True)
@@ -112,17 +121,20 @@ async def test_update_service_observation_node_not_found(
     with pytest.raises(DynamicSidecarNotFoundError):
         client.patch(
             f"/v2/dynamic_scheduler/services/{scheduler_data.node_uuid}/observation",
-            json=dict(is_disabled=False),
+            json={"is_disabled": False},
         )
 
 
 async def test_update_service_observation(
-    mock_sidecar_api: None, client: TestClient, observed_service: SchedulerData
+    mock_apply_observation_cycle: None,
+    mock_sidecar_api: None,
+    client: TestClient,
+    observed_service: SchedulerData,
 ):
     def _toggle(*, is_disabled: bool) -> Response:
         return client.patch(
             f"/v2/dynamic_scheduler/services/{observed_service.node_uuid}/observation",
-            json=dict(is_disabled=is_disabled),
+            json={"is_disabled": is_disabled},
         )
 
     # trying to lock the service
@@ -170,6 +182,7 @@ async def test_update_service_observation(
     ],
 )
 async def test_409_response(
+    mock_apply_observation_cycle: None,
     mock_scheduler_service_shutdown_tasks: None,
     client: TestClient,
     observed_service: SchedulerData,

@@ -50,20 +50,20 @@ environment:
 
     assert isinstance(compose_as_list_str["environment"], list)
 
-    assert docker_compose_specs._environment_section.parse(
+    assert docker_compose_specs._EnvironmentSection.parse(
         compose_as_dict["environment"]
-    ) == docker_compose_specs._environment_section.parse(
+    ) == docker_compose_specs._EnvironmentSection.parse(
         compose_as_list_str["environment"]
     )
 
     assert (
-        docker_compose_specs._environment_section.parse(
+        docker_compose_specs._EnvironmentSection.parse(
             compose_as_list_str["environment"]
         )
         == compose_as_dict["environment"]
     )
 
-    envs = docker_compose_specs._environment_section.export_as_list(
+    envs = docker_compose_specs._EnvironmentSection.export_as_list(
         compose_as_dict["environment"]
     )
     assert envs == compose_as_list_str["environment"]
@@ -96,7 +96,7 @@ environment:
                     DEFAULT_SINGLE_SERVICE_NAME: {
                         "image": "simcore/services/dynamic/jupyter-math:2.0.5",
                         "resources": {
-                            "CPU": {"limit": 1.1, "reservation": 4.0},
+                            "CPU": {"limit": "1.1", "reservation": "4.0"},
                             "RAM": {"limit": 17179869184, "reservation": 536870912},
                         },
                     },
@@ -133,7 +133,7 @@ async def test_inject_resource_limits_and_reservations(
             assert spec["deploy"]["resources"]["limits"]["memory"] == f"{memory.limit}"
 
             assert (
-                f"{CPU_RESOURCE_LIMIT_KEY}={int(cpu.limit*10**9)}"
+                f"{CPU_RESOURCE_LIMIT_KEY}={int(float(cpu.limit)*10**9)}"
                 in spec["environment"]
             )
             assert f"{MEM_RESOURCE_LIMIT_KEY}={memory.limit}" in spec["environment"]

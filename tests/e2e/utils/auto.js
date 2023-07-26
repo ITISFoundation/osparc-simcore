@@ -159,7 +159,7 @@ async function dashboardOpenFirstTemplate(page, templateName) {
   if (children.length) {
     const firstChildId = '[osparc-test-id="' + children[0] + '"]';
     await utils.waitAndClick(page, firstChildId);
-    await utils.waitAndClick(page, '[osparc-test-id="openResource"]');
+    await __openResource(page);
     return true;
   }
   console.log("Creating New Study from template: no template found");
@@ -192,11 +192,23 @@ async function dashboardOpenService(page, serviceName) {
     }
     const firstChildId = '[osparc-test-id="' + children[idx] + '"]';
     await utils.waitAndClick(page, firstChildId);
-    await utils.waitAndClick(page, '[osparc-test-id="openResource"]');
+    await __openResource(page);
     return true;
   }
   console.log("Creating New Study from service: no service found");
   return false;
+}
+
+async function __openResource(page) {
+  await utils.waitAndClick(page, '[osparc-test-id="openResource"]');
+
+  // Under some circumstances, users might need to also go through the resource selection window
+  const id = '[osparc-test-id=openWithResources]';
+  await page.waitForSelector(id, {
+    timeout: 5000
+  })
+    .then(() => page.click(id))
+    .catch(() => console.log("Accept Cookies button not found"));
 }
 
 async function __filterStudiesByText(page, studyName) {

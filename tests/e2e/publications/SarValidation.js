@@ -1,4 +1,4 @@
-// node SarValidation.js [url_prefix] [template_uuid] [start_timeout] [--demo]
+// node SarValidation.js [url_prefix] [template_uuid] [--start_timeout timeout] [--demo]
 
 // master https://osparc-master.speag.com/study/2b7b88be-ea51-11ed-ade4-02420a000d13
 // prod https://osparc.io/study/ff72c36a-df81-11ed-9c9e-02420a0b755a

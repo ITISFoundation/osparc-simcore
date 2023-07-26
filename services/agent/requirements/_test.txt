@@ -10,7 +10,7 @@ aioboto3==9.6.0
     #   -r requirements/_test.in
 aiobotocore==2.3.0
     # via aioboto3
-aiohttp==3.8.3
+aiohttp==3.8.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

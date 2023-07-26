@@ -1,6 +1,6 @@
 import logging
 from copy import deepcopy
-from typing import Any, Optional, TypedDict
+from typing import Any, Final, TypedDict
 
 from fastapi.applications import FastAPI
 from models_library.docker import DockerGenericTag, StandardSimcoreDockerLabels
@@ -29,8 +29,9 @@ from settings_library.docker_registry import RegistrySettings
 from .docker_compose_egress_config import add_egress_configuration
 
 EnvKeyEqValueList = list[str]
-EnvVarsMap = dict[str, Optional[str]]
+EnvVarsMap = dict[str, str | None]
 
+_COMPOSE_MAJOR_VERSION: Final[int] = 3
 
 logger = logging.getLogger(__name__)
 
@@ -51,12 +52,14 @@ def _update_networking_configuration(
     networks = service_spec.get("networks", {})
     # used by the proxy to contact the service http entrypoint
     networks[dynamic_sidecar_network_name] = {
-        "external": {"name": dynamic_sidecar_network_name},
+        "name": dynamic_sidecar_network_name,
+        "external": True,
         "driver": "overlay",
     }
     # used by egress proxies to gain access to the internet
     networks[swarm_network_name] = {
-        "external": {"name": swarm_network_name},
+        "name": swarm_network_name,
+        "external": True,
         "driver": "overlay",
     }
     service_spec["networks"] = networks
@@ -68,7 +71,7 @@ def _update_networking_configuration(
     target_container_spec["networks"] = container_networks
 
 
-class _environment_section:
+class _EnvironmentSection:
     """the 'environment' field in a docker-compose can be either a dict (EnvVarsMap)
     or a list of "key=value" (EnvKeyEqValueList)
 
@@ -107,7 +110,7 @@ def _update_paths_mappings(
     for service_name in service_spec["services"]:
         service_content = service_spec["services"][service_name]
 
-        env_vars: EnvVarsMap = _environment_section.parse(
+        env_vars: EnvVarsMap = _EnvironmentSection.parse(
             service_content.get("environment", {})
         )
         env_vars["DY_SIDECAR_PATH_INPUTS"] = f"{path_mappings.inputs_path}"
@@ -116,7 +119,7 @@ def _update_paths_mappings(
             "DY_SIDECAR_STATE_PATHS"
         ] = f"{json_dumps( { f'{p}' for p in path_mappings.state_paths } )}"
 
-        service_content["environment"] = _environment_section.export_as_list(env_vars)
+        service_content["environment"] = _EnvironmentSection.export_as_list(env_vars)
 
 
 class _AssignedLimits(TypedDict):
@@ -144,7 +147,7 @@ def _update_resource_limits_and_reservations(
         mem_limits: str = "0"
         _NANO = 10**9  #  cpu's in nano-cpu's
 
-        if docker_compose_major_version >= 3:
+        if docker_compose_major_version >= _COMPOSE_MAJOR_VERSION:
             # compos spec version 3 and beyond
             deploy: dict[str, Any] = spec.get("deploy", {})
             resources_v3: dict[str, Any] = deploy.get("resources", {})
@@ -152,10 +155,10 @@ def _update_resource_limits_and_reservations(
             reservations: dict[str, Any] = resources_v3.get("reservations", {})
 
             # assign limits
-            limits["cpus"] = float(cpu.limit)
+            limits["cpus"] = f"{cpu.limit}"
             limits["memory"] = f"{memory.limit}"
             # assing reservations
-            reservations["cpus"] = float(cpu.reservation)
+            reservations["cpus"] = f"{cpu.reservation}"
             reservations["memory"] = f"{memory.reservation}"
 
             resources_v3["reservations"] = reservations
@@ -163,7 +166,7 @@ def _update_resource_limits_and_reservations(
             deploy["resources"] = resources_v3
             spec["deploy"] = deploy
 
-            nano_cpu_limits = limits["cpus"]
+            nano_cpu_limits = float(cpu.limit)
             mem_limits = limits["memory"]
         else:
             # compos spec version 2

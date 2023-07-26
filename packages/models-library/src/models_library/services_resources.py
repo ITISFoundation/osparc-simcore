@@ -134,7 +134,8 @@ class ServiceResourcesDictHelpers:
     def create_jsonable(
         service_resources: ServiceResourcesDict,
     ) -> dict[DockerGenericTag, Any]:
-        return jsonable_encoder(service_resources)
+        output: dict[DockerGenericTag, Any] = jsonable_encoder(service_resources)
+        return output
 
     class Config:
         schema_extra = {

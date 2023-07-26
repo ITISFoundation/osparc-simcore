@@ -6,7 +6,7 @@ import asyncio
 import json
 import logging
 from collections.abc import Awaitable, Callable
-from typing import Union
+from typing import Any, Union
 
 from aiohttp import web
 from aiohttp.web_request import Request
@@ -16,7 +16,6 @@ from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ..utils import is_production_environ
 from .rest_models import ErrorItemType, ErrorType, LogMessageType
 from .rest_responses import (
-    Any,
     create_data_response,
     create_error_response,
     is_enveloped_from_map,
@@ -34,7 +33,7 @@ _logger = logging.getLogger(__name__)
 
 def is_api_request(request: web.Request, api_version: str) -> bool:
     base_path = "/" + api_version.lstrip("/")
-    return request.path.startswith(base_path)
+    return bool(request.path.startswith(base_path))
 
 
 def error_middleware_factory(
@@ -138,7 +137,7 @@ def error_middleware_factory(
     # adds identifier (mostly for debugging)
     _middleware_handler.__middleware_name__ = f"{__name__}.error_{api_version}"
 
-    return _middleware_handler
+    return _middleware_handler  # type: ignore[no-any-return]
 
 
 _ResponseOrBodyData = Union[StreamResponse, Any]
@@ -164,7 +163,7 @@ def envelope_middleware_factory(api_version: str) -> MiddlewareFlexible:
             return resp
 
         # NOTE: the return values of this handler
-        resp: _ResponseOrBodyData = await handler(request)
+        resp = await handler(request)
 
         if isinstance(resp, web.FileResponse):
             return resp
@@ -181,7 +180,7 @@ def envelope_middleware_factory(api_version: str) -> MiddlewareFlexible:
     # adds identifier (mostly for debugging)
     _middleware_handler.__middleware_name__ = f"{__name__}.envelope_{api_version}"
 
-    return _middleware_handler
+    return _middleware_handler  # type: ignore[no-any-return]
 
 
 def append_rest_middlewares(

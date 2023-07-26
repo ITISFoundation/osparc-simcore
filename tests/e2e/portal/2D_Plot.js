@@ -1,4 +1,4 @@
-// node 2D_Plot.js [url_prefix] [template_uuid] [start_timeout] [--demo]
+// node 2D_Plot.js [url_prefix] [template_uuid] [--start_timeout timeout] [--demo]
 
 const tutorialBase = require('../tutorials/tutorialBase');
 const utils = require('../utils/utils');

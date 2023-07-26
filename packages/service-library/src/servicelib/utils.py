@@ -103,7 +103,7 @@ async def logged_gather(
     :param log: passing the logger gives a chance to identify the origin of the gather call, defaults to current submodule's logger
     :return: list of tasks results and errors e.g. [1, 2, ValueError("task3 went wrong"), 33, "foo"]
     """
-
+    wrapped_tasks: tuple | list
     if max_concurrency > 0:
         semaphore = asyncio.Semaphore(max_concurrency)
 

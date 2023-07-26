@@ -1,4 +1,4 @@
-// node isolve-gpu.js [url] [user] [password] [--demo]
+// node isolve-gpu.js [url] [--user user] [--pass password] [--demo]
 
 // https://itisfoundation.github.io/osparc-manual-z43/#/Tutorials/GeneralTutorial
 

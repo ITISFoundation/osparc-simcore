@@ -116,6 +116,17 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       this.base(arguments, value);
     },
 
+    // overridden
+    _applySubtitleMD: function(value) {
+      this.base(arguments, value);
+
+      // highlight me
+      const email = osparc.auth.Data.getInstance().getEmail();
+      if (email === value) {
+        this.addState("selected");
+      }
+    },
+
     __applyAccessRights: function(value) {
       if (value === null) {
         return;

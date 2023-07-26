@@ -28,7 +28,7 @@ def _middleware_factory() -> Middleware:
             _logger.debug("Error serialized to client:%s", formatted_error)
             raise
 
-    return middleware_handler
+    return middleware_handler  # type: ignore[no-any-return]
 
 
 def setup_dev_error_logger(app: Application) -> None:
