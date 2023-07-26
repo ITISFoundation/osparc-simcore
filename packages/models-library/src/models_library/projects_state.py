@@ -21,6 +21,7 @@ class RunningState(str, Enum):
     PUBLISHED = "PUBLISHED"
     NOT_STARTED = "NOT_STARTED"
     PENDING = "PENDING"
+    WAITING_FOR_RESOURCES = "WAITING_FOR_RESOURCES"
     STARTED = "STARTED"
     RETRY = "RETRY"
     SUCCESS = "SUCCESS"
@@ -31,6 +32,7 @@ class RunningState(str, Enum):
         return self in (
             RunningState.PUBLISHED,
             RunningState.PENDING,
+            RunningState.WAITING_FOR_RESOURCES,
             RunningState.STARTED,
             RunningState.RETRY,
         )

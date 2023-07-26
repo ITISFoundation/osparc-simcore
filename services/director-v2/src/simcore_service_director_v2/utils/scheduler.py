@@ -7,6 +7,7 @@ from ..api.dependencies.database import RepoType
 SCHEDULED_STATES: set[RunningState] = {
     RunningState.PUBLISHED,
     RunningState.PENDING,
+    RunningState.WAITING_FOR_RESOURCES,
     RunningState.STARTED,
     RunningState.RETRY,
 }
@@ -14,11 +15,13 @@ SCHEDULED_STATES: set[RunningState] = {
 WAITING_FOR_START_STATES: set[RunningState] = {
     RunningState.PUBLISHED,
     RunningState.PENDING,
+    RunningState.WAITING_FOR_RESOURCES,
     RunningState.RETRY,
 }
 
 PROCESSING_STATES: set[RunningState] = {
     RunningState.PENDING,
+    RunningState.WAITING_FOR_RESOURCES,
     RunningState.STARTED,
 }
 
