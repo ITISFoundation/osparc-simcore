@@ -34,6 +34,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       check: "osparc.data.model.Wallet",
       init: null,
       nullable: false,
+      event: "changeWallet",
       apply: "__applyWallet"
     },
 
@@ -133,12 +134,14 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     },
 
     __applyWallet: function(wallet) {
-      const walletSelector = this.getChildControl("wallet-selector");
-      walletSelector.getSelectables().forEach(selectable => {
-        if (selectable.walletId === wallet.getWalletId()) {
-          walletSelector.setSelection([selectable]);
-        }
-      });
+      if (wallet) {
+        const walletSelector = this.getChildControl("wallet-selector");
+        walletSelector.getSelectables().forEach(selectable => {
+          if (selectable.walletId === wallet.getWalletId()) {
+            walletSelector.setSelection([selectable]);
+          }
+        });
+      }
     },
 
     __buildLayout: function() {
@@ -185,23 +188,30 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         }
       });
 
+      walletSelector.addListener("changeSelection", e => {
+        const selection = e.getData();
+        const found = store.getWallets().find(wallet => wallet.getWalletId() === parseInt(selection[0].walletId));
+        if (found) {
+          this.setWallet(found);
+        }
+      });
+
       return walletSelector;
     },
 
     __getCreditsLeftView: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
-      const store = osparc.store.Store.getInstance();
-      const currentWallet = store.getCurrentWallet();
-      const progressBar = new osparc.desktop.credits.CreditsIndicator(currentWallet);
+      const progressBar = new osparc.desktop.credits.CreditsIndicator();
+      this.bind("wallet", progressBar, "wallet");
       layout.add(progressBar);
 
       const creditsLabel = new qx.ui.basic.Label().set({
         font: "text-14"
       });
       layout.add(creditsLabel);
-      currentWallet.bind("credits", creditsLabel, "value", {
-        converter: val => "You have " + val + " credits left"
+      this.bind("wallet", creditsLabel, "value", {
+        converter: wallet => wallet ? "You have " + wallet.getCredits() + " credits left" : this.tr("Select Wallet")
       });
 
       return layout;
@@ -399,13 +409,10 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       const walletLabel = new qx.ui.basic.Label().set({
         font: "text-14"
       });
-      this.getChildControl("wallet-selector").bind("selection", walletLabel, "value", {
-        converter: selection => selection[0].getLabel()
+      this.bind("wallet", walletLabel, "value", {
+        converter: wallet => wallet ? wallet.getName() : this.tr("Select Wallet")
       });
-      this.bind("totalPrice", walletLabel, "value", {
-        converter: totalPrice => (totalPrice*0.077).toFixed(2) + " $"
-      });
-      layout.add(vatLabel, {
+      layout.add(walletLabel, {
         row,
         column: 1
       });
