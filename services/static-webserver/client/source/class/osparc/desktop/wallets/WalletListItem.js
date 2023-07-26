@@ -63,8 +63,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
 
     __applyCredits: function(credits) {
       const creditsIndicator = this.getChildControl("credits-indicator");
-      const val = osparc.desktop.credits.CreditsIndicator.convertCreditsToIndicatorValue(credits);
-      creditsIndicator.setCredits(val);
+      creditsIndicator.setCredits(credits);
 
       this.getChildControl("credits-label").set({
         value: credits + this.tr(" credits")

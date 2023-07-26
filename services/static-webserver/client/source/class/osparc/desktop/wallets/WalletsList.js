@@ -37,8 +37,16 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
       flex: 1
     });
 
+    const newWalletButton = this.__getCreateWalletSection();
+    newWalletButton.exclude();
+    this._add(newWalletButton);
     if (osparc.data.Permissions.getInstance().canDo("user.wallets.create")) {
-      this._add(this.__getCreateWalletSection());
+      // Only users that are managers of organizations can create wallets
+      const store = osparc.store.Store.getInstance();
+      store.getGroupsOrganizationsWithRights("write")
+        .then(orgs => {
+          newWalletButton.setVisibility(orgs && orgs.length ? "visible" : "excluded");
+        });
     }
 
     this.loadWallets();
