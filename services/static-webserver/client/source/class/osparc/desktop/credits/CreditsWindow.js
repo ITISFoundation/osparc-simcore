@@ -70,6 +70,7 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
     __buyCreditsPage: null,
     __transactionsPage: null,
     __usageOverviewPage: null,
+    __buyCredits: null,
     __transactions: null,
 
     __getWalletsPage: function() {
@@ -80,6 +81,13 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
       walletsView.set({
         margin: 10
       });
+      walletsView.addListener("buyCredits", e => {
+        this.openBuyCredits();
+        const {
+          walletId
+        } = e.getData();
+        this.__buyCredits.setSelectedWallet(walletId);
+      });
       page.add(walletsView);
       return page;
     },
@@ -88,7 +96,7 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
       const title = this.tr("Buy Credits");
       const iconSrc = "@FontAwesome5Solid/dollar-sign/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
-      const buyCredits = new osparc.desktop.credits.BuyCredits();
+      const buyCredits = this.__buyCredits = new osparc.desktop.credits.BuyCredits();
       buyCredits.set({
         margin: 10
       });

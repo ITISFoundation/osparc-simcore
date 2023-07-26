@@ -24,6 +24,10 @@ qx.Class.define("osparc.desktop.wallets.WalletsView", {
     this.__buildLayout();
   },
 
+  events: {
+    "buyCredits": "qx.event.type.Data"
+  },
+
   members: {
     __walletsList: null,
     __walletDetails: null,
@@ -43,6 +47,8 @@ qx.Class.define("osparc.desktop.wallets.WalletsView", {
         this.setSelection([walletsPage]);
         walletsPage.loadWallets();
       });
+
+      walletsPage.addListener("buyCredits", e => this.fireDataEvent("buyCredits", e.getData()));
     },
 
     openWalletDetails: function(walletId) {

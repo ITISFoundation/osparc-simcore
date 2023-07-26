@@ -53,7 +53,8 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
   },
 
   events: {
-    "walletSelected": "qx.event.type.Data"
+    "walletSelected": "qx.event.type.Data",
+    "buyCredits": "qx.event.type.Data"
   },
 
   properties: {
@@ -154,10 +155,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
             this.__openEditWallet(walletId);
           });
 
-          item.addListener("deleteWallet", e => {
-            const walletId = e.getData();
-            this.__deleteWallet(walletId);
-          });
+          item.addListener("buyCredits", e => this.fireDataEvent("buyCredits", e.getData()));
         }
       });
 

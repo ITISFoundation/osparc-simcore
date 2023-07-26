@@ -69,7 +69,6 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
 
   members: {
     __creditPrice: null,
-    __walletSelector: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -126,6 +125,15 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       return control || this.base(arguments, id);
     },
 
+    setSelectedWallet: function(walletId) {
+      const walletSelector = this.getChildControl("wallet-selector");
+      walletSelector.getSelectables().forEach(selectable => {
+        if (selectable.walletId === walletId) {
+          walletSelector.setSelection([selectable]);
+        }
+      });
+    },
+
     __buildLayout: function() {
       this.getChildControl("wallet-selector");
       this.getChildControl("credits-left-view");
@@ -158,7 +166,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     },
 
     __getWalletSelector: function() {
-      const walletSelector = this.__walletSelector = new qx.ui.form.SelectBox();
+      const walletSelector = new qx.ui.form.SelectBox();
 
       const store = osparc.store.Store.getInstance();
       store.getWallets().forEach(wallet => {
@@ -364,6 +372,29 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         font: "text-13"
       });
       this.bind("totalPrice", vatLabel, "value", {
+        converter: totalPrice => (totalPrice*0.077).toFixed(2) + " $"
+      });
+      layout.add(vatLabel, {
+        row,
+        column: 1
+      });
+      row++;
+
+      const walletTitle = new qx.ui.basic.Label().set({
+        value: "Wallet",
+        font: "text-14"
+      });
+      layout.add(walletTitle, {
+        row,
+        column: 0
+      });
+      const walletLabel = new qx.ui.basic.Label().set({
+        font: "text-14"
+      });
+      this.getChildControl("wallet-selector").bind("selection", walletLabel, "value", {
+        converter: selection => selection[0].getLabel()
+      });
+      this.bind("totalPrice", walletLabel, "value", {
         converter: totalPrice => (totalPrice*0.077).toFixed(2) + " $"
       });
       layout.add(vatLabel, {

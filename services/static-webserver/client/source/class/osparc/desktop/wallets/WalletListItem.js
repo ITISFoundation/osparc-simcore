@@ -27,7 +27,8 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
   },
 
   events: {
-    "openEditWallet": "qx.event.type.Data"
+    "openEditWallet": "qx.event.type.Data",
+    "buyCredits": "qx.event.type.Data"
   },
 
   members: {
@@ -61,8 +62,12 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
             label: this.tr("Buy Credits"),
             icon: "@FontAwesome5Solid/dollar-sign/16",
             maxHeight: 30,
+            alignY: "middle",
             visibility: "hidden"
           });
+          control.addListener("execute", () => this.fireDataEvent("buyCredits", {
+            walletId: this.getKey()
+          }), this);
           this._add(control, {
             row: 0,
             column: 5,
