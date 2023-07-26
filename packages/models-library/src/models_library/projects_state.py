@@ -3,7 +3,7 @@
 """
 
 from enum import Enum, unique
-from typing import Optional
+from typing import Any, ClassVar
 
 from pydantic import BaseModel, Extra, Field, validator
 
@@ -54,7 +54,7 @@ class ProjectStatus(str, Enum):
 
 class ProjectLocked(BaseModel):
     value: bool = Field(..., description="True if the project is locked")
-    owner: Optional[Owner] = Field(
+    owner: Owner | None = Field(
         default=None, description="If locked, the user that owns the lock"
     )
     status: ProjectStatus = Field(..., description="The status of the project")
@@ -62,7 +62,7 @@ class ProjectLocked(BaseModel):
     class Config:
         extra = Extra.forbid
         use_enum_values = True
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {"value": False, "status": ProjectStatus.CLOSED},
                 {
@@ -81,20 +81,19 @@ class ProjectLocked(BaseModel):
     @classmethod
     def check_not_null(cls, v, values):
         if values["value"] is True and v is None:
-            raise ValueError("value cannot be None when project is locked")
+            msg = "value cannot be None when project is locked"
+            raise ValueError(msg)
         return v
 
     @validator("status", always=True)
     @classmethod
     def check_status_compatible(cls, v, values):
         if values["value"] is False and v not in ["CLOSED", "OPENED"]:
-            raise ValueError(
-                f"status is set to {v} and lock is set to {values['value']}!"
-            )
+            msg = f"status is set to {v} and lock is set to {values['value']}!"
+            raise ValueError(msg)
         if values["value"] is True and v == "CLOSED":
-            raise ValueError(
-                f"status is set to {v} and lock is set to {values['value']}!"
-            )
+            msg = f"status is set to {v} and lock is set to {values['value']}!"
+            raise ValueError(msg)
         return v
 
 
