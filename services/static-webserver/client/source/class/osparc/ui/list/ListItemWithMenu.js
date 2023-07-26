@@ -22,7 +22,7 @@ qx.Class.define("osparc.ui.list.ListItemWithMenu", {
   properties: {
     accessRights: {
       check: "Object",
-      apply: "__applyAccessRights",
+      apply: "_applyAccessRights",
       event: "changeAccessRights",
       nullable: true
     },
@@ -81,7 +81,7 @@ qx.Class.define("osparc.ui.list.ListItemWithMenu", {
       return control || this.base(arguments, id);
     },
 
-    __applyAccessRights: function(value) {
+    _applyAccessRights: function(value) {
       const optionsMenu = this.getChildControl("options");
       optionsMenu.hide();
 

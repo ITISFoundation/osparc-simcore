@@ -56,6 +56,19 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
           control = new qx.ui.basic.Label();
           this.getChildControl("credits-layout").addAt(control, 1);
           break;
+        case "buy-credits-button":
+          control = new qx.ui.form.Button().set({
+            label: this.tr("Buy Credits"),
+            icon: "@FontAwesome5Solid/dollar-sign/16",
+            maxHeight: 30,
+            visibility: "hidden"
+          });
+          this._add(control, {
+            row: 0,
+            column: 5,
+            rowSpan: 2
+          });
+          break;
       }
 
       return control || this.base(arguments, id);
@@ -67,6 +80,15 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
 
       this.getChildControl("credits-label").set({
         value: credits + this.tr(" credits")
+      });
+    },
+
+    // overridden
+    _applyAccessRights: function(accessRights) {
+      this.base(arguments, accessRights);
+
+      this.getChildControl("buy-credits-button").set({
+        visibility: accessRights["write"] ? "visible" : "hidden"
       });
     },
 
