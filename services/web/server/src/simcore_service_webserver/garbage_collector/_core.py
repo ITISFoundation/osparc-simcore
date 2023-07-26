@@ -18,38 +18,38 @@ from servicelib.utils import logged_gather
 from simcore_postgres_database.errors import DatabaseError
 from simcore_postgres_database.models.users import UserRole
 
-from .director_v2 import api
-from .director_v2.exceptions import (
+from ..director_v2 import api
+from ..director_v2.exceptions import (
     DirectorServiceError,
     ServiceWaitingForManualIntervention,
 )
-from .garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
-from .garbage_collector_utils import get_new_project_owner_gid, replace_current_owner
-from .projects.db import ProjectDBAPI
-from .projects.exceptions import (
+from ..projects.db import ProjectDBAPI
+from ..projects.exceptions import (
     ProjectDeleteError,
     ProjectLockError,
     ProjectNotFoundError,
 )
-from .projects.projects_api import (
+from ..projects.projects_api import (
     get_project_for_user,
     get_workbench_node_ids_from_project_uuid,
     is_node_id_present_in_any_project_workbench,
     remove_project_dynamic_services,
     submit_delete_project_task,
 )
-from .redis import get_redis_lock_manager_client
-from .resource_manager.registry import RedisResourceRegistry, get_registry
-from .users import exceptions
-from .users.api import (
+from ..redis import get_redis_lock_manager_client
+from ..resource_manager.registry import RedisResourceRegistry, get_registry
+from ..users import exceptions
+from ..users.api import (
     delete_user_without_projects,
     get_guest_user_ids_and_names,
     get_user,
     get_user_role,
 )
-from .users.exceptions import UserNotFoundError
+from ..users.exceptions import UserNotFoundError
+from ._utils import get_new_project_owner_gid, replace_current_owner
+from .settings import GUEST_USER_RC_LOCK_FORMAT
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 async def collect_garbage(app: web.Application):
@@ -76,20 +76,20 @@ async def collect_garbage(app: web.Application):
     registry: RedisResourceRegistry = get_registry(app)
 
     with log_context(
-        logger, logging.INFO, "Step 1: Removes disconnected user resources"
+        _logger, logging.INFO, "Step 1: Removes disconnected user resources"
     ):
         # Triggers signal to close possible pending opened projects
         # Removes disconnected GUEST users after they finished their sessions
         await remove_disconnected_user_resources(registry, app)
 
     with log_context(
-        logger, logging.INFO, "Step 2: Removes users manually marked for removal"
+        _logger, logging.INFO, "Step 2: Removes users manually marked for removal"
     ):
         # if a user was manually marked as GUEST it needs to be
         # removed together with all the associated projects
         await remove_users_manually_marked_as_guests(registry, app)
 
-    with log_context(logger, logging.INFO, "Step 3: Removes orphaned services"):
+    with log_context(_logger, logging.INFO, "Step 3: Removes orphaned services"):
         # For various reasons, some services remain pending after
         # the projects are closed or the user was disconencted.
         # This will close and remove all these services from
@@ -130,7 +130,7 @@ async def remove_disconnected_user_resources(
     # the websocket ids are referred to as resources (but NOT the only resource)
 
     alive_keys, dead_keys = await registry.get_all_resource_keys()
-    logger.debug("potential dead keys: %s", dead_keys)
+    _logger.debug("potential dead keys: %s", dead_keys)
 
     # clean up all resources of expired keys
     for dead_key in dead_keys:
@@ -139,7 +139,7 @@ async def remove_disconnected_user_resources(
         if await lock_manager.lock(
             GUEST_USER_RC_LOCK_FORMAT.format(user_id=user_id)
         ).locked():
-            logger.info(
+            _logger.info(
                 "Skipping garbage-collecting %s since it is still locked",
                 f"{user_id=}",
             )
@@ -152,7 +152,7 @@ async def remove_disconnected_user_resources(
             continue
 
         # (1,2) CAREFULLY releasing every resource acquired by the expired key
-        logger.info(
+        _logger.info(
             "%s expired. Checking resources to cleanup",
             f"{dead_key=}",
         )
@@ -187,7 +187,7 @@ async def remove_disconnected_user_resources(
                 keys_to_update.extend(other_keys_with_this_resource)
 
                 # (1) releasing acquired resources
-                logger.info(
+                _logger.info(
                     "(1) Releasing resource %s:%s acquired by expired %s",
                     f"{resource_name=}",
                     f"{resource_value=}",
@@ -210,7 +210,7 @@ async def remove_disconnected_user_resources(
                         )
 
                     except (ProjectNotFoundError, ProjectLockError) as err:
-                        logger.warning(
+                        _logger.warning(
                             (
                                 "Could not remove project interactive services user_id=%s "
                                 "project_uuid=%s. Check the logs above for details [%s]"
@@ -229,7 +229,7 @@ async def remove_disconnected_user_resources(
                 )
 
             # (2) remove resource field in collected keys since (1) is completed
-            logger.info(
+            _logger.info(
                 "(2) Removing field for released resource %s:%s from registry keys: %s",
                 f"{resource_name=}",
                 f"{resource_value=}",
@@ -270,7 +270,7 @@ async def remove_users_manually_marked_as_guests(
         # Prevents removing GUEST users that were automatically (NOT manually) created
         # from the front-end
         if guest_user_id in skip_users:
-            logger.debug(
+            _logger.debug(
                 "Skipping garbage-collecting GUEST user with %s since it still has resources in use",
                 f"{guest_user_id=}",
             )
@@ -286,7 +286,7 @@ async def remove_users_manually_marked_as_guests(
         ).locked()
 
         if lock_during_construction or lock_during_initialization:
-            logger.debug(
+            _logger.debug(
                 "Skipping garbage-collecting GUEST user with %s and %s since it is still locked",
                 f"{guest_user_id=}",
                 f"{guest_user_name=}",
@@ -294,7 +294,7 @@ async def remove_users_manually_marked_as_guests(
             continue
 
         # Removing
-        logger.info(
+        _logger.info(
             "Removing user %s and %s with all its resources because it was MARKED as GUEST",
             f"{guest_user_id=}",
             f"{guest_user_name=}",
@@ -305,7 +305,7 @@ async def remove_users_manually_marked_as_guests(
         )
 
 
-@log_decorator(logger, log_traceback=True)
+@log_decorator(_logger, log_traceback=True)
 async def _remove_single_service_if_orphan(
     app: web.Application,
     interactive_service: dict[str, Any],
@@ -321,7 +321,7 @@ async def _remove_single_service_if_orphan(
     # if the node does not exist in any project in the db
     # they can be safely remove it without saving any state
     if not await is_node_id_present_in_any_project_workbench(app, service_uuid):
-        logger.info(
+        _logger.info(
             "Will remove orphaned service without saving state since "
             "this service is not part of any project %s",
             f"{service_host=}",
@@ -334,7 +334,7 @@ async def _remove_single_service_if_orphan(
                 save_state=False,
             )
         except DirectorServiceError as err:
-            logger.warning("Error while stopping service: %s", err)
+            _logger.warning("Error while stopping service: %s", err)
         return
 
     # if the node is not present in any of the currently opened project it shall be closed
@@ -356,14 +356,14 @@ async def _remove_single_service_if_orphan(
             # the functionality is in the old service which is frozen.
             #
             # a service state might be one of [pending, pulling, starting, running, complete, failed]
-            logger.warning(
+            _logger.warning(
                 "Skipping %s since service state is %s",
                 f"{service_host=}",
                 service_state,
             )
             return
 
-        logger.info("Will remove service %s", service_host)
+        _logger.info("Will remove service %s", service_host)
         try:
             # let's be conservative here.
             # 1. opened project disappeared from redis?
@@ -395,7 +395,7 @@ async def _remove_single_service_if_orphan(
                 )
 
         except DirectorServiceError as err:
-            logger.warning("Error while stopping service: %s", err)
+            _logger.warning("Error while stopping service: %s", err)
 
 
 async def remove_orphaned_services(
@@ -410,7 +410,7 @@ async def remove_orphaned_services(
 
     If the service is a dynamic service
     """
-    logger.debug("Starting orphaned services removal...")
+    _logger.debug("Starting orphaned services removal...")
 
     currently_opened_projects_node_ids: dict[str, str] = {}
     alive_keys, _ = await registry.get_all_resource_keys()
@@ -430,9 +430,9 @@ async def remove_orphaned_services(
     try:
         running_interactive_services = await api.list_dynamic_services(app)
     except api.DirectorServiceError:
-        logger.debug("Could not fetch running_interactive_services")
+        _logger.debug("Could not fetch running_interactive_services")
 
-    logger.info(
+    _logger.info(
         "Currently running services %s",
         [
             (x.get("service_uuid", ""), x.get("service_host", ""))
@@ -453,7 +453,7 @@ async def remove_orphaned_services(
     ]
     await logged_gather(*tasks, reraise=False)
 
-    logger.debug("Finished orphaned services removal")
+    _logger.debug("Finished orphaned services removal")
 
 
 async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> None:
@@ -473,7 +473,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
     try:
         project_owner: dict = await get_user(app=app, user_id=user_id)
     except exceptions.UserNotFoundError:
-        logger.warning(
+        _logger.warning(
             "Could not recover user data for user '%s', stopping removal of projects!",
             f"{user_id=}",
         )
@@ -486,7 +486,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
         app
     ).list_projects_uuids(user_id=user_id)
 
-    logger.info(
+    _logger.info(
         "Removing or transferring projects of user with %s, %s: %s",
         f"{user_id=}",
         f"{project_owner=}",
@@ -503,7 +503,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
                 user_id=user_id,
             )
         except (web.HTTPNotFound, ProjectNotFoundError) as err:
-            logger.warning(
+            _logger.warning(
                 "Could not find project %s for user with %s to be removed: %s. Skipping.",
                 f"{project_uuid=}",
                 f"{user_id=}",
@@ -524,7 +524,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
         if new_project_owner_gid is None:
             # when no new owner is found just remove the project
             try:
-                logger.debug(
+                _logger.debug(
                     "Removing or transferring ownership of project with %s from user with %s",
                     f"{project_uuid=}",
                     f"{user_id=}",
@@ -546,7 +546,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
 
         else:
             # Try to change the project owner and remove access rights from the current owner
-            logger.debug(
+            _logger.debug(
                 "Transferring ownership of project %s from user %s to %s.",
                 "This project cannot be removed since it is shared with other users"
                 f"{project_uuid=}",
@@ -578,13 +578,13 @@ async def remove_guest_user_with_all_its_resources(
             # priviledge users
             return
 
-        logger.debug(
+        _logger.debug(
             "Deleting all projects of user with %s because it is a GUEST",
             f"{user_id=}",
         )
         await _delete_all_projects_for_user(app=app, user_id=user_id)
 
-        logger.debug(
+        _logger.debug(
             "Deleting user %s because it is a GUEST",
             f"{user_id=}",
         )
@@ -597,7 +597,7 @@ async def remove_guest_user_with_all_its_resources(
         UserNotFoundError,
         ProjectDeleteError,
     ) as error:
-        logger.warning(
+        _logger.warning(
             "Failed to delete guest user %s and its resources: %s",
             f"{user_id=}",
             f"{error}",

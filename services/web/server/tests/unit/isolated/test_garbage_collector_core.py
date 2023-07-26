@@ -10,13 +10,13 @@ from aiohttp import ClientSession, web
 from aioresponses import aioresponses as AioResponsesMock
 from faker import Faker
 from pytest_mock import MockerFixture
-from simcore_service_webserver.garbage_collector_core import (
+from simcore_service_webserver.garbage_collector._core import (
     _remove_single_service_if_orphan,
     remove_orphaned_services,
 )
 from yarl import URL
 
-MODULE_GC_CORE: Final[str] = "simcore_service_webserver.garbage_collector_core"
+MODULE_GC_CORE: Final[str] = "simcore_service_webserver.garbage_collector._core"
 
 
 @pytest.fixture
@@ -93,7 +93,6 @@ async def test_remove_single_service_if_orphan_service_is_waiting_manual_interve
     mocker: MockerFixture,
     aioresponses_mocker: AioResponsesMock,
 ):
-
     mocker.patch(
         f"{MODULE_GC_CORE}.is_node_id_present_in_any_project_workbench",
         autospec=True,
