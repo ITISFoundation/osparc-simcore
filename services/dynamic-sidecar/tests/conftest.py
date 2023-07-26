@@ -120,7 +120,7 @@ def node_id(faker: Faker) -> NodeID:
 
 @pytest.fixture
 def run_id() -> RunID:
-    return RunID.create_run_id()
+    return RunID.create()
 
 
 @pytest.fixture

@@ -26,7 +26,7 @@ def volume_name() -> str:
 
 @pytest.fixture
 def run_id() -> RunID:
-    return RunID.create_run_id()
+    return RunID.create()
 
 
 @pytest.fixture

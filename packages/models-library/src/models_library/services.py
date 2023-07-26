@@ -130,7 +130,7 @@ class RunID(str):
     __slots__ = ()
 
     @classmethod
-    def create_run_id(cls) -> "RunID":
+    def create(cls) -> "RunID":
         # NOTE: there was a legacy version of this RunID
         # legacy version:
         #   '0ac3ed64-665b-42d2-95f7-e59e0db34242'

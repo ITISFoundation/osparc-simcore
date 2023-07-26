@@ -70,7 +70,7 @@ def node_uuid(faker: Faker) -> str:
 
 @pytest.fixture
 def run_id() -> RunID:
-    return RunID.create_run_id()
+    return RunID.create()
 
 
 @pytest.fixture

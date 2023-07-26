@@ -367,7 +367,7 @@ async def test_regression_io_log_redirect_cb(
         monkeypatch.setenv(mock_empty_str, "")
 
     mounted_volumes = MountedVolumes(
-        run_id=RunID.create_run_id(),
+        run_id=RunID.create(),
         node_id=faker.uuid4(cast_to=None),
         inputs_path=Path("/"),
         outputs_path=Path("/"),
