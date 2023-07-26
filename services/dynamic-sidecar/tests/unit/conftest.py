@@ -4,7 +4,7 @@
 
 import asyncio
 import logging
-from typing import AsyncIterable, AsyncIterator
+from collections.abc import AsyncIterable, AsyncIterator
 from unittest.mock import AsyncMock
 
 import pytest
@@ -108,7 +108,8 @@ async def ensure_external_volumes(
     volume_labels_source = [
         app_state.mounted_volumes.volume_name_inputs,
         app_state.mounted_volumes.volume_name_outputs,
-    ] + list(app_state.mounted_volumes.volume_name_state_paths())
+        *list(app_state.mounted_volumes.volume_name_state_paths()),
+    ]
 
     async with docker_client() as docker:
         volumes = await asyncio.gather(
@@ -125,30 +126,6 @@ async def ensure_external_volumes(
             ]
         )
 
-        #
-        #
-        # docker volume ls --format "{{.Name}} {{.Labels}}" | grep run_id | awk '{print $1}')
-        #
-        #
-        # Example
-        #   {
-        #     "CreatedAt": "2022-06-23T03:22:08+02:00",
-        #     "Driver": "local",
-        #     "Labels": {
-        #         "run_id": "1689771013",
-        #         "source": "dy-sidecar_e3e70682-c209-4cac-a29f-6fbed82c07cd_data_dir_2"
-        #     },
-        #     "Mountpoint": "/var/lib/docker/volumes/22bfd79a50eb9097d45cc946736cb66f3670a2fadccb62a77ffbe5e1d88f0034/_data",
-        #     "Name": "22bfd79a50eb9097d45cc946736cb66f3670a2fadccb62a77ffbe5e1d88f0034",
-        #     "Options": null,
-        #     "Scope": "local",
-        #     "CreatedTime": 1655947328000,
-        #     "Containers": {}
-        #   }
-        #
-        # CLEAN:
-        #    docker volume rm $(docker volume ls --format "{{.Name}} {{.Labels}}" | grep run_id | awk '{print $1}')
-
         yield tuple(volumes)
 
         @retry(
@@ -158,7 +135,7 @@ async def ensure_external_volumes(
             after=after_log(logger, logging.WARNING),
         )
         async def _delete(volume):
-            # Ocasionally might raise because volumes are mount to closing containers
+            # Occasionally might raise because volumes are mounted to closing containers
             await volume.delete()
 
         deleted = await asyncio.gather(
