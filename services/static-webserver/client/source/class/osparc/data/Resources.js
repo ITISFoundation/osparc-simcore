@@ -1116,6 +1116,18 @@ qx.Class.define("osparc.data.Resources", {
               description: "Organization wide Wallet",
               accessRights: {
                 delete: false,
+                write: true,
+                read: true
+              },
+              credits: {
+                left: 100
+              }
+            }, {
+              id: 3,
+              label: "Anotrher Wallet",
+              description: "Organization wide Wallet",
+              accessRights: {
+                delete: false,
                 write: false,
                 read: true
               },

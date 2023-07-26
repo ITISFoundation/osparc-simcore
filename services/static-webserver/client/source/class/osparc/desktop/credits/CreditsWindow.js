@@ -142,6 +142,10 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
       }
     },
 
+    openWallets: function() {
+      this.__openPage(this.__walletsPage);
+    },
+
     openBuyCredits: function() {
       this.__openPage(this.__buyCreditsPage);
     },
