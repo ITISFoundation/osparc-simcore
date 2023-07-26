@@ -427,7 +427,6 @@ class DaskClient:
             task_future: distributed.Future = await wrap_client_async_routine(
                 self.backend.client.get_dataset(name=job_id)
             )
-            _logger.debug("Dask task future status %s", task_future.status)
             # NOTE: It seems there is a bug in the pubsub system in dask
             # Event are more robust to connections/disconnections
             cancel_event = await distributed.Event(
