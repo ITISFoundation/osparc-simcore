@@ -53,7 +53,7 @@ from ..db.repositories.comp_pipelines import CompPipelinesRepository
 from ..db.repositories.comp_runs import CompRunsRepository
 from ..db.repositories.comp_tasks import CompTasksRepository
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @dataclass(kw_only=True)
@@ -90,7 +90,7 @@ class BaseCompScheduler(ABC):
         # ensure the pipeline exists and is populated with something
         dag = await self._get_pipeline_dag(project_id)
         if not dag:
-            logger.warning(
+            _logger.warning(
                 "project %s has no computational dag defined. not scheduled for a run.",
                 f"{project_id=}",
             )
@@ -153,7 +153,7 @@ class BaseCompScheduler(ABC):
                     iteration,
                 ), pipeline_params in self.scheduled_pipelines.items()
             ),
-            log=logger,
+            log=_logger,
             max_concurrency=40,
         )
 
@@ -163,7 +163,7 @@ class BaseCompScheduler(ABC):
             project_id
         )
         dag = pipeline_at_db.get_graph()
-        logger.debug("%s: current %s", f"{project_id=}", f"{dag=}")
+        _logger.debug("%s: current %s", f"{project_id=}", f"{dag=}")
         return dag
 
     async def _get_pipeline_tasks(
@@ -369,7 +369,7 @@ class BaseCompScheduler(ABC):
         marked_for_stopping: bool,
         metadata: MetadataDict,
     ) -> None:
-        logger.debug(
+        _logger.debug(
             "checking run of project [%s:%s] for user [%s]",
             f"{project_id=}",
             f"{iteration=}",
@@ -409,13 +409,13 @@ class BaseCompScheduler(ABC):
             if not dag.nodes() or pipeline_result in COMPLETED_STATES:
                 # there is nothing left, the run is completed, we're done here
                 self.scheduled_pipelines.pop((user_id, project_id, iteration), None)
-                logger.info(
+                _logger.info(
                     "pipeline %s scheduling completed with result %s",
                     f"{project_id=}",
                     f"{pipeline_result=}",
                 )
         except PipelineNotFoundError:
-            logger.warning(
+            _logger.warning(
                 "pipeline %s does not exist in comp_pipeline table, it will be removed from scheduler",
                 f"{project_id=}",
             )
@@ -424,7 +424,7 @@ class BaseCompScheduler(ABC):
             )
             self.scheduled_pipelines.pop((user_id, project_id, iteration), None)
         except InvalidPipelineError as exc:
-            logger.warning(
+            _logger.warning(
                 "pipeline %s appears to be misconfigured, it will be removed from scheduler. Please check pipeline:\n%s",
                 f"{project_id=}",
                 exc,
@@ -445,12 +445,7 @@ class BaseCompScheduler(ABC):
         comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
         await comp_tasks_repo.mark_project_published_tasks_as_aborted(project_id)
         # stop any remaining running task, these are already submitted
-        tasks_to_stop = [
-            t
-            for t in comp_tasks.values()
-            if t.state
-            in [RunningState.STARTED, RunningState.RETRY, RunningState.PENDING]
-        ]
+        tasks_to_stop = [t for t in comp_tasks.values() if t.state in PROCESSING_STATES]
         await self._stop_tasks(user_id, cluster_id, tasks_to_stop)
 
     async def _schedule_tasks_to_start(
@@ -512,7 +507,7 @@ class BaseCompScheduler(ABC):
         # Handling errors raised when _start_tasks(...)
         for r, t in zip(results, tasks_ready_to_start, strict=True):
             if isinstance(r, TaskSchedulingError):
-                logger.error(
+                _logger.error(
                     "Project '%s''s task '%s' could not be scheduled due to the following: %s",
                     r.project_id,
                     r.node_id,
@@ -532,7 +527,7 @@ class BaseCompScheduler(ABC):
                 ComputationalBackendNotConnectedError
                 | ComputationalSchedulerChangedError,
             ):
-                logger.error(
+                _logger.error(
                     "Issue with computational backend: %s. Tasks are set back "
                     "to PUBLISHED state until scheduler comes back!",
                     r,
@@ -549,7 +544,7 @@ class BaseCompScheduler(ABC):
                     ),
                 )
             elif isinstance(r, Exception):
-                logger.error(
+                _logger.error(
                     "Unexpected error for %s with %s on %s happened when scheduling %s:\n%s\n%s",
                     f"{user_id=}",
                     f"{project_id=}",
