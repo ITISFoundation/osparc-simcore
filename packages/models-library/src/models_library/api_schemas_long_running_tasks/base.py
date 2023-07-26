@@ -21,7 +21,7 @@ class TaskProgress(BaseModel):
     """
 
     message: ProgressMessage = Field(default="")
-    percent: ProgressPercent = Field(default=0.0)
+    percent: ProgressPercent = Field(default=ProgressPercent(0.0))
 
     @validate_arguments
     def update(

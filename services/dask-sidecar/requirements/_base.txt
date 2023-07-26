@@ -5,8 +5,17 @@
 #    pip-compile --output-file=requirements/_base.txt --strip-extras requirements/_base.in
 #
 aio-pika==9.1.2
-    # via -r requirements/../../../packages/service-library/requirements/_base.in
-aiobotocore==2.5.0
+    # via
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+aiobotocore==2.5.2
     # via s3fs
 aiodebug==2.3.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
@@ -18,7 +27,7 @@ aiofiles==23.1.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
-aiohttp==3.8.4
+aiohttp==3.8.5
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
@@ -39,6 +48,8 @@ aiormq==6.7.6
     # via aio-pika
 aiosignal==1.3.1
     # via aiohttp
+anyio==3.7.1
+    # via httpcore
 arrow==1.2.3
     # via
     #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/_base.in
@@ -49,23 +60,26 @@ async-timeout==4.0.2
     # via
     #   aiohttp
     #   redis
-attrs==21.4.0
+attrs==23.1.0
     # via
     #   aiohttp
     #   jsonschema
+    #   referencing
 blosc==1.11.1
     # via -r requirements/_base.in
 bokeh==2.4.3
     # via dask
-botocore==1.29.76
+botocore==1.29.161
     # via aiobotocore
-certifi==2023.5.7
-    # via requests
-charset-normalizer==3.1.0
+certifi==2023.7.22
+    # via
+    #   httpcore
+    #   requests
+charset-normalizer==3.2.0
     # via
     #   aiohttp
     #   requests
-click==8.1.3
+click==8.1.6
     # via
     #   dask
     #   dask-gateway
@@ -88,25 +102,32 @@ distributed==2023.3.2
     # via
     #   dask
     #   dask-gateway
-dnspython==2.3.0
+dnspython==2.4.0
     # via email-validator
 email-validator==2.0.0.post2
     # via pydantic
-frozenlist==1.3.3
+exceptiongroup==1.1.2
+    # via anyio
+frozenlist==1.4.0
     # via
     #   aiohttp
     #   aiosignal
-fsspec==2023.5.0
+fsspec==2023.6.0
     # via
     #   -r requirements/_base.in
     #   dask
     #   s3fs
+h11==0.14.0
+    # via httpcore
+httpcore==0.17.3
+    # via dnspython
 idna==3.4
     # via
+    #   anyio
     #   email-validator
     #   requests
     #   yarl
-importlib-metadata==6.6.0
+importlib-metadata==6.8.0
     # via dask
 jinja2==3.1.2
     # via
@@ -123,11 +144,13 @@ jinja2==3.1.2
     #   distributed
 jmespath==1.0.1
     # via botocore
-jsonschema==3.2.0
+jsonschema==4.18.4
     # via
     #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+jsonschema-specifications==2023.7.1
+    # via jsonschema
 locket==1.0.0
     # via
     #   distributed
@@ -136,7 +159,7 @@ lz4==4.3.2
     # via -r requirements/_base.in
 markdown-it-py==3.0.0
     # via rich
-markupsafe==2.1.2
+markupsafe==2.1.3
     # via jinja2
 mdurl==0.1.2
     # via markdown-it-py
@@ -146,7 +169,7 @@ multidict==6.0.4
     # via
     #   aiohttp
     #   yarl
-numpy==1.24.3
+numpy==1.25.1
     # via bokeh
 packaging==23.1
     # via
@@ -157,11 +180,11 @@ pamqp==3.2.1
     # via aiormq
 partd==1.4.0
     # via dask
-pillow==9.5.0
+pillow==10.0.0
     # via bokeh
 psutil==5.9.5
     # via distributed
-pydantic==1.10.8
+pydantic==1.10.11
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
@@ -181,10 +204,8 @@ pydantic==1.10.8
     #   -r requirements/_base.in
 pygments==2.15.1
     # via rich
-pyinstrument==4.4.0
+pyinstrument==4.5.1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-pyrsistent==0.19.3
-    # via jsonschema
 python-dateutil==2.8.2
     # via
     #   arrow
@@ -206,7 +227,7 @@ pyyaml==6.0.1
     #   dask
     #   dask-gateway
     #   distributed
-redis==4.5.5
+redis==4.6.0
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
@@ -217,21 +238,33 @@ redis==4.5.5
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
+referencing==0.29.3
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
+    #   jsonschema
+    #   jsonschema-specifications
 requests==2.31.0
     # via fsspec
 rich==13.4.2
     # via
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
-s3fs==2023.5.0
-    # via fsspec
-six==1.16.0
+rpds-py==0.9.2
     # via
     #   jsonschema
-    #   python-dateutil
+    #   referencing
+s3fs==2023.6.0
+    # via fsspec
+six==1.16.0
+    # via python-dateutil
+sniffio==1.3.0
+    # via
+    #   anyio
+    #   dnspython
+    #   httpcore
 sortedcontainers==2.4.0
     # via distributed
-tblib==1.7.0
+tblib==2.0.0
     # via distributed
 tenacity==8.2.2
     # via -r requirements/../../../packages/service-library/requirements/_base.in
@@ -251,7 +284,7 @@ typer==0.9.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
-typing-extensions==4.6.1
+typing-extensions==4.7.1
     # via
     #   aiodebug
     #   aiodocker
@@ -280,8 +313,5 @@ yarl==1.9.2
     #   aiormq
 zict==3.0.0
     # via distributed
-zipp==3.15.0
+zipp==3.16.2
     # via importlib-metadata
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools

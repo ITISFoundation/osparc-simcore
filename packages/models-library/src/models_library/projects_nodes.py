@@ -225,7 +225,7 @@ class Node(BaseModel):
     def convert_old_enum_name(cls, v) -> RunningState:
         if v == "FAILURE":
             return RunningState.FAILED
-        return v
+        return RunningState(v)
 
     @validator("state", pre=True)
     @classmethod

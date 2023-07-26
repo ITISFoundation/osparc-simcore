@@ -104,7 +104,6 @@ async def test_event_handler_observer_health_degraded(
     outputs_manager: OutputsManager,
     heart_beat_interval_s: PositiveFloat,
 ):
-
     observer_monitor = EventHandlerObserver(
         outputs_context=outputs_context,
         outputs_manager=outputs_manager,

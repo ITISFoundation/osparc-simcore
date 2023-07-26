@@ -5,7 +5,8 @@ import arrow
 from pydantic import BaseModel, Field, PositiveInt
 
 from .clusters import ClusterID
-from .projects_nodes import NodeID, NodeState
+from .projects_nodes import NodeState
+from .projects_nodes_io import NodeID
 from .projects_state import RunningState
 
 

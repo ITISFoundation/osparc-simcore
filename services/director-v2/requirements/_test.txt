@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-aio-pika==9.1.4
+aio-pika==9.1.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -13,7 +13,7 @@ aioboto3==11.2.0
     # via -r requirements/_test.in
 aiobotocore==2.5.0
     # via aioboto3
-aiohttp==3.8.4
+aiohttp==3.8.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -60,7 +60,7 @@ botocore==1.29.76
     #   aiobotocore
     #   boto3
     #   s3transfer
-certifi==2023.5.7
+certifi==2023.7.22
     # via
     #   -c requirements/_base.txt
     #   httpcore
@@ -74,7 +74,7 @@ charset-normalizer==3.2.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   requests
-click==8.1.3
+click==8.1.6
     # via
     #   -c requirements/_base.txt
     #   dask
@@ -112,7 +112,7 @@ exceptiongroup==1.1.2
     #   pytest
 execnet==2.0.2
     # via pytest-xdist
-faker==19.1.0
+faker==19.2.0
     # via -r requirements/_test.in
 flaky==3.7.0
     # via -r requirements/_test.in
@@ -121,7 +121,7 @@ frozenlist==1.4.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
-fsspec==2023.5.0
+fsspec==2023.6.0
     # via
     #   -c requirements/_base.txt
     #   dask
@@ -151,7 +151,7 @@ idna==3.4
     #   httpx
     #   requests
     #   yarl
-importlib-metadata==6.6.0
+importlib-metadata==6.8.0
     # via
     #   -c requirements/_base.txt
     #   dask
@@ -178,7 +178,7 @@ mako==1.2.4
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   alembic
-markupsafe==2.1.2
+markupsafe==2.1.3
     # via
     #   -c requirements/_base.txt
     #   jinja2
@@ -273,7 +273,7 @@ requests==2.31.0
     # via
     #   async-asgi-testclient
     #   docker
-respx==0.20.1
+respx==0.20.2
     # via -r requirements/_test.in
 s3transfer==0.6.1
     # via boto3
@@ -301,7 +301,7 @@ sqlalchemy==1.4.49
     #   dask-gateway-server
 sqlalchemy2-stubs==0.0.2a35
     # via sqlalchemy
-tblib==1.7.0
+tblib==2.0.0
     # via
     #   -c requirements/_base.txt
     #   distributed
@@ -353,7 +353,7 @@ zict==3.0.0
     # via
     #   -c requirements/_base.txt
     #   distributed
-zipp==3.15.0
+zipp==3.16.2
     # via
     #   -c requirements/_base.txt
     #   importlib-metadata
