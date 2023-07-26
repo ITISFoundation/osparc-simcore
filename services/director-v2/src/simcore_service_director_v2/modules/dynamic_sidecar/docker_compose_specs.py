@@ -52,12 +52,14 @@ def _update_networking_configuration(
     networks = service_spec.get("networks", {})
     # used by the proxy to contact the service http entrypoint
     networks[dynamic_sidecar_network_name] = {
-        "external": {"name": dynamic_sidecar_network_name},
+        "name": dynamic_sidecar_network_name,
+        "external": True,
         "driver": "overlay",
     }
     # used by egress proxies to gain access to the internet
     networks[swarm_network_name] = {
-        "external": {"name": swarm_network_name},
+        "name": swarm_network_name,
+        "external": True,
         "driver": "overlay",
     }
     service_spec["networks"] = networks
