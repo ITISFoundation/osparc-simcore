@@ -111,7 +111,6 @@ async def ensure_external_volumes(
     ] + list(app_state.mounted_volumes.volume_name_state_paths())
 
     async with docker_client() as docker:
-
         volumes = await asyncio.gather(
             *[
                 docker.volumes.create(
@@ -170,7 +169,6 @@ async def ensure_external_volumes(
 
 @pytest.fixture
 async def cleanup_containers(app: FastAPI) -> AsyncIterator[None]:
-
     app_state = AppState(app)
 
     yield
