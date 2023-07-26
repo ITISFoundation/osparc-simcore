@@ -84,13 +84,23 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             flex: 1
           });
           break;
+        case "wallet-info": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+          const label = new qx.ui.basic.Label().set({
+            value: this.tr("Wallets:"),
+            font: "text-14"
+          });
+          control.add(label);
+          this.getChildControl("left-side").add(control);
+          break;
+        }
         case "wallet-selector":
           control = this.__getWalletSelector();
-          this.getChildControl("left-side").add(control);
+          this.getChildControl("wallet-info").add(control);
           break;
         case "credits-left-view":
           control = this.__getCreditsLeftView();
-          this.getChildControl("left-side").add(control);
+          this.getChildControl("wallet-info").add(control);
           break;
         case "credit-offers-view":
           control = this.__getCreditOffersView();
@@ -164,18 +174,19 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
 
     __getCreditsLeftView: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+
+      const store = osparc.store.Store.getInstance();
+      const currentWallet = store.getCurrentWallet();
+      const progressBar = new osparc.desktop.credits.CreditsIndicator(currentWallet);
+      layout.add(progressBar);
+
       const creditsLabel = new qx.ui.basic.Label().set({
         font: "text-14"
       });
-      const store = osparc.store.Store.getInstance();
-      const currentWallet = store.getCurrentWallet();
+      layout.add(creditsLabel);
       currentWallet.bind("credits", creditsLabel, "value", {
         converter: val => "You have " + val + " credits left"
       });
-      layout.add(creditsLabel);
-
-      const progressBar = new osparc.desktop.credits.CreditsIndicator(currentWallet);
-      layout.add(progressBar);
 
       return layout;
     },
