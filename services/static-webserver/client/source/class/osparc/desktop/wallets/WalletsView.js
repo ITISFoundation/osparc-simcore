@@ -55,7 +55,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsView", {
     openWalletDetails: function(walletId) {
       const openWalletDetails = walletId2 => {
         const walletModel = this.__walletsList.getWalletModel(walletId2);
-        this.__walletDetails.setCurrentWallet(walletModel);
+        this.__walletDetails.setWallet(walletModel);
         this.setSelection([this.__walletDetails]);
       };
       if (this.__walletsList.isWalletsLoaded()) {

@@ -443,13 +443,13 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
           buyBtn.setFetching(false);
           const nCredits = this.getNCredits();
           const totalPrice = this.getTotalPrice();
-          const walletName = this.getWallet().getName();
+          const wallet = this.getWallet();
           const title = "3rd party payment gateway";
           const paymentGateway = new osparc.desktop.credits.PaymentGateway().set({
             url: "https://www.paymentservice.io?user_id=2&session_id=1234567890&token=5678",
             nCredits,
             totalPrice,
-            walletName
+            walletName: wallet.getName()
           });
           const win = osparc.ui.window.Window.popUpInWindow(paymentGateway, title, 320, 475);
           win.center();
@@ -459,13 +459,11 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             msg += "<br>";
             msg += "You now have " + nCredits + " more credits";
             osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO", null, 10000);
-            const store = osparc.store.Store.getInstance();
-            const currentWallet = store.getCurrentWallet();
-            currentWallet.setCredits(currentWallet.getCredits() + nCredits);
+            wallet.setCredits(wallet.getCredits() + nCredits);
             this.fireDataEvent("transactionSuccessful", {
               nCredits,
               totalPrice,
-              walletName
+              walletName: wallet.getName()
             });
           });
           paymentGateway.addListener("paymentFailed", () => {
