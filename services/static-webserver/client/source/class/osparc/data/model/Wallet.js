@@ -23,7 +23,7 @@ qx.Class.define("osparc.data.model.Wallet", {
 
     this.set({
       walletId: walletData["id"],
-      label: walletData["label"],
+      name: walletData["name"],
       description: walletData["description"] ? walletData["description"] : null,
       thumbnail: walletData["thumbnail"] ? walletData["thumbnail"] : null,
       accessRights: walletData["accessRights"],
@@ -39,11 +39,11 @@ qx.Class.define("osparc.data.model.Wallet", {
       event: "changeWalletId"
     },
 
-    label: {
+    name: {
       check: "String",
       init: "",
       nullable: false,
-      event: "changeLabel"
+      event: "changeName"
     },
 
     description: {

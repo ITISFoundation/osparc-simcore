@@ -168,10 +168,11 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     __getWalletSelector: function() {
       const walletSelector = new qx.ui.form.SelectBox();
 
+      const myGid = osparc.auth.Data.getInstance().getGroupId();
       const store = osparc.store.Store.getInstance();
       store.getWallets().forEach(wallet => {
-        if (wallet.getAccessRights()["write"]) {
-          const sbItem = new qx.ui.form.ListItem(wallet.getLabel());
+        if (myGid in wallet.getAccessRights() && wallet.getAccessRights()[myGid]["write"]) {
+          const sbItem = new qx.ui.form.ListItem(wallet.getName());
           sbItem.walletId = wallet.getWalletId();
           walletSelector.add(sbItem);
         }

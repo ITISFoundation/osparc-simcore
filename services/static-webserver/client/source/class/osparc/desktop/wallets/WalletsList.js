@@ -214,7 +214,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
         return;
       }
 
-      const name = wallet.getLabel();
+      const name = wallet.getName();
       const msg = this.tr("Are you sure you want to delete ") + name + "?";
       const win = new osparc.ui.window.Confirmation(msg).set({
         confirmText: this.tr("Delete"),

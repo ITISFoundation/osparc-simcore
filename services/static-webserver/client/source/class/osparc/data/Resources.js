@@ -1100,40 +1100,67 @@ qx.Class.define("osparc.data.Resources", {
           resolve({
             wallets: [{
               id: 1,
-              label: "My Wallet",
+              name: "My Wallet",
               description: "Personal Wallet",
+              owner: 2,
               accessRights: {
-                delete: false,
-                write: true,
-                read: true
+                "2": {
+                  delete: true,
+                  write: true,
+                  read: true
+                }
               },
               credits: {
                 left: 10
-              }
+              },
+              active: true
             }, {
               id: 2,
-              label: "Our Wallet",
+              name: "Our Wallet",
               description: "Organization wide Wallet",
+              owner: 2,
               accessRights: {
-                delete: false,
-                write: true,
-                read: true
+                "2": {
+                  delete: false,
+                  write: true,
+                  read: true
+                },
+                "3": {
+                  delete: false,
+                  write: false,
+                  read: true
+                }
               },
               credits: {
                 left: 100
-              }
+              },
+              active: true
             }, {
               id: 3,
-              label: "Anotrher Wallet",
+              name: "Anotrher Wallet",
               description: "Organization wide Wallet 2",
+              owner: 4,
               accessRights: {
-                delete: false,
-                write: false,
-                read: true
+                "2": {
+                  delete: false,
+                  write: false,
+                  read: true
+                },
+                "3": {
+                  delete: false,
+                  write: false,
+                  read: true
+                },
+                "4": {
+                  delete: true,
+                  write: true,
+                  read: true
+                }
               },
               credits: {
                 left: 1000
-              }
+              },
+              active: false
             }]
           });
         });

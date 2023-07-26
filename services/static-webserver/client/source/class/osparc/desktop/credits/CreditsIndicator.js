@@ -88,7 +88,7 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
       wallet.bind("credits", this, "credits");
 
       wallet.bind("credits", this, "toolTipText", {
-        converter: val => wallet.getLabel() + ": " + val + " credits left"
+        converter: val => wallet.getName() + ": " + val + " credits left"
       });
     },
 
