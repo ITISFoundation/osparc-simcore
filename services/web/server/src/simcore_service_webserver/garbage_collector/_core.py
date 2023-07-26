@@ -52,56 +52,158 @@ from .settings import GUEST_USER_RC_LOCK_FORMAT
 _logger = logging.getLogger(__name__)
 
 
-async def collect_garbage(app: web.Application):
+async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> None:
     """
-    Garbage collection has the task of removing trash (i.e. unused resources) from the system. The trash
-    can be divided in:
-
-    - Websockets & Redis (used to keep track of current active connections)
-    - GUEST users (used for temporary access to the system which are created on the fly)
-    - Deletion of users. If a user needs to be deleted it can be set as GUEST in the database
-
-    The resources are Redis entries where all information regarding all the
-    websocket identifiers for all opened tabs accross all browser for each user
-    are stored.
-
-    The alive/dead keys are normal Redis keys. To each key an ALIVE key is associated,
-    which has an assigned TTL (Time To Live). The browser will call the `client_heartbeat` websocket
-    endpoint to refresh the TTL, thus declaring that the user (websocket connection) is
-    still active. The `resource_deletion_timeout_seconds` is the TTL of the key.
-
-    The field `garbage_collection_interval_seconds` defines the interval at which this
-    function will be called.
+    Goes through all the projects and will try to remove them but first it will check if
+    the project is shared with others.
+    Based on the given access rights it will determine the action to take:
+    - if other users have read access & execute access it will get deleted
+    - if other users have write access the project's owner will be changed to a new owner:
+        - if the project is directly shared with a one or more users, one of these
+            will be picked as the new owner
+        - if the project is not shared with any user but with groups of users, one
+            of the users inside the group (which currently exists) will be picked as
+            the new owner
     """
-    registry: RedisResourceRegistry = get_registry(app)
+    # recover user's primary_gid
+    try:
+        project_owner: dict = await get_user(app=app, user_id=user_id)
+    except exceptions.UserNotFoundError:
+        _logger.warning(
+            "Could not recover user data for user '%s', stopping removal of projects!",
+            f"{user_id=}",
+        )
+        return
 
-    with log_context(
-        _logger, logging.INFO, "Step 1: Removes disconnected user resources"
-    ):
-        # Triggers signal to close possible pending opened projects
-        # Removes disconnected GUEST users after they finished their sessions
-        await remove_disconnected_user_resources(registry, app)
+    user_primary_gid = int(project_owner["primary_gid"])
 
-    with log_context(
-        _logger, logging.INFO, "Step 2: Removes users manually marked for removal"
-    ):
-        # if a user was manually marked as GUEST it needs to be
-        # removed together with all the associated projects
-        await remove_users_manually_marked_as_guests(registry, app)
+    # fetch all projects for the user
+    user_project_uuids = await ProjectDBAPI.get_from_app_context(
+        app
+    ).list_projects_uuids(user_id=user_id)
 
-    with log_context(_logger, logging.INFO, "Step 3: Removes orphaned services"):
-        # For various reasons, some services remain pending after
-        # the projects are closed or the user was disconencted.
-        # This will close and remove all these services from
-        # the cluster, thus freeing important resources.
+    _logger.info(
+        "Removing or transferring projects of user with %s, %s: %s",
+        f"{user_id=}",
+        f"{project_owner=}",
+        f"{user_project_uuids=}",
+    )
 
-        # Temporary disabling GC to until the dynamic service
-        # safe function is invoked by the GC. This will avoid
-        # data loss for current users.
-        await remove_orphaned_services(registry, app)
+    delete_tasks: list[asyncio.Task] = []
+
+    for project_uuid in user_project_uuids:
+        try:
+            project: dict = await get_project_for_user(
+                app=app,
+                project_uuid=project_uuid,
+                user_id=user_id,
+            )
+        except (web.HTTPNotFound, ProjectNotFoundError) as err:
+            _logger.warning(
+                "Could not find project %s for user with %s to be removed: %s. Skipping.",
+                f"{project_uuid=}",
+                f"{user_id=}",
+                f"{err}",
+            )
+            continue
+
+        assert project  # nosec
+
+        new_project_owner_gid = await get_new_project_owner_gid(
+            app=app,
+            project_uuid=project_uuid,
+            user_id=user_id,
+            user_primary_gid=user_primary_gid,
+            project=project,
+        )
+
+        if new_project_owner_gid is None:
+            # when no new owner is found just remove the project
+            try:
+                _logger.debug(
+                    "Removing or transferring ownership of project with %s from user with %s",
+                    f"{project_uuid=}",
+                    f"{user_id=}",
+                )
+                task = await submit_delete_project_task(
+                    app,
+                    ProjectID(project_uuid),
+                    user_id,
+                    UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                )
+                assert task  # nosec
+                delete_tasks.append(task)
+
+            except ProjectNotFoundError:
+                logging.warning(
+                    "Project with %s was not found, skipping removal",
+                    f"{project_uuid=}",
+                )
+
+        else:
+            # Try to change the project owner and remove access rights from the current owner
+            _logger.debug(
+                "Transferring ownership of project %s from user %s to %s.",
+                "This project cannot be removed since it is shared with other users"
+                f"{project_uuid=}",
+                f"{user_id}",
+                f"{new_project_owner_gid}",
+            )
+            await replace_current_owner(
+                app=app,
+                project_uuid=project_uuid,
+                user_primary_gid=user_primary_gid,
+                new_project_owner_gid=new_project_owner_gid,
+                project=project,
+            )
+
+    # NOTE: ensures all delete_task tasks complete or fails fast
+    # can raise ProjectDeleteError, CancellationError
+    await asyncio.gather(*delete_tasks)
 
 
-async def remove_disconnected_user_resources(
+async def _remove_guest_user_with_all_its_resources(
+    app: web.Application, user_id: int
+) -> None:
+    """Removes a GUEST user with all its associated projects and S3/MinIO files"""
+
+    try:
+        user_role: UserRole = await get_user_role(app, user_id)
+        if user_role > UserRole.GUEST:
+            # NOTE: This acts as a protection barrier to avoid removing resources to more
+            # priviledge users
+            return
+
+        _logger.debug(
+            "Deleting all projects of user with %s because it is a GUEST",
+            f"{user_id=}",
+        )
+        await _delete_all_projects_for_user(app=app, user_id=user_id)
+
+        _logger.debug(
+            "Deleting user %s because it is a GUEST",
+            f"{user_id=}",
+        )
+        await delete_user_without_projects(app, user_id)
+
+    except (
+        DatabaseError,
+        asyncpg.exceptions.PostgresError,
+        ProjectNotFoundError,
+        UserNotFoundError,
+        ProjectDeleteError,
+    ) as error:
+        _logger.warning(
+            "Failed to delete guest user %s and its resources: %s",
+            f"{user_id=}",
+            f"{error}",
+        )
+
+
+# 1 ----
+
+
+async def _remove_disconnected_user_resources(
     registry: RedisResourceRegistry, app: web.Application
 ) -> None:
     lock_manager: Redis = get_redis_lock_manager_client(app)
@@ -223,7 +325,7 @@ async def remove_disconnected_user_resources(
                 # ONLY GUESTS: if this user was a GUEST also remove it from the database
                 # with the only associated project owned
                 # FIXME: if a guest can share, it will become permanent user!
-                await remove_guest_user_with_all_its_resources(
+                await _remove_guest_user_with_all_its_resources(
                     app=app,
                     user_id=int(dead_key["user_id"]),
                 )
@@ -246,7 +348,10 @@ async def remove_disconnected_user_resources(
             #   - if all resource fields are removed from a key, next GC iteration will remove the key (see (0))
 
 
-async def remove_users_manually_marked_as_guests(
+# 2 ----
+
+
+async def _remove_users_manually_marked_as_guests(
     registry: RedisResourceRegistry, app: web.Application
 ) -> None:
     """
@@ -299,10 +404,13 @@ async def remove_users_manually_marked_as_guests(
             f"{guest_user_id=}",
             f"{guest_user_name=}",
         )
-        await remove_guest_user_with_all_its_resources(
+        await _remove_guest_user_with_all_its_resources(
             app=app,
             user_id=guest_user_id,
         )
+
+
+# 3 ----
 
 
 @log_decorator(_logger, log_traceback=True)
@@ -398,7 +506,7 @@ async def _remove_single_service_if_orphan(
             _logger.warning("Error while stopping service: %s", err)
 
 
-async def remove_orphaned_services(
+async def _remove_orphaned_services(
     registry: RedisResourceRegistry, app: web.Application
 ) -> None:
     """Removes services which are no longer tracked in the database
@@ -426,9 +534,9 @@ async def remove_orphaned_services(
         for node_id in node_ids:
             currently_opened_projects_node_ids[node_id] = project_uuid
 
-    running_interactive_services: list[dict[str, Any]] = []
+    running_dynamic_services: list[dict[str, Any]] = []
     try:
-        running_interactive_services = await api.list_dynamic_services(app)
+        running_dynamic_services = await api.list_dynamic_services(app)
     except api.DirectorServiceError:
         _logger.debug("Could not fetch running_interactive_services")
 
@@ -436,7 +544,7 @@ async def remove_orphaned_services(
         "Currently running services %s",
         [
             (x.get("service_uuid", ""), x.get("service_host", ""))
-            for x in running_interactive_services
+            for x in running_dynamic_services
         ],
     )
 
@@ -447,158 +555,60 @@ async def remove_orphaned_services(
     # ensure it gets done in parallel
     tasks = [
         _remove_single_service_if_orphan(
-            app, interactive_service, currently_opened_projects_node_ids
+            app, service, currently_opened_projects_node_ids
         )
-        for interactive_service in running_interactive_services
+        for service in running_dynamic_services
     ]
     await logged_gather(*tasks, reraise=False)
 
     _logger.debug("Finished orphaned services removal")
 
 
-async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> None:
+# main
+async def collect_garbage(app: web.Application):
     """
-    Goes through all the projects and will try to remove them but first it will check if
-    the project is shared with others.
-    Based on the given access rights it will determine the action to take:
-    - if other users have read access & execute access it will get deleted
-    - if other users have write access the project's owner will be changed to a new owner:
-        - if the project is directly shared with a one or more users, one of these
-            will be picked as the new owner
-        - if the project is not shared with any user but with groups of users, one
-            of the users inside the group (which currently exists) will be picked as
-            the new owner
+    Garbage collection has the task of removing trash (i.e. unused resources) from the system. The trash
+    can be divided in:
+
+    - Websockets & Redis (used to keep track of current active connections)
+    - GUEST users (used for temporary access to the system which are created on the fly)
+    - Deletion of users. If a user needs to be deleted it can be set as GUEST in the database
+
+    The resources are Redis entries where all information regarding all the
+    websocket identifiers for all opened tabs accross all browser for each user
+    are stored.
+
+    The alive/dead keys are normal Redis keys. To each key an ALIVE key is associated,
+    which has an assigned TTL (Time To Live). The browser will call the `client_heartbeat` websocket
+    endpoint to refresh the TTL, thus declaring that the user (websocket connection) is
+    still active. The `resource_deletion_timeout_seconds` is the TTL of the key.
+
+    The field `garbage_collection_interval_seconds` defines the interval at which this
+    function will be called.
     """
-    # recover user's primary_gid
-    try:
-        project_owner: dict = await get_user(app=app, user_id=user_id)
-    except exceptions.UserNotFoundError:
-        _logger.warning(
-            "Could not recover user data for user '%s', stopping removal of projects!",
-            f"{user_id=}",
-        )
-        return
+    registry: RedisResourceRegistry = get_registry(app)
 
-    user_primary_gid = int(project_owner["primary_gid"])
+    with log_context(
+        _logger, logging.INFO, "Step 1: Removes disconnected user sessions"
+    ):
+        # Triggers signal to close possible pending opened projects
+        # Removes disconnected GUEST users after they finished their sessions
+        await _remove_disconnected_user_resources(registry, app)
 
-    # fetch all projects for the user
-    user_project_uuids = await ProjectDBAPI.get_from_app_context(
-        app
-    ).list_projects_uuids(user_id=user_id)
+    with log_context(
+        _logger, logging.INFO, "Step 2: Removes users manually marked for removal"
+    ):
+        # if a user was manually marked as GUEST it needs to be
+        # removed together with all the associated projects
+        await _remove_users_manually_marked_as_guests(registry, app)
 
-    _logger.info(
-        "Removing or transferring projects of user with %s, %s: %s",
-        f"{user_id=}",
-        f"{project_owner=}",
-        f"{user_project_uuids=}",
-    )
+    with log_context(_logger, logging.INFO, "Step 3: Removes orphaned services"):
+        # For various reasons, some services remain pending after
+        # the projects are closed or the user was disconencted.
+        # This will close and remove all these services from
+        # the cluster, thus freeing important resources.
 
-    delete_tasks: list[asyncio.Task] = []
-
-    for project_uuid in user_project_uuids:
-        try:
-            project: dict = await get_project_for_user(
-                app=app,
-                project_uuid=project_uuid,
-                user_id=user_id,
-            )
-        except (web.HTTPNotFound, ProjectNotFoundError) as err:
-            _logger.warning(
-                "Could not find project %s for user with %s to be removed: %s. Skipping.",
-                f"{project_uuid=}",
-                f"{user_id=}",
-                f"{err}",
-            )
-            continue
-
-        assert project  # nosec
-
-        new_project_owner_gid = await get_new_project_owner_gid(
-            app=app,
-            project_uuid=project_uuid,
-            user_id=user_id,
-            user_primary_gid=user_primary_gid,
-            project=project,
-        )
-
-        if new_project_owner_gid is None:
-            # when no new owner is found just remove the project
-            try:
-                _logger.debug(
-                    "Removing or transferring ownership of project with %s from user with %s",
-                    f"{project_uuid=}",
-                    f"{user_id=}",
-                )
-                task = await submit_delete_project_task(
-                    app,
-                    ProjectID(project_uuid),
-                    user_id,
-                    UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-                )
-                assert task  # nosec
-                delete_tasks.append(task)
-
-            except ProjectNotFoundError:
-                logging.warning(
-                    "Project with %s was not found, skipping removal",
-                    f"{project_uuid=}",
-                )
-
-        else:
-            # Try to change the project owner and remove access rights from the current owner
-            _logger.debug(
-                "Transferring ownership of project %s from user %s to %s.",
-                "This project cannot be removed since it is shared with other users"
-                f"{project_uuid=}",
-                f"{user_id}",
-                f"{new_project_owner_gid}",
-            )
-            await replace_current_owner(
-                app=app,
-                project_uuid=project_uuid,
-                user_primary_gid=user_primary_gid,
-                new_project_owner_gid=new_project_owner_gid,
-                project=project,
-            )
-
-    # NOTE: ensures all delete_task tasks complete or fails fast
-    # can raise ProjectDeleteError, CancellationError
-    await asyncio.gather(*delete_tasks)
-
-
-async def remove_guest_user_with_all_its_resources(
-    app: web.Application, user_id: int
-) -> None:
-    """Removes a GUEST user with all its associated projects and S3/MinIO files"""
-
-    try:
-        user_role: UserRole = await get_user_role(app, user_id)
-        if user_role > UserRole.GUEST:
-            # NOTE: This acts as a protection barrier to avoid removing resources to more
-            # priviledge users
-            return
-
-        _logger.debug(
-            "Deleting all projects of user with %s because it is a GUEST",
-            f"{user_id=}",
-        )
-        await _delete_all_projects_for_user(app=app, user_id=user_id)
-
-        _logger.debug(
-            "Deleting user %s because it is a GUEST",
-            f"{user_id=}",
-        )
-        await delete_user_without_projects(app, user_id)
-
-    except (
-        DatabaseError,
-        asyncpg.exceptions.PostgresError,
-        ProjectNotFoundError,
-        UserNotFoundError,
-        ProjectDeleteError,
-    ) as error:
-        _logger.warning(
-            "Failed to delete guest user %s and its resources: %s",
-            f"{user_id=}",
-            f"{error}",
-        )
+        # Temporary disabling GC to until the dynamic service
+        # safe function is invoked by the GC. This will avoid
+        # data loss for current users.
+        await _remove_orphaned_services(registry, app)

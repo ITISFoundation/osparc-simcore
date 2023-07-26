@@ -11,8 +11,8 @@ from aioresponses import aioresponses as AioResponsesMock
 from faker import Faker
 from pytest_mock import MockerFixture
 from simcore_service_webserver.garbage_collector._core import (
+    _remove_orphaned_services,
     _remove_single_service_if_orphan,
-    remove_orphaned_services,
 )
 from yarl import URL
 
@@ -56,7 +56,7 @@ async def test_regression_remove_orphaned_services_node_ids_unhashable_type_set(
     mock_registry: AsyncMock,
     mock_app: AsyncMock,
 ):
-    await remove_orphaned_services(mock_registry, mock_app)
+    await _remove_orphaned_services(mock_registry, mock_app)
 
 
 async def test_regression_project_id_recovered_from_the_wrong_data_structure(
