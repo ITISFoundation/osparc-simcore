@@ -29,7 +29,6 @@ aiodocker
 aiofiles
 aioprocessing
 arrow
-cython # Explicitly added to build pyyaml (see constraints)
 fastapi
 httpx
 psutil
