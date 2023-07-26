@@ -169,7 +169,7 @@ def app_config(
 @pytest.fixture
 def mock_orphaned_services(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
-        "simcore_service_webserver.garbage_collector._core._remove_orphaned_services",
+        "simcore_service_webserver.garbage_collector._core.remove_orphaned_services",
         return_value="",
     )
 

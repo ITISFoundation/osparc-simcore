@@ -6,8 +6,8 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 from ..login.plugin import setup_login_storage
 from ..projects.db import setup_projects_db
 from ..socketio.plugin import setup_socketio
-from ._tasks import run_background_task
 from ._tasks_api_keys import create_background_task_to_prune_api_keys
+from ._tasks_core import run_background_task
 from ._tasks_users import create_background_task_for_trial_accounts
 from .settings import get_plugin_settings
 
