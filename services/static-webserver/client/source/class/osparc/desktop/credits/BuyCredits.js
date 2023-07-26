@@ -128,7 +128,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     setSelectedWallet: function(walletId) {
       const walletSelector = this.getChildControl("wallet-selector");
       walletSelector.getSelectables().forEach(selectable => {
-        if (selectable.walletId === walletId) {
+        if (selectable.walletId === parseInt(walletId)) {
           walletSelector.setSelection([selectable]);
         }
       });
