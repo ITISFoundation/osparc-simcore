@@ -61,7 +61,7 @@ class RedisResourceRegistry:
 
     @classmethod
     def _hash_key(cls, key: RegistryKeyPrefixDict) -> str:
-        hash_key = ":".join(f"{k}={v}" for k, v in key.items())
+        hash_key: str = ":".join(f"{k}={v}" for k, v in key.items())
         return hash_key
 
     @classmethod
@@ -76,7 +76,7 @@ class RedisResourceRegistry:
 
     @property
     def client(self) -> aioredis.Redis:
-        client = get_redis_resources_client(self.app)
+        client: aioredis.Redis = get_redis_resources_client(self.app)
         return client
 
     async def set_resource(
@@ -100,7 +100,7 @@ class RedisResourceRegistry:
     async def find_resources(
         self, key: RegistryKeyPrefixDict, resource_name: str
     ) -> list[str]:
-        resources = []
+        resources: list[str] = []
         # the key might only be partialy complete
         partial_hash_key = f"{self._hash_key(key)}:{RESOURCE_SUFFIX}"
         async for scanned_key in self.client.scan_iter(match=partial_hash_key):

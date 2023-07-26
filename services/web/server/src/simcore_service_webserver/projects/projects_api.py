@@ -600,6 +600,13 @@ async def try_open_project_for_user(
     app: web.Application,
     max_number_of_studies_per_user: int | None,
 ) -> bool:
+    """
+    Raises:
+        ProjectTooManyProjectOpenedError: maximum limit of projects (`max_number_of_studies_per_user`) reached
+
+    Returns:
+        False if cannot be opened (e.g. locked, )
+    """
     try:
         async with lock_with_notification(
             app,
@@ -609,14 +616,14 @@ async def try_open_project_for_user(
             await get_user_name(app, user_id),
             notify_users=False,
         ):
-            with managed_resource(user_id, client_session_id, app) as rt:
+            with managed_resource(user_id, client_session_id, app) as user_session:
                 # NOTE: if max_number_of_studies_per_user is set, the same
                 # project shall still be openable if the tab was closed
                 if max_number_of_studies_per_user is not None and (
                     len(
                         {
                             uuid
-                            for uuid in await rt.find_all_resources_of_user(
+                            for uuid in await user_session.find_all_resources_of_user(
                                 PROJECT_ID_KEY
                             )
                             if uuid != project_uuid
@@ -628,34 +635,32 @@ async def try_open_project_for_user(
                         max_num_projects=max_number_of_studies_per_user
                     )
 
-                user_session_id_list: list[
+                current_session_id: UserSessionID = user_session.get_id()
+                users_sessions_ids: list[
                     UserSessionID
-                ] = await rt.find_users_of_resource(PROJECT_ID_KEY, project_uuid)
+                ] = await user_session.find_users_of_resource(
+                    app, PROJECT_ID_KEY, project_uuid
+                )
 
-                if not user_session_id_list:
+                if not users_sessions_ids:
                     # no one has the project so we lock it
-                    await rt.add(PROJECT_ID_KEY, project_uuid)
+                    await user_session.add(PROJECT_ID_KEY, project_uuid)
                     return True
 
-                set_user_ids = {
-                    user_session.user_id for user_session in user_session_id_list
-                }
-                if set_user_ids.issubset({user_id}):
-                    # we are the only user, remove this session from the list
-                    if not await _user_has_another_client_open(
-                        [
-                            uid
-                            for uid in user_session_id_list
-                            if uid != UserSessionID(user_id, client_session_id)
-                        ],
-                        app,
-                    ):
-                        # steal the project
-                        await rt.add(PROJECT_ID_KEY, project_uuid)
-                        await _clean_user_disconnected_clients(
-                            user_session_id_list, app
-                        )
-                        return True
+                user_ids: set[int] = {usid.user_id for usid in users_sessions_ids}
+
+                # we are the only user, remove this session from the list
+                if user_ids.issubset(
+                    {user_id}
+                ) and not await _user_has_another_client_open(
+                    [usid for usid in users_sessions_ids if usid != current_session_id],
+                    app,
+                ):
+                    # steal the project
+                    await user_session.add(PROJECT_ID_KEY, project_uuid)
+                    await _clean_user_disconnected_clients(users_sessions_ids, app)
+                    return True
+
             return False
 
     except ProjectLockError:
@@ -675,12 +680,16 @@ async def try_close_project_for_user(
     app: web.Application,
     simcore_user_agent: str,
 ):
-    with managed_resource(user_id, client_session_id, app) as rt:
-        user_to_session_ids: list[UserSessionID] = await rt.find_users_of_resource(
-            PROJECT_ID_KEY, project_uuid
+    with managed_resource(user_id, client_session_id, app) as user_session:
+        current_session_id: UserSessionID = user_session.get_id()
+        user_sessions_with_project: list[
+            UserSessionID
+        ] = await user_session.find_users_of_resource(
+            app, key=PROJECT_ID_KEY, value=project_uuid
         )
+
         # first check we have it opened now
-        if UserSessionID(user_id, client_session_id) not in user_to_session_ids:
+        if current_session_id not in user_sessions_with_project:
             # nothing to do the project is already closed
             log.warning(
                 "project [%s] is already closed for user [%s].",
@@ -689,15 +698,18 @@ async def try_close_project_for_user(
                 extra=get_log_record_extra(user_id=user_id),
             )
             return
+
         # remove the project from our list of opened ones
         log.debug(
             "removing project [%s] from user [%s] resources", project_uuid, user_id
         )
-        await rt.remove(PROJECT_ID_KEY)
+        await user_session.remove(key=PROJECT_ID_KEY)
+
     # check it is not opened by someone else
-    user_to_session_ids.remove(UserSessionID(user_id, client_session_id))
-    log.debug("remaining user_to_session_ids: %s", user_to_session_ids)
-    if not user_to_session_ids:
+    user_sessions_with_project.remove(current_session_id)
+    log.debug("remaining user_to_session_ids: %s", user_sessions_with_project)
+
+    if not user_sessions_with_project:
         # NOTE: depending on the garbage collector speed, it might already be removing it
         fire_and_forget_task(
             remove_project_dynamic_services(
@@ -707,10 +719,10 @@ async def try_close_project_for_user(
             fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
         )
     else:
-        log.warning(
+        log.error(
             "project [%s] is used by other users: [%s]. This should not be possible",
             project_uuid,
-            {user_session.user_id for user_session in user_to_session_ids},
+            {user_session.user_id for user_session in user_sessions_with_project},
         )
 
 
@@ -1198,7 +1210,7 @@ async def lock_with_notification(
         prj_states: ProjectState = await get_project_states_for_user(
             user_id, project_uuid, app
         )
-        log.error(
+        log.exception(
             "Project [%s] already locked in state '%s'. Please check with support.",
             f"{project_uuid=}",
             f"{prj_states.locked.status=}",

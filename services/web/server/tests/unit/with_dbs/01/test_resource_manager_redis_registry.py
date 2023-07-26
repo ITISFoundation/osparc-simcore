@@ -38,7 +38,6 @@ def mock_env_devel_environment(
 def redis_enabled_app(
     redis_client: aioredis.Redis, mocker, mock_env_devel_environment
 ) -> web.Application:
-
     # app.cleanup_ctx.append(redis_client) in setup_redis would create a client and connect
     # to a real redis service. Instead, we mock the get_redis_resources_client access
     mocker.patch(
@@ -197,7 +196,6 @@ async def test_websocket_manager(
     redis_registry: RedisResourceRegistry,
     create_user_ids: Callable,
 ):
-
     # create some user ids and socket ids
     NUM_USER_IDS = 5
     list_user_ids = create_user_ids(NUM_USER_IDS)
@@ -243,7 +241,9 @@ async def test_websocket_manager(
                 assert await rt.find(res_key) == [res_value]
                 list_of_same_resource_users: list[
                     UserSessionID
-                ] = await rt.find_users_of_resource(res_key, res_value)
+                ] = await rt.find_users_of_resource(
+                    redis_enabled_app, res_key, res_value
+                )
                 assert list_user_ids[: (list_user_ids.index(user_id) + 1)] == sorted(
                     {
                         user_session.user_id

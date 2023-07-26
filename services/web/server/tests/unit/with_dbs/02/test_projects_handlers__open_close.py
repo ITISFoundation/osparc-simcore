@@ -412,6 +412,7 @@ async def test_open_template_project_for_edition(
     url = client.app.router["open_project"].url_for(project_id=template_project["uuid"])
     resp = await client.post(f"{url}", json=client_session_id_factory())
     await assert_status(resp, expected)
+
     if resp.status == web.HTTPOk.status_code:
         mocked_notifications_plugin["subscribe"].assert_called_once_with(
             client.app, ProjectID(template_project["uuid"])

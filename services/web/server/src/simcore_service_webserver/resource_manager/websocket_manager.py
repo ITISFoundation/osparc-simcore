@@ -17,7 +17,7 @@
 import logging
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Iterator
+from typing import Final, Iterator
 
 from aiohttp import web
 from servicelib.logging_utils import get_log_record_extra, log_context
@@ -28,11 +28,11 @@ from .settings import ResourceManagerSettings, get_plugin_settings
 _logger = logging.getLogger(__name__)
 
 
-SOCKET_ID_KEY = "socket_id"
-PROJECT_ID_KEY = "project_id"
+_SOCKET_ID_FIELDNAME: Final[str] = "socket_id"
+PROJECT_ID_KEY: Final[str] = "project_id"
 
-assert SOCKET_ID_KEY in ResourcesValueDict.__annotations__.keys()  # nosec
-assert PROJECT_ID_KEY in ResourcesValueDict.__annotations__.keys()  # nosec
+assert _SOCKET_ID_FIELDNAME in ResourcesValueDict.__annotations__  # nosec
+assert PROJECT_ID_KEY in ResourcesValueDict.__annotations__  # nosec
 
 
 def get_service_deletion_timeout(app: web.Application) -> int:
@@ -47,7 +47,7 @@ class UserSessionID:
 
 
 @dataclass
-class WebsocketRegistry:
+class UserSessionResourcesRegistry:
     """
     Keeps track of resources allocated for a user's session
 
@@ -56,11 +56,8 @@ class WebsocketRegistry:
 
     """
 
-    # TODO: find a more descriptive name ... too many registries!
-    #
-
     user_id: int
-    client_session_id: str | None
+    client_session_id: str | None  # Every tab that a user opens
     app: web.Application
 
     def _resource_key(self) -> RegistryKeyPrefixDict:
@@ -78,7 +75,9 @@ class WebsocketRegistry:
             extra=get_log_record_extra(user_id=self.user_id),
         )
         registry = get_registry(self.app)
-        await registry.set_resource(self._resource_key(), (SOCKET_ID_KEY, socket_id))
+        await registry.set_resource(
+            self._resource_key(), (_SOCKET_ID_FIELDNAME, socket_id)
+        )
         # NOTE: hearthbeat is not emulated in tests, make sure that with very small GC intervals
         # the resources do not expire; this value is usually in the order of minutes
         timeout = max(3, get_service_deletion_timeout(self.app))
@@ -109,7 +108,7 @@ class WebsocketRegistry:
             extra=get_log_record_extra(user_id=self.user_id),
         )
         registry = get_registry(self.app)
-        await registry.remove_resource(self._resource_key(), SOCKET_ID_KEY)
+        await registry.remove_resource(self._resource_key(), _SOCKET_ID_FIELDNAME)
         await registry.set_key_alive(
             self._resource_key(), get_service_deletion_timeout(self.app)
         )
@@ -126,12 +125,13 @@ class WebsocketRegistry:
             "user %s/tab %s finding %s from registry...",
             self.user_id,
             self.client_session_id,
-            SOCKET_ID_KEY,
+            _SOCKET_ID_FIELDNAME,
             extra=get_log_record_extra(user_id=self.user_id),
         )
         registry = get_registry(self.app)
-        user_sockets = await registry.find_resources(
-            {"user_id": f"{self.user_id}", "client_session_id": "*"}, SOCKET_ID_KEY
+        user_sockets: list[str] = await registry.find_resources(
+            {"user_id": f"{self.user_id}", "client_session_id": "*"},
+            _SOCKET_ID_FIELDNAME,
         )
         return user_sockets
 
@@ -142,7 +142,7 @@ class WebsocketRegistry:
             msg=f"{self.user_id=} finding all {key} from registry",
             extra=get_log_record_extra(user_id=self.user_id),
         ):
-            resources = await get_registry(self.app).find_resources(
+            resources: list[str] = await get_registry(self.app).find_resources(
                 {"user_id": f"{self.user_id}", "client_session_id": "*"}, key
             )
             return resources
@@ -156,7 +156,9 @@ class WebsocketRegistry:
             extra=get_log_record_extra(user_id=self.user_id),
         )
         registry = get_registry(self.app)
-        user_resources = await registry.find_resources(self._resource_key(), key)
+        user_resources: list[str] = await registry.find_resources(
+            self._resource_key(), key
+        )
         return user_resources
 
     async def add(self, key: str, value: str) -> None:
@@ -182,30 +184,39 @@ class WebsocketRegistry:
         registry = get_registry(self.app)
         await registry.remove_resource(self._resource_key(), key)
 
-    async def find_users_of_resource(self, key: str, value: str) -> list[UserSessionID]:
-        _logger.debug(
-            "user %s/tab %s finding %s:%s in registry...",
-            self.user_id,
-            self.client_session_id,
-            key,
-            value,
-            extra=get_log_record_extra(user_id=self.user_id),
+    @staticmethod
+    async def find_users_of_resource(
+        app: web.Application, key: str, value: str
+    ) -> list[UserSessionID]:
+        registry = get_registry(app)
+        registry_keys: list[RegistryKeyPrefixDict] = await registry.find_keys(
+            resource=(key, value)
         )
-        registry = get_registry(self.app)
-        registry_keys = await registry.find_keys((key, value))
-        user_session_id_list = [
-            UserSessionID(int(x["user_id"]), x["client_session_id"])
-            for x in registry_keys
+        user_session_id_list: list[UserSessionID] = [
+            UserSessionID(
+                user_id=int(key["user_id"]),
+                client_session_id=key["client_session_id"],
+            )
+            for key in registry_keys
+            if ("use_id" in key and "client_session_id" in key)
         ]
         return user_session_id_list
+
+    def get_id(self) -> UserSessionID:
+        if self.client_session_id is None:
+            msg = f"Invalid user session id. Missing {self.client_session_id=}"
+            raise ValueError(msg)
+        return UserSessionID(
+            user_id=self.user_id, client_session_id=self.client_session_id
+        )
 
 
 @contextmanager
 def managed_resource(
     user_id: str | int, client_session_id: str | None, app: web.Application
-) -> Iterator[WebsocketRegistry]:
+) -> Iterator[UserSessionResourcesRegistry]:
     try:
-        registry = WebsocketRegistry(int(user_id), client_session_id, app)
+        registry = UserSessionResourcesRegistry(int(user_id), client_session_id, app)
         yield registry
     except Exception:
         _logger.exception(
