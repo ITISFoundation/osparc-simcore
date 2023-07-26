@@ -69,6 +69,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
 
   members: {
     __creditPrice: null,
+    __walletSelector: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -82,6 +83,10 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
           this._add(control, {
             flex: 1
           });
+          break;
+        case "wallet-selector":
+          control = this.__getWalletSelector();
+          this.getChildControl("left-side").add(control);
           break;
         case "credits-left-view":
           control = this.__getCreditsLeftView();
@@ -112,6 +117,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     },
 
     __buildLayout: function() {
+      this.getChildControl("wallet-selector");
       this.getChildControl("credits-left-view");
       this.getChildControl("credit-offers-view");
       this.getChildControl("credit-selector");
@@ -139,6 +145,21 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
 
     __applyCreditPrice: function(creditPrice) {
       this.setTotalPrice(creditPrice * this.getNCredits());
+    },
+
+    __getWalletSelector: function() {
+      const walletSelector = this.__walletSelector = new qx.ui.form.SelectBox();
+
+      const store = osparc.store.Store.getInstance();
+      store.getWallets().forEach(wallet => {
+        if (wallet.getAccessRights()["write"]) {
+          const sbItem = new qx.ui.form.ListItem(wallet.getLabel());
+          sbItem.walletId = wallet.getWalletId();
+          walletSelector.add(sbItem);
+        }
+      });
+
+      return walletSelector;
     },
 
     __getCreditsLeftView: function() {
