@@ -5,7 +5,7 @@ from typing import Any, ClassVar, Final
 from models_library.generated_models.docker_rest_api import Task
 from models_library.products import ProductName
 from models_library.projects import ProjectID
-from models_library.projects_nodes import NodeID
+from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pydantic import (
     BaseModel,
