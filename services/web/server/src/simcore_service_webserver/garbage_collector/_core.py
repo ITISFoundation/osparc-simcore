@@ -200,7 +200,7 @@ async def _remove_guest_user_with_all_its_resources(
         )
 
 
-# 1 ----
+# 1 Removes disconnected user sessions ----
 
 
 async def _remove_disconnected_user_resources(
@@ -237,7 +237,11 @@ async def _remove_disconnected_user_resources(
     # clean up all resources of expired keys
     for dead_key in dead_keys:
         # Skip locked keys for the moment
-        user_id = int(dead_key["user_id"])
+        try:
+            user_id = int(dead_key["user_id"])
+        except (KeyError, ValueError):  # noqa: PERF203
+            continue
+
         if await lock_manager.lock(
             GUEST_USER_RC_LOCK_FORMAT.format(user_id=user_id)
         ).locked():
@@ -260,8 +264,6 @@ async def _remove_disconnected_user_resources(
         )
 
         for resource_name, resource_value in dead_key_resources.items():
-            resource_value = f"{resource_value}"
-
             # Releasing a resource consists of two steps
             #   - (1) release actual resource (e.g. stop service, close project, deallocate memory, etc)
             #   - (2) remove resource field entry in expired key registry after (1) is completed.
@@ -271,18 +273,20 @@ async def _remove_disconnected_user_resources(
                 dead_key,
             ]
 
-            # Every resource might be shared with other keys.
+            # Every resource might be SHARED with other keys.
             # In that case, the resource is released by THE LAST DYING KEY
             # (we could call this the "last-standing-man" pattern! :-) )
             #
             other_keys_with_this_resource = [
                 k
-                for k in await registry.find_keys((resource_name, resource_value))
+                for k in await registry.find_keys((resource_name, f"{resource_value}"))
                 if k != dead_key
             ]
             is_resource_still_in_use: bool = any(
                 k in alive_keys for k in other_keys_with_this_resource
             )
+
+            # FIXME: if the key is dead, shouldn't we still delete the field entry from the expired key regisitry?
 
             if not is_resource_still_in_use:
                 # adds the remaining resource entries for (2)
@@ -301,8 +305,8 @@ async def _remove_disconnected_user_resources(
                     #
                     try:
                         await remove_project_dynamic_services(
-                            user_id=int(dead_key["user_id"]),
-                            project_uuid=resource_value,
+                            user_id=user_id,
+                            project_uuid=f"{resource_value}",
                             app=app,
                             simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                             user_name={
@@ -327,7 +331,7 @@ async def _remove_disconnected_user_resources(
                 # FIXME: if a guest can share, it will become permanent user!
                 await _remove_guest_user_with_all_its_resources(
                     app=app,
-                    user_id=int(dead_key["user_id"]),
+                    user_id=user_id,
                 )
 
             # (2) remove resource field in collected keys since (1) is completed
@@ -337,10 +341,13 @@ async def _remove_disconnected_user_resources(
                 f"{resource_value=}",
                 keys_to_update,
             )
-            on_released_tasks = [
-                registry.remove_resource(key, resource_name) for key in keys_to_update
-            ]
-            await logged_gather(*on_released_tasks, reraise=False)
+            await logged_gather(
+                *[
+                    registry.remove_resource(key, resource_name)
+                    for key in keys_to_update
+                ],
+                reraise=False,
+            )
 
             # NOTE:
             #   - if releasing a resource (1) fails, annotations in registry allows GC to try in next round
@@ -348,7 +355,7 @@ async def _remove_disconnected_user_resources(
             #   - if all resource fields are removed from a key, next GC iteration will remove the key (see (0))
 
 
-# 2 ----
+# 2 Removes users manually marked for removal ----
 
 
 async def _remove_users_manually_marked_as_guests(
@@ -410,7 +417,7 @@ async def _remove_users_manually_marked_as_guests(
         )
 
 
-# 3 ----
+# 3 Removes orphaned services ----
 
 
 @log_decorator(_logger, log_traceback=True)
@@ -564,7 +571,6 @@ async def _remove_orphaned_services(
     _logger.debug("Finished orphaned services removal")
 
 
-# main
 async def collect_garbage(app: web.Application):
     """
     Garbage collection has the task of removing trash (i.e. unused resources) from the system. The trash
