@@ -94,19 +94,21 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
     },
 
     __applyCredits: function(credits) {
-      this.setValue(this.self().convertCreditsToIndicatorValue(credits));
+      if (credits !== null) {
+        this.setValue(this.self().convertCreditsToIndicatorValue(credits));
 
-      if (credits <= 0) {
-        this.setBackgroundColor("danger-red");
-      } else {
-        this.resetBackgroundColor();
-      }
+        if (credits <= 0) {
+          this.setBackgroundColor("danger-red");
+        } else {
+          this.resetBackgroundColor();
+        }
 
-      let tttext = credits + " " + this.tr("credits left");
-      if (this.getWallet()) {
-        tttext = this.getWallet().getName() + ": " + tttext;
+        let tttext = credits + " " + this.tr("credits left");
+        if (this.getWallet()) {
+          tttext = this.getWallet().getName() + ": " + tttext;
+        }
+        this.setToolTipText(tttext);
       }
-      this.setToolTipText(tttext);
     }
   }
 });

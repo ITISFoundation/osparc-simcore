@@ -80,12 +80,14 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
     },
 
     __applyCredits: function(credits) {
-      const creditsIndicator = this.getChildControl("credits-indicator");
-      creditsIndicator.setCredits(credits);
+      if (credits !== null) {
+        const creditsIndicator = this.getChildControl("credits-indicator");
+        creditsIndicator.setCredits(credits);
 
-      this.getChildControl("credits-label").set({
-        value: credits + this.tr(" credits")
-      });
+        this.getChildControl("credits-label").set({
+          value: credits + this.tr(" credits")
+        });
+      }
     },
 
     // overridden
