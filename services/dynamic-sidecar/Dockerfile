@@ -32,7 +32,7 @@ RUN \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
   docker-ce-cli=${DOCKER_APT_VERSION} \
-  docker-compose-plugin?${DOCKER_COMPOSE_APT_VERSION} \
+  docker-compose-plugin=${DOCKER_COMPOSE_APT_VERSION} \
   gosu \
   libcap2-bin \
   ca-certificates \
