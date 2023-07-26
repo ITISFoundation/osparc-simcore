@@ -19,11 +19,11 @@ DB_TO_RUNNING_STATE = {
     StateType.ABORTED: RunningState.ABORTED,
 }
 
-RUNNING_STATE_TO_DB = (
-    {v: k for k, v in DB_TO_RUNNING_STATE.items()}
-    | {RunningState.RETRY: StateType.RUNNING}
-    | {RunningState.WAITING_FOR_RESOURCES: StateType.PENDING},
-)
+RUNNING_STATE_TO_DB = {
+    **{v: k for k, v in DB_TO_RUNNING_STATE.items()},
+    RunningState.RETRY: StateType.RUNNING,
+    RunningState.WAITING_FOR_RESOURCES: StateType.PENDING,
+}
 
 
 def to_clusters_db(cluster: BaseCluster, *, only_update: bool) -> dict[str, Any]:
