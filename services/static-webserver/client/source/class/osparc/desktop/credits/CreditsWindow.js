@@ -107,9 +107,10 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
       buyCredits.addListener("transactionSuccessful", e => {
         const {
           nCredits,
-          totalPrice
+          totalPrice,
+          walletName
         } = e.getData();
-        this.__transactions.addRow(nCredits, totalPrice);
+        this.__transactions.addRow(nCredits, totalPrice, walletName);
         this.openTransactions();
       }, this);
       page.add(buyCredits);
