@@ -158,10 +158,8 @@ async def disconnect(socket_id: SocketID, app: web.Application) -> None:
                 f"{user_id=}",
                 f"{client_session_id=}",
             ):
-                with managed_resource(
-                    user_id, client_session_id, app
-                ) as resource_registry:
-                    await resource_registry.remove_socket_id()
+                with managed_resource(user_id, client_session_id, app) as user_session:
+                    await user_session.remove_socket_id()
                 # signal same user other clients if available
                 await emit(
                     app, "SIGNAL_USER_DISCONNECTED", user_id, client_session_id, app

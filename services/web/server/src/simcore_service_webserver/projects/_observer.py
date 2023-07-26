@@ -17,18 +17,20 @@ from ..notifications import project_logs
 from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
 from .projects_api import retrieve_and_notify_project_locked_state
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 async def _on_user_disconnected(
     user_id: int, client_session_id: str, app: web.Application
 ) -> None:
     # check if there is a project resource
-    with managed_resource(user_id, client_session_id, app) as rt:
-        list_projects: list[str] = await rt.find(PROJECT_ID_KEY)
+    with managed_resource(user_id, client_session_id, app) as user_session:
+        projects: list[str] = await user_session.find(PROJECT_ID_KEY)
+
+    assert len(projects) <= 1, "At the moment, at most one project per session"  # nosec
 
     await logged_gather(
-        *[project_logs.unsubscribe(app, ProjectID(prj)) for prj in list_projects]
+        *[project_logs.unsubscribe(app, ProjectID(prj)) for prj in projects]
     )
 
     await logged_gather(
@@ -36,7 +38,7 @@ async def _on_user_disconnected(
             retrieve_and_notify_project_locked_state(
                 user_id, prj, app, notify_only_prj_user=True
             )
-            for prj in list_projects
+            for prj in projects
         ]
     )
 
@@ -46,6 +48,6 @@ def setup_project_observer_events(app: web.Application) -> None:
 
     register_observer(app, _on_user_disconnected, event="SIGNAL_USER_DISCONNECTED")
 
-    logger.info(
+    _logger.info(
         "App registered events (at this point):\n%s", registed_observers_report(app)
     )
