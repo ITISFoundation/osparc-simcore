@@ -582,11 +582,11 @@ async def delete_project(request: web.Request):
             user_id=req_ctx.user_id,
         )
         project_users: set[int] = set()
-        with managed_resource(req_ctx.user_id, None, request.app) as rt:
+        with managed_resource(req_ctx.user_id, None, request.app) as user_session:
             project_users = {
-                user_session.user_id
-                for user_session in await rt.find_users_of_resource(
-                    PROJECT_ID_KEY, f"{path_params.project_id}"
+                us.user_id
+                for us in await user_session.find_users_of_resource(
+                    request.app, PROJECT_ID_KEY, f"{path_params.project_id}"
                 )
             }
         # that project is still in use

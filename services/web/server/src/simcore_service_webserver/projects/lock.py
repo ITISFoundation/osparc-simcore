@@ -1,7 +1,8 @@
 import datetime
 from asyncio.log import logger
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import AsyncIterator, Final
+from typing import Final
 
 import redis
 from aiohttp import web

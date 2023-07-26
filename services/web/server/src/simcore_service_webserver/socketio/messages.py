@@ -37,8 +37,8 @@ async def send_messages(
     sio: AsyncServer = get_socket_server(app)
 
     socket_ids: list[str] = []
-    with managed_resource(user_id, None, app) as rt:
-        socket_ids = await rt.find_socket_ids()
+    with managed_resource(user_id, None, app) as user_session:
+        socket_ids = await user_session.find_socket_ids()
 
     await logged_gather(
         *(
