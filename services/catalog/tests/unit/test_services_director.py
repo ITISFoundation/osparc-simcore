@@ -11,7 +11,6 @@ import pytest
 import respx
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
 from simcore_service_catalog.api.dependencies.director import get_director_api
@@ -21,7 +20,7 @@ from simcore_service_catalog.services.director import DirectorApi
 
 @pytest.fixture
 def minimal_app(
-    monkeypatch: MonkeyPatch, service_test_environ: EnvVarsDict
+    monkeypatch: pytest.MonkeyPatch, service_test_environ: EnvVarsDict
 ) -> Iterator[FastAPI]:
     # disable a couple of subsystems
     monkeypatch.setenv("CATALOG_POSTGRES", "null")

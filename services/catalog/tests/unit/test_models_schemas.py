@@ -17,12 +17,12 @@ from models_library.services import ServiceInput
 
 @pytest.mark.parametrize(
     "model_cls",
-    (
+    [
         ServiceGet,
         ServiceUpdate,
         ServiceItem,
         ServicePortGet,
-    ),
+    ],
 )
 def test_service_api_models_examples(model_cls, model_cls_examples):
     for name, example in model_cls_examples.items():

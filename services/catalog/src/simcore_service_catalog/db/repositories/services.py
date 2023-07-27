@@ -5,10 +5,10 @@ from typing import Any, Iterable, cast
 
 import packaging.version
 import sqlalchemy as sa
-from models_library.api_schemas_catalog.domain.group import GroupAtDB
 from models_library.api_schemas_catalog.services_specifications import (
     ServiceSpecifications,
 )
+from models_library.groups import GroupAtDB
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from models_library.users import GroupID
