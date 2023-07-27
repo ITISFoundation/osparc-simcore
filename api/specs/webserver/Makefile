@@ -13,6 +13,4 @@ install: _check_venv_active
 
 .PHONY: all
 all: _check_venv_active
-	@for file in *.py; do \
-		python $$file; \
-	done
+	python openapi.py
