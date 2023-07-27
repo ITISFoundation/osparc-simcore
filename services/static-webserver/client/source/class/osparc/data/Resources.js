@@ -1125,6 +1125,7 @@ qx.Class.define("osparc.data.Resources", {
               id: 1,
               name: "My Wallet",
               description: "Personal Wallet",
+              thumbnail: null,
               type: "personal",
               owner: 2,
               accessRights: {
@@ -1142,6 +1143,7 @@ qx.Class.define("osparc.data.Resources", {
               id: 2,
               name: "Our Wallet",
               description: "Organization wide Wallet",
+              thumbnail: null,
               type: "shared",
               owner: 2,
               accessRights: {
@@ -1164,6 +1166,7 @@ qx.Class.define("osparc.data.Resources", {
               id: 3,
               name: "Another Wallet",
               description: "Organization wide Wallet 2",
+              thumbnail: null,
               type: "shared",
               owner: 4,
               accessRights: {

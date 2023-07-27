@@ -26,6 +26,7 @@ qx.Class.define("osparc.data.model.Wallet", {
       name: walletData["name"],
       description: walletData["description"] ? walletData["description"] : null,
       thumbnail: walletData["thumbnail"] ? walletData["thumbnail"] : null,
+      walletType: walletData["type"] ? walletData["type"] : "personal",
       accessRights: walletData["accessRights"],
       credits: walletData["credits"]["left"]
     });
@@ -58,6 +59,13 @@ qx.Class.define("osparc.data.model.Wallet", {
       init: "",
       nullable: true,
       event: "changeThumbnail"
+    },
+
+    walletType: {
+      check: ["personal", "shared"],
+      init: "personal",
+      nullable: false,
+      event: "changeWalletType"
     },
 
     accessRights: {
