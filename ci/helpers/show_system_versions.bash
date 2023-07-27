@@ -6,7 +6,7 @@ set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
 echo "------------------------------ environs -----------------------------------"
-env
+env | sort
 
 echo "------------------------------ uname -----------------------------------"
 uname -a
