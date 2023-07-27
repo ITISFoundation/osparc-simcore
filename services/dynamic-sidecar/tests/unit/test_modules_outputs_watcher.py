@@ -16,6 +16,7 @@ import aiofiles
 import pytest
 from aiofiles import os
 from faker import Faker
+from models_library.services import RunID
 from pydantic import (
     ByteSize,
     NonNegativeFloat,
@@ -43,12 +44,12 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-_TENACITY_RETRY_PARAMS = dict(
-    reraise=True,
-    retry=retry_if_exception_type(AssertionError),
-    stop=stop_after_delay(10),
-    wait=wait_fixed(0.01),
-)
+_TENACITY_RETRY_PARAMS = {
+    "reraise": True,
+    "retry": retry_if_exception_type(AssertionError),
+    "stop": stop_after_delay(10),
+    "wait": wait_fixed(0.01),
+}
 
 TICK_INTERVAL: Final[PositiveFloat] = 0.001
 WAIT_INTERVAL: Final[PositiveFloat] = TICK_INTERVAL * 10
@@ -61,7 +62,7 @@ UPLOAD_DURATION: Final[PositiveFloat] = TICK_INTERVAL * 10
 @pytest.fixture
 def mounted_volumes(faker: Faker, tmp_path: Path) -> Iterator[MountedVolumes]:
     mounted_volumes = MountedVolumes(
-        run_id=faker.uuid4(cast_to=None),
+        run_id=RunID.create(),
         node_id=faker.uuid4(cast_to=None),
         inputs_path=tmp_path / "inputs",
         outputs_path=tmp_path / "outputs",
