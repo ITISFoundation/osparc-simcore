@@ -113,8 +113,8 @@ qx.Class.define("osparc.data.Roles", {
       },
       3: {
         id: "delete",
-        label: qx.locale.Manager.tr("Administrator"),
-        longLabel: qx.locale.Manager.tr("Admin: Read/Write/Delete access"),
+        label: qx.locale.Manager.tr("Accountant+"),
+        longLabel: qx.locale.Manager.tr("Accountant+: Read/Write access"),
         canDo: [
           qx.locale.Manager.tr("- can Delete the Wallet")
         ]

@@ -19,6 +19,12 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
   extend: osparc.ui.list.ListItemWithMenu,
 
   properties: {
+    walletType: {
+      check: ["personal", "shared"],
+      init: "personal",
+      nullable: false
+    },
+
     credits: {
       check: "Number",
       apply: "__applyCredits",
@@ -143,6 +149,8 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       const thumbnail = this.getChildControl("thumbnail");
       if (value) {
         thumbnail.setSource(value);
+      } else if (this.getWalletType() === "personal") {
+        thumbnail.setSource(osparc.utils.Icons.user(osparc.ui.list.ListItemWithMenu.ICON_SIZE));
       } else {
         thumbnail.setSource(osparc.utils.Icons.organization(osparc.ui.list.ListItemWithMenu.ICON_SIZE));
       }
