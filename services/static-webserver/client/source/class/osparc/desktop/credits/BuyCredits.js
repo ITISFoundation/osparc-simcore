@@ -206,7 +206,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       });
       layout.add(creditsLabel);
       this.bind("wallet", creditsLabel, "value", {
-        converter: wallet => wallet ? "You have " + wallet.getCredits() + " credits left" : this.tr("Select Wallet")
+        converter: wallet => wallet ? wallet.getCredits() + " " + this.tr("credits left") : this.tr("Select Wallet")
       });
 
       return layout;
