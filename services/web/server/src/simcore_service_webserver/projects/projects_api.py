@@ -684,19 +684,19 @@ async def try_close_project_for_user(
 ):
     with managed_resource(user_id, client_session_id, app) as user_session:
         current_session: UserSessionID = user_session.get_id()
-        sessions_with_project: list[
+        all_sessions_with_project: list[
             UserSessionID
         ] = await user_session.find_users_of_resource(
             app, key=PROJECT_ID_KEY, value=project_uuid
         )
 
-        # first check we have it opened now
-        if current_session not in sessions_with_project:
-            # nothing to do the project is already closed
+        # first check whether other sessions registered this project
+        if current_session not in all_sessions_with_project:
+            # nothing to do, I do not have this project registered
             log.warning(
-                "project [%s] is already closed for user [%s].",
-                project_uuid,
-                user_id,
+                "%s is not registered as resource of %s. Skipping close project",
+                f"{project_uuid=}",
+                f"{user_id}",
                 extra=get_log_record_extra(user_id=user_id),
             )
             return
@@ -708,10 +708,9 @@ async def try_close_project_for_user(
         await user_session.remove(key=PROJECT_ID_KEY)
 
     # check it is not opened by someone else
-    sessions_with_project.remove(current_session)
-    log.debug("remaining user_to_session_ids: %s", sessions_with_project)
-
-    if not sessions_with_project:
+    all_sessions_with_project.remove(current_session)
+    log.debug("remaining user_to_session_ids: %s", all_sessions_with_project)
+    if not all_sessions_with_project:
         # NOTE: depending on the garbage collector speed, it might already be removing it
         fire_and_forget_task(
             remove_project_dynamic_services(
@@ -724,7 +723,7 @@ async def try_close_project_for_user(
         log.error(
             "project [%s] is used by other users: [%s]. This should not be possible",
             project_uuid,
-            {user_session.user_id for user_session in sessions_with_project},
+            {user_session.user_id for user_session in all_sessions_with_project},
         )
 
 
@@ -987,21 +986,22 @@ async def run_project_dynamic_services(
 ) -> None:
     # first get the services if they already exist
     project_settings: ProjectsSettings = get_plugin_settings(request.app)
-    running_service_uuids: list[NodeIDStr] = [
+    running_services_uuids: list[NodeIDStr] = [
         d["service_uuid"]
         for d in await director_v2_api.list_dynamic_services(
             request.app, user_id, project["uuid"]
         )
     ]
+
     # find what needs to be started
-    project_missing_services: dict[NodeIDStr, dict[str, Any]] = {
+    services_to_start_uuids: dict[NodeIDStr, dict[str, Any]] = {
         service_uuid: service
         for service_uuid, service in project["workbench"].items()
         if _is_node_dynamic(service["key"])
-        and service_uuid not in running_service_uuids
+        and service_uuid not in running_services_uuids
     }
     if project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES > 0 and (
-        (len(project_missing_services) + len(running_service_uuids))
+        (len(services_to_start_uuids) + len(running_services_uuids))
         > project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
     ):
         # we cannot start so many services so we are done
@@ -1009,16 +1009,17 @@ async def run_project_dynamic_services(
             user_id=user_id, project_uuid=ProjectID(project["uuid"])
         )
 
+    # avoid starting deprecated services
     deprecated_services: list[bool] = await logged_gather(
         *(
             is_service_deprecated(
                 request.app,
                 user_id,
-                project_missing_services[service_uuid]["key"],
-                project_missing_services[service_uuid]["version"],
+                services_to_start_uuids[service_uuid]["key"],
+                services_to_start_uuids[service_uuid]["version"],
                 product_name,
             )
-            for service_uuid in project_missing_services
+            for service_uuid in services_to_start_uuids
         ),
         reraise=True,
     )
@@ -1027,15 +1028,15 @@ async def run_project_dynamic_services(
         *(
             _start_dynamic_service(
                 request,
-                service_key=project_missing_services[service_uuid]["key"],
-                service_version=project_missing_services[service_uuid]["version"],
+                service_key=services_to_start_uuids[service_uuid]["key"],
+                service_version=services_to_start_uuids[service_uuid]["version"],
                 product_name=product_name,
                 user_id=user_id,
                 project_uuid=project["uuid"],
                 node_uuid=NodeID(service_uuid),
             )
             for service_uuid, is_deprecated in zip(
-                project_missing_services, deprecated_services
+                services_to_start_uuids, deprecated_services, strict=True
             )
             if not is_deprecated
         ),
@@ -1048,6 +1049,7 @@ async def remove_project_dynamic_services(
     project_uuid: str,
     app: web.Application,
     simcore_user_agent: str,
+    *,
     notify_users: bool = True,
     user_name: UserNameDict | None = None,
 ) -> None:
@@ -1123,7 +1125,7 @@ async def notify_project_state_update(
     ]
 
     if notify_only_user:
-        await send_messages(app, user_id=str(notify_only_user), messages=messages)
+        await send_messages(app, user_id=f"{notify_only_user}", messages=messages)
     else:
         rooms_to_notify = [
             f"{gid}"
