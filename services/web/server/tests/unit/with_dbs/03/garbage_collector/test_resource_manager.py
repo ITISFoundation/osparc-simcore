@@ -50,7 +50,7 @@ from simcore_service_webserver.rabbitmq import setup_rabbitmq
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.resource_manager.registry import (
     RedisResourceRegistry,
-    RegistryKeyPrefixDict,
+    UserSessionDict,
     get_registry,
 )
 from simcore_service_webserver.rest.plugin import setup_rest
@@ -281,7 +281,7 @@ async def test_websocket_resource_management(
     cur_client_session_id = client_session_id_factory()
     sio = await socketio_client_factory(cur_client_session_id)
     sid = sio.get_sid()
-    resource_key = RegistryKeyPrefixDict(
+    resource_key = UserSessionDict(
         user_id=f"{logged_user['id']}", client_session_id=cur_client_session_id
     )
 
@@ -324,14 +324,14 @@ async def test_websocket_multiple_connections(
     client_session_id_factory: Callable[[], str],
 ):
     NUMBER_OF_SOCKETS = 5
-    resource_keys: list[RegistryKeyPrefixDict] = []
+    resource_keys: list[UserSessionDict] = []
 
     # connect multiple clients
     clients = []
     for socket_count in range(1, NUMBER_OF_SOCKETS + 1):
         cur_client_session_id = client_session_id_factory()
         sio = await socketio_client_factory(cur_client_session_id)
-        resource_key = RegistryKeyPrefixDict(
+        resource_key = UserSessionDict(
             user_id=f"{logged_user['id']}", client_session_id=cur_client_session_id
         )
         assert await socket_registry.find_keys(("socket_id", sio.get_sid())) == [

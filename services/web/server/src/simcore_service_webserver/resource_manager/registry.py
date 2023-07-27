@@ -34,17 +34,19 @@ _ALIVE_SUFFIX = "alive"  # points to a string type
 _RESOURCE_SUFFIX = "resources"  # points to a hash (like a dict) type
 
 
-class _RegistryKeyPrefixRequired(TypedDict, total=True):
+class _UserRequired(TypedDict, total=True):
     user_id: str | int
 
 
-class RegistryKeyPrefixDict(_RegistryKeyPrefixRequired):
-    """Parts of the redis key w/o suffix"""
+class UserSessionDict(_UserRequired):
+    """Parts of the key used in redis for a user-session"""
 
     client_session_id: str
 
 
-class ResourcesValueDict(TypedDict, total=False):
+class ResourcesDict(TypedDict, total=False):
+    """Field-value pairs of {user_id}:{client_session_id}:resources key"""
+
     project_id: UUIDStr
     socket_id: str
 
@@ -68,19 +70,19 @@ class RedisResourceRegistry:
         return self._app
 
     @classmethod
-    def _hash_key(cls, key: RegistryKeyPrefixDict) -> str:
+    def _hash_key(cls, key: UserSessionDict) -> str:
         hash_key: str = ":".join(f"{k}={v}" for k, v in key.items())
         return hash_key
 
     @classmethod
-    def _decode_hash_key(cls, hash_key: str) -> RegistryKeyPrefixDict:
+    def _decode_hash_key(cls, hash_key: str) -> UserSessionDict:
         tmp_key = (
             hash_key[: -len(f":{_RESOURCE_SUFFIX}")]
             if hash_key.endswith(f":{_RESOURCE_SUFFIX}")
             else hash_key[: -len(f":{_ALIVE_SUFFIX}")]
         )
         key = dict(x.split("=") for x in tmp_key.split(":"))
-        return RegistryKeyPrefixDict(**key)  # type: ignore
+        return UserSessionDict(**key)  # type: ignore
 
     @property
     def client(self) -> aioredis.Redis:
@@ -88,25 +90,23 @@ class RedisResourceRegistry:
         return client
 
     async def set_resource(
-        self, key: RegistryKeyPrefixDict, resource: tuple[str, str]
+        self, key: UserSessionDict, resource: tuple[str, str]
     ) -> None:
         hash_key = f"{self._hash_key(key)}:{_RESOURCE_SUFFIX}"
         field, value = resource
         await self.client.hset(hash_key, mapping={field: value})
 
-    async def get_resources(self, key: RegistryKeyPrefixDict) -> ResourcesValueDict:
+    async def get_resources(self, key: UserSessionDict) -> ResourcesDict:
         hash_key = f"{self._hash_key(key)}:{_RESOURCE_SUFFIX}"
         fields = await self.client.hgetall(hash_key)
-        return ResourcesValueDict(**fields)  # type: ignore
+        return ResourcesDict(**fields)  # type: ignore
 
-    async def remove_resource(
-        self, key: RegistryKeyPrefixDict, resource_name: str
-    ) -> None:
+    async def remove_resource(self, key: UserSessionDict, resource_name: str) -> None:
         hash_key = f"{self._hash_key(key)}:{_RESOURCE_SUFFIX}"
         await self.client.hdel(hash_key, resource_name)
 
     async def find_resources(
-        self, key: RegistryKeyPrefixDict, resource_name: str
+        self, key: UserSessionDict, resource_name: str
     ) -> list[str]:
         resources: list[str] = []
         # the key might only be partialy complete
@@ -116,8 +116,8 @@ class RedisResourceRegistry:
                 resources.append(await self.client.hget(scanned_key, resource_name))
         return resources
 
-    async def find_keys(self, resource: tuple[str, str]) -> list[RegistryKeyPrefixDict]:
-        keys: list[RegistryKeyPrefixDict] = []
+    async def find_keys(self, resource: tuple[str, str]) -> list[UserSessionDict]:
+        keys: list[UserSessionDict] = []
         if not resource:
             return keys
 
@@ -128,17 +128,17 @@ class RedisResourceRegistry:
                 keys.append(self._decode_hash_key(hash_key))
         return keys
 
-    async def set_key_alive(self, key: RegistryKeyPrefixDict, timeout: int) -> None:
+    async def set_key_alive(self, key: UserSessionDict, timeout: int) -> None:
         # setting the timeout to always expire, timeout > 0
         timeout = int(max(1, timeout))
         hash_key = f"{self._hash_key(key)}:{_ALIVE_SUFFIX}"
         await self.client.set(hash_key, 1, ex=timeout)
 
-    async def is_key_alive(self, key: RegistryKeyPrefixDict) -> bool:
+    async def is_key_alive(self, key: UserSessionDict) -> bool:
         hash_key = f"{self._hash_key(key)}:{_ALIVE_SUFFIX}"
         return await self.client.exists(hash_key) > 0
 
-    async def remove_key(self, key: RegistryKeyPrefixDict) -> None:
+    async def remove_key(self, key: UserSessionDict) -> None:
         await self.client.delete(
             f"{self._hash_key(key)}:{_RESOURCE_SUFFIX}",
             f"{self._hash_key(key)}:{_ALIVE_SUFFIX}",
@@ -146,7 +146,7 @@ class RedisResourceRegistry:
 
     async def get_all_resource_keys(
         self,
-    ) -> tuple[list[RegistryKeyPrefixDict], list[RegistryKeyPrefixDict]]:
+    ) -> tuple[list[UserSessionDict], list[UserSessionDict]]:
         alive_keys = [
             self._decode_hash_key(hash_key)
             async for hash_key in self.client.scan_iter(match=f"*:{_ALIVE_SUFFIX}")

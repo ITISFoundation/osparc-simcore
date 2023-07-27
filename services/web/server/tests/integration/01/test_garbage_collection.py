@@ -45,7 +45,7 @@ from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.resource_manager.registry import (
-    RegistryKeyPrefixDict,
+    UserSessionDict,
     get_registry,
 )
 from simcore_service_webserver.rest.plugin import setup_rest
@@ -296,7 +296,7 @@ async def connect_to_socketio(
     socket_registry = get_registry(client.server.app)
     cur_client_session_id = f"{uuid4()}"
     sio = await socketio_client_factory(cur_client_session_id, client)
-    resource_key: RegistryKeyPrefixDict = {
+    resource_key: UserSessionDict = {
         "user_id": str(user["id"]),
         "client_session_id": cur_client_session_id,
     }

@@ -9,8 +9,8 @@ from servicelib.logging_utils import get_log_record_extra, log_context
 
 from .registry import (
     RedisResourceRegistry,
-    RegistryKeyPrefixDict,
-    ResourcesValueDict,
+    ResourcesDict,
+    UserSessionDict,
     get_registry,
 )
 from .settings import ResourceManagerSettings, get_plugin_settings
@@ -21,8 +21,8 @@ _logger = logging.getLogger(__name__)
 _SOCKET_ID_FIELDNAME: Final[str] = "socket_id"
 PROJECT_ID_KEY: Final[str] = "project_id"
 
-assert _SOCKET_ID_FIELDNAME in ResourcesValueDict.__annotations__  # nosec
-assert PROJECT_ID_KEY in ResourcesValueDict.__annotations__  # nosec
+assert _SOCKET_ID_FIELDNAME in ResourcesDict.__annotations__  # nosec
+assert PROJECT_ID_KEY in ResourcesDict.__annotations__  # nosec
 
 
 def _get_service_deletion_timeout(app: web.Application) -> int:
@@ -68,8 +68,8 @@ class UserSessionResourcesRegistry:
     def _registry(self) -> RedisResourceRegistry:
         return get_registry(self.app)
 
-    def _resource_key(self) -> RegistryKeyPrefixDict:
-        return RegistryKeyPrefixDict(
+    def _resource_key(self) -> UserSessionDict:
+        return UserSessionDict(
             user_id=f"{self.user_id}",
             client_session_id=self.client_session_id or "*",
         )
@@ -197,7 +197,7 @@ class UserSessionResourcesRegistry:
         app: web.Application, key: str, value: str
     ) -> list[UserSessionID]:
         registry = get_registry(app)
-        registry_keys: list[RegistryKeyPrefixDict] = await registry.find_keys(
+        registry_keys: list[UserSessionDict] = await registry.find_keys(
             resource=(key, value)
         )
         users_sessions_ids: list[UserSessionID] = [
