@@ -147,19 +147,19 @@ class UserSessionResourcesRegistry:
             )
             return resources
 
-    async def find(self, key: str) -> list[str]:
+    async def find(self, resource_name: str) -> list[str]:
         _logger.debug(
             "user %s/tab %s finding %s from registry...",
             self.user_id,
             self.client_session_id,
-            key,
+            resource_name,
             extra=get_log_record_extra(user_id=self.user_id),
         )
         registry = get_registry(self.app)
-        user_resources: list[str] = await registry.find_resources(
-            self._resource_key(), key
+        resource_values: list[str] = await registry.find_resources(
+            self._resource_key(), resource_name
         )
-        return user_resources
+        return resource_values
 
     async def add(self, key: str, value: str) -> None:
         _logger.debug(
@@ -192,19 +192,18 @@ class UserSessionResourcesRegistry:
         registry_keys: list[RegistryKeyPrefixDict] = await registry.find_keys(
             resource=(key, value)
         )
-        user_session_id_list: list[UserSessionID] = [
+        users_sessions_ids: list[UserSessionID] = [
             UserSessionID(
-                user_id=int(key["user_id"]),
-                client_session_id=key["client_session_id"],
+                user_id=int(r["user_id"]),
+                client_session_id=r["client_session_id"],
             )
-            for key in registry_keys
-            if ("use_id" in key and "client_session_id" in key)
+            for r in registry_keys
         ]
-        return user_session_id_list
+        return users_sessions_ids
 
     def get_id(self) -> UserSessionID:
         if self.client_session_id is None:
-            msg = f"Invalid user session id. Missing {self.client_session_id=}"
+            msg = f"Cannot build UserSessionID with missing {self.client_session_id=}"
             raise ValueError(msg)
         return UserSessionID(
             user_id=self.user_id, client_session_id=self.client_session_id
