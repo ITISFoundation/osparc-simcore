@@ -13,7 +13,7 @@ from pint import PintError, UnitRegistry
 from pydantic import Extra, Field
 from pydantic.main import BaseModel
 
-from ..api_schemas_catalog.schemas import services
+from ..api_schemas_catalog import services
 from ._base import InputSchema, OutputSchema
 
 ServiceInputKey: TypeAlias = ServicePortKey

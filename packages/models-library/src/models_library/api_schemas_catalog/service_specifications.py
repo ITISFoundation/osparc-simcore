@@ -1,12 +1,21 @@
-from ...services import ServiceKey, ServiceVersion
-from ...users import GroupID
-from ..schemas.services_specifications import ServiceSpecifications
+from pydantic import BaseModel, Field
+
+from ..generated_models.docker_rest_api import ServiceSpec as DockerServiceSpec
 
 
-class ServiceSpecificationsAtDB(ServiceSpecifications):
-    service_key: ServiceKey
-    service_version: ServiceVersion
-    gid: GroupID
+class ServiceSpecifications(BaseModel):
+    sidecar: DockerServiceSpec | None = Field(
+        default=None,
+        description="schedule-time specifications for the service sidecar (follows Docker Service creation API, see https://docs.docker.com/engine/api/v1.25/#operation/ServiceCreate)",
+    )
+    service: DockerServiceSpec | None = Field(
+        default=None,
+        description="schedule-time specifications specifications for the service (follows Docker Service creation API (specifically only the Resources part), see https://docs.docker.com/engine/api/v1.41/#tag/Service/operation/ServiceCreate",
+    )
 
-    class Config(ServiceSpecifications.Config):
-        orm_mode: bool = True
+    class Config:
+        pass
+
+
+class ServiceSpecificationsGet(ServiceSpecifications):
+    ...

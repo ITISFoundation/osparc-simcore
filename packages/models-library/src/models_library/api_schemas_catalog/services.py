@@ -7,10 +7,10 @@ from ..services import ServiceDockerData, ServiceMetaData
 from ..services_access import ServiceAccessRights
 from ..services_resources import ServiceResourcesDict
 
-from ...emails import LowerCaseEmailStr
-from ...services import ServiceDockerData, ServiceMetaData
-from ...services_access import ServiceAccessRights
-from ...services_resources import ServiceResourcesDict
+from ..emails import LowerCaseEmailStr
+from ..services import ServiceDockerData, ServiceMetaData
+from ..services_access import ServiceAccessRights
+from ..services_resources import ServiceResourcesDict
 
 
 class ServiceUpdate(ServiceMetaData, ServiceAccessRights):
