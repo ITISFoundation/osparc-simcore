@@ -8,7 +8,7 @@ from servicelib.utils import logged_gather
 from ..projects.exceptions import ProjectLockError, ProjectNotFoundError
 from ..projects.projects_api import remove_project_dynamic_services
 from ..redis import get_redis_lock_manager_client
-from ..resource_manager.registry import RedisResourceRegistry
+from ..resource_manager.registry import RedisResourceRegistry, ResourcesDict
 from ._core_guests import remove_guest_user_with_all_its_resources
 from .settings import GUEST_USER_RC_LOCK_FORMAT
 
@@ -43,14 +43,14 @@ async def remove_disconnected_user_resources(
     # these keys hold references to more than one websocket connection ids
     # the websocket ids are referred to as resources (but NOT the only resource)
 
-    alive_keys, dead_keys = await registry.get_all_resource_keys()
-    _logger.debug("potential dead keys: %s", dead_keys)
+    all_session_alive, all_sessions_dead = await registry.get_all_resource_keys()
+    _logger.debug("potential dead keys: %s", all_sessions_dead)
 
     # clean up all resources of expired keys
-    for dead_key in dead_keys:
+    for dead_session in all_sessions_dead:
         # Skip locked keys for the moment
         try:
-            user_id = int(dead_key["user_id"])
+            user_id = int(dead_session["user_id"])
         except (KeyError, ValueError):  # noqa: PERF203
             continue
 
@@ -64,25 +64,25 @@ async def remove_disconnected_user_resources(
             continue
 
         # (0) If key has no resources => remove from registry and continue
-        dead_key_resources = await registry.get_resources(dead_key)
-        if not dead_key_resources:
-            await registry.remove_key(dead_key)
+        resources: ResourcesDict = await registry.get_resources(dead_session)
+        if not resources:
+            await registry.remove_key(dead_session)
             continue
 
         # (1,2) CAREFULLY releasing every resource acquired by the expired key
         _logger.info(
             "%s expired. Checking resources to cleanup",
-            f"{dead_key=}",
+            f"{dead_session=}",
         )
 
-        for resource_name, resource_value in dead_key_resources.items():
+        for resource_name, resource_value in resources.items():
             # Releasing a resource consists of two steps
             #   - (1) release actual resource (e.g. stop service, close project, deallocate memory, etc)
             #   - (2) remove resource field entry in expired key registry after (1) is completed.
 
             # collects a list of keys for (2)
             keys_to_update = [
-                dead_key,
+                dead_session,
             ]
 
             # Every resource might be SHARED with other keys.
@@ -92,10 +92,10 @@ async def remove_disconnected_user_resources(
             other_keys_with_this_resource = [
                 k
                 for k in await registry.find_keys((resource_name, f"{resource_value}"))
-                if k != dead_key
+                if k != dead_session
             ]
             is_resource_still_in_use: bool = any(
-                k in alive_keys for k in other_keys_with_this_resource
+                k in all_session_alive for k in other_keys_with_this_resource
             )
 
             # FIXME: if the key is dead, shouldn't we still delete the field entry from the expired key regisitry?
@@ -109,7 +109,7 @@ async def remove_disconnected_user_resources(
                     "(1) Releasing resource %s:%s acquired by expired %s",
                     f"{resource_name=}",
                     f"{resource_value=}",
-                    f"{dead_key!r}",
+                    f"{dead_session!r}",
                 )
 
                 if resource_name == "project_id":
