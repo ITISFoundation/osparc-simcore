@@ -75,7 +75,7 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
 
     __getWalletsPage: function() {
       const title = this.tr("Wallets");
-      const iconSrc = "@FontAwesome5Solid/folder/22";
+      const iconSrc = "@MaterialIcons/account_balance_wallet/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       const walletsView = new osparc.desktop.wallets.WalletsView();
       walletsView.set({
