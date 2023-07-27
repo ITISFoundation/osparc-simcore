@@ -37,7 +37,7 @@ async def _fetch_new_project_owner_from_groups(
             try:
                 possible_user = await get_user(app=app, user_id=possible_user_id)
                 return int(possible_user["primary_gid"])
-            except UserNotFoundError:
+            except UserNotFoundError:  # noqa: PERF203
                 _logger.warning(
                     "Could not find new owner '%s' will try a new one",
                     possible_user_id,

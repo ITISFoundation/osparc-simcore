@@ -29,10 +29,13 @@ ALIVE_SUFFIX = "alive"
 RESOURCE_SUFFIX = "resources"
 
 
-class RegistryKeyPrefixDict(TypedDict, total=False):
+class _RegistryKeyPrefixRequired(TypedDict, total=True):
+    user_id: str | int
+
+
+class RegistryKeyPrefixDict(_RegistryKeyPrefixRequired):
     """Parts of the redis key w/o suffix"""
 
-    user_id: str | int
     client_session_id: str
 
 

@@ -23,7 +23,7 @@ from ..users.api import (
     get_user_role,
 )
 from ..users.exceptions import UserNotFoundError
-from ._utils import get_new_project_owner_gid, replace_current_owner
+from ._core_utils import get_new_project_owner_gid, replace_current_owner
 from .settings import GUEST_USER_RC_LOCK_FORMAT
 
 _logger = logging.getLogger(__name__)
@@ -75,7 +75,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
                 project_uuid=project_uuid,
                 user_id=user_id,
             )
-        except (web.HTTPNotFound, ProjectNotFoundError) as err:
+        except (web.HTTPNotFound, ProjectNotFoundError) as err:  # noqa: PERF203
             _logger.warning(
                 "Could not find project %s for user with %s to be removed: %s. Skipping.",
                 f"{project_uuid=}",

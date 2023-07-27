@@ -5,7 +5,7 @@
 
 import asyncio
 import logging
-from typing import AsyncIterator, Callable
+from collections.abc import AsyncIterator, Callable
 
 from aiohttp import web
 from aiopg.sa.engine import Engine
@@ -81,7 +81,6 @@ async def _update_expired_users(app: web.Application):
             # We need a mechanism to send messages from GC to the webservers
             # OR a way to notify from the database changes back to the web-servers (similar to compuational services)
             # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3387
-            # await notify_user_logout_all_sessions(app, user_id)
 
     else:
         _logger.info("No users expired")
