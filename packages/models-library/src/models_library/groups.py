@@ -1,8 +1,10 @@
 import enum
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Final
 
 from pydantic import BaseModel, Field
 from pydantic.types import PositiveInt
+
+EVERYONE_GROUP_ID: Final[int] = 1
 
 
 class GroupType(enum.Enum):

@@ -11,7 +11,9 @@ from aiohttp.client_exceptions import (
     ClientResponseError,
     InvalidURL,
 )
-from models_library.api_schemas_catalog import ServiceAccessRightsGet
+from models_library.api_schemas_catalog.service_access_rights import (
+    ServiceAccessRightsGet,
+)
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from pydantic import parse_obj_as
@@ -65,7 +67,6 @@ async def get_services_for_user_in_product(
     )
 
     with handle_client_exceptions(app) as session:
-
         async with session.get(
             url,
             headers={X_PRODUCT_NAME_HEADER: product_name},
