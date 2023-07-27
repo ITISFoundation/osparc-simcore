@@ -6,7 +6,6 @@ from typing import AsyncIterable, AsyncIterator
 import aiodocker
 import pytest
 import yaml
-from faker import Faker
 from models_library.services import RunID
 from pydantic import PositiveInt, SecretStr
 from pytest import FixtureRequest
@@ -26,8 +25,8 @@ def volume_name() -> str:
 
 
 @pytest.fixture
-def run_id(faker: Faker) -> RunID:
-    return faker.uuid4(cast_to=None)
+def run_id() -> RunID:
+    return RunID.create()
 
 
 @pytest.fixture
@@ -36,10 +35,7 @@ async def volume_with_label(volume_name: str, run_id: RunID) -> AsyncIterable[No
         volume = await docker_client.volumes.create(
             {
                 "Name": "test_volume_name_1",
-                "Labels": {
-                    "source": volume_name,
-                    "run_id": f"{run_id}",
-                },
+                "Labels": {"source": volume_name, "run_id": run_id},
             }
         )
 
@@ -87,7 +83,7 @@ async def test_volume_label_missing(run_id: RunID) -> None:
         await get_volume_by_label("not_exist", run_id)
 
     error_msg = f"{exc_info.value}"
-    assert f"{run_id}" in error_msg
+    assert run_id in error_msg
     assert "not_exist" in error_msg
 
 

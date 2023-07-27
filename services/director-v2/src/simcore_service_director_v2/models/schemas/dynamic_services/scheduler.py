@@ -4,7 +4,7 @@ import re
 from enum import Enum
 from functools import cached_property
 from typing import Any, Mapping, TypeAlias
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from models_library.basic_types import PortInt
 from models_library.generated_models.docker_rest_api import ContainerState, Status2
@@ -335,7 +335,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         description="Name of the current dynamic-sidecar being observed",
     )
     run_id: RunID = Field(
-        default_factory=uuid4,
+        default_factory=RunID.create,
         description=(
             "Uniquely identify the dynamic sidecar session (a.k.a. 2 "
             "subsequent exact same services will have a different run_id)"
@@ -425,7 +425,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         request_scheme: str,
         request_simcore_user_agent: str,
         can_save: bool,
-        run_id: UUID | None = None,
+        run_id: RunID | None = None,
     ) -> "SchedulerData":
         # This constructor method sets current product
         names_helper = DynamicSidecarNamesHelper.make(service.node_uuid)
