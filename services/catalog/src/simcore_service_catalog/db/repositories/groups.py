@@ -1,7 +1,6 @@
 from typing import Optional, cast
 
 import sqlalchemy as sa
-from models_library.api_schemas_catalog.domain.group import GroupAtDB
 from models_library.emails import LowerCaseEmailStr
 from models_library.groups import GroupAtDB
 from pydantic.types import PositiveInt
