@@ -4,9 +4,10 @@
 
 import re
 import urllib.parse
+from collections.abc import Callable
 from copy import deepcopy
 from pprint import pformat
-from typing import Any, Callable
+from typing import Any
 
 import pytest
 from models_library.basic_regex import VERSION_RE
@@ -27,10 +28,10 @@ from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataA
 
 @pytest.fixture()
 def minimal_service_common_data() -> dict[str, Any]:
-    return dict(
-        name="this is a nice sample service",
-        description="this is the description of the service",
-    )
+    return {
+        "name": "this is a nice sample service",
+        "description": "this is the description of the service",
+    }
 
 
 def test_create_minimal_service_common_data(
@@ -40,7 +41,7 @@ def test_create_minimal_service_common_data(
 
     assert service.name == minimal_service_common_data["name"]
     assert service.description == minimal_service_common_data["description"]
-    assert service.thumbnail == None
+    assert service.thumbnail is None
 
 
 def test_node_with_empty_thumbnail(minimal_service_common_data: dict[str, Any]):
@@ -51,7 +52,7 @@ def test_node_with_empty_thumbnail(minimal_service_common_data: dict[str, Any]):
 
     assert service.name == minimal_service_common_data["name"]
     assert service.description == minimal_service_common_data["description"]
-    assert service.thumbnail == None
+    assert service.thumbnail is None
 
 
 def test_node_with_thumbnail(minimal_service_common_data: dict[str, Any]):

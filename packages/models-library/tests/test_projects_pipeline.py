@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 
 from pprint import pformat
-from typing import Dict, Type
 
 import pytest
 from models_library.projects_pipeline import ComputationTask
@@ -15,7 +14,7 @@ from pydantic import BaseModel
     (ComputationTask,),
 )
 def test_computation_task_model_examples(
-    model_cls: Type[BaseModel], model_cls_examples: Dict[str, Dict]
+    model_cls: type[BaseModel], model_cls_examples: dict[str, dict]
 ):
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))

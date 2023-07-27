@@ -1,14 +1,14 @@
 import hashlib
 import json
 import logging
+from collections.abc import Callable, Coroutine
 from copy import deepcopy
-from typing import Any, Callable, Coroutine
+from typing import Any
 
-from models_library.projects_nodes_io import UUIDStr
 from pydantic import BaseModel
 
 from ..projects import Project
-from ..projects_nodes_io import NodeID, PortLink
+from ..projects_nodes_io import NodeID, PortLink, UUIDStr
 
 logger = logging.getLogger(__name__)
 

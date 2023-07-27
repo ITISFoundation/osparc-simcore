@@ -2,7 +2,7 @@
     Models Front-end UI
 """
 
-from typing import Literal, TypedDict
+from typing import Any, ClassVar, Literal, TypedDict
 
 from pydantic import BaseModel, Extra, Field, validator
 from pydantic.color import Color
@@ -35,7 +35,7 @@ class Annotation(BaseModel):
 
     class Config:
         extra = Extra.forbid
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "type": "note",
@@ -46,7 +46,7 @@ class Annotation(BaseModel):
                         "width": 117,
                         "height": 26,
                         "destinataryGid": 4,
-                        "text": "ToDo"
+                        "text": "ToDo",
                     },
                 },
                 {

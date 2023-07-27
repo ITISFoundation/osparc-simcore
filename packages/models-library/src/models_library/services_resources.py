@@ -1,9 +1,7 @@
 import logging
 from enum import auto
-from typing import Any, Final, TypeAlias
+from typing import Any, ClassVar, Final, TypeAlias
 
-from models_library.docker import DockerGenericTag
-from models_library.utils.enums import StrAutoEnum
 from pydantic import (
     BaseModel,
     ByteSize,
@@ -14,6 +12,8 @@ from pydantic import (
     root_validator,
 )
 
+from .docker import DockerGenericTag
+from .utils.enums import StrAutoEnum
 from .utils.fastapi_encoders import jsonable_encoder
 
 logger = logging.getLogger(__name__)
@@ -90,7 +90,7 @@ class ImageResources(BaseModel):
             resource.set_reservation_same_as_limit()
 
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "image": "simcore/service/dynamic/pretty-intense:1.0.0",
                 "resources": {
@@ -138,7 +138,7 @@ class ServiceResourcesDictHelpers:
         return output
 
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 # no compose spec (majority of services)
                 {

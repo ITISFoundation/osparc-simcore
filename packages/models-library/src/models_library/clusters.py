@@ -1,10 +1,15 @@
-from typing import Final, Literal, TypeAlias, Union
+from enum import Enum
+from typing import Any, ClassVar, Final, Literal, TypeAlias, Union
 
 from pydantic import AnyUrl, BaseModel, Extra, Field, HttpUrl, SecretStr, root_validator
 from pydantic.types import NonNegativeInt
-from simcore_postgres_database.models.clusters import ClusterType
 
 from .users import GroupID
+
+
+class ClusterType(Enum):
+    AWS = "AWS"
+    ON_PREMISE = "ON_PREMISE"
 
 
 class ClusterAccessRights(BaseModel):
@@ -35,7 +40,7 @@ class SimpleAuthentication(BaseAuthentication):
     password: SecretStr
 
     class Config(BaseAuthentication.Config):
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "type": "simple",
@@ -51,7 +56,7 @@ class KerberosAuthentication(BaseAuthentication):
 
     # NOTE: the entries here still need to be defined
     class Config(BaseAuthentication.Config):
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "type": "kerberos",
@@ -65,7 +70,7 @@ class JupyterHubTokenAuthentication(BaseAuthentication):
     api_token: str
 
     class Config(BaseAuthentication.Config):
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {"type": "jupyterhub", "api_token": "some_jupyterhub_token"},
             ]
@@ -115,7 +120,7 @@ class Cluster(BaseCluster):
     id: ClusterID = Field(..., description="The cluster ID")
 
     class Config(BaseCluster.Config):
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "id": DEFAULT_CLUSTER_ID,
@@ -191,8 +196,7 @@ class Cluster(BaseCluster):
         if access_rights[owner_gid] != (
             CLUSTER_USER_RIGHTS if is_default_cluster else CLUSTER_ADMIN_RIGHTS
         ):
-            raise ValueError(
-                f"the cluster owner access rights are incorrectly set: {access_rights[owner_gid]}"
-            )
+            msg = f"the cluster owner access rights are incorrectly set: {access_rights[owner_gid]}"
+            raise ValueError(msg)
         values["access_rights"] = access_rights
         return values

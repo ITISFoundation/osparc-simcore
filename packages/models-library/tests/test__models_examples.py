@@ -4,11 +4,12 @@
 
 
 import json
+from collections.abc import Iterable
 from contextlib import suppress
 from importlib import import_module
 from inspect import getmembers, isclass
 from pathlib import Path
-from typing import Any, Iterable, Optional, Set, Tuple, Type
+from typing import Any
 
 import models_library
 import pytest
@@ -18,8 +19,8 @@ from pydantic.json import pydantic_encoder
 
 
 def iter_model_cls_examples(
-    exclude: Optional[Set] = None,
-) -> Iterable[Tuple[str, Type[BaseModel], NonNegativeInt, Any]]:
+    exclude: set | None = None,
+) -> Iterable[tuple[str, type[BaseModel], NonNegativeInt, Any]]:
     def _is_model_cls(cls) -> bool:
         with suppress(TypeError):
             # NOTE: issubclass( dict[models_library.services.ConstrainedStrValue, models_library.services.ServiceInput] ) raises TypeError
@@ -45,7 +46,7 @@ def iter_model_cls_examples(
 )
 def test_all_module_model_examples(
     class_name: str,
-    model_cls: Type[BaseModel],
+    model_cls: type[BaseModel],
     example_index: NonNegativeInt,
     test_example: Any,
 ):

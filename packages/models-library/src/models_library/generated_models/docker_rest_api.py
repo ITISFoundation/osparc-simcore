@@ -1883,8 +1883,6 @@ class File1(File):
 
     """
 
-    pass
-
 
 class Config1(BaseModel):
     File: File1 | None = Field(

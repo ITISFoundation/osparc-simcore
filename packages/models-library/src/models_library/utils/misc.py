@@ -1,17 +1,17 @@
-from typing import Any, Dict, List, Type, Union
+from typing import Any
 
 from pydantic import BaseModel
 from pydantic.config import SchemaExtraCallable
 
 
-def extract_examples(model_cls: Type[BaseModel]) -> List[Dict[str, Any]]:
+def extract_examples(model_cls: type[BaseModel]) -> list[dict[str, Any]]:
     """Extracts examples from pydantic classes"""
 
     examples = []
 
-    schema_extra: Union[
-        Dict[str, Any], SchemaExtraCallable
-    ] = model_cls.__config__.schema_extra
+    schema_extra: dict[
+        str, Any
+    ] | SchemaExtraCallable = model_cls.__config__.schema_extra
 
     if isinstance(schema_extra, dict):
         # NOTE: Sometimes an example (singular) mistaken

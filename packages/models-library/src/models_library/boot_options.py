@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Any, ClassVar
 
 from pydantic import BaseModel, validator
 from typing_extensions import TypedDict
@@ -15,20 +15,19 @@ class BootOption(BaseModel):
     label: str
     description: str
     default: str
-    items: Dict[str, BootChoice]
+    items: dict[str, BootChoice]
 
     @validator("items")
     @classmethod
     def ensure_default_included(cls, v, values):
         default = values["default"]
         if default not in v:
-            raise ValueError(
-                f"Expected default={default} to be present a key of items={v}"
-            )
+            msg = f"Expected default={default} to be present a key of items={v}"
+            raise ValueError(msg)
         return v
 
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "label": "Boot mode",
@@ -64,4 +63,4 @@ class BootOption(BaseModel):
         }
 
 
-BootOptions = Dict[EnvVarKey, BootOption]
+BootOptions = dict[EnvVarKey, BootOption]

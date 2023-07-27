@@ -8,16 +8,17 @@ from enum import Enum
 from typing import Any, TypeAlias
 from uuid import UUID
 
-from models_library.utils.common_validators import empty_str_to_none, none_to_empty_str
 from pydantic import BaseModel, ConstrainedStr, Extra, Field, validator
 
 from .basic_regex import DATE_RE, UUID_RE_BASE
+from .basic_types import HttpUrlWithCustomMinLength
 from .emails import LowerCaseEmailStr
 from .projects_access import AccessRights, GroupIDStr
-from .projects_nodes import HttpUrlWithCustomMinLength, Node
+from .projects_nodes import Node
 from .projects_nodes_io import NodeIDStr
 from .projects_state import ProjectState
 from .projects_ui import StudyUI
+from .utils.common_validators import empty_str_to_none, none_to_empty_str
 
 ProjectID: TypeAlias = UUID
 ClassifierID: TypeAlias = str

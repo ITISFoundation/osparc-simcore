@@ -29,30 +29,30 @@ TEST_REQUIREMENTS = tuple(
 )  # STRICK requirements
 
 
-SETUP = dict(
-    name="simcore-models-library",
-    version=Path(CURRENT_DIR / "VERSION").read_text().strip(),
-    author="Sylvain Anderegg (sanderegg)",
-    description="Core service library for simcore pydantic models",
-    python_requires="~=3.10",
-    classifiers=[
+SETUP = {
+    "name": "simcore-models-library",
+    "version": Path(CURRENT_DIR / "VERSION").read_text().strip(),
+    "author": "Sylvain Anderegg (sanderegg)",
+    "description": "Core service library for simcore pydantic models",
+    "python_requires": "~=3.10",
+    "classifiers": [
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
         "Programming Language :: Python :: 3.10",
     ],
-    long_description=Path(CURRENT_DIR / "README.md").read_text(),
-    license="MIT license",
-    install_requires=INSTALL_REQUIREMENTS,
-    packages=find_packages(where="src"),
-    package_dir={"": "src"},
-    include_package_data=True,
-    test_suite="tests",
-    tests_require=TEST_REQUIREMENTS,
-    extras_require={"test": TEST_REQUIREMENTS},
-    zip_safe=False,
-)
+    "long_description": Path(CURRENT_DIR / "README.md").read_text(),
+    "license": "MIT license",
+    "install_requires": INSTALL_REQUIREMENTS,
+    "packages": find_packages(where="src"),
+    "package_dir": {"": "src"},
+    "include_package_data": True,
+    "test_suite": "tests",
+    "tests_require": TEST_REQUIREMENTS,
+    "extras_require": {"test": TEST_REQUIREMENTS},
+    "zip_safe": False,
+}
 
 
 if __name__ == "__main__":
