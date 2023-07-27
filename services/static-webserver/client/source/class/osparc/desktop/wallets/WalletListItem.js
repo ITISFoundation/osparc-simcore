@@ -75,7 +75,8 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
             maxHeight: 30,
             width: 62,
             alignX: "center",
-            alignY: "middle"
+            alignY: "middle",
+            enabled: false
           });
           control.addListener("execute", () => {
             console.log("hall");
@@ -119,13 +120,18 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       }
     },
 
+    __canIWrite: function() {
+      const myGid = osparc.auth.Data.getInstance().getGroupId();
+      const accessRights = this.getAccessRights();
+      return (accessRights && (myGid in accessRights) && accessRights[myGid]["write"]);
+    },
+
     // overridden
     _applyAccessRights: function(accessRights) {
       this.base(arguments, accessRights);
 
-      const myGid = osparc.auth.Data.getInstance().getGroupId();
       this.getChildControl("buy-credits-button").set({
-        visibility: accessRights && (myGid in accessRights) && accessRights[myGid]["write"] ? "visible" : "hidden"
+        visibility: this.__canIWrite() ? "visible" : "hidden"
       });
     },
 
@@ -190,12 +196,15 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
     },
 
     __applyActive: function(active) {
-      const activeButton = this.getChildControl("active-button");
-      activeButton.set({
-        icon: active ? "@FontAwesome5Solid/toggle-on/16" : "@FontAwesome5Solid/toggle-off/16",
-        label: active ? this.tr("ON") : this.tr("OFF"),
-        toolTipText: active ? this.tr("Wallet enabled") : this.tr("Wallet blocked")
-      });
+      if (active !== null) {
+        const activeButton = this.getChildControl("active-button");
+        activeButton.set({
+          icon: active ? "@FontAwesome5Solid/toggle-on/16" : "@FontAwesome5Solid/toggle-off/16",
+          label: active ? this.tr("ON") : this.tr("OFF"),
+          toolTipText: active ? this.tr("Wallet enabled") : this.tr("Wallet blocked"),
+          enabled: this.__canIWrite()
+        });
+      }
     }
   }
 });
