@@ -307,7 +307,8 @@ qx.Class.define("osparc.data.model.Study", {
         "PUBLISHED",
         "PENDING",
         "STARTED",
-        "RETRY"
+        "RETRY",
+        "WAITING_FOR_RESOURCES"
       ].includes(state);
     }
   },
