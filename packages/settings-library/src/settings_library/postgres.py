@@ -1,5 +1,6 @@
 import urllib.parse
 from functools import cached_property
+from typing import Any, ClassVar
 
 from pydantic import Field, PostgresDsn, SecretStr, validator
 
@@ -82,7 +83,7 @@ class PostgresSettings(BaseCustomSettings):
         return dsn
 
     class Config(BaseCustomSettings.Config):
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 # minimal required
                 {

@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from ..projects import Project
 from ..projects_nodes_io import NodeID, PortLink, UUIDStr
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def project_node_io_payload_cb(

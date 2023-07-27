@@ -6,7 +6,7 @@ from urllib.parse import quote
 from ..services import Author, ServiceDockerData, ServiceKey, ServiceVersion
 from ._settings import AUTHORS, FunctionServiceSettings
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 _DEFAULT = {

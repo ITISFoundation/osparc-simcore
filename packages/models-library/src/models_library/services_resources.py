@@ -16,7 +16,7 @@ from .docker import DockerGenericTag
 from .utils.enums import StrAutoEnum
 from .utils.fastapi_encoders import jsonable_encoder
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 ResourceName = str
