@@ -25,6 +25,7 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
       maximum: 1,
       width: 50,
       maxHeight: 20,
+      minHeight: 10,
       allowGrowY: false,
       alignY:"middle"
     });

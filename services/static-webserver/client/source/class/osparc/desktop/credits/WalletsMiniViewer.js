@@ -72,18 +72,34 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
 
     __showOneWallet: function(wallet) {
       this.__removeWallets();
+
+      this._add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+
       this.__addWallet(wallet);
       const id = wallet.addListener("changeActive", () => this.__reloadLayout());
       this.__walletListeners.push({
         walletId: wallet.getWalletId(),
         listenerId: id
       });
+
+      this._add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
     },
 
     __showAllWallets: function() {
       this.__removeWallets();
-      const store = osparc.store.Store.getInstance();
-      store.getWallets().forEach(wallet => {
+
+      this._add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+
+      const wallets = osparc.store.Store.getInstance().getWallets();
+      const maxIndicators = 3;
+      for (let i=0; i<wallets.length && i<maxIndicators; i++) {
+        const wallet = wallets[i];
         if (wallet.isActive()) {
           this.__addWallet(wallet);
         }
@@ -92,6 +108,10 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
           walletId: wallet.getWalletId(),
           listenerId: id
         });
+      }
+
+      this._add(new qx.ui.core.Spacer(), {
+        flex: 1
       });
     },
 
