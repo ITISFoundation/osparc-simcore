@@ -24,7 +24,7 @@ from simcore_service_webserver.resource_manager.registry import (
     get_registry,
 )
 from simcore_service_webserver.resource_manager.settings import get_plugin_settings
-from simcore_service_webserver.resource_manager.websocket_manager import (
+from simcore_service_webserver.resource_manager.user_sessions import (
     UserSessionID,
     managed_resource,
 )
@@ -198,7 +198,7 @@ async def test_redis_registry_key_will_always_expire(
     assert len(dead_keys) == 2
 
 
-async def test_websocket_manager(
+async def test_users_sessions_resources_registry(
     redis_enabled_app: web.Application,
     redis_registry: RedisResourceRegistry,
     create_user_ids: Callable,

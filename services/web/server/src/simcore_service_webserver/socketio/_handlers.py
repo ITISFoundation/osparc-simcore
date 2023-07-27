@@ -16,7 +16,7 @@ from socketio.exceptions import ConnectionRefusedError as SocketIOConnectionErro
 
 from ..groups.api import list_user_groups
 from ..login.decorators import login_required
-from ..resource_manager.websocket_manager import managed_resource
+from ..resource_manager.user_sessions import managed_resource
 from ._utils import EnvironDict, SocketID, get_socket_server, register_socketio_handler
 from .messages import SOCKET_IO_HEARTBEAT_EVENT, SocketMessageDict, send_messages
 

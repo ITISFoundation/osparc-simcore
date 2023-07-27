@@ -1,23 +1,8 @@
-""" wrapper around redis registry containing data about:
-    - user_id - socket_it - client_session_id relation
-    - which resources a specific user/socket/client has opened
-
-    there is one websocket per opened tab in a browser.
-    {
-        user_id: { # identifies the user
-            client_session_id: { # identifies the browser tab
-                socket_id: identifies the socket on the server,
-                project_id: identifies the project opened in the tab
-            }
-        }
-    }
-
-"""
-
 import logging
+from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Final, Iterator
+from typing import Final
 
 from aiohttp import web
 from servicelib.logging_utils import get_log_record_extra, log_context
@@ -53,6 +38,20 @@ class UserSessionResourcesRegistry:
 
     A session is started when a socket resource is allocated (via set_socket_id)
     A session can allocate multiple resources
+
+    Implements a wrapper around redis registry containing data about:
+    - user_id - socket_it - client_session_id relation
+    - which resources a specific user/socket/client has opened
+
+    there is one websocket per opened tab in a browser.
+    {
+        user_id: { # identifies the user
+            client_session_id: { # identifies the browser tab
+                socket_id: identifies the socket on the server,
+                project_id: identifies the project opened in the tab
+            }
+        }
+    }
 
     """
 

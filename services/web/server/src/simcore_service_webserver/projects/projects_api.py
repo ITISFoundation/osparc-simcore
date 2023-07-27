@@ -55,7 +55,7 @@ from ..catalog import client as catalog_client
 from ..director_v2 import api as director_v2_api
 from ..products.plugin import get_product_name
 from ..redis import get_redis_lock_manager_client_sdk
-from ..resource_manager.websocket_manager import (
+from ..resource_manager.user_sessions import (
     PROJECT_ID_KEY,
     UserSessionID,
     managed_resource,

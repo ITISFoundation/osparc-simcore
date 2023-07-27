@@ -28,16 +28,16 @@ _logger = logging.getLogger(__name__)
 @log_decorator(_logger, log_traceback=True)
 async def _remove_single_service_if_orphan(
     app: web.Application,
-    interactive_service: dict[str, Any],
+    dynamic_service: dict[str, Any],
     currently_opened_projects_node_ids: dict[str, str],
 ) -> None:
     """
     Removes the service if it is an orphan. Otherwise the service is left running.
     """
 
-    service_host = interactive_service["service_host"]
+    service_host = dynamic_service["service_host"]
     # if not present in DB or not part of currently opened projects, can be removed
-    service_uuid = interactive_service["service_uuid"]
+    service_uuid = dynamic_service["service_uuid"]
     # if the node does not exist in any project in the db
     # they can be safely remove it without saving any state
     if not await is_node_id_present_in_any_project_workbench(app, service_uuid):
@@ -59,7 +59,7 @@ async def _remove_single_service_if_orphan(
 
     # if the node is not present in any of the currently opened project it shall be closed
     if service_uuid not in currently_opened_projects_node_ids:
-        if service_state := interactive_service.get("service_state") in [
+        if service_state := dynamic_service.get("service_state") in [
             "pulling",
             "starting",
         ]:
@@ -89,7 +89,7 @@ async def _remove_single_service_if_orphan(
             # 1. opened project disappeared from redis?
             # 2. something bad happened when closing a project?
 
-            user_id = int(interactive_service.get("user_id", -1))
+            user_id = int(dynamic_service.get("user_id", -1))
 
             user_role: UserRole | None = None
             try:
@@ -97,7 +97,7 @@ async def _remove_single_service_if_orphan(
             except (UserNotFoundError, ValueError):
                 user_role = None
 
-            project_uuid = interactive_service["project_id"]
+            project_uuid = dynamic_service["project_id"]
 
             save_state = await ProjectDBAPI.get_from_app_context(app).has_permission(
                 user_id, project_uuid, "write"

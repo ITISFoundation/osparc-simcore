@@ -43,7 +43,7 @@ from .._meta import api_version_prefix as VTAG
 from ..catalog.client import get_services_for_user_in_product
 from ..director_v2 import api
 from ..login.decorators import login_required
-from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
+from ..resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
 from ..security.api import check_permission
 from ..security.decorators import permission_required
 from ..users.api import get_user_name

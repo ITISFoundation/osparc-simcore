@@ -80,7 +80,7 @@ async def test_regression_project_id_recovered_from_the_wrong_data_structure(
 
     await _remove_single_service_if_orphan(
         app=AsyncMock(),
-        interactive_service={
+        dynamic_service={
             "service_host": "host",
             "service_uuid": faker.uuid4(),
             "user_id": 1,
@@ -131,7 +131,7 @@ async def test_remove_single_service_if_orphan_service_is_waiting_manual_interve
 
     await _remove_single_service_if_orphan(
         app=AsyncMock(),
-        interactive_service={
+        dynamic_service={
             "service_host": "host",
             "service_uuid": faker.uuid4(),
             "user_id": 1,

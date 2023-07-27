@@ -13,7 +13,7 @@ from servicelib.logging_utils import get_log_record_extra
 from servicelib.utils import fire_and_forget_task, logged_gather
 from socketio import AsyncServer
 
-from ..resource_manager.websocket_manager import managed_resource
+from ..resource_manager.user_sessions import managed_resource
 from ._utils import get_socket_server
 
 _logger = logging.getLogger(__name__)
