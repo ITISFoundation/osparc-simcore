@@ -18,7 +18,7 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.projects import _crud_delete_utils
+from simcore_service_webserver.projects import _crud_api_delete
 from simcore_service_webserver.projects.models import ProjectDict
 
 
@@ -88,7 +88,7 @@ async def test_custom_metadata_handlers(
     await assert_status(response, expected_cls=web.HTTPNoContent)
 
     async def _wait_until_deleted():
-        tasks = _crud_delete_utils.get_scheduled_tasks(
+        tasks = _crud_api_delete.get_scheduled_tasks(
             project_uuid=user_project["uuid"], user_id=logged_user["id"]
         )
         await tasks[0]

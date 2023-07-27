@@ -70,7 +70,7 @@ from ..socketio.messages import (
 from ..storage import api as storage_api
 from ..users.api import UserNameDict, get_user_name, get_user_role
 from ..users.exceptions import UserNotFoundError
-from . import _crud_delete_utils, _nodes_api
+from . import _crud_api_delete, _nodes_api
 from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_resources
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import (
@@ -176,12 +176,12 @@ async def submit_delete_project_task(
     raises ProjectInvalidRightsError
     raises ProjectNotFoundError
     """
-    await _crud_delete_utils.mark_project_as_deleted(app, project_uuid, user_id)
+    await _crud_api_delete.mark_project_as_deleted(app, project_uuid, user_id)
 
     # Ensures ONE delete task per (project,user) pair
     task = get_delete_project_task(project_uuid, user_id)
     if not task:
-        task = _crud_delete_utils.schedule_task(
+        task = _crud_api_delete.schedule_task(
             app,
             project_uuid,
             user_id,
@@ -195,7 +195,7 @@ async def submit_delete_project_task(
 def get_delete_project_task(
     project_uuid: ProjectID, user_id: UserID
 ) -> asyncio.Task | None:
-    if tasks := _crud_delete_utils.get_scheduled_tasks(project_uuid, user_id):
+    if tasks := _crud_api_delete.get_scheduled_tasks(project_uuid, user_id):
         assert len(tasks) == 1, f"{tasks=}"  # nosec
         task = tasks[0]
         return task
