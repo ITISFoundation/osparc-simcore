@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
+import asyncio
 import filecmp
 import os
 import re
@@ -11,6 +12,7 @@ from typing import Final
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
+import aioboto3
 import aiofiles
 import pytest
 from faker import Faker
@@ -49,6 +51,24 @@ def file_name(request: pytest.FixtureRequest) -> str:
 @pytest.fixture
 def local_file_for_download(upload_file_dir: Path, file_name: str) -> Path:
     return upload_file_dir / f"__local__{file_name}"
+
+
+@pytest.fixture
+async def cleanup_bucket_after_test(r_clone_settings: RCloneSettings) -> None:
+    session = aioboto3.Session(
+        aws_access_key_id=r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY,
+        aws_secret_access_key=r_clone_settings.R_CLONE_S3.S3_SECRET_KEY,
+    )
+    async with session.resource(
+        "s3",
+        endpoint_url=r_clone_settings.R_CLONE_S3.S3_ENDPOINT,
+        use_ssl=r_clone_settings.R_CLONE_S3.S3_SECURE,
+    ) as s_3:
+        bucket = await s_3.Bucket(r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME)
+        s3_objects = []
+        async for s3_object in bucket.objects.all():
+            s3_objects.append(s3_object)  # noqa: PERF402
+        await asyncio.gather(*[o.delete() for o in s3_objects])
 
 
 # UTILS
@@ -145,6 +165,7 @@ async def _upload_local_dir_to_s3(
             progress_bar,
             local_directory_path=source_dir,
             upload_s3_link=s3_directory_link,
+            debug_logs=True,
         )
     if check_progress:
         # NOTE: a progress of 1 is always sent by the progress bar
@@ -168,6 +189,7 @@ async def _download_from_s3_to_local_dir(
             progress_bar,
             local_directory_path=destination_dir,
             download_s3_link=s3_directory_link,
+            debug_logs=True,
         )
 
 
@@ -225,6 +247,7 @@ async def test_local_to_remote_to_local(
     file_count: int,
     file_size: ByteSize,
     check_progress: bool,
+    cleanup_bucket_after_test: None,
 ) -> None:
     await _create_files_in_dir(dir_locally_created_files, file_count, file_size)
 
@@ -309,6 +332,7 @@ async def test_overwrite_an_existing_file_and_sync_again(
     dir_downloaded_files_1: Path,
     dir_downloaded_files_2: Path,
     changes_callable: Callable[[Path, set[str]], None],
+    cleanup_bucket_after_test: None,
 ) -> None:
     generated_file_names: set[str] = await _create_files_in_dir(
         dir_locally_created_files,
@@ -357,7 +381,7 @@ async def test_overwrite_an_existing_file_and_sync_again(
 
 
 async def test_raises_error_if_local_directory_path_is_a_file(
-    tmp_path: Path, faker: Faker
+    tmp_path: Path, faker: Faker, cleanup_bucket_after_test: None
 ):
     file_path = await _create_file_of_size(
         tmp_path, name=f"test{faker.uuid4()}.bin", file_size=ByteSize(1)
@@ -368,6 +392,7 @@ async def test_raises_error_if_local_directory_path_is_a_file(
             progress_bar=AsyncMock(),
             local_directory_path=file_path,
             upload_s3_link=AsyncMock(),
+            debug_logs=True,
         )
     with pytest.raises(r_clone.RCloneDirectoryNotFoundError):
         await r_clone.sync_s3_to_local(
@@ -375,4 +400,5 @@ async def test_raises_error_if_local_directory_path_is_a_file(
             progress_bar=AsyncMock(),
             local_directory_path=file_path,
             download_s3_link=AsyncMock(),
+            debug_logs=True,
         )

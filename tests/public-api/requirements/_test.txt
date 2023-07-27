@@ -4,13 +4,13 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-aiohttp==3.8.4
+aiohttp==3.8.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
 aiosignal==1.3.1
     # via aiohttp
-anyio==3.7.0
+anyio==3.7.1
     # via httpcore
 async-timeout==4.0.2
     # via aiohttp
@@ -18,30 +18,31 @@ attrs==23.1.0
     # via
     #   aiohttp
     #   jsonschema
+    #   referencing
 certifi==2023.5.7
     # via
     #   httpcore
     #   httpx
     #   requests
-charset-normalizer==3.1.0
+charset-normalizer==3.2.0
     # via
     #   aiohttp
     #   requests
 docker==6.1.3
     # via -r requirements/_test.in
-exceptiongroup==1.1.1
+exceptiongroup==1.1.2
     # via
     #   anyio
     #   pytest
-faker==18.10.1
+faker==19.1.0
     # via -r requirements/_test.in
-frozenlist==1.3.3
+frozenlist==1.4.0
     # via
     #   aiohttp
     #   aiosignal
 h11==0.14.0
     # via httpcore
-httpcore==0.17.2
+httpcore==0.17.3
     # via httpx
 httpx==0.24.1
     # via
@@ -55,8 +56,10 @@ idna==3.4
     #   yarl
 iniconfig==2.0.0
     # via pytest
-jsonschema==4.17.3
+jsonschema==4.18.4
     # via -r requirements/_test.in
+jsonschema-specifications==2023.7.1
+    # via jsonschema
 multidict==6.0.4
     # via
     #   aiohttp
@@ -65,15 +68,13 @@ packaging==23.1
     # via
     #   docker
     #   pytest
-pluggy==1.0.0
+pluggy==1.2.0
     # via pytest
-pyrsistent==0.19.3
-    # via jsonschema
-pytest==7.3.1
+pytest==7.4.0
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
-pytest-asyncio==0.21.0
+pytest-asyncio==0.21.1
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via faker
@@ -83,8 +84,16 @@ pyyaml==6.0.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
+referencing==0.30.0
+    # via
+    #   jsonschema
+    #   jsonschema-specifications
 requests==2.31.0
     # via docker
+rpds-py==0.9.2
+    # via
+    #   jsonschema
+    #   referencing
 six==1.16.0
     # via python-dateutil
 sniffio==1.3.0
@@ -96,12 +105,12 @@ tenacity==8.2.2
     # via -r requirements/_test.in
 tomli==2.0.1
     # via pytest
-urllib3==2.0.2
+urllib3==2.0.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   docker
     #   requests
-websocket-client==1.5.2
+websocket-client==1.6.1
     # via docker
 yarl==1.9.2
     # via aiohttp

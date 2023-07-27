@@ -174,8 +174,9 @@ async def get_app_status(app: web.Application) -> dict[str, Any]:
     async with client.get(
         url=api_endpoint / "status",
     ) as resp:
-        payload = await resp.json()
-        return payload["data"]
+        data: dict[str, Any] = (await resp.json())["data"]
+        assert isinstance(data, dict)  # nosec
+        return data
 
 
 async def get_download_link(
@@ -201,4 +202,5 @@ async def get_download_link(
         download: PresignedLink = (
             Envelope[PresignedLink].parse_obj(await response.json()).data
         )
-        return parse_obj_as(HttpUrl, download.link)
+        link: HttpUrl = parse_obj_as(HttpUrl, download.link)
+        return link

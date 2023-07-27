@@ -141,7 +141,7 @@ logger = logging.getLogger(__name__)
 
 @pytest.fixture
 async def minimal_configuration(
-    catalog_ready: Callable[[UserID, str], Awaitable[None]],
+    wait_for_catalog_service: Callable[[UserID, str], Awaitable[None]],
     sleeper_service: dict,
     dy_static_file_server_dynamic_sidecar_service: dict,
     dy_static_file_server_dynamic_sidecar_compose_spec_service: dict,
@@ -157,7 +157,7 @@ async def minimal_configuration(
     current_user: dict[str, Any],
     osparc_product_name: str,
 ) -> AsyncIterator[None]:
-    await catalog_ready(current_user["id"], osparc_product_name)
+    await wait_for_catalog_service(current_user["id"], osparc_product_name)
     with postgres_db.connect() as conn:
         # pylint: disable=no-value-for-parameter
         conn.execute(comp_tasks.delete())

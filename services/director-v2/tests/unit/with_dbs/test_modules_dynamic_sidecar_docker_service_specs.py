@@ -31,7 +31,9 @@ from simcore_service_director_v2.utils.dict_utils import nested_update
 
 
 @pytest.fixture
-def mock_env(monkeypatch: MonkeyPatch, mock_env: EnvVarsDict) -> EnvVarsDict:
+def mock_env(
+    monkeypatch: MonkeyPatch, mock_env: EnvVarsDict, disable_postgres: None
+) -> EnvVarsDict:
     """overrides unit/conftest:mock_env fixture"""
     env_vars = mock_env.copy()
     env_vars.update(
@@ -107,7 +109,7 @@ def expected_dynamic_sidecar_spec(
                     "container_http_entry": "rt-web",
                     "hostname": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                     "port": 1222,
-                    "run_id": f"{run_id}",
+                    "run_id": run_id,
                     "dynamic_sidecar": {
                         "containers_inspect": [],
                         "dynamic_sidecar_id": None,
@@ -178,7 +180,7 @@ def expected_dynamic_sidecar_spec(
                 "Env": {
                     "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                     "DY_SIDECAR_NODE_ID": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
-                    "DY_SIDECAR_RUN_ID": f"{run_id}",
+                    "DY_SIDECAR_RUN_ID": run_id,
                     "DY_SIDECAR_PATH_INPUTS": "/tmp/inputs",  # noqa: S108
                     "DY_SIDECAR_PATH_OUTPUTS": "/tmp/outputs",  # noqa: S108
                     "DY_SIDECAR_PROJECT_ID": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
@@ -250,7 +252,7 @@ def expected_dynamic_sidecar_spec(
                             "Labels": {
                                 "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                                 "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-                                "run_id": f"{run_id}",
+                                "run_id": run_id,
                                 "source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_erots-derahs_",
                                 "swarm_stack_name": "test_swarm_name",
                                 "user_id": "234",
@@ -265,7 +267,7 @@ def expected_dynamic_sidecar_spec(
                             "Labels": {
                                 "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                                 "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-                                "run_id": f"{run_id}",
+                                "run_id": run_id,
                                 "source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_stupni_pmt_",
                                 "swarm_stack_name": "test_swarm_name",
                                 "user_id": "234",
@@ -280,7 +282,7 @@ def expected_dynamic_sidecar_spec(
                             "Labels": {
                                 "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                                 "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-                                "run_id": f"{run_id}",
+                                "run_id": run_id,
                                 "source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_stuptuo_pmt_",
                                 "swarm_stack_name": "test_swarm_name",
                                 "user_id": "234",
@@ -295,7 +297,7 @@ def expected_dynamic_sidecar_spec(
                             "Labels": {
                                 "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                                 "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-                                "run_id": f"{run_id}",
+                                "run_id": run_id,
                                 "source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_1_evas_pmt_",
                                 "swarm_stack_name": "test_swarm_name",
                                 "user_id": "234",
@@ -310,7 +312,7 @@ def expected_dynamic_sidecar_spec(
                             "Labels": {
                                 "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                                 "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-                                "run_id": f"{run_id}",
+                                "run_id": run_id,
                                 "source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_2_evas_pmt_",
                                 "swarm_stack_name": "test_swarm_name",
                                 "user_id": "234",

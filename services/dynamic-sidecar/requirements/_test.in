@@ -6,6 +6,7 @@
 aioboto3
 asgi_lifespan
 async-asgi-testclient # replacement for fastapi.testclient.TestClient [see b) below]
+docker
 faker
 minio
 pytest

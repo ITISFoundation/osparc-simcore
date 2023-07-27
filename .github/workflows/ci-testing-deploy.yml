@@ -95,6 +95,8 @@ jobs:
               - 'packages/postgres-database/**'
               - 'packages/pytest-simcore/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             postgres-database:
               - 'packages/postgres-database/**'
               - 'packages/pytest-simcore/**'
@@ -110,6 +112,8 @@ jobs:
               - 'packages/pytest-simcore/**'
               - 'packages/service-library/**'
               - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             settings-library:
               - 'packages/pytest-simcore/**'
               - 'packages/settings-library/**'
@@ -292,7 +296,10 @@ jobs:
         run: ./ci/helpers/show_system_versions.bash
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/webserver.bash typecheck
       - name: test isolated
+        if: always()
         run: ./ci/github/unit-testing/webserver.bash test_isolated
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 01
@@ -1297,6 +1304,8 @@ jobs:
         run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/service-library.bash install_all
+      - name: typecheck
+        run: ./ci/github/unit-testing/service-library.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/service-library.bash test_all
       - uses: codecov/codecov-action@v3.1.4
@@ -1384,6 +1393,8 @@ jobs:
         run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/models-library.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/models-library.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/models-library.bash test
       - uses: codecov/codecov-action@v3.1.4

@@ -3,7 +3,7 @@
 
 aiohttp
 coverage
-openapi-core<0.15  # Broken compatibility. This library in any case is marked as deprecated and will be removed!
+openapi-core
 pytest
 pytest-aiohttp
 pytest-cov

@@ -2,12 +2,11 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 from unittest.mock import AsyncMock
 
 import pytest
 from fastapi import FastAPI
-from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_director_v2.core.settings import AppSettings
@@ -27,7 +26,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._observ
 
 
 @pytest.fixture
-def disable_observation(mocker: MockerFixture) -> None:
+def disable_observation(mocker: MockerFixture) -> None:  # noqa: PT004
     mocker.patch(
         "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._task.DynamicSidecarsScheduler.start",
         autospec=True,
@@ -35,7 +34,9 @@ def disable_observation(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-def mock_are_sidecar_and_proxy_services_present(mocker: MockerFixture) -> None:
+def mock_are_sidecar_and_proxy_services_present(  # noqa: PT004
+    mocker: MockerFixture,
+) -> None:
     mocker.patch(
         "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._observer.are_sidecar_and_proxy_services_present",
         autospec=True,
@@ -44,7 +45,7 @@ def mock_are_sidecar_and_proxy_services_present(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-def mock_events(mocker: MockerFixture) -> None:
+def mock_events(mocker: MockerFixture) -> None:  # noqa: PT004
     for event_to_mock in (
         "CreateSidecars",
         "WaitForSidecarAPI",
@@ -63,10 +64,11 @@ def mock_events(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-def mock_env(
+def mock_env(  # noqa: PT004
+    disable_postgres: None,
     docker_swarm: None,
     mock_env: EnvVarsDict,
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     setenvs_from_dict(
         monkeypatch,
@@ -79,11 +81,6 @@ def mock_env(
             "S3_SECRET_KEY": "secret_key",
             "S3_BUCKET_NAME": "bucket_name",
             "S3_SECURE": "false",
-            "DIRECTOR_V2_POSTGRES_ENABLED": "false",
-            "POSTGRES_HOST": "test",
-            "POSTGRES_USER": "test",
-            "POSTGRES_PASSWORD": "test",
-            "POSTGRES_DB": "test",
         },
     )
 
@@ -115,7 +112,7 @@ def _is_observation_task_present(
 ) -> bool:
     return (
         scheduler_data_from_http_request.service_name
-        in dynamic_sidecar_scheduler._scheduler._service_observation_task
+        in dynamic_sidecar_scheduler._scheduler._service_observation_task  # noqa: SLF001
     )
 
 
@@ -129,7 +126,7 @@ async def test_regression_break_endless_loop_cancellation_edge_case(
     can_save: bool | None,
 ):
     # in this situation the scheduler would never end loops forever
-    await dynamic_sidecar_scheduler._scheduler._add_service(
+    await dynamic_sidecar_scheduler._scheduler._add_service(  # noqa: SLF001
         scheduler_data_from_http_request
     )
 
@@ -157,7 +154,7 @@ async def test_regression_break_endless_loop_cancellation_edge_case(
     )
 
     # requires an extra pass to remove the service
-    for _ in range(2):
+    for _ in range(3):
         await _apply_observation_cycle(
             dynamic_sidecar_scheduler, scheduler_data_from_http_request
         )

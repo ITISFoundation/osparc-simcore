@@ -174,7 +174,7 @@ class LoggingEventHandlerObserver:
                 try:
                     self._health_check_queue.get_nowait()
                     heart_beat_count += 1
-                except Empty:
+                except Empty:  # noqa: PERF203
                     break
 
             if heart_beat_count == 0:

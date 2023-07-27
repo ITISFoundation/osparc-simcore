@@ -7,9 +7,10 @@ import signal
 import tempfile
 import time
 from asyncio.subprocess import Process
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncIterator, NamedTuple
+from typing import NamedTuple
 
 import aiofiles
 import httpx
@@ -38,7 +39,7 @@ class CommandResult(NamedTuple):
     elapsed: float | None
 
 
-class _RegistryNotReachableException(Exception):
+class _RegistryNotReachableError(Exception):
     pass
 
 
@@ -69,7 +70,7 @@ async def _is_registry_reachable(registry_settings: RegistrySettings) -> None:
                 f"Could not reach registry {registry_settings.api_url} "
                 f"auth={registry_settings.REGISTRY_AUTH}"
             )
-            raise _RegistryNotReachableException(error_message)
+            raise _RegistryNotReachableError(error_message)
 
 
 async def login_registry(registry_settings: RegistrySettings) -> None:
@@ -124,7 +125,7 @@ def _close_transport(proc: Process):
     # SEE implementation of asyncio.subprocess.Process._read_stream(...)
     for fd in (1, 2):
         # pylint: disable=protected-access
-        if transport := getattr(proc, "_transport", None):
+        if transport := getattr(proc, "_transport", None):  # noqa: SIM102
             if t := transport.get_pipe_transport(fd):
                 t.close()
 

@@ -6,13 +6,14 @@
 #
 aio-pika==9.1.2
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
 aioboto3==11.2.0
     # via -r requirements/_test.in
 aiobotocore==2.5.0
     # via aioboto3
-aiohttp==3.8.3
+aiohttp==3.8.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -25,15 +26,15 @@ aiormq==6.7.6
     # via
     #   -c requirements/_base.txt
     #   aio-pika
-aiosignal==1.2.0
+aiosignal==1.3.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-alembic==1.8.1
+alembic==1.11.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-anyio==3.6.2
+anyio==3.7.1
     # via
     #   -c requirements/_base.txt
     #   httpcore
@@ -45,7 +46,7 @@ async-timeout==4.0.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-attrs==21.4.0
+attrs==23.1.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -59,7 +60,7 @@ botocore==1.29.76
     #   aiobotocore
     #   boto3
     #   s3transfer
-certifi==2022.12.7
+certifi==2023.7.22
     # via
     #   -c requirements/_base.txt
     #   httpcore
@@ -68,12 +69,12 @@ certifi==2022.12.7
     #   requests
 cffi==1.15.1
     # via cryptography
-charset-normalizer==2.0.12
+charset-normalizer==3.2.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   requests
-click==8.1.3
+click==8.1.6
     # via
     #   -c requirements/_base.txt
     #   dask
@@ -87,7 +88,7 @@ colorlog==6.7.0
     # via dask-gateway-server
 coverage==7.2.7
     # via pytest-cov
-cryptography==41.0.1
+cryptography==41.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   dask-gateway-server
@@ -104,20 +105,23 @@ distributed==2023.3.2
     #   dask
 docker==6.1.3
     # via -r requirements/_test.in
-exceptiongroup==1.1.1
-    # via pytest
-execnet==1.9.0
+exceptiongroup==1.1.2
+    # via
+    #   -c requirements/_base.txt
+    #   anyio
+    #   pytest
+execnet==2.0.2
     # via pytest-xdist
-faker==18.10.1
+faker==19.2.0
     # via -r requirements/_test.in
 flaky==3.7.0
     # via -r requirements/_test.in
-frozenlist==1.3.0
+frozenlist==1.4.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
-fsspec==2023.5.0
+fsspec==2023.6.0
     # via
     #   -c requirements/_base.txt
     #   dask
@@ -125,29 +129,29 @@ greenlet==2.0.2
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
-h11==0.12.0
+h11==0.14.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
-httpcore==0.15.0
+httpcore==0.17.3
     # via
     #   -c requirements/_base.txt
     #   httpx
-httpx==0.24.0
+httpx==0.24.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   respx
 icdiff==2.0.6
     # via pytest-icdiff
-idna==2.10
+idna==3.4
     # via
     #   -c requirements/_base.txt
     #   anyio
     #   httpx
     #   requests
     #   yarl
-importlib-metadata==6.6.0
+importlib-metadata==6.8.0
     # via
     #   -c requirements/_base.txt
     #   dask
@@ -169,12 +173,12 @@ locket==1.0.0
     #   -c requirements/_base.txt
     #   distributed
     #   partd
-mako==1.2.2
+mako==1.2.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   alembic
-markupsafe==2.1.2
+markupsafe==2.1.3
     # via
     #   -c requirements/_base.txt
     #   jinja2
@@ -187,17 +191,17 @@ msgpack==1.0.5
     # via
     #   -c requirements/_base.txt
     #   distributed
-multidict==6.0.2
+multidict==6.0.4
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   async-asgi-testclient
     #   yarl
-mypy==1.3.0
+mypy==1.4.1
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
-numpy==1.24.3
+numpy==1.25.1
     # via bokeh
 packaging==23.1
     # via
@@ -215,9 +219,9 @@ partd==1.4.0
     # via
     #   -c requirements/_base.txt
     #   dask
-pillow==9.5.0
+pillow==10.0.0
     # via bokeh
-pluggy==1.0.0
+pluggy==1.2.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
@@ -227,7 +231,7 @@ psutil==5.9.5
     #   distributed
 pycparser==2.21
     # via cffi
-pytest==7.3.1
+pytest==7.4.0
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -239,15 +243,15 @@ pytest==7.3.1
     #   pytest-xdist
 pytest-aiohttp==1.0.4
     # via -r requirements/_test.in
-pytest-asyncio==0.21.0
+pytest-asyncio==0.21.1
     # via pytest-aiohttp
 pytest-cov==4.1.0
     # via -r requirements/_test.in
-pytest-docker==1.0.1
+pytest-docker==2.0.0
     # via -r requirements/_test.in
 pytest-icdiff==0.6
     # via -r requirements/_test.in
-pytest-mock==3.10.0
+pytest-mock==3.11.1
     # via -r requirements/_test.in
 pytest-runner==6.0.0
     # via -r requirements/_test.in
@@ -267,18 +271,17 @@ pyyaml==6.0.1
     #   distributed
 requests==2.31.0
     # via
-    #   -c requirements/_base.txt
     #   async-asgi-testclient
     #   docker
-respx==0.20.1
+respx==0.20.2
     # via -r requirements/_test.in
 s3transfer==0.6.1
     # via boto3
-six==1.15.0
+six==1.16.0
     # via
     #   -c requirements/_base.txt
     #   python-dateutil
-sniffio==1.2.0
+sniffio==1.3.0
     # via
     #   -c requirements/_base.txt
     #   anyio
@@ -289,16 +292,16 @@ sortedcontainers==2.4.0
     # via
     #   -c requirements/_base.txt
     #   distributed
-sqlalchemy==1.4.47
+sqlalchemy==1.4.49
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   alembic
     #   dask-gateway-server
-sqlalchemy2-stubs==0.0.2a34
+sqlalchemy2-stubs==0.0.2a35
     # via sqlalchemy
-tblib==1.7.0
+tblib==2.0.0
     # via
     #   -c requirements/_base.txt
     #   distributed
@@ -320,9 +323,10 @@ tornado==6.3.2
     #   distributed
 traitlets==5.9.0
     # via dask-gateway-server
-typing-extensions==4.3.0
+typing-extensions==4.7.1
     # via
     #   -c requirements/_base.txt
+    #   alembic
     #   bokeh
     #   mypy
     #   sqlalchemy2-stubs
@@ -335,7 +339,7 @@ urllib3==1.26.16
     #   docker
     #   minio
     #   requests
-websocket-client==1.5.2
+websocket-client==1.6.1
     # via docker
 wrapt==1.15.0
     # via aiobotocore
@@ -349,7 +353,7 @@ zict==3.0.0
     # via
     #   -c requirements/_base.txt
     #   distributed
-zipp==3.15.0
+zipp==3.16.2
     # via
     #   -c requirements/_base.txt
     #   importlib-metadata

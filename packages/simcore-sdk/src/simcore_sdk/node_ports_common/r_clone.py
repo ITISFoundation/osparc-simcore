@@ -33,7 +33,9 @@ class BaseRCloneError(PydanticErrorMixin, RuntimeError):
 
 
 class RCloneFailedError(BaseRCloneError):
-    msg_template: str = "Command {command} finished with exception:\n{stdout}"
+    msg_template: str = (
+        "Command {command} finished with exit code={returncode}:\n{stdout}\n{stderr}"
+    )
 
 
 class RCloneDirectoryNotFoundError(BaseRCloneError):
@@ -83,10 +85,15 @@ async def _async_r_clone_command(
         assert proc.stdout  # nosec
         await asyncio.wait([_read_stream(proc.stdout, r_clone_log_parsers)])
 
-    stdout, _ = await proc.communicate()
+    stdout, stderr = await proc.communicate()
     decoded_stdout = stdout.decode()
     if proc.returncode != 0:
-        raise RCloneFailedError(command=str_cmd, stdout=decoded_stdout)
+        raise RCloneFailedError(
+            command=str_cmd,
+            stdout=decoded_stdout,
+            stderr=stderr,
+            returncode=proc.returncode,
+        )
 
     _logger.debug("'%s' result:\n%s", str_cmd, decoded_stdout)
     return decoded_stdout
@@ -129,7 +136,7 @@ async def _sync_sources(
     exclude_patterns: set[str] | None,
     s3_retries: int = S3_RETRIES,
     s3_parallelism: int = S3_PARALLELISM,
-    debug_progress: bool = False,
+    debug_logs: bool,
 ) -> None:
     r_clone_config_file_content = get_r_clone_config(
         r_clone_settings, s3_config_key=s3_config_key
@@ -166,7 +173,7 @@ async def _sync_sources(
 
         async with progress_bar.sub_progress(steps=100) as sub_progress:
             r_clone_log_parsers: list[BaseRCloneLogParser] = (
-                [DebugLogParser()] if debug_progress else []
+                [DebugLogParser()] if debug_logs else []
             )
             r_clone_log_parsers.append(SyncProgressLogParser(sub_progress))
 
@@ -189,6 +196,7 @@ async def sync_local_to_s3(
     local_directory_path: Path,
     upload_s3_link: AnyUrl,
     exclude_patterns: set[str] | None = None,
+    debug_logs: bool = False,
 ) -> None:
     """transfer the contents of a local directory to an s3 path
 
@@ -207,6 +215,7 @@ async def sync_local_to_s3(
         local_dir=local_directory_path,
         s3_config_key=_S3_CONFIG_KEY_DESTINATION,
         exclude_patterns=exclude_patterns,
+        debug_logs=debug_logs,
     )
 
 
@@ -217,6 +226,7 @@ async def sync_s3_to_local(
     local_directory_path: Path,
     download_s3_link: AnyUrl,
     exclude_patterns: set[str] | None = None,
+    debug_logs: bool = False,
 ) -> None:
     """transfer the contents of a path in s3 to a local directory
 
@@ -235,4 +245,5 @@ async def sync_s3_to_local(
         local_dir=local_directory_path,
         s3_config_key=_S3_CONFIG_KEY_SOURCE,
         exclude_patterns=exclude_patterns,
+        debug_logs=debug_logs,
     )

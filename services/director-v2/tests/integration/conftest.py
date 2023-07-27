@@ -118,7 +118,7 @@ def mock_projects_repository(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-async def catalog_ready(
+async def wait_for_catalog_service(
     services_endpoint: dict[str, URL]
 ) -> Callable[[UserID, str], Awaitable[None]]:
     async def _waiter(user_id: UserID, product_name: str) -> None:

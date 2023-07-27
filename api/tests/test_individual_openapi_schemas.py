@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 from openapi_spec_validator import validate_spec
-from openapi_spec_validator.exceptions import OpenAPIValidationError
+from openapi_spec_validator.exceptions import OpenAPISpecValidatorError
 from utils import dump_specs, is_json_schema, is_openapi_schema, load_specs
 
 # Conventions
@@ -102,7 +102,6 @@ def converted_specs_testdir(api_specs_dir, all_api_specs_tails, tmpdir_factory):
     print(testdir)
 
     for tail in all_api_specs_tails:
-
         # directory with converted specs
         os.makedirs(testdir / tail.parent, exist_ok=True)
 
@@ -113,7 +112,6 @@ def converted_specs_testdir(api_specs_dir, all_api_specs_tails, tmpdir_factory):
             and not is_openapi_schema(specs)
             and not is_json_schema(specs)
         ):
-
             # convert to valid openapi
             if tail.name.endswith(CONVERTED_SUFFIX):
                 specs = add_namespace_for_converted_schemas(specs)
@@ -144,5 +142,5 @@ def test_valid_individual_openapi_specs(api_specs_tail, converted_specs_testdir)
     try:
         specs = load_specs(api_specs_path)
         validate_spec(specs, spec_url=api_specs_path.as_uri())
-    except OpenAPIValidationError as err:
+    except OpenAPISpecValidatorError as err:
         pytest.fail(f"Failed validating {api_specs_path}:\n{err.message}")

@@ -30,6 +30,17 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
 
   members: {
     // overridden
+    _applySubtitleMD: function(value) {
+      this.base(arguments, value);
+
+      // highlight me
+      const email = osparc.auth.Data.getInstance().getEmail();
+      if (email === value) {
+        this.addState("selected");
+      }
+    },
+
+    // overridden
     _getOptionsMenu: function() {
       const menu = new qx.ui.menu.Menu().set({
         position: "bottom-right"

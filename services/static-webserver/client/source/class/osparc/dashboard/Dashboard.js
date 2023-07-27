@@ -18,8 +18,9 @@
 /**
  * Widget containing a TabView including:
  * - StudyBrowser
- * - Explorer
- * - DataManager
+ * - TemplateBrowser
+ * - ServiceBrowser
+ * - DataBrowser
  *
  * *Example*
  *

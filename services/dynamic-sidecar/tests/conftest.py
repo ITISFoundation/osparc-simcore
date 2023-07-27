@@ -121,8 +121,8 @@ def node_id(faker: Faker) -> NodeID:
 
 
 @pytest.fixture
-def run_id(faker: Faker) -> RunID:
-    return faker.uuid4(cast_to=None)
+def run_id() -> RunID:
+    return RunID.create()
 
 
 @pytest.fixture
@@ -185,17 +185,39 @@ def mock_environment(
 
     Override if new configuration for the app is needed.
     """
-    envs: EnvVarsDict = {
-        "DY_SIDECAR_USER_ID": f"{user_id}",
-        "DY_SIDECAR_PROJECT_ID": f"{project_id}",
-        "S3_ENDPOINT": "endpoint",
-        "S3_ACCESS_KEY": "access_key",
-        "S3_SECRET_KEY": "secret_key",
-        "S3_BUCKET_NAME": "bucket_name",
-        "S3_SECURE": "false",
-        "R_CLONE_PROVIDER": "MINIO",
-        **base_mock_envs,
-    }
+    envs = {}
+    # envs in Dockerfile
+    envs["SC_BOOT_MODE"] = "production"
+    envs["SC_BUILD_TARGET"] = "production"
+    envs["DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR"] = f"{dy_volumes}"
+    envs["DYNAMIC_SIDECAR_SHARED_STORE_DIR"] = f"{shared_store_dir}"
+
+    # envs on container
+    envs["DYNAMIC_SIDECAR_COMPOSE_NAMESPACE"] = compose_namespace
+
+    envs["REGISTRY_AUTH"] = "false"
+    envs["REGISTRY_USER"] = "test"
+    envs["REGISTRY_PW"] = "test"
+    envs["REGISTRY_SSL"] = "false"
+
+    envs["DY_SIDECAR_USER_ID"] = f"{user_id}"
+    envs["DY_SIDECAR_PROJECT_ID"] = f"{project_id}"
+    envs["DY_SIDECAR_RUN_ID"] = run_id
+    envs["DY_SIDECAR_NODE_ID"] = f"{node_id}"
+    envs["DY_SIDECAR_PATH_INPUTS"] = f"{inputs_dir}"
+    envs["DY_SIDECAR_PATH_OUTPUTS"] = f"{outputs_dir}"
+    envs["DY_SIDECAR_STATE_PATHS"] = json_dumps(state_paths_dirs)
+    envs["DY_SIDECAR_STATE_EXCLUDE"] = json_dumps(state_exclude_dirs)
+    envs["DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS"] = "false"
+
+    envs["S3_ENDPOINT"] = "endpoint"
+    envs["S3_ACCESS_KEY"] = "access_key"
+    envs["S3_SECRET_KEY"] = "secret_key"
+    envs["S3_BUCKET_NAME"] = "bucket_name"
+    envs["S3_SECURE"] = "false"
+
+    envs["R_CLONE_PROVIDER"] = "MINIO"
+
     setenvs_from_dict(monkeypatch, envs)
 
     return envs
