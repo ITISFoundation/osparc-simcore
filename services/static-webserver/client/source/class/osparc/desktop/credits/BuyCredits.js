@@ -176,7 +176,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     },
 
     __getWalletSelector: function() {
-      const walletSelector = osparc.desktop.credits.Utils.createWalletSelector("write");
+      const walletSelector = osparc.desktop.credits.Utils.createWalletSelector("write", false, false);
 
       walletSelector.addListener("changeSelection", e => {
         const selection = e.getData();

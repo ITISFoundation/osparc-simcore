@@ -196,7 +196,7 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
           this.getChildControl("right-main-layout").add(control);
           break;
         case "wallet-selector":
-          control = osparc.desktop.credits.Utils.createWalletSelector("read", true);
+          control = osparc.desktop.credits.Utils.createWalletSelector("read", true, true);
           this.getChildControl("wallet-selector-layout").add(control);
           break;
         case "credits-left-view":
