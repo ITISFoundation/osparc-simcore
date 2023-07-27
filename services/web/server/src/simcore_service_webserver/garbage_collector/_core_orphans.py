@@ -31,9 +31,7 @@ async def _remove_single_service_if_orphan(
     dynamic_service: dict[str, Any],
     currently_opened_projects_node_ids: dict[str, str],
 ) -> None:
-    """
-    Removes the service if it is an orphan. Otherwise the service is left running.
-    """
+
     service_host = dynamic_service["service_host"]
     service_uuid = dynamic_service["service_uuid"]
 
