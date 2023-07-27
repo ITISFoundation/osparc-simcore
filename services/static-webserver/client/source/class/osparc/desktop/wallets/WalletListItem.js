@@ -79,7 +79,12 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
             enabled: false
           });
           control.addListener("execute", () => {
-            console.log("hall");
+            const walletId = this.getKey();
+            const store = osparc.store.Store.getInstance();
+            const found = store.getWallets().find(wallet => wallet.getWalletId() === parseInt(walletId));
+            if (found) {
+              found.setActive(!found.getActive());
+            }
           }, this);
           this._add(control, {
             row: 0,

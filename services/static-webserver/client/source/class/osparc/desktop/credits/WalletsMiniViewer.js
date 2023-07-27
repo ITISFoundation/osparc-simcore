@@ -27,6 +27,8 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
       padding: 5
     });
 
+    this.__walletListeners = [];
+
     this.__buildLayout();
   },
 
@@ -40,6 +42,8 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
   },
 
   members: {
+    __walletListeners: null,
+
     __buildLayout: function() {
       const store = osparc.store.Store.getInstance();
       store.bind("currentWallet", this, "currentWallet");
@@ -54,19 +58,40 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
       }
     },
 
-    __showOneWallet: function(wallet) {
+    __removeWallets: function() {
+      const store = osparc.store.Store.getInstance();
+      this.__walletListeners.forEach(walletListener => {
+        const found = store.getWallets().find(wallet => wallet.getWalletId() === walletListener.walletId);
+        if (found) {
+          found.removeListenerById(walletListener.listenerId);
+        }
+      });
+      this.__walletListeners = [];
       this._removeAll();
+    },
+
+    __showOneWallet: function(wallet) {
+      this.__removeWallets();
       this.__addWallet(wallet);
+      const id = wallet.addListener("changeActive", () => this.__reloadLayout());
+      this.__walletListeners.push({
+        walletId: wallet.getWalletId(),
+        listenerId: id
+      });
     },
 
     __showAllWallets: function() {
-      this._removeAll();
+      this.__removeWallets();
       const store = osparc.store.Store.getInstance();
       store.getWallets().forEach(wallet => {
         if (wallet.isActive()) {
           this.__addWallet(wallet);
         }
-        wallet.addListener("changeActive", () => this.__reloadLayout());
+        const id = wallet.addListener("changeActive", () => this.__reloadLayout());
+        this.__walletListeners.push({
+          walletId: wallet.getWalletId(),
+          listenerId: id
+        });
       });
     },
 
