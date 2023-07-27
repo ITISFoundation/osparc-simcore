@@ -1,7 +1,4 @@
-""" Handlers for on /projects colletions
-
-Imports in standard methods (SEE _crud_handlers) and extends with
-    - custom methods (https://google.aip.dev/121)
+""" handlers for project states
 
 """
 import contextlib
@@ -45,6 +42,11 @@ log = logging.getLogger(__name__)
 
 
 routes = web.RouteTableDef()
+
+
+#
+# open project: custom methods https://google.aip.dev/136
+#
 
 
 class _OpenProjectQuery(BaseModel):
