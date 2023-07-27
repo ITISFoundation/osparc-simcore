@@ -277,9 +277,7 @@ async def task_restore_state(
             _logger.debug("No content previously saved for '%s'", state_path)
 
     progress.update(message="Downloading state", percent=0.05)
-    state_paths = [  # pylint: disable=unnecessary-comprehension # noqa: C416
-        x for x in mounted_volumes.disk_state_paths_iter()
-    ]
+    state_paths = list(mounted_volumes.disk_state_paths_iter())
     await post_sidecar_log_message(
         app,
         f"Downloading state files for {state_paths}...",
@@ -355,9 +353,7 @@ async def task_save_state(
             )
 
     progress.update(message="starting state save", percent=0.0)
-    state_paths = [  # pylint: disable=unnecessary-comprehension # noqa: C416
-        x for x in mounted_volumes.disk_state_paths_iter()
-    ]
+    state_paths = list(mounted_volumes.disk_state_paths_iter())
     async with ProgressBarData(
         steps=len(state_paths),
         progress_report_cb=functools.partial(
