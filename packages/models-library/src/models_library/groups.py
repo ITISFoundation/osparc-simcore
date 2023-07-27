@@ -1,22 +1,24 @@
-import enum
+from enum import auto
 from typing import Any, ClassVar, Final
 
 from pydantic import BaseModel, Field
 from pydantic.types import PositiveInt
 
+from .utils.enums import StrAutoEnum
+
 EVERYONE_GROUP_ID: Final[int] = 1
 
 
-class GroupType(enum.Enum):
+class GroupType(StrAutoEnum):
     """
     standard: standard group, e.g. any group that is not a primary group or special group such as the everyone group
     primary: primary group, e.g. the primary group is the user own defined group that typically only contain the user (same as in linux)
     everyone: the only group for all users
     """
 
-    STANDARD = "standard"
-    PRIMARY = "primary"
-    EVERYONE = "everyone"
+    STANDARD = auto()
+    PRIMARY = auto()
+    EVERYONE = auto()
 
 
 class Group(BaseModel):
