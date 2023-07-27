@@ -233,5 +233,3 @@ def managed_resource(
             extra=get_log_record_extra(user_id=user_id),
         )
         raise
-
-    # TODO: PC->SAN?? exception handling? e.g. remove resource from registry?
