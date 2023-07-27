@@ -1160,7 +1160,7 @@ qx.Class.define("osparc.data.Resources", {
               active: true
             }, {
               id: 3,
-              name: "Anotrher Wallet",
+              name: "Another Wallet",
               description: "Organization wide Wallet 2",
               owner: 4,
               accessRights: {
