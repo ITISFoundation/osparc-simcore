@@ -37,19 +37,20 @@ async def push_directory(
     progress_bar: ProgressBarData,
 ) -> None:
     s3_object = _create_s3_object_key(project_id, node_uuid, source_path)
-    _logger.info("uploading %s to S3 to %s...", source_path.name, s3_object)
-    await filemanager.upload_path(
-        user_id=user_id,
-        store_id=SIMCORE_LOCATION,
-        store_name=None,
-        s3_object=s3_object,
-        path_to_upload=source_path,
-        r_clone_settings=r_clone_settings,
-        io_log_redirect_cb=io_log_redirect_cb,
-        progress_bar=progress_bar,
-        exclude_patterns=exclude_patterns,
-    )
-    _logger.info("%s successfully uploaded", source_path)
+    with log_context(
+        _logger, logging.INFO, f"uploading {source_path.name} to S3 to {s3_object}"
+    ):
+        await filemanager.upload_path(
+            user_id=user_id,
+            store_id=SIMCORE_LOCATION,
+            store_name=None,
+            s3_object=s3_object,
+            path_to_upload=source_path,
+            r_clone_settings=r_clone_settings,
+            io_log_redirect_cb=io_log_redirect_cb,
+            progress_bar=progress_bar,
+            exclude_patterns=exclude_patterns,
+        )
 
 
 def _get_s3_name(path: Path, *, is_archive: bool) -> str:
@@ -70,7 +71,7 @@ async def pull_directory(
     save_to_path = destination_path if save_to is None else save_to
     s3_object = _create_s3_object_key(project_id, node_uuid, destination_path)
     with log_context(
-        _logger, logging.INFO, f"pulling data from {s3_object} to {save_to_path}..."
+        _logger, logging.INFO, f"pulling data from {s3_object} to {save_to_path}"
     ):
         await filemanager.download_path_from_s3(
             user_id=user_id,
