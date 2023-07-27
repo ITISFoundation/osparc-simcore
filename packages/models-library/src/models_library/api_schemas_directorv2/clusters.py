@@ -1,18 +1,5 @@
 from typing import Any, ClassVar, TypeAlias
 
-from models_library.clusters import (
-    CLUSTER_ADMIN_RIGHTS,
-    CLUSTER_MANAGER_RIGHTS,
-    CLUSTER_USER_RIGHTS,
-    BaseCluster,
-    Cluster,
-    ClusterAccessRights,
-    ClusterAuthentication,
-    ClusterTypeInModel,
-    ExternalClusterAuthentication,
-)
-from models_library.generics import DictModel
-from models_library.users import GroupID
 from pydantic import (
     AnyHttpUrl,
     BaseModel,
@@ -24,6 +11,20 @@ from pydantic import (
 )
 from pydantic.networks import AnyUrl
 from pydantic.types import ByteSize, PositiveFloat
+
+from ..clusters import (
+    CLUSTER_ADMIN_RIGHTS,
+    CLUSTER_MANAGER_RIGHTS,
+    CLUSTER_USER_RIGHTS,
+    BaseCluster,
+    Cluster,
+    ClusterAccessRights,
+    ClusterAuthentication,
+    ClusterTypeInModel,
+    ExternalClusterAuthentication,
+)
+from ..generics import DictModel
+from ..users import GroupID
 
 
 class TaskCounts(BaseModel):

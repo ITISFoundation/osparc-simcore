@@ -7,23 +7,21 @@ from functools import cached_property
 from typing import Any, TypeAlias
 from uuid import UUID
 
-from models_library.api_schemas_directorv2.dynamic_services_service import (
-    CommonServiceDetails,
-)
-from models_library.basic_types import PortInt
-from models_library.generated_models.docker_rest_api import ContainerState, Status2
-from models_library.projects_nodes_io import NodeID
-from models_library.service_settings_labels import (
-    DynamicSidecarServiceLabels,
-    PathMappingsLabel,
-    SimcoreServiceLabels,
-)
-from models_library.services import RunID
-from models_library.services_resources import ServiceResourcesDict
 from pydantic import AnyHttpUrl, BaseModel, ConstrainedStr, Extra, Field, parse_obj_as
 from servicelib.error_codes import ErrorCodeStr
 from servicelib.exception_utils import DelayedExceptionHandler
 
+from ..api_schemas_directorv2.dynamic_services_service import CommonServiceDetails
+from ..basic_types import PortInt
+from ..generated_models.docker_rest_api import ContainerState, Status2
+from ..projects_nodes_io import NodeID
+from ..service_settings_labels import (
+    DynamicSidecarServiceLabels,
+    PathMappingsLabel,
+    SimcoreServiceLabels,
+)
+from ..services import RunID
+from ..services_resources import ServiceResourcesDict
 from .constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
     DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,

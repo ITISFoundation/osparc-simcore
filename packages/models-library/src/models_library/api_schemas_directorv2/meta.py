@@ -1,8 +1,9 @@
 import re
 from typing import Any, ClassVar
 
-from models_library.basic_regex import VERSION_RE
 from pydantic import BaseModel, ConstrainedStr, Field
+
+from ..basic_regex import VERSION_RE
 
 
 class VersionStr(ConstrainedStr):

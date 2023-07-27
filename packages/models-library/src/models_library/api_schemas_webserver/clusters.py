@@ -1,7 +1,7 @@
-from models_library.clusters import ClusterID
 from pydantic import BaseModel, Extra
 
 from ..api_schemas_directorv2 import clusters
+from ..clusters import ClusterID
 from ._base import InputSchema, OutputSchema
 
 

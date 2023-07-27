@@ -2,18 +2,13 @@ from dataclasses import dataclass
 from typing import Any, ClassVar, TypeAlias
 
 import orjson
-from models_library.services import (
-    BaseServiceIOModel,
-    ServiceInput,
-    ServiceOutput,
-    ServicePortKey,
-)
-from models_library.utils.change_case import snake_to_camel
 from pint import PintError, UnitRegistry
 from pydantic import Extra, Field
 from pydantic.main import BaseModel
 
 from ..api_schemas_catalog import services
+from ..services import BaseServiceIOModel, ServiceInput, ServiceOutput, ServicePortKey
+from ..utils.change_case import snake_to_camel
 from ._base import InputSchema, OutputSchema
 
 ServiceInputKey: TypeAlias = ServicePortKey
