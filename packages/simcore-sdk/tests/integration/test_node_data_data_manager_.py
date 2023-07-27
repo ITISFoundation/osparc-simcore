@@ -171,7 +171,7 @@ async def test_valid_upload_download(
 
         _empty_path(content_path)
 
-        await data_manager.pull_directory_path(
+        await data_manager.pull_directory(
             user_id=user_id,
             project_id=project_id,
             node_uuid=node_uuid,
@@ -226,7 +226,7 @@ async def test_valid_upload_download_saved_to(
 
         new_destination = random_tmp_dir_generator(is_file=content_path.is_file())
 
-        await data_manager.pull_directory_path(
+        await data_manager.pull_directory(
             user_id=user_id,
             project_id=project_id,
             node_uuid=node_uuid,

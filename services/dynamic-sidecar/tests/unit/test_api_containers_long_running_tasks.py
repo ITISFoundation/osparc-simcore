@@ -196,7 +196,7 @@ def mock_data_manager(mocker: MockerFixture) -> None:
     for function_name in (
         "push_directory",
         "state_metadata_entry_exists",
-        "pull_directory_path",
+        "pull_directory",
         "pull_legacy_archive",
     ):
         mocker.patch(

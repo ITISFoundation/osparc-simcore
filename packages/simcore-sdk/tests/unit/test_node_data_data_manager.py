@@ -244,7 +244,7 @@ async def test_pull_legacy_archive(
     assert not errors
 
 
-async def test_pull_directory_path(
+async def test_pull_directory(
     user_id: int,
     project_id: ProjectID,
     node_uuid: NodeID,
@@ -267,7 +267,7 @@ async def test_pull_directory_path(
     mock_filemanager.download_path_from_s3.return_value = fake_download_folder
 
     async with ProgressBarData(steps=1) as progress_bar:
-        await data_manager.pull_directory_path(
+        await data_manager.pull_directory(
             user_id,
             project_id,
             node_uuid,

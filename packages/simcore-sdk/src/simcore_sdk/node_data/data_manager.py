@@ -55,7 +55,7 @@ def _get_s3_name(path: Path, *, is_archive: bool) -> str:
     return f"{path.stem}.zip" if is_archive else path.stem
 
 
-async def pull_directory_path(
+async def pull_directory(
     user_id: UserID,
     project_id: ProjectID,
     node_uuid: NodeID,

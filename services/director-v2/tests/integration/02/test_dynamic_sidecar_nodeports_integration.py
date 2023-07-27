@@ -642,7 +642,7 @@ async def _fetch_data_via_data_manager(
     )
 
     async with ProgressBarData(steps=1) as progress_bar:
-        await data_manager.pull_directory_path(
+        await data_manager.pull_directory(
             user_id=user_id,
             project_id=project_id,
             node_uuid=service_uuid,

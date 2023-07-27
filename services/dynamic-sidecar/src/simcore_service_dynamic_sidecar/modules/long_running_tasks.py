@@ -262,7 +262,7 @@ async def task_restore_state(
                     progress_bar=root_progress,
                 )
         elif state_directory_exists:
-            await data_manager.pull_directory_path(
+            await data_manager.pull_directory(
                 user_id=settings.DY_SIDECAR_USER_ID,
                 project_id=settings.DY_SIDECAR_PROJECT_ID,
                 node_uuid=settings.DY_SIDECAR_NODE_ID,
