@@ -59,7 +59,7 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
 
       walletListItem.addListener("buyCredits", e => this.fireDataEvent("buyCredits", e.getData()));
 
-      // this.__membersList.setWallet(walletModel);
+      this.__membersList.setCurrentWallet(walletModel);
     },
 
     __getTitleLayout: function() {
@@ -167,7 +167,7 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
       });
 
       const membersListPage = this.__createTabPage(this.tr("Members"), "@FontAwesome5Solid/users/14");
-      const membersList = this.__membersList = new osparc.desktop.organizations.MembersList();
+      const membersList = this.__membersList = new osparc.desktop.wallets.MembersList();
       membersListPage.add(membersList, {
         flex: 1
       });

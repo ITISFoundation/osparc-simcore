@@ -154,6 +154,10 @@ qx.Class.define("osparc.data.Roles", {
       return this.__createIntoFromRoles(osparc.data.Roles.ORG);
     },
 
+    createRolesWalleltInfo: function() {
+      return this.__createIntoFromRoles(osparc.data.Roles.WALLET);
+    },
+
     createRolesResourceInfo: function() {
       return this.__createIntoFromRoles(osparc.data.Roles.RESOURCE);
     }
