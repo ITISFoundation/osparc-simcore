@@ -180,7 +180,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
       return memebersUIList;
     },
 
-    __reloadWalletMembers: function() {
+    __reloadWalletMembers: async function() {
       const membersModel = this.__membersModel;
       membersModel.removeAll();
 
@@ -192,14 +192,24 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
       const wallets = osparc.store.Store.getInstance().getWallets();
       const found = wallets.find(wallet => wallet.getWalletId() === walletModel.getWalletId());
       if (found) {
+        const accessRights = found.getAccessRights();
         const membersList = [];
-        Object.entries(found.getAccessRights()).forEach(([groupId, ar]) => {
-          const member = {};
-          member["name"] = groupId;
-          member["showOptions"] = true;
-          membersList.push(member);
+        const potentialCollaborators = await osparc.store.Store.getInstance().getPotentialCollaborators();
+        Object.keys(accessRights).forEach(gid => {
+          if (Object.prototype.hasOwnProperty.call(potentialCollaborators, gid)) {
+            const collab = potentialCollaborators[gid];
+            // Do not override collaborator object
+            const collaborator = osparc.utils.Utils.deepCloneObject(collab);
+            if ("first_name" in collaborator) {
+              collaborator["thumbnail"] = osparc.utils.Avatar.getUrl(collaborator["login"], 32);
+              collaborator["name"] = osparc.utils.Utils.firstsUp(collaborator["first_name"], collaborator["last_name"]);
+            }
+            collaborator["accessRights"] = collab["accessRights"];
+            collaborator["showOptions"] = true;
+            membersList.push(collaborator);
+          }
         });
-        // membersList.sort(this.self().sortWalletMembers);
+        membersList.sort(this.self().sortWalletMembers);
         membersList.forEach(member => membersModel.append(qx.data.marshal.Json.createModel(member)));
       }
     },
