@@ -460,29 +460,28 @@ async def replace_project(request: web.Request):
 
         if await api.is_pipeline_running(
             request.app, req_ctx.user_id, path_params.project_id
-        ):
-            if any_node_inputs_changed(new_project, current_project):
-                # NOTE:  This is a conservative measure that we take
-                #  until nodeports logic is re-designed to tackle with this
-                #  particular state.
-                #
-                # This measure avoid having a state with different node *links* in the
-                # comp-tasks table and the project's workbench column.
-                # The limitation is that nodeports only "sees" those in the comptask
-                # and this table does not add the new ones since it remains "blocked"
-                # for modification from that project while the pipeline runs. Therefore
-                # any extra link created while the pipeline is running can not
-                # be managed by nodeports because it basically "cannot see it"
-                #
-                # Responds https://httpstatuses.com/409:
-                #  The request could not be completed due to a conflict with the current
-                #  state of the target resource (i.e. pipeline is running). This code is used in
-                #  situations where the user might be able to resolve the conflict
-                #  and resubmit the request  (front-end will show a pop-up with message below)
-                #
-                raise web.HTTPConflict(
-                    reason=f"Project {path_params.project_id} cannot be modified while pipeline is still running."
-                )
+        ) and any_node_inputs_changed(new_project, current_project):
+            # NOTE:  This is a conservative measure that we take
+            #  until nodeports logic is re-designed to tackle with this
+            #  particular state.
+            #
+            # This measure avoid having a state with different node *links* in the
+            # comp-tasks table and the project's workbench column.
+            # The limitation is that nodeports only "sees" those in the comptask
+            # and this table does not add the new ones since it remains "blocked"
+            # for modification from that project while the pipeline runs. Therefore
+            # any extra link created while the pipeline is running can not
+            # be managed by nodeports because it basically "cannot see it"
+            #
+            # Responds https://httpstatuses.com/409:
+            #  The request could not be completed due to a conflict with the current
+            #  state of the target resource (i.e. pipeline is running). This code is used in
+            #  situations where the user might be able to resolve the conflict
+            #  and resubmit the request  (front-end will show a pop-up with message below)
+            #
+            raise web.HTTPConflict(
+                reason=f"Project {path_params.project_id} cannot be modified while pipeline is still running."
+            )
 
         new_project = await db.replace_project(
             new_project,
