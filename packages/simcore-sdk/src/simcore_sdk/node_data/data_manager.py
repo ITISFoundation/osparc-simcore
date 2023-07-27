@@ -7,6 +7,7 @@ from models_library.projects_nodes_io import NodeID, StorageFileID
 from models_library.users import UserID
 from pydantic import parse_obj_as
 from servicelib.archiving_utils import unarchive_dir
+from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
 from settings_library.r_clone import RCloneSettings
 
@@ -68,17 +69,19 @@ async def pull_directory(
 ) -> None:
     save_to_path = destination_path if save_to is None else save_to
     s3_object = _create_s3_object_key(project_id, node_uuid, destination_path)
-    _logger.info("pulling data from %s to %s...", s3_object, save_to_path)
-    await filemanager.download_path_from_s3(
-        user_id=user_id,
-        store_id=SIMCORE_LOCATION,
-        store_name=None,
-        s3_object=s3_object,
-        local_path=save_to_path,
-        io_log_redirect_cb=io_log_redirect_cb,
-        r_clone_settings=r_clone_settings,
-        progress_bar=progress_bar,
-    )
+    with log_context(
+        _logger, logging.INFO, f"pulling data from {s3_object} to {save_to_path}..."
+    ):
+        await filemanager.download_path_from_s3(
+            user_id=user_id,
+            store_id=SIMCORE_LOCATION,
+            store_name=None,
+            s3_object=s3_object,
+            local_path=save_to_path,
+            io_log_redirect_cb=io_log_redirect_cb,
+            r_clone_settings=r_clone_settings,
+            progress_bar=progress_bar,
+        )
 
 
 async def pull_legacy_archive(
