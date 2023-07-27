@@ -56,7 +56,7 @@ def get_html_formatted_unit(
         return None
 
 
-class ServiceGet(services.ServiceGet):
+class ServiceGet(services.ServiceGet):  # pylint: disable=too-many-ancestors
     class Config(OutputSchema.Config):
         ...
 

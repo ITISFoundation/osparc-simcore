@@ -13,21 +13,26 @@ class ClusterPathParams(BaseModel):
         extra = Extra.forbid
 
 
-class ClusterGet(clusters.ClusterGet, OutputSchema):
-    ...
+class ClusterGet(clusters.ClusterGet):
+    class Config(OutputSchema.Config):
+        ...
 
 
-class ClusterCreate(clusters.ClusterCreate, InputSchema):
-    ...
+class ClusterCreate(clusters.ClusterCreate):
+    class Config(InputSchema.Config):
+        ...
 
 
-class ClusterPatch(clusters.ClusterPatch, InputSchema):
-    ...
+class ClusterPatch(clusters.ClusterPatch):
+    class Config(InputSchema.Config):
+        ...
 
 
-class ClusterPing(clusters.ClusterPing, InputSchema):
-    ...
+class ClusterPing(clusters.ClusterPing):
+    class Config(InputSchema.Config):
+        ...
 
 
-class ClusterDetails(clusters.ClusterDetails, OutputSchema):
-    ...
+class ClusterDetails(clusters.ClusterDetails):
+    class Config(OutputSchema.Config):
+        ...

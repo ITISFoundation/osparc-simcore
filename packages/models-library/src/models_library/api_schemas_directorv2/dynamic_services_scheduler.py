@@ -348,7 +348,9 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     hostname: str = Field(
         ..., description="dy-sidecar's service hostname (provided by docker-swarm)"
     )
-    port: PortInt = Field(8000, description="dynamic-sidecar port")
+    port: PortInt = Field(
+        default=parse_obj_as(PortInt, 8000), description="dynamic-sidecar port"
+    )
 
     @property
     def endpoint(self) -> AnyHttpUrl:
@@ -376,7 +378,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     )
 
     service_port: PortInt = Field(
-        default=TEMPORARY_PORT_NUMBER,
+        default=parse_obj_as(PortInt, TEMPORARY_PORT_NUMBER),
         description=(
             "port where the service is exposed defined by the service; "
             "NOTE: temporary default because it will be changed once the service "

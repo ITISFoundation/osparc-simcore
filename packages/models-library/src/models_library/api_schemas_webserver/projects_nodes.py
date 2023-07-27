@@ -4,7 +4,7 @@ from pydantic import Field
 
 from ..api_schemas_directorv2.dynamic_services import RetrieveDataOut
 from ..basic_types import PortInt
-from ..projects_nodes import NodeID
+from ..projects_nodes_io import NodeID
 from ..services import ServiceKey, ServicePortKey, ServiceVersion
 from ..services_enums import ServiceState
 from ..services_resources import ServiceResourcesDict

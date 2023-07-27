@@ -1,4 +1,4 @@
-from enum import auto
+from enum import auto, Enum
 from typing import Any, ClassVar, Final, Literal, TypeAlias, Union
 
 from models_library.utils.common_validators import create_enums_pre_validator
@@ -23,6 +23,11 @@ class ClusterTypeInModel(StrAutoEnum):
     # SEE models-library/tests/test__pydantic_models_and_enums.py
     AWS = auto()
     ON_PREMISE = auto()
+
+
+class ClusterType(Enum):
+    AWS = "AWS"
+    ON_PREMISE = "ON_PREMISE"
 
 
 class ClusterAccessRights(BaseModel):
