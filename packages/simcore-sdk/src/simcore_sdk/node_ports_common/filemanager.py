@@ -311,7 +311,7 @@ async def _abort_upload(
         async with session.post(upload_links.links.abort_upload) as resp:
             resp.raise_for_status()
     except ClientError:
-        _logger.warning("Error while aborting uplupload_pathoad", exc_info=True)
+        _logger.warning("Error while aborting upload", exc_info=True)
         if reraise_exceptions:
             raise
     _logger.warning("Upload aborted")
