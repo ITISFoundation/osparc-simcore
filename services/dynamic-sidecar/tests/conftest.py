@@ -6,7 +6,6 @@
 
 import logging
 import sys
-from copy import deepcopy
 from pathlib import Path
 from typing import Iterable, Iterator
 from unittest.mock import AsyncMock
@@ -178,7 +177,7 @@ def base_mock_envs(
 @pytest.fixture
 def mock_environment(
     monkeypatch: MonkeyPatch,
-    base_mock_envs: dict[str, str],
+    base_mock_envs: EnvVarsDict,
     user_id: UserID,
     project_id: ProjectID,
 ) -> EnvVarsDict:
@@ -186,19 +185,17 @@ def mock_environment(
 
     Override if new configuration for the app is needed.
     """
-    envs: EnvVarsDict = deepcopy(base_mock_envs)
-
-    envs["DY_SIDECAR_USER_ID"] = f"{user_id}"
-    envs["DY_SIDECAR_PROJECT_ID"] = f"{project_id}"
-
-    envs["S3_ENDPOINT"] = "endpoint"
-    envs["S3_ACCESS_KEY"] = "access_key"
-    envs["S3_SECRET_KEY"] = "secret_key"
-    envs["S3_BUCKET_NAME"] = "bucket_name"
-    envs["S3_SECURE"] = "false"
-
-    envs["R_CLONE_PROVIDER"] = "MINIO"
-
+    envs: EnvVarsDict = {
+        "DY_SIDECAR_USER_ID": f"{user_id}",
+        "DY_SIDECAR_PROJECT_ID": f"{project_id}",
+        "S3_ENDPOINT": "endpoint",
+        "S3_ACCESS_KEY": "access_key",
+        "S3_SECRET_KEY": "secret_key",
+        "S3_BUCKET_NAME": "bucket_name",
+        "S3_SECURE": "false",
+        "R_CLONE_PROVIDER": "MINIO",
+        **base_mock_envs,
+    }
     setenvs_from_dict(monkeypatch, envs)
 
     return envs

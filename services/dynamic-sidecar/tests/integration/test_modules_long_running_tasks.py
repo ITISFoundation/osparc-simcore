@@ -6,7 +6,6 @@
 import filecmp
 import shutil
 from collections.abc import AsyncIterable, Iterable
-from copy import deepcopy
 from pathlib import Path
 from typing import Any, cast
 from unittest.mock import AsyncMock
@@ -117,25 +116,25 @@ def mock_environment(
     storage_endpoint: URL,
     minio_config: dict[str, Any],
     monkeypatch: MonkeyPatch,
-    base_mock_envs: dict[str, str],
+    base_mock_envs: EnvVarsDict,
     user_id: UserID,
     project_id: ProjectID,
 ) -> EnvVarsDict:
-    envs: EnvVarsDict = deepcopy(base_mock_envs)
-
     assert storage_endpoint.host
-    envs["STORAGE_HOST"] = storage_endpoint.host
-    envs["STORAGE_PORT"] = f"{storage_endpoint.port}"
 
-    envs["DY_SIDECAR_USER_ID"] = f"{user_id}"
-    envs["DY_SIDECAR_PROJECT_ID"] = f"{project_id}"
-
-    envs["S3_ENDPOINT"] = minio_config["client"]["endpoint"]
-    envs["S3_ACCESS_KEY"] = minio_config["client"]["access_key"]
-    envs["S3_SECRET_KEY"] = minio_config["client"]["secret_key"]
-    envs["S3_BUCKET_NAME"] = minio_config["bucket_name"]
-    envs["S3_SECURE"] = f"{minio_config['client']['secure']}"
-    envs["R_CLONE_PROVIDER"] = "MINIO"
+    envs: EnvVarsDict = {
+        "STORAGE_HOST": storage_endpoint.host,
+        "STORAGE_PORT": f"{storage_endpoint.port}",
+        "DY_SIDECAR_USER_ID": f"{user_id}",
+        "DY_SIDECAR_PROJECT_ID": f"{project_id}",
+        "S3_ENDPOINT": minio_config["client"]["endpoint"],
+        "S3_ACCESS_KEY": minio_config["client"]["access_key"],
+        "S3_SECRET_KEY": minio_config["client"]["secret_key"],
+        "S3_BUCKET_NAME": minio_config["bucket_name"],
+        "S3_SECURE": f"{minio_config['client']['secure']}",
+        "R_CLONE_PROVIDER": "MINIO",
+        **base_mock_envs,
+    }
 
     setenvs_from_dict(monkeypatch, envs)
     return envs
