@@ -1,6 +1,6 @@
 """ Handlers for on /projects colletions
 
-Imports in standard methods (SEE _handlers_crud) and extends with
+Imports in standard methods (SEE _crud_handlers) and extends with
     - custom methods (https://google.aip.dev/121)
 
 """
