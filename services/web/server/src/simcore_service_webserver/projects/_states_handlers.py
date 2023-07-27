@@ -17,10 +17,10 @@ from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
 )
-from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import ProjectType
+from simcore_service_webserver.utils_aiohttp import envelope_json_response
 
 from .._meta import api_version_prefix as VTAG
 from ..director_v2.exceptions import DirectorServiceError
@@ -38,7 +38,7 @@ from .exceptions import (
     ProjectTooManyProjectOpenedError,
 )
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 routes = web.RouteTableDef()
@@ -129,7 +129,7 @@ async def open_project(request: web.Request) -> web.Response:
         )
         await projects_api.notify_project_state_update(request.app, project)
 
-        return web.json_response({"data": project}, dumps=json_dumps)
+        return envelope_json_response(project)
 
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(
@@ -221,4 +221,4 @@ async def get_project_state(request: web.Request) -> web.Response:
         include_state=True,
     )
     project_state = ProjectState(**validated_project["state"])
-    return web.json_response({"data": project_state.dict()}, dumps=json_dumps)
+    return envelope_json_response(project_state.dict())
