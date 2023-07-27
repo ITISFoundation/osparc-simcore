@@ -9,11 +9,14 @@ from pathlib import Path
 from shutil import copy, make_archive
 
 import pytest
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from pytest_mock import MockerFixture
 from servicelib.progress_bar import ProgressBarData
 from settings_library.r_clone import RCloneSettings, S3Provider
 from simcore_sdk.node_data import data_manager
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
+from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 
 
 @pytest.fixture
@@ -49,14 +52,25 @@ def r_clone_settings() -> RCloneSettings:
     )
 
 
+@pytest.fixture
+def project_id(project_id: str) -> ProjectID:
+    return ProjectID(project_id)
+
+
+@pytest.fixture
+def node_uuid(node_uuid: str) -> NodeID:
+    return NodeID(node_uuid)
+
+
 async def test_push_folder(
     user_id: int,
-    project_id: str,
-    node_uuid: str,
+    project_id: ProjectID,
+    node_uuid: NodeID,
     mocker: MockerFixture,
     tmpdir: Path,
     create_files: Callable[..., list[Path]],
     r_clone_settings: RCloneSettings,
+    mock_io_log_redirect_cb: LogRedirectCB,
 ):
     # create some files
     assert tmpdir.exists()
@@ -83,7 +97,7 @@ async def test_push_folder(
             project_id,
             node_uuid,
             test_folder,
-            io_log_redirect_cb=None,
+            io_log_redirect_cb=mock_io_log_redirect_cb,
             progress_bar=progress_bar,
             r_clone_settings=r_clone_settings,
         )
@@ -104,12 +118,13 @@ async def test_push_folder(
 
 async def test_push_file(
     user_id: int,
-    project_id: str,
-    node_uuid: str,
+    project_id: ProjectID,
+    node_uuid: NodeID,
     mocker,
     tmpdir: Path,
     create_files: Callable[..., list[Path]],
     r_clone_settings: RCloneSettings,
+    mock_io_log_redirect_cb: LogRedirectCB,
 ):
     mock_filemanager = mocker.patch(
         "simcore_sdk.node_data.data_manager.filemanager", spec=True
@@ -129,7 +144,7 @@ async def test_push_file(
             project_id,
             node_uuid,
             file_path,
-            io_log_redirect_cb=None,
+            io_log_redirect_cb=mock_io_log_redirect_cb,
             progress_bar=progress_bar,
             r_clone_settings=r_clone_settings,
         )
@@ -151,11 +166,12 @@ async def test_push_file(
 
 async def test_pull_legacy_archive(
     user_id: int,
-    project_id: str,
-    node_uuid: str,
+    project_id: ProjectID,
+    node_uuid: NodeID,
     mocker,
     tmpdir: Path,
     create_files: Callable[..., list[Path]],
+    mock_io_log_redirect_cb: LogRedirectCB,
 ):
     assert tmpdir.exists()
     # create a folder to compress from
@@ -202,7 +218,7 @@ async def test_pull_legacy_archive(
             project_id,
             node_uuid,
             test_folder,
-            io_log_redirect_cb=None,
+            io_log_redirect_cb=mock_io_log_redirect_cb,
             progress_bar=progress_bar,
         )
     assert progress_bar._continuous_progress_value == pytest.approx(1)
@@ -230,12 +246,13 @@ async def test_pull_legacy_archive(
 
 async def test_pull_directory_path(
     user_id: int,
-    project_id: str,
-    node_uuid: str,
+    project_id: ProjectID,
+    node_uuid: NodeID,
     mocker,
     tmpdir: Path,
     create_files: Callable[..., list[Path]],
     r_clone_settings: RCloneSettings,
+    mock_io_log_redirect_cb: LogRedirectCB,
 ):
     file_path = create_files(1, Path(tmpdir))[0]
     assert file_path.exists()
@@ -255,7 +272,7 @@ async def test_pull_directory_path(
             project_id,
             node_uuid,
             fake_download_folder,
-            io_log_redirect_cb=None,
+            io_log_redirect_cb=mock_io_log_redirect_cb,
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
         )

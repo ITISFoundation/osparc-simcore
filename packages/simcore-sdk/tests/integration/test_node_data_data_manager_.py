@@ -11,13 +11,16 @@ from pathlib import Path
 from uuid import uuid4
 
 import pytest
-from models_library.projects_nodes_io import SimcoreS3FileID
+from faker import Faker
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from pydantic import parse_obj_as
 from servicelib.progress_bar import ProgressBarData
 from settings_library.r_clone import RCloneSettings
 from simcore_sdk.node_data import data_manager
 from simcore_sdk.node_ports_common import filemanager
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
+from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 
 pytest_simcore_core_services_selection = [
     "migration",
@@ -95,11 +98,6 @@ def _zip_directory(dir_to_compress: Path, destination: Path) -> None:
 
 
 @pytest.fixture
-def node_uuid() -> str:
-    return f"{uuid4()}"
-
-
-@pytest.fixture
 def temp_dir(tmpdir: Path) -> Path:
     return Path(tmpdir)
 
@@ -129,6 +127,16 @@ def dir_content_multiple_files_path(temp_dir: Path) -> Path:
     return _make_dir_with_files(temp_dir, file_count=2)
 
 
+@pytest.fixture
+def project_id(project_id: str) -> ProjectID:
+    return ProjectID(project_id)
+
+
+@pytest.fixture
+def node_uuid(faker: Faker) -> NodeID:
+    return NodeID(faker.node_uuid4())
+
+
 @pytest.mark.parametrize(
     "content_path",
     [
@@ -141,9 +149,10 @@ async def test_valid_upload_download(
     node_ports_config,
     content_path: Path,
     user_id: int,
-    project_id: str,
-    node_uuid: str,
+    project_id: ProjectID,
+    node_uuid: NodeID,
     r_clone_settings: RCloneSettings,
+    mock_io_log_redirect_cb: LogRedirectCB,
 ):
     async with ProgressBarData(steps=2) as progress_bar:
         await data_manager.push_directory(
@@ -151,7 +160,7 @@ async def test_valid_upload_download(
             project_id=project_id,
             node_uuid=node_uuid,
             source_path=content_path,
-            io_log_redirect_cb=None,
+            io_log_redirect_cb=mock_io_log_redirect_cb,
             progress_bar=progress_bar,
             r_clone_settings=r_clone_settings,
         )
@@ -167,7 +176,7 @@ async def test_valid_upload_download(
             project_id=project_id,
             node_uuid=node_uuid,
             destination_path=content_path,
-            io_log_redirect_cb=None,
+            io_log_redirect_cb=mock_io_log_redirect_cb,
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
         )
@@ -190,10 +199,11 @@ async def test_valid_upload_download_saved_to(
     node_ports_config,
     content_path: Path,
     user_id: int,
-    project_id: str,
-    node_uuid: str,
+    project_id: ProjectID,
+    node_uuid: NodeID,
     random_tmp_dir_generator: Callable,
     r_clone_settings: RCloneSettings,
+    mock_io_log_redirect_cb: LogRedirectCB,
 ):
     async with ProgressBarData(steps=2) as progress_bar:
         await data_manager.push_directory(
@@ -201,7 +211,7 @@ async def test_valid_upload_download_saved_to(
             project_id=project_id,
             node_uuid=node_uuid,
             source_path=content_path,
-            io_log_redirect_cb=None,
+            io_log_redirect_cb=mock_io_log_redirect_cb,
             progress_bar=progress_bar,
             r_clone_settings=r_clone_settings,
         )
@@ -222,7 +232,7 @@ async def test_valid_upload_download_saved_to(
             node_uuid=node_uuid,
             destination_path=content_path,
             save_to=new_destination,
-            io_log_redirect_cb=None,
+            io_log_redirect_cb=mock_io_log_redirect_cb,
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
         )
@@ -247,8 +257,8 @@ async def test_delete_legacy_archive(
     node_ports_config,
     content_path: Path,
     user_id: int,
-    project_id: str,
-    node_uuid: str,
+    project_id: ProjectID,
+    node_uuid: NodeID,
     r_clone_settings: RCloneSettings,
     temp_dir: Path,
 ):

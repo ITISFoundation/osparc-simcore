@@ -8,7 +8,6 @@ from unittest.mock import Mock
 
 import pytest
 from faker import Faker
-from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from settings_library.r_clone import S3Provider
 from simcore_sdk.node_ports_common import r_clone
@@ -22,7 +21,7 @@ def s3_provider(request) -> S3Provider:
 
 @pytest.fixture
 def r_clone_settings(
-    monkeypatch: MonkeyPatch, s3_provider: S3Provider
+    monkeypatch: pytest.MonkeyPatch, s3_provider: S3Provider
 ) -> RCloneSettings:
     monkeypatch.setenv("R_CLONE_PROVIDER", s3_provider.value)
     monkeypatch.setenv("S3_ENDPOINT", "endpoint")

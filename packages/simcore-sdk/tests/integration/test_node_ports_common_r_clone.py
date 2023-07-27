@@ -5,8 +5,9 @@ import filecmp
 import os
 import re
 import urllib.parse
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Final
+from typing import Final
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
@@ -14,7 +15,6 @@ import aiofiles
 import pytest
 from faker import Faker
 from pydantic import AnyUrl, ByteSize, parse_obj_as
-from pytest import FixtureRequest
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from settings_library.r_clone import RCloneSettings
@@ -42,14 +42,13 @@ WAIT_FOR_S3_BACKEND_TO_UPDATE: Final[float] = 1.0
         "öä$äö2-34 no extension",
     ]
 )
-def file_name(request: FixtureRequest) -> str:
-    return request.param  # type: ignore
+def file_name(request: pytest.FixtureRequest) -> str:
+    return request.param
 
 
 @pytest.fixture
 def local_file_for_download(upload_file_dir: Path, file_name: str) -> Path:
-    local_file_path = upload_file_dir / f"__local__{file_name}"
-    return local_file_path
+    return upload_file_dir / f"__local__{file_name}"
 
 
 # UTILS
@@ -81,7 +80,7 @@ async def _create_random_binary_file(
     file_path: Path,
     file_size: ByteSize,
     # NOTE: bigger files get created faster with bigger chunk_size
-    chunk_size: int = parse_obj_as(ByteSize, "1mib"),
+    chunk_size: int = parse_obj_as(ByteSize, "1mib"),  # noqa: B008
 ):
     async with aiofiles.open(file_path, mode="wb") as file:
         bytes_written = 0
@@ -123,6 +122,7 @@ async def _upload_local_dir_to_s3(
     r_clone_settings: RCloneSettings,
     s3_directory_link: AnyUrl,
     source_dir: Path,
+    *,
     check_progress: bool = False,
 ) -> None:
     # NOTE: progress is enforced only when uploading and only when using
@@ -147,7 +147,7 @@ async def _upload_local_dir_to_s3(
             upload_s3_link=s3_directory_link,
         )
     if check_progress:
-        # NOTE: a progress of 1 is always sent ny the progress bar
+        # NOTE: a progress of 1 is always sent by the progress bar
         # we want to check that rclone also reports some progress entries
         assert len(progress_entries) > 1
 

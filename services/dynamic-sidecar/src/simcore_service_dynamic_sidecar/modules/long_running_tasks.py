@@ -234,21 +234,18 @@ async def task_restore_state(
     # NOTE: this implies that the legacy format will always be decompressed
     # until it is not removed.
 
-    project_id_str = f"{settings.DY_SIDECAR_PROJECT_ID}"
-    node_uuid_str = f"{settings.DY_SIDECAR_NODE_ID}"
-
     async def _restore_state_folder(state_path: Path) -> None:
         state_archive_exists = await data_manager.state_metadata_entry_exists(
             user_id=settings.DY_SIDECAR_USER_ID,
-            project_id=project_id_str,
-            node_uuid=node_uuid_str,
+            project_id=settings.DY_SIDECAR_PROJECT_ID,
+            node_uuid=settings.DY_SIDECAR_NODE_ID,
             path=state_path,
             is_archive=True,
         )
         state_directory_exists = await data_manager.state_metadata_entry_exists(
             user_id=settings.DY_SIDECAR_USER_ID,
-            project_id=project_id_str,
-            node_uuid=node_uuid_str,
+            project_id=settings.DY_SIDECAR_PROJECT_ID,
+            node_uuid=settings.DY_SIDECAR_NODE_ID,
             path=state_path,
             is_archive=False,
         )
@@ -256,8 +253,8 @@ async def task_restore_state(
             with log_context(_logger, logging.INFO, "restoring legacy data archive"):
                 await data_manager.pull_legacy_archive(
                     user_id=settings.DY_SIDECAR_USER_ID,
-                    project_id=project_id_str,
-                    node_uuid=node_uuid_str,
+                    project_id=settings.DY_SIDECAR_PROJECT_ID,
+                    node_uuid=settings.DY_SIDECAR_NODE_ID,
                     destination_path=state_path,
                     io_log_redirect_cb=functools.partial(
                         post_sidecar_log_message, app, log_level=logging.INFO
@@ -267,8 +264,8 @@ async def task_restore_state(
         elif state_directory_exists:
             await data_manager.pull_directory_path(
                 user_id=settings.DY_SIDECAR_USER_ID,
-                project_id=project_id_str,
-                node_uuid=node_uuid_str,
+                project_id=settings.DY_SIDECAR_PROJECT_ID,
+                node_uuid=settings.DY_SIDECAR_NODE_ID,
                 destination_path=state_path,
                 io_log_redirect_cb=functools.partial(
                     post_sidecar_log_message, app, log_level=logging.INFO
@@ -324,13 +321,10 @@ async def task_save_state(
     async def _push_and_remove_legacy_archive(
         state_path: Path, root_progress: ProgressBarData
     ) -> None:
-        project_id_str = f"{settings.DY_SIDECAR_PROJECT_ID}"
-        node_uuid_str = f"{settings.DY_SIDECAR_NODE_ID}"
-
         await data_manager.push_directory(
             user_id=settings.DY_SIDECAR_USER_ID,
-            project_id=project_id_str,
-            node_uuid=node_uuid_str,
+            project_id=settings.DY_SIDECAR_PROJECT_ID,
+            node_uuid=settings.DY_SIDECAR_NODE_ID,
             source_path=state_path,
             # NOTE: interface was broken on purpose, next PR wil fix it
             # and will cleanup how rclone is used
@@ -343,8 +337,8 @@ async def task_save_state(
         )
         archive_exists = await data_manager.state_metadata_entry_exists(
             user_id=settings.DY_SIDECAR_USER_ID,
-            project_id=project_id_str,
-            node_uuid=node_uuid_str,
+            project_id=settings.DY_SIDECAR_PROJECT_ID,
+            node_uuid=settings.DY_SIDECAR_NODE_ID,
             path=state_path,
             is_archive=True,
         )
@@ -355,8 +349,8 @@ async def task_save_state(
         with log_context(_logger, logging.INFO, "removing legacy data archive"):
             await data_manager.delete_legacy_archive(
                 user_id=settings.DY_SIDECAR_USER_ID,
-                project_id=project_id_str,
-                node_uuid=node_uuid_str,
+                project_id=settings.DY_SIDECAR_PROJECT_ID,
+                node_uuid=settings.DY_SIDECAR_NODE_ID,
                 path=state_path,
             )
 

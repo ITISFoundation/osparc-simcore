@@ -74,6 +74,7 @@ from simcore_postgres_database.models.projects_networks import projects_networks
 from simcore_postgres_database.models.services import services_access_rights
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_data import data_manager
+from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 from simcore_sdk.node_ports_v2 import DBManager, Nodeports, Port
 from simcore_service_director_v2.core.settings import AppSettings, RCloneSettings
 from simcore_service_director_v2.models.schemas.comp_tasks import ComputationGet
@@ -440,6 +441,14 @@ async def projects_networks_db(
         await conn.execute(upsert_snapshot)
 
 
+@pytest.fixture
+def mock_io_log_redirect_cb() -> LogRedirectCB:
+    async def _mocked_function(*args, **kwargs) -> None:
+        pass
+
+    return _mocked_function
+
+
 async def _get_mapped_nodeports_values(
     user_id: UserID, project_id: str, workbench: NodesDict, db_manager: DBManager
 ) -> dict[str, InputsOutputs]:
@@ -613,9 +622,10 @@ async def _fetch_data_via_data_manager(
     r_clone_settings: RCloneSettings,
     dir_tag: str,
     user_id: UserID,
-    project_id: str,
-    service_uuid: str,
+    project_id: ProjectID,
+    service_uuid: NodeID,
     temp_dir: Path,
+    io_log_redirect_cb: LogRedirectCB,
 ) -> Path:
     save_to = temp_dir / f"data-manager_{dir_tag}_{uuid4()}"
     save_to.mkdir(parents=True, exist_ok=True)
@@ -638,7 +648,7 @@ async def _fetch_data_via_data_manager(
             node_uuid=service_uuid,
             destination_path=DY_SERVICES_STATE_PATH,
             save_to=save_to,
-            io_log_redirect_cb=None,
+            io_log_redirect_cb=io_log_redirect_cb,
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
         )
@@ -872,6 +882,7 @@ async def test_nodeports_integration(
     tmp_path: Path,
     osparc_product_name: str,
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
+    mock_io_log_redirect_cb: LogRedirectCB,
 ) -> None:
     """
     Creates a new project with where the following connections
@@ -1066,9 +1077,10 @@ async def test_nodeports_integration(
             r_clone_settings=r_clone_settings,
             dir_tag="dy",
             user_id=current_user["id"],
-            project_id=str(current_study.uuid),
+            project_id=current_study.uuid,
             service_uuid=services_node_uuids.dy,
             temp_dir=tmp_path,
+            io_log_redirect_cb=mock_io_log_redirect_cb,
         )
     )
 
@@ -1085,9 +1097,10 @@ async def test_nodeports_integration(
             r_clone_settings=r_clone_settings,
             dir_tag="dy_compose_spec",
             user_id=current_user["id"],
-            project_id=str(current_study.uuid),
+            project_id=current_study.uuid,
             service_uuid=services_node_uuids.dy_compose_spec,
             temp_dir=tmp_path,
+            io_log_redirect_cb=mock_io_log_redirect_cb,
         )
     )
 
