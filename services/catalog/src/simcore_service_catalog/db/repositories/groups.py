@@ -2,9 +2,9 @@ from typing import Optional, cast
 
 import sqlalchemy as sa
 from models_library.emails import LowerCaseEmailStr
+from models_library.groups import GroupAtDB
 from pydantic.types import PositiveInt
 
-from ...models.domain.group import GroupAtDB
 from ..errors import RepositoryError
 from ..tables import GroupType, groups, user_to_groups, users
 from ._base import BaseRepository

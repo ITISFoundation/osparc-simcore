@@ -13,6 +13,10 @@ import respx
 from faker import Faker
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
+from models_library.api_schemas_catalog.services_specifications import (
+    ServiceSpecifications,
+    ServiceSpecificationsGet,
+)
 from models_library.generated_models.docker_rest_api import (
     DiscreteResourceSpec,
     GenericResource,
@@ -30,12 +34,8 @@ from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.services_specifications import (
     services_specifications,
 )
-from simcore_service_catalog.models.domain.service_specifications import (
+from simcore_service_catalog.models.service_specifications import (
     ServiceSpecificationsAtDB,
-)
-from simcore_service_catalog.models.schemas.services_specifications import (
-    ServiceSpecifications,
-    ServiceSpecificationsGet,
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette import status

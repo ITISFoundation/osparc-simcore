@@ -6,13 +6,13 @@
 from pprint import pformat
 
 import pytest
-from models_library.services import ServiceInput
-from simcore_service_catalog.models.schemas.services import (
+from models_library.api_schemas_catalog.services import (
     ServiceGet,
     ServiceItem,
     ServiceUpdate,
 )
-from simcore_service_catalog.models.schemas.services_ports import ServicePortGet
+from models_library.api_schemas_catalog.services_ports import ServicePortGet
+from models_library.services import ServiceInput
 
 
 @pytest.mark.parametrize(

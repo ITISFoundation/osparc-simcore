@@ -3,10 +3,16 @@
 import asyncio
 import logging
 import urllib.parse
-from typing import Any, cast
+from typing import Any, TypeAlias, cast
 
 from aiocache import cached
 from fastapi import APIRouter, Depends, Header, HTTPException, status
+from models_library.api_schemas_catalog.constants import (
+    DIRECTOR_CACHING_TTL,
+    LIST_SERVICES_CACHING_TTL,
+    RESPONSE_MODEL_POLICY,
+)
+from models_library.api_schemas_catalog.services import ServiceGet, ServiceUpdate
 from models_library.services import ServiceKey, ServiceType, ServiceVersion
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from pydantic import ValidationError
@@ -15,12 +21,6 @@ from starlette.requests import Request
 
 from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
-from ...models.schemas.constants import (
-    DIRECTOR_CACHING_TTL,
-    LIST_SERVICES_CACHING_TTL,
-    RESPONSE_MODEL_POLICY,
-)
-from ...models.schemas.services import ServiceGet, ServiceUpdate
 from ...services.director import DirectorApi
 from ...services.function_services import is_function_service
 from ...utils.requests_decorators import cancellable_request
@@ -28,9 +28,9 @@ from ..dependencies.database import get_repository
 from ..dependencies.director import get_director_api
 from ..dependencies.services import get_service_from_registry
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
-ServicesSelection = set[tuple[str, str]]
+ServicesSelection: TypeAlias = set[tuple[str, str]]
 
 
 def _prepare_service_details(
@@ -52,7 +52,7 @@ def _prepare_service_details(
     try:
         validated_service = ServiceGet(**composed_service)
     except ValidationError as exc:
-        logger.warning(
+        _logger.warning(
             "could not validate service [%s:%s]: %s",
             composed_service.get("key"),
             composed_service.get("version"),

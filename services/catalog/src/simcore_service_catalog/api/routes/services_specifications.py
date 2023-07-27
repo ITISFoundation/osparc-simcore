@@ -1,16 +1,16 @@
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from models_library.api_schemas_catalog.constants import RESPONSE_MODEL_POLICY
+from models_library.api_schemas_catalog.services_specifications import (
+    ServiceSpecifications,
+    ServiceSpecificationsGet,
+)
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 
 from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
-from ...models.schemas.constants import RESPONSE_MODEL_POLICY
-from ...models.schemas.services_specifications import (
-    ServiceSpecifications,
-    ServiceSpecificationsGet,
-)
 from ...services.function_services import is_function_service
 from ..dependencies.database import get_repository
 from ..dependencies.services import get_default_service_specifications

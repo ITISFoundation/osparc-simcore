@@ -5,6 +5,10 @@ from typing import Any, Iterable, cast
 
 import packaging.version
 import sqlalchemy as sa
+from models_library.api_schemas_catalog.domain.group import GroupAtDB
+from models_library.api_schemas_catalog.services_specifications import (
+    ServiceSpecifications,
+)
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from models_library.users import GroupID
@@ -18,9 +22,7 @@ from sqlalchemy.sql import and_, or_
 from sqlalchemy.sql.expression import tuple_
 from sqlalchemy.sql.selectable import Select
 
-from ...models.domain.group import GroupAtDB
-from ...models.domain.service_specifications import ServiceSpecificationsAtDB
-from ...models.schemas.services_specifications import ServiceSpecifications
+from ...models.service_specifications import ServiceSpecificationsAtDB
 from ..tables import services_access_rights, services_meta_data, services_specifications
 from ._base import BaseRepository
 
