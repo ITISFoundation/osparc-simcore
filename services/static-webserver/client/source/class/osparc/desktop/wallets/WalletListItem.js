@@ -22,13 +22,14 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
     walletType: {
       check: ["personal", "shared"],
       init: "personal",
-      nullable: false
+      nullable: false,
+      apply: "__setDefaultThumbnail"
     },
 
     credits: {
       check: "Number",
-      apply: "__applyCredits",
-      nullable: false
+      nullable: false,
+      apply: "__applyCredits"
     }
   },
 
@@ -149,19 +150,20 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       const thumbnail = this.getChildControl("thumbnail");
       if (value) {
         thumbnail.setSource(value);
-      } else if (this.getWalletType() === "personal") {
-        thumbnail.setSource(osparc.utils.Icons.user(osparc.ui.list.ListItemWithMenu.ICON_SIZE));
       } else {
-        thumbnail.setSource(osparc.utils.Icons.organization(osparc.ui.list.ListItemWithMenu.ICON_SIZE));
+        this.__setDefaultThumbnail();
       }
-      if (this.isPropertyInitialized("key")) {
-        const store = osparc.store.Store.getInstance();
-        store.getProductEveryone()
-          .then(groupProductEveryone => {
-            if (groupProductEveryone && parseInt(this.getKey()) === groupProductEveryone["gid"]) {
-              thumbnail.setSource(osparc.utils.Icons.everyone(osparc.ui.list.ListItemWithMenu.ICON_SIZE));
-            }
-          });
+    },
+
+    __setDefaultThumbnail: function() {
+      if (this.getThumbnail() === null) {
+        // default thumbnail only if it's null
+        const thumbnail = this.getChildControl("thumbnail");
+        if (this.getWalletType() === "personal") {
+          thumbnail.setSource(osparc.utils.Icons.user(osparc.ui.list.ListItemWithMenu.ICON_SIZE));
+        } else {
+          thumbnail.setSource(osparc.utils.Icons.organization(osparc.ui.list.ListItemWithMenu.ICON_SIZE));
+        }
       }
     }
   }

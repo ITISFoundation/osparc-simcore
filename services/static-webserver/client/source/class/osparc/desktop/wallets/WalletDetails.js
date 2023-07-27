@@ -53,7 +53,7 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
       walletModel.bind("name", walletListItem, "title");
       walletModel.bind("description", walletListItem, "subtitle");
       walletModel.bind("accessRights", walletListItem, "accessRights");
-      walletModel.bind("type", walletListItem, "walletType");
+      walletModel.bind("walletType", walletListItem, "walletType");
       walletModel.bind("credits", walletListItem, "credits");
 
       walletListItem.addListener("buyCredits", e => this.fireDataEvent("buyCredits", e.getData()));
