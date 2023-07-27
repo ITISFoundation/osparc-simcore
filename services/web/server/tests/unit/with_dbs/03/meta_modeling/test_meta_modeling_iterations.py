@@ -24,14 +24,14 @@ from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.models.projects import projects
 from simcore_service_webserver._constants import APP_DB_ENGINE_KEY
 from simcore_service_webserver.director_v2.api import get_project_run_policy
-from simcore_service_webserver.meta_modeling._projects import (
-    meta_project_policy,
-    projects_redirection_middleware,
-)
-from simcore_service_webserver.meta_modeling._rest_handlers import (
+from simcore_service_webserver.meta_modeling._handlers import (
     Page,
     ProjectIterationItem,
     ProjectIterationResultItem,
+)
+from simcore_service_webserver.meta_modeling._projects import (
+    meta_project_policy,
+    projects_redirection_middleware,
 )
 from simcore_service_webserver.projects.models import ProjectDict
 

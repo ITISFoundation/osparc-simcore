@@ -7,11 +7,7 @@ from typing import NamedTuple
 
 from aiohttp import web
 from models_library.projects import ProjectID
-from models_library.rest_pagination import (
-    DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
-    MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
-    Page,
-)
+from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
 from pydantic import BaseModel, ValidationError, validator
 from pydantic.fields import Field
@@ -33,13 +29,9 @@ log = logging.getLogger(__name__)
 # HANDLER'S CORE IMPLEMENTATION ------------------------------------------------------------
 
 
-class _QueryParametersModel(BaseModel):
+class ParametersModel(PageQueryParameters):
     project_uuid: ProjectID
     ref_id: CommitID
-    limit: int = Field(
-        DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, gt=0, lt=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
-    )
-    offset: int = 0
 
     @validator("ref_id", pre=True)
     @classmethod
@@ -52,9 +44,9 @@ class _QueryParametersModel(BaseModel):
             raise NotImplementedError(msg) from err
 
 
-def parse_query_parameters(request: web.Request) -> _QueryParametersModel:
+def parse_query_parameters(request: web.Request) -> ParametersModel:
     try:
-        return _QueryParametersModel(**request.match_info)
+        return ParametersModel(**request.match_info)
     except ValidationError as err:
         raise web.HTTPUnprocessableEntity(
             reason=f"Invalid query parameters: {err}"
@@ -269,11 +261,11 @@ routes = web.RouteTableDef()
 
 @routes.get(
     f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations",
-    name=f"{__name__}._list_meta_project_iterations_handler",
+    name="list_project_iterations",
 )
 @login_required
 @permission_required("project.snapshot.read")
-async def _list_meta_project_iterations_handler(request: web.Request) -> web.Response:
+async def _list_project_iterations(request: web.Request) -> web.Response:
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735
 
     # parse and validate request ----
@@ -332,7 +324,7 @@ async def _list_meta_project_iterations_handler(request: web.Request) -> web.Res
 #
 # @routes.post(
 @permission_required("project.snapshot.create")
-async def _create_meta_project_iterations_handler(request: web.Request) -> web.Response:
+async def _create_project_iteration(request: web.Request) -> web.Response:
     q = parse_query_parameters(request)
     meta_project_uuid = q.project_uuid
     meta_project_commit_id = q.ref_id
@@ -361,23 +353,12 @@ async def _create_meta_project_iterations_handler(request: web.Request) -> web.R
 
 
 @routes.get(
-    f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations/{{iter_id}}",
-    name=f"{__name__}._get_meta_project_iterations_handler",
-)
-@login_required
-@permission_required("project.snapshot.read")
-async def _get_meta_project_iterations_handler(request: web.Request) -> web.Response:
-    msg = "Currently iteration is retrieved via GET /projects/{workcopy_project_id}SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735"
-    raise NotImplementedError(msg)
-
-
-@routes.get(
     f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations/-/results",
-    name=f"{__name__}._list_meta_project_iterations_results_handler",
+    name="list_project_iterations_results",
 )
 @login_required
 @permission_required("project.snapshot.read")
-async def _list_meta_project_iterations_results_handler(
+async def _list_project_iterations_results(
     request: web.Request,
 ) -> web.Response:
     # parse and validate request ----
@@ -439,16 +420,3 @@ async def _list_meta_project_iterations_results_handler(
         text=page.json(**RESPONSE_MODEL_POLICY),
         content_type="application/json",
     )
-
-
-@routes.get(
-    f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations/{{iter_id}}/results",
-    name=f"{__name__}._get_meta_project_iteration_results_handler",
-)
-@login_required
-@permission_required("project.snapshot.read")
-async def _get_meta_project_iteration_results_handler(
-    request: web.Request,
-) -> web.Response:
-    msg = "SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735"
-    raise NotImplementedError(msg)
