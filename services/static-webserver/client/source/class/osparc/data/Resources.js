@@ -1107,7 +1107,6 @@ qx.Class.define("osparc.data.Resources", {
                 wallets.push(wallet);
               });
               store.setWallets(wallets);
-              store.setCurrentWallet(wallets[0]);
               setInterval(() => {
                 store.getWallets().forEach(wallet => {
                   wallet.setCredits(wallet.getCredits()-1);
