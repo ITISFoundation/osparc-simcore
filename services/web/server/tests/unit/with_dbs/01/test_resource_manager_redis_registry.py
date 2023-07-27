@@ -18,8 +18,8 @@ from servicelib.aiohttp.application_setup import is_setup_completed
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.resource_manager.registry import (
-    ALIVE_SUFFIX,
-    RESOURCE_SUFFIX,
+    _ALIVE_SUFFIX,
+    _RESOURCE_SUFFIX,
     RedisResourceRegistry,
     get_registry,
 )
@@ -93,9 +93,9 @@ async def test_redis_registry_hashes(redis_enabled_app: web.Application, key, ha
     # pylint: disable=protected-access
     assert RedisResourceRegistry._hash_key(key) == hash_key
     assert (
-        RedisResourceRegistry._decode_hash_key(f"{hash_key}:{RESOURCE_SUFFIX}") == key
+        RedisResourceRegistry._decode_hash_key(f"{hash_key}:{_RESOURCE_SUFFIX}") == key
     )
-    assert RedisResourceRegistry._decode_hash_key(f"{hash_key}:{ALIVE_SUFFIX}") == key
+    assert RedisResourceRegistry._decode_hash_key(f"{hash_key}:{_ALIVE_SUFFIX}") == key
 
 
 async def test_redis_registry(redis_registry: RedisResourceRegistry):

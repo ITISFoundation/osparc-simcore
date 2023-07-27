@@ -25,8 +25,13 @@ from ._constants import APP_CLIENT_SOCKET_REGISTRY_KEY
 
 _logger = logging.getLogger(__name__)
 
-ALIVE_SUFFIX = "alive"
-RESOURCE_SUFFIX = "resources"
+# redis `resources` db has composed-keys formatted as '${user_id=}:${client_session_id=}:{suffix}'
+#    Example:
+#        Key: user_id=1:client_session_id=7f40353b-db02-4474-a44d-23ce6a6e428c:alive = 1
+#        Key: user_id=1:client_session_id=7f40353b-db02-4474-a44d-23ce6a6e428c:resources = {project_id: ... , socket_id: ...}
+#
+_ALIVE_SUFFIX = "alive"  # points to a string type
+_RESOURCE_SUFFIX = "resources"  # points to a hash (like a dict) type
 
 
 class _RegistryKeyPrefixRequired(TypedDict, total=True):
@@ -70,9 +75,9 @@ class RedisResourceRegistry:
     @classmethod
     def _decode_hash_key(cls, hash_key: str) -> RegistryKeyPrefixDict:
         tmp_key = (
-            hash_key[: -len(f":{RESOURCE_SUFFIX}")]
-            if hash_key.endswith(f":{RESOURCE_SUFFIX}")
-            else hash_key[: -len(f":{ALIVE_SUFFIX}")]
+            hash_key[: -len(f":{_RESOURCE_SUFFIX}")]
+            if hash_key.endswith(f":{_RESOURCE_SUFFIX}")
+            else hash_key[: -len(f":{_ALIVE_SUFFIX}")]
         )
         key = dict(x.split("=") for x in tmp_key.split(":"))
         return RegistryKeyPrefixDict(**key)  # type: ignore
@@ -85,19 +90,19 @@ class RedisResourceRegistry:
     async def set_resource(
         self, key: RegistryKeyPrefixDict, resource: tuple[str, str]
     ) -> None:
-        hash_key = f"{self._hash_key(key)}:{RESOURCE_SUFFIX}"
+        hash_key = f"{self._hash_key(key)}:{_RESOURCE_SUFFIX}"
         field, value = resource
         await self.client.hset(hash_key, mapping={field: value})
 
     async def get_resources(self, key: RegistryKeyPrefixDict) -> ResourcesValueDict:
-        hash_key = f"{self._hash_key(key)}:{RESOURCE_SUFFIX}"
+        hash_key = f"{self._hash_key(key)}:{_RESOURCE_SUFFIX}"
         fields = await self.client.hgetall(hash_key)
         return ResourcesValueDict(**fields)  # type: ignore
 
     async def remove_resource(
         self, key: RegistryKeyPrefixDict, resource_name: str
     ) -> None:
-        hash_key = f"{self._hash_key(key)}:{RESOURCE_SUFFIX}"
+        hash_key = f"{self._hash_key(key)}:{_RESOURCE_SUFFIX}"
         await self.client.hdel(hash_key, resource_name)
 
     async def find_resources(
@@ -105,7 +110,7 @@ class RedisResourceRegistry:
     ) -> list[str]:
         resources: list[str] = []
         # the key might only be partialy complete
-        partial_hash_key = f"{self._hash_key(key)}:{RESOURCE_SUFFIX}"
+        partial_hash_key = f"{self._hash_key(key)}:{_RESOURCE_SUFFIX}"
         async for scanned_key in self.client.scan_iter(match=partial_hash_key):
             if await self.client.hexists(scanned_key, resource_name):
                 resources.append(await self.client.hget(scanned_key, resource_name))
@@ -118,7 +123,7 @@ class RedisResourceRegistry:
 
         field, value = resource
 
-        async for hash_key in self.client.scan_iter(match=f"*:{RESOURCE_SUFFIX}"):
+        async for hash_key in self.client.scan_iter(match=f"*:{_RESOURCE_SUFFIX}"):
             if value == await self.client.hget(hash_key, field):
                 keys.append(self._decode_hash_key(hash_key))
         return keys
@@ -126,17 +131,17 @@ class RedisResourceRegistry:
     async def set_key_alive(self, key: RegistryKeyPrefixDict, timeout: int) -> None:
         # setting the timeout to always expire, timeout > 0
         timeout = int(max(1, timeout))
-        hash_key = f"{self._hash_key(key)}:{ALIVE_SUFFIX}"
+        hash_key = f"{self._hash_key(key)}:{_ALIVE_SUFFIX}"
         await self.client.set(hash_key, 1, ex=timeout)
 
     async def is_key_alive(self, key: RegistryKeyPrefixDict) -> bool:
-        hash_key = f"{self._hash_key(key)}:{ALIVE_SUFFIX}"
+        hash_key = f"{self._hash_key(key)}:{_ALIVE_SUFFIX}"
         return await self.client.exists(hash_key) > 0
 
     async def remove_key(self, key: RegistryKeyPrefixDict) -> None:
         await self.client.delete(
-            f"{self._hash_key(key)}:{RESOURCE_SUFFIX}",
-            f"{self._hash_key(key)}:{ALIVE_SUFFIX}",
+            f"{self._hash_key(key)}:{_RESOURCE_SUFFIX}",
+            f"{self._hash_key(key)}:{_ALIVE_SUFFIX}",
         )
 
     async def get_all_resource_keys(
@@ -144,11 +149,11 @@ class RedisResourceRegistry:
     ) -> tuple[list[RegistryKeyPrefixDict], list[RegistryKeyPrefixDict]]:
         alive_keys = [
             self._decode_hash_key(hash_key)
-            async for hash_key in self.client.scan_iter(match=f"*:{ALIVE_SUFFIX}")
+            async for hash_key in self.client.scan_iter(match=f"*:{_ALIVE_SUFFIX}")
         ]
         dead_keys = [
             self._decode_hash_key(hash_key)
-            async for hash_key in self.client.scan_iter(match=f"*:{RESOURCE_SUFFIX}")
+            async for hash_key in self.client.scan_iter(match=f"*:{_RESOURCE_SUFFIX}")
             if self._decode_hash_key(hash_key) not in alive_keys
         ]
 
