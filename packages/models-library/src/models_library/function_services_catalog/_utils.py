@@ -1,6 +1,6 @@
 import logging
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
-from typing import Callable, Dict, Iterator, Optional, Tuple
 from urllib.parse import quote
 
 from ..services import Author, ServiceDockerData, ServiceKey, ServiceVersion
@@ -30,32 +30,34 @@ class ServiceNotFound(KeyError):
 @dataclass
 class _Record:
     meta: ServiceDockerData
-    implementation: Optional[Callable] = None
+    implementation: Callable | None = None
     is_under_development: bool = False
 
 
 class FunctionServices:
     """Used to register a collection of function services"""
 
-    def __init__(self, settings: Optional[FunctionServiceSettings] = None):
-        self._functions: Dict[Tuple[ServiceKey, ServiceVersion], _Record] = {}
+    def __init__(self, settings: FunctionServiceSettings | None = None):
+        self._functions: dict[tuple[ServiceKey, ServiceVersion], _Record] = {}
         self.settings = settings
 
     def add(
         self,
         meta: ServiceDockerData,
-        implementation: Optional[Callable] = None,
+        implementation: Callable | None = None,
         is_under_development: bool = False,
     ):
         """
         raises ValueError
         """
         if not isinstance(meta, ServiceDockerData):
-            raise ValueError(f"Expected ServiceDockerData, got {type(meta)}")
+            msg = f"Expected ServiceDockerData, got {type(meta)}"
+            raise ValueError(msg)
 
         # ensure unique
         if (meta.key, meta.version) in self._functions:
-            raise ValueError(f"{(meta.key, meta.version)} is already registered")
+            msg = f"{meta.key, meta.version} is already registered"
+            raise ValueError(msg)
 
         # TODO: ensure callable signature fits metadata
 
@@ -77,7 +79,7 @@ class FunctionServices:
             skip = not self.settings.is_dev_feature_enabled()
         return skip
 
-    def _items(self) -> Iterator[Tuple[Tuple[ServiceKey, ServiceVersion], _Record]]:
+    def _items(self) -> Iterator[tuple[tuple[ServiceKey, ServiceVersion], _Record]]:
         skip_dev = self._skip_dev()
         for key, value in self._functions.items():
             if value.is_under_development and skip_dev:
@@ -89,7 +91,7 @@ class FunctionServices:
         for _, f in self._items():
             yield f.meta
 
-    def iter_services_key_version(self) -> Iterator[Tuple[ServiceKey, ServiceVersion]]:
+    def iter_services_key_version(self) -> Iterator[tuple[ServiceKey, ServiceVersion]]:
         """WARNING: this function might skip services makred as 'under development'"""
         for kv, f in self._items():
             assert kv == (f.meta.key, f.meta.version)  # nosec
@@ -97,14 +99,13 @@ class FunctionServices:
 
     def get_implementation(
         self, service_key: ServiceKey, service_version: ServiceVersion
-    ) -> Optional[Callable]:
+    ) -> Callable | None:
         """raises ServiceNotFound"""
         try:
             func = self._functions[(service_key, service_version)]
         except KeyError as err:
-            raise ServiceNotFound(
-                f"{service_key}:{service_version} not found in registry"
-            ) from err
+            msg = f"{service_key}:{service_version} not found in registry"
+            raise ServiceNotFound(msg) from err
         return func.implementation
 
     def get_metadata(
@@ -114,9 +115,8 @@ class FunctionServices:
         try:
             func = self._functions[(service_key, service_version)]
         except KeyError as err:
-            raise ServiceNotFound(
-                f"{service_key}:{service_version} not found in registry"
-            ) from err
+            msg = f"{service_key}:{service_version} not found in registry"
+            raise ServiceNotFound(msg) from err
         return func.meta
 
     def __len__(self):
