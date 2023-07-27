@@ -2,6 +2,7 @@
 
 """
 import contextlib
+import functools
 import json
 import logging
 
@@ -12,6 +13,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
+from servicelib.aiohttp.typing_extension import Handler
 from servicelib.aiohttp.web_exceptions_extension import HTTPLockedError
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
@@ -44,6 +46,26 @@ _logger = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
 
+def _handle_project_exceptions(handler: Handler):
+    """Transforms common project errors -> http errors"""
+
+    @functools.wraps(handler)
+    async def _wrapper(request: web.Request) -> web.StreamResponse:
+        try:
+            return await handler(request)
+
+        except ProjectNotFoundError as exc:
+            raise web.HTTPNotFound(reason=f"{exc}") from exc
+
+        except ProjectInvalidRightsError as exc:
+            raise web.HTTPForbidden(reason=f"{exc}") from exc
+
+        except ProjectTooManyProjectOpenedError as exc:
+            raise web.HTTPConflict(reason=f"{exc}") from exc
+
+    return _wrapper
+
+
 #
 # open project: custom methods https://google.aip.dev/136
 #
@@ -56,6 +78,7 @@ class _OpenProjectQuery(BaseModel):
 @routes.post(f"/{VTAG}/projects/{{project_id}}:open", name="open_project")
 @login_required
 @permission_required("project.open")
+@_handle_project_exceptions
 async def open_project(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
@@ -131,10 +154,6 @@ async def open_project(request: web.Request) -> web.Response:
 
         return envelope_json_response(project)
 
-    except ProjectNotFoundError as exc:
-        raise web.HTTPNotFound(
-            reason=f"Project {path_params.project_id} not found"
-        ) from exc
     except DirectorServiceError as exc:
         # there was an issue while accessing the director-v2/director-v0
         # ensure the project is closed again
@@ -150,12 +169,6 @@ async def open_project(request: web.Request) -> web.Response:
         raise web.HTTPServiceUnavailable(
             reason="Unexpected error while starting services."
         ) from exc
-    except ProjectTooManyProjectOpenedError as exc:
-        raise web.HTTPConflict(reason=f"{exc}") from exc
-    except ProjectInvalidRightsError as exc:
-        raise web.HTTPForbidden(
-            reason=f"You do not have sufficient rights to access project {path_params.project_id}"
-        ) from exc
 
 
 #
@@ -166,6 +179,7 @@ async def open_project(request: web.Request) -> web.Response:
 @routes.post(f"/{VTAG}/projects/{{project_id}}:close", name="close_project")
 @login_required
 @permission_required("project.close")
+@_handle_project_exceptions
 async def close_project(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
@@ -176,29 +190,24 @@ async def close_project(request: web.Request) -> web.Response:
     except json.JSONDecodeError as exc:
         raise web.HTTPBadRequest(reason="Invalid request body") from exc
 
-    try:
-        # ensure the project exists
-        await projects_api.get_project_for_user(
-            request.app,
-            project_uuid=f"{path_params.project_id}",
-            user_id=req_ctx.user_id,
-            include_state=False,
-        )
-        await projects_api.try_close_project_for_user(
-            req_ctx.user_id,
-            f"{path_params.project_id}",
-            client_session_id,
-            request.app,
-            simcore_user_agent=request.headers.get(
-                X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-            ),
-        )
-        await project_logs.unsubscribe(request.app, path_params.project_id)
-        raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
-    except ProjectNotFoundError as exc:
-        raise web.HTTPNotFound(
-            reason=f"Project {path_params.project_id} not found"
-        ) from exc
+    # ensure the project exists
+    await projects_api.get_project_for_user(
+        request.app,
+        project_uuid=f"{path_params.project_id}",
+        user_id=req_ctx.user_id,
+        include_state=False,
+    )
+    await projects_api.try_close_project_for_user(
+        req_ctx.user_id,
+        f"{path_params.project_id}",
+        client_session_id,
+        request.app,
+        simcore_user_agent=request.headers.get(
+            X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+        ),
+    )
+    await project_logs.unsubscribe(request.app, path_params.project_id)
+    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 #
