@@ -7,10 +7,15 @@ IMPORTANT: lowest level module
 import asyncio
 import logging
 import os
+from collections.abc import Awaitable, Coroutine, Iterable
 from pathlib import Path
-from typing import Any, Awaitable, Coroutine
+from typing import Any, TypeVar
 
-logger = logging.getLogger(__name__)
+from pydantic import NonNegativeInt
+
+T = TypeVar("T")
+
+_logger = logging.getLogger(__name__)
 
 
 def is_production_environ() -> bool:
@@ -74,9 +79,9 @@ def fire_and_forget_task(
         try:
             fut.result()
         except asyncio.CancelledError:
-            logger.warning("%s spawned as fire&forget was cancelled", fut)
+            _logger.warning("%s spawned as fire&forget was cancelled", fut)
         except Exception:  # pylint: disable=broad-except
-            logger.exception("Error occurred while running task %s!", task.get_name())
+            _logger.exception("Error occurred while running task %s!", task.get_name())
 
     task.add_done_callback(log_exception_callback)
     task.add_done_callback(fire_and_forget_tasks_collection.discard)
@@ -87,7 +92,7 @@ def fire_and_forget_task(
 async def logged_gather(
     *tasks: Awaitable[Any],
     reraise: bool = True,
-    log: logging.Logger = logger,
+    log: logging.Logger = _logger,
     max_concurrency: int = 0,
 ) -> list[Any]:
     """
@@ -141,3 +146,24 @@ def ensure_ends_with(input_string: str, char: str) -> str:
     if not input_string.endswith(char):
         input_string += char
     return input_string
+
+
+def slice_list_iter(
+    input_list: list[T], *, slice_size: NonNegativeInt
+) -> Iterable[list[T]]:
+    """
+    Given a list of elements and the slice_size yields lists containing
+    slice_size elements in them.
+
+    Inputs:
+        input_list= [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+        slice_size = 5
+    Outputs:
+        [[1, 2, 3, 4, 5], [6, 7, 8, 9, 10], [11, 12, 13]]
+
+    """
+    if not input_list:
+        yield []
+
+    for i in range(0, len(input_list), slice_size):
+        yield input_list[i : i + slice_size]
