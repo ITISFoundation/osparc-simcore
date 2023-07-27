@@ -24,7 +24,6 @@ _logger = logging.getLogger(__name__)
 
 CleanupContextFunc = Callable[[web.Application], AsyncIterator[None]]
 
-_SEC = 1
 
 _PERIODIC_TASK_NAME = f"{__name__}.update_expired_users_periodically"
 _APP_TASK_KEY = f"{_PERIODIC_TASK_NAME}.task"
@@ -53,7 +52,7 @@ async def notify_user_logout_all_sessions(
 
 
 @retry(
-    wait=wait_exponential(min=5 * _SEC, max=20 * _SEC),
+    wait=wait_exponential(min=5, max=20),
     before_sleep=before_sleep_log(_logger, logging.WARNING),
     # NOTE: this function does suppresses all exceptions and retry indefinitly
 )

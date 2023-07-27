@@ -17,14 +17,13 @@ logger = logging.getLogger(__name__)
 
 CleanupContextFunc = Callable[[web.Application], AsyncIterator[None]]
 
-_SEC = 1  # in seconds
 
 _PERIODIC_TASK_NAME = f"{__name__}.prune_expired_api_keys_periodically"
 _APP_TASK_KEY = f"{_PERIODIC_TASK_NAME}.task"
 
 
 @retry(
-    wait=wait_exponential(min=5 * _SEC, max=30 * _SEC),
+    wait=wait_exponential(min=5, max=30),
     before_sleep=before_sleep_log(logger, logging.WARNING),
 )
 async def _run_task(app: web.Application):

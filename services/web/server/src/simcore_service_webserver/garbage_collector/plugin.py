@@ -21,8 +21,6 @@ logger = logging.getLogger(__name__)
     logger=logger,
 )
 def setup_garbage_collector(app: web.Application) -> None:
-    # Needs a partial inits (i.e. not all the steps in the setup_* functions are necessary) of projects plugin
-    # since this plugin uses projects-api and ...
     # - project-api needs access to db
     setup_projects_db(app)
     # - project needs access to socketio via notify_project_state_update
