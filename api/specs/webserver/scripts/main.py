@@ -26,6 +26,7 @@ openapi_modules = [
         "openapi_diagnostics",
         "openapi_exporter",
         "openapi_groups",
+        "openapi_long_running_tasks",
         "openapi_metamodeling",
         "openapi_nih_sparc_redirections",
         "openapi_nih_sparc",
