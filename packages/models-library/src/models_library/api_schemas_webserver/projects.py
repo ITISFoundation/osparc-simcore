@@ -10,10 +10,10 @@ from typing import Any, Literal, TypeAlias
 from pydantic import Field, validator
 
 from ..api_schemas_long_running_tasks.tasks import TaskGet
+from ..basic_types import HttpUrlWithCustomMinLength
 from ..emails import LowerCaseEmailStr
 from ..projects import ClassifierID, DateTimeStr, NodesDict, ProjectID
 from ..projects_access import AccessRights, GroupIDStr
-from ..projects_nodes import HttpUrlWithCustomMinLength
 from ..projects_state import ProjectState
 from ..projects_ui import StudyUI
 from ..utils.common_validators import empty_str_to_none, none_to_empty_str

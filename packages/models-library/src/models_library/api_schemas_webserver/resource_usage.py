@@ -1,10 +1,11 @@
 from datetime import datetime
 from enum import Enum
 
-from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID
-from models_library.services import ServiceKey, ServiceVersion
 from pydantic import BaseModel
+
+from ..projects import ProjectID
+from ..projects_nodes_io import NodeID
+from ..services import ServiceKey, ServiceVersion
 
 # Frontend API
 
