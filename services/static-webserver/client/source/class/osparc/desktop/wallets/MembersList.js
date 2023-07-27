@@ -196,8 +196,8 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
         const membersList = [];
         const potentialCollaborators = await osparc.store.Store.getInstance().getPotentialCollaborators();
         Object.keys(accessRights).forEach(gid => {
-          if (Object.prototype.hasOwnProperty.call(potentialCollaborators, gid)) {
-            const collab = potentialCollaborators[gid];
+          if (Object.prototype.hasOwnProperty.call(potentialCollaborators, parseInt(gid))) {
+            const collab = potentialCollaborators[parseInt(gid)];
             // Do not override collaborator object
             const collaborator = osparc.utils.Utils.deepCloneObject(collab);
             if ("first_name" in collaborator) {

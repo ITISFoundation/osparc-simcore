@@ -1128,7 +1128,7 @@ qx.Class.define("osparc.data.Resources", {
               type: "personal",
               owner: 2,
               accessRights: {
-                "2": {
+                2: {
                   delete: true,
                   write: true,
                   read: true
@@ -1146,12 +1146,12 @@ qx.Class.define("osparc.data.Resources", {
               type: "shared",
               owner: 2,
               accessRights: {
-                "2": {
+                2: {
                   delete: false,
                   write: true,
                   read: true
                 },
-                "3": {
+                10: {
                   delete: false,
                   write: false,
                   read: true
@@ -1169,17 +1169,17 @@ qx.Class.define("osparc.data.Resources", {
               type: "shared",
               owner: 4,
               accessRights: {
-                "2": {
+                2: {
                   delete: false,
                   write: false,
                   read: true
                 },
-                "3": {
+                10: {
                   delete: false,
                   write: false,
                   read: true
                 },
-                "4": {
+                11: {
                   delete: true,
                   write: true,
                   read: true
@@ -1197,17 +1197,17 @@ qx.Class.define("osparc.data.Resources", {
               type: "shared",
               owner: 4,
               accessRights: {
-                "2": {
+                2: {
                   delete: false,
                   write: false,
                   read: true
                 },
-                "3": {
+                51: {
                   delete: false,
                   write: false,
                   read: true
                 },
-                "4": {
+                11: {
                   delete: true,
                   write: true,
                   read: true
