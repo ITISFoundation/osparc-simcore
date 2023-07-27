@@ -1,7 +1,4 @@
 # pylint: disable=redefined-outer-name
-import json
-from pprint import pformat
-from typing import Any
 from uuid import UUID
 
 import pytest
@@ -9,27 +6,8 @@ from models_library.projects_networks import (
     DockerNetworkAlias,
     DockerNetworkName,
     NetworksWithAliases,
-    ProjectsNetworks,
 )
-from pydantic import BaseModel, ValidationError, parse_obj_as
-
-
-@pytest.mark.parametrize(
-    "model_cls",
-    (
-        ProjectsNetworks,
-        NetworksWithAliases,
-    ),
-)
-def test_service_settings_model_examples(
-    model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
-) -> None:
-    for name, example in model_cls_examples.items():
-        print(name, ":", pformat(example))
-
-        model_instance = model_cls.parse_obj(example)
-        assert json.loads(model_instance.json()) == example
-        assert model_instance.json() == json.dumps(example)
+from pydantic import ValidationError, parse_obj_as
 
 
 @pytest.mark.parametrize(

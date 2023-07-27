@@ -6,7 +6,6 @@ import re
 import urllib.parse
 from collections.abc import Callable
 from copy import deepcopy
-from pprint import pformat
 from typing import Any
 
 import pytest
@@ -18,12 +17,8 @@ from models_library.services import (
     SERVICE_KEY_RE,
     BootOption,
     ServiceDockerData,
-    ServiceInput,
-    ServiceMetaData,
-    ServiceOutput,
     _BaseServiceCommonDataModel,
 )
-from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 
 
 @pytest.fixture()
@@ -71,21 +66,6 @@ def test_node_with_thumbnail(minimal_service_common_data: dict[str, Any]):
         service.thumbnail
         == "https://www.google.com/imgres?imgurl=http%3A%2F%2Fclipart-library.com%2Fimages%2FpT5ra4Xgc.jpg&imgrefurl=http%3A%2F%2Fclipart-library.com%2Fcool-pictures.html&tbnid=6Cgc0X9Jo24p3M&vet=12ahUKEwiW3Kbd8KruAhUHzaQKHbvtApwQMygAegUIARCaAQ..i&docid=QuGKBFIIEGuLhM&w=1920&h=1080&q=some%20cool%20images&ved=2ahUKEwiW3Kbd8KruAhUHzaQKHbvtApwQMygAegUIARCaAQ"
     )
-
-
-@pytest.mark.parametrize(
-    "model_cls",
-    (
-        ServiceInput,
-        ServiceOutput,
-        BootOption,
-    ),
-)
-def test_service_models_examples(model_cls, model_cls_examples):
-    for name, example in model_cls_examples.items():
-        print(name, ":", pformat(example))
-        model_instance = model_cls(**example)
-        assert model_instance, f"Failed with {name}"
 
 
 @pytest.mark.parametrize("pattern", (SERVICE_KEY_RE, SERVICE_ENCODED_KEY_RE))
@@ -167,17 +147,6 @@ def test_SERVICE_KEY_RE(service_key: str, pattern: re.Pattern):
         new_match = re.match(pattern, new_service_key)
         assert new_match
         assert new_match.groups() == match.groups()
-
-
-@pytest.mark.parametrize(
-    "model_cls",
-    (ServiceAccessRightsAtDB, ServiceMetaDataAtDB, ServiceMetaData, ServiceDockerData),
-)
-def test_services_model_examples(model_cls, model_cls_examples):
-    for name, example in model_cls_examples.items():
-        print(name, ":", pformat(example))
-        model_instance = model_cls(**example)
-        assert model_instance, f"Failed with {name}"
 
 
 @pytest.mark.skip(reason="will be disabled by PC")

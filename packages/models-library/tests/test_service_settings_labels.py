@@ -82,23 +82,6 @@ def test_service_settings():
 
 @pytest.mark.parametrize(
     "model_cls",
-    (
-        SimcoreServiceSettingLabelEntry,
-        SimcoreServiceSettingsLabel,
-        SimcoreServiceLabels,
-    ),
-)
-def test_service_settings_model_examples(
-    model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
-):
-    for name, example in model_cls_examples.items():
-        print(name, ":", pformat(example))
-        model_instance = model_cls(**example)
-        assert model_instance, f"Failed with {name}"
-
-
-@pytest.mark.parametrize(
-    "model_cls",
     (SimcoreServiceLabels,),
 )
 def test_correctly_detect_dynamic_sidecar_boot(
@@ -544,7 +527,6 @@ def test_can_parse_labels_with_osparc_identifiers(
 def test_resolving_some_service_labels_at_load_time(
     vendor_environments: dict[str, Any], service_labels: dict[str, str]
 ):
-
     print(json.dumps(service_labels, indent=1))
 
     # Resolving at load-time (some of them are possible)

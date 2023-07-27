@@ -11,7 +11,7 @@ from pytest_simcore.pydantic_models import walk_model_examples_in_package
     "model_cls, example_name, example_data",
     walk_model_examples_in_package(models_library),
 )
-def test_all_models_config_examples(
+def test_all_models_library_models_config_examples(
     model_cls: type[BaseModel], example_name: int, example_data: Any
 ):
     assert model_cls.parse_obj(
