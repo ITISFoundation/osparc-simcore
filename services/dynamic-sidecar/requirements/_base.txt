@@ -22,7 +22,7 @@ aiofiles==0.8.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
-aiohttp==3.8.3
+aiohttp==3.8.5
     # via
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   aiodocker
