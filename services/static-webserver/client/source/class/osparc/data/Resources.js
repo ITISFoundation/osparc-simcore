@@ -589,6 +589,29 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * WALLETS
+       */
+      "wallets": {
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/wallets"
+          },
+          getOne: {
+            method: "GET",
+            url: statics.API + "/wallets/{walletId}"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/wallets"
+          },
+          patch: {
+            method: "PATCH",
+            url: statics.API + "/wallets/{walletId}"
+          }
+        }
+      },
+      /*
        * CLUSTERS
        */
       "clusters": {
