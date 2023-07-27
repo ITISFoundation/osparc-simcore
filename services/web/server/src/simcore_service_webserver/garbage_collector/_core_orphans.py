@@ -34,10 +34,10 @@ async def _remove_single_service_if_orphan(
     """
     Removes the service if it is an orphan. Otherwise the service is left running.
     """
-
     service_host = dynamic_service["service_host"]
-    # if not present in DB or not part of currently opened projects, can be removed
     service_uuid = dynamic_service["service_uuid"]
+
+    # if not present in DB or not part of currently opened projects, can be removed
     # if the node does not exist in any project in the db
     # they can be safely remove it without saving any state
     if not await is_node_id_present_in_any_project_workbench(app, service_uuid):
@@ -111,7 +111,7 @@ async def _remove_single_service_if_orphan(
                     app,
                     service_uuid,
                     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-                    save_state,
+                    save_state=save_state,
                 )
 
         except DirectorServiceError as err:
@@ -133,9 +133,9 @@ async def remove_orphaned_services(
     _logger.debug("Starting orphaned services removal...")
 
     currently_opened_projects_node_ids: dict[str, str] = {}
-    alive_keys, _ = await registry.get_all_resource_keys()
-    for alive_key in alive_keys:
-        resources = await registry.get_resources(alive_key)
+    all_session_alive, _ = await registry.get_all_resource_keys()
+    for alive_session in all_session_alive:
+        resources = await registry.get_resources(alive_session)
         if "project_id" not in resources:
             continue
 
@@ -150,7 +150,7 @@ async def remove_orphaned_services(
     try:
         running_dynamic_services = await api.list_dynamic_services(app)
     except api.DirectorServiceError:
-        _logger.debug("Could not fetch running_interactive_services")
+        _logger.debug("Could not fetch list_dynamic_services")
 
     _logger.info(
         "Currently running services %s",
