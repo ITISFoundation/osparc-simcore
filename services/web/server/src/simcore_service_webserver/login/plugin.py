@@ -6,7 +6,6 @@ import asyncpg
 from aiohttp import web
 from pydantic import ValidationError
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
-from servicelib.functools_utils import called_successfully_once
 from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
 
@@ -69,7 +68,6 @@ async def _setup_login_storage_ctx(app: web.Application):
         log.exception("Failed to close login storage loop")
 
 
-@called_successfully_once
 def setup_login_storage(app: web.Application):
     if _setup_login_storage_ctx not in app.cleanup_ctx:
         app.cleanup_ctx.append(_setup_login_storage_ctx)

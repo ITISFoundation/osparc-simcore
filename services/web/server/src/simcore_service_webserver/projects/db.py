@@ -24,7 +24,6 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ValidationError, parse_obj_as
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
-from servicelib.functools_utils import called_successfully_once
 from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import get_log_record_extra, log_context
 from simcore_postgres_database.errors import UniqueViolation
@@ -975,7 +974,6 @@ class ProjectDBAPI(BaseProjectDB):
             )
 
 
-@called_successfully_once
 def setup_projects_db(app: web.Application):
     # NOTE: inits once per app
     return ProjectDBAPI.set_once_in_app_context(app)
