@@ -30,6 +30,12 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       check: "Number",
       nullable: false,
       apply: "__applyCredits"
+    },
+
+    active: {
+      check: "Boolean",
+      nullable: false,
+      apply: "__applyActive"
     }
   },
 
@@ -64,6 +70,22 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
           control = new qx.ui.basic.Label();
           this.getChildControl("credits-layout").addAt(control, 1);
           break;
+        case "active-button":
+          control = new qx.ui.form.Button().set({
+            maxHeight: 30,
+            width: 62,
+            alignX: "center",
+            alignY: "middle"
+          });
+          control.addListener("execute", () => {
+            console.log("hall");
+          }, this);
+          this._add(control, {
+            row: 0,
+            column: 5,
+            rowSpan: 2
+          });
+          break;
         case "buy-credits-button":
           control = new qx.ui.form.Button().set({
             label: this.tr("Buy Credits"),
@@ -77,7 +99,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
           }), this);
           this._add(control, {
             row: 0,
-            column: 5,
+            column: 6,
             rowSpan: 2
           });
           break;
@@ -165,6 +187,15 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
           thumbnail.setSource(osparc.utils.Icons.organization(osparc.ui.list.ListItemWithMenu.ICON_SIZE));
         }
       }
+    },
+
+    __applyActive: function(active) {
+      const activeButton = this.getChildControl("active-button");
+      activeButton.set({
+        icon: active ? "@FontAwesome5Solid/toggle-on/16" : "@FontAwesome5Solid/toggle-off/16",
+        label: active ? this.tr("ON") : this.tr("OFF"),
+        toolTipText: active ? this.tr("Wallet enabled") : this.tr("Wallet blocked")
+      });
     }
   }
 });
