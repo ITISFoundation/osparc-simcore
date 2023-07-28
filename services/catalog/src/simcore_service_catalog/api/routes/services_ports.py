@@ -1,7 +1,6 @@
 import logging
 
 from fastapi import APIRouter, Depends
-from models_library.api_schemas_catalog.constants import RESPONSE_MODEL_POLICY
 from models_library.api_schemas_catalog.services import ServiceGet
 from models_library.api_schemas_catalog.services_ports import ServicePortGet
 
@@ -10,6 +9,7 @@ from ..dependencies.services import (
     check_service_read_access,
     get_service_from_registry,
 )
+from ._constants import RESPONSE_MODEL_POLICY
 
 _logger = logging.getLogger(__name__)
 

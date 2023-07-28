@@ -7,11 +7,6 @@ from typing import Any, TypeAlias, cast
 
 from aiocache import cached
 from fastapi import APIRouter, Depends, Header, HTTPException, status
-from models_library.api_schemas_catalog.constants import (
-    DIRECTOR_CACHING_TTL,
-    LIST_SERVICES_CACHING_TTL,
-    RESPONSE_MODEL_POLICY,
-)
 from models_library.api_schemas_catalog.services import ServiceGet, ServiceUpdate
 from models_library.services import ServiceKey, ServiceType, ServiceVersion
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
@@ -27,6 +22,11 @@ from ...utils.requests_decorators import cancellable_request
 from ..dependencies.database import get_repository
 from ..dependencies.director import get_director_api
 from ..dependencies.services import get_service_from_registry
+from ._constants import (
+    DIRECTOR_CACHING_TTL,
+    LIST_SERVICES_CACHING_TTL,
+    RESPONSE_MODEL_POLICY,
+)
 
 _logger = logging.getLogger(__name__)
 

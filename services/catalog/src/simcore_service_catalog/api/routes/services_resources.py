@@ -5,10 +5,6 @@ from typing import Any, Final, cast
 
 import yaml
 from fastapi import APIRouter, Depends, HTTPException, status
-from models_library.api_schemas_catalog.constants import (
-    RESPONSE_MODEL_POLICY,
-    SIMCORE_SERVICE_SETTINGS_LABELS,
-)
 from models_library.docker import DockerGenericTag
 from models_library.groups import GroupAtDB
 from models_library.service_settings_labels import (
@@ -37,6 +33,7 @@ from ..dependencies.database import get_repository
 from ..dependencies.director import get_director_api
 from ..dependencies.services import get_default_service_resources
 from ..dependencies.user_groups import list_user_groups
+from ._constants import RESPONSE_MODEL_POLICY, SIMCORE_SERVICE_SETTINGS_LABELS
 
 router = APIRouter()
 logger = logging.getLogger(__name__)

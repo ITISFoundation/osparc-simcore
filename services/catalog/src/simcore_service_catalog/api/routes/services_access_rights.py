@@ -1,7 +1,6 @@
 import logging
 
 from fastapi import APIRouter, Depends, Header
-from models_library.api_schemas_catalog.constants import RESPONSE_MODEL_POLICY
 from models_library.api_schemas_catalog.service_access_rights import (
     ServiceAccessRightsGet,
 )
@@ -11,6 +10,7 @@ from models_library.services_db import ServiceAccessRightsAtDB
 from ...db.repositories.services import ServicesRepository
 from ..dependencies.database import get_repository
 from ..dependencies.services import AccessInfo, check_service_read_access
+from ._constants import RESPONSE_MODEL_POLICY
 
 #
 # Routes -----------------------------------------------------------------------------------------------
