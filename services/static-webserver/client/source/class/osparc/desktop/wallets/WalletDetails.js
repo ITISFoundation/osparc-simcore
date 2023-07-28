@@ -38,7 +38,7 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
     __walletModel: null,
     __titleLayout: null,
     __walletListItem: null,
-    // __membersList: null,
+    __membersList: null,
 
     setWallet: function(walletModel) {
       if (walletModel === null) {
