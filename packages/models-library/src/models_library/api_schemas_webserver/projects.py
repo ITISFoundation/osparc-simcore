@@ -16,7 +16,10 @@ from ..projects import ClassifierID, DateTimeStr, NodesDict, ProjectID
 from ..projects_access import AccessRights, GroupIDStr
 from ..projects_state import ProjectState
 from ..projects_ui import StudyUI
-from ..utils.common_validators import empty_str_to_none, none_to_empty_str
+from ..utils.common_validators import (
+    empty_str_to_none_pre_validator,
+    none_to_empty_str_pre_validator,
+)
 from ..utils.pydantic_tools_extension import FieldNotRequired
 from ._base import EmptyModel, InputSchema, OutputSchema
 from .permalinks import ProjectPermalink
@@ -35,7 +38,7 @@ class ProjectCreateNew(InputSchema):
 
     _empty_is_none = validator(
         "uuid", "thumbnail", "description", allow_reuse=True, pre=True
-    )(empty_str_to_none)
+    )(empty_str_to_none_pre_validator)
 
 
 # NOTE: based on OVERRIDABLE_DOCUMENT_KEYS
@@ -46,7 +49,7 @@ class ProjectCopyOverride(InputSchema):
     prj_owner: LowerCaseEmailStr
 
     _empty_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
-        empty_str_to_none
+        empty_str_to_none_pre_validator
     )
 
 
@@ -69,7 +72,7 @@ class ProjectGet(OutputSchema):
     permalink: ProjectPermalink = FieldNotRequired()
 
     _empty_description = validator("description", allow_reuse=True, pre=True)(
-        none_to_empty_str
+        none_to_empty_str_pre_validator
     )
 
 
@@ -99,7 +102,7 @@ class ProjectReplace(InputSchema):
     )
 
     _empty_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
-        empty_str_to_none
+        empty_str_to_none_pre_validator
     )
 
 

@@ -18,7 +18,10 @@ from .projects_nodes import Node
 from .projects_nodes_io import NodeIDStr
 from .projects_state import ProjectState
 from .projects_ui import StudyUI
-from .utils.common_validators import empty_str_to_none, none_to_empty_str
+from .utils.common_validators import (
+    empty_str_to_none_pre_validator,
+    none_to_empty_str_pre_validator,
+)
 
 ProjectID: TypeAlias = UUID
 ClassifierID: TypeAlias = str
@@ -78,11 +81,11 @@ class BaseProjectModel(BaseModel):
 
     # validators
     _empty_thumbnail_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
-        empty_str_to_none
+        empty_str_to_none_pre_validator
     )
 
     _none_description_is_empty = validator("description", allow_reuse=True, pre=True)(
-        none_to_empty_str
+        none_to_empty_str_pre_validator
     )
 
 

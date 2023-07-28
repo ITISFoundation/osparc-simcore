@@ -18,19 +18,24 @@ import enum
 from typing import Any
 
 
-def empty_str_to_none(value: Any):
+def empty_str_to_none_pre_validator(value: Any):
     if isinstance(value, str) and value.strip() == "":
         return None
     return value
 
 
-def none_to_empty_str(value: Any):
+def none_to_empty_str_pre_validator(value: Any):
     if value is None:
         return ""
     return value
 
 
-def create_transform_from_equivalent_enums(enum_cls: type[enum.Enum]):
+def create_enums_pre_validator(enum_cls: type[enum.Enum]):
+    """Enables parsing enums from equivalent enums
+
+    SEE test__pydantic_models_and_enumps.py for more details
+    """
+
     def _validator(value: Any):
         if value and not isinstance(value, enum_cls) and isinstance(value, enum.Enum):
             return value.value

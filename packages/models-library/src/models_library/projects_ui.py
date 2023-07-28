@@ -9,7 +9,7 @@ from pydantic.color import Color
 
 from .projects_nodes_io import NodeID, NodeIDStr
 from .projects_nodes_ui import Marker, Position
-from .utils.common_validators import empty_str_to_none
+from .utils.common_validators import empty_str_to_none_pre_validator
 
 
 class WorkbenchUI(BaseModel):
@@ -72,4 +72,6 @@ class StudyUI(BaseModel):
     class Config:
         extra = Extra.allow
 
-    _empty_is_none = validator("*", allow_reuse=True, pre=True)(empty_str_to_none)
+    _empty_is_none = validator("*", allow_reuse=True, pre=True)(
+        empty_str_to_none_pre_validator
+    )

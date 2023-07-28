@@ -1,9 +1,7 @@
 from enum import auto
 from typing import Any, ClassVar, Final, Literal, TypeAlias, Union
 
-from models_library.utils.common_validators import (
-    create_transform_from_equivalent_enums,
-)
+from models_library.utils.common_validators import create_enums_pre_validator
 from pydantic import (
     AnyUrl,
     BaseModel,
@@ -123,7 +121,7 @@ class BaseCluster(BaseModel):
     access_rights: dict[GroupID, ClusterAccessRights] = Field(default_factory=dict)
 
     _from_equivalent_enums = validator("type", allow_reuse=True, pre=True)(
-        create_transform_from_equivalent_enums(ClusterTypeInModel)
+        create_enums_pre_validator(ClusterTypeInModel)
     )
 
     class Config:

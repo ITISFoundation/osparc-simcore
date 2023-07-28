@@ -1,9 +1,7 @@
 import enum
 from typing import Any, ClassVar, Final
 
-from models_library.utils.common_validators import (
-    create_transform_from_equivalent_enums,
-)
+from models_library.utils.common_validators import create_enums_pre_validator
 from pydantic import BaseModel, Field, validator
 from pydantic.types import PositiveInt
 
@@ -30,7 +28,7 @@ class Group(BaseModel):
     thumbnail: str | None
 
     _from_equivalent_enums = validator("group_type", allow_reuse=True, pre=True)(
-        create_transform_from_equivalent_enums(GroupTypeInModel)
+        create_enums_pre_validator(GroupTypeInModel)
     )
 
 

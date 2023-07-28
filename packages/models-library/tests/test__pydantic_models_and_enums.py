@@ -4,11 +4,10 @@ import pytest
 from models_library.utils.enums import are_equivalent_enums, enum_to_dict
 from pydantic import BaseModel, ValidationError, parse_obj_as
 
+
 #
 # Enum Color1 is **equivalent** to enum Color2 but not equal
 #
-
-
 @unique
 class Color1(Enum):
     RED = "RED"
@@ -32,6 +31,7 @@ def test_equivalent_enums_are_not_strictly_equal():
 # Here two equivalent enum BUT of type str-enum
 #
 # SEE from models_library.utils.enums.AutoStrEnum
+# SEE https://docs.pydantic.dev/dev-v2/usage/types/enums/
 #
 
 
@@ -63,34 +63,36 @@ def test_enums_vs_strenums():
     assert ColorStrAndEnum1.RED.value == "RED"
 
 
-#
-# How are these parsed/exported in pydantic?
-# https://docs.pydantic.dev/dev-v2/usage/types/enums/
-#
+def test_enums_and_strenums_are_equivalent():
+
+    assert are_equivalent_enums(Color1, ColorStrAndEnum1)
+    assert are_equivalent_enums(Color2, ColorStrAndEnum2)
+    assert are_equivalent_enums(Color1, ColorStrAndEnum2)
 
 
-def test_equivalent_enums_in_pydantic():
-    class Model(BaseModel):
-        color: Color1
+class Model(BaseModel):
+    color: Color1
+
+
+def test_parsing_enums_in_pydantic():
 
     model = parse_obj_as(Model, {"color": Color1.RED})
     assert model.color == Color1.RED
 
-    # Can parse from string
+    # Can parse from STRING
     model = parse_obj_as(Model, {"color": "RED"})
     assert model.color == Color1.RED
 
-    # Can NOT parse from equilalent enum
+    # Can **NOT** parse from equilalent enum
     with pytest.raises(ValidationError):
         parse_obj_as(Model, {"color": Color2.RED})
 
-    #
-    # Using str-enums allow you to parse from equivalent enums!
-    #
 
-    class ModelStrAndEnum(BaseModel):
-        color: ColorStrAndEnum1
+class ModelStrAndEnum(BaseModel):
+    color: ColorStrAndEnum1
 
+
+def test_parsing_strenum_in_pydantic():
     assert are_equivalent_enums(Color1, ColorStrAndEnum1)
 
     model = parse_obj_as(ModelStrAndEnum, {"color": ColorStrAndEnum1.RED})
@@ -100,8 +102,12 @@ def test_equivalent_enums_in_pydantic():
     model = parse_obj_as(ModelStrAndEnum, {"color": "RED"})
     assert model.color == ColorStrAndEnum1.RED
 
-    # Can parse other equivalent str-enum!
+    # **CAN** parse other equivalent str-enum
+    #  Using str-enums allow you to parse from equivalent enums!
     parse_obj_as(ModelStrAndEnum, {"color": ColorStrAndEnum2.RED})
+
+
+def test_parsing_str_and_enum_in_pydantic():
 
     # Can still NOT parse equilalent enum(-only)
     with pytest.raises(ValidationError):
@@ -113,3 +119,6 @@ def test_equivalent_enums_in_pydantic():
 
     with pytest.raises(ValidationError):
         parse_obj_as(Color1, {"color": ColorStrAndEnum2.RED})
+
+    # CONCLUSION: we need a validator to pre-process inputs !
+    # SEE models_library.utils.common_validators
