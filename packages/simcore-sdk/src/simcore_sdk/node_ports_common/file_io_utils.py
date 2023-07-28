@@ -272,7 +272,8 @@ async def _session_put(
         assert response.status == web.HTTPOk.status_code  # nosec
         assert response.headers  # nosec
         assert "Etag" in response.headers  # nosec
-        return json.loads(response.headers["Etag"])
+        etag: str = json.loads(response.headers["Etag"])
+        return etag
 
 
 async def _upload_file_part(
