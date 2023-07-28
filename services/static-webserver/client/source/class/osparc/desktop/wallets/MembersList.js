@@ -150,7 +150,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
       const membersModel = this.__membersModel = new qx.data.Array();
       const membersCtrl = new qx.data.controller.List(membersModel, memebersUIList, "name");
       membersCtrl.setDelegate({
-        createItem: () => new osparc.ui.list.MemberListItem(),
+        createItem: () => new osparc.desktop.wallets.MemberListItem(),
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("id", "model", null, item, id);
           ctrl.bindProperty("id", "key", null, item, id);
@@ -166,7 +166,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
             .setStyles({
               "border-radius": "16px"
             });
-          item.addListener("promoteToManager", e => {
+          item.addListener("promoteToAccountant", e => {
             const walletMember = e.getData();
             this.__promoteToAccountant(walletMember);
           });
