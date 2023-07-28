@@ -90,6 +90,10 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
       this.__reloadWalletMembers();
     },
 
+    __canIWrite: function() {
+      return true;
+    },
+
     __createIntroText: function() {
       const msg = this.tr("If you are an accountant, you can add new members and promote or demote existing ones.");
       const intro = new qx.ui.basic.Label().set({
@@ -205,7 +209,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
               collaborator["name"] = osparc.utils.Utils.firstsUp(collaborator["first_name"], collaborator["last_name"]);
             }
             collaborator["accessRights"] = collab["accessRights"];
-            collaborator["showOptions"] = true;
+            collaborator["showOptions"] = this.__canIWrite();
             membersList.push(collaborator);
           }
         });
