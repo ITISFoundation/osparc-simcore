@@ -224,7 +224,7 @@ def test_ensure_ends_with(original: str, termination: str, expected: str):
         ),
     ],
 )
-def test_partition_iter(
+def test_partition_gen(
     input_list: list[Any], expected: list[tuple[Any, ...]], slice_size: int
 ):
     # check returned result
