@@ -105,7 +105,7 @@ async def test_push_folder(
 
     mock_filemanager.upload_path.assert_called_once_with(
         r_clone_settings=r_clone_settings,
-        io_log_redirect_cb=None,
+        io_log_redirect_cb=mock_io_log_redirect_cb,
         path_to_upload=test_folder,
         s3_object=f"{project_id}/{node_uuid}/{test_folder.stem}",
         store_id=SIMCORE_LOCATION,
@@ -152,7 +152,7 @@ async def test_push_file(
     mock_temporary_directory.assert_not_called()
     mock_filemanager.upload_path.assert_called_once_with(
         r_clone_settings=r_clone_settings,
-        io_log_redirect_cb=None,
+        io_log_redirect_cb=mock_io_log_redirect_cb,
         path_to_upload=file_path,
         s3_object=f"{project_id}/{node_uuid}/{file_path.name}",
         store_id=SIMCORE_LOCATION,
@@ -229,7 +229,7 @@ async def test_pull_legacy_archive(
         s3_object=f"{project_id}/{node_uuid}/{test_folder.stem}.zip",
         store_id=SIMCORE_LOCATION,
         store_name=None,
-        io_log_redirect_cb=None,
+        io_log_redirect_cb=mock_io_log_redirect_cb,
         r_clone_settings=None,
         progress_bar=progress_bar._children[0],
     )
@@ -283,7 +283,7 @@ async def test_pull_directory(
         store_id=SIMCORE_LOCATION,
         store_name=None,
         user_id=user_id,
-        io_log_redirect_cb=None,
+        io_log_redirect_cb=mock_io_log_redirect_cb,
         r_clone_settings=r_clone_settings,
         progress_bar=progress_bar,
     )
