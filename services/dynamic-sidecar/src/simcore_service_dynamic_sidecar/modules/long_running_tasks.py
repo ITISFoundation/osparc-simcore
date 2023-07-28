@@ -286,7 +286,7 @@ async def task_save_state(
     saving the new format.
     """
 
-    async def _push_and_remove_legacy_archive(
+    async def _save_state_folder(
         state_path: Path, root_progress: ProgressBarData
     ) -> None:
         await data_manager.push(
@@ -312,7 +312,7 @@ async def task_save_state(
     ) as root_progress:
         await logged_gather(
             *[
-                _push_and_remove_legacy_archive(state_path, root_progress)
+                _save_state_folder(state_path, root_progress)
                 for state_path in state_paths
             ],
             max_concurrency=CONCURRENCY_STATE_SAVE_RESTORE,
