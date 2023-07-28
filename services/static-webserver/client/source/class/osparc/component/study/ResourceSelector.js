@@ -369,21 +369,9 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
     },
 
     __getCreditsLeftView: function() {
-      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-
-      const progressBar = new osparc.desktop.credits.CreditsIndicator();
-      this.bind("wallet", progressBar, "wallet");
-      layout.add(progressBar);
-
-      const creditsLabel = new qx.ui.basic.Label().set({
-        font: "text-14"
-      });
-      layout.add(creditsLabel);
-      this.bind("wallet", creditsLabel, "value", {
-        converter: wallet => wallet ? wallet.getCredits() + " " + this.tr("credits left") : this.tr("Select Wallet")
-      });
-
-      return layout;
+      const creditsLeftView = new osparc.desktop.credits.CreditsIndicatorWText();
+      this.bind("wallet", creditsLeftView, "wallet");
+      return creditsLeftView;
     }
   }
 });
