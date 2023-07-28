@@ -91,7 +91,11 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
     },
 
     __canIWrite: function() {
-      return true;
+      const myGid = osparc.auth.Data.getInstance().getGroupId();
+      if ("getAccessRights" in this.__currentModel && myGid in this.__currentModel.getAccessRights()) {
+        return this.__currentModel.getAccessRights()[myGid]["write"];
+      }
+      return false;
     },
 
     __createIntroText: function() {
@@ -208,7 +212,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
               collaborator["thumbnail"] = osparc.utils.Avatar.getUrl(collaborator["login"], 32);
               collaborator["name"] = osparc.utils.Utils.firstsUp(collaborator["first_name"], collaborator["last_name"]);
             }
-            collaborator["accessRights"] = collab["accessRights"];
+            collaborator["accessRights"] = accessRights[gid];
             collaborator["showOptions"] = this.__canIWrite();
             membersList.push(collaborator);
           }

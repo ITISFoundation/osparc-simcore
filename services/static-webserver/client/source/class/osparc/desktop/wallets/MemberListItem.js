@@ -37,6 +37,17 @@ qx.Class.define("osparc.desktop.wallets.MemberListItem", {
     },
 
     // overridden
+    _setSubtitle: function() {
+      const accessRights = this.getAccessRights();
+      const subtitle = this.getChildControl("contact");
+      if ("getWrite" in accessRights && accessRights.getWrite()) {
+        subtitle.setValue(osparc.data.Roles.WALLET[2].longLabel);
+      } else if ("getRead" in accessRights && accessRights.getRead()) {
+        subtitle.setValue(osparc.data.Roles.WALLET[1].longLabel);
+      }
+    },
+
+    // overridden
     _getOptionsMenu: function() {
       const menu = new qx.ui.menu.Menu().set({
         position: "bottom-right"
