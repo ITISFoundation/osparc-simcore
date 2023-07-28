@@ -31,6 +31,7 @@ async def _remove_single_service_if_orphan(
     dynamic_service: dict[str, Any],
     currently_opened_projects_node_ids: dict[str, str],
 ) -> None:
+    """ "orphan" is a service who is not present in the DB or not part of a currently opened project"""
 
     service_host = dynamic_service["service_host"]
     service_uuid = dynamic_service["service_uuid"]
@@ -126,7 +127,6 @@ async def remove_orphaned_services(
     must be matching its own. The director service spawns dynamic services
     which have this new label and it also filters by this label.
 
-    If the service is a dynamic service
     """
     _logger.debug("Starting orphaned services removal...")
 

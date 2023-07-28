@@ -644,7 +644,7 @@ async def try_open_project_for_user(
                     return True
 
                 # Otherwise if this is the only user (NOTE: a session = user_id + client_seesion_id !)
-                user_ids: set[int] = {usid.user_id for usid in sessions_with_project}
+                user_ids: set[int] = {s.user_id for s in sessions_with_project}
                 if user_ids.issubset({user_id}):
                     other_sessions_with_project = [
                         usid
@@ -662,7 +662,6 @@ async def try_open_project_for_user(
                         )
                         return True
 
-            # other users have this project assigned as opened ???
             return False
 
     except ProjectLockError:

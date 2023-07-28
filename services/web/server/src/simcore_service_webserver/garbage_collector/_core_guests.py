@@ -1,6 +1,6 @@
 import asyncio
+import itertools
 import logging
-from itertools import chain
 
 import asyncpg.exceptions
 from aiohttp import web
@@ -36,7 +36,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
     Based on the given access rights it will determine the action to take:
     - if other users have read access & execute access it will get deleted
     - if other users have write access the project's owner will be changed to a new owner:
-        - if the project is directly shared with a one or more users, one of these
+        - if the project is directly shared with  one or more users, one of these
             will be picked as the new owner
         - if the project is not shared with any user but with groups of users, one
             of the users inside the group (which currently exists) will be picked as
@@ -60,7 +60,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
     ).list_projects_uuids(user_id=user_id)
 
     _logger.info(
-        "Removing or transferring projects of user with %s, %s: %s",
+        "Removing or transfering projects of user with %s, %s: %s",
         f"{user_id=}",
         f"{project_owner=}",
         f"{user_project_uuids=}",
@@ -98,7 +98,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
             # when no new owner is found just remove the project
             try:
                 _logger.debug(
-                    "Removing or transferring ownership of project with %s from user with %s",
+                    "Removing project %s from user with %s",
                     f"{project_uuid=}",
                     f"{user_id=}",
                 )
@@ -188,11 +188,17 @@ async def remove_users_manually_marked_as_guests(
     redis_locks_client: Redis = get_redis_lock_manager_client(app)
 
     # collects all users with registed sessions
-    alive_keys, dead_keys = await registry.get_all_resource_keys()
+    (
+        all_user_session_alive,
+        all_user_sessions_dead,
+    ) = await registry.get_all_resource_keys()
 
-    skip_users = set()
-    for entry in chain(alive_keys, dead_keys):
-        skip_users.add(int(entry["user_id"]))
+    skip_users = {
+        int(user_session["user_id"])
+        for user_session in itertools.chain(
+            all_user_session_alive, all_user_sessions_dead
+        )
+    }
 
     # Prevent creating this list if a guest user
     guest_users: list[tuple[int, str]] = await get_guest_user_ids_and_names(app)

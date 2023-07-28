@@ -583,8 +583,8 @@ async def delete_project(request: web.Request):
         project_users: set[int] = set()
         with managed_resource(req_ctx.user_id, None, request.app) as user_session:
             project_users = {
-                us.user_id
-                for us in await user_session.find_users_of_resource(
+                s.user_id
+                for s in await user_session.find_users_of_resource(
                     request.app, PROJECT_ID_KEY, f"{path_params.project_id}"
                 )
             }

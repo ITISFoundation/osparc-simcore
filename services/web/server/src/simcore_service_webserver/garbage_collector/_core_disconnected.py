@@ -8,7 +8,11 @@ from servicelib.utils import logged_gather
 from ..projects.exceptions import ProjectLockError, ProjectNotFoundError
 from ..projects.projects_api import remove_project_dynamic_services
 from ..redis import get_redis_lock_manager_client
-from ..resource_manager.registry import RedisResourceRegistry, ResourcesDict
+from ..resource_manager.registry import (
+    RedisResourceRegistry,
+    ResourcesDict,
+    UserSessionDict,
+)
 from ._core_guests import remove_guest_user_with_all_its_resources
 from .settings import GUEST_USER_RC_LOCK_FORMAT
 
@@ -22,33 +26,21 @@ async def remove_disconnected_user_resources(
 
     #
     # In redis jargon, every entry is denoted as "key"
-    #   - A key can contain one or more fields: name-value pairs
-    #   - A key can have a limited livespan by setting the Time-to-live (TTL) which
+    # - A key can contain one or more fields: name-value pairs
+    # - A key can have a limited livespan by setting the Time-to-live (TTL) which
     #       is automatically decreasing
-    #
     # - Every user can open multiple sessions (e.g. in different tabs and/or browser) and
     #   each session is hierarchically represented in the redis registry with two keys:
-    #     - "alive" that keeps a TLL
-    #     - "resources" to keep a list of resources
-    # - A resource is defined as something that can be acquire/released and in some times
-    #   also shared. For instance, websocket_id, project_id are resource ids. The first is established
-    #   between the web-client and the backend.
+    #     - "alive" is a string that keeps a TLL of the user session
+    #     - "resources" is a hash toto keep project and websocket ids
     #
-    # - If all sessions of a GUEST user close (i.e. "alive" key expires)
-    #
-    #
-
-    # alive_keys = currently "active" users
-    # dead_keys = users considered as "inactive" (i.e. resource has expired since TLL reached 0!)
-    # these keys hold references to more than one websocket connection ids
-    # the websocket ids are referred to as resources (but NOT the only resource)
 
     all_session_alive, all_sessions_dead = await registry.get_all_resource_keys()
     _logger.debug("potential dead keys: %s", all_sessions_dead)
 
     # clean up all resources of expired keys
     for dead_session in all_sessions_dead:
-        # Skip locked keys for the moment
+
         try:
             user_id = int(dead_session["user_id"])
         except (KeyError, ValueError):  # noqa: PERF203
@@ -89,20 +81,18 @@ async def remove_disconnected_user_resources(
             # In that case, the resource is released by THE LAST DYING KEY
             # (we could call this the "last-standing-man" pattern! :-) )
             #
-            other_keys_with_this_resource = [
+            other_sessions_with_this_resource: list[UserSessionDict] = [
                 k
                 for k in await registry.find_keys((resource_name, f"{resource_value}"))
                 if k != dead_session
             ]
             is_resource_still_in_use: bool = any(
-                k in all_session_alive for k in other_keys_with_this_resource
+                k in all_session_alive for k in other_sessions_with_this_resource
             )
-
-            # FIXME: if the key is dead, shouldn't we still delete the field entry from the expired key regisitry?
 
             if not is_resource_still_in_use:
                 # adds the remaining resource entries for (2)
-                keys_to_update.extend(other_keys_with_this_resource)
+                keys_to_update.extend(other_sessions_with_this_resource)
 
                 # (1) releasing acquired resources
                 _logger.info(
@@ -140,7 +130,6 @@ async def remove_disconnected_user_resources(
 
                 # ONLY GUESTS: if this user was a GUEST also remove it from the database
                 # with the only associated project owned
-                # FIXME: if a guest can share, it will become permanent user!
                 await remove_guest_user_with_all_its_resources(
                     app=app,
                     user_id=user_id,
@@ -162,6 +151,6 @@ async def remove_disconnected_user_resources(
             )
 
             # NOTE:
-            #   - if releasing a resource (1) fails, annotations in registry allows GC to try in next round
+            #   - if releasing a resource (1) fails, the resource is not removed from the registry and it allows GC to try in next round
             #   - if any task in (2) fails, GC will clean them up in next round as well
             #   - if all resource fields are removed from a key, next GC iteration will remove the key (see (0))
