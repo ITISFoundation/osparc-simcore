@@ -1,4 +1,4 @@
-// node jupyters.js [url] [user] [password] [--demo]
+// node jupyters.js [url] [--user user] [--pass password] [--demo]
 
 const utils = require('../utils/utils');
 const tutorialBase = require('./tutorialBase');

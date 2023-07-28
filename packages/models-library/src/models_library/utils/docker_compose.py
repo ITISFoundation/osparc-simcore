@@ -1,4 +1,5 @@
 import yaml
+from models_library.service_settings_labels import ComposeSpecLabelDict
 
 from .string_substitution import SubstitutionsDict, TextTemplate
 
@@ -17,7 +18,7 @@ MATCH_IMAGE_END = f":{MATCH_SERVICE_VERSION}"
 
 
 def replace_env_vars_in_compose_spec(
-    service_spec: "ComposeSpecLabelDict",
+    service_spec: ComposeSpecLabelDict,
     *,
     replace_simcore_registry: str,
     replace_service_version: str,

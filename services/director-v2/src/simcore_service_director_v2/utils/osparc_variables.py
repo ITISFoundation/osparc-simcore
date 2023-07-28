@@ -95,7 +95,6 @@ async def resolve_variables_from_context(
     variables_getters: dict[str, ContextGetter],
     context: ContextDict,
 ) -> dict[str, SubstitutionValue]:
-
     # evaluate getters from context values
     pre_environs: dict[str, SubstitutionValue | RequestTuple] = {
         key: fun(context) for key, fun in variables_getters.items()

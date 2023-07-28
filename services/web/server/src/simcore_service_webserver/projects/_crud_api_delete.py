@@ -25,9 +25,11 @@ from .exceptions import (
     ProjectNotFoundError,
 )
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
-DELETE_PROJECT_TASK_NAME = "background-task.delete_project/project_uuid={0}.user_id={1}"
+_DELETE_PROJECT_TASK_NAME = (
+    "background-task.delete_project/project_uuid={0}.user_id={1}"
+)
 
 
 class RemoveProjectServicesCallable(Protocol):
@@ -38,6 +40,7 @@ class RemoveProjectServicesCallable(Protocol):
         project_uuid: str,
         app: web.Application,
         simcore_user_agent: str,
+        *,
         notify_users: bool = True,
         user_name: UserNameDict | None = None,
     ) -> None:
@@ -68,7 +71,6 @@ async def delete_project(
     project_uuid: ProjectID,
     user_id: UserID,
     simcore_user_agent,
-    # TODO: this function was tmp added here to avoid refactoring all projects_api in a single PR
     remove_project_dynamic_services: RemoveProjectServicesCallable,
 ) -> None:
     """Stops dynamic services, deletes data and finally deletes project
@@ -78,7 +80,7 @@ async def delete_project(
     raises ProjectDeleteError
     """
 
-    log.debug(
+    _logger.debug(
         "Deleting project '%s' for user '%s' in database",
         f"{project_uuid=}",
         f"{user_id=}",
@@ -91,7 +93,11 @@ async def delete_project(
         # stops dynamic services
         # - raises ProjectNotFoundError, UserNotFoundError, ProjectLockError
         await remove_project_dynamic_services(
-            user_id, f"{project_uuid}", app, simcore_user_agent, notify_users=False
+            user_id=user_id,
+            project_uuid=f"{project_uuid}",
+            app=app,
+            simcore_user_agent=simcore_user_agent,
+            notify_users=False,
         )
 
         # stops computational services
@@ -136,27 +142,37 @@ def schedule_task(
         # state of the task when completed.
         try:
             fut.result()
-            logger.info(f"Deleted {project_uuid=} using {user_id=} permissions")
+            logger.info(
+                "Deleted %s using %s permissions", f"{project_uuid=}", f"{user_id=}"
+            )
 
         except asyncio.exceptions.CancelledError:
             logger.warning(
-                f"Canceled deletion of {project_uuid=} using {user_id=} permissions"
+                "Canceled deletion of %s using %s permissions",
+                f"{project_uuid=}",
+                f"{user_id=}",
             )
             raise
 
-        except ProjectDeleteError as err:
-            logger.error(
-                f"Failed to delete {project_uuid=} using {user_id=} permissions: {err}"
+        except ProjectDeleteError:
+            logger.exception(
+                "Failed to delete %s using %s permissions",
+                f"{project_uuid=}",
+                f"{user_id=}",
             )
 
-        except ProjectInvalidRightsError as err:
-            logger.error(
-                f"{user_id=} does not have permission to delete {project_uuid=}: {err}"
+        except ProjectInvalidRightsError:
+            logger.exception(
+                "%s does not have permission to delete %s",
+                f"{user_id=}",
+                f"{project_uuid=}",
             )
 
         except Exception:  # pylint: disable=broad-except
             logger.exception(
-                f"Unexpected error while deleting {project_uuid=} with {user_id=} permissions"
+                "Unexpected error while deleting %s with %spermissions",
+                f"{project_uuid=}",
+                f"{user_id=}",
             )
 
     # ------
@@ -169,10 +185,10 @@ def schedule_task(
             simcore_user_agent,
             remove_project_dynamic_services,
         ),
-        name=DELETE_PROJECT_TASK_NAME.format(project_uuid, user_id),
+        name=_DELETE_PROJECT_TASK_NAME.format(project_uuid, user_id),
     )
 
-    assert task.get_name() == DELETE_PROJECT_TASK_NAME.format(  # nosec
+    assert task.get_name() == _DELETE_PROJECT_TASK_NAME.format(  # nosec
         project_uuid, user_id
     )
 
@@ -185,5 +201,5 @@ def get_scheduled_tasks(project_uuid: ProjectID, user_id: UserID) -> list[asynci
     return [
         task
         for task in asyncio.all_tasks()
-        if task.get_name() == DELETE_PROJECT_TASK_NAME.format(project_uuid, user_id)
+        if task.get_name() == _DELETE_PROJECT_TASK_NAME.format(project_uuid, user_id)
     ]

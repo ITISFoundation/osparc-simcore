@@ -205,7 +205,7 @@ async def request_delete_project(
         autospec=True,
     )
     fire_and_forget_call_to_storage: mock.Mock = mocker.patch(
-        "simcore_service_webserver.projects._crud_delete_utils.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._crud_api_delete.delete_data_folders_of_project",
         autospec=True,
     )
 

@@ -157,7 +157,8 @@ qx.Class.define("osparc.component.widget.PreparingInputs", {
             const fetching = [
               "PUBLISHED",
               "PENDING",
-              "STARTED"
+              "STARTED",
+              "WAITING_FOR_RESOURCES"
             ].includes(nodeRunningStatus);
             rerunBtn.setFetching(fetching);
             const rerunnable = [

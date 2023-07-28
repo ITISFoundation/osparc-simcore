@@ -44,7 +44,8 @@ class SpecsSubstitutionsResolver:
 
     def get_identifiers(self) -> list[str]:
         """lists identifiers in specs in order of apperance. Can have repetitions"""
-        return self._template.get_identifiers()
+        output: list[str] = self._template.get_identifiers()
+        return output
 
     def get_replaced(self) -> set[str]:
         return self._substitutions.used

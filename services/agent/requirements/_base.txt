@@ -14,7 +14,7 @@ aiodocker==0.21.0
     #   -r requirements/_base.in
 aiofiles==22.1.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-aiohttp==3.8.3
+aiohttp==3.8.5
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt

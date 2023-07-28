@@ -54,12 +54,9 @@ qx.Class.define("osparc.desktop.MainPage", {
     osparc.WindowSizeTracker.getInstance().startTracker();
     osparc.MaintenanceTracker.getInstance().startTracker();
 
-    const store = osparc.store.Store.getInstance();
+    osparc.data.Resources.dummy.addWalletsToStore();
 
-    osparc.data.Resources.dummy.getCreditsLeft()
-      .then(credits => store.setCredits(credits.left))
-      .catch(err => console.error(err));
-    setInterval(() => store.setCredits(store.getCredits()-1), 60000);
+    const store = osparc.store.Store.getInstance();
 
     Promise.all([
       store.getAllClassifiers(true),
@@ -154,6 +151,9 @@ qx.Class.define("osparc.desktop.MainPage", {
       this.__dashboard.getStudyBrowser().reloadResources();
       this.__dashboard.getStudyBrowser().resetSelection();
       dashboardBtn.setFetching(false);
+
+      const store = osparc.store.Store.getInstance();
+      store.setActiveWallet(null);
     },
 
     closeEditor: function() {

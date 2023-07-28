@@ -63,7 +63,7 @@ class DefaultDelayPolicy(BaseDelayPolicy):
 @dataclass
 class TrackedEvent:
     last_detection: NonNegativeFloat
-    wait_interval: Optional[NonNegativeFloat] = None
+    wait_interval: NonNegativeFloat | None = None
 
 
 class EventFilter:
@@ -76,13 +76,13 @@ class EventFilter:
         self.delay_policy = delay_policy
 
         self._incoming_events_queue: Queue[PortEvent] = Queue()
-        self._task_incoming_event_ingestion: Optional[Task] = None
+        self._task_incoming_event_ingestion: Task | None = None
 
-        self._task_event_emitter: Optional[Task] = None
+        self._task_event_emitter: Task | None = None
         self._keep_event_emitter_running: bool = True
 
-        self._upload_events_queue: Queue[Optional[str]] = Queue()
-        self._task_upload_events: Optional[Task] = None
+        self._upload_events_queue: Queue[str | None] = Queue()
+        self._task_upload_events: Task | None = None
 
         self._port_key_tracked_event: dict[str, TrackedEvent] = {}
 
@@ -105,7 +105,6 @@ class EventFilter:
     def _worker_blocking_event_emitter(self) -> None:  # NOSONAR
         repeat_interval = self.delay_policy.get_min_interval() * 0.49
         while self._keep_event_emitter_running:
-
             # can be iterated while modified
             for port_key in list(self._port_key_tracked_event.keys()):
                 tracked_event = self._port_key_tracked_event.get(port_key, None)
@@ -161,7 +160,7 @@ class EventFilter:
     async def _worker_upload_events(self) -> None:
         """enqueues uploads for port  `port_key`"""
         while True:
-            port_key: Optional[str] = await self._upload_events_queue.get()
+            port_key: str | None = await self._upload_events_queue.get()
             if port_key is None:
                 break
 
@@ -188,7 +187,7 @@ class EventFilter:
             )
 
     async def shutdown(self) -> None:
-        async def _cancel_task(task: Optional[Task]) -> None:
+        async def _cancel_task(task: Task | None) -> None:
             if task is None:
                 return
 

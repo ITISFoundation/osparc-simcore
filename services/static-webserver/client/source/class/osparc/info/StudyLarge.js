@@ -31,6 +31,10 @@ qx.Class.define("osparc.info.StudyLarge", {
     } else if (study instanceof Object) {
       const studyModel = new osparc.data.model.Study(study);
       this.setStudy(studyModel);
+
+      if ("resourceType" in study) {
+        this.__isTemplate = study["resourceType"] === "template";
+      }
     }
 
     if (openOptions !== undefined) {
@@ -54,6 +58,8 @@ qx.Class.define("osparc.info.StudyLarge", {
   },
 
   members: {
+    __isTemplate: null,
+
     __canIWrite: function() {
       return osparc.data.model.Study.canIWrite(this.getStudy().getAccessRights());
     },
@@ -67,9 +73,13 @@ qx.Class.define("osparc.info.StudyLarge", {
         font: "text-14"
       });
       const titleLayout = this.__createViewWithEdit(title, this.__openTitleEditor);
+      let text = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + " Id";
+      if (this.__isTemplate) {
+        text = osparc.product.Utils.getTemplateAlias({firstUpperCase: true}) + " Id";
+      }
       const button = new qx.ui.form.Button(null, "@FontAwesome5Solid/copy/12").set({
-        label: osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + " Id",
-        toolTipText: "Copy " + osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + " Id"
+        label: text,
+        toolTipText: "Copy " + text
       });
       button.addListener("execute", () => osparc.utils.Utils.copyTextToClipboard(this.getStudy().getUuid()));
       let autoStartButton = null;
@@ -88,14 +98,34 @@ qx.Class.define("osparc.info.StudyLarge", {
       }
       vBox.add(titleAndCopyLayout);
 
+      const mainHBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
+      const leftVBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      mainHBox.add(leftVBox, {
+        flex: 1
+      });
+      const rightVBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
+      mainHBox.add(rightVBox);
+      vBox.add(mainHBox);
+
       if (osparc.product.Utils.showStudyPreview() && !this.getStudy().isPipelineEmpty()) {
-        const studyThumbnailExplorer = new osparc.dashboard.StudyThumbnailExplorer(this.getStudy().serialize());
-        vBox.add(studyThumbnailExplorer);
+        leftVBox.add(new osparc.dashboard.StudyThumbnailExplorer(this.getStudy().serialize()));
+        leftVBox.add(new qx.ui.core.Spacer(15, 15));
       }
+      const descInfo = {
+        label: this.tr("DESCRIPTION"),
+        view: osparc.info.StudyUtils.createDescriptionMD(this.getStudy()),
+        action: {
+          button: osparc.utils.Utils.getEditButton(),
+          callback: this.__canIWrite() ? this.__openDescriptionEditor : null,
+          ctx: this
+        }
+      };
+      leftVBox.add(osparc.info.StudyUtils.titleWithEditLayout(descInfo));
+      leftVBox.add(descInfo.view);
 
       const extraInfo = this.__extraInfo();
       const extraInfoLayout = this.__createExtraInfo(extraInfo);
-      vBox.add(extraInfoLayout);
+      rightVBox.add(extraInfoLayout);
 
       const scrollContainer = new qx.ui.container.Scroll();
       scrollContainer.add(vBox);
@@ -131,7 +161,7 @@ qx.Class.define("osparc.info.StudyLarge", {
           label: this.tr("ACCESS RIGHTS"),
           view: osparc.info.StudyUtils.createAccessRights(this.getStudy()),
           action: {
-            button: osparc.utils.Utils.getViewButton(),
+            button: osparc.utils.Utils.getEditButton(),
             callback: this.isOpenOptions() ? this.__openAccessRights : "openAccessRights",
             ctx: this
           }
@@ -150,20 +180,22 @@ qx.Class.define("osparc.info.StudyLarge", {
           label: this.tr("TAGS"),
           view: osparc.info.StudyUtils.createTags(this.getStudy()),
           action: {
-            button: osparc.utils.Utils.getViewButton(),
+            button: osparc.utils.Utils.getEditButton(),
             callback: this.isOpenOptions() ? this.__openTagsEditor : "openTags",
             ctx: this
           }
         },
+        /*
         "DESCRIPTION": {
           label: this.tr("DESCRIPTION"),
-          view: osparc.info.StudyUtils.createDescription(this.getStudy()),
+          view: osparc.info.StudyUtils.createDescriptionMD(this.getStudy()),
           action: {
             button: osparc.utils.Utils.getEditButton(),
             callback: this.__canIWrite() ? this.__openDescriptionEditor : null,
             ctx: this
           }
         },
+        */
         "THUMBNAIL": {
           label: this.tr("THUMBNAIL"),
           view: this.__createThumbnail(),
@@ -184,7 +216,7 @@ qx.Class.define("osparc.info.StudyLarge", {
           label: this.tr("QUALITY"),
           view: osparc.info.StudyUtils.createQuality(this.getStudy()),
           action: {
-            button: osparc.utils.Utils.getViewButton(),
+            button: osparc.utils.Utils.getEditButton(),
             callback: this.isOpenOptions() ? this.__openQuality : "openQuality",
             ctx: this
           }
@@ -196,7 +228,7 @@ qx.Class.define("osparc.info.StudyLarge", {
           label: this.tr("CLASSIFIERS"),
           view: osparc.info.StudyUtils.createClassifiers(this.getStudy()),
           action: (this.getStudy().getClassifiers().length || this.__canIWrite()) ? {
-            button: osparc.utils.Utils.getViewButton(),
+            button: osparc.utils.Utils.getEditButton(),
             callback: this.isOpenOptions() ? this.__openClassifiers : "openClassifiers",
             ctx: this
           } : null

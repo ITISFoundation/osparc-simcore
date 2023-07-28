@@ -117,6 +117,17 @@ class DaskScheduler(BaseCompScheduler):
             await asyncio.gather(
                 *[client.abort_computation_task(t.job_id) for t in tasks if t.job_id]
             )
+            # tasks that have no-worker must be unpublished as these are blocking forever
+            tasks_with_no_worker = [
+                t for t in tasks if t.state is RunningState.WAITING_FOR_RESOURCES
+            ]
+            await asyncio.gather(
+                *[
+                    client.release_task_result(t.job_id)
+                    for t in tasks_with_no_worker
+                    if t.job_id
+                ]
+            )
 
     async def _process_completed_tasks(
         self, user_id: UserID, cluster_id: ClusterID, tasks: list[CompTaskAtDB]
