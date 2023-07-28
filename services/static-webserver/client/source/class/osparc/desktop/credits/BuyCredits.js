@@ -180,10 +180,12 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
 
       walletSelector.addListener("changeSelection", e => {
         const selection = e.getData();
-        const store = osparc.store.Store.getInstance();
-        const found = store.getWallets().find(wallet => wallet.getWalletId() === parseInt(selection[0].walletId));
-        if (found) {
-          this.setWallet(found);
+        if (selection.length) {
+          const store = osparc.store.Store.getInstance();
+          const found = store.getWallets().find(wallet => wallet.getWalletId() === parseInt(selection[0].walletId));
+          if (found) {
+            this.setWallet(found);
+          }
         }
       });
 
