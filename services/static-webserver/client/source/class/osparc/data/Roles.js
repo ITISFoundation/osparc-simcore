@@ -86,14 +86,6 @@ qx.Class.define("osparc.data.Roles", {
     },
 
     WALLET: {
-      0: {
-        id: "noRead",
-        label: qx.locale.Manager.tr("No Read"),
-        longLabel: qx.locale.Manager.tr("No Read: no Read access"),
-        canDo: [
-          qx.locale.Manager.tr("- something went wrong")
-        ]
-      },
       1: {
         id: "read",
         label: qx.locale.Manager.tr("User"),
@@ -109,14 +101,6 @@ qx.Class.define("osparc.data.Roles", {
         canDo: [
           qx.locale.Manager.tr("- can Add/Delete members"),
           qx.locale.Manager.tr("- can Edit Wallet details")
-        ]
-      },
-      3: {
-        id: "delete",
-        label: qx.locale.Manager.tr("Accountant+"),
-        longLabel: qx.locale.Manager.tr("Accountant+: Read/Write access"),
-        canDo: [
-          qx.locale.Manager.tr("- can Delete the Wallet")
         ]
       }
     },

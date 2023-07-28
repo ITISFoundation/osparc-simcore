@@ -95,7 +95,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
     },
 
     __createIntroText: function() {
-      const msg = this.tr("If you are an accountant, you can add new members and promote or demote existing ones.");
+      const msg = this.tr("If you are an Accountant of an organization you can share a wallet with the entire organization. Also, if you have write access on a wallet you can add new members and promote or demote existing ones.");
       const intro = new qx.ui.basic.Label().set({
         value: msg,
         alignX: "left",

@@ -146,14 +146,10 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       const subtitle = this.getChildControl("contact");
       if (myGid in accessRights) {
-        if (accessRights[myGid]["delete"]) {
-          subtitle.setValue(osparc.data.Roles.WALLET[3].longLabel);
-        } else if (accessRights[myGid]["write"]) {
+        if (accessRights[myGid]["write"]) {
           subtitle.setValue(osparc.data.Roles.WALLET[2].longLabel);
         } else if (accessRights[myGid]["read"]) {
           subtitle.setValue(osparc.data.Roles.WALLET[1].longLabel);
-        } else {
-          subtitle.setValue(osparc.data.Roles.WALLET[0].longLabel);
         }
       }
     },
