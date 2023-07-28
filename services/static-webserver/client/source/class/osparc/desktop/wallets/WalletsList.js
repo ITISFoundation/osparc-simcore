@@ -207,98 +207,56 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
       walletEditor.addListener("cancel", () => win.close());
     },
 
-    __deleteWallet: function(walletId) {
-      let wallet = null;
-      this.__walletsModel.forEach(walletModel => {
-        if (walletModel.getWalletId() === parseInt(walletId)) {
-          wallet = walletModel;
-        }
-      });
-      if (wallet === null) {
-        return;
-      }
-
-      const name = wallet.getName();
-      const msg = this.tr("Are you sure you want to delete ") + name + "?";
-      const win = new osparc.ui.window.Confirmation(msg).set({
-        confirmText: this.tr("Delete"),
-        confirmAction: "delete"
-      });
-      win.open();
-      win.addListener("close", () => {
-        if (win.getConfirmed()) {
-          const params = {
-            url: {
-              "walletId": walletId
-            }
-          };
-          osparc.data.Resources.fetch("wallets", "delete", params)
-            .then(() => {
-              osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Wallet successfully deleted"), "INFO");
-            })
-            .catch(err => {
-              osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong deleting ") + name, "ERROR");
-              console.error(err);
-            })
-            .finally(() => win.close());
-        }
-      }, this);
-    },
-
     __createWallet: function(win, button, walletEditor) {
-      const walletId = walletEditor.getWalletId();
-      const name = walletEditor.getLabel();
+      button.setFetching(true);
+
+      const name = walletEditor.getName();
       const description = walletEditor.getDescription();
       const thumbnail = walletEditor.getThumbnail();
-      const params = {
-        url: {
-          "walletId": walletId
-        },
-        data: {
-          "name": name,
-          "description": description,
-          "thumbnail": thumbnail || null
-        }
+      const owner = osparc.auth.Data.getInstance().getUserId();
+      const accessRights = {};
+      accessRights[osparc.auth.Data.getInstance().getGroupId()] = {
+        delete: true,
+        write: true,
+        read: true
       };
-      osparc.data.Resources.fetch("wallets", "post", params)
-        .then(() => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(name + this.tr(" successfully created"));
-          button.setFetching(false);
-        })
-        .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong creating ") + name, "ERROR");
-          button.setFetching(false);
-          console.error(err);
-        })
-        .finally(() => win.close());
+
+      const newWalletData = osparc.data.Resources.dummy.newWalletData();
+      newWalletData.name = name;
+      newWalletData.description = description;
+      newWalletData.thumbnail = thumbnail;
+      newWalletData.owner = owner;
+      newWalletData.accessRights = accessRights;
+
+      const wallet = new osparc.data.model.Wallet(newWalletData);
+      const store = osparc.store.Store.getInstance();
+      store.getWallets().push(wallet);
+
+      button.setFetching(false);
+      win.close();
+
+      this.loadWallets();
     },
 
     __updateWallet: function(win, button, walletEditor) {
+      button.setFetching(true);
+
+      const store = osparc.store.Store.getInstance();
       const walletId = walletEditor.getWalletId();
-      const name = walletEditor.getLabel();
-      const description = walletEditor.getDescription();
-      const thumbnail = walletEditor.getThumbnail();
-      const params = {
-        url: {
-          "walletId": walletId
-        },
-        data: {
-          "name": name,
-          "description": description,
-          "thumbnail": thumbnail || null
-        }
-      };
-      osparc.data.Resources.fetch("wallets", "patch", params)
-        .then(() => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(name + this.tr(" successfully edited"));
-          button.setFetching(false);
-          win.close();
-        })
-        .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing ") + name, "ERROR");
-          button.setFetching(false);
-          console.error(err);
+      const found = store.getWallets().find(wallet => wallet.getWalletId() === walletId);
+      if (found) {
+        const name = walletEditor.getName();
+        const description = walletEditor.getDescription();
+        const thumbnail = walletEditor.getThumbnail();
+        found.set({
+          name,
+          description,
+          thumbnail
         });
+      }
+
+      button.setFetching(false);
+      win.close();
     }
   }
 });

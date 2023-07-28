@@ -1096,6 +1096,22 @@ qx.Class.define("osparc.data.Resources", {
     },
 
     dummy: {
+      newWalletData: function() {
+        return {
+          id: Math.floor(Math.random() * 1000),
+          name: "New Wallet",
+          description: "",
+          thumbnail: null,
+          type: "shared",
+          owner: null,
+          accessRights: {},
+          credits: {
+            left: 0
+          },
+          active: true
+        };
+      },
+
       addWalletsToStore: function() {
         const store = osparc.store.Store.getInstance();
         osparc.data.Resources.dummy.getWallets()
