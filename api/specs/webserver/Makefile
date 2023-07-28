@@ -1,3 +1,4 @@
+.DEFAULT_GOAL := all
 
 .PHONY: _check_venv_active
 _check_venv_active:
