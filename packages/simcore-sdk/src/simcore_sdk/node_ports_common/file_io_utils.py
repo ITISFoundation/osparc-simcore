@@ -23,7 +23,7 @@ from models_library.api_schemas_storage import ETag, FileUploadSchema, UploadedP
 from pydantic import AnyUrl, NonNegativeInt
 from servicelib.logging_utils import log_catch
 from servicelib.progress_bar import ProgressBarData
-from servicelib.utils import logged_gather, partition_iter
+from servicelib.utils import logged_gather, partition_gen
 from tenacity._asyncio import AsyncRetrying
 from tenacity.after import after_log
 from tenacity.before_sleep import before_sleep_log
@@ -350,7 +350,7 @@ async def upload_file_to_presigned_links(
         )
 
         indexed_urls: list[tuple[int, AnyUrl]] = list(enumerate(file_upload_links.urls))
-        for partition_of_indexed_urls in partition_iter(
+        for partition_of_indexed_urls in partition_gen(
             indexed_urls, slice_size=_CONCURRENT_MULTIPART_UPLOADS_COUNT
         ):
             upload_tasks = []

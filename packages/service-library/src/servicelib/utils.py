@@ -147,18 +147,18 @@ def ensure_ends_with(input_string: str, char: str) -> str:
     return input_string
 
 
-def partition_iter(
+def partition_gen(
     input_list: Iterable, *, slice_size: NonNegativeInt
 ) -> Generator[tuple[Any, ...], None, None]:
     """
-    Given a list of elements and the slice_size yields lists containing
+    Given an iterable and the slice_size yields tuples containing
     slice_size elements in them.
 
     Inputs:
         input_list= [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
         slice_size = 5
     Outputs:
-        [[1, 2, 3, 4, 5], [6, 7, 8, 9, 10], [11, 12, 13]]
+        [(1, 2, 3, 4, 5), (6, 7, 8, 9, 10), (11, 12, 13)]
 
     """
     if not input_list:

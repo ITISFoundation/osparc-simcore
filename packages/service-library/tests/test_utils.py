@@ -15,7 +15,7 @@ from servicelib.utils import (
     ensure_ends_with,
     fire_and_forget_task,
     logged_gather,
-    partition_iter,
+    partition_gen,
 )
 
 
@@ -228,7 +228,7 @@ def test_partition_iter(
     input_list: list[Any], expected: list[tuple[Any, ...]], slice_size: int
 ):
     # check returned result
-    result = list(partition_iter(input_list, slice_size=slice_size))
+    result = list(partition_gen(input_list, slice_size=slice_size))
     assert result == expected
 
     # check returned type
