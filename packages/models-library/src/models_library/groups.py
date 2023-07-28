@@ -1,13 +1,16 @@
 import enum
 from typing import Any, ClassVar, Final
 
-from pydantic import BaseModel, Field
+from models_library.utils.common_validators import (
+    create_transform_from_equivalent_enums,
+)
+from pydantic import BaseModel, Field, validator
 from pydantic.types import PositiveInt
 
 EVERYONE_GROUP_ID: Final[int] = 1
 
 
-class GroupType(enum.Enum):
+class GroupTypeInModel(str, enum.Enum):  # noqa: SLOT000
     """
     standard: standard group, e.g. any group that is not a primary group or special group such as the everyone group
     primary: primary group, e.g. the primary group is the user own defined group that typically only contain the user (same as in linux)
@@ -23,8 +26,12 @@ class Group(BaseModel):
     gid: PositiveInt
     name: str
     description: str
-    group_type: GroupType = Field(..., alias="type")
+    group_type: GroupTypeInModel = Field(..., alias="type")
     thumbnail: str | None
+
+    _from_equivalent_enums = validator("group_type", allow_reuse=True, pre=True)(
+        create_transform_from_equivalent_enums(GroupTypeInModel)
+    )
 
 
 class GroupAtDB(Group):

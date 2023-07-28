@@ -6,8 +6,8 @@
 # pylint: disable=unused-variable
 
 import re
+from collections.abc import Callable
 from datetime import datetime, timedelta
-from typing import Callable
 
 import pytest
 from models_library.api_schemas_catalog.services import ServiceGet

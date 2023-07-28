@@ -14,6 +14,7 @@
 SEE https://docs.pydantic.dev/usage/validators/#reuse-validators
 """
 
+import enum
 from typing import Any
 
 
@@ -27,3 +28,12 @@ def none_to_empty_str(value: Any):
     if value is None:
         return ""
     return value
+
+
+def create_transform_from_equivalent_enums(enum_cls: type[enum.Enum]):
+    def _validator(value: Any):
+        if value and not isinstance(value, enum_cls) and isinstance(value, enum.Enum):
+            return value.value
+        return value
+
+    return _validator

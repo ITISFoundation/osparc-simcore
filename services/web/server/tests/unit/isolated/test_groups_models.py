@@ -1,4 +1,3 @@
-import enum
 from pprint import pformat
 from typing import Any
 
@@ -6,6 +5,7 @@ import models_library.groups
 import pytest
 import simcore_postgres_database.models.groups
 from models_library.generics import Envelope
+from models_library.utils.enums import enum_to_dict
 from pydantic import BaseModel
 from simcore_service_webserver.groups.schemas import (
     AllUsersGroups,
@@ -15,16 +15,13 @@ from simcore_service_webserver.groups.schemas import (
 )
 
 
-def test_models_library_and_postgress_database_enums_are_in_sync():
+def test_models_library_and_postgress_database_enums_are_equivalent():
     # For the moment these two libraries they do not have a common library to share these
     # basic types so we test here that they are in sync
 
-    def to_dict(enum_cls: type[enum.Enum]) -> dict[str, Any]:
-        return {m.name: m.value for m in enum_cls}
-
-    assert to_dict(simcore_postgres_database.models.groups.GroupType) == to_dict(
-        models_library.groups.GroupType
-    )
+    assert enum_to_dict(
+        simcore_postgres_database.models.groups.GroupType
+    ) == enum_to_dict(models_library.groups.GroupTypeInModel)
 
 
 @pytest.mark.parametrize(

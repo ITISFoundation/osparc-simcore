@@ -1,7 +1,7 @@
 from enum import Enum, unique
 
 import pytest
-from models_library.utils.enums import check_equivalency, enum_to_dict
+from models_library.utils.enums import are_equivalent_enums, enum_to_dict
 from pydantic import BaseModel, ValidationError, parse_obj_as
 
 #
@@ -24,8 +24,8 @@ def test_equivalent_enums_are_not_strictly_equal():
 
     assert enum_to_dict(Color1) == enum_to_dict(Color2)
 
-    assert check_equivalency(Color1, Color2)
-    assert check_equivalency(Color1, Color1)
+    assert are_equivalent_enums(Color1, Color2)
+    assert are_equivalent_enums(Color1, Color1)
 
 
 #
@@ -91,7 +91,7 @@ def test_equivalent_enums_in_pydantic():
     class ModelStrAndEnum(BaseModel):
         color: ColorStrAndEnum1
 
-    assert check_equivalency(Color1, ColorStrAndEnum1)
+    assert are_equivalent_enums(Color1, ColorStrAndEnum1)
 
     model = parse_obj_as(ModelStrAndEnum, {"color": ColorStrAndEnum1.RED})
     assert model.color == ColorStrAndEnum1.RED
