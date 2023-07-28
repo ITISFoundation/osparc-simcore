@@ -18,14 +18,18 @@ from ..node_ports_common.file_io_utils import LogRedirectCB
 _logger = logging.getLogger(__name__)
 
 
-def _create_s3_object_key(
+def __create_s3_object_key(
     project_id: ProjectID, node_uuid: NodeID, file_path: Path | str
 ) -> StorageFileID:
     file_name = file_path.name if isinstance(file_path, Path) else file_path
     return parse_obj_as(StorageFileID, f"{project_id}/{node_uuid}/{file_name}")
 
 
-async def push_directory(
+def __get_s3_name(path: Path, *, is_archive: bool) -> str:
+    return f"{path.stem}.zip" if is_archive else path.stem
+
+
+async def _push_directory(
     user_id: UserID,
     project_id: ProjectID,
     node_uuid: NodeID,
@@ -36,7 +40,7 @@ async def push_directory(
     exclude_patterns: set[str] | None = None,
     progress_bar: ProgressBarData,
 ) -> None:
-    s3_object = _create_s3_object_key(project_id, node_uuid, source_path)
+    s3_object = __create_s3_object_key(project_id, node_uuid, source_path)
     with log_context(
         _logger, logging.INFO, f"uploading {source_path.name} to S3 to {s3_object}"
     ):
@@ -53,23 +57,19 @@ async def push_directory(
         )
 
 
-def _get_s3_name(path: Path, *, is_archive: bool) -> str:
-    return f"{path.stem}.zip" if is_archive else path.stem
-
-
-async def pull_directory(
+async def _pull_directory(
     user_id: UserID,
     project_id: ProjectID,
     node_uuid: NodeID,
     destination_path: Path,
     *,
     io_log_redirect_cb: LogRedirectCB,
-    save_to: Path | None = None,
     r_clone_settings: RCloneSettings,
     progress_bar: ProgressBarData,
+    save_to: Path | None = None,
 ) -> None:
     save_to_path = destination_path if save_to is None else save_to
-    s3_object = _create_s3_object_key(project_id, node_uuid, destination_path)
+    s3_object = __create_s3_object_key(project_id, node_uuid, destination_path)
     with log_context(
         _logger, logging.INFO, f"pulling data from {s3_object} to {save_to_path}"
     ):
@@ -85,7 +85,7 @@ async def pull_directory(
         )
 
 
-async def pull_legacy_archive(
+async def _pull_legacy_archive(
     user_id: UserID,
     project_id: ProjectID,
     node_uuid: NodeID,
@@ -97,11 +97,11 @@ async def pull_legacy_archive(
     # NOTE: the legacy way of storing states was as zip archives
     async with progress_bar.sub_progress(steps=2) as sub_prog:
         with TemporaryDirectory() as tmp_dir_name:
-            archive_file = Path(tmp_dir_name) / _get_s3_name(
+            archive_file = Path(tmp_dir_name) / __get_s3_name(
                 destination_path, is_archive=True
             )
 
-            s3_object = _create_s3_object_key(project_id, node_uuid, archive_file)
+            s3_object = __create_s3_object_key(project_id, node_uuid, archive_file)
             _logger.info("pulling data from %s to %s...", s3_object, archive_file)
             downloaded_file = await filemanager.download_path_from_s3(
                 user_id=user_id,
@@ -131,7 +131,7 @@ async def pull_legacy_archive(
                 )
 
 
-async def state_metadata_entry_exists(
+async def _state_metadata_entry_exists(
     user_id: UserID,
     project_id: ProjectID,
     node_uuid: NodeID,
@@ -142,8 +142,8 @@ async def state_metadata_entry_exists(
     """
     :returns True if an entry is present inside the files_metadata else False
     """
-    s3_object = _create_s3_object_key(
-        project_id, node_uuid, _get_s3_name(path, is_archive=is_archive)
+    s3_object = __create_s3_object_key(
+        project_id, node_uuid, __get_s3_name(path, is_archive=is_archive)
     )
     _logger.debug("Checking if s3_object='%s' is present", s3_object)
     return await filemanager.entry_exists(
@@ -154,14 +154,107 @@ async def state_metadata_entry_exists(
     )
 
 
-async def delete_legacy_archive(
+async def _delete_legacy_archive(
     user_id: UserID, project_id: ProjectID, node_uuid: NodeID, path: Path
 ) -> None:
     """removes the .zip state archive from storage"""
-    s3_object = _create_s3_object_key(
-        project_id, node_uuid, _get_s3_name(path, is_archive=True)
+    s3_object = __create_s3_object_key(
+        project_id, node_uuid, __get_s3_name(path, is_archive=True)
     )
     _logger.debug("Deleting s3_object='%s' is archive", s3_object)
     await filemanager.delete_file(
         user_id=user_id, store_id=SIMCORE_LOCATION, s3_object=s3_object
     )
+
+
+async def push(
+    user_id: UserID,
+    project_id: ProjectID,
+    node_uuid: NodeID,
+    source_path: Path,
+    *,
+    io_log_redirect_cb: LogRedirectCB,
+    r_clone_settings: RCloneSettings,
+    exclude_patterns: set[str] | None = None,
+    progress_bar: ProgressBarData,
+) -> None:
+    """pushes and removes the legacy archive if present"""
+
+    await _push_directory(
+        user_id=user_id,
+        project_id=project_id,
+        node_uuid=node_uuid,
+        source_path=source_path,
+        r_clone_settings=r_clone_settings,
+        exclude_patterns=exclude_patterns,
+        io_log_redirect_cb=io_log_redirect_cb,
+        progress_bar=progress_bar,
+    )
+    archive_exists = await _state_metadata_entry_exists(
+        user_id=user_id,
+        project_id=project_id,
+        node_uuid=node_uuid,
+        path=source_path,
+        is_archive=True,
+    )
+
+    if not archive_exists:
+        return
+
+    with log_context(_logger, logging.INFO, "removing legacy data archive"):
+        await _delete_legacy_archive(
+            user_id=user_id,
+            project_id=project_id,
+            node_uuid=node_uuid,
+            path=source_path,
+        )
+
+
+async def pull(
+    user_id: UserID,
+    project_id: ProjectID,
+    node_uuid: NodeID,
+    destination_path: Path,
+    *,
+    io_log_redirect_cb: LogRedirectCB,
+    r_clone_settings: RCloneSettings,
+    progress_bar: ProgressBarData,
+) -> None:
+    """restores the state folder"""
+
+    state_archive_exists = await _state_metadata_entry_exists(
+        user_id=user_id,
+        project_id=project_id,
+        node_uuid=node_uuid,
+        path=destination_path,
+        is_archive=True,
+    )
+    state_directory_exists = await _state_metadata_entry_exists(
+        user_id=user_id,
+        project_id=project_id,
+        node_uuid=node_uuid,
+        path=destination_path,
+        is_archive=False,
+    )
+    if state_archive_exists:
+        with log_context(_logger, logging.INFO, "restoring legacy data archive"):
+            await _pull_legacy_archive(
+                user_id=user_id,
+                project_id=project_id,
+                node_uuid=node_uuid,
+                destination_path=destination_path,
+                io_log_redirect_cb=io_log_redirect_cb,
+                progress_bar=progress_bar,
+            )
+    elif state_directory_exists:
+        await _pull_directory(
+            user_id=user_id,
+            project_id=project_id,
+            node_uuid=node_uuid,
+            destination_path=destination_path,
+            io_log_redirect_cb=io_log_redirect_cb,
+            r_clone_settings=r_clone_settings,
+            progress_bar=progress_bar,
+        )
+    else:
+        _logger.debug("No content previously saved for '%s'", destination_path)

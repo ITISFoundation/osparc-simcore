@@ -1,7 +1,8 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
+# pylint:disable=protected-access
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-arguments
+# pylint:disable=unused-argument
+# pylint:disable=unused-variable
 
 import hashlib
 import shutil
@@ -155,7 +156,7 @@ async def test_valid_upload_download(
     mock_io_log_redirect_cb: LogRedirectCB,
 ):
     async with ProgressBarData(steps=2) as progress_bar:
-        await data_manager.push_directory(
+        await data_manager._push_directory(
             user_id=user_id,
             project_id=project_id,
             node_uuid=node_uuid,
@@ -171,7 +172,7 @@ async def test_valid_upload_download(
 
         _empty_path(content_path)
 
-        await data_manager.pull_directory(
+        await data_manager._pull_directory(
             user_id=user_id,
             project_id=project_id,
             node_uuid=node_uuid,
@@ -206,7 +207,7 @@ async def test_valid_upload_download_saved_to(
     mock_io_log_redirect_cb: LogRedirectCB,
 ):
     async with ProgressBarData(steps=2) as progress_bar:
-        await data_manager.push_directory(
+        await data_manager._push_directory(
             user_id=user_id,
             project_id=project_id,
             node_uuid=node_uuid,
@@ -226,7 +227,7 @@ async def test_valid_upload_download_saved_to(
 
         new_destination = random_tmp_dir_generator(is_file=content_path.is_file())
 
-        await data_manager.pull_directory(
+        await data_manager._pull_directory(
             user_id=user_id,
             project_id=project_id,
             node_uuid=node_uuid,
@@ -289,7 +290,7 @@ async def test_delete_legacy_archive(
         )
 
         assert (
-            await data_manager.state_metadata_entry_exists(
+            await data_manager._state_metadata_entry_exists(
                 user_id=user_id,
                 project_id=project_id,
                 node_uuid=node_uuid,
@@ -299,7 +300,7 @@ async def test_delete_legacy_archive(
             is True
         )
 
-        await data_manager.delete_legacy_archive(
+        await data_manager._delete_legacy_archive(
             user_id=user_id,
             project_id=project_id,
             node_uuid=node_uuid,
@@ -307,7 +308,7 @@ async def test_delete_legacy_archive(
         )
 
         assert (
-            await data_manager.state_metadata_entry_exists(
+            await data_manager._state_metadata_entry_exists(
                 user_id=user_id,
                 project_id=project_id,
                 node_uuid=node_uuid,

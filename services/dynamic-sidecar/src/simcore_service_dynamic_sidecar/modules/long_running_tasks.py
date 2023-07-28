@@ -6,7 +6,6 @@ from typing import Final
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import ProgressType
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
-from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from simcore_sdk.node_data import data_manager
@@ -235,46 +234,17 @@ async def task_restore_state(
     # until it is not removed.
 
     async def _restore_state_folder(state_path: Path) -> None:
-        state_archive_exists = await data_manager.state_metadata_entry_exists(
+        await data_manager.pull(
             user_id=settings.DY_SIDECAR_USER_ID,
             project_id=settings.DY_SIDECAR_PROJECT_ID,
             node_uuid=settings.DY_SIDECAR_NODE_ID,
-            path=state_path,
-            is_archive=True,
+            destination_path=state_path,
+            io_log_redirect_cb=functools.partial(
+                post_sidecar_log_message, app, log_level=logging.INFO
+            ),
+            r_clone_settings=settings.DY_SIDECAR_R_CLONE_SETTINGS,
+            progress_bar=root_progress,
         )
-        state_directory_exists = await data_manager.state_metadata_entry_exists(
-            user_id=settings.DY_SIDECAR_USER_ID,
-            project_id=settings.DY_SIDECAR_PROJECT_ID,
-            node_uuid=settings.DY_SIDECAR_NODE_ID,
-            path=state_path,
-            is_archive=False,
-        )
-        if state_archive_exists:
-            with log_context(_logger, logging.INFO, "restoring legacy data archive"):
-                await data_manager.pull_legacy_archive(
-                    user_id=settings.DY_SIDECAR_USER_ID,
-                    project_id=settings.DY_SIDECAR_PROJECT_ID,
-                    node_uuid=settings.DY_SIDECAR_NODE_ID,
-                    destination_path=state_path,
-                    io_log_redirect_cb=functools.partial(
-                        post_sidecar_log_message, app, log_level=logging.INFO
-                    ),
-                    progress_bar=root_progress,
-                )
-        elif state_directory_exists:
-            await data_manager.pull_directory(
-                user_id=settings.DY_SIDECAR_USER_ID,
-                project_id=settings.DY_SIDECAR_PROJECT_ID,
-                node_uuid=settings.DY_SIDECAR_NODE_ID,
-                destination_path=state_path,
-                io_log_redirect_cb=functools.partial(
-                    post_sidecar_log_message, app, log_level=logging.INFO
-                ),
-                r_clone_settings=settings.DY_SIDECAR_R_CLONE_SETTINGS,
-                progress_bar=root_progress,
-            )
-        else:
-            _logger.debug("No content previously saved for '%s'", state_path)
 
     progress.update(message="Downloading state", percent=0.05)
     state_paths = list(mounted_volumes.disk_state_paths_iter())
@@ -319,13 +289,11 @@ async def task_save_state(
     async def _push_and_remove_legacy_archive(
         state_path: Path, root_progress: ProgressBarData
     ) -> None:
-        await data_manager.push_directory(
+        await data_manager.push(
             user_id=settings.DY_SIDECAR_USER_ID,
             project_id=settings.DY_SIDECAR_PROJECT_ID,
             node_uuid=settings.DY_SIDECAR_NODE_ID,
             source_path=state_path,
-            # NOTE: interface was broken on purpose, next PR wil fix it
-            # and will cleanup how rclone is used
             r_clone_settings=settings.DY_SIDECAR_R_CLONE_SETTINGS,
             exclude_patterns=mounted_volumes.state_exclude,
             io_log_redirect_cb=functools.partial(
@@ -333,24 +301,6 @@ async def task_save_state(
             ),
             progress_bar=root_progress,
         )
-        archive_exists = await data_manager.state_metadata_entry_exists(
-            user_id=settings.DY_SIDECAR_USER_ID,
-            project_id=settings.DY_SIDECAR_PROJECT_ID,
-            node_uuid=settings.DY_SIDECAR_NODE_ID,
-            path=state_path,
-            is_archive=True,
-        )
-
-        if not archive_exists:
-            return
-
-        with log_context(_logger, logging.INFO, "removing legacy data archive"):
-            await data_manager.delete_legacy_archive(
-                user_id=settings.DY_SIDECAR_USER_ID,
-                project_id=settings.DY_SIDECAR_PROJECT_ID,
-                node_uuid=settings.DY_SIDECAR_NODE_ID,
-                path=state_path,
-            )
 
     progress.update(message="starting state save", percent=0.0)
     state_paths = list(mounted_volumes.disk_state_paths_iter())

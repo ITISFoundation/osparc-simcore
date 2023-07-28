@@ -1,7 +1,7 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
 # pylint:disable=protected-access
+# pylint:disable=redefined-outer-name
+# pylint:disable=unused-argument
+# pylint:disable=unused-variable
 
 from collections.abc import Callable, Iterator
 from filecmp import cmpfiles
@@ -92,7 +92,7 @@ async def test_push_folder(
     for file_path in test_folder.glob("**/*"):
         assert file_path.exists()
     async with ProgressBarData(steps=1) as progress_bar:
-        await data_manager.push_directory(
+        await data_manager._push_directory(
             user_id,
             project_id,
             node_uuid,
@@ -139,7 +139,7 @@ async def test_push_file(
 
     # test push file by file
     async with ProgressBarData(steps=1) as progress_bar:
-        await data_manager.push_directory(
+        await data_manager._push_directory(
             user_id,
             project_id,
             node_uuid,
@@ -213,7 +213,7 @@ async def test_pull_legacy_archive(
     )
 
     async with ProgressBarData(steps=1) as progress_bar:
-        await data_manager.pull_legacy_archive(
+        await data_manager._pull_legacy_archive(
             user_id,
             project_id,
             node_uuid,
@@ -267,7 +267,7 @@ async def test_pull_directory(
     mock_filemanager.download_path_from_s3.return_value = fake_download_folder
 
     async with ProgressBarData(steps=1) as progress_bar:
-        await data_manager.pull_directory(
+        await data_manager._pull_directory(
             user_id,
             project_id,
             node_uuid,

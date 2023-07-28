@@ -9,19 +9,17 @@ import json
 import logging
 import os
 from collections import namedtuple
-from itertools import tee
-from pathlib import Path
-from typing import (
-    Any,
+from collections.abc import (
     AsyncIterable,
     AsyncIterator,
     Awaitable,
     Callable,
     Coroutine,
     Iterable,
-    Optional,
-    cast,
 )
+from itertools import tee
+from pathlib import Path
+from typing import Any, Optional, cast
 from uuid import uuid4
 
 import aioboto3
@@ -56,7 +54,6 @@ from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.users import UserID
 from pydantic import AnyHttpUrl, parse_obj_as
-from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from servicelib.fastapi.long_running_tasks.client import (
     Client,
@@ -323,7 +320,7 @@ def dev_feature_r_clone_enabled(request) -> str:
 
 @pytest.fixture(scope="function")
 def mock_env(
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     redis_service: RedisSettings,
     network_name: str,
     dev_feature_r_clone_enabled: str,
@@ -631,7 +628,7 @@ async def _fetch_data_via_data_manager(
     save_to.mkdir(parents=True, exist_ok=True)
 
     assert (
-        await data_manager.state_metadata_entry_exists(
+        await data_manager._state_metadata_entry_exists(
             user_id=user_id,
             project_id=project_id,
             node_uuid=service_uuid,
@@ -642,7 +639,7 @@ async def _fetch_data_via_data_manager(
     )
 
     async with ProgressBarData(steps=1) as progress_bar:
-        await data_manager.pull_directory(
+        await data_manager._pull_directory(
             user_id=user_id,
             project_id=project_id,
             node_uuid=service_uuid,
