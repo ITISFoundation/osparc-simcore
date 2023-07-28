@@ -1176,7 +1176,7 @@ qx.Class.define("osparc.data.Resources", {
                 },
                 10: {
                   delete: false,
-                  write: false,
+                  write: true,
                   read: true
                 },
                 11: {
@@ -1187,34 +1187,6 @@ qx.Class.define("osparc.data.Resources", {
               },
               credits: {
                 left: 1000
-              },
-              active: true
-            }, {
-              id: 4,
-              name: "Yet another Wallet",
-              description: "Organization wide Wallet 3",
-              thumbnail: null,
-              type: "shared",
-              owner: 4,
-              accessRights: {
-                2: {
-                  delete: false,
-                  write: false,
-                  read: true
-                },
-                51: {
-                  delete: false,
-                  write: false,
-                  read: true
-                },
-                11: {
-                  delete: true,
-                  write: true,
-                  read: true
-                }
-              },
-              credits: {
-                left: 10000
               },
               active: true
             }]
