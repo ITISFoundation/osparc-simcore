@@ -9,7 +9,7 @@ import logging
 import os
 from collections.abc import Awaitable, Coroutine, Iterable
 from pathlib import Path
-from typing import Any
+from typing import Any, Generator
 
 import toolz
 from pydantic import NonNegativeInt
@@ -149,7 +149,7 @@ def ensure_ends_with(input_string: str, char: str) -> str:
 
 def partition_iter(
     input_list: Iterable, *, slice_size: NonNegativeInt
-) -> Iterable[tuple[Any, ...]]:
+) -> Generator[tuple[Any, ...], None, None]:
     """
     Given a list of elements and the slice_size yields lists containing
     slice_size elements in them.
