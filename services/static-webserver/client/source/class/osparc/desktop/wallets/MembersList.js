@@ -86,7 +86,11 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
       if (model === null) {
         return;
       }
+
       this.__currentModel = model;
+
+      this.__memberInvitation.setVisilibility(this.__canIWrite() ? "visible" : "excluded");
+
       this.__reloadWalletMembers();
     },
 
@@ -111,7 +115,8 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
     },
 
     __getMemberInvitation: function() {
-      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const vBox = this.__memberInvitation = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      vBox.exclude();
 
       const label = new qx.ui.basic.Label(this.tr("Select from the list below and click Share"));
       vBox.add(label);
