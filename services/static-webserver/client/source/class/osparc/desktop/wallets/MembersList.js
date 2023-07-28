@@ -89,7 +89,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
 
       this.__currentModel = model;
 
-      this.__memberInvitation.setVisilibility(this.__canIWrite() ? "visible" : "excluded");
+      this.__memberInvitation.setVisibility(this.__canIWrite() ? "visible" : "excluded");
 
       this.__reloadWalletMembers();
     },
@@ -104,7 +104,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
     },
 
     __createIntroText: function() {
-      const msg = this.tr("If you are an Accountant of an organization you can share a wallet with the entire organization. Also, if you have write access on a wallet you can add new members and promote or demote existing ones.");
+      const msg = this.tr("Only Accountants of an organization can share a wallet with the entire organization and members.");
       const intro = new qx.ui.basic.Label().set({
         value: msg,
         alignX: "left",
