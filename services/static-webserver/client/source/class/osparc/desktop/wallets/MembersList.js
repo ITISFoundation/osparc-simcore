@@ -92,8 +92,9 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
 
     __canIWrite: function() {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
-      if ("getAccessRights" in this.__currentModel && myGid in this.__currentModel.getAccessRights()) {
-        return this.__currentModel.getAccessRights()[myGid]["write"];
+      const wallet = this.__currentModel;
+      if (wallet && "getAccessRights" in wallet && myGid in wallet.getAccessRights()) {
+        return wallet.getAccessRights()[myGid]["write"];
       }
       return false;
     },
@@ -122,8 +123,8 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
       addMemberBtn.addListener("execute", () => {
         const collaboratorsManager = new osparc.component.share.NewCollaboratorsManager(this._serializedData);
         collaboratorsManager.addListener("addCollaborators", e => {
-          // const cb = () => collaboratorsManager.close();
-          console.log("addCollaborators", e.getData());
+          const cb = () => collaboratorsManager.close();
+          this.__addMembers(e.getData(), cb);
         }, this);
       }, this);
       vBox.add(addMemberBtn);
@@ -158,6 +159,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("id", "model", null, item, id);
           ctrl.bindProperty("id", "key", null, item, id);
+          ctrl.bindProperty("gid", "gid", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id);
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
@@ -192,109 +194,92 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
       const membersModel = this.__membersModel;
       membersModel.removeAll();
 
-      const walletModel = this.__currentModel;
-      if (walletModel === null) {
+      const wallet = this.__currentModel;
+      if (wallet === null) {
         return;
       }
 
-      const wallets = osparc.store.Store.getInstance().getWallets();
-      const found = wallets.find(wallet => wallet.getWalletId() === walletModel.getWalletId());
-      if (found) {
-        const accessRights = found.getAccessRights();
-        const membersList = [];
-        const potentialCollaborators = await osparc.store.Store.getInstance().getPotentialCollaborators();
-        Object.keys(accessRights).forEach(gid => {
-          if (Object.prototype.hasOwnProperty.call(potentialCollaborators, parseInt(gid))) {
-            const collab = potentialCollaborators[parseInt(gid)];
-            // Do not override collaborator object
-            const collaborator = osparc.utils.Utils.deepCloneObject(collab);
-            if ("first_name" in collaborator) {
-              collaborator["thumbnail"] = osparc.utils.Avatar.getUrl(collaborator["login"], 32);
-              collaborator["name"] = osparc.utils.Utils.firstsUp(collaborator["first_name"], collaborator["last_name"]);
-            }
-            collaborator["accessRights"] = accessRights[gid];
-            collaborator["showOptions"] = this.__canIWrite();
-            membersList.push(collaborator);
+      const accessRights = wallet.getAccessRights();
+      const membersList = [];
+      const potentialCollaborators = await osparc.store.Store.getInstance().getPotentialCollaborators();
+      Object.keys(accessRights).forEach(gid => {
+        if (Object.prototype.hasOwnProperty.call(potentialCollaborators, parseInt(gid))) {
+          const collab = potentialCollaborators[parseInt(gid)];
+          // Do not override collaborator object
+          const collaborator = osparc.utils.Utils.deepCloneObject(collab);
+          if ("first_name" in collaborator) {
+            collaborator["thumbnail"] = osparc.utils.Avatar.getUrl(collaborator["login"], 32);
+            collaborator["name"] = osparc.utils.Utils.firstsUp(collaborator["first_name"], collaborator["last_name"]);
           }
-        });
-        membersList.sort(this.self().sortWalletMembers);
-        membersList.forEach(member => membersModel.append(qx.data.marshal.Json.createModel(member)));
+          collaborator["accessRights"] = accessRights[gid];
+          collaborator["showOptions"] = this.__canIWrite();
+          membersList.push(collaborator);
+        }
+      });
+      membersList.sort(this.self().sortWalletMembers);
+      membersList.forEach(member => membersModel.append(qx.data.marshal.Json.createModel(member)));
+    },
+
+    __addMembers: function(gids, cb) {
+      if (gids.length === 0) {
+        return;
+      }
+      const wallet = this.__currentModel;
+      if (wallet === null) {
+        return;
+      }
+
+      const newAccessRights = osparc.utils.Utils.deepCloneObject(wallet.getAccessRights());
+      gids.forEach(gid => {
+        newAccessRights[gid] = this.self().getReadAccess();
+      });
+      wallet.setAccessRights(newAccessRights);
+      this.__reloadWalletMembers();
+      if (cb) {
+        cb();
       }
     },
 
     __promoteToAccountant: function(walletMember) {
-      if (this.__currentModel === null) {
+      const wallet = this.__currentModel;
+      if (wallet === null) {
         return;
       }
 
-      const params = {
-        url: {
-          "gid": this.__currentModel.getGid(),
-          "uid": walletMember["id"]
-        },
-        data: {
-          "accessRights": this.self().getWriteAccess()
-        }
-      };
-      osparc.data.Resources.fetch("organizationMembers", "patch", params)
-        .then(() => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(walletMember["name"] + this.tr(" successfully promoted to Manager"));
-          osparc.store.Store.getInstance().reset("organizationMembers");
-          this.__reloadWalletMembers();
-        })
-        .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong promoting ") + walletMember["name"], "ERROR");
-          console.error(err);
-        });
+      const newAccessRights = osparc.utils.Utils.deepCloneObject(wallet.getAccessRights());
+      if (walletMember["gid"] in newAccessRights) {
+        newAccessRights[walletMember["gid"]] = this.self().getWriteAccess();
+        wallet.setAccessRights(newAccessRights);
+        this.__reloadWalletMembers();
+      }
     },
 
-    __demoteToMember: function(orgMember) {
-      if (this.__currentModel === null) {
+    __demoteToMember: function(walletMember) {
+      const wallet = this.__currentModel;
+      if (wallet === null) {
         return;
       }
 
-      const params = {
-        url: {
-          "gid": this.__currentModel.getGid(),
-          "uid": orgMember["id"]
-        },
-        data: {
-          "accessRights": this.self().getReadAccess()
-        }
-      };
-      osparc.data.Resources.fetch("organizationMembers", "patch", params)
-        .then(() => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(orgMember["name"] + this.tr(" successfully demoted to Member"));
-          osparc.store.Store.getInstance().reset("organizationMembers");
-          this.__reloadWalletMembers();
-        })
-        .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong demoting ") + orgMember["name"], "ERROR");
-          console.error(err);
-        });
+      const newAccessRights = osparc.utils.Utils.deepCloneObject(wallet.getAccessRights());
+      if (walletMember["gid"] in newAccessRights) {
+        newAccessRights[walletMember["gid"]] = this.self().getReadAccess();
+        wallet.setAccessRights(newAccessRights);
+        this.__reloadWalletMembers();
+      }
     },
 
-    __deleteMember: function(orgMember) {
-      if (this.__currentModel === null) {
+    __deleteMember: function(walletMember) {
+      const wallet = this.__currentModel;
+      if (wallet === null) {
         return;
       }
 
-      const params = {
-        url: {
-          "gid": this.__currentModel.getGid(),
-          "uid": orgMember["id"]
-        }
-      };
-      osparc.data.Resources.fetch("organizationMembers", "delete", params)
-        .then(() => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(orgMember["name"] + this.tr(" successfully removed"));
-          osparc.store.Store.getInstance().reset("organizationMembers");
-          this.__reloadWalletMembers();
-        })
-        .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing ") + orgMember["name"], "ERROR");
-          console.error(err);
-        });
+      const newAccessRights = osparc.utils.Utils.deepCloneObject(wallet.getAccessRights());
+      if (walletMember["gid"] in newAccessRights) {
+        delete newAccessRights[walletMember["gid"]];
+        wallet.setAccessRights(newAccessRights);
+        this.__reloadWalletMembers();
+      }
     }
   }
 });
