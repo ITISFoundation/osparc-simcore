@@ -2831,7 +2831,7 @@ class Type5(str, Enum):
     network = "network"
     node = "node"
     plugin = "plugin"
-    secret = "secret"
+    secret = "secret"  # nosec
     service = "service"
     volume = "volume"
 
