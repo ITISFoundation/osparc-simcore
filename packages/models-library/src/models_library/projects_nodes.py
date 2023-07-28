@@ -3,6 +3,7 @@
 """
 
 import re
+from copy import deepcopy
 from typing import Any, ClassVar, TypeAlias, Union
 
 from pydantic import (
@@ -231,3 +232,13 @@ class Node(BaseModel):
 
     class Config:
         extra = Extra.forbid
+        # NOTE: exporting without this trick does not make runHash as nullable.
+        # It is a Pydantic issue see https://github.com/samuelcolvin/pydantic/issues/1270
+        @staticmethod
+        def schema_extra(schema, _model: "Node"):
+            # NOTE: the variant with anyOf[{type: null}, { other }] is compatible with OpenAPI
+            # The other as type = [null, other] is only jsonschema compatible
+            for prop_name in ["parent", "runHash"]:
+                if prop_name in schema.get("properties", {}):
+                    was = deepcopy(schema["properties"][prop_name])
+                    schema["properties"][prop_name] = {"anyOf": [{"type": "null"}, was]}
