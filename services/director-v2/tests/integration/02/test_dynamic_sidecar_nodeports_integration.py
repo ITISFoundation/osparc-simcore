@@ -243,7 +243,7 @@ def services_node_uuids(
             ):
                 return node_uuid
 
-        assert False, f"No node_uuid found for {key}:{version}"
+        pytest.fail(f"No node_uuid found for {key}:{version}")
 
     return ServicesNodeUUIDs(
         sleeper=_get_node_uuid(sleeper_service),
@@ -298,8 +298,7 @@ async def db_manager(aiopg_engine: aiopg.sa.engine.Engine) -> DBManager:
 
 
 def _is_docker_r_clone_plugin_installed() -> bool:
-    is_plugin_installed = "rclone:" in run_command("docker plugin ls")
-    return is_plugin_installed
+    return "rclone:" in run_command("docker plugin ls")
 
 
 @pytest.fixture(
@@ -318,7 +317,7 @@ def dev_feature_r_clone_enabled(request) -> str:
     return request.param
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def mock_env(
     monkeypatch: pytest.MonkeyPatch,
     redis_service: RedisSettings,
