@@ -151,6 +151,9 @@ qx.Class.define("osparc.desktop.MainPage", {
       this.__dashboard.getStudyBrowser().reloadResources();
       this.__dashboard.getStudyBrowser().resetSelection();
       dashboardBtn.setFetching(false);
+
+      const store = osparc.store.Store.getInstance();
+      store.setCurrentWallet(null);
     },
 
     closeEditor: function() {

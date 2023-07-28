@@ -335,8 +335,14 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
     },
 
     __buildRightColumn: function() {
+      const store = osparc.store.Store.getInstance();
+
       const openButton = this.getChildControl("open-button");
-      openButton.addListener("execute", () => this.fireEvent("startStudy"));
+      openButton.addListener("execute", () => {
+        this.fireEvent("startStudy");
+
+        store.setCurrentWallet(this.getWallet());
+      });
 
       const cancelButton = this.getChildControl("cancel-button");
       cancelButton.addListener("execute", () => this.fireEvent("cancel"));
@@ -352,7 +358,6 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
 
       walletSelector.addListener("changeSelection", e => {
         const selection = e.getData();
-        const store = osparc.store.Store.getInstance();
         const found = store.getWallets().find(wallet => wallet.getWalletId() === parseInt(selection[0].walletId));
         if (found) {
           this.setWallet(found);

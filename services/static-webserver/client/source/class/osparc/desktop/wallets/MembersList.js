@@ -82,7 +82,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
     __memberInvitation: null,
     __membersModel: null,
 
-    setCurrentWallet: function(model) {
+    setWallet: function(model) {
       if (model === null) {
         return;
       }

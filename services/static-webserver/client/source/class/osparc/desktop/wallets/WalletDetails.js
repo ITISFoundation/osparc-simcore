@@ -59,7 +59,7 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
 
       walletListItem.addListener("buyCredits", e => this.fireDataEvent("buyCredits", e.getData()));
 
-      this.__membersList.setCurrentWallet(walletModel);
+      this.__membersList.setWallet(walletModel);
     },
 
     __getTitleLayout: function() {
