@@ -4,8 +4,7 @@
 
 import inspect
 
-import pytest
-from servicelib.functools_utils import called_successfully_once, copy_func
+from servicelib.functools_utils import copy_func
 
 
 def test_copy_functions():
@@ -33,18 +32,3 @@ def test_copy_functions():
     assert callable(copied_func)
     assert original_func(1, True, z=33) == copied_func(1, True, z=33)
     assert original_func.cache == copied_func.cache
-
-
-def test_called_once():
-    @called_successfully_once
-    def init_something_once(v):
-        if isinstance(v, Exception):
-            raise v
-        return v
-
-    with pytest.raises(RuntimeError):
-        init_something_once(RuntimeError())
-
-    assert init_something_once(1) == 1
-    assert init_something_once(1) is None
-    assert init_something_once(2) is None
