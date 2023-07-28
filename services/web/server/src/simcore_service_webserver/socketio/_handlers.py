@@ -16,7 +16,7 @@ from socketio.exceptions import ConnectionRefusedError as SocketIOConnectionErro
 
 from ..groups.api import list_user_groups
 from ..login.decorators import login_required
-from ..resource_manager.websocket_manager import managed_resource
+from ..resource_manager.user_sessions import managed_resource
 from ._utils import EnvironDict, SocketID, get_socket_server, register_socketio_handler
 from .messages import SOCKET_IO_HEARTBEAT_EVENT, SocketMessageDict, send_messages
 
@@ -158,10 +158,8 @@ async def disconnect(socket_id: SocketID, app: web.Application) -> None:
                 f"{user_id=}",
                 f"{client_session_id=}",
             ):
-                with managed_resource(
-                    user_id, client_session_id, app
-                ) as resource_registry:
-                    await resource_registry.remove_socket_id()
+                with managed_resource(user_id, client_session_id, app) as user_session:
+                    await user_session.remove_socket_id()
                 # signal same user other clients if available
                 await emit(
                     app, "SIGNAL_USER_DISCONNECTED", user_id, client_session_id, app

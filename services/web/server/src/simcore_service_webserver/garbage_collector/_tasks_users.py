@@ -5,7 +5,7 @@
 
 import asyncio
 import logging
-from typing import AsyncIterator, Callable
+from collections.abc import AsyncIterator, Callable
 
 from aiohttp import web
 from aiopg.sa.engine import Engine
@@ -15,16 +15,15 @@ from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.wait import wait_exponential
 
-from ._constants import APP_DB_ENGINE_KEY
-from .login.utils import notify_user_logout
-from .security.api import clean_auth_policy_cache
-from .users.api import update_expired_users
+from .._constants import APP_DB_ENGINE_KEY
+from ..login.utils import notify_user_logout
+from ..security.api import clean_auth_policy_cache
+from ..users.api import update_expired_users
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 CleanupContextFunc = Callable[[web.Application], AsyncIterator[None]]
 
-_SEC = 1
 
 _PERIODIC_TASK_NAME = f"{__name__}.update_expired_users_periodically"
 _APP_TASK_KEY = f"{_PERIODIC_TASK_NAME}.task"
@@ -35,7 +34,7 @@ async def notify_user_logout_all_sessions(
 ) -> None:
     #  NOTE kept here for convenience
     with log_context(
-        logger,
+        _logger,
         logging.INFO,
         "Forcing logout of %s from all sessions",
         f"{user_id=}",
@@ -44,7 +43,7 @@ async def notify_user_logout_all_sessions(
         try:
             await notify_user_logout(app, user_id, client_session_id=None)
         except Exception:  # pylint: disable=broad-except
-            logger.warning(
+            _logger.warning(
                 "Ignored error while notifying logout for %s",
                 f"{user_id=}",
                 exc_info=True,
@@ -53,8 +52,8 @@ async def notify_user_logout_all_sessions(
 
 
 @retry(
-    wait=wait_exponential(min=5 * _SEC, max=20 * _SEC),
-    before_sleep=before_sleep_log(logger, logging.WARNING),
+    wait=wait_exponential(min=5, max=20),
+    before_sleep=before_sleep_log(_logger, logging.WARNING),
     # NOTE: this function does suppresses all exceptions and retry indefinitly
 )
 async def _update_expired_users(app: web.Application):
@@ -71,7 +70,7 @@ async def _update_expired_users(app: web.Application):
 
         # broadcast force logout of user_id
         for user_id in updated:
-            logger.info(
+            _logger.info(
                 "User account with %s expired",
                 f"{user_id=}",
                 extra=get_log_record_extra(user_id=user_id),
@@ -81,10 +80,9 @@ async def _update_expired_users(app: web.Application):
             # We need a mechanism to send messages from GC to the webservers
             # OR a way to notify from the database changes back to the web-servers (similar to compuational services)
             # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3387
-            # await notify_user_logout_all_sessions(app, user_id)
 
     else:
-        logger.info("No users expired")
+        _logger.info("No users expired")
 
 
 async def _update_expired_users_periodically(
@@ -103,7 +101,6 @@ def create_background_task_for_trial_accounts(
     async def _cleanup_ctx_fun(
         app: web.Application,
     ) -> AsyncIterator[None]:
-
         # setup
         task = asyncio.create_task(
             _update_expired_users_periodically(app, wait_s),

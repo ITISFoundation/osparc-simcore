@@ -1,5 +1,6 @@
 import datetime
 from asyncio.log import logger
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Final
 
@@ -31,19 +32,13 @@ async def lock_project(
     status: ProjectStatus,
     user_id: int,
     user_name: UserNameDict,
-):
-    """returns a distributed redis lock on the project defined by its UUID.
-    NOTE: can be used as a context manager
+) -> AsyncIterator[None]:
+    """Context manager to lock and unlock a project by user_id
 
-    try:
-        async with lock_project(app, project_uuid, ProjectStatus.CLOSING, user_id, user_name):
-            close_project(project_uuid) # do something with the project that requires the project to be locked
-
-
-    except ProjectLockError:
-        pass # the lock could not be acquired
-
+    Raises:
+        ProjectLockError: if project is already locked
     """
+
     redis_lock = get_redis_lock_manager_client(app).lock(
         PROJECT_REDIS_LOCK_KEY.format(project_uuid),
         timeout=PROJECT_LOCK_TIMEOUT.total_seconds(),
@@ -57,9 +52,9 @@ async def lock_project(
                 status=status,
             ).json(),
         ):
-            raise ProjectLockError(
-                f"Lock for project {project_uuid!r} user {user_id!r} could not be acquired"
-            )
+            msg = f"Lock for project {project_uuid!r} user {user_id!r} could not be acquired"
+            raise ProjectLockError(msg)
+
         async with periodic_task(
             _auto_extend_project_lock,
             interval=0.6 * PROJECT_LOCK_TIMEOUT,
@@ -67,6 +62,7 @@ async def lock_project(
             project_lock=redis_lock,
         ):
             yield
+
     finally:
         # let's ensure we release that stuff
         try:
@@ -92,7 +88,10 @@ async def is_project_locked(
 async def get_project_locked_state(
     app: web.Application, project_uuid: str | ProjectID
 ) -> ProjectLocked | None:
-    """returns the ProjectLocked object if the project is locked"""
+    """
+    Returns:
+        ProjectLocked object if the project project_uuid is locked or None otherwise
+    """
     if await is_project_locked(app, project_uuid):
         redis_locks_client = get_redis_lock_manager_client(app)
 

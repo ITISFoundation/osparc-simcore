@@ -31,7 +31,7 @@ from .catalog.settings import CatalogSettings
 from .diagnostics.settings import DiagnosticsSettings
 from .director_v2.settings import DirectorV2Settings
 from .exporter.settings import ExporterSettings
-from .garbage_collector_settings import GarbageCollectorSettings
+from .garbage_collector.settings import GarbageCollectorSettings
 from .invitations.settings import InvitationsSettings
 from .login.settings import LoginSettings
 from .projects.settings import ProjectsSettings
