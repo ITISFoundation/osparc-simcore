@@ -3,27 +3,24 @@ import logging
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from .garbage_collector_settings import get_plugin_settings
-from .garbage_collector_task import run_background_task
-from .garbage_collector_tasks_api_keys import create_background_task_to_prune_api_keys
-from .garbage_collector_tasks_users import create_background_task_for_trial_accounts
-from .login.plugin import setup_login_storage
-from .projects.db import setup_projects_db
-from .socketio.plugin import setup_socketio
+from ..login.plugin import setup_login_storage
+from ..projects.db import setup_projects_db
+from ..socketio.plugin import setup_socketio
+from ._tasks_api_keys import create_background_task_to_prune_api_keys
+from ._tasks_core import run_background_task
+from ._tasks_users import create_background_task_for_trial_accounts
+from .settings import get_plugin_settings
 
 logger = logging.getLogger(__name__)
 
 
 @app_module_setup(
-    __name__,
+    "simcore_service_webserver.garbage_collector",
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_GARBAGE_COLLECTOR",
     logger=logger,
 )
 def setup_garbage_collector(app: web.Application) -> None:
-    # TODO: review these partial inits! project-api is code smell!!
-
-    # needs a partial init of projects plugin since this plugin uses projects-api
     # - project-api needs access to db
     setup_projects_db(app)
     # - project needs access to socketio via notify_project_state_update

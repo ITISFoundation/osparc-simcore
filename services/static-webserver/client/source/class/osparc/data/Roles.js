@@ -85,12 +85,35 @@ qx.Class.define("osparc.data.Roles", {
       }
     },
 
+    WALLET: {
+      1: {
+        id: "read",
+        label: qx.locale.Manager.tr("User"),
+        longLabel: qx.locale.Manager.tr("User: Read access"),
+        canDo: [
+          qx.locale.Manager.tr("- can use the credits")
+        ]
+      },
+      2: {
+        id: "write",
+        label: qx.locale.Manager.tr("Accountant"),
+        longLabel: qx.locale.Manager.tr("Accountant: Read/Write access"),
+        canDo: [
+          qx.locale.Manager.tr("- can Add/Delete members"),
+          qx.locale.Manager.tr("- can Edit Wallet details")
+        ]
+      }
+    },
+
     __createIntoFromRoles: function(roles) {
-      const rolesLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
-        alignX: "right"
-      })).set({
+      const rolesLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
+        alignY: "middle",
         paddingRight: 10
       });
+      rolesLayout.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+
       const rolesText = new qx.ui.basic.Label(qx.locale.Manager.tr("Roles")).set({
         font: "text-13"
       });
@@ -113,6 +136,10 @@ qx.Class.define("osparc.data.Roles", {
 
     createRolesOrgInfo: function() {
       return this.__createIntoFromRoles(osparc.data.Roles.ORG);
+    },
+
+    createRolesWalleltInfo: function() {
+      return this.__createIntoFromRoles(osparc.data.Roles.WALLET);
     },
 
     createRolesResourceInfo: function() {

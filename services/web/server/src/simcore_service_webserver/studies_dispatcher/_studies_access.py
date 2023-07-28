@@ -29,7 +29,7 @@ from servicelib.error_codes import create_error_code
 
 from .._constants import INDEX_RESOURCE_NAME
 from ..director_v2._core_computations import create_or_update_pipeline
-from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
+from ..garbage_collector.settings import GUEST_USER_RC_LOCK_FORMAT
 from ..products.plugin import get_current_product, get_product_name
 from ..projects.db import ANY_USER, ProjectDBAPI
 from ..projects.exceptions import ProjectInvalidRightsError, ProjectNotFoundError

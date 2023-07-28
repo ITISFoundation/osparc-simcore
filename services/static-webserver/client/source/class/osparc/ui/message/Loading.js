@@ -212,16 +212,16 @@ qx.Class.define("osparc.ui.message.Loading", {
 
     __createMaximizeButton: function(showMaximizeButton) {
       const maximize = false;
-      const maxButton = this.__maxButton = new qx.ui.form.Button(null).set({
+      const maxButton = this.__maxButton = osparc.component.widget.PersistentIframe.createToolbarButton(maximize).set({
+        label: osparc.component.widget.PersistentIframe.getZoomLabel(maximize),
         icon: osparc.component.widget.PersistentIframe.getZoomIcon(maximize),
-        visibility: showMaximizeButton ? "visible" : "excluded",
-        decorator: null
+        visibility: showMaximizeButton ? "visible" : "excluded"
       });
       osparc.utils.Utils.setIdToWidget(maxButton, osparc.component.widget.PersistentIframe.getMaximizeWidgetId(maximize));
       maxButton.addListener("execute", () => this.maximizeIFrame(!this.hasState("maximized")), this);
 
       const maximizeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
-        maxWidth: 40
+        maxWidth: 100
       });
       maximizeLayout.add(maxButton);
       maximizeLayout.add(new qx.ui.core.Widget(), {
@@ -283,7 +283,10 @@ qx.Class.define("osparc.ui.message.Loading", {
         this.removeState("maximized");
       }
       const maxButton = this.__maxButton;
-      maxButton.setIcon(osparc.component.widget.PersistentIframe.getZoomIcon(maximize));
+      maxButton.set({
+        label: osparc.component.widget.PersistentIframe.getZoomLabel(maximize),
+        icon: osparc.component.widget.PersistentIframe.getZoomIcon(maximize)
+      });
       osparc.utils.Utils.setIdToWidget(maxButton, osparc.component.widget.PersistentIframe.getMaximizeWidgetId(maximize));
       qx.event.message.Bus.getInstance().dispatchByName("maximizeIframe", this.hasState("maximized"));
     }

@@ -43,9 +43,7 @@ qx.Class.define("osparc.component.share.Collaborators", {
   },
 
   statics: {
-    sortByAccessRights: function(a, b) {
-      const aAccessRights = a["accessRights"];
-      const bAccessRights = b["accessRights"];
+    sortByAccessRights: function(aAccessRights, bAccessRights) {
       if (aAccessRights["delete"] !== bAccessRights["delete"]) {
         return bAccessRights["delete"] - aAccessRights["delete"];
       }
@@ -64,7 +62,7 @@ qx.Class.define("osparc.component.share.Collaborators", {
       let sorted = null;
       if ("delete" in aAccessRights) {
         // studies
-        sorted = this.self().sortByAccessRights(a, b);
+        sorted = this.self().sortByAccessRights(aAccessRights, bAccessRights);
       } else if ("write_access" in aAccessRights) {
         // services
         if (aAccessRights["write_access"] !== bAccessRights["write_access"]) {
@@ -164,20 +162,24 @@ qx.Class.define("osparc.component.share.Collaborators", {
           control = this.__createAddCollaboratorSection();
           this._add(control);
           break;
-        case "collaborators-list":
-          control = this.__createCollaboratorsListSection();
-          this._add(control, {
-            flex: 1
-          });
-          break;
         case "open-organizations-btn":
           control = new qx.ui.form.Button(this.tr("Organizations...")).set({
             allowGrowY: false,
             allowGrowX: false,
             icon: osparc.dashboard.CardBase.SHARED_ORGS
           });
-          osparc.desktop.organizations.OrganizationsWindow.evaluateOrganizationsButton(control);
+          if (this._canIWrite()) {
+            osparc.desktop.organizations.OrganizationsWindow.evaluateOrganizationsButton(control);
+          } else {
+            control.exclude();
+          }
           control.addListener("execute", () => osparc.desktop.organizations.OrganizationsWindow.openWindow(), this);
+          this._add(control, {
+            flex: 1
+          });
+          break;
+        case "collaborators-list":
+          control = this.__createCollaboratorsListSection();
           this._add(control, {
             flex: 1
           });
@@ -208,7 +210,13 @@ qx.Class.define("osparc.component.share.Collaborators", {
 
     __createAddCollaboratorSection: function() {
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-      vBox.setVisibility(this._canIWrite() ? "visible" : "excluded");
+      if (osparc.utils.Resources.isService(this._serializedData)) {
+        // service
+        vBox.setVisibility(this._canIWrite() ? "visible" : "excluded");
+      } else {
+        // study or template
+        vBox.setVisibility(this._canIDelete() ? "visible" : "excluded");
+      }
 
       const label = new qx.ui.basic.Label(this.tr("Select from the list below and click Share"));
       vBox.add(label);
@@ -236,6 +244,10 @@ qx.Class.define("osparc.component.share.Collaborators", {
       vBox.add(label);
 
       const rolesLayout = osparc.data.Roles.createRolesResourceInfo();
+      const leaveButton = this.__getLeaveStudyButton();
+      if (leaveButton) {
+        rolesLayout.addAt(leaveButton, 0);
+      }
       vBox.add(rolesLayout);
 
       const collaboratorsUIList = new qx.ui.form.List().set({
@@ -304,6 +316,38 @@ qx.Class.define("osparc.component.share.Collaborators", {
         });
     },
 
+    __getLeaveStudyButton: function() {
+      if (osparc.utils.Resources.isStudy(this._serializedData)) {
+        const myGid = osparc.auth.Data.getInstance().getGroupId();
+        const leaveButton = new qx.ui.form.Button(this.tr("Leave") + " " + osparc.product.Utils.getStudyAlias({
+          firstUpperCase: true
+        })).set({
+          allowGrowX: false,
+          visibility: Object.keys(this._serializedData["accessRights"]).includes(myGid.toString()) ? "visible" : "excluded"
+        });
+        leaveButton.addListener("execute", () => {
+          let msg = this._serializedData["name"] + " " + this.tr("will no longer be listed.");
+          if (!osparc.component.share.CollaboratorsStudy.checkRemoveCollaborator(this._serializedData, myGid)) {
+            msg += "<br>";
+            msg += this.tr("If you remove yourself, there won't be any other Owners.");
+          }
+          const win = new osparc.ui.window.Confirmation(msg).set({
+            confirmText: this.tr("Leave"),
+            confirmAction: "delete"
+          });
+          win.open();
+          win.addListener("close", () => {
+            if (win.getConfirmed()) {
+              this._deleteMember({gid: myGid});
+              qx.event.message.Bus.dispatchByName("reloadStudies");
+            }
+          }, this);
+        }, this);
+        return leaveButton;
+      }
+      return null;
+    },
+
     _reloadCollaboratorsList: function() {
       this.__collaboratorsModel.removeAll();
 
@@ -319,12 +363,16 @@ qx.Class.define("osparc.component.share.Collaborators", {
             collaborator["name"] = osparc.utils.Utils.firstsUp(collaborator["first_name"], collaborator["last_name"]);
           }
           collaborator["accessRights"] = aceessRights[gid];
-          collaborator["showOptions"] = this._canIWrite();
+          collaborator["showOptions"] = osparc.utils.Resources.isService(this._serializedData) ? this._canIWrite() : this._canIDelete();
           collaboratorsList.push(collaborator);
         }
       });
       collaboratorsList.sort(this.self().sortStudyOrServiceCollabs);
       collaboratorsList.forEach(c => this.__collaboratorsModel.append(qx.data.marshal.Json.createModel(c)));
+    },
+
+    _canIDelete: function() {
+      throw new Error("Abstract method called!");
     },
 
     _canIWrite: function() {

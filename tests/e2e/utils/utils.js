@@ -142,7 +142,7 @@ function parseCommandLineArgumentsStudyDispatcherParams(args) {
   // [url] [download_link] [file_size] [--demo]
 
   if (args.length < 4) {
-    console.log('More arguments expected: [url] [download_link] [file_size] [start_timeout] [--demo]');
+    console.log('More arguments expected: [url] [download_link] [file_size] [--start_timeout timeout] [--demo]');
     process.exit(1);
   }
 

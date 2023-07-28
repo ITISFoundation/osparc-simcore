@@ -43,13 +43,13 @@ from .._meta import api_version_prefix as VTAG
 from ..catalog.client import get_services_for_user_in_product
 from ..director_v2 import api
 from ..login.decorators import login_required
-from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
+from ..resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
 from ..security.api import check_permission
 from ..security.decorators import permission_required
 from ..users.api import get_user_name
-from . import _crud_create_utils, _crud_read_utils, projects_api
+from . import _crud_api_create, _crud_api_read, projects_api
 from ._common_models import ProjectPathParams, RequestContext
-from ._crud_read_utils import OrderDirection, ProjectListFilters, ProjectOrderBy
+from ._crud_api_read import OrderDirection, ProjectListFilters, ProjectOrderBy
 from ._permalink_api import update_or_pop_permalink_in_project
 from .db import ProjectDBAPI
 from .exceptions import (
@@ -140,7 +140,7 @@ async def create_project(request: web.Request):
 
     return await start_long_running_task(
         request,
-        _crud_create_utils.create_project,
+        _crud_api_create.create_project,
         fire_and_forget=True,
         task_context=jsonable_encoder(req_ctx),
         # arguments
@@ -252,7 +252,7 @@ async def list_projects(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
     query_params = parse_request_query_parameters_as(_ProjectListParams, request)
 
-    projects, total_number_of_projects = await _crud_read_utils.list_projects(
+    projects, total_number_of_projects = await _crud_api_read.list_projects(
         request,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
@@ -460,29 +460,28 @@ async def replace_project(request: web.Request):
 
         if await api.is_pipeline_running(
             request.app, req_ctx.user_id, path_params.project_id
-        ):
-            if any_node_inputs_changed(new_project, current_project):
-                # NOTE:  This is a conservative measure that we take
-                #  until nodeports logic is re-designed to tackle with this
-                #  particular state.
-                #
-                # This measure avoid having a state with different node *links* in the
-                # comp-tasks table and the project's workbench column.
-                # The limitation is that nodeports only "sees" those in the comptask
-                # and this table does not add the new ones since it remains "blocked"
-                # for modification from that project while the pipeline runs. Therefore
-                # any extra link created while the pipeline is running can not
-                # be managed by nodeports because it basically "cannot see it"
-                #
-                # Responds https://httpstatuses.com/409:
-                #  The request could not be completed due to a conflict with the current
-                #  state of the target resource (i.e. pipeline is running). This code is used in
-                #  situations where the user might be able to resolve the conflict
-                #  and resubmit the request  (front-end will show a pop-up with message below)
-                #
-                raise web.HTTPConflict(
-                    reason=f"Project {path_params.project_id} cannot be modified while pipeline is still running."
-                )
+        ) and any_node_inputs_changed(new_project, current_project):
+            # NOTE:  This is a conservative measure that we take
+            #  until nodeports logic is re-designed to tackle with this
+            #  particular state.
+            #
+            # This measure avoid having a state with different node *links* in the
+            # comp-tasks table and the project's workbench column.
+            # The limitation is that nodeports only "sees" those in the comptask
+            # and this table does not add the new ones since it remains "blocked"
+            # for modification from that project while the pipeline runs. Therefore
+            # any extra link created while the pipeline is running can not
+            # be managed by nodeports because it basically "cannot see it"
+            #
+            # Responds https://httpstatuses.com/409:
+            #  The request could not be completed due to a conflict with the current
+            #  state of the target resource (i.e. pipeline is running). This code is used in
+            #  situations where the user might be able to resolve the conflict
+            #  and resubmit the request  (front-end will show a pop-up with message below)
+            #
+            raise web.HTTPConflict(
+                reason=f"Project {path_params.project_id} cannot be modified while pipeline is still running."
+            )
 
         new_project = await db.replace_project(
             new_project,
@@ -582,11 +581,11 @@ async def delete_project(request: web.Request):
             user_id=req_ctx.user_id,
         )
         project_users: set[int] = set()
-        with managed_resource(req_ctx.user_id, None, request.app) as rt:
+        with managed_resource(req_ctx.user_id, None, request.app) as user_session:
             project_users = {
-                user_session.user_id
-                for user_session in await rt.find_users_of_resource(
-                    PROJECT_ID_KEY, f"{path_params.project_id}"
+                s.user_id
+                for s in await user_session.find_users_of_resource(
+                    request.app, PROJECT_ID_KEY, f"{path_params.project_id}"
                 )
             }
         # that project is still in use

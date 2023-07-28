@@ -8,9 +8,10 @@ import asyncio
 import json
 import logging
 from asyncio import Future
+from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncIterator, Awaitable, Callable
+from typing import Any
 from unittest import mock
 from unittest.mock import call
 
@@ -31,11 +32,11 @@ from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.application_setup import is_setup_completed
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver import garbage_collector_core
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db.plugin import setup_db
 from simcore_service_webserver.director_v2.plugin import setup_director_v2
+from simcore_service_webserver.garbage_collector import _core as gc_core
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.notifications.plugin import setup_notifications
 from simcore_service_webserver.products.plugin import setup_products
@@ -49,7 +50,7 @@ from simcore_service_webserver.rabbitmq import setup_rabbitmq
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.resource_manager.registry import (
     RedisResourceRegistry,
-    RegistryKeyPrefixDict,
+    UserSessionDict,
     get_registry,
 )
 from simcore_service_webserver.rest.plugin import setup_rest
@@ -160,7 +161,7 @@ def client(
     assert is_setup_completed("simcore_service_webserver.resource_manager", app)
 
     # NOTE: garbage_collector is disabled and instead explicitly called using
-    # garbage_collector_core.collect_garbage
+    # garbage_collectorgc_core.collect_garbage
     assert not is_setup_completed("simcore_service_webserver.garbage_collector", app)
 
     return event_loop.run_until_complete(
@@ -174,7 +175,7 @@ def client(
 @pytest.fixture
 def mock_storage_delete_data_folders(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
-        "simcore_service_webserver.projects._crud_delete_utils.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._crud_api_delete.delete_data_folders_of_project",
         return_value=None,
     )
 
@@ -182,8 +183,7 @@ def mock_storage_delete_data_folders(mocker: MockerFixture) -> mock.Mock:
 @pytest.fixture()
 def socket_registry(client: TestClient) -> RedisResourceRegistry:
     app = client.server.app  # type: ignore
-    socket_registry = get_registry(app)
-    return socket_registry
+    return get_registry(app)
 
 
 @pytest.fixture
@@ -281,7 +281,7 @@ async def test_websocket_resource_management(
     cur_client_session_id = client_session_id_factory()
     sio = await socketio_client_factory(cur_client_session_id)
     sid = sio.get_sid()
-    resource_key = RegistryKeyPrefixDict(
+    resource_key = UserSessionDict(
         user_id=f"{logged_user['id']}", client_session_id=cur_client_session_id
     )
 
@@ -324,14 +324,14 @@ async def test_websocket_multiple_connections(
     client_session_id_factory: Callable[[], str],
 ):
     NUMBER_OF_SOCKETS = 5
-    resource_keys: list[RegistryKeyPrefixDict] = []
+    resource_keys: list[UserSessionDict] = []
 
     # connect multiple clients
     clients = []
     for socket_count in range(1, NUMBER_OF_SOCKETS + 1):
         cur_client_session_id = client_session_id_factory()
         sio = await socketio_client_factory(cur_client_session_id)
-        resource_key = RegistryKeyPrefixDict(
+        resource_key = UserSessionDict(
             user_id=f"{logged_user['id']}", client_session_id=cur_client_session_id
         )
         assert await socket_registry.find_keys(("socket_id", sio.get_sid())) == [
@@ -367,12 +367,12 @@ async def test_websocket_multiple_connections(
         assert not await socket_registry.find_resources(resource_key, "socket_id")
 
 
-_TENACITY_ASSERT_RETRY = dict(
-    reraise=True,
-    retry=retry_if_exception_type(AssertionError),
-    wait=wait_fixed(0.5),
-    stop=stop_after_delay(30),
-)
+_TENACITY_ASSERT_RETRY = {
+    "reraise": True,
+    "retry": retry_if_exception_type(AssertionError),
+    "wait": wait_fixed(0.5),
+    "stop": stop_after_delay(30),
+}
 
 
 @pytest.mark.skip(
@@ -509,7 +509,7 @@ async def test_interactive_services_removed_after_logout(
 
     # check result perfomed by background task
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
-    await garbage_collector_core.collect_garbage(client.app)
+    await gc_core.collect_garbage(client.app)
 
     # assert dynamic service is removed *this is done in a fire/forget way so give a bit of leeway
     async for attempt in AsyncRetrying(**_TENACITY_ASSERT_RETRY):
@@ -578,7 +578,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     await sio.disconnect()
     assert not sio.sid
     async for attempt in AsyncRetrying(
-        **(_TENACITY_ASSERT_RETRY | dict(wait=wait_fixed(0.1)))
+        **(_TENACITY_ASSERT_RETRY | {"wait": wait_fixed(0.1)})
     ):
         with attempt:
             socket_project_state_update_mock_callable.assert_called_with(
@@ -604,7 +604,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     await open_project(client, empty_user_project["uuid"], client_session_id2)
     # ensure sufficient time is wasted here
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
-    await garbage_collector_core.collect_garbage(client.app)
+    await gc_core.collect_garbage(client.app)
 
     # assert dynamic service is still around
     mocked_director_v2_api["director_v2.api.stop_dynamic_service"].assert_not_called()
@@ -617,7 +617,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     sio2 = await socketio_client_factory(client_session_id2)
     # it should still be there even after waiting for auto deletion from garbage collector
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
-    await garbage_collector_core.collect_garbage(client.app)
+    await gc_core.collect_garbage(client.app)
 
     mocked_director_v2_api["director_v2.api.stop_dynamic_service"].assert_not_called()
     # now really disconnect
@@ -627,7 +627,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     # run the garbage collector
     # event after waiting some time
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
-    await garbage_collector_core.collect_garbage(client.app)
+    await gc_core.collect_garbage(client.app)
 
     await asyncio.sleep(0)
     # assert dynamic service is gone
@@ -654,7 +654,7 @@ async def mocked_notification_system(mocker):
     )
     mocked_notification_system.return_value.set_result("")
     mocks["mocked_notification_system"] = mocked_notification_system
-    yield mocks
+    return mocks
 
 
 @pytest.mark.parametrize(
@@ -713,7 +713,7 @@ async def test_interactive_services_removed_per_project(
     mocked_director_v2_api["director_v2.api.stop_dynamic_service"].assert_not_called()
     # wait the defined delay
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
-    await garbage_collector_core.collect_garbage(client.app)
+    await gc_core.collect_garbage(client.app)
     # assert dynamic service 1 is removed
     calls = [
         call(
@@ -740,7 +740,7 @@ async def test_interactive_services_removed_per_project(
     ].assert_not_called()
     # wait the defined delay
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
-    await garbage_collector_core.collect_garbage(client.app)
+    await gc_core.collect_garbage(client.app)
     # assert dynamic service 2,3 is removed
     calls = [
         call(
@@ -811,14 +811,14 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(
     await close_project(client, empty_user_project["uuid"], client_session_id1)
     # wait the defined delay
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
-    await garbage_collector_core.collect_garbage(client.app)
+    await gc_core.collect_garbage(client.app)
     # assert dynamic service is still around
     mocked_director_v2_api["director_v2.api.stop_dynamic_service"].assert_not_called()
     # close project in tab2
     await close_project(client, empty_user_project["uuid"], client_session_id2)
     # wait the defined delay
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
-    await garbage_collector_core.collect_garbage(client.app)
+    await gc_core.collect_garbage(client.app)
     mocked_director_v2_api["director_v2.api.stop_dynamic_service"].assert_has_calls(
         [call(client.server.app, service["service_uuid"], expected_save_state)]
     )
@@ -868,7 +868,7 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
 
     # ensure sufficient time is wasted here
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
-    await garbage_collector_core.collect_garbage(client.app)
+    await gc_core.collect_garbage(client.app)
 
     # assert dynamic service is removed
     calls = [

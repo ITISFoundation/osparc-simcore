@@ -92,8 +92,8 @@ def dynamic_sidecar_port() -> PortInt:
 
 
 @pytest.fixture
-def run_id(faker: Faker) -> RunID:
-    return faker.uuid4(cast_to=None)
+def run_id() -> RunID:
+    return RunID.create()
 
 
 @pytest.fixture

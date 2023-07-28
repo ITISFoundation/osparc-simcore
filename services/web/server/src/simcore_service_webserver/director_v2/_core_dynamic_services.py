@@ -137,6 +137,7 @@ async def stop_dynamic_service(
     app: web.Application,
     service_uuid: NodeIDStr,
     simcore_user_agent: str,
+    *,
     save_state: bool = True,
     progress: ProgressBarData | None = None,
 ) -> None:

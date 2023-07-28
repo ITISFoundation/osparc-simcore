@@ -5,9 +5,10 @@
 import asyncio
 import logging
 import re
+from collections.abc import AsyncIterable, Awaitable, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncIterable, Awaitable, Callable, Iterator
+from typing import Any
 from unittest import mock
 from uuid import UUID, uuid4
 
@@ -27,24 +28,24 @@ from servicelib.aiohttp.application import create_safe_application
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver import garbage_collector_core
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db.models import projects, users
 from simcore_service_webserver.db.plugin import setup_db
 from simcore_service_webserver.director_v2.plugin import setup_director_v2
-from simcore_service_webserver.garbage_collector import setup_garbage_collector
+from simcore_service_webserver.garbage_collector import _core as gc_core
+from simcore_service_webserver.garbage_collector.plugin import setup_garbage_collector
 from simcore_service_webserver.groups.api import (
     add_user_in_group,
     create_user_group,
     list_user_groups,
 )
 from simcore_service_webserver.login.plugin import setup_login
-from simcore_service_webserver.projects._crud_delete_utils import get_scheduled_tasks
+from simcore_service_webserver.projects._crud_api_delete import get_scheduled_tasks
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.resource_manager.registry import (
-    RegistryKeyPrefixDict,
+    UserSessionDict,
     get_registry,
 )
 from simcore_service_webserver.rest.plugin import setup_rest
@@ -75,7 +76,7 @@ WAIT_FOR_COMPLETE_GC_CYCLE = GARBAGE_COLLECTOR_INTERVAL + SERVICE_DELETION_DELAY
 
 @pytest.fixture(autouse=True)
 def __drop_and_recreate_postgres__(database_from_template_before_each_function):
-    yield
+    return
 
 
 @pytest.fixture(autouse=True)
@@ -87,8 +88,6 @@ async def __delete_all_redis_keys__(redis_settings: RedisSettings):
     )
     await client.flushall()
     await client.close(close_connection_pool=True)
-    yield
-    # do nothing on teadown
 
 
 @pytest.fixture(scope="session")
@@ -144,7 +143,7 @@ def client(
     redis_client: aioredis.Redis,
     rabbit_service: RabbitSettings,
     simcore_services_ready: None,
-):
+) -> TestClient:
     cfg = deepcopy(app_config)
 
     assert cfg["rest"]["version"] == API_VERSION
@@ -176,7 +175,7 @@ def client(
     assert setup_resource_manager(app)
     setup_garbage_collector(app)
 
-    yield event_loop.run_until_complete(
+    return event_loop.run_until_complete(
         aiohttp_client(
             app,
             server_kwargs={"port": cfg["main"]["port"], "host": cfg["main"]["host"]},
@@ -192,7 +191,7 @@ def disable_garbage_collector_task(mocker: MockerFixture) -> Iterator[mock.Mock]
         yield
 
     mocked_run_background = mocker.patch(
-        "simcore_service_webserver.garbage_collector.run_background_task",
+        "simcore_service_webserver.garbage_collector.plugin.run_background_task",
         side_effect=_fake_background_task,
     )
     yield mocked_run_background
@@ -297,7 +296,7 @@ async def connect_to_socketio(
     socket_registry = get_registry(client.server.app)
     cur_client_session_id = f"{uuid4()}"
     sio = await socketio_client_factory(cur_client_session_id, client)
-    resource_key: RegistryKeyPrefixDict = {
+    resource_key: UserSessionDict = {
         "user_id": str(user["id"]),
         "client_session_id": cur_client_session_id,
     }
@@ -308,8 +307,7 @@ async def connect_to_socketio(
         resource_key, "socket_id"
     )
     assert len(await socket_registry.find_resources(resource_key, "socket_id")) == 1
-    sio_connection_data = sio, resource_key
-    return sio_connection_data
+    return sio, resource_key
 
 
 async def disconnect_user_from_socketio(client, sio_connection_data) -> None:
@@ -447,7 +445,7 @@ async def test_t1_while_guest_is_connected_no_resources_are_removed(
 
     await connect_to_socketio(client, logged_guest_user, socketio_client_factory)
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
-    await garbage_collector_core.collect_garbage(app=client.app)
+    await gc_core.collect_garbage(app=client.app)
 
     await assert_user_in_db(aiopg_engine, logged_guest_user)
     await assert_project_in_db(aiopg_engine, empty_guest_user_project)
@@ -475,7 +473,7 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
         client, logged_guest_user, socketio_client_factory
     )
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
-    await garbage_collector_core.collect_garbage(app=client.app)
+    await gc_core.collect_garbage(app=client.app)
 
     # check user and project are still in the DB
     await assert_user_in_db(aiopg_engine, logged_guest_user)
@@ -483,7 +481,7 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
 
     await disconnect_user_from_socketio(client, sio_connection_data)
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
-    await garbage_collector_core.collect_garbage(app=client.app)
+    await gc_core.collect_garbage(app=client.app)
 
     # ensures all project delete tasks are
     delete_tasks = get_scheduled_tasks(
@@ -756,7 +754,7 @@ async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_l
     await assert_user_is_owner_of_project(aiopg_engine, u1, project)
 
     # await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
-    await garbage_collector_core.collect_garbage(app=client.app)
+    await gc_core.collect_garbage(app=client.app)
 
     # expected outcome: u1 was deleted, one of the users in g1 is the new owner
     await assert_one_owner_for_project(aiopg_engine, project, [u2, u3])
@@ -782,7 +780,7 @@ async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_l
     await change_user_role(aiopg_engine, new_owner, UserRole.GUEST)
 
     # await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
-    await garbage_collector_core.collect_garbage(app=client.app)
+    await gc_core.collect_garbage(app=client.app)
 
     # expected outcome: the new_owner will be deleted and one of the remainint_others wil be the new owner
     await assert_one_owner_for_project(aiopg_engine, project, remaining_users)
@@ -794,7 +792,7 @@ async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_l
         await change_user_role(aiopg_engine, user, UserRole.GUEST)
 
     # await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
-    await garbage_collector_core.collect_garbage(app=client.app)
+    await gc_core.collect_garbage(app=client.app)
 
     # expected outcome: the last user will be removed and the project will be removed
     await assert_projects_count(aiopg_engine, 0)

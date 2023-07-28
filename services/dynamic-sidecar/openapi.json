@@ -1,5 +1,5 @@
 {
-  "openapi": "3.0.2",
+  "openapi": "3.1.0",
   "info": {
     "title": "simcore-service-dynamic-sidecar",
     "description": " Implements a sidecar service to manage user's dynamic/interactive services",
@@ -58,8 +58,8 @@
             "description": "if True only show the status of the container",
             "required": false,
             "schema": {
-              "title": "Only Status",
               "type": "boolean",
+              "title": "Only Status",
               "description": "if True only show the status of the container",
               "default": false
             },
@@ -73,8 +73,8 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Containers Docker Inspect V1 Containers Get",
-                  "type": "object"
+                  "type": "object",
+                  "title": "Response Containers Docker Inspect V1 Containers Get"
                 }
               }
             }
@@ -116,8 +116,8 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Create Service Containers Task V1 Containers Post",
-                  "type": "string"
+                  "type": "string",
+                  "title": "Response Create Service Containers Task V1 Containers Post"
                 }
               }
             }
@@ -147,8 +147,8 @@
           {
             "required": true,
             "schema": {
-              "title": "Id",
-              "type": "string"
+              "type": "string",
+              "title": "Id"
             },
             "name": "id",
             "in": "path"
@@ -157,8 +157,8 @@
             "description": "Only return logs since this time, as a UNIX timestamp",
             "required": false,
             "schema": {
-              "title": "Timestamp",
               "type": "integer",
+              "title": "Timestamp",
               "description": "Only return logs since this time, as a UNIX timestamp",
               "default": 0
             },
@@ -169,8 +169,8 @@
             "description": "Only return logs before this time, as a UNIX timestamp",
             "required": false,
             "schema": {
-              "title": "Timestamp",
               "type": "integer",
+              "title": "Timestamp",
               "description": "Only return logs before this time, as a UNIX timestamp",
               "default": 0
             },
@@ -181,8 +181,8 @@
             "description": "Enabling this parameter will include timestamps in logs",
             "required": false,
             "schema": {
-              "title": "Display timestamps",
               "type": "boolean",
+              "title": "Display timestamps",
               "description": "Enabling this parameter will include timestamps in logs",
               "default": false
             },
@@ -196,11 +196,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Get Container Logs V1 Containers  Id  Logs Get",
-                  "type": "array",
                   "items": {
                     "type": "string"
-                  }
+                  },
+                  "type": "array",
+                  "title": "Response Get Container Logs V1 Containers  Id  Logs Get"
                 }
               }
             }
@@ -237,8 +237,8 @@
             "description": "JSON encoded dictionary. FastAPI does not allow for dict as type in query parameters",
             "required": true,
             "schema": {
-              "title": "Filters",
               "type": "string",
+              "title": "Filters",
               "description": "JSON encoded dictionary. FastAPI does not allow for dict as type in query parameters"
             },
             "name": "filters",
@@ -251,7 +251,6 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Get Containers Name V1 Containers Name Get",
                   "anyOf": [
                     {
                       "type": "string"
@@ -259,7 +258,8 @@
                     {
                       "type": "object"
                     }
-                  ]
+                  ],
+                  "title": "Response Get Containers Name V1 Containers Name Get"
                 }
               }
             }
@@ -285,8 +285,8 @@
           {
             "required": true,
             "schema": {
-              "title": "Id",
-              "type": "string"
+              "type": "string",
+              "title": "Id"
             },
             "name": "id",
             "in": "path"
@@ -298,8 +298,8 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Inspect Container V1 Containers  Id  Get",
-                  "type": "object"
+                  "type": "object",
+                  "title": "Response Inspect Container V1 Containers  Id  Get"
                 }
               }
             }
@@ -402,8 +402,8 @@
           {
             "required": true,
             "schema": {
-              "title": "Id",
-              "type": "string"
+              "type": "string",
+              "title": "Id"
             },
             "name": "id",
             "in": "path"
@@ -447,8 +447,8 @@
           {
             "required": true,
             "schema": {
-              "title": "Id",
-              "type": "string"
+              "type": "string",
+              "title": "Id"
             },
             "name": "id",
             "in": "path"
@@ -494,8 +494,8 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Runs Docker Compose Down Task V1 Containers Down Post",
-                  "type": "string"
+                  "type": "string",
+                  "title": "Response Runs Docker Compose Down Task V1 Containers Down Post"
                 }
               }
             }
@@ -516,8 +516,8 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response State Restore Task V1 Containers State Restore Post",
-                  "type": "string"
+                  "type": "string",
+                  "title": "Response State Restore Task V1 Containers State Restore Post"
                 }
               }
             }
@@ -538,8 +538,8 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response State Save Task V1 Containers State Save Post",
-                  "type": "string"
+                  "type": "string",
+                  "title": "Response State Save Task V1 Containers State Save Post"
                 }
               }
             }
@@ -558,11 +558,11 @@
           "content": {
             "application/json": {
               "schema": {
-                "title": "Port Keys",
-                "type": "array",
                 "items": {
                   "type": "string"
-                }
+                },
+                "type": "array",
+                "title": "Port Keys"
               }
             }
           }
@@ -573,8 +573,8 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Ports Inputs Pull Task V1 Containers Ports Inputs Pull Post",
-                  "type": "string"
+                  "type": "string",
+                  "title": "Response Ports Inputs Pull Task V1 Containers Ports Inputs Pull Post"
                 }
               }
             }
@@ -603,11 +603,11 @@
           "content": {
             "application/json": {
               "schema": {
-                "title": "Port Keys",
-                "type": "array",
                 "items": {
                   "type": "string"
-                }
+                },
+                "type": "array",
+                "title": "Port Keys"
               }
             }
           }
@@ -618,8 +618,8 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Ports Outputs Pull Task V1 Containers Ports Outputs Pull Post",
-                  "type": "string"
+                  "type": "string",
+                  "title": "Response Ports Outputs Pull Task V1 Containers Ports Outputs Pull Post"
                 }
               }
             }
@@ -650,8 +650,8 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Ports Outputs Push Task V1 Containers Ports Outputs Push Post",
-                  "type": "string"
+                  "type": "string",
+                  "title": "Response Ports Outputs Push Task V1 Containers Ports Outputs Push Post"
                 }
               }
             }
@@ -672,8 +672,8 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Containers Restart Task V1 Containers Restart Post",
-                  "type": "string"
+                  "type": "string",
+                  "title": "Response Containers Restart Task V1 Containers Restart Post"
                 }
               }
             }
@@ -729,213 +729,210 @@
   "components": {
     "schemas": {
       "ApplicationHealth": {
-        "title": "ApplicationHealth",
-        "type": "object",
         "properties": {
           "is_healthy": {
-            "title": "Is Healthy",
             "type": "boolean",
+            "title": "Is Healthy",
             "description": "returns True if the service sis running correctly",
             "default": true
           },
           "error_message": {
-            "title": "Error Message",
             "type": "string",
+            "title": "Error Message",
             "description": "in case of error this gets set"
           }
-        }
+        },
+        "type": "object",
+        "title": "ApplicationHealth"
       },
       "AttachContainerToNetworkItem": {
-        "title": "AttachContainerToNetworkItem",
+        "properties": {
+          "network_id": {
+            "type": "string",
+            "title": "Network Id"
+          },
+          "network_aliases": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Network Aliases"
+          }
+        },
+        "type": "object",
         "required": [
           "network_id",
           "network_aliases"
         ],
-        "type": "object",
-        "properties": {
-          "network_id": {
-            "title": "Network Id",
-            "type": "string"
-          },
-          "network_aliases": {
-            "title": "Network Aliases",
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        }
+        "title": "AttachContainerToNetworkItem"
       },
       "ContainersCreate": {
-        "title": "ContainersCreate",
+        "properties": {
+          "docker_compose_yaml": {
+            "type": "string",
+            "title": "Docker Compose Yaml"
+          }
+        },
+        "type": "object",
         "required": [
           "docker_compose_yaml"
         ],
-        "type": "object",
-        "properties": {
-          "docker_compose_yaml": {
-            "title": "Docker Compose Yaml",
-            "type": "string"
-          }
-        }
+        "title": "ContainersCreate"
       },
       "CreateDirsRequestItem": {
-        "title": "CreateDirsRequestItem",
+        "properties": {
+          "outputs_labels": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ServiceOutput"
+            },
+            "type": "object",
+            "title": "Outputs Labels"
+          }
+        },
+        "type": "object",
         "required": [
           "outputs_labels"
         ],
-        "type": "object",
-        "properties": {
-          "outputs_labels": {
-            "title": "Outputs Labels",
-            "type": "object",
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ServiceOutput"
-            }
-          }
-        }
+        "title": "CreateDirsRequestItem"
       },
       "DetachContainerFromNetworkItem": {
-        "title": "DetachContainerFromNetworkItem",
+        "properties": {
+          "network_id": {
+            "type": "string",
+            "title": "Network Id"
+          }
+        },
+        "type": "object",
         "required": [
           "network_id"
         ],
-        "type": "object",
-        "properties": {
-          "network_id": {
-            "title": "Network Id",
-            "type": "string"
-          }
-        }
+        "title": "DetachContainerFromNetworkItem"
       },
       "HTTPValidationError": {
-        "title": "HTTPValidationError",
-        "type": "object",
         "properties": {
           "detail": {
-            "title": "Detail",
-            "type": "array",
             "items": {
               "$ref": "#/components/schemas/ValidationError"
-            }
+            },
+            "type": "array",
+            "title": "Detail"
           }
-        }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
       },
       "PatchDirectoryWatcherItem": {
-        "title": "PatchDirectoryWatcherItem",
+        "properties": {
+          "is_enabled": {
+            "type": "boolean",
+            "title": "Is Enabled"
+          }
+        },
+        "type": "object",
         "required": [
           "is_enabled"
         ],
-        "type": "object",
-        "properties": {
-          "is_enabled": {
-            "title": "Is Enabled",
-            "type": "boolean"
-          }
-        }
+        "title": "PatchDirectoryWatcherItem"
       },
       "PutVolumeItem": {
-        "title": "PutVolumeItem",
-        "required": [
-          "status"
-        ],
-        "type": "object",
         "properties": {
           "status": {
             "$ref": "#/components/schemas/VolumeStatus"
           }
-        }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "PutVolumeItem"
       },
       "SelectBox": {
-        "title": "SelectBox",
+        "properties": {
+          "structure": {
+            "items": {
+              "$ref": "#/components/schemas/Structure"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Structure"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
         "required": [
           "structure"
         ],
-        "type": "object",
-        "properties": {
-          "structure": {
-            "title": "Structure",
-            "minItems": 1,
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Structure"
-            }
-          }
-        },
-        "additionalProperties": false
+        "title": "SelectBox"
       },
       "ServiceOutput": {
-        "title": "ServiceOutput",
-        "required": [
-          "label",
-          "description",
-          "type"
-        ],
-        "type": "object",
         "properties": {
           "displayOrder": {
-            "title": "Displayorder",
             "type": "number",
+            "title": "Displayorder",
             "description": "DEPRECATED: new display order is taken from the item position. This will be removed.",
             "deprecated": true
           },
           "label": {
-            "title": "Label",
             "type": "string",
+            "title": "Label",
             "description": "short name for the property",
             "example": "Age"
           },
           "description": {
-            "title": "Description",
             "type": "string",
+            "title": "Description",
             "description": "description of the property",
             "example": "Age in seconds since 1970"
           },
           "type": {
-            "title": "Type",
-            "pattern": "^(number|integer|boolean|string|ref_contentSchema|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
             "type": "string",
+            "pattern": "^(number|integer|boolean|string|ref_contentSchema|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
+            "title": "Type",
             "description": "data type expected on this input glob matching for data type is allowed"
           },
           "contentSchema": {
-            "title": "Contentschema",
             "type": "object",
+            "title": "Contentschema",
             "description": "jsonschema of this input/output. Required when type='ref_contentSchema'"
           },
           "fileToKeyMap": {
-            "title": "Filetokeymap",
+            "additionalProperties": {
+              "type": "string",
+              "pattern": "^[-_a-zA-Z0-9]+$"
+            },
             "type": "object",
+            "title": "Filetokeymap",
             "description": "Place the data associated with the named keys in files"
           },
           "unit": {
-            "title": "Unit",
             "type": "string",
+            "title": "Unit",
             "description": "Units, when it refers to a physical quantity"
           },
           "widget": {
-            "title": "Widget",
             "allOf": [
               {
                 "$ref": "#/components/schemas/Widget"
               }
             ],
+            "title": "Widget",
             "description": "custom widget to use instead of the default one determined from the data-type",
             "deprecated": true
           }
         },
         "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "label",
+          "description",
+          "type"
+        ],
+        "title": "ServiceOutput",
         "description": "Base class for service input/outputs"
       },
       "Structure": {
-        "title": "Structure",
-        "required": [
-          "key",
-          "label"
-        ],
-        "type": "object",
         "properties": {
           "key": {
-            "title": "Key",
             "anyOf": [
               {
                 "type": "string"
@@ -946,44 +943,42 @@
               {
                 "type": "number"
               }
-            ]
+            ],
+            "title": "Key"
           },
           "label": {
-            "title": "Label",
-            "type": "string"
+            "type": "string",
+            "title": "Label"
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "key",
+          "label"
+        ],
+        "title": "Structure"
       },
       "TextArea": {
-        "title": "TextArea",
-        "required": [
-          "minHeight"
-        ],
-        "type": "object",
         "properties": {
           "minHeight": {
-            "title": "Minheight",
-            "exclusiveMinimum": true,
             "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Minheight",
             "description": "minimum Height of the textarea",
             "minimum": 0
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "minHeight"
+        ],
+        "title": "TextArea"
       },
       "ValidationError": {
-        "title": "ValidationError",
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
-        "type": "object",
         "properties": {
           "loc": {
-            "title": "Location",
-            "type": "array",
             "items": {
               "anyOf": [
                 {
@@ -993,46 +988,49 @@
                   "type": "integer"
                 }
               ]
-            }
+            },
+            "type": "array",
+            "title": "Location"
           },
           "msg": {
-            "title": "Message",
-            "type": "string"
+            "type": "string",
+            "title": "Message"
           },
           "type": {
-            "title": "Error Type",
-            "type": "string"
+            "type": "string",
+            "title": "Error Type"
           }
-        }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
       },
       "VolumeCategory": {
-        "title": "VolumeCategory",
+        "type": "string",
         "enum": [
           "OUTPUTS",
           "INPUTS",
           "STATES",
           "SHARED_STORE"
         ],
-        "type": "string",
+        "title": "VolumeCategory",
         "description": "These uniquely identify volumes which are mounted by\nthe dynamic-sidecar and user services.\n\nThis is primarily used to keep track of the status of\neach individual volume on the volumes.\n\nThe status is ingested by the agent and processed\nwhen the volume is removed."
       },
       "VolumeStatus": {
-        "title": "VolumeStatus",
+        "type": "string",
         "enum": [
           "CONTENT_NEEDS_TO_BE_SAVED",
           "CONTENT_WAS_SAVED",
           "CONTENT_NO_SAVE_REQUIRED"
         ],
-        "type": "string",
+        "title": "VolumeStatus",
         "description": "Used by the agent to figure out what to do with the data\npresent on the volume."
       },
       "Widget": {
-        "title": "Widget",
-        "required": [
-          "type",
-          "details"
-        ],
-        "type": "object",
         "properties": {
           "type": {
             "allOf": [
@@ -1043,7 +1041,6 @@
             "description": "type of the property"
           },
           "details": {
-            "title": "Details",
             "anyOf": [
               {
                 "$ref": "#/components/schemas/TextArea"
@@ -1051,18 +1048,25 @@
               {
                 "$ref": "#/components/schemas/SelectBox"
               }
-            ]
+            ],
+            "title": "Details"
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "type",
+          "details"
+        ],
+        "title": "Widget"
       },
       "WidgetType": {
-        "title": "WidgetType",
+        "type": "string",
         "enum": [
           "TextArea",
           "SelectBox"
         ],
-        "type": "string",
+        "title": "WidgetType",
         "description": "An enumeration."
       }
     }

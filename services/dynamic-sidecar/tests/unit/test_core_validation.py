@@ -2,7 +2,6 @@
 # pylint: disable=unused-argument
 
 from inspect import signature
-from typing import Union
 
 import pytest
 from servicelib.docker_constants import DEFAULT_USER_SERVICES_NETWORK_NAME
@@ -18,8 +17,8 @@ def incoming_iseg_compose_file_content() -> str:
 networks:
   dy-sidecar_6f54ecb4-cac2-424a-8b72-ee9366026ff8:
     driver: overlay
-    external:
-      name: dy-sidecar_6f54ecb4-cac2-424a-8b72-ee9366026ff8
+    name: dy-sidecar_6f54ecb4-cac2-424a-8b72-ee9366026ff8
+    external: true
 services:
   iseg-app:
     image: registry.osparc.org/simcore/services/dynamic/iseg-app:1.0.7
@@ -111,14 +110,16 @@ def incoming_compose_file(
 )
 @pytest.mark.parametrize("allow_internet_access", [True, False])
 def test_inject_backend_networking(
-    networks: Union[None, dict], incoming_compose_file: str, allow_internet_access: bool
+    networks: None | dict, incoming_compose_file: str, allow_internet_access: bool
 ):
     """
     NOTE: this goes with issue [https://github.com/ITISFoundation/osparc-simcore/issues/3261]
     """
     parsed_compose_spec = parse_compose_spec(incoming_compose_file)
     parsed_compose_spec["networks"] = networks
-    _connect_user_services(parsed_compose_spec, allow_internet_access)
+    _connect_user_services(
+        parsed_compose_spec, allow_internet_access=allow_internet_access
+    )
     assert DEFAULT_USER_SERVICES_NETWORK_NAME in parsed_compose_spec["networks"]
     assert (
         DEFAULT_USER_SERVICES_NETWORK_NAME
