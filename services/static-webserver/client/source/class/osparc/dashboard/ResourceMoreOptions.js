@@ -374,12 +374,6 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     __getPermissionsPage: function() {
       const id = "Permissions";
       const resourceData = this.__resourceData;
-      if (osparc.utils.Resources.isTemplate(resourceData) && !osparc.data.model.Study.canIWrite(resourceData["accessRights"])) {
-        return null;
-      }
-      if (osparc.utils.Resources.isService(resourceData) && !osparc.utils.Services.canIWrite(resourceData["accessRights"])) {
-        return null;
-      }
 
       let resourceLabel = "";
       if (osparc.utils.Resources.isService(resourceData)) {

@@ -40,6 +40,9 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
       contentPadding: 0
     });
 
+    const walletsPage = this.__walletsPage = this.__getWalletsPage();
+    tabViews.add(walletsPage);
+
     const buyCreditsPage = this.__buyCreditsPage = this.__getBuyCreditsPage();
     tabViews.add(buyCreditsPage);
 
@@ -63,25 +66,51 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
 
   members: {
     __tabsView: null,
+    __walletsPage: null,
     __buyCreditsPage: null,
     __transactionsPage: null,
     __usageOverviewPage: null,
+    __buyCredits: null,
     __transactions: null,
+
+    __getWalletsPage: function() {
+      const title = this.tr("Wallets");
+      const iconSrc = "@MaterialIcons/account_balance_wallet/22";
+      const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
+      const walletsView = new osparc.desktop.wallets.WalletsView();
+      walletsView.set({
+        margin: 10
+      });
+      walletsView.addListener("buyCredits", e => {
+        this.openBuyCredits();
+        const {
+          walletId
+        } = e.getData();
+        const store = osparc.store.Store.getInstance();
+        const found = store.getWallets().find(wallet => wallet.getWalletId() === parseInt(walletId));
+        if (found) {
+          this.__buyCredits.setWallet(found);
+        }
+      });
+      page.add(walletsView);
+      return page;
+    },
 
     __getBuyCreditsPage: function() {
       const title = this.tr("Buy Credits");
       const iconSrc = "@FontAwesome5Solid/dollar-sign/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
-      const buyCredits = new osparc.desktop.credits.BuyCredits();
+      const buyCredits = this.__buyCredits = new osparc.desktop.credits.BuyCredits();
       buyCredits.set({
         margin: 10
       });
       buyCredits.addListener("transactionSuccessful", e => {
         const {
           nCredits,
-          totalPrice
+          totalPrice,
+          walletName
         } = e.getData();
-        this.__transactions.addRow(nCredits, totalPrice);
+        this.__transactions.addRow(nCredits, totalPrice, walletName);
         this.openTransactions();
       }, this);
       page.add(buyCredits);
@@ -116,6 +145,10 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
       if (page) {
         this.__tabsView.setSelection([page]);
       }
+    },
+
+    openWallets: function() {
+      this.__openPage(this.__walletsPage);
     },
 
     openBuyCredits: function() {

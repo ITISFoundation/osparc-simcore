@@ -43,9 +43,7 @@ qx.Class.define("osparc.component.share.Collaborators", {
   },
 
   statics: {
-    sortByAccessRights: function(a, b) {
-      const aAccessRights = a["accessRights"];
-      const bAccessRights = b["accessRights"];
+    sortByAccessRights: function(aAccessRights, bAccessRights) {
       if (aAccessRights["delete"] !== bAccessRights["delete"]) {
         return bAccessRights["delete"] - aAccessRights["delete"];
       }
@@ -64,7 +62,7 @@ qx.Class.define("osparc.component.share.Collaborators", {
       let sorted = null;
       if ("delete" in aAccessRights) {
         // studies
-        sorted = this.self().sortByAccessRights(a, b);
+        sorted = this.self().sortByAccessRights(aAccessRights, bAccessRights);
       } else if ("write_access" in aAccessRights) {
         // services
         if (aAccessRights["write_access"] !== bAccessRights["write_access"]) {
@@ -164,20 +162,24 @@ qx.Class.define("osparc.component.share.Collaborators", {
           control = this.__createAddCollaboratorSection();
           this._add(control);
           break;
-        case "collaborators-list":
-          control = this.__createCollaboratorsListSection();
-          this._add(control, {
-            flex: 1
-          });
-          break;
         case "open-organizations-btn":
           control = new qx.ui.form.Button(this.tr("Organizations...")).set({
             allowGrowY: false,
             allowGrowX: false,
             icon: osparc.dashboard.CardBase.SHARED_ORGS
           });
-          osparc.desktop.organizations.OrganizationsWindow.evaluateOrganizationsButton(control);
+          if (this._canIWrite()) {
+            osparc.desktop.organizations.OrganizationsWindow.evaluateOrganizationsButton(control);
+          } else {
+            control.exclude();
+          }
           control.addListener("execute", () => osparc.desktop.organizations.OrganizationsWindow.openWindow(), this);
+          this._add(control, {
+            flex: 1
+          });
+          break;
+        case "collaborators-list":
+          control = this.__createCollaboratorsListSection();
           this._add(control, {
             flex: 1
           });

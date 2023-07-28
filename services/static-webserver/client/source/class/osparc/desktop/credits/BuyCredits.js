@@ -30,6 +30,14 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
   },
 
   properties: {
+    wallet: {
+      check: "osparc.data.model.Wallet",
+      init: null,
+      nullable: false,
+      event: "changeWallet",
+      apply: "__applyWallet"
+    },
+
     nCredits: {
       check: "Number",
       init: 1,
@@ -83,9 +91,23 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             flex: 1
           });
           break;
+        case "wallet-info": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+          const label = new qx.ui.basic.Label().set({
+            value: this.tr("Wallets:"),
+            font: "text-14"
+          });
+          control.add(label);
+          this.getChildControl("left-side").add(control);
+          break;
+        }
+        case "wallet-selector":
+          control = this.__getWalletSelector();
+          this.getChildControl("wallet-info").add(control);
+          break;
         case "credits-left-view":
           control = this.__getCreditsLeftView();
-          this.getChildControl("left-side").add(control);
+          this.getChildControl("wallet-info").add(control);
           break;
         case "credit-offers-view":
           control = this.__getCreditOffersView();
@@ -111,7 +133,19 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       return control || this.base(arguments, id);
     },
 
+    __applyWallet: function(wallet) {
+      if (wallet) {
+        const walletSelector = this.getChildControl("wallet-selector");
+        walletSelector.getSelectables().forEach(selectable => {
+          if (selectable.walletId === wallet.getWalletId()) {
+            walletSelector.setSelection([selectable]);
+          }
+        });
+      }
+    },
+
     __buildLayout: function() {
+      this.getChildControl("wallet-selector");
       this.getChildControl("credits-left-view");
       this.getChildControl("credit-offers-view");
       this.getChildControl("credit-selector");
@@ -141,21 +175,29 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       this.setTotalPrice(creditPrice * this.getNCredits());
     },
 
+    __getWalletSelector: function() {
+      const walletSelector = osparc.desktop.credits.Utils.createWalletSelector("write", false, false);
+
+      walletSelector.addListener("changeSelection", e => {
+        const selection = e.getData();
+        const store = osparc.store.Store.getInstance();
+        const found = store.getWallets().find(wallet => wallet.getWalletId() === parseInt(selection[0].walletId));
+        if (found) {
+          this.setWallet(found);
+        }
+      });
+
+      if (walletSelector.getSelectables().length) {
+        walletSelector.setSelection([walletSelector.getSelectables()[0]]);
+      }
+
+      return walletSelector;
+    },
+
     __getCreditsLeftView: function() {
-      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-      const creditsLabel = new qx.ui.basic.Label().set({
-        font: "text-14"
-      });
-      const store = osparc.store.Store.getInstance();
-      store.bind("credits", creditsLabel, "value", {
-        converter: val => "You have " + val + " credits left"
-      });
-      layout.add(creditsLabel);
-
-      const progressBar = osparc.component.resourceUsage.CreditsLeft.createCreditsLeftInidcator();
-      layout.add(progressBar);
-
-      return layout;
+      const creditsLeftView = new osparc.desktop.credits.CreditsIndicatorWText();
+      this.bind("wallet", creditsLeftView, "wallet");
+      return creditsLeftView;
     },
 
     __getCreditOffersView: function() {
@@ -339,6 +381,26 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       });
       row++;
 
+      const walletTitle = new qx.ui.basic.Label().set({
+        value: "Wallet",
+        font: "text-14"
+      });
+      layout.add(walletTitle, {
+        row,
+        column: 0
+      });
+      const walletLabel = new qx.ui.basic.Label().set({
+        font: "text-14"
+      });
+      this.bind("wallet", walletLabel, "value", {
+        converter: wallet => wallet ? wallet.getName() : this.tr("Select Wallet")
+      });
+      layout.add(walletLabel, {
+        row,
+        column: 1
+      });
+      row++;
+
       return layout;
     },
 
@@ -356,13 +418,15 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
           buyBtn.setFetching(false);
           const nCredits = this.getNCredits();
           const totalPrice = this.getTotalPrice();
+          const wallet = this.getWallet();
           const title = "3rd party payment gateway";
           const paymentGateway = new osparc.desktop.credits.PaymentGateway().set({
             url: "https://www.paymentservice.io?user_id=2&session_id=1234567890&token=5678",
             nCredits,
-            totalPrice
+            totalPrice,
+            walletName: wallet.getName()
           });
-          const win = osparc.ui.window.Window.popUpInWindow(paymentGateway, title, 320, 445);
+          const win = osparc.ui.window.Window.popUpInWindow(paymentGateway, title, 320, 475);
           win.center();
           win.open();
           paymentGateway.addListener("paymentSuccessful", () => {
@@ -370,11 +434,11 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             msg += "<br>";
             msg += "You now have " + nCredits + " more credits";
             osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO", null, 10000);
-            const store = osparc.store.Store.getInstance();
-            store.setCredits(store.getCredits() + nCredits);
+            wallet.setCredits(wallet.getCredits() + nCredits);
             this.fireDataEvent("transactionSuccessful", {
               nCredits,
-              totalPrice
+              totalPrice,
+              walletName: wallet.getName()
             });
           });
           paymentGateway.addListener("paymentFailed", () => {
