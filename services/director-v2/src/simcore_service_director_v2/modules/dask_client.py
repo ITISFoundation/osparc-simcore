@@ -93,7 +93,7 @@ _DASK_TASK_STATUS_RUNNING_STATE_MAP = {
     "new": RunningState.PENDING,
     "released": RunningState.PENDING,
     "waiting": RunningState.PENDING,
-    "no-worker": RunningState.PENDING,
+    "no-worker": RunningState.WAITING_FOR_RESOURCES,
     "processing": RunningState.STARTED,
     "memory": RunningState.SUCCESS,
     "erred": RunningState.FAILED,

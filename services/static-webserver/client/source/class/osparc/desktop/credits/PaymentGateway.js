@@ -51,6 +51,13 @@ qx.Class.define("osparc.desktop.credits.PaymentGateway", {
       event: "changeTotalPrice"
     },
 
+    walletName: {
+      check: "String",
+      init: "",
+      nullable: false,
+      event: "changeWalletName"
+    },
+
     paymentStatus: {
       check: [null, true, false],
       init: null,
@@ -93,7 +100,7 @@ qx.Class.define("osparc.desktop.credits.PaymentGateway", {
             padding: 10
           });
 
-          const hbox1 = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
+          const nCreditsHBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
             alignX: "center",
             maxWidth: 200
           });
@@ -101,8 +108,8 @@ qx.Class.define("osparc.desktop.credits.PaymentGateway", {
             value: this.tr("Number of credits:"),
             font: "text-14"
           });
-          hbox1.add(creditsTitle);
-          hbox1.add(new qx.ui.core.Spacer(), {
+          nCreditsHBox.add(creditsTitle);
+          nCreditsHBox.add(new qx.ui.core.Spacer(), {
             flex: 1
           });
           const creditsLabel = new qx.ui.basic.Label().set({
@@ -110,10 +117,30 @@ qx.Class.define("osparc.desktop.credits.PaymentGateway", {
             font: "text-16"
           });
           this.bind("nCredits", creditsLabel, "value");
-          hbox1.add(creditsLabel);
-          control.add(hbox1);
+          nCreditsHBox.add(creditsLabel);
+          control.add(nCreditsHBox);
 
-          const hbox2 = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
+          const walletNameHBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
+            alignX: "center",
+            maxWidth: 200
+          });
+          const walletNameTitle = new qx.ui.basic.Label().set({
+            value: this.tr("Wallet:"),
+            font: "text-14"
+          });
+          walletNameHBox.add(walletNameTitle);
+          walletNameHBox.add(new qx.ui.core.Spacer(), {
+            flex: 1
+          });
+          const walletNameLabel = new qx.ui.basic.Label().set({
+            value: this.tr("Sim4Life credits"),
+            font: "text-16"
+          });
+          this.bind("walletName", walletNameLabel, "value");
+          walletNameHBox.add(walletNameLabel);
+          control.add(walletNameHBox);
+
+          const totalHBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
             alignX: "center",
             maxWidth: 200
           });
@@ -121,8 +148,8 @@ qx.Class.define("osparc.desktop.credits.PaymentGateway", {
             value: this.tr("Total"),
             font: "text-14"
           });
-          hbox2.add(totalTitle);
-          hbox2.add(new qx.ui.core.Spacer(), {
+          totalHBox.add(totalTitle);
+          totalHBox.add(new qx.ui.core.Spacer(), {
             flex: 1
           });
           const totalLabel = new qx.ui.basic.Label().set({
@@ -132,8 +159,8 @@ qx.Class.define("osparc.desktop.credits.PaymentGateway", {
           this.bind("totalPrice", totalLabel, "value", {
             converter: val => val + " $"
           });
-          hbox2.add(totalLabel);
-          control.add(hbox2);
+          totalHBox.add(totalLabel);
+          control.add(totalHBox);
 
           this._add(control);
           break;

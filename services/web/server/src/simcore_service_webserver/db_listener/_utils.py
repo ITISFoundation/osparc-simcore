@@ -18,6 +18,7 @@ DB_TO_RUNNING_STATE = {
     StateType.NOT_STARTED: RunningState.NOT_STARTED,
     StateType.RUNNING: RunningState.STARTED,
     StateType.ABORTED: RunningState.ABORTED,
+    StateType.WAITING_FOR_RESOURCES: RunningState.WAITING_FOR_RESOURCES,
 }
 
 

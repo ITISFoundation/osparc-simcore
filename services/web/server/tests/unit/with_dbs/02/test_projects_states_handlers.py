@@ -281,16 +281,18 @@ async def test_share_project(
         client, {"role": user_role.name}, enable_check=user_role != UserRole.ANONYMOUS
     )
     if new_project:
-        # user 2 can only get the project if user 2 has read access
+        # user 2 can get the project if user 2 has read access
         await assert_get_same_project(
             client,
             new_project,
             expected.ok if share_rights["read"] else expected.forbidden,
         )
-        # user 2 can only list projects if user 2 has read access
+
+        # user 2 can list projects if user 2 has read access
         list_projects = await _list_projects(client, expected.ok)
         assert len(list_projects) == (1 if share_rights["read"] else 0)
-        # user 2 can only update the project is user 2 has write access
+
+        # user 2 can update the project if user 2 has write access
         project_update = deepcopy(new_project)
         project_update["name"] = "my super name"
         await _replace_project(
@@ -298,7 +300,8 @@ async def test_share_project(
             project_update,
             expected.ok if share_rights["write"] else expected.forbidden,
         )
-        # user 2 can only delete projects if user 2 has delete access
+
+        # user 2 can delete projects if user 2 has delete access
         resp = await _delete_project(client, new_project)
         await assert_status(
             resp,
@@ -340,9 +343,11 @@ async def test_open_project(
     await assert_status(resp, expected)
 
     if resp.status == web.HTTPOk.status_code:
+        # calls notifications to subscribe to this project
         mocked_notifications_plugin["subscribe"].assert_called_once_with(
             client.app, ProjectID(user_project["uuid"])
         )
+        # calls all dynamic-services in project to start
         dynamic_services = {
             service_uuid: service
             for service_uuid, service in user_project["workbench"].items()
@@ -412,6 +417,7 @@ async def test_open_template_project_for_edition(
     url = client.app.router["open_project"].url_for(project_id=template_project["uuid"])
     resp = await client.post(f"{url}", json=client_session_id_factory())
     await assert_status(resp, expected)
+
     if resp.status == web.HTTPOk.status_code:
         mocked_notifications_plugin["subscribe"].assert_called_once_with(
             client.app, ProjectID(template_project["uuid"])
@@ -920,7 +926,7 @@ async def test_project_node_lifetime(
     faker: Faker,
 ):
     mock_storage_api_delete_data_folders_of_project_node = mocker.patch(
-        "simcore_service_webserver.projects._handlers_crud.projects_api.storage_api.delete_data_folders_of_project_node",
+        "simcore_service_webserver.projects._crud_handlers.projects_api.storage_api.delete_data_folders_of_project_node",
         return_value="",
     )
     assert client.app

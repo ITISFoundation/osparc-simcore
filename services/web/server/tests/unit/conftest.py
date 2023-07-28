@@ -78,7 +78,7 @@ def activity_data(fake_data_dir: Path) -> Iterable[dict[str, Any]]:
 @pytest.fixture
 def mock_orphaned_services(mocker):
     remove_orphaned_services = mocker.patch(
-        "simcore_service_webserver.garbage_collector_core.remove_orphaned_services",
+        "simcore_service_webserver.garbage_collector._core.remove_orphaned_services",
         return_value="",
     )
     return remove_orphaned_services
@@ -88,7 +88,7 @@ def mock_orphaned_services(mocker):
 def disable_gc_manual_guest_users(mocker):
     """Disable to avoid an almost instant cleanup of GUEST users with their projects"""
     mocker.patch(
-        "simcore_service_webserver.garbage_collector_core.remove_users_manually_marked_as_guests",
+        "simcore_service_webserver.garbage_collector._core.remove_users_manually_marked_as_guests",
         return_value=None,
     )
 
