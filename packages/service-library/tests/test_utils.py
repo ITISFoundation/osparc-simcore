@@ -216,6 +216,12 @@ def test_ensure_ends_with(original: str, termination: str, expected: str):
             [()],
             id="input_is_empty_returns_an_empty_list",
         ),
+        pytest.param(
+            5,
+            list(range(13)),
+            [(0, 1, 2, 3, 4), (5, 6, 7, 8, 9), (10, 11, 12)],
+            id="group_5_using_generator",
+        ),
     ],
 )
 def test_partition_iter(

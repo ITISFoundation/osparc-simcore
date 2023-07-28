@@ -40,6 +40,7 @@ from .constants import CHUNK_SIZE
 _logger = logging.getLogger(__name__)
 
 _CONCURRENT_MULTIPART_UPLOADS_COUNT: Final[NonNegativeInt] = 10
+_VALID_HTTP_STATUS_CODES: Final[NonNegativeInt] = 299
 
 
 @dataclass(frozen=True)
@@ -188,7 +189,7 @@ async def download_link_to_file(
                 response = await stack.enter_async_context(session.get(url))
                 if response.status == web.HTTPNotFound.status_code:
                     raise exceptions.InvalidDownloadLinkError(url)
-                if response.status >= web.HTTPMultipleChoices.status_code:
+                if response.status > _VALID_HTTP_STATUS_CODES:
                     raise exceptions.TransferError(url)
                 file_path.parent.mkdir(parents=True, exist_ok=True)
                 # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Length
