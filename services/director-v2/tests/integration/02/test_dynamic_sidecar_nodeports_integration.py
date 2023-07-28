@@ -236,14 +236,16 @@ def services_node_uuids(
         key = registry_service_data["schema"]["key"]
         version = registry_service_data["schema"]["version"]
 
+        found_node_uuid: str | None = None
         for node_uuid, workbench_service_data in fake_dy_workbench.items():
             if (
                 workbench_service_data["key"] == key
                 and workbench_service_data["version"] == version
             ):
-                return node_uuid
-
-        pytest.fail(f"No node_uuid found for {key}:{version}")
+                found_node_uuid = node_uuid
+                break
+        assert found_node_uuid is not None, f"No node_uuid found for {key}:{version}"
+        return found_node_uuid
 
     return ServicesNodeUUIDs(
         sleeper=_get_node_uuid(sleeper_service),
