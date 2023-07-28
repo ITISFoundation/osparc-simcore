@@ -9,11 +9,10 @@ import logging
 import os
 from collections.abc import Awaitable, Coroutine, Iterable
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import Any
 
+import toolz
 from pydantic import NonNegativeInt
-
-T = TypeVar("T")
 
 _logger = logging.getLogger(__name__)
 
@@ -148,9 +147,9 @@ def ensure_ends_with(input_string: str, char: str) -> str:
     return input_string
 
 
-def slice_list_iter(
-    input_list: list[T], *, slice_size: NonNegativeInt
-) -> Iterable[list[T]]:
+def partition_iter(
+    input_list: Iterable, *, slice_size: NonNegativeInt
+) -> Iterable[tuple[Any, ...]]:
     """
     Given a list of elements and the slice_size yields lists containing
     slice_size elements in them.
@@ -163,7 +162,6 @@ def slice_list_iter(
 
     """
     if not input_list:
-        yield []
+        yield ()
 
-    for i in range(0, len(input_list), slice_size):
-        yield input_list[i : i + slice_size]
+    yield from toolz.partition_all(slice_size, input_list)

@@ -15,7 +15,7 @@ from servicelib.utils import (
     ensure_ends_with,
     fire_and_forget_task,
     logged_gather,
-    slice_list_iter,
+    partition_iter,
 )
 
 
@@ -189,37 +189,42 @@ def test_ensure_ends_with(original: str, termination: str, expected: str):
         pytest.param(
             5,
             list(range(13)),
-            [[0, 1, 2, 3, 4], [5, 6, 7, 8, 9], [10, 11, 12]],
+            [(0, 1, 2, 3, 4), (5, 6, 7, 8, 9), (10, 11, 12)],
             id="group_5_last_group_is_smaller",
         ),
         pytest.param(
             2,
             list(range(5)),
-            [[0, 1], [2, 3], [4]],
+            [(0, 1), (2, 3), (4,)],
             id="group_2_last_group_is_smaller",
         ),
         pytest.param(
             2,
             list(range(4)),
-            [[0, 1], [2, 3]],
+            [(0, 1), (2, 3)],
             id="group_2_last_group_is_the_same",
         ),
         pytest.param(
             10,
             list(range(4)),
-            [[0, 1, 2, 3]],
+            [(0, 1, 2, 3)],
             id="only_one_group_if_list_is_not_bit_enough",
         ),
         pytest.param(
             3,
             [],
-            [[]],
+            [()],
             id="input_is_empty_returns_an_empty_list",
         ),
     ],
 )
-def test_chunk_list(
+def test_partition_iter(
     input_list: list[Any], expected: list[tuple[Any, ...]], slice_size: int
 ):
-    result = list(slice_list_iter(input_list, slice_size=slice_size))
+    # check returned result
+    result = list(partition_iter(input_list, slice_size=slice_size))
     assert result == expected
+
+    # check returned type
+    for entry in result:
+        assert type(entry) == tuple
