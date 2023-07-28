@@ -341,7 +341,7 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
       openButton.addListener("execute", () => {
         this.fireEvent("startStudy");
 
-        store.setCurrentWallet(this.getWallet());
+        store.setActiveWallet(this.getWallet());
       });
 
       const cancelButton = this.getChildControl("cancel-button");

@@ -112,10 +112,11 @@ qx.Class.define("osparc.store.Store", {
       check: "Object",
       init: []
     },
-    currentWallet: {
+    activeWallet: {
       check: "osparc.data.model.Wallet",
       init: null,
-      event: "changeCurrentWallet"
+      nullable: true,
+      event: "changeActiveWallet"
     },
     permissions: {
       check: "Array",
