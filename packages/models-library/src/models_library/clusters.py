@@ -1,15 +1,27 @@
-from enum import Enum
+from enum import Enum, auto
 from typing import Any, ClassVar, Final, Literal, TypeAlias, Union
 
-from pydantic import AnyUrl, BaseModel, Extra, Field, HttpUrl, SecretStr, root_validator
+from pydantic import (
+    AnyUrl,
+    BaseModel,
+    Extra,
+    Field,
+    HttpUrl,
+    SecretStr,
+    root_validator,
+    validator,
+)
 from pydantic.types import NonNegativeInt
 
 from .users import GroupID
+from .utils.enums import StrAutoEnum
 
 
-class ClusterType(Enum):
-    AWS = "AWS"
-    ON_PREMISE = "ON_PREMISE"
+class ClusterTypeInModel(StrAutoEnum):
+    # This enum is equivalent to `simcore_postgres_database.models.clusters.ClusterType`
+    # SEE models-library/tests/test__pydantic_models_and_enums.py
+    AWS = auto()
+    ON_PREMISE = auto()
 
 
 class ClusterAccessRights(BaseModel):
@@ -81,11 +93,11 @@ class NoAuthentication(BaseAuthentication):
     type: Literal["none"] = "none"
 
 
-InternalClusterAuthentication = NoAuthentication
-ExternalClusterAuthentication = Union[
+InternalClusterAuthentication: TypeAlias = NoAuthentication
+ExternalClusterAuthentication: TypeAlias = Union[
     SimpleAuthentication, KerberosAuthentication, JupyterHubTokenAuthentication
 ]
-ClusterAuthentication = Union[
+ClusterAuthentication: TypeAlias = Union[
     ExternalClusterAuthentication,
     InternalClusterAuthentication,
 ]
@@ -94,7 +106,7 @@ ClusterAuthentication = Union[
 class BaseCluster(BaseModel):
     name: str = Field(..., description="The human readable name of the cluster")
     description: str | None = None
-    type: ClusterType
+    type: ClusterTypeInModel
     owner: GroupID
     thumbnail: HttpUrl | None = Field(
         None,
@@ -106,6 +118,14 @@ class BaseCluster(BaseModel):
         ..., description="Dask gateway authentication"
     )
     access_rights: dict[GroupID, ClusterAccessRights] = Field(default_factory=dict)
+
+    @validator("type", pre=True)
+    @classmethod
+    def _transform_equivalent_enums(cls, v):
+        if v and not isinstance(v, ClusterTypeInModel) and isinstance(v, Enum):
+            # Allows
+            return v.value
+        return v
 
     class Config:
         extra = Extra.forbid
@@ -125,7 +145,7 @@ class Cluster(BaseCluster):
                 {
                     "id": DEFAULT_CLUSTER_ID,
                     "name": "The default cluster",
-                    "type": ClusterType.ON_PREMISE,
+                    "type": ClusterTypeInModel.ON_PREMISE,
                     "owner": 1456,
                     "endpoint": "tcp://default-dask-scheduler:8786",
                     "authentication": {
@@ -137,7 +157,7 @@ class Cluster(BaseCluster):
                 {
                     "id": 432,
                     "name": "My awesome cluster",
-                    "type": ClusterType.ON_PREMISE,
+                    "type": ClusterTypeInModel.ON_PREMISE,
                     "owner": 12,
                     "endpoint": "https://registry.osparc-development.fake.dev",
                     "authentication": {
@@ -150,7 +170,7 @@ class Cluster(BaseCluster):
                     "id": 432546,
                     "name": "My AWS cluster",
                     "description": "a AWS cluster administered by me",
-                    "type": ClusterType.AWS,
+                    "type": ClusterTypeInModel.AWS,
                     "owner": 154,
                     "endpoint": "https://registry.osparc-development.fake.dev",
                     "authentication": {"type": "kerberos"},
@@ -164,7 +184,7 @@ class Cluster(BaseCluster):
                     "id": 325436,
                     "name": "My AWS cluster",
                     "description": "a AWS cluster administered by me",
-                    "type": ClusterType.AWS,
+                    "type": ClusterTypeInModel.AWS,
                     "owner": 2321,
                     "endpoint": "https://registry.osparc-development.fake2.dev",
                     "authentication": {
