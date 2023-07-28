@@ -250,6 +250,31 @@ def _check_for_aws_http_errors(exc: BaseException) -> bool:
     return False
 
 
+async def _session_put(
+    session: ClientSession,
+    file_part_size: int,
+    upload_url: AnyUrl,
+    pbar: tqdm,
+    io_log_redirect_cb: LogRedirectCB | None,
+    progress_bar: ProgressBarData,
+    file_uploader: Any | None,
+) -> str:
+    async with session.put(
+        upload_url, data=file_uploader, headers={"Content-Length": f"{file_part_size}"}
+    ) as response:
+        await _raise_for_status(response)
+        if io_log_redirect_cb and pbar.update(file_part_size):
+            with log_catch(_logger, reraise=False):
+                await io_log_redirect_cb(f"{pbar}")
+        await progress_bar.update(file_part_size)
+
+        # NOTE: the response from minio does not contain a json body
+        assert response.status == web.HTTPOk.status_code  # nosec
+        assert response.headers  # nosec
+        assert "Etag" in response.headers  # nosec
+        return json.loads(response.headers["Etag"])
+
+
 async def _upload_file_part(
     session: ClientSession,
     file_to_upload: Path | UploadableFileObject,
@@ -285,25 +310,16 @@ async def _upload_file_part(
         after=after_log(_logger, log_level=logging.ERROR),
     ):
         with attempt:
-            async with session.put(
-                upload_url,
-                data=file_uploader,
-                headers={
-                    "Content-Length": f"{file_part_size}",
-                },
-            ) as response:
-                await _raise_for_status(response)
-                if io_log_redirect_cb and pbar.update(file_part_size):
-                    with log_catch(_logger, reraise=False):
-                        await io_log_redirect_cb(f"{pbar}")
-                await progress_bar.update(file_part_size)
-
-                # NOTE: the response from minio does not contain a json body
-                assert response.status == web.HTTPOk.status_code  # nosec
-                assert response.headers  # nosec
-                assert "Etag" in response.headers  # nosec
-                received_e_tag = json.loads(response.headers["Etag"])
-                return (part_index, received_e_tag)
+            received_e_tag = await _session_put(
+                session=session,
+                file_part_size=file_part_size,
+                upload_url=upload_url,
+                pbar=pbar,
+                io_log_redirect_cb=io_log_redirect_cb,
+                progress_bar=progress_bar,
+                file_uploader=file_uploader,
+            )
+            return (part_index, received_e_tag)
     msg = f"Unexpected error while transferring {file_to_upload} to {upload_url}"
     raise exceptions.S3TransferError(msg)
 
