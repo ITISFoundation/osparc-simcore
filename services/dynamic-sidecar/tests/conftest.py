@@ -180,6 +180,15 @@ def mock_environment(
     base_mock_envs: EnvVarsDict,
     user_id: UserID,
     project_id: ProjectID,
+    state_paths_dirs: list[Path],
+    state_exclude_dirs: list[Path],
+    node_id: NodeID,
+    run_id: RunID,
+    inputs_dir: Path,
+    compose_namespace: str,
+    outputs_dir: Path,
+    dy_volumes: Path,
+    shared_store_dir: Path,
 ) -> EnvVarsDict:
     """Main test environment used to build the application
 
