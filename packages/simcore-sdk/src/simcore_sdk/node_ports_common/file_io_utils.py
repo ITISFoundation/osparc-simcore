@@ -326,6 +326,10 @@ async def upload_file_to_presigned_links(
         file_size = file_to_upload.file_size
         file_name = file_to_upload.file_name
 
+    # NOTE: when the file object is already created it cannot be duplicated so
+    # no concurrency is allowed in that case
+    max_concurrency = 4 if isinstance(file_to_upload, Path) else 1
+
     file_chunk_size = int(file_upload_links.chunk_size)
     num_urls = len(file_upload_links.urls)
     last_chunk_size = file_size - file_chunk_size * (num_urls - 1)
@@ -356,25 +360,21 @@ async def upload_file_to_presigned_links(
                 )
                 upload_tasks.append(
                     _upload_file_part(
-                        session,
-                        file_to_upload,
-                        index,
-                        index * file_chunk_size,
-                        this_file_chunk_size,
-                        upload_url,
-                        tqdm_progress,
-                        num_retries,
+                        session=session,
+                        file_to_upload=file_to_upload,
+                        part_index=index,
+                        file_offset=index * file_chunk_size,
+                        file_part_size=this_file_chunk_size,
+                        upload_url=upload_url,
+                        pbar=tqdm_progress,
+                        num_retries=num_retries,
                         io_log_redirect_cb=io_log_redirect_cb,
                         progress_bar=sub_progress,
                     )
                 )
             try:
                 upload_results = await logged_gather(
-                    *upload_tasks,
-                    log=_logger,
-                    # NOTE: when the file object is already created it cannot be duplicated so
-                    # no concurrency is allowed in that case
-                    max_concurrency=4 if isinstance(file_to_upload, Path) else 1,
+                    *upload_tasks, log=_logger, max_concurrency=max_concurrency
                 )
 
                 for i, e_tag in upload_results:
