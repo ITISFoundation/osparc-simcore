@@ -1134,6 +1134,7 @@ qx.Class.define("osparc.data.Resources", {
       },
 
       getWallets: function() {
+        const myGid = osparc.auth.Data.getInstance().getGroupId();
         return new Promise(resolve => {
           resolve({
             wallets: [{
@@ -1142,9 +1143,9 @@ qx.Class.define("osparc.data.Resources", {
               description: "Personal Wallet",
               thumbnail: null,
               type: "personal",
-              owner: 2,
+              owner: myGid,
               accessRights: {
-                2: {
+                [myGid]: {
                   delete: true,
                   write: true,
                   read: true
@@ -1160,14 +1161,14 @@ qx.Class.define("osparc.data.Resources", {
               description: "Organization wide Wallet",
               thumbnail: null,
               type: "shared",
-              owner: 2,
+              owner: myGid,
               accessRights: {
-                2: {
+                [myGid]: {
                   delete: false,
                   write: true,
                   read: true
                 },
-                10: {
+                417: {
                   delete: false,
                   write: false,
                   read: true
@@ -1183,21 +1184,16 @@ qx.Class.define("osparc.data.Resources", {
               description: "Organization wide Wallet 2",
               thumbnail: null,
               type: "shared",
-              owner: 4,
+              owner: 417,
               accessRights: {
-                2: {
-                  delete: false,
-                  write: false,
-                  read: true
-                },
-                10: {
-                  delete: false,
-                  write: true,
-                  read: true
-                },
-                11: {
+                417: {
                   delete: true,
                   write: true,
+                  read: true
+                },
+                [myGid]: {
+                  delete: false,
+                  write: false,
                   read: true
                 }
               },
