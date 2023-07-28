@@ -8,7 +8,6 @@ from ..services_access import ServiceAccessRights
 from ..services_resources import ServiceResourcesDict
 
 
-# OpenAPI models (contain both service metadata and access rights)
 class ServiceUpdate(ServiceMetaData, ServiceAccessRights):
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {

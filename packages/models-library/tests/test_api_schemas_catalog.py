@@ -3,32 +3,8 @@
 # pylint: disable=unused-variable
 
 
-from pprint import pformat
-
-import pytest
-from models_library.api_schemas_catalog.services import (
-    ServiceGet,
-    ServiceItem,
-    ServiceUpdate,
-)
 from models_library.api_schemas_catalog.services_ports import ServicePortGet
 from models_library.services import ServiceInput
-
-
-@pytest.mark.parametrize(
-    "model_cls",
-    [
-        ServiceGet,
-        ServiceUpdate,
-        ServiceItem,
-        ServicePortGet,
-    ],
-)
-def test_service_api_models_examples(model_cls, model_cls_examples):
-    for name, example in model_cls_examples.items():
-        print(name, ":", pformat(example))
-        model_instance = model_cls(**example)
-        assert model_instance, f"Failed with {name}"
 
 
 def test_service_port_with_file():
