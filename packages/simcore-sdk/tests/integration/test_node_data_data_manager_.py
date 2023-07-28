@@ -135,7 +135,7 @@ def project_id(project_id: str) -> ProjectID:
 
 @pytest.fixture
 def node_uuid(faker: Faker) -> NodeID:
-    return NodeID(faker.node_uuid4())
+    return NodeID(faker.uuid4())
 
 
 @pytest.mark.parametrize(
