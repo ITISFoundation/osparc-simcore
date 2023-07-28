@@ -35,7 +35,7 @@ from models_library.rest_pagination import (
 )
 from pydantic import NonNegativeInt
 from servicelib.aiohttp.long_running_tasks.server import TaskGet
-from simcore_service_webserver.projects._handlers_crud import (
+from simcore_service_webserver.projects._crud_handlers import (
     ProjectPathParams,
     ProjectTypeAPI,
     _ProjectActiveParams,

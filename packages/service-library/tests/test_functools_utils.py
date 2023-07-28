@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 
 import inspect
-from typing import Tuple, Union
 
 from servicelib.functools_utils import copy_func
 
@@ -11,8 +10,8 @@ from servicelib.functools_utils import copy_func
 def test_copy_functions():
     # fixture
     def original_func(
-        x: int, y: bool, *, z: Union[str, float, None] = None
-    ) -> Tuple[int, Union[str, float, None]]:
+        x: int, y: bool, *, z: str | float | None = None
+    ) -> tuple[int, str | float | None]:
         """some doc"""
         return 2 * x, z if y else "Foo"
 

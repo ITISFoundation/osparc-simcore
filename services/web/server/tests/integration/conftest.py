@@ -15,10 +15,10 @@
 import json
 import logging
 import sys
+from collections.abc import AsyncIterable
 from copy import deepcopy
 from pathlib import Path
 from string import Template
-from typing import AsyncIterable
 from unittest import mock
 
 import pytest
@@ -152,7 +152,7 @@ def _default_app_config_for_integration_tests(
     return cfg
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def app_config(
     _default_app_config_for_integration_tests: ConfigDict, unused_tcp_port_factory
 ) -> ConfigDict:
@@ -168,11 +168,10 @@ def app_config(
 
 @pytest.fixture
 def mock_orphaned_services(mocker: MockerFixture) -> mock.Mock:
-    remove_orphaned_services = mocker.patch(
-        "simcore_service_webserver.garbage_collector_core.remove_orphaned_services",
+    return mocker.patch(
+        "simcore_service_webserver.garbage_collector._core.remove_orphaned_services",
         return_value="",
     )
-    return remove_orphaned_services
 
 
 @pytest.fixture
