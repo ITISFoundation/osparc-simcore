@@ -225,7 +225,8 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
         });
       }
 
-      this.getChildControl("open-button").setEnabled(Boolean(wallet));
+      // OM: puppeteer has no walelts. Enable it when BE is ready
+      // this.getChildControl("open-button").setEnabled(Boolean(wallet));
     },
 
     __buildLayout: function() {
