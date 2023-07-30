@@ -1,0 +1,118 @@
+paths:
+  /projects/{project_id}/wallet:
+    get:
+      tags:
+      - project
+      summary: Get current connected wallet to the project.
+      operationId: get_project_wallet
+      parameters:
+      - required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+        name: project_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_Union_WalletGet__NoneType__'
+  /projects/{project_id}/wallet/{wallet_id}:
+    put:
+      tags:
+      - project
+      summary: Connect wallet to the project (Project can have only one wallet)
+      operationId: connect_wallet_to_project
+      parameters:
+      - required: true
+        schema:
+          type: string
+          format: uuid
+          title: Project Id
+        name: project_id
+        in: path
+      - required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: Wallet Id
+          minimum: 0
+        name: wallet_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WalletGet_'
+components:
+  schemas:
+    Envelope_Union_WalletGet__NoneType__:
+      properties:
+        data:
+          $ref: '#/components/schemas/WalletGet'
+        error:
+          title: Error
+      type: object
+      title: Envelope[Union[WalletGet, NoneType]]
+    Envelope_WalletGet_:
+      properties:
+        data:
+          $ref: '#/components/schemas/WalletGet'
+        error:
+          title: Error
+      type: object
+      title: Envelope[WalletGet]
+    WalletGet:
+      properties:
+        id:
+          type: integer
+          exclusiveMinimum: true
+          title: Id
+          minimum: 0
+        name:
+          type: string
+          title: Name
+        description:
+          type: string
+          title: Description
+        owner:
+          type: integer
+          exclusiveMinimum: true
+          title: Owner
+          minimum: 0
+        thumbnail:
+          type: string
+          title: Thumbnail
+        status:
+          $ref: '#/components/schemas/WalletStatus'
+        created:
+          type: string
+          format: date-time
+          title: Created
+        modified:
+          type: string
+          format: date-time
+          title: Modified
+      type: object
+      required:
+      - id
+      - name
+      - description
+      - owner
+      - thumbnail
+      - status
+      - created
+      - modified
+      title: WalletGet
+    WalletStatus:
+      type: string
+      enum:
+      - ACTIVE
+      - INACTIVE
+      title: WalletStatus
+      description: An enumeration.
