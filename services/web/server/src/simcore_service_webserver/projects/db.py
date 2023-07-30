@@ -21,6 +21,7 @@ from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from models_library.wallets import WalletGetDB, WalletID
 from pydantic import ValidationError, parse_obj_as
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
@@ -29,6 +30,7 @@ from servicelib.logging_utils import get_log_record_extra, log_context
 from simcore_postgres_database.errors import UniqueViolation
 from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.models.projects_to_products import projects_to_products
+from simcore_postgres_database.models.wallets import wallets
 from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraPropertiesRepo,
 )
@@ -45,7 +47,7 @@ from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 
-from ..db.models import study_tags
+from ..db.models import projects_to_wallet, study_tags
 from ..utils import now_str
 from ._comments_db import (
     create_project_comment,
@@ -915,6 +917,58 @@ class ProjectDBAPI(BaseProjectDB):
     async def get_project_comment(self, comment_id: CommentID) -> ProjectsCommentsDB:
         async with self.engine.acquire() as conn:
             return await get_project_comment(conn, comment_id)
+
+    #
+    # Project Wallet
+    #
+
+    async def get_project_wallet(
+        self,
+        project_uuid: ProjectID,
+    ) -> WalletGetDB | None:
+        async with self.engine.acquire() as conn:
+            result = await conn.execute(
+                sa.select(
+                    wallets.c.id.label("wallet_id"),
+                    wallets.c.name,
+                    wallets.c.description,
+                    wallets.c.owner,
+                    wallets.c.thumbnail,
+                    wallets.c.status,
+                    wallets.c.created,
+                    wallets.c.modified,
+                )
+                .select_from(
+                    projects_to_wallet.join(
+                        wallets, projects_to_wallet.c.wallet_id == wallets.c.id
+                    )
+                )
+                .where(projects_to_wallet.c.project_uuid == f"{project_uuid}")
+            )
+            return await result.fetchone()
+
+    async def connect_wallet_to_project(
+        self,
+        project_uuid: ProjectID,
+        wallet_id: WalletID,
+    ) -> None:
+        async with self.engine.acquire() as conn:
+            insert_stmt = pg_insert(projects_to_wallet).values(
+                project_uuid=f"{project_uuid}",
+                wallet_id=wallet_id,
+                created=sa.func.now(),
+                modified=sa.func.now(),
+            )
+            on_update_stmt = insert_stmt.on_conflict_do_update(
+                index_elements=[
+                    projects_to_wallet.c.project_uuid,
+                ],
+                set_={
+                    "wallet_id": insert_stmt.excluded.wallet_id,
+                    "modified": sa.func.now(),
+                },
+            )
+            await conn.execute(on_update_stmt)
 
     #
     # Project HIDDEN column

@@ -218,6 +218,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_TAGS: bool = True
     WEBSERVER_USERS: bool = True
     WEBSERVER_VERSION_CONTROL: bool = True
+    WEBSERVER_WALLETS: bool = True
 
     #
     WEBSERVER_SECURITY: bool = Field(

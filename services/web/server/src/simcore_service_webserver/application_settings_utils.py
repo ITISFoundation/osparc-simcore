@@ -163,6 +163,7 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
         "tags": {"enabled": app_settings.WEBSERVER_TAGS},
         "users": {"enabled": app_settings.WEBSERVER_USERS},
         "version_control": {"enabled": app_settings.WEBSERVER_VERSION_CONTROL},
+        "wallets": {"enabled": app_settings.WEBSERVER_WALLETS},
     }
 
     return cfg
@@ -302,6 +303,7 @@ def convert_to_environ_vars(cfg: dict[str, Any]) -> dict[str, Any]:
         "WEBSERVER_TAGS",
         "WEBSERVER_USERS",
         "WEBSERVER_VERSION_CONTROL",
+        "WEBSERVER_WALLETS",
     ):
         section_name = settings_name.replace("WEBSERVER_", "").lower()
         if section := cfg.get(section_name):

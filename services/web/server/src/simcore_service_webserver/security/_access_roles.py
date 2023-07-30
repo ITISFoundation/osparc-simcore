@@ -72,6 +72,7 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
             "user.tokens.*",
             "groups.*",
             "tag.crud.*",
+            "wallets.*",
         ],
         inherits=[UserRole.GUEST, UserRole.ANONYMOUS],
     ),
