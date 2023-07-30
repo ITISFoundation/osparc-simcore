@@ -12,6 +12,7 @@ from .models.confirmations import ConfirmationAction, confirmations
 from .models.groups import GroupType, groups, user_to_groups
 from .models.products import products
 from .models.projects import ProjectType, projects
+from .models.projects_to_wallet import projects_to_wallet
 from .models.scicrunch_resources import scicrunch_resources
 from .models.tags import study_tags, tags
 from .models.tokens import tokens
@@ -40,5 +41,6 @@ __all__ = (
     "UserRole",
     "users",
     "UserStatus",
+    "projects_to_wallet",
 )
 # nopycln: file
