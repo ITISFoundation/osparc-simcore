@@ -8,9 +8,19 @@ import aiodocker
 from aiodocker.utils import clean_filters, clean_map
 from fastapi.encoders import jsonable_encoder
 from models_library.aiodocker_api import AioDockerServiceSpec
+from models_library.api_schemas_directorv2.constants import (
+    DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
+    DYNAMIC_SIDECAR_SERVICE_PREFIX,
+)
+from models_library.api_schemas_directorv2.dynamic_services_scheduler import (
+    NetworkId,
+    SchedulerData,
+    ServiceId,
+)
 from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.services_enums import ServiceState
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from starlette import status
@@ -21,12 +31,6 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential, wait_random_exponential
 
 from ....core.settings import DynamicSidecarSettings
-from ....models.schemas.constants import (
-    DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
-    DYNAMIC_SIDECAR_SERVICE_PREFIX,
-)
-from ....models.schemas.dynamic_services import SchedulerData, ServiceId, ServiceState
-from ....models.schemas.dynamic_services.scheduler import NetworkId
 from ....utils.dict_utils import get_leaf_key_paths, nested_update
 from ..docker_states import TASK_STATES_RUNNING, extract_task_state
 from ..errors import DockerServiceNotFoundError, DynamicSidecarError, GenericDockerError

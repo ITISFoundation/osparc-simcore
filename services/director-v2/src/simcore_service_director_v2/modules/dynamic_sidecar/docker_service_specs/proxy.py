@@ -1,5 +1,8 @@
 from typing import Any
 
+from models_library.api_schemas_directorv2.dynamic_services_scheduler import (
+    SchedulerData,
+)
 from models_library.docker import StandardSimcoreDockerLabels
 from models_library.services_resources import (
     CPU_10_PERCENT,
@@ -10,7 +13,6 @@ from models_library.services_resources import (
 from pydantic import ByteSize
 
 from ....core.settings import DynamicSidecarProxySettings, DynamicSidecarSettings
-from ....models.schemas.dynamic_services import SchedulerData
 from ._constants import DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS
 
 

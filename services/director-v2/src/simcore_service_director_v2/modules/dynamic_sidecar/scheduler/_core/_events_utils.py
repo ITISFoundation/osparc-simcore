@@ -6,6 +6,11 @@ from collections import deque
 from typing import Any, Deque, Final
 
 from fastapi import FastAPI
+from models_library.api_schemas_directorv2.dynamic_services_scheduler import (
+    DockerContainerInspect,
+    DockerStatus,
+    SchedulerData,
+)
 from models_library.projects_networks import ProjectsNetworks
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import NodeIDStr
@@ -30,11 +35,6 @@ from tenacity.wait import wait_fixed
 
 from .....core.errors import NodeRightsAcquireError
 from .....core.settings import AppSettings, DynamicSidecarSettings
-from .....models.schemas.dynamic_services.scheduler import (
-    DockerContainerInspect,
-    DockerStatus,
-    SchedulerData,
-)
 from .....utils.db import get_repository
 from ....db.repositories.projects import ProjectsRepository
 from ....db.repositories.projects_networks import ProjectsNetworksRepository

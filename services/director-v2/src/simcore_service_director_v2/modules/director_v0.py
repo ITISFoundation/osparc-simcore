@@ -10,6 +10,9 @@ from typing import Any, cast
 import httpx
 import yarl
 from fastapi import FastAPI, HTTPException, status
+from models_library.api_schemas_directorv2.dynamic_services import (
+    RunningDynamicServiceDetails,
+)
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
@@ -18,7 +21,6 @@ from models_library.users import UserID
 from servicelib.logging_utils import log_decorator
 
 from ..core.settings import DirectorV0Settings
-from ..models.schemas.dynamic_services import RunningDynamicServiceDetails
 from ..models.schemas.services import ServiceExtras
 from ..utils.client_decorators import handle_errors, handle_retry
 from ..utils.clients import unenvelope_or_raise_error

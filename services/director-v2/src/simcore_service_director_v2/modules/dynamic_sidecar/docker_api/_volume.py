@@ -2,6 +2,9 @@ import logging
 from datetime import datetime, timezone
 
 from fastapi.encoders import jsonable_encoder
+from models_library.api_schemas_directorv2.constants import (
+    DYNAMIC_VOLUME_REMOVER_PREFIX,
+)
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
@@ -14,7 +17,6 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from ....core.settings import DynamicSidecarSettings
-from ....models.schemas.constants import DYNAMIC_VOLUME_REMOVER_PREFIX
 from ..docker_service_specs.volume_remover import spec_volume_removal_service
 from ._utils import docker_client
 

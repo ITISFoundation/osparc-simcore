@@ -3,8 +3,9 @@
 from abc import ABC, abstractmethod
 
 from fastapi import FastAPI
-
-from .....models.schemas.dynamic_services import SchedulerData
+from models_library.api_schemas_directorv2.dynamic_services_scheduler import (
+    SchedulerData,
+)
 
 
 class DynamicSchedulerEvent(ABC):
