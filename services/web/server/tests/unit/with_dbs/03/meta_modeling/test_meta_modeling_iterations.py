@@ -2,8 +2,8 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+from collections.abc import Awaitable, Callable
 from http import HTTPStatus
-from typing import Awaitable, Callable
 
 import pytest
 from aiohttp import ClientResponse, web
@@ -26,14 +26,14 @@ from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.models.projects import projects
 from simcore_service_webserver._constants import APP_DB_ENGINE_KEY
 from simcore_service_webserver.director_v2.api import get_project_run_policy
-from simcore_service_webserver.meta_modeling._projects import (
-    meta_project_policy,
-    projects_redirection_middleware,
-)
-from simcore_service_webserver.meta_modeling._rest_handlers import (
+from simcore_service_webserver.meta_modeling._handlers import (
     Page,
     ProjectIterationItem,
     ProjectIterationResultItem,
+)
+from simcore_service_webserver.meta_modeling._projects import (
+    meta_project_policy,
+    projects_redirection_middleware,
 )
 from simcore_service_webserver.projects.models import ProjectDict
 
@@ -233,7 +233,7 @@ async def test_iterators_workflow(
     assert response.status == HTTPStatus.OK, await response.text()
     body = await response.json()
 
-    results = Page[ProjectIterationResultItem].parse_obj(body).data
+    Page[ProjectIterationResultItem].parse_obj(body).data
 
     # GET project and MODIFY iterator values----------------------------------------------
     #  - Change iterations from 0:4 -> HEAD+1
