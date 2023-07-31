@@ -18,7 +18,7 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 
 from .._constants import RQ_PRODUCT_KEY
-from .._meta import api_version_prefix as VTAG
+from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..version_control.models import CommitID
@@ -35,6 +35,21 @@ routes = web.RouteTableDef()
 class RequestContext(BaseModel):
     user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore
     product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore
+
+
+class _ComputationStart(BaseModel):
+    force_restart: bool = False
+    cluster_id: ClusterID = 0
+    subgraph: set[str] = set()
+
+
+class _ComputationStarted(BaseModel):
+    pipeline_id: str = Field(
+        ..., description="ID for created pipeline (=project identifier)"
+    )
+    ref_ids: list[CommitID] = Field(
+        None, description="Checkpoints IDs for created pipeline"
+    )
 
 
 @routes.post(f"/{VTAG}/computations/{{project_id}}:start", name="start_computation")
@@ -56,6 +71,8 @@ async def start_computation(request: web.Request) -> web.Response:
 
     if request.can_read_body:
         body = await request.json()
+        assert parse_obj_as(_ComputationStart, body)  # nosec
+
         subgraph = body.get("subgraph", [])
         force_restart = bool(body.get("force_restart", force_restart))
         cluster_id = body.get("cluster_id")
@@ -113,6 +130,8 @@ async def start_computation(request: web.Request) -> web.Response:
         # Optional
         if project_vc_commits:
             data["ref_ids"] = project_vc_commits
+
+        assert parse_obj_as(_ComputationStarted, data)  # nosec
 
         return web.json_response(
             {"data": data},
