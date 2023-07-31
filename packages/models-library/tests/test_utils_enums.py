@@ -11,4 +11,4 @@ class _Ordinal(StrAutoEnum):
 
 
 def test_strautoenum():
-    assert list(f"{n}" for n in _Ordinal) == ["NORTH", "EAST", "SOUTH", "WEST"]
+    assert [f"{n}" for n in _Ordinal] == ["NORTH", "EAST", "SOUTH", "WEST"]

@@ -6,8 +6,10 @@
 
 import keyword
 import re
+from collections.abc import Sequence
 from datetime import datetime
-from typing import Any, Pattern, Sequence
+from re import Pattern
+from typing import Any
 
 import pytest
 from models_library.basic_regex import (

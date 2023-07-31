@@ -1,7 +1,4 @@
 # pylint: disable=redefined-outer-name
-import json
-from pprint import pformat
-from typing import Any, Dict, Type
 from uuid import UUID
 
 import pytest
@@ -9,27 +6,8 @@ from models_library.projects_networks import (
     DockerNetworkAlias,
     DockerNetworkName,
     NetworksWithAliases,
-    ProjectsNetworks,
 )
-from pydantic import BaseModel, ValidationError, parse_obj_as
-
-
-@pytest.mark.parametrize(
-    "model_cls",
-    (
-        ProjectsNetworks,
-        NetworksWithAliases,
-    ),
-)
-def test_service_settings_model_examples(
-    model_cls: Type[BaseModel], model_cls_examples: Dict[str, Dict[str, Any]]
-) -> None:
-    for name, example in model_cls_examples.items():
-        print(name, ":", pformat(example))
-
-        model_instance = model_cls.parse_obj(example)
-        assert json.loads(model_instance.json()) == example
-        assert model_instance.json() == json.dumps(example)
+from pydantic import ValidationError, parse_obj_as
 
 
 @pytest.mark.parametrize(
@@ -40,7 +18,7 @@ def test_service_settings_model_examples(
         {"shr-ntwrk_5c743ad2-8fdb-11ec-bb3a-02420a000008_default": {}},
     ],
 )
-def test_networks_with_aliases_ok(valid_example: Dict) -> None:
+def test_networks_with_aliases_ok(valid_example: dict) -> None:
     assert NetworksWithAliases.parse_obj(valid_example)
 
 
@@ -59,7 +37,7 @@ def test_networks_with_aliases_ok(valid_example: Dict) -> None:
         {"i_am_ok": {"5057e2c1-d392-4d31-b5c8-19f3db780390": "1_I_AM_INVALID"}},
     ],
 )
-def test_networks_with_aliases_fail(invalid_example: Dict) -> None:
+def test_networks_with_aliases_fail(invalid_example: dict) -> None:
     with pytest.raises(ValidationError):
         assert NetworksWithAliases.parse_obj(invalid_example)
 

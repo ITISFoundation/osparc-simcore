@@ -33,6 +33,7 @@ class OutputSchema(BaseModel):
 
     def data(
         self,
+        *,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
@@ -49,6 +50,7 @@ class OutputSchema(BaseModel):
 
     def data_json(
         self,
+        *,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,

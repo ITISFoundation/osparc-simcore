@@ -1,4 +1,4 @@
-from typing import Final, Generic, TypeVar
+from typing import Any, ClassVar, Final, Generic, TypeVar
 
 from pydantic import (
     AnyHttpUrl,
@@ -18,6 +18,20 @@ DEFAULT_NUMBER_OF_ITEMS_PER_PAGE: Final[int] = 20
 MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE: Final[int] = 50
 
 assert DEFAULT_NUMBER_OF_ITEMS_PER_PAGE < MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE  # nosec
+
+
+class PageQueryParameters(BaseModel):
+    """Use as pagination options in query parameters"""
+
+    limit: int = Field(
+        default=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+        description="maximum number of items to return (pagination)",
+        ge=1,
+        lt=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
+    )
+    offset: NonNegativeInt = Field(
+        default=0, description="index to the first item to return (pagination)"
+    )
 
 
 class PageMetaInfoLimitOffset(BaseModel):
@@ -53,7 +67,7 @@ class PageMetaInfoLimitOffset(BaseModel):
     class Config:
         extra = Extra.forbid
 
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {"total": 7, "count": 4, "limit": 4, "offset": 0},
             ]
@@ -95,17 +109,17 @@ class Page(GenericModel, Generic[ItemT]):
     def check_data_compatible_with_meta(cls, v, values):
         if "meta" not in values:
             # if the validation failed in meta this happens
-            raise ValueError("meta not in values")
+            msg = "meta not in values"
+            raise ValueError(msg)
         if len(v) != values["meta"].count:
-            raise ValueError(
-                f"container size [{len(v)}] must be equal to count [{values['meta'].count}]"
-            )
+            msg = f"container size [{len(v)}] must be equal to count [{values['meta'].count}]"
+            raise ValueError(msg)
         return v
 
     class Config:
         extra = Extra.forbid
 
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 # first page Page[str]
                 {
