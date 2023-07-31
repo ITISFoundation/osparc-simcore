@@ -1,4 +1,5 @@
 from contextlib import suppress
+from typing import Any, ClassVar
 
 from models_library.emails import LowerCaseEmailStr
 from pydantic import AnyUrl, BaseModel, Field, ValidationError, parse_obj_as, validator
@@ -20,7 +21,7 @@ class GroupAccessRights(BaseModel):
     delete: bool
 
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {"read": True, "write": False, "delete": False},
                 {"read": True, "write": True, "delete": False},
@@ -53,7 +54,7 @@ class UsersGroup(BaseModel):
         return None
 
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "gid": "27",
@@ -93,7 +94,7 @@ class AllUsersGroups(BaseModel):
     product: UsersGroup | None = None
 
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "me": {
                     "gid": "27",
@@ -142,7 +143,7 @@ class GroupUser(GroupAccessRights):
     gid: str | None = Field(None, description="the user primary gid")
 
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "first_name": "Mr",
                 "last_name": "Smith",
