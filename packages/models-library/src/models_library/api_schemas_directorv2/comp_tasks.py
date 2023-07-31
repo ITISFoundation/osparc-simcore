@@ -1,9 +1,10 @@
-from models_library.clusters import ClusterID
-from models_library.projects import ProjectID
-from models_library.projects_nodes import NodeID
-from models_library.projects_pipeline import ComputationTask
-from models_library.users import UserID
 from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, validator
+
+from ..clusters import ClusterID
+from ..projects import ProjectID
+from ..projects_nodes_io import NodeID
+from ..projects_pipeline import ComputationTask
+from ..users import UserID
 
 
 class ComputationGet(ComputationTask):
