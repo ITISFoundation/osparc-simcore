@@ -7,13 +7,13 @@ from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from servicelib.docker_utils import to_datetime
 from servicelib.logging_utils import log_context
-from simcore_service_director_v2.constants import DYNAMIC_VOLUME_REMOVER_PREFIX
 from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
+from ....constants import DYNAMIC_VOLUME_REMOVER_PREFIX
 from ....core.settings import DynamicSidecarSettings
 from ..docker_service_specs.volume_remover import spec_volume_removal_service
 from ._utils import docker_client

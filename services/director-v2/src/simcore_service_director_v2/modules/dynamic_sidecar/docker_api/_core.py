@@ -14,15 +14,6 @@ from models_library.projects_nodes_io import NodeID
 from models_library.services_enums import ServiceState
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
-from simcore_service_director_v2.constants import (
-    DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
-    DYNAMIC_SIDECAR_SERVICE_PREFIX,
-)
-from simcore_service_director_v2.models.dynamic_services_scheduler import (
-    NetworkId,
-    SchedulerData,
-    ServiceId,
-)
 from starlette import status
 from tenacity import TryAgain, retry
 from tenacity._asyncio import AsyncRetrying
@@ -30,7 +21,12 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential, wait_random_exponential
 
+from ....constants import (
+    DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
+    DYNAMIC_SIDECAR_SERVICE_PREFIX,
+)
 from ....core.settings import DynamicSidecarSettings
+from ....models.dynamic_services_scheduler import NetworkId, SchedulerData, ServiceId
 from ....utils.dict_utils import get_leaf_key_paths, nested_update
 from ..docker_states import TASK_STATES_RUNNING, extract_task_state
 from ..errors import DockerServiceNotFoundError, DynamicSidecarError, GenericDockerError

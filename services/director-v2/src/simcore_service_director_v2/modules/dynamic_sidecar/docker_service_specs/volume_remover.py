@@ -15,8 +15,8 @@ from models_library.services_resources import (
 )
 from models_library.users import UserID
 from pydantic import parse_obj_as
-from simcore_service_director_v2.constants import DYNAMIC_VOLUME_REMOVER_PREFIX
 
+from ....constants import DYNAMIC_VOLUME_REMOVER_PREFIX
 from ....core.settings import DynamicSidecarSettings
 
 

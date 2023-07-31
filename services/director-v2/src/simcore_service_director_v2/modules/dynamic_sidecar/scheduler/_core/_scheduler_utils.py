@@ -9,12 +9,9 @@ from models_library.api_schemas_directorv2.dynamic_services_service import (
 from models_library.projects_nodes_io import NodeID
 from models_library.services_enums import ServiceBootType, ServiceState
 from servicelib.fastapi.long_running_tasks.client import ProgressCallback
-from simcore_service_director_v2.models.dynamic_services_scheduler import (
-    DynamicSidecarStatus,
-    SchedulerData,
-)
 
 from .....core.settings import DynamicServicesSchedulerSettings, DynamicSidecarSettings
+from .....models.dynamic_services_scheduler import DynamicSidecarStatus, SchedulerData
 from ...api_client import SidecarsClient, get_sidecars_client
 from ...docker_api import (
     get_dynamic_sidecar_state,

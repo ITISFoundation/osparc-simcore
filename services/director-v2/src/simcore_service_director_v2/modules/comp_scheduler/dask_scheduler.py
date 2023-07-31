@@ -24,7 +24,6 @@ from models_library.rabbitmq_messages import (
 from models_library.users import UserID
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.comp_tasks import NodeClass
-from simcore_service_director_v2.models.comp_runs import MetadataDict
 
 from ...core.errors import TaskSchedulingError
 from ...core.settings import ComputationalBackendSettings
@@ -39,6 +38,7 @@ from ...utils.dask import (
 )
 from ...utils.dask_client_utils import TaskHandlers
 from ..db.repositories.comp_tasks import CompTasksRepository
+from ..models.comp_runs import MetadataDict
 from .base_scheduler import BaseCompScheduler
 
 logger = logging.getLogger(__name__)

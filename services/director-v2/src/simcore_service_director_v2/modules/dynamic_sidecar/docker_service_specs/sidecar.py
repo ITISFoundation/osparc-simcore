@@ -10,10 +10,10 @@ from models_library.docker import (
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from pydantic import ByteSize
 from servicelib.json_serialization import json_dumps
-from simcore_service_director_v2.constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
-from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 
+from ....constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
 from ....core.settings import AppSettings, DynamicSidecarSettings
+from ....models.dynamic_services_scheduler import SchedulerData
 from .._namespace import get_compose_namespace
 from ..volumes import DynamicSidecarVolumesPathsResolver
 from ._constants import DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS

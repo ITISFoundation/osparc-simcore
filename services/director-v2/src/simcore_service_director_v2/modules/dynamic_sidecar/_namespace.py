@@ -1,5 +1,6 @@
 from models_library.projects_nodes import NodeID
-from simcore_service_director_v2.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
+
+from ...constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
 
 
 def get_compose_namespace(node_uuid: NodeID) -> str:

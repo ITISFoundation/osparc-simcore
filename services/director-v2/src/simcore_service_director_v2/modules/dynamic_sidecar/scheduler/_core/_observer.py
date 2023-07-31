@@ -7,16 +7,16 @@ from math import floor
 
 from fastapi import FastAPI
 from servicelib.error_codes import create_error_code
-from simcore_service_director_v2.models.dynamic_services_scheduler import (
-    DynamicSidecarStatus,
-    SchedulerData,
-    ServiceName,
-)
 
 from .....core.settings import (
     DynamicServicesSchedulerSettings,
     DynamicServicesSettings,
     DynamicSidecarSettings,
+)
+from .....models.dynamic_services_scheduler import (
+    DynamicSidecarStatus,
+    SchedulerData,
+    ServiceName,
 )
 from ...docker_api import (
     are_sidecar_and_proxy_services_present,

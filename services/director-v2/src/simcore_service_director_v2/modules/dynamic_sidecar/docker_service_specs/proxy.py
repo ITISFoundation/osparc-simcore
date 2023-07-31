@@ -8,9 +8,9 @@ from models_library.services_resources import (
     MEMORY_250MB,
 )
 from pydantic import ByteSize
-from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 
 from ....core.settings import DynamicSidecarProxySettings, DynamicSidecarSettings
+from ....models.dynamic_services_scheduler import SchedulerData
 from ._constants import DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS
 
 
