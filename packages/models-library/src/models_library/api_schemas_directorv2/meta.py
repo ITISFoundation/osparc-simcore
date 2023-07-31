@@ -1,13 +1,8 @@
-import re
 from typing import Any, ClassVar
 
-from pydantic import BaseModel, ConstrainedStr, Field
+from pydantic import BaseModel, Field
 
-from ..basic_regex import VERSION_RE
-
-
-class VersionStr(ConstrainedStr):
-    regex = re.compile(VERSION_RE)
+from ..basic_types import VersionStr
 
 
 class Meta(BaseModel):
