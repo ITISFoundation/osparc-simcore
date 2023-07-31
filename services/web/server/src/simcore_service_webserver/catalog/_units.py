@@ -3,10 +3,11 @@ from typing import Any
 from models_library.api_schemas_webserver.catalog import (
     ServiceInputGet,
     ServiceOutputGet,
-    get_unit_name,
 )
 from models_library.services import BaseServiceIOModel, ServiceInput, ServiceOutput
 from pint import PintError, UnitRegistry
+
+from ._models import get_unit_name, model_factory
 
 
 def _get_type_name(port: BaseServiceIOModel) -> str:
@@ -37,13 +38,13 @@ def replace_service_input_outputs(
     # This is a fast solution until proper models are available for the web API
 
     for input_key in service["inputs"]:
-        new_input = ServiceInputGet.from_catalog_service_api_model(
+        new_input = model_factory[ServiceInputGet].from_catalog_service_api_model(
             service, input_key, unit_registry
         )
         service["inputs"][input_key] = new_input.dict(**export_options)
 
     for output_key in service["outputs"]:
-        new_output = ServiceOutputGet.from_catalog_service_api_model(
+        new_output = model_factory[ServiceOutputGet].from_catalog_service_api_model(
             service, output_key, unit_registry
         )
         service["outputs"][output_key] = new_output.dict(**export_options)

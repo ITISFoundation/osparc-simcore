@@ -30,6 +30,7 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
 from . import client
+from ._models import model_factory
 from ._units import can_connect, replace_service_input_outputs
 
 _logger = logging.getLogger(__name__)
@@ -125,15 +126,15 @@ async def update_service(
 
 async def list_service_inputs(
     service_key: ServiceKey, service_version: ServiceVersion, ctx: CatalogRequestContext
-) -> list[ServiceOutputGet]:
+) -> list[ServiceInputGet]:
     service = await client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
     inputs = []
     for input_key in service["inputs"]:
-        service_input = ServiceInputGet.from_catalog_service_api_model(
-            service, input_key
-        )
+        service_input: ServiceInputGet = model_factory[
+            ServiceInputGet
+        ].from_catalog_service_api_model(service, input_key)
         inputs.append(service_input)
     return inputs
 
@@ -147,9 +148,9 @@ async def get_service_input(
     service = await client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
-    service_input: ServiceInputGet = ServiceInputGet.from_catalog_service_api_model(
-        service, input_key
-    )
+    service_input: ServiceInputGet = model_factory[
+        ServiceInputGet
+    ].from_catalog_service_api_model(service, input_key)
 
     return service_input
 
@@ -207,7 +208,7 @@ async def list_service_outputs(
 
     outputs = []
     for output_key in service["outputs"]:
-        service_output = ServiceOutputGet.from_catalog_service_api_model(
+        service_output = model_factory[ServiceOutputGet].from_catalog_service_api_model(
             service, output_key
         )
         outputs.append(service_output)
@@ -223,9 +224,9 @@ async def get_service_output(
     service = await client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
-    service_output: ServiceOutputGet = ServiceOutputGet.from_catalog_service_api_model(
-        service, output_key
-    )
+    service_output: ServiceOutputGet = model_factory[
+        ServiceOutputGet
+    ].from_catalog_service_api_model(service, output_key)
 
     return service_output
 
