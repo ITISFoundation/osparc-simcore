@@ -1,13 +1,5 @@
-from typing import (
-    Any,
-    Generic,
-    ItemsView,
-    Iterable,
-    Iterator,
-    KeysView,
-    TypeVar,
-    ValuesView,
-)
+from collections.abc import ItemsView, Iterable, Iterator, KeysView, ValuesView
+from typing import Any, Generic, TypeVar
 
 from pydantic import validator
 from pydantic.generics import GenericModel

@@ -2,7 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from typing import Any, Dict
+from typing import Any
 from uuid import uuid4
 
 import pytest
@@ -77,9 +77,9 @@ ANOTHER_NODE_PAYLOAD = {"outputs": {ANOTHER_NODE_OUTPUT_KEY: 36}}
     ],
 )
 async def test_compute_node_hash(
-    node_id: NodeID, node_payload: Dict[str, Any], expected_hash: str
+    node_id: NodeID, node_payload: dict[str, Any], expected_hash: str
 ):
-    async def get_node_io_payload_cb(some_node_id: NodeID) -> Dict[str, Any]:
+    async def get_node_io_payload_cb(some_node_id: NodeID) -> dict[str, Any]:
         assert some_node_id in [node_id, ANOTHER_NODE_ID]
         return node_payload if some_node_id == node_id else ANOTHER_NODE_PAYLOAD
 

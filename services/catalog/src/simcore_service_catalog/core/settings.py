@@ -2,6 +2,9 @@ import logging
 from functools import cached_property
 from typing import Final
 
+from models_library.api_schemas_catalog.services_specifications import (
+    ServiceSpecifications,
+)
 from models_library.basic_types import BootModeEnum, BuildTargetEnum, LogLevel
 from models_library.services_resources import ResourcesDict
 from pydantic import ByteSize, Field, PositiveInt, parse_obj_as
@@ -9,8 +12,6 @@ from settings_library.base import BaseCustomSettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.utils_logging import MixinLoggingSettings
-
-from ..models.schemas.services_specifications import ServiceSpecifications
 
 logger = logging.getLogger(__name__)
 
@@ -51,12 +52,12 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         env=["CATALOG_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
     )
     CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
-        False,
+        default=False,
         env=["CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"],
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
     CATALOG_DEV_FEATURES_ENABLED: bool = Field(
-        False,
+        default=False,
         description="Enables development features. WARNING: make sure it is disabled in production .env file!",
     )
 

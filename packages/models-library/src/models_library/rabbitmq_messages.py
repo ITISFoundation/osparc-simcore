@@ -3,13 +3,14 @@ from abc import abstractmethod
 from enum import Enum, auto
 from typing import Any, Literal, TypeAlias
 
-from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID
-from models_library.projects_state import RunningState
-from models_library.users import UserID
-from models_library.utils.enums import StrAutoEnum
 from pydantic import BaseModel, Field
 from pydantic.types import NonNegativeFloat
+
+from .projects import ProjectID
+from .projects_nodes_io import NodeID
+from .projects_state import RunningState
+from .users import UserID
+from .utils.enums import StrAutoEnum
 
 LogLevelInt: TypeAlias = int
 LogMessageStr: TypeAlias = str

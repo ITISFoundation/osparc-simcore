@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import AnyUrl, BaseModel, Field
 
@@ -10,16 +10,16 @@ class AppStatusCheck(BaseModel):
         default={}, description="Other backend services connected from this service"
     )
 
-    sessions: Optional[dict[str, Any]] = Field(
+    sessions: dict[str, Any] | None = Field(
         default={},
         description="Client sessions info. If single session per app, then is denoted as main",
     )
 
-    url: Optional[AnyUrl] = Field(
+    url: AnyUrl | None = Field(
         default=None,
         description="Link to current resource",
     )
-    diagnostics_url: Optional[AnyUrl] = Field(
+    diagnostics_url: AnyUrl | None = Field(
         default=None,
         description="Link to diagnostics report sub-resource. This MIGHT take some time to compute",
     )

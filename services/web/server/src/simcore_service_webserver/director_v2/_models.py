@@ -4,6 +4,7 @@ from models_library.clusters import (
     CLUSTER_USER_RIGHTS,
     BaseCluster,
     ClusterAccessRights,
+    ClusterTypeInModel,
     ExternalClusterAuthentication,
 )
 from models_library.users import GroupID
@@ -17,6 +18,12 @@ class ClusterPing(BaseModel):
     authentication: ExternalClusterAuthentication
 
 
+_DEFAULT_THUMBNAILS = {
+    f"{ClusterTypeInModel.AWS}": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/250px-Amazon_Web_Services_Logo.svg.png",
+    f"{ClusterTypeInModel.ON_PREMISE}": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Crystal_Clear_app_network_local.png/120px-Crystal_Clear_app_network_local.png",
+}
+
+
 class ClusterCreate(BaseCluster):
     owner: GroupID | None
     authentication: ExternalClusterAuthentication
@@ -27,13 +34,10 @@ class ClusterCreate(BaseCluster):
     @validator("thumbnail", always=True, pre=True)
     @classmethod
     def set_default_thumbnail_if_empty(cls, v, values):
-        if v is None:
-            cluster_type = values["type"]
-            default_thumbnails = {
-                ClusterType.AWS.value: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/250px-Amazon_Web_Services_Logo.svg.png",
-                ClusterType.ON_PREMISE.value: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Crystal_Clear_app_network_local.png/120px-Crystal_Clear_app_network_local.png",
-            }
-            return default_thumbnails[cluster_type]
+        if v is None and (
+            cluster_type := values.get("type", f"{ClusterTypeInModel.ON_PREMISE}")
+        ):
+            return _DEFAULT_THUMBNAILS[f"{cluster_type}"]
         return v
 
     class Config(BaseCluster.Config):
@@ -41,7 +45,7 @@ class ClusterCreate(BaseCluster):
             "examples": [
                 {
                     "name": "My awesome cluster",
-                    "type": ClusterType.ON_PREMISE,
+                    "type": ClusterType.ON_PREMISE,  # can use also values from equivalent enum
                     "endpoint": "https://registry.osparc-development.fake.dev",
                     "authentication": {
                         "type": "simple",

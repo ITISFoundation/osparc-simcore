@@ -1,6 +1,6 @@
 import yaml
-from models_library.service_settings_labels import ComposeSpecLabelDict
 
+from ..service_settings_labels import ComposeSpecLabelDict
 from .string_substitution import SubstitutionsDict, TextTemplate
 
 # Notes on below env var names:

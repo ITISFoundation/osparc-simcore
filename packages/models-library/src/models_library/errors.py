@@ -1,6 +1,6 @@
-from typing import Any, TypedDict, Union
+from typing import Any, TypedDict
 
-Loc = tuple[Union[int, str], ...]
+Loc = tuple[int | str, ...]
 
 
 class _ErrorDictRequired(TypedDict):
