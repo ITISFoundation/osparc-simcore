@@ -23,18 +23,10 @@ APP_LOGIN_OPTIONS_KEY = f"{__name__}.APP_LOGIN_OPTIONS_KEY"
 class LoginSettings(BaseCustomSettings):
     LOGIN_REGISTRATION_CONFIRMATION_REQUIRED: bool = Field(
         True,
-        env=[
-            "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED",
-            "WEBSERVER_LOGIN_REGISTRATION_CONFIRMATION_REQUIRED",
-        ],
     )
 
     LOGIN_REGISTRATION_INVITATION_REQUIRED: bool = Field(
         ...,
-        env=[
-            "LOGIN_REGISTRATION_INVITATION_REQUIRED",
-            "WEBSERVER_LOGIN_REGISTRATION_INVITATION_REQUIRED",
-        ],
     )
 
     LOGIN_TWILIO: TwilioSettings | None = Field(

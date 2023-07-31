@@ -72,10 +72,12 @@ def webserver_environ(
     #   version tha loads only the subsystems under test. For that reason,
     #   the test webserver is built-up in webserver_service fixture that runs
     #   on the host.
+    EXCLUDED_SERVICES = ["dask-scheduler"]
     services_with_published_ports = [
         name
         for name in core_services
         if "ports" in simcore_docker_compose["services"][name]
+        and name not in EXCLUDED_SERVICES
     ]
     for name in services_with_published_ports:
         host_key = f"{name.upper().replace('-', '_')}_HOST"
@@ -135,7 +137,10 @@ def _default_app_config_for_integration_tests(
     # for the moment using web-server as an all-in-one service.
     # TODO: create integration tests using different configs
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2896
-    test_environ["WEBSERVER_GARBAGE_COLLECTION_INTERVAL_SECONDS"] = "30"
+    test_environ[
+        "WEBSERVER_GARBAGE_COLLECTOR"
+    ] = "{}"  # by default it is disabled. This enables it with default or env variables
+    test_environ["GARBAGE_COLLECTOR_INTERVAL_S"] = "30"
 
     # recreate config-file
     config_template = Template(default_app_config_integration_file.read_text())

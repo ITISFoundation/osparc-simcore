@@ -77,7 +77,7 @@ def mock_environment(mock_env_devel_environment: dict[str, str], monkeypatch):
     monkeypatch.setenv("AIODEBUG_SLOW_DURATION_SECS", f"{SLOW_HANDLER_DELAY_SECS / 10}")
     monkeypatch.setenv("DIAGNOSTICS_MAX_TASK_DELAY", f"{SLOW_HANDLER_DELAY_SECS}")
     monkeypatch.setenv("DIAGNOSTICS_MAX_AVG_LATENCY", f"{2.0}")
-    monkeypatch.setenv("DIAGNOSTICS_START_SENSING_DELAY", f"{0}")  # inmidiately
+    monkeypatch.setenv("DIAGNOSTICS_START_SENSING_DELAY", f"{0}")
     monkeypatch.setenv("SC_HEALTHCHECK_TIMEOUT", "2m")
 
 
