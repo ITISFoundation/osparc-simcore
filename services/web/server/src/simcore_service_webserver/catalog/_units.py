@@ -1,22 +1,12 @@
-from dataclasses import dataclass
+from typing import Any
 
+from models_library.api_schemas_webserver.catalog import (
+    ServiceInputGet,
+    ServiceOutputGet,
+    get_unit_name,
+)
 from models_library.services import BaseServiceIOModel, ServiceInput, ServiceOutput
 from pint import PintError, UnitRegistry
-
-
-def _get_unit_name(port: BaseServiceIOModel) -> str | None:
-    unit: str | None = port.unit
-    if port.property_type == "ref_contentSchema":
-        assert port.content_schema is not None  # nosec
-        # NOTE: content schema might not be resolved (i.e. has $ref!! )
-        unit = port.content_schema.get("x_unit", unit)
-        if unit:
-            # WARNING: has a special format for prefix. tmp direct replace here
-            unit = unit.replace("-", "")
-        elif port.content_schema.get("type") in ("object", "array", None):
-            # these objects might have unit in its fields
-            raise NotImplementedError
-    return unit
 
 
 def _get_type_name(port: BaseServiceIOModel) -> str:
@@ -27,29 +17,6 @@ def _get_type_name(port: BaseServiceIOModel) -> str:
     return _type
 
 
-@dataclass
-class UnitHtmlFormat:
-    short: str
-    long: str
-
-
-def get_html_formatted_unit(
-    port: BaseServiceIOModel, ureg: UnitRegistry
-) -> UnitHtmlFormat | None:
-    try:
-        unit_name = _get_unit_name(port)
-        if unit_name is None:
-            return None
-
-        q = ureg.Quantity(unit_name)
-        return UnitHtmlFormat(short=f"{q.units:~H}", long=f"{q.units:H}")
-    except (PintError, NotImplementedError):
-        return None
-
-
-## PORT COMPATIBILITY ---------------------------------
-
-
 def _can_convert_units(from_unit: str, to_unit: str, ureg: UnitRegistry) -> bool:
     assert from_unit  # nosec
     assert to_unit  # nosec
@@ -58,6 +25,28 @@ def _can_convert_units(from_unit: str, to_unit: str, ureg: UnitRegistry) -> bool
     except (TypeError, PintError):
         can = False
     return can
+
+
+def replace_service_input_outputs(
+    service: dict[str, Any],
+    *,
+    unit_registry: UnitRegistry | None = None,
+    **export_options,
+):
+    """Thin wrapper to replace i/o ports in returned service model"""
+    # This is a fast solution until proper models are available for the web API
+
+    for input_key in service["inputs"]:
+        new_input = ServiceInputGet.from_catalog_service_api_model(
+            service, input_key, unit_registry
+        )
+        service["inputs"][input_key] = new_input.dict(**export_options)
+
+    for output_key in service["outputs"]:
+        new_output = ServiceOutputGet.from_catalog_service_api_model(
+            service, output_key, unit_registry
+        )
+        service["outputs"][output_key] = new_output.dict(**export_options)
 
 
 def can_connect(
@@ -100,8 +89,8 @@ def can_connect(
     # types units
     if ok:
         try:
-            from_unit = _get_unit_name(from_output)
-            to_unit = _get_unit_name(to_input)
+            from_unit = get_unit_name(from_output)
+            to_unit = get_unit_name(to_input)
         except NotImplementedError:
             return ok
 
