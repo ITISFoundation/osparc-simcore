@@ -1,7 +1,6 @@
 from enum import auto
-from typing import Any, ClassVar, Final, Literal, TypeAlias, Union
+from typing import Any, ClassVar, Final, Literal, TypeAlias
 
-from models_library.utils.common_validators import create_enums_pre_validator
 from pydantic import (
     AnyUrl,
     BaseModel,
@@ -15,6 +14,7 @@ from pydantic import (
 from pydantic.types import NonNegativeInt
 
 from .users import GroupID
+from .utils.common_validators import create_enums_pre_validator
 from .utils.enums import StrAutoEnum
 
 
@@ -95,13 +95,12 @@ class NoAuthentication(BaseAuthentication):
 
 
 InternalClusterAuthentication: TypeAlias = NoAuthentication
-ExternalClusterAuthentication: TypeAlias = Union[
-    SimpleAuthentication, KerberosAuthentication, JupyterHubTokenAuthentication
-]
-ClusterAuthentication: TypeAlias = Union[
-    ExternalClusterAuthentication,
-    InternalClusterAuthentication,
-]
+ExternalClusterAuthentication: TypeAlias = (
+    SimpleAuthentication | KerberosAuthentication | JupyterHubTokenAuthentication
+)
+ClusterAuthentication: TypeAlias = (
+    ExternalClusterAuthentication | InternalClusterAuthentication
+)
 
 
 class BaseCluster(BaseModel):
