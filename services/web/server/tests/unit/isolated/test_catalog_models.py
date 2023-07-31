@@ -12,7 +12,7 @@ from simcore_service_webserver.catalog._handlers import RESPONSE_MODEL_POLICY
 
 
 @pytest.fixture(scope="module")
-def unit_registry():
+def unit_registry() -> UnitRegistry:
     return UnitRegistry()
 
 
@@ -36,12 +36,12 @@ def test_from_catalog_to_webapi_service(unit_registry: UnitRegistry):
         "badges": None,
         "authors": [
             {
-                "name": "Odei Maiz",
-                "email": "maiz@itis.swiss",
+                "name": "Foo Bar",
+                "email": "foo@fake.com",
                 "affiliation": None,
             }
         ],
-        "contact": "maiz@itis.swiss",
+        "contact": "foo@fake.com",
         "inputs": {
             "uno": {
                 "displayOrder": 0,
@@ -63,7 +63,7 @@ def test_from_catalog_to_webapi_service(unit_registry: UnitRegistry):
                 "widget": None,
             }
         },
-        "owner": "maiz@itis.swiss",
+        "owner": "foo@fake.com",
     }
 
     webapi_service = deepcopy(catalog_service)
