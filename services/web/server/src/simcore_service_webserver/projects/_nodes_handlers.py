@@ -8,7 +8,9 @@ import logging
 from typing import Any
 
 from aiohttp import web
-from models_library.api_schemas_catalog.service_access_rights import ServiceAccessRightsGet
+from models_library.api_schemas_catalog.service_access_rights import (
+    ServiceAccessRightsGet,
+)
 from models_library.api_schemas_webserver.projects_nodes import (
     NodeCreate,
     NodeCreated,
