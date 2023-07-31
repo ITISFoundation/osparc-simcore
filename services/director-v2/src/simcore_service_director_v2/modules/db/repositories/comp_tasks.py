@@ -7,6 +7,10 @@ import aiopg.sa
 import arrow
 import sqlalchemy as sa
 from dask_task_models_library.container_tasks.protocol import ContainerEnvsDict
+from models_library.api_schemas_directorv2.services import (
+    NodeRequirements,
+    ServiceExtras,
+)
 from models_library.errors import ErrorDict
 from models_library.function_services_catalog import iter_service_docker_data
 from models_library.projects import ProjectAtDB, ProjectID
@@ -28,7 +32,6 @@ from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert
 
 from ....models.domains.comp_tasks import CompTaskAtDB, Image, NodeSchema
-from ....models.schemas.services import NodeRequirements, ServiceExtras
 from ....utils.computations import to_node_class
 from ....utils.db import RUNNING_STATE_TO_DB
 from ...catalog import CatalogClient, ServiceResourcesDict

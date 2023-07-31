@@ -1,8 +1,9 @@
 import datetime
 from contextlib import suppress
-from typing import Any
+from typing import Any, ClassVar
 
 from dask_task_models_library.container_tasks.protocol import ContainerEnvsDict
+from models_library.api_schemas_directorv2.services import NodeRequirements
 from models_library.basic_regex import VERSION_RE
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
@@ -20,7 +21,6 @@ from pydantic.types import PositiveInt
 from simcore_postgres_database.models.comp_tasks import NodeClass, StateType
 
 from ...utils.db import DB_TO_RUNNING_STATE, RUNNING_STATE_TO_DB
-from ..schemas.services import NodeRequirements
 
 
 class Image(BaseModel):
@@ -64,7 +64,7 @@ class Image(BaseModel):
 
     class Config:
         orm_mode = True
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "name": "simcore/services/dynamic/jupyter-octave-python-math",
