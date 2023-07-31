@@ -4,6 +4,7 @@
 
 from typing import Any
 
+import pytest
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.sidecar import (

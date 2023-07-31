@@ -102,7 +102,7 @@ async def discover_running_services(scheduler: "Scheduler") -> None:  # type: ig
         await scheduler._add_service(scheduler_data)  # pylint: disable=protected-access
 
 
-def _create_model_from_scheduler_data(
+def create_model_from_scheduler_data(
     node_uuid: NodeID,
     scheduler_data: SchedulerData,
     service_state: ServiceState,
@@ -132,7 +132,7 @@ async def get_stack_status_from_scheduler_data(
     # check if there was an error picked up by the scheduler
     # and marked this service as failed
     if scheduler_data.dynamic_sidecar.status.current != DynamicSidecarStatus.OK:
-        return _create_model_from_scheduler_data(
+        return create_model_from_scheduler_data(
             node_uuid=scheduler_data.node_uuid,
             scheduler_data=scheduler_data,
             service_state=ServiceState.FAILED,
@@ -141,7 +141,7 @@ async def get_stack_status_from_scheduler_data(
 
     # is the service stopping?
     if scheduler_data.dynamic_sidecar.service_removal_state.can_remove:
-        return _create_model_from_scheduler_data(
+        return create_model_from_scheduler_data(
             node_uuid=scheduler_data.node_uuid,
             scheduler_data=scheduler_data,
             service_state=ServiceState.STOPPING,
@@ -157,7 +157,7 @@ async def get_stack_status_from_scheduler_data(
         )
     except DockerServiceNotFoundError:
         # in this case, the service is starting, so state is pending
-        return _create_model_from_scheduler_data(
+        return create_model_from_scheduler_data(
             node_uuid=scheduler_data.node_uuid,
             scheduler_data=scheduler_data,
             service_state=ServiceState.PENDING,
@@ -166,7 +166,7 @@ async def get_stack_status_from_scheduler_data(
 
     # while the dynamic-sidecar state is not RUNNING report it's state
     if sidecar_state != ServiceState.RUNNING:
-        return _create_model_from_scheduler_data(
+        return create_model_from_scheduler_data(
             node_uuid=scheduler_data.node_uuid,
             scheduler_data=scheduler_data,
             service_state=sidecar_state,
@@ -179,7 +179,7 @@ async def get_stack_status_from_scheduler_data(
     # wait for containers to start
     if len(scheduler_data.dynamic_sidecar.containers_inspect) == 0:
         # marks status as waiting for containers
-        return _create_model_from_scheduler_data(
+        return create_model_from_scheduler_data(
             node_uuid=scheduler_data.node_uuid,
             scheduler_data=scheduler_data,
             service_state=ServiceState.STARTING,
@@ -190,7 +190,7 @@ async def get_stack_status_from_scheduler_data(
     container_state, container_message = extract_containers_minimum_statuses(
         scheduler_data.dynamic_sidecar.containers_inspect
     )
-    return _create_model_from_scheduler_data(
+    return create_model_from_scheduler_data(
         node_uuid=scheduler_data.node_uuid,
         scheduler_data=scheduler_data,
         service_state=container_state,

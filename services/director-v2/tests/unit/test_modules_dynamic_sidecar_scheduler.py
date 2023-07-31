@@ -45,6 +45,9 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._observ
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._scheduler import (
     Scheduler,
 )
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._scheduler_utils import (
+    create_model_from_scheduler_data,
+)
 
 # running scheduler at a hight rate to stress out the system
 # and ensure faster tests
@@ -364,7 +367,7 @@ async def test_get_stack_status(
     await scheduler._scheduler._add_service(scheduler_data)
 
     stack_status = await scheduler.get_stack_status(scheduler_data.node_uuid)
-    assert stack_status == RunningDynamicServiceDetails.from_scheduler_data(
+    assert stack_status == create_model_from_scheduler_data(
         node_uuid=scheduler_data.node_uuid,
         scheduler_data=scheduler_data,
         service_state=ServiceState.PENDING,
@@ -395,7 +398,7 @@ async def test_get_stack_status_failing_sidecar(
     await scheduler._scheduler._add_service(scheduler_data)
 
     stack_status = await scheduler.get_stack_status(scheduler_data.node_uuid)
-    assert stack_status == RunningDynamicServiceDetails.from_scheduler_data(
+    assert stack_status == create_model_from_scheduler_data(
         node_uuid=scheduler_data.node_uuid,
         scheduler_data=scheduler_data,
         service_state=ServiceState.FAILED,
@@ -414,7 +417,7 @@ async def test_get_stack_status_containers_are_starting(
     async with _assert_get_dynamic_services_mocked(
         scheduler, scheduler_data, mock_service_running, expected_status="created"
     ) as stack_status:
-        assert stack_status == RunningDynamicServiceDetails.from_scheduler_data(
+        assert stack_status == create_model_from_scheduler_data(
             node_uuid=scheduler_data.node_uuid,
             scheduler_data=scheduler_data,
             service_state=ServiceState.STARTING,
@@ -433,7 +436,7 @@ async def test_get_stack_status_ok(
     async with _assert_get_dynamic_services_mocked(
         scheduler, scheduler_data, mock_service_running, expected_status="running"
     ) as stack_status:
-        assert stack_status == RunningDynamicServiceDetails.from_scheduler_data(
+        assert stack_status == create_model_from_scheduler_data(
             node_uuid=scheduler_data.node_uuid,
             scheduler_data=scheduler_data,
             service_state=ServiceState.RUNNING,
