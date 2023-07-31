@@ -1,6 +1,6 @@
 import datetime
 from contextlib import suppress
-from typing import Any
+from typing import Any, ClassVar
 
 from models_library.clusters import DEFAULT_CLUSTER_ID, ClusterID
 from models_library.projects import ProjectID
@@ -62,7 +62,7 @@ class CompRunsAtDB(BaseModel):
 
     class Config:
         orm_mode = True
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 # DB model
                 {

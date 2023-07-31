@@ -1,4 +1,5 @@
 from contextlib import suppress
+from typing import Any, ClassVar
 
 import networkx as nx
 from models_library.projects import ProjectID
@@ -41,7 +42,7 @@ class CompPipelineAtDB(BaseModel):
     class Config:
         orm_mode = True
 
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 # DB model
                 {

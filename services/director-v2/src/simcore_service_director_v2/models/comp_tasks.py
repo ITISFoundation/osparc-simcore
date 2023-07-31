@@ -162,7 +162,7 @@ class CompTaskAtDB(BaseModel):
     class Config:
         extra = Extra.forbid
         orm_mode = True
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 # DB model
                 {
