@@ -4,11 +4,10 @@
 
 from typing import Any
 
-from pytest import MonkeyPatch
-from simcore_service_director_v2.core.settings import AppSettings
-from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
+from models_library.api_schemas_directorv2.dynamic_services_scheduler import (
     SchedulerData,
 )
+from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.sidecar import (
     _get_environment_variables,
 )
@@ -59,7 +58,7 @@ EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES = {
 
 
 def test_dynamic_sidecar_env_vars(
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     scheduler_data_from_http_request: SchedulerData,
     project_env_devel_environment: dict[str, Any],
 ):

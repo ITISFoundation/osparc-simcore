@@ -15,6 +15,13 @@ import pytest
 import respx
 from fastapi import FastAPI
 from httpx import URL, QueryParams
+from models_library.api_schemas_directorv2.dynamic_services import (
+    DynamicServiceCreate,
+    RetrieveDataOutEnveloped,
+)
+from models_library.api_schemas_directorv2.dynamic_services_scheduler import (
+    SchedulerData,
+)
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from pytest_mock.plugin import MockerFixture
@@ -25,15 +32,8 @@ from servicelib.common_headers import (
     X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
     X_SIMCORE_USER_AGENT,
 )
-from simcore_service_director_v2.models.domains.dynamic_services import (
-    DynamicServiceCreate,
-    RetrieveDataOutEnveloped,
-)
 from simcore_service_director_v2.models.schemas.dynamic_services import (
     RunningDynamicServiceDetails,
-)
-from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
-    SchedulerData,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarNotFoundError,

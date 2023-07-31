@@ -4,14 +4,16 @@
 import os
 import re
 import traceback
+from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterable, AsyncIterator, Awaitable, Callable
+from typing import Any
 
 import pytest
 import respx
 from click.testing import Result
 from faker import Faker
 from fastapi import status
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes_io import NodeID
 from pytest_mock.plugin import MockerFixture
@@ -20,9 +22,6 @@ from servicelib.long_running_tasks._models import ProgressCallback
 from simcore_service_director_v2.cli import DEFAULT_NODE_SAVE_ATTEMPTS, main
 from simcore_service_director_v2.cli._close_and_save_service import (
     ThinDV2LocalhostClient,
-)
-from simcore_service_director_v2.models.domains.dynamic_services import (
-    DynamicServiceGet,
 )
 from simcore_service_director_v2.models.schemas.dynamic_services import (
     RunningDynamicServiceDetails,
@@ -87,7 +86,8 @@ def mock_save_service_state(mocker: MockerFixture) -> None:
 @pytest.fixture
 def mock_save_service_state_as_failing(mocker: MockerFixture) -> None:
     async def _always_raise(*args, **kwargs) -> None:
-        raise Exception("I AM FAILING NOW")  # pylint: disable=broad-exception-raised
+        msg = "I AM FAILING NOW"
+        raise Exception(msg)  # pylint: disable=broad-exception-raised
 
     mocker.patch(
         "simcore_service_director_v2.modules.dynamic_sidecar.api_client._public.SidecarsClient.save_service_state",

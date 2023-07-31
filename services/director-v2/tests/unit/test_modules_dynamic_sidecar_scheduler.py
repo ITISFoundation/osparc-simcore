@@ -14,8 +14,10 @@ import pytest
 import respx
 from faker import Faker
 from fastapi import FastAPI
+from models_library.api_schemas_directorv2.dynamic_services_scheduler import (
+    DockerContainerInspect,
+)
 from models_library.service_settings_labels import SimcoreServiceLabels
-from pytest import LogCaptureFixture, MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
@@ -25,9 +27,6 @@ from simcore_service_director_v2.models.schemas.dynamic_services import (
     RunningDynamicServiceDetails,
     SchedulerData,
     ServiceState,
-)
-from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
-    DockerContainerInspect,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarError,
@@ -117,7 +116,7 @@ def mock_env(
     disable_postgres: None,
     disable_rabbitmq: None,
     mock_env: EnvVarsDict,
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     simcore_services_network_name: str,
     mock_docker_api: None,
 ) -> None:
@@ -223,7 +222,7 @@ def mock_update_label(mocker: MockerFixture) -> Iterator[None]:
 
 
 @pytest.fixture
-def mock_max_status_api_duration(monkeypatch: MonkeyPatch) -> Iterator[None]:
+def mock_max_status_api_duration(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     monkeypatch.setenv("DYNAMIC_SIDECAR_STATUS_API_TIMEOUT_S", "0.0001")
     yield
 
@@ -451,7 +450,7 @@ def mocked_app() -> AsyncMock:
 async def test_regression_remove_service_from_observation(
     mocked_app: AsyncMock,
     faker: Faker,
-    caplog_debug_level: LogCaptureFixture,
+    caplog_debug_level: pytest.LogCaptureFixture,
     missing_to_observe_entry: bool,
 ):
     scheduler = Scheduler(mocked_app)

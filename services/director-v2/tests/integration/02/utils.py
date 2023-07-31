@@ -12,6 +12,13 @@ from typing import Any
 import aiodocker
 import httpx
 from fastapi import FastAPI
+from models_library.api_schemas_directorv2.constants import (
+    DYNAMIC_PROXY_SERVICE_PREFIX,
+    DYNAMIC_SIDECAR_SERVICE_PREFIX,
+)
+from models_library.api_schemas_directorv2.dynamic_services_scheduler import (
+    SchedulerData,
+)
 from models_library.basic_types import PortInt
 from models_library.projects import Node, NodesDict
 from models_library.projects_nodes_io import NodeID
@@ -28,13 +35,6 @@ from servicelib.common_headers import (
     X_SIMCORE_USER_AGENT,
 )
 from simcore_service_director_v2.core.settings import DynamicSidecarSettings
-from simcore_service_director_v2.models.schemas.constants import (
-    DYNAMIC_PROXY_SERVICE_PREFIX,
-    DYNAMIC_SIDECAR_SERVICE_PREFIX,
-)
-from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
-    SchedulerData,
-)
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
     DynamicSidecarsScheduler,
 )

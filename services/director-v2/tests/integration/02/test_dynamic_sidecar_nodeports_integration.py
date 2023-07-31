@@ -37,6 +37,9 @@ from helpers.shared_comp_utils import (
     assert_and_wait_for_pipeline_status,
     assert_computation_task_out_obj,
 )
+from models_library.api_schemas_directorv2.constants import (
+    DYNAMIC_SIDECAR_SERVICE_PREFIX,
+)
 from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import (
     Node,
@@ -77,9 +80,6 @@ from simcore_sdk.node_data import data_manager
 from simcore_sdk.node_ports_v2 import DBManager, Nodeports, Port
 from simcore_service_director_v2.core.settings import AppSettings, RCloneSettings
 from simcore_service_director_v2.models.schemas.comp_tasks import ComputationGet
-from simcore_service_director_v2.models.schemas.constants import (
-    DYNAMIC_SIDECAR_SERVICE_PREFIX,
-)
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type

@@ -7,18 +7,17 @@ from typing import Final, Iterable
 
 import pytest
 from fastapi import FastAPI
+from models_library.api_schemas_directorv2.dynamic_services_scheduler import (
+    ContainerState,
+    DockerContainerInspect,
+    DockerStatus,
+)
 from pydantic import PositiveFloat, PositiveInt
-from pytest import LogCaptureFixture, MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from servicelib.exception_utils import _SKIPS_MESSAGE
 from simcore_service_director_v2.models.schemas.dynamic_services import SchedulerData
-from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
-    ContainerState,
-    DockerContainerInspect,
-    DockerStatus,
-)
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client import (
     BaseClientHTTPError,
 )
@@ -34,7 +33,7 @@ REPEAT_COUNT: Final[PositiveInt] = STEPS + 1
 def mock_env(
     disable_postgres: None,
     mock_env: EnvVarsDict,
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     setenvs_from_dict(
         monkeypatch,
@@ -93,7 +92,9 @@ def scheduler_data(
 
 
 @pytest.fixture()
-def caplog_debug(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
+def caplog_debug(
+    caplog: pytest.LogCaptureFixture,
+) -> Iterable[pytest.LogCaptureFixture]:
     with caplog.at_level(
         logging.DEBUG,
     ):
@@ -104,7 +105,7 @@ async def test_event_get_status_network_connectivity(
     mock_sidecars_client_always_fail: None,
     minimal_app: FastAPI,
     scheduler_data: SchedulerData,
-    caplog_debug: LogCaptureFixture,
+    caplog_debug: pytest.LogCaptureFixture,
 ):
     caplog_debug.clear()
     with pytest.raises(BaseClientHTTPError):
@@ -119,7 +120,7 @@ async def test_event_get_status_recovers_after_error(
     mock_sidecars_client_stops_failing: None,
     minimal_app: FastAPI,
     scheduler_data: SchedulerData,
-    caplog_debug: LogCaptureFixture,
+    caplog_debug: pytest.LogCaptureFixture,
 ):
     caplog_debug.clear()
     for _ in range(REPEAT_COUNT):

@@ -4,22 +4,22 @@
 
 import asyncio
 import re
+from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Final, Iterator
+from typing import Final
 from unittest.mock import AsyncMock
 
 import httpx
 import pytest
 import respx
 from fastapi import FastAPI
-from pytest import FixtureRequest, MonkeyPatch
+from models_library.api_schemas_directorv2.dynamic_services_scheduler import (
+    SchedulerData,
+)
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from respx.router import MockRouter
-from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
-    SchedulerData,
-)
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
     SidecarsClient,
 )
@@ -45,7 +45,7 @@ def mock_env(
     disable_postgres: None,
     disable_rabbitmq: None,
     mock_env: EnvVarsDict,
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     simcore_services_network_name: str,
     docker_swarm: None,
     mock_docker_api: None,
@@ -88,7 +88,7 @@ def mock_containers_docker_status(
             name="containers_docker_status",
         ).mock(httpx.Response(200, json={}))
         mock.get(f"{service_endpoint}/health", name="is_healthy").respond(
-            json=dict(is_healthy=True)
+            json={"is_healthy": True}
         )
 
         yield mock
@@ -131,7 +131,7 @@ class ACounter:
 
 
 @pytest.fixture(params=[True, False])
-def error_raised_by_saving_state(request: FixtureRequest) -> bool:
+def error_raised_by_saving_state(request: pytest.FixtureRequest) -> bool:
     return request.param  # type: ignore
 
 
@@ -194,7 +194,8 @@ def mocked_dynamic_scheduler_events(
                 scheduler_data.dynamic_sidecar.wait_for_manual_intervention_after_error = (
                     use_case.wait_for_manual_intervention_after_error
                 )
-            raise RuntimeError("Failed as planned")
+            msg = "Failed as planned"
+            raise RuntimeError(msg)
 
     test_defined_scheduler_events: list[type[DynamicSchedulerEvent]] = [
         AlwaysTriggersDynamicSchedulerEvent
@@ -214,7 +215,7 @@ def mock_remove_calls(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture(params=[True, False])
-def node_present_in_db(request: FixtureRequest) -> bool:
+def node_present_in_db(request: pytest.FixtureRequest) -> bool:
     return request.param
 
 
