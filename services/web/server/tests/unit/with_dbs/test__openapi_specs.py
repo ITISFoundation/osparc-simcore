@@ -27,6 +27,9 @@ def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     faker: Faker,
 ) -> EnvVarsDict:
+    # Needed to enable  WEBSERVER_ACTIVITY using PROMETEUS below
+    monkeypatch.delenv("WEBSERVER_ACTIVITY", raising=False)
+
     return mock_env_devel_environment | setenvs_from_dict(
         monkeypatch,
         {
@@ -40,7 +43,7 @@ def app_environment(
             "WEBSERVER_VERSION_CONTROL": "1",
             "WEBSERVER_META_MODELING": "1",
             "WEBSERVER_CLUSTERS": "1",
-            # enables activity ACTIVITY
+            # enables activity WEBSERVER_ACTIVITY
             "PROMETHEUS_URL": f"https://{faker.domain_name()}",
             "PROMETHEUS_USERNAME": faker.user_name(),
             "PROMETHEUS_PASSWORD": faker.password(),
