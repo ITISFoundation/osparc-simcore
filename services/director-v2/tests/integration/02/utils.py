@@ -12,10 +12,6 @@ from typing import Any
 import aiodocker
 import httpx
 from fastapi import FastAPI
-from models_library.api_schemas_directorv2.constants import (
-    DYNAMIC_PROXY_SERVICE_PREFIX,
-    DYNAMIC_SIDECAR_SERVICE_PREFIX,
-)
 from models_library.basic_types import PortInt
 from models_library.projects import Node, NodesDict
 from models_library.projects_nodes_io import NodeID
@@ -30,6 +26,10 @@ from servicelib.common_headers import (
     X_DYNAMIC_SIDECAR_REQUEST_DNS,
     X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
     X_SIMCORE_USER_AGENT,
+)
+from simcore_service_director_v2.constants import (
+    DYNAMIC_PROXY_SERVICE_PREFIX,
+    DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
 from simcore_service_director_v2.core.settings import DynamicSidecarSettings
 from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData

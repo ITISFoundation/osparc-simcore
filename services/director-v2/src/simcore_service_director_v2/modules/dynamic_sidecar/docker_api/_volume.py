@@ -2,14 +2,12 @@ import logging
 from datetime import datetime, timezone
 
 from fastapi.encoders import jsonable_encoder
-from models_library.api_schemas_directorv2.constants import (
-    DYNAMIC_VOLUME_REMOVER_PREFIX,
-)
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from servicelib.docker_utils import to_datetime
 from servicelib.logging_utils import log_context
+from simcore_service_director_v2.constants import DYNAMIC_VOLUME_REMOVER_PREFIX
 from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type

@@ -9,9 +9,6 @@ from enum import Enum, auto
 from functools import cached_property
 from pathlib import Path
 
-from models_library.api_schemas_directorv2.constants import (
-    DYNAMIC_SIDECAR_DOCKER_IMAGE_RE,
-)
 from models_library.basic_types import (
     BootModeEnum,
     BuildTargetEnum,
@@ -50,6 +47,7 @@ from settings_library.utils_logging import MixinLoggingSettings
 from settings_library.utils_service import DEFAULT_FASTAPI_PORT
 from simcore_postgres_database.models.clusters import ClusterType
 from simcore_sdk.node_ports_v2 import FileLinkType
+from simcore_service_director_v2.constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE
 
 logger = logging.getLogger(__name__)
 

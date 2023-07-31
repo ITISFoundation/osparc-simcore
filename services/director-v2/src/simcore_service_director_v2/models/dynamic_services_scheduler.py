@@ -7,13 +7,6 @@ from functools import cached_property
 from typing import Any, TypeAlias
 from uuid import UUID
 
-from models_library.api_schemas_directorv2.constants import (
-    DYNAMIC_PROXY_SERVICE_PREFIX,
-    DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
-    DYNAMIC_SIDECAR_SERVICE_PREFIX,
-    REGEX_DY_SERVICE_PROXY,
-    REGEX_DY_SERVICE_SIDECAR,
-)
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceCreate
 from models_library.api_schemas_directorv2.dynamic_services_service import (
     CommonServiceDetails,
@@ -31,6 +24,13 @@ from models_library.services_resources import ServiceResourcesDict
 from pydantic import AnyHttpUrl, BaseModel, ConstrainedStr, Extra, Field, parse_obj_as
 from servicelib.error_codes import ErrorCodeStr
 from servicelib.exception_utils import DelayedExceptionHandler
+from simcore_service_director_v2.constants import (
+    DYNAMIC_PROXY_SERVICE_PREFIX,
+    DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
+    DYNAMIC_SIDECAR_SERVICE_PREFIX,
+    REGEX_DY_SERVICE_PROXY,
+    REGEX_DY_SERVICE_SIDECAR,
+)
 
 TEMPORARY_PORT_NUMBER = 65_534
 

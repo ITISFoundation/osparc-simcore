@@ -5,9 +5,6 @@ from typing import Final
 from uuid import uuid4
 
 from models_library.aiodocker_api import AioDockerServiceSpec
-from models_library.api_schemas_directorv2.constants import (
-    DYNAMIC_VOLUME_REMOVER_PREFIX,
-)
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import (
@@ -18,6 +15,7 @@ from models_library.services_resources import (
 )
 from models_library.users import UserID
 from pydantic import parse_obj_as
+from simcore_service_director_v2.constants import DYNAMIC_VOLUME_REMOVER_PREFIX
 
 from ....core.settings import DynamicSidecarSettings
 
