@@ -1,3 +1,8 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
+
 from fastapi import APIRouter
 from models_library.api_schemas_webserver.activity import ActivityStatusDict
 from models_library.generics import Envelope
