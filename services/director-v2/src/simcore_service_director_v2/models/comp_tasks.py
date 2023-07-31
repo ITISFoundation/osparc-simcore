@@ -20,7 +20,7 @@ from pydantic import BaseModel, ByteSize, Extra, Field, parse_obj_as, validator
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.comp_tasks import NodeClass, StateType
 
-from ...utils.db import DB_TO_RUNNING_STATE, RUNNING_STATE_TO_DB
+from ..utils.db import DB_TO_RUNNING_STATE, RUNNING_STATE_TO_DB
 
 
 class Image(BaseModel):

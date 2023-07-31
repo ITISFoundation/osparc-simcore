@@ -47,8 +47,8 @@ from ..core.errors import (
     MissingComputationalResourcesError,
     PortsValidationError,
 )
-from ..models.domains.comp_runs import MetadataDict
-from ..models.domains.comp_tasks import Image
+from ..models.comp_runs import MetadataDict
+from ..models.comp_tasks import Image
 from ..modules.osparc_variables_substitutions import (
     resolve_and_substitute_session_variables_in_specs,
     substitute_vendor_secrets_in_specs,

@@ -20,8 +20,8 @@ from simcore_sdk.node_ports_common.exceptions import NodeportsException
 from simcore_sdk.node_ports_v2 import FileLinkType
 from starlette import status
 
-from ...models.domains.comp_pipelines import CompPipelineAtDB
-from ...models.domains.comp_tasks import CompTaskAtDB
+from ...models.comp_pipelines import CompPipelineAtDB
+from ...models.comp_tasks import CompTaskAtDB
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...utils.dask import get_service_log_file_download_link

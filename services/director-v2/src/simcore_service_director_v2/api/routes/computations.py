@@ -48,9 +48,9 @@ from ...core.errors import (
     ProjectNotFoundError,
     SchedulerError,
 )
-from ...models.domains.comp_pipelines import CompPipelineAtDB
-from ...models.domains.comp_runs import CompRunsAtDB
-from ...models.domains.comp_tasks import CompTaskAtDB
+from ...models.comp_pipelines import CompPipelineAtDB
+from ...models.comp_runs import CompRunsAtDB
+from ...models.comp_tasks import CompTaskAtDB
 from ...modules.catalog import CatalogClient
 from ...modules.comp_scheduler.base_scheduler import BaseCompScheduler
 from ...modules.db.repositories.clusters import ClustersRepository

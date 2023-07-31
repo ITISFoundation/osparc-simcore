@@ -12,7 +12,7 @@ from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.utils.nodes import compute_node_hash
 
-from ..models.domains.comp_tasks import CompTaskAtDB
+from ..models.comp_tasks import CompTaskAtDB
 from ..modules.db.tables import NodeClass
 from .computations import to_node_class
 

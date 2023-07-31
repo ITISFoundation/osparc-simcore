@@ -39,9 +39,9 @@ from ...core.errors import (
     SchedulerError,
     TaskSchedulingError,
 )
-from ...models.domains.comp_pipelines import CompPipelineAtDB
-from ...models.domains.comp_runs import CompRunsAtDB, MetadataDict
-from ...models.domains.comp_tasks import CompTaskAtDB, Image
+from ...models.comp_pipelines import CompPipelineAtDB
+from ...models.comp_runs import CompRunsAtDB, MetadataDict
+from ...models.comp_tasks import CompTaskAtDB, Image
 from ...utils.computations import get_pipeline_state_from_task_states
 from ...utils.scheduler import (
     COMPLETED_STATES,

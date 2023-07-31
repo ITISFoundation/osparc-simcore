@@ -66,8 +66,8 @@ from simcore_service_director_v2.core.errors import (
     InsuficientComputationalResourcesError,
     MissingComputationalResourcesError,
 )
-from simcore_service_director_v2.models.domains.comp_runs import MetadataDict
-from simcore_service_director_v2.models.domains.comp_tasks import Image
+from simcore_service_director_v2.models.comp_runs import MetadataDict
+from simcore_service_director_v2.models.comp_tasks import Image
 from simcore_service_director_v2.modules.dask_client import DaskClient, TaskHandlers
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type

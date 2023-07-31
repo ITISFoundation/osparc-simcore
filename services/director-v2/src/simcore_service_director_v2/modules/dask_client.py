@@ -60,8 +60,8 @@ from ..core.errors import (
     ComputationalBackendTaskResultsNotReadyError,
 )
 from ..core.settings import AppSettings, ComputationalBackendSettings
-from ..models.domains.comp_runs import MetadataDict
-from ..models.domains.comp_tasks import Image
+from ..models.comp_runs import MetadataDict
+from ..models.comp_tasks import Image
 from ..modules.storage import StorageClient
 from ..utils.dask import (
     check_communication_with_scheduler_is_open,

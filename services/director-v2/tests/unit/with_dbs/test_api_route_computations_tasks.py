@@ -17,8 +17,8 @@ from models_library.users import UserID
 from pydantic import parse_raw_as
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_director_v2.core.settings import AppSettings
-from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
-from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
+from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
+from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
 
 pytest_simcore_core_services_selection = [
     "postgres",

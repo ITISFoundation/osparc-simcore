@@ -31,7 +31,7 @@ from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert
 
-from ....models.domains.comp_tasks import CompTaskAtDB, Image, NodeSchema
+from ....models.comp_tasks import CompTaskAtDB, Image, NodeSchema
 from ....utils.computations import to_node_class
 from ....utils.db import RUNNING_STATE_TO_DB
 from ...catalog import CatalogClient, ServiceResourcesDict
