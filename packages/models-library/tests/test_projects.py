@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 from copy import deepcopy
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 from faker import Faker
@@ -11,7 +11,7 @@ from models_library.projects import Project
 
 
 @pytest.fixture()
-def minimal_project(faker: Faker) -> Dict[str, Any]:
+def minimal_project(faker: Faker) -> dict[str, Any]:
     # API request body payload
     return {
         "uuid": faker.uuid4(),
@@ -26,20 +26,20 @@ def minimal_project(faker: Faker) -> Dict[str, Any]:
     }
 
 
-def test_project_minimal_model(minimal_project: Dict[str, Any]):
+def test_project_minimal_model(minimal_project: dict[str, Any]):
     project = Project.parse_obj(minimal_project)
     assert project
 
-    assert project.thumbnail == None
+    assert project.thumbnail is None
 
 
-def test_project_with_thumbnail_as_empty_string(minimal_project: Dict[str, Any]):
+def test_project_with_thumbnail_as_empty_string(minimal_project: dict[str, Any]):
     thumbnail_empty_string = deepcopy(minimal_project)
     thumbnail_empty_string.update({"thumbnail": ""})
     project = Project.parse_obj(thumbnail_empty_string)
 
     assert project
-    assert project.thumbnail == None
+    assert project.thumbnail is None
 
 
 def test_project_type_in_models_package_same_as_in_postgres_database_package():

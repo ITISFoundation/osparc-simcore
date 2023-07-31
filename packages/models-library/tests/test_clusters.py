@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Any, Dict, Type
+from typing import Any
 
 import pytest
 from faker import Faker
@@ -18,7 +18,7 @@ from pydantic import BaseModel, ValidationError
     (Cluster,),
 )
 def test_cluster_access_rights_correctly_created_when_owner_access_rights_not_present(
-    model_cls: Type[BaseModel], model_cls_examples: Dict[str, Dict[str, Any]]
+    model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
 ):
     for example in model_cls_examples.values():
         modified_example = deepcopy(example)
@@ -38,8 +38,8 @@ def test_cluster_access_rights_correctly_created_when_owner_access_rights_not_pr
     (Cluster,),
 )
 def test_cluster_fails_when_owner_has_no_admin_rights_unless_default_cluster(
-    model_cls: Type[BaseModel],
-    model_cls_examples: Dict[str, Dict[str, Any]],
+    model_cls: type[BaseModel],
+    model_cls_examples: dict[str, dict[str, Any]],
     faker: Faker,
 ):
     for example in model_cls_examples.values():
@@ -64,8 +64,8 @@ def test_cluster_fails_when_owner_has_no_admin_rights_unless_default_cluster(
     (Cluster,),
 )
 def test_cluster_fails_when_owner_has_no_user_rights_if_default_cluster(
-    model_cls: Type[BaseModel],
-    model_cls_examples: Dict[str, Dict[str, Any]],
+    model_cls: type[BaseModel],
+    model_cls_examples: dict[str, dict[str, Any]],
 ):
     for example in model_cls_examples.values():
         modified_example = deepcopy(example)

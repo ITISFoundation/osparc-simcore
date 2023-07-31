@@ -54,11 +54,20 @@ run-prod: .env up-extra
 
 # BUILD #####################
 
+
+# specification of the used openapi-generator-cli (see also https://github.com/ITISFoundation/openapi-generator)
+OPENAPI_GENERATOR_NAME := itisfoundation/openapi-generator-cli-openapi-generator-v4.2.3
+OPENAPI_GENERATOR_TAG := v0
+OPENAPI_GENERATOR_IMAGE := $(OPENAPI_GENERATOR_NAME):$(OPENAPI_GENERATOR_TAG)
+
+
 .PHONY: openapi-specs openapi.json
 openapi-specs: openapi.json
 openapi.json: .env
 	# generating openapi specs file
 	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
+
 	# validates OAS file: $@
-	@cd $(CURDIR); \
-	$(SCRIPTS_DIR)/openapi-generator-cli.bash validate --input-spec /local/$@
+	docker run --rm \
+			--volume "$(CURDIR):/local" \
+			$(OPENAPI_GENERATOR_IMAGE) validate --input-spec /local/$@

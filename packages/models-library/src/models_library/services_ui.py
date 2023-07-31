@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import Union
 
 from pydantic import BaseModel, Extra, Field
 from pydantic.types import PositiveInt
@@ -20,7 +19,7 @@ class TextArea(BaseModel):
 
 
 class Structure(BaseModel):
-    key: Union[str, bool, float]
+    key: str | bool | float
     label: str
 
     class Config:
@@ -38,7 +37,7 @@ class Widget(BaseModel):
     widget_type: WidgetType = Field(
         ..., alias="type", description="type of the property"
     )
-    details: Union[TextArea, SelectBox]
+    details: TextArea | SelectBox
 
     class Config:
         extra = Extra.forbid

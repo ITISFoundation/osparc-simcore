@@ -38,6 +38,16 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
       });
   },
 
+  properties: {
+    wallet: {
+      check: "osparc.data.model.Wallet",
+      init: null,
+      nullable: true,
+      event: "changeWallet",
+      apply: "__applyWallet"
+    }
+  },
+
   events: {
     "startStudy": "qx.event.type.Event",
     "cancel": "qx.event.type.Event"
@@ -181,11 +191,17 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
           });
           this.getChildControl("buttons-layout").add(control);
           break;
-        case "credits-left":
-          control = osparc.component.resourceUsage.CreditsLeft.createCreditsLeftInidcator(true).set({
-            backgroundColor: "background-main"
-          });
+        case "wallet-selector-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
           this.getChildControl("right-main-layout").add(control);
+          break;
+        case "wallet-selector":
+          control = osparc.desktop.credits.Utils.createWalletSelector("read", true, true);
+          this.getChildControl("wallet-selector-layout").add(control);
+          break;
+        case "credits-left-view":
+          control = this.__getCreditsLeftView();
+          this.getChildControl("wallet-selector-layout").add(control);
           break;
         case "summary-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
@@ -197,6 +213,20 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
           break;
       }
       return control || this.base(arguments, id);
+    },
+
+    __applyWallet: function(wallet) {
+      if (wallet) {
+        const walletSelector = this.getChildControl("wallet-selector");
+        walletSelector.getSelectables().forEach(selectable => {
+          if (selectable.walletId === wallet.getWalletId()) {
+            walletSelector.setSelection([selectable]);
+          }
+        });
+      }
+
+      // OM: puppeteer has no walelts. Enable it when BE is ready
+      // this.getChildControl("open-button").setEnabled(Boolean(wallet));
     },
 
     __buildLayout: function() {
@@ -306,19 +336,43 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
     },
 
     __buildRightColumn: function() {
+      const store = osparc.store.Store.getInstance();
+
       const openButton = this.getChildControl("open-button");
-      openButton.addListener("execute", () => this.fireEvent("startStudy"));
+      openButton.addListener("execute", () => {
+        this.fireEvent("startStudy");
+
+        store.setActiveWallet(this.getWallet());
+      });
 
       const cancelButton = this.getChildControl("cancel-button");
       cancelButton.addListener("execute", () => this.fireEvent("cancel"));
 
-      this.getChildControl("credits-left");
+      const walletSelector = this.getChildControl("wallet-selector");
+      this.getChildControl("credits-left-view");
 
       const summaryLayout = this.getChildControl("summary-layout");
       summaryLayout.add(new qx.ui.basic.Label(this.tr("Total Credits/h:")).set({
         font: "text-14"
       }));
       this.getChildControl("summary-label");
+
+      walletSelector.addListener("changeSelection", e => {
+        const selection = e.getData();
+        const found = store.getWallets().find(wallet => wallet.getWalletId() === parseInt(selection[0].walletId));
+        if (found) {
+          this.setWallet(found);
+        } else {
+          this.setWallet(null);
+        }
+      });
+      walletSelector.setSelection([]);
+    },
+
+    __getCreditsLeftView: function() {
+      const creditsLeftView = new osparc.desktop.credits.CreditsIndicatorWText();
+      this.bind("wallet", creditsLeftView, "wallet");
+      return creditsLeftView;
     }
   }
 });

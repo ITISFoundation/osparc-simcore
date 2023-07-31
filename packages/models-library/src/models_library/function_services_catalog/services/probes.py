@@ -1,11 +1,9 @@
-from typing import Optional
-
 from ...services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
 from .._key_labels import FUNCTION_SERVICE_KEY_PREFIX
 from .._utils import OM, FunctionServices, create_fake_thumbnail_url
 
 
-def create_metadata(type_name: str, prefix: Optional[str] = None) -> ServiceDockerData:
+def create_metadata(type_name: str, prefix: str | None = None) -> ServiceDockerData:
     prefix = prefix or type_name
     LABEL = f"{type_name.capitalize()} probe"
 
@@ -35,9 +33,9 @@ def create_metadata(type_name: str, prefix: Optional[str] = None) -> ServiceDock
     )
 
 
-META_NUMBER, META_BOOL, META_INT, META_STR = [
+META_NUMBER, META_BOOL, META_INT, META_STR = (
     create_metadata(t) for t in ("number", "boolean", "integer", "string")
-]
+)
 
 META_ARRAY = ServiceDockerData.parse_obj(
     {

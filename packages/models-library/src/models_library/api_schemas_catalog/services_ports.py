@@ -1,20 +1,16 @@
-from typing import Any, Literal, Optional, Union
+from typing import Any, ClassVar, Literal
 
-from models_library.basic_regex import PUBLIC_VARIABLE_NAME_RE
-from models_library.services import ServiceInput, ServiceOutput
-from models_library.utils.services_io import (
+from pydantic import BaseModel, Field
+
+from ..basic_regex import PUBLIC_VARIABLE_NAME_RE
+from ..services import ServiceInput, ServiceOutput
+from ..utils.services_io import (
     get_service_io_json_schema,
     guess_media_type,
     update_schema_doc,
 )
-from pydantic import BaseModel, Field
 
 PortKindStr = Literal["input", "output"]
-
-
-#
-# Model -------------------------------------------------------------------------------
-#
 
 
 class ServicePortGet(BaseModel):
@@ -25,14 +21,14 @@ class ServicePortGet(BaseModel):
         title="Key name",
     )
     kind: PortKindStr
-    content_media_type: Optional[str] = None
-    content_schema: Optional[dict[str, Any]] = Field(
+    content_media_type: str | None = None
+    content_schema: dict[str, Any] | None = Field(
         None,
         description="jsonschema for the port's value. SEE https://json-schema.org/understanding-json-schema/",
     )
 
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "key": "input_1",
                 "kind": "input",
@@ -51,7 +47,7 @@ class ServicePortGet(BaseModel):
         cls,
         kind: PortKindStr,
         key: str,
-        port: Union[ServiceInput, ServiceOutput],
+        port: ServiceInput | ServiceOutput,
     ) -> "ServicePortGet":
         kwargs: dict[str, Any] = {"key": key, "kind": kind}
 

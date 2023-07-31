@@ -1,5 +1,6 @@
+from collections.abc import Iterator
 from copy import deepcopy
-from typing import Any, Iterator
+from typing import Any
 
 from pydantic import schema_of
 

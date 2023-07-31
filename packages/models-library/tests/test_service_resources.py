@@ -81,7 +81,7 @@ def test_service_resource_parsed_as_expected(
         assert type(service_resources_dict) == dict
 
         print(service_resources_dict)
-        for _, image_resources in service_resources_dict.items():
+        for image_resources in service_resources_dict.values():
             _ensure_resource_value_is_an_object(image_resources.resources)
 
     service_resources_dict: ServiceResourcesDict = parse_obj_as(

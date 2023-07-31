@@ -8,7 +8,7 @@ from models_library.clusters import (
     Cluster,
     ClusterAccessRights,
     ClusterAuthentication,
-    ClusterType,
+    ClusterTypeInModel,
     ExternalClusterAuthentication,
 )
 from models_library.generics import DictModel
@@ -123,8 +123,8 @@ class ClusterCreate(BaseCluster):
         if v is None:
             cluster_type = values["type"]
             default_thumbnails = {
-                ClusterType.AWS.value: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/250px-Amazon_Web_Services_Logo.svg.png",
-                ClusterType.ON_PREMISE.value: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Crystal_Clear_app_network_local.png/120px-Crystal_Clear_app_network_local.png",
+                ClusterTypeInModel.AWS.value: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/250px-Amazon_Web_Services_Logo.svg.png",
+                ClusterTypeInModel.ON_PREMISE.value: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Crystal_Clear_app_network_local.png/120px-Crystal_Clear_app_network_local.png",
             }
             return default_thumbnails[cluster_type]
         return v
@@ -134,7 +134,7 @@ class ClusterCreate(BaseCluster):
             "examples": [
                 {
                     "name": "My awesome cluster",
-                    "type": ClusterType.ON_PREMISE,
+                    "type": ClusterTypeInModel.ON_PREMISE,
                     "endpoint": "https://registry.osparc-development.fake.dev",
                     "authentication": {
                         "type": "simple",
@@ -145,7 +145,7 @@ class ClusterCreate(BaseCluster):
                 {
                     "name": "My AWS cluster",
                     "description": "a AWS cluster administered by me",
-                    "type": ClusterType.AWS,
+                    "type": ClusterTypeInModel.AWS,
                     "owner": 154,
                     "endpoint": "https://registry.osparc-development.fake.dev",
                     "authentication": {
@@ -166,7 +166,7 @@ class ClusterCreate(BaseCluster):
 class ClusterPatch(BaseCluster):
     name: str | None
     description: str | None
-    type: ClusterType | None
+    type: ClusterTypeInModel | None
     owner: GroupID | None
     thumbnail: HttpUrl | None
     endpoint: AnyUrl | None

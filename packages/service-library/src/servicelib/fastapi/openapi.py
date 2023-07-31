@@ -84,7 +84,7 @@ def _remove_named_groups(regex: str) -> str:
 def _patch_node_properties(key: str, node: dict):
     # Validation for URL is broken in the context of the license entry
     # this helps to bypass validation and then replace with the correct value
-    if key.startswith("__PLACEHOLDER___KEY_"):
+    if isinstance(key, str) and key.startswith("__PLACEHOLDER___KEY_"):
         new_key = key.replace("__PLACEHOLDER___KEY_", "")
         node[new_key] = node[key]
         node.pop(key)

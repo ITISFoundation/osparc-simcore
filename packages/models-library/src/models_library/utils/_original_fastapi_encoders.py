@@ -1,26 +1,26 @@
 # pylint: disable-all
-# nopycln: file
 #
 # wget https://raw.githubusercontent.com/tiangolo/fastapi/master/fastapi/encoders.py --output-document=_original_fastapi_encoders
 #
 import dataclasses
 from collections import defaultdict
+from collections.abc import Callable
 from enum import Enum
 from pathlib import PurePath
 from types import GeneratorType
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
+from typing import Any
 
 from pydantic import BaseModel
 from pydantic.json import ENCODERS_BY_TYPE
 
-SetIntStr = Set[Union[int, str]]
-DictIntStrAny = Dict[Union[int, str], Any]
+SetIntStr = set[int | str]
+DictIntStrAny = dict[int | str, Any]
 
 
 def generate_encoders_by_class_tuples(
-    type_encoder_map: Dict[Any, Callable[[Any], Any]]
-) -> Dict[Callable[[Any], Any], Tuple[Any, ...]]:
-    encoders_by_class_tuples: Dict[Callable[[Any], Any], Tuple[Any, ...]] = defaultdict(
+    type_encoder_map: dict[Any, Callable[[Any], Any]]
+) -> dict[Callable[[Any], Any], tuple[Any, ...]]:
+    encoders_by_class_tuples: dict[Callable[[Any], Any], tuple[Any, ...]] = defaultdict(
         tuple
     )
     for type_, encoder in type_encoder_map.items():
@@ -33,13 +33,13 @@ encoders_by_class_tuples = generate_encoders_by_class_tuples(ENCODERS_BY_TYPE)
 
 def jsonable_encoder(
     obj: Any,
-    include: Optional[Union[SetIntStr, DictIntStrAny]] = None,
-    exclude: Optional[Union[SetIntStr, DictIntStrAny]] = None,
+    include: SetIntStr | DictIntStrAny | None = None,
+    exclude: SetIntStr | DictIntStrAny | None = None,
     by_alias: bool = True,
     exclude_unset: bool = False,
     exclude_defaults: bool = False,
     exclude_none: bool = False,
-    custom_encoder: Optional[Dict[Any, Callable[[Any], Any]]] = None,
+    custom_encoder: dict[Any, Callable[[Any], Any]] | None = None,
     sqlalchemy_safe: bool = True,
 ) -> Any:
     custom_encoder = custom_encoder or {}
@@ -50,9 +50,9 @@ def jsonable_encoder(
             for encoder_type, encoder_instance in custom_encoder.items():
                 if isinstance(obj, encoder_type):
                     return encoder_instance(obj)
-    if include is not None and not isinstance(include, (set, dict)):
+    if include is not None and not isinstance(include, set | dict):
         include = set(include)
-    if exclude is not None and not isinstance(exclude, (set, dict)):
+    if exclude is not None and not isinstance(exclude, set | dict):
         exclude = set(exclude)
     if isinstance(obj, BaseModel):
         encoder = getattr(obj.__config__, "json_encoders", {})
@@ -92,7 +92,7 @@ def jsonable_encoder(
         return obj.value
     if isinstance(obj, PurePath):
         return str(obj)
-    if isinstance(obj, (str, int, float, type(None))):
+    if isinstance(obj, str | int | float | type(None)):
         return obj
     if isinstance(obj, dict):
         encoded_dict = {}
@@ -129,7 +129,7 @@ def jsonable_encoder(
                 )
                 encoded_dict[encoded_key] = encoded_value
         return encoded_dict
-    if isinstance(obj, (list, set, frozenset, GeneratorType, tuple)):
+    if isinstance(obj, list | set | frozenset | GeneratorType | tuple):
         encoded_list = []
         for item in obj:
             encoded_list.append(
@@ -156,7 +156,7 @@ def jsonable_encoder(
     try:
         data = dict(obj)
     except Exception as e:
-        errors: List[Exception] = []
+        errors: list[Exception] = []
         errors.append(e)
         try:
             data = vars(obj)

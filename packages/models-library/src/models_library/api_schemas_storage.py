@@ -13,13 +13,6 @@ from re import Pattern
 from typing import Any, ClassVar
 from uuid import UUID
 
-from models_library.projects_nodes_io import (
-    LocationID,
-    LocationName,
-    NodeID,
-    SimcoreS3FileID,
-    StorageFileID,
-)
 from pydantic import (
     BaseModel,
     ByteSize,
@@ -34,6 +27,13 @@ from pydantic.networks import AnyUrl
 
 from .basic_regex import DATCORE_DATASET_NAME_RE, S3_BUCKET_NAME_RE
 from .generics import ListModel
+from .projects_nodes_io import (
+    LocationID,
+    LocationName,
+    NodeID,
+    SimcoreS3FileID,
+    StorageFileID,
+)
 
 ETag = str
 

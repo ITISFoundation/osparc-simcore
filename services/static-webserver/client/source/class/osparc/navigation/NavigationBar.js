@@ -267,9 +267,10 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         }
         case "credits-left":
-          control = new osparc.component.resourceUsage.CreditsLeft().set({
+          control = new osparc.desktop.credits.WalletsMiniViewer().set({
             maxWidth: 50,
-            minWidth: 50
+            minWidth: 50,
+            maxHeight: this.self().HEIGHT
           });
           this.getChildControl("right-items").add(control);
           break;
