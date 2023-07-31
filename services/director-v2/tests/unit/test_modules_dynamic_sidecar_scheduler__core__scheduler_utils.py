@@ -2,7 +2,7 @@
 
 import pytest
 from pytest import LogCaptureFixture
-from simcore_service_director_v2.models.schemas.dynamic_services import (
+from simcore_service_director_v2.models.dynamic_services_scheduler import (
     DynamicSidecarStatus,
     SchedulerData,
 )

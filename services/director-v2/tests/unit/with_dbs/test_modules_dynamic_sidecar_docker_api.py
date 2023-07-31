@@ -19,6 +19,7 @@ from faker import Faker
 from fastapi.encoders import jsonable_encoder
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.services_enums import ServiceState
 from models_library.users import UserID
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_service_director_v2.constants import (
@@ -30,11 +31,8 @@ from simcore_service_director_v2.constants import (
 from simcore_service_director_v2.core.settings import DynamicSidecarSettings
 from simcore_service_director_v2.models.dynamic_services_scheduler import (
     DockerContainerInspect,
-    SimcoreServiceLabels,
-)
-from simcore_service_director_v2.models.schemas.dynamic_services import (
     SchedulerData,
-    ServiceState,
+    SimcoreServiceLabels,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar import docker_api
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_api._core import (

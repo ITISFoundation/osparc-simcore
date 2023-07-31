@@ -3,7 +3,8 @@
 
 import asyncio
 import logging
-from typing import Final, Iterable
+from collections.abc import Iterable
+from typing import Final
 
 import pytest
 from fastapi import FastAPI
@@ -16,8 +17,8 @@ from simcore_service_director_v2.models.dynamic_services_scheduler import (
     ContainerState,
     DockerContainerInspect,
     DockerStatus,
+    SchedulerData,
 )
-from simcore_service_director_v2.models.schemas.dynamic_services import SchedulerData
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client import (
     BaseClientHTTPError,
 )
@@ -57,7 +58,8 @@ def mock_sidecars_client_always_fail(mocker: MockerFixture) -> None:
     class MockedObj:
         @classmethod
         async def containers_inspect(cls, *args, **kwargs) -> None:
-            raise BaseClientHTTPError("will always fail")
+            msg = "will always fail"
+            raise BaseClientHTTPError(msg)
 
     mocker.patch.object(_events, "get_sidecars_client", return_value=MockedObj())
 
@@ -71,7 +73,8 @@ def mock_sidecars_client_stops_failing(mocker: MockerFixture) -> None:
         async def containers_inspect(self, *args, **kwargs) -> None:
             self.counter += 1
             if self.counter < STEPS / 2:
-                raise BaseClientHTTPError("will always fail")
+                msg = "will always fail"
+                raise BaseClientHTTPError(msg)
 
     mocker.patch.object(_events, "get_sidecars_client", return_value=MockedObj())
 

@@ -3,14 +3,13 @@ import string
 from collections import namedtuple
 
 import pytest
+from models_library.api_schemas_directorv2.dynamic_services import (
+    RunningDynamicServiceDetails,
+)
+from models_library.services_enums import ServiceBootType, ServiceState
 from simcore_service_director_v2.models.dynamic_services_scheduler import (
     DockerContainerInspect,
-)
-from simcore_service_director_v2.models.schemas.dynamic_services import (
-    RunningDynamicServiceDetails,
     SchedulerData,
-    ServiceBootType,
-    ServiceState,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_states import (
     CONTAINER_STATUSES_UNEXPECTED,
