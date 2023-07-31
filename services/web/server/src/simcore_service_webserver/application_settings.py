@@ -206,9 +206,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_ANNOUNCEMENTS: bool = False
     WEBSERVER_CLUSTERS: bool = False
     WEBSERVER_DB_LISTENER: bool = True
-    WEBSERVER_NOTIFICATIONS: bool = Field(
-        default=True, env=["WEBSERVER_NOTIFICATIONS", "WEBSERVER_COMPUTATION"]
-    )
+    WEBSERVER_NOTIFICATIONS: bool = Field(default=True)
     WEBSERVER_GROUPS: bool = True
     WEBSERVER_META_MODELING: bool = True
     WEBSERVER_PRODUCTS: bool = True
