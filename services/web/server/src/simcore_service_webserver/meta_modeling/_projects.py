@@ -14,7 +14,7 @@ from aiohttp.typedefs import Handler
 from models_library.basic_regex import UUID_RE
 from models_library.projects import ProjectID
 
-from .._meta import api_version_prefix as VTAG
+from .._meta import API_VTAG as VTAG
 from ..director_v2.api import AbstractProjectRunPolicy
 from ..projects._crud_handlers import RQ_REQUESTED_REPO_PROJECT_UUID_KEY
 from ..version_control.models import CommitID

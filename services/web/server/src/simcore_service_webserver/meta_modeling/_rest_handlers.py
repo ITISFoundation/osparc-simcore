@@ -2,7 +2,8 @@
 
 """
 import logging
-from typing import Callable, NamedTuple
+from collections.abc import Callable
+from typing import NamedTuple
 
 from aiohttp import web
 from models_library.projects import ProjectID
@@ -17,7 +18,7 @@ from pydantic.fields import Field
 from pydantic.networks import HttpUrl
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
-from .._meta import api_version_prefix as VTAG
+from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import create_url_for_function, envelope_json_response
@@ -107,23 +108,23 @@ async def _get_project_iterations_range(
                     tag.name, return_none_if_fails=True
                 ):
                     if iteration:
-                        raise _NotTaggedAsIteration(
-                            f"This {commit_id=} has more than one iteration {tag=}"
-                        )
+                        msg = f"This commit_id={commit_id!r} has more than one iteration tag={tag!r}"
+                        raise _NotTaggedAsIteration(msg)
                     iteration = pim
                 elif pid := parse_workcopy_project_tag_name(tag.name):
                     if workcopy_id:
-                        raise _NotTaggedAsIteration(
-                            f"This {commit_id=} has more than one workcopy  {tag=}"
-                        )
+                        msg = f"This commit_id={commit_id!r} has more than one workcopy  tag={tag!r}"
+                        raise _NotTaggedAsIteration(msg)
                     workcopy_id = pid
                 else:
                     log.debug("Got %s for children of %s", f"{tag=}", f"{commit_id=}")
 
             if not workcopy_id:
-                raise _NotTaggedAsIteration(f"No workcopy tag found in {tags=}")
+                msg = f"No workcopy tag found in tags={tags!r}"
+                raise _NotTaggedAsIteration(msg)
             if not iteration:
-                raise _NotTaggedAsIteration(f"No iteration tag found in {tags=}")
+                msg = f"No iteration tag found in tags={tags!r}"
+                raise _NotTaggedAsIteration(msg)
 
             iter_items.append(
                 IterationItem(
@@ -165,7 +166,7 @@ async def create_or_get_project_iterations(
     project_uuid: ProjectID,
     commit_id: CommitID,
 ) -> list[IterationItem]:
-    raise NotImplementedError()
+    raise NotImplementedError
 
 
 # MODELS ------------------------------------------------------------
@@ -330,9 +331,6 @@ async def _list_meta_project_iterations_handler(request: web.Request) -> web.Res
 # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735
 #
 # @routes.post(
-#    f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations",
-#    name=f"{__name__}._create_meta_project_iterations_handler",
-# )
 @permission_required("project.snapshot.create")
 async def _create_meta_project_iterations_handler(request: web.Request) -> web.Response:
     q = parse_query_parameters(request)
@@ -369,10 +367,8 @@ async def _create_meta_project_iterations_handler(request: web.Request) -> web.R
 @login_required
 @permission_required("project.snapshot.read")
 async def _get_meta_project_iterations_handler(request: web.Request) -> web.Response:
-    raise NotImplementedError(
-        "Currently iteration is retrieved via GET /projects/{workcopy_project_id}"
-        "SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735"
-    )
+    msg = "Currently iteration is retrieved via GET /projects/{workcopy_project_id}SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735"
+    raise NotImplementedError(msg)
 
 
 @routes.get(
@@ -415,8 +411,7 @@ async def _list_meta_project_iterations_results_handler(
         _prj_data[item.project_id] = prj["workbench"]
 
     def _get_project_results(project_id) -> ExtractedResults:
-        results = extract_project_results(_prj_data[project_id])
-        return results
+        return extract_project_results(_prj_data[project_id])
 
     # parse and validate response ----
     page_items = [
@@ -455,6 +450,5 @@ async def _list_meta_project_iterations_results_handler(
 async def _get_meta_project_iteration_results_handler(
     request: web.Request,
 ) -> web.Response:
-    raise NotImplementedError(
-        "SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735"
-    )
+    msg = "SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735"
+    raise NotImplementedError(msg)
