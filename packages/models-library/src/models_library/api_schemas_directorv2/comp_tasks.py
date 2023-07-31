@@ -40,7 +40,8 @@ class ComputationCreate(BaseModel):
     @classmethod
     def ensure_product_name_defined_if_computation_starts(cls, v, values):
         if "start_pipeline" in values and values["start_pipeline"] and v is None:
-            raise ValueError("product_name must be set if computation shall start!")
+            msg = "product_name must be set if computation shall start!"
+            raise ValueError(msg)
         return v
 
 
@@ -50,7 +51,7 @@ class ComputationStop(BaseModel):
 
 class ComputationDelete(ComputationStop):
     force: bool | None = Field(
-        False,
+        default=False,
         description="if True then the pipeline will be removed even if it is running",
     )
 

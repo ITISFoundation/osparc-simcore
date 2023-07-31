@@ -14,6 +14,7 @@ from models_library.api_schemas_directorv2.constants import (
     REGEX_DY_SERVICE_PROXY,
     REGEX_DY_SERVICE_SIDECAR,
 )
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceCreate
 from models_library.api_schemas_directorv2.dynamic_services_service import (
     CommonServiceDetails,
 )
@@ -428,7 +429,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     def from_http_request(
         # pylint: disable=too-many-arguments
         cls,
-        service: "DynamicServiceCreate",  # type: ignore
+        service: DynamicServiceCreate,
         simcore_service_labels: SimcoreServiceLabels,
         port: PortInt,
         request_dns: str,
