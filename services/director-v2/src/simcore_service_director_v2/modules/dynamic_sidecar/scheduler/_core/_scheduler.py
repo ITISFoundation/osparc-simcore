@@ -21,6 +21,11 @@ from asyncio import Lock, Queue, Task, sleep
 from dataclasses import dataclass, field
 
 from fastapi import FastAPI
+from models_library.api_schemas_directorv2.dynamic_services import (
+    DynamicServiceCreate,
+    RetrieveDataOutEnveloped,
+    RunningDynamicServiceDetails,
+)
 from models_library.basic_types import PortInt
 from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkAlias
@@ -33,15 +38,7 @@ from servicelib.fastapi.long_running_tasks.client import ProgressCallback
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 
 from .....core.settings import DynamicServicesSchedulerSettings, DynamicSidecarSettings
-from .....models.domains.dynamic_services import (
-    DynamicServiceCreate,
-    RetrieveDataOutEnveloped,
-)
-from .....models.schemas.dynamic_services import (
-    RunningDynamicServiceDetails,
-    SchedulerData,
-    ServiceName,
-)
+from .....models.dynamic_services_scheduler import SchedulerData, ServiceName
 from ...api_client import SidecarsClient, get_sidecars_client
 from ...docker_api import update_scheduler_data_label
 from ...errors import DynamicSidecarError, DynamicSidecarNotFoundError
@@ -328,7 +325,11 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes
                 )
                 return
 
-            current.dynamic_sidecar.service_removal_state.mark_to_remove(can_save)
+            # PC-> ANE: could you please review what to do when can_save=None
+            assert can_save is not None  # nosec
+            current.dynamic_sidecar.service_removal_state.mark_to_remove(
+                can_save=can_save
+            )
             await update_scheduler_data_label(current)
 
             # cancel current observation task

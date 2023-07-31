@@ -3,6 +3,7 @@ import time
 from uuid import UUID
 
 import httpx
+from models_library.api_schemas_directorv2.comp_tasks import ComputationGet
 from models_library.clusters import ClusterID
 from models_library.projects import ProjectAtDB
 from models_library.projects_pipeline import PipelineDetails
@@ -11,7 +12,6 @@ from models_library.users import UserID
 from pydantic import PositiveInt
 from pydantic.networks import AnyHttpUrl
 from pytest_simcore.helpers.constants import MINUTE
-from simcore_service_director_v2.models.schemas.comp_tasks import ComputationGet
 from starlette import status
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type

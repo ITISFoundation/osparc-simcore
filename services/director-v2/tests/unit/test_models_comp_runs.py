@@ -3,12 +3,12 @@
 # pylint:disable=redefined-outer-name
 
 from pprint import pformat
-from typing import Any, Dict, Type
+from typing import Any
 
 import pytest
 from models_library.projects_state import RunningState
 from pydantic.main import BaseModel
-from simcore_service_director_v2.models.domains.comp_runs import CompRunsAtDB
+from simcore_service_director_v2.models.comp_runs import CompRunsAtDB
 
 
 @pytest.mark.parametrize(
@@ -16,7 +16,7 @@ from simcore_service_director_v2.models.domains.comp_runs import CompRunsAtDB
     (CompRunsAtDB,),
 )
 def test_computation_run_model_examples(
-    model_cls: Type[BaseModel], model_cls_examples: Dict[str, Dict[str, Any]]
+    model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
 ):
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
@@ -29,7 +29,7 @@ def test_computation_run_model_examples(
     (CompRunsAtDB,),
 )
 def test_computation_run_model_with_run_result_value_field(
-    model_cls: Type[BaseModel], model_cls_examples: Dict[str, Dict[str, Any]]
+    model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
 ):
     for name, example in model_cls_examples.items():
         example["result"] = RunningState.RETRY.value

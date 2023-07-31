@@ -19,6 +19,7 @@ from helpers.shared_comp_utils import (
     assert_and_wait_for_pipeline_status,
     assert_computation_task_out_obj,
 )
+from models_library.api_schemas_directorv2.comp_tasks import ComputationGet
 from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import NodeState
@@ -28,7 +29,6 @@ from models_library.projects_state import RunningState
 from models_library.users import UserID
 from pytest import MonkeyPatch
 from settings_library.rabbit import RabbitSettings
-from simcore_service_director_v2.models.schemas.comp_tasks import ComputationGet
 from starlette import status
 from starlette.testclient import TestClient
 from yarl import URL

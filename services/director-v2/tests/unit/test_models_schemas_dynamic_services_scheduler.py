@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 from pydantic import parse_file_as
-from simcore_service_director_v2.models.schemas.dynamic_services import SchedulerData
+from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 
 
 @pytest.fixture

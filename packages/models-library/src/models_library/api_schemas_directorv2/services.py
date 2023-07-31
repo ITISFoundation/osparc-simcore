@@ -1,8 +1,9 @@
 from typing import Any, ClassVar
 
-from models_library.service_settings_labels import ContainerSpec
 from pydantic import BaseModel, Field, validator
 from pydantic.types import ByteSize, NonNegativeInt
+
+from ..service_settings_labels import ContainerSpec
 
 
 class ServiceBuildDetails(BaseModel):
