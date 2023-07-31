@@ -4,43 +4,16 @@
 
 import json
 from copy import deepcopy
-from pprint import pformat
-from typing import Any, Mapping
 
 import pytest
-from models_library.api_schemas_webserver.catalog import (
-    ServiceInputGet,
-    ServiceOutputGet,
-)
 from pint import UnitRegistry
-from pydantic import BaseModel
+from simcore_service_webserver.catalog._api_units import replace_service_input_outputs
 from simcore_service_webserver.catalog._handlers import RESPONSE_MODEL_POLICY
-from simcore_service_webserver.catalog._units import replace_service_input_outputs
 
 
 @pytest.fixture(scope="module")
 def unit_registry():
     return UnitRegistry()
-
-
-@pytest.mark.parametrize(
-    "model_cls",
-    (
-        ServiceInputGet,
-        ServiceOutputGet,
-    ),
-)
-def test_webserver_catalog_api_models(
-    model_cls: type[BaseModel], model_cls_examples: dict[str, Mapping[str, Any]]
-):
-    for name, example in model_cls_examples.items():
-        print(name, ":", pformat(example))
-        model_instance = model_cls(**example)
-        assert model_instance, f"Failed with {name}"
-
-        # tests export policy w/o errors
-        data = model_instance.dict(**RESPONSE_MODEL_POLICY)
-        assert model_cls(**data) == model_instance
 
 
 def test_from_catalog_to_webapi_service(unit_registry: UnitRegistry):

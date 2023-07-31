@@ -30,8 +30,8 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
 from . import client
+from ._api_units import can_connect, replace_service_input_outputs
 from ._models import model_factory
-from ._units import can_connect, replace_service_input_outputs
 
 _logger = logging.getLogger(__name__)
 
@@ -52,6 +52,7 @@ class CatalogRequestContext(BaseModel):
             resource_name=request.rel_url.path,
             use_error_v1=True,
         ):
+            assert request.app  # nosec
             return cls(
                 app=request.app,
                 user_id=request[RQT_USERID_KEY],
