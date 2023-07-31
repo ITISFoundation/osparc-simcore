@@ -8,14 +8,14 @@ from pprint import pformat
 from typing import Any, Mapping
 
 import pytest
+from models_library.api_schemas_webserver.catalog import (
+    ServiceInputGet,
+    ServiceOutputGet,
+)
 from pint import UnitRegistry
 from pydantic import BaseModel
 from simcore_service_webserver.catalog._handlers import RESPONSE_MODEL_POLICY
-from simcore_service_webserver.catalog._schemas import (
-    ServiceInputGet,
-    ServiceOutputGet,
-    replace_service_input_outputs,
-)
+from simcore_service_webserver.catalog._units import replace_service_input_outputs
 
 
 @pytest.fixture(scope="module")
