@@ -6,14 +6,14 @@
 # pylint: disable=unused-variable
 
 import re
+from collections.abc import Callable
 from datetime import datetime, timedelta
-from typing import Callable
 
 import pytest
+from models_library.api_schemas_catalog.services import ServiceGet
 from models_library.services import ServiceDockerData
 from pydantic import parse_obj_as
 from respx.router import MockRouter
-from simcore_service_catalog.models.schemas.services import ServiceGet
 from starlette import status
 from starlette.testclient import TestClient
 from yarl import URL

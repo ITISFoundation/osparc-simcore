@@ -186,8 +186,17 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
         case "NEW_ORGANIZATION": {
           const items = actionablePath.split("/");
           const orgId = items.pop();
-          const orgsWindow = osparc.desktop.organizations.OrganizationsWindow.openWindow();
-          orgsWindow.openOrganizationDetails(parseInt(orgId));
+          // make sure org is available
+          osparc.store.Store.getInstance().getGroup(orgId)
+            .then(org => {
+              if (org) {
+                const orgsWindow = osparc.desktop.organizations.OrganizationsWindow.openWindow();
+                orgsWindow.openOrganizationDetails(parseInt(orgId));
+              } else {
+                const msg = this.tr("You don't have access anymore");
+                osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING");
+              }
+            });
           break;
         }
         case "TEMPLATE_SHARED":
@@ -209,6 +218,11 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
                 const win = osparc.dashboard.ResourceMoreOptions.popUpInWindow(moreOpts);
                 moreOpts.addListener("openingStudy", () => win.close());
               }
+            })
+            .catch(err => {
+              console.error(err);
+              const msg = this.tr("You don't have access anymore");
+              osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING");
             });
           break;
         }

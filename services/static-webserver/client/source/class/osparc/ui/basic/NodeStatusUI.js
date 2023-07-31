@@ -59,7 +59,8 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
         converter: state => {
           if (state) {
             this.show();
-            const labelValue = osparc.utils.StatusUI.getLabelValue(state);
+            let labelValue = osparc.utils.StatusUI.getLabelValue(state);
+            labelValue = labelValue.replaceAll("_", " ");
             return qx.lang.String.firstUp(labelValue.toLowerCase());
           }
           this.exclude();
@@ -83,11 +84,11 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
               osparc.utils.Utils.removeClass(this.getChildControl("icon").getContentElement(), "rotate");
               target.setTextColor(osparc.utils.StatusUI.getColor(state));
               return;
-            case "PENDING":
             case "PUBLISHED":
+            case "PENDING":
+            case "WAITING_FOR_RESOURCES":
             case "STARTED":
             case "RETRY":
-            case "WAITING_FOR_RESOURCES":
               osparc.utils.Utils.addClass(this.getChildControl("icon").getContentElement(), "rotate");
               target.setTextColor(osparc.utils.StatusUI.getColor(state));
               return;

@@ -9,7 +9,9 @@
 import random
 from typing import Any, Callable
 
-from models_library.api_schemas_catalog import ServiceAccessRightsGet
+from models_library.api_schemas_catalog.service_access_rights import (
+    ServiceAccessRightsGet,
+)
 from pydantic import parse_obj_as
 from respx.router import MockRouter
 from starlette.testclient import TestClient

@@ -66,7 +66,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
     },
 
     sortOrgMembers: function(a, b) {
-      const sorted = osparc.component.share.Collaborators.sortByAccessRights(a, b);
+      const sorted = osparc.component.share.Collaborators.sortByAccessRights(a["accessRights"], b["accessRights"]);
       if (sorted !== 0) {
         return sorted;
       }
@@ -156,6 +156,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("id", "model", null, item, id);
           ctrl.bindProperty("id", "key", null, item, id);
+          ctrl.bindProperty("gid", "gid", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id);
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);

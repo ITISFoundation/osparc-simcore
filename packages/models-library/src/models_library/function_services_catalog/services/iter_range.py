@@ -1,4 +1,4 @@
-from typing import Iterator
+from collections.abc import Iterator
 
 from ...projects_nodes import OutputID, OutputsDict
 from ...services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType

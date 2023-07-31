@@ -6,7 +6,7 @@
     director2->catalog, it was decided to share as a library
 """
 
-from typing import Iterator, Tuple
+from collections.abc import Iterator
 
 from ..services import ServiceDockerData
 from ._key_labels import is_function_service, is_iterator_service
@@ -24,7 +24,7 @@ def iter_service_docker_data() -> Iterator[ServiceDockerData]:
         yield copied_meta_obj
 
 
-__all__: Tuple[str, ...] = (
+__all__: tuple[str, ...] = (
     "catalog",
     "is_function_service",
     "is_iterator_service",

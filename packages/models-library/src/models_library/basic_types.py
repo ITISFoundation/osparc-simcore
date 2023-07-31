@@ -54,6 +54,11 @@ class HttpSecureUrl(HttpUrl):
     allowed_schemes = {"https"}
 
 
+class HttpUrlWithCustomMinLength(HttpUrl):
+    # Overwriting min length to be back compatible when generating OAS
+    min_length = 0
+
+
 class LogLevel(str, Enum):
     DEBUG = "DEBUG"
     INFO = "INFO"

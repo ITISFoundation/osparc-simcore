@@ -3,7 +3,8 @@
 NOTE: to dump json-schema from CLI use
     python -c "from models_library.services import ServiceDockerData as cls; print(cls.schema_json(indent=2))" > services-schema.json
 """
-from typing import Optional
+
+from typing import Any, ClassVar
 
 from pydantic import Field
 from pydantic.types import PositiveInt
@@ -19,12 +20,12 @@ from .services_access import ServiceGroupAccessRights
 
 class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaData):
     # for a partial update all members must be Optional
-    classifiers: Optional[list[str]] = Field([])
-    owner: Optional[PositiveInt]
+    classifiers: list[str] | None = Field([])
+    owner: PositiveInt | None
 
     class Config:
         orm_mode = True
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "key": "simcore/services/dynamic/sim4life",
                 "version": "1.0.9",
@@ -64,7 +65,7 @@ class ServiceAccessRightsAtDB(ServiceKeyVersion, ServiceGroupAccessRights):
 
     class Config:
         orm_mode = True
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "key": "simcore/services/dynamic/sim4life",
                 "version": "1.0.9",

@@ -1,6 +1,6 @@
 import mimetypes
 from copy import deepcopy
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 
 from pydantic import schema_of
 
@@ -16,7 +16,7 @@ _PROPERTY_TYPE_TO_SCHEMAS = {
 }
 
 
-def guess_media_type(io: Union[ServiceInput, ServiceOutput]) -> str:
+def guess_media_type(io: ServiceInput | ServiceOutput) -> str:
     # SEE https://docs.python.org/3/library/mimetypes.html
     # SEE https://www.iana.org/assignments/media-types/media-types.xhtml
     media_type = io.property_type.removeprefix("data:")
@@ -28,7 +28,7 @@ def guess_media_type(io: Union[ServiceInput, ServiceOutput]) -> str:
     return media_type
 
 
-def update_schema_doc(schema: dict[str, Any], port: Union[ServiceInput, ServiceOutput]):
+def update_schema_doc(schema: dict[str, Any], port: ServiceInput | ServiceOutput):
     schema["title"] = port.label
     if port.label != port.description:
         schema["description"] = port.description
@@ -36,8 +36,8 @@ def update_schema_doc(schema: dict[str, Any], port: Union[ServiceInput, ServiceO
 
 
 def get_service_io_json_schema(
-    port: Union[ServiceInput, ServiceOutput]
-) -> Optional[JsonSchemaDict]:
+    port: ServiceInput | ServiceOutput,
+) -> JsonSchemaDict | None:
     """Get json-schema for a i/o service
 
     For legacy metadata with property_type = integer, etc ... , it applies a conversion
