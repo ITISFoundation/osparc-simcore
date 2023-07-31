@@ -459,7 +459,7 @@ def from_node_reqs_to_dask_resources(
     node_reqs: NodeRequirements,
 ) -> dict[str, int | float]:
     """Dask resources are set such as {"CPU": X.X, "GPU": Y.Y, "RAM": INT}"""
-    dask_resources = node_reqs.dict(
+    dask_resources: dict[str, int | float] = node_reqs.dict(
         exclude_unset=True,
         by_alias=True,
         exclude_none=True,

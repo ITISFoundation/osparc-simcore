@@ -27,6 +27,7 @@ from simcore_postgres_database.models.comp_tasks import NodeClass
 
 from ...core.errors import TaskSchedulingError
 from ...core.settings import ComputationalBackendSettings
+from ...models.comp_runs import MetadataDict
 from ...models.comp_tasks import CompTaskAtDB, Image
 from ...modules.dask_client import DaskClient
 from ...modules.dask_clients_pool import DaskClientsPool
@@ -38,7 +39,6 @@ from ...utils.dask import (
 )
 from ...utils.dask_client_utils import TaskHandlers
 from ..db.repositories.comp_tasks import CompTasksRepository
-from ..models.comp_runs import MetadataDict
 from .base_scheduler import BaseCompScheduler
 
 logger = logging.getLogger(__name__)

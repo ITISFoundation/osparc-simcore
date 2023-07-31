@@ -467,19 +467,19 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         }
         if run_id:
             obj_dict["run_id"] = run_id
-        return cls.parse_obj(obj_dict)
+        return cls.parse_obj(obj_dict)  # type: ignore[no-any-return]
 
     @classmethod
     def from_service_inspect(
         cls, service_inspect: Mapping[str, Any]
     ) -> "SchedulerData":
         labels = service_inspect["Spec"]["Labels"]
-        return cls.parse_raw(labels[DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL])
+        return cls.parse_raw(labels[DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL])  # type: ignore[no-any-return]
 
     def as_label_data(self) -> str:
         # compose_spec needs to be json encoded before encoding it to json
         # and storing it in the label
-        return self.copy(
+        return self.copy(  # type: ignore[no-any-return]
             update={"compose_spec": json.dumps(self.compose_spec)}, deep=True
         ).json()
 

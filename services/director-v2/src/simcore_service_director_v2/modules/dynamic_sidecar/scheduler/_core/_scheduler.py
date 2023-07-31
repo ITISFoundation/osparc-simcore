@@ -325,7 +325,11 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes
                 )
                 return
 
-            current.dynamic_sidecar.service_removal_state.mark_to_remove(can_save)
+            # PC-> ANE: could you please review what to do when can_save=None
+            assert can_save is not None  # nosec
+            current.dynamic_sidecar.service_removal_state.mark_to_remove(
+                can_save=can_save
+            )
             await update_scheduler_data_label(current)
 
             # cancel current observation task

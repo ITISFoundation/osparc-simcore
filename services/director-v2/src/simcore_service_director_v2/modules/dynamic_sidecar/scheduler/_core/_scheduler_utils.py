@@ -104,7 +104,7 @@ async def discover_running_services(scheduler: "Scheduler") -> None:  # type: ig
 
 def _create_model_from_scheduler_data(
     node_uuid: NodeID,
-    scheduler_data: "SchedulerData",  # type: ignore
+    scheduler_data: SchedulerData,
     service_state: ServiceState,
     service_message: str,
 ) -> RunningDynamicServiceDetails:
