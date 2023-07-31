@@ -4,7 +4,6 @@
 
 import asyncio
 import functools
-import json
 import logging
 from typing import Any
 
@@ -12,11 +11,17 @@ from aiohttp import web
 from models_library.api_schemas_catalog.service_access_rights import (
     ServiceAccessRightsGet,
 )
+from models_library.api_schemas_webserver.projects_nodes import (
+    NodeCreate,
+    NodeCreated,
+    NodeGet,
+    NodeRetrieve,
+)
 from models_library.groups import EVERYONE_GROUP_ID
 from models_library.projects import Project, ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import NodeIDStr
-from models_library.services import ServiceKey, ServiceKeyVersion, ServiceVersion
+from models_library.services import ServiceKeyVersion
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import GroupID
 from models_library.utils.fastapi_encoders import jsonable_encoder
@@ -59,7 +64,7 @@ from .exceptions import (
     ProjectStartsTooManyDynamicNodesError,
 )
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def _handle_project_nodes_exceptions(handler: Handler):
@@ -81,10 +86,8 @@ def _handle_project_nodes_exceptions(handler: Handler):
 routes = web.RouteTableDef()
 
 
-class _CreateNodeBody(BaseModel):
-    service_key: ServiceKey
-    service_version: ServiceVersion
-    service_id: str | None = None
+class _NodePathParams(ProjectPathParams):
+    node_id: NodeID
 
 
 @routes.post(f"/{VTAG}/projects/{{project_id}}/nodes", name="create_node")
@@ -94,7 +97,7 @@ class _CreateNodeBody(BaseModel):
 async def create_node(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
-    body = await parse_request_body_as(_CreateNodeBody, request)
+    body = await parse_request_body_as(NodeCreate, request)
 
     if await projects_api.is_service_deprecated(
         request.app,
@@ -124,11 +127,9 @@ async def create_node(request: web.Request) -> web.Response:
             body.service_id,
         )
     }
+    assert NodeCreated.parse_obj(data)  # nosec
+
     return envelope_json_response(data, status_cls=web.HTTPCreated)
-
-
-class _NodePathParams(ProjectPathParams):
-    node_id: NodeID
 
 
 @routes.get(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}", name="get_node")
@@ -166,9 +167,11 @@ async def get_node(request: web.Request) -> web.Response:
 
         if "data" not in service_data:
             # dynamic-service NODE STATE
+            assert NodeGet.parse_obj(service_data)  # nosec
             return envelope_json_response(service_data)
 
         # LEGACY-service NODE STATE
+        assert NodeGet.parse_obj(service_data)  # nosec
         return envelope_json_response(service_data["data"])
 
     except DirectorServiceError as exc:
@@ -216,15 +219,10 @@ async def delete_node(request: web.Request) -> web.Response:
 async def retrieve_node(request: web.Request) -> web.Response:
     """Has only effect on nodes associated to dynamic services"""
     path_params = parse_request_path_parameters_as(_NodePathParams, request)
-
-    try:
-        data = await request.json()
-        port_keys = data.get("port_keys", [])
-    except json.JSONDecodeError as exc:
-        raise web.HTTPBadRequest(reason=f"Invalid request body: {exc}") from exc
+    retrieve = await parse_request_body_as(NodeRetrieve, request)
 
     return web.json_response(
-        await api.retrieve(request.app, f"{path_params.node_id}", port_keys),
+        await api.retrieve(request.app, f"{path_params.node_id}", retrieve.port_keys),
         dumps=json_dumps,
     )
 
@@ -348,7 +346,7 @@ async def get_node_resources(request: web.Request) -> web.Response:
     if f"{path_params.node_id}" not in project["workbench"]:
         raise NodeNotFoundError(f"{path_params.project_id}", f"{path_params.node_id}")
 
-    resources = await projects_api.get_project_node_resources(
+    resources: ServiceResourcesDict = await projects_api.get_project_node_resources(
         request.app,
         user_id=req_ctx.user_id,
         project_id=path_params.project_id,

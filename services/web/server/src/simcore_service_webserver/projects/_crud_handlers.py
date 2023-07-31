@@ -17,14 +17,10 @@ from models_library.api_schemas_webserver.projects import (
 )
 from models_library.projects import Project, ProjectID
 from models_library.projects_state import ProjectLocked
-from models_library.rest_pagination import (
-    DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
-    MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
-    Page,
-)
+from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import BaseModel, Extra, Field, NonNegativeInt, validator
+from pydantic import BaseModel, Extra, Field, validator
 from servicelib.aiohttp.long_running_tasks.server import start_long_running_task
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -39,7 +35,7 @@ from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
-from .._meta import api_version_prefix as VTAG
+from .._meta import API_VTAG as VTAG
 from ..catalog.client import get_services_for_user_in_product
 from ..director_v2 import api
 from ..login.decorators import login_required
@@ -164,16 +160,8 @@ async def create_project(request: web.Request):
 #
 
 
-class _ProjectListParams(BaseModel):
-    limit: int = Field(
-        default=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
-        description="maximum number of items to return (pagination)",
-        ge=1,
-        lt=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
-    )
-    offset: NonNegativeInt = Field(
-        default=0, description="index to the first item to return (pagination)"
-    )
+class _ProjectListParams(PageQueryParameters):
+
     project_type: ProjectTypeAPI = Field(default=ProjectTypeAPI.all, alias="type")
     show_hidden: bool = Field(
         default=False, description="includes projects marked as hidden in the listing"
