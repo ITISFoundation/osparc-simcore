@@ -1,6 +1,3 @@
-""" Helper script to generate OAS automatically
-"""
-
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
