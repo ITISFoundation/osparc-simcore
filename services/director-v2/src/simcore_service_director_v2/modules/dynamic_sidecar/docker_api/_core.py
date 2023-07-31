@@ -12,17 +12,17 @@ from models_library.api_schemas_directorv2.constants import (
     DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
-from models_library.api_schemas_directorv2.dynamic_services_scheduler import (
-    NetworkId,
-    SchedulerData,
-    ServiceId,
-)
 from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_enums import ServiceState
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
+from simcore_service_director_v2.models.dynamic_services_scheduler import (
+    NetworkId,
+    SchedulerData,
+    ServiceId,
+)
 from starlette import status
 from tenacity import TryAgain, retry
 from tenacity._asyncio import AsyncRetrying

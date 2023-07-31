@@ -5,9 +5,6 @@ from typing import Any, Coroutine, Final
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient
-from models_library.api_schemas_directorv2.dynamic_services_scheduler import (
-    SchedulerData,
-)
 from models_library.basic_types import PortInt
 from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkAlias
@@ -24,6 +21,7 @@ from servicelib.fastapi.long_running_tasks.client import (
 )
 from servicelib.logging_utils import log_context, log_decorator
 from servicelib.utils import logged_gather
+from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 
 from ....core.settings import DynamicSidecarSettings
 from ....modules.dynamic_sidecar.docker_api import get_or_create_networks_ids

@@ -23,15 +23,15 @@ from models_library.api_schemas_directorv2.constants import (
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
     DYNAMIC_VOLUME_REMOVER_PREFIX,
 )
-from models_library.api_schemas_directorv2.dynamic_services_scheduler import (
-    DockerContainerInspect,
-    SimcoreServiceLabels,
-)
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_service_director_v2.core.settings import DynamicSidecarSettings
+from simcore_service_director_v2.models.dynamic_services_scheduler import (
+    DockerContainerInspect,
+    SimcoreServiceLabels,
+)
 from simcore_service_director_v2.models.schemas.dynamic_services import (
     SchedulerData,
     ServiceState,

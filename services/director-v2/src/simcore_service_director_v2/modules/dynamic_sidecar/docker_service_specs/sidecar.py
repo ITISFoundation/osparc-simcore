@@ -5,9 +5,6 @@ from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.api_schemas_directorv2.constants import (
     DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
 )
-from models_library.api_schemas_directorv2.dynamic_services_scheduler import (
-    SchedulerData,
-)
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.docker import (
     StandardSimcoreDockerLabels,
@@ -16,6 +13,7 @@ from models_library.docker import (
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from pydantic import ByteSize
 from servicelib.json_serialization import json_dumps
+from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 
 from ....core.settings import AppSettings, DynamicSidecarSettings
 from .._namespace import get_compose_namespace

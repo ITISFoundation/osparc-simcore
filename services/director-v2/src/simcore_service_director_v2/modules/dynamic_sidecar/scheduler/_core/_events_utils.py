@@ -6,11 +6,6 @@ from collections import deque
 from typing import Any, Deque, Final
 
 from fastapi import FastAPI
-from models_library.api_schemas_directorv2.dynamic_services_scheduler import (
-    DockerContainerInspect,
-    DockerStatus,
-    SchedulerData,
-)
 from models_library.projects_networks import ProjectsNetworks
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import NodeIDStr
@@ -27,6 +22,11 @@ from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 from simcore_postgres_database.models.comp_tasks import NodeClass
+from simcore_service_director_v2.models.dynamic_services_scheduler import (
+    DockerContainerInspect,
+    DockerStatus,
+    SchedulerData,
+)
 from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log

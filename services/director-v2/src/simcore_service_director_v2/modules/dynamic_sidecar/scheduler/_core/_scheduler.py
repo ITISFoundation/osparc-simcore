@@ -26,10 +26,6 @@ from models_library.api_schemas_directorv2.dynamic_services import (
     RetrieveDataOutEnveloped,
     RunningDynamicServiceDetails,
 )
-from models_library.api_schemas_directorv2.dynamic_services_scheduler import (
-    SchedulerData,
-    ServiceName,
-)
 from models_library.basic_types import PortInt
 from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkAlias
@@ -40,6 +36,10 @@ from pydantic import AnyHttpUrl
 from servicelib.background_task import cancel_task
 from servicelib.fastapi.long_running_tasks.client import ProgressCallback
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
+from simcore_service_director_v2.models.dynamic_services_scheduler import (
+    SchedulerData,
+    ServiceName,
+)
 
 from .....core.settings import DynamicServicesSchedulerSettings, DynamicSidecarSettings
 from ...api_client import SidecarsClient, get_sidecars_client

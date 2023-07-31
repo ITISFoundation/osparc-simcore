@@ -4,10 +4,8 @@
 
 from typing import Any
 
-from models_library.api_schemas_directorv2.dynamic_services_scheduler import (
-    SchedulerData,
-)
 from simcore_service_director_v2.core.settings import AppSettings
+from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.sidecar import (
     _get_environment_variables,
 )

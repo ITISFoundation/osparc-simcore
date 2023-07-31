@@ -8,9 +8,6 @@ import typer
 from fastapi import FastAPI, status
 from httpx import AsyncClient, HTTPError
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
-from models_library.api_schemas_directorv2.dynamic_services_scheduler import (
-    DynamicSidecarNamesHelper,
-)
 from models_library.projects import NodeIDStr, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceType
@@ -19,6 +16,9 @@ from pydantic import AnyHttpUrl, BaseModel, PositiveInt, parse_obj_as
 from rich.live import Live
 from rich.table import Table
 from servicelib.services_utils import get_service_from_key
+from simcore_service_director_v2.models.dynamic_services_scheduler import (
+    DynamicSidecarNamesHelper,
+)
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_random_exponential

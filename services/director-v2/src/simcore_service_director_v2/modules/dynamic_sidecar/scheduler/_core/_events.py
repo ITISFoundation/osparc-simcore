@@ -6,13 +6,6 @@ from typing import Any, Final
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.aiodocker_api import AioDockerServiceSpec
-from models_library.api_schemas_directorv2.dynamic_services_scheduler import (
-    DockerContainerInspect,
-    DockerStatus,
-    DynamicSidecarStatus,
-    NetworkId,
-    SchedulerData,
-)
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeIDStr
@@ -31,6 +24,13 @@ from servicelib.fastapi.long_running_tasks.client import TaskId
 from servicelib.json_serialization import json_dumps
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_postgres_database.models.comp_tasks import NodeClass
+from simcore_service_director_v2.models.dynamic_services_scheduler import (
+    DockerContainerInspect,
+    DockerStatus,
+    DynamicSidecarStatus,
+    NetworkId,
+    SchedulerData,
+)
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay

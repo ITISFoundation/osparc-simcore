@@ -14,14 +14,14 @@ import pytest
 import respx
 from faker import Faker
 from fastapi import FastAPI
-from models_library.api_schemas_directorv2.dynamic_services_scheduler import (
-    DockerContainerInspect,
-)
 from models_library.service_settings_labels import SimcoreServiceLabels
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
 from simcore_service_director_v2.core.settings import AppSettings
+from simcore_service_director_v2.models.dynamic_services_scheduler import (
+    DockerContainerInspect,
+)
 from simcore_service_director_v2.models.schemas.dynamic_services import (
     DynamicSidecarStatus,
     RunningDynamicServiceDetails,

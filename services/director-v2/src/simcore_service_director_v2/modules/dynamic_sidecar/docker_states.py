@@ -3,11 +3,11 @@ States from Docker Tasks and docker Containers are mapped to ServiceState.
 """
 import logging
 
-from models_library.api_schemas_directorv2.dynamic_services_scheduler import (
-    DockerContainerInspect,
-)
 from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.services_enums import ServiceState
+from simcore_service_director_v2.models.dynamic_services_scheduler import (
+    DockerContainerInspect,
+)
 
 logger = logging.getLogger(__name__)
 
