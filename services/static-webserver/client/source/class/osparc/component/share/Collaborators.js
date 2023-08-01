@@ -318,7 +318,13 @@ qx.Class.define("osparc.component.share.Collaborators", {
     },
 
     __getLeaveStudyButton: function() {
-      if (this._resourceType === "study") {
+      if (
+        (this._resourceType === "study") &&
+        // check the study is shared
+        (Object.keys(this._serializedData["accessRights"]).length > 1) &&
+        // check also user is not "prjOwner". Backend will silently not let the frontend remove that user.
+        (this._serializedData["prjOwner"] !== osparc.auth.Data.getInstance().getEmail())
+      ) {
         const myGid = osparc.auth.Data.getInstance().getGroupId();
         const leaveButton = new qx.ui.form.Button(this.tr("Leave") + " " + osparc.product.Utils.getStudyAlias({
           firstUpperCase: true
