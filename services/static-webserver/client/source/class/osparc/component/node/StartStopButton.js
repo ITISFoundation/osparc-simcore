@@ -47,6 +47,7 @@ qx.Class.define("osparc.component.node.StartStopButton", {
       switch (id) {
         case "start-button":
           control = new qx.ui.form.Button().set({
+            label: this.tr("Start"),
             icon: "@FontAwesome5Solid/play/14",
             allowGrowX: false,
             enabled: false
@@ -70,16 +71,12 @@ qx.Class.define("osparc.component.node.StartStopButton", {
     },
 
     __applyNode: function(node) {
-      if (node) {
+      if (node && node.isDynamic()) {
         const startButton = this.getChildControl("start-button");
+        node.attachHandlersToStartButton(startButton);
+
         const stopButton = this.getChildControl("stop-button");
-        if (node.isDynamic()) {
-          startButton.setLabel(this.tr("Start"));
-          node.attachHandlersToStartButton(startButton);
-          node.attachHandlersToStopButton(stopButton);
-        } else {
-          startButton.setLabel(this.tr("Run"));
-        }
+        node.attachHandlersToStopButton(stopButton);
       }
     }
   }
