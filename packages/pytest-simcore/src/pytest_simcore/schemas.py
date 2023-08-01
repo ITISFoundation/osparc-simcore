@@ -1,14 +1,11 @@
 # pylint:disable=redefined-outer-name
 
 import json
-import logging
 import subprocess
 from pathlib import Path
 from typing import Any, Callable, Iterable
 
 import pytest
-
-log = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="session")
