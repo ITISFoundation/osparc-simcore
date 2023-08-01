@@ -28,6 +28,7 @@ from dask_task_models_library.container_tasks.protocol import (
 from distributed import SpecCluster
 from faker import Faker
 from fastapi import FastAPI
+from models_library.api_schemas_directorv2.services import NodeRequirements
 from models_library.api_schemas_storage import FileUploadLinks, FileUploadSchema
 from models_library.clusters import ClusterID
 from models_library.docker import to_simcore_runtime_docker_label_key
@@ -40,9 +41,8 @@ from pydantic.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_sdk.node_ports_v2 import FileLinkType
-from simcore_service_director_v2.models.domains.comp_runs import MetadataDict
-from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
-from simcore_service_director_v2.models.schemas.services import NodeRequirements
+from simcore_service_director_v2.models.comp_runs import MetadataDict
+from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
 from simcore_service_director_v2.modules.dask_clients_pool import DaskClientsPool
 from simcore_service_director_v2.utils.dask import (
     _LOGS_FILE_NAME,

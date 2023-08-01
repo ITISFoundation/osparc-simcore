@@ -9,7 +9,9 @@ import logging
 from typing import Any
 
 from aiohttp import web
-from models_library.api_schemas_catalog import ServiceAccessRightsGet
+from models_library.api_schemas_catalog.service_access_rights import (
+    ServiceAccessRightsGet,
+)
 from models_library.groups import EVERYONE_GROUP_ID
 from models_library.projects import Project, ProjectID
 from models_library.projects_nodes import NodeID

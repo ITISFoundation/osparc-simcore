@@ -57,7 +57,7 @@ def test_clone_project_document(
     try:
         jsonschema.validate(instance=clone, schema=project_jsonschema)
     except ValidationError as err:
-        pytest.fail(f"Invalid clone of '{test_data_file_name}': {err.message}")
+        pytest.fail(f"Invalid clone of '{test_data_file_name}': {err}")
 
 
 @pytest.mark.parametrize(

@@ -30,11 +30,12 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from .....core.settings import DynamicSidecarProxySettings, DynamicSidecarSettings
-from .....models.schemas.dynamic_services import DynamicSidecarStatus, SchedulerData
-from .....models.schemas.dynamic_services.scheduler import (
+from .....models.dynamic_services_scheduler import (
     DockerContainerInspect,
     DockerStatus,
+    DynamicSidecarStatus,
     NetworkId,
+    SchedulerData,
 )
 from .....utils.db import get_repository
 from .....utils.dict_utils import nested_update

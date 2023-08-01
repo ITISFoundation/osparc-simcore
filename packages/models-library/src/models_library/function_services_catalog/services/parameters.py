@@ -1,12 +1,10 @@
-from typing import Optional
-
 from ...services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
 from .._key_labels import FUNCTION_SERVICE_KEY_PREFIX
 from .._utils import OM, FunctionServices, create_fake_thumbnail_url
 
 
 def create_metadata(
-    output_type: str, output_name: Optional[str] = None
+    output_type: str, output_name: str | None = None
 ) -> ServiceDockerData:
     """
     Represents a parameter (e.g. "x":5) in a study
@@ -46,9 +44,9 @@ def create_metadata(
     return meta
 
 
-META_NUMBER, META_BOOL, META_INT, META_STR = [
+META_NUMBER, META_BOOL, META_INT, META_STR = (
     create_metadata(output_type=t) for t in ("number", "boolean", "integer", "string")
-]
+)
 
 META_ARRAY = ServiceDockerData.parse_obj(
     {

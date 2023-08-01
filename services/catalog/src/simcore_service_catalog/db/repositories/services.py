@@ -1,16 +1,20 @@
 import logging
 from collections import defaultdict
+from collections.abc import Iterable
 from itertools import chain
-from typing import Any, Iterable, cast
+from typing import Any, cast
 
 import packaging.version
 import sqlalchemy as sa
+from models_library.api_schemas_catalog.services_specifications import (
+    ServiceSpecifications,
+)
+from models_library.groups import GroupAtDB, GroupTypeInModel
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from models_library.users import GroupID
 from psycopg2.errors import ForeignKeyViolation
 from pydantic import ValidationError
-from simcore_postgres_database.models.groups import GroupType
 from simcore_postgres_database.utils_services import create_select_latest_services_query
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -18,9 +22,7 @@ from sqlalchemy.sql import and_, or_
 from sqlalchemy.sql.expression import tuple_
 from sqlalchemy.sql.selectable import Select
 
-from ...models.domain.group import GroupAtDB
-from ...models.domain.service_specifications import ServiceSpecificationsAtDB
-from ...models.schemas.services_specifications import ServiceSpecifications
+from ...models.services_specifications import ServiceSpecificationsAtDB
 from ..tables import services_access_rights, services_meta_data, services_specifications
 from ._base import BaseRepository
 
@@ -37,11 +39,7 @@ def _make_list_services_query(
     query = sa.select(services_meta_data)
     if gids or execute_access or write_access:
         logic_operator = and_ if combine_access_with_and else or_
-        default = (
-            True  # pylint: disable=simplifiable-if-expression
-            if combine_access_with_and
-            else False
-        )
+        default = bool(combine_access_with_and)
         access_query_part = logic_operator(
             services_access_rights.c.execute_access if execute_access else default,
             services_access_rights.c.write_access if write_access else default,
@@ -111,7 +109,8 @@ class ServicesRepository(BaseRepository):
         limit_count limits returned value. None or non-positive values returns all matches
         """
         if minor is not None and major is None:
-            raise ValueError("Expected only major.*.* or major.minor.*")
+            msg = "Expected only major.*.* or major.minor.*"
+            raise ValueError(msg)
 
         search_condition = services_meta_data.c.key == key
         if major is not None:
@@ -142,8 +141,7 @@ class ServicesRepository(BaseRepository):
         def _by_version(x: ServiceMetaDataAtDB) -> packaging.version.Version:
             return cast(packaging.version.Version, packaging.version.parse(x.version))
 
-        releases_sorted = sorted(releases, key=_by_version, reverse=True)
-        return releases_sorted
+        return sorted(releases, key=_by_version, reverse=True)
 
     async def get_latest_release(self, key: str) -> ServiceMetaDataAtDB | None:
         """Returns last release or None if service was never released"""
@@ -219,9 +217,8 @@ class ServicesRepository(BaseRepository):
                 access_rights.key != new_service.key
                 or access_rights.version != new_service.version
             ):
-                raise ValueError(
-                    f"{access_rights} does not correspond to service {new_service.key}:{new_service.version}"
-                )
+                msg = f"{access_rights} does not correspond to service {new_service.key}:{new_service.version}"
+                raise ValueError(msg)
         async with self.db_engine.begin() as conn:
             # NOTE: this ensure proper rollback in case of issue
             result = await conn.execute(
@@ -258,8 +255,7 @@ class ServicesRepository(BaseRepository):
             )
             row = result.first()
             assert row  # nosec
-        updated_service = ServiceMetaDataAtDB.from_orm(row)
-        return updated_service
+        return ServiceMetaDataAtDB.from_orm(row)
 
     async def get_service_access_rights(
         self,
@@ -410,16 +406,16 @@ class ServicesRepository(BaseRepository):
                         continue
                     # filter by group type
                     group = gid_to_group_map[row.gid]
-                    if (group.group_type == GroupType.STANDARD) and _is_newer(
+                    if (group.group_type == GroupTypeInModel.STANDARD) and _is_newer(
                         teams_specs.get(db_service_spec.gid),
                         db_service_spec,
                     ):
                         teams_specs[db_service_spec.gid] = db_service_spec
-                    elif (group.group_type == GroupType.EVERYONE) and _is_newer(
+                    elif (group.group_type == GroupTypeInModel.EVERYONE) and _is_newer(
                         everyone_specs, db_service_spec
                     ):
                         everyone_specs = db_service_spec
-                    elif (group.group_type == GroupType.PRIMARY) and _is_newer(
+                    elif (group.group_type == GroupTypeInModel.PRIMARY) and _is_newer(
                         primary_specs, db_service_spec
                     ):
                         primary_specs = db_service_spec

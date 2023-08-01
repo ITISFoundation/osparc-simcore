@@ -16,7 +16,7 @@ from models_library.emails import LowerCaseEmailStr
 from pydantic import BaseModel, parse_obj_as
 from servicelib.logging_utils import log_decorator
 
-from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
+from ..garbage_collector.settings import GUEST_USER_RC_LOCK_FORMAT
 from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..login.utils import ACTIVE, GUEST, get_client_ip, get_random_string
 from ..redis import get_redis_lock_manager_client

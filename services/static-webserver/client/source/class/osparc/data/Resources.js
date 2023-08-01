@@ -589,6 +589,29 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * WALLETS
+       */
+      "wallets": {
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/wallets"
+          },
+          getOne: {
+            method: "GET",
+            url: statics.API + "/wallets/{walletId}"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/wallets"
+          },
+          patch: {
+            method: "PATCH",
+            url: statics.API + "/wallets/{walletId}"
+          }
+        }
+      },
+      /*
        * CLUSTERS
        */
       "clusters": {
@@ -1073,12 +1096,112 @@ qx.Class.define("osparc.data.Resources", {
     },
 
     dummy: {
-      getCreditsLeft: function() {
+      newWalletData: function() {
+        return {
+          id: Math.floor(Math.random() * 1000),
+          name: "New Wallet",
+          description: "",
+          thumbnail: null,
+          type: "shared",
+          owner: null,
+          accessRights: {},
+          credits: {
+            left: 0
+          },
+          active: true
+        };
+      },
+
+      addWalletsToStore: function() {
+        const store = osparc.store.Store.getInstance();
+        osparc.data.Resources.dummy.getWallets()
+          .then(walletsData => {
+            if (walletsData && "wallets" in walletsData && walletsData["wallets"].length) {
+              const wallets = [];
+              walletsData["wallets"].forEach(walletData => {
+                const wallet = new osparc.data.model.Wallet(walletData);
+                wallets.push(wallet);
+              });
+              store.setWallets(wallets);
+              setInterval(() => {
+                store.getWallets().forEach(wallet => {
+                  wallet.setCredits(wallet.getCredits()-1);
+                });
+              }, 30000);
+            }
+          })
+          .catch(err => console.error(err));
+      },
+
+      getWallets: function() {
+        const myGid = osparc.auth.Data.getInstance().getGroupId();
         return new Promise(resolve => {
           resolve({
-            credits: {
-              left: 10
-            }
+            wallets: [{
+              id: 1,
+              name: "My Wallet",
+              description: "Personal Wallet",
+              thumbnail: null,
+              type: "personal",
+              owner: myGid,
+              accessRights: {
+                [myGid]: {
+                  delete: true,
+                  write: true,
+                  read: true
+                }
+              },
+              credits: {
+                left: 10
+              },
+              active: true
+            }, {
+              id: 2,
+              name: "Our Wallet",
+              description: "Organization wide Wallet",
+              thumbnail: null,
+              type: "shared",
+              owner: myGid,
+              accessRights: {
+                [myGid]: {
+                  delete: false,
+                  write: true,
+                  read: true
+                },
+                417: {
+                  delete: false,
+                  write: false,
+                  read: true
+                }
+              },
+              credits: {
+                left: 100
+              },
+              active: true
+            }, {
+              id: 3,
+              name: "Another Wallet",
+              description: "Organization wide Wallet 2",
+              thumbnail: null,
+              type: "shared",
+              owner: 417,
+              accessRights: {
+                417: {
+                  delete: true,
+                  write: true,
+                  read: true
+                },
+                [myGid]: {
+                  delete: false,
+                  write: false,
+                  read: true
+                }
+              },
+              credits: {
+                left: 1000
+              },
+              active: true
+            }]
           });
         });
       },

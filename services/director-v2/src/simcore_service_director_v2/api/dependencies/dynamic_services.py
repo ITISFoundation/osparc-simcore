@@ -1,12 +1,14 @@
 import logging
 
 from fastapi import Depends, Request
+from models_library.api_schemas_directorv2.dynamic_services import (
+    RunningDynamicServiceDetails,
+)
 from models_library.projects_nodes import NodeID
 from servicelib.logging_utils import log_decorator
 from starlette.datastructures import URL
 
 from ...core.settings import DynamicServicesSettings
-from ...models.schemas.dynamic_services import RunningDynamicServiceDetails
 from ...modules.director_v0 import DirectorV0Client
 from ...modules.dynamic_services import ServicesClient
 from ...modules.dynamic_sidecar.scheduler import DynamicSidecarsScheduler

@@ -1,8 +1,12 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import pytest
 from pytest import LogCaptureFixture
-from simcore_service_director_v2.models.schemas.dynamic_services import (
+from simcore_service_director_v2.models.dynamic_services_scheduler import (
     DynamicSidecarStatus,
     SchedulerData,
 )

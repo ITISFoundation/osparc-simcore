@@ -1,13 +1,7 @@
-"""
-
-NOTE: to dump json-schema from CLI use
-    python -c "from models_library.services import ServiceDockerData as cls; print(cls.schema_json(indent=2))" > services-schema.json
-"""
-
 import re
 from datetime import datetime
 from enum import Enum
-from typing import Any, Final
+from typing import Any, ClassVar, Final
 from uuid import uuid4
 
 import arrow
@@ -276,12 +270,9 @@ class BaseServiceIOModel(BaseModel):
     @validator("content_schema")
     @classmethod
     def check_type_is_set_to_schema(cls, v, values):
-        if v is not None:
-            if (ptype := values["property_type"]) != "ref_contentSchema":
-                raise ValueError(
-                    "content_schema is defined but set the wrong type."
-                    f"Expected type=ref_contentSchema but got ={ptype}."
-                )
+        if v is not None and (ptype := values["property_type"]) != "ref_contentSchema":
+            msg = f"content_schema is defined but set the wrong type.Expected type=ref_contentSchema but got ={ptype}."
+            raise ValueError(msg)
         return v
 
     @validator("content_schema")
@@ -293,13 +284,13 @@ class BaseServiceIOModel(BaseModel):
 
                 if any_ref_key(v):
                     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3030
-                    raise ValueError("Schemas with $ref are still not supported")
+                    msg = "Schemas with $ref are still not supported"
+                    raise ValueError(msg)
 
             except InvalidJsonSchema as err:
                 failed_path = "->".join(map(str, err.path))
-                raise ValueError(
-                    f"Invalid json-schema at {failed_path}: {err.message}"
-                ) from err
+                msg = f"Invalid json-schema at {failed_path}: {err.message}"
+                raise ValueError(msg) from err
         return v
 
     @classmethod
@@ -307,13 +298,12 @@ class BaseServiceIOModel(BaseModel):
         cls, port_schema: dict[str, Any]
     ) -> dict[str, Any]:
         description = port_schema.pop("description", port_schema["title"])
-        data = {
+        return {
             "label": port_schema["title"],
             "description": description,
             "type": "ref_contentSchema",
             "contentSchema": port_schema,
         }
-        return data
 
 
 class ServiceInput(BaseServiceIOModel):
@@ -332,7 +322,7 @@ class ServiceInput(BaseServiceIOModel):
     )
 
     class Config(BaseServiceIOModel.Config):
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 # file-wo-widget:
                 {
@@ -403,7 +393,7 @@ class ServiceOutput(BaseServiceIOModel):
     )
 
     class Config(BaseServiceIOModel.Config):
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "displayOrder": 2,
@@ -545,7 +535,7 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
         extra = Extra.forbid
         frozen = False  # it inherits from ServiceKeyVersion.
 
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "name": "oSparc Python Runner",
@@ -659,7 +649,7 @@ class ServiceMetaData(_BaseServiceCommonDataModel):
     quality: dict[str, Any] = {}
 
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "key": "simcore/services/dynamic/sim4life",
                 "version": "1.0.9",

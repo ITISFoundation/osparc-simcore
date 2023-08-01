@@ -8,7 +8,7 @@ from models_library.users import UserID
 from pydantic import parse_obj_as
 from servicelib.utils import logged_gather
 
-from ..models.domains.comp_tasks import CompTaskAtDB
+from ..models.comp_tasks import CompTaskAtDB
 from ..modules.catalog import CatalogClient
 from ..modules.db.tables import NodeClass
 

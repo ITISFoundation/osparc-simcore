@@ -5,8 +5,9 @@ SEE: Copied and adapted from https://github.com/tiangolo/pydantic-sqlalchemy/blo
 
 import json
 import warnings
+from collections.abc import Callable, Container
 from datetime import datetime
-from typing import Any, Callable, Container
+from typing import Any
 from uuid import UUID
 
 import sqlalchemy as sa
@@ -76,7 +77,7 @@ def _eval_defaults(
             elif issubclass(pydantic_type, datetime):
                 assert isinstance(  # nosec
                     column.server_default.arg,  # type: ignore
-                    (type(null()), sqlalchemy.sql.functions.now),
+                    type(null()) | sqlalchemy.sql.functions.now,
                 )
                 default_factory = datetime.now
     return default, default_factory

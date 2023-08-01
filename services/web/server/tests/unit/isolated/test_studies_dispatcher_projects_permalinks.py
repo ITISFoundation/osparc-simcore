@@ -41,7 +41,7 @@ def app_environment(
             "WEBSERVER_ACTIVITY": "null",
             "WEBSERVER_CATALOG": "null",
             "WEBSERVER_CLUSTERS": "false",
-            "WEBSERVER_COMPUTATION": "0",
+            "WEBSERVER_NOTIFICATIONS": "0",
             "WEBSERVER_DIAGNOSTICS": "null",
             "WEBSERVER_DIRECTOR_V2": "null",
             "WEBSERVER_EXPORTER": "null",

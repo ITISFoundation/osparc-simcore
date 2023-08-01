@@ -7,9 +7,11 @@ from typing import AsyncIterator
 import typer
 from fastapi import FastAPI, status
 from httpx import AsyncClient, HTTPError
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.projects import NodeIDStr, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceType
+from models_library.services_enums import ServiceBootType, ServiceState
 from pydantic import AnyHttpUrl, BaseModel, PositiveInt, parse_obj_as
 from rich.live import Live
 from rich.table import Table
@@ -20,12 +22,7 @@ from tenacity.wait import wait_random_exponential
 
 from ..core.application import create_base_app
 from ..core.settings import AppSettings
-from ..models.domains.dynamic_services import DynamicServiceGet
-from ..models.schemas.dynamic_services import (
-    DynamicSidecarNamesHelper,
-    ServiceBootType,
-    ServiceState,
-)
+from ..models.dynamic_services_scheduler import DynamicSidecarNamesHelper
 from ..modules import db, director_v0, dynamic_sidecar
 from ..modules.db.repositories.projects import ProjectsRepository
 from ..modules.director_v0 import DirectorV0Client

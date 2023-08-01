@@ -1,10 +1,28 @@
-from typing import Final, Literal, TypeAlias, Union
+from enum import auto
+from typing import Any, ClassVar, Final, Literal, TypeAlias
 
-from pydantic import AnyUrl, BaseModel, Extra, Field, HttpUrl, SecretStr, root_validator
+from pydantic import (
+    AnyUrl,
+    BaseModel,
+    Extra,
+    Field,
+    HttpUrl,
+    SecretStr,
+    root_validator,
+    validator,
+)
 from pydantic.types import NonNegativeInt
-from simcore_postgres_database.models.clusters import ClusterType
 
 from .users import GroupID
+from .utils.common_validators import create_enums_pre_validator
+from .utils.enums import StrAutoEnum
+
+
+class ClusterTypeInModel(StrAutoEnum):
+    # This enum is equivalent to `simcore_postgres_database.models.clusters.ClusterType`
+    # SEE models-library/tests/test__pydantic_models_and_enums.py
+    AWS = auto()
+    ON_PREMISE = auto()
 
 
 class ClusterAccessRights(BaseModel):
@@ -35,7 +53,7 @@ class SimpleAuthentication(BaseAuthentication):
     password: SecretStr
 
     class Config(BaseAuthentication.Config):
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "type": "simple",
@@ -51,7 +69,7 @@ class KerberosAuthentication(BaseAuthentication):
 
     # NOTE: the entries here still need to be defined
     class Config(BaseAuthentication.Config):
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "type": "kerberos",
@@ -65,7 +83,7 @@ class JupyterHubTokenAuthentication(BaseAuthentication):
     api_token: str
 
     class Config(BaseAuthentication.Config):
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {"type": "jupyterhub", "api_token": "some_jupyterhub_token"},
             ]
@@ -76,20 +94,19 @@ class NoAuthentication(BaseAuthentication):
     type: Literal["none"] = "none"
 
 
-InternalClusterAuthentication = NoAuthentication
-ExternalClusterAuthentication = Union[
-    SimpleAuthentication, KerberosAuthentication, JupyterHubTokenAuthentication
-]
-ClusterAuthentication = Union[
-    ExternalClusterAuthentication,
-    InternalClusterAuthentication,
-]
+InternalClusterAuthentication: TypeAlias = NoAuthentication
+ExternalClusterAuthentication: TypeAlias = (
+    SimpleAuthentication | KerberosAuthentication | JupyterHubTokenAuthentication
+)
+ClusterAuthentication: TypeAlias = (
+    ExternalClusterAuthentication | InternalClusterAuthentication
+)
 
 
 class BaseCluster(BaseModel):
     name: str = Field(..., description="The human readable name of the cluster")
     description: str | None = None
-    type: ClusterType
+    type: ClusterTypeInModel
     owner: GroupID
     thumbnail: HttpUrl | None = Field(
         None,
@@ -101,6 +118,10 @@ class BaseCluster(BaseModel):
         ..., description="Dask gateway authentication"
     )
     access_rights: dict[GroupID, ClusterAccessRights] = Field(default_factory=dict)
+
+    _from_equivalent_enums = validator("type", allow_reuse=True, pre=True)(
+        create_enums_pre_validator(ClusterTypeInModel)
+    )
 
     class Config:
         extra = Extra.forbid
@@ -115,12 +136,12 @@ class Cluster(BaseCluster):
     id: ClusterID = Field(..., description="The cluster ID")
 
     class Config(BaseCluster.Config):
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "id": DEFAULT_CLUSTER_ID,
                     "name": "The default cluster",
-                    "type": ClusterType.ON_PREMISE,
+                    "type": ClusterTypeInModel.ON_PREMISE,
                     "owner": 1456,
                     "endpoint": "tcp://default-dask-scheduler:8786",
                     "authentication": {
@@ -132,7 +153,7 @@ class Cluster(BaseCluster):
                 {
                     "id": 432,
                     "name": "My awesome cluster",
-                    "type": ClusterType.ON_PREMISE,
+                    "type": ClusterTypeInModel.ON_PREMISE,
                     "owner": 12,
                     "endpoint": "https://registry.osparc-development.fake.dev",
                     "authentication": {
@@ -145,7 +166,7 @@ class Cluster(BaseCluster):
                     "id": 432546,
                     "name": "My AWS cluster",
                     "description": "a AWS cluster administered by me",
-                    "type": ClusterType.AWS,
+                    "type": ClusterTypeInModel.AWS,
                     "owner": 154,
                     "endpoint": "https://registry.osparc-development.fake.dev",
                     "authentication": {"type": "kerberos"},
@@ -159,7 +180,7 @@ class Cluster(BaseCluster):
                     "id": 325436,
                     "name": "My AWS cluster",
                     "description": "a AWS cluster administered by me",
-                    "type": ClusterType.AWS,
+                    "type": ClusterTypeInModel.AWS,
                     "owner": 2321,
                     "endpoint": "https://registry.osparc-development.fake2.dev",
                     "authentication": {
@@ -191,8 +212,7 @@ class Cluster(BaseCluster):
         if access_rights[owner_gid] != (
             CLUSTER_USER_RIGHTS if is_default_cluster else CLUSTER_ADMIN_RIGHTS
         ):
-            raise ValueError(
-                f"the cluster owner access rights are incorrectly set: {access_rights[owner_gid]}"
-            )
+            msg = f"the cluster owner access rights are incorrectly set: {access_rights[owner_gid]}"
+            raise ValueError(msg)
         values["access_rights"] = access_rights
         return values

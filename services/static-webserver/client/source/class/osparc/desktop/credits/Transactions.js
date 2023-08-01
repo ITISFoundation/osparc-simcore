@@ -35,6 +35,7 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
         this.tr("Date"),
         this.tr("Credits"),
         this.tr("Price"),
+        this.tr("Wallet"),
         this.tr("Comment")
       ]);
 
@@ -50,17 +51,19 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
         osparc.utils.Utils.formatDateAndTime(new Date()),
         10,
         0,
+        "My Wallet",
         "Welcome to Sim4Life"
       ];
       this.__rawData.push(welcome);
       table.setData(this.__rawData);
     },
 
-    addRow: function(nCredits, price, comment) {
+    addRow: function(nCredits, price, walletName, comment) {
       const newData = [
         osparc.utils.Utils.formatDateAndTime(new Date()),
         nCredits ? nCredits : 0,
         price ? price : 0,
+        walletName ? walletName : "Unknown Wallet",
         comment ? comment : ""
       ];
       this.__rawData.push(newData);

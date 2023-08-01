@@ -10,7 +10,9 @@ from typing import Any
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from models_library.api_schemas_catalog import ServiceAccessRightsGet
+from models_library.api_schemas_catalog.service_access_rights import (
+    ServiceAccessRightsGet,
+)
 from models_library.projects_nodes import Node, NodeID
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture

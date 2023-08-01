@@ -12,8 +12,9 @@
 """
 
 import asyncio
+from collections.abc import Awaitable, Callable, Iterator
 from copy import deepcopy
-from typing import Any, Awaitable, Callable, Iterator
+from typing import Any
 from unittest import mock
 from uuid import uuid4
 
@@ -38,7 +39,7 @@ from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.catalog.plugin import setup_catalog
 from simcore_service_webserver.db.plugin import setup_db
 from simcore_service_webserver.director_v2.plugin import setup_director_v2
-from simcore_service_webserver.garbage_collector import setup_garbage_collector
+from simcore_service_webserver.garbage_collector.plugin import setup_garbage_collector
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.products.plugin import setup_products
 from simcore_service_webserver.projects.models import ProjectDict
@@ -98,7 +99,7 @@ def client(
     setup_products(app)
     setup_director_v2(app)
 
-    yield event_loop.run_until_complete(
+    return event_loop.run_until_complete(
         aiohttp_client(
             app,
             server_kwargs={
@@ -135,14 +136,14 @@ async def storage_subsystem_mock(mocker: MockerFixture):
         )
 
     mock = mocker.patch(
-        "simcore_service_webserver.projects._crud_create_utils.copy_data_folders_from_project",
+        "simcore_service_webserver.projects._crud_api_create.copy_data_folders_from_project",
         autospec=True,
         side_effect=_mock_copy_data_from_project,
     )
 
     # requests storage to delete data
     mock1 = mocker.patch(
-        "simcore_service_webserver.projects._crud_delete_utils.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._crud_api_delete.delete_data_folders_of_project",
         return_value="",
     )
     return mock, mock1
@@ -170,8 +171,8 @@ def catalog_subsystem_mock(
         return services_in_project
 
     for namespace in (
-        "simcore_service_webserver.projects._crud_read_utils.get_services_for_user_in_product",
-        "simcore_service_webserver.projects._handlers_crud.get_services_for_user_in_product",
+        "simcore_service_webserver.projects._crud_api_read.get_services_for_user_in_product",
+        "simcore_service_webserver.projects._crud_handlers.get_services_for_user_in_product",
     ):
         mock = mocker.patch(
             namespace,
@@ -260,7 +261,7 @@ async def test_workflow(
     assert len(projects) == 1
 
     assert not ProjectState(**projects[0].pop("state")).locked.value
-    for key in projects[0].keys():
+    for key in projects[0]:
         if key not in (
             "uuid",
             "prjOwner",
@@ -280,7 +281,7 @@ async def test_workflow(
 
     new_node_id = str(uuid4())
     modified_project["workbench"][new_node_id] = modified_project["workbench"].pop(
-        list(modified_project["workbench"].keys())[0]
+        next(iter(modified_project["workbench"].keys()))
     )
     modified_project["workbench"][new_node_id]["position"]["x"] = 0
     # share with some group
@@ -295,13 +296,13 @@ async def test_workflow(
     projects = await _request_list(client)
     assert len(projects) == 1
 
-    for key in projects[0].keys():
+    for key in projects[0]:
         if key not in ("lastChangeDate", "state"):
             assert projects[0][key] == modified_project[key]
 
     # get
     project = await _request_get(client, pid)
-    for key in project.keys():
+    for key in project:
         if key not in ("lastChangeDate", "state"):
             assert project[key] == modified_project[key]
 

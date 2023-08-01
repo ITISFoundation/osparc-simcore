@@ -20,7 +20,7 @@ from .services import (
     probes,
 )
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 catalog = FunctionServices(settings=FunctionServiceSettings())

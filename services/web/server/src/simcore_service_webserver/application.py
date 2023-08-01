@@ -20,7 +20,7 @@ from .diagnostics.plugin import setup_diagnostics
 from .director_v2.plugin import setup_director_v2
 from .email.plugin import setup_email
 from .exporter.plugin import setup_exporter
-from .garbage_collector import setup_garbage_collector
+from .garbage_collector.plugin import setup_garbage_collector
 from .groups.plugin import setup_groups
 from .invitations.plugin import setup_invitations
 from .login.plugin import setup_login

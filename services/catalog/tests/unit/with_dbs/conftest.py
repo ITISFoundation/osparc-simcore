@@ -17,7 +17,6 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.services import ServiceDockerData
 from models_library.users import UserID
-from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_postgres import PostgresTestConfig
@@ -66,7 +65,7 @@ async def products_names(
 
 @pytest.fixture
 def app(
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     mocker: MockerFixture,
     service_test_environ: EnvVarsDict,
     postgres_db: sa.engine.Engine,

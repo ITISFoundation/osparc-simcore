@@ -33,6 +33,7 @@ qx.Class.define("osparc.component.resourceUsage.OverviewTable", {
     columnModel.getBehavior().setWidth(this.self().COLUMNS.processors.pos, 80);
     columnModel.getBehavior().setWidth(this.self().COLUMNS.coreHours.pos, 80);
     columnModel.getBehavior().setWidth(this.self().COLUMNS.status.pos, 70);
+    columnModel.getBehavior().setWidth(this.self().COLUMNS.wallet.pos, 80);
     columnModel.setDataCellRenderer(this.self().COLUMNS.duration.pos, new qx.ui.table.cellrenderer.Number());
     columnModel.setDataCellRenderer(this.self().COLUMNS.processors.pos, new qx.ui.table.cellrenderer.Number());
     columnModel.setDataCellRenderer(this.self().COLUMNS.coreHours.pos, new qx.ui.table.cellrenderer.Number());
@@ -71,6 +72,10 @@ qx.Class.define("osparc.component.resourceUsage.OverviewTable", {
       status: {
         pos: 7,
         title: "Status"
+      },
+      wallet: {
+        pos: 8,
+        title: "Wallet"
       }
     }
   },
@@ -96,6 +101,7 @@ qx.Class.define("osparc.component.resourceUsage.OverviewTable", {
           newData[cols["processors"].pos] = data["processors"];
           newData[cols["coreHours"].pos] = data["core_hours"];
           newData[cols["status"].pos] = qx.lang.String.firstUp(data["status"]);
+          newData[cols["wallet"].pos] = data["wallet_label"] ? data["wallet_label"] : "Wallet ID?";
           newDatas.push(newData);
         });
       }

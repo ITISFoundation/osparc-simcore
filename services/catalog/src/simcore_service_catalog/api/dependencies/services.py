@@ -5,6 +5,10 @@ from typing import Any, cast
 
 from fastapi import Depends, Header, HTTPException, status
 from fastapi.requests import Request
+from models_library.api_schemas_catalog.services import ServiceGet
+from models_library.api_schemas_catalog.services_specifications import (
+    ServiceSpecifications,
+)
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import ResourcesDict
 from pydantic import ValidationError
@@ -12,8 +16,6 @@ from pydantic import ValidationError
 from ...core.settings import ApplicationSettings
 from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
-from ...models.schemas.services import ServiceGet
-from ...models.schemas.services_specifications import ServiceSpecifications
 from ...services.director import DirectorApi
 from ...services.function_services import get_function_service, is_function_service
 from .database import get_repository
