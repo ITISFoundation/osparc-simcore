@@ -1,9 +1,3 @@
-""" rest api handlers
-
-- Take into account that part of the API is also needed in the public API so logic
-should live in the catalog service in his final version
-
-"""
 import logging
 from collections.abc import Iterator
 from typing import Any

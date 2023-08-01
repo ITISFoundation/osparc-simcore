@@ -1,13 +1,13 @@
 from typing import TypeAlias
 
-from pydantic import BaseModel, PositiveFloat
+from pydantic import BaseModel, Field, PositiveFloat
 
 from ..projects_nodes_io import NodeID
 
 
 class Stats(BaseModel):
     cpuUsage: PositiveFloat
-    memoryUsage: PositiveFloat
+    memUsage: PositiveFloat
 
 
 class Limits(BaseModel):
@@ -18,7 +18,7 @@ class Limits(BaseModel):
 class Activity(BaseModel):
     stats: Stats
     limits: Limits
-    queued: bool
+    queued: bool = Field(None)  # TODO: review since it in NOT filled
 
 
 ActivityStatusDict: TypeAlias = dict[NodeID, Activity]
