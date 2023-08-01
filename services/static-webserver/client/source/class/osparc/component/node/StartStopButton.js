@@ -21,10 +21,7 @@ qx.Class.define("osparc.component.node.StartStopButton", {
   construct: function(node) {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.HBox());
-
-    this._createChildControlImpl("start-button");
-    this._createChildControlImpl("stop-button");
+    this._setLayout(new qx.ui.layout.HBox(5));
 
     if (node) {
       this.setNode(node);
