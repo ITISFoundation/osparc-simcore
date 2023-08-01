@@ -17,6 +17,7 @@ from sqlalchemy.dialects.postgresql import BOOLEAN, INTEGER
 from sqlalchemy.sql import select
 
 from ..db.plugin import get_database_engine
+from .exceptions import WalletAccessForbiddenError, WalletNotFoundError
 
 _logger = logging.getLogger(__name__)
 
@@ -43,16 +44,7 @@ async def create_wallet(
             .returning(literal_column("*"))
         )
         row = await result.first()
-        return WalletGetDB(
-            wallet_id=row[0],
-            name=row[1],
-            description=row[2],
-            owner=row[3],
-            thumbnail=row[4],
-            status=row[5],
-            created=row[6],
-            modified=row[7],
-        )
+        return parse_obj_as(WalletGetDB, row)
 
 
 async def list_wallets_for_user(
@@ -61,7 +53,7 @@ async def list_wallets_for_user(
 ) -> list[UserWalletGetDB]:
     stmt = (
         select(
-            wallets.c.id.label("wallet_id"),
+            wallets.c.wallet_id,
             wallets.c.name,
             wallets.c.description,
             wallets.c.owner,
@@ -80,14 +72,14 @@ async def list_wallets_for_user(
         .select_from(
             user_to_groups.join(
                 wallet_to_groups, user_to_groups.c.gid == wallet_to_groups.c.gid
-            ).join(wallets, wallet_to_groups.c.wallet_id == wallets.c.id)
+            ).join(wallets, wallet_to_groups.c.wallet_id == wallets.c.wallet_id)
         )
         .where(
             (user_to_groups.c.uid == user_id)
             & (user_to_groups.c.access_rights["read"].astext == "true")
         )
         .group_by(
-            wallets.c.id,
+            wallets.c.wallet_id,
             wallets.c.name,
             wallets.c.description,
             wallets.c.owner,
@@ -113,7 +105,7 @@ async def get_wallet_for_user(
 ) -> UserWalletGetDB:
     stmt = (
         select(
-            wallets.c.id.label("wallet_id"),
+            wallets.c.wallet_id,
             wallets.c.name,
             wallets.c.description,
             wallets.c.owner,
@@ -132,15 +124,15 @@ async def get_wallet_for_user(
         .select_from(
             user_to_groups.join(
                 wallet_to_groups, user_to_groups.c.gid == wallet_to_groups.c.gid
-            ).join(wallets, wallet_to_groups.c.wallet_id == wallets.c.id)
+            ).join(wallets, wallet_to_groups.c.wallet_id == wallets.c.wallet_id)
         )
         .where(
             (user_to_groups.c.uid == user_id)
             & (user_to_groups.c.access_rights["read"].astext == "true")
-            & (wallets.c.id == wallet_id)
+            & (wallets.c.wallet_id == wallet_id)
         )
         .group_by(
-            wallets.c.id,
+            wallets.c.wallet_id,
             wallets.c.name,
             wallets.c.description,
             wallets.c.owner,
@@ -152,15 +144,19 @@ async def get_wallet_for_user(
     )
 
     async with get_database_engine(app).acquire() as conn:
-        result = conn.execute(stmt)
+        result = await conn.execute(stmt)
         row = await result.first()
-        return parse_obj_as(WalletGetDB, row)
+        if row is None:
+            raise WalletAccessForbiddenError(
+                wallet_id=wallet_id,
+            )
+        return parse_obj_as(UserWalletGetDB, row)
 
 
 async def get_wallet(app: web.Application, wallet_id: WalletID) -> WalletGetDB:
     stmt = (
         select(
-            wallets.c.id.label("wallet_id"),
+            wallets.c.wallet_id,
             wallets.c.name,
             wallets.c.description,
             wallets.c.owner,
@@ -170,11 +166,13 @@ async def get_wallet(app: web.Application, wallet_id: WalletID) -> WalletGetDB:
             wallets.c.modified,
         )
         .select_from(wallets)
-        .where(wallets.c.id == wallet_id)
+        .where(wallets.c.wallet_id == wallet_id)
     )
     async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(stmt)
         row = await result.first()
+        if row is None:
+            raise WalletNotFoundError(wallet_id=wallet_id)
         return parse_obj_as(WalletGetDB, row)
 
 
@@ -196,10 +194,12 @@ async def update_wallet(
                 status=status,
                 modified=func.now(),
             )
-            .where(wallets.c.id == wallet_id)
+            .where(wallets.c.wallet_id == wallet_id)
             .returning(literal_column("*"))
         )
         row = await result.first()
+        if row is None:
+            raise WalletNotFoundError(wallet_id=wallet_id)
         return parse_obj_as(WalletGetDB, row)
 
 

@@ -7,13 +7,12 @@ import logging
 
 from aiohttp import web
 from models_library import wallets
-from models_library.users import UserID
-from models_library.wallets import (
+from models_library.api_schemas_webserver.wallets import (
     WalletGet,
     WalletGetWithAvailableCredits,
-    WalletID,
-    WalletStatus,
 )
+from models_library.users import UserID
+from models_library.wallets import WalletID, WalletStatus
 from pydantic import BaseModel, Extra, Field
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -28,7 +27,7 @@ from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _api
-from .exceptions import WalletNotFoundError
+from .exceptions import WalletAccessForbiddenError, WalletNotFoundError
 
 _logger = logging.getLogger(__name__)
 
@@ -46,6 +45,9 @@ def _handle_wallets_exceptions(handler: Handler):
 
         except WalletNotFoundError as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
+
+        except WalletAccessForbiddenError as exc:
+            raise web.HTTPForbidden(reason=f"{exc}") from exc
 
     return wrapper
 
@@ -125,12 +127,12 @@ class _PutWalletBodyParams(BaseModel):
 
 @routes.put(
     f"/{VTAG}/wallets/{{wallet_id}}",
-    name="update_wallets",
+    name="update_wallet",
 )
 @login_required
 @permission_required("wallets.*")
 @_handle_wallets_exceptions
-async def update_wallets(request: web.Request):
+async def update_wallet(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
     body_params = await parse_request_body_as(_PutWalletBodyParams, request)

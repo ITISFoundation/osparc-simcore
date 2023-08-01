@@ -1,18 +1,16 @@
 import logging
 
 from aiohttp import web
-from models_library.users import UserID
-from models_library.wallets import (
-    UserWalletGetDB,
+from models_library.api_schemas_webserver.wallets import (
     WalletGet,
-    WalletGetDB,
     WalletGetWithAvailableCredits,
-    WalletID,
-    WalletStatus,
 )
+from models_library.users import UserID
+from models_library.wallets import UserWalletGetDB, WalletGetDB, WalletID, WalletStatus
 
 from ..users import api as users_api
 from . import _db as db
+from .exceptions import WalletAccessForbiddenError
 
 log = logging.getLogger(__name__)
 
@@ -80,8 +78,8 @@ async def update_wallet(
         app=app, user_id=user_id, wallet_id=wallet_id
     )
     if wallet.write is False:
-        raise web.HTTPForbidden(
-            reason="User does not have permission to modify wallet",
+        raise WalletAccessForbiddenError(
+            wallet_id=wallet_id,
         )
 
     wallet_db: WalletGetDB = await db.update_wallet(
@@ -93,7 +91,7 @@ async def update_wallet(
         status=status,
     )
 
-    wallet_api: WalletGet = WalletGet(**wallet_db.model_dump())
+    wallet_api: WalletGet = WalletGet(**wallet_db.dict())
     return wallet_api
 
 
@@ -106,8 +104,8 @@ async def delete_wallet(
         app=app, user_id=user_id, wallet_id=wallet_id
     )
     if wallet.delete is False:
-        raise web.HTTPForbidden(
-            reason="User does not have permission to delete wallet",
+        raise WalletAccessForbiddenError(
+            wallet_id=wallet_id,
         )
 
     raise NotImplementedError
@@ -125,12 +123,12 @@ async def can_wallet_be_used_by_user(
         app=app, user_id=user_id, wallet_id=wallet_id
     )
     if wallet.read is False:
-        raise web.HTTPForbidden(
-            reason="User does not have permission to use the wallet",
+        raise WalletAccessForbiddenError(
+            wallet_id=wallet_id,
         )
 
     wallet_api: WalletGet = WalletGet(
-        id=wallet.wallet_id,
+        wallet_id=wallet.wallet_id,
         name=wallet.name,
         description=wallet.description,
         owner=wallet.owner,

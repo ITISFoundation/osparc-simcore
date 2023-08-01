@@ -929,7 +929,7 @@ class ProjectDBAPI(BaseProjectDB):
         async with self.engine.acquire() as conn:
             result = await conn.execute(
                 sa.select(
-                    wallets.c.id.label("wallet_id"),
+                    wallets.c.wallet_id,
                     wallets.c.name,
                     wallets.c.description,
                     wallets.c.owner,
@@ -940,12 +940,13 @@ class ProjectDBAPI(BaseProjectDB):
                 )
                 .select_from(
                     projects_to_wallet.join(
-                        wallets, projects_to_wallet.c.wallet_id == wallets.c.id
+                        wallets, projects_to_wallet.c.wallet_id == wallets.c.wallet_id
                     )
                 )
                 .where(projects_to_wallet.c.project_uuid == f"{project_uuid}")
             )
-            return await result.fetchone()
+            row = await result.fetchone()
+            return parse_obj_as(WalletGetDB, row) if row else None
 
     async def connect_wallet_to_project(
         self,

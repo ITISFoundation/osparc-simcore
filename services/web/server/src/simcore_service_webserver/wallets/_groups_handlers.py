@@ -25,7 +25,7 @@ from ..utils_aiohttp import envelope_json_response
 from . import _groups_api
 from ._groups_api import WalletGroupGet
 from ._handlers import WalletsPathParams
-from .exceptions import GroupNotFoundError
+from .exceptions import WalletAccessForbiddenError, WalletGroupNotFoundError
 
 _logger = logging.getLogger(__name__)
 
@@ -41,8 +41,11 @@ def _handle_wallets_groups_exceptions(handler: Handler):
         try:
             return await handler(request)
 
-        except GroupNotFoundError as exc:
+        except WalletGroupNotFoundError as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
+
+        except WalletAccessForbiddenError as exc:
+            raise web.HTTPForbidden(reason=f"{exc}") from exc
 
     return wrapper
 
@@ -62,7 +65,7 @@ class _WalletsGroupsPathParams(BaseModel):
         extra = Extra.forbid
 
 
-class _WalletsGroupsParams(BaseModel):
+class _WalletsGroupsBodyParams(BaseModel):
     read: bool
     write: bool
     delete: bool
@@ -80,7 +83,7 @@ class _WalletsGroupsParams(BaseModel):
 async def create_wallet_group(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_WalletsGroupsPathParams, request)
-    body_params = await parse_request_body_as(_WalletsGroupsParams, request)
+    body_params = await parse_request_body_as(_WalletsGroupsBodyParams, request)
 
     wallet_groups: WalletGroupGet = await _groups_api.create_wallet_group(
         request.app,
@@ -120,7 +123,7 @@ async def list_wallet_groups(request: web.Request):
 async def update_wallet_group(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_WalletsGroupsPathParams, request)
-    body_params = await parse_request_body_as(_WalletsGroupsParams, request)
+    body_params = await parse_request_body_as(_WalletsGroupsBodyParams, request)
 
     return await _groups_api.update_wallet_group(
         app=request.app,
