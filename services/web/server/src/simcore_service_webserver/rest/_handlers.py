@@ -8,7 +8,7 @@ from typing import Any
 
 from aiohttp import web
 from models_library.utils.pydantic_tools_extension import FieldNotRequired
-from pydantic import BaseModel, parse_raw_as
+from pydantic import BaseModel, parse_obj_as
 
 from .._constants import APP_PUBLIC_CONFIG_PER_PRODUCT, APP_SETTINGS_KEY
 from .._meta import API_VTAG
@@ -101,9 +101,10 @@ async def get_scheduled_maintenance(request: web.Request):
     #  {"start": "2023-01-17T14:45:00.000Z", "end": "2023-01-17T23:00:00.000Z", "reason": "Release 1.0.4"}
     #  {"start": "2023-01-20T09:00:00.000Z", "end": "2023-01-20T10:30:00.000Z", "reason": "Release ResistanceIsFutile2"}
     # NOTE: datetime is UTC (Canary islands / UK)
-    if maintenance_str := await redis_client.get(hash_key):
-        assert parse_raw_as(_ScheduledMaintenanceGet, maintenance_str)  # nosec
-        return web.json_response(data={"data": maintenance_str})
+
+    if maintenance_data := await redis_client.get(hash_key):
+        assert parse_obj_as(_ScheduledMaintenanceGet, maintenance_data)  # nosec
+        return envelope_json_response(maintenance_data)
 
     response = web.json_response(status=web.HTTPNoContent.status_code)
     assert response.status == 204  # nosec
