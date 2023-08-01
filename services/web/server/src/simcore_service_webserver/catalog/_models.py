@@ -98,10 +98,3 @@ class ServiceOutputGetFactory:
             )
 
         return port
-
-
-# Convenient factory map
-model_factory = {
-    ServiceInputGet: ServiceInputGetFactory,
-    ServiceOutputGet: ServiceOutputGetFactory,
-}

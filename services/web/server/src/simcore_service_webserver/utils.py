@@ -8,7 +8,6 @@ import os
 import sys
 import traceback
 import tracemalloc
-from collections import OrderedDict
 from datetime import datetime
 from pathlib import Path
 from typing import Any, TypedDict, cast
@@ -109,10 +108,9 @@ class TaskInfoDict(TypedDict):
 
 def get_task_info(task: asyncio.Task) -> TaskInfoDict:
     def _format_frame(f):
-        keys = ["f_code", "f_lineno"]
-        return OrderedDict([(k, str(getattr(f, k))) for k in keys])
+        return StackInfoDict(f_code=f.f_code, f_lineno=f.f_lineno)
 
-    info = OrderedDict(
+    info = TaskInfoDict(
         txt=str(task),
         type=str(type(task)),
         done=task.done(),
