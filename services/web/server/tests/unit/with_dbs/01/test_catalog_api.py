@@ -64,7 +64,7 @@ async def test_get_service_resources(
 ):
     assert client.app
     assert client.app.router
-    url = client.app.router["get_service_resources_handler"].url_for(
+    url = client.app.router["get_service_resources"].url_for(
         service_key=urllib.parse.quote("simcore/services/dynamic/someservice", safe=""),
         service_version="3.4.5",
     )
@@ -98,7 +98,7 @@ async def test_get_undefined_service_resources_raises_not_found_error(
 ):
     assert client.app
     assert client.app.router
-    url = client.app.router["get_service_resources_handler"].url_for(
+    url = client.app.router["get_service_resources"].url_for(
         service_key="simcore%2Fservices%2Fdynamic%2Fsomeservice",
         service_version="3.4.5",
     )
