@@ -31,6 +31,7 @@ qx.Class.define("osparc.component.share.CollaboratorsService", {
     * @param serviceData {Object} Object containing the Service Data
     */
   construct: function(serviceData) {
+    this._resourceType = "service";
     const serializedData = osparc.utils.Utils.deepCloneObject(serviceData);
 
     const initCollabs = this.self().getEveryoneObj();

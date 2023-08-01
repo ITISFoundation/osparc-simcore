@@ -151,6 +151,7 @@ qx.Class.define("osparc.component.share.Collaborators", {
 
   members: {
     _serializedData: null,
+    _resourceType: null,
     __organizationsAndMembers: null,
     __collaboratorsModel: null,
     __collaborators: null,
@@ -210,7 +211,7 @@ qx.Class.define("osparc.component.share.Collaborators", {
 
     __createAddCollaboratorSection: function() {
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-      if (osparc.utils.Resources.isService(this._serializedData)) {
+      if (this._resourceType === "service") {
         // service
         vBox.setVisibility(this._canIWrite() ? "visible" : "excluded");
       } else {
@@ -317,7 +318,7 @@ qx.Class.define("osparc.component.share.Collaborators", {
     },
 
     __getLeaveStudyButton: function() {
-      if (osparc.utils.Resources.isStudy(this._serializedData)) {
+      if (this._resourceType === "study") {
         const myGid = osparc.auth.Data.getInstance().getGroupId();
         const leaveButton = new qx.ui.form.Button(this.tr("Leave") + " " + osparc.product.Utils.getStudyAlias({
           firstUpperCase: true
@@ -363,7 +364,7 @@ qx.Class.define("osparc.component.share.Collaborators", {
             collaborator["name"] = osparc.utils.Utils.firstsUp(collaborator["first_name"], collaborator["last_name"]);
           }
           collaborator["accessRights"] = aceessRights[gid];
-          collaborator["showOptions"] = osparc.utils.Resources.isService(this._serializedData) ? this._canIWrite() : this._canIDelete();
+          collaborator["showOptions"] = (this._resourceType === "service") ? this._canIWrite() : this._canIDelete();
           collaboratorsList.push(collaborator);
         }
       });
