@@ -5,6 +5,11 @@ from contextlib import suppress
 from typing import Literal
 
 from aiohttp import web
+from models_library.api_schemas_webserver.groups import (
+    AllUsersGroups,
+    GroupUser,
+    UsersGroup,
+)
 from models_library.emails import LowerCaseEmailStr
 from models_library.users import GroupID
 from pydantic import BaseModel, parse_obj_as
@@ -32,7 +37,6 @@ from .exceptions import (
     UserInGroupNotFoundError,
     UserInsufficientRightsError,
 )
-from .schemas import AllUsersGroups, GroupUser, UsersGroup
 
 _logger = logging.getLogger(__name__)
 

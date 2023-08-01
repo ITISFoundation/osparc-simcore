@@ -7,15 +7,15 @@
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, status
-from models_library.generics import Envelope
-from models_library.users import GroupID, UserID
-from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.groups._handlers import _ClassifiersQuery
-from simcore_service_webserver.groups.schemas import (
+from models_library.api_schemas_webserver.groups import (
     AllUsersGroups,
     GroupUser,
     UsersGroup,
 )
+from models_library.generics import Envelope
+from models_library.users import GroupID, UserID
+from simcore_service_webserver._meta import API_VTAG
+from simcore_service_webserver.groups._handlers import _ClassifiersQuery
 from simcore_service_webserver.scicrunch.models import ResearchResource, ResourceHit
 
 router = APIRouter(
