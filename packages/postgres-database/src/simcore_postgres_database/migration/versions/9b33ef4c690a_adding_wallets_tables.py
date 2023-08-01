@@ -1,7 +1,7 @@
 """adding wallets tables
 
 Revision ID: 9b33ef4c690a
-Revises: ef931143b7cd
+Revises: afc752d10a6c
 Create Date: 2023-07-31 11:40:38.764685+00:00
 
 """
@@ -10,7 +10,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "9b33ef4c690a"
-down_revision = "ef931143b7cd"
+down_revision = "afc752d10a6c"
 branch_labels = None
 depends_on = None
 
