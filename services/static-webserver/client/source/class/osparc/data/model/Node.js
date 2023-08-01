@@ -1496,7 +1496,7 @@ qx.Class.define("osparc.data.model.Node", {
     attachHandlersToStopButton: function(stopButton) {
       this.attachVisibilityHandlerToStopButton(stopButton);
       this.attachEnabledHandlerToStopButton(stopButton);
-      this.attachHandlersToStopButton(stopButton);
+      this.attachExecuteHandlerToStopButton(stopButton);
     },
 
     removeNode: function() {
