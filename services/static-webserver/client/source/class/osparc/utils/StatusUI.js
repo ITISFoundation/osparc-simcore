@@ -116,6 +116,8 @@ qx.Class.define("osparc.utils.StatusUI", {
           return qx.locale.Manager.tr("Running");
         case "NOT_STARTED":
           return qx.locale.Manager.tr("Idle");
+        case "WAITING_FOR_RESOURCES":
+          return qx.locale.Manager.tr("Waiting for resources");
 
         // dynamics
         case "idle":
