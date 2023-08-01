@@ -58,6 +58,7 @@ def app_environment(
             "WEBSERVER_TRACING": "null",
             "WEBSERVER_USERS": "1",
             "WEBSERVER_VERSION_CONTROL": "0",
+            "WEBSERVER_WALLETS": "0",
             #
             "STUDIES_ACCESS_ANONYMOUS_ALLOWED": "1",
         },
