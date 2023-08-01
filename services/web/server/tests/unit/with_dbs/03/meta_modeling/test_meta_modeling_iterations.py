@@ -233,7 +233,7 @@ async def test_iterators_workflow(
     assert response.status == HTTPStatus.OK, await response.text()
     body = await response.json()
 
-    Page[ProjectIterationResultItem].parse_obj(body).data
+    assert Page[ProjectIterationResultItem].parse_obj(body).data is not None
 
     # GET project and MODIFY iterator values----------------------------------------------
     #  - Change iterations from 0:4 -> HEAD+1
