@@ -103,7 +103,9 @@ async def get_scheduled_maintenance(request: web.Request):
     # NOTE: datetime is UTC (Canary islands / UK)
 
     if maintenance_data := await redis_client.get(hash_key):
-        assert parse_obj_as(_ScheduledMaintenanceGet, maintenance_data)  # nosec
+        assert (  # nosec
+            parse_obj_as(_ScheduledMaintenanceGet, maintenance_data) is not None
+        )
         return envelope_json_response(maintenance_data)
 
     response = web.json_response(status=web.HTTPNoContent.status_code)

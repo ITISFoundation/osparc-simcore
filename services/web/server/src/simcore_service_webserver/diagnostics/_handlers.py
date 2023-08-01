@@ -63,7 +63,7 @@ async def get_app_diagnostics(request: web.Request):
             top_tracemalloc=get_tracemalloc_info(top=query_params.top_tracemalloc)
         )
 
-    assert parse_obj_as(StatusDiagnosticsGet, data)  # nosec
+    assert parse_obj_as(StatusDiagnosticsGet, data) is not None  # nosec
     return envelope_json_response(data)
 
 

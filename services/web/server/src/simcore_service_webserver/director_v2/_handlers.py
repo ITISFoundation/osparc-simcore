@@ -71,7 +71,7 @@ async def start_computation(request: web.Request) -> web.Response:
 
     if request.can_read_body:
         body = await request.json()
-        assert parse_obj_as(_ComputationStart, body)  # nosec
+        assert parse_obj_as(_ComputationStart, body) is not None  # nosec
 
         subgraph = body.get("subgraph", [])
         force_restart = bool(body.get("force_restart", force_restart))
@@ -131,7 +131,7 @@ async def start_computation(request: web.Request) -> web.Response:
         if project_vc_commits:
             data["ref_ids"] = project_vc_commits
 
-        assert parse_obj_as(_ComputationStarted, data)  # nosec
+        assert parse_obj_as(_ComputationStarted, data) is not None  # nosec
 
         return web.json_response(
             {"data": data},

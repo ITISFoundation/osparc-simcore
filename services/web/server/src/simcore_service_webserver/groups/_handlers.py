@@ -92,7 +92,7 @@ async def list_groups(request: web.Request):
                 product_gid=product.group_id,
             )
 
-    assert parse_obj_as(AllUsersGroups, result)  # nosec
+    assert parse_obj_as(AllUsersGroups, result) is not None  # nosec
     return result
 
 
@@ -106,7 +106,7 @@ async def get_group(request: web.Request):
     gid = request.match_info["gid"]
 
     group = await api.get_user_group(request.app, user_id, gid)
-    assert parse_obj_as(UsersGroup, group)  # nosec
+    assert parse_obj_as(UsersGroup, group) is not None  # nosec
     return group
 
 
@@ -120,7 +120,7 @@ async def create_group(request: web.Request):
     new_group = await request.json()
 
     created_group = await api.create_user_group(request.app, user_id, new_group)
-    assert parse_obj_as(UsersGroup, created_group)  # nosec
+    assert parse_obj_as(UsersGroup, created_group) is not None  # nosec
     raise web.HTTPCreated(
         text=json.dumps({"data": created_group}), content_type=MIMETYPE_APPLICATION_JSON
     )
@@ -138,7 +138,7 @@ async def update_group(request: web.Request):
     updated_group = await api.update_user_group(
         request.app, user_id, gid, new_group_values
     )
-    assert parse_obj_as(UsersGroup, updated_group)  # nosec
+    assert parse_obj_as(UsersGroup, updated_group) is not None  # nosec
     return update_group
 
 
@@ -163,7 +163,7 @@ async def get_group_users(request: web.Request):
     gid = request.match_info["gid"]
 
     group_user = await api.list_users_in_group(request.app, user_id, gid)
-    assert parse_obj_as(list[GroupUser], group_user)  # nosec
+    assert parse_obj_as(list[GroupUser], group_user) is not None  # nosec
     return group_user
 
 
@@ -210,7 +210,7 @@ async def get_group_user(request: web.Request):
     gid = request.match_info["gid"]
     the_user_id_in_group = request.match_info["uid"]
     user = await api.get_user_in_group(request.app, user_id, gid, the_user_id_in_group)
-    assert parse_obj_as(GroupUser, user)  # nosec
+    assert parse_obj_as(GroupUser, user) is not None  # nosec
     return user
 
 
@@ -233,7 +233,7 @@ async def update_group_user(request: web.Request):
         the_user_id_in_group,
         new_values_for_user_in_group,
     )
-    assert parse_obj_as(GroupUser, user)  # nosec
+    assert parse_obj_as(GroupUser, user) is not None  # nosec
     return user
 
 
