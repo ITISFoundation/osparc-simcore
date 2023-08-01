@@ -26,7 +26,7 @@ projects_to_wallet = sa.Table(
         "wallet_id",
         sa.BigInteger,
         sa.ForeignKey(
-            wallets.c.id,
+            wallets.c.wallet_id,
             name="fk_projects_wallet_wallets_id",
             ondelete="CASCADE",
             onupdate="CASCADE",

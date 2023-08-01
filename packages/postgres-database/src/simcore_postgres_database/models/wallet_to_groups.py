@@ -13,7 +13,7 @@ wallet_to_groups = sa.Table(
         "wallet_id",
         sa.BigInteger,
         sa.ForeignKey(
-            wallets.c.id,
+            wallets.c.wallet_id,
             name="fk_wallet_to_groups_id_wallets",
             onupdate="CASCADE",
             ondelete="CASCADE",

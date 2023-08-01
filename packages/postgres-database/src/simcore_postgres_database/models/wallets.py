@@ -15,7 +15,7 @@ wallets = sa.Table(
     "wallets",
     metadata,
     sa.Column(
-        "id",
+        "wallet_id",
         sa.BigInteger,
         nullable=False,
         autoincrement=True,
