@@ -1136,9 +1136,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
 
       let showPage = false;
-      let showStopButton = false;
+      let showStartStopButton = false;
 
       const sections = [];
+
+      // Life Cycle
       if (
         node.isDynamic() &&
         (node.isUpdatable() || node.isDeprecated() || node.isRetired())
@@ -1147,17 +1149,19 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         node.addListener("versionChanged", () => this.__populateSecondPanel(node));
         sections.push(lifeCycleView);
         showPage = true;
-        showStopButton = true;
+        showStartStopButton = true;
       }
 
+      // Boot Options
       if (node.hasBootModes()) {
         const bootOptionsView = new osparc.component.node.BootOptionsView(node);
         node.addListener("bootModeChanged", () => this.__populateSecondPanel(node));
         sections.push(bootOptionsView);
         showPage = true;
-        showStopButton = true;
+        showStartStopButton = true;
       }
 
+      // Update Resource Limits
       if (
         await osparc.data.Permissions.getInstance().checkCanDo("override_services_specifications") &&
         (node.isComputational() || node.isDynamic())
@@ -1166,7 +1170,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         node.addListener("limitsChanged", () => this.__populateSecondPanel(node));
         sections.push(updateResourceLimitsView);
         showPage = true;
-        showStopButton |= node.isDynamic();
+        showStartStopButton |= node.isDynamic();
       }
 
       this.__nodeOptionsPage.removeAll();
@@ -1177,7 +1181,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         });
         introLayout.add(title);
 
-        if (showStopButton) {
+        if (showStartStopButton) {
           const instructions = new qx.ui.basic.Label(this.tr("To procceed with the following actions, the service needs to be Stopped.")).set({
             font: "text-13",
             rich: true,
@@ -1185,15 +1189,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           });
           introLayout.add(instructions);
 
-          const stopButton = new qx.ui.form.Button().set({
-            label: this.tr("Stop"),
-            icon: "@FontAwesome5Solid/stop/14",
-            enabled: false,
-            allowGrowX: false
-          });
-          node.attachEnabledHandlerToStopButton(stopButton);
-          node.attachExecuteHandlerToStopButton(stopButton);
-          introLayout.add(stopButton);
+          const startStopButton = new osparc.component.node.StartStopButton();
+          startStopButton.setNode(node);
+          introLayout.add(startStopButton);
         }
 
         this.__nodeOptionsPage.add(introLayout);
