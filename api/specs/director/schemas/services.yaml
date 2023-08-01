@@ -1,0 +1,69 @@
+components:
+  schemas:
+    ServicesEnveloped:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "./node-meta-v0.0.1-pydantic-converted-clean.yaml"
+        error:
+          nullable: true
+          default: null
+
+    ServiceExtras:
+      type: object
+      required:
+        - node_requirements
+      properties:
+        node_requirements:
+          type: object
+          required:
+            - CPU
+            - RAM
+          properties:
+            CPU:
+              type: number
+              default: 1.0
+              minimum: 1.0
+            GPU:
+              type: integer
+              minimum: 0
+            RAM:
+              type: integer
+              format: int64
+              minimum: 1024
+            MPI:
+              type: integer
+              maximum: 1
+
+        service_build_details:
+          type: object
+          properties:
+            build_date:
+              type: string
+            vcs_ref:
+              type: string
+            vcs_url:
+              type: string
+
+        container_spec:
+          type: object
+          properties:
+            command:
+              type: array
+              items:
+                type: string
+
+    ServiceExtrasEnveloped:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/ServiceExtras"
+        error:
+          nullable: true
+          default: null
