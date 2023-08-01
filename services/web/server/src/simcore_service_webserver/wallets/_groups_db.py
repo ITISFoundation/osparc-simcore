@@ -110,7 +110,7 @@ async def get_wallet_group(
         result = await conn.execute(stmt)
         row = await result.first()
         if row is None:
-            WalletGroupNotFoundError(wallet_id=wallet_id, group_id=group_id)
+            raise WalletGroupNotFoundError(wallet_id=wallet_id, group_id=group_id)
         return parse_obj_as(WalletGroupGetDB, row)
 
 

@@ -6,7 +6,6 @@ import functools
 import logging
 
 from aiohttp import web
-from models_library import wallets
 from models_library.api_schemas_webserver.wallets import (
     WalletGet,
     WalletGetWithAvailableCredits,
@@ -101,10 +100,6 @@ async def create_wallet(request: web.Request):
 @_handle_wallets_exceptions
 async def list_wallets(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
-    # path_params = parse_request_path_parameters_as(_ProjectCommentsPathParams, request)
-    # query_params = parse_request_query_parameters_as(
-    #     _ListProjectCommentsQueryParams, request
-    # )
 
     wallets: list[
         WalletGetWithAvailableCredits
