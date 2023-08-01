@@ -47,7 +47,7 @@ Taken from https://docs.docker.com/engine/reference/builder/#healthcheck
 import asyncio
 import inspect
 from collections.abc import Awaitable, Callable
-from typing import Any, TypeAlias, TypedDict
+from typing import TypeAlias, TypedDict
 
 from aiohttp import web
 from aiosignal import Signal
@@ -102,7 +102,7 @@ class HealthCheck:
             api_version=settings.API_VERSION,
         )
 
-    async def run(self, app: web.Application) -> dict[str, Any]:
+    async def run(self, app: web.Application) -> HealthInfoDict:
         """Runs all registered checks to determine the service health.
 
         can raise HealthCheckFailed
@@ -115,12 +115,10 @@ class HealthCheck:
         ), "All Slot functions that append to on_healthcheck must be coroutines. SEE _HealthCheckSlot"
 
         try:
-            heath_report: dict[str, Any] = self.get_app_info(app)
-
             await asyncio.wait_for(
                 self._on_healthcheck.send(app), timeout=self._timeout
             )
-
+            heath_report: HealthInfoDict = self.get_app_info(app)
             return heath_report
 
         except asyncio.TimeoutError as err:

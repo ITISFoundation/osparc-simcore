@@ -58,7 +58,6 @@ async def healthcheck_readiness_probe(request: web.Request):
     healthcheck: HealthCheck = request.app[HealthCheck.__name__]
     health_report = healthcheck.get_app_info(request.app)
     # NOTE: do NOT run healthcheck here, just return info fast.
-    health_report["status"] = "SERVICE_RUNNING"
     return envelope_json_response(health_report)
 
 
