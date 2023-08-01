@@ -6621,10 +6621,10 @@ paths:
                 properties:
                   data:
                     properties:
-                      id:
+                      wallet_id:
                         type: integer
                         exclusiveMinimum: true
-                        title: Id
+                        title: Wallet Id
                         minimum: 0
                       name:
                         type: string
@@ -6657,11 +6657,9 @@ paths:
                         title: Modified
                     type: object
                     required:
-                      - id
+                      - wallet_id
                       - name
-                      - description
                       - owner
-                      - thumbnail
                       - status
                       - created
                       - modified
@@ -7844,7 +7842,7 @@ paths:
                   error:
                     title: Error
                 type: object
-                title: 'Envelope[list[models_library.wallets.WalletGet]]'
+                title: 'Envelope[list[models_library.api_schemas_webserver.wallets.WalletGet]]'
     post:
       tags:
         - wallets
@@ -7879,10 +7877,10 @@ paths:
                 properties:
                   data:
                     properties:
-                      id:
+                      wallet_id:
                         type: integer
                         exclusiveMinimum: true
-                        title: Id
+                        title: Wallet Id
                         minimum: 0
                       name:
                         type: string
@@ -7910,11 +7908,9 @@ paths:
                         title: Modified
                     type: object
                     required:
-                      - id
+                      - wallet_id
                       - name
-                      - description
                       - owner
-                      - thumbnail
                       - status
                       - created
                       - modified
@@ -8049,7 +8045,7 @@ paths:
                 - read
                 - write
                 - delete
-              title: _WalletsGroupsParams
+              title: _WalletsGroupsBodyParams
         required: true
       responses:
         '200':

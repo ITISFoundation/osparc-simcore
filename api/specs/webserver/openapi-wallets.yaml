@@ -11,7 +11,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.wallets.WalletGet__'
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.wallets.WalletGet__'
     post:
       tags:
       - wallets
@@ -85,7 +85,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/_WalletsGroupsParams'
+              $ref: '#/components/schemas/_WalletsGroupsBodyParams'
         required: true
       responses:
         '200':
@@ -120,7 +120,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/_WalletsGroupsParams'
+              $ref: '#/components/schemas/_WalletsGroupsBodyParams'
         required: true
       responses:
         '201':
@@ -194,7 +194,7 @@ components:
           title: Error
       type: object
       title: Envelope[WalletGroupGet]
-    Envelope_list_models_library.wallets.WalletGet__:
+    Envelope_list_models_library.api_schemas_webserver.wallets.WalletGet__:
       properties:
         data:
           items:
@@ -204,7 +204,7 @@ components:
         error:
           title: Error
       type: object
-      title: Envelope[list[models_library.wallets.WalletGet]]
+      title: Envelope[list[models_library.api_schemas_webserver.wallets.WalletGet]]
     Envelope_list_simcore_service_webserver.wallets._groups_api.WalletGroupGet__:
       properties:
         data:
@@ -218,10 +218,10 @@ components:
       title: Envelope[list[simcore_service_webserver.wallets._groups_api.WalletGroupGet]]
     WalletGet:
       properties:
-        id:
+        wallet_id:
           type: integer
           exclusiveMinimum: true
-          title: Id
+          title: Wallet Id
           minimum: 0
         name:
           type: string
@@ -249,11 +249,9 @@ components:
           title: Modified
       type: object
       required:
-      - id
+      - wallet_id
       - name
-      - description
       - owner
-      - thumbnail
       - status
       - created
       - modified
@@ -335,7 +333,7 @@ components:
       - thumbnail
       - status
       title: _PutWalletBodyParams
-    _WalletsGroupsParams:
+    _WalletsGroupsBodyParams:
       properties:
         read:
           type: boolean
@@ -352,4 +350,4 @@ components:
       - read
       - write
       - delete
-      title: _WalletsGroupsParams
+      title: _WalletsGroupsBodyParams

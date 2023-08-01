@@ -69,10 +69,10 @@ components:
       title: Envelope[WalletGet]
     WalletGet:
       properties:
-        id:
+        wallet_id:
           type: integer
           exclusiveMinimum: true
-          title: Id
+          title: Wallet Id
           minimum: 0
         name:
           type: string
@@ -100,11 +100,9 @@ components:
           title: Modified
       type: object
       required:
-      - id
+      - wallet_id
       - name
-      - description
       - owner
-      - thumbnail
       - status
       - created
       - modified
