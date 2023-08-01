@@ -1182,6 +1182,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         introLayout.add(title);
 
         if (showStartStopButton) {
+          // Only available to dynamic services
           const instructions = new qx.ui.basic.Label(this.tr("To procceed with the following actions, the service needs to be Stopped.")).set({
             font: "text-13",
             rich: true,
