@@ -24,7 +24,6 @@ def wallets_clean_db(postgres_db: sa.engine.Engine) -> Iterator[None]:
         con.execute(wallets.delete())
 
 
-@pytest.mark.testit
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
 async def test_wallets_groups_full_workflow(
     client: TestClient,

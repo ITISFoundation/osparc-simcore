@@ -43,7 +43,6 @@ async def test_project_comments_user_role_access(
     assert resp.status == 401 if user_role == UserRole.ANONYMOUS else 200
 
 
-@pytest.mark.testit
 @pytest.mark.acceptance_test(
     "https://github.com/ITISFoundation/osparc-issues/issues/993"
 )
