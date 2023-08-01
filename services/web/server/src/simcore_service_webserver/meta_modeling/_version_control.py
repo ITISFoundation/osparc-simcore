@@ -19,7 +19,7 @@ from ..version_control.vc_changes import (
 )
 from ..version_control.vc_tags import compose_workcopy_project_tag_name
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class VersionControlForMetaModeling(VersionControlRepository):
