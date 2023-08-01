@@ -1470,7 +1470,6 @@ qx.Class.define("osparc.data.model.Node", {
         converter: state => (state === "ready") ? "excluded" : "visible"
       });
       this.getStatus().bind("interactive", startButton, "enabled", {
-        // OM
         converter: state => ["idle", "failed"].includes(state)
       });
       const executeListenerId = startButton.addListener("execute", this.requestStartNode, this);
@@ -1480,6 +1479,12 @@ qx.Class.define("osparc.data.model.Node", {
     attachExecuteHandlerToStopButton: function(stopButton) {
       const executeListenerId = stopButton.addListener("execute", this.requestStopNode, this);
       stopButton.executeListenerId = executeListenerId;
+    },
+
+    attachEnabledHandlerToStopButton: function(stopButton) {
+      this.getStatus().getStatus().bind("interactive", stopButton, "enabled", {
+        converter: state => state === "ready"
+      });
     },
 
     attachVisibilityHandlerToStopButton: function(stopButton) {

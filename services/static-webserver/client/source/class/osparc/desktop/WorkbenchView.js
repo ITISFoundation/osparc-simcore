@@ -1191,9 +1191,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             enabled: false,
             allowGrowX: false
           });
-          node.getStatus().bind("interactive", stopButton, "enabled", {
-            converter: state => state === "ready"
-          });
+          node.attachEnabledHandlerToStopButton(stopButton);
           node.attachExecuteHandlerToStopButton(stopButton);
           introLayout.add(stopButton);
         }
