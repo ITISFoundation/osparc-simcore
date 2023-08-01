@@ -4,8 +4,6 @@ from typing import TypeAlias
 
 from pydantic import BaseModel, Field, PositiveInt
 
-from .users import GroupID
-
 WalletID: TypeAlias = PositiveInt
 
 
@@ -44,21 +42,3 @@ class UserWalletGetDB(WalletGetDB):
     read: bool
     write: bool
     delete: bool
-
-
-### API
-
-
-class WalletGet(BaseModel):
-    wallet_id: WalletID
-    name: str
-    description: str | None
-    owner: GroupID
-    thumbnail: str | None
-    status: WalletStatus
-    created: datetime
-    modified: datetime
-
-
-class WalletGetWithAvailableCredits(WalletGet):
-    available_credits: float
