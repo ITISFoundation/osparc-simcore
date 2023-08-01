@@ -17,9 +17,10 @@ from _common import (
     create_openapi_specs,
 )
 from fastapi import FastAPI
+from models_library.api_schemas_webserver.wallets import WalletGet
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
-from models_library.wallets import WalletGet, WalletID
+from models_library.wallets import WalletID
 from simcore_service_webserver.projects._common_models import ProjectPathParams
 
 app = FastAPI(redoc_url=None)

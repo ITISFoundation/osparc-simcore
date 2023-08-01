@@ -10,11 +10,12 @@
 from enum import Enum
 
 from fastapi import FastAPI, status
+from models_library.api_schemas_webserver.wallets import WalletGet
 from models_library.generics import Envelope
 from models_library.users import GroupID
-from models_library.wallets import WalletGet, WalletID
+from models_library.wallets import WalletID
 from simcore_service_webserver.wallets._groups_api import WalletGroupGet
-from simcore_service_webserver.wallets._groups_handlers import _WalletsGroupsParams
+from simcore_service_webserver.wallets._groups_handlers import _WalletsGroupsBodyParams
 
 # from simcore_service_webserver.tags._handlers import TagCreate, TagGet, TagUpdate
 from simcore_service_webserver.wallets._handlers import (
@@ -74,7 +75,7 @@ async def update_wallet(wallet_id: WalletID, body: _PutWalletBodyParams):
     status_code=201,
 )
 async def create_wallet_group(
-    wallet_id: WalletID, group_id: GroupID, body: _WalletsGroupsParams
+    wallet_id: WalletID, group_id: GroupID, body: _WalletsGroupsBodyParams
 ):
     ...
 
@@ -96,7 +97,7 @@ async def list_wallet_groups(wallet_id: WalletID):
     operation_id="update_wallet_group",
 )
 async def update_wallet_group(
-    wallet_id: WalletID, group_id: GroupID, body: _WalletsGroupsParams
+    wallet_id: WalletID, group_id: GroupID, body: _WalletsGroupsBodyParams
 ):
     ...
 
