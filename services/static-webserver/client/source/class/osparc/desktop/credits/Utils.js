@@ -30,7 +30,7 @@ qx.Class.define("osparc.desktop.credits.Utils", {
         walletSelector.add(sbItem);
       }
       wallets.forEach(wallet => {
-        if (onlyActive && !wallet.isActive()) {
+        if (onlyActive && wallet.getStatus() !== "ACTIVE") {
           return;
         }
         if (myGid in wallet.getAccessRights() && wallet.getAccessRights()[myGid][accessRight]) {

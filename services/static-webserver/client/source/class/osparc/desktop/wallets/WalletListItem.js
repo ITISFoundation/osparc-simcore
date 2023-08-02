@@ -21,7 +21,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
   properties: {
     walletType: {
       check: ["personal", "shared"],
-      init: "personal",
+      init: null,
       nullable: false,
       apply: "__setDefaultThumbnail"
     },
@@ -116,7 +116,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       return control || this.base(arguments, id);
     },
 
-    __applyCredits: function(creditsAvailable) {
+    __applyCreditsAvailable: function(creditsAvailable) {
       if (creditsAvailable !== null) {
         const creditsIndicator = this.getChildControl("credits-indicator");
         creditsIndicator.setCreditsAvailable(creditsAvailable);

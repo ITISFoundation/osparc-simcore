@@ -78,7 +78,7 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
       });
 
       this.__addWallet(wallet);
-      const id = wallet.addListener("changeActive", () => this.__reloadLayout());
+      const id = wallet.addListener("changeStatus", () => this.__reloadLayout());
       this.__walletListeners.push({
         walletId: wallet.getWalletId(),
         listenerId: id
@@ -100,10 +100,10 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
       const maxIndicators = 3;
       for (let i=0; i<wallets.length && i<maxIndicators; i++) {
         const wallet = wallets[i];
-        if (wallet.isActive()) {
+        if (wallet.getStatus() === "ACTIVE") {
           this.__addWallet(wallet);
         }
-        const id = wallet.addListener("changeActive", () => this.__reloadLayout());
+        const id = wallet.addListener("changeStatus", () => this.__reloadLayout());
         this.__walletListeners.push({
           walletId: wallet.getWalletId(),
           listenerId: id
