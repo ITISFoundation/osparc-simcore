@@ -76,6 +76,7 @@ def _get_environment_variables(
         "RABBIT_PASSWORD": f"{rabbit_settings.RABBIT_PASSWORD.get_secret_value()}",
         "RABBIT_PORT": f"{rabbit_settings.RABBIT_PORT}",
         "RABBIT_USER": f"{rabbit_settings.RABBIT_USER}",
+        "RABBIT_SECURE": f"{rabbit_settings.RABBIT_SECURE}",
         "REGISTRY_AUTH": f"{registry_settings.REGISTRY_AUTH}",
         "REGISTRY_PATH": f"{registry_settings.REGISTRY_PATH}",
         "REGISTRY_PW": f"{registry_settings.REGISTRY_PW.get_secret_value()}",
