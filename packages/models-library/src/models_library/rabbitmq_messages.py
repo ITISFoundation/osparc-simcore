@@ -199,7 +199,7 @@ class RabbitResourceTrackingStartedMessage(_RabbitResourceTrackingBaseMessage):
     service_version: ServiceVersion
     service_type: ServiceType
     service_resources: ServiceResourcesDict
-    service_tracking_metadata: dict[str, Any] = Field(
+    service_additional_metadata: dict[str, Any] = Field(
         default_factory=dict, description="service additional 'free' metadata"
     )
 
