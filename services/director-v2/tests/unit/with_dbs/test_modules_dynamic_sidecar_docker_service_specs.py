@@ -206,7 +206,7 @@ def expected_dynamic_sidecar_spec(
                     "RABBIT_PASSWORD": "adminadmin",
                     "RABBIT_PORT": "5672",
                     "RABBIT_USER": "admin",
-                    "RABBIT_SECURE": "false",
+                    "RABBIT_SECURE": "False",
                     "REGISTRY_AUTH": "False",
                     "REGISTRY_PATH": "None",
                     "REGISTRY_PW": "test",
