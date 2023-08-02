@@ -183,7 +183,11 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       if (this.getThumbnail() === null) {
         // default thumbnail only if it's null
         const thumbnail = this.getChildControl("thumbnail");
-        thumbnail.setSource("@MaterialIcons/account_balance_wallet/20");
+        if (this.getAccessRights() && Object.keys(this.getAccessRights()).length > 1) {
+          thumbnail.setSource(osparc.utils.Icons.organization(osparc.ui.list.ListItemWithMenu.ICON_SIZE));
+        } else {
+          thumbnail.setSource(osparc.utils.Icons.user(osparc.ui.list.ListItemWithMenu.ICON_SIZE));
+        }
       }
     },
 
