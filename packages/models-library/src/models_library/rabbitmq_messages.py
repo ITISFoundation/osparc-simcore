@@ -1,14 +1,17 @@
+import datetime
 import logging
 from abc import abstractmethod
 from enum import Enum, auto
 from typing import Any, Literal, TypeAlias
 
-from pydantic import BaseModel, Field
+from models_library.services_resources import ServiceResourcesDict
+from pydantic import BaseModel, Field, PositiveInt
 from pydantic.types import NonNegativeFloat
 
 from .projects import ProjectID
 from .projects_nodes_io import NodeID
 from .projects_state import RunningState
+from .services import ServiceKey, ServiceType, ServiceVersion
 from .users import UserID
 from .utils.enums import StrAutoEnum
 
@@ -17,6 +20,8 @@ LogMessageStr: TypeAlias = str
 
 
 class RabbitEventMessageType(str, Enum):
+    __slots__ = ()
+
     RELOAD_IFRAME = "RELOAD_IFRAME"
 
 
@@ -157,4 +162,63 @@ class RabbitAutoscalingStatusMessage(_RabbitAutoscalingBaseMessage):
     )
     instances_running: int = Field(
         ..., description="the number of EC2 instances currently in running state in AWS"
+    )
+
+
+class _RabbitResourceTrackingBaseMessage(RabbitMessageBase):
+    channel_name: Literal["io.simcore.simcore.tracking"] = Field(
+        default="io.simcore.simcore.tracking", const=True
+    )
+
+    service_run_id: str = Field(
+        ..., description="uniquely identitifies the service run"
+    )
+    created_at: datetime.datetime = Field(..., description="message creation datetime")
+
+    def routing_key(self) -> str | None:
+        return None
+
+
+class RabbitResourceTrackingStartedMessage(_RabbitResourceTrackingBaseMessage):
+    wallet_id: PositiveInt
+    wallet_name: str
+
+    product_name: str
+    simcore_user_agent: str
+
+    user_id: UserID
+    user_email: str
+
+    project_id: ProjectID
+    project_name: str
+
+    node_id: NodeID
+    node_name: str
+
+    service_key: ServiceKey
+    service_version: ServiceVersion
+    service_type: ServiceType
+    service_resources: ServiceResourcesDict
+    service_tracking_metadata: dict[str, Any] = Field(
+        default_factory=dict, description="service additional 'free' metadata"
+    )
+
+
+class RabbitResourceTrackingHeartbeatMessage(_RabbitResourceTrackingBaseMessage):
+    ...
+
+
+class SimcoreStatus(StrAutoEnum):
+    OK = auto()
+    BAD = auto()
+
+
+class RabbitResourceTrackingStoppedMessage(_RabbitResourceTrackingBaseMessage):
+    service_result: RunningState = Field(
+        ...,
+        description="the service result, may fail or succeed independently of osparc status",
+    )
+    service_babysitting_result: SimcoreStatus = Field(
+        ...,
+        description=f"{SimcoreStatus.BAD} if simcore failed to run the service properly",
     )
