@@ -69,7 +69,7 @@ async def test_expected_paths_and_volumes(
                 )
             }
         )
-        == len(set(mounted_volumes.disk_state_paths()))
+        == len(set(mounted_volumes.disk_state_paths_iter()))
     )
 
     # check location on disk
@@ -82,7 +82,7 @@ async def test_expected_paths_and_volumes(
         == mounted_volumes._dy_volumes / inputs_dir.relative_to("/")
     )
 
-    assert set(mounted_volumes.disk_state_paths()) == {
+    assert set(mounted_volumes.disk_state_paths_iter()) == {
         mounted_volumes._dy_volumes / x.relative_to("/") for x in state_paths_dirs
     }
 

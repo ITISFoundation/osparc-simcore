@@ -214,7 +214,7 @@ async def volumes_fix_permissions(mounted_volumes: MountedVolumes) -> None:
     # NOTE: by creating a hidden file on all mounted volumes
     # the same permissions are ensured and avoids
     # issues when starting the services
-    for volume_path in mounted_volumes.all_disk_paths():
+    for volume_path in mounted_volumes.all_disk_paths_iter():
         hidden_file = volume_path / HIDDEN_FILE_NAME
         hidden_file.write_text(
             f"Directory must not be empty.\nCreated by {__file__}.\n"

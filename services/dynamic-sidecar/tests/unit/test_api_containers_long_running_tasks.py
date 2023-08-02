@@ -193,21 +193,17 @@ def shared_store(httpx_async_client: AsyncClient) -> SharedStore:
 
 @pytest.fixture
 def mock_data_manager(mocker: MockerFixture) -> None:
-    mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.long_running_tasks.data_manager.push",
-        autospec=True,
-        return_value=None,
-    )
-    mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.long_running_tasks.data_manager.exists",
-        autospec=True,
-        return_value=True,
-    )
-    mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.long_running_tasks.data_manager.pull",
-        autospec=True,
-        return_value=None,
-    )
+    for function_name in (
+        "_push_directory",
+        "_state_metadata_entry_exists",
+        "_pull_directory",
+        "_pull_legacy_archive",
+    ):
+        mocker.patch(
+            f"simcore_service_dynamic_sidecar.modules.long_running_tasks.data_manager.{function_name}",
+            autospec=True,
+            return_value=None,
+        )
 
 
 @pytest.fixture()

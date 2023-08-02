@@ -24,15 +24,15 @@ qx.Class.define("osparc.utils.Resources", {
 
   statics: {
     isStudy: function(studyData) {
-      return ((studyData["resourceType"] === "study") || ("uuid" in studyData));
+      return ((studyData["resourceType"] === "study") && ("uuid" in studyData));
     },
 
     isTemplate: function(templateData) {
-      return ((templateData["resourceType"] === "template") || ("uuid" in templateData));
+      return ((templateData["resourceType"] === "template") && ("uuid" in templateData));
     },
 
     isService: function(serviceData) {
-      return ((serviceData["resourceType"] === "service") || (("key" in serviceData) && ("version" in serviceData)));
+      return ((serviceData["resourceType"] === "service") && ("key" in serviceData) && ("version" in serviceData));
     }
   }
 });
