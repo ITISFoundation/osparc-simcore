@@ -229,13 +229,6 @@ async def pull(
         path=destination_path,
         is_archive=True,
     )
-    state_directory_exists = await _state_metadata_entry_exists(
-        user_id=user_id,
-        project_id=project_id,
-        node_uuid=node_uuid,
-        path=destination_path,
-        is_archive=False,
-    )
     if state_archive_exists:
         with log_context(_logger, logging.INFO, "restoring legacy data archive"):
             await _pull_legacy_archive(
@@ -246,7 +239,16 @@ async def pull(
                 io_log_redirect_cb=io_log_redirect_cb,
                 progress_bar=progress_bar,
             )
-    elif state_directory_exists:
+        return
+
+    state_directory_exists = await _state_metadata_entry_exists(
+        user_id=user_id,
+        project_id=project_id,
+        node_uuid=node_uuid,
+        path=destination_path,
+        is_archive=False,
+    )
+    if state_directory_exists:
         await _pull_directory(
             user_id=user_id,
             project_id=project_id,
@@ -256,5 +258,6 @@ async def pull(
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
         )
-    else:
-        _logger.debug("No content previously saved for '%s'", destination_path)
+        return
+
+    _logger.debug("No content previously saved for '%s'", destination_path)
