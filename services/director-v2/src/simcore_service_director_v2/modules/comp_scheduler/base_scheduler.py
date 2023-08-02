@@ -292,6 +292,23 @@ class BaseCompScheduler(ABC):
                 )
                 await self.rabbitmq_client.publish(message.channel_name, message)
 
+    async def _publish_service_stopped_metrics(
+        self, user_id: UserID, task: CompTaskAtDB, task_final_state: RunningState
+    ) -> None:
+        message = InstrumentationRabbitMessage.construct(
+            metrics="service_stopped",
+            user_id=user_id,
+            project_id=task.project_id,
+            node_id=task.node_id,
+            service_uuid=task.node_id,
+            service_type=NodeClass.COMPUTATIONAL.value,
+            service_key=task.image.name,
+            service_tag=task.image.tag,
+            result=task_final_state,
+            simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+        )
+        await self.rabbitmq_client.publish(message.channel_name, message)
+
     async def _update_states_from_comp_backend(
         self,
         user_id: UserID,

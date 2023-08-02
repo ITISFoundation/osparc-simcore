@@ -17,13 +17,10 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import (
-    InstrumentationRabbitMessage,
     LoggerRabbitMessage,
     ProgressRabbitMessageNode,
 )
 from models_library.users import UserID
-from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-from simcore_postgres_database.models.comp_tasks import NodeClass
 
 from ...core.errors import TaskSchedulingError
 from ...core.settings import ComputationalBackendSettings
@@ -208,19 +205,7 @@ class DaskScheduler(BaseCompScheduler):
                 )
 
             # instrumentation
-            message = InstrumentationRabbitMessage.construct(
-                metrics="service_stopped",
-                user_id=user_id,
-                project_id=task.project_id,
-                node_id=task.node_id,
-                service_uuid=task.node_id,
-                service_type=NodeClass.COMPUTATIONAL.value,
-                service_key=service_key,
-                service_tag=service_version,
-                result=task_final_state,
-                simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-            )
-            await self.rabbitmq_client.publish(message.channel_name, message)
+            await self._publish_service_stopped_metrics(user_id, task, task_final_state)
 
         await CompTasksRepository(self.db_engine).update_project_tasks_state(
             task.project_id,
