@@ -32,12 +32,12 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
     */
   construct: function(studyData) {
     // this info is lost when we deepCloneStudyObject
-    this.__resourceType = studyData["resourceType"]; // study or template
+    this._resourceType = studyData["resourceType"]; // study or template
     const serializedData = osparc.data.model.Study.deepCloneStudyObject(studyData);
 
     const initCollabs = [];
     if (osparc.data.Permissions.getInstance().canDo("study.everyone.share")) {
-      initCollabs.push(this.self().getEveryoneObj(this.__resourceType === "study"));
+      initCollabs.push(this.self().getEveryoneObj(this._resourceType === "study"));
     }
 
     this.base(arguments, serializedData, initCollabs);
@@ -126,8 +126,6 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
   },
 
   members: {
-    __resourceType: null,
-
     _canIDelete: function() {
       return osparc.data.model.Study.canIDelete(this._serializedData["accessRights"]);
     },
@@ -142,7 +140,7 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
       }
 
       gids.forEach(gid => {
-        this._serializedData["accessRights"][gid] = this.__resourceType === "study" ? this.self().getCollaboratorAccessRight() : this.self().getViewerAccessRight();
+        this._serializedData["accessRights"][gid] = this._resourceType === "study" ? this.self().getCollaboratorAccessRight() : this.self().getViewerAccessRight();
       });
       const params = {
         url: {
@@ -173,7 +171,7 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
               // it's a user, not an organization
               const collab = potentialCollaborators[gid];
               const uid = collab["id"];
-              if (this.__resourceType === "study") {
+              if (this._resourceType === "study") {
                 osparc.component.notification.Notifications.postNewStudy(uid, this._serializedData["uuid"]);
               } else {
                 osparc.component.notification.Notifications.postNewTemplate(uid, this._serializedData["uuid"]);
