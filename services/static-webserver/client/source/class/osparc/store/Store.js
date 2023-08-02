@@ -109,7 +109,7 @@ qx.Class.define("osparc.store.Store", {
       init: {}
     },
     wallets: {
-      check: "Object",
+      check: "Array",
       init: []
     },
     activeWallet: {
@@ -608,6 +608,43 @@ qx.Class.define("osparc.store.Store", {
           resolve(null);
         }
       });
+    },
+
+    loadWallets: function() {
+      osparc.data.Resources.fetch("wallets", "get")
+        .then(walletsData => {
+          const arPromises = [];
+          walletsData.forEach(walletReducedData => {
+            const params = {
+              url: {
+                "walletId": walletReducedData["wallet_id"]
+              }
+            };
+            arPromises.push(osparc.data.Resources.fetch("wallets", "getAccessRights", params));
+          });
+          Promise.all(arPromises)
+            .then(accessRightss => {
+              const wallets = [];
+              if (walletsData.length === accessRightss.length) {
+                for (let i=0; i<walletsData.length; i++) {
+                  const walletData = walletsData[i];
+                  walletData["accessRights"] = accessRightss[i];
+                  const wallet = new osparc.data.model.Wallet(walletData);
+                  wallets.push(wallet);
+                }
+              }
+
+              const store = osparc.store.Store.getInstance();
+              store.setWallets(wallets);
+              // trick to get a countdown
+              setInterval(() => {
+                store.getWallets().forEach(wallet => {
+                  wallet.setCreditsAvailable(wallet.getCreditsAvailable()-1);
+                });
+              }, 30000);
+            });
+        })
+        .catch(err => console.error(err));
     },
 
     __getOrgClassifiers: function(orgId, useCache = false) {

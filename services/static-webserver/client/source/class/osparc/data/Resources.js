@@ -1240,43 +1240,6 @@ qx.Class.define("osparc.data.Resources", {
       }
     },
 
-    addWalletsToStore: function() {
-      osparc.data.Resources.getWallets()
-        .then(walletsData => {
-          const promises = [];
-          walletsData.forEach(walletReducedData => {
-            const params = {
-              url: {
-                "walletId": walletReducedData["wallet_id"]
-              }
-            };
-            promises.push(osparc.data.Resources.fetch("wallets", "getAccessRights", params));
-          });
-          Promise.all(promises)
-            .then(acessRightss => {
-              const wallets = [];
-              if (walletsData.length === acessRightss.length) {
-                for (let i=0; i<walletsData.length; i++) {
-                  const walletData = walletsData[i];
-                  walletData["accessRights"] = acessRightss[i];
-                  const wallet = new osparc.data.model.Wallet(walletData);
-                  wallets.push(wallet);
-                }
-              }
-
-              const store = osparc.store.Store.getInstance();
-              store.setWallets(wallets);
-              // trick to get a countdown
-              setInterval(() => {
-                store.getWallets().forEach(wallet => {
-                  wallet.setCreditsAvailable(wallet.getCreditsAvailable()-1);
-                });
-              }, 30000);
-            });
-        })
-        .catch(err => console.error(err));
-    },
-
     getServiceUrl: function(key, version) {
       return {
         "key": encodeURIComponent(key),
