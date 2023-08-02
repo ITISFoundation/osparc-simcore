@@ -21,6 +21,7 @@ from models_library.rabbitmq_messages import (
     ProgressRabbitMessageNode,
 )
 from models_library.users import UserID
+from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 
 from ...core.errors import TaskSchedulingError
 from ...core.settings import ComputationalBackendSettings
@@ -72,7 +73,7 @@ class DaskScheduler(BaseCompScheduler):
         user_id: UserID,
         project_id: ProjectID,
         cluster_id: ClusterID,
-        metadata: MetadataDict,
+        run_metadata: MetadataDict,
         scheduled_tasks: dict[NodeID, Image],
     ):
         # now transfer the pipeline to the dask scheduler
@@ -85,7 +86,7 @@ class DaskScheduler(BaseCompScheduler):
                 cluster_id=cluster_id,
                 tasks=scheduled_tasks,
                 callback=self._wake_up_scheduler_now,
-                metadata=metadata,
+                metadata=run_metadata,
             )
             logger.debug(
                 "started following tasks (node_id, job_id)[%s] on cluster %s",
@@ -127,7 +128,11 @@ class DaskScheduler(BaseCompScheduler):
             )
 
     async def _process_completed_tasks(
-        self, user_id: UserID, cluster_id: ClusterID, tasks: list[CompTaskAtDB]
+        self,
+        user_id: UserID,
+        cluster_id: ClusterID,
+        tasks: list[CompTaskAtDB],
+        run_metadata: MetadataDict,
     ) -> None:
         try:
             async with _cluster_dask_client(user_id, cluster_id, self) as client:
@@ -137,7 +142,7 @@ class DaskScheduler(BaseCompScheduler):
                 )
             await asyncio.gather(
                 *[
-                    self._process_task_result(task, result)
+                    self._process_task_result(task, result, run_metadata)
                     for task, result in zip(tasks, tasks_results)
                 ]
             )
@@ -148,7 +153,10 @@ class DaskScheduler(BaseCompScheduler):
                 )
 
     async def _process_task_result(
-        self, task: CompTaskAtDB, result: Exception | TaskOutputData
+        self,
+        task: CompTaskAtDB,
+        result: Exception | TaskOutputData,
+        run_metadata: MetadataDict,
     ) -> None:
         logger.debug("received %s result: %s", f"{task=}", f"{result=}")
         task_final_state = RunningState.FAILED
@@ -205,7 +213,14 @@ class DaskScheduler(BaseCompScheduler):
                 )
 
             # instrumentation
-            await self._publish_service_stopped_metrics(user_id, task, task_final_state)
+            await self._publish_service_stopped_metrics(
+                user_id,
+                run_metadata.get(
+                    "simcore_user_agent", UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+                ),
+                task,
+                task_final_state,
+            )
 
         await CompTasksRepository(self.db_engine).update_project_tasks_state(
             task.project_id,

@@ -59,7 +59,7 @@ _logger = logging.getLogger(__name__)
 @dataclass(kw_only=True)
 class ScheduledPipelineParams:
     cluster_id: ClusterID
-    metadata: MetadataDict
+    run_metadata: MetadataDict
     mark_for_cancellation: bool = False
 
 
@@ -108,7 +108,9 @@ class BaseCompScheduler(ABC):
         )
         self.scheduled_pipelines[
             (user_id, project_id, new_run.iteration)
-        ] = ScheduledPipelineParams(cluster_id=cluster_id, metadata=new_run.metadata)
+        ] = ScheduledPipelineParams(
+            cluster_id=cluster_id, run_metadata=new_run.metadata
+        )
         # ensure the scheduler starts right away
         self._wake_up_scheduler_now()
 
@@ -145,7 +147,7 @@ class BaseCompScheduler(ABC):
                     cluster_id=pipeline_params.cluster_id,
                     iteration=iteration,
                     marked_for_stopping=pipeline_params.mark_for_cancellation,
-                    metadata=pipeline_params.metadata,
+                    run_metadata=pipeline_params.run_metadata,
                 )
                 for (
                     user_id,
@@ -272,6 +274,7 @@ class BaseCompScheduler(ABC):
         self,
         user_id: UserID,
         project_id: ProjectID,
+        simcore_user_agent: str,
         changed_tasks: list[tuple[_Previous, _Current]],
     ) -> None:
         for previous, current in changed_tasks:
@@ -288,12 +291,16 @@ class BaseCompScheduler(ABC):
                     service_type=NodeClass.COMPUTATIONAL.value,
                     service_key=current.image.name,
                     service_tag=current.image.tag,
-                    simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                    simcore_user_agent=simcore_user_agent,
                 )
                 await self.rabbitmq_client.publish(message.channel_name, message)
 
     async def _publish_service_stopped_metrics(
-        self, user_id: UserID, task: CompTaskAtDB, task_final_state: RunningState
+        self,
+        user_id: UserID,
+        simcore_user_agent: str,
+        task: CompTaskAtDB,
+        task_final_state: RunningState,
     ) -> None:
         message = InstrumentationRabbitMessage.construct(
             metrics="service_stopped",
@@ -305,7 +312,7 @@ class BaseCompScheduler(ABC):
             service_key=task.image.name,
             service_tag=task.image.tag,
             result=task_final_state,
-            simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+            simcore_user_agent=simcore_user_agent,
         )
         await self.rabbitmq_client.publish(message.channel_name, message)
 
@@ -315,6 +322,7 @@ class BaseCompScheduler(ABC):
         cluster_id: ClusterID,
         project_id: ProjectID,
         pipeline_dag: nx.DiGraph,
+        run_metadata: MetadataDict,
     ) -> None:
         all_tasks = await self._get_pipeline_tasks(project_id, pipeline_dag)
         if processing_tasks := [
@@ -325,7 +333,12 @@ class BaseCompScheduler(ABC):
             )
 
             await self._publish_service_started_metrics(
-                user_id, project_id, changed_tasks
+                user_id,
+                project_id,
+                run_metadata.get(
+                    "simcore_user_agent", UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+                ),
+                changed_tasks,
             )
 
             completed_tasks = [
@@ -353,7 +366,7 @@ class BaseCompScheduler(ABC):
         user_id: UserID,
         project_id: ProjectID,
         cluster_id: ClusterID,
-        metadata: MetadataDict,
+        run_metadata: MetadataDict,
         scheduled_tasks: dict[NodeID, Image],
     ) -> None:
         ...
@@ -384,7 +397,7 @@ class BaseCompScheduler(ABC):
         cluster_id: ClusterID,
         iteration: PositiveInt,
         marked_for_stopping: bool,
-        metadata: MetadataDict,
+        run_metadata: MetadataDict,
     ) -> None:
         _logger.debug(
             "checking run of project [%s:%s] for user [%s]",
@@ -397,7 +410,7 @@ class BaseCompScheduler(ABC):
             dag: nx.DiGraph = await self._get_pipeline_dag(project_id)
             # 1. Update our list of tasks with data from backend (state, results)
             await self._update_states_from_comp_backend(
-                user_id, cluster_id, project_id, dag
+                user_id, cluster_id, project_id, dag, run_metadata
             )
             # 2. Any task following a FAILED task shall be ABORTED
             comp_tasks = await self._set_states_following_failed_to_aborted(
@@ -416,7 +429,7 @@ class BaseCompScheduler(ABC):
                     cluster_id=cluster_id,
                     comp_tasks=comp_tasks,
                     dag=dag,
-                    metadata=metadata,
+                    run_metadata=run_metadata,
                 )
             # 4. Update the run result
             pipeline_result = await self._update_run_result_from_tasks(
@@ -470,7 +483,7 @@ class BaseCompScheduler(ABC):
         user_id: UserID,
         project_id: ProjectID,
         cluster_id: ClusterID,
-        metadata: MetadataDict,
+        run_metadata: MetadataDict,
         comp_tasks: dict[str, CompTaskAtDB],
         dag: nx.DiGraph,
     ):
@@ -514,7 +527,7 @@ class BaseCompScheduler(ABC):
                     user_id=user_id,
                     project_id=project_id,
                     cluster_id=cluster_id,
-                    metadata=metadata,
+                    run_metadata=run_metadata,
                     scheduled_tasks={node_id: task.image},
                 )
                 for node_id, task in tasks_ready_to_start.items()
