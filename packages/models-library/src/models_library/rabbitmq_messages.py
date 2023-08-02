@@ -214,11 +214,7 @@ class SimcoreStatus(StrAutoEnum):
 
 
 class RabbitResourceTrackingStoppedMessage(_RabbitResourceTrackingBaseMessage):
-    service_result: RunningState = Field(
-        ...,
-        description="the service result, may fail or succeed independently of osparc status",
-    )
-    service_babysitting_result: SimcoreStatus = Field(
+    simcore_status: SimcoreStatus = Field(
         ...,
         description=f"{SimcoreStatus.BAD} if simcore failed to run the service properly",
     )
