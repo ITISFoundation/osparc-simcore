@@ -27,14 +27,12 @@ from servicelib.common_headers import (
     X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
     X_SIMCORE_USER_AGENT,
 )
-from simcore_service_director_v2.core.settings import DynamicSidecarSettings
-from simcore_service_director_v2.models.schemas.constants import (
+from simcore_service_director_v2.constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
-from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
-    SchedulerData,
-)
+from simcore_service_director_v2.core.settings import DynamicSidecarSettings
+from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
     DynamicSidecarsScheduler,
 )

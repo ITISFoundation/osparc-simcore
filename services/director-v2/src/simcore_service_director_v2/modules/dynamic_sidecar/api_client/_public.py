@@ -23,7 +23,7 @@ from servicelib.logging_utils import log_context, log_decorator
 from servicelib.utils import logged_gather
 
 from ....core.settings import DynamicSidecarSettings
-from ....models.schemas.dynamic_services import SchedulerData
+from ....models.dynamic_services_scheduler import SchedulerData
 from ....modules.dynamic_sidecar.docker_api import get_or_create_networks_ids
 from ..errors import EntrypointContainerNotFoundError
 from ._errors import BaseClientHTTPError, UnexpectedStatusError

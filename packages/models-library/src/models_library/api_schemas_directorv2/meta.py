@@ -1,11 +1,8 @@
-import re
+from typing import Any, ClassVar
 
-from models_library.basic_regex import VERSION_RE
-from pydantic import BaseModel, ConstrainedStr, Field
+from pydantic import BaseModel, Field
 
-
-class VersionStr(ConstrainedStr):
-    regex = re.compile(VERSION_RE)
+from ..basic_types import VersionStr
 
 
 class Meta(BaseModel):
@@ -16,7 +13,7 @@ class Meta(BaseModel):
     )
 
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "name": "simcore_service_foo",
                 "version": "2.4.45",

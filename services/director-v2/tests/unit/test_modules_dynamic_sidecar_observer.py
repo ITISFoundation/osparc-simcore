@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_director_v2.core.settings import AppSettings
-from simcore_service_director_v2.models.schemas.dynamic_services import SchedulerData
+from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client import (
     setup,
     shutdown,

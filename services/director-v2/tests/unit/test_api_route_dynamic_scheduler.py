@@ -9,15 +9,11 @@ import pytest
 import respx
 from fastapi import status
 from httpx import Response
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceCreate
 from models_library.service_settings_labels import SimcoreServiceLabels
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from simcore_service_director_v2.models.domains.dynamic_services import (
-    DynamicServiceCreate,
-)
-from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
-    SchedulerData,
-)
+from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarNotFoundError,
 )

@@ -16,11 +16,6 @@ class GarbageCollectorSettings(BaseCustomSettings):
     GARBAGE_COLLECTOR_INTERVAL_S: PositiveInt = Field(
         30 * _SEC,
         description="Waiting time between consecutive runs of the garbage-colector",
-        # legacy
-        env=[
-            "GARBAGE_COLLECTOR_INTERVAL_S",
-            "WEBSERVER_GARBAGE_COLLECTION_INTERVAL_SECONDS",  # legacy
-        ],
     )
 
     GARBAGE_COLLECTOR_EXPIRED_USERS_CHECK_INTERVAL_S: PositiveInt = Field(

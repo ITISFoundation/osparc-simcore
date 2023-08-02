@@ -20,6 +20,12 @@ from typing import Any
 
 import networkx as nx
 from fastapi import APIRouter, Depends, HTTPException
+from models_library.api_schemas_directorv2.comp_tasks import (
+    ComputationCreate,
+    ComputationDelete,
+    ComputationGet,
+    ComputationStop,
+)
 from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.services import ServiceKeyVersion
@@ -42,15 +48,9 @@ from ...core.errors import (
     ProjectNotFoundError,
     SchedulerError,
 )
-from ...models.domains.comp_pipelines import CompPipelineAtDB
-from ...models.domains.comp_runs import CompRunsAtDB
-from ...models.domains.comp_tasks import CompTaskAtDB
-from ...models.schemas.comp_tasks import (
-    ComputationCreate,
-    ComputationDelete,
-    ComputationGet,
-    ComputationStop,
-)
+from ...models.comp_pipelines import CompPipelineAtDB
+from ...models.comp_runs import CompRunsAtDB
+from ...models.comp_tasks import CompTaskAtDB
 from ...modules.catalog import CatalogClient
 from ...modules.comp_scheduler.base_scheduler import BaseCompScheduler
 from ...modules.db.repositories.clusters import ClustersRepository

@@ -43,6 +43,7 @@ from distributed import Event, Scheduler
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
 from fastapi.applications import FastAPI
+from models_library.api_schemas_directorv2.services import NodeRequirements
 from models_library.api_schemas_storage import LinkType
 from models_library.clusters import ClusterID, NoAuthentication, SimpleAuthentication
 from models_library.docker import to_simcore_runtime_docker_label_key
@@ -65,9 +66,8 @@ from simcore_service_director_v2.core.errors import (
     InsuficientComputationalResourcesError,
     MissingComputationalResourcesError,
 )
-from simcore_service_director_v2.models.domains.comp_runs import MetadataDict
-from simcore_service_director_v2.models.domains.comp_tasks import Image
-from simcore_service_director_v2.models.schemas.services import NodeRequirements
+from simcore_service_director_v2.models.comp_runs import MetadataDict
+from simcore_service_director_v2.models.comp_tasks import Image
 from simcore_service_director_v2.modules.dask_client import DaskClient, TaskHandlers
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
