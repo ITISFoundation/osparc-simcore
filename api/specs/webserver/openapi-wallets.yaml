@@ -11,7 +11,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.wallets.WalletGet__'
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.wallets.WalletGetWithAvailableCredits__'
     post:
       tags:
       - wallets
@@ -194,17 +194,17 @@ components:
           title: Error
       type: object
       title: Envelope[WalletGroupGet]
-    Envelope_list_models_library.api_schemas_webserver.wallets.WalletGet__:
+    Envelope_list_models_library.api_schemas_webserver.wallets.WalletGetWithAvailableCredits__:
       properties:
         data:
           items:
-            $ref: '#/components/schemas/WalletGet'
+            $ref: '#/components/schemas/WalletGetWithAvailableCredits'
           type: array
           title: Data
         error:
           title: Error
       type: object
-      title: Envelope[list[models_library.api_schemas_webserver.wallets.WalletGet]]
+      title: Envelope[list[models_library.api_schemas_webserver.wallets.WalletGetWithAvailableCredits]]
     Envelope_list_simcore_service_webserver.wallets._groups_api.WalletGroupGet__:
       properties:
         data:
@@ -256,6 +256,50 @@ components:
       - created
       - modified
       title: WalletGet
+    WalletGetWithAvailableCredits:
+      properties:
+        wallet_id:
+          type: integer
+          exclusiveMinimum: true
+          title: Wallet Id
+          minimum: 0
+        name:
+          type: string
+          title: Name
+        description:
+          type: string
+          title: Description
+        owner:
+          type: integer
+          exclusiveMinimum: true
+          title: Owner
+          minimum: 0
+        thumbnail:
+          type: string
+          title: Thumbnail
+        status:
+          $ref: '#/components/schemas/WalletStatus'
+        created:
+          type: string
+          format: date-time
+          title: Created
+        modified:
+          type: string
+          format: date-time
+          title: Modified
+        available_credits:
+          type: number
+          title: Available Credits
+      type: object
+      required:
+      - wallet_id
+      - name
+      - owner
+      - status
+      - created
+      - modified
+      - available_credits
+      title: WalletGetWithAvailableCredits
     WalletGroupGet:
       properties:
         gid:

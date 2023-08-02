@@ -10,14 +10,15 @@
 from enum import Enum
 
 from fastapi import FastAPI, status
-from models_library.api_schemas_webserver.wallets import WalletGet
+from models_library.api_schemas_webserver.wallets import (
+    WalletGet,
+    WalletGetWithAvailableCredits,
+)
 from models_library.generics import Envelope
 from models_library.users import GroupID
 from models_library.wallets import WalletID
 from simcore_service_webserver.wallets._groups_api import WalletGroupGet
 from simcore_service_webserver.wallets._groups_handlers import _WalletsGroupsBodyParams
-
-# from simcore_service_webserver.tags._handlers import TagCreate, TagGet, TagUpdate
 from simcore_service_webserver.wallets._handlers import (
     _CreateWalletBodyParams,
     _PutWalletBodyParams,
@@ -46,7 +47,7 @@ async def create_wallet(body: _CreateWalletBodyParams):
 
 @app.get(
     "/wallets",
-    response_model=Envelope[list[WalletGet]],
+    response_model=Envelope[list[WalletGetWithAvailableCredits]],
     tags=TAGS,
     operation_id="list_wallets",
 )
