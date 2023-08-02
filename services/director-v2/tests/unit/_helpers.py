@@ -8,9 +8,9 @@ from models_library.projects import ProjectAtDB
 from models_library.projects_nodes_io import NodeID
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import comp_tasks
-from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
-from simcore_service_director_v2.models.domains.comp_runs import CompRunsAtDB
-from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
+from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
+from simcore_service_director_v2.models.comp_runs import CompRunsAtDB
+from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
 from simcore_service_director_v2.modules.comp_scheduler.base_scheduler import (
     BaseCompScheduler,
 )

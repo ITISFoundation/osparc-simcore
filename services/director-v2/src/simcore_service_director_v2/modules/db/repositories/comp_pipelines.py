@@ -8,7 +8,7 @@ from models_library.projects_state import RunningState
 from sqlalchemy.dialects.postgresql import insert
 
 from ....core.errors import PipelineNotFoundError
-from ....models.domains.comp_pipelines import CompPipelineAtDB
+from ....models.comp_pipelines import CompPipelineAtDB
 from ..tables import comp_pipeline
 from ._base import BaseRepository
 

@@ -1,9 +1,10 @@
-from models_library.clusters import ClusterID
-from models_library.projects import ProjectID
-from models_library.projects_nodes import NodeID
-from models_library.projects_pipeline import ComputationTask
-from models_library.users import UserID
 from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, validator
+
+from ..clusters import ClusterID
+from ..projects import ProjectID
+from ..projects_nodes_io import NodeID
+from ..projects_pipeline import ComputationTask
+from ..users import UserID
 
 
 class ComputationGet(ComputationTask):
@@ -40,7 +41,8 @@ class ComputationCreate(BaseModel):
     @classmethod
     def ensure_product_name_defined_if_computation_starts(cls, v, values):
         if "start_pipeline" in values and values["start_pipeline"] and v is None:
-            raise ValueError("product_name must be set if computation shall start!")
+            msg = "product_name must be set if computation shall start!"
+            raise ValueError(msg)
         return v
 
 
@@ -50,7 +52,7 @@ class ComputationStop(BaseModel):
 
 class ComputationDelete(ComputationStop):
     force: bool | None = Field(
-        False,
+        default=False,
         description="if True then the pipeline will be removed even if it is running",
     )
 

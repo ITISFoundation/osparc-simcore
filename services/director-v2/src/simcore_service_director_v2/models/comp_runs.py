@@ -1,6 +1,6 @@
 import datetime
 from contextlib import suppress
-from typing import Any
+from typing import Any, ClassVar
 
 from models_library.clusters import DEFAULT_CLUSTER_ID, ClusterID
 from models_library.projects import ProjectID
@@ -9,7 +9,7 @@ from models_library.users import UserID
 from pydantic import BaseModel, Field, PositiveInt, validator
 from simcore_postgres_database.models.comp_pipeline import StateType
 
-from ...utils.db import DB_TO_RUNNING_STATE
+from ..utils.db import DB_TO_RUNNING_STATE
 
 MetadataDict = dict[str, Any]
 
@@ -62,7 +62,7 @@ class CompRunsAtDB(BaseModel):
 
     class Config:
         orm_mode = True
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 # DB model
                 {

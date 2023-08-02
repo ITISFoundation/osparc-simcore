@@ -22,7 +22,7 @@ from sqlalchemy.sql import and_, or_
 from sqlalchemy.sql.expression import tuple_
 from sqlalchemy.sql.selectable import Select
 
-from ...models.service_specifications import ServiceSpecificationsAtDB
+from ...models.services_specifications import ServiceSpecificationsAtDB
 from ..tables import services_access_rights, services_meta_data, services_specifications
 from ._base import BaseRepository
 

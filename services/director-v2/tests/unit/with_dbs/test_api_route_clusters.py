@@ -4,7 +4,8 @@
 
 import json
 import random
-from typing import Any, Callable, Iterator
+from collections.abc import Callable, Iterator
+from typing import Any
 
 import httpx
 import pytest
@@ -13,6 +14,12 @@ from _dask_helpers import DaskGatewayServer
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
 from httpx import URL
+from models_library.api_schemas_directorv2.clusters import (
+    ClusterCreate,
+    ClusterGet,
+    ClusterPatch,
+    ClusterPing,
+)
 from models_library.clusters import (
     CLUSTER_ADMIN_RIGHTS,
     CLUSTER_MANAGER_RIGHTS,
@@ -24,16 +31,9 @@ from models_library.clusters import (
     SimpleAuthentication,
 )
 from pydantic import AnyHttpUrl, SecretStr, parse_obj_as
-from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.utils_cli import create_json_encoder_wo_secrets
 from simcore_postgres_database.models.clusters import ClusterType, clusters
-from simcore_service_director_v2.models.schemas.clusters import (
-    ClusterCreate,
-    ClusterGet,
-    ClusterPatch,
-    ClusterPing,
-)
 from starlette import status
 
 pytest_simcore_core_services_selection = [
@@ -49,7 +49,7 @@ def clusters_config(
     mock_env: EnvVarsDict,
     postgres_db: sa.engine.Engine,
     postgres_host_config: dict[str, str],
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     dask_spec_local_cluster: SpecCluster,
 ):
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
@@ -335,7 +335,7 @@ async def test_create_cluster(
 
     # let's check that DB is correctly setup, there is one entry
     with postgres_db.connect() as conn:
-        cluster_entry = conn.execute(
+        conn.execute(
             sa.select(clusters).where(clusters.c.name == cluster_data.name)
         ).one()
 
@@ -544,7 +544,7 @@ async def test_update_another_cluster(
         f"/v2/clusters/{the_cluster.id}?user_id={user_1['id']}"
     )
     assert response.status_code == status.HTTP_200_OK, f"received {response.text}"
-    original_cluster = parse_obj_as(ClusterGet, response.json())
+    parse_obj_as(ClusterGet, response.json())
 
     # let's try to modify stuff as we are user 2
     for cluster_patch in [

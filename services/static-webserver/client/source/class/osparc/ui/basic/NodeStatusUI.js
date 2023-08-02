@@ -59,8 +59,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
         converter: state => {
           if (state) {
             this.show();
-            let labelValue = osparc.utils.StatusUI.getLabelValue(state);
-            labelValue = labelValue.replaceAll("_", " ");
+            const labelValue = osparc.utils.StatusUI.getLabelValue(state);
             return qx.lang.String.firstUp(labelValue.toLowerCase());
           }
           this.exclude();

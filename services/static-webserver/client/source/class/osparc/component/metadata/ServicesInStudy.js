@@ -19,6 +19,7 @@
  */
 
 qx.Class.define("osparc.component.metadata.ServicesInStudy", {
+  type: "abstract",
   extend: qx.ui.core.Widget,
 
   /**

@@ -1,20 +1,27 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 import string
 from collections import namedtuple
 
 import pytest
-from simcore_service_director_v2.models.schemas.dynamic_services import (
+from models_library.api_schemas_directorv2.dynamic_services import (
     RunningDynamicServiceDetails,
-    SchedulerData,
-    ServiceBootType,
-    ServiceState,
 )
-from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
+from models_library.services_enums import ServiceBootType, ServiceState
+from simcore_service_director_v2.models.dynamic_services_scheduler import (
     DockerContainerInspect,
+    SchedulerData,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_states import (
     CONTAINER_STATUSES_UNEXPECTED,
     extract_containers_minimum_statuses,
+)
+from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._scheduler_utils import (
+    create_model_from_scheduler_data,
 )
 
 # the following is the predefined expected ordering, change below test only if
@@ -122,7 +129,7 @@ SAMPLE_EXPECTED_STATUSES: list[ExpectedStatus] = [
 def test_running_service_details_make_status(
     scheduler_data: SchedulerData, service_message: str, service_state: ServiceState
 ):
-    running_service_details = RunningDynamicServiceDetails.from_scheduler_data(
+    running_service_details = create_model_from_scheduler_data(
         node_uuid=scheduler_data.node_uuid,
         scheduler_data=scheduler_data,
         service_state=service_state,

@@ -1,10 +1,17 @@
 import asyncio
 import logging
-from typing import Coroutine, cast
+from collections.abc import Coroutine
+from typing import cast
 
 import httpx
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import RedirectResponse
+from models_library.api_schemas_directorv2.dynamic_services import (
+    DynamicServiceCreate,
+    DynamicServiceGet,
+    RetrieveDataIn,
+    RetrieveDataOutEnveloped,
+)
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
@@ -25,12 +32,6 @@ from tenacity.wait import wait_fixed
 from ...api.dependencies.database import get_repository
 from ...api.dependencies.rabbitmq import get_rabbitmq_client
 from ...core.settings import DynamicServicesSettings, DynamicSidecarSettings
-from ...models.domains.dynamic_services import (
-    DynamicServiceCreate,
-    DynamicServiceGet,
-    RetrieveDataIn,
-    RetrieveDataOutEnveloped,
-)
 from ...modules import projects_networks
 from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.db.repositories.projects_networks import ProjectsNetworksRepository
@@ -298,7 +299,7 @@ async def service_restart_containers(
     try:
         await scheduler.restart_containers(node_uuid)
     except DynamicSidecarNotFoundError as error:
-        raise LegacyServiceIsNotSupportedError() from error
+        raise LegacyServiceIsNotSupportedError from error
 
     return NoContentResponse()
 

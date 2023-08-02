@@ -4,12 +4,11 @@
 # pylint:disable=protected-access
 
 from pathlib import Path
-from typing import List
 
 import faker
 import pytest
 from models_library.projects_state import RunningState
-from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
+from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
 from simcore_service_director_v2.utils.computations import (
     get_pipeline_state_from_task_states,
     is_pipeline_running,
@@ -253,11 +252,11 @@ def fake_task(fake_task_file: Path) -> CompTaskAtDB:
     ],
 )
 def test_get_pipeline_state_from_task_states(
-    task_states: List[RunningState],
+    task_states: list[RunningState],
     exp_pipeline_state: RunningState,
     fake_task: CompTaskAtDB,
 ):
-    tasks: List[CompTaskAtDB] = [
+    tasks: list[CompTaskAtDB] = [
         fake_task.copy(deep=True, update={"state": s}) for s in task_states
     ]
 

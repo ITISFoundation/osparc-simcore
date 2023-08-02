@@ -1,9 +1,10 @@
 import enum
 from typing import Any, ClassVar, Final
 
-from models_library.utils.common_validators import create_enums_pre_validator
 from pydantic import BaseModel, Field, validator
 from pydantic.types import PositiveInt
+
+from .utils.common_validators import create_enums_pre_validator
 
 EVERYONE_GROUP_ID: Final[int] = 1
 
