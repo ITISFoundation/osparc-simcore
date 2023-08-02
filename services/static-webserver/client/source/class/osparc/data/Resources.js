@@ -1139,8 +1139,8 @@ qx.Class.define("osparc.data.Resources", {
               name: "My Wallet",
               description: "Personal Wallet",
               thumbnail: null,
-              status: "ACTIVE",
               owner: myGid,
+              status: "ACTIVE",
               "available_credits": 10,
               accessRights: {
                 [myGid]: {
@@ -1154,8 +1154,8 @@ qx.Class.define("osparc.data.Resources", {
               name: "Our Wallet",
               description: "Organization wide Wallet",
               thumbnail: null,
-              status: "ACTIVE",
               owner: myGid,
+              status: "ACTIVE",
               "available_credits": 100,
               accessRights: {
                 [myGid]: {
@@ -1174,8 +1174,8 @@ qx.Class.define("osparc.data.Resources", {
               name: "Another Wallet",
               description: "Organization wide Wallet 2",
               thumbnail: null,
-              status: "INACTIVE",
               owner: 417,
+              status: "INACTIVE",
               "available_credits": 1000,
               accessRights: {
                 417: {

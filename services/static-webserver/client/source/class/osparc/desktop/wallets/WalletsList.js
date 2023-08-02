@@ -212,15 +212,16 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
       const name = walletEditor.getName();
       const description = walletEditor.getDescription();
       const thumbnail = walletEditor.getThumbnail();
-      const owner = osparc.auth.Data.getInstance().getUserId();
+      const myUid = osparc.auth.Data.getInstance().getUserId();
+      const myGid = osparc.auth.Data.getInstance().getGroupId();
       const accessRights = {};
-      accessRights[osparc.auth.Data.getInstance().getGroupId()] = osparc.desktop.wallets.MembersList.getDeleteAccess();
+      accessRights[myGid] = osparc.desktop.wallets.MembersList.getDeleteAccess();
 
       const newWalletData = osparc.data.Resources.dummy.newWalletData();
       newWalletData.name = name;
       newWalletData.description = description;
       newWalletData.thumbnail = thumbnail;
-      newWalletData.owner = owner;
+      newWalletData.owner = myUid;
       newWalletData.accessRights = accessRights;
 
       const wallet = new osparc.data.model.Wallet(newWalletData);
