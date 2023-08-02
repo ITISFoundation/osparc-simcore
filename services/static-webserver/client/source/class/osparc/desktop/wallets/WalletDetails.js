@@ -49,10 +49,10 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
       const walletListItem = this.__addWalletListItem();
       walletModel.bind("walletId", walletListItem, "key");
       walletModel.bind("walletId", walletListItem, "model");
+      walletModel.bind("accessRights", walletListItem, "accessRights");
       walletModel.bind("thumbnail", walletListItem, "thumbnail");
       walletModel.bind("name", walletListItem, "title");
       walletModel.bind("description", walletListItem, "subtitle");
-      walletModel.bind("accessRights", walletListItem, "accessRights");
       walletModel.bind("creditsAvailable", walletListItem, "creditsAvailable");
       walletModel.bind("status", walletListItem, "status");
 
