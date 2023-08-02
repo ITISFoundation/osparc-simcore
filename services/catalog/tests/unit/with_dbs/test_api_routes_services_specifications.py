@@ -34,7 +34,7 @@ from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.services_specifications import (
     services_specifications,
 )
-from simcore_service_catalog.models.service_specifications import (
+from simcore_service_catalog.models.services_specifications import (
     ServiceSpecificationsAtDB,
 )
 from sqlalchemy.ext.asyncio import AsyncEngine

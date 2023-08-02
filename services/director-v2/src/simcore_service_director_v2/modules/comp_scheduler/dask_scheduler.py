@@ -24,11 +24,11 @@ from models_library.rabbitmq_messages import (
 from models_library.users import UserID
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.comp_tasks import NodeClass
-from simcore_service_director_v2.models.domains.comp_runs import MetadataDict
 
 from ...core.errors import TaskSchedulingError
 from ...core.settings import ComputationalBackendSettings
-from ...models.domains.comp_tasks import CompTaskAtDB, Image
+from ...models.comp_runs import MetadataDict
+from ...models.comp_tasks import CompTaskAtDB, Image
 from ...modules.dask_client import DaskClient
 from ...modules.dask_clients_pool import DaskClientsPool
 from ...modules.db.repositories.clusters import ClustersRepository

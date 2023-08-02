@@ -5,12 +5,12 @@ from unittest.mock import AsyncMock
 import httpx
 import pytest
 import sqlalchemy as sa
+from models_library.api_schemas_directorv2.comp_tasks import ComputationGet
 from models_library.projects import ProjectAtDB
 from models_library.users import UserID
 from pytest_mock import MockerFixture
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects import projects
-from simcore_service_director_v2.models.schemas.comp_tasks import ComputationGet
 from starlette import status
 from tenacity import retry
 from tenacity.retry import retry_if_exception_type

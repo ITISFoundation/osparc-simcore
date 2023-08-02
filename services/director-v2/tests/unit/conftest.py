@@ -5,8 +5,7 @@ import json
 import logging
 import random
 import urllib.parse
-from typing import (
-    Any,
+from collections.abc import (
     AsyncIterable,
     AsyncIterator,
     Callable,
@@ -14,6 +13,7 @@ from typing import (
     Iterator,
     Mapping,
 )
+from typing import Any
 from unittest import mock
 
 import aiodocker
@@ -27,6 +27,10 @@ from dask_gateway_server.backends.local import UnsafeLocalBackend
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
 from fastapi import FastAPI
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceCreate
+from models_library.api_schemas_directorv2.dynamic_services_service import (
+    ServiceDetails,
+)
 from models_library.basic_types import PortInt
 from models_library.clusters import ClusterID
 from models_library.generated_models.docker_rest_api import (
@@ -34,24 +38,16 @@ from models_library.generated_models.docker_rest_api import (
 )
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import RunID, ServiceKey, ServiceKeyVersion, ServiceVersion
+from models_library.services_enums import ServiceState
 from pydantic import parse_obj_as
 from pytest import LogCaptureFixture, MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.s3 import S3Settings
 from simcore_sdk.node_ports_v2 import FileLinkType
+from simcore_service_director_v2.constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
 from simcore_service_director_v2.core.settings import AppSettings
-from simcore_service_director_v2.models.domains.dynamic_services import (
-    DynamicServiceCreate,
-)
-from simcore_service_director_v2.models.schemas.constants import (
-    DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
-)
-from simcore_service_director_v2.models.schemas.dynamic_services import (
-    SchedulerData,
-    ServiceDetails,
-    ServiceState,
-)
+from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.volume_remover import (
     DIND_VERSION,
     DockerVersion,

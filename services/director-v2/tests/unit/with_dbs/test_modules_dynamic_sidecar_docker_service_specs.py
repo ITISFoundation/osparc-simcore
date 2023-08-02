@@ -22,7 +22,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from servicelib.json_serialization import json_dumps
 from simcore_service_director_v2.core.settings import DynamicSidecarSettings
-from simcore_service_director_v2.models.schemas.dynamic_services import SchedulerData
+from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 from simcore_service_director_v2.modules.catalog import CatalogClient
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs import (
     get_dynamic_sidecar_spec,

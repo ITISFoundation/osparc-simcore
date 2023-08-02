@@ -1,9 +1,3 @@
-"""
-
-NOTE: to dump json-schema from CLI use
-    python -c "from models_library.services import ServiceDockerData as cls; print(cls.schema_json(indent=2))" > services-schema.json
-"""
-
 import re
 from datetime import datetime
 from enum import Enum

@@ -22,9 +22,9 @@ from simcore_postgres_database.models.clusters import clusters
 from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline
 from simcore_postgres_database.models.comp_runs import comp_runs
 from simcore_postgres_database.models.comp_tasks import comp_tasks
-from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
-from simcore_service_director_v2.models.domains.comp_runs import CompRunsAtDB
-from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB, Image
+from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
+from simcore_service_director_v2.models.comp_runs import CompRunsAtDB
+from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB, Image
 from simcore_service_director_v2.utils.computations import to_node_class
 from simcore_service_director_v2.utils.dask import generate_dask_job_id
 from simcore_service_director_v2.utils.db import to_clusters_db

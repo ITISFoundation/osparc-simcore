@@ -1,11 +1,10 @@
-from models_library.services import ServicePortKey
-from models_library.services_resources import (
-    ServiceResourcesDict,
-    ServiceResourcesDictHelpers,
-)
+from typing import Any, ClassVar, TypeAlias
+
 from pydantic import BaseModel, ByteSize, Field
 
-from ..schemas.dynamic_services import RunningDynamicServiceDetails, ServiceDetails
+from ..services import ServicePortKey
+from ..services_resources import ServiceResourcesDict, ServiceResourcesDictHelpers
+from .dynamic_services_service import RunningDynamicServiceDetails, ServiceDetails
 
 
 class RetrieveDataIn(BaseModel):
@@ -30,7 +29,9 @@ class RetrieveDataOutEnveloped(BaseModel):
         return cls(data=RetrieveDataOut(size_bytes=ByteSize(transferred_bytes)))
 
     class Config:
-        schema_extra = {"examples": [{"data": {"size_bytes": 42}}]}
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [{"data": {"size_bytes": 42}}]
+        }
 
 
 class DynamicServiceCreate(ServiceDetails):
@@ -42,7 +43,7 @@ class DynamicServiceCreate(ServiceDetails):
     )
 
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "key": "simcore/services/dynamic/3dviewer",
                 "version": "2.4.5",
@@ -59,4 +60,4 @@ class DynamicServiceCreate(ServiceDetails):
         }
 
 
-DynamicServiceGet = RunningDynamicServiceDetails
+DynamicServiceGet: TypeAlias = RunningDynamicServiceDetails

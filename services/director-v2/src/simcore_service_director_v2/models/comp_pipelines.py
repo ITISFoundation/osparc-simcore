@@ -1,4 +1,5 @@
 from contextlib import suppress
+from typing import Any, ClassVar
 
 import networkx as nx
 from models_library.projects import ProjectID
@@ -6,7 +7,7 @@ from models_library.projects_state import RunningState
 from pydantic import BaseModel, validator
 from simcore_postgres_database.models.comp_pipeline import StateType
 
-from ...utils.db import DB_TO_RUNNING_STATE
+from ..utils.db import DB_TO_RUNNING_STATE
 
 
 class CompPipelineAtDB(BaseModel):
@@ -41,7 +42,7 @@ class CompPipelineAtDB(BaseModel):
     class Config:
         orm_mode = True
 
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 # DB model
                 {

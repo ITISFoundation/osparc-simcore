@@ -3,16 +3,15 @@ import logging
 from typing import Final
 
 from fastapi import FastAPI
+from models_library.api_schemas_directorv2.dynamic_services_service import (
+    RunningDynamicServiceDetails,
+)
 from models_library.projects_nodes_io import NodeID
+from models_library.services_enums import ServiceBootType, ServiceState
 from servicelib.fastapi.long_running_tasks.client import ProgressCallback
 
 from .....core.settings import DynamicServicesSchedulerSettings, DynamicSidecarSettings
-from .....models.schemas.dynamic_services import (
-    DynamicSidecarStatus,
-    RunningDynamicServiceDetails,
-    SchedulerData,
-    ServiceState,
-)
+from .....models.dynamic_services_scheduler import DynamicSidecarStatus, SchedulerData
 from ...api_client import SidecarsClient, get_sidecars_client
 from ...docker_api import (
     get_dynamic_sidecar_state,
@@ -88,10 +87,10 @@ async def cleanup_volume_removal_services(app: FastAPI) -> None:
             )
 
 
-async def discover_running_services(schduler: "Scheduler") -> None:  # type: ignore
+async def discover_running_services(scheduler: "Scheduler") -> None:  # type: ignore
     """discover all services which were started before and add them to the scheduler"""
     dynamic_sidecar_settings: DynamicSidecarSettings = (
-        schduler.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+        scheduler.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
     )
     services_to_observe: list[SchedulerData] = await get_dynamic_sidecars_to_observe(
         dynamic_sidecar_settings
@@ -100,7 +99,29 @@ async def discover_running_services(schduler: "Scheduler") -> None:  # type: ign
     logger.info("The following services need to be observed: %s", services_to_observe)
 
     for scheduler_data in services_to_observe:
-        await schduler._add_service(scheduler_data)  # pylint: disable=protected-access
+        await scheduler._add_service(scheduler_data)  # pylint: disable=protected-access
+
+
+def create_model_from_scheduler_data(
+    node_uuid: NodeID,
+    scheduler_data: SchedulerData,
+    service_state: ServiceState,
+    service_message: str,
+) -> RunningDynamicServiceDetails:
+    return RunningDynamicServiceDetails.parse_obj(
+        {
+            "boot_type": ServiceBootType.V2,
+            "user_id": scheduler_data.user_id,
+            "project_id": scheduler_data.project_id,
+            "service_uuid": node_uuid,
+            "service_key": scheduler_data.key,
+            "service_version": scheduler_data.version,
+            "service_host": scheduler_data.service_name,
+            "service_port": scheduler_data.service_port,
+            "service_state": service_state.value,
+            "service_message": service_message,
+        }
+    )
 
 
 async def get_stack_status_from_scheduler_data(
@@ -111,7 +132,7 @@ async def get_stack_status_from_scheduler_data(
     # check if there was an error picked up by the scheduler
     # and marked this service as failed
     if scheduler_data.dynamic_sidecar.status.current != DynamicSidecarStatus.OK:
-        return RunningDynamicServiceDetails.from_scheduler_data(
+        return create_model_from_scheduler_data(
             node_uuid=scheduler_data.node_uuid,
             scheduler_data=scheduler_data,
             service_state=ServiceState.FAILED,
@@ -120,7 +141,7 @@ async def get_stack_status_from_scheduler_data(
 
     # is the service stopping?
     if scheduler_data.dynamic_sidecar.service_removal_state.can_remove:
-        return RunningDynamicServiceDetails.from_scheduler_data(
+        return create_model_from_scheduler_data(
             node_uuid=scheduler_data.node_uuid,
             scheduler_data=scheduler_data,
             service_state=ServiceState.STOPPING,
@@ -136,7 +157,7 @@ async def get_stack_status_from_scheduler_data(
         )
     except DockerServiceNotFoundError:
         # in this case, the service is starting, so state is pending
-        return RunningDynamicServiceDetails.from_scheduler_data(
+        return create_model_from_scheduler_data(
             node_uuid=scheduler_data.node_uuid,
             scheduler_data=scheduler_data,
             service_state=ServiceState.PENDING,
@@ -145,7 +166,7 @@ async def get_stack_status_from_scheduler_data(
 
     # while the dynamic-sidecar state is not RUNNING report it's state
     if sidecar_state != ServiceState.RUNNING:
-        return RunningDynamicServiceDetails.from_scheduler_data(
+        return create_model_from_scheduler_data(
             node_uuid=scheduler_data.node_uuid,
             scheduler_data=scheduler_data,
             service_state=sidecar_state,
@@ -158,7 +179,7 @@ async def get_stack_status_from_scheduler_data(
     # wait for containers to start
     if len(scheduler_data.dynamic_sidecar.containers_inspect) == 0:
         # marks status as waiting for containers
-        return RunningDynamicServiceDetails.from_scheduler_data(
+        return create_model_from_scheduler_data(
             node_uuid=scheduler_data.node_uuid,
             scheduler_data=scheduler_data,
             service_state=ServiceState.STARTING,
@@ -169,7 +190,7 @@ async def get_stack_status_from_scheduler_data(
     container_state, container_message = extract_containers_minimum_statuses(
         scheduler_data.dynamic_sidecar.containers_inspect
     )
-    return RunningDynamicServiceDetails.from_scheduler_data(
+    return create_model_from_scheduler_data(
         node_uuid=scheduler_data.node_uuid,
         scheduler_data=scheduler_data,
         service_state=container_state,

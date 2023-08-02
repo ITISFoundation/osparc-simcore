@@ -10,15 +10,15 @@ import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI, status
+from models_library.api_schemas_directorv2.comp_tasks import TaskLogFileGet
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pydantic import parse_raw_as
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_director_v2.core.settings import AppSettings
-from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
-from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
-from simcore_service_director_v2.models.schemas.comp_tasks import TaskLogFileGet
+from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
+from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
 
 pytest_simcore_core_services_selection = [
     "postgres",
