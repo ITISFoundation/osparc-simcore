@@ -122,7 +122,7 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
           "thumbnail": thumbnail || null
         }
       };
-      osparc.data.Resources.fetch("wallets", "patch", params)
+      osparc.data.Resources.fetch("wallets", "put", params)
         .then(() => {
           osparc.component.message.FlashMessenger.getInstance().logAs(name + this.tr(" successfully edited"));
           button.setFetching(false);
