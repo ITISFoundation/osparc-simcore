@@ -156,6 +156,7 @@ def mock_env(
         "COMPUTATIONAL_BACKEND_ENABLED": "false",
         "DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED": "false",
         "RABBIT_HOST": "mocked_host",
+        "RABBIT_SECURE": "false",
         "RABBIT_USER": "mocked_user",
         "RABBIT_PASSWORD": "mocked_password",
         "REGISTRY_AUTH": "false",

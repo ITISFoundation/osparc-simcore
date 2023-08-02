@@ -63,6 +63,7 @@ publications:
 rabbitmq:
   enabled: true
   host: 127.0.0.1
+  secure: false
   port: 5672
   user: admin
   password: adminadmin

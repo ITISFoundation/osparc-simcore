@@ -211,6 +211,7 @@ def convert_to_environ_vars(cfg: dict[str, Any]) -> dict[str, Any]:
         envs["RABBIT_PORT"] = section.get("port")
         envs["RABBIT_USER"] = section.get("user")
         envs["RABBIT_PASSWORD"] = section.get("password")
+        envs["RABBIT_SECURE"] = section.get("secure")
 
     if section := cfg.get("resource_manager"):
         _set_if_disabled("WEBSERVER_RESOURCE_MANAGER", section)
