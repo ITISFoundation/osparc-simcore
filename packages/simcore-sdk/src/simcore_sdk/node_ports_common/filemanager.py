@@ -61,7 +61,9 @@ async def _complete_upload(
     session: ClientSession,
     upload_links: FileUploadSchema,
     parts: list[UploadedPart],
-) -> ETag:
+    *,
+    is_directory: bool,
+) -> ETag | None:
     """completes a potentially multipart upload in AWS
     NOTE: it can take several minutes to finish, see [AWS documentation](https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html)
     it can take several minutes
@@ -104,6 +106,10 @@ async def _complete_upload(
                 if future_enveloped.data.state == FileUploadCompleteState.NOK:
                     msg = "upload not ready yet"
                     raise ValueError(msg)
+            if is_directory:
+                assert future_enveloped.data.e_tag is None  # nosec
+                return None
+
             assert future_enveloped.data.e_tag  # nosec
             _logger.debug(
                 "multipart upload completed in %s, received %s",
@@ -116,7 +122,7 @@ async def _complete_upload(
 
 
 async def _resolve_location_id(
-    client_session: ClientSession | None,
+    client_session: ClientSession,
     user_id: UserID,
     store_name: LocationName | None,
     store_id: LocationID | None,
@@ -126,10 +132,9 @@ async def _resolve_location_id(
         raise exceptions.NodeportsException(msg)
 
     if store_name is not None:
-        async with ClientSessionContextManager(client_session) as session:
-            store_id = await _get_location_id_from_location_name(
-                user_id, store_name, session
-            )
+        store_id = await _get_location_id_from_location_name(
+            user_id, store_name, client_session
+        )
     assert store_id is not None  # nosec
     return store_id
 
@@ -150,9 +155,7 @@ async def get_download_link_from_s3(
     :raises exceptions.StorageServerIssue
     """
     async with ClientSessionContextManager(client_session) as session:
-        store_id = await _resolve_location_id(
-            client_session, user_id, store_name, store_id
-        )
+        store_id = await _resolve_location_id(session, user_id, store_name, store_id)
         file_link = await storage_client.get_download_file_link(
             session=session,
             file_id=s3_object,
@@ -175,9 +178,7 @@ async def get_upload_links_from_s3(
     is_directory: bool,
 ) -> tuple[LocationID, FileUploadSchema]:
     async with ClientSessionContextManager(client_session) as session:
-        store_id = await _resolve_location_id(
-            client_session, user_id, store_name, store_id
-        )
+        store_id = await _resolve_location_id(session, user_id, store_name, store_id)
         file_links = await storage_client.get_upload_file_links(
             session=session,
             file_id=s3_object,
@@ -196,7 +197,7 @@ async def download_path_from_s3(
     store_name: LocationName | None,
     store_id: LocationID | None,
     s3_object: StorageFileID,
-    local_folder: Path,
+    local_path: Path,
     io_log_redirect_cb: LogRedirectCB | None,
     client_session: ClientSession | None = None,
     r_clone_settings: RCloneSettings | None,
@@ -216,13 +217,11 @@ async def download_path_from_s3(
         store_name,
         store_id,
         s3_object,
-        local_folder,
+        local_path,
     )
 
     async with ClientSessionContextManager(client_session) as session:
-        store_id = await _resolve_location_id(
-            client_session, user_id, store_name, store_id
-        )
+        store_id = await _resolve_location_id(session, user_id, store_name, store_id)
         file_meta_data: FileMetaDataGet = await _get_file_meta_data(
             user_id=user_id,
             s3_object=s3_object,
@@ -257,14 +256,14 @@ async def download_path_from_s3(
             await r_clone.sync_s3_to_local(
                 r_clone_settings,
                 progress_bar,
-                local_directory_path=local_folder,
+                local_directory_path=local_path,
                 download_s3_link=parse_obj_as(AnyUrl, f"{download_link}"),
             )
-            return local_folder
+            return local_path
 
         return await download_file_from_link(
             download_link,
-            local_folder,
+            local_path,
             client_session=session,
             io_log_redirect_cb=io_log_redirect_cb,
             progress_bar=progress_bar,
@@ -340,6 +339,7 @@ async def upload_path(
     client_session: ClientSession | None = None,
     r_clone_settings: RCloneSettings | None = None,
     progress_bar: ProgressBarData | None = None,
+    exclude_patterns: set[str] | None = None,
 ) -> UploadedFile | UploadedFolder:
     """Uploads a file (potentially in parallel) or a file object (sequential in any case) to S3
 
@@ -386,6 +386,7 @@ async def upload_path(
                 progress_bar=progress_bar,
                 is_directory=is_directory,
                 session=session,
+                exclude_patterns=exclude_patterns,
             )
         except (r_clone.RCloneFailedError, exceptions.S3TransferError) as exc:
             _logger.exception("The upload failed with an unexpected error:")
@@ -401,7 +402,7 @@ async def upload_path(
     return UploadedFolder() if e_tag is None else UploadedFile(store_id, e_tag)
 
 
-async def _upload_to_s3(
+async def _upload_to_s3(  # noqa: PLR0913
     *,
     user_id: UserID,
     store_id: LocationID | None,
@@ -413,8 +414,8 @@ async def _upload_to_s3(
     progress_bar: ProgressBarData,
     is_directory: bool,
     session: ClientSession,
+    exclude_patterns: set[str] | None,
 ) -> tuple[LocationID, ETag | None, FileUploadSchema]:
-    e_tag: ETag | None = None
     store_id, upload_links = await get_upload_links_from_s3(
         user_id=user_id,
         store_name=store_name,
@@ -429,6 +430,8 @@ async def _upload_to_s3(
         ),
         is_directory=is_directory,
     )
+
+    uploaded_parts: list[UploadedPart] = []
     if is_directory:
         assert r_clone_settings  # nosec
         assert isinstance(path_to_upload, Path)  # nosec
@@ -438,10 +441,11 @@ async def _upload_to_s3(
             progress_bar,
             local_directory_path=path_to_upload,
             upload_s3_link=upload_links.urls[0],
+            exclude_patterns=exclude_patterns,
         )
     else:
         # uploading a file
-        uploaded_parts: list[UploadedPart] = await upload_file_to_presigned_links(
+        uploaded_parts = await upload_file_to_presigned_links(
             session,
             upload_links,
             path_to_upload,
@@ -449,8 +453,10 @@ async def _upload_to_s3(
             io_log_redirect_cb=io_log_redirect_cb,
             progress_bar=progress_bar,
         )
-        # complete the upload
-        e_tag = await _complete_upload(session, upload_links, uploaded_parts)
+    # complete the upload
+    e_tag = await _complete_upload(
+        session, upload_links, uploaded_parts, is_directory=is_directory
+    )
     return store_id, e_tag, upload_links
 
 
@@ -482,14 +488,22 @@ async def entry_exists(
     store_id: LocationID,
     s3_object: StorageFileID,
     client_session: ClientSession | None = None,
+    *,
+    is_directory: bool,
 ) -> bool:
-    """Returns True if metadata for s3_object is present"""
+    """
+    Returns True if metadata for s3_object is present.
+    Before returning it also checks if the metadata entry is a directory or a file.
+    """
     try:
         file_metadata: FileMetaDataGet = await _get_file_meta_data(
             user_id, store_id, s3_object, client_session
         )
-        exists: bool = file_metadata.file_id == s3_object
-        return exists
+        result: bool = (
+            file_metadata.file_id == s3_object
+            and file_metadata.is_directory == is_directory
+        )
+        return result
     except exceptions.S3InvalidPathError as err:
         _logger.debug(
             "Failed request metadata for s3_object=%s with %s", s3_object, err
@@ -506,14 +520,11 @@ async def get_file_metadata(
     """
     :raises S3InvalidPathError
     """
-    async with ClientSessionContextManager(client_session) as session:
-        _logger.debug("Will request metadata for s3_object=%s", s3_object)
-        file_metadata = await storage_client.get_file_metadata(
-            session=session, file_id=s3_object, location_id=store_id, user_id=user_id
-        )
-
-    _logger.debug(
-        "Result for metadata s3_object=%s, result=%s", s3_object, f"{file_metadata=}"
+    file_metadata: FileMetaDataGet = await _get_file_meta_data(
+        user_id=user_id,
+        store_id=store_id,
+        s3_object=s3_object,
+        client_session=client_session,
     )
     assert file_metadata.location_id is not None  # nosec
     assert file_metadata.entity_tag is not None  # nosec

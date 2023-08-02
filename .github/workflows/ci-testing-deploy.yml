@@ -1713,6 +1713,8 @@ jobs:
           path: /${{ runner.temp }}/build
       - name: load docker images
         run: make load-images local-src=/${{ runner.temp }}/build
+      - name: install rclone
+        run: sudo ./ci/github/helpers/install_rclone.bash
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1728,6 +1730,68 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/director-v2.bash clean_up
+      - uses: codecov/codecov-action@v3.1.4
+        with:
+          flags: integrationtests #optional
+
+  integration-test-dynamic-sidecar:
+    needs: [changes, build-test-images]
+    if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.dynamic-sidecar == 'true' || github.event_name == 'push'}}
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
+    name: "[int] dynamic-sidecar"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker-container
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: setup python environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/dynamic-sidecar/requirements/ci.txt"
+      - name: expose github runtime for buildx
+        uses: crazy-max/ghaction-github-runtime@v2
+      - name: download docker images
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}
+          path: /${{ runner.temp }}/build
+      - name: load docker images
+        run: make load-images local-src=/${{ runner.temp }}/build
+      - name: install rclone
+        run: sudo ./ci/github/helpers/install_rclone.bash
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - name: install
+        run: ./ci/github/integration-testing/dynamic-sidecar.bash install
+      - name: test
+        run: ./ci/github/integration-testing/dynamic-sidecar.bash test 01
+      - name: upload failed tests logs
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ github.job }}_docker_logs
+          path: ./services/dynamic-sidecar/test_failures
+      - name: cleanup
+        if: always()
+        run: ./ci/github/integration-testing/dynamic-sidecar.bash clean_up
       - uses: codecov/codecov-action@v3.1.4
         with:
           flags: integrationtests #optional
@@ -1874,6 +1938,7 @@ jobs:
       [
         integration-test-director-v2-01,
         integration-test-director-v2-02,
+        integration-test-dynamic-sidecar,
         integration-test-osparc-gateway-server,
         integration-test-simcore-sdk,
         integration-test-webserver-01,
