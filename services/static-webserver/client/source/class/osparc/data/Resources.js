@@ -1108,27 +1108,6 @@ qx.Class.define("osparc.data.Resources", {
     },
 
     dummy: {
-      addWalletsToStore: function() {
-        const store = osparc.store.Store.getInstance();
-        osparc.data.Resources.dummy.getWallets()
-          .then(walletsData => {
-            if (walletsData && "wallets" in walletsData && walletsData["wallets"].length) {
-              const wallets = [];
-              walletsData["wallets"].forEach(walletData => {
-                const wallet = new osparc.data.model.Wallet(walletData);
-                wallets.push(wallet);
-              });
-              store.setWallets(wallets);
-              setInterval(() => {
-                store.getWallets().forEach(wallet => {
-                  wallet.setCreditsAvailable(wallet.getCreditsAvailable()-1);
-                });
-              }, 30000);
-            }
-          })
-          .catch(err => console.error(err));
-      },
-
       newWalletData: function() {
         return {
           "wallet_id": Math.floor(Math.random() * 1000),
@@ -1145,64 +1124,76 @@ qx.Class.define("osparc.data.Resources", {
       getWallets: function() {
         const myGid = osparc.auth.Data.getInstance().getGroupId();
         return new Promise(resolve => {
-          resolve({
-            wallets: [{
-              "wallet_id": 1,
-              name: "My Wallet",
-              description: "Personal Wallet",
-              thumbnail: null,
-              owner: myGid,
-              status: "ACTIVE",
-              "available_credits": 10,
-              accessRights: {
-                [myGid]: {
-                  delete: true,
-                  write: true,
-                  read: true
-                }
-              }
-            }, {
-              "wallet_id": 2,
-              name: "Our Wallet",
-              description: "Organization wide Wallet",
-              thumbnail: null,
-              owner: myGid,
-              status: "ACTIVE",
-              "available_credits": 100,
-              accessRights: {
-                [myGid]: {
-                  delete: false,
-                  write: true,
-                  read: true
-                },
-                417: {
-                  delete: false,
-                  write: false,
-                  read: true
-                }
-              }
-            }, {
-              "wallet_id": 3,
-              name: "Another Wallet",
-              description: "Organization wide Wallet 2",
-              thumbnail: null,
-              owner: 417,
-              status: "INACTIVE",
-              "available_credits": 1000,
-              accessRights: {
-                417: {
-                  delete: true,
-                  write: true,
-                  read: true
-                },
-                [myGid]: {
-                  delete: false,
-                  write: false,
-                  read: true
-                }
-              }
-            }]
-          });
+          resolve([{
+            "wallet_id": 1,
+            name: "My Wallet",
+            description: "Personal Wallet",
+            thumbnail: null,
+            owner: myGid,
+            status: "ACTIVE",
+            "available_credits": 10
+          }, {
+            "wallet_id": 2,
+            name: "Our Wallet",
+            description: "Organization wide Wallet",
+            thumbnail: null,
+            owner: myGid,
+            status: "ACTIVE",
+            "available_credits": 100
+          }, {
+            "wallet_id": 3,
+            name: "Another Wallet",
+            description: "Organization wide Wallet 2",
+            thumbnail: null,
+            owner: 417,
+            status: "INACTIVE",
+            "available_credits": 1000
+          }]);
+        });
+      },
+
+      getWalletAccessRights: function(walletId) {
+        let accessRights = {};
+        const myGid = osparc.auth.Data.getInstance().getGroupId();
+        switch (walletId) {
+          case 1:
+            accessRights[myGid] = {
+              delete: true,
+              write: true,
+              read: true
+            };
+            break;
+          case 2:
+            accessRights[myGid] = {
+              delete: false,
+              write: true,
+              read: true
+            };
+            accessRights[417] = {
+              delete: false,
+              write: false,
+              read: true
+            };
+            break;
+          case 3:
+            accessRights[417] = {
+              delete: true,
+              write: true,
+              read: true
+            };
+            accessRights[myGid] = {
+              delete: false,
+              write: false,
+              read: true
+            };
+            break;
+        }
+        return new Promise((resolve, reject) => {
+          if (accessRights) {
+            resolve(accessRights);
+          } else {
+            reject("No");
+          }
         });
       },
 
