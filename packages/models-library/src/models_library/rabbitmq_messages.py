@@ -4,7 +4,6 @@ from abc import abstractmethod
 from enum import Enum, auto
 from typing import Any, Literal, TypeAlias
 
-from models_library.services_resources import ServiceResourcesDict
 from pydantic import BaseModel, Field, PositiveInt
 from pydantic.types import NonNegativeFloat
 
@@ -12,6 +11,7 @@ from .projects import ProjectID
 from .projects_nodes_io import NodeID
 from .projects_state import RunningState
 from .services import ServiceKey, ServiceType, ServiceVersion
+from .services_resources import ServiceResourcesDict
 from .users import UserID
 from .utils.enums import StrAutoEnum
 
