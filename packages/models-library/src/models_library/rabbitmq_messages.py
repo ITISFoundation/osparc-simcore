@@ -208,13 +208,13 @@ class RabbitResourceTrackingHeartbeatMessage(_RabbitResourceTrackingBaseMessage)
     ...
 
 
-class SimcoreStatus(StrAutoEnum):
+class SimcorePlatformStatus(StrAutoEnum):
     OK = auto()
     BAD = auto()
 
 
 class RabbitResourceTrackingStoppedMessage(_RabbitResourceTrackingBaseMessage):
-    simcore_status: SimcoreStatus = Field(
+    simcore_platform_status: SimcorePlatformStatus = Field(
         ...,
-        description=f"{SimcoreStatus.BAD} if simcore failed to run the service properly",
+        description=f"{SimcorePlatformStatus.BAD} if simcore failed to run the service properly",
     )
