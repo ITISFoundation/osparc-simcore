@@ -19,13 +19,6 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
   extend: osparc.ui.list.ListItemWithMenu,
 
   properties: {
-    walletType: {
-      check: ["personal", "shared"],
-      init: null,
-      nullable: false,
-      apply: "__setDefaultThumbnail"
-    },
-
     creditsAvailable: {
       check: "Number",
       nullable: false,
@@ -190,11 +183,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       if (this.getThumbnail() === null) {
         // default thumbnail only if it's null
         const thumbnail = this.getChildControl("thumbnail");
-        if (this.getWalletType() === "personal") {
-          thumbnail.setSource(osparc.utils.Icons.user(osparc.ui.list.ListItemWithMenu.ICON_SIZE));
-        } else {
-          thumbnail.setSource(osparc.utils.Icons.organization(osparc.ui.list.ListItemWithMenu.ICON_SIZE));
-        }
+        thumbnail.setSource("@MaterialIcons/account_balance_wallet/20");
       }
     },
 

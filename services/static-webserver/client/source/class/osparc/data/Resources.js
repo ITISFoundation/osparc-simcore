@@ -1126,7 +1126,6 @@ qx.Class.define("osparc.data.Resources", {
           owner: null,
           "available_credits": 0,
           status: "ACTIVE",
-          // type: "shared",
           accessRights: {}
         };
       },
@@ -1143,7 +1142,6 @@ qx.Class.define("osparc.data.Resources", {
               status: "ACTIVE",
               owner: myGid,
               "available_credits": 10,
-              // type: "personal",
               accessRights: {
                 [myGid]: {
                   delete: true,
@@ -1159,7 +1157,6 @@ qx.Class.define("osparc.data.Resources", {
               status: "ACTIVE",
               owner: myGid,
               "available_credits": 100,
-              // type: "shared",
               accessRights: {
                 [myGid]: {
                   delete: false,
@@ -1180,7 +1177,6 @@ qx.Class.define("osparc.data.Resources", {
               status: "INACTIVE",
               owner: 417,
               "available_credits": 1000,
-              // type: "shared",
               accessRights: {
                 417: {
                   delete: true,
