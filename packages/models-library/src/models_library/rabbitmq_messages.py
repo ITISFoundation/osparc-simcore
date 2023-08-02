@@ -166,8 +166,8 @@ class RabbitAutoscalingStatusMessage(_RabbitAutoscalingBaseMessage):
 
 
 class _RabbitResourceTrackingBaseMessage(RabbitMessageBase):
-    channel_name: Literal["io.simcore.simcore.tracking"] = Field(
-        default="io.simcore.simcore.tracking", const=True
+    channel_name: Literal["io.simcore.service.tracking"] = Field(
+        default="io.simcore.service.tracking", const=True
     )
 
     service_run_id: str = Field(
