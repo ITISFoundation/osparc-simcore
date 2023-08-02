@@ -148,8 +148,8 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
           ctrl.bindProperty("description", "subtitle", null, item, id);
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
           ctrl.bindProperty("walletType", "walletType", null, item, id);
-          ctrl.bindProperty("credits", "credits", null, item, id);
-          ctrl.bindProperty("active", "active", null, item, id);
+          ctrl.bindProperty("creditsAvailable", "creditsAvailable", null, item, id);
+          ctrl.bindProperty("status", "status", null, item, id);
         },
         configureItem: item => {
           item.subscribeToFilterGroup("walletsList");

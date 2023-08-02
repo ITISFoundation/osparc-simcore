@@ -22,14 +22,14 @@ qx.Class.define("osparc.data.model.Wallet", {
     this.base(arguments);
 
     this.set({
-      walletId: walletData["id"],
+      walletId: walletData["wallet_id"],
       name: walletData["name"],
       description: walletData["description"] ? walletData["description"] : null,
       thumbnail: walletData["thumbnail"] ? walletData["thumbnail"] : null,
-      walletType: walletData["type"] ? walletData["type"] : "personal",
-      accessRights: walletData["accessRights"],
-      credits: walletData["credits"] && walletData["credits"]["left"] ? walletData["credits"]["left"] : 0,
-      active: walletData["active"] ? walletData["active"] : false
+      status: walletData["status"] ? walletData["status"] : false,
+      creditsAvailable: walletData["credits_available"] ? walletData["credits_available"] : 0,
+      // walletType: walletData["type"] ? walletData["type"] : "personal",
+      accessRights: walletData["accessRights"]
     });
   },
 
@@ -62,11 +62,18 @@ qx.Class.define("osparc.data.model.Wallet", {
       event: "changeThumbnail"
     },
 
-    walletType: {
-      check: ["personal", "shared"],
-      init: "personal",
+    creditsAvailable: {
+      check: "Number",
+      init: 0,
       nullable: false,
-      event: "changeWalletType"
+      event: "changeCreditsAvailable"
+    },
+
+    status: {
+      check: ["ACTIVE", "INACTIVE"],
+      init: false,
+      nullable: false,
+      event: "changeStatus"
     },
 
     accessRights: {
@@ -76,18 +83,11 @@ qx.Class.define("osparc.data.model.Wallet", {
       event: "changeAccessRights"
     },
 
-    credits: {
-      check: "Number",
-      init: 0,
+    walletType: {
+      check: ["personal", "shared"],
+      init: null,
       nullable: false,
-      event: "changeCredits"
-    },
-
-    active: {
-      check: "Boolean",
-      init: false,
-      nullable: false,
-      event: "changeActive"
+      event: "changeWalletType"
     }
   }
 });

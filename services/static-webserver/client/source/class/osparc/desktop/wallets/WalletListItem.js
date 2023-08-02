@@ -26,16 +26,17 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       apply: "__setDefaultThumbnail"
     },
 
-    credits: {
+    creditsAvailable: {
       check: "Number",
       nullable: false,
-      apply: "__applyCredits"
+      apply: "__applyCreditsAvailable"
     },
 
-    active: {
-      check: "Boolean",
+    status: {
+      check: ["ACTIVE", "INACTIVE"],
+      init: null,
       nullable: false,
-      apply: "__applyActive"
+      apply: "__applyStatus"
     }
   },
 
@@ -70,7 +71,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
           control = new qx.ui.basic.Label();
           this.getChildControl("credits-layout").addAt(control, 1);
           break;
-        case "active-button":
+        case "status-button":
           control = new qx.ui.form.Button().set({
             maxHeight: 30,
             width: 62,
@@ -83,7 +84,8 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
             const store = osparc.store.Store.getInstance();
             const found = store.getWallets().find(wallet => wallet.getWalletId() === parseInt(walletId));
             if (found) {
-              found.setActive(!found.getActive());
+              // switch status
+              found.setStatus(found.getStatus() === "ACTIVE" ? "INACTIVE" : "ACTIVE");
             }
           }, this);
           this._add(control, {
@@ -114,13 +116,13 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       return control || this.base(arguments, id);
     },
 
-    __applyCredits: function(credits) {
-      if (credits !== null) {
+    __applyCredits: function(creditsAvailable) {
+      if (creditsAvailable !== null) {
         const creditsIndicator = this.getChildControl("credits-indicator");
-        creditsIndicator.setCredits(credits);
+        creditsIndicator.setCreditsAvailable(creditsAvailable);
 
         this.getChildControl("credits-label").set({
-          value: credits + this.tr(" credits")
+          value: creditsAvailable + this.tr(" credits")
         });
       }
     },
@@ -196,13 +198,13 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       }
     },
 
-    __applyActive: function(active) {
-      if (active !== null) {
-        const activeButton = this.getChildControl("active-button");
-        activeButton.set({
-          icon: active ? "@FontAwesome5Solid/toggle-on/16" : "@FontAwesome5Solid/toggle-off/16",
-          label: active ? this.tr("ON") : this.tr("OFF"),
-          toolTipText: active ? this.tr("Wallet enabled") : this.tr("Wallet blocked"),
+    __applyStatus: function(status) {
+      if (status) {
+        const statusButton = this.getChildControl("status-button");
+        statusButton.set({
+          icon: status === "ACTIVE" ? "@FontAwesome5Solid/toggle-on/16" : "@FontAwesome5Solid/toggle-off/16",
+          label: status === "ACTIVE" ? this.tr("ON") : this.tr("OFF"),
+          toolTipText: status === "ACTIVE" ? this.tr("Wallet enabled") : this.tr("Wallet blocked"),
           enabled: this.__canIWrite()
         });
       }

@@ -1096,22 +1096,6 @@ qx.Class.define("osparc.data.Resources", {
     },
 
     dummy: {
-      newWalletData: function() {
-        return {
-          id: Math.floor(Math.random() * 1000),
-          name: "New Wallet",
-          description: "",
-          thumbnail: null,
-          type: "shared",
-          owner: null,
-          accessRights: {},
-          credits: {
-            left: 0
-          },
-          active: true
-        };
-      },
-
       addWalletsToStore: function() {
         const store = osparc.store.Store.getInstance();
         osparc.data.Resources.dummy.getWallets()
@@ -1125,7 +1109,7 @@ qx.Class.define("osparc.data.Resources", {
               store.setWallets(wallets);
               setInterval(() => {
                 store.getWallets().forEach(wallet => {
-                  wallet.setCredits(wallet.getCredits()-1);
+                  wallet.setCreditsAvailable(wallet.getCreditsAvailable()-1);
                 });
               }, 30000);
             }
@@ -1133,35 +1117,49 @@ qx.Class.define("osparc.data.Resources", {
           .catch(err => console.error(err));
       },
 
+      newWalletData: function() {
+        return {
+          "wallet_id": Math.floor(Math.random() * 1000),
+          name: "New Wallet",
+          description: "",
+          thumbnail: null,
+          owner: null,
+          "available_credits": 0,
+          status: "ACTIVE",
+          // type: "shared",
+          accessRights: {}
+        };
+      },
+
       getWallets: function() {
         const myGid = osparc.auth.Data.getInstance().getGroupId();
         return new Promise(resolve => {
           resolve({
             wallets: [{
-              id: 1,
+              "wallet_id": 1,
               name: "My Wallet",
               description: "Personal Wallet",
               thumbnail: null,
-              type: "personal",
+              status: "ACTIVE",
               owner: myGid,
+              "available_credits": 10,
+              // type: "personal",
               accessRights: {
                 [myGid]: {
                   delete: true,
                   write: true,
                   read: true
                 }
-              },
-              credits: {
-                left: 10
-              },
-              active: true
+              }
             }, {
-              id: 2,
+              "wallet_id": 2,
               name: "Our Wallet",
               description: "Organization wide Wallet",
               thumbnail: null,
-              type: "shared",
+              status: "ACTIVE",
               owner: myGid,
+              "available_credits": 100,
+              // type: "shared",
               accessRights: {
                 [myGid]: {
                   delete: false,
@@ -1173,18 +1171,16 @@ qx.Class.define("osparc.data.Resources", {
                   write: false,
                   read: true
                 }
-              },
-              credits: {
-                left: 100
-              },
-              active: true
+              }
             }, {
-              id: 3,
+              "wallet_id": 3,
               name: "Another Wallet",
               description: "Organization wide Wallet 2",
               thumbnail: null,
-              type: "shared",
+              status: "INACTIVE",
               owner: 417,
+              "available_credits": 1000,
+              // type: "shared",
               accessRights: {
                 417: {
                   delete: true,
@@ -1196,11 +1192,7 @@ qx.Class.define("osparc.data.Resources", {
                   write: false,
                   read: true
                 }
-              },
-              credits: {
-                left: 1000
-              },
-              active: true
+              }
             }]
           });
         });
