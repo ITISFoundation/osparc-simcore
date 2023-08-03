@@ -174,7 +174,10 @@ class RabbitResourceTrackingBaseMessage(RabbitMessageBase):
     service_run_id: str = Field(
         ..., description="uniquely identitifies the service run"
     )
-    created_at: datetime.datetime = Field(..., description="message creation datetime")
+    created_at: datetime.datetime = Field(
+        default_factory=lambda: datetime.datetime.now(datetime.timezone.utc),
+        description="message creation datetime",
+    )
 
     def routing_key(self) -> str | None:
         return None
