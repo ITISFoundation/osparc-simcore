@@ -5,6 +5,7 @@
 # pylint:disable=too-many-statements
 
 
+import datetime
 import random
 from collections.abc import Awaitable, Callable
 from typing import Any
@@ -17,6 +18,9 @@ from models_library.projects_nodes_io import NodeIDStr
 from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import (
     InstrumentationRabbitMessage,
+    RabbitResourceTrackingHeartbeatMessage,
+    RabbitResourceTrackingStartedMessage,
+    RabbitResourceTrackingStoppedMessage,
     SimcorePlatformStatus,
     _RabbitResourceTrackingBaseMessage,
 )
@@ -52,7 +56,8 @@ def mocked_message_parser(mocker: MockerFixture) -> mock.AsyncMock:
 async def _assert_message_received(
     mocked_message_parser: mock.AsyncMock,
     expected_call_count: int,
-) -> None:
+    message_parser: Callable,
+) -> list:
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.1),
         stop=stop_after_delay(5),
@@ -68,6 +73,10 @@ async def _assert_message_received(
             print(
                 f"<-- rabbitmq message received after [{attempt.retry_state.attempt_number}, {attempt.retry_state.idle_for}]"
             )
+    return [
+        message_parser(mocked_message_parser.call_args_list[c].args[0])
+        for c in range(expected_call_count)
+    ]
 
 
 @pytest.fixture
@@ -120,7 +129,9 @@ async def test_publish_service_started_metrics(
         simcore_user_agent=simcore_user_agent,
         task=random.choice(tasks),  # noqa: S311
     )
-    await _assert_message_received(mocked_message_parser, 1)
+    await _assert_message_received(
+        mocked_message_parser, 1, InstrumentationRabbitMessage.parse_raw
+    )
 
 
 async def test_publish_service_stopped_metrics(
@@ -143,7 +154,9 @@ async def test_publish_service_stopped_metrics(
         task=random.choice(tasks),  # noqa: S311
         task_final_state=random.choice(list(RunningState)),  # noqa: S311
     )
-    await _assert_message_received(mocked_message_parser, 1)
+    await _assert_message_received(
+        mocked_message_parser, 1, InstrumentationRabbitMessage.parse_raw
+    )
 
 
 async def test_publish_service_resource_tracking_started(
@@ -151,7 +164,6 @@ async def test_publish_service_resource_tracking_started(
     user: dict[str, Any],
     project: ProjectAtDB,
     simcore_user_agent: str,
-    pipeline: Callable[..., CompPipelineAtDB],
     tasks: list[CompTaskAtDB],
     mocked_message_parser: mock.AsyncMock,
     faker: Faker,
@@ -165,9 +177,11 @@ async def test_publish_service_resource_tracking_started(
     await consumer.subscribe(
         _RabbitResourceTrackingBaseMessage.get_channel_name(), mocked_message_parser
     )
+    random_service_run_id = faker.pystr()
+    before_publication_time = datetime.datetime.now(datetime.timezone.utc)
     await publish_service_resource_tracking_started(
         publisher,
-        service_run_id=faker.pystr(),
+        service_run_id=random_service_run_id,
         wallet_id=faker.pyint(min_value=1),
         wallet_name=faker.pystr(),
         product_name=osparc_product_name,
@@ -184,7 +198,18 @@ async def test_publish_service_resource_tracking_started(
         service_resources={},
         service_additional_metadata=faker.pydict(),
     )
-    await _assert_message_received(mocked_message_parser, 1)
+    after_publication_time = datetime.datetime.now(datetime.timezone.utc)
+    received_messages = await _assert_message_received(
+        mocked_message_parser, 1, RabbitResourceTrackingStartedMessage.parse_raw
+    )
+    assert isinstance(received_messages[0], RabbitResourceTrackingStartedMessage)
+    assert received_messages[0].service_run_id == random_service_run_id
+    assert received_messages[0].created_at
+    assert (
+        before_publication_time
+        < received_messages[0].created_at
+        < after_publication_time
+    )
 
 
 async def test_publish_service_resource_tracking_stopped(
@@ -198,14 +223,27 @@ async def test_publish_service_resource_tracking_stopped(
     await consumer.subscribe(
         _RabbitResourceTrackingBaseMessage.get_channel_name(), mocked_message_parser
     )
+    random_service_run_id = faker.pystr()
+    before_publication_time = datetime.datetime.now(datetime.timezone.utc)
     await publish_service_resource_tracking_stopped(
         publisher,
-        service_run_id=faker.pystr(),
+        service_run_id=random_service_run_id,
         simcore_platform_status=random.choice(  # noqa: S311
             list(SimcorePlatformStatus)
         ),
     )
-    await _assert_message_received(mocked_message_parser, 1)
+    after_publication_time = datetime.datetime.now(datetime.timezone.utc)
+    received_messages = await _assert_message_received(
+        mocked_message_parser, 1, RabbitResourceTrackingStoppedMessage.parse_raw
+    )
+    assert isinstance(received_messages[0], RabbitResourceTrackingStoppedMessage)
+    assert received_messages[0].service_run_id == random_service_run_id
+    assert received_messages[0].created_at
+    assert (
+        before_publication_time
+        < received_messages[0].created_at
+        < after_publication_time
+    )
 
 
 async def test_publish_service_resource_tracking_heartbeat(
@@ -219,8 +257,21 @@ async def test_publish_service_resource_tracking_heartbeat(
     await consumer.subscribe(
         _RabbitResourceTrackingBaseMessage.get_channel_name(), mocked_message_parser
     )
+    random_service_run_id = faker.pystr()
+    before_publication_time = datetime.datetime.now(datetime.timezone.utc)
     await publish_service_resource_tracking_heartbeat(
         publisher,
-        service_run_id=faker.pystr(),
+        service_run_id=random_service_run_id,
     )
-    await _assert_message_received(mocked_message_parser, 1)
+    after_publication_time = datetime.datetime.now(datetime.timezone.utc)
+    received_messages = await _assert_message_received(
+        mocked_message_parser, 1, RabbitResourceTrackingHeartbeatMessage.parse_raw
+    )
+    assert isinstance(received_messages[0], RabbitResourceTrackingHeartbeatMessage)
+    assert received_messages[0].service_run_id == random_service_run_id
+    assert received_messages[0].created_at
+    assert (
+        before_publication_time
+        < received_messages[0].created_at
+        < after_publication_time
+    )
