@@ -6,18 +6,29 @@
 
 
 import random
-from typing import Any, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
 from unittest import mock
 
 import pytest
+from faker import Faker
 from models_library.projects import ProjectAtDB
+from models_library.projects_nodes_io import NodeIDStr
 from models_library.projects_state import RunningState
-from models_library.rabbitmq_messages import InstrumentationRabbitMessage
+from models_library.rabbitmq_messages import (
+    InstrumentationRabbitMessage,
+    SimcorePlatformStatus,
+    _RabbitResourceTrackingBaseMessage,
+)
+from models_library.services import ServiceKey, ServiceType, ServiceVersion
 from pytest_mock import MockerFixture
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
 from simcore_service_director_v2.utils.rabbitmq import (
+    publish_service_resource_tracking_heartbeat,
+    publish_service_resource_tracking_started,
+    publish_service_resource_tracking_stopped,
     publish_service_started_metrics,
     publish_service_stopped_metrics,
 )
@@ -59,29 +70,46 @@ async def _assert_message_received(
             )
 
 
-async def test_publish_service_started_metrics(
-    rabbitmq_client: Callable[[str], RabbitMQClient],
-    registered_user: Callable[..., dict],
+@pytest.fixture
+def user(registered_user: Callable[..., dict]) -> dict:
+    return registered_user()
+
+
+@pytest.fixture
+async def project(
+    user: dict[str, Any],
     fake_workbench_without_outputs: dict[str, Any],
-    fake_workbench_adjacency: dict[str, Any],
     project: Callable[..., Awaitable[ProjectAtDB]],
-    simcore_user_agent: str,
+) -> ProjectAtDB:
+    return await project(user, workbench=fake_workbench_without_outputs)
+
+
+@pytest.fixture
+def tasks(
+    user: dict[str, Any],
+    project: ProjectAtDB,
+    fake_workbench_adjacency: dict[str, Any],
     pipeline: Callable[..., CompPipelineAtDB],
     tasks: Callable[..., list[CompTaskAtDB]],
+) -> list[CompTaskAtDB]:
+    pipeline(
+        project_id=project.uuid,
+        dag_adjacency_list=fake_workbench_adjacency,
+    )
+    comp_tasks = tasks(user, project)
+    assert len(comp_tasks) > 0
+    return comp_tasks
+
+
+async def test_publish_service_started_metrics(
+    rabbitmq_client: Callable[[str], RabbitMQClient],
+    user: dict[str, Any],
+    simcore_user_agent: str,
+    tasks: list[CompTaskAtDB],
     mocked_message_parser: mock.AsyncMock,
 ):
     consumer = rabbitmq_client("consumer")
     publisher = rabbitmq_client("publisher")
-
-    user = registered_user()
-    prj = await project(user, workbench=fake_workbench_without_outputs)
-    pipeline(
-        project_id=prj.uuid,
-        dag_adjacency_list=fake_workbench_adjacency,
-    )
-    comp_tasks = tasks(user, prj)
-    assert len(comp_tasks) > 0
-    random_task = random.choice(comp_tasks)  # noqa: S311
 
     await consumer.subscribe(
         InstrumentationRabbitMessage.get_channel_name(), mocked_message_parser
@@ -90,44 +118,109 @@ async def test_publish_service_started_metrics(
         publisher,
         user_id=user["id"],
         simcore_user_agent=simcore_user_agent,
-        task=random_task,
+        task=random.choice(tasks),  # noqa: S311
     )
     await _assert_message_received(mocked_message_parser, 1)
 
 
 async def test_publish_service_stopped_metrics(
     rabbitmq_client: Callable[[str], RabbitMQClient],
-    registered_user: Callable[..., dict],
-    fake_workbench_without_outputs: dict[str, Any],
-    fake_workbench_adjacency: dict[str, Any],
-    project: Callable[..., Awaitable[ProjectAtDB]],
+    user: dict[str, Any],
     simcore_user_agent: str,
-    pipeline: Callable[..., CompPipelineAtDB],
-    tasks: Callable[..., list[CompTaskAtDB]],
+    tasks: list[CompTaskAtDB],
     mocked_message_parser: mock.AsyncMock,
 ):
     consumer = rabbitmq_client("consumer")
     publisher = rabbitmq_client("publisher")
 
-    user = registered_user()
-    prj = await project(user, workbench=fake_workbench_without_outputs)
-    pipeline(
-        project_id=prj.uuid,
-        dag_adjacency_list=fake_workbench_adjacency,
-    )
-    comp_tasks = tasks(user, prj)
-    assert len(comp_tasks) > 0
-    random_task = random.choice(comp_tasks)  # noqa: S311
-
     await consumer.subscribe(
         InstrumentationRabbitMessage.get_channel_name(), mocked_message_parser
     )
-    random_task_final_state = random.choice(list(RunningState))  # noqa: S311
     await publish_service_stopped_metrics(
         publisher,
         user_id=user["id"],
         simcore_user_agent=simcore_user_agent,
-        task=random_task,
-        task_final_state=random_task_final_state,
+        task=random.choice(tasks),  # noqa: S311
+        task_final_state=random.choice(list(RunningState)),  # noqa: S311
+    )
+    await _assert_message_received(mocked_message_parser, 1)
+
+
+async def test_publish_service_resource_tracking_started(
+    rabbitmq_client: Callable[[str], RabbitMQClient],
+    user: dict[str, Any],
+    project: ProjectAtDB,
+    simcore_user_agent: str,
+    pipeline: Callable[..., CompPipelineAtDB],
+    tasks: list[CompTaskAtDB],
+    mocked_message_parser: mock.AsyncMock,
+    faker: Faker,
+    osparc_product_name: str,
+):
+    consumer = rabbitmq_client("consumer")
+    publisher = rabbitmq_client("publisher")
+
+    random_task = random.choice(tasks)  # noqa: S311
+
+    await consumer.subscribe(
+        _RabbitResourceTrackingBaseMessage.get_channel_name(), mocked_message_parser
+    )
+    await publish_service_resource_tracking_started(
+        publisher,
+        service_run_id=faker.pystr(),
+        wallet_id=faker.pyint(min_value=1),
+        wallet_name=faker.pystr(),
+        product_name=osparc_product_name,
+        simcore_user_agent=simcore_user_agent,
+        user_id=user["id"],
+        user_email=faker.email(),
+        project_id=project.uuid,
+        project_name=project.name,
+        node_id=random_task.node_id,
+        node_name=project.workbench[NodeIDStr(f"{random_task.node_id}")].label,
+        service_key=ServiceKey(random_task.image.name),
+        service_version=ServiceVersion(random_task.image.tag),
+        service_type=ServiceType.COMPUTATIONAL,
+        service_resources={},
+        service_additional_metadata=faker.pydict(),
+    )
+    await _assert_message_received(mocked_message_parser, 1)
+
+
+async def test_publish_service_resource_tracking_stopped(
+    rabbitmq_client: Callable[[str], RabbitMQClient],
+    mocked_message_parser: mock.AsyncMock,
+    faker: Faker,
+):
+    consumer = rabbitmq_client("consumer")
+    publisher = rabbitmq_client("publisher")
+
+    await consumer.subscribe(
+        _RabbitResourceTrackingBaseMessage.get_channel_name(), mocked_message_parser
+    )
+    await publish_service_resource_tracking_stopped(
+        publisher,
+        service_run_id=faker.pystr(),
+        simcore_platform_status=random.choice(  # noqa: S311
+            list(SimcorePlatformStatus)
+        ),
+    )
+    await _assert_message_received(mocked_message_parser, 1)
+
+
+async def test_publish_service_resource_tracking_heartbeat(
+    rabbitmq_client: Callable[[str], RabbitMQClient],
+    mocked_message_parser: mock.AsyncMock,
+    faker: Faker,
+):
+    consumer = rabbitmq_client("consumer")
+    publisher = rabbitmq_client("publisher")
+
+    await consumer.subscribe(
+        _RabbitResourceTrackingBaseMessage.get_channel_name(), mocked_message_parser
+    )
+    await publish_service_resource_tracking_heartbeat(
+        publisher,
+        service_run_id=faker.pystr(),
     )
     await _assert_message_received(mocked_message_parser, 1)
