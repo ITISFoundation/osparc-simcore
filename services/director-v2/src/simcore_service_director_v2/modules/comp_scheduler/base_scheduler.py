@@ -280,7 +280,11 @@ class BaseCompScheduler(ABC):
         task_final_state: RunningState,
     ) -> None:
         await publish_service_stopped_metrics(
-            self.rabbitmq_client, user_id, simcore_user_agent, task, task_final_state
+            self.rabbitmq_client,
+            user_id=user_id,
+            simcore_user_agent=simcore_user_agent,
+            task=task,
+            task_final_state=task_final_state,
         )
 
     async def _update_states_from_comp_backend(
@@ -305,13 +309,12 @@ class BaseCompScheduler(ABC):
                 ):
                     await publish_service_started_metrics(
                         self.rabbitmq_client,
-                        user_id,
-                        project_id,
-                        run_metadata.get(
+                        user_id=user_id,
+                        simcore_user_agent=run_metadata.get(
                             "simcore_user_agent",
                             UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                         ),
-                        current,
+                        task=current,
                     )
 
             completed_tasks = [

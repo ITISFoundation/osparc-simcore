@@ -23,14 +23,13 @@ async def publish_service_started_metrics(
     rabbitmq_client: RabbitMQClient,
     *,
     user_id: UserID,
-    project_id: ProjectID,
     simcore_user_agent: str,
     task: CompTaskAtDB,
 ) -> None:
     message = InstrumentationRabbitMessage.construct(
         metrics="service_started",
         user_id=user_id,
-        project_id=project_id,
+        project_id=task.project_id,
         node_id=task.node_id,
         service_uuid=task.node_id,
         service_type=task.node_class.value,

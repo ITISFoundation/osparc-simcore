@@ -11,12 +11,16 @@ from unittest import mock
 
 import pytest
 from models_library.projects import ProjectAtDB
+from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import InstrumentationRabbitMessage
 from pytest_mock import MockerFixture
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
-from simcore_service_director_v2.utils.rabbitmq import publish_service_started_metrics
+from simcore_service_director_v2.utils.rabbitmq import (
+    publish_service_started_metrics,
+    publish_service_stopped_metrics,
+)
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -85,8 +89,44 @@ async def test_publish_service_started_metrics(
     await publish_service_started_metrics(
         publisher,
         user_id=user["id"],
-        project_id=prj.uuid,
         simcore_user_agent=simcore_user_agent,
         task=random_task,
+    )
+    await _assert_message_received(mocked_message_parser, 1)
+
+
+async def test_publish_service_stopped_metrics(
+    rabbitmq_client: Callable[[str], RabbitMQClient],
+    registered_user: Callable[..., dict],
+    fake_workbench_without_outputs: dict[str, Any],
+    fake_workbench_adjacency: dict[str, Any],
+    project: Callable[..., Awaitable[ProjectAtDB]],
+    simcore_user_agent: str,
+    pipeline: Callable[..., CompPipelineAtDB],
+    tasks: Callable[..., list[CompTaskAtDB]],
+    mocked_message_parser: mock.AsyncMock,
+):
+    consumer = rabbitmq_client("consumer")
+    publisher = rabbitmq_client("publisher")
+
+    user = registered_user()
+    prj = await project(user, workbench=fake_workbench_without_outputs)
+    pipeline(
+        project_id=prj.uuid,
+        dag_adjacency_list=fake_workbench_adjacency,
+    )
+    comp_tasks = tasks(user, prj)
+    assert len(comp_tasks) > 0
+    random_task = random.choice(comp_tasks)  # noqa: S311
+
+    await consumer.subscribe(
+        InstrumentationRabbitMessage.get_channel_name(), mocked_message_parser
+    )
+    await publish_service_stopped_metrics(
+        publisher,
+        user_id=user["id"],
+        simcore_user_agent=simcore_user_agent,
+        task=random_task,
+        task_final_state=random.choice(list(RunningState)),
     )
     await _assert_message_received(mocked_message_parser, 1)
