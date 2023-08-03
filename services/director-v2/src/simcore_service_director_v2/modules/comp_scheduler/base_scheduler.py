@@ -45,7 +45,12 @@ from ...utils.rabbitmq import (
     publish_service_started_metrics,
     publish_service_stopped_metrics,
 )
-from ...utils.scheduler import COMPLETED_STATES, PROCESSING_STATES, Iteration
+from ...utils.scheduler import (
+    COMPLETED_STATES,
+    PROCESSING_STATES,
+    WAITING_FOR_START_STATES,
+    Iteration,
+)
 from ..db.repositories.comp_pipelines import CompPipelinesRepository
 from ..db.repositories.comp_runs import CompRunsRepository
 from ..db.repositories.comp_tasks import CompTasksRepository
@@ -293,16 +298,21 @@ class BaseCompScheduler(ABC):
             changed_tasks = await self._get_changed_tasks_from_backend(
                 user_id, cluster_id, processing_tasks
             )
-
-            await publish_service_started_metrics(
-                self.rabbitmq_client,
-                user_id,
-                project_id,
-                run_metadata.get(
-                    "simcore_user_agent", UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-                ),
-                changed_tasks,
-            )
+            for previous, current in changed_tasks:
+                if current.state is RunningState.STARTED or (
+                    previous.state in WAITING_FOR_START_STATES
+                    and current.state in COMPLETED_STATES
+                ):
+                    await publish_service_started_metrics(
+                        self.rabbitmq_client,
+                        user_id,
+                        project_id,
+                        run_metadata.get(
+                            "simcore_user_agent",
+                            UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                        ),
+                        current,
+                    )
 
             completed_tasks = [
                 current
