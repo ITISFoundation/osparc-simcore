@@ -23,13 +23,11 @@ from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import RunningState
-from models_library.rabbitmq_messages import InstrumentationRabbitMessage
 from models_library.users import UserID
 from pydantic import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
-from simcore_postgres_database.models.comp_tasks import NodeClass
 
 from ...core.errors import (
     ComputationalBackendNotConnectedError,
@@ -43,12 +41,11 @@ from ...models.comp_pipelines import CompPipelineAtDB
 from ...models.comp_runs import CompRunsAtDB, MetadataDict
 from ...models.comp_tasks import CompTaskAtDB, Image
 from ...utils.computations import get_pipeline_state_from_task_states
-from ...utils.scheduler import (
-    COMPLETED_STATES,
-    PROCESSING_STATES,
-    WAITING_FOR_START_STATES,
-    Iteration,
+from ...utils.rabbitmq import (
+    publish_service_started_metrics,
+    publish_service_stopped_metrics,
 )
+from ...utils.scheduler import COMPLETED_STATES, PROCESSING_STATES, Iteration
 from ..db.repositories.comp_pipelines import CompPipelinesRepository
 from ..db.repositories.comp_runs import CompRunsRepository
 from ..db.repositories.comp_tasks import CompTasksRepository
@@ -270,31 +267,6 @@ class BaseCompScheduler(ABC):
             )
         )
 
-    async def _publish_service_started_metrics(
-        self,
-        user_id: UserID,
-        project_id: ProjectID,
-        simcore_user_agent: str,
-        changed_tasks: list[tuple[_Previous, _Current]],
-    ) -> None:
-        for previous, current in changed_tasks:
-            if current.state is RunningState.STARTED or (
-                previous.state in WAITING_FOR_START_STATES
-                and current.state in COMPLETED_STATES
-            ):
-                message = InstrumentationRabbitMessage.construct(
-                    metrics="service_started",
-                    user_id=user_id,
-                    project_id=project_id,
-                    node_id=current.node_id,
-                    service_uuid=current.node_id,
-                    service_type=NodeClass.COMPUTATIONAL.value,
-                    service_key=current.image.name,
-                    service_tag=current.image.tag,
-                    simcore_user_agent=simcore_user_agent,
-                )
-                await self.rabbitmq_client.publish(message.channel_name, message)
-
     async def _publish_service_stopped_metrics(
         self,
         user_id: UserID,
@@ -302,19 +274,9 @@ class BaseCompScheduler(ABC):
         task: CompTaskAtDB,
         task_final_state: RunningState,
     ) -> None:
-        message = InstrumentationRabbitMessage.construct(
-            metrics="service_stopped",
-            user_id=user_id,
-            project_id=task.project_id,
-            node_id=task.node_id,
-            service_uuid=task.node_id,
-            service_type=NodeClass.COMPUTATIONAL.value,
-            service_key=task.image.name,
-            service_tag=task.image.tag,
-            result=task_final_state,
-            simcore_user_agent=simcore_user_agent,
+        await publish_service_stopped_metrics(
+            self.rabbitmq_client, user_id, simcore_user_agent, task, task_final_state
         )
-        await self.rabbitmq_client.publish(message.channel_name, message)
 
     async def _update_states_from_comp_backend(
         self,
@@ -332,7 +294,8 @@ class BaseCompScheduler(ABC):
                 user_id, cluster_id, processing_tasks
             )
 
-            await self._publish_service_started_metrics(
+            await publish_service_started_metrics(
+                self.rabbitmq_client,
                 user_id,
                 project_id,
                 run_metadata.get(
