@@ -41,7 +41,10 @@ from ...models.comp_pipelines import CompPipelineAtDB
 from ...models.comp_runs import CompRunsAtDB, MetadataDict
 from ...models.comp_tasks import CompTaskAtDB, Image
 from ...utils.computations import get_pipeline_state_from_task_states
-from ...utils.rabbitmq import publish_service_started_metrics
+from ...utils.rabbitmq import (
+    publish_service_resource_tracking_started,
+    publish_service_started_metrics,
+)
 from ...utils.scheduler import (
     COMPLETED_STATES,
     PROCESSING_STATES,
@@ -274,6 +277,7 @@ class BaseCompScheduler(ABC):
         user_id: UserID,
         cluster_id: ClusterID,
         project_id: ProjectID,
+        iteration: PositiveInt,
         pipeline_dag: nx.DiGraph,
         run_metadata: MetadataDict,
     ) -> None:
@@ -284,7 +288,7 @@ class BaseCompScheduler(ABC):
             changed_tasks = await self._get_changed_tasks_from_backend(
                 user_id, cluster_id, processing_tasks
             )
-            tasks_started_since_last_check = [
+            tasks_started_since_last_check: list[CompTaskAtDB] = [
                 current
                 for previous, current in changed_tasks
                 if current.state is RunningState.STARTED
@@ -293,6 +297,32 @@ class BaseCompScheduler(ABC):
                     and current.state in COMPLETED_STATES
                 )
             ]
+
+            # resource tracking
+            def _service_run_id(user_id, project_id, iteration) -> str:
+                return f"{user_id}_{project_id}_{iteration}"
+
+            await asyncio.gather(
+                *(
+                    publish_service_resource_tracking_started(
+                        self.rabbitmq_client,
+                        service_run_id=_service_run_id(user_id, project_id, iteration),
+                        wallet_id=5,
+                        wallet_name="fake",
+                        product_name=run_metadata.get("product_name", "undefined"),
+                        simcore_user_agent=run_metadata.get(
+                            "simcore_user_agent",
+                            UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                        ),
+                        user_id=user_id,
+                        user_name="fake",
+                        user_email="fake",
+                        project_id=project_id,
+                        project_name="fake",
+                    )
+                    for t in tasks_started_since_last_check
+                )
+            )
             # instrumentation
             await asyncio.gather(
                 *(
@@ -382,7 +412,7 @@ class BaseCompScheduler(ABC):
             dag: nx.DiGraph = await self._get_pipeline_dag(project_id)
             # 1. Update our list of tasks with data from backend (state, results)
             await self._update_states_from_comp_backend(
-                user_id, cluster_id, project_id, dag, run_metadata
+                user_id, cluster_id, project_id, iteration, dag, run_metadata
             )
             # 2. Any task following a FAILED task shall be ABORTED
             comp_tasks = await self._set_states_following_failed_to_aborted(
