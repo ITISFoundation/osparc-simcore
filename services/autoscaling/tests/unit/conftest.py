@@ -134,6 +134,7 @@ def disable_dynamic_service_background_task(mocker: MockerFixture) -> Iterator[N
 def disabled_rabbitmq(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.delenv("RABBIT_HOST")
     monkeypatch.delenv("RABBIT_USER")
+    monkeypatch.delenv("RABBIT_SECURE")
     monkeypatch.delenv("RABBIT_PASSWORD")
 
 

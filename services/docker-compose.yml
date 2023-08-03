@@ -281,7 +281,7 @@ services:
 
       # WEBSERVER_ACTIVITY
       WEBSERVER_ACTIVITY: ${WEBSERVER_ACTIVITY}
-      PROMETHEUS_API_VERSION: ${WEBSERVER_PROMETHEUS_API_VERSION}  # seems to be not used
+      PROMETHEUS_API_VERSION: ${WEBSERVER_PROMETHEUS_API_VERSION} # seems to be not used
       PROMETHEUS_URL: ${WEBSERVER_PROMETHEUS_URL}
 
       WEBSERVER_CATALOG: ${WEBSERVER_CATALOG}
@@ -384,6 +384,7 @@ services:
       RABBIT_HOST: ${RABBIT_HOST}
       RABBIT_PASSWORD: ${RABBIT_PASSWORD}
       RABBIT_PORT: ${RABBIT_PORT}
+      RABBIT_SECURE: ${RABBIT_SECURE}
       RABBIT_USER: ${RABBIT_USER}
 
       # ARBITRARY ENV VARS
@@ -507,6 +508,7 @@ services:
       RABBIT_HOST: ${RABBIT_HOST}
       RABBIT_PASSWORD: ${RABBIT_PASSWORD}
       RABBIT_PORT: ${RABBIT_PORT}
+      RABBIT_SECURE: ${RABBIT_SECURE}
       RABBIT_USER: ${RABBIT_USER}
 
       # WEBSERVER_REDIS
@@ -609,6 +611,7 @@ services:
       RABBIT_HOST: ${RABBIT_HOST}
       RABBIT_PASSWORD: ${RABBIT_PASSWORD}
       RABBIT_PORT: ${RABBIT_PORT}
+      RABBIT_SECURE: ${RABBIT_SECURE}
       RABBIT_USER: ${RABBIT_USER}
 
     deploy:
@@ -659,8 +662,7 @@ services:
     volumes:
       - computational_shared_data:${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
       - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      &sidecar-environment
+    environment: &sidecar-environment
       DASK_SCHEDULER_HOST: ${DASK_SCHEDULER_HOST:-dask-scheduler}
       DASK_LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       SIDECAR_LOGLEVEL: ${LOG_LEVEL:-WARNING}

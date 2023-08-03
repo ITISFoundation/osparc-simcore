@@ -365,6 +365,7 @@ async def test_regression_io_log_redirect_cb(
         "POSTGRES_DB",
     ):
         monkeypatch.setenv(mock_empty_str, "")
+    monkeypatch.setenv("RABBIT_SECURE", "false")
 
     mounted_volumes = MountedVolumes(
         run_id=RunID.create(),
