@@ -4,7 +4,7 @@ from abc import abstractmethod
 from enum import Enum, auto
 from typing import Any, Literal, TypeAlias
 
-from pydantic import BaseModel, Field, PositiveInt
+from pydantic import BaseModel, Field
 from pydantic.types import NonNegativeFloat
 
 from .projects import ProjectID
@@ -14,6 +14,7 @@ from .services import ServiceKey, ServiceType, ServiceVersion
 from .services_resources import ServiceResourcesDict
 from .users import UserID
 from .utils.enums import StrAutoEnum
+from .wallets import WalletID
 
 LogLevelInt: TypeAlias = int
 LogMessageStr: TypeAlias = str
@@ -180,7 +181,7 @@ class _RabbitResourceTrackingBaseMessage(RabbitMessageBase):
 
 
 class RabbitResourceTrackingStartedMessage(_RabbitResourceTrackingBaseMessage):
-    wallet_id: PositiveInt
+    wallet_id: WalletID
     wallet_name: str
 
     product_name: str
