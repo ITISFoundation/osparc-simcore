@@ -44,6 +44,7 @@ def app_environment(
             "WEBSERVER_TAGS": "0",
             "WEBSERVER_TRACING": "null",
             "WEBSERVER_VERSION_CONTROL": "0",
+            "WEBSERVER_WALLETS": "0",
         },
     )
 

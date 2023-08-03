@@ -1,18 +1,27 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
+# pylint:disable=protected-access
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-arguments
+# pylint:disable=unused-argument
+# pylint:disable=unused-variable
 
 import hashlib
 import shutil
+import zipfile
 from collections.abc import Callable
 from pathlib import Path
 from uuid import uuid4
 
 import pytest
+from faker import Faker
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
+from pydantic import parse_obj_as
 from servicelib.progress_bar import ProgressBarData
 from settings_library.r_clone import RCloneSettings
 from simcore_sdk.node_data import data_manager
+from simcore_sdk.node_ports_common import filemanager
+from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
+from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 
 pytest_simcore_core_services_selection = [
     "migration",
@@ -26,7 +35,7 @@ pytest_simcore_ops_services_selection = ["minio", "adminer"]
 # UTILS
 
 
-def _remove_path(path: Path) -> None:
+def _empty_path(path: Path) -> None:
     if path.is_file():
         path.unlink()
         assert path.exists() is False
@@ -79,9 +88,14 @@ def _make_dir_with_files(temp_dir: Path, file_count: int) -> Path:
     return content_dir_path
 
 
-@pytest.fixture
-def node_uuid() -> str:
-    return f"{uuid4()}"
+def _zip_directory(dir_to_compress: Path, destination: Path) -> None:
+    dir_to_compress = Path(dir_to_compress)
+    destination = Path(destination)
+
+    with zipfile.ZipFile(destination, "w", zipfile.ZIP_DEFLATED) as zipf:
+        for file_path in dir_to_compress.glob("**/*"):
+            if file_path.is_file():
+                zipf.write(file_path, file_path.relative_to(dir_to_compress))
 
 
 @pytest.fixture
@@ -105,11 +119,6 @@ def random_tmp_dir_generator(temp_dir: Path) -> Callable[[bool], Path]:
 
 
 @pytest.fixture
-def file_content_path(temp_dir: Path) -> Path:
-    return _make_file_with_content(file_path=temp_dir / f"{uuid4()}_test.txt")
-
-
-@pytest.fixture
 def dir_content_one_file_path(temp_dir: Path) -> Path:
     return _make_dir_with_files(temp_dir, file_count=1)
 
@@ -119,11 +128,20 @@ def dir_content_multiple_files_path(temp_dir: Path) -> Path:
     return _make_dir_with_files(temp_dir, file_count=2)
 
 
+@pytest.fixture
+def project_id(project_id: str) -> ProjectID:
+    return ProjectID(project_id)
+
+
+@pytest.fixture
+def node_uuid(faker: Faker) -> NodeID:
+    return NodeID(faker.uuid4())
+
+
 @pytest.mark.parametrize(
     "content_path",
     [
         # pylint: disable=no-member
-        pytest.lazy_fixture("file_content_path"),
         pytest.lazy_fixture("dir_content_one_file_path"),
         pytest.lazy_fixture("dir_content_multiple_files_path"),
     ],
@@ -132,17 +150,18 @@ async def test_valid_upload_download(
     node_ports_config,
     content_path: Path,
     user_id: int,
-    project_id: str,
-    node_uuid: str,
+    project_id: ProjectID,
+    node_uuid: NodeID,
     r_clone_settings: RCloneSettings,
+    mock_io_log_redirect_cb: LogRedirectCB,
 ):
     async with ProgressBarData(steps=2) as progress_bar:
-        await data_manager.push(
+        await data_manager._push_directory(
             user_id=user_id,
             project_id=project_id,
             node_uuid=node_uuid,
             source_path=content_path,
-            io_log_redirect_cb=None,
+            io_log_redirect_cb=mock_io_log_redirect_cb,
             progress_bar=progress_bar,
             r_clone_settings=r_clone_settings,
         )
@@ -151,15 +170,15 @@ async def test_valid_upload_download(
 
         uploaded_hashes = _get_file_hashes_in_path(content_path)
 
-        _remove_path(content_path)
+        _empty_path(content_path)
 
-        await data_manager.pull(
+        await data_manager._pull_directory(
             user_id=user_id,
             project_id=project_id,
             node_uuid=node_uuid,
             destination_path=content_path,
-            io_log_redirect_cb=None,
-            r_clone_settings=None,
+            io_log_redirect_cb=mock_io_log_redirect_cb,
+            r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
         )
         assert progress_bar._continuous_progress_value == pytest.approx(2.0)
@@ -173,7 +192,6 @@ async def test_valid_upload_download(
     "content_path",
     [
         # pylint: disable=no-member
-        pytest.lazy_fixture("file_content_path"),
         pytest.lazy_fixture("dir_content_one_file_path"),
         pytest.lazy_fixture("dir_content_multiple_files_path"),
     ],
@@ -182,42 +200,120 @@ async def test_valid_upload_download_saved_to(
     node_ports_config,
     content_path: Path,
     user_id: int,
-    project_id: str,
-    node_uuid: str,
+    project_id: ProjectID,
+    node_uuid: NodeID,
     random_tmp_dir_generator: Callable,
     r_clone_settings: RCloneSettings,
+    mock_io_log_redirect_cb: LogRedirectCB,
 ):
     async with ProgressBarData(steps=2) as progress_bar:
-        await data_manager.push(
+        await data_manager._push_directory(
             user_id=user_id,
             project_id=project_id,
             node_uuid=node_uuid,
             source_path=content_path,
-            io_log_redirect_cb=None,
+            io_log_redirect_cb=mock_io_log_redirect_cb,
             progress_bar=progress_bar,
             r_clone_settings=r_clone_settings,
         )
         # pylint: disable=protected-access
-        assert progress_bar._continuous_progress_value == pytest.approx(1)
+        assert progress_bar._continuous_progress_value == pytest.approx(  # noqa: SLF001
+            1
+        )
 
         uploaded_hashes = _get_file_hashes_in_path(content_path)
 
-        _remove_path(content_path)
+        _empty_path(content_path)
 
         new_destination = random_tmp_dir_generator(is_file=content_path.is_file())
 
-        await data_manager.pull(
+        await data_manager._pull_directory(
             user_id=user_id,
             project_id=project_id,
             node_uuid=node_uuid,
             destination_path=content_path,
             save_to=new_destination,
-            io_log_redirect_cb=None,
-            r_clone_settings=None,
+            io_log_redirect_cb=mock_io_log_redirect_cb,
+            r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
         )
-        assert progress_bar._continuous_progress_value == pytest.approx(2)
+        assert progress_bar._continuous_progress_value == pytest.approx(  # noqa: SLF001
+            2
+        )
 
     downloaded_hashes = _get_file_hashes_in_path(new_destination)
 
     assert uploaded_hashes == downloaded_hashes
+
+
+@pytest.mark.parametrize(
+    "content_path",
+    [
+        # pylint: disable=no-member
+        pytest.lazy_fixture("dir_content_one_file_path"),
+        pytest.lazy_fixture("dir_content_multiple_files_path"),
+    ],
+)
+async def test_delete_legacy_archive(
+    node_ports_config,
+    content_path: Path,
+    user_id: int,
+    project_id: ProjectID,
+    node_uuid: NodeID,
+    r_clone_settings: RCloneSettings,
+    temp_dir: Path,
+):
+    async with ProgressBarData(steps=2) as progress_bar:
+        # NOTE: legacy archives can no longer be crated
+        # generating a "legacy style archive"
+        archive_into_dir = temp_dir / f"legacy-archive-dir-{uuid4()}"
+        archive_into_dir.mkdir(parents=True, exist_ok=True)
+        legacy_archive_name = archive_into_dir / f"{content_path.stem}.zip"
+        _zip_directory(dir_to_compress=content_path, destination=legacy_archive_name)
+
+        await filemanager.upload_path(
+            user_id=user_id,
+            store_id=SIMCORE_LOCATION,
+            store_name=None,
+            s3_object=parse_obj_as(
+                SimcoreS3FileID, f"{project_id}/{node_uuid}/{legacy_archive_name.name}"
+            ),
+            path_to_upload=legacy_archive_name,
+            io_log_redirect_cb=None,
+            progress_bar=progress_bar,
+            r_clone_settings=r_clone_settings,
+        )
+
+        # pylint: disable=protected-access
+        assert progress_bar._continuous_progress_value == pytest.approx(  # noqa: SLF001
+            1
+        )
+
+        assert (
+            await data_manager._state_metadata_entry_exists(
+                user_id=user_id,
+                project_id=project_id,
+                node_uuid=node_uuid,
+                path=content_path,
+                is_archive=True,
+            )
+            is True
+        )
+
+        await data_manager._delete_legacy_archive(
+            user_id=user_id,
+            project_id=project_id,
+            node_uuid=node_uuid,
+            path=content_path,
+        )
+
+        assert (
+            await data_manager._state_metadata_entry_exists(
+                user_id=user_id,
+                project_id=project_id,
+                node_uuid=node_uuid,
+                path=content_path,
+                is_archive=True,
+            )
+            is False
+        )

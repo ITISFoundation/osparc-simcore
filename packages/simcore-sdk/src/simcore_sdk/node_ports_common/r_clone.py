@@ -2,7 +2,6 @@ import asyncio
 import logging
 import re
 import shlex
-from abc import abstractmethod
 from asyncio.streams import StreamReader
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -18,6 +17,8 @@ from servicelib.utils import logged_gather
 from settings_library.r_clone import RCloneSettings
 from settings_library.utils_r_clone import get_r_clone_config
 
+from .r_clone_utils import BaseRCloneLogParser, DebugLogParser, SyncProgressLogParser
+
 S3_RETRIES: Final[int] = 3
 S3_PARALLELISM: Final[int] = 5
 
@@ -25,12 +26,6 @@ _S3_CONFIG_KEY_DESTINATION: Final[str] = "s3-destination"
 _S3_CONFIG_KEY_SOURCE: Final[str] = "s3-source"
 
 _logger = logging.getLogger(__name__)
-
-
-class BaseRCloneLogParser:
-    @abstractmethod
-    async def __call__(self, logs: str) -> None:
-        ...
 
 
 class BaseRCloneError(PydanticErrorMixin, RuntimeError):
@@ -43,7 +38,7 @@ class RCloneFailedError(BaseRCloneError):
     )
 
 
-class RCloneFileFoundError(BaseRCloneError):
+class RCloneDirectoryNotFoundError(BaseRCloneError):
     msg_template: str = (
         "Provided path '{local_directory_path}' is a file. Expects a directory!"
     )
@@ -72,7 +67,7 @@ async def _read_stream(
             break
 
 
-async def _async_command(
+async def _async_r_clone_command(
     *cmd: str,
     r_clone_log_parsers: list[BaseRCloneLogParser] | None = None,
     cwd: str | None = None,
@@ -87,6 +82,7 @@ async def _async_command(
     )
 
     if r_clone_log_parsers:
+        assert proc.stdout  # nosec
         await asyncio.wait([_read_stream(proc.stdout, r_clone_log_parsers)])
 
     stdout, stderr = await proc.communicate()
@@ -109,45 +105,24 @@ async def is_r_clone_available(r_clone_settings: RCloneSettings | None) -> bool:
     if r_clone_settings is None:
         return False
     try:
-        await _async_command("rclone", "--version")
+        await _async_r_clone_command("rclone", "--version")
         return True
     except RCloneFailedError:
         return False
 
 
-class SyncProgressLogParser(BaseRCloneLogParser):
-    """
-    log processor that only yields and progress updates detected in the logs.
-    """
+def _get_exclude_filters(exclude_patterns: set[str] | None) -> list[str]:
+    if exclude_patterns is None:
+        return []
 
-    def __init__(self, progress_bar: ProgressBarData) -> None:
-        self._last_update_value = 0
-        self.progress_bar = progress_bar
+    exclude_options: list[str] = []
+    for entry in exclude_patterns:
+        exclude_options.append("--exclude")
+        # NOTE: in rclone ** is the equivalent of * in unix
+        # for details about rclone filters https://rclone.org/filtering/
+        exclude_options.append(entry.replace("*", "**"))
 
-    async def __call__(self, logs: str) -> None:
-        # Try to do it with https://github.com/r1chardj0n3s/parse
-        if "Transferred" not in logs:
-            return
-
-        to_parse = logs.split("Transferred")[-1]
-        match = re.search(r"(\d{1,3})%", to_parse)
-        if not match:
-            return
-
-        # extracting percentage and only emitting if
-        # value is bigger than the one previously emitted
-        # avoids to send the same progress twice
-        percentage = int(match.group(1))
-        if percentage > self._last_update_value:
-            progress_delta = percentage - self._last_update_value
-            await self.progress_bar.update(progress_delta)
-            self._last_update_value = percentage
-
-
-class DebugLogParser(BaseRCloneLogParser):
-    async def __call__(self, logs: str) -> None:
-        no_new_line_ending_logs = logs.rstrip("\n")
-        print(f"|{no_new_line_ending_logs}|")
+    return exclude_options
 
 
 async def _sync_sources(
@@ -158,6 +133,7 @@ async def _sync_sources(
     destination: str,
     local_dir: Path,
     s3_config_key: str,
+    exclude_patterns: set[str] | None,
     s3_retries: int = S3_RETRIES,
     s3_parallelism: int = S3_PARALLELISM,
     debug_logs: bool,
@@ -188,6 +164,8 @@ async def _sync_sources(
             "sync",
             shlex.quote(source),
             shlex.quote(destination),
+            # filter options
+            *_get_exclude_filters(exclude_patterns),
             "--progress",
             "--copy-links",
             "--verbose",
@@ -199,7 +177,7 @@ async def _sync_sources(
             )
             r_clone_log_parsers.append(SyncProgressLogParser(sub_progress))
 
-            await _async_command(
+            await _async_r_clone_command(
                 *r_clone_command,
                 r_clone_log_parsers=r_clone_log_parsers,
                 cwd=f"{local_dir}",
@@ -208,7 +186,7 @@ async def _sync_sources(
 
 def _raise_if_directory_is_file(local_directory_path: Path) -> None:
     if local_directory_path.exists() and local_directory_path.is_file():
-        raise RCloneFileFoundError(local_directory_path=local_directory_path)
+        raise RCloneDirectoryNotFoundError(local_directory_path=local_directory_path)
 
 
 async def sync_local_to_s3(
@@ -217,6 +195,7 @@ async def sync_local_to_s3(
     *,
     local_directory_path: Path,
     upload_s3_link: AnyUrl,
+    exclude_patterns: set[str] | None = None,
     debug_logs: bool = False,
 ) -> None:
     """transfer the contents of a local directory to an s3 path
@@ -235,6 +214,7 @@ async def sync_local_to_s3(
         destination=f"{_S3_CONFIG_KEY_DESTINATION}:{upload_s3_path}",
         local_dir=local_directory_path,
         s3_config_key=_S3_CONFIG_KEY_DESTINATION,
+        exclude_patterns=exclude_patterns,
         debug_logs=debug_logs,
     )
 
@@ -245,6 +225,7 @@ async def sync_s3_to_local(
     *,
     local_directory_path: Path,
     download_s3_link: AnyUrl,
+    exclude_patterns: set[str] | None = None,
     debug_logs: bool = False,
 ) -> None:
     """transfer the contents of a path in s3 to a local directory
@@ -263,5 +244,6 @@ async def sync_s3_to_local(
         destination=f"{local_directory_path}",
         local_dir=local_directory_path,
         s3_config_key=_S3_CONFIG_KEY_SOURCE,
+        exclude_patterns=exclude_patterns,
         debug_logs=debug_logs,
     )

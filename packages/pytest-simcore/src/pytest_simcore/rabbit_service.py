@@ -4,7 +4,7 @@
 
 import asyncio
 import logging
-from typing import AsyncIterator, Callable
+from collections.abc import AsyncIterator, Callable
 
 import aio_pika
 import pytest
@@ -49,6 +49,7 @@ async def rabbit_settings(
         RABBIT_PASSWORD=testing_environ_vars["RABBIT_PASSWORD"],
         RABBIT_HOST=get_localhost_ip(),
         RABBIT_PORT=PortInt(port),
+        RABBIT_SECURE=testing_environ_vars["RABBIT_SECURE"],
     )
 
     await wait_till_rabbit_responsive(settings.dsn)
@@ -65,8 +66,9 @@ async def rabbit_service(
     NOTE: Use this fixture to setup client app
     """
     monkeypatch.setenv("RABBIT_HOST", rabbit_settings.RABBIT_HOST)
-    monkeypatch.setenv("RABBIT_PORT", str(rabbit_settings.RABBIT_PORT))
+    monkeypatch.setenv("RABBIT_PORT", f"{rabbit_settings.RABBIT_PORT}")
     monkeypatch.setenv("RABBIT_USER", rabbit_settings.RABBIT_USER)
+    monkeypatch.setenv("RABBIT_SECURE", f"{rabbit_settings.RABBIT_SECURE}")
     monkeypatch.setenv(
         "RABBIT_PASSWORD", rabbit_settings.RABBIT_PASSWORD.get_secret_value()
     )

@@ -9,19 +9,17 @@ import json
 import logging
 import os
 from collections import namedtuple
-from itertools import tee
-from pathlib import Path
-from typing import (
-    Any,
+from collections.abc import (
     AsyncIterable,
     AsyncIterator,
     Awaitable,
     Callable,
     Coroutine,
     Iterable,
-    Optional,
-    cast,
 )
+from itertools import tee
+from pathlib import Path
+from typing import Any, Optional, cast
 from uuid import uuid4
 
 import aioboto3
@@ -57,7 +55,6 @@ from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.users import UserID
 from pydantic import AnyHttpUrl, parse_obj_as
-from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from servicelib.fastapi.long_running_tasks.client import (
     Client,
@@ -75,6 +72,7 @@ from simcore_postgres_database.models.projects_networks import projects_networks
 from simcore_postgres_database.models.services import services_access_rights
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_data import data_manager
+from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 from simcore_sdk.node_ports_v2 import DBManager, Nodeports, Port
 from simcore_service_director_v2.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
 from simcore_service_director_v2.core.settings import AppSettings, RCloneSettings
@@ -236,14 +234,16 @@ def services_node_uuids(
         key = registry_service_data["schema"]["key"]
         version = registry_service_data["schema"]["version"]
 
+        found_node_uuid: str | None = None
         for node_uuid, workbench_service_data in fake_dy_workbench.items():
             if (
                 workbench_service_data["key"] == key
                 and workbench_service_data["version"] == version
             ):
-                return node_uuid
-
-        assert False, f"No node_uuid found for {key}:{version}"
+                found_node_uuid = node_uuid
+                break
+        assert found_node_uuid is not None, f"No node_uuid found for {key}:{version}"
+        return found_node_uuid
 
     return ServicesNodeUUIDs(
         sleeper=_get_node_uuid(sleeper_service),
@@ -298,8 +298,7 @@ async def db_manager(aiopg_engine: aiopg.sa.engine.Engine) -> DBManager:
 
 
 def _is_docker_r_clone_plugin_installed() -> bool:
-    is_plugin_installed = "rclone:" in run_command("docker plugin ls")
-    return is_plugin_installed
+    return "rclone:" in run_command("docker plugin ls")
 
 
 @pytest.fixture(
@@ -318,9 +317,9 @@ def dev_feature_r_clone_enabled(request) -> str:
     return request.param
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def mock_env(
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     redis_service: RedisSettings,
     network_name: str,
     dev_feature_r_clone_enabled: str,
@@ -436,6 +435,14 @@ async def projects_networks_db(
             constraint=projects_networks.primary_key, set_=row_data
         )
         await conn.execute(upsert_snapshot)
+
+
+@pytest.fixture
+def mock_io_log_redirect_cb() -> LogRedirectCB:
+    async def _mocked_function(*args, **kwargs) -> None:
+        pass
+
+    return _mocked_function
 
 
 async def _get_mapped_nodeports_values(
@@ -611,31 +618,33 @@ async def _fetch_data_via_data_manager(
     r_clone_settings: RCloneSettings,
     dir_tag: str,
     user_id: UserID,
-    project_id: str,
-    service_uuid: str,
+    project_id: ProjectID,
+    service_uuid: NodeID,
     temp_dir: Path,
+    io_log_redirect_cb: LogRedirectCB,
 ) -> Path:
     save_to = temp_dir / f"data-manager_{dir_tag}_{uuid4()}"
     save_to.mkdir(parents=True, exist_ok=True)
 
     assert (
-        await data_manager.exists(
+        await data_manager._state_metadata_entry_exists(
             user_id=user_id,
             project_id=project_id,
             node_uuid=service_uuid,
-            file_path=DY_SERVICES_STATE_PATH,
+            path=DY_SERVICES_STATE_PATH,
+            is_archive=False,
         )
         is True
     )
 
     async with ProgressBarData(steps=1) as progress_bar:
-        await data_manager.pull(
+        await data_manager._pull_directory(
             user_id=user_id,
             project_id=project_id,
             node_uuid=service_uuid,
             destination_path=DY_SERVICES_STATE_PATH,
             save_to=save_to,
-            io_log_redirect_cb=None,
+            io_log_redirect_cb=io_log_redirect_cb,
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
         )
@@ -869,6 +878,7 @@ async def test_nodeports_integration(
     tmp_path: Path,
     osparc_product_name: str,
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
+    mock_io_log_redirect_cb: LogRedirectCB,
 ) -> None:
     """
     Creates a new project with where the following connections
@@ -1063,9 +1073,10 @@ async def test_nodeports_integration(
             r_clone_settings=r_clone_settings,
             dir_tag="dy",
             user_id=current_user["id"],
-            project_id=str(current_study.uuid),
+            project_id=current_study.uuid,
             service_uuid=services_node_uuids.dy,
             temp_dir=tmp_path,
+            io_log_redirect_cb=mock_io_log_redirect_cb,
         )
     )
 
@@ -1082,9 +1093,10 @@ async def test_nodeports_integration(
             r_clone_settings=r_clone_settings,
             dir_tag="dy_compose_spec",
             user_id=current_user["id"],
-            project_id=str(current_study.uuid),
+            project_id=current_study.uuid,
             service_uuid=services_node_uuids.dy_compose_spec,
             temp_dir=tmp_path,
+            io_log_redirect_cb=mock_io_log_redirect_cb,
         )
     )
 

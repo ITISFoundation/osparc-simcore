@@ -45,13 +45,12 @@ WAIT_FOR_S3_BACKEND_TO_UPDATE: Final[float] = 1.0
     ]
 )
 def file_name(request: pytest.FixtureRequest) -> str:
-    return request.param  # type: ignore
+    return request.param
 
 
 @pytest.fixture
 def local_file_for_download(upload_file_dir: Path, file_name: str) -> Path:
-    local_file_path = upload_file_dir / f"__local__{file_name}"
-    return local_file_path
+    return upload_file_dir / f"__local__{file_name}"
 
 
 @pytest.fixture
@@ -101,7 +100,7 @@ async def _create_random_binary_file(
     file_path: Path,
     file_size: ByteSize,
     # NOTE: bigger files get created faster with bigger chunk_size
-    chunk_size: int = parse_obj_as(ByteSize, "1mib"),
+    chunk_size: int = parse_obj_as(ByteSize, "1mib"),  # noqa: B008
 ):
     async with aiofiles.open(file_path, mode="wb") as file:
         bytes_written = 0
@@ -143,6 +142,7 @@ async def _upload_local_dir_to_s3(
     r_clone_settings: RCloneSettings,
     s3_directory_link: AnyUrl,
     source_dir: Path,
+    *,
     check_progress: bool = False,
 ) -> None:
     # NOTE: progress is enforced only when uploading and only when using
@@ -168,7 +168,7 @@ async def _upload_local_dir_to_s3(
             debug_logs=True,
         )
     if check_progress:
-        # NOTE: a progress of 1 is always sent ny the progress bar
+        # NOTE: a progress of 1 is always sent by the progress bar
         # we want to check that rclone also reports some progress entries
         assert len(progress_entries) > 1
 
@@ -386,7 +386,7 @@ async def test_raises_error_if_local_directory_path_is_a_file(
     file_path = await _create_file_of_size(
         tmp_path, name=f"test{faker.uuid4()}.bin", file_size=ByteSize(1)
     )
-    with pytest.raises(r_clone.RCloneFileFoundError):
+    with pytest.raises(r_clone.RCloneDirectoryNotFoundError):
         await r_clone.sync_local_to_s3(
             r_clone_settings=AsyncMock(),
             progress_bar=AsyncMock(),
@@ -394,7 +394,7 @@ async def test_raises_error_if_local_directory_path_is_a_file(
             upload_s3_link=AsyncMock(),
             debug_logs=True,
         )
-    with pytest.raises(r_clone.RCloneFileFoundError):
+    with pytest.raises(r_clone.RCloneDirectoryNotFoundError):
         await r_clone.sync_s3_to_local(
             r_clone_settings=AsyncMock(),
             progress_bar=AsyncMock(),
