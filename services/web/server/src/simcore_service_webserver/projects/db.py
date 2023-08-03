@@ -21,7 +21,7 @@ from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from models_library.wallets import WalletGetDB, WalletID
+from models_library.wallets import WalletDB, WalletID
 from pydantic import ValidationError, parse_obj_as
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
@@ -925,7 +925,7 @@ class ProjectDBAPI(BaseProjectDB):
     async def get_project_wallet(
         self,
         project_uuid: ProjectID,
-    ) -> WalletGetDB | None:
+    ) -> WalletDB | None:
         async with self.engine.acquire() as conn:
             result = await conn.execute(
                 sa.select(
@@ -946,7 +946,7 @@ class ProjectDBAPI(BaseProjectDB):
                 .where(projects_to_wallet.c.project_uuid == f"{project_uuid}")
             )
             row = await result.fetchone()
-            return parse_obj_as(WalletGetDB, row) if row else None
+            return parse_obj_as(WalletDB, row) if row else None
 
     async def connect_wallet_to_project(
         self,

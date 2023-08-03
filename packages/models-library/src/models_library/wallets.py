@@ -15,7 +15,7 @@ class WalletStatus(str, enum.Enum):
 ### DB
 
 
-class WalletGetDB(BaseModel):
+class WalletDB(BaseModel):
     wallet_id: WalletID
     name: str
     description: str | None
@@ -38,7 +38,7 @@ class WalletGetDB(BaseModel):
     )
 
 
-class UserWalletGetDB(WalletGetDB):
+class UserWalletDB(WalletDB):
     read: bool
     write: bool
     delete: bool

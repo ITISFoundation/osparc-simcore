@@ -15,7 +15,7 @@ from sqlalchemy import func, literal_column
 from sqlalchemy.sql import select
 
 from ..db.plugin import get_database_engine
-from .exceptions import WalletGroupNotFoundError
+from .errors import WalletGroupNotFoundError
 
 _logger = logging.getLogger(__name__)
 
@@ -110,7 +110,9 @@ async def get_wallet_group(
         result = await conn.execute(stmt)
         row = await result.first()
         if row is None:
-            raise WalletGroupNotFoundError(wallet_id=wallet_id, group_id=group_id)
+            raise WalletGroupNotFoundError(
+                reason=f"Wallet {wallet_id} group {group_id} not found"
+            )
         return parse_obj_as(WalletGroupGetDB, row)
 
 
@@ -138,7 +140,9 @@ async def update_wallet_group(
         )
         row = await result.first()
         if row is None:
-            raise WalletGroupNotFoundError(wallet_id=wallet_id, group_id=group_id)
+            raise WalletGroupNotFoundError(
+                reason=f"Wallet {wallet_id} group {group_id} not found"
+            )
         return parse_obj_as(WalletGroupGetDB, row)
 
 

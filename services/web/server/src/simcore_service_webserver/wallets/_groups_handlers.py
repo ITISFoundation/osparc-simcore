@@ -25,7 +25,7 @@ from ..utils_aiohttp import envelope_json_response
 from . import _groups_api
 from ._groups_api import WalletGroupGet
 from ._handlers import WalletsPathParams
-from .exceptions import WalletAccessForbiddenError, WalletGroupNotFoundError
+from .errors import WalletAccessForbiddenError, WalletGroupNotFoundError
 
 _logger = logging.getLogger(__name__)
 

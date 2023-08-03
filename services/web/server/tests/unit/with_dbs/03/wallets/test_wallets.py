@@ -57,6 +57,7 @@ async def test_wallets_full_workflow(
     assert data[0]["description"] == "Custom description"
     assert data[0]["thumbnail"] == None
     assert data[0]["status"] == "ACTIVE"
+    assert data[0]["available_credits"] == 0.0
     store_modified_field = arrow.get(data[0]["modified"])
 
     # update user wallet

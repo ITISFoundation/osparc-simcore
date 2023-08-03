@@ -26,7 +26,7 @@ from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _api
-from .exceptions import WalletAccessForbiddenError, WalletNotFoundError
+from .errors import WalletAccessForbiddenError, WalletNotFoundError
 
 _logger = logging.getLogger(__name__)
 
@@ -80,7 +80,6 @@ class _CreateWalletBodyParams(BaseModel):
 @_handle_wallets_exceptions
 async def create_wallet(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
-    # path_params = parse_request_path_parameters_as(_ProjectCommentsPathParams, request)
     body_params = await parse_request_body_as(_CreateWalletBodyParams, request)
 
     wallet: WalletGet = await _api.create_wallet(

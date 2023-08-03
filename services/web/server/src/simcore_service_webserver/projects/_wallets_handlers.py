@@ -8,7 +8,7 @@ import logging
 from aiohttp import web
 from models_library.api_schemas_webserver.wallets import WalletGet
 from models_library.projects import ProjectID
-from models_library.wallets import WalletGetDB, WalletID
+from models_library.wallets import WalletDB, WalletID
 from pydantic import BaseModel, Extra
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
@@ -61,7 +61,7 @@ async def get_project_wallet(request: web.Request):
         include_state=False,
     )
 
-    wallet_db: WalletGetDB | None = await db.get_project_wallet(
+    wallet_db: WalletDB | None = await db.get_project_wallet(
         project_uuid=path_params.project_id
     )
     output: WalletGet | None = WalletGet(**wallet_db.dict()) if wallet_db else None

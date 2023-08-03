@@ -7,7 +7,7 @@ import logging
 
 from aiohttp import web
 from models_library.users import GroupID, UserID
-from models_library.wallets import UserWalletGetDB, WalletGetDB, WalletID, WalletStatus
+from models_library.wallets import UserWalletDB, WalletDB, WalletID, WalletStatus
 from pydantic import parse_obj_as
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.wallet_to_groups import wallet_to_groups
@@ -17,7 +17,7 @@ from sqlalchemy.dialects.postgresql import BOOLEAN, INTEGER
 from sqlalchemy.sql import select
 
 from ..db.plugin import get_database_engine
-from .exceptions import WalletAccessForbiddenError, WalletNotFoundError
+from .errors import WalletAccessForbiddenError, WalletNotFoundError
 
 _logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ async def create_wallet(
     wallet_name: str,
     description: str | None,
     thumbnail: str | None,
-) -> WalletGetDB:
+) -> WalletDB:
     async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(
             wallets.insert()
@@ -44,13 +44,13 @@ async def create_wallet(
             .returning(literal_column("*"))
         )
         row = await result.first()
-        return parse_obj_as(WalletGetDB, row)
+        return parse_obj_as(WalletDB, row)
 
 
 async def list_wallets_for_user(
     app: web.Application,
     user_id: UserID,
-) -> list[UserWalletGetDB]:
+) -> list[UserWalletDB]:
     stmt = (
         select(
             wallets.c.wallet_id,
@@ -92,9 +92,9 @@ async def list_wallets_for_user(
 
     async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(stmt)
-        output: list[UserWalletGetDB] = []
+        output: list[UserWalletDB] = []
         for row in await result.fetchall():
-            output.append(parse_obj_as(UserWalletGetDB, row))
+            output.append(parse_obj_as(UserWalletDB, row))
         return output
 
 
@@ -102,7 +102,7 @@ async def get_wallet_for_user(
     app: web.Application,
     user_id: UserID,
     wallet_id: WalletID,
-) -> UserWalletGetDB:
+) -> UserWalletDB:
     stmt = (
         select(
             wallets.c.wallet_id,
@@ -148,12 +148,12 @@ async def get_wallet_for_user(
         row = await result.first()
         if row is None:
             raise WalletAccessForbiddenError(
-                wallet_id=wallet_id,
+                reason=f"User does not have access to the wallet {wallet_id}. Or wallet does not exist.",
             )
-        return parse_obj_as(UserWalletGetDB, row)
+        return parse_obj_as(UserWalletDB, row)
 
 
-async def get_wallet(app: web.Application, wallet_id: WalletID) -> WalletGetDB:
+async def get_wallet(app: web.Application, wallet_id: WalletID) -> WalletDB:
     stmt = (
         select(
             wallets.c.wallet_id,
@@ -172,8 +172,8 @@ async def get_wallet(app: web.Application, wallet_id: WalletID) -> WalletGetDB:
         result = await conn.execute(stmt)
         row = await result.first()
         if row is None:
-            raise WalletNotFoundError(wallet_id=wallet_id)
-        return parse_obj_as(WalletGetDB, row)
+            raise WalletNotFoundError(reason=f"Wallet {wallet_id} not found.")
+        return parse_obj_as(WalletDB, row)
 
 
 async def update_wallet(
@@ -183,7 +183,7 @@ async def update_wallet(
     description: str,
     thumbnail: str,
     status: WalletStatus,
-) -> WalletGetDB:
+) -> WalletDB:
     async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(
             wallets.update()
@@ -199,8 +199,8 @@ async def update_wallet(
         )
         row = await result.first()
         if row is None:
-            raise WalletNotFoundError(wallet_id=wallet_id)
-        return parse_obj_as(WalletGetDB, row)
+            raise WalletNotFoundError(reason=f"Wallet {wallet_id} not found.")
+        return parse_obj_as(WalletDB, row)
 
 
 async def delete_wallet(
