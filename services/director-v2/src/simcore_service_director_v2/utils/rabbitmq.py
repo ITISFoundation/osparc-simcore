@@ -21,6 +21,7 @@ from ..models.comp_tasks import CompTaskAtDB
 
 async def publish_service_started_metrics(
     rabbitmq_client: RabbitMQClient,
+    *,
     user_id: UserID,
     project_id: ProjectID,
     simcore_user_agent: str,
@@ -42,6 +43,7 @@ async def publish_service_started_metrics(
 
 async def publish_service_stopped_metrics(
     rabbitmq_client: RabbitMQClient,
+    *,
     user_id: UserID,
     simcore_user_agent: str,
     task: CompTaskAtDB,
@@ -80,7 +82,7 @@ async def publish_service_resource_tracking_started(  # noqa: PLR0913
     service_version: ServiceVersion,
     service_type: ServiceType,
     service_resources: ServiceResourcesDict,
-    service_additional_metadata: dict[str, Any]
+    service_additional_metadata: dict[str, Any],
 ) -> None:
     message = RabbitResourceTrackingStartedMessage(
         service_run_id=service_run_id,
@@ -107,7 +109,7 @@ async def publish_service_resource_tracking_stopped(
     rabbitmq_client: RabbitMQClient,
     service_run_id: str,
     *,
-    simcore_platform_status: SimcorePlatformStatus
+    simcore_platform_status: SimcorePlatformStatus,
 ) -> None:
     message = RabbitResourceTrackingStoppedMessage(
         service_run_id=service_run_id, simcore_platform_status=simcore_platform_status
