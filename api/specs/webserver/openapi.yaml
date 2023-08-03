@@ -250,6 +250,12 @@ paths:
   /v0/projects/{project_uuid}/tags/{tag_id}:
     $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_uuid}~1tags~1{tag_id}"
 
+  /v0/projects/{project_id}/wallet:
+    $ref: "./openapi-projects-wallet.yaml#/paths/~1projects~1{project_id}~1wallet"
+
+  /v0/projects/{project_id}/wallet/{wallet_id}:
+    $ref: "./openapi-projects-wallet.yaml#/paths/~1projects~1{project_id}~1wallet~1{wallet_id}"
+
   # META-PROJECTS -------------------------------------------------------------------------
 
   /v0/projects/{project_uuid}/checkpoint/{ref_id}/iterations:
@@ -293,6 +299,19 @@ paths:
 
   /v0/tags/{tag_id}:
     $ref: "./openapi-tags.yaml#/paths/~1tags~1{tag_id}"
+
+  # WALLETS -------------------------------------------------------------------------
+  /v0/wallets:
+    $ref: "./openapi-wallets.yaml#/paths/~1wallets"
+
+  /v0/wallets/{wallet_id}:
+    $ref: "./openapi-wallets.yaml#/paths/~1wallets~1{wallet_id}"
+
+  /v0/wallets/{wallet_id}/groups:
+    $ref: "./openapi-wallets.yaml#/paths/~1wallets~1{wallet_id}~1groups"
+
+  /v0/wallets/{wallet_id}/groups/{group_id}:
+    $ref: "./openapi-wallets.yaml#/paths/~1wallets~1{wallet_id}~1groups~1{group_id}"
 
   # RESOURCE USAGE ------------------------------------------------------------------
 

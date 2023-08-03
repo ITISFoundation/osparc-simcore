@@ -47,6 +47,7 @@ from .tags.plugin import setup_tags
 from .tracing import setup_app_tracing
 from .users.plugin import setup_users
 from .version_control.plugin import setup_version_control
+from .wallets.plugin import setup_wallets
 
 _logger = logging.getLogger(__name__)
 
@@ -115,6 +116,9 @@ def create_application() -> web.Application:
     # tagging
     setup_scicrunch(app)
     setup_tags(app)
+
+    # wallets
+    setup_wallets(app)
 
     setup_announcements(app)
     setup_publications(app)

@@ -17,6 +17,7 @@ from . import (
     _ports_handlers,
     _states_handlers,
     _tags_handlers,
+    _wallets_handlers,
 )
 from ._observer import setup_project_observer_events
 from ._projects_access import setup_projects_access
@@ -51,5 +52,6 @@ def setup_projects(app: web.Application) -> bool:
     app.router.add_routes(_ports_handlers.routes)
     app.router.add_routes(_nodes_handlers.routes)
     app.router.add_routes(_tags_handlers.routes)
+    app.router.add_routes(_wallets_handlers.routes)
 
     return True
