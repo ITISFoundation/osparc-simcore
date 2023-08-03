@@ -22,6 +22,7 @@ from models_library.rabbitmq_messages import (
 )
 from models_library.users import UserID
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+from simcore_service_director_v2.utils.rabbitmq import publish_service_stopped_metrics
 
 from ...core.errors import TaskSchedulingError
 from ...core.settings import ComputationalBackendSettings
@@ -213,13 +214,14 @@ class DaskScheduler(BaseCompScheduler):
                 )
 
             # instrumentation
-            await self._publish_service_stopped_metrics(
-                user_id,
-                run_metadata.get(
+            await publish_service_stopped_metrics(
+                self.rabbitmq_client,
+                user_id=user_id,
+                simcore_user_agent=run_metadata.get(
                     "simcore_user_agent", UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
                 ),
-                task,
-                task_final_state,
+                task=task,
+                task_final_state=task_final_state,
             )
 
         await CompTasksRepository(self.db_engine).update_project_tasks_state(

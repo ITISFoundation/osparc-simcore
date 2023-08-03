@@ -41,10 +41,7 @@ from ...models.comp_pipelines import CompPipelineAtDB
 from ...models.comp_runs import CompRunsAtDB, MetadataDict
 from ...models.comp_tasks import CompTaskAtDB, Image
 from ...utils.computations import get_pipeline_state_from_task_states
-from ...utils.rabbitmq import (
-    publish_service_started_metrics,
-    publish_service_stopped_metrics,
-)
+from ...utils.rabbitmq import publish_service_started_metrics
 from ...utils.scheduler import (
     COMPLETED_STATES,
     PROCESSING_STATES,
@@ -270,21 +267,6 @@ class BaseCompScheduler(ABC):
                 )
                 for t in tasks
             )
-        )
-
-    async def _publish_service_stopped_metrics(
-        self,
-        user_id: UserID,
-        simcore_user_agent: str,
-        task: CompTaskAtDB,
-        task_final_state: RunningState,
-    ) -> None:
-        await publish_service_stopped_metrics(
-            self.rabbitmq_client,
-            user_id=user_id,
-            simcore_user_agent=simcore_user_agent,
-            task=task,
-            task_final_state=task_final_state,
         )
 
     async def _update_states_from_comp_backend(
