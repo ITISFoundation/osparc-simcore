@@ -99,8 +99,6 @@ async def _assert_message_received(
         reraise=True,
     ):
         with attempt:
-            # NOTE: this sleep is here to ensure that there are not multiple messages coming in
-            await asyncio.sleep(1)
             assert mocked_message_parser.call_count == expected_call_count
             if expected_call_count == 1:
                 assert expected_message
