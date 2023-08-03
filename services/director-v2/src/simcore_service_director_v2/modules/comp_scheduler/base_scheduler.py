@@ -354,7 +354,7 @@ class BaseCompScheduler(ABC):
 
             if completed_tasks:
                 await self._process_completed_tasks(
-                    user_id, cluster_id, completed_tasks
+                    user_id, cluster_id, completed_tasks, run_metadata
                 )
             if incomplete_tasks:
                 await self._process_incomplete_tasks(incomplete_tasks)
@@ -385,7 +385,11 @@ class BaseCompScheduler(ABC):
 
     @abstractmethod
     async def _process_completed_tasks(
-        self, user_id: UserID, cluster_id: ClusterID, tasks: list[CompTaskAtDB]
+        self,
+        user_id: UserID,
+        cluster_id: ClusterID,
+        tasks: list[CompTaskAtDB],
+        run_metadata: MetadataDict,
     ) -> None:
         ...
 
