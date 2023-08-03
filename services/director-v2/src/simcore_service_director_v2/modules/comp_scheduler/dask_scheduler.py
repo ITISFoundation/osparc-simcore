@@ -143,7 +143,7 @@ class DaskScheduler(BaseCompScheduler):
             await asyncio.gather(
                 *[
                     self._process_task_result(task, result, run_metadata)
-                    for task, result in zip(tasks, tasks_results)
+                    for task, result in zip(tasks, tasks_results, strict=True)
                 ]
             )
         finally:
@@ -164,8 +164,8 @@ class DaskScheduler(BaseCompScheduler):
 
         if task.job_id is not None:
             (
-                service_key,
-                service_version,
+                _service_key,
+                _service_version,
                 user_id,
                 project_id,
                 node_id,
