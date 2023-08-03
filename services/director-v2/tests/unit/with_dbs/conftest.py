@@ -13,6 +13,7 @@ from uuid import uuid4
 import pytest
 import sqlalchemy as sa
 from _helpers import PublishedProject, RunningProject
+from faker import Faker
 from models_library.clusters import Cluster
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes_io import NodeID
@@ -277,3 +278,8 @@ async def running_project(
         ),
         runs=runs(user=user, project=created_project, result=StateType.RUNNING),
     )
+
+
+@pytest.fixture
+def simcore_user_agent(faker: Faker) -> str:
+    return faker.pystr()

@@ -22,7 +22,6 @@ from dask.distributed import SpecCluster
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import TaskProgressEvent
 from dask_task_models_library.container_tasks.io import TaskOutputData
-from faker import Faker
 from fastapi.applications import FastAPI
 from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB, ProjectID
@@ -246,11 +245,6 @@ def test_scheduler_raises_exception_for_missing_dependencies(
     with pytest.raises(ConfigurationError):
         with TestClient(app, raise_server_exceptions=True) as _:
             pass
-
-
-@pytest.fixture
-def simcore_user_agent(faker: Faker) -> str:
-    return faker.pystr()
 
 
 async def test_empty_pipeline_is_not_scheduled(
