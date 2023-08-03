@@ -42,10 +42,6 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
     deploy:
-      placement:
-        constraints:
-          - node.platform.os == linux
-          - node.role == manager
       resources:
         reservations:
           cpus: "0.5"
@@ -116,11 +112,6 @@ services:
       - TRAEFIK_SIMCORE_ZONE=${TRAEFIK_SIMCORE_ZONE:-internal_simcore_stack}
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
-    deploy:
-      placement:
-        constraints:
-          - node.platform.os == linux
-          - node.role == manager
     networks:
       - default
       - interactive_services_subnet
@@ -156,11 +147,6 @@ services:
       - ../.env
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
-    deploy:
-      placement:
-        constraints:
-          - node.platform.os == linux
-          - node.role == manager
     networks:
       - default
       - interactive_services_subnet
@@ -211,9 +197,6 @@ services:
       - SERVER_LOG_LEVEL=error
       - SERVER_ROOT=/static-content
     deploy:
-      placement:
-        constraints:
-          - node.platform.os == linux
       labels:
         - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
         - traefik.http.middlewares.${SWARM_STACK_NAME}_gzip.compress=true
@@ -406,9 +389,6 @@ services:
       WEBSERVER_VERSION_CONTROL: ${WEBSERVER_VERSION_CONTROL}
 
     deploy:
-      placement:
-        constraints:
-          - node.platform.os == linux
       labels:
         - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
         # gzip compression
@@ -522,9 +502,6 @@ services:
       # NOTE: this MUSTN'T change, or weird things might happen
       # this will stay until all legacy dynamic services are gone.
       replicas: 1
-      placement:
-        constraints:
-          - node.platform.os == linux
     networks:
       - default
 
@@ -613,11 +590,6 @@ services:
       RABBIT_PORT: ${RABBIT_PORT}
       RABBIT_SECURE: ${RABBIT_SECURE}
       RABBIT_USER: ${RABBIT_USER}
-
-    deploy:
-      placement:
-        constraints:
-          - node.platform.os == linux
     networks:
       - default
       - interactive_services_subnet
@@ -714,10 +686,6 @@ services:
       - STORAGE_LOGLEVEL=${LOG_LEVEL:-WARNING}
       - STORAGE_MONITORING_ENABLED=1
       - TRACING_ZIPKIN_ENDPOINT=${TRACING_ZIPKIN_ENDPOINT:-http://jaeger:9411}
-    deploy:
-      placement:
-        constraints:
-          - node.platform.os == linux
     networks:
       - default
       - interactive_services_subnet
@@ -881,9 +849,6 @@ services:
       # So that Traefik can listen to the Docker events
       - /var/run/docker.sock:/var/run/docker.sock
     deploy:
-      placement:
-        constraints:
-          - node.role == manager
       labels:
         # for each service in the stack a new middlaware for rate limiting needs to be registered here
         # requests = average / period this is how the limits are defined
