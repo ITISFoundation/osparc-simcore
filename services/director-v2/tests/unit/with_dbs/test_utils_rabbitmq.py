@@ -122,11 +122,12 @@ async def test_publish_service_stopped_metrics(
     await consumer.subscribe(
         InstrumentationRabbitMessage.get_channel_name(), mocked_message_parser
     )
+    random_task_final_state = random.choice(list(RunningState))  # noqa: S311
     await publish_service_stopped_metrics(
         publisher,
         user_id=user["id"],
         simcore_user_agent=simcore_user_agent,
         task=random_task,
-        task_final_state=random.choice(list(RunningState)),
+        task_final_state=random_task_final_state,
     )
     await _assert_message_received(mocked_message_parser, 1)
