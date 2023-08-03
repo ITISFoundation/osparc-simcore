@@ -284,20 +284,30 @@ class BaseCompScheduler(ABC):
             changed_tasks = await self._get_changed_tasks_from_backend(
                 user_id, cluster_id, processing_tasks
             )
-            for previous, current in changed_tasks:
-                if current.state is RunningState.STARTED or (
+            tasks_started_since_last_check = [
+                current
+                for previous, current in changed_tasks
+                if current.state is RunningState.STARTED
+                or (
                     previous.state in WAITING_FOR_START_STATES
                     and current.state in COMPLETED_STATES
-                ):
-                    await publish_service_started_metrics(
+                )
+            ]
+            # instrumentation
+            await asyncio.gather(
+                *(
+                    publish_service_started_metrics(
                         self.rabbitmq_client,
                         user_id=user_id,
                         simcore_user_agent=run_metadata.get(
                             "simcore_user_agent",
                             UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                         ),
-                        task=current,
+                        task=t,
                     )
+                    for t in tasks_started_since_last_check
+                )
+            )
 
             completed_tasks = [
                 current
