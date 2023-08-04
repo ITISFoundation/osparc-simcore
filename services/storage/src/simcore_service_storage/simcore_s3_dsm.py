@@ -378,15 +378,19 @@ class SimcoreS3DataManager(BaseDataManager):
             assert fmd  # nosec
             return convert_db_to_model(fmd)
 
-    async def create_file_download_link(
+    async def create_file_download_link(  # noqa: C901
         self, user_id: UserID, file_id: StorageFileID, link_type: LinkType
     ) -> AnyUrl:
         """
-        A file can be in the following:
-        1. the `file_id` maps 1:1 to a `file_meta_data` (is_directory==False). Returns link
-        2. part of the `file_id` is shared with a directory in a `file_meta_data` (is_directory==True) and the file is there. Returns link
-        3. part of the `file_id` is shared with a directory in a `file_meta_data` (is_directory==True) and the file is missing. Raises S3KeyNotFoundError
-        4. `file_id` was not found anywhere. Raises FileAccessRightError
+        Cases:
+        1. the `file_id` maps 1:1 to a `file_meta_data` (is_directory==False).
+            ==> Returns link
+        2. part of the `file_id` is shared with a directory in a `file_meta_data` (is_directory==True) and the file is there.
+            ==> Returns link
+        3. part of the `file_id` is shared with a directory in a `file_meta_data` (is_directory==True) and the file is missing.
+            ==> Raises S3KeyNotFoundError
+        4. `file_id` was not found anywhere.
+            ==> Raises FileAccessRightError
         """
 
         async def _get_fmd(
