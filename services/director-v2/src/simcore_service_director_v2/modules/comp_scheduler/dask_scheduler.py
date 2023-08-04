@@ -19,10 +19,18 @@ from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import (
     LoggerRabbitMessage,
     ProgressRabbitMessageNode,
+    SimcorePlatformStatus,
 )
 from models_library.users import UserID
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-from simcore_service_director_v2.utils.rabbitmq import publish_service_stopped_metrics
+from simcore_service_director_v2.utils.comp_scheduler import (
+    Iteration,
+    get_resource_tracking_run_id,
+)
+from simcore_service_director_v2.utils.rabbitmq import (
+    publish_service_resource_tracking_stopped,
+    publish_service_stopped_metrics,
+)
 
 from ...core.errors import TaskSchedulingError
 from ...core.settings import ComputationalBackendSettings
@@ -134,6 +142,7 @@ class DaskScheduler(BaseCompScheduler):
         cluster_id: ClusterID,
         tasks: list[CompTaskAtDB],
         run_metadata: MetadataDict,
+        iteration: Iteration,
     ) -> None:
         try:
             async with _cluster_dask_client(user_id, cluster_id, self) as client:
@@ -143,7 +152,7 @@ class DaskScheduler(BaseCompScheduler):
                 )
             await asyncio.gather(
                 *[
-                    self._process_task_result(task, result, run_metadata)
+                    self._process_task_result(task, result, run_metadata, iteration)
                     for task, result in zip(tasks, tasks_results, strict=True)
                 ]
             )
@@ -158,9 +167,11 @@ class DaskScheduler(BaseCompScheduler):
         task: CompTaskAtDB,
         result: Exception | TaskOutputData,
         run_metadata: MetadataDict,
+        iteration: Iteration,
     ) -> None:
         logger.debug("received %s result: %s", f"{task=}", f"{result=}")
         task_final_state = RunningState.FAILED
+        simcore_platform_status = SimcorePlatformStatus.OK
         errors: list[ErrorDict] = []
 
         if task.job_id is not None:
@@ -206,6 +217,7 @@ class DaskScheduler(BaseCompScheduler):
                     )
             except TaskSchedulingError as err:
                 task_final_state = RunningState.FAILED
+                simcore_platform_status = SimcorePlatformStatus.BAD
                 errors = err.get_errors()
                 logger.debug(
                     "Unexpected failure while processing results of %s: %s",
@@ -213,6 +225,12 @@ class DaskScheduler(BaseCompScheduler):
                     f"{errors=}",
                 )
 
+            # resource tracking
+            await publish_service_resource_tracking_stopped(
+                self.rabbitmq_client,
+                get_resource_tracking_run_id(user_id, project_id, iteration),
+                simcore_platform_status=simcore_platform_status,
+            )
             # instrumentation
             await publish_service_stopped_metrics(
                 self.rabbitmq_client,

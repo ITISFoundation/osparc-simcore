@@ -360,7 +360,7 @@ class BaseCompScheduler(ABC):
 
             if completed_tasks:
                 await self._process_completed_tasks(
-                    user_id, cluster_id, completed_tasks, run_metadata
+                    user_id, cluster_id, completed_tasks, run_metadata, iteration
                 )
             if incomplete_tasks:
                 await self._process_incomplete_tasks(incomplete_tasks)
@@ -396,6 +396,7 @@ class BaseCompScheduler(ABC):
         cluster_id: ClusterID,
         tasks: list[CompTaskAtDB],
         run_metadata: MetadataDict,
+        iteration: Iteration,
     ) -> None:
         ...
 
