@@ -114,7 +114,7 @@ def _get_files_with_thumbnails(
     search_file_name_to_file_meta_data_get: dict[str, FileMetaDataGet] = {
         __get_search_key(f): f
         for f in assets_files
-        if not f.file_id.endswith(".hidden_do_not_remove")  # TODO: remove this line
+        if not f.file_id.endswith(".hidden_do_not_remove")
     }
 
     with_thumbnail_image: list[tuple[FileMetaDataGet, FileMetaDataGet]] = []
