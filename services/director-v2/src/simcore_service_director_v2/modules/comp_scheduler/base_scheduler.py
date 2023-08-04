@@ -51,6 +51,7 @@ from ...utils.comp_scheduler import (
 )
 from ...utils.computations import get_pipeline_state_from_task_states
 from ...utils.rabbitmq import (
+    publish_service_resource_tracking_heartbeat,
     publish_service_resource_tracking_started,
     publish_service_started_metrics,
 )
@@ -264,12 +265,24 @@ class BaseCompScheduler(ABC):
             if task.state is not backend_state
         ]
 
-    async def _process_incomplete_tasks(self, tasks: list[CompTaskAtDB]) -> None:
+    async def _process_incomplete_tasks(
+        self, user_id: UserID, tasks: list[CompTaskAtDB], iteration: Iteration
+    ) -> None:
         comp_tasks_repo = CompTasksRepository(self.db_engine)
         await asyncio.gather(
             *(
                 comp_tasks_repo.update_project_tasks_state(
                     t.project_id, [t.node_id], t.state
+                )
+                for t in tasks
+            )
+        )
+        # resource tracking
+        await asyncio.gather(
+            *(
+                publish_service_resource_tracking_heartbeat(
+                    self.rabbitmq_client,
+                    get_resource_tracking_run_id(user_id, t.project_id, iteration),
                 )
                 for t in tasks
             )
