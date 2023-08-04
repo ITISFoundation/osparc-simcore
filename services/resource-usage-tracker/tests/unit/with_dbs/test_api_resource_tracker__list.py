@@ -7,7 +7,9 @@ import httpx
 import pytest
 import sqlalchemy as sa
 from pytest_mock import MockerFixture
-from simcore_postgres_database.models.resource_tracker import resource_tracker_container
+from simcore_postgres_database.models.resource_tracker_containers import (
+    resource_tracker_container,
+)
 from starlette import status
 from yarl import URL
 

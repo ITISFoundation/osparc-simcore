@@ -12,7 +12,9 @@ from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from pytest_mock import MockerFixture
-from simcore_postgres_database.models.resource_tracker import resource_tracker_container
+from simcore_postgres_database.models.resource_tracker_containers import (
+    resource_tracker_container,
+)
 from simcore_service_resource_usage_tracker.resource_tracker_core import (
     collect_container_resource_usage_task,
 )
