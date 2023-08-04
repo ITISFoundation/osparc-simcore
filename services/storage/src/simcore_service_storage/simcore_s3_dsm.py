@@ -380,10 +380,6 @@ class SimcoreS3DataManager(BaseDataManager):
     async def create_file_download_link(
         self, user_id: UserID, file_id: StorageFileID, link_type: LinkType
     ) -> AnyUrl:
-        # TODO: in a separate PR (poll for containing directory permissions also!)
-        # figure out if we can use the path to figure out if in a directory or not
-        # maybe there is an edge case with the outputs!
-        # let's do the one with better support
         async with self.engine.acquire() as conn:
             can: AccessRights | None = await get_file_access_rights(
                 conn, user_id, file_id
