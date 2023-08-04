@@ -28,13 +28,13 @@ class Image(BaseModel):
     tag: str = Field(..., regex=VERSION_RE)
 
     requires_gpu: bool | None = Field(
-        None, deprecated=True, description="Use instead node_requirements"
+        default=None, deprecated=True, description="Use instead node_requirements"
     )
     requires_mpi: bool | None = Field(
-        None, deprecated=True, description="Use instead node_requirements"
+        default=None, deprecated=True, description="Use instead node_requirements"
     )
     node_requirements: NodeRequirements | None = Field(
-        None, description="the requirements for the service to run on a node"
+        default=None, description="the requirements for the service to run on a node"
     )
     boot_mode: BootMode = BootMode.CPU
     command: list[str] = Field(

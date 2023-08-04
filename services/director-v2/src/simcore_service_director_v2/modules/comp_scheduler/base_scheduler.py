@@ -20,12 +20,10 @@ import arrow
 import networkx as nx
 from aiopg.sa.engine import Engine
 from models_library.clusters import ClusterID
-from models_library.docker import DockerGenericTag
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import RunningState
 from models_library.services import ServiceKey, ServiceType, ServiceVersion
-from models_library.services_resources import ResourceValue, ServiceResourcesDictHelpers
 from models_library.users import UserID
 from pydantic import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
@@ -48,6 +46,8 @@ from ...utils.comp_scheduler import (
     PROCESSING_STATES,
     WAITING_FOR_START_STATES,
     Iteration,
+    create_service_resources_from_task,
+    get_resource_tracking_run_id,
 )
 from ...utils.computations import get_pipeline_state_from_task_states
 from ...utils.rabbitmq import (
@@ -280,7 +280,7 @@ class BaseCompScheduler(ABC):
         user_id: UserID,
         cluster_id: ClusterID,
         project_id: ProjectID,
-        iteration: PositiveInt,
+        iteration: Iteration,
         pipeline_dag: nx.DiGraph,
         run_metadata: MetadataDict,
     ) -> None:
@@ -302,14 +302,13 @@ class BaseCompScheduler(ABC):
             ]
 
             # resource tracking
-            def _service_run_id(user_id, project_id, iteration) -> str:
-                return f"{user_id}_{project_id}_{iteration}"
-
             await asyncio.gather(
                 *(
                     publish_service_resource_tracking_started(
                         self.rabbitmq_client,
-                        service_run_id=_service_run_id(user_id, project_id, iteration),
+                        service_run_id=get_resource_tracking_run_id(
+                            user_id, project_id, iteration
+                        ),
                         wallet_id=5,
                         wallet_name="fake",
                         product_name=run_metadata.get("product_name", "undefined"),
@@ -326,18 +325,7 @@ class BaseCompScheduler(ABC):
                         service_key=ServiceKey(t.image.name),
                         service_version=ServiceVersion(t.image.tag),
                         service_type=ServiceType.COMPUTATIONAL,
-                        service_resources=ServiceResourcesDictHelpers.create_from_single_service(
-                            DockerGenericTag(f"{t.image.name}:{t.image.tag}"),
-                            {
-                                res_name: ResourceValue(
-                                    limit=res_value, reservation=res_value
-                                )
-                                for res_name, res_value in t.image.node_requirements.dict(
-                                    by_alias=True
-                                ).items()
-                            },
-                            [t.image.boot_mode],
-                        ),
+                        service_resources=create_service_resources_from_task(t),
                         service_additional_metadata={},
                     )
                     for t in tasks_started_since_last_check
