@@ -382,13 +382,11 @@ class SimcoreS3DataManager(BaseDataManager):
         self, user_id: UserID, file_id: StorageFileID, link_type: LinkType
     ) -> AnyUrl:
         """
-        A `file_id` can be:
-            1. a `file` entry in the file_meta_data table
-            2. a file in a `directory` entry in the file_meta_data table
-
-        For 2. the `file_id` is not the one provided by the caller but must
-        computed.
-
+        A file can be in the following:
+        1. the `file_id` maps 1:1 to a `file_meta_data` (is_directory==False). Returns link
+        2. part of the `file_id` is shared with a directory in a `file_meta_data` (is_directory==True) and the file is there. Returns link
+        3. part of the `file_id` is shared with a directory in a `file_meta_data` (is_directory==True) and the file is missing. Raises S3KeyNotFoundError
+        4. `file_id` was not found anywhere. Raises FileAccessRightError
         """
 
         async def _get_fmd(
@@ -413,7 +411,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 #
                 raise FileAccessRightError(access_right="read", file_id=storage_file_id)
 
-        async def _get_directory_data(
+        async def _get_directory_objects(
             conn: SAConnection,
         ) -> tuple[SimcoreS3FileID, FileMetaDataAtDB] | tuple[None, None]:
             # if the file_meta_data is not present it could be a directory
@@ -448,10 +446,12 @@ class SimcoreS3DataManager(BaseDataManager):
 
         async with self.engine.acquire() as conn:
             # if the file_meta_data is not present it could be a directory
-            directory_file_id, directory_file_id_fmd = await _get_directory_data(conn)
+            directory_file_id, directory_file_id_fmd = await _get_directory_objects(
+                conn
+            )
 
-            # the file is inside the directory
             if directory_file_id and directory_file_id_fmd:
+                # the file can be inside a `file_meta_data` directory entry
                 await _ensure_access_rights(conn, directory_file_id)
                 if not await get_s3_client(self.app).file_exists(
                     self.simcore_bucket_name, s3_object=f"{file_id}"
@@ -461,7 +461,7 @@ class SimcoreS3DataManager(BaseDataManager):
                     )
                 return await _format_link(parse_obj_as(SimcoreS3FileID, file_id))
 
-            # legacy way of handling
+            # (legacy) the file can be listed in `file_meta_data` as a file entry
             await _ensure_access_rights(conn, file_id)
 
             fmd = await db_file_meta_data.get(
