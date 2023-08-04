@@ -20,9 +20,12 @@ import arrow
 import networkx as nx
 from aiopg.sa.engine import Engine
 from models_library.clusters import ClusterID
+from models_library.docker import DockerGenericTag
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import RunningState
+from models_library.services import ServiceKey, ServiceType, ServiceVersion
+from models_library.services_resources import ResourceValue, ServiceResourcesDictHelpers
 from models_library.users import UserID
 from pydantic import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
@@ -315,10 +318,27 @@ class BaseCompScheduler(ABC):
                             UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                         ),
                         user_id=user_id,
-                        user_name="fake",
                         user_email="fake",
-                        project_id=project_id,
+                        project_id=t.project_id,
                         project_name="fake",
+                        node_id=t.node_id,
+                        node_name="fake",
+                        service_key=ServiceKey(t.image.name),
+                        service_version=ServiceVersion(t.image.tag),
+                        service_type=ServiceType.COMPUTATIONAL,
+                        service_resources=ServiceResourcesDictHelpers.create_from_single_service(
+                            DockerGenericTag(f"{t.image.name}:{t.image.tag}"),
+                            {
+                                res_name: ResourceValue(
+                                    limit=res_value, reservation=res_value
+                                )
+                                for res_name, res_value in t.image.node_requirements.dict(
+                                    by_alias=True
+                                ).items()
+                            },
+                            [t.image.boot_mode],
+                        ),
+                        service_additional_metadata={},
                     )
                     for t in tasks_started_since_last_check
                 )
