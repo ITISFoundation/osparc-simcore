@@ -12,7 +12,6 @@ from models_library.api_schemas_storage import (
     FileUploadSchema,
     LinkType,
 )
-from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, BaseModel, ByteSize, parse_obj_as
@@ -255,7 +254,7 @@ async def complete_upload_file(request: web.Request) -> web.Response:
         file_id: StorageFileIDStr
 
     parse_request_path_parameters_as(_PathParams, request)
-    body_item = await parse_request_body_as(Envelope[FileUploadCompletionBody], request)
+    body_item = await parse_request_body_as(FileUploadCompletionBody, request)
 
     payload, status = await _forward_request_to_storage(
         request, "POST", body=body_item.dict()
