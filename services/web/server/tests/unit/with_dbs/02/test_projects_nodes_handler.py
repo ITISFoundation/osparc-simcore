@@ -4,10 +4,11 @@
 # pylint: disable=unused-variable
 
 import asyncio
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from random import choice
-from typing import Any, Awaitable, Callable, Final
+from typing import Any, Final
 from unittest import mock
 from uuid import uuid4
 
@@ -22,7 +23,6 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from pydantic import NonNegativeFloat, NonNegativeInt, parse_obj_as
-from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_webserver_unit_with_db import (
@@ -828,7 +828,7 @@ async def test_stop_node(
     all_service_uuids = list(project["workbench"])
     # start the node, shall work as expected
     url = client.app.router["stop_node"].url_for(
-        project_id=project["uuid"], node_id=choice(all_service_uuids)
+        project_id=project["uuid"], node_id=choice(all_service_uuids)  # noqa: S311
     )
     response = await client.post(f"{url}")
     data, error = await assert_status(
@@ -847,14 +847,14 @@ async def test_stop_node(
 
 @pytest.fixture
 def app_environment(
-    app_environment: dict[str, str], monkeypatch: MonkeyPatch
+    app_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch
 ) -> dict[str, str]:
     # test_read_project_nodes_previews needs WEBSERVER_DEV_FEATURES_ENABLED=1
     new_envs = setenvs_from_dict(monkeypatch, {"WEBSERVER_DEV_FEATURES_ENABLED": "1"})
     return app_environment | new_envs
 
 
-@pytest.mark.parametrize("user_role", (UserRole.USER,))
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_read_project_nodes_previews(
     client: TestClient,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],

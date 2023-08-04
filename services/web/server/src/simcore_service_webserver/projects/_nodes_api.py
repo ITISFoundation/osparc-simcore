@@ -6,6 +6,7 @@ from typing import Final
 
 from aiohttp import web
 from aiohttp.client import ClientError
+from models_library.api_schemas_storage import FileMetaDataGet
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, NodeID
 from models_library.projects_nodes_io import SimCoreFileLink
@@ -20,14 +21,20 @@ from pydantic import (
     parse_obj_as,
     root_validator,
 )
+from servicelib.utils import logged_gather
 
-from .._constants import APP_SETTINGS_KEY, RQT_USERID_KEY
+from .._constants import RQT_USERID_KEY
 from ..application_settings import get_settings
-from ..storage.api import get_download_link
+from ..storage.api import get_download_link, get_files_in_node_folder
 from .exceptions import ProjectStartsTooManyDynamicNodesError
 
 _logger = logging.getLogger(__name__)
+
 _NODE_START_INTERVAL_S: Final[datetime.timedelta] = datetime.timedelta(seconds=15)
+
+_SUPPORTED_THUMBNAIL_EXTENSIONS: set[str] = {".png", ".jpeg", ".jpg"}
+
+ASSETS_FOLDER: Final[str] = "assets"
 
 
 def get_service_start_lock_key(user_id: UserID, project_uuid: ProjectID) -> str:
@@ -95,15 +102,99 @@ class NodeScreenshot(BaseModel):
         return values
 
 
-async def fake_screenshots_factory(
-    request: web.Request, node_id: NodeID, node: Node
-) -> list[NodeScreenshot]:
-    """
-    ONLY for testing purposes
+def __get_search_key(meta_data: FileMetaDataGet) -> str:
+    return f"{meta_data.file_id}".lower()
 
-    """
-    assert request.app[APP_SETTINGS_KEY].WEBSERVER_DEV_FEATURES_ENABLED  # nosec
-    screenshots = []
+
+def _get_files_with_thumbnails(
+    assets_files: list[FileMetaDataGet],
+) -> list[tuple[FileMetaDataGet, FileMetaDataGet]]:
+    """returns a list of tuples where the second entry is the thumbnails"""
+
+    search_file_name_to_file_meta_data_get: dict[str, FileMetaDataGet] = {
+        __get_search_key(f): f
+        for f in assets_files
+        if not f.file_id.endswith(".hidden_do_not_remove")  # TODO: remove this line
+    }
+
+    with_thumbnail_image: list[tuple[FileMetaDataGet, FileMetaDataGet]] = []
+
+    for search_file_name in search_file_name_to_file_meta_data_get:
+        # search for thumbnail
+        thumbnail: FileMetaDataGet | None = None
+        for extension in _SUPPORTED_THUMBNAIL_EXTENSIONS:
+            thumbnail_search_file_name = f"{search_file_name}{extension}"
+            if thumbnail_search_file_name in search_file_name_to_file_meta_data_get:
+                thumbnail = search_file_name_to_file_meta_data_get[
+                    thumbnail_search_file_name
+                ]
+                break
+
+        if thumbnail:
+            # do something with it emit an entry
+            with_thumbnail_image.append(
+                (search_file_name_to_file_meta_data_get[search_file_name], thumbnail)
+            )
+
+    # remove entries which have been associated
+    for file_meta, thumbnail_meta in with_thumbnail_image:
+        search_file_name_to_file_meta_data_get.pop(__get_search_key(file_meta), None)
+        search_file_name_to_file_meta_data_get.pop(
+            __get_search_key(thumbnail_meta), None
+        )
+
+    without_thumbnail_image = [
+        (x, x) for x in search_file_name_to_file_meta_data_get.values()
+    ]
+
+    return with_thumbnail_image + without_thumbnail_image
+
+
+async def _get_http_url(
+    app: web.Application, user_id: UserID, file_meta_data: FileMetaDataGet
+) -> tuple[str, HttpUrl]:
+    return __get_search_key(file_meta_data), await get_download_link(
+        app,
+        user_id,
+        parse_obj_as(SimCoreFileLink, {"store": "0", "path": file_meta_data.file_id}),
+    )
+
+
+async def _to_http_urls_parallel(
+    app: web.Application,
+    user_id: UserID,
+    entries: list[tuple[FileMetaDataGet, FileMetaDataGet]],
+) -> list[tuple[HttpUrl, HttpUrl]]:
+    search_map: dict[str, FileMetaDataGet] = {}
+
+    for file_meta_data, thumbnail_meta_data in entries:
+        search_map[__get_search_key(file_meta_data)] = file_meta_data
+        search_map[__get_search_key(thumbnail_meta_data)] = thumbnail_meta_data
+
+    results = await logged_gather(
+        *[_get_http_url(app, user_id, x) for x in search_map.values()],
+        max_concurrency=10,
+    )
+
+    mapped_http_url: dict[str, HttpUrl] = dict(results)
+
+    return [
+        (
+            mapped_http_url[__get_search_key(t[0])],
+            mapped_http_url[__get_search_key(t[1])],
+        )
+        for t in entries
+    ]
+
+
+async def get_node_screenshots(
+    request: web.Request,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    node: Node,
+) -> list[NodeScreenshot]:
+    screenshots: list[NodeScreenshot] = []
 
     if (
         "file-picker" in node.key
@@ -135,33 +226,30 @@ async def fake_screenshots_factory(
             )
 
     elif node.key.startswith("simcore/services/dynamic"):
-        # For dynamic services, just create fake images
+        # when dealing with dynamic service scan the assets directory and
+        # pull in all the assets that have been dropped in there
 
-        # References:
-        # - https://github.com/Ybalrid/Ogre_glTF
-        # - https://placehold.co/
-        # - https://picsum.photos/
-        #
-        count = int(str(node_id.int)[0])
-        text = urllib.parse.quote(node.label)
+        assets_files: list[FileMetaDataGet] = await get_files_in_node_folder(
+            app=request.app,
+            user_id=user_id,
+            project_id=project_id,
+            node_id=node_id,
+            folder_name=ASSETS_FOLDER,
+        )
 
-        screenshots = [
-            *(
-                NodeScreenshot(
-                    thumbnail_url=f"https://picsum.photos/seed/{node_id.int + n}/170/120",  # type: ignore[arg-type]
-                    file_url=f"https://picsum.photos/seed/{node_id.int + n}/500",  # type: ignore[arg-type]
-                    mimetype="image/jpeg",
-                )
-                for n in range(count)
-            ),
-            *(
-                NodeScreenshot(
-                    thumbnail_url=f"https://placehold.co/170x120?text={text}",  # type: ignore[arg-type]
-                    file_url=f"https://placehold.co/500x500?text={text}",  # type: ignore[arg-type]
-                    mimetype="image/svg+xml",
-                )
-                for n in range(count)
-            ),
-        ]
+        asset_files_with_thumbnails: list[
+            tuple[FileMetaDataGet, FileMetaDataGet]
+        ] = _get_files_with_thumbnails(assets_files)
+
+        asset_file_urls_with_thumbnails: list[
+            tuple[HttpUrl, HttpUrl]
+        ] = await _to_http_urls_parallel(
+            app=request.app, user_id=user_id, entries=asset_files_with_thumbnails
+        )
+
+        for file_url, thumbnail_url in asset_file_urls_with_thumbnails:
+            screenshots.append(
+                NodeScreenshot(thumbnail_url=thumbnail_url, file_url=file_url)
+            )
 
     return screenshots

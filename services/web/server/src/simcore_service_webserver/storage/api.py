@@ -5,7 +5,7 @@ import asyncio
 import logging
 import urllib.parse
 from collections.abc import AsyncGenerator
-from typing import Any
+from typing import Any, Final
 
 from aiohttp import ClientError, ClientSession, ClientTimeout, web
 from models_library.api_schemas_storage import (
@@ -16,7 +16,7 @@ from models_library.api_schemas_storage import (
 )
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import SimCoreFileLink
+from models_library.projects_nodes_io import LocationID, NodeID, SimCoreFileLink
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, HttpUrl, parse_obj_as
@@ -204,3 +204,29 @@ async def get_download_link(
         )
         link: HttpUrl = parse_obj_as(HttpUrl, download.link)
         return link
+
+
+_SIMCORE_LOCATION: Final[LocationID] = 0
+
+
+async def get_files_in_node_folder(
+    app: web.Application,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    folder_name: str,
+) -> list[FileMetaDataGet]:
+    session, api_endpoint = _get_storage_client(app)
+
+    s3_folder_path = f"{project_id}/{node_id}/{folder_name}"
+    files_metadata_url = (
+        api_endpoint / "locations" / f"{_SIMCORE_LOCATION}" / "files" / "metadata"
+    ).with_query(user_id=user_id, uuid_filter=s3_folder_path, expand_dirs="true")
+
+    async with session.get(f"{files_metadata_url}") as response:
+        response.raise_for_status()
+        list_of_files_enveloped = Envelope[list[FileMetaDataGet]].parse_obj(
+            await response.json()
+        )
+        assert list_of_files_enveloped.data is not None  # nosec
+        return list_of_files_enveloped.data
