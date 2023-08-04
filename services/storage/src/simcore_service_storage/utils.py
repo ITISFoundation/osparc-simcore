@@ -62,6 +62,7 @@ def is_file_entry_valid(file_metadata: FileMetaData | FileMetaDataAtDB) -> bool:
         and file_metadata.file_size > 0
         and file_metadata.upload_id is None
         and file_metadata.upload_expires_at is None
+        and file_metadata.is_directory is False
     )
 
 

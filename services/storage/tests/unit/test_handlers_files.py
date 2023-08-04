@@ -10,11 +10,12 @@ import filecmp
 import json
 import urllib.parse
 from collections import deque
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from time import perf_counter
-from typing import AsyncContextManager, AsyncIterator, Awaitable, Callable, Literal
+from typing import AsyncContextManager, Literal
 from uuid import uuid4
 
 import pytest
@@ -38,7 +39,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import ByteSize, parse_obj_as
+from pydantic import AnyHttpUrl, ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
@@ -877,6 +878,128 @@ async def test_download_file(
 @pytest.mark.parametrize(
     "file_size",
     [
+        pytest.param(parse_obj_as(ByteSize, "1")),
+    ],
+    ids=byte_size_ids,
+)
+async def test_download_file_cases(
+    client: TestClient,
+    file_size: ByteSize,
+    upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
+    location_id: int,
+    user_id: UserID,
+    faker: Faker,
+    create_empty_directory: Callable[..., Awaitable[FileUploadSchema]],
+    create_file_of_size: Callable[[ByteSize, str | None], Path],
+    storage_s3_client: StorageS3Client,
+    storage_s3_bucket: S3BucketName,
+):
+    assert client.app
+
+    # 1. error case
+    # no file was not uploaded
+    missing_file = parse_obj_as(
+        SimcoreS3FileID, f"{faker.uuid4()}/{faker.uuid4()}/missing.file"
+    )
+    assert (
+        await storage_s3_client.file_exists(storage_s3_bucket, s3_object=missing_file)
+        is False
+    )
+
+    download_url = (
+        client.app.router["download_file"]
+        .url_for(
+            location_id=f"{location_id}",
+            file_id=urllib.parse.quote(missing_file, safe=""),
+        )
+        .with_query(user_id=user_id)
+    )
+    response = await client.get(f"{download_url}")
+    data, error = await assert_status(response, web.HTTPForbidden)
+    assert data is None
+
+    # 2. file_meta_data entry corresponds to a file
+    # upload a single file as a file_meta_data entry and check link
+    _, uploaded_file_uuid = await upload_file(file_size, "meta_data_entry_is_file.file")
+    assert (
+        await storage_s3_client.file_exists(
+            storage_s3_bucket, s3_object=uploaded_file_uuid
+        )
+        is True
+    )
+
+    download_url = (
+        client.app.router["download_file"]
+        .url_for(
+            location_id=f"{location_id}",
+            file_id=urllib.parse.quote(uploaded_file_uuid, safe=""),
+        )
+        .with_query(user_id=user_id)
+    )
+    response = await client.get(f"{download_url}")
+    data, error = await assert_status(response, web.HTTPOk)
+    assert not error
+    assert data
+    assert "link" in data
+    assert parse_obj_as(AnyHttpUrl, data["link"])
+
+    # 3. file_meta_data entry corresponds to a directory
+    # upload a file inside a directory and check the download link
+
+    directory_name = "a-test-dir"
+    directory_file_upload = await create_empty_directory(directory_name)
+
+    assert directory_file_upload.urls[0].path
+    dir_path_in_s3 = directory_file_upload.urls[0].path.strip("/")
+
+    file_name = "meta_data_entry_is_dir.file"
+    file = create_file_of_size(file_size, file_name)
+
+    s3_file_id = parse_obj_as(SimcoreS3FileID, f"{dir_path_in_s3}/{file_name}")
+    await storage_s3_client.upload_file(storage_s3_bucket, file, s3_file_id, None)
+    assert (
+        await storage_s3_client.file_exists(storage_s3_bucket, s3_object=s3_file_id)
+        is True
+    )
+
+    # finally check the download link
+    download_url = (
+        client.app.router["download_file"]
+        .url_for(
+            location_id=f"{location_id}",
+            file_id=urllib.parse.quote(s3_file_id, safe=""),
+        )
+        .with_query(user_id=user_id)
+    )
+    response = await client.get(f"{download_url}")
+    data, error = await assert_status(response, web.HTTPOk)
+    assert not error
+    assert data
+    assert "link" in data
+    assert parse_obj_as(AnyHttpUrl, data["link"])
+
+    # 4. file_meta_data entry corresponds to a directory but file is not present in directory
+
+    missing_s3_file_id = parse_obj_as(
+        SimcoreS3FileID, f"{dir_path_in_s3}/missing_inside_dir.file"
+    )
+    download_url = (
+        client.app.router["download_file"]
+        .url_for(
+            location_id=f"{location_id}",
+            file_id=urllib.parse.quote(missing_s3_file_id, safe=""),
+        )
+        .with_query(user_id=user_id)
+    )
+    response = await client.get(f"{download_url}")
+    data, error = await assert_status(response, web.HTTPNotFound)
+    assert data is None
+    assert missing_s3_file_id in error["message"]
+
+
+@pytest.mark.parametrize(
+    "file_size",
+    [
         pytest.param(parse_obj_as(ByteSize, "1Mib")),
     ],
     ids=byte_size_ids,
@@ -1141,13 +1264,12 @@ async def __list_files(
             location_id=f"{location_id}",
             file_id=urllib.parse.quote(path, safe=""),
         )
-        .with_query(**{"user_id": user_id, "expand_dirs": f"{expand_dirs}".lower()})
+        .with_query(user_id=user_id, expand_dirs=f"{expand_dirs}".lower())
     )
     response = await client.get(f"{get_url}")
     data, error = await assert_status(response, web.HTTPOk)
     assert not error
-    list_files_metadata = parse_obj_as(list[FileMetaDataGet], data)
-    return list_files_metadata
+    return parse_obj_as(list[FileMetaDataGet], data)
 
 
 async def _list_files_legacy(

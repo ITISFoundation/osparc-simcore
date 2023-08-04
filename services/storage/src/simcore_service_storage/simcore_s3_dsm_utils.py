@@ -1,6 +1,6 @@
 from aiohttp import web
 from models_library.api_schemas_storage import S3BucketName
-from models_library.projects_nodes_io import SimcoreS3DirectoryID, SimcoreS3FileID
+from models_library.projects_nodes_io import SimcoreS3DirectoryID, StorageFileID
 from pydantic import ByteSize, NonNegativeInt, parse_obj_as
 from servicelib.utils import ensure_ends_with
 
@@ -52,9 +52,9 @@ async def expand_directory(
     return result
 
 
-def get_simcore_directory(file_id: SimcoreS3FileID) -> str:
+def get_simcore_directory(file_id: StorageFileID) -> str:
     try:
-        directory_id = SimcoreS3DirectoryID.from_simcore_s3_object(file_id)
+        directory_id = SimcoreS3DirectoryID.from_simcore_s3_object(f"{file_id}")
     except ValueError:
         return ""
     return f"{directory_id}"
