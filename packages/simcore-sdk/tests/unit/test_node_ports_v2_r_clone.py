@@ -110,7 +110,6 @@ async def test__async_command_error(
         await r_clone._async_r_clone_command(*cmd)  # noqa: SLF001
     assert (
         f"{exe_info.value}"
-        # == f"Command {' '.join(cmd)} finished with exit code=127:\n/bin/sh: 1: {cmd[0]}: not found\n\nNone"
         == f"Command {' '.join(cmd)} finished with exit code={exit_code}:\n{output}\n"
     )
 
