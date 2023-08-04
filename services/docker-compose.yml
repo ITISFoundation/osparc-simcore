@@ -42,6 +42,9 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
     deploy:
+      placement:
+        constraints:
+          - node.role == manager
       resources:
         reservations:
           cpus: "0.5"
@@ -112,6 +115,10 @@ services:
       - TRAEFIK_SIMCORE_ZONE=${TRAEFIK_SIMCORE_ZONE:-internal_simcore_stack}
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
     networks:
       - default
       - interactive_services_subnet
@@ -147,6 +154,10 @@ services:
       - ../.env
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
     networks:
       - default
       - interactive_services_subnet
@@ -849,6 +860,9 @@ services:
       # So that Traefik can listen to the Docker events
       - /var/run/docker.sock:/var/run/docker.sock
     deploy:
+      placement:
+        constraints:
+          - node.role == manager
       labels:
         # for each service in the stack a new middlaware for rate limiting needs to be registered here
         # requests = average / period this is how the limits are defined
