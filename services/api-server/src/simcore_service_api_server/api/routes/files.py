@@ -11,20 +11,23 @@ from fastapi import File as FileParam
 from fastapi import Header, Request, UploadFile, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse
+from models_library.api_schemas_storage import LinkType
 from models_library.projects_nodes_io import StorageFileID
-from pydantic import ValidationError, parse_obj_as
+from pydantic import AnyUrl, ByteSize, PositiveInt, ValidationError, parse_obj_as
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 from simcore_sdk.node_ports_common.filemanager import (
     UploadableFileObject,
     UploadedFile,
     UploadedFolder,
+    get_upload_links_from_s3,
 )
 from simcore_sdk.node_ports_common.filemanager import upload_path as storage_upload_path
 from starlette.responses import RedirectResponse
 
 from ..._meta import API_VTAG
-from ...models.pagination import Page, PaginationParams
+from ...models.basic_types import FileNameStr
+from ...models.pagination import OnePage, Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.files import File
 from ...services.storage import StorageApi, StorageFileMetaData, to_file_api_model
@@ -168,6 +171,32 @@ async def upload_file(
 async def upload_files(files: list[UploadFile] = FileParam(...)):
     """Uploads multiple files to the system"""
     raise NotImplementedError
+
+
+@router.get("/locations/page", response_model=Page[AnyUrl])
+@cancel_on_disconnect
+async def get_upload_links(
+    file_name: FileNameStr,
+    file_size: PositiveInt,
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    page_params: Annotated[PaginationParams, Depends()],
+):
+    file_meta: File = await File.create_from_name_and_size(
+        file_name, file_size, datetime.datetime.now(datetime.timezone.utc).isoformat()
+    )
+    _, upload_links = await get_upload_links_from_s3(
+        user_id=user_id,
+        store_name=None,
+        store_id=SIMCORE_LOCATION,
+        s3_object=parse_obj_as(
+            StorageFileID, f"api/{file_meta.id}/{file_meta.filename}"
+        ),
+        client_session=None,
+        link_type=LinkType.PRESIGNED,
+        file_size=ByteSize(file_size),
+        is_directory=False,
+    )
+    return OnePage(items=upload_links.urls, total=len(upload_links.urls))
 
 
 @router.get("/{file_id}", response_model=File, responses={**_COMMON_ERROR_RESPONSES})

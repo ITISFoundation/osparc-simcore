@@ -97,5 +97,15 @@ class File(BaseModel):
         )
 
     @classmethod
+    async def create_from_name_and_size(
+        cls, file_name: str, file_size: int, created_at: str
+    ) -> "File":
+        return cls(
+            id=cls.create_id(file_size, file_name, created_at),
+            filename=file_name,
+            checksum=None,
+        )
+
+    @classmethod
     def create_id(cls, *keys) -> UUID:
         return uuid3(NAMESPACE_FILEID_KEY, ":".join(map(str, keys)))
