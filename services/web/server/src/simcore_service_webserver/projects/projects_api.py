@@ -1196,19 +1196,11 @@ async def lock_with_notification(
             user_id,
             user_name,
         ):
-            log.debug(
-                "Project [%s] lock acquired",
-                f"{project_uuid=}",
-            )
             if notify_users:
                 await retrieve_and_notify_project_locked_state(
                     user_id, project_uuid, app
                 )
             yield
-        log.debug(
-            "Project [%s] lock released",
-            f"{project_uuid=}",
-        )
     except ProjectLockError:
         # someone else has already the lock?
         prj_states: ProjectState = await get_project_states_for_user(
