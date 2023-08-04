@@ -5,7 +5,7 @@
 
 import pytest
 from models_library.projects_state import RunningState
-from simcore_service_director_v2.utils.scheduler import (
+from simcore_service_director_v2.utils.comp_scheduler import (
     COMPLETED_STATES,
     SCHEDULED_STATES,
 )

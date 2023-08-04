@@ -43,16 +43,16 @@ from ...core.errors import (
 from ...models.comp_pipelines import CompPipelineAtDB
 from ...models.comp_runs import CompRunsAtDB, MetadataDict
 from ...models.comp_tasks import CompTaskAtDB, Image
-from ...utils.computations import get_pipeline_state_from_task_states
-from ...utils.rabbitmq import (
-    publish_service_resource_tracking_started,
-    publish_service_started_metrics,
-)
-from ...utils.scheduler import (
+from ...utils.comp_scheduler import (
     COMPLETED_STATES,
     PROCESSING_STATES,
     WAITING_FOR_START_STATES,
     Iteration,
+)
+from ...utils.computations import get_pipeline_state_from_task_states
+from ...utils.rabbitmq import (
+    publish_service_resource_tracking_started,
+    publish_service_started_metrics,
 )
 from ..db.repositories.comp_pipelines import CompPipelinesRepository
 from ..db.repositories.comp_runs import CompRunsRepository

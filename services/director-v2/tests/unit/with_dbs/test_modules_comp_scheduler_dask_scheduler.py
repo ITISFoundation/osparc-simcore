@@ -55,8 +55,8 @@ from simcore_service_director_v2.modules.comp_scheduler.base_scheduler import (
 from simcore_service_director_v2.modules.comp_scheduler.dask_scheduler import (
     DaskScheduler,
 )
+from simcore_service_director_v2.utils.comp_scheduler import COMPLETED_STATES
 from simcore_service_director_v2.utils.dask_client_utils import TaskHandlers
-from simcore_service_director_v2.utils.scheduler import COMPLETED_STATES
 from starlette.testclient import TestClient
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit"]

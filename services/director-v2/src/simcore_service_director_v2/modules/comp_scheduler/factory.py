@@ -7,7 +7,7 @@ from ...core.errors import ConfigurationError
 from ...models.comp_runs import CompRunsAtDB
 from ...modules.dask_clients_pool import DaskClientsPool
 from ...modules.rabbitmq import get_rabbitmq_client
-from ...utils.scheduler import SCHEDULED_STATES
+from ...utils.comp_scheduler import SCHEDULED_STATES
 from ..db.repositories.comp_runs import CompRunsRepository
 from .base_scheduler import BaseCompScheduler, ScheduledPipelineParams
 from .dask_scheduler import DaskScheduler

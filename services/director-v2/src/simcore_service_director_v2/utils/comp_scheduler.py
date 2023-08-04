@@ -1,3 +1,5 @@
+from typing import TypeAlias
+
 from models_library.projects_state import RunningState
 from pydantic import PositiveInt
 
@@ -31,4 +33,4 @@ COMPLETED_STATES: set[RunningState] = {
 }
 
 
-Iteration = PositiveInt
+Iteration: TypeAlias = PositiveInt
