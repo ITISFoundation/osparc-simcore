@@ -2,47 +2,52 @@ import logging
 from typing import Awaitable, Callable
 
 from fastapi import FastAPI
-from servicelib.background_task import start_periodic_task, stop_periodic_task
-from servicelib.redis_utils import exclusive
-from settings_library.prometheus import PrometheusSettings
+from servicelib.logging_utils import log_catch, log_context
+from servicelib.rabbitmq import RabbitMQClient, RabbitSettings
 
 from .core.settings import ApplicationSettings
-from .modules.redis import get_redis_client
-from .resource_tracker_core import collect_container_resource_usage_task
-
-_TASK_NAME = "periodic_prometheus_polling"
+from .modules.rabbitmq import get_rabbitmq_client
 
 _logger = logging.getLogger(__name__)
+
+
+async def _subscribe_to_rabbitmq(app) -> None:
+    with log_context(_logger, logging.INFO, msg="Subscribing to rabbitmq channel"):
+        rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
+
+        # TODO: subscribe to rabbitmq channel
+        print("rabbit_client", rabbit_client)
+
+    return
+
+
+async def _unsubscribe_from_rabbitmq(app) -> None:
+    with log_context(
+        _logger, logging.INFO, msg="Unsubscribing from rabbitmq channels"
+    ), log_catch(_logger, reraise=False):
+        rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
+
+        # TODO: unsubscribe from rabbitmq channel
+        print("rabbit_client", rabbit_client)
 
 
 def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _startup() -> None:
         app_settings: ApplicationSettings = app.state.settings
-        app.state.resource_tracker_task = None
-        settings: PrometheusSettings | None = (
-            app_settings.RESOURCE_USAGE_TRACKER_PROMETHEUS
-        )
+        app.state.resource_tracker_rabbitmq_consumer = None
+        settings: RabbitSettings | None = app_settings.RESOURCE_USAGE_TRACKER_RABBITMQ
         if not settings:
-            _logger.warning("Prometheus API client is de-activated in the settings")
+            _logger.warning("RabbitMQ client is de-activated in the settings")
             return
-        lock_key = f"{app.title}:collect_container_resource_usage_task_lock"
-        lock_value = "locked"
-        app.state.resource_tracker_task = start_periodic_task(
-            exclusive(get_redis_client(app), lock_key=lock_key, lock_value=lock_value)(
-                collect_container_resource_usage_task
-            ),
-            interval=app_settings.RESOURCE_USAGE_TRACKER_EVALUATION_INTERVAL_SEC,
-            task_name=_TASK_NAME,
-            app=app,
-        )
+        app.state.resource_tracker_rabbitmq_consumer = _subscribe_to_rabbitmq(app)
 
     return _startup
 
 
 def on_app_shutdown(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _stop() -> None:
-        if app.state.resource_tracker_task:
-            await stop_periodic_task(app.state.resource_tracker_task)
+        if app.state.resource_tracker_rabbitmq_consumer:
+            await _unsubscribe_from_rabbitmq(app)
 
     return _stop
 

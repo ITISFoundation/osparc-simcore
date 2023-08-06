@@ -66,7 +66,7 @@ async def async_client(initialized_app: FastAPI) -> AsyncIterable[httpx.AsyncCli
 @pytest.fixture
 def mocked_prometheus(mocker: MockerFixture) -> mock.Mock:
     mocked_get_prometheus_api_client = mocker.patch(
-        "simcore_service_resource_usage_tracker.resource_tracker_core.get_prometheus_api_client",
+        "simcore_service_resource_usage_tracker.prometheus_containers.core.get_prometheus_api_client",
         autospec=True,
     )
     return mocked_get_prometheus_api_client

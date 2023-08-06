@@ -15,8 +15,9 @@ from .._meta import (
 from ..api.routes import setup_api_routes
 from ..modules.db import setup as setup_db
 from ..modules.prometheus import setup as setup_prometheus_api_client
+from ..modules.rabbitmq import setup as setup_rabbitmq
 from ..modules.redis import setup as setup_redis
-from ..resource_tracker import setup as setup_background_task
+from ..resource_tracker import setup as setup_resource_tracker
 from .settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
@@ -50,8 +51,13 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     if settings.RESOURCE_USAGE_TRACKER_POSTGRES:
         setup_db(app)
     setup_redis(app)
+    setup_rabbitmq(app)
 
-    setup_background_task(app)
+    # NOTE: This task currently runs in the background and collects data from prometheus for all
+    # jupyter smash services. This is currently not needed.
+    # setup_background_task(app)
+
+    setup_resource_tracker(app)
 
     # EVENTS
     async def _on_startup() -> None:

@@ -29,6 +29,7 @@ def mocked_prometheus_fail_response(
 def test_prometheus_does_not_initialize_if_deactivated(
     disabled_database: None,
     disabled_prometheus: None,
+    disabled_rabbitmq: None,
     mocked_redis_server: None,
     initialized_app: FastAPI,
 ):
@@ -41,6 +42,7 @@ def test_prometheus_does_not_initialize_if_deactivated(
 
 def test_mocked_prometheus_initialize(
     disabled_database,
+    disabled_rabbitmq: None,
     mocked_prometheus: None,
     mocked_redis_server: None,
     initialized_app: FastAPI,

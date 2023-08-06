@@ -16,9 +16,9 @@ from simcore_service_resource_usage_tracker.modules.prometheus import (
     get_prometheus_api_client,
 )
 
-from .models.resource_tracker_container import ContainerScrapedResourceUsage
-from .modules.db.repositories.resource_tracker import ResourceTrackerRepository
-from .modules.db.repositories.user_and_project import UserAndProjectRepository
+from ..models.resource_tracker_container import ContainerScrapedResourceUsage
+from ..modules.db.repositories.resource_tracker import ResourceTrackerRepository
+from ..modules.db.repositories.user_and_project import UserAndProjectRepository
 
 _logger = logging.getLogger(__name__)
 

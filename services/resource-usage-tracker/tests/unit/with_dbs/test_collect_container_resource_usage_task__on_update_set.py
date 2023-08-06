@@ -13,7 +13,7 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 from pytest_mock import MockerFixture
 from simcore_postgres_database.models.resource_tracker import resource_tracker_container
-from simcore_service_resource_usage_tracker.resource_tracker_core import (
+from simcore_service_resource_usage_tracker.prometheus_containers.core import (
     collect_container_resource_usage_task,
 )
 
@@ -111,7 +111,7 @@ def mocked_prometheus_client_custom_query(
     mocker: MockerFixture, project_slug_dir: Path, random_promql_output_generator
 ) -> dict[str, mock.Mock]:
     mocked_get_prometheus_api_client = mocker.patch(
-        "simcore_service_resource_usage_tracker.resource_tracker_core._prometheus_sync_client_custom_query",
+        "simcore_service_resource_usage_tracker.prometheus_containers.core._prometheus_sync_client_custom_query",
         autospec=True,
         return_value=random_promql_output_generator["data"],
     )

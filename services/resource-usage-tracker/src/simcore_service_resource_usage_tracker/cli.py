@@ -9,7 +9,7 @@ from rich.console import Console
 from settings_library.utils_cli import create_settings_command
 from simcore_service_resource_usage_tracker.core.errors import ConfigurationError
 from simcore_service_resource_usage_tracker.modules.prometheus import create_client
-from simcore_service_resource_usage_tracker.resource_tracker_cli_placeholder import (
+from simcore_service_resource_usage_tracker.prometheus_containers.cli_placeholder import (
     collect_and_return_service_resource_usage,
 )
 

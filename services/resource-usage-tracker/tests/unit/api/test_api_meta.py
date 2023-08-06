@@ -12,6 +12,7 @@ from simcore_service_resource_usage_tracker.api._meta import _Meta
 def test_healthcheck(
     disabled_database: None,
     disabled_prometheus: None,
+    disabled_rabbitmq: None,
     mocked_redis_server: None,
     client: TestClient,
 ):
@@ -25,6 +26,7 @@ def test_healthcheck(
 def test_meta(
     disabled_database: None,
     disabled_prometheus: None,
+    disabled_rabbitmq: None,
     mocked_redis_server: None,
     client: TestClient,
 ):

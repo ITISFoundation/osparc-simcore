@@ -16,6 +16,8 @@ def test_valid_cli_application_settings(app_environment: EnvVarsDict):
     assert settings
     assert settings.RESOURCE_USAGE_TRACKER_PROMETHEUS
     assert settings.RESOURCE_USAGE_TRACKER_POSTGRES
+    assert settings.RESOURCE_USAGE_TRACKER_REDIS
+    assert settings.RESOURCE_USAGE_TRACKER_RABBITMQ
     assert settings.LOG_LEVEL
 
 
@@ -24,4 +26,6 @@ def test_valid_web_application_settings(app_environment: EnvVarsDict):
     assert settings
     assert settings.RESOURCE_USAGE_TRACKER_PROMETHEUS
     assert settings.RESOURCE_USAGE_TRACKER_POSTGRES
+    assert settings.RESOURCE_USAGE_TRACKER_REDIS
+    assert settings.RESOURCE_USAGE_TRACKER_RABBITMQ
     assert settings.LOG_LEVEL

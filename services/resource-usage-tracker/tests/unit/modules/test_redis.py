@@ -10,6 +10,7 @@ from simcore_service_resource_usage_tracker.modules.redis import get_redis_clien
 async def test_redis_raises_if_missing(
     disabled_prometheus: None,
     disabled_database: None,
+    disabled_rabbitmq: None,
     mocked_redis_server: None,
     initialized_app: FastAPI,
 ):
