@@ -34,6 +34,11 @@ PROCESSING_STATES: set[RunningState] = {
     RunningState.RETRY,
 }
 
+RUNNING_STATES: set[RunningState] = {
+    RunningState.STARTED,
+    RunningState.RETRY,
+}
+
 COMPLETED_STATES: set[RunningState] = {
     RunningState.ABORTED,
     RunningState.SUCCESS,

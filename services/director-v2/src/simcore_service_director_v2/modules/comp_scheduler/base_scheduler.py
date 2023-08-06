@@ -26,7 +26,6 @@ from models_library.projects_state import RunningState
 from models_library.services import ServiceKey, ServiceType, ServiceVersion
 from models_library.users import UserID
 from pydantic import PositiveInt
-from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 
@@ -44,6 +43,7 @@ from ...models.comp_tasks import CompTaskAtDB, Image
 from ...utils.comp_scheduler import (
     COMPLETED_STATES,
     PROCESSING_STATES,
+    RUNNING_STATES,
     WAITING_FOR_START_STATES,
     Iteration,
     create_service_resources_from_task,
@@ -261,24 +261,63 @@ class BaseCompScheduler(ABC):
             if task.state is not backend_state
         ]
 
-    async def _process_incomplete_tasks(
-        self, user_id: UserID, tasks: list[CompTaskAtDB], iteration: Iteration
+    async def _process_started_tasks(
+        self,
+        tasks: list[CompTaskAtDB],
+        *,
+        user_id: UserID,
+        iteration: Iteration,
+        run_metadata: MetadataDict,
     ) -> None:
-        comp_tasks_repo = CompTasksRepository(self.db_engine)
+        # resource tracking
         await asyncio.gather(
             *(
-                comp_tasks_repo.update_project_tasks_state(
-                    t.project_id, [t.node_id], t.state
+                publish_service_resource_tracking_started(
+                    self.rabbitmq_client,
+                    service_run_id=get_resource_tracking_run_id(
+                        user_id, t.project_id, iteration
+                    ),
+                    wallet_id=run_metadata["wallet_id"],
+                    wallet_name=run_metadata["wallet_name"],
+                    product_name=run_metadata["product_name"],
+                    simcore_user_agent=run_metadata["simcore_user_agent"],
+                    user_id=user_id,
+                    user_email=run_metadata["user_email"],
+                    project_id=t.project_id,
+                    project_name=run_metadata["project_name"],
+                    node_id=t.node_id,
+                    node_name=run_metadata["node_id_names_map"].get(
+                        t.node_id, "undefined"
+                    ),
+                    service_key=ServiceKey(t.image.name),
+                    service_version=ServiceVersion(t.image.tag),
+                    service_type=ServiceType.COMPUTATIONAL,
+                    service_resources=create_service_resources_from_task(t),
+                    service_additional_metadata={},
                 )
                 for t in tasks
             )
         )
-        # resource tracking
+        # instrumentation
         await asyncio.gather(
             *(
-                publish_service_resource_tracking_heartbeat(
+                publish_service_started_metrics(
                     self.rabbitmq_client,
-                    get_resource_tracking_run_id(user_id, t.project_id, iteration),
+                    user_id=user_id,
+                    simcore_user_agent=run_metadata["simcore_user_agent"],
+                    task=t,
+                )
+                for t in tasks
+            )
+        )
+
+    async def _process_incomplete_tasks(self, tasks: list[CompTaskAtDB]) -> None:
+        comp_tasks_repo = CompTasksRepository(self.db_engine)
+        # FIXME: this does not do well with start time here!!!
+        await asyncio.gather(
+            *(
+                comp_tasks_repo.update_project_tasks_state(
+                    t.project_id, [t.node_id], t.state
                 )
                 for t in tasks
             )
@@ -300,7 +339,7 @@ class BaseCompScheduler(ABC):
             changed_tasks = await self._get_changed_tasks_from_backend(
                 user_id, cluster_id, processing_tasks
             )
-            tasks_started_since_last_check: list[CompTaskAtDB] = [
+            if started_tasks := [
                 current
                 for previous, current in changed_tasks
                 if current.state is RunningState.STARTED
@@ -308,71 +347,44 @@ class BaseCompScheduler(ABC):
                     previous.state in WAITING_FOR_START_STATES
                     and current.state in COMPLETED_STATES
                 )
-            ]
-
-            # resource tracking
-            await asyncio.gather(
-                *(
-                    publish_service_resource_tracking_started(
-                        self.rabbitmq_client,
-                        service_run_id=get_resource_tracking_run_id(
-                            user_id, project_id, iteration
-                        ),
-                        wallet_id=run_metadata["wallet_id"],
-                        wallet_name=run_metadata["wallet_name"],
-                        product_name=run_metadata["product_name"],
-                        simcore_user_agent=run_metadata["simcore_user_agent"],
-                        user_id=user_id,
-                        user_email=run_metadata["user_email"],
-                        project_id=t.project_id,
-                        project_name=run_metadata["project_name"],
-                        node_id=t.node_id,
-                        node_name=run_metadata["node_id_names_map"].get(
-                            t.node_id, "undefined"
-                        ),
-                        service_key=ServiceKey(t.image.name),
-                        service_version=ServiceVersion(t.image.tag),
-                        service_type=ServiceType.COMPUTATIONAL,
-                        service_resources=create_service_resources_from_task(t),
-                        service_additional_metadata={},
-                    )
-                    for t in tasks_started_since_last_check
+            ]:
+                await self._process_started_tasks(
+                    started_tasks,
+                    user_id=user_id,
+                    iteration=iteration,
+                    run_metadata=run_metadata,
                 )
-            )
-            # instrumentation
-            await asyncio.gather(
-                *(
-                    publish_service_started_metrics(
-                        self.rabbitmq_client,
-                        user_id=user_id,
-                        simcore_user_agent=run_metadata.get(
-                            "simcore_user_agent",
-                            UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-                        ),
-                        task=t,
-                    )
-                    for t in tasks_started_since_last_check
-                )
-            )
 
-            completed_tasks = [
+            if completed_tasks := [
                 current
                 for _, current in changed_tasks
                 if current.state in COMPLETED_STATES
-            ]
-            incomplete_tasks = [
-                current
-                for _, current in changed_tasks
-                if current.state not in COMPLETED_STATES
-            ]
-
-            if completed_tasks:
+            ]:
                 await self._process_completed_tasks(
                     user_id, cluster_id, completed_tasks, run_metadata, iteration
                 )
-            if incomplete_tasks:
-                await self._process_incomplete_tasks(
-                    user_id, incomplete_tasks, iteration
+
+            if incomplete_tasks := [
+                current
+                for _, current in changed_tasks
+                if current.state not in COMPLETED_STATES
+            ]:
+                await self._process_incomplete_tasks(incomplete_tasks)
+
+            # resource tracking for running tasks
+            if running_tasks := [
+                task for task in processing_tasks if task.state in RUNNING_STATES
+            ]:
+                await asyncio.gather(
+                    *(
+                        publish_service_resource_tracking_heartbeat(
+                            self.rabbitmq_client,
+                            get_resource_tracking_run_id(
+                                user_id, t.project_id, iteration
+                            ),
+                        )
+                        for t in running_tasks
+                    )
                 )
 
     @abstractmethod
