@@ -371,7 +371,9 @@ class BaseCompScheduler(ABC):
                     user_id, cluster_id, completed_tasks, run_metadata, iteration
                 )
             if incomplete_tasks:
-                await self._process_incomplete_tasks(incomplete_tasks)
+                await self._process_incomplete_tasks(
+                    user_id, incomplete_tasks, iteration
+                )
 
     @abstractmethod
     async def _start_tasks(
