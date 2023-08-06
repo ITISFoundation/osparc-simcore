@@ -318,19 +318,18 @@ class BaseCompScheduler(ABC):
                         service_run_id=get_resource_tracking_run_id(
                             user_id, project_id, iteration
                         ),
-                        wallet_id=5,
-                        wallet_name="fake",
-                        product_name=run_metadata.get("product_name", "undefined"),
-                        simcore_user_agent=run_metadata.get(
-                            "simcore_user_agent",
-                            UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-                        ),
+                        wallet_id=run_metadata["wallet_id"],
+                        wallet_name=run_metadata["wallet_name"],
+                        product_name=run_metadata["product_name"],
+                        simcore_user_agent=run_metadata["simcore_user_agent"],
                         user_id=user_id,
-                        user_email="fake",
+                        user_email=run_metadata["user_email"],
                         project_id=t.project_id,
-                        project_name="fake",
+                        project_name=run_metadata["project_name"],
                         node_id=t.node_id,
-                        node_name="fake",
+                        node_name=run_metadata["node_id_names_map"].get(
+                            t.node_id, "undefined"
+                        ),
                         service_key=ServiceKey(t.image.name),
                         service_version=ServiceVersion(t.image.tag),
                         service_type=ServiceType.COMPUTATIONAL,

@@ -1,9 +1,10 @@
 import datetime
 from contextlib import suppress
-from typing import Any, ClassVar
+from typing import Any, ClassVar, TypedDict
 
 from models_library.clusters import DEFAULT_CLUSTER_ID, ClusterID
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
 from pydantic import BaseModel, Field, PositiveInt, validator
@@ -11,7 +12,15 @@ from simcore_postgres_database.models.comp_pipeline import StateType
 
 from ..utils.db import DB_TO_RUNNING_STATE
 
-MetadataDict = dict[str, Any]
+
+class MetadataDict(TypedDict):
+    node_id_names_map: dict[NodeID, str]
+    project_name: str
+    product_name: str
+    simcore_user_agent: str
+    user_email: str
+    wallet_id: int
+    wallet_name: str
 
 
 class CompRunsAtDB(BaseModel):

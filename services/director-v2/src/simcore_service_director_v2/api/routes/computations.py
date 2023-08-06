@@ -28,6 +28,7 @@ from models_library.api_schemas_directorv2.comp_tasks import (
 )
 from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
@@ -49,7 +50,7 @@ from ...core.errors import (
     SchedulerError,
 )
 from ...models.comp_pipelines import CompPipelineAtDB
-from ...models.comp_runs import CompRunsAtDB
+from ...models.comp_runs import CompRunsAtDB, MetadataDict
 from ...models.comp_tasks import CompTaskAtDB
 from ...modules.catalog import CatalogClient
 from ...modules.comp_scheduler.base_scheduler import BaseCompScheduler
@@ -58,6 +59,7 @@ from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_runs import CompRunsRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...modules.db.repositories.projects import ProjectsRepository
+from ...modules.db.repositories.users import UsersRepository
 from ...modules.director_v0 import DirectorV0Client
 from ...utils.computations import (
     find_deprecated_tasks,
@@ -117,6 +119,7 @@ async def create_computation(  # noqa: C901, PLR0912
     director_client: Annotated[DirectorV0Client, Depends(get_director_v0_client)],
     scheduler: Annotated[BaseCompScheduler, Depends(get_scheduler)],
     catalog_client: Annotated[CatalogClient, Depends(get_catalog_client)],
+    users_repo: Annotated[UsersRepository, Depends(get_repository(UsersRepository))],
 ) -> ComputationGet:
     log.debug(
         "User %s is creating a new computation from project %s",
@@ -220,10 +223,18 @@ async def create_computation(  # noqa: C901, PLR0912
                 computation.user_id,
                 computation.project_id,
                 computation.cluster_id or DEFAULT_CLUSTER_ID,
-                {
-                    "product_name": computation.product_name,
-                    "simcore_user_agent": computation.simcore_user_agent,
-                },
+                MetadataDict(
+                    node_id_names_map={
+                        NodeID(node_idstr): node_data.label
+                        for node_idstr, node_data in project.workbench.items()
+                    },
+                    product_name=computation.product_name,
+                    project_name=project.name,
+                    simcore_user_agent=computation.simcore_user_agent,
+                    user_email=await users_repo.get_user_email(computation.user_id),
+                    wallet_id=42,
+                    wallet_name="the super wallet!",
+                ),
             )
 
         # filter the tasks by the effective pipeline
