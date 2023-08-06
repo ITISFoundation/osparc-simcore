@@ -220,8 +220,10 @@ async def create_computation(  # noqa: C901, PLR0912
                 computation.user_id,
                 computation.project_id,
                 computation.cluster_id or DEFAULT_CLUSTER_ID,
-                computation.product_name,
-                computation.simcore_user_agent,
+                {
+                    "product_name": computation.product_name,
+                    "simcore_user_agent": computation.simcore_user_agent,
+                },
             )
 
         # filter the tasks by the effective pipeline
