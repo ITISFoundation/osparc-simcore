@@ -10,16 +10,17 @@ from ._common import column_modified_datetime
 from .base import metadata
 
 
-class TransactionStatus(str, enum.Enum):
+class TransactionBillingStatus(str, enum.Enum):
     PENDING = "PENDING"
-    COMPLETED = "COMPLETED"
-    FAILED = "FAILED"
+    BILLED = "BILLED"
+    NOT_BILLED = "NOT_BILLED"
+    MANUAL_REVIEW = "MANUAL_REVIEW"
 
 
 class TransactionClassification(str, enum.Enum):
-    TOP_UP = "TOP_UP"  # user top up credits
-    DEDUCTION_SERVICE_RUN = (
-        "DEDUCTION_SERVICE_RUN"  # computational/dynamic service run costs
+    ADD_WALLET_TOP_UP = "ADD_WALLET_TOP_UP"  # user top up credits
+    DEDUCT_SERVICE_RUN = (
+        "DEDUCT_SERVICE_RUN"  # computational/dynamic service run costs)
     )
 
 
@@ -74,16 +75,16 @@ resource_tracker_wallets_credit_transactions = sa.Table(
     ),
     sa.Column(
         "transaction_status",
-        sa.Enum(TransactionStatus),
+        sa.Enum(TransactionBillingStatus),
         nullable=True,
-        doc="Transaction status, ex. PENDING, COMPLETED, FAILED",
+        doc="Transaction status, ex. PENDING, BILLED, NOT_BILLED, MANUAL_REVIEW",
         index=True,
     ),
     sa.Column(
         "transaction_classification",
         sa.Enum(TransactionClassification),
         nullable=True,
-        doc="Transaction classification, ex. TOP_UP, DEDUCTION_SERVICE_RUN, DEDUCTION_STORAGE",
+        doc="Transaction classification, ex. ADD_WALLET_TOP_UP, DEDUCT_SERVICE_RUN",
         index=True,
     ),
     sa.Column(

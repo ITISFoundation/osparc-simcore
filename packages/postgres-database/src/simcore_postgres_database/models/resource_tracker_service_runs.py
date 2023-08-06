@@ -21,7 +21,8 @@ class ResourceTrackerServiceType(str, enum.Enum):
 class ResourceTrackerServiceRunStatus(str, enum.Enum):
     RUNNING = "RUNNING"
     STOPPED_SUCCESS = "STOPPED_SUCCESS"
-    STOPPED_ERROR = "STOPPED_ERROR"
+    STOPPED_USER_ERROR = "STOPPED_USER_ERROR"
+    STOPPED_PLATFORM_ERROR = "STOPPED_PLATFORM_ERROR"
 
 
 resource_tracker_service_runs = sa.Table(
