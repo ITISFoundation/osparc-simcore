@@ -212,10 +212,9 @@ def fake_task(fake_task_file: Path) -> CompTaskAtDB:
                 (RunningState.SUCCESS),
                 (RunningState.FAILED),
                 (RunningState.ABORTED),
-                (RunningState.RETRY),
             ],
             RunningState.STARTED,
-            id="any number of success and 1 retry = started",
+            id="any number of success",
         ),
         pytest.param(
             [
@@ -274,7 +273,6 @@ def test_get_pipeline_state_from_task_states(
         (RunningState.NOT_STARTED, False),
         (RunningState.PENDING, True),
         (RunningState.STARTED, True),
-        (RunningState.RETRY, True),
         (RunningState.SUCCESS, False),
         (RunningState.FAILED, False),
         (RunningState.ABORTED, False),

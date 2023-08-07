@@ -24,7 +24,6 @@ from simcore_service_director_v2.utils.comp_scheduler import (
         RunningState.PUBLISHED,
         RunningState.PENDING,
         RunningState.STARTED,
-        RunningState.RETRY,
     ],
 )
 def test_scheduler_takes_care_of_runs_with_state(state: RunningState):

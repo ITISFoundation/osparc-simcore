@@ -486,10 +486,9 @@ async def test_run_pipeline_and_check_state(
         RunningState.PENDING: 3,
         RunningState.WAITING_FOR_RESOURCES: 3,
         RunningState.STARTED: 4,
-        RunningState.RETRY: 5,
-        RunningState.SUCCESS: 6,
-        RunningState.FAILED: 6,
-        RunningState.ABORTED: 6,
+        RunningState.SUCCESS: 5,
+        RunningState.FAILED: 5,
+        RunningState.ABORTED: 5,
     }
 
     assert all(  # pylint: disable=use-a-generator

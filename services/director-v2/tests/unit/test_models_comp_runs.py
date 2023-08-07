@@ -32,7 +32,7 @@ def test_computation_run_model_with_run_result_value_field(
     model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
 ):
     for name, example in model_cls_examples.items():
-        example["result"] = RunningState.RETRY.value
+        example["result"] = RunningState.WAITING_FOR_RESOURCES.value
         print(name, ":", pformat(example))
         model_instance = model_cls(**example)
         assert model_instance, f"Failed with {name}"

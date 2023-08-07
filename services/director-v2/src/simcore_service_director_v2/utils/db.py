@@ -22,7 +22,6 @@ DB_TO_RUNNING_STATE = {
 
 RUNNING_STATE_TO_DB = {
     **{v: k for k, v in DB_TO_RUNNING_STATE.items()},
-    RunningState.RETRY: StateType.RUNNING,
 }
 
 
