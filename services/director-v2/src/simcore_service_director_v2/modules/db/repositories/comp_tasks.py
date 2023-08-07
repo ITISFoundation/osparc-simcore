@@ -236,6 +236,7 @@ async def _generate_tasks_list_from_project(
             internal_id=internal_id,
             node_class=to_node_class(node.key),
             progress=task_progress,
+            last_heartbeat=None,
         )
 
         list_comp_tasks.append(task_db)
@@ -332,7 +333,7 @@ class CompTasksRepository(BaseRepository):
                 insert_stmt = insert(comp_tasks).values(**comp_task_db.to_db_model())
 
                 exclusion_rule = (
-                    {"state", "progress"}
+                    {"state", "progress", "last_heartbeat"}
                     if str(comp_task_db.node_id) not in published_nodes
                     else set()
                 )
@@ -434,6 +435,11 @@ class CompTasksRepository(BaseRepository):
         self, project_id: ProjectID, node_id: NodeID, progress: float
     ) -> None:
         await self._update_task(project_id, node_id, progress=progress)
+
+    async def update_project_task_last_heartbeat(
+        self, project_id: ProjectID, node_id: NodeID, heartbeat_time: datetime
+    ) -> None:
+        await self._update_task(project_id, node_id, last_heartbeat=heartbeat_time)
 
     async def delete_tasks_from_project(self, project_id: ProjectID) -> None:
         async with self.db_engine.acquire() as conn:

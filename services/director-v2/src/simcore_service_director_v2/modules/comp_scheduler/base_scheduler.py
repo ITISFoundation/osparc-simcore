@@ -11,6 +11,7 @@ The sidecar will then change the state to STARTED, then to SUCCESS or FAILED.
 
 """
 import asyncio
+import datetime
 import logging
 import traceback
 from abc import ABC, abstractmethod
@@ -37,6 +38,7 @@ from ...core.errors import (
     SchedulerError,
     TaskSchedulingError,
 )
+from ...core.settings import ComputationalBackendSettings
 from ...models.comp_pipelines import CompPipelineAtDB
 from ...models.comp_runs import CompRunsAtDB, MetadataDict
 from ...models.comp_tasks import CompTaskAtDB, Image
@@ -81,6 +83,8 @@ class BaseCompScheduler(ABC):
     db_engine: Engine
     wake_up_event: asyncio.Event = field(default_factory=asyncio.Event, init=False)
     rabbitmq_client: RabbitMQClient
+    settings: ComputationalBackendSettings
+    service_runtime_heartbeat_interval: datetime.timedelta
 
     async def run_new_pipeline(
         self,
@@ -241,6 +245,46 @@ class BaseCompScheduler(ABC):
             )
         return tasks
 
+    async def _send_running_tasks_heartbeat(
+        self,
+        user_id: UserID,
+        project_id: ProjectID,
+        iteration: Iteration,
+        dag: nx.DiGraph,
+    ) -> None:
+        utc_now = arrow.utcnow().datetime
+        tasks: dict[str, CompTaskAtDB] = await self._get_pipeline_tasks(project_id, dag)
+        if running_tasks := [
+            t
+            for t in tasks.values()
+            if t.state in RUNNING_STATES
+            and (
+                t.last_heartbeat is None
+                or (
+                    (utc_now - t.last_heartbeat)
+                    > self.service_runtime_heartbeat_interval
+                )
+            )
+        ]:
+            await asyncio.gather(
+                *(
+                    publish_service_resource_tracking_heartbeat(
+                        self.rabbitmq_client,
+                        get_resource_tracking_run_id(user_id, t.project_id, iteration),
+                    )
+                    for t in running_tasks
+                )
+            )
+            comp_tasks_repo = CompTasksRepository(self.db_engine)
+            await asyncio.gather(
+                *(
+                    comp_tasks_repo.update_project_task_last_heartbeat(
+                        t.project_id, t.node_id, utc_now
+                    )
+                    for t in running_tasks
+                )
+            )
+
     async def _get_changed_tasks_from_backend(
         self,
         user_id: UserID,
@@ -250,16 +294,45 @@ class BaseCompScheduler(ABC):
         tasks_backend_status = await self._get_tasks_status(
             user_id, cluster_id, processing_tasks
         )
+
         return [
             (
                 task,
                 task.copy(update={"state": backend_state}),
             )
             for task, backend_state in zip(
-                processing_tasks, tasks_backend_status, strict=False
+                processing_tasks, tasks_backend_status, strict=True
             )
             if task.state is not backend_state
         ]
+
+    async def _triage_changed_tasks(
+        self, changed_tasks: list[tuple[_Previous, _Current]]
+    ) -> tuple:
+        started_tasks = [
+            current
+            for previous, current in changed_tasks
+            if current.state in RUNNING_STATES
+            or (
+                previous.state in WAITING_FOR_START_STATES
+                and current.state in COMPLETED_STATES
+            )
+        ]
+
+        completed_tasks = [
+            current for _, current in changed_tasks if current.state in COMPLETED_STATES
+        ]
+
+        waiting_for_resources_tasks = [
+            current
+            for previous, current in changed_tasks
+            if current.state in WAITING_FOR_START_STATES
+        ]
+
+        assert len(changed_tasks) == (
+            len(started_tasks) + len(completed_tasks) + len(waiting_for_resources_tasks)
+        )  # nosec
+        return (started_tasks, completed_tasks, waiting_for_resources_tasks)
 
     async def _process_started_tasks(
         self,
@@ -269,6 +342,8 @@ class BaseCompScheduler(ABC):
         iteration: Iteration,
         run_metadata: MetadataDict,
     ) -> None:
+        utc_now = arrow.utcnow().datetime
+
         # resource tracking
         await asyncio.gather(
             *(
@@ -311,7 +386,7 @@ class BaseCompScheduler(ABC):
             )
         )
 
-    async def _process_incomplete_tasks(self, tasks: list[CompTaskAtDB]) -> None:
+        # update DB
         comp_tasks_repo = CompTasksRepository(self.db_engine)
         await asyncio.gather(
             *(
@@ -319,9 +394,24 @@ class BaseCompScheduler(ABC):
                     t.project_id,
                     [t.node_id],
                     t.state,
-                    optional_started=arrow.utcnow().datetime
-                    if t.state is RunningState.STARTED
-                    else None,
+                    optional_started=utc_now,
+                )
+                for t in tasks
+            )
+        )
+
+    async def _process_reverted_tasks(self, tasks: list[CompTaskAtDB]) -> None:
+        _logger.warning(
+            "Tasks were reverted, this should not happen! TIP: Check %s",
+            f"{[t.job_id for t in tasks]}",
+        )
+        comp_tasks_repo = CompTasksRepository(self.db_engine)
+        await asyncio.gather(
+            *(
+                comp_tasks_repo.update_project_tasks_state(
+                    t.project_id,
+                    [t.node_id],
+                    t.state,
                 )
                 for t in tasks
             )
@@ -336,60 +426,38 @@ class BaseCompScheduler(ABC):
         pipeline_dag: nx.DiGraph,
         run_metadata: MetadataDict,
     ) -> None:
-        all_tasks = await self._get_pipeline_tasks(project_id, pipeline_dag)
-        if processing_tasks := [
-            t for t in all_tasks.values() if t.state in PROCESSING_STATES
-        ]:
-            changed_tasks = await self._get_changed_tasks_from_backend(
-                user_id, cluster_id, processing_tasks
+        tasks = await self._get_pipeline_tasks(project_id, pipeline_dag)
+        tasks_inprocess = [t for t in tasks.values() if t.state in PROCESSING_STATES]
+        if not tasks_inprocess:
+            return
+
+        # get the tasks which state actually changed since last check
+        tasks_with_changed_states = await self._get_changed_tasks_from_backend(
+            user_id, cluster_id, tasks_inprocess
+        )
+
+        (
+            tasks_started,
+            tasks_stopped,
+            tasks_reverted,
+        ) = await self._triage_changed_tasks(tasks_with_changed_states)
+
+        # now process the tasks
+        if tasks_started:
+            await self._process_started_tasks(
+                tasks_started,
+                user_id=user_id,
+                iteration=iteration,
+                run_metadata=run_metadata,
             )
-            if started_tasks := [
-                current
-                for previous, current in changed_tasks
-                if current.state is RunningState.STARTED
-                or (
-                    previous.state in WAITING_FOR_START_STATES
-                    and current.state in COMPLETED_STATES
-                )
-            ]:
-                await self._process_started_tasks(
-                    started_tasks,
-                    user_id=user_id,
-                    iteration=iteration,
-                    run_metadata=run_metadata,
-                )
 
-            if completed_tasks := [
-                current
-                for _, current in changed_tasks
-                if current.state in COMPLETED_STATES
-            ]:
-                await self._process_completed_tasks(
-                    user_id, cluster_id, completed_tasks, run_metadata, iteration
-                )
+        if tasks_stopped:
+            await self._process_completed_tasks(
+                user_id, cluster_id, tasks_stopped, run_metadata, iteration
+            )
 
-            if incomplete_tasks := [
-                current
-                for _, current in changed_tasks
-                if current.state not in COMPLETED_STATES
-            ]:
-                await self._process_incomplete_tasks(incomplete_tasks)
-
-            # resource tracking for running tasks
-            if running_tasks := [
-                task for task in processing_tasks if task.state in RUNNING_STATES
-            ]:
-                await asyncio.gather(
-                    *(
-                        publish_service_resource_tracking_heartbeat(
-                            self.rabbitmq_client,
-                            get_resource_tracking_run_id(
-                                user_id, t.project_id, iteration
-                            ),
-                        )
-                        for t in running_tasks
-                    )
-                )
+        if tasks_reverted:
+            await self._process_reverted_tasks(tasks_reverted)
 
     @abstractmethod
     async def _start_tasks(
@@ -468,11 +536,15 @@ class BaseCompScheduler(ABC):
                     dag=dag,
                     run_metadata=run_metadata,
                 )
-            # 4. Update the run result
+            # 4. send a heartbeat
+            await self._send_running_tasks_heartbeat(
+                user_id, project_id, iteration, dag
+            )
+            # 5. Update the run result
             pipeline_result = await self._update_run_result_from_tasks(
                 user_id, project_id, iteration, comp_tasks
             )
-            # 5. Are we done scheduling that pipeline?
+            # 6. Are we done scheduling that pipeline?
             if not dag.nodes() or pipeline_result in COMPLETED_STATES:
                 # there is nothing left, the run is completed, we're done here
                 self.scheduled_pipelines.pop((user_id, project_id, iteration), None)

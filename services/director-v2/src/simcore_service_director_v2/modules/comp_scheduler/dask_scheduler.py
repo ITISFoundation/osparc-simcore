@@ -33,7 +33,6 @@ from simcore_service_director_v2.utils.rabbitmq import (
 )
 
 from ...core.errors import TaskSchedulingError
-from ...core.settings import ComputationalBackendSettings
 from ...models.comp_runs import MetadataDict
 from ...models.comp_tasks import CompTaskAtDB, Image
 from ...modules.dask_client import DaskClient
@@ -65,7 +64,6 @@ async def _cluster_dask_client(
 
 @dataclass
 class DaskScheduler(BaseCompScheduler):
-    settings: ComputationalBackendSettings
     dask_clients_pool: DaskClientsPool
 
     def __post_init__(self):
