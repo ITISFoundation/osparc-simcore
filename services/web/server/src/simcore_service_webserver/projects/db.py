@@ -709,9 +709,7 @@ class ProjectDBAPI(BaseProjectDB):
         old_struct_node: Node,
         product_name: str,
     ) -> None:
-        project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
-        async with self.engine.acquire() as conn:
-            await project_nodes_repo.add(conn, nodes=[node])
+        # NOTE: permission check is done currently in update_project_workbench!
         partial_workbench_data: dict[str, Any] = {
             f"{node.node_id}": jsonable_encoder(
                 old_struct_node,
@@ -721,19 +719,23 @@ class ProjectDBAPI(BaseProjectDB):
         await self.update_project_workbench(
             partial_workbench_data, user_id, f"{project_id}", product_name
         )
+        project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
+        async with self.engine.acquire() as conn:
+            await project_nodes_repo.add(conn, nodes=[node])
 
     async def remove_project_node(
         self, user_id: UserID, project_id: ProjectID, node_id: NodeID
     ) -> None:
-        project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
-        async with self.engine.acquire() as conn:
-            await project_nodes_repo.delete(conn, node_id=node_id)
+        # NOTE: permission check is done currently in update_project_workbench!
         partial_workbench_data: dict[str, Any] = {
             f"{node_id}": None,
         }
         await self.update_project_workbench(
             partial_workbench_data, user_id, f"{project_id}"
         )
+        project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
+        async with self.engine.acquire() as conn:
+            await project_nodes_repo.delete(conn, node_id=node_id)
 
     async def get_project_node(
         self, project_id: ProjectID, node_id: NodeID
@@ -758,9 +760,11 @@ class ProjectDBAPI(BaseProjectDB):
                 )
             )
             if not user_extra_properties.override_services_specifications:
-                raise ProjectNodeResourcesInsufficientRightsError(
-                    "User not allowed to modify node resources! TIP: Ask your administrator or contact support"
+                msg = (
+                    "User not allowed to modify node resources! "
+                    "TIP: Ask your administrator or contact support"
                 )
+                raise ProjectNodeResourcesInsufficientRightsError(msg)
             return await project_nodes_repo.update(conn, node_id=node_id, **values)
 
     async def list_project_nodes(self, project_id: ProjectID) -> list[ProjectNode]:
