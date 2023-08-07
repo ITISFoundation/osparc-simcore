@@ -887,8 +887,9 @@ async def test_download_file_cases(
     file_size: ByteSize,
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
     location_id: int,
+    project_id: ProjectID,
+    node_id: NodeID,
     user_id: UserID,
-    faker: Faker,
     create_empty_directory: Callable[..., Awaitable[FileUploadSchema]],
     create_file_of_size: Callable[[ByteSize, str | None], Path],
     storage_s3_client: StorageS3Client,
@@ -898,9 +899,7 @@ async def test_download_file_cases(
 
     # 1. error case
     # no file was not uploaded
-    missing_file = parse_obj_as(
-        SimcoreS3FileID, f"{faker.uuid4()}/{faker.uuid4()}/missing.file"
-    )
+    missing_file = parse_obj_as(SimcoreS3FileID, f"{project_id}/{node_id}/missing.file")
     assert (
         await storage_s3_client.file_exists(storage_s3_bucket, s3_object=missing_file)
         is False
@@ -915,8 +914,9 @@ async def test_download_file_cases(
         .with_query(user_id=user_id)
     )
     response = await client.get(f"{download_url}")
-    data, error = await assert_status(response, web.HTTPForbidden)
+    data, error = await assert_status(response, web.HTTPNotFound)
     assert data is None
+    assert missing_file in error["message"]
 
     # 2. file_meta_data entry corresponds to a file
     # upload a single file as a file_meta_data entry and check link
