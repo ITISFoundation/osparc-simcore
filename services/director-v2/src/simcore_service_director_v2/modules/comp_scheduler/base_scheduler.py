@@ -313,11 +313,15 @@ class BaseCompScheduler(ABC):
 
     async def _process_incomplete_tasks(self, tasks: list[CompTaskAtDB]) -> None:
         comp_tasks_repo = CompTasksRepository(self.db_engine)
-        # FIXME: this does not do well with start time here!!!
         await asyncio.gather(
             *(
                 comp_tasks_repo.update_project_tasks_state(
-                    t.project_id, [t.node_id], t.state
+                    t.project_id,
+                    [t.node_id],
+                    t.state,
+                    optional_started=arrow.utcnow().datetime
+                    if t.state is RunningState.STARTED
+                    else None,
                 )
                 for t in tasks
             )
