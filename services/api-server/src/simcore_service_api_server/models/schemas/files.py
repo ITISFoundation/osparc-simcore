@@ -15,8 +15,8 @@ NAMESPACE_FILEID_KEY = UUID("aa154444-d22d-4290-bb15-df37dba87865")
 class ClientFile(BaseModel):
     """Represents a file stored on the client side"""
 
-    filename: ConstrainedStr
-    filesize: ByteSize
+    filename: ConstrainedStr = Field(..., description="File name")
+    filesize: ByteSize = Field(..., description="File size in bytes")
 
 
 class File(BaseModel):
