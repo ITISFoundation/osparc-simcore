@@ -46,7 +46,7 @@ from simcore_service_director_v2.core.errors import (
 )
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
-from simcore_service_director_v2.models.comp_runs import CompRunsAtDB
+from simcore_service_director_v2.models.comp_runs import CompRunsAtDB, RunMetadataDict
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
 from simcore_service_director_v2.modules.comp_scheduler import background_task
 from simcore_service_director_v2.modules.comp_scheduler.base_scheduler import (
@@ -363,12 +363,20 @@ async def _assert_start_pipeline(
 ) -> list[CompTaskAtDB]:
     exp_published_tasks = deepcopy(published_project.tasks)
     assert published_project.project.prj_owner
+    run_metadata = RunMetadataDict(
+        node_id_names_map={},
+        project_name="",
+        product_name="",
+        simcore_user_agent="",
+        user_email="",
+        wallet_id=231,
+        wallet_name="",
+    )
     await scheduler.run_new_pipeline(
         user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
         cluster_id=DEFAULT_CLUSTER_ID,
-        product_name="",
-        simcore_user_agent="",
+        run_metadata=run_metadata,
     )
     assert len(scheduler.scheduled_pipelines) == 1, "the pipeline is not scheduled!"
     assert (
@@ -379,6 +387,7 @@ async def _assert_start_pipeline(
         assert p_id == published_project.project.uuid
         assert it > 0
         assert params.mark_for_cancellation is False
+        assert params.run_metadata == run_metadata
 
     # check the database is correctly updated, the run is published
     await _assert_comp_run_db(aiopg_engine, published_project, RunningState.PUBLISHED)
@@ -534,6 +543,9 @@ async def test_proper_pipeline_is_scheduled(
     )
     mocked_dask_client.get_tasks_status.reset_mock()
     mocked_dask_client.get_task_result.assert_not_called()
+    assert (
+        False
+    ), "Check the rabbitmq messages here!!, there should be metrics and resource tracking"
 
     # -------------------------------------------------------------------------------
     # 4. the "worker" completed the task successfully
@@ -560,6 +572,9 @@ async def test_proper_pipeline_is_scheduled(
         expected_state=RunningState.SUCCESS,
         expected_progress=1,
     )
+    assert (
+        False
+    ), "Check the rabbitmq messages here!!, there should be metrics and resource tracking stop"
     completed_tasks = [exp_started_task]
     next_pending_task = published_project.tasks[2]
     expected_pending_tasks.append(next_pending_task)
@@ -640,6 +655,9 @@ async def test_proper_pipeline_is_scheduled(
     )
     mocked_dask_client.get_tasks_status.reset_mock()
     mocked_dask_client.get_task_result.assert_not_called()
+    assert (
+        False
+    ), "Check the rabbitmq messages here!!, there should be metrics and resource tracking"
 
     # -------------------------------------------------------------------------------
     # 7. the task fails
@@ -671,6 +689,9 @@ async def test_proper_pipeline_is_scheduled(
     mocked_dask_client.get_task_result.reset_mock()
     mocked_parse_output_data_fct.assert_not_called()
     expected_pending_tasks.remove(exp_started_task)
+    assert (
+        False
+    ), "Check the rabbitmq messages here!!, there should be metrics and resource tracking"
 
     # -------------------------------------------------------------------------------
     # 8. the last task shall succeed
@@ -703,6 +724,10 @@ async def test_proper_pipeline_is_scheduled(
         [p.job_id for p in expected_pending_tasks]
     )
     mocked_dask_client.get_task_result.assert_called_once_with(exp_started_task.job_id)
+    assert (
+        False
+    ), "Check the rabbitmq messages here!!, there should be metrics and resource tracking"
+
     # the scheduled pipeline shall be removed
     assert scheduler.scheduled_pipelines == {}
 
@@ -982,3 +1007,7 @@ async def test_handling_scheduling_after_reboot(
     await _assert_comp_run_db(
         aiopg_engine, running_project, reboot_state.expected_run_state
     )
+
+
+async def test_running_pipeline_triggers_heartbeat():
+    assert False
