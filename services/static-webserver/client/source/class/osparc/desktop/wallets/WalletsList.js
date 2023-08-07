@@ -219,26 +219,38 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
       const name = walletEditor.getName();
       const description = walletEditor.getDescription();
       const thumbnail = walletEditor.getThumbnail();
-      const myUid = osparc.auth.Data.getInstance().getUserId();
-      const myGid = osparc.auth.Data.getInstance().getGroupId();
-      const accessRights = {};
-      accessRights[myGid] = osparc.desktop.wallets.MembersList.getDeleteAccess();
 
-      const newWalletData = osparc.data.Resources.dummy.newWalletData();
-      newWalletData.name = name;
-      newWalletData.description = description;
-      newWalletData.thumbnail = thumbnail;
-      newWalletData.owner = myUid;
-      newWalletData.accessRights = accessRights;
-
-      const wallet = new osparc.data.model.Wallet(newWalletData);
-      const store = osparc.store.Store.getInstance();
-      store.getWallets().push(wallet);
-
-      button.setFetching(false);
-      win.close();
-
-      this.loadWallets();
+      const params = {
+        data: {
+          "name": name,
+          "description": description || null,
+          "thumbnail": thumbnail || null
+        }
+      };
+      osparc.data.Resources.fetch("wallets", "post", params)
+        .then(newWalletData => {
+          const params2 = {
+            url: {
+              "walletId": newWalletData["wallet_id"]
+            }
+          };
+          osparc.data.Resources.fetch("wallets", "getAccessRights", params2)
+            .then(accessRights => {
+              newWalletData["accessRights"] = accessRights;
+              const wallet = new osparc.data.model.Wallet(newWalletData);
+              const store = osparc.store.Store.getInstance();
+              store.getWallets().push(wallet);
+              this.loadWallets();
+            })
+            .catch(err => console.error(err));
+        })
+        .catch(err => {
+          console.error(err);
+        })
+        .finally(() => {
+          button.setFetching(false);
+          win.close();
+        });
     },
 
     __updateWallet: function(win, button, walletEditor) {
