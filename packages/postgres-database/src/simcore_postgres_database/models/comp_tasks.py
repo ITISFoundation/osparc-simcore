@@ -80,7 +80,11 @@ comp_tasks = sa.Table(
     sa.Column("submit", sa.DateTime, doc="UTC timestamp for task submission"),
     sa.Column("start", sa.DateTime, doc="UTC timestamp when task started"),
     sa.Column("end", sa.DateTime, doc="UTC timestamp for task completion"),
-    sa.Column("last_check", sa.DateTime, doc="UTC timestamp for last task check"),
+    sa.Column(
+        "last_check",
+        sa.DateTime(timezone=True),
+        doc="UTC timestamp for last task running check",
+    ),
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
     sa.UniqueConstraint("project_id", "node_id", name="project_node_uniqueness"),
