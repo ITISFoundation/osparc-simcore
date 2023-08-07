@@ -179,7 +179,7 @@ async def _sync_sources(
             # filter options
             *_get_exclude_filters(exclude_patterns),
             "--progress",
-            "--copy-links",
+            "--links",
             "--verbose",
         )
 
