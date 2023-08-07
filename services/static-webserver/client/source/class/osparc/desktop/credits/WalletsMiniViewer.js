@@ -29,7 +29,7 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
 
     this.__walletListeners = [];
 
-    this.__buildLayout();
+    setTimeout(() => this.__buildLayout(), 1000);
   },
 
   properties: {
