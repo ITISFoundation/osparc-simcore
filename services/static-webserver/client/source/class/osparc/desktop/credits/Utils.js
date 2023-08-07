@@ -33,10 +33,13 @@ qx.Class.define("osparc.desktop.credits.Utils", {
         if (onlyActive && wallet.getStatus() !== "ACTIVE") {
           return;
         }
-        if (myGid in wallet.getAccessRights() && wallet.getAccessRights()[myGid][accessRight]) {
-          const sbItem = new qx.ui.form.ListItem(wallet.getName());
-          sbItem.walletId = wallet.getWalletId();
-          walletSelector.add(sbItem);
+        if (myGid in wallet.getAccessRights()) {
+          const found = wallet.getAccessRights().find(ar => ar["gid"] === myGid);
+          if (found && found[accessRight]) {
+            const sbItem = new qx.ui.form.ListItem(wallet.getName());
+            sbItem.walletId = wallet.getWalletId();
+            walletSelector.add(sbItem);
+          }
         }
       });
 
