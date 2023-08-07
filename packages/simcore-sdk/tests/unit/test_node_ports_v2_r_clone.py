@@ -198,7 +198,7 @@ async def test__get_exclude_filter(
         "rclone",
         "--quiet",
         "--dry-run",
-        "--copy-links",
+        "--links",
         *r_clone._get_exclude_filters(exclude_patterns),  # noqa: SLF001
         "lsf",
         "--absolute",
