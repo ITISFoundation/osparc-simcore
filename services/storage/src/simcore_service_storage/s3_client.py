@@ -2,10 +2,11 @@ import datetime
 import json
 import logging
 import urllib.parse
+from collections.abc import Callable
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Final, TypeAlias, cast
+from typing import Final, TypeAlias, cast
 
 import aioboto3
 from aiobotocore.session import ClientCreatorContext
