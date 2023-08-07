@@ -51,7 +51,7 @@ qx.Class.define("osparc.data.model.Wallet", {
     description: {
       check: "String",
       init: "",
-      nullable: false,
+      nullable: true,
       event: "changeDescription"
     },
 
@@ -84,7 +84,7 @@ qx.Class.define("osparc.data.model.Wallet", {
     },
 
     accessRights: {
-      check: "Object",
+      check: "Array",
       init: null,
       nullable: false,
       event: "changeAccessRights"
