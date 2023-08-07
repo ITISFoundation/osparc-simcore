@@ -231,7 +231,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
         .then(() => {
           const store = osparc.store.Store.getInstance();
           osparc.store.Store.getInstance().invalidate("wallets");
-          store.loadWallets()
+          store.reloadWallets()
             .then(() => this.loadWallets());
         })
         .catch(err => {

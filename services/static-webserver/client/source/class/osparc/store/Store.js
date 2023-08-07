@@ -611,47 +611,51 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
-    loadWallets: function() {
+    reloadWallets: function() {
+      const store = osparc.store.Store.getInstance();
+      store.setWallets([]);
+
       return new Promise((resolve, reject) => {
         osparc.data.Resources.fetch("wallets", "get")
           .then(walletsData => {
-            const arPromises = [];
+            const wallets = [];
+            const promises = [];
             walletsData.forEach(walletReducedData => {
-              const params = {
-                url: {
-                  "walletId": walletReducedData["wallet_id"]
-                }
-              };
-              arPromises.push(osparc.data.Resources.fetch("wallets", "getAccessRights", params));
-            });
-            Promise.all(arPromises)
-              .then(accessRightss => {
-                const wallets = [];
-                if (walletsData.length === accessRightss.length) {
-                  for (let i=0; i<walletsData.length; i++) {
-                    const walletData = walletsData[i];
-                    walletData["accessRights"] = accessRightss[i];
-                    const wallet = new osparc.data.model.Wallet(walletData);
-                    wallets.push(wallet);
-                  }
-                }
+              const wallet = new osparc.data.model.Wallet(walletReducedData);
+              wallets.push(wallet);
+              promises.push(this.reloadWalletAccessRights(wallet));
 
-                const store = osparc.store.Store.getInstance();
-                store.setWallets(wallets);
-                // trick to get a countdown
-                setInterval(() => {
-                  store.getWallets().forEach(wallet => {
-                    wallet.setCreditsAvailable(wallet.getCreditsAvailable()-1);
-                  });
-                }, 30000);
-                resolve();
+              // trick to get a countdown
+              setInterval(() => {
+                wallet.setCreditsAvailable(wallet.getCreditsAvailable()-1);
+              }, 30000);
+            });
+            store.setWallets(wallets);
+            Promise.all(promises)
+              .then(() => resolve())
+              .catch(err => {
+                console.error(err);
+                reject();
               });
           })
           .catch(err => {
             console.error(err);
-            reject(err);
+            reject();
           });
       });
+    },
+
+    reloadWalletAccessRights: function(wallet) {
+      const params = {
+        url: {
+          "walletId": wallet.getWalletId()
+        }
+      };
+      return osparc.data.Resources.fetch("wallets", "getAccessRights", params)
+        .then(accessRights => {
+          wallet.setAccessRights(accessRights);
+        })
+        .catch(err => console.error(err));
     },
 
     __getOrgClassifiers: function(orgId, useCache = false) {

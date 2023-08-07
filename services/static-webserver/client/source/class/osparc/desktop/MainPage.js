@@ -55,7 +55,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     osparc.MaintenanceTracker.getInstance().startTracker();
 
     const store = osparc.store.Store.getInstance();
-    store.loadWallets();
+    store.reloadWallets();
 
     Promise.all([
       store.getAllClassifiers(true),
