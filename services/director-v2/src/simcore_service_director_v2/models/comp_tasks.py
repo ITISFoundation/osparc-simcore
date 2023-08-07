@@ -133,6 +133,9 @@ class CompTaskAtDB(BaseModel):
         le=1.0,
         description="current progress of the task if available",
     )
+    last_heartbeat: datetime.datetime | None = Field(
+        ..., description="Last time the running task was checked by the backend"
+    )
 
     @validator("state", pre=True)
     @classmethod

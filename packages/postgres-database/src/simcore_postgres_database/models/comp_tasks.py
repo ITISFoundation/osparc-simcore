@@ -81,7 +81,7 @@ comp_tasks = sa.Table(
     sa.Column("start", sa.DateTime, doc="UTC timestamp when task started"),
     sa.Column("end", sa.DateTime, doc="UTC timestamp for task completion"),
     sa.Column(
-        "last_check",
+        "last_heartbeat",
         sa.DateTime(timezone=True),
         doc="UTC timestamp for last task running check",
     ),
