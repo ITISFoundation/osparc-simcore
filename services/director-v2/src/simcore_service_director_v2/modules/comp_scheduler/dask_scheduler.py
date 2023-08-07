@@ -23,14 +23,6 @@ from models_library.rabbitmq_messages import (
 )
 from models_library.users import UserID
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-from simcore_service_director_v2.utils.comp_scheduler import (
-    Iteration,
-    get_resource_tracking_run_id,
-)
-from simcore_service_director_v2.utils.rabbitmq import (
-    publish_service_resource_tracking_stopped,
-    publish_service_stopped_metrics,
-)
 
 from ...core.errors import TaskSchedulingError
 from ...models.comp_runs import RunMetadataDict
@@ -38,12 +30,17 @@ from ...models.comp_tasks import CompTaskAtDB, Image
 from ...modules.dask_client import DaskClient
 from ...modules.dask_clients_pool import DaskClientsPool
 from ...modules.db.repositories.clusters import ClustersRepository
+from ...utils.comp_scheduler import Iteration, get_resource_tracking_run_id
 from ...utils.dask import (
     clean_task_output_and_log_files_if_invalid,
     parse_dask_job_id,
     parse_output_data,
 )
 from ...utils.dask_client_utils import TaskHandlers
+from ...utils.rabbitmq import (
+    publish_service_resource_tracking_stopped,
+    publish_service_stopped_metrics,
+)
 from ..db.repositories.comp_tasks import CompTasksRepository
 from .base_scheduler import BaseCompScheduler
 
