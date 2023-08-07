@@ -47,7 +47,7 @@ from ..core.errors import (
     MissingComputationalResourcesError,
     PortsValidationError,
 )
-from ..models.comp_runs import MetadataDict
+from ..models.comp_runs import RunMetadataDict
 from ..models.comp_tasks import Image
 from ..modules.osparc_variables_substitutions import (
     resolve_and_substitute_session_variables_in_specs,
@@ -301,7 +301,7 @@ def compute_task_labels(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
-    run_metadata: MetadataDict,
+    run_metadata: RunMetadataDict,
     node_requirements: NodeRequirements,
 ) -> ContainerLabelsDict:
     product_name = run_metadata["product_name"]
@@ -333,7 +333,7 @@ async def compute_task_envs(
     project_id: ProjectID,
     node_id: NodeID,
     node_image: Image,
-    metadata: MetadataDict,
+    metadata: RunMetadataDict,
 ) -> ContainerEnvsDict:
     product_name = metadata.get("product_name", _UNDEFINED_METADATA)
     task_envs = node_image.envs

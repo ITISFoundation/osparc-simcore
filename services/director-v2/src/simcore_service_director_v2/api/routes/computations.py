@@ -50,7 +50,7 @@ from ...core.errors import (
     SchedulerError,
 )
 from ...models.comp_pipelines import CompPipelineAtDB
-from ...models.comp_runs import CompRunsAtDB, MetadataDict
+from ...models.comp_runs import CompRunsAtDB, RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
 from ...modules.catalog import CatalogClient
 from ...modules.comp_scheduler.base_scheduler import BaseCompScheduler
@@ -223,7 +223,7 @@ async def create_computation(  # noqa: C901, PLR0912
                 computation.user_id,
                 computation.project_id,
                 computation.cluster_id or DEFAULT_CLUSTER_ID,
-                MetadataDict(
+                RunMetadataDict(
                     node_id_names_map={
                         NodeID(node_idstr): node_data.label
                         for node_idstr, node_data in project.workbench.items()

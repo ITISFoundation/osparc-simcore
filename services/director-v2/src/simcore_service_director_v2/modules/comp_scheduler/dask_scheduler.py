@@ -33,7 +33,7 @@ from simcore_service_director_v2.utils.rabbitmq import (
 )
 
 from ...core.errors import TaskSchedulingError
-from ...models.comp_runs import MetadataDict
+from ...models.comp_runs import RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB, Image
 from ...modules.dask_client import DaskClient
 from ...modules.dask_clients_pool import DaskClientsPool
@@ -80,7 +80,7 @@ class DaskScheduler(BaseCompScheduler):
         user_id: UserID,
         project_id: ProjectID,
         cluster_id: ClusterID,
-        run_metadata: MetadataDict,
+        run_metadata: RunMetadataDict,
         scheduled_tasks: dict[NodeID, Image],
     ):
         # now transfer the pipeline to the dask scheduler
@@ -139,7 +139,7 @@ class DaskScheduler(BaseCompScheduler):
         user_id: UserID,
         cluster_id: ClusterID,
         tasks: list[CompTaskAtDB],
-        run_metadata: MetadataDict,
+        run_metadata: RunMetadataDict,
         iteration: Iteration,
     ) -> None:
         try:
@@ -164,7 +164,7 @@ class DaskScheduler(BaseCompScheduler):
         self,
         task: CompTaskAtDB,
         result: Exception | TaskOutputData,
-        run_metadata: MetadataDict,
+        run_metadata: RunMetadataDict,
         iteration: Iteration,
     ) -> None:
         logger.debug("received %s result: %s", f"{task=}", f"{result=}")

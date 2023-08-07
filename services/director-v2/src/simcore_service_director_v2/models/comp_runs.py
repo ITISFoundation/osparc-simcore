@@ -13,7 +13,7 @@ from simcore_postgres_database.models.comp_pipeline import StateType
 from ..utils.db import DB_TO_RUNNING_STATE
 
 
-class MetadataDict(TypedDict):
+class RunMetadataDict(TypedDict):
     node_id_names_map: dict[NodeID, str]
     project_name: str
     product_name: str
@@ -34,7 +34,7 @@ class CompRunsAtDB(BaseModel):
     modified: datetime.datetime
     started: datetime.datetime | None
     ended: datetime.datetime | None
-    metadata: MetadataDict = Field(default_factory=dict)
+    metadata: RunMetadataDict = Field(default_factory=dict)
 
     @validator("result", pre=True)
     @classmethod
@@ -59,7 +59,7 @@ class CompRunsAtDB(BaseModel):
     @classmethod
     def convert_null_to_empty_metadata(cls, v):
         if v is None:
-            v = MetadataDict()
+            v = RunMetadataDict()
         return v
 
     @validator("created", "modified", "started", "ended")

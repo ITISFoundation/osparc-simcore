@@ -42,7 +42,7 @@ from pydantic.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_sdk.node_ports_v2 import FileLinkType
-from simcore_service_director_v2.models.comp_runs import MetadataDict
+from simcore_service_director_v2.models.comp_runs import RunMetadataDict
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
 from simcore_service_director_v2.modules.dask_clients_pool import DaskClientsPool
 from simcore_service_director_v2.utils.dask import (
@@ -597,7 +597,7 @@ async def test_compute_task_labels(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
-    run_metadata: MetadataDict,
+    run_metadata: RunMetadataDict,
     expected_additional_task_labels: ContainerLabelsDict,
     initialized_app: FastAPI,
 ):
@@ -648,7 +648,7 @@ async def test_compute_task_envs(
     _app_config_with_db: None,
     published_project: PublishedProject,
     initialized_app: FastAPI,
-    run_metadata: MetadataDict,
+    run_metadata: RunMetadataDict,
     input_task_envs: ContainerEnvsDict,
     expected_computed_task_envs: ContainerEnvsDict,
 ):

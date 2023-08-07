@@ -40,7 +40,7 @@ from ...core.errors import (
 )
 from ...core.settings import ComputationalBackendSettings
 from ...models.comp_pipelines import CompPipelineAtDB
-from ...models.comp_runs import CompRunsAtDB, MetadataDict
+from ...models.comp_runs import CompRunsAtDB, RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB, Image
 from ...utils.comp_scheduler import (
     COMPLETED_STATES,
@@ -67,7 +67,7 @@ _logger = logging.getLogger(__name__)
 @dataclass(kw_only=True)
 class ScheduledPipelineParams:
     cluster_id: ClusterID
-    run_metadata: MetadataDict
+    run_metadata: RunMetadataDict
     mark_for_cancellation: bool = False
 
 
@@ -91,7 +91,7 @@ class BaseCompScheduler(ABC):
         user_id: UserID,
         project_id: ProjectID,
         cluster_id: ClusterID,
-        run_metadata: MetadataDict,
+        run_metadata: RunMetadataDict,
     ) -> None:
         """Sets a new pipeline to be scheduled on the computational resources.
         Passing cluster_id=0 will use the default cluster. Passing an existing ID will instruct
@@ -340,7 +340,7 @@ class BaseCompScheduler(ABC):
         *,
         user_id: UserID,
         iteration: Iteration,
-        run_metadata: MetadataDict,
+        run_metadata: RunMetadataDict,
     ) -> None:
         utc_now = arrow.utcnow().datetime
 
@@ -424,7 +424,7 @@ class BaseCompScheduler(ABC):
         project_id: ProjectID,
         iteration: Iteration,
         pipeline_dag: nx.DiGraph,
-        run_metadata: MetadataDict,
+        run_metadata: RunMetadataDict,
     ) -> None:
         tasks = await self._get_pipeline_tasks(project_id, pipeline_dag)
         tasks_inprocess = [t for t in tasks.values() if t.state in PROCESSING_STATES]
@@ -466,7 +466,7 @@ class BaseCompScheduler(ABC):
         user_id: UserID,
         project_id: ProjectID,
         cluster_id: ClusterID,
-        run_metadata: MetadataDict,
+        run_metadata: RunMetadataDict,
         scheduled_tasks: dict[NodeID, Image],
     ) -> None:
         ...
@@ -489,7 +489,7 @@ class BaseCompScheduler(ABC):
         user_id: UserID,
         cluster_id: ClusterID,
         tasks: list[CompTaskAtDB],
-        run_metadata: MetadataDict,
+        run_metadata: RunMetadataDict,
         iteration: Iteration,
     ) -> None:
         ...
@@ -502,7 +502,7 @@ class BaseCompScheduler(ABC):
         cluster_id: ClusterID,
         iteration: PositiveInt,
         marked_for_stopping: bool,
-        run_metadata: MetadataDict,
+        run_metadata: RunMetadataDict,
     ) -> None:
         _logger.debug(
             "checking run of project [%s:%s] for user [%s]",
@@ -592,7 +592,7 @@ class BaseCompScheduler(ABC):
         user_id: UserID,
         project_id: ProjectID,
         cluster_id: ClusterID,
-        run_metadata: MetadataDict,
+        run_metadata: RunMetadataDict,
         comp_tasks: dict[str, CompTaskAtDB],
         dag: nx.DiGraph,
     ):
