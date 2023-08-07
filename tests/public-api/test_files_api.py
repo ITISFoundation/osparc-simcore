@@ -68,3 +68,19 @@ def test_upload_list_and_download(
         assert content == Path(download_path).read_text()
     else:
         assert content == Path(download_path).read_bytes()
+
+
+def test_get_upload_links(files_api: osparc.FilesApi, tmp_path: Path):
+    """Test that we can get a list of upload links for multipart file upload
+
+    Arguments:
+        files_api -- The osparc.FilesApi fixture
+        tmp_path -- pytest fixture
+    """
+    try:
+        file: Path = tmp_path / "myfile.txt"
+        file.write_text("this is a test file")
+        urls: list[str] = files_api.get_upload_links(file.name, file.stat().st_size)
+    except osparc.ApiException as err:
+        print(err)
+        raise err
