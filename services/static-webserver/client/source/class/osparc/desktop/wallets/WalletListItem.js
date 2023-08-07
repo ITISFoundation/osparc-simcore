@@ -123,7 +123,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
     __canIWrite: function() {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       const accessRightss = this.getAccessRights();
-      const found = accessRightss.find(ar => ar["gid"] === myGid);
+      const found = accessRightss && accessRightss.find(ar => ar["gid"] === myGid);
       if (found) {
         return found["write"];
       }
@@ -143,7 +143,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
     _setSubtitle: function() {
       const accessRightss = this.getAccessRights();
       const myGid = osparc.auth.Data.getInstance().getGroupId();
-      const found = accessRightss.find(ar => ar["gid"] === myGid);
+      const found = accessRightss && accessRightss.find(ar => ar["gid"] === myGid);
       if (found) {
         const subtitle = this.getChildControl("contact");
         if (found["write"]) {
@@ -159,7 +159,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       let menu = null;
       const accessRightss = this.getAccessRights();
       const myGid = osparc.auth.Data.getInstance().getGroupId();
-      const found = accessRightss.find(ar => ar["gid"] === myGid);
+      const found = accessRightss && accessRightss.find(ar => ar["gid"] === myGid);
       if (found && found["write"]) {
         const optionsMenu = this.getChildControl("options");
         optionsMenu.show();
