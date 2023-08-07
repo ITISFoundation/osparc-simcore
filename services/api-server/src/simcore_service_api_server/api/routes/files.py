@@ -173,7 +173,7 @@ async def upload_files(files: list[UploadFile] = FileParam(...)):
     raise NotImplementedError
 
 
-@router.get(
+@router.post(
     "/uploadlinks",
     response_model=list[AnyUrl],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,

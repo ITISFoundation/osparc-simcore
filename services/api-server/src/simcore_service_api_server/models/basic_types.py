@@ -1,6 +1,6 @@
 import re
 
-from models_library.basic_regex import FILENAME_RE, VERSION_RE
+from models_library.basic_regex import VERSION_RE
 from pydantic import ConstrainedStr
 
 
@@ -10,4 +10,4 @@ class VersionStr(ConstrainedStr):
 
 
 class FileNameStr(ConstrainedStr):
-    regex = re.compile(FILENAME_RE)
+    strip_whitespace = True

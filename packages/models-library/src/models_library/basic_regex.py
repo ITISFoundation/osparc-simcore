@@ -26,9 +26,6 @@ DATE_RE = r"\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|
 # python-like version
 VERSION_RE = r"^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$"
 
-# quite permissive regexp to validate file names against
-FILENAME_RE = r"^[a-zA-Z0-9-_\.]*$"
-
 # Semantic version
 # SEE https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
 #
