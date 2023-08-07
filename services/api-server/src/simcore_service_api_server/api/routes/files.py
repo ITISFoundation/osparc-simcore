@@ -26,10 +26,9 @@ from simcore_sdk.node_ports_common.filemanager import upload_path as storage_upl
 from starlette.responses import RedirectResponse
 
 from ..._meta import API_VTAG
-from ...models.basic_types import FileNameStr
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
-from ...models.schemas.files import File
+from ...models.schemas.files import ClientFile, File
 from ...services.storage import StorageApi, StorageFileMetaData, to_file_api_model
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
@@ -181,13 +180,14 @@ async def upload_files(files: list[UploadFile] = FileParam(...)):
 @cancel_on_disconnect
 async def get_upload_links(
     request: Request,
-    file_name: FileNameStr,
-    file_size: PositiveInt,
+    client_file: ClientFile,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
 ):
     assert request  # nosec
     file_meta: File = await File.create_from_name_and_size(
-        file_name, file_size, datetime.datetime.now(datetime.timezone.utc).isoformat()
+        client_file.name,
+        client_file.size,
+        datetime.datetime.now(datetime.timezone.utc).isoformat(),
     )
     _, upload_links = await get_upload_links_from_s3(
         user_id=user_id,
@@ -198,7 +198,7 @@ async def get_upload_links(
         ),
         client_session=None,
         link_type=LinkType.PRESIGNED,
-        file_size=ByteSize(file_size),
+        file_size=ByteSize(client_file.size),
         is_directory=False,
     )
     return upload_links.urls
