@@ -342,14 +342,14 @@ class StorageS3Client:
         :type src_file: SimcoreS3FileID
         :type dst_file: SimcoreS3FileID
         """
-        copy_options = dict(
-            CopySource={"Bucket": bucket, "Key": src_file},
-            Bucket=bucket,
-            Key=dst_file,
-            Config=TransferConfig(max_concurrency=self.transfer_max_concurrency),
-        )
+        copy_options = {
+            "CopySource": {"Bucket": bucket, "Key": src_file},
+            "Bucket": bucket,
+            "Key": dst_file,
+            "Config": TransferConfig(max_concurrency=self.transfer_max_concurrency),
+        }
         if bytes_transfered_cb:
-            copy_options |= dict(Callback=bytes_transfered_cb)
+            copy_options |= {"Callback": bytes_transfered_cb}
         await self.client.copy(**copy_options)
 
     @s3_exception_handler(_logger)
@@ -398,13 +398,13 @@ class StorageS3Client:
         :type file: Path
         :type file_id: SimcoreS3FileID
         """
-        upload_options = dict(
-            Bucket=bucket,
-            Key=file_id,
-            Config=TransferConfig(max_concurrency=self.transfer_max_concurrency),
-        )
+        upload_options = {
+            "Bucket": bucket,
+            "Key": file_id,
+            "Config": TransferConfig(max_concurrency=self.transfer_max_concurrency),
+        }
         if bytes_transfered_cb:
-            upload_options |= dict(Callback=bytes_transfered_cb)
+            upload_options |= {"Callback": bytes_transfered_cb}
         await self.client.upload_file(f"{file}", **upload_options)
 
     @staticmethod
