@@ -7,7 +7,7 @@ from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Final
+from typing import Any, Final, cast
 
 from aiohttp import web
 from aiopg.sa import Engine
@@ -558,11 +558,15 @@ class SimcoreS3DataManager(BaseDataManager):
             return fmd.file_size
 
         # in case of directory list files and return size
-        files_meta_data: list[S3MetaData] = await get_s3_client(self.app).list_files(
-            self.simcore_bucket_name, prefix=f"{fmd.object_name}"
-        )
-        size_of_directory = sum(m.size for m in files_meta_data)
-        return parse_obj_as(ByteSize, size_of_directory)
+        total_size: int = 0
+        async for s3_objects in get_s3_client(self.app).list_all_objects_gen(
+            self.simcore_bucket_name,
+            prefix=f"{fmd.object_name}",
+            max_yield_result_size=_MAX_ELEMENTS_TO_LIST,
+        ):
+            total_size += sum(x.get("Size", 0) for x in s3_objects)
+
+        return parse_obj_as(ByteSize, total_size)
 
     async def search_files_starting_with(
         self, user_id: UserID, prefix: str
@@ -656,7 +660,7 @@ class SimcoreS3DataManager(BaseDataManager):
         1. will try to update the entry from S3 backend if exists
         2. will delete the entry if nothing exists in S3 backend.
         """
-        now = datetime.datetime.now(tz=datetime.timezone.utc)
+        now = datetime.datetime.utcnow()
         async with self.engine.acquire() as conn:
             list_of_expired_uploads = await db_file_meta_data.list_fmds(
                 conn, expired_after=now
@@ -913,7 +917,7 @@ class SimcoreS3DataManager(BaseDataManager):
             s3_client: StorageS3Client = get_s3_client(self.app)
 
             if src_fmd.is_directory:
-                async for s3_objects in s3_client.list_all_objects_iter(
+                async for s3_objects in s3_client.list_all_objects_gen(
                     self.simcore_bucket_name,
                     prefix=src_fmd.object_name,
                     max_yield_result_size=_MAX_ELEMENTS_TO_LIST,
@@ -929,7 +933,7 @@ class SimcoreS3DataManager(BaseDataManager):
                         *[
                             s3_client.copy_file(
                                 self.simcore_bucket_name,
-                                parse_obj_as(SimcoreS3FileID, src),
+                                cast(SimcoreS3FileID, src),
                                 parse_obj_as(SimcoreS3FileID, new),
                                 bytes_transfered_cb=bytes_transfered_cb,
                             )

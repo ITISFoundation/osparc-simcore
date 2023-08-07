@@ -5,7 +5,7 @@ import urllib.parse
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from pathlib import Path
-from typing import AsyncIterable, Callable, Final, TypeAlias, cast
+from typing import AsyncGenerator, Callable, Final, TypeAlias, cast
 
 import aioboto3
 from aiobotocore.session import ClientCreatorContext
@@ -277,9 +277,9 @@ class StorageS3Client:
     async def delete_file(self, bucket: S3BucketName, file_id: SimcoreS3FileID) -> None:
         await self.client.delete_object(Bucket=bucket, Key=file_id)
 
-    async def list_all_objects_iter(
+    async def list_all_objects_gen(
         self, bucket: S3BucketName, *, prefix: str, max_yield_result_size: int
-    ) -> AsyncIterable[list[ObjectTypeDef]]:
+    ) -> AsyncGenerator[list[ObjectTypeDef], None]:
         while True:
             s3_objects, next_continuation_token = await _list_objects_v2_paginated(
                 self.client,
@@ -302,7 +302,7 @@ class StorageS3Client:
 
         # NOTE: deletion of objects is done in batches of max 1000 elements,
         # the maximum accepted by the S3 API
-        async for s3_objects in self.list_all_objects_iter(
+        async for s3_objects in self.list_all_objects_gen(
             bucket,
             prefix=prefix,
             max_yield_result_size=_DELETE_OBJECTS_MAX_ACCEPTED_ELEMENTS,
