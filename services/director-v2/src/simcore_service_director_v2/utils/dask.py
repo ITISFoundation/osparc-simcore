@@ -22,7 +22,7 @@ from dask_task_models_library.container_tasks.protocol import (
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.services import NodeRequirements
 from models_library.clusters import ClusterID
-from models_library.docker import StandardSimcoreDockerLabels
+from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes_io import NodeID, NodeIDStr
@@ -301,16 +301,16 @@ def compute_task_labels(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
-    metadata: MetadataDict,
+    run_metadata: MetadataDict,
     node_requirements: NodeRequirements,
 ) -> ContainerLabelsDict:
-    product_name = metadata.get("product_name", _UNDEFINED_METADATA)
+    product_name = run_metadata["product_name"]
     standard_simcore_labels = StandardSimcoreDockerLabels.construct(
         user_id=user_id,
         project_id=project_id,
         node_id=node_id,
         product_name=product_name,
-        simcore_user_agent=metadata.get("simcore_user_agent", _UNDEFINED_METADATA),
+        simcore_user_agent=run_metadata["simcore_user_agent"],
         swarm_stack_name=_UNDEFINED_METADATA,  # NOTE: there is currently no need for this label in the comp backend
         memory_limit=node_requirements.ram,
         cpu_limit=node_requirements.cpu,
@@ -318,8 +318,8 @@ def compute_task_labels(
     all_labels = standard_simcore_labels | parse_obj_as(
         ContainerLabelsDict,
         {
-            k.lower(): f"{v}"
-            for k, v in metadata.items()
+            DockerLabelKey.from_key(k): f"{v}"
+            for k, v in run_metadata.items()
             if k not in ["product_name", "simcore_user_agent"]
         },
     )

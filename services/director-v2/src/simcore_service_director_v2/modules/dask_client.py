@@ -307,7 +307,7 @@ class DaskClient:
                 user_id=user_id,
                 project_id=project_id,
                 node_id=node_id,
-                metadata=metadata,
+                run_metadata=metadata,
                 node_requirements=node_image.node_requirements,
             )
             task_envs = await compute_task_envs(

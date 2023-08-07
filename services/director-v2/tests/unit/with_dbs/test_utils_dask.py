@@ -608,7 +608,7 @@ async def test_compute_task_labels(
         user_id=user_id,
         project_id=project_id,
         node_id=node_id,
-        metadata=run_metadata,
+        run_metadata=run_metadata,
         node_requirements=sleeper_task.image.node_requirements,
     )
     expected_task_labels = {
