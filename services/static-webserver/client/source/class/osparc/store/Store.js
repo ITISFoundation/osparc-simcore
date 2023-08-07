@@ -110,7 +110,8 @@ qx.Class.define("osparc.store.Store", {
     },
     wallets: {
       check: "Array",
-      init: []
+      init: [],
+      event: "changeWallets"
     },
     activeWallet: {
       check: "osparc.data.model.Wallet",

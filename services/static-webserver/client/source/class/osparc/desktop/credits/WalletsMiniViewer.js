@@ -29,7 +29,7 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
 
     this.__walletListeners = [];
 
-    setTimeout(() => this.__buildLayout(), 1000);
+    this.__buildLayout();
   },
 
   properties: {
@@ -47,6 +47,7 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
     __buildLayout: function() {
       const store = osparc.store.Store.getInstance();
       store.bind("activeWallet", this, "activeWallet");
+      store.addListener("changeWallets", () => this.__reloadLayout());
     },
 
     __reloadLayout: function() {
