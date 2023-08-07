@@ -611,20 +611,16 @@ qx.Class.define("osparc.store.Store", {
     },
 
     loadWallets: function() {
-      // osparc.data.Resources.fetch("wallets", "get")
-      osparc.data.Resources.dummy.getWallets()
+      osparc.data.Resources.fetch("wallets", "get")
         .then(walletsData => {
           const arPromises = [];
           walletsData.forEach(walletReducedData => {
-            /*
             const params = {
               url: {
                 "walletId": walletReducedData["wallet_id"]
               }
             };
             arPromises.push(osparc.data.Resources.fetch("wallets", "getAccessRights", params));
-            */
-            arPromises.push(osparc.data.Resources.dummy.getWalletAccessRights(walletReducedData["wallet_id"]));
           });
           Promise.all(arPromises)
             .then(accessRightss => {
