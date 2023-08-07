@@ -122,8 +122,12 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
 
     __canIWrite: function() {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
-      const accessRights = this.getAccessRights();
-      return (accessRights && (myGid in accessRights) && accessRights[myGid]["write"]);
+      const accessRightss = this.getAccessRights();
+      const found = accessRightss.find(ar => ar["gid"] === myGid);
+      if (found) {
+        return found["write"];
+      }
+      return false;
     },
 
     // overridden
@@ -137,13 +141,14 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
 
     // overridden
     _setSubtitle: function() {
-      const accessRights = this.getAccessRights();
+      const accessRightss = this.getAccessRights();
       const myGid = osparc.auth.Data.getInstance().getGroupId();
-      const subtitle = this.getChildControl("contact");
-      if (myGid in accessRights) {
-        if (accessRights[myGid]["write"]) {
+      const found = accessRightss.find(ar => ar["gid"] === myGid);
+      if (found) {
+        const subtitle = this.getChildControl("contact");
+        if (found["write"]) {
           subtitle.setValue(osparc.data.Roles.WALLET[2].longLabel);
-        } else if (accessRights[myGid]["read"]) {
+        } else if (found["read"]) {
           subtitle.setValue(osparc.data.Roles.WALLET[1].longLabel);
         }
       }
@@ -152,9 +157,10 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
     // overridden
     _getOptionsMenu: function() {
       let menu = null;
-      const accessRights = this.getAccessRights();
+      const accessRightss = this.getAccessRights();
       const myGid = osparc.auth.Data.getInstance().getGroupId();
-      if ((myGid in accessRights) && accessRights[myGid]["write"]) {
+      const found = accessRightss.find(ar => ar["gid"] === myGid);
+      if (found && found["write"]) {
         const optionsMenu = this.getChildControl("options");
         optionsMenu.show();
 
@@ -183,7 +189,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       if (this.getThumbnail() === null) {
         // default thumbnail only if it's null
         const thumbnail = this.getChildControl("thumbnail");
-        if (this.getAccessRights() && Object.keys(this.getAccessRights()).length > 1) {
+        if (this.getAccessRights() && this.getAccessRights().length > 1) {
           thumbnail.setSource(osparc.utils.Icons.organization(osparc.ui.list.ListItemWithMenu.ICON_SIZE));
         } else {
           thumbnail.setSource(osparc.utils.Icons.user(osparc.ui.list.ListItemWithMenu.ICON_SIZE));
