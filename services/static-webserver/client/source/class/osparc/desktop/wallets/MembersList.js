@@ -91,7 +91,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
 
       this.__memberInvitation.setVisibility(this.__canIWrite() ? "visible" : "excluded");
 
-      this.__reloadWalletMembers();
+      this.__reloadMembers();
     },
 
     __canIWrite: function() {
@@ -197,7 +197,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
       return memebersUIList;
     },
 
-    __reloadWalletMembers: async function() {
+    __reloadMembers: async function() {
       const membersModel = this.__membersModel;
       membersModel.removeAll();
 
@@ -208,31 +208,23 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
 
       const membersList = [];
       const potentialCollaborators = await osparc.store.Store.getInstance().getPotentialCollaborators();
-      const params = {
-        url: {
-          "walletId": wallet.getWalletId()
+      wallet.getAccessRights().forEach(accessRights => {
+        const gid = accessRights["gid"];
+        if (Object.prototype.hasOwnProperty.call(potentialCollaborators, parseInt(gid))) {
+          const collab = potentialCollaborators[parseInt(gid)];
+          // Do not override collaborator object
+          const collaborator = osparc.utils.Utils.deepCloneObject(collab);
+          if ("first_name" in collaborator) {
+            collaborator["thumbnail"] = osparc.utils.Avatar.getUrl(collaborator["login"], 32);
+            collaborator["name"] = osparc.utils.Utils.firstsUp(collaborator["first_name"], collaborator["last_name"]);
+          }
+          collaborator["accessRights"] = accessRights;
+          collaborator["showOptions"] = this.__canIWrite();
+          membersList.push(collaborator);
         }
-      };
-      osparc.data.Resources.fetch("wallets", "getAccessRights", params)
-        .then(accessRightss => {
-          accessRightss.forEach(accessRights => {
-            const gid = accessRights["gid"];
-            if (Object.prototype.hasOwnProperty.call(potentialCollaborators, parseInt(gid))) {
-              const collab = potentialCollaborators[parseInt(gid)];
-              // Do not override collaborator object
-              const collaborator = osparc.utils.Utils.deepCloneObject(collab);
-              if ("first_name" in collaborator) {
-                collaborator["thumbnail"] = osparc.utils.Avatar.getUrl(collaborator["login"], 32);
-                collaborator["name"] = osparc.utils.Utils.firstsUp(collaborator["first_name"], collaborator["last_name"]);
-              }
-              collaborator["accessRights"] = accessRights;
-              collaborator["showOptions"] = this.__canIWrite();
-              membersList.push(collaborator);
-            }
-          });
-          membersList.sort(this.self().sortWalletMembers);
-          membersList.forEach(member => membersModel.append(qx.data.marshal.Json.createModel(member)));
-        });
+      });
+      membersList.sort(this.self().sortWalletMembers);
+      membersList.forEach(member => membersModel.append(qx.data.marshal.Json.createModel(member)));
     },
 
     __addMembers: function(gids, cb) {
@@ -257,10 +249,13 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
       });
       Promise.all(promises)
         .then(() => {
-          this.__reloadWalletMembers();
-          if (cb) {
-            cb();
-          }
+          osparc.store.Store.getInstance().reloadWalletAccessRights(wallet)
+            .then(() => {
+              this.__reloadMembers();
+              if (cb) {
+                cb();
+              }
+            });
         });
     },
 
@@ -274,7 +269,8 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
       if (walletMember["gid"] in newAccessRights) {
         newAccessRights[walletMember["gid"]] = this.self().getWriteAccess();
         wallet.setAccessRights(newAccessRights);
-        this.__reloadWalletMembers();
+        osparc.store.Store.getInstance().reloadWalletAccessRights(wallet)
+          .then(() => this.__reloadMembers());
       }
     },
 
@@ -288,7 +284,8 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
       if (walletMember["gid"] in newAccessRights) {
         newAccessRights[walletMember["gid"]] = this.self().getReadAccess();
         wallet.setAccessRights(newAccessRights);
-        this.__reloadWalletMembers();
+        osparc.store.Store.getInstance().reloadWalletAccessRights(wallet)
+          .then(() => this.__reloadMembers());
       }
     },
 
@@ -302,7 +299,8 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
       if (walletMember["gid"] in newAccessRights) {
         delete newAccessRights[walletMember["gid"]];
         wallet.setAccessRights(newAccessRights);
-        this.__reloadWalletMembers();
+        osparc.store.Store.getInstance().reloadWalletAccessRights(wallet)
+          .then(() => this.__reloadMembers());
       }
     }
   }
