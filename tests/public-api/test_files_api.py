@@ -6,10 +6,13 @@
 
 import time
 from pathlib import Path
+from typing import Callable
 from uuid import UUID
 
 import osparc
 import pytest
+from pydantic import ByteSize
+from pytest_simcore.file_extra import create_file_of_size
 
 
 def test_upload_file(files_api: osparc.FilesApi, tmp_path: Path):
@@ -70,17 +73,16 @@ def test_upload_list_and_download(
         assert content == Path(download_path).read_bytes()
 
 
-def test_get_upload_links(files_api: osparc.FilesApi, tmp_path: Path):
+def test_get_upload_links(
+    create_file_of_size: Callable[[ByteSize, str], Path], files_api: osparc.FilesApi
+):
     """Test that we can get a list of upload links for multipart file upload
 
     Arguments:
         files_api -- The osparc.FilesApi fixture
         tmp_path -- pytest fixture
     """
-    try:
-        file: Path = tmp_path / "myfile.txt"
-        file.write_text("this is a test file")
-        urls: list[str] = files_api.get_upload_links(file.name, file.stat().st_size)
-    except osparc.ApiException as err:
-        print(err)
-        raise err
+    file: Path = create_file_of_size(ByteSize(200000000), "myfile.txt")
+    urls: list[str] = files_api.get_upload_links(file.name, file.stat().st_size)
+    assert len(urls) > 1
+    assert all(isinstance(elm, str) for elm in urls)

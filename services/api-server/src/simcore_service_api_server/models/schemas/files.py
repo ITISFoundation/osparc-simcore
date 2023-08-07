@@ -5,7 +5,7 @@ from uuid import UUID, uuid3
 
 import aiofiles
 from fastapi import UploadFile
-from pydantic import BaseModel, ConstrainedStr, Field, PositiveInt, validator
+from pydantic import BaseModel, ByteSize, ConstrainedStr, Field, validator
 
 from ...utils.hash import create_md5_checksum
 
@@ -15,8 +15,8 @@ NAMESPACE_FILEID_KEY = UUID("aa154444-d22d-4290-bb15-df37dba87865")
 class ClientFile(BaseModel):
     """Represents a file stored on the client side"""
 
-    name: ConstrainedStr
-    size: PositiveInt
+    filename: ConstrainedStr
+    filesize: ByteSize
 
 
 class File(BaseModel):
