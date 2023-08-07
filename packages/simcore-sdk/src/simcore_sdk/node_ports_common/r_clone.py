@@ -17,7 +17,12 @@ from servicelib.utils import logged_gather
 from settings_library.r_clone import RCloneSettings
 from settings_library.utils_r_clone import get_r_clone_config
 
-from .r_clone_utils import BaseRCloneLogParser, DebugLogParser, SyncProgressLogParser
+from .r_clone_utils import (
+    BaseRCloneLogParser,
+    CommandResultCaptureParser,
+    DebugLogParser,
+    SyncProgressLogParser,
+)
 
 S3_RETRIES: Final[int] = 3
 S3_PARALLELISM: Final[int] = 5
@@ -34,7 +39,7 @@ class BaseRCloneError(PydanticErrorMixin, RuntimeError):
 
 class RCloneFailedError(BaseRCloneError):
     msg_template: str = (
-        "Command {command} finished with exit code={returncode}:\n{stdout}\n{stderr}"
+        "Command {command} finished with exit code={returncode}:\n{command_output}"
     )
 
 
@@ -81,22 +86,29 @@ async def _async_r_clone_command(
         cwd=cwd,
     )
 
-    if r_clone_log_parsers:
-        assert proc.stdout  # nosec
-        await asyncio.wait([_read_stream(proc.stdout, r_clone_log_parsers)])
+    command_result_parser = CommandResultCaptureParser()
+    r_clone_log_parsers = (
+        [*r_clone_log_parsers, command_result_parser]
+        if r_clone_log_parsers
+        else [command_result_parser]
+    )
 
-    stdout, stderr = await proc.communicate()
-    decoded_stdout = stdout.decode()
+    assert proc.stdout  # nosec
+    await asyncio.wait(
+        [_read_stream(proc.stdout, [*r_clone_log_parsers, command_result_parser])]
+    )
+
+    await proc.communicate()
+    command_output = command_result_parser.get_output()
     if proc.returncode != 0:
         raise RCloneFailedError(
             command=str_cmd,
-            stdout=decoded_stdout,
-            stderr=stderr,
+            command_output=command_output,
             returncode=proc.returncode,
         )
 
-    _logger.debug("'%s' result:\n%s", str_cmd, decoded_stdout)
-    return decoded_stdout
+    _logger.debug("'%s' result:\n%s", str_cmd, command_output)
+    return command_output
 
 
 @cached()
@@ -167,7 +179,7 @@ async def _sync_sources(
             # filter options
             *_get_exclude_filters(exclude_patterns),
             "--progress",
-            "--copy-links",
+            "--links",
             "--verbose",
         )
 
