@@ -95,10 +95,12 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
     },
 
     __canIWrite: function() {
-      const myGid = osparc.auth.Data.getInstance().getGroupId();
       const wallet = this.__currentModel;
-      if (wallet && "getAccessRights" in wallet && myGid in wallet.getAccessRights()) {
-        return wallet.getAccessRights()[myGid]["write"];
+      if (wallet) {
+        const myAcessRights = wallet.getMyAccessRights();
+        if (myAcessRights) {
+          return myAcessRights["write"];
+        }
       }
       return false;
     },
@@ -204,10 +206,11 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
         return;
       }
 
-      const accessRights = wallet.getAccessRights();
+      const accessRightss = wallet.getAccessRights();
       const membersList = [];
       const potentialCollaborators = await osparc.store.Store.getInstance().getPotentialCollaborators();
-      Object.keys(accessRights).forEach(gid => {
+      accessRightss.forEach(accessRights => {
+        const gid = accessRights["gid"];
         if (Object.prototype.hasOwnProperty.call(potentialCollaborators, parseInt(gid))) {
           const collab = potentialCollaborators[parseInt(gid)];
           // Do not override collaborator object
@@ -216,7 +219,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
             collaborator["thumbnail"] = osparc.utils.Avatar.getUrl(collaborator["login"], 32);
             collaborator["name"] = osparc.utils.Utils.firstsUp(collaborator["first_name"], collaborator["last_name"]);
           }
-          collaborator["accessRights"] = accessRights[gid];
+          collaborator["accessRights"] = accessRights;
           collaborator["showOptions"] = this.__canIWrite();
           membersList.push(collaborator);
         }
