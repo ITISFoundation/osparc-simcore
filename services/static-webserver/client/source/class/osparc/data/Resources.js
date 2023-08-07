@@ -1117,84 +1117,8 @@ qx.Class.define("osparc.data.Resources", {
           owner: null,
           "available_credits": 0,
           status: "ACTIVE",
-          accessRights: {}
+          accessRights: []
         };
-      },
-
-      getWallets: function() {
-        const myGid = osparc.auth.Data.getInstance().getGroupId();
-        return new Promise(resolve => {
-          resolve([{
-            "wallet_id": 1,
-            name: "My Wallet",
-            description: "Personal Wallet",
-            thumbnail: null,
-            owner: myGid,
-            status: "ACTIVE",
-            "available_credits": 10
-          }, {
-            "wallet_id": 2,
-            name: "Our Wallet",
-            description: "Organization wide Wallet",
-            thumbnail: null,
-            owner: myGid,
-            status: "ACTIVE",
-            "available_credits": 100
-          }, {
-            "wallet_id": 3,
-            name: "Another Wallet",
-            description: "Organization wide Wallet 2",
-            thumbnail: null,
-            owner: 417,
-            status: "INACTIVE",
-            "available_credits": 1000
-          }]);
-        });
-      },
-
-      getWalletAccessRights: function(walletId) {
-        let accessRights = {};
-        const myGid = osparc.auth.Data.getInstance().getGroupId();
-        switch (walletId) {
-          case 1:
-            accessRights[myGid] = {
-              delete: true,
-              write: true,
-              read: true
-            };
-            break;
-          case 2:
-            accessRights[myGid] = {
-              delete: false,
-              write: true,
-              read: true
-            };
-            accessRights[417] = {
-              delete: false,
-              write: false,
-              read: true
-            };
-            break;
-          case 3:
-            accessRights[417] = {
-              delete: true,
-              write: true,
-              read: true
-            };
-            accessRights[myGid] = {
-              delete: false,
-              write: false,
-              read: true
-            };
-            break;
-        }
-        return new Promise((resolve, reject) => {
-          if (accessRights) {
-            resolve(accessRights);
-          } else {
-            reject("No");
-          }
-        });
       },
 
       getUsageDetailed: function() {
