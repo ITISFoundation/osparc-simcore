@@ -20,25 +20,34 @@ qx.Class.define("osparc.desktop.credits.Utils", {
 
   statics: {
     createWalletSelector: function(accessRight = "read", onlyActive = false, emptySelection = false) {
+      const store = osparc.store.Store.getInstance();
+
       const walletSelector = new qx.ui.form.SelectBox();
 
-      const wallets = osparc.store.Store.getInstance().getWallets();
-      if (emptySelection) {
-        const sbItem = new qx.ui.form.ListItem(qx.locale.Manager.tr("Select Wallet"));
-        sbItem.walletId = null;
-        walletSelector.add(sbItem);
-      }
-      wallets.forEach(wallet => {
-        if (onlyActive && wallet.getStatus() !== "ACTIVE") {
-          return;
+      const populateSelectBox = selectBox => {
+        selectBox.removeAll();
+
+        const wallets = store.getWallets();
+        if (emptySelection) {
+          const sbItem = new qx.ui.form.ListItem(qx.locale.Manager.tr("Select Wallet"));
+          sbItem.walletId = null;
+          selectBox.add(sbItem);
         }
-        const found = wallet.getMyAccessRights();
-        if (found && found[accessRight]) {
-          const sbItem = new qx.ui.form.ListItem(wallet.getName());
-          sbItem.walletId = wallet.getWalletId();
-          walletSelector.add(sbItem);
-        }
-      });
+        wallets.forEach(wallet => {
+          if (onlyActive && wallet.getStatus() !== "ACTIVE") {
+            return;
+          }
+          const found = wallet.getMyAccessRights();
+          if (found && found[accessRight]) {
+            const sbItem = new qx.ui.form.ListItem(wallet.getName());
+            sbItem.walletId = wallet.getWalletId();
+            selectBox.add(sbItem);
+          }
+        });
+      };
+
+      populateSelectBox(walletSelector);
+      store.addListener("changeWallets", () => populateSelectBox(walletSelector));
 
       return walletSelector;
     }
