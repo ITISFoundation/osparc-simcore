@@ -22,7 +22,6 @@ qx.Class.define("osparc.desktop.credits.Utils", {
     createWalletSelector: function(accessRight = "read", onlyActive = false, emptySelection = false) {
       const walletSelector = new qx.ui.form.SelectBox();
 
-      const myGid = osparc.auth.Data.getInstance().getGroupId();
       const wallets = osparc.store.Store.getInstance().getWallets();
       if (emptySelection) {
         const sbItem = new qx.ui.form.ListItem(qx.locale.Manager.tr("Select Wallet"));
@@ -33,13 +32,11 @@ qx.Class.define("osparc.desktop.credits.Utils", {
         if (onlyActive && wallet.getStatus() !== "ACTIVE") {
           return;
         }
-        if (myGid in wallet.getAccessRights()) {
-          const found = wallet.getAccessRights().find(ar => ar["gid"] === myGid);
-          if (found && found[accessRight]) {
-            const sbItem = new qx.ui.form.ListItem(wallet.getName());
-            sbItem.walletId = wallet.getWalletId();
-            walletSelector.add(sbItem);
-          }
+        const found = wallet.getMyAccessRights();
+        if (found && found[accessRight]) {
+          const sbItem = new qx.ui.form.ListItem(wallet.getName());
+          sbItem.walletId = wallet.getWalletId();
+          walletSelector.add(sbItem);
         }
       });
 

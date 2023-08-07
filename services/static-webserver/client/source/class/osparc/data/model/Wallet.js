@@ -28,7 +28,7 @@ qx.Class.define("osparc.data.model.Wallet", {
       thumbnail: walletData["thumbnail"] ? walletData["thumbnail"] : null,
       owner: walletData["owner"] ? walletData["owner"] : null,
       status: walletData["status"] ? walletData["status"] : false,
-      creditsAvailable: walletData["available_credits"] ? walletData["available_credits"] : 0,
+      creditsAvailable: walletData["available_credits"] ? walletData["available_credits"] : 20,
       accessRights: walletData["accessRights"]
     });
   },
@@ -88,6 +88,16 @@ qx.Class.define("osparc.data.model.Wallet", {
       init: [],
       nullable: false,
       event: "changeAccessRights"
+    }
+  },
+
+  members: {
+    getMyAccessRights: function() {
+      const myGid = osparc.auth.Data.getInstance().getGroupId();
+      if (myGid in this.getAccessRights()) {
+        return this.getAccessRights().find(accessRight => accessRight["gid"] === myGid);
+      }
+      return null;
     }
   }
 });
