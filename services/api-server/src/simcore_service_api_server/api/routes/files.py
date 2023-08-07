@@ -27,7 +27,7 @@ from starlette.responses import RedirectResponse
 
 from ..._meta import API_VTAG
 from ...models.basic_types import FileNameStr
-from ...models.pagination import OnePage, Page, PaginationParams
+from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.files import File
 from ...services.storage import StorageApi, StorageFileMetaData, to_file_api_model
@@ -173,14 +173,19 @@ async def upload_files(files: list[UploadFile] = FileParam(...)):
     raise NotImplementedError
 
 
-@router.get("/locations/page", response_model=Page[AnyUrl])
+@router.get(
+    "/uploadlinks",
+    response_model=list[AnyUrl],
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
 @cancel_on_disconnect
 async def get_upload_links(
+    request: Request,
     file_name: FileNameStr,
     file_size: PositiveInt,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
-    page_params: Annotated[PaginationParams, Depends()],
 ):
+    assert request  # nosec
     file_meta: File = await File.create_from_name_and_size(
         file_name, file_size, datetime.datetime.now(datetime.timezone.utc).isoformat()
     )
@@ -196,7 +201,7 @@ async def get_upload_links(
         file_size=ByteSize(file_size),
         is_directory=False,
     )
-    return OnePage(items=upload_links.urls, total=len(upload_links.urls))
+    return upload_links.urls
 
 
 @router.get("/{file_id}", response_model=File, responses={**_COMMON_ERROR_RESPONSES})
