@@ -74,6 +74,9 @@ qx.Class.define("osparc.component.notification.RibbonNotification", {
           if (longText) {
             fullText += " " + longText;
           }
+          if (!wLineBreak) {
+            fullText = fullText.replace(/<br\s*\/?>/gi, " ");
+          }
           break;
         }
       }

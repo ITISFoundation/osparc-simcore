@@ -91,47 +91,54 @@ SINGLE_ENCODE_SLASH_IN_FILE_ID = "ef944bbe-14c7-11ee-a195-02420a0f07ab%2F46ac491
     "file_id", [DOUBLE_ENCODE_SLASH_IN_FILE_ID, SINGLE_ENCODE_SLASH_IN_FILE_ID]
 )
 @pytest.mark.parametrize(
-    "method, path, expected_response",
+    "method, path, body, expected_response",
     [
         pytest.param(
             "GET",
             "/v0/storage/locations/0/files/{file_id}/metadata",
+            None,
             "",
             id="get_file_metadata",
         ),
         pytest.param(
             "GET",
             "/v0/storage/locations/0/files/{file_id}",
+            None,
             "",
             id="download_file",
         ),
         pytest.param(
             "PUT",
             "/v0/storage/locations/0/files/{file_id}",
+            None,
             json.loads(MOCK_FILE_UPLOAD_SCHEMA.json()),
             id="upload_file",
         ),
         pytest.param(
             "DELETE",
             "/v0/storage/locations/0/files/{file_id}",
+            None,
             "",
             id="delete_file",
         ),
         pytest.param(
             "POST",
             "/v0/storage/locations/0/files/{file_id}:abort",
+            None,
             "",
             id="abort_upload_file",
         ),
         pytest.param(
             "POST",
             "/v0/storage/locations/0/files/{file_id}:complete",
+            {"parts": []},
             json.loads(MOCK_FILE_UPLOAD_COMPLETE_RESPONSE.json()),
             id="complete_upload_file",
         ),
         pytest.param(
             "POST",
             "/v0/storage/locations/0/files/{file_id}:complete/futures/RANDOM_FUTURE_ID",
+            None,
             json.loads(MOCK_FILE_UPLOAD_SCHEMA.json()),
             id="is_completed_upload_file",
         ),
@@ -145,9 +152,10 @@ async def test_openapi_regression_test(
     file_id: str,
     method: str,
     path: str,
+    body,
     expected_response: Any,
 ):
-    response = await client.request(method, path.format(file_id=file_id))
+    response = await client.request(method, path.format(file_id=file_id), json=body)
     decoded_response = await response.json()
     assert decoded_response["error"] is None
     assert decoded_response["data"] is not None
