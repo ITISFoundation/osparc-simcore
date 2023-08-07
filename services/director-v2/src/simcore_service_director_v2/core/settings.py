@@ -534,7 +534,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     PUBLISHED_HOSTS_NAME: str = Field("", env="PUBLISHED_HOSTS_NAME")
     SWARM_STACK_NAME: str = Field("undefined-please-check", env="SWARM_STACK_NAME")
     SERVICE_TRACKING_HEARTBEAT: datetime.timedelta = Field(
-        default=datetime.timedelta(seconds=10),
+        default=datetime.timedelta(seconds=60),
         description="Service scheduler heartbeat (everytime a heartbeat is sent into RabbitMQ)",
     )
 
