@@ -94,7 +94,7 @@ qx.Class.define("osparc.data.model.Wallet", {
   members: {
     getMyAccessRights: function() {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
-      if (myGid in this.getAccessRights()) {
+      if (myGid && this.getAccessRights()) {
         return this.getAccessRights().find(accessRight => accessRight["gid"] === myGid);
       }
       return null;
