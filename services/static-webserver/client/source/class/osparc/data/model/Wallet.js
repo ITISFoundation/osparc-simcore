@@ -85,7 +85,7 @@ qx.Class.define("osparc.data.model.Wallet", {
 
     accessRights: {
       check: "Array",
-      init: null,
+      init: [],
       nullable: false,
       event: "changeAccessRights"
     }
