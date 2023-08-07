@@ -11,7 +11,6 @@ import aioboto3
 from aiobotocore.session import ClientCreatorContext
 from boto3.s3.transfer import TransferConfig
 from botocore.client import Config
-from botocore.exceptions import ClientError
 from models_library.api_schemas_storage import UploadedPart
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
@@ -377,13 +376,12 @@ class StorageS3Client:
 
     @s3_exception_handler(_logger)
     async def file_exists(self, bucket: S3BucketName, *, s3_object: str) -> bool:
-        try:
-            await self.client.head_object(Bucket=bucket, Key=s3_object)
-        except ClientError as exc:
-            if exc.response["Error"]["Code"] != "404":
-                raise
-            return False
-        return True
+        # SEE https://www.peterbe.com/plog/fastest-way-to-find-out-if-a-file-exists-in-s3
+        response = await self.client.list_objects_v2(
+            Bucket=bucket,
+            Prefix=s3_object,
+        )
+        return any(obj["Key"] == s3_object for obj in response.get("Contents", []))
 
     @s3_exception_handler(_logger)
     async def upload_file(
