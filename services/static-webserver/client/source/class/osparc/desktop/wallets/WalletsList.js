@@ -228,24 +228,16 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
         }
       };
       osparc.data.Resources.fetch("wallets", "post", params)
-        .then(newWalletData => {
-          const params2 = {
-            url: {
-              "walletId": newWalletData["wallet_id"]
-            }
-          };
-          osparc.data.Resources.fetch("wallets", "getAccessRights", params2)
-            .then(accessRights => {
-              newWalletData["accessRights"] = accessRights;
-              const wallet = new osparc.data.model.Wallet(newWalletData);
-              const store = osparc.store.Store.getInstance();
-              store.getWallets().push(wallet);
-              this.loadWallets();
-            })
-            .catch(err => console.error(err));
+        .then(() => {
+          const store = osparc.store.Store.getInstance();
+          osparc.store.Store.getInstance().invalidate("wallets");
+          store.loadWallets()
+            .then(() => this.loadWallets());
         })
         .catch(err => {
           console.error(err);
+          const msg = err.message || this.tr("Something went wrong creating the Wallet");
+          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
         })
         .finally(() => {
           button.setFetching(false);
