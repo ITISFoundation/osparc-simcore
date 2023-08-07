@@ -200,10 +200,24 @@ def _directories_have_the_same_content(dir_1: Path, dir_2: Path) -> bool:
         return False
 
     filecmp.clear_cache()
-    return all(
-        filecmp.cmp(dir_1 / file_name, dir_2 / file_name, shallow=False)
-        for file_name in names_in_dir_1
-    )
+
+    compare_results: list[bool] = []
+
+    for file_name in names_in_dir_1:
+        f1 = dir_1 / file_name
+        f2 = dir_2 / file_name
+
+        # when there is a broken symlink, which we want to sync, filecmp does not work
+        is_broken_symlink = (
+            not f1.exists() and f1.is_symlink() and not f2.exists() and f2.is_symlink()
+        )
+
+        if is_broken_symlink:
+            compare_results.append(True)
+        else:
+            compare_results.append(filecmp.cmp(f1, f2, shallow=False))
+
+    return all(compare_results)
 
 
 def _ensure_dir(tmp_path: Path, faker: Faker, *, dir_prefix: str) -> Path:
@@ -314,6 +328,18 @@ def _remove_all_files(
         (dir_locally_created_files / file_name).unlink()
 
 
+def _regression_add_broken_symlink(
+    dir_locally_created_files: Path, generated_file_names: set[str]
+) -> None:
+    # NOTE: if rclone tries to copy a link that does not exist an error is raised
+    path_does_not_exist_on_fs = Path(f"/tmp/missing-{uuid4()}")  # noqa: S108
+    assert not path_does_not_exist_on_fs.exists()
+
+    broken_symlink = dir_locally_created_files / "missing.link"
+    assert not broken_symlink.exists()
+    os.symlink(f"{path_does_not_exist_on_fs}", f"{broken_symlink}")
+
+
 @pytest.mark.parametrize(
     "changes_callable",
     [
@@ -323,6 +349,7 @@ def _remove_all_files(
         _remove_all_files,
         _rename_one_file,
         _add_a_new_file,
+        _regression_add_broken_symlink,
     ],
 )
 async def test_overwrite_an_existing_file_and_sync_again(
