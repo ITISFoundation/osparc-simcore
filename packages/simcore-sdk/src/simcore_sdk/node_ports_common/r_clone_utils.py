@@ -45,3 +45,15 @@ class SyncProgressLogParser(BaseRCloneLogParser):
 class DebugLogParser(BaseRCloneLogParser):
     async def __call__(self, logs: str) -> None:
         _logger.debug("|>>>| %s |", logs)
+
+
+class CommandResultCaptureParser(BaseRCloneLogParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self._logs: list[str] = []
+
+    async def __call__(self, logs: str) -> None:
+        self._logs.append(logs)
+
+    def get_output(self) -> str:
+        return "".join(self._logs)
