@@ -32,7 +32,7 @@ def app_environment(
 @pytest.fixture
 def mock_background_task(mocker: MockerFixture) -> mock.Mock:
     mocked_task = mocker.patch(
-        "simcore_service_resource_usage_tracker.prometheus_containers.plugin.collect_container_resource_usage_task",
+        "simcore_service_resource_usage_tracker.modules.prometheus_containers.plugin.collect_container_resource_usage_task",
         autospec=True,
     )
     return mocked_task

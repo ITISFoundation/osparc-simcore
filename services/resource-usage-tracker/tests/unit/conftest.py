@@ -200,12 +200,12 @@ def mocked_prometheus_with_query(
 @pytest.fixture
 def disabled_tracker_background_task(mocker: MockerFixture) -> dict[str, mock.Mock]:
     mocked_start = mocker.patch(
-        "simcore_service_resource_usage_tracker.prometheus_containers.plugin.start_periodic_task",
+        "simcore_service_resource_usage_tracker.modules.prometheus_containers.plugin.start_periodic_task",
         autospec=True,
     )
 
     mocked_stop = mocker.patch(
-        "simcore_service_resource_usage_tracker.prometheus_containers.plugin.stop_periodic_task",
+        "simcore_service_resource_usage_tracker.modules.prometheus_containers.plugin.stop_periodic_task",
         autospec=True,
     )
     return {"start_task": mocked_start, "stop_task": mocked_stop}

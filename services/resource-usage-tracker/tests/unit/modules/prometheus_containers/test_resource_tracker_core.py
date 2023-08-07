@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 import pytest
-from simcore_service_resource_usage_tracker.prometheus_containers.core import (
+from simcore_service_resource_usage_tracker.modules.prometheus_containers.core import (
     _prepare_prom_query_parameters,
     _PromQueryParameters,
 )

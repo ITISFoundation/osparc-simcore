@@ -8,7 +8,7 @@ from unittest import mock
 import pytest
 import requests_mock
 from fastapi import FastAPI
-from simcore_service_resource_usage_tracker.prometheus_containers.cli_placeholder import (
+from simcore_service_resource_usage_tracker.modules.prometheus_containers.cli_placeholder import (
     collect_service_resource_usage_task,
 )
 

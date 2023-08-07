@@ -6,8 +6,8 @@ from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.redis_utils import exclusive
 from settings_library.prometheus import PrometheusSettings
 
-from ..core.settings import ApplicationSettings
-from ..modules.redis import get_redis_client
+from ...core.settings import ApplicationSettings
+from ..redis import get_redis_client
 from .core import collect_container_resource_usage_task
 
 _TASK_NAME = "periodic_prometheus_polling"

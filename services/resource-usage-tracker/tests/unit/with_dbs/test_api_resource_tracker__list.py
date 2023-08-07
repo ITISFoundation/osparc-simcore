@@ -93,7 +93,7 @@ def resource_tracker_container_db(postgres_db: sa.engine.Engine) -> Iterator[lis
 
 async def test_list_containers(
     mocked_redis_server: None,
-    mocked_setup_background_task: mock.Mock,
+    # mocked_setup_background_task: mock.Mock,
     mocked_setup_prometheus_api_client: mock.Mock,
     postgres_db: sa.engine.Engine,
     resource_tracker_container_db: dict,
