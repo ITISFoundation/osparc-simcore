@@ -2,7 +2,7 @@ import datetime
 import json
 import logging
 import urllib.parse
-from collections.abc import Callable
+from collections.abc import AsyncGenerator, Callable
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from pathlib import Path
@@ -278,6 +278,21 @@ class StorageS3Client:
     async def delete_file(self, bucket: S3BucketName, file_id: SimcoreS3FileID) -> None:
         await self.client.delete_object(Bucket=bucket, Key=file_id)
 
+    async def list_all_objects_gen(
+        self, bucket: S3BucketName, *, prefix: str, max_yield_result_size: int
+    ) -> AsyncGenerator[list[ObjectTypeDef], None]:
+        while True:
+            s3_objects, next_continuation_token = await _list_objects_v2_paginated(
+                self.client,
+                bucket=bucket,
+                prefix=prefix,
+                max_total_items=max_yield_result_size,
+            )
+            yield s3_objects
+
+            if next_continuation_token is None:
+                break
+
     @s3_exception_handler(_logger)
     async def delete_files_in_path(self, bucket: S3BucketName, *, prefix: str) -> None:
         """Removes one or more files from a given S3 path.
@@ -288,22 +303,16 @@ class StorageS3Client:
 
         # NOTE: deletion of objects is done in batches of max 1000 elements,
         # the maximum accepted by the S3 API
-        while True:
-            s3_objects, next_continuation_token = await _list_objects_v2_paginated(
-                self.client,
-                bucket=bucket,
-                prefix=prefix,
-                max_total_items=_DELETE_OBJECTS_MAX_ACCEPTED_ELEMENTS,
-            )
-
+        async for s3_objects in self.list_all_objects_gen(
+            bucket,
+            prefix=prefix,
+            max_yield_result_size=_DELETE_OBJECTS_MAX_ACCEPTED_ELEMENTS,
+        ):
             if objects_to_delete := [f["Key"] for f in s3_objects if "Key" in f]:
                 await self.client.delete_objects(
                     Bucket=bucket,
                     Delete={"Objects": [{"Key": key} for key in objects_to_delete]},
                 )
-
-            if next_continuation_token is None:
-                break
 
     @s3_exception_handler(_logger)
     async def delete_files_in_project_node(
