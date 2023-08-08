@@ -184,8 +184,8 @@ class RabbitMQClient:
 
         assert self._channel_pool  # nosec
         async with self._channel_pool.acquire() as channel:
-            _DEFAULT_PREFETCH_VALUE = 10  # this value is set to the default for now
-            await channel.set_qos(_DEFAULT_PREFETCH_VALUE)
+            _PREFETCH_VALUE = 1 if exclusive_queue is False else 10
+            await channel.set_qos(_PREFETCH_VALUE)
 
             exchange = await channel.declare_exchange(
                 exchange_name,
