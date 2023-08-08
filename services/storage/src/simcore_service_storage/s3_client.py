@@ -2,10 +2,11 @@ import datetime
 import json
 import logging
 import urllib.parse
+from collections.abc import AsyncGenerator, Callable
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from pathlib import Path
-from typing import AsyncGenerator, Callable, Final, TypeAlias, cast
+from typing import Final, TypeAlias, cast
 
 import aioboto3
 from aiobotocore.session import ClientCreatorContext
@@ -350,14 +351,14 @@ class StorageS3Client:
         :type src_file: SimcoreS3FileID
         :type dst_file: SimcoreS3FileID
         """
-        copy_options = dict(
-            CopySource={"Bucket": bucket, "Key": src_file},
-            Bucket=bucket,
-            Key=dst_file,
-            Config=TransferConfig(max_concurrency=self.transfer_max_concurrency),
-        )
+        copy_options = {
+            "CopySource": {"Bucket": bucket, "Key": src_file},
+            "Bucket": bucket,
+            "Key": dst_file,
+            "Config": TransferConfig(max_concurrency=self.transfer_max_concurrency),
+        }
         if bytes_transfered_cb:
-            copy_options |= dict(Callback=bytes_transfered_cb)
+            copy_options |= {"Callback": bytes_transfered_cb}
         await self.client.copy(**copy_options)
 
     @s3_exception_handler(_logger)
@@ -387,10 +388,8 @@ class StorageS3Client:
     async def file_exists(self, bucket: S3BucketName, *, s3_object: str) -> bool:
         """Checks if an S3 object exists"""
         # SEE https://www.peterbe.com/plog/fastest-way-to-find-out-if-a-file-exists-in-s3
-        s3_objects, _ = await _list_objects_v2_paginated(
-            self.client, bucket, s3_object, max_total_items=EXPAND_DIR_MAX_ITEM_COUNT
-        )
-        return len(s3_objects) > 0
+        response = await self.client.list_objects_v2(Bucket=bucket, Prefix=s3_object)
+        return len(response.get("Contents", [])) > 0
 
     @s3_exception_handler(_logger)
     async def upload_file(
@@ -406,13 +405,13 @@ class StorageS3Client:
         :type file: Path
         :type file_id: SimcoreS3FileID
         """
-        upload_options = dict(
-            Bucket=bucket,
-            Key=file_id,
-            Config=TransferConfig(max_concurrency=self.transfer_max_concurrency),
-        )
+        upload_options = {
+            "Bucket": bucket,
+            "Key": file_id,
+            "Config": TransferConfig(max_concurrency=self.transfer_max_concurrency),
+        }
         if bytes_transfered_cb:
-            upload_options |= dict(Callback=bytes_transfered_cb)
+            upload_options |= {"Callback": bytes_transfered_cb}
         await self.client.upload_file(f"{file}", **upload_options)
 
     @staticmethod
