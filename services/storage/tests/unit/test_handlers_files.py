@@ -848,56 +848,17 @@ async def _assert_file_downloaded(
     assert filecmp.cmp(uploaded_file, dest_file)
 
 
-async def test_download_file(
+async def test_download_file_no_file_was_uploaded(
     client: TestClient,
-    file_size: ByteSize,
-    upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
-    location_id: int,
-    user_id: UserID,
-    tmp_path: Path,
-    faker: Faker,
-):
-    assert client.app
-    uploaded_file, uploaded_file_uuid = await upload_file(file_size, faker.file_name())
-
-    download_url = (
-        client.app.router["download_file"]
-        .url_for(
-            location_id=f"{location_id}",
-            file_id=urllib.parse.quote(uploaded_file_uuid, safe=""),
-        )
-        .with_query(user_id=user_id)
-    )
-    response = await client.get(f"{download_url}")
-    data, error = await assert_status(response, web.HTTPOk)
-    assert not error
-    assert data
-    assert "link" in data
-
-    await _assert_file_downloaded(
-        faker, tmp_path, link=data["link"], uploaded_file=uploaded_file
-    )
-
-
-async def test_download_file_cases(
-    client: TestClient,
-    file_size: ByteSize,
-    upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
     location_id: int,
     project_id: ProjectID,
     node_id: NodeID,
     user_id: UserID,
-    create_empty_directory: Callable[..., Awaitable[FileUploadSchema]],
-    create_file_of_size: Callable[[ByteSize, str | None], Path],
     storage_s3_client: StorageS3Client,
     storage_s3_bucket: S3BucketName,
-    tmp_path: Path,
-    faker: Faker,
 ):
     assert client.app
 
-    # 1. error case
-    # no file was not uploaded
     missing_file = parse_obj_as(SimcoreS3FileID, f"{project_id}/{node_id}/missing.file")
     assert (
         await storage_s3_client.file_exists(storage_s3_bucket, s3_object=missing_file)
@@ -917,6 +878,19 @@ async def test_download_file_cases(
     assert data is None
     assert missing_file in error["message"]
 
+
+async def test_download_file_1_to_1_with_file_meta_data(
+    client: TestClient,
+    file_size: ByteSize,
+    upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
+    location_id: int,
+    user_id: UserID,
+    storage_s3_client: StorageS3Client,
+    storage_s3_bucket: S3BucketName,
+    tmp_path: Path,
+    faker: Faker,
+):
+    assert client.app
     # 2. file_meta_data entry corresponds to a file
     # upload a single file as a file_meta_data entry and check link
     uploaded_file, uploaded_file_uuid = await upload_file(
@@ -947,6 +921,20 @@ async def test_download_file_cases(
         faker, tmp_path, link=data["link"], uploaded_file=uploaded_file
     )
 
+
+async def test_download_file_from_inside_a_directory(
+    client: TestClient,
+    file_size: ByteSize,
+    location_id: int,
+    user_id: UserID,
+    create_empty_directory: Callable[..., Awaitable[FileUploadSchema]],
+    create_file_of_size: Callable[[ByteSize, str | None], Path],
+    storage_s3_client: StorageS3Client,
+    storage_s3_bucket: S3BucketName,
+    tmp_path: Path,
+    faker: Faker,
+):
+    assert client.app
     # 3. file_meta_data entry corresponds to a directory
     # upload a file inside a directory and check the download link
 
@@ -987,7 +975,21 @@ async def test_download_file_cases(
         faker, tmp_path, link=data["link"], uploaded_file=file_to_upload_in_dir
     )
 
-    # 4. file_meta_data entry corresponds to a directory but file is not present in directory
+
+async def test_download_file_the_file_is_missing_from_the_directory(
+    client: TestClient,
+    location_id: int,
+    user_id: UserID,
+    create_empty_directory: Callable[..., Awaitable[FileUploadSchema]],
+):
+    assert client.app
+    # file_meta_data entry corresponds to a directory but file is not present in directory
+
+    directory_name = "a-second-test-dir"
+    directory_file_upload = await create_empty_directory(directory_name)
+
+    assert directory_file_upload.urls[0].path
+    dir_path_in_s3 = directory_file_upload.urls[0].path.strip("/")
 
     missing_s3_file_id = parse_obj_as(
         SimcoreS3FileID, f"{dir_path_in_s3}/missing_inside_dir.file"
