@@ -97,7 +97,7 @@ async def mocked_node_ports_filemanager_fcts(
                     urls=[
                         parse_obj_as(
                             AnyUrl,
-                            f"{URL(faker.uri()).with_scheme(choice(tasks_file_link_scheme))}",
+                            f"{URL(faker.uri()).with_scheme(choice(tasks_file_link_scheme))}",  # noqa: S311
                         )
                     ],
                     chunk_size=parse_obj_as(ByteSize, "5GiB"),
@@ -167,7 +167,7 @@ def test_dask_job_id_serialization(
 @pytest.fixture()
 def fake_io_config(faker: Faker) -> dict[str, str]:
     return {
-        f"pytest_io_key_{faker.pystr()}": choice(
+        f"pytest_io_key_{faker.pystr()}": choice(  # noqa: S311
             ["integer", "data:*/*", "boolean", "number", "string"]
         )
         for n in range(20)
