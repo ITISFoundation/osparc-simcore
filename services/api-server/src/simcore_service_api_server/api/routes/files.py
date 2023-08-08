@@ -11,9 +11,9 @@ from fastapi import File as FileParam
 from fastapi import Header, Request, UploadFile, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse
-from models_library.api_schemas_storage import LinkType
+from models_library.api_schemas_storage import FileUploadSchema, LinkType
 from models_library.projects_nodes_io import StorageFileID
-from pydantic import AnyUrl, ByteSize, PositiveInt, ValidationError, parse_obj_as
+from pydantic import ByteSize, PositiveInt, ValidationError, parse_obj_as
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 from simcore_sdk.node_ports_common.filemanager import (
@@ -174,8 +174,7 @@ async def upload_files(files: list[UploadFile] = FileParam(...)):
 
 @router.post(
     "/uploadlinks",
-    response_model=list[AnyUrl],
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    response_model=FileUploadSchema,
 )
 @cancel_on_disconnect
 async def get_upload_links(
@@ -201,7 +200,7 @@ async def get_upload_links(
         file_size=ByteSize(client_file.filesize),
         is_directory=False,
     )
-    return upload_links.urls
+    return upload_links
 
 
 @router.get("/{file_id}", response_model=File, responses={**_COMMON_ERROR_RESPONSES})

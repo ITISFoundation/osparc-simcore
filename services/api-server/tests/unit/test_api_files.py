@@ -5,13 +5,19 @@
 # pylint: disable=unused-variable
 from pathlib import Path
 
+import httpx
 import pytest
+from aioresponses import aioresponses as AioResponsesMock
 from fastapi import status
 from httpx import AsyncClient
 from pydantic import parse_obj_as
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.files import File
+
+pytest_plugins = [
+    "pytest_simcore.aioresponses_mocker",
+]
 
 
 @pytest.mark.xfail(reason="Under dev")
@@ -122,3 +128,22 @@ async def test_download_content(
 
     assert response.status_code == status.HTTP_200_OK
     assert response.headers["content-type"] == "application/octet-stream"
+
+
+@pytest.mark.testit
+async def test_get_upload_links(
+    client: AsyncClient,
+    auth: httpx.BasicAuth,
+    storage_v0_service_mock: AioResponsesMock,
+):
+    """Test that we can get data needed for performing multipart upload directly to S3"""
+    payload: dict[str, str] = {"filename": "myfile.txt", "filesize": "100000"}
+
+    response = await client.post(
+        f"{API_VTAG}/files/uploadlinks", json=payload, auth=auth
+    )
+
+    payload: dict[str, str] = response.json()
+
+    assert response.status_code == status.HTTP_200_OK
+    assert all(elm in payload.keys() for elm in ["chunk_size", "urls", "links"])
