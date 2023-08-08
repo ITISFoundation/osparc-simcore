@@ -65,7 +65,6 @@ async def _assert_message_received(
         reraise=True,
     ):
         with attempt:
-            # NOTE: this sleep is here to ensure that there are not multiple messages coming in
             print(
                 f"--> waiting for rabbitmq message [{attempt.retry_state.attempt_number}, {attempt.retry_state.idle_for}]"
             )

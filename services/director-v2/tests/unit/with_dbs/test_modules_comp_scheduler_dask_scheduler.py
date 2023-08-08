@@ -10,7 +10,7 @@
 
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Awaitable, Callable, cast
+from typing import Any, AsyncIterator, Awaitable, Callable, cast
 from unittest import mock
 
 import aiopg
@@ -27,10 +27,16 @@ from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
+from models_library.rabbitmq_messages import (
+    InstrumentationRabbitMessage,
+    RabbitResourceTrackingStartedMessage,
+    _RabbitResourceTrackingBaseMessage,
+)
 from pydantic import parse_obj_as
 from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.rabbitmq import RabbitMQClient
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.comp_runs import comp_runs
 from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
@@ -58,6 +64,10 @@ from simcore_service_director_v2.modules.comp_scheduler.dask_scheduler import (
 from simcore_service_director_v2.utils.comp_scheduler import COMPLETED_STATES
 from simcore_service_director_v2.utils.dask_client_utils import TaskHandlers
 from starlette.testclient import TestClient
+from tenacity._asyncio import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = [
@@ -476,6 +486,55 @@ async def _assert_schedule_pipeline_PENDING(
     return expected_pending_tasks
 
 
+@pytest.fixture
+async def instrumentation_rabbit_client_parser(
+    rabbitmq_client: Callable[[str], RabbitMQClient], mocker: MockerFixture
+) -> AsyncIterator[mock.AsyncMock]:
+    client = rabbitmq_client("instrumentation_pytest_consumer")
+    with mocker.AsyncMock(return_value=True) as mock:
+        await client.subscribe(InstrumentationRabbitMessage.get_channel_name(), mock)
+        yield mock
+        await client.unsubscribe(InstrumentationRabbitMessage.get_channel_name())
+
+
+@pytest.fixture
+async def resource_tracking_rabbit_client_parser(
+    rabbitmq_client: Callable[[str], RabbitMQClient], mocker: MockerFixture
+) -> AsyncIterator[mock.AsyncMock]:
+    client = rabbitmq_client("resource_tracking_pytest_consumer")
+    with mocker.AsyncMock(return_value=True) as mock:
+        await client.subscribe(
+            _RabbitResourceTrackingBaseMessage.get_channel_name(), mock
+        )
+        yield mock
+        await client.unsubscribe(_RabbitResourceTrackingBaseMessage.get_channel_name())
+
+
+async def _assert_message_received(
+    mocked_message_parser: mock.AsyncMock,
+    expected_call_count: int,
+    message_parser: Callable,
+) -> list:
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1),
+        stop=stop_after_delay(5),
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+    ):
+        with attempt:
+            print(
+                f"--> waiting for rabbitmq message [{attempt.retry_state.attempt_number}, {attempt.retry_state.idle_for}]"
+            )
+            assert mocked_message_parser.call_count == expected_call_count
+            print(
+                f"<-- rabbitmq message received after [{attempt.retry_state.attempt_number}, {attempt.retry_state.idle_for}]"
+            )
+    return [
+        message_parser(mocked_message_parser.call_args_list[c].args[0])
+        for c in range(expected_call_count)
+    ]
+
+
 @pytest.mark.acceptance_test
 async def test_proper_pipeline_is_scheduled(
     with_disabled_scheduler_task: None,
@@ -485,6 +544,8 @@ async def test_proper_pipeline_is_scheduled(
     published_project: PublishedProject,
     mocked_parse_output_data_fct: mock.Mock,
     mocked_clean_task_output_and_log_files_if_invalid: None,
+    instrumentation_rabbit_client_parser: mock.AsyncMock,
+    resource_tracking_rabbit_client_parser: mock.AsyncMock,
 ):
     expected_published_tasks = await _assert_start_pipeline(
         aiopg_engine, published_project, scheduler
@@ -543,9 +604,17 @@ async def test_proper_pipeline_is_scheduled(
     )
     mocked_dask_client.get_tasks_status.reset_mock()
     mocked_dask_client.get_task_result.assert_not_called()
-    assert (
-        False
-    ), "Check the rabbitmq messages here!!, there should be metrics and resource tracking"
+    messages = await _assert_message_received(
+        instrumentation_rabbit_client_parser, 1, InstrumentationRabbitMessage.parse_raw
+    )
+    assert messages[0].metrics == "service_started"
+    assert messages[0].service_uuid == exp_started_task.node_id
+    messages = await _assert_message_received(
+        resource_tracking_rabbit_client_parser,
+        1,
+        RabbitResourceTrackingStartedMessage.parse_raw,
+    )
+    assert messages[0].node_id == exp_started_task.node_id
 
     # -------------------------------------------------------------------------------
     # 4. the "worker" completed the task successfully
