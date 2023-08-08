@@ -1,9 +1,18 @@
+from contextlib import suppress
+
 from aiohttp import web
+from aiopg.sa.connection import SAConnection
 from models_library.api_schemas_storage import S3BucketName
-from models_library.projects_nodes_io import SimcoreS3DirectoryID, StorageFileID
+from models_library.projects_nodes_io import (
+    SimcoreS3DirectoryID,
+    SimcoreS3FileID,
+    StorageFileID,
+)
 from pydantic import ByteSize, NonNegativeInt, parse_obj_as
 from servicelib.utils import ensure_ends_with
 
+from . import db_file_meta_data
+from .exceptions import FileMetaDataNotFoundError
 from .models import FileMetaData, FileMetaDataAtDB
 from .s3 import get_s3_client
 from .s3_client import S3MetaData
@@ -58,3 +67,36 @@ def get_simcore_directory(file_id: StorageFileID) -> str:
     except ValueError:
         return ""
     return f"{directory_id}"
+
+
+async def get_directory_file_id(
+    conn: SAConnection, file_id: StorageFileID
+) -> SimcoreS3FileID | None:
+    """
+    returns the containing file's `directory_file_id` if the entry exists
+    in the `file_meta_data` table
+    """
+
+    async def _get_fmd(
+        conn: SAConnection, s3_file_id: StorageFileID
+    ) -> FileMetaDataAtDB | None:
+        with suppress(FileMetaDataNotFoundError):
+            return await db_file_meta_data.get(
+                conn, parse_obj_as(SimcoreS3FileID, s3_file_id)
+            )
+        return None
+
+    provided_file_id_fmd = await _get_fmd(conn, file_id)
+    if provided_file_id_fmd:
+        # file_meta_data exists it is not a directory
+        return None
+
+    directory_file_id_str: str = get_simcore_directory(file_id)
+    if directory_file_id_str == "":
+        # could not extract a directory name from the provided path
+        return None
+
+    directory_file_id = parse_obj_as(SimcoreS3FileID, directory_file_id_str.rstrip("/"))
+    directory_file_id_fmd = await _get_fmd(conn, directory_file_id)
+
+    return directory_file_id if directory_file_id_fmd else None

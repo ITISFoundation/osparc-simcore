@@ -66,7 +66,11 @@ from .s3 import get_s3_client
 from .s3_client import S3MetaData, StorageS3Client
 from .s3_utils import S3TransferDataCB, update_task_progress
 from .settings import Settings
-from .simcore_s3_dsm_utils import expand_directory, get_simcore_directory
+from .simcore_s3_dsm_utils import (
+    expand_directory,
+    get_directory_file_id,
+    get_simcore_directory,
+)
 from .utils import (
     convert_db_to_model,
     download_to_file_or_raise,
@@ -405,38 +409,6 @@ class SimcoreS3DataManager(BaseDataManager):
                 #
                 raise FileAccessRightError(access_right="read", file_id=storage_file_id)
 
-        async def _get_directory_file_id(conn: SAConnection) -> SimcoreS3FileID | None:
-            """
-            returns the containing file's `directory_file_id` if the entry exists
-            in the `file_meta_data` table
-            """
-
-            async def _get_fmd(
-                conn: SAConnection, s3_file_id: StorageFileID
-            ) -> FileMetaDataAtDB | None:
-                with suppress(FileMetaDataNotFoundError):
-                    return await db_file_meta_data.get(
-                        conn, parse_obj_as(SimcoreS3FileID, s3_file_id)
-                    )
-                return None
-
-            provided_file_id_fmd = await _get_fmd(conn, file_id)
-            if provided_file_id_fmd:
-                # file_meta_data exists it is not a directory
-                return None
-
-            directory_file_id_str: str = get_simcore_directory(file_id)
-            if directory_file_id_str == "":
-                # could not extract a directory name from the provided path
-                return None
-
-            directory_file_id = parse_obj_as(
-                SimcoreS3FileID, directory_file_id_str.rstrip("/")
-            )
-            directory_file_id_fmd = await _get_fmd(conn, directory_file_id)
-
-            return directory_file_id if directory_file_id_fmd else None
-
         async def _get_link(s3_file_id: SimcoreS3FileID) -> AnyUrl:
             link: AnyUrl = parse_obj_as(
                 AnyUrl,
@@ -453,7 +425,7 @@ class SimcoreS3DataManager(BaseDataManager):
 
             return link
 
-        async def _get_link_for_file(conn: SAConnection) -> AnyUrl:
+        async def _get_link_for_file_fmd(conn: SAConnection) -> AnyUrl:
             # 1. the file_id maps 1:1 to `file_meta_data`
             await _ensure_access_rights(conn, file_id)
 
@@ -466,7 +438,7 @@ class SimcoreS3DataManager(BaseDataManager):
 
             return await _get_link(fmd.object_name)
 
-        async def _get_link_for_directory(
+        async def _get_link_for_directory_fmd(
             conn: SAConnection, directory_file_id: SimcoreS3FileID
         ) -> AnyUrl:
             # 2. the file_id represents a file inside a directory
@@ -478,13 +450,13 @@ class SimcoreS3DataManager(BaseDataManager):
             return await _get_link(parse_obj_as(SimcoreS3FileID, file_id))
 
         async with self.engine.acquire() as conn:
-            directory_file_id: SimcoreS3FileID | None = await _get_directory_file_id(
-                conn
+            directory_file_id: SimcoreS3FileID | None = await get_directory_file_id(
+                conn, file_id
             )
             return (
-                await _get_link_for_directory(conn, directory_file_id)
+                await _get_link_for_directory_fmd(conn, directory_file_id)
                 if directory_file_id
-                else await _get_link_for_file(conn)
+                else await _get_link_for_file_fmd(conn)
             )
 
     async def delete_file(self, user_id: UserID, file_id: StorageFileID):
