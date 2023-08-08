@@ -293,7 +293,11 @@ async def running_project(
             dag_adjacency_list=fake_workbench_adjacency,
         ),
         tasks=tasks(
-            user=user, project=created_project, state=StateType.RUNNING, progress=0.0
+            user=user,
+            project=created_project,
+            state=StateType.RUNNING,
+            progress=0.0,
+            start=datetime.datetime.now(tz=datetime.timezone.utc),
         ),
         runs=runs(user=user, project=created_project, result=StateType.RUNNING),
     )

@@ -33,6 +33,7 @@ from models_library.rabbitmq_messages import (
     InstrumentationRabbitMessage,
     RabbitResourceTrackingHeartbeatMessage,
     RabbitResourceTrackingMessages,
+    RabbitResourceTrackingStartedMessage,
     RabbitResourceTrackingStoppedMessage,
     _RabbitResourceTrackingBaseMessage,
 )
@@ -625,8 +626,8 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
 
     messages = await _assert_message_received(
         resource_tracking_rabbit_client_parser,
-        2,
-        _parser,
+        1,
+        RabbitResourceTrackingStartedMessage.parse_raw,
     )
     assert messages[0].node_id == exp_started_task.node_id
 
@@ -753,8 +754,8 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     assert messages[0].service_uuid == exp_started_task.node_id
     messages = await _assert_message_received(
         resource_tracking_rabbit_client_parser,
-        2,
-        _parser,
+        1,
+        RabbitResourceTrackingStartedMessage.parse_raw,
     )
     assert messages[0].node_id == exp_started_task.node_id
 
@@ -843,6 +844,8 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         2,
         _parser,
     )
+    assert isinstance(messages[0], RabbitResourceTrackingStartedMessage)
+    assert isinstance(messages[1], RabbitResourceTrackingStoppedMessage)
 
     # the scheduled pipeline shall be removed
     assert scheduler.scheduled_pipelines == {}
@@ -1169,16 +1172,12 @@ async def test_running_pipeline_triggers_heartbeat(
     mocked_dask_client.get_tasks_status.side_effect = _return_1st_task_running
     await run_comp_scheduler(scheduler)
 
-    def _parser(x) -> RabbitResourceTrackingMessages:
-        return parse_raw_as(RabbitResourceTrackingMessages, x)
-
     messages = await _assert_message_received(
         resource_tracking_rabbit_client_parser,
-        2,
-        _parser,
+        1,
+        RabbitResourceTrackingStartedMessage.parse_raw,
     )
     assert messages[0].node_id == exp_started_task.node_id
-    assert isinstance(messages[1], RabbitResourceTrackingHeartbeatMessage)
 
     # -------------------------------------------------------------------------------
     # 3. wait a bit and run again we should get another heartbeat, but only one!
@@ -1188,7 +1187,7 @@ async def test_running_pipeline_triggers_heartbeat(
     messages = await _assert_message_received(
         resource_tracking_rabbit_client_parser,
         1,
-        _parser,
+        RabbitResourceTrackingHeartbeatMessage.parse_raw,
     )
     assert isinstance(messages[0], RabbitResourceTrackingHeartbeatMessage)
 
@@ -1200,6 +1199,6 @@ async def test_running_pipeline_triggers_heartbeat(
     messages = await _assert_message_received(
         resource_tracking_rabbit_client_parser,
         1,
-        _parser,
+        RabbitResourceTrackingHeartbeatMessage.parse_raw,
     )
     assert isinstance(messages[0], RabbitResourceTrackingHeartbeatMessage)
