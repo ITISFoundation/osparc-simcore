@@ -213,7 +213,7 @@ def fake_task(fake_task_file: Path) -> CompTaskAtDB:
                 (RunningState.FAILED),
                 (RunningState.ABORTED),
             ],
-            RunningState.STARTED,
+            RunningState.FAILED,
             id="any number of success",
         ),
         pytest.param(
