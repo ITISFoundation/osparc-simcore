@@ -934,7 +934,7 @@ class SimcoreS3DataManager(BaseDataManager):
                             s3_client.copy_file(
                                 self.simcore_bucket_name,
                                 cast(SimcoreS3FileID, src),
-                                parse_obj_as(SimcoreS3FileID, new),
+                                cast(SimcoreS3FileID, new),
                                 bytes_transfered_cb=bytes_transfered_cb,
                             )
                             for src, new in s3_objects_src_to_new.items()
