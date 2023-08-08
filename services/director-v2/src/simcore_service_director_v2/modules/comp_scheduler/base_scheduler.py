@@ -288,12 +288,14 @@ class BaseCompScheduler(ABC):
                 return False
             if task.last_heartbeat is None:
                 assert task.start  # nosec
-                return (
-                    utc_now - task.start.replace(tzinfo=datetime.timezone.utc)
-                ) > self.service_runtime_heartbeat_interval
-            return (
-                utc_now - task.last_heartbeat
-            ) > self.service_runtime_heartbeat_interval
+                return bool(
+                    (utc_now - task.start.replace(tzinfo=datetime.timezone.utc))
+                    > self.service_runtime_heartbeat_interval
+                )
+            return bool(
+                (utc_now - task.last_heartbeat)
+                > self.service_runtime_heartbeat_interval
+            )
 
         tasks: dict[str, CompTaskAtDB] = await self._get_pipeline_tasks(project_id, dag)
         if running_tasks := [t for t in tasks.values() if _need_heartbeat(t)]:
