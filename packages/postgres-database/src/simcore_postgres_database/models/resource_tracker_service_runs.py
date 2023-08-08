@@ -1,7 +1,7 @@
 """ resource_tracker_service_runs table
 
-    - resource_usage_tracker is listening to rabbitmq events from director-v2 & sidecars and stores the data in this table
-    - the point here is that ...
+    - resource_usage_tracker is listening to rabbitmq events from director-v2 & sidecars and stores the data in this table.
+    - this events are starting a service, stopping a service, heartbeat so we know whether the service is still running
 
 """
 import enum

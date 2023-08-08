@@ -1,6 +1,6 @@
-""" Tables connected to credits
-    - resource_tracker_credit_mapping table
-    - resource_tracker_credit_history table
+""" Pricing plan table
+  - To be flexible for different pricing models, we can define different pricing plans.
+  Each pricing plan can behave differently, based on the classification.
 """
 import enum
 

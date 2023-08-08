@@ -1,6 +1,5 @@
-""" Tables connected to credits
-    - resource_tracker_credit_mapping table
-    - resource_tracker_credit_history table
+""" Wallets credit transaction
+    - Basically this table is balance sheet of each wallet.
 """
 import enum
 

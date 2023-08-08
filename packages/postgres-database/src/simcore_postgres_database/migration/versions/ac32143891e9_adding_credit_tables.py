@@ -1,8 +1,8 @@
 """adding credit tables
 
-Revision ID: 18434d9923c6
+Revision ID: ac32143891e9
 Revises: 9b33ef4c690a
-Create Date: 2023-08-08 15:44:06.706304+00:00
+Create Date: 2023-08-08 16:16:17.511253+00:00
 
 """
 import sqlalchemy as sa
@@ -10,7 +10,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = "18434d9923c6"
+revision = "ac32143891e9"
 down_revision = "9b33ef4c690a"
 branch_labels = None
 depends_on = None

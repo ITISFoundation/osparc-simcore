@@ -1,6 +1,8 @@
-""" Tables connected to credits
-    - resource_tracker_credit_mapping table
-    - resource_tracker_credit_history table
+""" Pricing details table
+    - each pricing plan table can have multiple units. This units are stored in the
+    pricing details table with its unit cost. Each unit cost (row in this table) has
+    id which unique defines the prices at this point of the time. We always store whole
+    history and do not update the rows of this table.
 """
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
