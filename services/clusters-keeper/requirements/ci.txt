@@ -1,0 +1,20 @@
+# Shortcut to install all packages for the contigous integration (CI) of 'services/clusters-keeper'
+#
+# - As ci.txt but w/ tests
+#
+# Usage:
+#   pip install -r requirements/ci.txt
+#
+
+# installs base + tests requirements
+--requirement _base.txt
+--requirement _test.txt
+
+# installs this repo's packages
+../../packages/models-library
+../../packages/pytest-simcore
+../../packages/service-library[fastapi]
+../../packages/settings-library
+
+# installs current package
+.
