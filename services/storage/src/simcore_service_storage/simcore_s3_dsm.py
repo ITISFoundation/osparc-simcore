@@ -67,6 +67,7 @@ from .s3_client import S3MetaData, StorageS3Client
 from .s3_utils import S3TransferDataCB, update_task_progress
 from .settings import Settings
 from .simcore_s3_dsm_utils import (
+    ensure_read_access_rights,
     expand_directory,
     get_directory_file_id,
     get_simcore_directory,
@@ -409,19 +410,6 @@ class SimcoreS3DataManager(BaseDataManager):
                 )
             )
 
-    async def __ensure_read_access_rights(
-        self, conn: SAConnection, user_id: UserID, storage_file_id: StorageFileID
-    ) -> None:
-        can: AccessRights | None = await get_file_access_rights(
-            conn, user_id, storage_file_id
-        )
-        if not can.read:
-            # NOTE: this is tricky. A user with read access can download and data!
-            # If write permission would be required, then shared projects as views cannot
-            # recover data in nodes (e.g. jupyter cannot pull work data)
-            #
-            raise FileAccessRightError(access_right="read", file_id=storage_file_id)
-
     async def __get_link(
         self, s3_file_id: SimcoreS3FileID, link_type: LinkType
     ) -> AnyUrl:
@@ -446,7 +434,7 @@ class SimcoreS3DataManager(BaseDataManager):
         link_type: LinkType,
     ) -> AnyUrl:
         # 1. the file_id maps 1:1 to `file_meta_data`
-        await self.__ensure_read_access_rights(conn, user_id, file_id)
+        await ensure_read_access_rights(conn, user_id, file_id)
 
         fmd = await db_file_meta_data.get(conn, parse_obj_as(SimcoreS3FileID, file_id))
         if not is_file_entry_valid(fmd):
@@ -464,7 +452,7 @@ class SimcoreS3DataManager(BaseDataManager):
         link_type: LinkType,
     ) -> AnyUrl:
         # 2. the file_id represents a file inside a directory
-        await self.__ensure_read_access_rights(conn, user_id, directory_file_id)
+        await ensure_read_access_rights(conn, user_id, directory_file_id)
         if not await get_s3_client(self.app).file_exists(
             self.simcore_bucket_name, s3_object=f"{file_id}"
         ):

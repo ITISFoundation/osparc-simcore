@@ -8,11 +8,13 @@ from models_library.projects_nodes_io import (
     SimcoreS3FileID,
     StorageFileID,
 )
+from models_library.users import UserID
 from pydantic import ByteSize, NonNegativeInt, parse_obj_as
 from servicelib.utils import ensure_ends_with
 
 from . import db_file_meta_data
-from .exceptions import FileMetaDataNotFoundError
+from .db_access_layer import AccessRights, get_file_access_rights
+from .exceptions import FileAccessRightError, FileMetaDataNotFoundError
 from .models import FileMetaData, FileMetaDataAtDB
 from .s3 import get_s3_client
 from .s3_client import S3MetaData
@@ -100,3 +102,21 @@ async def get_directory_file_id(
     directory_file_id_fmd = await _get_fmd(conn, directory_file_id)
 
     return directory_file_id if directory_file_id_fmd else None
+
+
+async def ensure_read_access_rights(
+    conn: SAConnection, user_id: UserID, storage_file_id: StorageFileID
+) -> None:
+    """
+    Raises:
+        FileAccessRightError
+    """
+    can: AccessRights | None = await get_file_access_rights(
+        conn, user_id, storage_file_id
+    )
+    if not can.read:
+        # NOTE: this is tricky. A user with read access can download and data!
+        # If write permission would be required, then shared projects as views cannot
+        # recover data in nodes (e.g. jupyter cannot pull work data)
+        #
+        raise FileAccessRightError(access_right="read", file_id=storage_file_id)
