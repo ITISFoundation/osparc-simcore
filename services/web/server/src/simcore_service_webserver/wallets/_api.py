@@ -70,8 +70,8 @@ async def update_wallet(
     user_id: UserID,
     wallet_id: WalletID,
     name: str,
-    description: str,
-    thumbnail: str,
+    description: str | None,
+    thumbnail: str | None,
     status: WalletStatus,
 ) -> WalletGet:
     wallet: UserWalletDB = await db.get_wallet_for_user(
