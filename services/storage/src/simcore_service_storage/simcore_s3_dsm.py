@@ -383,18 +383,15 @@ class SimcoreS3DataManager(BaseDataManager):
     ) -> AnyUrl:
         """
         Cases:
-        1. the `file_id` maps 1:1 to a `file_meta_data` (is_directory==False).
-            ==> Returns link
-        2. part of the `file_id` is shared with a directory in a `file_meta_data` (is_directory==True) and the file is there.
-            ==> Returns link
-        3. part of the `file_id` is shared with a directory in a `file_meta_data` (is_directory==True) and the file is missing.
-            ==> Raises S3KeyNotFoundError
-        4. `file_id` was not found anywhere.
-            ==> Raises FileAccessRightError
+        1. the file_id maps 1:1 to `file_meta_data` (e.g. it is not a file inside a directory)
+        2. the file_id represents a file inside a directory (its root path maps 1:1 to a `file_meta_data` defined as a directory)
+
+        3. Raises FileNotFoundError if the file does not exist
+        4. Raises FileAccessRightError if the user does not have access to the file
         """
 
         async def _get_fmd(
-            conn: SAConnection, s3_file_id: str
+            conn: SAConnection, s3_file_id: StorageFileID
         ) -> FileMetaDataAtDB | None:
             with suppress(FileMetaDataNotFoundError):
                 return await db_file_meta_data.get(
