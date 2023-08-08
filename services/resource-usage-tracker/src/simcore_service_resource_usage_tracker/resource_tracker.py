@@ -14,8 +14,8 @@ _logger = logging.getLogger(__name__)
 
 
 async def _process_message(
-    app: FastAPI, data: bytes
-) -> bool:  # pylint: disable=unused-argument
+    app: FastAPI, data: bytes  # pylint: disable=unused-argument
+) -> bool:
     # NOTE: parse the message and process it
 
     _logger.info("Received message")
