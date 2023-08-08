@@ -406,8 +406,9 @@ class SimcoreS3DataManager(BaseDataManager):
                 raise FileAccessRightError(access_right="read", file_id=storage_file_id)
 
         async def _get_directory_file_id(conn: SAConnection) -> SimcoreS3FileID | None:
-            """returns the containing file's directory_id if the entry exists
-            in the file_meta_data table
+            """
+            returns the containing file's `directory_file_id` if the entry exists
+            in the `file_meta_data` table
             """
 
             async def _get_fmd(
