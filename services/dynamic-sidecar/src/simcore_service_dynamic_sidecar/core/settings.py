@@ -15,6 +15,8 @@ from settings_library.r_clone import RCloneSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
+from ..modules.resource_tracking.models import ResourceTrackingSettings
+
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     SC_BOOT_MODE: BootModeEnum = Field(
@@ -107,6 +109,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     RABBIT_SETTINGS: RabbitSettings | None = Field(auto_default_from_env=True)
     DY_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
+
+    RESOURCE_TRACKING: ResourceTrackingSettings = Field(auto_default_from_env=True)
 
     @validator("LOG_LEVEL")
     @classmethod

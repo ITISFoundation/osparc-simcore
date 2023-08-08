@@ -36,7 +36,7 @@ from ..core.validation import parse_compose_spec, validate_compose_spec
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.schemas.containers import ContainersCreate
 from ..models.shared_store import SharedStore
-from ..modules import nodeports
+from ..modules import nodeports, resource_tracking
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.outputs import OutputsManager, outputs_watcher_disabled
 
@@ -164,13 +164,19 @@ async def task_create_service_containers(
         await _retry_docker_compose_create(shared_store.compose_spec, settings)
 
         progress.update(message="ensure containers are started", percent=0.95)
-        r = await _retry_docker_compose_start(shared_store.compose_spec, settings)
+        compose_start_result = await _retry_docker_compose_start(
+            shared_store.compose_spec, settings
+        )
 
-    message = f"Finished docker-compose start with output\n{r.message}"
+    await resource_tracking.send_service_started(app)
 
-    if r.success:
+    message = (
+        f"Finished docker-compose start with output\n{compose_start_result.message}"
+    )
+
+    if compose_start_result.success:
         await post_sidecar_log_message(
-            app, "service containers started", log_level=logging.INFO
+            app, "user services started", log_level=logging.INFO
         )
         _logger.debug(message)
         for container_name in shared_store.container_names:
@@ -182,7 +188,7 @@ async def task_create_service_containers(
             "Marked sidecar as unhealthy, see below for details\n:%s", message
         )
         await post_sidecar_log_message(
-            app, "could not start service containers", log_level=logging.ERROR
+            app, "could not user services", log_level=logging.ERROR
         )
 
     return shared_store.container_names
@@ -197,6 +203,8 @@ async def task_runs_docker_compose_down(
     if shared_store.compose_spec is None:
         _logger.warning("No compose-spec was found")
         return
+
+    await resource_tracking.send_service_stopped(app)
 
     progress.update(message="running docker-compose-down", percent=0.1)
     result = await _retry_docker_compose_down(shared_store.compose_spec, settings)
