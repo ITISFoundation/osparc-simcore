@@ -47,14 +47,17 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
     __buildLayout: function() {
       const store = osparc.store.Store.getInstance();
       store.bind("activeWallet", this, "activeWallet");
+      store.addListener("changeWallets", () => this.__reloadLayout());
     },
 
     __reloadLayout: function() {
       const activeWallet = this.getActiveWallet();
       if (activeWallet) {
         this.__showOneWallet(activeWallet);
-      } else {
+      } else if (osparc.store.Store.getInstance().getWallets().length) {
         this.__showAllWallets();
+      } else {
+        this.__showNoWallets();
       }
     },
 
@@ -70,6 +73,32 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
       this._removeAll();
     },
 
+    __showNoWallets: function() {
+      this.__removeWallets();
+
+      this._add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+
+      const iconSrc = "@MaterialIcons/account_balance_wallet/26";
+      const walletsButton = new qx.ui.form.Button(null, iconSrc).set({
+        toolTipText: this.tr("No Wallets"),
+        backgroundColor: "transparent",
+        textColor: "danger-red"
+      });
+      walletsButton.addListener("tap", () => {
+        const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow();
+        creditsWindow.openWallets();
+      }, this);
+      this._add(walletsButton, {
+        flex: 1
+      });
+
+      this._add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+    },
+
     __showOneWallet: function(wallet) {
       this.__removeWallets();
 
@@ -78,7 +107,7 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
       });
 
       this.__addWallet(wallet);
-      const id = wallet.addListener("changeActive", () => this.__reloadLayout());
+      const id = wallet.addListener("changeStatus", () => this.__reloadLayout());
       this.__walletListeners.push({
         walletId: wallet.getWalletId(),
         listenerId: id
@@ -100,10 +129,10 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
       const maxIndicators = 3;
       for (let i=0; i<wallets.length && i<maxIndicators; i++) {
         const wallet = wallets[i];
-        if (wallet.isActive()) {
+        if (wallet.getStatus() === "ACTIVE") {
           this.__addWallet(wallet);
         }
-        const id = wallet.addListener("changeActive", () => this.__reloadLayout());
+        const id = wallet.addListener("changeStatus", () => this.__reloadLayout());
         this.__walletListeners.push({
           walletId: wallet.getWalletId(),
           listenerId: id

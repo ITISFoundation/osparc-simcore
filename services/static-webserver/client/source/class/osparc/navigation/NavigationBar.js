@@ -132,10 +132,10 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       this.getChildControl("read-only-info");
 
       // right-items
-      const creditsLeft = this.getChildControl("credits-left");
-      creditsLeft.exclude();
+      const walletsViewer = this.getChildControl("wallets-viewer");
+      walletsViewer.exclude();
       osparc.utils.Utils.isDevelopmentPlatform()
-        .then(isDevel => isDevel && osparc.product.Utils.isProduct("s4l") ? creditsLeft.show() : creditsLeft.exclude());
+        .then(isDevel => isDevel && osparc.product.Utils.isProduct("s4l") ? walletsViewer.show() : walletsViewer.exclude());
       this.getChildControl("tasks-button");
       this.getChildControl("notifications-button");
       this.getChildControl("expiration-icon");
@@ -266,7 +266,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("center-items").add(control);
           break;
         }
-        case "credits-left":
+        case "wallets-viewer":
           control = new osparc.desktop.credits.WalletsMiniViewer().set({
             maxWidth: 50,
             minWidth: 50,

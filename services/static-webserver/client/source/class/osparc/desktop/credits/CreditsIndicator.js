@@ -65,12 +65,12 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
       apply: "__applyWallet"
     },
 
-    credits: {
+    creditsAvailable: {
       check: "Number",
       init: 0,
       nullable: false,
       event: "changeCredits",
-      apply: "__applyCredits"
+      apply: "__applyCreditsAvailable"
     }
   },
 
@@ -87,24 +87,24 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
   members: {
     __applyWallet: function(wallet) {
       if (wallet) {
-        wallet.bind("credits", this, "credits");
-        wallet.bind("credits", this, "toolTipText", {
+        wallet.bind("creditsAvailable", this, "creditsAvailable");
+        wallet.bind("creditsAvailable", this, "toolTipText", {
           converter: val => wallet.getName() + ": " + val + " credits left"
         });
       }
     },
 
-    __applyCredits: function(credits) {
-      if (credits !== null) {
-        this.setValue(this.self().convertCreditsToIndicatorValue(credits));
+    __applyCreditsAvailable: function(creditsAvailable) {
+      if (creditsAvailable !== null) {
+        this.setValue(this.self().convertCreditsToIndicatorValue(creditsAvailable));
 
-        if (credits <= 0) {
+        if (creditsAvailable <= 0) {
           this.setBackgroundColor("danger-red");
         } else {
           this.resetBackgroundColor();
         }
 
-        let tttext = credits + " " + this.tr("credits left");
+        let tttext = creditsAvailable + " " + this.tr("credits left");
         if (this.getWallet()) {
           tttext = this.getWallet().getName() + ": " + tttext;
         }
