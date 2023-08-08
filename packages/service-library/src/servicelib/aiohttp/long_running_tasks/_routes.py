@@ -11,7 +11,7 @@ from ...long_running_tasks._task import TrackedTask
 from ...mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ._dependencies import get_task_context, get_tasks_manager
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
 
@@ -89,3 +89,11 @@ async def cancel_and_delete_task(request: web.Request) -> web.Response:
     task_context = get_task_context(request)
     await tasks_manager.remove_task(path_params.task_id, with_task_context=task_context)
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+
+
+__all__: tuple[str, ...] = (
+    "get_tasks_manager",
+    "TaskId",
+    "TaskGet",
+    "TaskStatus",
+)

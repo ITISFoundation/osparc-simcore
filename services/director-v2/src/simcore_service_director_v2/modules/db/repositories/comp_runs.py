@@ -17,7 +17,7 @@ from sqlalchemy.sql.elements import literal_column
 from sqlalchemy.sql.expression import desc
 
 from ....core.errors import ClusterNotFoundError, ComputationalRunNotFoundError
-from ....models.domains.comp_runs import CompRunsAtDB, MetadataDict
+from ....models.comp_runs import CompRunsAtDB, MetadataDict
 from ....utils.db import RUNNING_STATE_TO_DB
 from ..tables import comp_runs
 from ._base import BaseRepository

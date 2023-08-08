@@ -36,7 +36,7 @@ from .utils import (
 )
 from .utils_email import get_template_path, send_email_from_template
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 routes = RouteTableDef()
@@ -46,8 +46,8 @@ class ResetPasswordBody(InputSchema):
     email: str
 
 
-@global_rate_limit_route(number_of_requests=10, interval_seconds=HOUR)
 @routes.post(f"/{API_VTAG}/auth/reset-password", name="auth_reset_password")
+@global_rate_limit_route(number_of_requests=10, interval_seconds=HOUR)
 async def submit_request_to_reset_password(request: web.Request):
     """
         1. confirm user exists
@@ -101,7 +101,7 @@ async def submit_request_to_reset_password(request: web.Request):
                 },
             )
         except Exception as err_mail:  # pylint: disable=broad-except
-            log.exception("Cannot send email")
+            _logger.exception("Cannot send email")
             raise web.HTTPServiceUnavailable(reason=MSG_CANT_SEND_MAIL) from err_mail
     else:
         confirmation = await db.create_confirmation(user["id"], action=RESET_PASSWORD)
@@ -121,12 +121,11 @@ async def submit_request_to_reset_password(request: web.Request):
                 },
             )
         except Exception as err:  # pylint: disable=broad-except
-            log.exception("Can not send email")
+            _logger.exception("Can not send email")
             await db.delete_confirmation(confirmation)
             raise web.HTTPServiceUnavailable(reason=MSG_CANT_SEND_MAIL) from err
 
-    response = flash_response(MSG_EMAIL_SENT.format(email=request_body.email), "INFO")
-    return response
+    return flash_response(MSG_EMAIL_SENT.format(email=request_body.email), "INFO")
 
 
 class ChangeEmailBody(InputSchema):
@@ -173,12 +172,11 @@ async def submit_request_to_change_email(request: web.Request):
             },
         )
     except Exception as err:  # pylint: disable=broad-except
-        log.error("Can not send email")
+        _logger.error("Can not send email")
         await db.delete_confirmation(confirmation)
         raise web.HTTPServiceUnavailable(reason=MSG_CANT_SEND_MAIL) from err
 
-    response = flash_response(MSG_CHANGE_EMAIL_REQUESTED)
-    return response
+    return flash_response(MSG_CHANGE_EMAIL_REQUESTED)
 
 
 class ChangePasswordBody(InputSchema):
@@ -210,5 +208,4 @@ async def change_password(request: web.Request):
         user, {"password_hash": encrypt_password(passwords.new.get_secret_value())}
     )
 
-    response = flash_response(MSG_PASSWORD_CHANGED)
-    return response
+    return flash_response(MSG_PASSWORD_CHANGED)

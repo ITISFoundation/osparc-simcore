@@ -3,17 +3,22 @@
 --constraint _base.txt
 
 
+aioboto3
 asgi_lifespan
 async-asgi-testclient # replacement for fastapi.testclient.TestClient [see b) below]
+docker
 faker
+minio
 pytest
 pytest-asyncio
 pytest-cov
 pytest-mock
+python-dotenv
+sqlalchemy[mypy] # adds Mypy / Pep-484 Support for ORM Mappings SEE https://docs.sqlalchemy.org/en/20/orm/extensions/mypy.html
+types_aiobotocore_s3
 types-aiofiles # missing mypy stubs
 types-pkg_resources # missing mypy stubs
 types-PyYAML # missing mypy stubs
-sqlalchemy[mypy] # adds Mypy / Pep-484 Support for ORM Mappings SEE https://docs.sqlalchemy.org/en/20/orm/extensions/mypy.html
 
 
 # NOTE: What test client to use for fastapi-based apps?

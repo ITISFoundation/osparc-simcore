@@ -19,3 +19,5 @@ except ImportError:  # for aiohttp-only services
     from ._original_fastapi_encoders import jsonable_encoder
 
     servicelib_jsonable_encoder = jsonable_encoder  # alias
+
+__all__ = ("jsonable_encoder",)

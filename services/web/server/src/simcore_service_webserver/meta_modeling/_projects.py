@@ -16,7 +16,7 @@ from models_library.projects import ProjectID
 
 from .._meta import api_version_prefix as VTAG
 from ..director_v2.api import AbstractProjectRunPolicy
-from ..projects._handlers_crud import RQ_REQUESTED_REPO_PROJECT_UUID_KEY
+from ..projects._crud_handlers import RQ_REQUESTED_REPO_PROJECT_UUID_KEY
 from ..version_control.models import CommitID
 from ._iterations import get_or_create_runnable_projects, get_runnable_projects_ids
 from ._version_control import VersionControlForMetaModeling

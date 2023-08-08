@@ -15,6 +15,7 @@ from ...long_running_tasks._task import (
     start_task,
 )
 from ..typing_extension import Handler
+from . import _routes
 from ._constants import (
     APP_LONG_RUNNING_TASKS_MANAGER_KEY,
     MINUTE,
@@ -22,9 +23,8 @@ from ._constants import (
 )
 from ._dependencies import create_task_name_from_request, get_tasks_manager
 from ._error_handlers import base_long_running_error_handler
-from ._routes import routes
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def no_ops_decorator(handler: Handler):
@@ -86,6 +86,24 @@ async def start_long_running_task(
         raise
 
 
+def _wrap_and_add_routes(
+    app: web.Application,
+    router_prefix: str,
+    handler_check_decorator: Callable,
+    task_request_context_decorator: Callable,
+):
+    # add routing paths
+    for route in _routes.routes:
+        app.router.add_route(
+            method=route.method,
+            path=f"{router_prefix}{route.path}",
+            handler=handler_check_decorator(
+                task_request_context_decorator(route.handler)
+            ),
+            **route.kwargs,
+        )
+
+
 def setup(
     app: web.Application,
     *,
@@ -105,16 +123,7 @@ def setup(
         task is considered stale
     """
 
-    async def on_startup(app: web.Application) -> AsyncGenerator[None, None]:
-        # add routing paths
-        for route in routes:
-            app.router.add_route(
-                route.method,  # type: ignore
-                f"{router_prefix}{route.path}",  # type: ignore
-                handler_check_decorator(task_request_context_decorator(route.handler)),  # type: ignore
-                **route.kwargs,  # type: ignore
-            )
-
+    async def on_cleanup_ctx(app: web.Application) -> AsyncGenerator[None, None]:
         # add components to state
         app[
             APP_LONG_RUNNING_TASKS_MANAGER_KEY
@@ -131,4 +140,12 @@ def setup(
         # cleanup
         await long_running_task_manager.close()
 
-    app.cleanup_ctx.append(on_startup)
+    # add routing (done at setup-time)
+    _wrap_and_add_routes(
+        app,
+        router_prefix=router_prefix,
+        handler_check_decorator=handler_check_decorator,
+        task_request_context_decorator=task_request_context_decorator,
+    )
+
+    app.cleanup_ctx.append(on_cleanup_ctx)

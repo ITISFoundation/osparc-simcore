@@ -31,7 +31,7 @@ from .catalog.settings import CatalogSettings
 from .diagnostics.settings import DiagnosticsSettings
 from .director_v2.settings import DirectorV2Settings
 from .exporter.settings import ExporterSettings
-from .garbage_collector_settings import GarbageCollectorSettings
+from .garbage_collector.settings import GarbageCollectorSettings
 from .invitations.settings import InvitationsSettings
 from .login.settings import LoginSettings
 from .projects.settings import ProjectsSettings
@@ -206,9 +206,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_ANNOUNCEMENTS: bool = False
     WEBSERVER_CLUSTERS: bool = False
     WEBSERVER_DB_LISTENER: bool = True
-    WEBSERVER_NOTIFICATIONS: bool = Field(
-        default=True, env=["WEBSERVER_NOTIFICATIONS", "WEBSERVER_COMPUTATION"]
-    )
+    WEBSERVER_NOTIFICATIONS: bool = Field(default=True)
     WEBSERVER_GROUPS: bool = True
     WEBSERVER_META_MODELING: bool = True
     WEBSERVER_PRODUCTS: bool = True
@@ -218,6 +216,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_TAGS: bool = True
     WEBSERVER_USERS: bool = True
     WEBSERVER_VERSION_CONTROL: bool = True
+    WEBSERVER_WALLETS: bool = True
 
     #
     WEBSERVER_SECURITY: bool = Field(

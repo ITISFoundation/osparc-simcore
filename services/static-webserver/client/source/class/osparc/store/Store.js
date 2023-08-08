@@ -108,6 +108,16 @@ qx.Class.define("osparc.store.Store", {
       check: "Object",
       init: {}
     },
+    wallets: {
+      check: "Object",
+      init: []
+    },
+    activeWallet: {
+      check: "osparc.data.model.Wallet",
+      init: null,
+      nullable: true,
+      event: "changeActiveWallet"
+    },
     permissions: {
       check: "Array",
       init: []
@@ -422,6 +432,17 @@ qx.Class.define("osparc.store.Store", {
 
     getGroupsOrganizations: function() {
       return this.__getGroups("organizations");
+    },
+
+    getGroupsOrganizationsWithRights(checkWrite = "read") {
+      return new Promise(resolve => {
+        this.getGroupsOrganizations()
+          .then(orgs => {
+            const orgsWithRights = orgs.filter(org => org["accessRights"][checkWrite]);
+            resolve(orgsWithRights);
+          })
+          .catch(err => console.error(err));
+      });
     },
 
     getProductEveryone: function() {

@@ -25,7 +25,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
 
     this._add(this.__createIntroText());
     this._add(this.__getMemberInvitation());
-    this._add(osparc.data.Roles.createRolesOrgInfo());
+    this._add(this.__getRolesToolbar());
     this._add(this.__getMembersFilter());
     this._add(this.__getMembersList(), {
       flex: 1
@@ -66,7 +66,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
     },
 
     sortOrgMembers: function(a, b) {
-      const sorted = osparc.component.share.Collaborators.sortByAccessRights(a, b);
+      const sorted = osparc.component.share.Collaborators.sortByAccessRights(a["accessRights"], b["accessRights"]);
       if (sorted !== 0) {
         return sorted;
       }
@@ -129,6 +129,10 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       return hBox;
     },
 
+    __getRolesToolbar: function() {
+      return osparc.data.Roles.createRolesOrgInfo();
+    },
+
     __getMembersFilter: function() {
       const filter = new osparc.component.filter.TextFilter("text", "organizationMembersList").set({
         allowStretchX: true,
@@ -152,6 +156,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("id", "model", null, item, id);
           ctrl.bindProperty("id", "key", null, item, id);
+          ctrl.bindProperty("gid", "gid", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id);
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
@@ -207,9 +212,9 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         return;
       }
 
-      const canWrite = orgModel.getAccessRights().getWrite();
+      const canDelete = orgModel.getAccessRights().getDelete();
       this.__memberInvitation.set({
-        visibility: canWrite ? "visible" : "excluded"
+        visibility: canDelete ? "visible" : "excluded"
       });
 
       const params = {
@@ -223,7 +228,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
           members.forEach(member => {
             member["thumbnail"] = osparc.utils.Avatar.getUrl(member["login"], 32);
             member["name"] = osparc.utils.Utils.firstsUp(member["first_name"], member["last_name"]);
-            member["showOptions"] = canWrite;
+            member["showOptions"] = canDelete;
             membersList.push(member);
           });
           membersList.sort(this.self().sortOrgMembers);

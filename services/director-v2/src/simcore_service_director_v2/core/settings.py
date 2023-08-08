@@ -48,7 +48,7 @@ from settings_library.utils_service import DEFAULT_FASTAPI_PORT
 from simcore_postgres_database.models.clusters import ClusterType
 from simcore_sdk.node_ports_v2 import FileLinkType
 
-from ..models.schemas.constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE
+from ..constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE
 
 logger = logging.getLogger(__name__)
 
@@ -439,13 +439,6 @@ class DynamicServicesSettings(BaseCustomSettings):
     )
 
 
-class PGSettings(PostgresSettings):
-    DIRECTOR_V2_POSTGRES_ENABLED: bool = Field(
-        True,
-        description="Enables/Disables connection with service",
-    )
-
-
 class ComputationalBackendSettings(BaseCustomSettings):
     COMPUTATIONAL_BACKEND_ENABLED: bool = Field(
         True,
@@ -567,7 +560,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 
     DYNAMIC_SERVICES: DynamicServicesSettings = Field(auto_default_from_env=True)
 
-    POSTGRES: PGSettings = Field(auto_default_from_env=True)
+    POSTGRES: PostgresSettings = Field(auto_default_from_env=True)
 
     REDIS: RedisSettings = Field(auto_default_from_env=True)
 

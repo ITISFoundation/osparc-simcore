@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 
 def discover_product_by_hostname(request: web.Request) -> str | None:
     products: dict[str, Product] = request.app[APP_PRODUCTS_KEY]
-    for _, product in products.items():
+    for product in products.values():
         if product.host_regex.search(request.host):
             product_name: str = product.name
             return product_name
@@ -22,7 +22,7 @@ def discover_product_by_hostname(request: web.Request) -> str | None:
 def discover_product_by_request_header(request: web.Request) -> str | None:
     requested_product: str | None = request.headers.get(X_PRODUCT_NAME_HEADER)
     if requested_product:
-        for product_name in request.app[APP_PRODUCTS_KEY].keys():
+        for product_name in request.app[APP_PRODUCTS_KEY]:
             if requested_product == product_name:
                 return requested_product
     return None
@@ -67,6 +67,4 @@ async def discover_product_middleware(request: web.Request, handler: Handler):
 
         request[RQ_PRODUCT_KEY] = product_name
 
-    response = await handler(request)
-
-    return response
+    return await handler(request)

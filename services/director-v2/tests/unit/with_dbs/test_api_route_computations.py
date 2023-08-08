@@ -18,6 +18,11 @@ import pytest
 import respx
 from faker import Faker
 from fastapi import FastAPI
+from models_library.api_schemas_directorv2.comp_tasks import (
+    ComputationCreate,
+    ComputationGet,
+)
+from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.basic_types import VersionStr
 from models_library.clusters import DEFAULT_CLUSTER_ID, Cluster, ClusterID
 from models_library.projects import ProjectAtDB
@@ -37,14 +42,9 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import NodeClass
-from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
-from simcore_service_director_v2.models.domains.comp_runs import CompRunsAtDB
-from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
-from simcore_service_director_v2.models.schemas.comp_tasks import (
-    ComputationCreate,
-    ComputationGet,
-)
-from simcore_service_director_v2.models.schemas.services import ServiceExtras
+from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
+from simcore_service_director_v2.models.comp_runs import CompRunsAtDB
+from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
 from starlette import status
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit"]
@@ -70,7 +70,6 @@ def minimal_configuration(
     mocked_rabbit_mq_client: None,
 ):
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
-    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "1")
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")

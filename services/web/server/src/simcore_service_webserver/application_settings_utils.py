@@ -163,6 +163,7 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
         "tags": {"enabled": app_settings.WEBSERVER_TAGS},
         "users": {"enabled": app_settings.WEBSERVER_USERS},
         "version_control": {"enabled": app_settings.WEBSERVER_VERSION_CONTROL},
+        "wallets": {"enabled": app_settings.WEBSERVER_WALLETS},
     }
 
     return cfg
@@ -211,14 +212,15 @@ def convert_to_environ_vars(cfg: dict[str, Any]) -> dict[str, Any]:
         envs["RABBIT_PORT"] = section.get("port")
         envs["RABBIT_USER"] = section.get("user")
         envs["RABBIT_PASSWORD"] = section.get("password")
+        envs["RABBIT_SECURE"] = section.get("secure")
 
     if section := cfg.get("resource_manager"):
         _set_if_disabled("WEBSERVER_RESOURCE_MANAGER", section)
 
-        envs["WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS"] = section.get(
+        envs["RESOURCE_MANAGER_RESOURCE_TTL_S"] = section.get(
             "resource_deletion_timeout_seconds"
         )
-        envs["WEBSERVER_GARBAGE_COLLECTION_INTERVAL_SECONDS"] = section.get(
+        envs["GARBAGE_COLLECTOR_INTERVAL_S"] = section.get(
             "garbage_collection_interval_seconds"
         )
 
@@ -302,6 +304,7 @@ def convert_to_environ_vars(cfg: dict[str, Any]) -> dict[str, Any]:
         "WEBSERVER_TAGS",
         "WEBSERVER_USERS",
         "WEBSERVER_VERSION_CONTROL",
+        "WEBSERVER_WALLETS",
     ):
         section_name = settings_name.replace("WEBSERVER_", "").lower()
         if section := cfg.get(section_name):

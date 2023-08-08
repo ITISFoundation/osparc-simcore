@@ -43,6 +43,7 @@ from distributed import Event, Scheduler
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
 from fastapi.applications import FastAPI
+from models_library.api_schemas_directorv2.services import NodeRequirements
 from models_library.api_schemas_storage import LinkType
 from models_library.clusters import ClusterID, NoAuthentication, SimpleAuthentication
 from models_library.docker import to_simcore_runtime_docker_label_key
@@ -65,9 +66,8 @@ from simcore_service_director_v2.core.errors import (
     InsuficientComputationalResourcesError,
     MissingComputationalResourcesError,
 )
-from simcore_service_director_v2.models.domains.comp_runs import MetadataDict
-from simcore_service_director_v2.models.domains.comp_tasks import Image
-from simcore_service_director_v2.models.schemas.services import NodeRequirements
+from simcore_service_director_v2.models.comp_runs import MetadataDict
+from simcore_service_director_v2.models.comp_tasks import Image
 from simcore_service_director_v2.modules.dask_client import DaskClient, TaskHandlers
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -134,16 +134,15 @@ def user_id(faker: Faker) -> UserID:
 
 @pytest.fixture
 def _minimal_dask_config(
+    disable_postgres: None,
     mock_env: EnvVarsDict,
     project_env_devel_environment: dict[str, Any],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """set a minimal configuration for testing the dask connection only"""
     monkeypatch.setenv("DIRECTOR_ENABLED", "0")
-    monkeypatch.setenv("POSTGRES_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V0_ENABLED", "0")
-    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_CATALOG", "null")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "0")

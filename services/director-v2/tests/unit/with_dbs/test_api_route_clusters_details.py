@@ -3,7 +3,8 @@
 # pylint:disable=redefined-outer-name
 
 import json
-from typing import Any, AsyncIterator, Callable
+from collections.abc import AsyncIterator, Callable
+from typing import Any
 
 import httpx
 import pytest
@@ -13,12 +14,11 @@ from dask_gateway import Gateway, GatewayCluster, auth
 from distributed import Client as DaskClient
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
+from models_library.api_schemas_directorv2.clusters import ClusterDetailsGet
 from models_library.clusters import Cluster, ClusterID, SimpleAuthentication
 from models_library.users import UserID
 from pydantic import SecretStr
-from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from simcore_service_director_v2.models.schemas.clusters import ClusterDetailsGet
 from starlette import status
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
@@ -37,10 +37,9 @@ def clusters_config(
     mock_env: EnvVarsDict,
     postgres_db: sa.engine.Engine,
     postgres_host_config: dict[str, str],
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     dask_spec_local_cluster: SpecCluster,
 ):
-    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
     monkeypatch.setenv("S3_ENDPOINT", "endpoint")
@@ -260,7 +259,7 @@ async def test_get_cluster_details(
     # let's wait for the result
     result = task.result(timeout=_TASK_SLEEP_TIME + 5)
     assert result
-    assert await result == True
+    assert await result is True
     # wait for the computation to effectively stop
     async for attempt in AsyncRetrying(
         reraise=True, stop=stop_after_delay(60), wait=wait_fixed(1)

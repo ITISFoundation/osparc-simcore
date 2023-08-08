@@ -13,6 +13,7 @@ from simcore_postgres_database.webserver_models import (
     groups,
     products,
     projects,
+    projects_to_wallet,
     scicrunch_resources,
     study_tags,
     tags,
@@ -39,5 +40,6 @@ __all__: tuple[str, ...] = (
     "UserRole",
     "users",
     "UserStatus",
+    "projects_to_wallet",
 )
 # nopycln: file

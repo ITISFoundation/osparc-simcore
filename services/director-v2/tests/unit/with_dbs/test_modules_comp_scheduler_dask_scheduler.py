@@ -46,9 +46,9 @@ from simcore_service_director_v2.core.errors import (
     SchedulerError,
 )
 from simcore_service_director_v2.core.settings import AppSettings
-from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
-from simcore_service_director_v2.models.domains.comp_runs import CompRunsAtDB
-from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
+from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
+from simcore_service_director_v2.models.comp_runs import CompRunsAtDB
+from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
 from simcore_service_director_v2.modules.comp_scheduler import background_task
 from simcore_service_director_v2.modules.comp_scheduler.base_scheduler import (
     BaseCompScheduler,
@@ -142,7 +142,6 @@ def minimal_dask_scheduler_config(
     """set a minimal configuration for testing the dask connection only"""
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V0_ENABLED", "0")
-    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "1")
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
@@ -228,7 +227,6 @@ async def test_scheduler_gracefully_starts_and_stops(
 @pytest.mark.parametrize(
     "missing_dependency",
     [
-        "DIRECTOR_V2_POSTGRES_ENABLED",
         "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED",
     ],
 )

@@ -8,14 +8,15 @@
 --requirement ../../../packages/models-library/requirements/_base.in
 --requirement ../../../packages/settings-library/requirements/_base.in
 
+aio-pika
 aiodebug
 aiodocker
 aiofiles
-aio-pika
 arrow # date/time
-redis
 pydantic
 pyinstrument
 pyyaml
+redis
 tenacity
+toolz
 tqdm

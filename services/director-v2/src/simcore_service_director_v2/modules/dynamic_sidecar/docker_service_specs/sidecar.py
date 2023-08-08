@@ -11,9 +11,9 @@ from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from pydantic import ByteSize
 from servicelib.json_serialization import json_dumps
 
+from ....constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
 from ....core.settings import AppSettings, DynamicSidecarSettings
-from ....models.schemas.constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
-from ....models.schemas.dynamic_services import SchedulerData
+from ....models.dynamic_services_scheduler import SchedulerData
 from .._namespace import get_compose_namespace
 from ..volumes import DynamicSidecarVolumesPathsResolver
 from ._constants import DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS
@@ -55,7 +55,7 @@ def _get_environment_variables(
         "DY_SIDECAR_PATH_INPUTS": f"{scheduler_data.paths_mapping.inputs_path}",
         "DY_SIDECAR_PATH_OUTPUTS": f"{scheduler_data.paths_mapping.outputs_path}",
         "DY_SIDECAR_PROJECT_ID": f"{scheduler_data.project_id}",
-        "DY_SIDECAR_RUN_ID": f"{scheduler_data.run_id}",
+        "DY_SIDECAR_RUN_ID": scheduler_data.run_id,
         "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": f"{allow_internet_access}",
         "DY_SIDECAR_STATE_EXCLUDE": json_dumps(f"{x}" for x in state_exclude),
         "DY_SIDECAR_STATE_PATHS": json_dumps(
@@ -71,12 +71,12 @@ def _get_environment_variables(
         "POSTGRES_PASSWORD": f"{app_settings.POSTGRES.POSTGRES_PASSWORD.get_secret_value()}",
         "POSTGRES_PORT": f"{app_settings.POSTGRES.POSTGRES_PORT}",
         "POSTGRES_USER": f"{app_settings.POSTGRES.POSTGRES_USER}",
-        "R_CLONE_ENABLED": f"{r_clone_settings.R_CLONE_ENABLED}",
         "R_CLONE_PROVIDER": r_clone_settings.R_CLONE_PROVIDER,
         "RABBIT_HOST": f"{rabbit_settings.RABBIT_HOST}",
         "RABBIT_PASSWORD": f"{rabbit_settings.RABBIT_PASSWORD.get_secret_value()}",
         "RABBIT_PORT": f"{rabbit_settings.RABBIT_PORT}",
         "RABBIT_USER": f"{rabbit_settings.RABBIT_USER}",
+        "RABBIT_SECURE": f"{rabbit_settings.RABBIT_SECURE}",
         "REGISTRY_AUTH": f"{registry_settings.REGISTRY_AUTH}",
         "REGISTRY_PATH": f"{registry_settings.REGISTRY_PATH}",
         "REGISTRY_PW": f"{registry_settings.REGISTRY_PW.get_secret_value()}",

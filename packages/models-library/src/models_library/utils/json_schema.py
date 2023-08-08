@@ -11,7 +11,7 @@ See how is used to validate input/output content-schemas of service models
 from collections.abc import Sequence
 from contextlib import suppress
 from copy import deepcopy
-from typing import Any, Dict, Tuple
+from typing import Any
 
 import jsonschema
 from jsonschema import validators
@@ -35,13 +35,12 @@ def _extend_with_default(validator_class):
             if "default" in subschema:
                 instance.setdefault(prop, subschema["default"])
 
-        for error in validate_properties(
+        yield from validate_properties(
             validator,
             properties,
             instance,
             schema,
-        ):
-            yield error
+        )
 
     return validators.extend(
         validator_class,
@@ -54,7 +53,7 @@ _EXTENDED_VALIDATOR = _extend_with_default(_LATEST_VALIDATOR)
 
 
 def jsonschema_validate_data(
-    instance: Any, schema: Dict[str, Any], *, return_with_default: bool = False
+    instance: Any, schema: dict[str, Any], *, return_with_default: bool = False
 ):
     """Checks whether data satisfies schema contract
 
@@ -72,20 +71,20 @@ def jsonschema_validate_data(
     return out
 
 
-def jsonschema_validate_schema(schema: Dict[str, Any]):
+def jsonschema_validate_schema(schema: dict[str, Any]):
     """Checks whether schema is a valid json-schema
 
     :raises InvalidJsonSchema
     """
     with suppress(jsonschema.ValidationError):
-        dummy_data = {}
+        dummy_data: dict = {}
         validators.validate(instance=dummy_data, schema=schema)
     return schema
 
 
 def any_ref_key(obj):
     if isinstance(obj, dict):
-        return "$ref" in obj.keys() or any_ref_key(tuple(obj.values()))
+        return "$ref" in obj or any_ref_key(tuple(obj.values()))
 
     if isinstance(obj, Sequence) and not isinstance(obj, str):
         return any(any_ref_key(v) for v in obj)
@@ -93,7 +92,7 @@ def any_ref_key(obj):
     return False
 
 
-__all__: Tuple[str, ...] = (
+__all__: tuple[str, ...] = (
     "any_ref_key",
     "InvalidJsonSchema",
     "jsonschema_validate_data",

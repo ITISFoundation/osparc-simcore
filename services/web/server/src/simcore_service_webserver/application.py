@@ -20,7 +20,7 @@ from .diagnostics.plugin import setup_diagnostics
 from .director_v2.plugin import setup_director_v2
 from .email.plugin import setup_email
 from .exporter.plugin import setup_exporter
-from .garbage_collector import setup_garbage_collector
+from .garbage_collector.plugin import setup_garbage_collector
 from .groups.plugin import setup_groups
 from .invitations.plugin import setup_invitations
 from .login.plugin import setup_login
@@ -47,6 +47,7 @@ from .tags.plugin import setup_tags
 from .tracing import setup_app_tracing
 from .users.plugin import setup_users
 from .version_control.plugin import setup_version_control
+from .wallets.plugin import setup_wallets
 
 _logger = logging.getLogger(__name__)
 
@@ -115,6 +116,9 @@ def create_application() -> web.Application:
     # tagging
     setup_scicrunch(app)
     setup_tags(app)
+
+    # wallets
+    setup_wallets(app)
 
     setup_announcements(app)
     setup_publications(app)

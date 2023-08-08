@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from models_library.clusters import DEFAULT_CLUSTER_ID
 
 from ...core.errors import ConfigurationError
-from ...models.domains.comp_runs import CompRunsAtDB
+from ...models.comp_runs import CompRunsAtDB
 from ...modules.dask_clients_pool import DaskClientsPool
 from ...modules.rabbitmq import get_rabbitmq_client
 from ...utils.scheduler import SCHEDULED_STATES

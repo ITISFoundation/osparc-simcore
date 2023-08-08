@@ -29,7 +29,7 @@ class Announcement(BaseModel):
         return v
 
     def expired(self) -> bool:
-        return self.end <= arrow.utcnow().datetime
+        return self.end <= arrow.utcnow().datetime  # type: ignore[no-any-return]
 
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {

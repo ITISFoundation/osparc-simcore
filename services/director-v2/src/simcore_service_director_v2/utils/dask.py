@@ -20,6 +20,7 @@ from dask_task_models_library.container_tasks.protocol import (
     ContainerLabelsDict,
 )
 from fastapi import FastAPI
+from models_library.api_schemas_directorv2.services import NodeRequirements
 from models_library.clusters import ClusterID
 from models_library.docker import StandardSimcoreDockerLabels
 from models_library.errors import ErrorDict
@@ -46,9 +47,8 @@ from ..core.errors import (
     MissingComputationalResourcesError,
     PortsValidationError,
 )
-from ..models.domains.comp_runs import MetadataDict
-from ..models.domains.comp_tasks import Image
-from ..models.schemas.services import NodeRequirements
+from ..models.comp_runs import MetadataDict
+from ..models.comp_tasks import Image
 from ..modules.osparc_variables_substitutions import (
     resolve_and_substitute_session_variables_in_specs,
     substitute_vendor_secrets_in_specs,
@@ -459,7 +459,7 @@ def from_node_reqs_to_dask_resources(
     node_reqs: NodeRequirements,
 ) -> dict[str, int | float]:
     """Dask resources are set such as {"CPU": X.X, "GPU": Y.Y, "RAM": INT}"""
-    dask_resources = node_reqs.dict(
+    dask_resources: dict[str, int | float] = node_reqs.dict(
         exclude_unset=True,
         by_alias=True,
         exclude_none=True,

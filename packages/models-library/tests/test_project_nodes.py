@@ -2,7 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 from models_library.projects_nodes import Node
@@ -10,15 +10,15 @@ from models_library.projects_state import RunningState
 
 
 @pytest.fixture()
-def minimal_node_data_sample() -> Dict[str, Any]:
-    return dict(
-        key="simcore/services/dynamic/3dviewer",
-        version="1.3.0-alpha",
-        label="3D viewer human message",
-    )
+def minimal_node_data_sample() -> dict[str, Any]:
+    return {
+        "key": "simcore/services/dynamic/3dviewer",
+        "version": "1.3.0-alpha",
+        "label": "3D viewer human message",
+    }
 
 
-def test_create_minimal_node(minimal_node_data_sample: Dict[str, Any]):
+def test_create_minimal_node(minimal_node_data_sample: dict[str, Any]):
     node = Node(**minimal_node_data_sample)
 
     # a nice way to see how the simplest node looks like
@@ -35,7 +35,7 @@ def test_create_minimal_node(minimal_node_data_sample: Dict[str, Any]):
 
 
 def test_create_minimal_node_with_new_data_type(
-    minimal_node_data_sample: Dict[str, Any]
+    minimal_node_data_sample: dict[str, Any]
 ):
     old_node_data = minimal_node_data_sample
     # found some old data with this aspect
@@ -57,7 +57,7 @@ def test_create_minimal_node_with_new_data_type(
     assert node.state.dependencies == set()
 
 
-def test_backwards_compatibility_node_data(minimal_node_data_sample: Dict[str, Any]):
+def test_backwards_compatibility_node_data(minimal_node_data_sample: dict[str, Any]):
     old_node_data = minimal_node_data_sample
     # found some old data with this aspect
     old_node_data.update({"thumbnail": "", "state": "FAILURE"})

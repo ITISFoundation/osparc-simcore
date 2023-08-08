@@ -8,6 +8,7 @@
 
 
 from collections.abc import Callable
+from copy import deepcopy
 from random import choice
 from typing import Any
 from unittest import mock
@@ -28,6 +29,7 @@ from dask_task_models_library.container_tasks.protocol import (
 from distributed import SpecCluster
 from faker import Faker
 from fastapi import FastAPI
+from models_library.api_schemas_directorv2.services import NodeRequirements
 from models_library.api_schemas_storage import FileUploadLinks, FileUploadSchema
 from models_library.clusters import ClusterID
 from models_library.docker import to_simcore_runtime_docker_label_key
@@ -40,9 +42,8 @@ from pydantic.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_sdk.node_ports_v2 import FileLinkType
-from simcore_service_director_v2.models.domains.comp_runs import MetadataDict
-from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
-from simcore_service_director_v2.models.schemas.services import NodeRequirements
+from simcore_service_director_v2.models.comp_runs import MetadataDict
+from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
 from simcore_service_director_v2.modules.dask_clients_pool import DaskClientsPool
 from simcore_service_director_v2.utils.dask import (
     _LOGS_FILE_NAME,
@@ -284,7 +285,6 @@ def _app_config_with_db(
     monkeypatch: pytest.MonkeyPatch,
     postgres_host_config: dict[str, str],
 ):
-    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
     monkeypatch.setenv("S3_ENDPOINT", "endpoint")
     monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
@@ -472,7 +472,15 @@ async def test_clean_task_output_and_log_files_if_invalid(
             s3_object=f"{published_project.project.uuid}/{sleeper_task.node_id}/{_LOGS_FILE_NAME}",
         )
     ]
-    mocked_node_ports_filemanager_fcts["entry_exists"].assert_has_calls(expected_calls)
+
+    def _add_is_directory(entry: mock._Call) -> mock._Call:  # noqa: SLF001
+        new_kwargs: dict[str, Any] = deepcopy(entry.kwargs)
+        new_kwargs["is_directory"] = False
+        return mock.call(**new_kwargs)
+
+    mocked_node_ports_filemanager_fcts["entry_exists"].assert_has_calls(
+        [_add_is_directory(x) for x in expected_calls]
+    )
     if entry_exists_returns:
         mocked_node_ports_filemanager_fcts["delete_file"].assert_not_called()
     else:

@@ -2,11 +2,6 @@ import contextlib
 import re
 from typing import Any, ClassVar, Final
 
-from models_library.generated_models.docker_rest_api import Task
-from models_library.products import ProductName
-from models_library.projects import ProjectID
-from models_library.projects_nodes import NodeID
-from models_library.users import UserID
 from pydantic import (
     BaseModel,
     ByteSize,
@@ -18,6 +13,11 @@ from pydantic import (
 )
 
 from .basic_regex import DOCKER_GENERIC_TAG_KEY_RE, DOCKER_LABEL_KEY_REGEX
+from .generated_models.docker_rest_api import Task
+from .products import ProductName
+from .projects import ProjectID
+from .projects_nodes_io import NodeID
+from .users import UserID
 
 
 class DockerLabelKey(ConstrainedStr):

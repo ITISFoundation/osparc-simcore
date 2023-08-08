@@ -7,7 +7,7 @@ import zipfile
 from contextlib import AsyncExitStack, contextmanager
 from functools import partial
 from pathlib import Path
-from typing import Awaitable, Callable, Final, Iterator, Optional
+from typing import Awaitable, Callable, Final, Iterator
 
 import tqdm
 from servicelib.logging_utils import log_catch
@@ -52,7 +52,7 @@ def _strip_undecodable_in_path(path: Path) -> Path:
 
 
 def _iter_files_to_compress(
-    dir_path: Path, exclude_patterns: Optional[set[str]]
+    dir_path: Path, exclude_patterns: set[str] | None
 ) -> Iterator[Path]:
     exclude_patterns = exclude_patterns if exclude_patterns else set()
     for path in dir_path.rglob("*"):
@@ -156,8 +156,8 @@ async def unarchive_dir(
     destination_folder: Path,
     *,
     max_workers: int = _MAX_UNARCHIVING_WORKER_COUNT,
-    progress_bar: Optional[ProgressBarData] = None,
-    log_cb: Optional[Callable[[str], Awaitable[None]]] = None,
+    progress_bar: ProgressBarData | None = None,
+    log_cb: Callable[[str], Awaitable[None]] | None = None,
 ) -> set[Path]:
     """Extracts zipped file archive_to_extract to destination_folder,
     preserving all relative files and folders inside the archive
@@ -250,7 +250,6 @@ async def unarchive_dir(
                 f"Details: {err}"
             ) from err
 
-
         # NOTE: extracted_paths includes all tree leafs, which might include files and empty folders
         return {
             p
@@ -274,14 +273,14 @@ def _progress_enabled_zip_write_handler(
     # Replace original write() with a wrapper to track progress
     assert zip_file_handler.fp  # nosec
     old_write_method = zip_file_handler.fp.write
-    zip_file_handler.fp.write = types.MethodType(
+    zip_file_handler.fp.write = types.MethodType(  # type: ignore[assignment]
         partial(_write_with_progress, old_write_method, pbar=progress_bar),
         zip_file_handler.fp,
     )
     try:
         yield zip_file_handler
     finally:
-        zip_file_handler.fp.write = old_write_method
+        zip_file_handler.fp.write = old_write_method  # type: ignore[method-assign]
 
 
 def _add_to_archive(
@@ -291,7 +290,7 @@ def _add_to_archive(
     store_relative_path: bool,
     update_progress,
     loop,
-    exclude_patterns: Optional[set[str]] = None,
+    exclude_patterns: set[str] | None = None,
 ) -> None:
     compression = zipfile.ZIP_DEFLATED if compress else zipfile.ZIP_STORED
     folder_size_bytes = sum(
@@ -339,8 +338,8 @@ async def archive_dir(
     *,
     compress: bool,
     store_relative_path: bool,
-    exclude_patterns: Optional[set[str]] = None,
-    progress_bar: Optional[ProgressBarData] = None,
+    exclude_patterns: set[str] | None = None,
+    progress_bar: ProgressBarData | None = None,
 ) -> None:
     """
     When archiving, undecodable bytes in filenames will be escaped,
@@ -420,7 +419,7 @@ class PrunableFolder:
 
     def __init__(self, folder: Path):
         self.basedir = folder
-        self.before_relpaths = set()
+        self.before_relpaths: set = set()
         self.capture()
 
     def capture(self) -> None:

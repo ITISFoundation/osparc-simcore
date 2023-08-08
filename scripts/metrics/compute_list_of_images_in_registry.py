@@ -2,12 +2,10 @@
 
 import asyncio
 import json
-import pdb
 from collections import defaultdict, deque
 from datetime import date, datetime
 from pathlib import Path
 from pprint import pformat
-from typing import Dict, List, Optional, Tuple
 
 import typer
 from httpx import URL, AsyncClient
@@ -38,9 +36,9 @@ async def list_images_in_registry(
     endpoint: URL,
     username: str,
     password: str,
-    from_date: Optional[datetime],
+    from_date: datetime | None,
     to_date: datetime,
-) -> Dict[str, List[Tuple[str, str, str, str]]]:
+) -> dict[str, list[tuple[str, str, str, str]]]:
     if not from_date:
         from_date = datetime(year=2000, month=1, day=1)
     typer.secho(
@@ -115,12 +113,12 @@ def main(
     endpoint: str,
     username: str,
     password: str = typer.Option(..., prompt=True, hide_input=True),
-    from_date: Optional[datetime] = typer.Option(None, formats=["%Y-%m-%d"]),
+    from_date: datetime | None = typer.Option(None, formats=["%Y-%m-%d"]),
     to_date: datetime = typer.Option(f"{date.today()}", formats=["%Y-%m-%d"]),
     markdown: bool = typer.Option(False),
 ):
     endpoint_url = URL(endpoint)
-    list_of_images: Dict[str, List[Tuple[str, str, str, str]]] = asyncio.run(
+    list_of_images: dict[str, list[tuple[str, str, str, str]]] = asyncio.run(
         list_images_in_registry(endpoint_url, username, password, from_date, to_date)
     )
 

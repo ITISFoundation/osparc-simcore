@@ -211,7 +211,7 @@ crespo@8ac9edf78469:~/services/api-server/requirements$ make reqs
 1. [Using pip-tools to manage my python dependencies](https://alexwlchan.net/2017/10/pip-tools/) by alexwlchan
 1. [A successful pip-tools workflow for managing Python package requirements](https://jamescooke.info/a-successful-pip-tools-workflow-for-managing-python-package-requirements.html) by J. Cooke
 1. [Python Application Dependency Management in 2018](https://hynek.me/articles/python-app-deps-2018/#pip-tools-everything-old-is-new-again) by Hynek Schlawack
-
+1. [Dealing with dependency conflicts](https://pip.pypa.io/en/latest/topics/dependency-resolution/#dealing-with-dependency-conflicts) in [pip] doc
 
 [pip-tools]:https://github.com/jazzband/pip-tools
 [pip]:https://pip.pypa.io/en/stable/reference/

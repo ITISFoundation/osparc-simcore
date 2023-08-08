@@ -1,5 +1,10 @@
 from abc import ABC, abstractmethod
 
+from models_library.api_schemas_directorv2.dynamic_services import (
+    DynamicServiceCreate,
+    RetrieveDataOutEnveloped,
+    RunningDynamicServiceDetails,
+)
 from models_library.basic_types import PortInt
 from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkAlias
@@ -8,12 +13,6 @@ from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.users import UserID
 from servicelib.fastapi.long_running_tasks.client import ProgressCallback
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
-
-from ....models.domains.dynamic_services import (
-    DynamicServiceCreate,
-    RetrieveDataOutEnveloped,
-)
-from ....models.schemas.dynamic_services import RunningDynamicServiceDetails
 
 
 class SchedulerInternalsInterface(ABC):

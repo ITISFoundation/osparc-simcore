@@ -13,7 +13,7 @@ from servicelib.logging_utils import get_log_record_extra
 from servicelib.utils import fire_and_forget_task, logged_gather
 from socketio import AsyncServer
 
-from ..resource_manager.websocket_manager import managed_resource
+from ..resource_manager.user_sessions import managed_resource
 from ._utils import get_socket_server
 
 _logger = logging.getLogger(__name__)
@@ -40,10 +40,10 @@ async def _on_user_logout(
     _logger.debug("user %s must be disconnected", user_id)
     # find the sockets related to the user
     sio: AsyncServer = get_socket_server(app)
-    with managed_resource(user_id, client_session_id, app) as rt:
+    with managed_resource(user_id, client_session_id, app) as user_session:
         # start by disconnecting this client if possible
         if client_session_id:
-            if socket_id := await rt.get_socket_id():
+            if socket_id := await user_session.get_socket_id():
                 try:
                     await sio.disconnect(sid=socket_id)
                 except KeyError as exc:
@@ -54,10 +54,10 @@ async def _on_user_logout(
                         extra=get_log_record_extra(user_id=user_id),
                     )
             # trigger faster gc on disconnect
-            await rt.user_pressed_disconnect()
+            await user_session.user_pressed_disconnect()
 
         # now let's give a chance to all the clients to properly logout
-        sockets = await rt.find_socket_ids()
+        sockets = await user_session.find_socket_ids()
         if sockets:
             # let's do it as a task so it does not block us here
             fire_and_forget_task(

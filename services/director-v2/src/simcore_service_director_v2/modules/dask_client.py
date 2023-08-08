@@ -37,6 +37,7 @@ from dask_task_models_library.container_tasks.protocol import (
     LogFileUploadURL,
 )
 from fastapi import FastAPI
+from models_library.api_schemas_directorv2.clusters import ClusterDetails, Scheduler
 from models_library.clusters import ClusterAuthentication, ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -59,9 +60,8 @@ from ..core.errors import (
     ComputationalBackendTaskResultsNotReadyError,
 )
 from ..core.settings import AppSettings, ComputationalBackendSettings
-from ..models.domains.comp_runs import MetadataDict
-from ..models.domains.comp_tasks import Image
-from ..models.schemas.clusters import ClusterDetails, Scheduler
+from ..models.comp_runs import MetadataDict
+from ..models.comp_tasks import Image
 from ..modules.storage import StorageClient
 from ..utils.dask import (
     check_communication_with_scheduler_is_open,
@@ -93,7 +93,7 @@ _DASK_TASK_STATUS_RUNNING_STATE_MAP = {
     "new": RunningState.PENDING,
     "released": RunningState.PENDING,
     "waiting": RunningState.PENDING,
-    "no-worker": RunningState.PENDING,
+    "no-worker": RunningState.WAITING_FOR_RESOURCES,
     "processing": RunningState.STARTED,
     "memory": RunningState.SUCCESS,
     "erred": RunningState.FAILED,

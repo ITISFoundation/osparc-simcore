@@ -95,7 +95,7 @@ services:
     volumes: *webserver-volumes-dev
     environment:
       <<: *webserver-environment-dev
-      WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS: 15
+      RESOURCE_MANAGER_RESOURCE_TTL_S: 15
 
   dask-sidecar:
     volumes:
@@ -103,6 +103,7 @@ services:
       - ./dask-sidecar:/devel/services/dask-sidecar
       - ../packages:/devel/packages
       - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
+
     environment:
       SC_BOOT_MODE: debug-ptvsd
       SIDECAR_LOGLEVEL: DEBUG

@@ -1,12 +1,14 @@
 import logging
 
 from fastapi import Depends, Request
+from models_library.api_schemas_directorv2.dynamic_services import (
+    RunningDynamicServiceDetails,
+)
 from models_library.projects_nodes import NodeID
 from servicelib.logging_utils import log_decorator
 from starlette.datastructures import URL
 
 from ...core.settings import DynamicServicesSettings
-from ...models.schemas.dynamic_services import RunningDynamicServiceDetails
 from ...modules.director_v0 import DirectorV0Client
 from ...modules.dynamic_services import ServicesClient
 from ...modules.dynamic_sidecar.scheduler import DynamicSidecarsScheduler
@@ -29,8 +31,7 @@ async def get_service_base_url(
 
 @log_decorator(logger=logger)
 def get_services_client(request: Request) -> ServicesClient:
-    client = ServicesClient.instance(request.app)
-    return client
+    return ServicesClient.instance(request.app)
 
 
 def get_dynamic_services_settings(request: Request) -> DynamicServicesSettings:

@@ -83,7 +83,7 @@ async def upload_outputs(
         user_id=settings.DY_SIDECAR_USER_ID,
         project_id=ProjectIDStr(settings.DY_SIDECAR_PROJECT_ID),
         node_uuid=NodeIDStr(settings.DY_SIDECAR_NODE_ID),
-        r_clone_settings=settings.rclone_settings_for_nodeports,
+        r_clone_settings=None,
         io_log_redirect_cb=io_log_redirect_cb,
     )
 
@@ -264,7 +264,7 @@ async def download_target_ports(
         user_id=settings.DY_SIDECAR_USER_ID,
         project_id=ProjectIDStr(settings.DY_SIDECAR_PROJECT_ID),
         node_uuid=NodeIDStr(settings.DY_SIDECAR_NODE_ID),
-        r_clone_settings=settings.rclone_settings_for_nodeports,
+        r_clone_settings=None,
         io_log_redirect_cb=io_log_redirect_cb,
     )
 

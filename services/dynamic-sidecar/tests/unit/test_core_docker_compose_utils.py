@@ -46,7 +46,7 @@ def compose_spec_yaml(faker: Faker) -> str:
     return yaml.safe_dump(COMPOSE_SPEC_SAMPLE, indent=1)
 
 
-@pytest.mark.parametrize("with_restart", (True, False))
+@pytest.mark.parametrize("with_restart", [True, False])
 async def test_docker_compose_workflow(
     compose_spec_yaml: str,
     mock_environment: EnvVarsDict,
@@ -57,7 +57,8 @@ async def test_docker_compose_workflow(
     settings = ApplicationSettings.create_from_envs()
 
     def _print_result(r: CommandResult):
-        assert r.elapsed and r.elapsed > 0
+        assert r.elapsed
+        assert r.elapsed > 0
         print(f"{r.command:*^100}", "\nELAPSED:", r.elapsed)
 
     compose_spec: dict[str, Any] = yaml.safe_load(compose_spec_yaml)
@@ -134,7 +135,8 @@ async def test_burst_calls_to_docker_compose_config(
     success = [r for r in results if r.success]
     failed = [r for r in results if not r.success]
 
-    assert len(success) == CALLS_COUNT and not failed
+    assert len(success) == CALLS_COUNT
+    assert not failed
 
 
 async def test_docker_start_fails_if_containers_are_not_present(
@@ -145,7 +147,8 @@ async def test_docker_start_fails_if_containers_are_not_present(
     settings = ApplicationSettings.create_from_envs()
 
     def _print_result(r: CommandResult):
-        assert r.elapsed and r.elapsed > 0
+        assert r.elapsed
+        assert r.elapsed > 0
         print(f"{r.command:*^100}", "\nELAPSED:", r.elapsed)
 
     compose_spec: dict[str, Any] = yaml.safe_load(compose_spec_yaml)

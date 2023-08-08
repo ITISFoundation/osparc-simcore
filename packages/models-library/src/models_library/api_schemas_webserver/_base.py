@@ -5,11 +5,9 @@
 
 from typing import Any
 
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, Extra
 
 from ..utils.change_case import snake_to_camel
-
-NOT_REQUIRED = Field(default=None)
 
 
 class EmptyModel(BaseModel):
@@ -35,6 +33,7 @@ class OutputSchema(BaseModel):
 
     def data(
         self,
+        *,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
@@ -51,6 +50,7 @@ class OutputSchema(BaseModel):
 
     def data_json(
         self,
+        *,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,

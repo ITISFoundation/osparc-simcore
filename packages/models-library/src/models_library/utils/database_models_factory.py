@@ -5,8 +5,9 @@ SEE: Copied and adapted from https://github.com/tiangolo/pydantic-sqlalchemy/blo
 
 import json
 import warnings
+from collections.abc import Callable, Container
 from datetime import datetime
-from typing import Any, Callable, Container
+from typing import Any
 from uuid import UUID
 
 import sqlalchemy as sa
@@ -57,26 +58,26 @@ def _eval_defaults(
         default = column.default.arg
 
     if include_server_defaults and column.server_default:
-        assert column.server_default.is_server_default  #  nosec
+        assert column.server_default.is_server_default  # type: ignore  # nosec
         #
         # FIXME: Map server's DefaultClauses to correct values
         #   Heuristics based on test against all our tables
         #
         if pydantic_type:
             if issubclass(pydantic_type, list):
-                assert column.server_default.arg == "{}"  # nosec
+                assert column.server_default.arg == "{}"  # type: ignore  # nosec
                 default_factory = list
             elif issubclass(pydantic_type, dict):
-                assert column.server_default.arg.text.endswith("::jsonb")  # nosec
+                assert column.server_default.arg.text.endswith("::jsonb")  # type: ignore  # nosec
                 default = json.loads(
-                    column.server_default.arg.text.replace("::jsonb", "").replace(
+                    column.server_default.arg.text.replace("::jsonb", "").replace(  # type: ignore
                         "'", ""
                     )
                 )
             elif issubclass(pydantic_type, datetime):
                 assert isinstance(  # nosec
-                    column.server_default.arg,
-                    (type(null()), sqlalchemy.sql.functions.now),
+                    column.server_default.arg,  # type: ignore
+                    type(null()) | sqlalchemy.sql.functions.now,
                 )
                 default_factory = datetime.now
     return default, default_factory
@@ -110,7 +111,7 @@ def create_pydantic_model_from_sa_table(
 ) -> type[BaseModel]:
     fields = {}
     exclude = exclude or []
-    extra_policies = extra_policies or DEFAULT_EXTRA_POLICIES
+    extra_policies = extra_policies or DEFAULT_EXTRA_POLICIES  # type: ignore
 
     for column in table.columns:
         name = str(column.name)
@@ -160,10 +161,10 @@ def create_pydantic_model_from_sa_table(
         if hasattr(column, "doc") and column.doc:
             field_args["description"] = column.doc
 
-        fields[name] = (pydantic_type, Field(**field_args))
+        fields[name] = (pydantic_type, Field(**field_args))  # type: ignore
 
     # create domain models from db-schemas
-    pydantic_model = create_model(
+    pydantic_model: type[BaseModel] = create_model(
         table.name.capitalize(), __config__=config, **fields  # type: ignore
     )
     assert issubclass(pydantic_model, BaseModel)  # nosec

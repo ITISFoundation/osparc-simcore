@@ -83,8 +83,9 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
               osparc.utils.Utils.removeClass(this.getChildControl("icon").getContentElement(), "rotate");
               target.setTextColor(osparc.utils.StatusUI.getColor(state));
               return;
-            case "PENDING":
             case "PUBLISHED":
+            case "PENDING":
+            case "WAITING_FOR_RESOURCES":
             case "STARTED":
             case "RETRY":
               osparc.utils.Utils.addClass(this.getChildControl("icon").getContentElement(), "rotate");

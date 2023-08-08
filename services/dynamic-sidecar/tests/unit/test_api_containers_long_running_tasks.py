@@ -15,7 +15,6 @@ from typing import (
     Callable,
     Final,
     Iterator,
-    Optional,
 )
 
 import aiodocker
@@ -194,21 +193,17 @@ def shared_store(httpx_async_client: AsyncClient) -> SharedStore:
 
 @pytest.fixture
 def mock_data_manager(mocker: MockerFixture) -> None:
-    mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.long_running_tasks.data_manager.push",
-        autospec=True,
-        return_value=None,
-    )
-    mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.long_running_tasks.data_manager.exists",
-        autospec=True,
-        return_value=True,
-    )
-    mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.long_running_tasks.data_manager.pull",
-        autospec=True,
-        return_value=None,
-    )
+    for function_name in (
+        "_push_directory",
+        "_state_metadata_entry_exists",
+        "_pull_directory",
+        "_pull_legacy_archive",
+    ):
+        mocker.patch(
+            f"simcore_service_dynamic_sidecar.modules.long_running_tasks.data_manager.{function_name}",
+            autospec=True,
+            return_value=None,
+        )
 
 
 @pytest.fixture()
@@ -231,9 +226,7 @@ def mock_nodeports(mocker: MockerFixture) -> None:
         ["first_port", "second_port"],
     ]
 )
-async def mock_port_keys(
-    request: FixtureRequest, client: Client
-) -> Optional[list[str]]:
+async def mock_port_keys(request: FixtureRequest, client: Client) -> list[str] | None:
     outputs_context: OutputsContext = client.app.state.outputs_context
     if request.param is not None:
         await outputs_context.set_file_type_port_keys(request.param)
@@ -300,7 +293,7 @@ async def _get_task_id_state_save(
 
 
 async def _get_task_id_task_ports_inputs_pull(
-    httpx_async_client: AsyncClient, port_keys: Optional[list[str]], *args, **kwargs
+    httpx_async_client: AsyncClient, port_keys: list[str] | None, *args, **kwargs
 ) -> TaskId:
     response = await httpx_async_client.post(
         f"/{API_VTAG}/containers/ports/inputs:pull", json=port_keys
@@ -311,7 +304,7 @@ async def _get_task_id_task_ports_inputs_pull(
 
 
 async def _get_task_id_task_ports_outputs_pull(
-    httpx_async_client: AsyncClient, port_keys: Optional[list[str]], *args, **kwargs
+    httpx_async_client: AsyncClient, port_keys: list[str] | None, *args, **kwargs
 ) -> TaskId:
     response = await httpx_async_client.post(
         f"/{API_VTAG}/containers/ports/outputs:pull", json=port_keys
@@ -354,7 +347,7 @@ async def test_create_containers_task(
     compose_spec: str,
     shared_store: SharedStore,
 ) -> None:
-    last_progress_message: Optional[tuple[str, float]] = None
+    last_progress_message: tuple[str, float] | None = None
 
     async def create_progress(message: str, percent: float, _: TaskId) -> None:
         nonlocal last_progress_message
@@ -506,7 +499,7 @@ async def test_container_save_state(
 async def test_container_pull_input_ports(
     httpx_async_client: AsyncClient,
     client: Client,
-    mock_port_keys: Optional[list[str]],
+    mock_port_keys: list[str] | None,
     mock_nodeports: None,
 ):
     async with periodic_task_result(
@@ -524,7 +517,7 @@ async def test_container_pull_input_ports(
 async def test_container_pull_output_ports(
     httpx_async_client: AsyncClient,
     client: Client,
-    mock_port_keys: Optional[list[str]],
+    mock_port_keys: list[str] | None,
     mock_nodeports: None,
 ):
     async with periodic_task_result(
@@ -542,7 +535,7 @@ async def test_container_pull_output_ports(
 async def test_container_push_output_ports(
     httpx_async_client: AsyncClient,
     client: Client,
-    mock_port_keys: Optional[list[str]],
+    mock_port_keys: list[str] | None,
     mock_nodeports: None,
 ):
     async with periodic_task_result(
@@ -560,12 +553,11 @@ async def test_container_push_output_ports(
 async def test_container_push_output_ports_missing_node(
     httpx_async_client: AsyncClient,
     client: Client,
-    mock_port_keys: Optional[list[str]],
+    mock_port_keys: list[str] | None,
     missing_node_uuid: str,
     mock_node_missing: None,
     outputs_manager: OutputsManager,
 ):
-
     for port_key in mock_port_keys if mock_port_keys else []:
         await outputs_manager.port_key_content_changed(port_key)
 

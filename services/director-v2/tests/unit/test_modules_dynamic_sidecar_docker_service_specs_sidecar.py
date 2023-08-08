@@ -4,11 +4,9 @@
 
 from typing import Any
 
-from pytest import MonkeyPatch
+import pytest
 from simcore_service_director_v2.core.settings import AppSettings
-from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
-    SchedulerData,
-)
+from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.sidecar import (
     _get_environment_variables,
 )
@@ -33,12 +31,12 @@ EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES = {
     "POSTGRES_PASSWORD",
     "POSTGRES_PORT",
     "POSTGRES_USER",
-    "R_CLONE_ENABLED",
     "R_CLONE_PROVIDER",
     "RABBIT_HOST",
     "RABBIT_PASSWORD",
     "RABBIT_PORT",
     "RABBIT_USER",
+    "RABBIT_SECURE",
     "REGISTRY_AUTH",
     "REGISTRY_PATH",
     "REGISTRY_PW",
@@ -59,7 +57,7 @@ EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES = {
 
 
 def test_dynamic_sidecar_env_vars(
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     scheduler_data_from_http_request: SchedulerData,
     project_env_devel_environment: dict[str, Any],
 ):

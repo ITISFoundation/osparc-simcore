@@ -1,6 +1,7 @@
 import logging
+from collections.abc import Callable, Coroutine
 from contextlib import AsyncExitStack
-from typing import Any, Callable, Coroutine
+from typing import Any
 
 from aiofiles.tempfile import TemporaryDirectory as AioTemporaryDirectory
 from aiohttp import web
@@ -8,6 +9,7 @@ from models_library.projects_state import ProjectStatus
 from servicelib.request_keys import RQT_USERID_KEY
 
 from .._constants import RQ_PRODUCT_KEY
+from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..projects.lock import lock_project
 from ..projects.projects_api import retrieve_and_notify_project_locked_state
@@ -19,7 +21,10 @@ from .utils import CleanupFileResponse
 
 _logger = logging.getLogger(__name__)
 
+routes = web.RouteTableDef()
 
+
+@routes.post(f"/{API_VTAG}/projects/{{project_id}}:xport", name="export_project")
 @login_required
 @permission_required("project.export")
 async def export_project(request: web.Request):
@@ -60,9 +65,8 @@ async def export_project(request: web.Request):
             _logger.info("File to download '%s'", file_to_download)
 
             if not file_to_download.is_file():
-                raise SDSException(
-                    f"Must provide a file to download, not {str(file_to_download)}"
-                )
+                msg = f"Must provide a file to download, not {file_to_download!s}"
+                raise SDSException(msg)
             # this allows to transfer deletion of the tmp dir responsibility
             delete_tmp_dir = tmp_dir_stack.pop_all().aclose
     finally:
@@ -75,6 +79,3 @@ async def export_project(request: web.Request):
     return CleanupFileResponse(
         remove_tmp_dir_cb=delete_tmp_dir, path=file_to_download, headers=headers
     )
-
-
-rest_handler_functions = {fun.__name__: fun for fun in {export_project}}

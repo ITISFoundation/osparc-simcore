@@ -16,7 +16,7 @@ from socketio.exceptions import ConnectionRefusedError as SocketIOConnectionErro
 
 from ..groups.api import list_user_groups
 from ..login.decorators import login_required
-from ..resource_manager.websocket_manager import managed_resource
+from ..resource_manager.user_sessions import managed_resource
 from ._utils import EnvironDict, SocketID, get_socket_server, register_socketio_handler
 from .messages import SOCKET_IO_HEARTBEAT_EVENT, SocketMessageDict, send_messages
 
@@ -37,40 +37,45 @@ _MSG_UNAUTHORIZED_MISSING_SESSION_INFO = (
 _EMIT_INTERVAL_S: int = 2
 
 
-@login_required
-async def _authenticate_user(
-    socket_id: SocketID, app: web.Application, request: web.Request
-) -> UserID:
-    """
+def auth_user_factory(socket_id: SocketID):
+    @login_required
+    async def _handler(request: web.Request) -> UserID:
+        """
+        Raises:
+            web.HTTPUnauthorized: when the user is not recognized. Keeps the original request
+        """
+        app = request.app
+        user_id = UserID(request.get(RQT_USERID_KEY, _ANONYMOUS_USER_ID))
+        client_session_id = request.query.get("client_session_id", None)
 
-    Raises:
-        web.HTTPUnauthorized: when the user is not recognized. Keeps the original request
-    """
-    user_id = UserID(request.get(RQT_USERID_KEY, _ANONYMOUS_USER_ID))
-    client_session_id = request.query.get("client_session_id", None)
-
-    _logger.debug("client %s,%s authenticated", f"{user_id=}", f"{client_session_id=}")
-
-    if not client_session_id:
-        _logger.error("Tab ID is missing", extra=get_log_record_extra(user_id=user_id))
-        raise web.HTTPUnauthorized(reason=_MSG_UNAUTHORIZED_MISSING_SESSION_INFO)
-
-    # here we keep the original HTTP request in the socket session storage
-    sio = get_socket_server(app)
-    async with sio.session(socket_id) as socketio_session:
-        socketio_session["user_id"] = user_id
-        socketio_session["client_session_id"] = client_session_id
-        socketio_session["request"] = request
-
-    with managed_resource(user_id, client_session_id, app) as resource_registry:
-        _logger.info(
-            "socketio connection from user %s",
-            user_id,
-            extra=get_log_record_extra(user_id=user_id),
+        _logger.debug(
+            "client %s,%s authenticated", f"{user_id=}", f"{client_session_id=}"
         )
-        await resource_registry.set_socket_id(socket_id)
 
-    return user_id
+        if not client_session_id:
+            _logger.error(
+                "Tab ID is missing", extra=get_log_record_extra(user_id=user_id)
+            )
+            raise web.HTTPUnauthorized(reason=_MSG_UNAUTHORIZED_MISSING_SESSION_INFO)
+
+        # here we keep the original HTTP request in the socket session storage
+        sio = get_socket_server(app)
+        async with sio.session(socket_id) as socketio_session:
+            socketio_session["user_id"] = user_id
+            socketio_session["client_session_id"] = client_session_id
+            socketio_session["request"] = request
+
+        with managed_resource(user_id, client_session_id, app) as resource_registry:
+            _logger.info(
+                "socketio connection from user %s",
+                user_id,
+                extra=get_log_record_extra(user_id=user_id),
+            )
+            await resource_registry.set_socket_id(socket_id)
+
+        return user_id
+
+    return _handler
 
 
 async def _set_user_in_group_rooms(
@@ -109,9 +114,8 @@ async def connect(
     _logger.debug("client connecting in room %s", f"{socket_id=}")
 
     try:
-        user_id = await _authenticate_user(
-            socket_id, app, request=environ["aiohttp.request"]
-        )
+        auth_user_handler = auth_user_factory(socket_id)
+        user_id = await auth_user_handler(environ["aiohttp.request"])
 
         await _set_user_in_group_rooms(app, user_id, socket_id)
 
@@ -130,9 +134,11 @@ async def connect(
         )
 
     except web.HTTPUnauthorized as exc:
-        raise SocketIOConnectionError("authentification failed") from exc
+        msg = "authentification failed"
+        raise SocketIOConnectionError(msg) from exc
     except Exception as exc:  # pylint: disable=broad-except
-        raise SocketIOConnectionError(f"Unexpected error: {exc}") from exc
+        msg = f"Unexpected error: {exc}"
+        raise SocketIOConnectionError(msg) from exc
 
     return True
 
@@ -152,10 +158,8 @@ async def disconnect(socket_id: SocketID, app: web.Application) -> None:
                 f"{user_id=}",
                 f"{client_session_id=}",
             ):
-                with managed_resource(
-                    user_id, client_session_id, app
-                ) as resource_registry:
-                    await resource_registry.remove_socket_id()
+                with managed_resource(user_id, client_session_id, app) as user_session:
+                    await user_session.remove_socket_id()
                 # signal same user other clients if available
                 await emit(
                     app, "SIGNAL_USER_DISCONNECTED", user_id, client_session_id, app

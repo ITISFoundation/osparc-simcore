@@ -70,9 +70,8 @@ class TextTemplate(Template):
                 ):
                     # If all the groups are None, there must be
                     # another group we're not expecting
-                    raise ValueError(
-                        "Unrecognized named group in pattern", self.pattern
-                    )
+                    msg = "Unrecognized named group in pattern"
+                    raise ValueError(msg, self.pattern)
             return True
 
         def get_identifiers(self):
@@ -89,9 +88,8 @@ class TextTemplate(Template):
                 ):
                     # If all the groups are None, there must be
                     # another group we're not expecting
-                    raise ValueError(
-                        "Unrecognized named group in pattern", self.pattern
-                    )
+                    msg = "Unrecognized named group in pattern"
+                    raise ValueError(msg, self.pattern)
             return ids
 
 
@@ -110,4 +108,4 @@ class SubstitutionsDict(UserDict):
 
     @property
     def unused(self):
-        return {key for key in self.keys() if key not in self.used}
+        return {key for key in self if key not in self.used}

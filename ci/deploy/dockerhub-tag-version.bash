@@ -47,4 +47,28 @@ export DOCKER_IMAGE_TAG
 log_info "pushing images ${DOCKER_IMAGE_TAG} to ${DOCKER_REGISTRY}"
 make push-version
 
+# push latest image to matching git tag if on git tag
+#
+# Explanation on how checking if a variable is set works with `set -o nounset`:
+#
+# - `${MY_ENV_VAR}`   : This would normally return the value of `MY_ENV_VAR`.
+#                       If `MY_ENV_VAR` is not set and `set -o nounset` is active, using this causes an error and the script would exit.
+# - `${MY_ENV_VAR+x}` : This is a form of parameter expansion. If `MY_ENV_VAR` is unset or null, this expands to nothing (i.e., it's an empty string).
+#                       If `MY_ENV_VAR` is set, this expands to `x`. Importantly, even if `MY_ENV_VAR` is unset, this will not cause an error even with `set -o nounset` active,
+#                       because you're not actually trying to use the value of an unset variable - you're just checking if it is set or not.
+# The `if [ ! -z ${MY_ENV_VAR+x} ]` line checks if `${MY_ENV_VAR+x}` is not an empty string (`! -z` checks for a non-empty string).
+# If `MY_ENV_VAR` is set, `${MY_ENV_VAR+x}` will be `x`, and the condition will be true. If `MY_ENV_VAR` is unset, `${MY_ENV_VAR+x}` will be an empty string, and the condition will be false.
+# `MY_ENV_VAR` is unset, this will not cause an error even with `set -o nounset` active.
+
+if [ ! -z ${GIT_TAG+x} ]; then
+    echo "GIT_TAG is '$GIT_TAG'"
+    DOCKER_IMAGE_TAG=${GIT_TAG}
+    export DOCKER_IMAGE_TAG
+    log_info "pushing images ${DOCKER_IMAGE_TAG} to ${DOCKER_REGISTRY}"
+    make push-version
+else
+    echo "GIT_TAG is not set, we assume we are on the master branch."
+fi
+
+
 log_info "complete!"

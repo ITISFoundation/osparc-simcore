@@ -105,7 +105,7 @@ async def test_valid_upload_download(
             store_id=s3_simcore_location,
             store_name=None,
             s3_object=file_id,
-            local_folder=download_folder,
+            local_path=download_folder,
             io_log_redirect_cb=None,
             r_clone_settings=optional_r_clone,
             progress_bar=progress_bar,
@@ -168,7 +168,7 @@ async def test_valid_upload_download_using_file_object(
             store_id=s3_simcore_location,
             store_name=None,
             s3_object=file_id,
-            local_folder=download_folder,
+            local_path=download_folder,
             io_log_redirect_cb=None,
             r_clone_settings=optional_r_clone,
             progress_bar=progress_bar,
@@ -328,7 +328,7 @@ async def test_invalid_file_path(
                 store_id=store,
                 store_name=None,
                 s3_object=file_id,
-                local_folder=download_folder,
+                local_path=download_folder,
                 io_log_redirect_cb=None,
                 r_clone_settings=optional_r_clone,
                 progress_bar=progress_bar,
@@ -379,7 +379,7 @@ async def test_errors_upon_invalid_file_identifiers(
                 store_id=store,
                 store_name=None,
                 s3_object=invalid_s3_path,
-                local_folder=download_folder,
+                local_path=download_folder,
                 io_log_redirect_cb=None,
                 r_clone_settings=optional_r_clone,
                 progress_bar=progress_bar,
@@ -392,7 +392,7 @@ async def test_errors_upon_invalid_file_identifiers(
                 store_id=store,
                 store_name=None,
                 s3_object=SimcoreS3FileID(f"{project_id}/{uuid4()}/invisible.txt"),
-                local_folder=download_folder,
+                local_path=download_folder,
                 io_log_redirect_cb=None,
                 r_clone_settings=optional_r_clone,
                 progress_bar=progress_bar,
@@ -430,27 +430,37 @@ async def test_invalid_store(
                 store_id=None,
                 store_name=store,  # type: ignore
                 s3_object=file_id,
-                local_folder=download_folder,
+                local_path=download_folder,
                 io_log_redirect_cb=None,
                 r_clone_settings=optional_r_clone,
                 progress_bar=progress_bar,
             )
 
 
+@pytest.mark.parametrize("is_directory", [False, True])
 async def test_valid_metadata(
     node_ports_config: None,
     tmpdir: Path,
     user_id: int,
     create_valid_file_uuid: Callable[[str, Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
+    r_clone_settings: RCloneSettings,
+    is_directory: bool,
 ):
     # first we go with a non-existing file
-    file_path = Path(tmpdir) / "test.test"
-    file_id = create_valid_file_uuid("", file_path)
+    file_path = Path(tmpdir) / "a-subdir" / "test.test"
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+
+    path_to_upload = file_path.parent if is_directory else file_path
+
+    file_id = create_valid_file_uuid("", path_to_upload)
     assert file_path.exists() is False
 
     is_metadata_present = await filemanager.entry_exists(
-        user_id=user_id, store_id=s3_simcore_location, s3_object=file_id  # type: ignore
+        user_id=user_id,
+        store_id=s3_simcore_location,
+        s3_object=file_id,
+        is_directory=is_directory,
     )
     assert is_metadata_present is False
 
@@ -458,30 +468,40 @@ async def test_valid_metadata(
     file_path.write_text("I am a test file")
     assert file_path.exists()
 
-    file_id = create_valid_file_uuid("", file_path)
+    file_id = create_valid_file_uuid("", path_to_upload)
     upload_result: UploadedFolder | UploadedFile = await filemanager.upload_path(
         user_id=user_id,
         store_id=s3_simcore_location,
         store_name=None,
         s3_object=file_id,
-        path_to_upload=file_path,
+        path_to_upload=path_to_upload,
         io_log_redirect_cb=None,
+        r_clone_settings=r_clone_settings,
     )
-    assert isinstance(upload_result, UploadedFile)
-    store_id, e_tag = upload_result.store_id, upload_result.etag
-    assert store_id == s3_simcore_location
-    assert e_tag
+    if is_directory:
+        assert isinstance(upload_result, UploadedFolder)
+    else:
+        assert isinstance(upload_result, UploadedFile)
+        assert upload_result.store_id == s3_simcore_location
+        assert upload_result.etag
 
     is_metadata_present = await filemanager.entry_exists(
-        user_id=user_id, store_id=store_id, s3_object=file_id
+        user_id=user_id,
+        store_id=s3_simcore_location,
+        s3_object=file_id,
+        is_directory=is_directory,
     )
 
     assert is_metadata_present is True
 
 
 @pytest.mark.parametrize(
-    "fct",
-    [filemanager.entry_exists, filemanager.delete_file, filemanager.get_file_metadata],
+    "fct, extra_kwargs",
+    [
+        (filemanager.entry_exists, {"is_directory": False}),
+        (filemanager.delete_file, {}),
+        (filemanager.get_file_metadata, {}),
+    ],
 )
 async def test_invalid_call_raises_exception(
     node_ports_config: None,
@@ -490,6 +510,7 @@ async def test_invalid_call_raises_exception(
     create_valid_file_uuid: Callable[[str, Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
     fct: Callable[[int, str, str, Any | None], Awaitable],
+    extra_kwargs: dict[str, Any],
 ):
     file_path = Path(tmpdir) / "test.test"
     file_id = create_valid_file_uuid("", file_path)
@@ -497,13 +518,13 @@ async def test_invalid_call_raises_exception(
 
     with pytest.raises(exceptions.StorageInvalidCall):
         await fct(
-            user_id=None, store_id=s3_simcore_location, s3_object=file_id  # type: ignore
+            user_id=None, store_id=s3_simcore_location, s3_object=file_id, **extra_kwargs  # type: ignore
         )
     with pytest.raises(exceptions.StorageInvalidCall):
-        await fct(user_id=user_id, store_id=None, s3_object=file_id)  # type: ignore
+        await fct(user_id=user_id, store_id=None, s3_object=file_id, **extra_kwargs)  # type: ignore
     with pytest.raises(exceptions.StorageInvalidCall):
         await fct(
-            user_id=user_id, store_id=s3_simcore_location, s3_object="bing"  # type: ignore
+            user_id=user_id, store_id=s3_simcore_location, s3_object="bing", **extra_kwargs  # type: ignore
         )
 
 
@@ -533,7 +554,7 @@ async def test_delete_file(
     assert e_tag
 
     is_metadata_present = await filemanager.entry_exists(
-        user_id=user_id, store_id=store_id, s3_object=file_id
+        user_id=user_id, store_id=store_id, s3_object=file_id, is_directory=False
     )
     assert is_metadata_present is True
 
@@ -544,7 +565,7 @@ async def test_delete_file(
     # check that it disappeared
     assert (
         await filemanager.entry_exists(
-            user_id=user_id, store_id=store_id, s3_object=file_id
+            user_id=user_id, store_id=store_id, s3_object=file_id, is_directory=False
         )
         is False
     )
@@ -593,7 +614,7 @@ async def test_upload_path_source_is_a_folder(
             store_name=None,
             store_id=s3_simcore_location,
             s3_object=s3_object,
-            local_folder=download_dir,
+            local_path=download_dir,
             io_log_redirect_cb=None,
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,

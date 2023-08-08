@@ -589,6 +589,29 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * WALLETS
+       */
+      "wallets": {
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/wallets"
+          },
+          getOne: {
+            method: "GET",
+            url: statics.API + "/wallets/{walletId}"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/wallets"
+          },
+          patch: {
+            method: "PATCH",
+            url: statics.API + "/wallets/{walletId}"
+          }
+        }
+      },
+      /*
        * CLUSTERS
        */
       "clusters": {
@@ -1070,6 +1093,151 @@ qx.Class.define("osparc.data.Resources", {
     },
     get: function(resource, params, useCache) {
       return this.getInstance().get(resource, params, useCache);
+    },
+
+    dummy: {
+      newWalletData: function() {
+        return {
+          id: Math.floor(Math.random() * 1000),
+          name: "New Wallet",
+          description: "",
+          thumbnail: null,
+          type: "shared",
+          owner: null,
+          accessRights: {},
+          credits: {
+            left: 0
+          },
+          active: true
+        };
+      },
+
+      addWalletsToStore: function() {
+        const store = osparc.store.Store.getInstance();
+        osparc.data.Resources.dummy.getWallets()
+          .then(walletsData => {
+            if (walletsData && "wallets" in walletsData && walletsData["wallets"].length) {
+              const wallets = [];
+              walletsData["wallets"].forEach(walletData => {
+                const wallet = new osparc.data.model.Wallet(walletData);
+                wallets.push(wallet);
+              });
+              store.setWallets(wallets);
+              setInterval(() => {
+                store.getWallets().forEach(wallet => {
+                  wallet.setCredits(wallet.getCredits()-1);
+                });
+              }, 30000);
+            }
+          })
+          .catch(err => console.error(err));
+      },
+
+      getWallets: function() {
+        const myGid = osparc.auth.Data.getInstance().getGroupId();
+        return new Promise(resolve => {
+          resolve({
+            wallets: [{
+              id: 1,
+              name: "My Wallet",
+              description: "Personal Wallet",
+              thumbnail: null,
+              type: "personal",
+              owner: myGid,
+              accessRights: {
+                [myGid]: {
+                  delete: true,
+                  write: true,
+                  read: true
+                }
+              },
+              credits: {
+                left: 10
+              },
+              active: true
+            }, {
+              id: 2,
+              name: "Our Wallet",
+              description: "Organization wide Wallet",
+              thumbnail: null,
+              type: "shared",
+              owner: myGid,
+              accessRights: {
+                [myGid]: {
+                  delete: false,
+                  write: true,
+                  read: true
+                },
+                417: {
+                  delete: false,
+                  write: false,
+                  read: true
+                }
+              },
+              credits: {
+                left: 100
+              },
+              active: true
+            }, {
+              id: 3,
+              name: "Another Wallet",
+              description: "Organization wide Wallet 2",
+              thumbnail: null,
+              type: "shared",
+              owner: 417,
+              accessRights: {
+                417: {
+                  delete: true,
+                  write: true,
+                  read: true
+                },
+                [myGid]: {
+                  delete: false,
+                  write: false,
+                  read: true
+                }
+              },
+              credits: {
+                left: 1000
+              },
+              active: true
+            }]
+          });
+        });
+      },
+
+      getUsageDetailed: function() {
+        return new Promise(resolve => {
+          resolve([{
+            "studyName": "Prj_1",
+            "jobType": "MESH",
+            "start": "2023-06-05T09:35:29.026Z",
+            "end": "2023-06-05T09:40:29.026Z",
+            "duration": 277233,
+            "computingTime": 1200000,
+            "numberOfCores": 4,
+            "status": "FINISHED"
+          }, {
+            "studyName": "Prj_1",
+            "jobType": "SIMULATION",
+            "start": "2023-06-06T09:35:29.026Z",
+            "end": "2023-06-06T09:40:29.026Z",
+            "duration": 1429861,
+            "computingTime": 11520000,
+            "numberOfCores": 8,
+            "status": "FINISHED"
+          }, {
+            "studyName": "Prj_2",
+            "jobType": "SIMULATION",
+            "start": "2023-06-06T10:37:29.026Z",
+            "end": "2023-06-06T10:42:29.026Z",
+            "duration": 1182460,
+            "computingTime": 9600000,
+            "numberOfCores": 8,
+            "status": "CANCELED"
+          }]);
+        });
+      }
     },
 
     getServiceUrl: function(key, version) {

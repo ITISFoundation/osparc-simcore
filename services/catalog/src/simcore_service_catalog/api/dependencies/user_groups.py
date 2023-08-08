@@ -1,15 +1,14 @@
-from typing import Optional
-
 from fastapi import Depends, Query
+from models_library.groups import GroupAtDB
 from models_library.users import UserID
 
 from ...db.repositories.groups import GroupsRepository
-from ...models.domain.group import GroupAtDB
 from .database import get_repository
 
 
 async def list_user_groups(
-    user_id: Optional[UserID] = Query(
+    user_id: UserID
+    | None = Query(
         default=None,
         description="if passed, and that user has custom resources, "
         "they will be merged with default resources and returned.",

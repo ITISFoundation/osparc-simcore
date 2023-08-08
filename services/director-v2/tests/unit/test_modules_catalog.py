@@ -18,14 +18,14 @@ from simcore_service_director_v2.modules.catalog import CatalogClient
 
 @pytest.fixture
 def minimal_catalog_config(
-    project_env_devel_environment: EnvVarsDict, monkeypatch: MonkeyPatch
+    disable_postgres: None,
+    project_env_devel_environment: EnvVarsDict,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """set a minimal configuration for testing the director connection only"""
     monkeypatch.setenv("DIRECTOR_ENABLED", "0")
-    monkeypatch.setenv("POSTGRES_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V0_ENABLED", "0")
-    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "0")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "0")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "0")
 

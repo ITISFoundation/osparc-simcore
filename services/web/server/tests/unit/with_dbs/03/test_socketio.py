@@ -46,6 +46,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
             "WEBSERVER_REDIS": "null",
             "WEBSERVER_SCICRUNCH": "null",
             "WEBSERVER_VERSION_CONTROL": "0",
+            "WEBSERVER_WALLETS": "0",
         },
     )
 

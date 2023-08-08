@@ -32,12 +32,12 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
     */
   construct: function(studyData) {
     // this info is lost when we deepCloneStudyObject
-    this.__resourceType = studyData["resourceType"]; // study or template
+    this._resourceType = studyData["resourceType"]; // study or template
     const serializedData = osparc.data.model.Study.deepCloneStudyObject(studyData);
 
     const initCollabs = [];
     if (osparc.data.Permissions.getInstance().canDo("study.everyone.share")) {
-      initCollabs.push(this.self().getEveryoneObj(this.__resourceType === "study"));
+      initCollabs.push(this.self().getEveryoneObj(this._resourceType === "study"));
     }
 
     this.base(arguments, serializedData, initCollabs);
@@ -90,6 +90,25 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
       };
     },
 
+    __getDeleters: function(studyData) {
+      const deleters = [];
+      Object.entries(studyData["accessRights"]).forEach(([key, value]) => {
+        if (value["delete"]) {
+          deleters.push(key);
+        }
+      });
+      return deleters;
+    },
+
+    // checks that if the user to remove is an owner, there will still be another owner
+    checkRemoveCollaborator: function(studyData, gid) {
+      const ownerGids = this.__getDeleters(studyData);
+      if (ownerGids.includes(gid.toString())) {
+        return ownerGids.length > 1;
+      }
+      return true;
+    },
+
     removeCollaborator: function(studyData, gid) {
       return delete studyData["accessRights"][gid];
     },
@@ -107,7 +126,9 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
   },
 
   members: {
-    __resourceType: null,
+    _canIDelete: function() {
+      return osparc.data.model.Study.canIDelete(this._serializedData["accessRights"]);
+    },
 
     _canIWrite: function() {
       return osparc.data.model.Study.canIWrite(this._serializedData["accessRights"]);
@@ -119,7 +140,7 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
       }
 
       gids.forEach(gid => {
-        this._serializedData["accessRights"][gid] = this.__resourceType === "study" ? this.self().getCollaboratorAccessRight() : this.self().getViewerAccessRight();
+        this._serializedData["accessRights"][gid] = this._resourceType === "study" ? this.self().getCollaboratorAccessRight() : this.self().getViewerAccessRight();
       });
       const params = {
         url: {
@@ -150,7 +171,7 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
               // it's a user, not an organization
               const collab = potentialCollaborators[gid];
               const uid = collab["id"];
-              if (this.__resourceType === "study") {
+              if (this._resourceType === "study") {
                 osparc.component.notification.Notifications.postNewStudy(uid, this._serializedData["uuid"]);
               } else {
                 osparc.component.notification.Notifications.postNewTemplate(uid, this._serializedData["uuid"]);
@@ -193,11 +214,15 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
     },
 
     _deleteMember: function(collaborator, item) {
-      item.setEnabled(false);
+      if (item) {
+        item.setEnabled(false);
+      }
       const success = this.self().removeCollaborator(this._serializedData, collaborator["gid"]);
       if (!success) {
         osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
-        item.setEnabled(true);
+        if (item) {
+          item.setEnabled(true);
+        }
       }
 
       const params = {
@@ -216,7 +241,11 @@ qx.Class.define("osparc.component.share.CollaboratorsStudy", {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
           console.error(err);
         })
-        .finally(() => item.setEnabled(true));
+        .finally(() => {
+          if (item) {
+            item.setEnabled(true);
+          }
+        });
     },
 
     __make: function(collboratorGId, newAccessRights, successMsg, failureMsg, item) {

@@ -123,7 +123,7 @@ def test_union_types_coercion():
     print(model.json(indent=1))
 
     assert model.input == 0.5
-    assert model.output == False
+    assert model.output is False
 
     # (undefined) json string vs string ------------------------
     model = Func.parse_obj(

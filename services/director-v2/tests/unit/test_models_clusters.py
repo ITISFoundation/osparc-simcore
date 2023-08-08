@@ -3,8 +3,7 @@ from typing import Any
 
 import pytest
 from faker import Faker
-from pydantic import BaseModel, parse_obj_as
-from simcore_service_director_v2.models.schemas.clusters import (
+from models_library.api_schemas_directorv2.clusters import (
     AvailableResources,
     ClusterCreate,
     ClusterPatch,
@@ -13,6 +12,7 @@ from simcore_service_director_v2.models.schemas.clusters import (
     Worker,
     WorkerMetrics,
 )
+from pydantic import BaseModel, parse_obj_as
 
 
 @pytest.mark.parametrize(

@@ -4,14 +4,19 @@
 import os
 import re
 import traceback
+from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterable, AsyncIterator, Awaitable, Callable
+from typing import Any
 
 import pytest
 import respx
 from click.testing import Result
 from faker import Faker
 from fastapi import status
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_directorv2.dynamic_services_service import (
+    RunningDynamicServiceDetails,
+)
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes_io import NodeID
 from pytest_mock.plugin import MockerFixture
@@ -20,12 +25,6 @@ from servicelib.long_running_tasks._models import ProgressCallback
 from simcore_service_director_v2.cli import DEFAULT_NODE_SAVE_ATTEMPTS, main
 from simcore_service_director_v2.cli._close_and_save_service import (
     ThinDV2LocalhostClient,
-)
-from simcore_service_director_v2.models.domains.dynamic_services import (
-    DynamicServiceGet,
-)
-from simcore_service_director_v2.models.schemas.dynamic_services import (
-    RunningDynamicServiceDetails,
 )
 from typer.testing import CliRunner
 
@@ -87,7 +86,8 @@ def mock_save_service_state(mocker: MockerFixture) -> None:
 @pytest.fixture
 def mock_save_service_state_as_failing(mocker: MockerFixture) -> None:
     async def _always_raise(*args, **kwargs) -> None:
-        raise Exception("I AM FAILING NOW")  # pylint: disable=broad-exception-raised
+        msg = "I AM FAILING NOW"
+        raise Exception(msg)  # pylint: disable=broad-exception-raised
 
     mocker.patch(
         "simcore_service_director_v2.modules.dynamic_sidecar.api_client._public.SidecarsClient.save_service_state",
@@ -174,15 +174,24 @@ def test_project_save_state_ok(
     mock_save_service_state: None,
     cli_runner: CliRunner,
     project_at_db: ProjectAtDB,
+    capsys: pytest.CaptureFixture,
 ):
-    result = cli_runner.invoke(main, ["project-save-state", f"{project_at_db.uuid}"])
+    with capsys.disabled() as _disabled:
+        # NOTE: without this, the test does not pass see https://github.com/pallets/click/issues/824
+        # also see this https://github.com/Stranger6667/pytest-click/issues/27 when using log-cli-level=DEBUG
+        result = cli_runner.invoke(
+            main, ["project-save-state", f"{project_at_db.uuid}"]
+        )
     print(result.stdout)
     assert result.exit_code == os.EX_OK, _format_cli_error(result)
     assert result.stdout.endswith(f"Save complete for project {project_at_db.uuid}\n")
     for node_uuid, node_content in project_at_db.workbench.items():
         assert f"Saving state for {node_uuid} {node_content.label}" in result.stdout
 
-    assert f"Saving project '{project_at_db.uuid}' - '{project_at_db.name}'"
+    assert (
+        f"Saving project '{project_at_db.uuid}' - '{project_at_db.name}'"
+        in result.stdout
+    )
 
 
 def test_project_save_state_retry_3_times_and_fails(
@@ -190,12 +199,18 @@ def test_project_save_state_retry_3_times_and_fails(
     mock_save_service_state_as_failing: None,
     cli_runner: CliRunner,
     project_at_db: ProjectAtDB,
+    capsys: pytest.CaptureFixture,
 ):
-    result = cli_runner.invoke(main, ["project-save-state", f"{project_at_db.uuid}"])
+    with capsys.disabled() as _disabled:
+        # NOTE: without this, the test does not pass see https://github.com/pallets/click/issues/824
+        # also see this https://github.com/Stranger6667/pytest-click/issues/27 when using log-cli-level=DEBUG
+        result = cli_runner.invoke(
+            main, ["project-save-state", f"{project_at_db.uuid}"]
+        )
     print(result.stdout)
     assert result.exit_code == 1, _format_cli_error(result)
     assert "The following nodes failed to save:" in result.stdout
-    for node_uuid in project_at_db.workbench.keys():
+    for node_uuid in project_at_db.workbench:
         assert (
             result.stdout.count(f"Attempting to save {node_uuid}")
             == DEFAULT_NODE_SAVE_ATTEMPTS

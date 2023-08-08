@@ -1,11 +1,13 @@
 import datetime
+from typing import Any, ClassVar
 from uuid import UUID
 
 import arrow
 from pydantic import BaseModel, Field, PositiveInt
 
 from .clusters import ClusterID
-from .projects_nodes import NodeID, NodeState
+from .projects_nodes import NodeState
+from .projects_nodes_io import NodeID
 from .projects_state import RunningState
 
 
@@ -57,7 +59,7 @@ class ComputationTask(BaseModel):
     )
 
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "id": "42838344-03de-4ce2-8d93-589a5dcdfd05",

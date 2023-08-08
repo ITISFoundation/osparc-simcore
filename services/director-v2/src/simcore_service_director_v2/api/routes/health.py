@@ -1,7 +1,7 @@
 import datetime
 
 from fastapi import APIRouter
-from models_library.api_schemas_directorv2 import HealthCheckGet
+from models_library.api_schemas_directorv2.health import HealthCheckGet
 
 router = APIRouter()
 

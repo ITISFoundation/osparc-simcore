@@ -4,14 +4,13 @@
 
 import re
 from copy import deepcopy
-from typing import Any, TypeAlias, Union
+from typing import Any, ClassVar, TypeAlias, Union
 
 from pydantic import (
     BaseModel,
     ConstrainedStr,
     Extra,
     Field,
-    HttpUrl,
     Json,
     StrictBool,
     StrictFloat,
@@ -19,7 +18,7 @@ from pydantic import (
     validator,
 )
 
-from .basic_types import EnvVarKey
+from .basic_types import EnvVarKey, HttpUrlWithCustomMinLength
 from .projects_access import AccessEnum
 from .projects_nodes_io import (
     DatCoreFileLink,
@@ -41,9 +40,9 @@ InputTypes = Union[
     Json,  # FIXME: remove if OM sends object/array. create project does NOT use pydantic
     str,
     PortLink,
-    Union[SimCoreFileLink, DatCoreFileLink],  # *FileLink to service
+    SimCoreFileLink | DatCoreFileLink,  # *FileLink to service
     DownloadLink,
-    Union[list[Any], dict[str, Any]],  # arrays | object
+    list[Any] | dict[str, Any],  # arrays | object
 ]
 OutputTypes = Union[
     StrictBool,
@@ -51,9 +50,9 @@ OutputTypes = Union[
     StrictFloat,
     Json,  # TODO: remove when OM sends object/array instead of json-formatted strings
     str,
-    Union[SimCoreFileLink, DatCoreFileLink],  # *FileLink to service
+    SimCoreFileLink | DatCoreFileLink,  # *FileLink to service
     DownloadLink,
-    Union[list[Any], dict[str, Any]],  # arrays | object
+    list[Any] | dict[str, Any],  # arrays | object
 ]
 
 
@@ -94,7 +93,7 @@ class NodeState(BaseModel):
 
     class Config:
         extra = Extra.forbid
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "modified": True,
@@ -113,11 +112,6 @@ class NodeState(BaseModel):
                 },
             ]
         }
-
-
-class HttpUrlWithCustomMinLength(HttpUrl):
-    # Overwriting min length to be back compatible when generating OAS
-    min_length = 0
 
 
 class Node(BaseModel):
@@ -225,7 +219,7 @@ class Node(BaseModel):
     def convert_old_enum_name(cls, v) -> RunningState:
         if v == "FAILURE":
             return RunningState.FAILED
-        return v
+        return RunningState(v)
 
     @validator("state", pre=True)
     @classmethod
@@ -238,7 +232,6 @@ class Node(BaseModel):
 
     class Config:
         extra = Extra.forbid
-
         # NOTE: exporting without this trick does not make runHash as nullable.
         # It is a Pydantic issue see https://github.com/samuelcolvin/pydantic/issues/1270
         @staticmethod

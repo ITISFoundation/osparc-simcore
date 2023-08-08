@@ -13,7 +13,7 @@ from .....core.settings import (
     DynamicServicesSettings,
     DynamicSidecarSettings,
 )
-from .....models.schemas.dynamic_services import (
+from .....models.dynamic_services_scheduler import (
     DynamicSidecarStatus,
     SchedulerData,
     ServiceName,

@@ -113,18 +113,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     def _check_log_level(cls, value):
         return cls.validate_log_level(value)
 
-    @property
-    def rclone_settings_for_nodeports(self) -> RCloneSettings | None:
-        """
-        If R_CLONE_ENABLED is False it returns None which indicates
-        nodeports to disable rclone and fallback to the previous storage mechanim.
-        """
-        return (
-            self.DY_SIDECAR_R_CLONE_SETTINGS
-            if self.DY_SIDECAR_R_CLONE_SETTINGS.R_CLONE_ENABLED
-            else None
-        )
-
 
 @lru_cache
 def get_settings() -> ApplicationSettings:

@@ -1,6 +1,7 @@
 import asyncio
 import logging
-from typing import Any, Callable, Coroutine, cast
+from collections.abc import Callable, Coroutine
+from typing import Any, cast
 
 from aiohttp import web
 from models_library.api_schemas_webserver.permalinks import ProjectPermalink
@@ -19,20 +20,17 @@ _CreateLinkCallable = Callable[
 
 def register_factory(app: web.Application, factory_coro: _CreateLinkCallable):
     if _create := app.get(_PROJECT_PERMALINK):
-        raise PermalinkFactoryError(
-            f"Permalink factory can only be set once: registered {_create}"
-        )
+        msg = f"Permalink factory can only be set once: registered {_create}"
+        raise PermalinkFactoryError(msg)
     app[_PROJECT_PERMALINK] = factory_coro
 
 
 def _get_factory(app: web.Application) -> _CreateLinkCallable:
-
     if _create := app.get(_PROJECT_PERMALINK):
         return cast(_CreateLinkCallable, _create)
 
-    raise PermalinkFactoryError(
-        "Undefined permalink factory. Check plugin initialization."
-    )
+    msg = "Undefined permalink factory. Check plugin initialization."
+    raise PermalinkFactoryError(msg)
 
 
 _PERMALINK_CREATE_TIMEOUT_S = 2
@@ -41,7 +39,6 @@ _PERMALINK_CREATE_TIMEOUT_S = 2
 async def _create_permalink(
     request: web.Request, project_id: ProjectID
 ) -> ProjectPermalink:
-
     create = _get_factory(request.app)
     assert create  # nosec
 
@@ -51,9 +48,8 @@ async def _create_permalink(
         )
         return permalink
     except asyncio.TimeoutError as err:
-        raise PermalinkFactoryError(
-            f"Permalink factory callback '{create}' timed out after {_PERMALINK_CREATE_TIMEOUT_S} secs"
-        ) from err
+        msg = f"Permalink factory callback '{create}' timed out after {_PERMALINK_CREATE_TIMEOUT_S} secs"
+        raise PermalinkFactoryError(msg) from err
 
 
 async def update_or_pop_permalink_in_project(
@@ -77,3 +73,6 @@ async def update_or_pop_permalink_in_project(
         project.pop("permalink", None)
 
     return None
+
+
+__all__: tuple[str, ...] = ("ProjectPermalink",)

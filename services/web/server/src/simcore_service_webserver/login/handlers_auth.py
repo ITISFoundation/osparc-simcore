@@ -76,6 +76,7 @@ class LoginNextPage(NextPage[CodePageParams]):
     reason: str = Field(deprecated=True)
 
 
+@routes.post(f"/{API_VTAG}/auth/login", name="auth_login")
 @on_success_grant_session_access_to(
     name="auth_register_phone",
     max_access_count=MAX_2FA_CODE_TRIALS,
@@ -88,7 +89,6 @@ class LoginNextPage(NextPage[CodePageParams]):
     name="auth_resend_2fa_code",
     max_access_count=MAX_2FA_CODE_RESEND,
 )
-@routes.post(f"/{API_VTAG}/auth//auth/login", name="auth_login")
 async def login(request: web.Request):
     """Login: user submits an email (identification) and a password
 
@@ -119,7 +119,7 @@ async def login(request: web.Request):
     assert user["email"] == login_.email, "db corrupted. Invalid email"  # nosec
 
     # Some roles have login privileges
-    has_privileges: Final[bool] = UserRole.USER < UserRole(user["role"])
+    has_privileges: Final[bool] = UserRole(user["role"]) > UserRole.USER
     if has_privileges or not settings.LOGIN_2FA_REQUIRED:
         return await login_granted_response(request, user=user)
 
@@ -142,8 +142,9 @@ async def login(request: web.Request):
 
     # create 2FA
     assert user["phone"]  # nosec
-    assert settings.LOGIN_2FA_REQUIRED and settings.LOGIN_TWILIO  # nosec
-    assert settings.LOGIN_2FA_REQUIRED and product.twilio_messaging_sid  # nosec
+    assert settings.LOGIN_2FA_REQUIRED  # nosec
+    assert settings.LOGIN_TWILIO  # nosec
+    assert product.twilio_messaging_sid  # nosec
 
     try:
         code = await create_2fa_code(
@@ -200,11 +201,11 @@ class LoginTwoFactorAuthBody(InputSchema):
     code: SecretStr
 
 
+@routes.post(f"/{API_VTAG}/auth/validate-code-login", name="auth_login_2fa")
 @session_access_required(
     "auth_login_2fa",
     unauthorized_reason=MSG_UNAUTHORIZED_LOGIN_2FA,
 )
-@routes.post(f"/{API_VTAG}/auth//auth/validate-code-login", name="auth_login_2fa")
 async def login_2fa(request: web.Request):
     """Login (continuation): Submits 2FA code"""
     product: Product = get_current_product(request)
@@ -247,7 +248,7 @@ class LogoutBody(InputSchema):
     )
 
 
-@routes.post(f"/{API_VTAG}/auth//auth/logout", name="auth_logout")
+@routes.post(f"/{API_VTAG}/auth/logout", name="auth_logout")
 @login_required
 async def logout(request: web.Request) -> web.Response:
     user_id = request.get(RQT_USERID_KEY, -1)

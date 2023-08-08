@@ -8,16 +8,20 @@ from enum import Enum
 from typing import Any, TypeAlias
 from uuid import UUID
 
-from models_library.utils.common_validators import empty_str_to_none, none_to_empty_str
 from pydantic import BaseModel, ConstrainedStr, Extra, Field, validator
 
 from .basic_regex import DATE_RE, UUID_RE_BASE
+from .basic_types import HttpUrlWithCustomMinLength
 from .emails import LowerCaseEmailStr
 from .projects_access import AccessRights, GroupIDStr
-from .projects_nodes import HttpUrlWithCustomMinLength, Node
+from .projects_nodes import Node
 from .projects_nodes_io import NodeIDStr
 from .projects_state import ProjectState
 from .projects_ui import StudyUI
+from .utils.common_validators import (
+    empty_str_to_none_pre_validator,
+    none_to_empty_str_pre_validator,
+)
 
 ProjectID: TypeAlias = UUID
 ClassifierID: TypeAlias = str
@@ -77,11 +81,11 @@ class BaseProjectModel(BaseModel):
 
     # validators
     _empty_thumbnail_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
-        empty_str_to_none
+        empty_str_to_none_pre_validator
     )
 
     _none_description_is_empty = validator("description", allow_reuse=True, pre=True)(
-        none_to_empty_str
+        none_to_empty_str_pre_validator
     )
 
 
@@ -121,13 +125,13 @@ class Project(BaseProjectModel):
     )
 
     # Timestamps
-    creation_date: DateTimeStr = Field(
+    creation_date: DateTimeStr = Field(  # type: ignore[assignment]
         ...,
         description="project creation date",
         examples=["2018-07-01T11:13:43Z"],
         alias="creationDate",
     )
-    last_change_date: DateTimeStr = Field(
+    last_change_date: DateTimeStr = Field(  # type: ignore[assignment]
         ...,
         description="last save date",
         examples=["2018-07-01T11:13:43Z"],

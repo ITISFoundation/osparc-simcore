@@ -29,7 +29,6 @@ aiodocker
 aiofiles
 aioprocessing
 arrow
-docker-compose
 fastapi
 httpx
 psutil

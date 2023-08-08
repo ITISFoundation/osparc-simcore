@@ -50,6 +50,7 @@ qx.Class.define("osparc.utils.StatusUI", {
           return "";
         case "PUBLISHED":
         case "PENDING":
+        case "WAITING_FOR_RESOURCES":
         case "STARTED":
         case "RETRY":
           return "@FontAwesome5Solid/circle-notch/"+size;
@@ -115,6 +116,8 @@ qx.Class.define("osparc.utils.StatusUI", {
           return qx.locale.Manager.tr("Running");
         case "NOT_STARTED":
           return qx.locale.Manager.tr("Idle");
+        case "WAITING_FOR_RESOURCES":
+          return qx.locale.Manager.tr("Waiting for resources");
 
         // dynamics
         case "idle":
@@ -153,6 +156,7 @@ qx.Class.define("osparc.utils.StatusUI", {
           return "ready-green";
         case "PUBLISHED":
         case "PENDING":
+        case "WAITING_FOR_RESOURCES":
         case "STARTED":
         case "RETRY":
           return "busy-orange";
@@ -206,6 +210,7 @@ qx.Class.define("osparc.utils.StatusUI", {
           return "border-error";
         case "PUBLISHED":
         case "PENDING":
+        case "WAITING_FOR_RESOURCES":
         case "STARTED":
         case "RETRY":
           return "border-busy";

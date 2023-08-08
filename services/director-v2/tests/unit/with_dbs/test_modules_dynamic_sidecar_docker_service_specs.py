@@ -22,7 +22,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from servicelib.json_serialization import json_dumps
 from simcore_service_director_v2.core.settings import DynamicSidecarSettings
-from simcore_service_director_v2.models.schemas.dynamic_services import SchedulerData
+from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 from simcore_service_director_v2.modules.catalog import CatalogClient
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs import (
     get_dynamic_sidecar_spec,
@@ -31,7 +31,9 @@ from simcore_service_director_v2.utils.dict_utils import nested_update
 
 
 @pytest.fixture
-def mock_env(monkeypatch: MonkeyPatch, mock_env: EnvVarsDict) -> EnvVarsDict:
+def mock_env(
+    monkeypatch: MonkeyPatch, mock_env: EnvVarsDict, disable_postgres: None
+) -> EnvVarsDict:
     """overrides unit/conftest:mock_env fixture"""
     env_vars = mock_env.copy()
     env_vars.update(
@@ -44,12 +46,12 @@ def mock_env(monkeypatch: MonkeyPatch, mock_env: EnvVarsDict) -> EnvVarsDict:
             "POSTGRES_PASSWORD": "test",
             "POSTGRES_PORT": "5432",
             "POSTGRES_USER": "test",
-            "R_CLONE_ENABLED": "False",
             "R_CLONE_PROVIDER": "MINIO",
             "RABBIT_HOST": "rabbit",
             "RABBIT_PASSWORD": "adminadmin",
             "RABBIT_PORT": "5672",
             "RABBIT_USER": "admin",
+            "RABBIT_SECURE": "false",
             "REGISTRY_AUTH": "false",
             "REGISTRY_PW": "test",
             "REGISTRY_SSL": "false",
@@ -108,7 +110,7 @@ def expected_dynamic_sidecar_spec(
                     "container_http_entry": "rt-web",
                     "hostname": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                     "port": 1222,
-                    "run_id": f"{run_id}",
+                    "run_id": run_id,
                     "dynamic_sidecar": {
                         "containers_inspect": [],
                         "dynamic_sidecar_id": None,
@@ -179,7 +181,7 @@ def expected_dynamic_sidecar_spec(
                 "Env": {
                     "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                     "DY_SIDECAR_NODE_ID": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
-                    "DY_SIDECAR_RUN_ID": f"{run_id}",
+                    "DY_SIDECAR_RUN_ID": run_id,
                     "DY_SIDECAR_PATH_INPUTS": "/tmp/inputs",  # noqa: S108
                     "DY_SIDECAR_PATH_OUTPUTS": "/tmp/outputs",  # noqa: S108
                     "DY_SIDECAR_PROJECT_ID": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
@@ -204,6 +206,7 @@ def expected_dynamic_sidecar_spec(
                     "RABBIT_PASSWORD": "adminadmin",
                     "RABBIT_PORT": "5672",
                     "RABBIT_USER": "admin",
+                    "RABBIT_SECURE": "False",
                     "REGISTRY_AUTH": "False",
                     "REGISTRY_PATH": "None",
                     "REGISTRY_PW": "test",
@@ -211,7 +214,6 @@ def expected_dynamic_sidecar_spec(
                     "REGISTRY_URL": "foo.bar.com",
                     "REGISTRY_USER": "test",
                     "R_CLONE_PROVIDER": "MINIO",
-                    "R_CLONE_ENABLED": "False",
                     "S3_ACCESS_KEY": "12345678",
                     "S3_BUCKET_NAME": "simcore",
                     "S3_ENDPOINT": "http://172.17.0.1:9001",
@@ -252,7 +254,7 @@ def expected_dynamic_sidecar_spec(
                             "Labels": {
                                 "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                                 "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-                                "run_id": f"{run_id}",
+                                "run_id": run_id,
                                 "source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_erots-derahs_",
                                 "swarm_stack_name": "test_swarm_name",
                                 "user_id": "234",
@@ -267,7 +269,7 @@ def expected_dynamic_sidecar_spec(
                             "Labels": {
                                 "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                                 "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-                                "run_id": f"{run_id}",
+                                "run_id": run_id,
                                 "source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_stupni_pmt_",
                                 "swarm_stack_name": "test_swarm_name",
                                 "user_id": "234",
@@ -282,7 +284,7 @@ def expected_dynamic_sidecar_spec(
                             "Labels": {
                                 "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                                 "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-                                "run_id": f"{run_id}",
+                                "run_id": run_id,
                                 "source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_stuptuo_pmt_",
                                 "swarm_stack_name": "test_swarm_name",
                                 "user_id": "234",
@@ -297,7 +299,7 @@ def expected_dynamic_sidecar_spec(
                             "Labels": {
                                 "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                                 "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-                                "run_id": f"{run_id}",
+                                "run_id": run_id,
                                 "source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_1_evas_pmt_",
                                 "swarm_stack_name": "test_swarm_name",
                                 "user_id": "234",
@@ -312,7 +314,7 @@ def expected_dynamic_sidecar_spec(
                             "Labels": {
                                 "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                                 "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-                                "run_id": f"{run_id}",
+                                "run_id": run_id,
                                 "source": f"dyv_{run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_2_evas_pmt_",
                                 "swarm_stack_name": "test_swarm_name",
                                 "user_id": "234",
