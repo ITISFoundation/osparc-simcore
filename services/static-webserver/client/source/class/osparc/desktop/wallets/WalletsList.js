@@ -262,7 +262,8 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
           data: {
             "name": name,
             "description": description || null,
-            "thumbnail": thumbnail || null
+            "thumbnail": thumbnail || null,
+            "status": found.getStatus()
           }
         };
         osparc.data.Resources.fetch("wallets", "put", params)
