@@ -388,11 +388,8 @@ class StorageS3Client:
     async def file_exists(self, bucket: S3BucketName, *, s3_object: str) -> bool:
         """Checks if an S3 object exists"""
         # SEE https://www.peterbe.com/plog/fastest-way-to-find-out-if-a-file-exists-in-s3
-        response = await self.client.list_objects_v2(
-            Bucket=bucket,
-            Prefix=s3_object,
-        )
-        return any(obj["Key"] == s3_object for obj in response.get("Contents", []))
+        response = await self.client.list_objects_v2(Bucket=bucket, Prefix=s3_object)
+        return len(response.get("Contents", [])) > 0
 
     @s3_exception_handler(_logger)
     async def upload_file(
