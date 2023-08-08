@@ -50,14 +50,14 @@ qx.Class.define("osparc.desktop.wallets.WalletEditor", {
     description: {
       check: "String",
       init: "",
-      nullable: false,
+      nullable: true,
       event: "changeDescription"
     },
 
     thumbnail: {
       check: "String",
       init: "",
-      nullable: false,
+      nullable: true,
       event: "changeThumbnail"
     }
   },

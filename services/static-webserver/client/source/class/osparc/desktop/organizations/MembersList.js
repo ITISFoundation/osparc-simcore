@@ -156,7 +156,6 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("id", "model", null, item, id);
           ctrl.bindProperty("id", "key", null, item, id);
-          ctrl.bindProperty("gid", "gid", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id);
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);

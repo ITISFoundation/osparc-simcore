@@ -91,14 +91,16 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
 
       this.__memberInvitation.setVisibility(this.__canIWrite() ? "visible" : "excluded");
 
-      this.__reloadWalletMembers();
+      this.__reloadMembers();
     },
 
     __canIWrite: function() {
-      const myGid = osparc.auth.Data.getInstance().getGroupId();
       const wallet = this.__currentModel;
-      if (wallet && "getAccessRights" in wallet && myGid in wallet.getAccessRights()) {
-        return wallet.getAccessRights()[myGid]["write"];
+      if (wallet) {
+        const myAcessRights = wallet.getMyAccessRights();
+        if (myAcessRights) {
+          return myAcessRights["write"];
+        }
       }
       return false;
     },
@@ -195,7 +197,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
       return memebersUIList;
     },
 
-    __reloadWalletMembers: async function() {
+    __reloadMembers: async function() {
       const membersModel = this.__membersModel;
       membersModel.removeAll();
 
@@ -204,10 +206,10 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
         return;
       }
 
-      const accessRights = wallet.getAccessRights();
       const membersList = [];
       const potentialCollaborators = await osparc.store.Store.getInstance().getPotentialCollaborators();
-      Object.keys(accessRights).forEach(gid => {
+      wallet.getAccessRights().forEach(accessRights => {
+        const gid = accessRights["gid"];
         if (Object.prototype.hasOwnProperty.call(potentialCollaborators, parseInt(gid))) {
           const collab = potentialCollaborators[parseInt(gid)];
           // Do not override collaborator object
@@ -216,7 +218,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
             collaborator["thumbnail"] = osparc.utils.Avatar.getUrl(collaborator["login"], 32);
             collaborator["name"] = osparc.utils.Utils.firstsUp(collaborator["first_name"], collaborator["last_name"]);
           }
-          collaborator["accessRights"] = accessRights[gid];
+          collaborator["accessRights"] = accessRights;
           collaborator["showOptions"] = this.__canIWrite();
           membersList.push(collaborator);
         }
@@ -234,15 +236,27 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
         return;
       }
 
-      const newAccessRights = osparc.utils.Utils.deepCloneObject(wallet.getAccessRights());
+      const promises = [];
       gids.forEach(gid => {
-        newAccessRights[gid] = this.self().getReadAccess();
+        const params = {
+          url: {
+            "walletId": wallet.getWalletId(),
+            "groupId": gid
+          },
+          data: this.self().getReadAccess()
+        };
+        promises.push(osparc.data.Resources.fetch("wallets", "postAccessRights", params));
       });
-      wallet.setAccessRights(newAccessRights);
-      this.__reloadWalletMembers();
-      if (cb) {
-        cb();
-      }
+      Promise.all(promises)
+        .then(() => {
+          osparc.store.Store.getInstance().reloadWalletAccessRights(wallet)
+            .then(() => {
+              this.__reloadMembers();
+              if (cb) {
+                cb();
+              }
+            });
+        });
     },
 
     __promoteToAccountant: function(walletMember) {
@@ -251,12 +265,18 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
         return;
       }
 
-      const newAccessRights = osparc.utils.Utils.deepCloneObject(wallet.getAccessRights());
-      if (walletMember["gid"] in newAccessRights) {
-        newAccessRights[walletMember["gid"]] = this.self().getWriteAccess();
-        wallet.setAccessRights(newAccessRights);
-        this.__reloadWalletMembers();
-      }
+      const params = {
+        url: {
+          "walletId": wallet.getWalletId(),
+          "groupId": walletMember["gid"]
+        },
+        data: this.self().getWriteAccess()
+      };
+      osparc.data.Resources.fetch("wallets", "putAccessRights", params)
+        .then(() => {
+          osparc.store.Store.getInstance().reloadWalletAccessRights(wallet)
+            .then(() => this.__reloadMembers());
+        });
     },
 
     __demoteToMember: function(walletMember) {
@@ -265,12 +285,18 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
         return;
       }
 
-      const newAccessRights = osparc.utils.Utils.deepCloneObject(wallet.getAccessRights());
-      if (walletMember["gid"] in newAccessRights) {
-        newAccessRights[walletMember["gid"]] = this.self().getReadAccess();
-        wallet.setAccessRights(newAccessRights);
-        this.__reloadWalletMembers();
-      }
+      const params = {
+        url: {
+          "walletId": wallet.getWalletId(),
+          "groupId": walletMember["gid"]
+        },
+        data: this.self().getReadAccess()
+      };
+      osparc.data.Resources.fetch("wallets", "putAccessRights", params)
+        .then(() => {
+          osparc.store.Store.getInstance().reloadWalletAccessRights(wallet)
+            .then(() => this.__reloadMembers());
+        });
     },
 
     __deleteMember: function(walletMember) {
@@ -279,12 +305,17 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
         return;
       }
 
-      const newAccessRights = osparc.utils.Utils.deepCloneObject(wallet.getAccessRights());
-      if (walletMember["gid"] in newAccessRights) {
-        delete newAccessRights[walletMember["gid"]];
-        wallet.setAccessRights(newAccessRights);
-        this.__reloadWalletMembers();
-      }
+      const params = {
+        url: {
+          "walletId": wallet.getWalletId(),
+          "groupId": walletMember["gid"]
+        }
+      };
+      osparc.data.Resources.fetch("wallets", "deleteAccessRights", params)
+        .then(() => {
+          osparc.store.Store.getInstance().reloadWalletAccessRights(wallet)
+            .then(() => this.__reloadMembers());
+        });
     }
   }
 });
