@@ -63,7 +63,7 @@ async def expand_directory(
     return result
 
 
-def get_simcore_directory(file_id: StorageFileID) -> str:
+def get_simcore_directory(file_id: SimcoreS3FileID) -> str:
     try:
         directory_id = SimcoreS3DirectoryID.from_simcore_s3_object(file_id)
     except ValueError:
@@ -72,7 +72,7 @@ def get_simcore_directory(file_id: StorageFileID) -> str:
 
 
 async def get_directory_file_id(
-    conn: SAConnection, file_id: StorageFileID
+    conn: SAConnection, file_id: SimcoreS3FileID
 ) -> SimcoreS3FileID | None:
     """
     returns the containing file's `directory_file_id` if the entry exists

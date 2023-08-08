@@ -398,7 +398,7 @@ class SimcoreS3DataManager(BaseDataManager):
         """
         async with self.engine.acquire() as conn:
             directory_file_id: SimcoreS3FileID | None = await get_directory_file_id(
-                conn, file_id
+                conn, cast(SimcoreS3FileID, file_id)
             )
             return (
                 await self._get_link_for_directory_fmd(
