@@ -8,6 +8,7 @@
 # pylint: disable=too-many-statements
 
 
+import asyncio
 from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from dataclasses import dataclass
@@ -30,6 +31,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import (
     InstrumentationRabbitMessage,
+    RabbitResourceTrackingHeartbeatMessage,
     RabbitResourceTrackingMessages,
     RabbitResourceTrackingStoppedMessage,
     _RabbitResourceTrackingBaseMessage,
@@ -1123,5 +1125,81 @@ async def test_handling_scheduling_after_reboot(
     )
 
 
-# async def test_running_pipeline_triggers_heartbeat():
-#     assert False
+@pytest.fixture
+def with_fast_service_heartbeat_s(monkeypatch: pytest.MonkeyPatch) -> int:
+    seconds = 1
+    monkeypatch.setenv("SERVICE_TRACKING_HEARTBEAT", f"{seconds}")
+    return seconds
+
+
+async def test_running_pipeline_triggers_heartbeat(
+    with_disabled_scheduler_task: None,
+    with_fast_service_heartbeat_s: int,
+    mocked_dask_client: mock.MagicMock,
+    scheduler: BaseCompScheduler,
+    aiopg_engine: aiopg.sa.engine.Engine,
+    published_project: PublishedProject,
+    resource_tracking_rabbit_client_parser: mock.AsyncMock,
+):
+    expected_published_tasks = await _assert_start_pipeline(
+        aiopg_engine, published_project, scheduler
+    )
+    # -------------------------------------------------------------------------------
+    # 1. first run will move comp_tasks to PENDING so the worker can take them
+    expected_pending_tasks = await _assert_schedule_pipeline_PENDING(
+        aiopg_engine,
+        published_project,
+        expected_published_tasks,
+        mocked_dask_client,
+        scheduler,
+    )
+    # -------------------------------------------------------------------------------
+    # 2. the "worker" starts processing a task
+    exp_started_task = expected_pending_tasks[0]
+    expected_pending_tasks.remove(exp_started_task)
+
+    async def _return_1st_task_running(job_ids: list[str]) -> list[RunningState]:
+        return [
+            RunningState.STARTED
+            if job_id == exp_started_task.job_id
+            else RunningState.PENDING
+            for job_id in job_ids
+        ]
+
+    mocked_dask_client.get_tasks_status.side_effect = _return_1st_task_running
+    await run_comp_scheduler(scheduler)
+
+    def _parser(x) -> RabbitResourceTrackingMessages:
+        return parse_raw_as(RabbitResourceTrackingMessages, x)
+
+    messages = await _assert_message_received(
+        resource_tracking_rabbit_client_parser,
+        2,
+        _parser,
+    )
+    assert messages[0].node_id == exp_started_task.node_id
+    assert isinstance(messages[1], RabbitResourceTrackingHeartbeatMessage)
+
+    # -------------------------------------------------------------------------------
+    # 3. wait a bit and run again we should get another heartbeat
+    await asyncio.sleep(with_fast_service_heartbeat_s + 1)
+    await run_comp_scheduler(scheduler)
+    await run_comp_scheduler(scheduler)
+    messages = await _assert_message_received(
+        resource_tracking_rabbit_client_parser,
+        1,
+        _parser,
+    )
+    assert isinstance(messages[0], RabbitResourceTrackingHeartbeatMessage)
+
+    # -------------------------------------------------------------------------------
+    # 4. wait a bit and run again we should get another heartbeat
+    await asyncio.sleep(with_fast_service_heartbeat_s + 1)
+    await run_comp_scheduler(scheduler)
+    await run_comp_scheduler(scheduler)
+    messages = await _assert_message_received(
+        resource_tracking_rabbit_client_parser,
+        1,
+        _parser,
+    )
+    assert isinstance(messages[0], RabbitResourceTrackingHeartbeatMessage)
