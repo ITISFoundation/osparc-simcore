@@ -29,7 +29,6 @@ from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, ValidationError, parse_obj_as
-from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_catch, log_context
 from simcore_sdk import node_ports_v2
@@ -311,9 +310,7 @@ def compute_task_labels(
         project_id=project_id,
         node_id=node_id,
         product_name=product_name,
-        simcore_user_agent=run_metadata.get(
-            "simcore_user_agent", UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-        ),
+        simcore_user_agent=run_metadata.get("simcore_user_agent", _UNDEFINED_METADATA),
         swarm_stack_name=_UNDEFINED_METADATA,  # NOTE: there is currently no need for this label in the comp backend
         memory_limit=node_requirements.ram,
         cpu_limit=node_requirements.cpu,
