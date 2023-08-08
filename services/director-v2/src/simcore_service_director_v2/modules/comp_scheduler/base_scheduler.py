@@ -253,19 +253,21 @@ class BaseCompScheduler(ABC):
         dag: nx.DiGraph,
     ) -> None:
         utc_now = arrow.utcnow().datetime
+
+        def _need_heartbeat(task: CompTaskAtDB) -> bool:
+            if task.state not in RUNNING_STATES:
+                return False
+            if task.last_heartbeat is None:
+                assert task.start  # nosec
+                return (
+                    utc_now - task.start.replace(tzinfo=datetime.timezone.utc)
+                ) > self.service_runtime_heartbeat_interval
+            return (
+                utc_now - task.last_heartbeat
+            ) > self.service_runtime_heartbeat_interval
+
         tasks: dict[str, CompTaskAtDB] = await self._get_pipeline_tasks(project_id, dag)
-        if running_tasks := [
-            t
-            for t in tasks.values()
-            if t.state in RUNNING_STATES
-            and (
-                t.last_heartbeat is None
-                or (
-                    (utc_now - t.last_heartbeat)
-                    > self.service_runtime_heartbeat_interval
-                )
-            )
-        ]:
+        if running_tasks := [t for t in tasks.values() if _need_heartbeat(t)]:
             await asyncio.gather(
                 *(
                     publish_service_resource_tracking_heartbeat(
