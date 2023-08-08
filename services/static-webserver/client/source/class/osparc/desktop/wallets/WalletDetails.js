@@ -49,13 +49,12 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
       const walletListItem = this.__addWalletListItem();
       walletModel.bind("walletId", walletListItem, "key");
       walletModel.bind("walletId", walletListItem, "model");
+      walletModel.bind("accessRights", walletListItem, "accessRights");
       walletModel.bind("thumbnail", walletListItem, "thumbnail");
       walletModel.bind("name", walletListItem, "title");
       walletModel.bind("description", walletListItem, "subtitle");
-      walletModel.bind("accessRights", walletListItem, "accessRights");
-      walletModel.bind("walletType", walletListItem, "walletType");
-      walletModel.bind("credits", walletListItem, "credits");
-      walletModel.bind("active", walletListItem, "active");
+      walletModel.bind("creditsAvailable", walletListItem, "creditsAvailable");
+      walletModel.bind("status", walletListItem, "status");
 
       walletListItem.addListener("buyCredits", e => this.fireDataEvent("buyCredits", e.getData()));
 
@@ -123,7 +122,7 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
           "thumbnail": thumbnail || null
         }
       };
-      osparc.data.Resources.fetch("wallets", "patch", params)
+      osparc.data.Resources.fetch("wallets", "put", params)
         .then(() => {
           osparc.component.message.FlashMessenger.getInstance().logAs(name + this.tr(" successfully edited"));
           button.setFetching(false);

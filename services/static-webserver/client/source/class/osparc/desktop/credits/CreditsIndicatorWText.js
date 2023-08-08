@@ -40,11 +40,11 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicatorWText", {
       apply: "__applyWallet"
     },
 
-    credits: {
+    creditsAvailable: {
       check: "Number",
       init: 0,
       nullable: false,
-      event: "changeCredits"
+      event: "changeCreditsAvailable"
     }
   },
 
@@ -61,7 +61,7 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicatorWText", {
           control = new qx.ui.basic.Label().set({
             font: "text-14"
           });
-          this.bind("credits", control, "value", {
+          this.bind("creditsAvailable", control, "value", {
             converter: val => val === null ? this.tr("Select Wallet") : val + " " + this.tr("credits left")
           });
           this._add(control);
@@ -72,7 +72,7 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicatorWText", {
 
     __applyWallet: function(wallet) {
       if (wallet) {
-        wallet.bind("credits", this, "credits");
+        wallet.bind("creditsAvailable", this, "creditsAvailable");
       }
     }
   }
