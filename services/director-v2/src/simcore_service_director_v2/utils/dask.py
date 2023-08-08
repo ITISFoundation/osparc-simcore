@@ -29,6 +29,7 @@ from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, ValidationError, parse_obj_as
+from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_catch, log_context
 from simcore_sdk import node_ports_v2
@@ -304,18 +305,20 @@ def compute_task_labels(
     run_metadata: RunMetadataDict,
     node_requirements: NodeRequirements,
 ) -> ContainerLabelsDict:
-    product_name = run_metadata["product_name"]
+    product_name = run_metadata.get("product_name", _UNDEFINED_METADATA)
     standard_simcore_labels = StandardSimcoreDockerLabels.construct(
         user_id=user_id,
         project_id=project_id,
         node_id=node_id,
         product_name=product_name,
-        simcore_user_agent=run_metadata["simcore_user_agent"],
+        simcore_user_agent=run_metadata.get(
+            "simcore_user_agent", UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+        ),
         swarm_stack_name=_UNDEFINED_METADATA,  # NOTE: there is currently no need for this label in the comp backend
         memory_limit=node_requirements.ram,
         cpu_limit=node_requirements.cpu,
     ).to_simcore_runtime_docker_labels()
-    all_labels = standard_simcore_labels | parse_obj_as(
+    return standard_simcore_labels | parse_obj_as(
         ContainerLabelsDict,
         {
             DockerLabelKey.from_key(k): f"{v}"
@@ -323,7 +326,6 @@ def compute_task_labels(
             if k not in ["product_name", "simcore_user_agent"]
         },
     )
-    return all_labels
 
 
 async def compute_task_envs(

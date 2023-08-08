@@ -27,6 +27,7 @@ from models_library.projects_state import RunningState
 from models_library.services import ServiceKey, ServiceType, ServiceVersion
 from models_library.users import UserID
 from pydantic import PositiveInt
+from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 
@@ -62,6 +63,8 @@ from ..db.repositories.comp_runs import CompRunsRepository
 from ..db.repositories.comp_tasks import CompTasksRepository
 
 _logger = logging.getLogger(__name__)
+
+_UNDEFINED_METADATA = "undefined"
 
 
 @dataclass(kw_only=True)
@@ -352,17 +355,19 @@ class BaseCompScheduler(ABC):
                     service_run_id=get_resource_tracking_run_id(
                         user_id, t.project_id, iteration
                     ),
-                    wallet_id=run_metadata["wallet_id"],
-                    wallet_name=run_metadata["wallet_name"],
-                    product_name=run_metadata["product_name"],
-                    simcore_user_agent=run_metadata["simcore_user_agent"],
+                    wallet_id=run_metadata.get("wallet_id", -1),
+                    wallet_name=run_metadata.get("wallet_name", _UNDEFINED_METADATA),
+                    product_name=run_metadata.get("product_name", _UNDEFINED_METADATA),
+                    simcore_user_agent=run_metadata.get(
+                        "simcore_user_agent", UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+                    ),
                     user_id=user_id,
-                    user_email=run_metadata["user_email"],
+                    user_email=run_metadata.get("user_email", _UNDEFINED_METADATA),
                     project_id=t.project_id,
-                    project_name=run_metadata["project_name"],
+                    project_name=run_metadata.get("project_name", _UNDEFINED_METADATA),
                     node_id=t.node_id,
-                    node_name=run_metadata["node_id_names_map"].get(
-                        t.node_id, "undefined"
+                    node_name=run_metadata.get("node_id_names_map", {}).get(
+                        t.node_id, _UNDEFINED_METADATA
                     ),
                     service_key=ServiceKey(t.image.name),
                     service_version=ServiceVersion(t.image.tag),
@@ -379,7 +384,9 @@ class BaseCompScheduler(ABC):
                 publish_service_started_metrics(
                     self.rabbitmq_client,
                     user_id=user_id,
-                    simcore_user_agent=run_metadata["simcore_user_agent"],
+                    simcore_user_agent=run_metadata.get(
+                        "simcore_user_agent", UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+                    ),
                     task=t,
                 )
                 for t in tasks
