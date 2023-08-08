@@ -237,6 +237,8 @@ async def _generate_tasks_list_from_project(
             node_class=to_node_class(node.key),
             progress=task_progress,
             last_heartbeat=None,
+            created=arrow.utcnow().datetime,
+            modified=arrow.utcnow().datetime,
         )
 
         list_comp_tasks.append(task_db)
@@ -330,7 +332,9 @@ class CompTasksRepository(BaseRepository):
             # NOTE: an exception to this is when a frontend service changes its output since there is no node_ports, the UPDATE must be done here.
             inserted_comp_tasks_db: list[CompTaskAtDB] = []
             for comp_task_db in list_of_comp_tasks_in_project:
-                insert_stmt = insert(comp_tasks).values(**comp_task_db.to_db_model())
+                insert_stmt = insert(comp_tasks).values(
+                    **comp_task_db.to_db_model(exclude={"created", "modified"})
+                )
 
                 exclusion_rule = (
                     {"state", "progress"}
