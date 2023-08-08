@@ -226,6 +226,6 @@ class RabbitResourceTrackingStoppedMessage(RabbitResourceTrackingBaseMessage):
 
 RabbitResourceTrackingMessages = (
     RabbitResourceTrackingStartedMessage
-    | RabbitResourceTrackingHeartbeatMessage
     | RabbitResourceTrackingStoppedMessage
+    | RabbitResourceTrackingHeartbeatMessage
 )
