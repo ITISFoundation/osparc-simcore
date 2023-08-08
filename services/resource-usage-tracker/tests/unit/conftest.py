@@ -215,3 +215,12 @@ def disabled_tracker_background_task(mocker: MockerFixture) -> dict[str, mock.Mo
 async def mocked_redis_server(mocker: MockerFixture) -> None:
     mock_redis = FakeRedis()
     mocker.patch("redis.asyncio.from_url", return_value=mock_redis)
+
+
+@pytest.fixture
+def mocked_setup_rabbitmq(mocker: MockerFixture):
+    mocked_rabbitmq = mocker.patch(
+        "simcore_service_resource_usage_tracker.core.application.setup_rabbitmq",
+        autospec=True,
+    )
+    return mocked_rabbitmq

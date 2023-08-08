@@ -3,6 +3,8 @@
 # pylint:disable=redefined-outer-name
 
 
+from unittest import mock
+
 import pytest
 from fastapi import FastAPI
 from settings_library.rabbit import RabbitSettings
@@ -21,6 +23,7 @@ def test_rabbitmq_does_not_initialize_if_deactivated(
     disabled_prometheus: None,
     disabled_database: None,
     disabled_rabbitmq: None,
+    mocked_setup_rabbitmq: mock.Mock,
     mocked_redis_server: None,
     initialized_app: FastAPI,
 ):
@@ -34,6 +37,7 @@ def test_rabbitmq_initializes(
     disabled_prometheus: None,
     disabled_database: None,
     enabled_rabbitmq: RabbitSettings,
+    mocked_setup_rabbitmq: mock.Mock,
     mocked_redis_server: None,
     initialized_app: FastAPI,
 ):

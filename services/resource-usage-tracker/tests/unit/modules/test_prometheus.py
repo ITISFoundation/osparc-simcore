@@ -2,6 +2,8 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+from unittest import mock
+
 import asgi_lifespan
 import pytest
 from fastapi import FastAPI
@@ -30,6 +32,7 @@ def test_prometheus_does_not_initialize_if_deactivated(
     disabled_database: None,
     disabled_prometheus: None,
     disabled_rabbitmq: None,
+    mocked_setup_rabbitmq: mock.Mock,
     mocked_redis_server: None,
     initialized_app: FastAPI,
 ):
@@ -45,6 +48,7 @@ def test_mocked_prometheus_initialize(
     disabled_rabbitmq: None,
     mocked_prometheus: None,
     mocked_redis_server: None,
+    mocked_setup_rabbitmq: mock.Mock,
     initialized_app: FastAPI,
 ):
     assert get_prometheus_api_client(initialized_app)

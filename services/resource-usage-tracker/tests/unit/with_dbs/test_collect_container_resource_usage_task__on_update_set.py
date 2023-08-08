@@ -131,6 +131,7 @@ def project_uuid() -> ProjectID:
 async def test_collect_container_resource_usage_task(
     mocked_redis_server: None,
     mocked_prometheus: mock.MagicMock,
+    mocked_setup_rabbitmq: mock.MagicMock,
     mocked_prometheus_client_custom_query: mock.MagicMock,
     initialized_app: FastAPI,
     postgres_db: sa.engine.Engine,
