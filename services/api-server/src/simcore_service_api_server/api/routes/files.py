@@ -185,8 +185,8 @@ async def get_upload_links(
 ):
     assert request  # nosec
     file_meta: File = await File.create_from_name_and_size(
-        client_file.name,
-        client_file.size,
+        client_file.filename,
+        client_file.filesize,
         datetime.datetime.now(datetime.timezone.utc).isoformat(),
     )
     _, upload_links = await get_upload_links_from_s3(
@@ -198,7 +198,7 @@ async def get_upload_links(
         ),
         client_session=None,
         link_type=LinkType.PRESIGNED,
-        file_size=ByteSize(client_file.size),
+        file_size=ByteSize(client_file.filesize),
         is_directory=False,
     )
     return upload_links.urls

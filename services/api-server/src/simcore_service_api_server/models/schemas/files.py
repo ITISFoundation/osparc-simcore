@@ -17,6 +17,7 @@ class ClientFile(BaseModel):
 
     filename: ConstrainedStr = Field(..., description="File name")
     filesize: ByteSize = Field(..., description="File size in bytes")
+    checksum: str | None = Field(None, description="MD5 hash of the file's content")
 
 
 class File(BaseModel):
