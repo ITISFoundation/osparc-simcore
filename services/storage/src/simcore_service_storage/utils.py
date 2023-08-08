@@ -57,6 +57,7 @@ async def download_to_file_or_raise(
 
 
 def is_file_entry_valid(file_metadata: FileMetaData | FileMetaDataAtDB) -> bool:
+    """checks if the file_metadata is valid"""
     return (
         file_metadata.entity_tag is not None
         and file_metadata.file_size > 0
