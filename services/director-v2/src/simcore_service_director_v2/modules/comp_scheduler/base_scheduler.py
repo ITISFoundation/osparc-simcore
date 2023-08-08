@@ -66,16 +66,42 @@ _logger = logging.getLogger(__name__)
 
 _UNDEFINED_METADATA = "undefined"
 
+_Previous = CompTaskAtDB
+_Current = CompTaskAtDB
+
+
+async def _triage_changed_tasks(
+    changed_tasks: list[tuple[_Previous, _Current]]
+) -> tuple:
+    started_tasks = [
+        current
+        for previous, current in changed_tasks
+        if current.state in RUNNING_STATES
+        or (
+            previous.state in WAITING_FOR_START_STATES
+            and current.state in COMPLETED_STATES
+        )
+    ]
+
+    # NOTE: some tasks can be both started and completed since we might have the time they were running
+    completed_tasks = [
+        current for _, current in changed_tasks if current.state in COMPLETED_STATES
+    ]
+
+    waiting_for_resources_tasks = [
+        current
+        for previous, current in changed_tasks
+        if current.state in WAITING_FOR_START_STATES
+    ]
+
+    return (started_tasks, completed_tasks, waiting_for_resources_tasks)
+
 
 @dataclass(kw_only=True)
 class ScheduledPipelineParams:
     cluster_id: ClusterID
     run_metadata: RunMetadataDict
     mark_for_cancellation: bool = False
-
-
-_Previous = CompTaskAtDB
-_Current = CompTaskAtDB
 
 
 @dataclass
@@ -311,32 +337,6 @@ class BaseCompScheduler(ABC):
             if task.state is not backend_state
         ]
 
-    async def _triage_changed_tasks(
-        self, changed_tasks: list[tuple[_Previous, _Current]]
-    ) -> tuple:
-        started_tasks = [
-            current
-            for previous, current in changed_tasks
-            if current.state in RUNNING_STATES
-            or (
-                previous.state in WAITING_FOR_START_STATES
-                and current.state in COMPLETED_STATES
-            )
-        ]
-
-        # NOTE: some tasks can be both started and completed since we might have the time they were running
-        completed_tasks = [
-            current for _, current in changed_tasks if current.state in COMPLETED_STATES
-        ]
-
-        waiting_for_resources_tasks = [
-            current
-            for previous, current in changed_tasks
-            if current.state in WAITING_FOR_START_STATES
-        ]
-
-        return (started_tasks, completed_tasks, waiting_for_resources_tasks)
-
     async def _process_started_tasks(
         self,
         tasks: list[CompTaskAtDB],
@@ -447,7 +447,7 @@ class BaseCompScheduler(ABC):
             tasks_started,
             tasks_stopped,
             tasks_reverted,
-        ) = await self._triage_changed_tasks(tasks_with_changed_states)
+        ) = await _triage_changed_tasks(tasks_with_changed_states)
 
         # now process the tasks
         if tasks_started:
