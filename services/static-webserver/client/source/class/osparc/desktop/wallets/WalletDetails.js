@@ -109,7 +109,7 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
 
     __updateWallet: function(win, button, walletEditor) {
       const walletId = walletEditor.getWalletId();
-      const name = walletEditor.getLabel();
+      const name = walletEditor.getName();
       const description = walletEditor.getDescription();
       const thumbnail = walletEditor.getThumbnail();
       const params = {
@@ -129,9 +129,8 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
           osparc.store.Store.getInstance().invalidate("wallets");
           const store = osparc.store.Store.getInstance();
           store.reloadWallets();
-          // OM: Check this
           this.__walletModel.set({
-            label: name,
+            name: name,
             description: description,
             thumbnail: thumbnail || null
           });
