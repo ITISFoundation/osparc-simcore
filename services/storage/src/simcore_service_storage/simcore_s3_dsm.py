@@ -395,69 +395,81 @@ class SimcoreS3DataManager(BaseDataManager):
         3. Raises FileNotFoundError if the file does not exist
         4. Raises FileAccessRightError if the user does not have access to the file
         """
-
-        async def _ensure_access_rights(
-            conn: SAConnection, storage_file_id: StorageFileID
-        ) -> None:
-            can: AccessRights | None = await get_file_access_rights(
-                conn, user_id, storage_file_id
-            )
-            if not can.read:
-                # NOTE: this is tricky. A user with read access can download and data!
-                # If write permission would be required, then shared projects as views cannot
-                # recover data in nodes (e.g. jupyter cannot pull work data)
-                #
-                raise FileAccessRightError(access_right="read", file_id=storage_file_id)
-
-        async def _get_link(s3_file_id: SimcoreS3FileID) -> AnyUrl:
-            link: AnyUrl = parse_obj_as(
-                AnyUrl,
-                f"s3://{self.simcore_bucket_name}/{urllib.parse.quote(s3_file_id)}",
-            )
-            if link_type == LinkType.PRESIGNED:
-                link = await get_s3_client(
-                    self.app
-                ).create_single_presigned_download_link(
-                    self.simcore_bucket_name,
-                    s3_file_id,
-                    self.settings.STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS,
-                )
-
-            return link
-
-        async def _get_link_for_file_fmd(conn: SAConnection) -> AnyUrl:
-            # 1. the file_id maps 1:1 to `file_meta_data`
-            await _ensure_access_rights(conn, file_id)
-
-            fmd = await db_file_meta_data.get(
-                conn, parse_obj_as(SimcoreS3FileID, file_id)
-            )
-            if not is_file_entry_valid(fmd):
-                # try lazy update
-                fmd = await self._update_database_from_storage(conn, fmd)
-
-            return await _get_link(fmd.object_name)
-
-        async def _get_link_for_directory_fmd(
-            conn: SAConnection, directory_file_id: SimcoreS3FileID
-        ) -> AnyUrl:
-            # 2. the file_id represents a file inside a directory
-            await _ensure_access_rights(conn, directory_file_id)
-            if not await get_s3_client(self.app).file_exists(
-                self.simcore_bucket_name, s3_object=f"{file_id}"
-            ):
-                raise S3KeyNotFoundError(key=file_id, bucket=self.simcore_bucket_name)
-            return await _get_link(parse_obj_as(SimcoreS3FileID, file_id))
-
         async with self.engine.acquire() as conn:
             directory_file_id: SimcoreS3FileID | None = await get_directory_file_id(
                 conn, file_id
             )
             return (
-                await _get_link_for_directory_fmd(conn, directory_file_id)
+                await self._get_link_for_directory_fmd(
+                    conn, user_id, directory_file_id, file_id, link_type
+                )
                 if directory_file_id
-                else await _get_link_for_file_fmd(conn)
+                else await self._get_link_for_file_fmd(
+                    conn, user_id, file_id, link_type
+                )
             )
+
+    async def __ensure_read_access_rights(
+        self, conn: SAConnection, user_id: UserID, storage_file_id: StorageFileID
+    ) -> None:
+        can: AccessRights | None = await get_file_access_rights(
+            conn, user_id, storage_file_id
+        )
+        if not can.read:
+            # NOTE: this is tricky. A user with read access can download and data!
+            # If write permission would be required, then shared projects as views cannot
+            # recover data in nodes (e.g. jupyter cannot pull work data)
+            #
+            raise FileAccessRightError(access_right="read", file_id=storage_file_id)
+
+    async def __get_link(
+        self, s3_file_id: SimcoreS3FileID, link_type: LinkType
+    ) -> AnyUrl:
+        link: AnyUrl = parse_obj_as(
+            AnyUrl,
+            f"s3://{self.simcore_bucket_name}/{urllib.parse.quote(s3_file_id)}",
+        )
+        if link_type == LinkType.PRESIGNED:
+            link = await get_s3_client(self.app).create_single_presigned_download_link(
+                self.simcore_bucket_name,
+                s3_file_id,
+                self.settings.STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS,
+            )
+
+        return link
+
+    async def _get_link_for_file_fmd(
+        self,
+        conn: SAConnection,
+        user_id: UserID,
+        file_id: StorageFileID,
+        link_type: LinkType,
+    ) -> AnyUrl:
+        # 1. the file_id maps 1:1 to `file_meta_data`
+        await self.__ensure_read_access_rights(conn, user_id, file_id)
+
+        fmd = await db_file_meta_data.get(conn, parse_obj_as(SimcoreS3FileID, file_id))
+        if not is_file_entry_valid(fmd):
+            # try lazy update
+            fmd = await self._update_database_from_storage(conn, fmd)
+
+        return await self.__get_link(fmd.object_name, link_type)
+
+    async def _get_link_for_directory_fmd(
+        self,
+        conn: SAConnection,
+        user_id: UserID,
+        directory_file_id: SimcoreS3FileID,
+        file_id: StorageFileID,
+        link_type: LinkType,
+    ) -> AnyUrl:
+        # 2. the file_id represents a file inside a directory
+        await self.__ensure_read_access_rights(conn, user_id, directory_file_id)
+        if not await get_s3_client(self.app).file_exists(
+            self.simcore_bucket_name, s3_object=f"{file_id}"
+        ):
+            raise S3KeyNotFoundError(key=file_id, bucket=self.simcore_bucket_name)
+        return await self.__get_link(parse_obj_as(SimcoreS3FileID, file_id), link_type)
 
     async def delete_file(self, user_id: UserID, file_id: StorageFileID):
         async with self.engine.acquire() as conn, conn.begin():
