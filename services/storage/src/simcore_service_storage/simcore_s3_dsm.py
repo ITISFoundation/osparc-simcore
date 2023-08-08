@@ -380,7 +380,7 @@ class SimcoreS3DataManager(BaseDataManager):
             assert fmd  # nosec
             return convert_db_to_model(fmd)
 
-    async def create_file_download_link(  # noqa: C901
+    async def create_file_download_link(
         self, user_id: UserID, file_id: StorageFileID, link_type: LinkType
     ) -> AnyUrl:
         """
@@ -391,15 +391,6 @@ class SimcoreS3DataManager(BaseDataManager):
         3. Raises FileNotFoundError if the file does not exist
         4. Raises FileAccessRightError if the user does not have access to the file
         """
-
-        async def _get_fmd(
-            conn: SAConnection, s3_file_id: StorageFileID
-        ) -> FileMetaDataAtDB | None:
-            with suppress(FileMetaDataNotFoundError):
-                return await db_file_meta_data.get(
-                    conn, parse_obj_as(SimcoreS3FileID, s3_file_id)
-                )
-            return None
 
         async def _ensure_access_rights(
             conn: SAConnection, storage_file_id: StorageFileID
@@ -414,22 +405,36 @@ class SimcoreS3DataManager(BaseDataManager):
                 #
                 raise FileAccessRightError(access_right="read", file_id=storage_file_id)
 
-        async def _get_directory_objects(
-            conn: SAConnection,
-        ) -> tuple[SimcoreS3FileID, FileMetaDataAtDB] | tuple[None, None]:
-            # if the file_meta_data is not present it could be a directory
-            provided_file_id_fmd = await _get_fmd(conn, file_id)
-            if provided_file_id_fmd is None and (
-                directory_file_id_str := get_simcore_directory(file_id)
-            ):
-                directory_file_id = parse_obj_as(
-                    SimcoreS3FileID, directory_file_id_str.rstrip("/")
-                )
+        async def _get_directory_file_id(conn: SAConnection) -> SimcoreS3FileID | None:
+            """returns the containing file's directory_id if the entry exists
+            in the file_meta_data table
+            """
 
-                directory_file_id_fmd = await _get_fmd(conn, directory_file_id)
-                if directory_file_id_fmd:
-                    return directory_file_id, directory_file_id_fmd
-            return None, None
+            async def _get_fmd(
+                conn: SAConnection, s3_file_id: StorageFileID
+            ) -> FileMetaDataAtDB | None:
+                with suppress(FileMetaDataNotFoundError):
+                    return await db_file_meta_data.get(
+                        conn, parse_obj_as(SimcoreS3FileID, s3_file_id)
+                    )
+                return None
+
+            provided_file_id_fmd = await _get_fmd(conn, file_id)
+            if provided_file_id_fmd:
+                # file_meta_data exists it is not a directory
+                return None
+
+            directory_file_id_str: str = get_simcore_directory(file_id)
+            if directory_file_id_str == "":
+                # could not extract a directory name from the provided path
+                return None
+
+            directory_file_id = parse_obj_as(
+                SimcoreS3FileID, directory_file_id_str.rstrip("/")
+            )
+            directory_file_id_fmd = await _get_fmd(conn, directory_file_id)
+
+            return directory_file_id if directory_file_id_fmd else None
 
         async def _format_link(s3_file_id: SimcoreS3FileID) -> AnyUrl:
             link: AnyUrl = parse_obj_as(
@@ -449,11 +454,9 @@ class SimcoreS3DataManager(BaseDataManager):
 
         async with self.engine.acquire() as conn:
             # if the file_meta_data is not present it could be a directory
-            directory_file_id, directory_file_id_fmd = await _get_directory_objects(
-                conn
-            )
+            directory_file_id = await _get_directory_file_id(conn)
 
-            if directory_file_id and directory_file_id_fmd:
+            if directory_file_id:
                 # the file can be inside a `file_meta_data` directory entry
                 await _ensure_access_rights(conn, directory_file_id)
                 if not await get_s3_client(self.app).file_exists(
