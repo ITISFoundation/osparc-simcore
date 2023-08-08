@@ -319,6 +319,7 @@ class BaseCompScheduler(ABC):
             )
         ]
 
+        # NOTE: some tasks can be both started and completed since we might have the time they were running
         completed_tasks = [
             current for _, current in changed_tasks if current.state in COMPLETED_STATES
         ]
@@ -329,9 +330,6 @@ class BaseCompScheduler(ABC):
             if current.state in WAITING_FOR_START_STATES
         ]
 
-        assert len(changed_tasks) == (
-            len(started_tasks) + len(completed_tasks) + len(waiting_for_resources_tasks)
-        )  # nosec
         return (started_tasks, completed_tasks, waiting_for_resources_tasks)
 
     async def _process_started_tasks(
