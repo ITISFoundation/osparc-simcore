@@ -3,7 +3,7 @@ import logging
 from typing import Awaitable, Callable
 
 from fastapi import FastAPI
-from models_library.rabbitmq_messages import _RabbitResourceTrackingBaseMessage
+from models_library.rabbitmq_messages import RabbitResourceTrackingBaseMessage
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient, RabbitSettings
 
@@ -13,8 +13,10 @@ from .modules.rabbitmq import get_rabbitmq_client
 _logger = logging.getLogger(__name__)
 
 
-async def _process_message(app: FastAPI, data: bytes) -> bool:
-    # TODO: parse the message and process it
+async def _process_message(
+    app: FastAPI, data: bytes
+) -> bool:  # pylint: disable=unused-argument
+    # NOTE: parse the message and process it
 
     _logger.info("Received message")
     return True
@@ -24,12 +26,10 @@ async def _subscribe_to_rabbitmq(app) -> None:
     with log_context(_logger, logging.INFO, msg="Subscribing to rabbitmq channel"):
         rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
         await rabbit_client.subscribe(
-            _RabbitResourceTrackingBaseMessage.get_channel_name(),
+            RabbitResourceTrackingBaseMessage.get_channel_name(),
             message_handler=functools.partial(_process_message, app),
             exclusive_queue=False,
         )
-
-    return
 
 
 async def _unsubscribe_from_rabbitmq(app) -> None:

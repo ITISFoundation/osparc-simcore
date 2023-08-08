@@ -53,10 +53,6 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_redis(app)
     setup_rabbitmq(app)
 
-    # NOTE: This task currently runs in the background and collects data from prometheus for all
-    # jupyter smash services. This is currently not needed.
-    # setup_background_task(app)
-
     setup_resource_tracker(app)
 
     # EVENTS
