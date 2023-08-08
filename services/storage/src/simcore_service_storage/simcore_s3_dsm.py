@@ -409,8 +409,9 @@ class SimcoreS3DataManager(BaseDataManager):
                 )
             )
 
+    @staticmethod
     async def __ensure_read_access_rights(
-        self, conn: SAConnection, user_id: UserID, storage_file_id: StorageFileID
+        conn: SAConnection, user_id: UserID, storage_file_id: StorageFileID
     ) -> None:
         can: AccessRights | None = await get_file_access_rights(
             conn, user_id, storage_file_id
