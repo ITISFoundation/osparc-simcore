@@ -436,7 +436,7 @@ class SimcoreS3DataManager(BaseDataManager):
 
             return directory_file_id if directory_file_id_fmd else None
 
-        async def _format_link(s3_file_id: SimcoreS3FileID) -> AnyUrl:
+        async def _get_link(s3_file_id: SimcoreS3FileID) -> AnyUrl:
             link: AnyUrl = parse_obj_as(
                 AnyUrl,
                 f"s3://{self.simcore_bucket_name}/{urllib.parse.quote(s3_file_id)}",
@@ -452,22 +452,8 @@ class SimcoreS3DataManager(BaseDataManager):
 
             return link
 
-        async with self.engine.acquire() as conn:
-            # if the file_meta_data is not present it could be a directory
-            directory_file_id = await _get_directory_file_id(conn)
-
-            if directory_file_id:
-                # the file can be inside a `file_meta_data` directory entry
-                await _ensure_access_rights(conn, directory_file_id)
-                if not await get_s3_client(self.app).file_exists(
-                    self.simcore_bucket_name, s3_object=f"{file_id}"
-                ):
-                    raise S3KeyNotFoundError(
-                        key=file_id, bucket=self.simcore_bucket_name
-                    )
-                return await _format_link(parse_obj_as(SimcoreS3FileID, file_id))
-
-            # (legacy) the file can be listed in `file_meta_data` as a file entry
+        async def _get_link_for_file(conn: SAConnection) -> AnyUrl:
+            # 1. the file_id maps 1:1 to `file_meta_data`
             await _ensure_access_rights(conn, file_id)
 
             fmd = await db_file_meta_data.get(
@@ -477,7 +463,28 @@ class SimcoreS3DataManager(BaseDataManager):
                 # try lazy update
                 fmd = await self._update_database_from_storage(conn, fmd)
 
-            return await _format_link(fmd.object_name)
+            return await _get_link(fmd.object_name)
+
+        async def _get_link_for_directory(
+            conn: SAConnection, directory_file_id: SimcoreS3FileID
+        ) -> AnyUrl:
+            # 2. the file_id represents a file inside a directory
+            await _ensure_access_rights(conn, directory_file_id)
+            if not await get_s3_client(self.app).file_exists(
+                self.simcore_bucket_name, s3_object=f"{file_id}"
+            ):
+                raise S3KeyNotFoundError(key=file_id, bucket=self.simcore_bucket_name)
+            return await _get_link(parse_obj_as(SimcoreS3FileID, file_id))
+
+        async with self.engine.acquire() as conn:
+            directory_file_id: SimcoreS3FileID | None = await _get_directory_file_id(
+                conn
+            )
+            return (
+                await _get_link_for_directory(conn, directory_file_id)
+                if directory_file_id
+                else await _get_link_for_file(conn)
+            )
 
     async def delete_file(self, user_id: UserID, file_id: StorageFileID):
         async with self.engine.acquire() as conn, conn.begin():
