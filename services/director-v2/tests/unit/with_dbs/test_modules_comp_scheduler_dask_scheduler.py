@@ -30,6 +30,7 @@ from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import (
     InstrumentationRabbitMessage,
     RabbitResourceTrackingStartedMessage,
+    RabbitResourceTrackingStoppedMessage,
     _RabbitResourceTrackingBaseMessage,
 )
 from pydantic import parse_obj_as
@@ -641,9 +642,18 @@ async def test_proper_pipeline_is_scheduled(
         expected_state=RunningState.SUCCESS,
         expected_progress=1,
     )
-    assert (
-        False
-    ), "Check the rabbitmq messages here!!, there should be metrics and resource tracking stop"
+    messages = await _assert_message_received(
+        instrumentation_rabbit_client_parser, 1, InstrumentationRabbitMessage.parse_raw
+    )
+    assert messages[0].metrics == "service_stopped"
+    assert messages[0].service_uuid == exp_started_task.node_id
+    messages = await _assert_message_received(
+        resource_tracking_rabbit_client_parser,
+        1,
+        RabbitResourceTrackingStoppedMessage.parse_raw,
+    )
+    assert messages[0].node_id == exp_started_task.node_id
+
     completed_tasks = [exp_started_task]
     next_pending_task = published_project.tasks[2]
     expected_pending_tasks.append(next_pending_task)
@@ -724,9 +734,17 @@ async def test_proper_pipeline_is_scheduled(
     )
     mocked_dask_client.get_tasks_status.reset_mock()
     mocked_dask_client.get_task_result.assert_not_called()
-    assert (
-        False
-    ), "Check the rabbitmq messages here!!, there should be metrics and resource tracking"
+    messages = await _assert_message_received(
+        instrumentation_rabbit_client_parser, 1, InstrumentationRabbitMessage.parse_raw
+    )
+    assert messages[0].metrics == "service_started"
+    assert messages[0].service_uuid == exp_started_task.node_id
+    messages = await _assert_message_received(
+        resource_tracking_rabbit_client_parser,
+        1,
+        RabbitResourceTrackingStartedMessage.parse_raw,
+    )
+    assert messages[0].node_id == exp_started_task.node_id
 
     # -------------------------------------------------------------------------------
     # 7. the task fails
@@ -758,9 +776,17 @@ async def test_proper_pipeline_is_scheduled(
     mocked_dask_client.get_task_result.reset_mock()
     mocked_parse_output_data_fct.assert_not_called()
     expected_pending_tasks.remove(exp_started_task)
-    assert (
-        False
-    ), "Check the rabbitmq messages here!!, there should be metrics and resource tracking"
+    messages = await _assert_message_received(
+        instrumentation_rabbit_client_parser, 1, InstrumentationRabbitMessage.parse_raw
+    )
+    assert messages[0].metrics == "service_stopped"
+    assert messages[0].service_uuid == exp_started_task.node_id
+    messages = await _assert_message_received(
+        resource_tracking_rabbit_client_parser,
+        1,
+        RabbitResourceTrackingStoppedMessage.parse_raw,
+    )
+    assert messages[0].node_id == exp_started_task.node_id
 
     # -------------------------------------------------------------------------------
     # 8. the last task shall succeed
@@ -793,9 +819,17 @@ async def test_proper_pipeline_is_scheduled(
         [p.job_id for p in expected_pending_tasks]
     )
     mocked_dask_client.get_task_result.assert_called_once_with(exp_started_task.job_id)
-    assert (
-        False
-    ), "Check the rabbitmq messages here!!, there should be metrics and resource tracking"
+    messages = await _assert_message_received(
+        instrumentation_rabbit_client_parser, 1, InstrumentationRabbitMessage.parse_raw
+    )
+    assert messages[0].metrics == "service_stopped"
+    assert messages[0].service_uuid == exp_started_task.node_id
+    messages = await _assert_message_received(
+        resource_tracking_rabbit_client_parser,
+        1,
+        RabbitResourceTrackingStoppedMessage.parse_raw,
+    )
+    assert messages[0].node_id == exp_started_task.node_id
 
     # the scheduled pipeline shall be removed
     assert scheduler.scheduled_pipelines == {}
