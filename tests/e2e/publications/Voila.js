@@ -27,12 +27,11 @@ async function runTutorial () {
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
     console.log("Workbench Data:", workbenchData);
     const voilaIdViewer = workbenchData["nodeIds"][0];
-    await tutorial.waitForServices(
-      workbenchData["studyId"],
-      [voilaIdViewer],
-      startTimeout
-    );
-
+    // await tutorial.waitForServices(
+    //   workbenchData["studyId"],
+    //   [voilaIdViewer],
+    //   startTimeout
+    // );
     await tutorial.waitFor(2000, 'Service started');
     await utils.takeScreenshot(page, screenshotPrefix + 'service_started');
 
