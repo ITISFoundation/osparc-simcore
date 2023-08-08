@@ -873,6 +873,9 @@ async def test_download_file(
     assert filecmp.cmp(uploaded_file, dest_file)
 
 
+# TODO: also add a test for access rights
+
+
 @pytest.mark.parametrize(
     "file_size",
     [
