@@ -879,9 +879,6 @@ async def test_download_file(
     )
 
 
-# TODO: also add a test for access rights
-
-
 async def test_download_file_cases(
     client: TestClient,
     file_size: ByteSize,
@@ -1007,6 +1004,39 @@ async def test_download_file_cases(
     data, error = await assert_status(response, web.HTTPNotFound)
     assert data is None
     assert missing_s3_file_id in error["message"]
+
+
+async def test_download_file_access_rights(
+    client: TestClient,
+    location_id: int,
+    user_id: UserID,
+    storage_s3_client: StorageS3Client,
+    storage_s3_bucket: S3BucketName,
+    faker: Faker,
+):
+    assert client.app
+
+    # project_id does not exist
+    missing_file = parse_obj_as(
+        SimcoreS3FileID, f"{faker.uuid4()}/{faker.uuid4()}/project_id_is_missing"
+    )
+    assert (
+        await storage_s3_client.file_exists(storage_s3_bucket, s3_object=missing_file)
+        is False
+    )
+
+    download_url = (
+        client.app.router["download_file"]
+        .url_for(
+            location_id=f"{location_id}",
+            file_id=urllib.parse.quote(missing_file, safe=""),
+        )
+        .with_query(user_id=user_id)
+    )
+    response = await client.get(f"{download_url}")
+    data, error = await assert_status(response, web.HTTPForbidden)
+    assert data is None
+    assert "Insufficient access rights" in error["message"]
 
 
 @pytest.mark.parametrize(
