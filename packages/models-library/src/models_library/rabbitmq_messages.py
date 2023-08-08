@@ -222,3 +222,10 @@ class RabbitResourceTrackingStoppedMessage(RabbitResourceTrackingBaseMessage):
         ...,
         description=f"{SimcorePlatformStatus.BAD} if simcore failed to run the service properly",
     )
+
+
+RabbitResourceTrackingMessages = (
+    RabbitResourceTrackingStartedMessage
+    | RabbitResourceTrackingHeartbeatMessage
+    | RabbitResourceTrackingStoppedMessage
+)
