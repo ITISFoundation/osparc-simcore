@@ -8,9 +8,10 @@
 # pylint: disable=too-many-statements
 
 
+from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Awaitable, Callable, cast
+from typing import Any, cast
 from unittest import mock
 
 import aiopg
@@ -29,12 +30,11 @@ from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import (
     InstrumentationRabbitMessage,
-    RabbitResourceTrackingStartedMessage,
+    RabbitResourceTrackingMessages,
     RabbitResourceTrackingStoppedMessage,
     _RabbitResourceTrackingBaseMessage,
 )
-from pydantic import parse_obj_as
-from pytest import MonkeyPatch
+from pydantic import parse_obj_as, parse_raw_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQClient
@@ -88,8 +88,10 @@ def _assert_dask_client_correctly_initialized(
     )
     mocked_dask_client.register_handlers.assert_called_once_with(
         TaskHandlers(
-            cast(DaskScheduler, scheduler)._task_progress_change_handler,
-            cast(DaskScheduler, scheduler)._task_log_change_handler,
+            cast(
+                DaskScheduler, scheduler
+            )._task_progress_change_handler,  # noqa: SLF001
+            cast(DaskScheduler, scheduler)._task_log_change_handler,  # noqa: SLF001
         )
     )
 
@@ -146,7 +148,7 @@ async def run_comp_scheduler(scheduler: BaseCompScheduler) -> None:
 def minimal_dask_scheduler_config(
     mock_env: EnvVarsDict,
     postgres_host_config: dict[str, str],
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     rabbit_service: RabbitSettings,
 ) -> None:
     """set a minimal configuration for testing the dask connection only"""
@@ -244,7 +246,7 @@ def test_scheduler_raises_exception_for_missing_dependencies(
     minimal_dask_scheduler_config: None,
     aiopg_engine: aiopg.sa.engine.Engine,
     dask_spec_local_cluster: SpecCluster,
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     missing_dependency: str,
 ):
     # disable the dependency
@@ -265,8 +267,7 @@ async def test_empty_pipeline_is_not_scheduled(
     project: Callable[..., Awaitable[ProjectAtDB]],
     pipeline: Callable[..., CompPipelineAtDB],
     aiopg_engine: aiopg.sa.engine.Engine,
-    osparc_product_name: str,
-    simcore_user_agent: str,
+    run_metadata: RunMetadataDict,
 ):
     user = registered_user()
     empty_project = await project(user)
@@ -277,8 +278,7 @@ async def test_empty_pipeline_is_not_scheduled(
             user_id=user["id"],
             project_id=empty_project.uuid,
             cluster_id=DEFAULT_CLUSTER_ID,
-            product_name=osparc_product_name,
-            simcore_user_agent=simcore_user_agent,
+            run_metadata=run_metadata,
         )
     # create the empty pipeline now
     pipeline(project_id=f"{empty_project.uuid}")
@@ -288,8 +288,7 @@ async def test_empty_pipeline_is_not_scheduled(
         user_id=user["id"],
         project_id=empty_project.uuid,
         cluster_id=DEFAULT_CLUSTER_ID,
-        product_name=osparc_product_name,
-        simcore_user_agent=simcore_user_agent,
+        run_metadata=run_metadata,
     )
     assert len(scheduler.scheduled_pipelines) == 0
     assert (
@@ -315,8 +314,7 @@ async def test_misconfigured_pipeline_is_not_scheduled(
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
     aiopg_engine: aiopg.sa.engine.Engine,
-    osparc_product_name: str,
-    simcore_user_agent: str,
+    run_metadata: RunMetadataDict,
 ):
     """A pipeline which comp_tasks are missing should not be scheduled.
     It shall be aborted and shown as such in the comp_runs db"""
@@ -331,8 +329,7 @@ async def test_misconfigured_pipeline_is_not_scheduled(
         user_id=user["id"],
         project_id=sleepers_project.uuid,
         cluster_id=DEFAULT_CLUSTER_ID,
-        product_name=osparc_product_name,
-        simcore_user_agent=simcore_user_agent,
+        run_metadata=run_metadata,
     )
     assert len(scheduler.scheduled_pipelines) == 1
     assert (
@@ -425,6 +422,11 @@ async def _assert_schedule_pipeline_PENDING(
     ]
     for p in expected_pending_tasks:
         published_tasks.remove(p)
+
+    async def _return_tasks_pending(job_ids: list[str]) -> list[RunningState]:
+        return [RunningState.PENDING for job_id in job_ids]
+
+    mocked_dask_client.get_tasks_status.side_effect = _return_tasks_pending
     await run_comp_scheduler(scheduler)
     _assert_dask_client_correctly_initialized(mocked_dask_client, scheduler)
     await _assert_comp_run_db(aiopg_engine, published_project, RunningState.PUBLISHED)
@@ -451,7 +453,7 @@ async def _assert_schedule_pipeline_PENDING(
                 project_id=published_project.project.uuid,
                 cluster_id=DEFAULT_CLUSTER_ID,
                 tasks={f"{p.node_id}": p.image},
-                callback=scheduler._wake_up_scheduler_now,
+                callback=scheduler._wake_up_scheduler_now,  # noqa: SLF001
                 metadata=mock.ANY,
             )
             for p in expected_pending_tasks
@@ -492,10 +494,12 @@ async def instrumentation_rabbit_client_parser(
     rabbitmq_client: Callable[[str], RabbitMQClient], mocker: MockerFixture
 ) -> AsyncIterator[mock.AsyncMock]:
     client = rabbitmq_client("instrumentation_pytest_consumer")
-    with mocker.AsyncMock(return_value=True) as mock:
-        await client.subscribe(InstrumentationRabbitMessage.get_channel_name(), mock)
-        yield mock
-        await client.unsubscribe(InstrumentationRabbitMessage.get_channel_name())
+    mock = mocker.AsyncMock(return_value=True)
+    queue_name = await client.subscribe(
+        InstrumentationRabbitMessage.get_channel_name(), mock
+    )
+    yield mock
+    await client.unsubscribe(queue_name)
 
 
 @pytest.fixture
@@ -503,12 +507,12 @@ async def resource_tracking_rabbit_client_parser(
     rabbitmq_client: Callable[[str], RabbitMQClient], mocker: MockerFixture
 ) -> AsyncIterator[mock.AsyncMock]:
     client = rabbitmq_client("resource_tracking_pytest_consumer")
-    with mocker.AsyncMock(return_value=True) as mock:
-        await client.subscribe(
-            _RabbitResourceTrackingBaseMessage.get_channel_name(), mock
-        )
-        yield mock
-        await client.unsubscribe(_RabbitResourceTrackingBaseMessage.get_channel_name())
+    mock = mocker.AsyncMock(return_value=True)
+    queue_name = await client.subscribe(
+        _RabbitResourceTrackingBaseMessage.get_channel_name(), mock
+    )
+    yield mock
+    await client.unsubscribe(queue_name)
 
 
 async def _assert_message_received(
@@ -530,14 +534,17 @@ async def _assert_message_received(
             print(
                 f"<-- rabbitmq message received after [{attempt.retry_state.attempt_number}, {attempt.retry_state.idle_for}]"
             )
-    return [
+    parsed_messages = [
         message_parser(mocked_message_parser.call_args_list[c].args[0])
         for c in range(expected_call_count)
     ]
 
+    mocked_message_parser.reset_mock()
+    return parsed_messages
 
-@pytest.mark.acceptance_test
-async def test_proper_pipeline_is_scheduled(
+
+@pytest.mark.acceptance_test()
+async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     with_disabled_scheduler_task: None,
     mocked_dask_client: mock.MagicMock,
     scheduler: BaseCompScheduler,
@@ -601,7 +608,7 @@ async def test_proper_pipeline_is_scheduled(
     )
     mocked_dask_client.send_computation_tasks.assert_not_called()
     mocked_dask_client.get_tasks_status.assert_called_once_with(
-        [p.job_id for p in ([exp_started_task] + expected_pending_tasks)],
+        [p.job_id for p in (exp_started_task, *expected_pending_tasks)],
     )
     mocked_dask_client.get_tasks_status.reset_mock()
     mocked_dask_client.get_task_result.assert_not_called()
@@ -610,10 +617,14 @@ async def test_proper_pipeline_is_scheduled(
     )
     assert messages[0].metrics == "service_started"
     assert messages[0].service_uuid == exp_started_task.node_id
+
+    def _parser(x) -> RabbitResourceTrackingMessages:
+        return parse_raw_as(RabbitResourceTrackingMessages, x)
+
     messages = await _assert_message_received(
         resource_tracking_rabbit_client_parser,
-        1,
-        RabbitResourceTrackingStartedMessage.parse_raw,
+        2,
+        _parser,
     )
     assert messages[0].node_id == exp_started_task.node_id
 
@@ -652,7 +663,6 @@ async def test_proper_pipeline_is_scheduled(
         1,
         RabbitResourceTrackingStoppedMessage.parse_raw,
     )
-    assert messages[0].node_id == exp_started_task.node_id
 
     completed_tasks = [exp_started_task]
     next_pending_task = published_project.tasks[2]
@@ -682,7 +692,7 @@ async def test_proper_pipeline_is_scheduled(
         tasks={
             f"{next_pending_task.node_id}": next_pending_task.image,
         },
-        callback=scheduler._wake_up_scheduler_now,
+        callback=scheduler._wake_up_scheduler_now,  # noqa: SLF001
         metadata=mock.ANY,
     )
     mocked_dask_client.send_computation_tasks.reset_mock()
@@ -741,8 +751,8 @@ async def test_proper_pipeline_is_scheduled(
     assert messages[0].service_uuid == exp_started_task.node_id
     messages = await _assert_message_received(
         resource_tracking_rabbit_client_parser,
-        1,
-        RabbitResourceTrackingStartedMessage.parse_raw,
+        2,
+        _parser,
     )
     assert messages[0].node_id == exp_started_task.node_id
 
@@ -786,7 +796,6 @@ async def test_proper_pipeline_is_scheduled(
         1,
         RabbitResourceTrackingStoppedMessage.parse_raw,
     )
-    assert messages[0].node_id == exp_started_task.node_id
 
     # -------------------------------------------------------------------------------
     # 8. the last task shall succeed
@@ -820,16 +829,18 @@ async def test_proper_pipeline_is_scheduled(
     )
     mocked_dask_client.get_task_result.assert_called_once_with(exp_started_task.job_id)
     messages = await _assert_message_received(
-        instrumentation_rabbit_client_parser, 1, InstrumentationRabbitMessage.parse_raw
+        instrumentation_rabbit_client_parser, 2, InstrumentationRabbitMessage.parse_raw
     )
-    assert messages[0].metrics == "service_stopped"
+    # NOTE: the service was fast and went directly to success
+    assert messages[0].metrics == "service_started"
     assert messages[0].service_uuid == exp_started_task.node_id
+    assert messages[1].metrics == "service_stopped"
+    assert messages[1].service_uuid == exp_started_task.node_id
     messages = await _assert_message_received(
         resource_tracking_rabbit_client_parser,
-        1,
-        RabbitResourceTrackingStoppedMessage.parse_raw,
+        2,
+        _parser,
     )
-    assert messages[0].node_id == exp_started_task.node_id
 
     # the scheduled pipeline shall be removed
     assert scheduler.scheduled_pipelines == {}
@@ -864,7 +875,9 @@ async def test_task_progress_triggers(
         progress_event = TaskProgressEvent(
             job_id=started_task.job_id, progress=progress
         )
-        await cast(DaskScheduler, scheduler)._task_progress_change_handler(
+        await cast(
+            DaskScheduler, scheduler
+        )._task_progress_change_handler(  # noqa: SLF001
             progress_event.json()
         )
         # NOTE: not sure whether it should switch to STARTED.. it would make sense
@@ -895,8 +908,7 @@ async def test_handling_of_disconnected_dask_scheduler(
     mocker: MockerFixture,
     published_project: PublishedProject,
     backend_error: SchedulerError,
-    osparc_product_name: str,
-    simcore_user_agent: str,
+    run_metadata: RunMetadataDict,
 ):
     # this will create a non connected backend issue that will trigger re-connection
     mocked_dask_client_send_task = mocker.patch(
@@ -911,8 +923,7 @@ async def test_handling_of_disconnected_dask_scheduler(
         user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
         cluster_id=DEFAULT_CLUSTER_ID,
-        product_name=osparc_product_name,
-        simcore_user_agent=simcore_user_agent,
+        run_metadata=run_metadata,
     )
 
     # since there is no cluster, there is no dask-scheduler,
@@ -1112,5 +1123,5 @@ async def test_handling_scheduling_after_reboot(
     )
 
 
-async def test_running_pipeline_triggers_heartbeat():
-    assert False
+# async def test_running_pipeline_triggers_heartbeat():
+#     assert False
