@@ -13,7 +13,9 @@ from simcore_service_director_v2.models.comp_runs import CompRunsAtDB
 
 @pytest.mark.parametrize(
     "model_cls",
-    (CompRunsAtDB,),
+    [
+        CompRunsAtDB,
+    ],
 )
 def test_computation_run_model_examples(
     model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
@@ -26,7 +28,9 @@ def test_computation_run_model_examples(
 
 @pytest.mark.parametrize(
     "model_cls",
-    (CompRunsAtDB,),
+    [
+        CompRunsAtDB,
+    ],
 )
 def test_computation_run_model_with_run_result_value_field(
     model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
