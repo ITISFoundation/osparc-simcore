@@ -18,8 +18,9 @@ def setup(app: FastAPI) -> None:
             app.state.settings.RESOURCE_USAGE_TRACKER_RABBITMQ
         )
         if not settings:
-            logger.warning("Rabbit MQ client is de-activated in the settings")
-            return
+            raise ConfigurationError(
+                msg="Rabbit MQ client is de-activated in the settings"
+            )
         await wait_till_rabbitmq_responsive(settings.dsn)
         app.state.rabbitmq_client = RabbitMQClient(
             client_name="resource-usage-tracker", settings=settings
