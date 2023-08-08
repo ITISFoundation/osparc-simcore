@@ -71,17 +71,24 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
       const aAccessRights = a.getAccessRights();
       const bAccessRights = b.getAccessRights();
       const myGid = osparc.auth.Data.getInstance().getGroupId();
-      if (myGid in aAccessRights && myGid in bAccessRights) {
-        const sorted = osparc.component.share.Collaborators.sortByAccessRights(aAccessRights[myGid], bAccessRights[myGid]);
+      if (
+        aAccessRights &&
+        bAccessRights &&
+        aAccessRights.find(ar => ar["gid"] === myGid) &&
+        bAccessRights.find(ar => ar["gid"] === myGid)
+      ) {
+        const aAr = aAccessRights.find(ar => ar["gid"] === myGid);
+        const bAr = bAccessRights.find(ar => ar["gid"] === myGid);
+        const sorted = osparc.component.share.Collaborators.sortByAccessRights(aAr, bAr);
         if (sorted !== 0) {
           return sorted;
         }
-        if (("name" in a) && ("name" in b)) {
-          return a["name"].localeCompare(b["name"]);
+        if (("getName" in a) && ("getName" in b)) {
+          return a.getName().localeCompare(b.getName());
         }
         return 0;
       }
-      return -1;
+      return 0;
     }
   },
 
@@ -143,13 +150,12 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("walletId", "key", null, item, id);
           ctrl.bindProperty("walletId", "model", null, item, id);
+          ctrl.bindProperty("accessRights", "accessRights", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id);
           ctrl.bindProperty("description", "subtitle", null, item, id);
-          ctrl.bindProperty("accessRights", "accessRights", null, item, id);
-          ctrl.bindProperty("walletType", "walletType", null, item, id);
-          ctrl.bindProperty("credits", "credits", null, item, id);
-          ctrl.bindProperty("active", "active", null, item, id);
+          ctrl.bindProperty("creditsAvailable", "creditsAvailable", null, item, id);
+          ctrl.bindProperty("status", "status", null, item, id);
         },
         configureItem: item => {
           item.subscribeToFilterGroup("walletsList");
@@ -213,25 +219,30 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
       const name = walletEditor.getName();
       const description = walletEditor.getDescription();
       const thumbnail = walletEditor.getThumbnail();
-      const owner = osparc.auth.Data.getInstance().getUserId();
-      const accessRights = {};
-      accessRights[osparc.auth.Data.getInstance().getGroupId()] = osparc.desktop.wallets.MembersList.getDeleteAccess();
 
-      const newWalletData = osparc.data.Resources.dummy.newWalletData();
-      newWalletData.name = name;
-      newWalletData.description = description;
-      newWalletData.thumbnail = thumbnail;
-      newWalletData.owner = owner;
-      newWalletData.accessRights = accessRights;
-
-      const wallet = new osparc.data.model.Wallet(newWalletData);
-      const store = osparc.store.Store.getInstance();
-      store.getWallets().push(wallet);
-
-      button.setFetching(false);
-      win.close();
-
-      this.loadWallets();
+      const params = {
+        data: {
+          "name": name,
+          "description": description || null,
+          "thumbnail": thumbnail || null
+        }
+      };
+      osparc.data.Resources.fetch("wallets", "post", params)
+        .then(() => {
+          const store = osparc.store.Store.getInstance();
+          osparc.store.Store.getInstance().invalidate("wallets");
+          store.reloadWallets()
+            .then(() => this.loadWallets());
+        })
+        .catch(err => {
+          console.error(err);
+          const msg = err.message || this.tr("Something went wrong creating the Wallet");
+          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        })
+        .finally(() => {
+          button.setFetching(false);
+          win.close();
+        });
     },
 
     __updateWallet: function(win, button, walletEditor) {
@@ -244,11 +255,31 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
         const name = walletEditor.getName();
         const description = walletEditor.getDescription();
         const thumbnail = walletEditor.getThumbnail();
-        found.set({
-          name,
-          description,
-          thumbnail
-        });
+        const params = {
+          url: {
+            "walletId": walletId
+          },
+          data: {
+            "name": name,
+            "description": description || null,
+            "thumbnail": thumbnail || null
+          }
+        };
+        osparc.data.Resources.fetch("wallets", "put", params)
+          .then(() => {
+            osparc.store.Store.getInstance().invalidate("wallets");
+            store.reloadWallets()
+              .then(() => this.loadWallets());
+          })
+          .catch(err => {
+            console.error(err);
+            const msg = err.message || this.tr("Something went wrong updating the Wallet");
+            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          })
+          .finally(() => {
+            button.setFetching(false);
+            win.close();
+          });
       }
 
       button.setFetching(false);
