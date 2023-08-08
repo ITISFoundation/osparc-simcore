@@ -180,8 +180,8 @@ async def update_wallet(
     app: web.Application,
     wallet_id: WalletID,
     name: str,
-    description: str,
-    thumbnail: str,
+    description: str | None,
+    thumbnail: str | None,
     status: WalletStatus,
 ) -> WalletDB:
     async with get_database_engine(app).acquire() as conn:
