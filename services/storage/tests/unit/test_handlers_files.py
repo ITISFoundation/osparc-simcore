@@ -37,7 +37,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import AnyHttpUrl, ByteSize, parse_obj_as
+from pydantic import AnyHttpUrl, ByteSize, HttpUrl, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
@@ -829,13 +829,25 @@ async def test_upload_twice_and_fail_second_time_shall_keep_first_version(
     assert s3_metadata.size == file_size
 
 
-@pytest.mark.parametrize(
-    "file_size",
-    [
-        pytest.param(parse_obj_as(ByteSize, "1Mib")),
-    ],
-    ids=byte_size_ids,
-)
+@pytest.fixture
+def file_size() -> ByteSize:
+    return parse_obj_as(ByteSize, "1Mib")
+
+
+async def _assert_file_downloaded(
+    faker: Faker, tmp_path: Path, link: HttpUrl, uploaded_file: Path
+):
+    dest_file = tmp_path / faker.file_name()
+    async with ClientSession() as session:
+        response = await session.get(link)
+        response.raise_for_status()
+        with dest_file.open("wb") as fp:
+            fp.write(await response.read())
+    assert dest_file.exists()
+    # compare files
+    assert filecmp.cmp(uploaded_file, dest_file)
+
+
 async def test_download_file(
     client: TestClient,
     file_size: ByteSize,
@@ -861,28 +873,15 @@ async def test_download_file(
     assert not error
     assert data
     assert "link" in data
-    # now download the link from S3
-    dest_file = tmp_path / faker.file_name()
-    async with ClientSession() as session:
-        response = await session.get(data["link"])
-        response.raise_for_status()
-        with dest_file.open("wb") as fp:
-            fp.write(await response.read())
-    assert dest_file.exists()
-    # compare files
-    assert filecmp.cmp(uploaded_file, dest_file)
+
+    await _assert_file_downloaded(
+        faker, tmp_path, link=data["link"], uploaded_file=uploaded_file
+    )
 
 
 # TODO: also add a test for access rights
 
 
-@pytest.mark.parametrize(
-    "file_size",
-    [
-        pytest.param(parse_obj_as(ByteSize, "1")),
-    ],
-    ids=byte_size_ids,
-)
 async def test_download_file_cases(
     client: TestClient,
     file_size: ByteSize,
@@ -895,6 +894,8 @@ async def test_download_file_cases(
     create_file_of_size: Callable[[ByteSize, str | None], Path],
     storage_s3_client: StorageS3Client,
     storage_s3_bucket: S3BucketName,
+    tmp_path: Path,
+    faker: Faker,
 ):
     assert client.app
 
@@ -921,7 +922,9 @@ async def test_download_file_cases(
 
     # 2. file_meta_data entry corresponds to a file
     # upload a single file as a file_meta_data entry and check link
-    _, uploaded_file_uuid = await upload_file(file_size, "meta_data_entry_is_file.file")
+    uploaded_file, uploaded_file_uuid = await upload_file(
+        file_size, "meta_data_entry_is_file.file"
+    )
     assert (
         await storage_s3_client.file_exists(
             storage_s3_bucket, s3_object=uploaded_file_uuid
@@ -943,6 +946,9 @@ async def test_download_file_cases(
     assert data
     assert "link" in data
     assert parse_obj_as(AnyHttpUrl, data["link"])
+    await _assert_file_downloaded(
+        faker, tmp_path, link=data["link"], uploaded_file=uploaded_file
+    )
 
     # 3. file_meta_data entry corresponds to a directory
     # upload a file inside a directory and check the download link
@@ -954,10 +960,12 @@ async def test_download_file_cases(
     dir_path_in_s3 = directory_file_upload.urls[0].path.strip("/")
 
     file_name = "meta_data_entry_is_dir.file"
-    file = create_file_of_size(file_size, file_name)
+    file_to_upload_in_dir = create_file_of_size(file_size, file_name)
 
     s3_file_id = parse_obj_as(SimcoreS3FileID, f"{dir_path_in_s3}/{file_name}")
-    await storage_s3_client.upload_file(storage_s3_bucket, file, s3_file_id, None)
+    await storage_s3_client.upload_file(
+        storage_s3_bucket, file_to_upload_in_dir, s3_file_id, None
+    )
     assert (
         await storage_s3_client.file_exists(storage_s3_bucket, s3_object=s3_file_id)
         is True
@@ -978,6 +986,9 @@ async def test_download_file_cases(
     assert data
     assert "link" in data
     assert parse_obj_as(AnyHttpUrl, data["link"])
+    await _assert_file_downloaded(
+        faker, tmp_path, link=data["link"], uploaded_file=file_to_upload_in_dir
+    )
 
     # 4. file_meta_data entry corresponds to a directory but file is not present in directory
 
