@@ -255,11 +255,31 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
         const name = walletEditor.getName();
         const description = walletEditor.getDescription();
         const thumbnail = walletEditor.getThumbnail();
-        found.set({
-          name,
-          description,
-          thumbnail
-        });
+        const params = {
+          url: {
+            "walletId": walletId
+          },
+          data: {
+            "name": name,
+            "description": description || null,
+            "thumbnail": thumbnail || null
+          }
+        };
+        osparc.data.Resources.fetch("wallets", "put", params)
+          .then(() => {
+            osparc.store.Store.getInstance().invalidate("wallets");
+            store.reloadWallets()
+              .then(() => this.loadWallets());
+          })
+          .catch(err => {
+            console.error(err);
+            const msg = err.message || this.tr("Something went wrong updating the Wallet");
+            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          })
+          .finally(() => {
+            button.setFetching(false);
+            win.close();
+          });
       }
 
       button.setFetching(false);
