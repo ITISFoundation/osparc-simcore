@@ -63,7 +63,7 @@ async def expand_directory(
 
 def get_simcore_directory(file_id: StorageFileID) -> str:
     try:
-        directory_id = SimcoreS3DirectoryID.from_simcore_s3_object(f"{file_id}")
+        directory_id = SimcoreS3DirectoryID.from_simcore_s3_object(file_id)
     except ValueError:
         return ""
     return f"{directory_id}"
