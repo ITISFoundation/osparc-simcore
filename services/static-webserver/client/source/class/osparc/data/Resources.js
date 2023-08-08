@@ -921,15 +921,17 @@ qx.Class.define("osparc.data.Resources", {
               osparc.component.metadata.Quality.attachQualityToObject(data);
             }
           }
-          if (endpoint.includes("delete")) {
-            this.__removeCached(resource, deleteId);
-          } else if (useCache && endpointDef.method === "POST" && options.pollTask !== true) {
-            this.__addCached(resource, data);
-          } else if (useCache && endpointDef.method === "GET") {
-            if (endpoint.includes("getPage")) {
+          if (useCache) {
+            if (endpoint.includes("delete")) {
+              this.__removeCached(resource, deleteId);
+            } else if (endpointDef.method === "POST" && options.pollTask !== true) {
               this.__addCached(resource, data);
-            } else {
-              this.__setCached(resource, data);
+            } else if (endpointDef.method === "GET") {
+              if (endpoint.includes("getPage")) {
+                this.__addCached(resource, data);
+              } else {
+                this.__setCached(resource, data);
+              }
             }
           }
           res.dispose();
