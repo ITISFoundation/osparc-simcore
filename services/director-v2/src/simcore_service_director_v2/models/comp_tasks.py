@@ -136,6 +136,8 @@ class CompTaskAtDB(BaseModel):
     last_heartbeat: datetime.datetime | None = Field(
         ..., description="Last time the running task was checked by the backend"
     )
+    created: datetime.datetime
+    modified: datetime.datetime
 
     @validator("state", pre=True)
     @classmethod
@@ -210,6 +212,8 @@ class CompTaskAtDB(BaseModel):
                     "state": "NOT_STARTED",
                     "progress": 0.44,
                     "last_heartbeat": None,
+                    "created": "2022-05-20 13:28:31.139+00",
+                    "modified": "2023-06-23 15:58:32.833081+00",
                 }
                 for image_example in Image.Config.schema_extra["examples"]
             ]
