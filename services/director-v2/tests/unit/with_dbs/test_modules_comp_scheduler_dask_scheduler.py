@@ -1181,7 +1181,7 @@ async def test_running_pipeline_triggers_heartbeat(
     assert isinstance(messages[1], RabbitResourceTrackingHeartbeatMessage)
 
     # -------------------------------------------------------------------------------
-    # 3. wait a bit and run again we should get another heartbeat
+    # 3. wait a bit and run again we should get another heartbeat, but only one!
     await asyncio.sleep(with_fast_service_heartbeat_s + 1)
     await run_comp_scheduler(scheduler)
     await run_comp_scheduler(scheduler)
@@ -1193,7 +1193,7 @@ async def test_running_pipeline_triggers_heartbeat(
     assert isinstance(messages[0], RabbitResourceTrackingHeartbeatMessage)
 
     # -------------------------------------------------------------------------------
-    # 4. wait a bit and run again we should get another heartbeat
+    # 4. wait a bit and run again we should get another heartbeat, but only one!
     await asyncio.sleep(with_fast_service_heartbeat_s + 1)
     await run_comp_scheduler(scheduler)
     await run_comp_scheduler(scheduler)
