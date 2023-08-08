@@ -209,6 +209,7 @@ class CompTaskAtDB(BaseModel):
                     "node_class": "INTERACTIVE",
                     "state": "NOT_STARTED",
                     "progress": 0.44,
+                    "last_heartbeat": None,
                 }
                 for image_example in Image.Config.schema_extra["examples"]
             ]
