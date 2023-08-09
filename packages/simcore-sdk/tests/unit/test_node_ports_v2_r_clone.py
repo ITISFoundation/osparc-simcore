@@ -79,22 +79,38 @@ async def test__config_file(faker: Faker) -> None:
 
 
 async def test__async_command_ok() -> None:
-    await r_clone._async_r_clone_command("ls", "-la")  # noqa: SLF001
+    result = await r_clone._async_r_clone_command("ls", "-la")  # noqa: SLF001
+    assert len(result) > 0
 
 
 @pytest.mark.parametrize(
-    "cmd",
+    "cmd, exit_code, output",
     [
-        ("__i_do_not_exist__",),
-        ("ls_", "-lah"),
+        (
+            ["__i_do_not_exist__"],
+            127,
+            "/bin/sh: 1: __i_do_not_exist__: not found\n/bin/sh: 1: __i_do_not_exist__: not found",
+        ),
+        (
+            ["ls_", "-lah"],
+            127,
+            "/bin/sh: 1: ls_: not found\n/bin/sh: 1: ls_: not found",
+        ),
+        (
+            ["echo", "this command will fail", "&&", "false"],
+            1,
+            "this command will fail\nthis command will fail",
+        ),
     ],
 )
-async def test__async_command_error(cmd: list[str]) -> None:
+async def test__async_command_error(
+    cmd: list[str], exit_code: int, output: str
+) -> None:
     with pytest.raises(r_clone.RCloneFailedError) as exe_info:
         await r_clone._async_r_clone_command(*cmd)  # noqa: SLF001
     assert (
         f"{exe_info.value}"
-        == f"Command {' '.join(cmd)} finished with exit code=127:\n/bin/sh: 1: {cmd[0]}: not found\n\nNone"
+        == f"Command {' '.join(cmd)} finished with exit code={exit_code}:\n{output}\n"
     )
 
 
@@ -182,7 +198,7 @@ async def test__get_exclude_filter(
         "rclone",
         "--quiet",
         "--dry-run",
-        "--copy-links",
+        "--links",
         *r_clone._get_exclude_filters(exclude_patterns),  # noqa: SLF001
         "lsf",
         "--absolute",

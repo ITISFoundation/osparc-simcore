@@ -54,9 +54,8 @@ qx.Class.define("osparc.desktop.MainPage", {
     osparc.WindowSizeTracker.getInstance().startTracker();
     osparc.MaintenanceTracker.getInstance().startTracker();
 
-    osparc.data.Resources.dummy.addWalletsToStore();
-
     const store = osparc.store.Store.getInstance();
+    store.reloadWallets();
 
     Promise.all([
       store.getAllClassifiers(true),

@@ -44,7 +44,6 @@ services:
     deploy:
       placement:
         constraints:
-          - node.platform.os == linux
           - node.role == manager
       resources:
         reservations:
@@ -119,7 +118,6 @@ services:
     deploy:
       placement:
         constraints:
-          - node.platform.os == linux
           - node.role == manager
     networks:
       - default
@@ -159,7 +157,6 @@ services:
     deploy:
       placement:
         constraints:
-          - node.platform.os == linux
           - node.role == manager
     networks:
       - default
@@ -211,9 +208,6 @@ services:
       - SERVER_LOG_LEVEL=error
       - SERVER_ROOT=/static-content
     deploy:
-      placement:
-        constraints:
-          - node.platform.os == linux
       labels:
         - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
         - traefik.http.middlewares.${SWARM_STACK_NAME}_gzip.compress=true
@@ -343,6 +337,7 @@ services:
       REDIS_PORT: ${REDIS_PORT}
 
       # WEBSERVER_REST
+      REST_SWAGGER_API_DOC_ENABLED: ${REST_SWAGGER_API_DOC_ENABLED}
 
       # WEBSERVER_RESOURCE_MANAGER
       RESOURCE_MANAGER_RESOURCE_TTL_S: ${RESOURCE_MANAGER_RESOURCE_TTL_S}
@@ -406,9 +401,6 @@ services:
       WEBSERVER_VERSION_CONTROL: ${WEBSERVER_VERSION_CONTROL}
 
     deploy:
-      placement:
-        constraints:
-          - node.platform.os == linux
       labels:
         - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
         # gzip compression
@@ -522,9 +514,6 @@ services:
       # NOTE: this MUSTN'T change, or weird things might happen
       # this will stay until all legacy dynamic services are gone.
       replicas: 1
-      placement:
-        constraints:
-          - node.platform.os == linux
     networks:
       - default
 
@@ -613,11 +602,6 @@ services:
       RABBIT_PORT: ${RABBIT_PORT}
       RABBIT_SECURE: ${RABBIT_SECURE}
       RABBIT_USER: ${RABBIT_USER}
-
-    deploy:
-      placement:
-        constraints:
-          - node.platform.os == linux
     networks:
       - default
       - interactive_services_subnet
@@ -714,10 +698,6 @@ services:
       - STORAGE_LOGLEVEL=${LOG_LEVEL:-WARNING}
       - STORAGE_MONITORING_ENABLED=1
       - TRACING_ZIPKIN_ENDPOINT=${TRACING_ZIPKIN_ENDPOINT:-http://jaeger:9411}
-    deploy:
-      placement:
-        constraints:
-          - node.platform.os == linux
     networks:
       - default
       - interactive_services_subnet
