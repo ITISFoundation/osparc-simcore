@@ -34,7 +34,8 @@ from .settings import StorageSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
 
-_TOTAL_TIMEOUT_TO_COPY_DATA_SECS = 60 * 60
+_TOTAL_TIMEOUT_TO_COPY_DATA_SECS: Final[int] = 60 * 60
+_SIMCORE_LOCATION: Final[LocationID] = 0
 
 
 def _get_storage_client(app: web.Application) -> tuple[ClientSession, URL]:
@@ -204,9 +205,6 @@ async def get_download_link(
         )
         link: HttpUrl = parse_obj_as(HttpUrl, download.link)
         return link
-
-
-_SIMCORE_LOCATION: Final[LocationID] = 0
 
 
 async def get_files_in_node_folder(
