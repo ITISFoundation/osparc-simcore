@@ -10,6 +10,7 @@ from servicelib.rabbitmq_utils import wait_till_rabbitmq_responsive
 from settings_library.rabbit import RabbitSettings
 
 from ..core.errors import ConfigurationError
+from ..core.settings import get_application_settings
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +18,9 @@ logger = logging.getLogger(__name__)
 def setup(app: FastAPI) -> None:
     async def on_startup() -> None:
         app.state.rabbitmq_client = None
-        settings: RabbitSettings | None = app.state.settings.clusters_keeper_RABBITMQ
+        settings: RabbitSettings | None = get_application_settings(
+            app
+        ).CLUSTERS_KEEPER_RABBITMQ
         if not settings:
             logger.warning("Rabbit MQ client is de-activated in the settings")
             return

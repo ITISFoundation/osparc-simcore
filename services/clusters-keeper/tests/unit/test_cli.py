@@ -12,7 +12,7 @@ runner = CliRunner()
 def test_settings():
     result = runner.invoke(main, ["settings"])
     assert result.exit_code == 0
-    assert "APP_NAME=simcore-service-clusters_keeper" in result.stdout
+    assert "APP_NAME=simcore-service-clusters-keeper" in result.stdout
 
 
 def test_run():

@@ -23,7 +23,7 @@ from ..core.errors import (
     Ec2NotConnectedError,
     Ec2TooManyInstancesError,
 )
-from ..core.settings import EC2InstancesSettings, EC2Settings
+from ..core.settings import EC2InstancesSettings, EC2Settings, get_application_settings
 from ..models import EC2InstanceData, EC2InstanceType
 from ..utils.ec2 import compose_user_data
 
@@ -221,7 +221,10 @@ class ClustersKeeperEC2:
 def setup(app: FastAPI) -> None:
     async def on_startup() -> None:
         app.state.ec2_client = None
-        settings: EC2Settings | None = app.state.settings.clusters_keeper_EC2_ACCESS
+
+        settings: EC2Settings | None = get_application_settings(
+            app
+        ).CLUSTERS_KEEPER_EC2_ACCESS
 
         if not settings:
             logger.warning("EC2 client is de-activated in the settings")
@@ -238,7 +241,7 @@ def setup(app: FastAPI) -> None:
             with attempt:
                 connected = await client.ping()
                 if not connected:
-                    raise Ec2NotConnectedError()
+                    raise Ec2NotConnectedError
 
     async def on_shutdown() -> None:
         if app.state.ec2_client:

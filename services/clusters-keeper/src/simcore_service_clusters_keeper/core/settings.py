@@ -9,7 +9,6 @@ from models_library.basic_types import (
     LogLevel,
     VersionTag,
 )
-from models_library.docker import DockerGenericTag
 from pydantic import Field, NonNegativeInt, PositiveInt, parse_obj_as, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
@@ -84,16 +83,6 @@ class EC2InstancesSettings(BaseCustomSettings):
         description="Usual time taken an EC2 instance with the given AMI takes to be in 'running' mode",
     )
 
-    EC2_INSTANCES_PRE_PULL_IMAGES: list[DockerGenericTag] = Field(
-        default_factory=list,
-        description="a list of docker image/tags to pull on instance cold start",
-    )
-
-    EC2_INSTANCES_PRE_PULL_IMAGES_CRON_INTERVAL: datetime.timedelta = Field(
-        default=datetime.timedelta(minutes=30),
-        description="time interval between pulls of images (minimum is 1 minute)",
-    )
-
     EC2_INSTANCES_CUSTOM_BOOT_SCRIPTS: list[str] = Field(
         default_factory=list,
         description="script(s) to run on EC2 instance startup (be careful!), each entry is run one after the other using '&&' operator",
@@ -144,7 +133,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # RUNTIME  -----------------------------------------------------------
     CLUSTERS_KEEPER_DEBUG: bool = Field(
-        False, description="Debug mode", env=["clusters_keeper_DEBUG", "DEBUG"]
+        default=False, description="Debug mode", env=["clusters_keeper_DEBUG", "DEBUG"]
     )
 
     CLUSTERS_KEEPER_LOGLEVEL: LogLevel = Field(
@@ -174,7 +163,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     @cached_property
-    def LOG_LEVEL(self):
+    def LOG_LEVEL(self):  # noqa: N802
         return self.CLUSTERS_KEEPER_LOGLEVEL
 
     @validator("CLUSTERS_KEEPER_LOGLEVEL")

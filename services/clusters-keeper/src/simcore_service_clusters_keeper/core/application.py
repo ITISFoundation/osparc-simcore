@@ -22,7 +22,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     logger.info("app settings: %s", settings.json(indent=1))
 
     app = FastAPI(
-        debug=settings.clusters_keeper_DEBUG,
+        debug=settings.CLUSTERS_KEEPER_DEBUG,
         title=APP_NAME,
         description="Service to keep external clusters alive",
         version=API_VERSION,
@@ -44,10 +44,10 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
 
     # EVENTS
     async def _on_startup() -> None:
-        print(APP_STARTED_BANNER_MSG, flush=True)
+        print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
 
     async def _on_shutdown() -> None:
-        print(APP_FINISHED_BANNER_MSG, flush=True)
+        print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
 
     app.add_event_handler("startup", _on_startup)
     app.add_event_handler("shutdown", _on_shutdown)

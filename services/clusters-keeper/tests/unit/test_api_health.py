@@ -49,9 +49,6 @@ async def test_status_no_rabbit(
     assert status_response.ec2.is_enabled is True
     assert status_response.ec2.is_responsive is True
 
-    assert status_response.docker.is_enabled is True
-    assert status_response.docker.is_responsive is True
-
 
 async def test_status(
     mocked_aws_server: ThreadedMotoServer,
@@ -72,8 +69,6 @@ async def test_status(
     assert status_response.ec2.is_enabled is True
     assert status_response.ec2.is_responsive is False
 
-    assert status_response.docker.is_enabled is True
-    assert status_response.docker.is_responsive is True
     # restart the server
     mocked_aws_server.start()
 
@@ -88,6 +83,3 @@ async def test_status(
 
     assert status_response.ec2.is_enabled is True
     assert status_response.ec2.is_responsive is True
-
-    assert status_response.docker.is_enabled is True
-    assert status_response.docker.is_responsive is True

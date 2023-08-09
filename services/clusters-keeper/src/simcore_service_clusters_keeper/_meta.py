@@ -5,7 +5,9 @@ from contextlib import suppress
 from typing import Final
 
 import pkg_resources
+from models_library.basic_types import VersionTag
 from packaging.version import Version
+from pydantic import parse_obj_as
 
 _current_distribution = pkg_resources.get_distribution(
     "simcore-service-clusters_keeper"
@@ -17,7 +19,7 @@ __version__: str = _current_distribution.version
 APP_NAME: Final[str] = _current_distribution.project_name
 API_VERSION: Final[str] = __version__
 VERSION: Final[Version] = Version(__version__)
-API_VTAG: Final[str] = f"v{VERSION.major}"
+API_VTAG: Final[VersionTag] = parse_obj_as(VersionTag, f"v{VERSION.major}")
 
 
 def get_summary() -> str:

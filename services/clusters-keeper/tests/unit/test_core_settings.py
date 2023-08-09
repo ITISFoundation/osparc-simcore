@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 
 import datetime
-import json
 
 import pytest
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
@@ -12,65 +11,28 @@ from simcore_service_clusters_keeper.core.settings import ApplicationSettings
 
 def test_settings(app_environment: EnvVarsDict):
     settings = ApplicationSettings.create_from_envs()
-    assert settings.clusters_keeper_EC2_ACCESS
-    assert settings.clusters_keeper_EC2_INSTANCES
-    assert settings.clusters_keeper_NODES_MONITORING
-    assert settings.clusters_keeper_RABBITMQ
-    assert settings.clusters_keeper_REDIS
+    assert settings.CLUSTERS_KEEPER_EC2_ACCESS
+    assert settings.CLUSTERS_KEEPER_EC2_INSTANCES
+    assert settings.CLUSTERS_KEEPER_RABBITMQ
+    assert settings.CLUSTERS_KEEPER_REDIS
 
 
-def test_invalid_EC2_INSTANCES_TIME_BEFORE_TERMINATION(
+def test_invalid_EC2_INSTANCES_TIME_BEFORE_TERMINATION(  # noqa: N802
     app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ):
     monkeypatch.setenv("EC2_INSTANCES_TIME_BEFORE_TERMINATION", "1:05:00")
     settings = ApplicationSettings.create_from_envs()
-    assert settings.clusters_keeper_EC2_INSTANCES
-    assert settings.clusters_keeper_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
+    assert settings.CLUSTERS_KEEPER_EC2_INSTANCES
+    assert settings.CLUSTERS_KEEPER_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
     assert (
-        settings.clusters_keeper_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
+        settings.CLUSTERS_KEEPER_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION  # noqa: SIM300
         == datetime.timedelta(minutes=59)
     )
 
     monkeypatch.setenv("EC2_INSTANCES_TIME_BEFORE_TERMINATION", "-1:05:00")
     settings = ApplicationSettings.create_from_envs()
-    assert settings.clusters_keeper_EC2_INSTANCES
+    assert settings.CLUSTERS_KEEPER_EC2_INSTANCES
     assert (
-        settings.clusters_keeper_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
+        settings.CLUSTERS_KEEPER_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION  # noqa: SIM300
         == datetime.timedelta(minutes=0)
     )
-
-
-def test_EC2_INSTANCES_PRE_PULL_IMAGES(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-):
-    settings = ApplicationSettings.create_from_envs()
-    assert settings.clusters_keeper_EC2_INSTANCES
-    assert settings.clusters_keeper_EC2_INSTANCES.EC2_INSTANCES_PRE_PULL_IMAGES == []
-
-    # passing an invalid image tag name will fail
-    monkeypatch.setenv(
-        "EC2_INSTANCES_PRE_PULL_IMAGES", json.dumps(["io.simcore.some234.cool-"])
-    )
-    settings = ApplicationSettings.create_from_envs()
-    assert not settings.clusters_keeper_EC2_INSTANCES
-
-    # passing a valid will pass
-    monkeypatch.setenv(
-        "EC2_INSTANCES_PRE_PULL_IMAGES",
-        json.dumps(
-            [
-                "nginx:latest",
-                "itisfoundation/my-very-nice-service:latest",
-                "simcore/services/dynamic/another-nice-one:2.4.5",
-                "asd",
-            ]
-        ),
-    )
-    settings = ApplicationSettings.create_from_envs()
-    assert settings.clusters_keeper_EC2_INSTANCES
-    assert settings.clusters_keeper_EC2_INSTANCES.EC2_INSTANCES_PRE_PULL_IMAGES == [
-        "nginx:latest",
-        "itisfoundation/my-very-nice-service:latest",
-        "simcore/services/dynamic/another-nice-one:2.4.5",
-        "asd",
-    ]

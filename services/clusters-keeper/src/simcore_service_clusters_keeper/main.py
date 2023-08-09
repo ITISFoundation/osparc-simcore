@@ -11,7 +11,7 @@ from simcore_service_clusters_keeper.core.settings import ApplicationSettings
 the_settings = ApplicationSettings.create_from_envs()
 logging.basicConfig(level=the_settings.log_level)
 logging.root.setLevel(the_settings.log_level)
-config_all_loggers(the_settings.clusters_keeper_LOG_FORMAT_LOCAL_DEV_ENABLED)
+config_all_loggers(the_settings.CLUSTERS_KEEPER_LOG_FORMAT_LOCAL_DEV_ENABLED)
 
 # SINGLETON FastAPI app
 the_app: FastAPI = create_app(the_settings)
