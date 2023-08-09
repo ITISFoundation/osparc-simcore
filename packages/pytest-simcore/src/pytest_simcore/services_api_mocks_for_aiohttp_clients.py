@@ -14,6 +14,7 @@ from aioresponses import aioresponses as AioResponsesMock
 from aioresponses.core import CallbackResult
 from models_library.api_schemas_storage import (
     FileMetaDataGet,
+    FileUploadCompleteResponse,
     FileUploadLinks,
     FileUploadSchema,
     LinkType,
@@ -413,6 +414,10 @@ async def storage_v0_service_mock(
         r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/metadata.+$"
     )
 
+    complete_upload_pattern = re.compile(
+        r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/api.+:complete.+$"
+    )
+
     aioresponses_mocker.get(
         get_file_metadata_pattern,
         status=web.HTTPOk.status_code,
@@ -439,6 +444,17 @@ async def storage_v0_service_mock(
         status=web.HTTPOk.status_code,
         payload={"data": [{"name": "simcore.s3", "id": 0}]},
         repeat=True,
+    )
+
+    aioresponses_mocker.post(
+        complete_upload_pattern,
+        status=web.HTTPOk.status_code,
+        payload={
+            "data": parse_obj_as(
+                FileUploadCompleteResponse,
+                {"links": {"state": "http://my-dummy-url.com"}},
+            )
+        },
     )
 
     return aioresponses_mocker

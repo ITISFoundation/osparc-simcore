@@ -134,7 +134,6 @@ async def test_download_content(
     assert response.headers["content-type"] == "application/octet-stream"
 
 
-@pytest.mark.testit
 async def test_get_upload_links(
     client: AsyncClient,
     auth: httpx.BasicAuth,
@@ -142,11 +141,36 @@ async def test_get_upload_links(
 ):
     """Test that we can get data needed for performing multipart upload directly to S3"""
 
-    assert storage_v0_service_mock  # no sec
+    assert storage_v0_service_mock  # nosec
 
     payload: dict[str, str] = {"filename": "myfile.txt", "filesize": "100000"}
 
     response = await client.post(f"{API_VTAG}/files/content", json=payload, auth=auth)
+
+    payload: dict[str, str] = response.json()
+
+    assert response.status_code == status.HTTP_200_OK
+    _ = FileUploadSchema.parse_obj(payload)
+
+
+@pytest.mark.testit
+async def test_complete_multipart_upload(
+    client: AsyncClient,
+    auth: httpx.BasicAuth,
+    storage_v0_service_mock: AioResponsesMock,
+):
+
+    assert storage_v0_service_mock  # nosec
+
+    payload = {
+        "client_file": {"filename": "string", "filesize": 0},
+        "uploaded_parts": {"parts": [{"number": 1, "e_tag": "string"}]},
+        "completion_link": {
+            "state": "http://storage:8080/v0/locations/0/files/api123something123string:complete?user_id=1"
+        },
+    }
+
+    response = await client.patch(f"{API_VTAG}/files/content", json=payload, auth=auth)
 
     payload: dict[str, str] = response.json()
 
