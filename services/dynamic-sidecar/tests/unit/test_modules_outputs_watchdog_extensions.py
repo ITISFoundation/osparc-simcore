@@ -2,7 +2,7 @@
 
 import asyncio
 from pathlib import Path
-from unittest.mock import AsyncMock
+from unittest.mock import Mock
 from uuid import uuid4
 
 import pytest
@@ -34,7 +34,7 @@ async def test_regression_watchdog_blocks_on_handler_error(
     path_to_observe: Path, fail_once: bool
 ):
     raised_error = False
-    event_handler = AsyncMock()
+    event_handler = Mock()
 
     class MockedEventHandler(FileSystemEventHandler):
         def on_any_event(self, event: FileSystemEvent) -> None:
