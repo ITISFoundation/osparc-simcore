@@ -11,6 +11,7 @@
 --constraint _base.txt
 
 
+aiodocker
 asgi-lifespan
 coverage
 deepdiff

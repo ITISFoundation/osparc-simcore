@@ -79,7 +79,7 @@ botocore==1.29.76
     #   aiobotocore
     #   boto3
     #   s3transfer
-botocore-stubs==1.31.21
+botocore-stubs==1.31.22
     # via types-aiobotocore
 certifi==2023.7.22
     # via
@@ -261,7 +261,7 @@ toolz==0.12.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-tqdm==4.65.1
+tqdm==4.65.2
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -270,7 +270,7 @@ typer==0.9.0
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/./../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
-types-aiobotocore==2.5.2.post1
+types-aiobotocore==2.5.4
     # via -r requirements/_base.in
 types-aiobotocore-ec2==2.5.4
     # via types-aiobotocore
