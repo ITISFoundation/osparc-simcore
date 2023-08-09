@@ -22,13 +22,15 @@ def upgrade():
 
     conn = op.get_bind()
     result = conn.execute(
-        f"SELECT * FROM pg_enum WHERE enumtypid = (SELECT oid FROM pg_type WHERE typname = '{enum_type_name}') AND enumlabel = '{new_value}'"
+        sa.DDL(
+            f"SELECT * FROM pg_enum WHERE enumtypid = (SELECT oid FROM pg_type WHERE typname = '{enum_type_name}') AND enumlabel = '{new_value}'"
+        )
     )
     value_exists = result.fetchone() is not None
 
     if not value_exists:
         # Step 1: Use ALTER TYPE to add the new value to the existing enum
-        op.execute(f"ALTER TYPE {enum_type_name} ADD VALUE '{new_value}'")
+        op.execute(sa.DDL(f"ALTER TYPE {enum_type_name} ADD VALUE '{new_value}'"))
 
 
 def downgrade():
