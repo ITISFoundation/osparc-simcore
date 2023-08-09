@@ -129,14 +129,14 @@ resource_tracker_service_runs = sa.Table(
         "service_resources",
         JSONB,
         nullable=False,
-        server_default="{}",
+        default="'{}'::jsonb",
         doc="Service aresources, ex. cpu, gpu, memory, ...",
     ),
     sa.Column(
         "service_additional_metadata",
         JSONB,
         nullable=False,
-        server_default="{}",
+        default="'{}'::jsonb",
         doc="Service additional metadata.",
     ),
     # Run timestamps

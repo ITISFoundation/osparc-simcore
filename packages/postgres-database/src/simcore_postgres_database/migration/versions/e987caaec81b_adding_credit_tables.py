@@ -1,8 +1,8 @@
 """adding credit tables
 
-Revision ID: ac32143891e9
-Revises: 9b33ef4c690a
-Create Date: 2023-08-08 16:16:17.511253+00:00
+Revision ID: e987caaec81b
+Revises: 6da4357ce10f
+Create Date: 2023-08-09 16:59:21.001729+00:00
 
 """
 import sqlalchemy as sa
@@ -10,8 +10,8 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = "ac32143891e9"
-down_revision = "9b33ef4c690a"
+revision = "e987caaec81b"
+down_revision = "6da4357ce10f"
 branch_labels = None
 depends_on = None
 
@@ -83,15 +83,11 @@ def upgrade():
             nullable=False,
         ),
         sa.Column(
-            "service_resources",
-            postgresql.JSONB(astext_type=sa.Text()),
-            server_default="{}",
-            nullable=False,
+            "service_resources", postgresql.JSONB(astext_type=sa.Text()), nullable=False
         ),
         sa.Column(
             "service_additional_metadata",
             postgresql.JSONB(astext_type=sa.Text()),
-            server_default="{}",
             nullable=False,
         ),
         sa.Column("started_at", sa.DateTime(timezone=True), nullable=False),
@@ -99,11 +95,7 @@ def upgrade():
         sa.Column(
             "service_run_status",
             sa.Enum(
-                "RUNNING",
-                "STOPPED_SUCCESS",
-                "STOPPED_USER_ERROR",
-                "STOPPED_PLATFORM_ERROR",
-                name="resourcetrackerservicerunstatus",
+                "RUNNING", "SUCCESS", "ERROR", name="resourcetrackerservicerunstatus"
             ),
             nullable=False,
         ),
@@ -130,7 +122,7 @@ def upgrade():
                 "PENDING",
                 "BILLED",
                 "NOT_BILLED",
-                "MANUAL_REVIEW",
+                "REQUIRES_MANUAL_REVIEW",
                 name="transactionbillingstatus",
             ),
             nullable=True,
@@ -200,10 +192,7 @@ def upgrade():
         sa.Column("valid_from", sa.DateTime(timezone=True), nullable=False),
         sa.Column("valid_to", sa.DateTime(timezone=True), nullable=True),
         sa.Column(
-            "specific_info",
-            postgresql.JSONB(astext_type=sa.Text()),
-            server_default="{}",
-            nullable=False,
+            "specific_info", postgresql.JSONB(astext_type=sa.Text()), nullable=False
         ),
         sa.Column(
             "created",
