@@ -3,6 +3,8 @@
 # pylint: disable=unused-variable
 
 
+from unittest import mock
+
 from fastapi import FastAPI
 from simcore_service_resource_usage_tracker.modules.redis import get_redis_client
 
@@ -10,6 +12,8 @@ from simcore_service_resource_usage_tracker.modules.redis import get_redis_clien
 async def test_redis_raises_if_missing(
     disabled_prometheus: None,
     disabled_database: None,
+    disabled_rabbitmq: None,
+    mocked_setup_rabbitmq: mock.Mock,
     mocked_redis_server: None,
     initialized_app: FastAPI,
 ):

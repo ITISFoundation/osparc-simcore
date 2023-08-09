@@ -197,6 +197,11 @@ services:
       - RESOURCE_USAGE_TRACKER_LOGLEVEL=${LOG_LEVEL:-INFO}
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
+      - RABBIT_HOST=${RABBIT_HOST}
+      - RABBIT_PASSWORD=${RABBIT_PASSWORD}
+      - RABBIT_PORT=${RABBIT_PORT}
+      - RABBIT_SECURE=${RABBIT_SECURE}
+      - RABBIT_USER=${RABBIT_USER}
 
   static-webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}

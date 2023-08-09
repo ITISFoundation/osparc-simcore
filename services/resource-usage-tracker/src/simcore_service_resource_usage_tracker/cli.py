@@ -7,14 +7,14 @@ import typer
 from models_library.users import UserID
 from rich.console import Console
 from settings_library.utils_cli import create_settings_command
-from simcore_service_resource_usage_tracker.core.errors import ConfigurationError
-from simcore_service_resource_usage_tracker.modules.prometheus import create_client
-from simcore_service_resource_usage_tracker.resource_tracker_cli_placeholder import (
-    collect_and_return_service_resource_usage,
-)
 
 from ._meta import PROJECT_NAME, __version__
+from .core.errors import ConfigurationError
 from .core.settings import ApplicationSettings, MinimalApplicationSettings
+from .modules.prometheus import create_client
+from .modules.prometheus_containers.cli_placeholder import (
+    collect_and_return_service_resource_usage,
+)
 
 # SEE setup entrypoint 'simcore_service_invitations.cli:app'
 app = typer.Typer(name=PROJECT_NAME)
