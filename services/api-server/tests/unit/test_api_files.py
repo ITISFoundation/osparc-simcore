@@ -175,4 +175,4 @@ async def test_complete_multipart_upload(
     payload: dict[str, str] = response.json()
 
     assert response.status_code == status.HTTP_200_OK
-    _ = FileUploadSchema.parse_obj(payload)
+    _ = File.parse_obj(payload)

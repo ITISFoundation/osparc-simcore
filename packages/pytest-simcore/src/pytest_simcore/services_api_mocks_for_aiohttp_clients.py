@@ -396,6 +396,8 @@ async def storage_v0_service_mock(
 ) -> AioResponsesMock:
     """mocks responses of storage API"""
 
+    dummy_s3_url: AnyUrl = "http://my-dummy-d3.com"
+
     get_file_metadata_pattern = re.compile(
         r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+/metadata.+$"
     )
@@ -452,8 +454,16 @@ async def storage_v0_service_mock(
         payload={
             "data": parse_obj_as(
                 FileUploadCompleteResponse,
-                {"links": {"state": "http://my-dummy-url.com"}},
-            )
+                {"links": {"state": dummy_s3_url}},
+            ).dict()
+        },
+    )
+
+    aioresponses_mocker.post(
+        dummy_s3_url,
+        status=web.HTTPOk.status_code,
+        payload={
+            "data": {"state": "ok", "e_tag": "my_etag"},
         },
     )
 
