@@ -2,6 +2,7 @@ import datetime
 import logging
 import mimetypes
 import urllib.parse
+from pathlib import Path
 from typing import Final
 
 from aiohttp import web
@@ -33,6 +34,7 @@ _logger = logging.getLogger(__name__)
 _NODE_START_INTERVAL_S: Final[datetime.timedelta] = datetime.timedelta(seconds=15)
 
 _SUPPORTED_THUMBNAIL_EXTENSIONS: set[str] = {".png", ".jpeg", ".jpg"}
+_SUPPORTED_PREVIEW_FILES: set[str] = {".gltf", ".png", ".jpeg", ".jpg"}
 
 ASSETS_FOLDER: Final[str] = "assets"
 
@@ -124,6 +126,7 @@ def _get_files_with_thumbnails(
         __get_search_key(f): f
         for f in assets_files
         if not f.file_id.endswith(".hidden_do_not_remove")
+        and Path(f.file_id).suffix in _SUPPORTED_PREVIEW_FILES
     }
 
     with_thumbnail_image: list[tuple[FileMetaDataGet, FileMetaDataGet]] = []
@@ -192,8 +195,8 @@ async def _to_screenshots_in_parallel(
     return [
         NodeScreenshot(
             mimetype=_guess_mimetype_from_name(t[0].file_id),
-            thumbnail_url=mapped_http_url[__get_search_key(t[0])],
-            file_url=mapped_http_url[__get_search_key(t[1])],
+            file_url=mapped_http_url[__get_search_key(t[0])],
+            thumbnail_url=mapped_http_url[__get_search_key(t[1])],
         )
         for t in entries
     ]
