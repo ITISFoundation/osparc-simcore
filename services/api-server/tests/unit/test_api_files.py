@@ -12,6 +12,9 @@ from fastapi import status
 from httpx import AsyncClient
 from models_library.api_schemas_storage import FileUploadSchema
 from pydantic import parse_obj_as
+from pytest_simcore.services_api_mocks_for_aiohttp_clients import (
+    storage_v0_service_mock,
+)
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.files import File
@@ -138,6 +141,9 @@ async def test_get_upload_links(
     storage_v0_service_mock: AioResponsesMock,
 ):
     """Test that we can get data needed for performing multipart upload directly to S3"""
+
+    assert storage_v0_service_mock  # no sec
+
     payload: dict[str, str] = {"filename": "myfile.txt", "filesize": "100000"}
 
     response = await client.post(f"{API_VTAG}/files/content", json=payload, auth=auth)
