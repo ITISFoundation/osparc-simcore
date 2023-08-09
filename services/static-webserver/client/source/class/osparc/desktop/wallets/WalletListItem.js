@@ -19,23 +19,17 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
   extend: osparc.ui.list.ListItemWithMenu,
 
   properties: {
-    walletType: {
-      check: ["personal", "shared"],
-      init: "personal",
-      nullable: false,
-      apply: "__setDefaultThumbnail"
-    },
-
-    credits: {
+    creditsAvailable: {
       check: "Number",
       nullable: false,
-      apply: "__applyCredits"
+      apply: "__applyCreditsAvailable"
     },
 
-    active: {
-      check: "Boolean",
+    status: {
+      check: ["ACTIVE", "INACTIVE"],
+      init: null,
       nullable: false,
-      apply: "__applyActive"
+      apply: "__applyStatus"
     }
   },
 
@@ -70,7 +64,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
           control = new qx.ui.basic.Label();
           this.getChildControl("credits-layout").addAt(control, 1);
           break;
-        case "active-button":
+        case "status-button":
           control = new qx.ui.form.Button().set({
             maxHeight: 30,
             width: 62,
@@ -83,7 +77,26 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
             const store = osparc.store.Store.getInstance();
             const found = store.getWallets().find(wallet => wallet.getWalletId() === parseInt(walletId));
             if (found) {
-              found.setActive(!found.getActive());
+              // switch status
+              const newStatus = found.getStatus() === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+              const params = {
+                url: {
+                  "walletId": walletId
+                },
+                data: {
+                  "name": found.getName(),
+                  "description": found.getDescription(),
+                  "thumbnail": found.getThumbnail(),
+                  "status": newStatus
+                }
+              };
+              osparc.data.Resources.fetch("wallets", "put", params)
+                .then(() => found.setStatus(newStatus))
+                .catch(err => {
+                  console.error(err);
+                  const msg = err.message || (this.tr("Something went wrong updating the state"));
+                  osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+                });
             }
           }, this);
           this._add(control, {
@@ -114,21 +127,25 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       return control || this.base(arguments, id);
     },
 
-    __applyCredits: function(credits) {
-      if (credits !== null) {
+    __applyCreditsAvailable: function(creditsAvailable) {
+      if (creditsAvailable !== null) {
         const creditsIndicator = this.getChildControl("credits-indicator");
-        creditsIndicator.setCredits(credits);
+        creditsIndicator.setCreditsAvailable(creditsAvailable);
 
         this.getChildControl("credits-label").set({
-          value: credits + this.tr(" credits")
+          value: creditsAvailable + this.tr(" credits")
         });
       }
     },
 
     __canIWrite: function() {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
-      const accessRights = this.getAccessRights();
-      return (accessRights && (myGid in accessRights) && accessRights[myGid]["write"]);
+      const accessRightss = this.getAccessRights();
+      const found = accessRightss && accessRightss.find(ar => ar["gid"] === myGid);
+      if (found) {
+        return found["write"];
+      }
+      return false;
     },
 
     // overridden
@@ -142,13 +159,14 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
 
     // overridden
     _setSubtitle: function() {
-      const accessRights = this.getAccessRights();
+      const accessRightss = this.getAccessRights();
       const myGid = osparc.auth.Data.getInstance().getGroupId();
-      const subtitle = this.getChildControl("contact");
-      if (myGid in accessRights) {
-        if (accessRights[myGid]["write"]) {
+      const found = accessRightss && accessRightss.find(ar => ar["gid"] === myGid);
+      if (found) {
+        const subtitle = this.getChildControl("contact");
+        if (found["write"]) {
           subtitle.setValue(osparc.data.Roles.WALLET[2].longLabel);
-        } else if (accessRights[myGid]["read"]) {
+        } else if (found["read"]) {
           subtitle.setValue(osparc.data.Roles.WALLET[1].longLabel);
         }
       }
@@ -157,9 +175,10 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
     // overridden
     _getOptionsMenu: function() {
       let menu = null;
-      const accessRights = this.getAccessRights();
+      const accessRightss = this.getAccessRights();
       const myGid = osparc.auth.Data.getInstance().getGroupId();
-      if ((myGid in accessRights) && accessRights[myGid]["write"]) {
+      const found = accessRightss && accessRightss.find(ar => ar["gid"] === myGid);
+      if (found && found["write"]) {
         const optionsMenu = this.getChildControl("options");
         optionsMenu.show();
 
@@ -188,21 +207,21 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       if (this.getThumbnail() === null) {
         // default thumbnail only if it's null
         const thumbnail = this.getChildControl("thumbnail");
-        if (this.getWalletType() === "personal") {
-          thumbnail.setSource(osparc.utils.Icons.user(osparc.ui.list.ListItemWithMenu.ICON_SIZE));
-        } else {
+        if (this.getAccessRights() && this.getAccessRights().length > 1) {
           thumbnail.setSource(osparc.utils.Icons.organization(osparc.ui.list.ListItemWithMenu.ICON_SIZE));
+        } else {
+          thumbnail.setSource(osparc.utils.Icons.user(osparc.ui.list.ListItemWithMenu.ICON_SIZE));
         }
       }
     },
 
-    __applyActive: function(active) {
-      if (active !== null) {
-        const activeButton = this.getChildControl("active-button");
-        activeButton.set({
-          icon: active ? "@FontAwesome5Solid/toggle-on/16" : "@FontAwesome5Solid/toggle-off/16",
-          label: active ? this.tr("ON") : this.tr("OFF"),
-          toolTipText: active ? this.tr("Wallet enabled") : this.tr("Wallet blocked"),
+    __applyStatus: function(status) {
+      if (status) {
+        const statusButton = this.getChildControl("status-button");
+        statusButton.set({
+          icon: status === "ACTIVE" ? "@FontAwesome5Solid/toggle-on/16" : "@FontAwesome5Solid/toggle-off/16",
+          label: status === "ACTIVE" ? this.tr("ON") : this.tr("OFF"),
+          toolTipText: status === "ACTIVE" ? this.tr("Wallet enabled") : this.tr("Wallet blocked"),
           enabled: this.__canIWrite()
         });
       }

@@ -111,8 +111,8 @@ async def list_wallets(request: web.Request):
 
 class _PutWalletBodyParams(BaseModel):
     name: str
-    description: str
-    thumbnail: str
+    description: str | None
+    thumbnail: str | None
     status: WalletStatus
 
     class Config:

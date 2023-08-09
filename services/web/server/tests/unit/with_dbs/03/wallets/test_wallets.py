@@ -68,7 +68,7 @@ async def test_wallets_full_workflow(
         f"{url}",
         json={
             "name": "My first wallet",
-            "description": "New description",
+            "description": None,
             "thumbnail": "New thumbnail",
             "status": "INACTIVE",
         },
@@ -76,7 +76,7 @@ async def test_wallets_full_workflow(
     data, _ = await assert_status(resp, web.HTTPOk)
     assert data["wallet_id"] == added_wallet["wallet_id"]
     assert data["name"] == "My first wallet"
-    assert data["description"] == "New description"
+    assert data["description"] == None
     assert data["thumbnail"] == "New thumbnail"
     assert data["status"] == "INACTIVE"
     assert arrow.get(data["modified"]) > store_modified_field
@@ -88,7 +88,7 @@ async def test_wallets_full_workflow(
     assert len(data) == 1
     assert data[0]["wallet_id"] == added_wallet["wallet_id"]
     assert data[0]["name"] == "My first wallet"
-    assert data[0]["description"] == "New description"
+    assert data[0]["description"] == None
     assert data[0]["thumbnail"] == "New thumbnail"
     assert data[0]["status"] == "INACTIVE"
     assert arrow.get(data[0]["modified"]) > store_modified_field

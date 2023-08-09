@@ -109,8 +109,9 @@ qx.Class.define("osparc.store.Store", {
       init: {}
     },
     wallets: {
-      check: "Object",
-      init: []
+      check: "Array",
+      init: [],
+      event: "changeWallets"
     },
     activeWallet: {
       check: "osparc.data.model.Wallet",
@@ -608,6 +609,53 @@ qx.Class.define("osparc.store.Store", {
           resolve(null);
         }
       });
+    },
+
+    reloadWallets: function() {
+      const store = osparc.store.Store.getInstance();
+      store.setWallets([]);
+
+      return new Promise((resolve, reject) => {
+        osparc.data.Resources.fetch("wallets", "get")
+          .then(walletsData => {
+            const wallets = [];
+            const promises = [];
+            walletsData.forEach(walletReducedData => {
+              const wallet = new osparc.data.model.Wallet(walletReducedData);
+              wallets.push(wallet);
+              promises.push(this.reloadWalletAccessRights(wallet));
+
+              // trick to get a countdown
+              setInterval(() => {
+                wallet.setCreditsAvailable(wallet.getCreditsAvailable()-1);
+              }, 30000);
+            });
+            store.setWallets(wallets);
+            Promise.all(promises)
+              .then(() => resolve())
+              .catch(err => {
+                console.error(err);
+                reject();
+              });
+          })
+          .catch(err => {
+            console.error(err);
+            reject();
+          });
+      });
+    },
+
+    reloadWalletAccessRights: function(wallet) {
+      const params = {
+        url: {
+          "walletId": wallet.getWalletId()
+        }
+      };
+      return osparc.data.Resources.fetch("wallets", "getAccessRights", params)
+        .then(accessRights => {
+          wallet.setAccessRights(accessRights);
+        })
+        .catch(err => console.error(err));
     },
 
     __getOrgClassifiers: function(orgId, useCache = false) {

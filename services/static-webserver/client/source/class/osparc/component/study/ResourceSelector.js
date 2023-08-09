@@ -340,9 +340,28 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
 
       const openButton = this.getChildControl("open-button");
       openButton.addListener("execute", () => {
-        this.fireEvent("startStudy");
-
-        store.setActiveWallet(this.getWallet());
+        const selection = this.getChildControl("wallet-selector").getSelection();
+        if (selection.length && selection[0]["walletId"]) {
+          const params = {
+            url: {
+              "studyId": this.__studyData["uuid"],
+              "walletId": selection[0]["walletId"]
+            }
+          };
+          osparc.data.Resources.fetch("studies", "selectWallet", params)
+            .then(() => {
+              store.setActiveWallet(this.getWallet());
+              this.fireEvent("startStudy");
+            })
+            .catch(err => {
+              console.error(err);
+              const msg = err.message || this.tr("Error selecting Wallet");
+              osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+            });
+        } else {
+          store.setActiveWallet(this.getWallet());
+          this.fireEvent("startStudy");
+        }
       });
 
       const cancelButton = this.getChildControl("cancel-button");
