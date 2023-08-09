@@ -31,11 +31,11 @@ from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import (
     InstrumentationRabbitMessage,
+    RabbitResourceTrackingBaseMessage,
     RabbitResourceTrackingHeartbeatMessage,
     RabbitResourceTrackingMessages,
     RabbitResourceTrackingStartedMessage,
     RabbitResourceTrackingStoppedMessage,
-    _RabbitResourceTrackingBaseMessage,
 )
 from pydantic import parse_obj_as, parse_raw_as
 from pytest_mock.plugin import MockerFixture
@@ -512,7 +512,7 @@ async def resource_tracking_rabbit_client_parser(
     client = rabbitmq_client("resource_tracking_pytest_consumer")
     mock = mocker.AsyncMock(return_value=True)
     queue_name = await client.subscribe(
-        _RabbitResourceTrackingBaseMessage.get_channel_name(), mock
+        RabbitResourceTrackingBaseMessage.get_channel_name(), mock
     )
     yield mock
     await client.unsubscribe(queue_name)
