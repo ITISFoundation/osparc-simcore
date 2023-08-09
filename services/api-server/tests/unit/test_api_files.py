@@ -10,6 +10,7 @@ import pytest
 from aioresponses import aioresponses as AioResponsesMock
 from fastapi import status
 from httpx import AsyncClient
+from models_library.api_schemas_storage import FileUploadSchema
 from pydantic import parse_obj_as
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
@@ -139,11 +140,9 @@ async def test_get_upload_links(
     """Test that we can get data needed for performing multipart upload directly to S3"""
     payload: dict[str, str] = {"filename": "myfile.txt", "filesize": "100000"}
 
-    response = await client.post(
-        f"{API_VTAG}/files/uploadlinks", json=payload, auth=auth
-    )
+    response = await client.post(f"{API_VTAG}/files/content", json=payload, auth=auth)
 
     payload: dict[str, str] = response.json()
 
     assert response.status_code == status.HTTP_200_OK
-    assert all(elm in payload.keys() for elm in ["chunk_size", "urls", "links"])
+    _ = FileUploadSchema.parse_obj(payload)

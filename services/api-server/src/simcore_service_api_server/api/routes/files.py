@@ -173,7 +173,7 @@ async def upload_files(files: list[UploadFile] = FileParam(...)):
 
 
 @router.post(
-    "/uploadlinks",
+    "/content",
     response_model=FileUploadSchema,
 )
 @cancel_on_disconnect
@@ -201,6 +201,18 @@ async def get_upload_links(
         is_directory=False,
     )
     return upload_links
+
+
+# @router.patch(
+#     "/content",
+#     response_model=File,
+# )
+# @cancel_on_disconnect
+# async def complete_multipart_upload(
+#     request: Request,
+#     uploaded_parts: FileUploadCompletionBody,
+#     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+# ):
 
 
 @router.get("/{file_id}", response_model=File, responses={**_COMMON_ERROR_RESPONSES})
