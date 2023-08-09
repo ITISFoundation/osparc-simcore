@@ -337,23 +337,17 @@ async def _abort_upload(
 
 async def abort_upload(
     upload_links: FileUploadSchema, client_session: ClientSession | None = None
-) -> bool:
+) -> None:
     """Abort a multipart upload
 
     Arguments:
         upload_links: FileUploadSchema
 
-    Returns:
-        True if abortion was successful else False
     """
-    try:
-        async with ClientSessionContextManager(client_session) as session:
-            await _abort_upload(
-                session=session, upload_links=upload_links, reraise_exceptions=True
-            )
-    except ClientError:
-        return False
-    return True
+    async with ClientSessionContextManager(client_session) as session:
+        await _abort_upload(
+            session=session, upload_links=upload_links, reraise_exceptions=True
+        )
 
 
 @dataclass

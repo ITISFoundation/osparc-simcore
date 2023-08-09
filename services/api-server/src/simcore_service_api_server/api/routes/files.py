@@ -6,6 +6,7 @@ from textwrap import dedent
 from typing import IO, Annotated, Final
 from uuid import UUID
 
+from aiohttp import ClientError
 from fastapi import APIRouter, Depends
 from fastapi import File as FileParam
 from fastapi import Header, Request, UploadFile, status
@@ -20,8 +21,9 @@ from models_library.api_schemas_storage import (
 )
 from models_library.projects_nodes_io import StorageFileID
 from pydantic import ByteSize, PositiveInt, ValidationError, parse_obj_as
-from servicelib.fastapi.requests_decorators import cancel_on_disconnect
+from servicelib.fastapi.requests_decorators import cancel_on_disconnect, catch_n_raise
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
+from simcore_sdk.node_ports_common.exceptions import NodeportsException, S3TransferError
 from simcore_sdk.node_ports_common.filemanager import (
     UploadableFileObject,
     UploadedFile,
@@ -185,6 +187,10 @@ async def upload_files(files: list[UploadFile] = FileParam(...)):
     response_model=FileUploadSchema,
 )
 @cancel_on_disconnect
+@catch_n_raise(
+    exceptions=[NodeportsException, ValidationError, ClientError],
+    http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+)
 async def get_upload_links(
     request: Request,
     client_file: ClientFile,
@@ -225,6 +231,10 @@ async def get_upload_links(
     response_model=File,
 )
 @cancel_on_disconnect
+@catch_n_raise(
+    exceptions=[ValueError, S3TransferError, ClientError, ValidationError],
+    http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+)
 async def complete_multipart_upload(
     request: Request,
     client_file: ClientFile,
@@ -260,8 +270,11 @@ async def complete_multipart_upload(
     return file_meta
 
 
-@router.delete("/content", response_model=bool)
+@router.delete("/content")
 @cancel_on_disconnect
+@catch_n_raise(
+    exceptions=[ClientError], http_status=status.HTTP_500_INTERNAL_SERVER_ERROR
+)
 async def abort_multipart_upload(
     request: Request,
     upload_links: FileUploadSchema,
@@ -279,7 +292,7 @@ async def abort_multipart_upload(
     """
     assert request  # nosec
     assert user_id  # nosec
-    return await abort_upload(upload_links=upload_links)
+    await abort_upload(upload_links=upload_links)
 
 
 @router.get("/{file_id}", response_model=File, responses={**_COMMON_ERROR_RESPONSES})
