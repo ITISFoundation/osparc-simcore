@@ -18,11 +18,11 @@ from models_library.projects_nodes_io import NodeIDStr
 from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import (
     InstrumentationRabbitMessage,
+    RabbitResourceTrackingBaseMessage,
     RabbitResourceTrackingHeartbeatMessage,
     RabbitResourceTrackingStartedMessage,
     RabbitResourceTrackingStoppedMessage,
     SimcorePlatformStatus,
-    _RabbitResourceTrackingBaseMessage,
 )
 from models_library.services import ServiceKey, ServiceType, ServiceVersion
 from pytest_mock import MockerFixture
@@ -174,7 +174,7 @@ async def test_publish_service_resource_tracking_started(
     random_task = random.choice(tasks)  # noqa: S311
 
     await consumer.subscribe(
-        _RabbitResourceTrackingBaseMessage.get_channel_name(), mocked_message_parser
+        RabbitResourceTrackingBaseMessage.get_channel_name(), mocked_message_parser
     )
     random_service_run_id = faker.pystr()
     before_publication_time = datetime.datetime.now(datetime.timezone.utc)
@@ -220,7 +220,7 @@ async def test_publish_service_resource_tracking_stopped(
     publisher = rabbitmq_client("publisher")
 
     await consumer.subscribe(
-        _RabbitResourceTrackingBaseMessage.get_channel_name(), mocked_message_parser
+        RabbitResourceTrackingBaseMessage.get_channel_name(), mocked_message_parser
     )
     random_service_run_id = faker.pystr()
     before_publication_time = datetime.datetime.now(datetime.timezone.utc)
@@ -254,7 +254,7 @@ async def test_publish_service_resource_tracking_heartbeat(
     publisher = rabbitmq_client("publisher")
 
     await consumer.subscribe(
-        _RabbitResourceTrackingBaseMessage.get_channel_name(), mocked_message_parser
+        RabbitResourceTrackingBaseMessage.get_channel_name(), mocked_message_parser
     )
     random_service_run_id = faker.pystr()
     before_publication_time = datetime.datetime.now(datetime.timezone.utc)
