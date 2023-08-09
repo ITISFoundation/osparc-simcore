@@ -285,8 +285,6 @@ async def abort_multipart_upload(
         upload_links: The FileUploadSchema
         user_id: The user id
 
-    Returns:
-        True if the abortion was successfull, else False
     """
     assert request  # nosec
     assert user_id  # nosec
