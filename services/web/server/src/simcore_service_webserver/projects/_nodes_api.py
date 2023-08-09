@@ -127,7 +127,7 @@ def _get_files_with_thumbnails(
 ) -> list[_FileWithThumbnail]:
     """returns a list of tuples where the second entry is the thumbnails"""
 
-    search_file_name_to_file_meta_data_get: dict[str, FileMetaDataGet] = {
+    selected_file_entries: dict[str, FileMetaDataGet] = {
         __get_search_key(f): f
         for f in assets_files
         if not f.file_id.endswith(".hidden_do_not_remove")
@@ -136,39 +136,35 @@ def _get_files_with_thumbnails(
 
     with_thumbnail_image: list[_FileWithThumbnail] = []
 
-    for search_file_name in search_file_name_to_file_meta_data_get:
+    for selected_file in set(selected_file_entries.keys()):
         # search for thumbnail
         thumbnail: FileMetaDataGet | None = None
         for extension in _SUPPORTED_THUMBNAIL_EXTENSIONS:
-            thumbnail_search_file_name = f"{search_file_name}{extension}"
-            if thumbnail_search_file_name in search_file_name_to_file_meta_data_get:
-                thumbnail = search_file_name_to_file_meta_data_get[
-                    thumbnail_search_file_name
-                ]
+            thumbnail_search_file_name = f"{selected_file}{extension}"
+            if thumbnail_search_file_name in selected_file_entries:
+                thumbnail = selected_file_entries[thumbnail_search_file_name]
                 break
+        if not thumbnail:
+            continue
 
-        if thumbnail:
-            # do something with it emit an entry
-            with_thumbnail_image.append(
-                _FileWithThumbnail(
-                    file=search_file_name_to_file_meta_data_get[search_file_name],
-                    thumbnail=thumbnail,
-                )
+        # since there is a thumbnail it can be associated to a file
+        with_thumbnail_image.append(
+            _FileWithThumbnail(
+                file=selected_file_entries[selected_file],
+                thumbnail=thumbnail,
             )
-
-    # remove entries which have been associated
-    for entry in with_thumbnail_image:
-        search_file_name_to_file_meta_data_get.pop(__get_search_key(entry.file), None)
-        search_file_name_to_file_meta_data_get.pop(
-            __get_search_key(entry.thumbnail), None
         )
+        # remove entries which have been used
+        selected_file_entries.pop(
+            __get_search_key(selected_file_entries[selected_file]), None
+        )
+        selected_file_entries.pop(__get_search_key(thumbnail), None)
 
-    without_thumbnail_image: list[_FileWithThumbnail] = [
-        _FileWithThumbnail(file=x, thumbnail=x)
-        for x in search_file_name_to_file_meta_data_get.values()
+    no_thumbnail_image: list[_FileWithThumbnail] = [
+        _FileWithThumbnail(file=x, thumbnail=x) for x in selected_file_entries.values()
     ]
 
-    return with_thumbnail_image + without_thumbnail_image
+    return with_thumbnail_image + no_thumbnail_image
 
 
 async def __get_link(
