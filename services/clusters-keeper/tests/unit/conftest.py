@@ -6,8 +6,9 @@ import json
 import random
 from datetime import timezone
 from pathlib import Path
-from typing import Any, AsyncIterator, Callable, Iterator
+from typing import AsyncIterator, Callable, Iterator
 
+import aiodocker
 import httpx
 import psutil
 import pytest
@@ -19,7 +20,7 @@ from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
 from moto.server import ThreadedMotoServer
-from pydantic import ByteSize, PositiveInt
+from pydantic import ByteSize
 from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
@@ -90,31 +91,9 @@ def app_environment(
             "EC2_INSTANCES_SUBNET_ID": faker.pystr(),
             "EC2_INSTANCES_AMI_ID": faker.pystr(),
             "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(ec2_instances),
-            "NODES_MONITORING_NODE_LABELS": json.dumps(["pytest.fake-node-label"]),
-            "NODES_MONITORING_SERVICE_LABELS": json.dumps(
-                ["pytest.fake-service-label"]
-            ),
-            "NODES_MONITORING_NEW_NODES_LABELS": json.dumps(
-                ["pytest.fake-new-node-label"]
-            ),
         },
     )
     return mock_env_devel_environment | envs
-
-
-@pytest.fixture
-def disable_dynamic_service_background_task(mocker: MockerFixture) -> Iterator[None]:
-    mocker.patch(
-        "simcore_service_clusters_keeper.dynamic_scaling.start_periodic_task",
-        autospec=True,
-    )
-
-    mocker.patch(
-        "simcore_service_clusters_keeper.dynamic_scaling.stop_periodic_task",
-        autospec=True,
-    )
-
-    yield
 
 
 @pytest.fixture
@@ -159,40 +138,6 @@ async def async_client(initialized_app: FastAPI) -> AsyncIterator[httpx.AsyncCli
         headers={"Content-Type": "application/json"},
     ) as client:
         yield client
-
-
-_GIGA_NANO_CPU = 10**9
-NUM_CPUS = PositiveInt
-
-
-@pytest.fixture
-def create_task_reservations() -> Callable[[NUM_CPUS, int], dict[str, Any]]:
-    def _creator(num_cpus: NUM_CPUS, memory: ByteSize | int) -> dict[str, Any]:
-        return {
-            "Resources": {
-                "Reservations": {
-                    "NanoCPUs": num_cpus * _GIGA_NANO_CPU,
-                    "MemoryBytes": int(memory),
-                }
-            }
-        }
-
-    return _creator
-
-
-@pytest.fixture
-def create_task_limits() -> Callable[[NUM_CPUS, int], dict[str, Any]]:
-    def _creator(num_cpus: NUM_CPUS, memory: ByteSize | int) -> dict[str, Any]:
-        return {
-            "Resources": {
-                "Limits": {
-                    "NanoCPUs": num_cpus * _GIGA_NANO_CPU,
-                    "MemoryBytes": int(memory),
-                }
-            }
-        }
-
-    return _creator
 
 
 @pytest.fixture(scope="module")
@@ -414,3 +359,9 @@ def fake_ec2_instance_data(faker: Faker) -> Callable[..., EC2InstanceData]:
 async def mocked_redis_server(mocker: MockerFixture) -> None:
     mock_redis = FakeRedis()
     mocker.patch("redis.asyncio.from_url", return_value=mock_redis)
+
+
+@pytest.fixture
+async def async_docker_client() -> AsyncIterator[aiodocker.Docker]:
+    async with aiodocker.Docker() as docker_client:
+        yield docker_client
