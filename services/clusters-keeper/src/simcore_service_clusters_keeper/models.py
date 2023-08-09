@@ -18,9 +18,9 @@ InstancePrivateDNSName = str
 @dataclass(frozen=True)
 class EC2InstanceData:
     launch_time: datetime.datetime
-    id: str
+    id: str  # noqa: A003
     aws_private_dns: InstancePrivateDNSName
-    type: InstanceTypeType
+    type: InstanceTypeType  # noqa: A003
     state: InstanceStateNameType
 
 

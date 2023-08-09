@@ -5,6 +5,7 @@ for instance: service health-check (w/ different variants), diagnostics, debuggi
 """
 
 import datetime
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, FastAPI
 from fastapi.responses import PlainTextResponse
@@ -35,7 +36,7 @@ class _StatusGet(BaseModel):
 
 
 @router.get("/status", include_in_schema=True, response_model=_StatusGet)
-async def get_status(app: FastAPI = Depends(get_app)) -> _StatusGet:
+async def get_status(app: Annotated[FastAPI, Depends(get_app)]) -> _StatusGet:
     return _StatusGet(
         rabbitmq=_ComponentStatus(
             is_enabled=bool(app.state.rabbitmq_client),

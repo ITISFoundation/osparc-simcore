@@ -4,9 +4,9 @@
 
 import json
 import random
+from collections.abc import AsyncIterator, Callable, Iterator
 from datetime import timezone
 from pathlib import Path
-from typing import AsyncIterator, Callable, Iterator
 
 import aiodocker
 import httpx
@@ -21,7 +21,6 @@ from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
 from moto.server import ThreadedMotoServer
 from pydantic import ByteSize
-from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
@@ -74,7 +73,7 @@ def ec2_instances() -> list[InstanceTypeType]:
 @pytest.fixture
 def app_environment(
     mock_env_devel_environment: EnvVarsDict,
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     faker: Faker,
     ec2_instances: list[InstanceTypeType],
 ) -> EnvVarsDict:
@@ -147,14 +146,18 @@ def mocked_aws_server() -> Iterator[ThreadedMotoServer]:
     """
     server = ThreadedMotoServer(ip_address=get_localhost_ip(), port=unused_port())
     # pylint: disable=protected-access
-    print(f"--> started mock AWS server on {server._ip_address}:{server._port}")
     print(
-        f"--> Dashboard available on [http://{server._ip_address}:{server._port}/moto-api/]"
+        f"--> started mock AWS server on {server._ip_address}:{server._port}"  # noqa: SLF001
+    )
+    print(
+        f"--> Dashboard available on [http://{server._ip_address}:{server._port}/moto-api/]"  # noqa: SLF001
     )
     server.start()
     yield server
     server.stop()
-    print(f"<-- stopped mock AWS server on {server._ip_address}:{server._port}")
+    print(
+        f"<-- stopped mock AWS server on {server._ip_address}:{server._port}"  # noqa: SLF001
+    )
 
 
 @pytest.fixture
@@ -163,7 +166,7 @@ def reset_aws_server_state(mocked_aws_server: ThreadedMotoServer) -> Iterator[No
     yield
     # pylint: disable=protected-access
     requests.post(
-        f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}/moto-api/reset",
+        f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}/moto-api/reset",  # noqa: SLF001
         timeout=10,
     )
 
@@ -174,20 +177,20 @@ def mocked_aws_server_envs(
     mocked_aws_server: ThreadedMotoServer,
     reset_aws_server_state: None,
     monkeypatch: pytest.MonkeyPatch,
-) -> Iterator[EnvVarsDict]:
+) -> EnvVarsDict:
     changed_envs = {
-        "EC2_ENDPOINT": f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access
+        "EC2_ENDPOINT": f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access # noqa: SLF001
         "EC2_ACCESS_KEY_ID": "xxx",
         "EC2_SECRET_ACCESS_KEY": "xxx",
     }
-    yield app_environment | setenvs_from_dict(monkeypatch, changed_envs)
+    return app_environment | setenvs_from_dict(monkeypatch, changed_envs)
 
 
 @pytest.fixture
 def aws_allowed_ec2_instance_type_names(
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
-) -> Iterator[EnvVarsDict]:
+) -> EnvVarsDict:
     changed_envs = {
         "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
             [
@@ -199,7 +202,7 @@ def aws_allowed_ec2_instance_type_names(
             ]
         ),
     }
-    yield app_environment | setenvs_from_dict(monkeypatch, changed_envs)
+    return app_environment | setenvs_from_dict(monkeypatch, changed_envs)
 
 
 @pytest.fixture(scope="session")
@@ -297,7 +300,7 @@ async def aws_ami_id(
     ec2_client: EC2Client,
 ) -> str:
     images = await ec2_client.describe_images()
-    image = random.choice(images["Images"])
+    image = random.choice(images["Images"])  # noqa S311
     ami_id = image["ImageId"]  # type: ignore
     monkeypatch.setenv("EC2_INSTANCES_AMI_ID", ami_id)
     return ami_id
@@ -317,8 +320,8 @@ async def clusters_keeper_ec2(
 @pytest.fixture
 async def ec2_client(
     clusters_keeper_ec2: ClustersKeeperEC2,
-) -> AsyncIterator[EC2Client]:
-    yield clusters_keeper_ec2.client
+) -> EC2Client:
+    return clusters_keeper_ec2.client
 
 
 @pytest.fixture
