@@ -166,7 +166,7 @@ class RabbitAutoscalingStatusMessage(_RabbitAutoscalingBaseMessage):
     )
 
 
-class _RabbitResourceTrackingBaseMessage(RabbitMessageBase):
+class RabbitResourceTrackingBaseMessage(RabbitMessageBase):
     channel_name: Literal["io.simcore.service.tracking"] = Field(
         default="io.simcore.service.tracking", const=True
     )
@@ -174,13 +174,16 @@ class _RabbitResourceTrackingBaseMessage(RabbitMessageBase):
     service_run_id: str = Field(
         ..., description="uniquely identitifies the service run"
     )
-    created_at: datetime.datetime = Field(..., description="message creation datetime")
+    created_at: datetime.datetime = Field(
+        default_factory=lambda: datetime.datetime.now(datetime.timezone.utc),
+        description="message creation datetime",
+    )
 
     def routing_key(self) -> str | None:
         return None
 
 
-class RabbitResourceTrackingStartedMessage(_RabbitResourceTrackingBaseMessage):
+class RabbitResourceTrackingStartedMessage(RabbitResourceTrackingBaseMessage):
     wallet_id: WalletID
     wallet_name: str
 
@@ -205,7 +208,7 @@ class RabbitResourceTrackingStartedMessage(_RabbitResourceTrackingBaseMessage):
     )
 
 
-class RabbitResourceTrackingHeartbeatMessage(_RabbitResourceTrackingBaseMessage):
+class RabbitResourceTrackingHeartbeatMessage(RabbitResourceTrackingBaseMessage):
     ...
 
 
@@ -214,8 +217,15 @@ class SimcorePlatformStatus(StrAutoEnum):
     BAD = auto()
 
 
-class RabbitResourceTrackingStoppedMessage(_RabbitResourceTrackingBaseMessage):
+class RabbitResourceTrackingStoppedMessage(RabbitResourceTrackingBaseMessage):
     simcore_platform_status: SimcorePlatformStatus = Field(
         ...,
         description=f"{SimcorePlatformStatus.BAD} if simcore failed to run the service properly",
     )
+
+
+RabbitResourceTrackingMessages = (
+    RabbitResourceTrackingStartedMessage
+    | RabbitResourceTrackingStoppedMessage
+    | RabbitResourceTrackingHeartbeatMessage
+)

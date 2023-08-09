@@ -341,7 +341,7 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
       const openButton = this.getChildControl("open-button");
       openButton.addListener("execute", () => {
         const selection = this.getChildControl("wallet-selector").getSelection();
-        if (selection.length) {
+        if (selection.length && selection[0]["walletId"]) {
           const params = {
             url: {
               "studyId": this.__studyData["uuid"],
@@ -358,6 +358,9 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
               const msg = err.message || this.tr("Error selecting Wallet");
               osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
             });
+        } else {
+          store.setActiveWallet(this.getWallet());
+          this.fireEvent("startStudy");
         }
       });
 

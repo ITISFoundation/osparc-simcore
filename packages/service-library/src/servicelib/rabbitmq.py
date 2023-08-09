@@ -36,6 +36,7 @@ class RabbitMessage(Protocol):
 
 
 _DEFAULT_RABBITMQ_SERVER_HEARTBEAT_S = 60
+_DEFAULT_PREFETCH_VALUE = 10
 
 
 @dataclass
@@ -180,12 +181,14 @@ class RabbitMQClient:
 
         Raises:
             aio_pika.exceptions.ChannelPreconditionFailed: In case an existing exchange with different type is used
+        Returns:
+            queue name
         """
 
         assert self._channel_pool  # nosec
         async with self._channel_pool.acquire() as channel:
-            _DEFAULT_PREFETCH_VALUE = 10  # this value is set to the default for now
-            await channel.set_qos(_DEFAULT_PREFETCH_VALUE)
+            qos_value = 1 if exclusive_queue is False else _DEFAULT_PREFETCH_VALUE
+            await channel.set_qos(qos_value)
 
             exchange = await channel.declare_exchange(
                 exchange_name,

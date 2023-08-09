@@ -58,6 +58,8 @@ exceptiongroup==1.1.2
     #   pytest
 faker==19.2.0
     # via -r requirements/_test.in
+flaky==3.7.0
+    # via -r requirements/_test.in
 frozenlist==1.4.0
     # via
     #   -c requirements/_base.txt

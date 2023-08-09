@@ -6,10 +6,8 @@ import pytest
 import sqlalchemy as sa
 from fastapi import FastAPI
 from pytest_mock import MockerFixture
-from simcore_postgres_database.models.resource_tracker_containers import (
-    resource_tracker_container,
-)
-from simcore_service_resource_usage_tracker.resource_tracker_core import (
+from simcore_postgres_database.models.resource_tracker import resource_tracker_container
+from simcore_service_resource_usage_tracker.modules.prometheus_containers.core import (
     collect_container_resource_usage_task,
 )
 
@@ -36,7 +34,7 @@ def mocked_prometheus_client_custom_query(
         data = json.load(file)
 
     mocked_get_prometheus_api_client = mocker.patch(
-        "simcore_service_resource_usage_tracker.resource_tracker_core._prometheus_sync_client_custom_query",
+        "simcore_service_resource_usage_tracker.modules.prometheus_containers.core._prometheus_sync_client_custom_query",
         autospec=True,
         return_value=data,
     )
@@ -46,6 +44,7 @@ def mocked_prometheus_client_custom_query(
 async def test_collect_container_resource_usage_task(
     mocked_redis_server: None,
     mocked_prometheus: mock.Mock,
+    mocked_setup_rabbitmq: mock.MagicMock,
     mocked_prometheus_client_custom_query: mock.MagicMock,
     initialized_app: FastAPI,
     postgres_db: sa.engine.Engine,

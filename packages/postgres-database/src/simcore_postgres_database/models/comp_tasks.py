@@ -6,6 +6,11 @@ import enum
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
+from ._common import (
+    column_created_datetime,
+    column_modified_datetime,
+    register_modified_datetime_auto_update_trigger,
+)
 from .base import metadata
 from .comp_pipeline import StateType
 
@@ -75,9 +80,17 @@ comp_tasks = sa.Table(
     sa.Column("submit", sa.DateTime, doc="UTC timestamp for task submission"),
     sa.Column("start", sa.DateTime, doc="UTC timestamp when task started"),
     sa.Column("end", sa.DateTime, doc="UTC timestamp for task completion"),
+    sa.Column(
+        "last_heartbeat",
+        sa.DateTime(timezone=True),
+        doc="UTC timestamp for last task running check",
+    ),
+    column_created_datetime(timezone=True),
+    column_modified_datetime(timezone=True),
     sa.UniqueConstraint("project_id", "node_id", name="project_node_uniqueness"),
 )
 
+register_modified_datetime_auto_update_trigger(comp_tasks)
 
 DB_PROCEDURE_NAME: str = "notify_comp_tasks_changed"
 DB_TRIGGER_NAME: str = f"{DB_PROCEDURE_NAME}_event"

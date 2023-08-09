@@ -22,6 +22,7 @@ from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
+from settings_library.rabbit import RabbitSettings
 from simcore_service_resource_usage_tracker.core.application import create_app
 from simcore_service_resource_usage_tracker.core.settings import ApplicationSettings
 
@@ -38,6 +39,7 @@ pytest_plugins = [
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.cli_runner",
     "pytest_simcore.environment_configs",
+    "pytest_simcore.rabbit_service",
 ]
 
 
@@ -51,7 +53,9 @@ def project_slug_dir(osparc_simcore_root_dir: Path) -> Path:
 
 
 @pytest.fixture
-def app_environment(monkeypatch: MonkeyPatch, faker: Faker) -> EnvVarsDict:
+def app_environment(
+    mock_env_devel_environment: EnvVarsDict, monkeypatch: MonkeyPatch, faker: Faker
+) -> EnvVarsDict:
     envs = setenvs_from_dict(
         monkeypatch,
         {
@@ -65,7 +69,7 @@ def app_environment(monkeypatch: MonkeyPatch, faker: Faker) -> EnvVarsDict:
         },
     )
 
-    return envs
+    return mock_env_devel_environment | envs
 
 
 @pytest.fixture
@@ -85,6 +89,21 @@ def disabled_database(
     monkeypatch.delenv("POSTGRES_USER")
     monkeypatch.delenv("POSTGRES_PASSWORD")
     monkeypatch.delenv("POSTGRES_DB")
+
+
+@pytest.fixture
+def disabled_rabbitmq(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.delenv("RABBIT_HOST")
+    monkeypatch.delenv("RABBIT_USER")
+    monkeypatch.delenv("RABBIT_SECURE")
+    monkeypatch.delenv("RABBIT_PASSWORD")
+
+
+@pytest.fixture
+def enabled_rabbitmq(
+    app_environment: EnvVarsDict, rabbit_service: RabbitSettings
+) -> RabbitSettings:
+    return rabbit_service
 
 
 @pytest.fixture
@@ -181,12 +200,12 @@ def mocked_prometheus_with_query(
 @pytest.fixture
 def disabled_tracker_background_task(mocker: MockerFixture) -> dict[str, mock.Mock]:
     mocked_start = mocker.patch(
-        "simcore_service_resource_usage_tracker.resource_tracker.start_periodic_task",
+        "simcore_service_resource_usage_tracker.modules.prometheus_containers.plugin.start_periodic_task",
         autospec=True,
     )
 
     mocked_stop = mocker.patch(
-        "simcore_service_resource_usage_tracker.resource_tracker.stop_periodic_task",
+        "simcore_service_resource_usage_tracker.modules.prometheus_containers.plugin.stop_periodic_task",
         autospec=True,
     )
     return {"start_task": mocked_start, "stop_task": mocked_stop}
@@ -196,3 +215,12 @@ def disabled_tracker_background_task(mocker: MockerFixture) -> dict[str, mock.Mo
 async def mocked_redis_server(mocker: MockerFixture) -> None:
     mock_redis = FakeRedis()
     mocker.patch("redis.asyncio.from_url", return_value=mock_redis)
+
+
+@pytest.fixture
+def mocked_setup_rabbitmq(mocker: MockerFixture):
+    mocked_rabbitmq = mocker.patch(
+        "simcore_service_resource_usage_tracker.core.application.setup_rabbitmq",
+        autospec=True,
+    )
+    return mocked_rabbitmq
