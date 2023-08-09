@@ -35,6 +35,7 @@ SERVICES_NAMES_TO_BUILD := \
   api-server \
   autoscaling \
   catalog \
+	clusters-keeper \
   dask-sidecar \
   datcore-adapter \
   director \
