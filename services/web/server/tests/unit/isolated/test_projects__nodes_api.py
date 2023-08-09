@@ -5,7 +5,7 @@ import pytest
 from models_library.api_schemas_storage import FileMetaDataGet
 from pydantic import parse_obj_as
 from simcore_service_webserver.projects._nodes_api import (
-    _SUPPORTED_PREVIEW_FILES,
+    _SUPPORTED_PREVIEW_FILE_EXTENSIONS,
     _FileWithThumbnail,
     _get_files_with_thumbnails,
 )
@@ -103,10 +103,10 @@ def _get_comparable(entries: list[_FileWithThumbnail]) -> set[tuple[str, str]]:
             id="one_to_one_multiple_entries_some_have_thumbnails",
         ),
         pytest.param(
-            [_c(f"a{x}") for x in _SUPPORTED_PREVIEW_FILES],
+            [_c(f"a{x}") for x in _SUPPORTED_PREVIEW_FILE_EXTENSIONS],
             [
                 _FileWithThumbnail(_c(f"a{x}"), _c(f"a{x}"))
-                for x in _SUPPORTED_PREVIEW_FILES
+                for x in _SUPPORTED_PREVIEW_FILE_EXTENSIONS
             ],
             id="all_supported_extensions_detected",
         ),

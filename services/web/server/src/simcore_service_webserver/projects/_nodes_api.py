@@ -34,7 +34,7 @@ _logger = logging.getLogger(__name__)
 _NODE_START_INTERVAL_S: Final[datetime.timedelta] = datetime.timedelta(seconds=15)
 
 _SUPPORTED_THUMBNAIL_EXTENSIONS: set[str] = {".png", ".jpeg", ".jpg"}
-_SUPPORTED_PREVIEW_FILES: set[str] = {".gltf", ".png", ".jpeg", ".jpg"}
+_SUPPORTED_PREVIEW_FILE_EXTENSIONS: set[str] = {".gltf", ".png", ".jpeg", ".jpg"}
 
 ASSETS_FOLDER: Final[str] = "assets"
 
@@ -131,7 +131,7 @@ def _get_files_with_thumbnails(
         __get_search_key(f): f
         for f in assets_files
         if not f.file_id.endswith(".hidden_do_not_remove")
-        and Path(f.file_id).suffix.lower() in _SUPPORTED_PREVIEW_FILES
+        and Path(f.file_id).suffix.lower() in _SUPPORTED_PREVIEW_FILE_EXTENSIONS
     }
 
     with_thumbnail_image: list[_FileWithThumbnail] = []
