@@ -119,19 +119,20 @@ def cancel_on_disconnect(handler: _HandlerWithRequestArg):
     return wrapper
 
 
-def catch_n_raise(exceptions: list[type], http_status: int):
+def catch_n_raise(exception_types, http_status: int):
     """Catch specified exceptions and raise a FastAPI.HTTPException
 
     Arguments:
-        exceptions: Tuple of Exceptions
+        exception_types: Tuple of exception types
         http_status: HTTP status to return in case exception is caught
     """
 
     def decorator(method):
-        def wrapper(*args, **kwargs):
+        @wraps(method)
+        async def wrapper(*args, **kwargs):
             try:
-                return method(*args, **kwargs)
-            except tuple(exceptions) as e:
+                return await method(*args, **kwargs)
+            except exception_types as e:
                 raise HTTPException(status_code=http_status, detail=str(e)) from e
 
         return wrapper

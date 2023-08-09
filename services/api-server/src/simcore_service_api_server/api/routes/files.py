@@ -186,11 +186,11 @@ async def upload_files(files: list[UploadFile] = FileParam(...)):
     "/content",
     response_model=FileUploadSchema,
 )
-@cancel_on_disconnect
 @catch_n_raise(
-    exceptions=[NodeportsException, ValidationError, ClientError],
+    exception_types=(NodeportsException, ValidationError, ClientError),
     http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
 )
+@cancel_on_disconnect
 async def get_upload_links(
     request: Request,
     client_file: ClientFile,
@@ -230,11 +230,11 @@ async def get_upload_links(
     "/content",
     response_model=File,
 )
-@cancel_on_disconnect
 @catch_n_raise(
-    exceptions=[ValueError, S3TransferError, ClientError, ValidationError],
+    exception_types=(ValueError, S3TransferError, ClientError, ValidationError),
     http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
 )
+@cancel_on_disconnect
 async def complete_multipart_upload(
     request: Request,
     client_file: ClientFile,
@@ -271,10 +271,10 @@ async def complete_multipart_upload(
 
 
 @router.delete("/content")
-@cancel_on_disconnect
 @catch_n_raise(
-    exceptions=[ClientError], http_status=status.HTTP_500_INTERNAL_SERVER_ERROR
+    exception_types=ClientError, http_status=status.HTTP_500_INTERNAL_SERVER_ERROR
 )
+@cancel_on_disconnect
 async def abort_multipart_upload(
     request: Request,
     upload_links: FileUploadSchema,
