@@ -78,7 +78,25 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
             const found = store.getWallets().find(wallet => wallet.getWalletId() === parseInt(walletId));
             if (found) {
               // switch status
-              found.setStatus(found.getStatus() === "ACTIVE" ? "INACTIVE" : "ACTIVE");
+              const newStatus = found.getStatus() === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+              const params = {
+                url: {
+                  "walletId": walletId
+                },
+                data: {
+                  "name": found.getName(),
+                  "description": found.getDescription(),
+                  "thumbnail": found.getThumbnail(),
+                  "status": newStatus
+                }
+              };
+              osparc.data.Resources.fetch("wallets", "put", params)
+                .then(() => found.setStatus(newStatus))
+                .catch(err => {
+                  console.error(err);
+                  const msg = err.message || (this.tr("Something went wrong updating the state"));
+                  osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+                });
             }
           }, this);
           this._add(control, {
