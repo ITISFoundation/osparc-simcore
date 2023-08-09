@@ -26,6 +26,7 @@ from simcore_sdk.node_ports_common.filemanager import (
     UploadableFileObject,
     UploadedFile,
     UploadedFolder,
+    abort_upload,
     complete_file_upload,
     get_upload_links_from_s3,
 )
@@ -257,6 +258,18 @@ async def complete_multipart_upload(
         checksum=e_tag,
     )
     return file_meta
+
+
+@router.delete("/content", response_model=bool)
+@cancel_on_disconnect
+async def abort_multipart_upload(
+    request: Request,
+    upload_links: FileUploadSchema,
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+):
+    assert request  # nosec
+    assert user_id  # nosec
+    return await abort_upload(upload_links=upload_links)
 
 
 @router.get("/{file_id}", response_model=File, responses={**_COMMON_ERROR_RESPONSES})
