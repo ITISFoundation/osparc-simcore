@@ -9,6 +9,9 @@ services:
   catalog:
     image: ${DOCKER_REGISTRY:-itisfoundation}/catalog:${DOCKER_IMAGE_TAG:-latest}
 
+  clusters-keeper:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/clusters-keeper:${DOCKER_IMAGE_TAG:-latest}
+
   director:
     image: ${DOCKER_REGISTRY:-itisfoundation}/director:${DOCKER_IMAGE_TAG:-latest}
 

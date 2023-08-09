@@ -27,6 +27,11 @@ services:
       - "8005:8000"
       - "3005:3000"
 
+  clusters-keeper:
+    ports:
+      - "8010:8000"
+      - "3015:3000"
+
   director:
     environment:
       - SC_BOOT_MODE=${SC_BOOT_MODE:-default}

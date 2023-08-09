@@ -1,0 +1,21 @@
+# Shortcut to install all packages needed to develop 'services/clusters-keeper'
+#
+# - As ci.txt but with current and repo packages in develop (edit) mode
+#
+# Usage:
+#   pip install -r requirements/dev.txt
+#
+
+# installs base + tests + tools requirements
+--requirement _base.txt
+--requirement _test.txt
+--requirement _tools.txt
+
+# installs this repo's packages
+--editable ../../packages/models-library
+--editable ../../packages/pytest-simcore
+--editable ../../packages/service-library[fastapi]
+--editable ../../packages/settings-library
+
+# installs current package
+--editable .
