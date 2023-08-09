@@ -186,7 +186,7 @@ async def _get_node_screenshots_parallel(
     user_id: UserID,
     files_with_thumbnails: list[_FileWithThumbnail],
 ) -> list[NodeScreenshot]:
-    """resolves links in parallel before composing all NodeScreenshot"""
+    """resolves links in parallel before returning all NodeScreenshot"""
 
     search_map: dict[str, FileMetaDataGet] = {}
 
