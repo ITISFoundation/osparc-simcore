@@ -43,7 +43,8 @@ async def test_regression_watchdog_blocks_on_handler_error(
             nonlocal raised_error
             if not raised_error and fail_once:
                 raised_error = True
-                raise RuntimeError("raised as expected")
+                msg = "raised as expected"
+                raise RuntimeError(msg)
 
     observer = ExtendedInotifyObserver()
     observer.schedule(
@@ -75,7 +76,8 @@ async def test_safe_file_system_event_handler(
     class MockedEventHandler(SafeFileSystemEventHandler):
         def event_handler(self, _: FileSystemEvent) -> None:
             if user_code_raises_error:
-                raise RuntimeError("error was raised")
+                msg = "error was raised"
+                raise RuntimeError(msg)
 
     mocked_handler = MockedEventHandler()
     mocked_handler.on_any_event(mocked_file_system_event)
