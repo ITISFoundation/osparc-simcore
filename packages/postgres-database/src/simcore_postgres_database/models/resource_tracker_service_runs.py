@@ -1,8 +1,4 @@
 """ resource_tracker_service_runs table
-
-    - resource_usage_tracker is listening to rabbitmq events from director-v2 & sidecars and stores the data in this table.
-    - this events are starting a service, stopping a service, heartbeat so we know whether the service is still running
-
 """
 import enum
 
@@ -20,9 +16,8 @@ class ResourceTrackerServiceType(str, enum.Enum):
 
 class ResourceTrackerServiceRunStatus(str, enum.Enum):
     RUNNING = "RUNNING"
-    STOPPED_SUCCESS = "STOPPED_SUCCESS"
-    STOPPED_USER_ERROR = "STOPPED_USER_ERROR"
-    STOPPED_PLATFORM_ERROR = "STOPPED_PLATFORM_ERROR"
+    SUCCESS = "SUCCESS"
+    ERROR = "ERROR"
 
 
 resource_tracker_service_runs = sa.Table(

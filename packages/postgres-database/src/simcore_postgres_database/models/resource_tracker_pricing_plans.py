@@ -1,6 +1,4 @@
 """ Pricing plan table
-  - To be flexible for different pricing models, we can define different pricing plans.
-  Each pricing plan can behave differently, based on the classification.
 """
 import enum
 
@@ -12,7 +10,7 @@ from .base import metadata
 
 class PricingPlanClassification(str, enum.Enum):
     """
-    This are our custom pricing plan classifications, each of them can have different behaviour.
+    These are our custom pricing plan classifications, each of them can have different behaviour.
     Potentional examples:
       - TIER
       - STORAGE
