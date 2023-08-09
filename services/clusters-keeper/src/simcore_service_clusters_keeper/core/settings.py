@@ -133,16 +133,16 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # RUNTIME  -----------------------------------------------------------
     CLUSTERS_KEEPER_DEBUG: bool = Field(
-        default=False, description="Debug mode", env=["clusters_keeper_DEBUG", "DEBUG"]
+        default=False, description="Debug mode", env=["CLUSTERS_KEEPER_DEBUG", "DEBUG"]
     )
 
     CLUSTERS_KEEPER_LOGLEVEL: LogLevel = Field(
-        LogLevel.INFO, env=["clusters_keeper_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
+        LogLevel.INFO, env=["CLUSTERS_KEEPER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
     )
     CLUSTERS_KEEPER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
         env=[
-            "clusters_keeper_LOG_FORMAT_LOCAL_DEV_ENABLED",
+            "CLUSTERS_KEEPER_LOG_FORMAT_LOCAL_DEV_ENABLED",
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
         ],
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",

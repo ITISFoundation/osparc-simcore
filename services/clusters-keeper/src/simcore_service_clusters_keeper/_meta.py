@@ -10,7 +10,7 @@ from packaging.version import Version
 from pydantic import parse_obj_as
 
 _current_distribution = pkg_resources.get_distribution(
-    "simcore-service-clusters_keeper"
+    "simcore-service-clusters-keeper"
 )
 
 __version__: str = _current_distribution.version
