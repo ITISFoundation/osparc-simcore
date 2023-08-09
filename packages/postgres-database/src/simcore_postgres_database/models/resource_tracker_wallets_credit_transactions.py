@@ -13,7 +13,7 @@ class TransactionBillingStatus(str, enum.Enum):
     PENDING = "PENDING"
     BILLED = "BILLED"
     NOT_BILLED = "NOT_BILLED"
-    MANUAL_REVIEW = "MANUAL_REVIEW"
+    REQUIRES_MANUAL_REVIEW = "REQUIRES_MANUAL_REVIEW"
 
 
 class TransactionClassification(str, enum.Enum):
@@ -76,7 +76,7 @@ resource_tracker_wallets_credit_transactions = sa.Table(
         "transaction_status",
         sa.Enum(TransactionBillingStatus),
         nullable=True,
-        doc="Transaction status, ex. PENDING, BILLED, NOT_BILLED, MANUAL_REVIEW",
+        doc="Transaction status, ex. PENDING, BILLED, NOT_BILLED, REQUIRES_MANUAL_REVIEW",
         index=True,
     ),
     sa.Column(
