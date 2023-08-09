@@ -32,6 +32,7 @@ pytest_plugins = [
     "pytest_simcore.aioresponses_mocker",
 ]
 
+_dummy_s3_url: str = "http://my-dummy-d3.com"
 
 # The adjacency list is defined as a dictionary with the key to the node and its list of successors
 FULL_PROJECT_PIPELINE_ADJACENCY: dict[str, list[str]] = {
@@ -396,8 +397,6 @@ async def storage_v0_service_mock(
 ) -> AioResponsesMock:
     """mocks responses of storage API"""
 
-    dummy_s3_url: AnyUrl = "http://my-dummy-d3.com"
-
     get_file_metadata_pattern = re.compile(
         r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+/metadata.+$"
     )
@@ -454,17 +453,22 @@ async def storage_v0_service_mock(
         payload={
             "data": parse_obj_as(
                 FileUploadCompleteResponse,
-                {"links": {"state": dummy_s3_url}},
+                {"links": {"state": _dummy_s3_url}},
             ).dict()
         },
     )
 
     aioresponses_mocker.post(
-        dummy_s3_url,
+        _dummy_s3_url,
         status=web.HTTPOk.status_code,
         payload={
             "data": {"state": "ok", "e_tag": "my_etag"},
         },
+    )
+
+    aioresponses_mocker.delete(
+        _dummy_s3_url,
+        status=web.HTTPOk.status_code,
     )
 
     return aioresponses_mocker

@@ -13,6 +13,7 @@ from httpx import AsyncClient
 from models_library.api_schemas_storage import FileUploadSchema
 from pydantic import parse_obj_as
 from pytest_simcore.services_api_mocks_for_aiohttp_clients import (
+    _dummy_s3_url,
     storage_v0_service_mock,
 )
 from respx import MockRouter
@@ -153,7 +154,6 @@ async def test_get_upload_links(
     _ = FileUploadSchema.parse_obj(payload)
 
 
-@pytest.mark.testit
 async def test_complete_multipart_upload(
     client: AsyncClient,
     auth: httpx.BasicAuth,
@@ -178,9 +178,7 @@ async def test_complete_multipart_upload(
     _ = File.parse_obj(payload)
 
 
-pytest.mark.markit
-
-
+@pytest.mark.testit
 async def test_delete_multipart_upload(
     client: AsyncClient,
     auth: httpx.BasicAuth,
@@ -188,12 +186,8 @@ async def test_delete_multipart_upload(
 ):
     assert storage_v0_service_mock  # nosec
 
-    msg = {
-        "chunk_size": 100,
-        "urls": ["http://my-s3-upload-url.com"],
-        "links": {
-            "abort_upload": "http://storage:8080/v0/locations/0/files/api123someting123string:abort?user_id=1",
-            "complete_upload": "http://storage:8080/v0/locations/0/files/api123something123string:complete?user_id=1",
-        },
-    }
-    response = await client.delete(f"{API_VTAG}/files/content", json=msg, auth=auth)
+    query_params = {"abort_upload_link": _dummy_s3_url}
+    response = await client.delete(
+        f"{API_VTAG}/files/content", params=query_params, auth=auth
+    )
+    assert response.status_code == status.HTTP_200_OK
