@@ -227,4 +227,5 @@ async def get_files_in_node_folder(
             await response.json()
         )
         assert list_of_files_enveloped.data is not None  # nosec
-        return list_of_files_enveloped.data
+        result: list[FileMetaDataGet] = list_of_files_enveloped.data
+        return result
