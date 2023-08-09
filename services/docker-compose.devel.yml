@@ -138,7 +138,7 @@ services:
       - RABBIT_HOST=${RABBIT_HOST}
       - RABBIT_PASSWORD=${RABBIT_PASSWORD}
       - RABBIT_PORT=${RABBIT_PORT}
-      - RABBIT_SECURE={RABBIT_SECURE}
+      - RABBIT_SECURE=${RABBIT_SECURE}
       - RABBIT_USER=${RABBIT_USER}
     volumes:
       - ./resource-usage-tracker:/devel/services/resource-usage-tracker
