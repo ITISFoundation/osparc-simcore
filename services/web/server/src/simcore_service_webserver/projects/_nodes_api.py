@@ -131,7 +131,7 @@ def _get_files_with_thumbnails(
         __get_search_key(f): f
         for f in assets_files
         if not f.file_id.endswith(".hidden_do_not_remove")
-        and Path(f.file_id).suffix in _SUPPORTED_PREVIEW_FILES
+        and Path(f.file_id).suffix.lower() in _SUPPORTED_PREVIEW_FILES
     }
 
     with_thumbnail_image: list[_FileWithThumbnail] = []
