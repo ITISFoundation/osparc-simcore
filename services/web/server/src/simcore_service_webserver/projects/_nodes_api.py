@@ -3,7 +3,7 @@ import logging
 import mimetypes
 import urllib.parse
 from pathlib import Path
-from typing import Final
+from typing import Final, NamedTuple
 
 from aiohttp import web
 from aiohttp.client import ClientError
@@ -117,9 +117,14 @@ def __get_search_key(meta_data: FileMetaDataGet) -> str:
     return f"{meta_data.file_id}".lower()
 
 
+class _FileWithThumbnail(NamedTuple):
+    file: FileMetaDataGet
+    thumbnail: FileMetaDataGet
+
+
 def _get_files_with_thumbnails(
     assets_files: list[FileMetaDataGet],
-) -> list[tuple[FileMetaDataGet, FileMetaDataGet]]:
+) -> list[_FileWithThumbnail]:
     """returns a list of tuples where the second entry is the thumbnails"""
 
     search_file_name_to_file_meta_data_get: dict[str, FileMetaDataGet] = {
@@ -129,7 +134,7 @@ def _get_files_with_thumbnails(
         and Path(f.file_id).suffix in _SUPPORTED_PREVIEW_FILES
     }
 
-    with_thumbnail_image: list[tuple[FileMetaDataGet, FileMetaDataGet]] = []
+    with_thumbnail_image: list[_FileWithThumbnail] = []
 
     for search_file_name in search_file_name_to_file_meta_data_get:
         # search for thumbnail
@@ -145,24 +150,28 @@ def _get_files_with_thumbnails(
         if thumbnail:
             # do something with it emit an entry
             with_thumbnail_image.append(
-                (search_file_name_to_file_meta_data_get[search_file_name], thumbnail)
+                _FileWithThumbnail(
+                    file=search_file_name_to_file_meta_data_get[search_file_name],
+                    thumbnail=thumbnail,
+                )
             )
 
     # remove entries which have been associated
-    for file_meta, thumbnail_meta in with_thumbnail_image:
-        search_file_name_to_file_meta_data_get.pop(__get_search_key(file_meta), None)
+    for entry in with_thumbnail_image:
+        search_file_name_to_file_meta_data_get.pop(__get_search_key(entry.file), None)
         search_file_name_to_file_meta_data_get.pop(
-            __get_search_key(thumbnail_meta), None
+            __get_search_key(entry.thumbnail), None
         )
 
-    without_thumbnail_image = [
-        (x, x) for x in search_file_name_to_file_meta_data_get.values()
+    without_thumbnail_image: list[_FileWithThumbnail] = [
+        _FileWithThumbnail(file=x, thumbnail=x)
+        for x in search_file_name_to_file_meta_data_get.values()
     ]
 
     return with_thumbnail_image + without_thumbnail_image
 
 
-async def _get_link(
+async def __get_link(
     app: web.Application, user_id: UserID, file_meta_data: FileMetaDataGet
 ) -> tuple[str, HttpUrl]:
     return __get_search_key(file_meta_data), await get_download_link(
@@ -172,21 +181,21 @@ async def _get_link(
     )
 
 
-async def _to_screenshots_in_parallel(
+async def _get_node_screenshots_parallel(
     app: web.Application,
     user_id: UserID,
-    entries: list[tuple[FileMetaDataGet, FileMetaDataGet]],
+    files_with_thumbnails: list[_FileWithThumbnail],
 ) -> list[NodeScreenshot]:
     """resolves links in parallel before composing all NodeScreenshot"""
 
     search_map: dict[str, FileMetaDataGet] = {}
 
-    for file_meta_data, thumbnail_meta_data in entries:
-        search_map[__get_search_key(file_meta_data)] = file_meta_data
-        search_map[__get_search_key(thumbnail_meta_data)] = thumbnail_meta_data
+    for entry in files_with_thumbnails:
+        search_map[__get_search_key(entry.file)] = entry.file
+        search_map[__get_search_key(entry.thumbnail)] = entry.thumbnail
 
     resolved_links: list[tuple[str, HttpUrl]] = await logged_gather(
-        *[_get_link(app, user_id, x) for x in search_map.values()],
+        *[__get_link(app, user_id, x) for x in search_map.values()],
         max_concurrency=10,
     )
 
@@ -194,11 +203,11 @@ async def _to_screenshots_in_parallel(
 
     return [
         NodeScreenshot(
-            mimetype=_guess_mimetype_from_name(t[0].file_id),
-            file_url=mapped_http_url[__get_search_key(t[0])],
-            thumbnail_url=mapped_http_url[__get_search_key(t[1])],
+            mimetype=_guess_mimetype_from_name(e.file.file_id),
+            file_url=mapped_http_url[__get_search_key(e.file)],
+            thumbnail_url=mapped_http_url[__get_search_key(e.thumbnail)],
         )
-        for t in entries
+        for e in files_with_thumbnails
     ]
 
 
@@ -252,12 +261,12 @@ async def get_node_screenshots(
             folder_name=ASSETS_FOLDER,
         )
 
-        asset_files_with_thumbnails: list[
-            tuple[FileMetaDataGet, FileMetaDataGet]
-        ] = _get_files_with_thumbnails(assets_files)
-
-        resolved_screenshots: list[NodeScreenshot] = await _to_screenshots_in_parallel(
-            app=request.app, user_id=user_id, entries=asset_files_with_thumbnails
+        resolved_screenshots: list[
+            NodeScreenshot
+        ] = await _get_node_screenshots_parallel(
+            app=request.app,
+            user_id=user_id,
+            files_with_thumbnails=_get_files_with_thumbnails(assets_files),
         )
         screenshots.extend(resolved_screenshots)
 
