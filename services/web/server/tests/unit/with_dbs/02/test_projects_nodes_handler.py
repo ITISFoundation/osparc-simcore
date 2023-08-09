@@ -7,16 +7,19 @@ import asyncio
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from pathlib import Path
 from random import choice
 from typing import Any, Final
 from unittest import mock
 from uuid import uuid4
 
 import pytest
+import pytest_mock
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.api_schemas_storage import FileMetaDataGet
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     ServiceResourcesDict,
@@ -854,8 +857,41 @@ def app_environment(
     return app_environment | new_envs
 
 
+@pytest.fixture
+def mock_storage_api(mocker: pytest_mock.MockerFixture, faker: Faker) -> None:
+    async def _mocked(*args, **kwargs) -> list[FileMetaDataGet]:
+        folder_name: str = kwargs["folder_name"]
+        file_uuid = f"{faker.uuid4()}/{faker.uuid4()}/{folder_name}/some_file.png"
+
+        file_in_dir = parse_obj_as(
+            FileMetaDataGet,
+            {
+                "file_uuid": file_uuid,
+                "location_id": 0,
+                "file_name": Path(file_uuid).name,
+                "file_id": file_uuid,
+                "created_at": "2020-06-17 12:28:55.705340",
+                "last_modified": "2020-06-17 12:28:55.705340",
+            },
+        )
+        return [file_in_dir]
+
+    mocker.patch(
+        "simcore_service_webserver.projects._nodes_api.get_files_in_node_folder",
+        autospec=True,
+        side_effect=_mocked,
+    )
+
+    mocker.patch(
+        "simcore_service_webserver.projects._nodes_api.get_download_link",
+        autospec=True,
+        return_value=faker.image_url(),
+    )
+
+
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_read_project_nodes_previews(
+    mock_storage_api: None,
     client: TestClient,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
     user_role: UserRole,
