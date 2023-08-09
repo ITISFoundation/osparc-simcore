@@ -6,7 +6,6 @@
 # files and folders recursively
 .codeclimate.yml                          @sanderegg @pcrespov
 .env-*                                    @mrnicegyu11 @YuryHrytsuk
-.travis.yml                               @sanderegg
 Makefile                                  @pcrespov @sanderegg
 
 
@@ -21,10 +20,9 @@ Makefile                                  @pcrespov @sanderegg
 /packages/service-library/                @pcrespov
 /packages/settings-library/               @pcrespov @sanderegg
 /requirements/                            @pcrespov @matusdrobuliak66
-/scripts/json-schema-to-openapi-schema    @sanderegg
 /services/agent/                          @GitHK
 /services/api-server/                     @pcrespov
-/services/autoscaling/                    @sanderegg @pcrespov
+/services/autoscaling/                    @sanderegg
 /services/catalog/                        @pcrespov @sanderegg
 /services/clusters-keeper/                @sanderegg
 /services/datcore-adapter/                @sanderegg
@@ -37,10 +35,10 @@ Makefile                                  @pcrespov @sanderegg
 /services/resource-usage-tracker/         @matusdrobuliak66
 /services/static-webserver/               @GitHK
 /services/static-webserver/client/        @odeimaiz
-/services/storage/                        @sanderegg @pcrespov
+/services/storage/                        @sanderegg
 /services/web/server/                     @pcrespov @sanderegg @GitHK @matusdrobuliak66
 /tests/environment-setup/                 @pcrespov
-/tests/performance/                       @pcrespov
+/tests/performance/                       @pcrespov @sanderegg
 /tests/public-api/                        @pcrespov
 requirements/*                            @pcrespov
 tools/*                                   @pcrespov
