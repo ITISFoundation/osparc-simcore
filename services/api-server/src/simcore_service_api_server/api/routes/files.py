@@ -267,6 +267,16 @@ async def abort_multipart_upload(
     upload_links: FileUploadSchema,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
 ):
+    """Abort a multipart upload
+
+    Arguments:
+        request: The Request
+        upload_links: The FileUploadSchema
+        user_id: The user id
+
+    Returns:
+        True if the abortion was successfull, else False
+    """
     assert request  # nosec
     assert user_id  # nosec
     return await abort_upload(upload_links=upload_links)
