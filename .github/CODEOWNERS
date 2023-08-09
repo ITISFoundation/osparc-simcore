@@ -26,6 +26,7 @@ Makefile                                  @pcrespov @sanderegg
 /services/api-server/                     @pcrespov
 /services/autoscaling/                    @sanderegg @pcrespov
 /services/catalog/                        @pcrespov @sanderegg
+/services/clusters-keeper/                @sanderegg
 /services/datcore-adapter/                @sanderegg
 /services/director*/                      @sanderegg @pcrespov @GitHK
 /services/docker-compose*.yml             @sanderegg @mrnicegyu11 @YuryHrytsuk
