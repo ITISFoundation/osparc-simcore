@@ -57,7 +57,7 @@ async def _get_location_id_from_location_name(
     raise exceptions.S3InvalidStore(store)
 
 
-async def complete_upload(
+async def _complete_upload(
     session: ClientSession,
     upload_completion_link: AnyUrl,
     parts: list[UploadedPart],
@@ -137,6 +137,24 @@ async def _resolve_location_id(
         )
     assert store_id is not None  # nosec
     return store_id
+
+
+async def complete_file_upload(
+    uploaded_parts: list[UploadedPart],
+    upload_completion_link: AnyUrl,
+    client_session: ClientSession | None = None,
+) -> ETag:
+    async with ClientSessionContextManager(client_session) as session:
+        e_tag: ETag | None = await _complete_upload(
+            session=session,
+            upload_completion_link=upload_completion_link,
+            parts=uploaded_parts,
+            is_directory=False,
+        )
+    assert (
+        e_tag is not None
+    )  # nosec - should be none because we are only uploading a file here
+    return e_tag
 
 
 async def get_download_link_from_s3(
@@ -454,7 +472,7 @@ async def _upload_to_s3(  # noqa: PLR0913
             progress_bar=progress_bar,
         )
     # complete the upload
-    e_tag = await complete_upload(
+    e_tag = await _complete_upload(
         session,
         upload_links.links.complete_upload,
         uploaded_parts,

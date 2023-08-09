@@ -12,6 +12,7 @@ from fastapi import Header, Request, UploadFile, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse
 from models_library.api_schemas_storage import (
+    ETag,
     FileUploadCompleteLinks,
     FileUploadCompletionBody,
     FileUploadSchema,
@@ -25,6 +26,7 @@ from simcore_sdk.node_ports_common.filemanager import (
     UploadableFileObject,
     UploadedFile,
     UploadedFolder,
+    complete_file_upload,
     get_upload_links_from_s3,
 )
 from simcore_sdk.node_ports_common.filemanager import upload_path as storage_upload_path
@@ -198,9 +200,8 @@ async def get_upload_links(
         FileUploadSchema
     """
     assert request  # nosec
-    file_meta: File = await File.create_from_name_and_size(
-        client_file.filename,
-        client_file.filesize,
+    file_meta: File = await File.create_from_client_file(
+        client_file,
         datetime.datetime.now(datetime.timezone.utc).isoformat(),
     )
     _, upload_links = await get_upload_links_from_s3(
@@ -224,28 +225,31 @@ async def get_upload_links(
 )
 @cancel_on_disconnect
 async def complete_multipart_upload(
-    request: Request,
+    client_file: ClientFile,
     uploaded_parts: FileUploadCompletionBody,
     completion_link: FileUploadCompleteLinks,
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
 ):
-    """Complete multipart upload to storage/s3
+    """Complete multipart upload of a single file
 
     Arguments:
-        request -- _description_
-        uploaded_parts -- _description_
-        completion_link -- _description_
-        user_id -- _description_
-
-    Raises:
-        ValueError: _description_
-        HTTPException: _description_
-        NotImplementedError: _description_
+        client_file -- File on the client side
+        uploaded_parts -- The uploaded parts
+        completion_link -- The S3 completion link
 
     Returns:
-        _description_
+        The File object
     """
-    pass
+    e_tag: ETag = await complete_file_upload(
+        uploaded_parts=uploaded_parts.parts,
+        upload_completion_link=completion_link.state,
+    )
+
+    file_meta: File = await File.create_from_client_file(
+        client_file,
+        datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        checksum=e_tag,
+    )
+    return file_meta
 
 
 @router.get("/{file_id}", response_model=File, responses={**_COMMON_ERROR_RESPONSES})

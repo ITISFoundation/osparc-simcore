@@ -17,7 +17,6 @@ class ClientFile(BaseModel):
 
     filename: ConstrainedStr = Field(..., description="File name")
     filesize: ByteSize = Field(..., description="File size in bytes")
-    checksum: str | None = Field(None, description="MD5 hash of the file's content")
 
 
 class File(BaseModel):
@@ -105,13 +104,13 @@ class File(BaseModel):
         )
 
     @classmethod
-    async def create_from_name_and_size(
-        cls, file_name: str, file_size: int, created_at: str
+    async def create_from_client_file(
+        cls, client_file: ClientFile, created_at: str, checksum: str | None = None
     ) -> "File":
         return cls(
-            id=cls.create_id(file_size, file_name, created_at),
-            filename=file_name,
-            checksum=None,
+            id=cls.create_id(client_file.filesize, client_file.filename, created_at),
+            filename=client_file.filename,
+            checksum=checksum,
         )
 
     @classmethod
