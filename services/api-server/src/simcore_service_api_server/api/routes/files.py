@@ -229,19 +229,23 @@ async def complete_multipart_upload(
     client_file: ClientFile,
     uploaded_parts: FileUploadCompletionBody,
     completion_link: FileUploadCompleteLinks,
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
 ):
     """Complete the multipart upload of a file
 
     Arguments:
-        request -- The Request
-        client_file -- The ClientFile object
-        uploaded_parts -- The uploaded parts
-        completion_link -- The S3 completion link for this multipart upload
+        request: The Request
+        client_file: The ClientFile object
+        uploaded_parts: The uploaded parts
+        completion_link: The S3 completion link for this multipart upload
+        user_id: The user id
 
     Returns:
         The File object
     """
     assert request  # nosec
+    assert user_id  # nosec
+
     e_tag: ETag = await complete_file_upload(
         uploaded_parts=uploaded_parts.parts,
         upload_completion_link=completion_link.state,
