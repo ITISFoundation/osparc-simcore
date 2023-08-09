@@ -15,7 +15,7 @@ from ..modules.db.tables import NodeClass
 log = logging.getLogger(__name__)
 
 _COMPLETED_STATES = (RunningState.ABORTED, RunningState.FAILED, RunningState.SUCCESS)
-_RUNNING_STATES = (RunningState.STARTED, RunningState.RETRY)
+_RUNNING_STATES = (RunningState.STARTED,)
 _TASK_TO_PIPELINE_CONVERSIONS = {
     # tasks are initially in NOT_STARTED state, then they transition to published
     (RunningState.PUBLISHED, RunningState.NOT_STARTED): RunningState.PUBLISHED,

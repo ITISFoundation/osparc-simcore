@@ -43,6 +43,15 @@ services:
       - ./catalog:/devel/services/catalog
       - ../packages:/devel/packages
 
+  clusters-keeper:
+    environment:
+      - SC_BOOT_MODE=debug-ptvsd
+      - LOG_LEVEL=DEBUG
+      - DEBUG=true
+    volumes:
+      - ./clusters-keeper:/devel/services/clusters-keeper
+      - ../packages:/devel/packages
+
   datcore-adapter:
     environment:
       - SC_BOOT_MODE=debug-ptvsd

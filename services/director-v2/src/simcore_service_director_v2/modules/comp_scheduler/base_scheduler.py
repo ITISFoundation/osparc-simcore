@@ -11,6 +11,7 @@ The sidecar will then change the state to STARTED, then to SUCCESS or FAILED.
 
 """
 import asyncio
+import datetime
 import logging
 import traceback
 from abc import ABC, abstractmethod
@@ -23,14 +24,14 @@ from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import RunningState
-from models_library.rabbitmq_messages import InstrumentationRabbitMessage
+from models_library.services import ServiceKey, ServiceType, ServiceVersion
 from models_library.users import UserID
 from pydantic import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
-from simcore_postgres_database.models.comp_tasks import NodeClass
 
+from ...constants import UNDEFINED_METADATA
 from ...core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalSchedulerChangedError,
@@ -39,15 +40,24 @@ from ...core.errors import (
     SchedulerError,
     TaskSchedulingError,
 )
+from ...core.settings import ComputationalBackendSettings
 from ...models.comp_pipelines import CompPipelineAtDB
-from ...models.comp_runs import CompRunsAtDB, MetadataDict
+from ...models.comp_runs import CompRunsAtDB, RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB, Image
-from ...utils.computations import get_pipeline_state_from_task_states
-from ...utils.scheduler import (
+from ...utils.comp_scheduler import (
     COMPLETED_STATES,
     PROCESSING_STATES,
+    RUNNING_STATES,
     WAITING_FOR_START_STATES,
     Iteration,
+    create_service_resources_from_task,
+    get_resource_tracking_run_id,
+)
+from ...utils.computations import get_pipeline_state_from_task_states
+from ...utils.rabbitmq import (
+    publish_service_resource_tracking_heartbeat,
+    publish_service_resource_tracking_started,
+    publish_service_started_metrics,
 )
 from ..db.repositories.comp_pipelines import CompPipelinesRepository
 from ..db.repositories.comp_runs import CompRunsRepository
@@ -56,15 +66,42 @@ from ..db.repositories.comp_tasks import CompTasksRepository
 _logger = logging.getLogger(__name__)
 
 
+_Previous = CompTaskAtDB
+_Current = CompTaskAtDB
+
+
+async def _triage_changed_tasks(
+    changed_tasks: list[tuple[_Previous, _Current]]
+) -> tuple:
+    started_tasks = [
+        current
+        for previous, current in changed_tasks
+        if current.state in RUNNING_STATES
+        or (
+            previous.state in WAITING_FOR_START_STATES
+            and current.state in COMPLETED_STATES
+        )
+    ]
+
+    # NOTE: some tasks can be both started and completed since we might have the time they were running
+    completed_tasks = [
+        current for _, current in changed_tasks if current.state in COMPLETED_STATES
+    ]
+
+    waiting_for_resources_tasks = [
+        current
+        for previous, current in changed_tasks
+        if current.state in WAITING_FOR_START_STATES
+    ]
+
+    return (started_tasks, completed_tasks, waiting_for_resources_tasks)
+
+
 @dataclass(kw_only=True)
 class ScheduledPipelineParams:
     cluster_id: ClusterID
-    metadata: MetadataDict
+    run_metadata: RunMetadataDict
     mark_for_cancellation: bool = False
-
-
-_Previous = CompTaskAtDB
-_Current = CompTaskAtDB
 
 
 @dataclass
@@ -75,14 +112,15 @@ class BaseCompScheduler(ABC):
     db_engine: Engine
     wake_up_event: asyncio.Event = field(default_factory=asyncio.Event, init=False)
     rabbitmq_client: RabbitMQClient
+    settings: ComputationalBackendSettings
+    service_runtime_heartbeat_interval: datetime.timedelta
 
     async def run_new_pipeline(
         self,
         user_id: UserID,
         project_id: ProjectID,
         cluster_id: ClusterID,
-        product_name: str,
-        simcore_user_agent: str,
+        run_metadata: RunMetadataDict,
     ) -> None:
         """Sets a new pipeline to be scheduled on the computational resources.
         Passing cluster_id=0 will use the default cluster. Passing an existing ID will instruct
@@ -101,14 +139,13 @@ class BaseCompScheduler(ABC):
             user_id=user_id,
             project_id=project_id,
             cluster_id=cluster_id,
-            metadata={
-                "product_name": product_name,
-                "simcore_user_agent": simcore_user_agent,
-            },
+            metadata=run_metadata,
         )
         self.scheduled_pipelines[
             (user_id, project_id, new_run.iteration)
-        ] = ScheduledPipelineParams(cluster_id=cluster_id, metadata=new_run.metadata)
+        ] = ScheduledPipelineParams(
+            cluster_id=cluster_id, run_metadata=new_run.metadata
+        )
         # ensure the scheduler starts right away
         self._wake_up_scheduler_now()
 
@@ -145,7 +182,7 @@ class BaseCompScheduler(ABC):
                     cluster_id=pipeline_params.cluster_id,
                     iteration=iteration,
                     marked_for_stopping=pipeline_params.mark_for_cancellation,
-                    metadata=pipeline_params.metadata,
+                    run_metadata=pipeline_params.run_metadata,
                 )
                 for (
                     user_id,
@@ -237,6 +274,50 @@ class BaseCompScheduler(ABC):
             )
         return tasks
 
+    async def _send_running_tasks_heartbeat(
+        self,
+        user_id: UserID,
+        project_id: ProjectID,
+        iteration: Iteration,
+        dag: nx.DiGraph,
+    ) -> None:
+        utc_now = arrow.utcnow().datetime
+
+        def _need_heartbeat(task: CompTaskAtDB) -> bool:
+            if task.state not in RUNNING_STATES:
+                return False
+            if task.last_heartbeat is None:
+                assert task.start  # nosec
+                return bool(
+                    (utc_now - task.start.replace(tzinfo=datetime.timezone.utc))
+                    > self.service_runtime_heartbeat_interval
+                )
+            return bool(
+                (utc_now - task.last_heartbeat)
+                > self.service_runtime_heartbeat_interval
+            )
+
+        tasks: dict[str, CompTaskAtDB] = await self._get_pipeline_tasks(project_id, dag)
+        if running_tasks := [t for t in tasks.values() if _need_heartbeat(t)]:
+            await asyncio.gather(
+                *(
+                    publish_service_resource_tracking_heartbeat(
+                        self.rabbitmq_client,
+                        get_resource_tracking_run_id(user_id, t.project_id, iteration),
+                    )
+                    for t in running_tasks
+                )
+            )
+            comp_tasks_repo = CompTasksRepository(self.db_engine)
+            await asyncio.gather(
+                *(
+                    comp_tasks_repo.update_project_task_last_heartbeat(
+                        t.project_id, t.node_id, utc_now
+                    )
+                    for t in running_tasks
+                )
+            )
+
     async def _get_changed_tasks_from_backend(
         self,
         user_id: UserID,
@@ -246,88 +327,146 @@ class BaseCompScheduler(ABC):
         tasks_backend_status = await self._get_tasks_status(
             user_id, cluster_id, processing_tasks
         )
+
         return [
             (
                 task,
                 task.copy(update={"state": backend_state}),
             )
             for task, backend_state in zip(
-                processing_tasks, tasks_backend_status, strict=False
+                processing_tasks, tasks_backend_status, strict=True
             )
             if task.state is not backend_state
         ]
 
-    async def _process_incomplete_tasks(self, tasks: list[CompTaskAtDB]) -> None:
-        comp_tasks_repo = CompTasksRepository(self.db_engine)
+    async def _process_started_tasks(
+        self,
+        tasks: list[CompTaskAtDB],
+        *,
+        user_id: UserID,
+        iteration: Iteration,
+        run_metadata: RunMetadataDict,
+    ) -> None:
+        utc_now = arrow.utcnow().datetime
+
+        # resource tracking
         await asyncio.gather(
             *(
-                comp_tasks_repo.update_project_tasks_state(
-                    t.project_id, [t.node_id], t.state
+                publish_service_resource_tracking_started(
+                    self.rabbitmq_client,
+                    service_run_id=get_resource_tracking_run_id(
+                        user_id, t.project_id, iteration
+                    ),
+                    wallet_id=run_metadata.get("wallet_id", -1),
+                    wallet_name=run_metadata.get("wallet_name", UNDEFINED_METADATA),
+                    product_name=run_metadata.get("product_name", UNDEFINED_METADATA),
+                    simcore_user_agent=run_metadata.get(
+                        "simcore_user_agent", UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+                    ),
+                    user_id=user_id,
+                    user_email=run_metadata.get("user_email", UNDEFINED_METADATA),
+                    project_id=t.project_id,
+                    project_name=run_metadata.get("project_name", UNDEFINED_METADATA),
+                    node_id=t.node_id,
+                    node_name=run_metadata.get("node_id_names_map", {}).get(
+                        t.node_id, UNDEFINED_METADATA
+                    ),
+                    service_key=ServiceKey(t.image.name),
+                    service_version=ServiceVersion(t.image.tag),
+                    service_type=ServiceType.COMPUTATIONAL,
+                    service_resources=create_service_resources_from_task(t),
+                    service_additional_metadata={},
+                )
+                for t in tasks
+            )
+        )
+        # instrumentation
+        await asyncio.gather(
+            *(
+                publish_service_started_metrics(
+                    self.rabbitmq_client,
+                    user_id=user_id,
+                    simcore_user_agent=run_metadata.get(
+                        "simcore_user_agent", UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+                    ),
+                    task=t,
                 )
                 for t in tasks
             )
         )
 
-    async def _publish_service_started_metrics(
-        self,
-        user_id: UserID,
-        project_id: ProjectID,
-        changed_tasks: list[tuple[_Previous, _Current]],
-    ) -> None:
-        for previous, current in changed_tasks:
-            if current.state is RunningState.STARTED or (
-                previous.state in WAITING_FOR_START_STATES
-                and current.state in COMPLETED_STATES
-            ):
-                message = InstrumentationRabbitMessage.construct(
-                    metrics="service_started",
-                    user_id=user_id,
-                    project_id=project_id,
-                    node_id=current.node_id,
-                    service_uuid=current.node_id,
-                    service_type=NodeClass.COMPUTATIONAL.value,
-                    service_key=current.image.name,
-                    service_tag=current.image.tag,
-                    simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+        # update DB
+        comp_tasks_repo = CompTasksRepository(self.db_engine)
+        await asyncio.gather(
+            *(
+                comp_tasks_repo.update_project_tasks_state(
+                    t.project_id,
+                    [t.node_id],
+                    t.state,
+                    optional_started=utc_now,
                 )
-                await self.rabbitmq_client.publish(message.channel_name, message)
+                for t in tasks
+            )
+        )
+
+    async def _process_reverted_tasks(self, tasks: list[CompTaskAtDB]) -> None:
+        _logger.warning(
+            "Tasks were reverted, this should not happen! TIP: Check %s",
+            f"{[t.job_id for t in tasks]}",
+        )
+        comp_tasks_repo = CompTasksRepository(self.db_engine)
+        await asyncio.gather(
+            *(
+                comp_tasks_repo.update_project_tasks_state(
+                    t.project_id,
+                    [t.node_id],
+                    t.state,
+                )
+                for t in tasks
+            )
+        )
 
     async def _update_states_from_comp_backend(
         self,
         user_id: UserID,
         cluster_id: ClusterID,
         project_id: ProjectID,
+        iteration: Iteration,
         pipeline_dag: nx.DiGraph,
+        run_metadata: RunMetadataDict,
     ) -> None:
-        all_tasks = await self._get_pipeline_tasks(project_id, pipeline_dag)
-        if processing_tasks := [
-            t for t in all_tasks.values() if t.state in PROCESSING_STATES
-        ]:
-            changed_tasks = await self._get_changed_tasks_from_backend(
-                user_id, cluster_id, processing_tasks
+        tasks = await self._get_pipeline_tasks(project_id, pipeline_dag)
+        tasks_inprocess = [t for t in tasks.values() if t.state in PROCESSING_STATES]
+        if not tasks_inprocess:
+            return
+
+        # get the tasks which state actually changed since last check
+        tasks_with_changed_states = await self._get_changed_tasks_from_backend(
+            user_id, cluster_id, tasks_inprocess
+        )
+
+        (
+            tasks_started,
+            tasks_stopped,
+            tasks_reverted,
+        ) = await _triage_changed_tasks(tasks_with_changed_states)
+
+        # now process the tasks
+        if tasks_started:
+            await self._process_started_tasks(
+                tasks_started,
+                user_id=user_id,
+                iteration=iteration,
+                run_metadata=run_metadata,
             )
 
-            await self._publish_service_started_metrics(
-                user_id, project_id, changed_tasks
+        if tasks_stopped:
+            await self._process_completed_tasks(
+                user_id, cluster_id, tasks_stopped, run_metadata, iteration
             )
 
-            completed_tasks = [
-                current
-                for _, current in changed_tasks
-                if current.state in COMPLETED_STATES
-            ]
-            incomplete_tasks = [
-                current
-                for _, current in changed_tasks
-                if current.state not in COMPLETED_STATES
-            ]
-
-            if completed_tasks:
-                await self._process_completed_tasks(
-                    user_id, cluster_id, completed_tasks
-                )
-            if incomplete_tasks:
-                await self._process_incomplete_tasks(incomplete_tasks)
+        if tasks_reverted:
+            await self._process_reverted_tasks(tasks_reverted)
 
     @abstractmethod
     async def _start_tasks(
@@ -336,7 +475,7 @@ class BaseCompScheduler(ABC):
         user_id: UserID,
         project_id: ProjectID,
         cluster_id: ClusterID,
-        metadata: MetadataDict,
+        run_metadata: RunMetadataDict,
         scheduled_tasks: dict[NodeID, Image],
     ) -> None:
         ...
@@ -355,7 +494,12 @@ class BaseCompScheduler(ABC):
 
     @abstractmethod
     async def _process_completed_tasks(
-        self, user_id: UserID, cluster_id: ClusterID, tasks: list[CompTaskAtDB]
+        self,
+        user_id: UserID,
+        cluster_id: ClusterID,
+        tasks: list[CompTaskAtDB],
+        run_metadata: RunMetadataDict,
+        iteration: Iteration,
     ) -> None:
         ...
 
@@ -367,7 +511,7 @@ class BaseCompScheduler(ABC):
         cluster_id: ClusterID,
         iteration: PositiveInt,
         marked_for_stopping: bool,
-        metadata: MetadataDict,
+        run_metadata: RunMetadataDict,
     ) -> None:
         _logger.debug(
             "checking run of project [%s:%s] for user [%s]",
@@ -380,7 +524,7 @@ class BaseCompScheduler(ABC):
             dag: nx.DiGraph = await self._get_pipeline_dag(project_id)
             # 1. Update our list of tasks with data from backend (state, results)
             await self._update_states_from_comp_backend(
-                user_id, cluster_id, project_id, dag
+                user_id, cluster_id, project_id, iteration, dag, run_metadata
             )
             # 2. Any task following a FAILED task shall be ABORTED
             comp_tasks = await self._set_states_following_failed_to_aborted(
@@ -399,13 +543,17 @@ class BaseCompScheduler(ABC):
                     cluster_id=cluster_id,
                     comp_tasks=comp_tasks,
                     dag=dag,
-                    metadata=metadata,
+                    run_metadata=run_metadata,
                 )
-            # 4. Update the run result
+            # 4. send a heartbeat
+            await self._send_running_tasks_heartbeat(
+                user_id, project_id, iteration, dag
+            )
+            # 5. Update the run result
             pipeline_result = await self._update_run_result_from_tasks(
                 user_id, project_id, iteration, comp_tasks
             )
-            # 5. Are we done scheduling that pipeline?
+            # 6. Are we done scheduling that pipeline?
             if not dag.nodes() or pipeline_result in COMPLETED_STATES:
                 # there is nothing left, the run is completed, we're done here
                 self.scheduled_pipelines.pop((user_id, project_id, iteration), None)
@@ -453,7 +601,7 @@ class BaseCompScheduler(ABC):
         user_id: UserID,
         project_id: ProjectID,
         cluster_id: ClusterID,
-        metadata: MetadataDict,
+        run_metadata: RunMetadataDict,
         comp_tasks: dict[str, CompTaskAtDB],
         dag: nx.DiGraph,
     ):
@@ -497,7 +645,7 @@ class BaseCompScheduler(ABC):
                     user_id=user_id,
                     project_id=project_id,
                     cluster_id=cluster_id,
-                    metadata=metadata,
+                    run_metadata=run_metadata,
                     scheduled_tasks={node_id: task.image},
                 )
                 for node_id, task in tasks_ready_to_start.items()
