@@ -11,7 +11,12 @@ from fastapi import File as FileParam
 from fastapi import Header, Request, UploadFile, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse
-from models_library.api_schemas_storage import FileUploadSchema, LinkType
+from models_library.api_schemas_storage import (
+    FileUploadCompleteLinks,
+    FileUploadCompletionBody,
+    FileUploadSchema,
+    LinkType,
+)
 from models_library.projects_nodes_io import StorageFileID
 from pydantic import ByteSize, PositiveInt, ValidationError, parse_obj_as
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
@@ -182,6 +187,16 @@ async def get_upload_links(
     client_file: ClientFile,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
 ):
+    """Get upload links for uploading a file to storage
+
+    Arguments:
+        request -- Request object
+        client_file -- ClientFile object
+        user_id -- User Id
+
+    Returns:
+        FileUploadSchema
+    """
     assert request  # nosec
     file_meta: File = await File.create_from_name_and_size(
         client_file.filename,
@@ -203,16 +218,34 @@ async def get_upload_links(
     return upload_links
 
 
-# @router.patch(
-#     "/content",
-#     response_model=File,
-# )
-# @cancel_on_disconnect
-# async def complete_multipart_upload(
-#     request: Request,
-#     uploaded_parts: FileUploadCompletionBody,
-#     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
-# ):
+@router.patch(
+    "/content",
+    response_model=File,
+)
+@cancel_on_disconnect
+async def complete_multipart_upload(
+    request: Request,
+    uploaded_parts: FileUploadCompletionBody,
+    completion_link: FileUploadCompleteLinks,
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+):
+    """Complete multipart upload to storage/s3
+
+    Arguments:
+        request -- _description_
+        uploaded_parts -- _description_
+        completion_link -- _description_
+        user_id -- _description_
+
+    Raises:
+        ValueError: _description_
+        HTTPException: _description_
+        NotImplementedError: _description_
+
+    Returns:
+        _description_
+    """
+    pass
 
 
 @router.get("/{file_id}", response_model=File, responses={**_COMMON_ERROR_RESPONSES})

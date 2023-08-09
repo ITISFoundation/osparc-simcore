@@ -57,9 +57,9 @@ async def _get_location_id_from_location_name(
     raise exceptions.S3InvalidStore(store)
 
 
-async def _complete_upload(
+async def complete_upload(
     session: ClientSession,
-    upload_links: FileUploadSchema,
+    upload_completion_link: AnyUrl,
     parts: list[UploadedPart],
     *,
     is_directory: bool,
@@ -72,7 +72,7 @@ async def _complete_upload(
     :rtype: ETag
     """
     async with session.post(
-        upload_links.links.complete_upload,
+        upload_completion_link,
         json=jsonable_encoder(FileUploadCompletionBody(parts=parts)),
     ) as resp:
         resp.raise_for_status()
@@ -117,7 +117,7 @@ async def _complete_upload(
                 f"{future_enveloped.data.e_tag=}",
             )
             return future_enveloped.data.e_tag
-    msg = f"Could not complete the upload of file upload_links={upload_links!r}"
+    msg = f"Could not complete the upload using the upload_completion_link={upload_completion_link!r}"
     raise exceptions.S3TransferError(msg)
 
 
@@ -454,8 +454,11 @@ async def _upload_to_s3(  # noqa: PLR0913
             progress_bar=progress_bar,
         )
     # complete the upload
-    e_tag = await _complete_upload(
-        session, upload_links, uploaded_parts, is_directory=is_directory
+    e_tag = await complete_upload(
+        session,
+        upload_links.links.complete_upload,
+        uploaded_parts,
+        is_directory=is_directory,
     )
     return store_id, e_tag, upload_links
 
