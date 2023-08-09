@@ -225,20 +225,23 @@ async def get_upload_links(
 )
 @cancel_on_disconnect
 async def complete_multipart_upload(
+    request: Request,
     client_file: ClientFile,
     uploaded_parts: FileUploadCompletionBody,
     completion_link: FileUploadCompleteLinks,
 ):
-    """Complete multipart upload of a single file
+    """Complete the multipart upload of a file
 
     Arguments:
-        client_file -- File on the client side
+        request -- The Request
+        client_file -- The ClientFile object
         uploaded_parts -- The uploaded parts
-        completion_link -- The S3 completion link
+        completion_link -- The S3 completion link for this multipart upload
 
     Returns:
         The File object
     """
+    assert request  # nosec
     e_tag: ETag = await complete_file_upload(
         uploaded_parts=uploaded_parts.parts,
         upload_completion_link=completion_link.state,
