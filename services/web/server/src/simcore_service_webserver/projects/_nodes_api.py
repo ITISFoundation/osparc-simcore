@@ -75,6 +75,19 @@ def get_total_project_dynamic_nodes_creation_interval(
 #
 
 
+def _guess_mimetype_from_name(name: str) -> str | None:
+    """Tries to guess the mimetype provided a name
+
+    Arguments:
+        name -- path of a file or the file url
+    """
+    _type, _ = mimetypes.guess_type(name)
+    # NOTE: mimetypes.guess_type works differently in our image, therefore made it nullable if
+    # cannot guess type
+    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/4385
+    return _type
+
+
 class NodeScreenshot(BaseModel):
     thumbnail_url: HttpUrl
     file_url: HttpUrl
@@ -93,11 +106,7 @@ class NodeScreenshot(BaseModel):
             file_url = values["file_url"]
             assert file_url  # nosec
 
-            _type, _encoding = mimetypes.guess_type(file_url)
-            # NOTE: mimetypes.guess_type works differently in our image, therefore made it nullable if
-            # cannot guess type
-            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/4385
-            values["mimetype"] = _type
+            values["mimetype"] = _guess_mimetype_from_name(file_url)
 
         return values
 
@@ -150,7 +159,7 @@ def _get_files_with_thumbnails(
     return with_thumbnail_image + without_thumbnail_image
 
 
-async def _get_http_url(
+async def _get_link(
     app: web.Application, user_id: UserID, file_meta_data: FileMetaDataGet
 ) -> tuple[str, HttpUrl]:
     return __get_search_key(file_meta_data), await get_download_link(
@@ -160,28 +169,31 @@ async def _get_http_url(
     )
 
 
-async def _to_http_urls_parallel(
+async def _to_screenshots_in_parallel(
     app: web.Application,
     user_id: UserID,
     entries: list[tuple[FileMetaDataGet, FileMetaDataGet]],
-) -> list[tuple[HttpUrl, HttpUrl]]:
+) -> list[NodeScreenshot]:
+    """resolves links in parallel before composing all NodeScreenshot"""
+
     search_map: dict[str, FileMetaDataGet] = {}
 
     for file_meta_data, thumbnail_meta_data in entries:
         search_map[__get_search_key(file_meta_data)] = file_meta_data
         search_map[__get_search_key(thumbnail_meta_data)] = thumbnail_meta_data
 
-    results = await logged_gather(
-        *[_get_http_url(app, user_id, x) for x in search_map.values()],
+    resolved_links: list[tuple[str, HttpUrl]] = await logged_gather(
+        *[_get_link(app, user_id, x) for x in search_map.values()],
         max_concurrency=10,
     )
 
-    mapped_http_url: dict[str, HttpUrl] = dict(results)
+    mapped_http_url: dict[str, HttpUrl] = dict(resolved_links)
 
     return [
-        (
-            mapped_http_url[__get_search_key(t[0])],
-            mapped_http_url[__get_search_key(t[1])],
+        NodeScreenshot(
+            mimetype=_guess_mimetype_from_name(t[0].file_id),
+            thumbnail_url=mapped_http_url[__get_search_key(t[0])],
+            file_url=mapped_http_url[__get_search_key(t[1])],
         )
         for t in entries
     ]
@@ -241,15 +253,9 @@ async def get_node_screenshots(
             tuple[FileMetaDataGet, FileMetaDataGet]
         ] = _get_files_with_thumbnails(assets_files)
 
-        asset_file_urls_with_thumbnails: list[
-            tuple[HttpUrl, HttpUrl]
-        ] = await _to_http_urls_parallel(
+        resolved_screenshots: list[NodeScreenshot] = await _to_screenshots_in_parallel(
             app=request.app, user_id=user_id, entries=asset_files_with_thumbnails
         )
-
-        for file_url, thumbnail_url in asset_file_urls_with_thumbnails:
-            screenshots.append(
-                NodeScreenshot(thumbnail_url=thumbnail_url, file_url=file_url)
-            )
+        screenshots.extend(resolved_screenshots)
 
     return screenshots
