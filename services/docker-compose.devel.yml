@@ -135,6 +135,11 @@ services:
       - PROMETHEUS_URL=${RESOURCE_USAGE_TRACKER_PROMETHEUS_URL}
       - PROMETHEUS_USERNAME=${RESOURCE_USAGE_TRACKER_PROMETHEUS_USERNAME}
       - PROMETHEUS_PASSWORD=${RESOURCE_USAGE_TRACKER_PROMETHEUS_PASSWORD}
+      - RABBIT_HOST=${RABBIT_HOST}
+      - RABBIT_PASSWORD=${RABBIT_PASSWORD}
+      - RABBIT_PORT=${RABBIT_PORT}
+      - RABBIT_SECURE=${RABBIT_SECURE}
+      - RABBIT_USER=${RABBIT_USER}
     volumes:
       - ./resource-usage-tracker:/devel/services/resource-usage-tracker
       - ../packages:/devel/packages
