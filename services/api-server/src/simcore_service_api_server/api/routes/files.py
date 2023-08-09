@@ -20,7 +20,7 @@ from models_library.api_schemas_storage import (
     LinkType,
 )
 from models_library.projects_nodes_io import StorageFileID
-from pydantic import ByteSize, PositiveInt, ValidationError, parse_obj_as
+from pydantic import AnyUrl, ByteSize, PositiveInt, ValidationError, parse_obj_as
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect, catch_n_raise
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 from simcore_sdk.node_ports_common.exceptions import NodeportsException, S3TransferError
@@ -272,10 +272,12 @@ async def complete_multipart_upload(
 
 @router.delete("/content")
 @cancel_on_disconnect
-@catch_n_raise(ClientError, lambda e: status.HTTP_500_INTERNAL_SERVER_ERROR)
+@catch_n_raise(
+    (ClientError, ValidationError), lambda e: status.HTTP_500_INTERNAL_SERVER_ERROR
+)
 async def abort_multipart_upload(
     request: Request,
-    upload_links: FileUploadSchema,
+    abort_upload_link: AnyUrl,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
 ):
     """Abort a multipart upload
@@ -288,7 +290,7 @@ async def abort_multipart_upload(
     """
     assert request  # nosec
     assert user_id  # nosec
-    await abort_upload(upload_links=upload_links)
+    await abort_upload(abort_upload_link=abort_upload_link)
 
 
 @router.get("/{file_id}", response_model=File, responses={**_COMMON_ERROR_RESPONSES})

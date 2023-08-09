@@ -143,9 +143,9 @@ async def test_get_upload_links(
 
     assert storage_v0_service_mock  # nosec
 
-    payload: dict[str, str] = {"filename": "myfile.txt", "filesize": "100000"}
+    msg: dict[str, str] = {"filename": "myfile.txt", "filesize": "100000"}
 
-    response = await client.post(f"{API_VTAG}/files/content", json=payload, auth=auth)
+    response = await client.post(f"{API_VTAG}/files/content", json=msg, auth=auth)
 
     payload: dict[str, str] = response.json()
 
@@ -162,7 +162,7 @@ async def test_complete_multipart_upload(
 
     assert storage_v0_service_mock  # nosec
 
-    payload = {
+    msg = {
         "client_file": {"filename": "string", "filesize": 0},
         "uploaded_parts": {"parts": [{"number": 1, "e_tag": "string"}]},
         "completion_link": {
@@ -170,9 +170,30 @@ async def test_complete_multipart_upload(
         },
     }
 
-    response = await client.patch(f"{API_VTAG}/files/content", json=payload, auth=auth)
+    response = await client.patch(f"{API_VTAG}/files/content", json=msg, auth=auth)
 
     payload: dict[str, str] = response.json()
 
     assert response.status_code == status.HTTP_200_OK
     _ = File.parse_obj(payload)
+
+
+pytest.mark.markit
+
+
+async def test_delete_multipart_upload(
+    client: AsyncClient,
+    auth: httpx.BasicAuth,
+    storage_v0_service_mock: AioResponsesMock,
+):
+    assert storage_v0_service_mock  # nosec
+
+    msg = {
+        "chunk_size": 100,
+        "urls": ["http://my-s3-upload-url.com"],
+        "links": {
+            "abort_upload": "http://storage:8080/v0/locations/0/files/api123someting123string:abort?user_id=1",
+            "complete_upload": "http://storage:8080/v0/locations/0/files/api123something123string:complete?user_id=1",
+        },
+    }
+    response = await client.delete(f"{API_VTAG}/files/content", json=msg, auth=auth)

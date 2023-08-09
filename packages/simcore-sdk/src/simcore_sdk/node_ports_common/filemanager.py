@@ -322,11 +322,11 @@ async def download_file_from_link(
 
 
 async def _abort_upload(
-    session: ClientSession, upload_links: FileUploadSchema, *, reraise_exceptions: bool
+    session: ClientSession, abort_upload_link: AnyUrl, *, reraise_exceptions: bool
 ) -> None:
     # abort the upload correctly, so it can revert back to last version
     try:
-        async with session.post(upload_links.links.abort_upload) as resp:
+        async with session.post(abort_upload_link) as resp:
             resp.raise_for_status()
     except ClientError:
         _logger.warning("Error while aborting upload", exc_info=True)
@@ -336,7 +336,7 @@ async def _abort_upload(
 
 
 async def abort_upload(
-    upload_links: FileUploadSchema, client_session: ClientSession | None = None
+    abort_upload_link: AnyUrl, client_session: ClientSession | None = None
 ) -> None:
     """Abort a multipart upload
 
@@ -346,7 +346,9 @@ async def abort_upload(
     """
     async with ClientSessionContextManager(client_session) as session:
         await _abort_upload(
-            session=session, upload_links=upload_links, reraise_exceptions=True
+            session=session,
+            abort_upload_link=abort_upload_link,
+            reraise_exceptions=True,
         )
 
 
@@ -406,7 +408,7 @@ async def upload_path(
     # each single file and it makes no sense to have one for directories
     e_tag: ETag | None = None
     async with ClientSessionContextManager(client_session) as session:
-        upload_links = None
+        upload_links: FileUploadSchema | None = None
         try:
             store_id, e_tag, upload_links = await _upload_to_s3(
                 user_id=user_id,
@@ -424,11 +426,15 @@ async def upload_path(
         except (r_clone.RCloneFailedError, exceptions.S3TransferError) as exc:
             _logger.exception("The upload failed with an unexpected error:")
             if upload_links:
-                await _abort_upload(session, upload_links, reraise_exceptions=False)
+                await _abort_upload(
+                    session, upload_links.links.abort_upload, reraise_exceptions=False
+                )
             raise exceptions.S3TransferError from exc
         except CancelledError:
             if upload_links:
-                await _abort_upload(session, upload_links, reraise_exceptions=False)
+                await _abort_upload(
+                    session, upload_links.links.abort_upload, reraise_exceptions=False
+                )
             raise
         if io_log_redirect_cb:
             await io_log_redirect_cb(f"upload of {path_to_upload} complete.")
