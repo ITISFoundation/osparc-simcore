@@ -435,17 +435,6 @@ qx.Class.define("osparc.store.Store", {
       return this.__getGroups("organizations");
     },
 
-    getGroupsOrganizationsWithRights(checkWrite = "read") {
-      return new Promise(resolve => {
-        this.getGroupsOrganizations()
-          .then(orgs => {
-            const orgsWithRights = orgs.filter(org => org["accessRights"][checkWrite]);
-            resolve(orgsWithRights);
-          })
-          .catch(err => console.error(err));
-      });
-    },
-
     getProductEveryone: function() {
       return this.__getGroups("product");
     },
