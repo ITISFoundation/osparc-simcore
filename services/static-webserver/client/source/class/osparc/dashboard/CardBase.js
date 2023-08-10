@@ -453,7 +453,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
             unaccessibleServices.forEach(unSrv => {
               toolTipText += "<br>" + unSrv.key + ":" + unSrv.version;
             });
-            this.__blockCard(image, toolTipText);
+            this.__showBlockedCard(image, toolTipText);
           }
         });
     },
@@ -534,10 +534,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
           image = "@FontAwesome5Solid/lock/";
           break;
       }
-      this.__blockCard(image, toolTip);
+      this.__showBlockedCard(image, toolTip);
     },
 
-    __blockCard: function(lockImageSrc, toolTipText) {
+    __showBlockedCard: function(lockImageSrc, toolTipText) {
       const lockImage = this.getChildControl("lock-status").getChildControl("image");
       lockImageSrc += this.classname.includes("Grid") ? "70" : "22";
       lockImage.setSource(lockImageSrc);
