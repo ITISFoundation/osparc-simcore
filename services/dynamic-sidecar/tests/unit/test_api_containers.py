@@ -510,6 +510,9 @@ async def test_outputs_watcher_disabling(
         assert len(events_set) == expected_events
 
     # by default outputs-watcher it is disabled
+    _assert_events_generated(expected_events=0)
+    await _create_port_key_events(is_propagation_enabled=False)
+    _assert_events_generated(expected_events=0)
 
     # after enabling new vents will be generated
     await _assert_enable_outputs_watcher(test_client)
@@ -526,8 +529,9 @@ async def test_outputs_watcher_disabling(
     # enabling once more time, events are once again generated
     await _assert_enable_outputs_watcher(test_client)
     _assert_events_generated(expected_events=1)
-    await _create_port_key_events(is_propagation_enabled=True)
-    _assert_events_generated(expected_events=2)
+    for i in range(10):
+        await _create_port_key_events(is_propagation_enabled=True)
+        _assert_events_generated(expected_events=2 + i)
 
 
 async def test_container_create_outputs_dirs(

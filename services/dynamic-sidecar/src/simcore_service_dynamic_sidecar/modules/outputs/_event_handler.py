@@ -135,7 +135,7 @@ class _EventHandlerProcess:
         while True:
             message: dict[
                 str, Any
-            ] | None = self.outputs_context.file_type_port_keys_updates_queue.get()
+            ] | None = self.outputs_context.file_system_event_handler_queue.get()
             _logger.debug("received message %s", message)
 
             # no more messages quitting
@@ -198,7 +198,7 @@ class _EventHandlerProcess:
             observer.stop()
 
             # stop created thread
-            self.outputs_context.file_type_port_keys_updates_queue.put(None)
+            self.outputs_context.file_system_event_handler_queue.put(None)
             thread_update_outputs_port_keys.join()
 
             _logger.warning("%s exited", _EventHandlerProcess.__name__)
