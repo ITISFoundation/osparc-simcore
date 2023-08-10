@@ -4,12 +4,13 @@
 
 import asyncio
 from collections import deque
+from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
 from random import randbytes, shuffle
 from shutil import move, rmtree
 from threading import Thread
-from typing import AsyncIterable, AsyncIterator, Awaitable, Final, Iterator
+from typing import Final
 from unittest.mock import AsyncMock
 
 import aiofiles
@@ -24,7 +25,6 @@ from pydantic import (
     PositiveFloat,
     parse_obj_as,
 )
-from pytest import FixtureRequest
 from pytest_mock import MockerFixture
 from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
 from simcore_service_dynamic_sidecar.modules.outputs import (
@@ -123,11 +123,11 @@ async def outputs_watcher(
 def mock_event_filter_upload_trigger(
     mocker: MockerFixture,
     outputs_watcher: OutputsWatcher,
-) -> Iterator[AsyncMock]:
+) -> AsyncMock:
     mock_enqueue = AsyncMock(return_value=None)
 
     mocker.patch.object(
-        outputs_watcher._event_filter.outputs_manager,
+        outputs_watcher._event_filter.outputs_manager,  # noqa: SLF001
         "port_key_content_changed",
         mock_enqueue,
     )
@@ -136,12 +136,12 @@ def mock_event_filter_upload_trigger(
         def get_min_interval(self) -> NonNegativeFloat:
             return WAIT_INTERVAL
 
-        def get_wait_interval(self, dir_size: NonNegativeInt) -> NonNegativeFloat:
+        def get_wait_interval(self, _: NonNegativeInt) -> NonNegativeFloat:
             return WAIT_INTERVAL
 
-    outputs_watcher._event_filter.delay_policy = FastDelayPolicy()
+    outputs_watcher._event_filter.delay_policy = FastDelayPolicy()  # noqa: SLF001
 
-    yield mock_enqueue
+    return mock_enqueue
 
 
 @pytest.fixture
@@ -149,14 +149,14 @@ def mock_long_running_upload_outputs(mocker: MockerFixture) -> Iterator[AsyncMoc
     async def mock_upload_outputs(*args, **kwargs) -> None:
         await asyncio.sleep(UPLOAD_DURATION)
 
-    yield mocker.patch(
+    return mocker.patch(
         "simcore_service_dynamic_sidecar.modules.outputs._manager.upload_outputs",
         side_effect=mock_upload_outputs,
     )
 
 
 @pytest.fixture(params=[1, 2, 4])
-def files_per_port_key(request: FixtureRequest) -> NonNegativeInt:
+def files_per_port_key(request: pytest.FixtureRequest) -> NonNegativeInt:
     return request.param
 
 
@@ -186,14 +186,14 @@ class FileGenerationInfo:
         ),
     ]
 )
-def file_generation_info(request: FixtureRequest) -> FileGenerationInfo:
+def file_generation_info(request: pytest.FixtureRequest) -> FileGenerationInfo:
     return request.param
 
 
 # UTILS
 
 
-async def random_events_in_path(
+async def random_events_in_path(  # noqa: C901
     *,
     port_key_path: Path,
     files_per_port_key: NonNegativeInt,
@@ -239,14 +239,20 @@ async def random_events_in_path(
     event_awaitables: deque[Awaitable] = deque()
 
     for i in range(empty_files):
-        event_awaitables.append(_empty_file(port_key_path / f"empty_file_{i}"))
+        event_awaitables.append(  # noqa: PERF401
+            _empty_file(port_key_path / f"empty_file_{i}")
+        )
     for i in range(moved_files):
-        event_awaitables.append(_move_existing_file(port_key_path / f"moved_file_{i}"))
+        event_awaitables.append(  # noqa: PERF401
+            _move_existing_file(port_key_path / f"moved_file_{i}")
+        )
     for i in range(removed_files):
-        event_awaitables.append(_remove_file(port_key_path / f"removed_file_{i}"))
+        event_awaitables.append(  # noqa: PERF401
+            _remove_file(port_key_path / f"removed_file_{i}")
+        )
 
     for i in range(files_per_port_key):
-        event_awaitables.append(
+        event_awaitables.append(  # noqa: PERF401
             _random_file(
                 port_key_path / f"big_file{i}", size=size, chunk_size=chunk_size
             )
@@ -292,6 +298,8 @@ async def test_run_observer(
     outputs_watcher: OutputsWatcher,
     port_keys: list[str],
 ) -> None:
+    outputs_watcher.enable_event_propagation()
+
     # generates the first event chain
     await _generate_event_burst(
         outputs_watcher.outputs_context.outputs_path, port_keys[0]
@@ -314,6 +322,7 @@ async def test_does_not_trigger_on_attribute_change(
     outputs_watcher: OutputsWatcher,
 ):
     await _wait_for_events_to_trigger()
+    outputs_watcher.enable_event_propagation()
 
     # crate a file in the directory
     mounted_volumes.disk_outputs_path.mkdir(parents=True, exist_ok=True)
@@ -343,6 +352,8 @@ async def test_port_key_sequential_event_generation(
     file_generation_info: FileGenerationInfo,
     port_keys: list[str],
 ):
+    outputs_watcher.enable_event_propagation()
+
     # writing ports sequentially
     wait_interval_for_port: deque[float] = deque()
     for port_key in port_keys:
@@ -355,7 +366,7 @@ async def test_port_key_sequential_event_generation(
             chunk_size=file_generation_info.chunk_size,
         )
         wait_interval_for_port.append(
-            outputs_watcher._event_filter.delay_policy.get_wait_interval(
+            outputs_watcher._event_filter.delay_policy.get_wait_interval(  # noqa: SLF001
                 get_directory_total_size(port_dir)
             )
         )

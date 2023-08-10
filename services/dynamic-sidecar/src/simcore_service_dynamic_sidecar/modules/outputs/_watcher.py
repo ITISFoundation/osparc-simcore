@@ -1,7 +1,7 @@
 import logging
 from asyncio import CancelledError, Task, create_task
+from collections.abc import Generator
 from contextlib import contextmanager, suppress
-from typing import Generator, Optional
 
 from fastapi import FastAPI
 from servicelib.logging_utils import log_context
@@ -22,8 +22,8 @@ class OutputsWatcher:
         self.outputs_manager = outputs_manager
         self.outputs_context = outputs_context
 
-        self._allow_event_propagation: bool = True
-        self._task_events_worker: Optional[Task] = None
+        self._allow_event_propagation: bool = False
+        self._task_events_worker: Task | None = None
         self._event_filter = EventFilter(outputs_manager=outputs_manager)
         self._observer_monitor: EventHandlerObserver = EventHandlerObserver(
             outputs_context=self.outputs_context,
@@ -33,9 +33,9 @@ class OutputsWatcher:
 
     async def _worker_events(self) -> None:
         while True:
-            event: Optional[
-                str
-            ] = await self.outputs_context.port_key_events_queue.coro_get()
+            event: str | None = (
+                await self.outputs_context.port_key_events_queue.coro_get()
+            )
             if event is None:
                 break
 
@@ -80,11 +80,11 @@ def setup_outputs_watcher(app: FastAPI) -> None:
             outputs_manager=outputs_manager,
             outputs_context=outputs_context,
         )
-        app.state.outputs_watcher.disable_event_propagation()
         await app.state.outputs_watcher.start()
+        disable_outputs_watcher(app)
 
     async def on_shutdown() -> None:
-        outputs_watcher: Optional[OutputsWatcher] = app.state.outputs_watcher
+        outputs_watcher: OutputsWatcher | None = app.state.outputs_watcher
         if outputs_watcher is not None:
             await outputs_watcher.shutdown()
 
