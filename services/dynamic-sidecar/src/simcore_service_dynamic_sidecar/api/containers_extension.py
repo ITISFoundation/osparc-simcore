@@ -1,4 +1,5 @@
 import logging
+from typing import Annotated
 
 from aiodocker.networks import DockerNetwork
 from fastapi import APIRouter, Depends, FastAPI
@@ -54,12 +55,12 @@ router = APIRouter()
 )
 async def toggle_directory_watcher(
     patch_directory_watcher_item: PatchDirectoryWatcherItem,
-    app: FastAPI = Depends(get_application),
+    app: Annotated[FastAPI, Depends(get_application)],
 ) -> None:
     if patch_directory_watcher_item.is_enabled:
-        enable_outputs_watcher(app)
+        await enable_outputs_watcher(app)
     else:
-        disable_outputs_watcher(app)
+        await disable_outputs_watcher(app)
 
 
 @router.post(
@@ -75,8 +76,8 @@ async def toggle_directory_watcher(
 )
 async def create_output_dirs(
     request_mode: CreateDirsRequestItem,
-    mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
-    outputs_context: OutputsContext = Depends(get_outputs_context),
+    mounted_volumes: Annotated[MountedVolumes, Depends(get_mounted_volumes)],
+    outputs_context: Annotated[OutputsContext, Depends(get_outputs_context)],
 ) -> None:
     outputs_path = mounted_volumes.disk_outputs_path
     file_type_port_keys = []
@@ -104,7 +105,7 @@ async def create_output_dirs(
 async def attach_container_to_network(
     request: Request,
     item: AttachContainerToNetworkItem,
-    container_id: str = PathParam(..., alias="id"),
+    container_id: Annotated[str, PathParam(..., alias="id")],
 ) -> None:
     assert request  # nosec
 
@@ -144,7 +145,7 @@ async def attach_container_to_network(
 )
 async def detach_container_from_network(
     item: DetachContainerFromNetworkItem,
-    container_id: str = PathParam(..., alias="id"),
+    container_id: Annotated[str, PathParam(..., alias="id")],
 ) -> None:
     async with docker_client() as docker:
         container_instance = await docker.containers.get(container_id)
