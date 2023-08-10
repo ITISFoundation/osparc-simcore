@@ -4,6 +4,7 @@
 # pylint: disable=unused-variable
 
 import asyncio
+import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
@@ -14,17 +15,19 @@ from unittest import mock
 from uuid import uuid4
 
 import pytest
-import pytest_mock
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from aioresponses import aioresponses as AioResponsesMock
 from faker import Faker
-from models_library.api_schemas_storage import FileMetaDataGet
+from models_library.api_schemas_storage import FileMetaDataGet, PresignedLink
+from models_library.generics import Envelope
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import NonNegativeFloat, NonNegativeInt, parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
@@ -858,40 +861,51 @@ def app_environment(
 
 
 @pytest.fixture
-def mock_storage_api(mocker: pytest_mock.MockerFixture, faker: Faker) -> None:
-    async def _mocked(*args, **kwargs) -> list[FileMetaDataGet]:
-        folder_name: str = kwargs["folder_name"]
-        file_uuid = f"{faker.uuid4()}/{faker.uuid4()}/{folder_name}/some_file.png"
-
-        file_in_dir = parse_obj_as(
-            FileMetaDataGet,
-            {
-                "file_uuid": file_uuid,
-                "location_id": 0,
-                "file_name": Path(file_uuid).name,
-                "file_id": file_uuid,
-                "created_at": "2020-06-17 12:28:55.705340",
-                "last_modified": "2020-06-17 12:28:55.705340",
-            },
-        )
-        return [file_in_dir]
-
-    mocker.patch(
-        "simcore_service_webserver.projects._nodes_api.get_files_in_node_folder",
-        autospec=True,
-        side_effect=_mocked,
+def mock_storage_calls(aioresponses_mocker: AioResponsesMock, faker: Faker) -> None:
+    _get_files_in_node_folder = re.compile(
+        r"^http://[a-z\-_]*:[0-9]+/v[0-9]/locations/[0-9]+/files/metadata.+$"
     )
 
-    mocker.patch(
-        "simcore_service_webserver.projects._nodes_api.get_download_link",
-        autospec=True,
-        return_value=faker.image_url(),
+    _get_download_link = re.compile(
+        r"^http://[a-z\-_]*:[0-9]+/v[0-9]/locations/[0-9]+/files.+$"
+    )
+
+    file_uuid = f"{uuid4()}/{uuid4()}/assets/some_file.png"
+    aioresponses_mocker.get(
+        _get_files_in_node_folder,
+        payload=jsonable_encoder(
+            Envelope[list[FileMetaDataGet]](
+                data=[
+                    parse_obj_as(
+                        FileMetaDataGet,
+                        {
+                            "file_uuid": file_uuid,
+                            "location_id": 0,
+                            "file_name": Path(file_uuid).name,
+                            "file_id": file_uuid,
+                            "created_at": "2020-06-17 12:28:55.705340",
+                            "last_modified": "2020-06-17 12:28:55.705340",
+                        },
+                    )
+                ]
+            )
+        ),
+        repeat=True,
+    )
+
+    aioresponses_mocker.get(
+        _get_download_link,
+        status=web.HTTPOk.status_code,
+        payload=jsonable_encoder(
+            Envelope[PresignedLink](data=PresignedLink(link=faker.image_url()))
+        ),
+        repeat=True,
     )
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_read_project_nodes_previews(
-    mock_storage_api: None,
+    mock_storage_calls: None,
     client: TestClient,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
     user_role: UserRole,
