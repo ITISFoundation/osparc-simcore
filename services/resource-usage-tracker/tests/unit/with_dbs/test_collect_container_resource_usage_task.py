@@ -6,7 +6,9 @@ import pytest
 import sqlalchemy as sa
 from fastapi import FastAPI
 from pytest_mock import MockerFixture
-from simcore_postgres_database.models.resource_tracker import resource_tracker_container
+from simcore_postgres_database.models.resource_tracker_containers import (
+    resource_tracker_container,
+)
 from simcore_service_resource_usage_tracker.modules.prometheus_containers.core import (
     collect_container_resource_usage_task,
 )
