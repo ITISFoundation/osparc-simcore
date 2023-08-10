@@ -159,6 +159,7 @@ async def test_complete_multipart_upload(
     auth: httpx.BasicAuth,
     storage_v0_service_mock: AioResponsesMock,
 ):
+    """Test that we can complete multipart upload directly to S3"""
 
     assert storage_v0_service_mock  # nosec
 
@@ -184,6 +185,8 @@ async def test_delete_multipart_upload(
     auth: httpx.BasicAuth,
     storage_v0_service_mock: AioResponsesMock,
 ):
+    """Test that we can abort multipart upload directly to S3"""
+
     assert storage_v0_service_mock  # nosec
 
     query_params = {"abort_upload_link": _dummy_s3_url}
