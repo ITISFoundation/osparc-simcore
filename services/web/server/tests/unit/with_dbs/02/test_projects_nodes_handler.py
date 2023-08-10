@@ -4,10 +4,13 @@
 # pylint: disable=unused-variable
 
 import asyncio
+import re
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from pathlib import Path
 from random import choice
-from typing import Any, Awaitable, Callable, Final
+from typing import Any, Final
 from unittest import mock
 from uuid import uuid4
 
@@ -15,14 +18,17 @@ import pytest
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from aioresponses import aioresponses as AioResponsesMock
 from faker import Faker
+from models_library.api_schemas_storage import FileMetaDataGet, PresignedLink
+from models_library.generics import Envelope
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import NonNegativeFloat, NonNegativeInt, parse_obj_as
-from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_webserver_unit_with_db import (
@@ -828,7 +834,7 @@ async def test_stop_node(
     all_service_uuids = list(project["workbench"])
     # start the node, shall work as expected
     url = client.app.router["stop_node"].url_for(
-        project_id=project["uuid"], node_id=choice(all_service_uuids)
+        project_id=project["uuid"], node_id=choice(all_service_uuids)  # noqa: S311
     )
     response = await client.post(f"{url}")
     data, error = await assert_status(
@@ -847,15 +853,59 @@ async def test_stop_node(
 
 @pytest.fixture
 def app_environment(
-    app_environment: dict[str, str], monkeypatch: MonkeyPatch
+    app_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch
 ) -> dict[str, str]:
     # test_read_project_nodes_previews needs WEBSERVER_DEV_FEATURES_ENABLED=1
     new_envs = setenvs_from_dict(monkeypatch, {"WEBSERVER_DEV_FEATURES_ENABLED": "1"})
     return app_environment | new_envs
 
 
-@pytest.mark.parametrize("user_role", (UserRole.USER,))
+@pytest.fixture
+def mock_storage_calls(aioresponses_mocker: AioResponsesMock, faker: Faker) -> None:
+    _get_files_in_node_folder = re.compile(
+        r"^http://[a-z\-_]*:[0-9]+/v[0-9]/locations/[0-9]+/files/metadata.+$"
+    )
+
+    _get_download_link = re.compile(
+        r"^http://[a-z\-_]*:[0-9]+/v[0-9]/locations/[0-9]+/files.+$"
+    )
+
+    file_uuid = f"{uuid4()}/{uuid4()}/assets/some_file.png"
+    aioresponses_mocker.get(
+        _get_files_in_node_folder,
+        payload=jsonable_encoder(
+            Envelope[list[FileMetaDataGet]](
+                data=[
+                    parse_obj_as(
+                        FileMetaDataGet,
+                        {
+                            "file_uuid": file_uuid,
+                            "location_id": 0,
+                            "file_name": Path(file_uuid).name,
+                            "file_id": file_uuid,
+                            "created_at": "2020-06-17 12:28:55.705340",
+                            "last_modified": "2020-06-17 12:28:55.705340",
+                        },
+                    )
+                ]
+            )
+        ),
+        repeat=True,
+    )
+
+    aioresponses_mocker.get(
+        _get_download_link,
+        status=web.HTTPOk.status_code,
+        payload=jsonable_encoder(
+            Envelope[PresignedLink](data=PresignedLink(link=faker.image_url()))
+        ),
+        repeat=True,
+    )
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_read_project_nodes_previews(
+    mock_storage_calls: None,
     client: TestClient,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
     user_role: UserRole,

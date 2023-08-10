@@ -4,7 +4,7 @@
 import asyncio
 from pathlib import Path
 from typing import AsyncIterable
-from unittest.mock import AsyncMock
+from unittest.mock import Mock
 
 import aioprocessing
 import pytest
@@ -46,7 +46,7 @@ async def outputs_manager(
     )
     await outputs_manager.start()
 
-    outputs_manager.set_all_ports_for_upload = AsyncMock()
+    outputs_manager.set_all_ports_for_upload = Mock()
 
     yield outputs_manager
     await outputs_manager.shutdown()
