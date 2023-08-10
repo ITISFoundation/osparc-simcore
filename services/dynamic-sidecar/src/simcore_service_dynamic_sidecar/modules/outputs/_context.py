@@ -16,7 +16,7 @@ class OutputsContext:
     port_key_events_queue: AioQueue = field(default_factory=aioprocessing.AioQueue)
 
     # OutputsContext (generates) -> _EventHandlerProcess(receives)
-    file_type_port_keys_updates_queue: AioQueue = field(
+    file_system_event_handler_queue: AioQueue = field(
         default_factory=aioprocessing.AioQueue
     )
 
@@ -28,8 +28,19 @@ class OutputsContext:
 
     async def set_file_type_port_keys(self, file_type_port_keys: list[str]) -> None:
         self._file_type_port_keys = file_type_port_keys
-        await self.file_type_port_keys_updates_queue.coro_put(  # pylint:disable=no-member
-            self._file_type_port_keys
+        await self.file_system_event_handler_queue.coro_put(  # pylint:disable=no-member
+            {
+                "method_name": "handle_set_outputs_port_keys",
+                "kwargs": {"outputs_port_keys": self._file_type_port_keys},
+            }
+        )
+
+    async def toggle_event_propagation(self, *, is_enabled: bool) -> None:
+        await self.file_system_event_handler_queue.coro_put(  # pylint:disable=no-member
+            {
+                "method_name": "handle_toggle_event_propagation",
+                "kwargs": {"is_enabled": is_enabled},
+            }
         )
 
     @property

@@ -71,7 +71,7 @@ def mock_upload_outputs(
     async def _mock_upload_outputs(*args, **kwargs) -> None:
         await asyncio.sleep(upload_duration)
 
-    yield mocker.patch(
+    return mocker.patch(
         "simcore_service_dynamic_sidecar.modules.outputs._manager.upload_outputs",
         side_effect=_mock_upload_outputs,
     )
