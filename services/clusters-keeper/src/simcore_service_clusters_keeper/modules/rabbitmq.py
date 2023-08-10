@@ -12,7 +12,7 @@ from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient, RPCMethodName
 
 from settings_library.rabbit import RabbitSettings
 
-from ..clusters_api import create_cluster
+from ..clusters_api import cluster_heartbeat, create_cluster
 from ..core.errors import ConfigurationError
 from ..core.settings import get_application_settings
 
@@ -40,6 +40,12 @@ def setup(app: FastAPI) -> None:
             client_name="clusters_keeper_rpc_server", settings=settings
         )
 
+
+        await rpc_server.rpc_register_handler(
+            CLUSTERS_KEEPER_RPC_NAMESPACE,
+            RPCMethodName("cluster_heartbeat"),
+            functools.partial(cluster_heartbeat, app),
+        )
 
     async def on_shutdown() -> None:
         if app.state.rabbitmq_client:

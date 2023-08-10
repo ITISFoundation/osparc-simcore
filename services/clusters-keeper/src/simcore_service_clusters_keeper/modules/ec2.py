@@ -225,6 +225,22 @@ class ClustersKeeperEC2:
                 raise Ec2InstanceNotFoundError from exc
             raise
 
+    async def set_instances_tags(
+        self, instances: list[EC2InstanceData], tags: dict[str, str]
+    ) -> None:
+        with log_context(
+            logger,
+            logging.DEBUG,
+            msg=f"setting {tags=} on instances '[{[i.id for i in instances]}]'",
+        ):
+            await self.client.create_tags(
+                Resources=[i.id for i in instances],
+                Tags=[
+                    {"Key": tag_key, "Value": tag_value}
+                    for tag_key, tag_value in tags.items()
+                ],
+            )
+
 
 def setup(app: FastAPI) -> None:
     async def on_startup() -> None:
