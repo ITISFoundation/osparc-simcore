@@ -109,7 +109,7 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
 
     __updateWallet: function(win, button, walletEditor) {
       const walletId = walletEditor.getWalletId();
-      const name = walletEditor.getLabel();
+      const name = walletEditor.getName();
       const description = walletEditor.getDescription();
       const thumbnail = walletEditor.getThumbnail();
       const params = {
@@ -119,25 +119,30 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
         data: {
           "name": name,
           "description": description,
-          "thumbnail": thumbnail || null
+          "thumbnail": thumbnail || null,
+          "status": this.__walletModel.getStatus()
         }
       };
       osparc.data.Resources.fetch("wallets", "put", params)
         .then(() => {
           osparc.component.message.FlashMessenger.getInstance().logAs(name + this.tr(" successfully edited"));
-          button.setFetching(false);
-          win.close();
-          osparc.store.Store.getInstance().reset("wallets");
+          osparc.store.Store.getInstance().invalidate("wallets");
+          const store = osparc.store.Store.getInstance();
+          store.reloadWallets();
           this.__walletModel.set({
-            label: name,
+            name: name,
             description: description,
             thumbnail: thumbnail || null
           });
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing ") + name, "ERROR");
-          button.setFetching(false);
           console.error(err);
+          const msg = err.message || (this.tr("Something went wrong editing ") + name);
+          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        })
+        .finally(() => {
+          button.setFetching(false);
+          win.close();
         });
     },
 

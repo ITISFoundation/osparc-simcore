@@ -8,6 +8,7 @@ asgi_lifespan
 async-asgi-testclient # replacement for fastapi.testclient.TestClient [see b) below]
 docker
 faker
+flaky
 minio
 pytest
 pytest-asyncio

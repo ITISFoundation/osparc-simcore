@@ -66,7 +66,7 @@ from simcore_service_director_v2.core.errors import (
     InsuficientComputationalResourcesError,
     MissingComputationalResourcesError,
 )
-from simcore_service_director_v2.models.comp_runs import MetadataDict
+from simcore_service_director_v2.models.comp_runs import RunMetadataDict
 from simcore_service_director_v2.models.comp_tasks import Image
 from simcore_service_director_v2.modules.dask_client import DaskClient, TaskHandlers
 from tenacity._asyncio import AsyncRetrying
@@ -462,15 +462,15 @@ async def test_dask_does_report_any_non_base_exception_derived_error(
 
 
 @pytest.fixture
-def comp_run_metadata(faker: Faker) -> MetadataDict:
-    return MetadataDict(
+def comp_run_metadata(faker: Faker) -> RunMetadataDict:
+    return RunMetadataDict(
         product_name=faker.pystr(),
         simcore_user_agent=faker.pystr(),
     ) | faker.pydict(allowed_types=(str,))
 
 
 @pytest.fixture
-def task_labels(comp_run_metadata: MetadataDict) -> ContainerLabelsDict:
+def task_labels(comp_run_metadata: RunMetadataDict) -> ContainerLabelsDict:
     return parse_obj_as(
         ContainerLabelsDict,
         {
@@ -491,7 +491,7 @@ async def test_send_computation_task(
     _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
-    comp_run_metadata: MetadataDict,
+    comp_run_metadata: RunMetadataDict,
     task_labels: ContainerLabelsDict,
     faker: Faker,
 ):
@@ -604,7 +604,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
     _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
-    comp_run_metadata: MetadataDict,
+    comp_run_metadata: RunMetadataDict,
 ):
     """rationale:
     When a task is submitted to the dask backend, a dask future is returned.
@@ -696,7 +696,7 @@ async def test_abort_computation_tasks(
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
     faker: Faker,
-    comp_run_metadata: MetadataDict,
+    comp_run_metadata: RunMetadataDict,
 ):
     _DASK_EVENT_NAME = faker.pystr()
 
@@ -785,7 +785,7 @@ async def test_failed_task_returns_exceptions(
     _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
-    comp_run_metadata: MetadataDict,
+    comp_run_metadata: RunMetadataDict,
 ):
     # NOTE: this must be inlined so that the test works,
     # the dask-worker must be able to import the function
@@ -852,7 +852,7 @@ async def test_missing_resource_send_computation_task(
     _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
-    comp_run_metadata: MetadataDict,
+    comp_run_metadata: RunMetadataDict,
 ):
     # remove the workers that can handle gpu
     scheduler_info = dask_client.backend.client.scheduler_info()
@@ -895,7 +895,7 @@ async def test_too_many_resources_send_computation_task(
     _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
-    comp_run_metadata: MetadataDict,
+    comp_run_metadata: RunMetadataDict,
 ):
     # create an image that needs a huge amount of CPU
     image = Image(
@@ -935,7 +935,7 @@ async def test_disconnected_backend_raises_exception(
     _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
-    comp_run_metadata: MetadataDict,
+    comp_run_metadata: RunMetadataDict,
 ):
     # DISCONNECT THE CLUSTER
     await dask_spec_local_cluster.close()  # type: ignore
@@ -968,7 +968,7 @@ async def test_changed_scheduler_raises_exception(
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
     unused_tcp_port_factory: Callable,
-    comp_run_metadata: MetadataDict,
+    comp_run_metadata: RunMetadataDict,
 ):
     # change the scheduler (stop the current one and start another at the same address)
     scheduler_address = URL(dask_spec_local_cluster.scheduler_address)
@@ -1015,7 +1015,7 @@ async def test_get_tasks_status(
     mocked_storage_service_api: respx.MockRouter,
     faker: Faker,
     fail_remote_fct: bool,
-    comp_run_metadata: MetadataDict,
+    comp_run_metadata: RunMetadataDict,
 ):
     # NOTE: this must be inlined so that the test works,
     # the dask-worker must be able to import the function
@@ -1103,7 +1103,7 @@ async def test_dask_sub_handlers(
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
     fake_task_handlers: TaskHandlers,
-    comp_run_metadata: MetadataDict,
+    comp_run_metadata: RunMetadataDict,
 ):
     dask_client.register_handlers(fake_task_handlers)
     _DASK_START_EVENT = "start"
@@ -1178,7 +1178,7 @@ async def test_get_cluster_details(
     _mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
-    comp_run_metadata: MetadataDict,
+    comp_run_metadata: RunMetadataDict,
     faker: Faker,
 ):
     cluster_details = await dask_client.get_cluster_details()

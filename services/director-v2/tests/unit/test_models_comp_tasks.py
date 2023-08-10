@@ -27,7 +27,7 @@ def test_computation_task_model_examples(
 
 @pytest.mark.parametrize(
     "model_cls",
-    (CompTaskAtDB,),
+    [CompTaskAtDB],
 )
 def test_computation_task_model_export_to_db_model(
     model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
@@ -46,13 +46,13 @@ def test_computation_task_model_export_to_db_model(
 
 @pytest.mark.parametrize(
     "model_cls",
-    (CompTaskAtDB,),
+    [CompTaskAtDB],
 )
 def test_computation_task_model_with_running_state_value_field(
     model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
 ):
     for name, example in model_cls_examples.items():
-        example["state"] = RunningState.RETRY.value
+        example["state"] = RunningState.WAITING_FOR_RESOURCES.value
         print(name, ":", pformat(example))
         model_instance = model_cls(**example)
         assert model_instance, f"Failed with {name}"
@@ -60,7 +60,7 @@ def test_computation_task_model_with_running_state_value_field(
 
 @pytest.mark.parametrize(
     "model_cls",
-    (CompTaskAtDB,),
+    [CompTaskAtDB],
 )
 def test_computation_task_model_with_wrong_default_value_field(
     model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]

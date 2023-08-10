@@ -25,6 +25,10 @@ class DockerLabelKey(ConstrainedStr):
     # good practice: use reverse DNS notation
     regex: re.Pattern[str] | None = DOCKER_LABEL_KEY_REGEX
 
+    @classmethod
+    def from_key(cls, key: str) -> "DockerLabelKey":
+        return cls(key.lower().replace("_", "-"))
+
 
 class DockerGenericTag(ConstrainedStr):
     # NOTE: https://docs.docker.com/engine/reference/commandline/tag/#description

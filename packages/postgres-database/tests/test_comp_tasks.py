@@ -106,7 +106,7 @@ async def test_listen_query(
         db_connection, task, outputs=updated_output, state=StateType.ABORTED
     )
     tasks = await _assert_notification_queue_status(db_notification_queue, 1)
-    assert tasks[0]["changes"] == ["outputs", "state"]
+    assert tasks[0]["changes"] == ["modified", "outputs", "state"]
     assert (
         tasks[0]["data"]["outputs"] == updated_output
     ), f"the data received from the database is {tasks[0]}, expected new output is {updated_output}"
@@ -116,7 +116,7 @@ async def test_listen_query(
     await _update_comp_task_with(db_connection, task, outputs=updated_output)
     await _update_comp_task_with(db_connection, task, outputs=updated_output)
     tasks = await _assert_notification_queue_status(db_notification_queue, 1)
-    assert tasks[0]["changes"] == ["outputs"]
+    assert tasks[0]["changes"] == ["modified", "outputs"]
     assert (
         tasks[0]["data"]["outputs"] == updated_output
     ), f"the data received from the database is {tasks[0]}, expected new output is {updated_output}"
@@ -132,7 +132,7 @@ async def test_listen_query(
     tasks = await _assert_notification_queue_status(db_notification_queue, NUM_CALLS)
 
     for n, output in enumerate(update_outputs):
-        assert tasks[n]["changes"] == ["outputs"]
+        assert tasks[n]["changes"] == ["modified", "outputs"]
         assert (
             tasks[n]["data"]["outputs"] == output
         ), f"the data received from the database is {tasks[n]}, expected new output is {output}"
