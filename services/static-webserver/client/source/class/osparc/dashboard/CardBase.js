@@ -545,8 +545,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
         this.set({
           toolTipText
         });
-      } else {
-        this.resetToolTipText();
       }
     },
 
