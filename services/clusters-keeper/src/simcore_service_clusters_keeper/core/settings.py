@@ -162,6 +162,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         auto_default_from_env=True
     )
 
+    CLUSTERS_KEEPER_CLEAN_INTERVAL: datetime.timedelta = Field(
+        default=datetime.timedelta(seconds=60),
+        description="interval between each clusters clean check (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+    )
+
     @cached_property
     def LOG_LEVEL(self):  # noqa: N802
         return self.CLUSTERS_KEEPER_LOGLEVEL
