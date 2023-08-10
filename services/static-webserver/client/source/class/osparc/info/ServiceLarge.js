@@ -27,11 +27,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
   construct: function(serviceData, instance = null, openOptions = true) {
     this.base(arguments);
 
-    if (serviceData) {
-      this.setService(serviceData);
-    } else {
-      osparc.component.message.FlashMessenger.logAs(this.tr("Service information could not be retrieved"), "WARNING");
-    }
+    this.setService(serviceData);
 
     if (instance) {
       if ("nodeId" in instance) {
