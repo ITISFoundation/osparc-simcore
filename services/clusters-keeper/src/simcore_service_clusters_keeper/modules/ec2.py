@@ -115,7 +115,6 @@ class ClustersKeeperEC2:
                 InstanceType=instance_type,
                 InstanceInitiatedShutdownBehavior="terminate",
                 KeyName=instance_settings.EC2_INSTANCES_KEY_NAME,
-                SubnetId=instance_settings.EC2_INSTANCES_SUBNET_ID,
                 TagSpecifications=[
                     {
                         "ResourceType": "instance",
@@ -126,7 +125,14 @@ class ClustersKeeperEC2:
                     }
                 ],
                 UserData=compose_user_data(startup_script),
-                SecurityGroupIds=instance_settings.EC2_INSTANCES_SECURITY_GROUP_IDS,
+                NetworkInterfaces=[
+                    {
+                        "AssociatePublicIpAddress": True,
+                        "DeviceIndex": 0,
+                        "SubnetId": instance_settings.EC2_INSTANCES_SUBNET_ID,
+                        "Groups": instance_settings.EC2_INSTANCES_SECURITY_GROUP_IDS,
+                    }
+                ],
             )
             instance_ids = [i["InstanceId"] for i in instances["Instances"]]
             logger.info(
@@ -201,7 +207,9 @@ class ClustersKeeperEC2:
                         state=instance["State"]["Name"],
                     )
                 )
-        logger.debug("received: %s", f"{all_instances=}")
+        logger.debug(
+            "received: %s instances with %s", f"{len(all_instances)}", f"{state_names=}"
+        )
         return all_instances
 
     async def terminate_instances(self, instance_datas: list[EC2InstanceData]) -> None:
