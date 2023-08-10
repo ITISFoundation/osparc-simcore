@@ -1,0 +1,17 @@
+# Shortcut to install 'services/clusters-keeper' for production
+#
+# - As ci.txt but w/o tests
+#
+# Usage:
+#   pip install -r requirements/prod.txt
+#
+
+# installs base requirements
+--requirement _base.txt
+
+# installs this repo's packages
+../../packages/models-library
+../../packages/service-library[fastapi]
+../../packages/settings-library
+# installs current package
+.

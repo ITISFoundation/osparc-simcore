@@ -16,6 +16,7 @@ SERVICES_AND_EXIT_CODES = [
     # SEE https://betterprogramming.pub/understanding-docker-container-exit-codes-5ee79a1d58f6
     ("api-server", 0),
     ("catalog", 0),
+    ("clusters-keeper", 0),
     ("dask-sidecar", 0),
     ("datcore-adapter", 0),
     ("director-v2", 0),
@@ -26,6 +27,7 @@ SERVICES_AND_EXIT_CODES = [
 ]
 
 MAX_TIME_TO_RESTART_SERVICE = 10
+
 
 # FIXME: https://github.com/ITISFoundation/osparc-simcore/issues/2407
 @pytest.mark.skip(

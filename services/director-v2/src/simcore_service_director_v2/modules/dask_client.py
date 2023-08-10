@@ -60,7 +60,7 @@ from ..core.errors import (
     ComputationalBackendTaskResultsNotReadyError,
 )
 from ..core.settings import AppSettings, ComputationalBackendSettings
-from ..models.comp_runs import MetadataDict
+from ..models.comp_runs import RunMetadataDict
 from ..models.comp_tasks import Image
 from ..modules.storage import StorageClient
 from ..utils.dask import (
@@ -194,7 +194,7 @@ class DaskClient:
         tasks: dict[NodeID, Image],
         callback: _UserCallbackInSepThread,
         remote_fct: ContainerRemoteFct | None = None,
-        metadata: MetadataDict,
+        metadata: RunMetadataDict,
     ) -> list[tuple[NodeID, str]]:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
         function that runs container will be started."""
@@ -307,7 +307,7 @@ class DaskClient:
                 user_id=user_id,
                 project_id=project_id,
                 node_id=node_id,
-                metadata=metadata,
+                run_metadata=metadata,
                 node_requirements=node_image.node_requirements,
             )
             task_envs = await compute_task_envs(

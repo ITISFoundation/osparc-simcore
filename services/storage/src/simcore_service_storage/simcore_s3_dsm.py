@@ -1,13 +1,13 @@
 import datetime
-import functools
 import logging
 import tempfile
 import urllib.parse
 from collections import deque
+from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Awaitable, Callable
+from typing import Any, Final, cast
 
 from aiohttp import web
 from aiopg.sa import Engine
@@ -21,7 +21,7 @@ from models_library.projects_nodes_io import (
     StorageFileID,
 )
 from models_library.users import UserID
-from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pydantic import AnyUrl, ByteSize, NonNegativeInt, parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.utils import ensure_ends_with, logged_gather
@@ -63,16 +63,23 @@ from .models import (
     UploadLinks,
 )
 from .s3 import get_s3_client
-from .s3_client import S3MetaData
+from .s3_client import S3MetaData, StorageS3Client
 from .s3_utils import S3TransferDataCB, update_task_progress
 from .settings import Settings
-from .simcore_s3_dsm_utils import expand_directory, get_simcore_directory
+from .simcore_s3_dsm_utils import (
+    expand_directory,
+    get_directory_file_id,
+    get_simcore_directory,
+)
 from .utils import (
     convert_db_to_model,
     download_to_file_or_raise,
     is_file_entry_valid,
     is_valid_managed_multipart_upload,
 )
+
+_MAX_PARALLEL_S3_CALLS: Final[NonNegativeInt] = 10
+_MAX_ELEMENTS_TO_LIST: Final[int] = 1000
 
 logger = logging.getLogger(__name__)
 
@@ -380,36 +387,90 @@ class SimcoreS3DataManager(BaseDataManager):
     async def create_file_download_link(
         self, user_id: UserID, file_id: StorageFileID, link_type: LinkType
     ) -> AnyUrl:
+        """
+        Cases:
+        1. the file_id maps 1:1 to `file_meta_data` (e.g. it is not a file inside a directory)
+        2. the file_id represents a file inside a directory (its root path maps 1:1 to a `file_meta_data` defined as a directory)
+
+        3. Raises FileNotFoundError if the file does not exist
+        4. Raises FileAccessRightError if the user does not have access to the file
+        """
         async with self.engine.acquire() as conn:
-            can: AccessRights | None = await get_file_access_rights(
-                conn, user_id, file_id
+            directory_file_id: SimcoreS3FileID | None = await get_directory_file_id(
+                conn, cast(SimcoreS3FileID, file_id)
             )
-            if not can.read:
-                # NOTE: this is tricky. A user with read access can download and data!
-                # If write permission would be required, then shared projects as views cannot
-                # recover data in nodes (e.g. jupyter cannot pull work data)
-                #
-                raise FileAccessRightError(access_right="read", file_id=file_id)
-
-            fmd = await db_file_meta_data.get(
-                conn, parse_obj_as(SimcoreS3FileID, file_id)
+            return (
+                await self._get_link_for_directory_fmd(
+                    conn, user_id, directory_file_id, file_id, link_type
+                )
+                if directory_file_id
+                else await self._get_link_for_file_fmd(
+                    conn, user_id, file_id, link_type
+                )
             )
-            if not is_file_entry_valid(fmd):
-                # try lazy update
-                fmd = await self._update_database_from_storage(conn, fmd)
 
+    @staticmethod
+    async def __ensure_read_access_rights(
+        conn: SAConnection, user_id: UserID, storage_file_id: StorageFileID
+    ) -> None:
+        can: AccessRights | None = await get_file_access_rights(
+            conn, user_id, storage_file_id
+        )
+        if not can.read:
+            # NOTE: this is tricky. A user with read access can download and data!
+            # If write permission would be required, then shared projects as views cannot
+            # recover data in nodes (e.g. jupyter cannot pull work data)
+            #
+            raise FileAccessRightError(access_right="read", file_id=storage_file_id)
+
+    async def __get_link(
+        self, s3_file_id: SimcoreS3FileID, link_type: LinkType
+    ) -> AnyUrl:
         link: AnyUrl = parse_obj_as(
             AnyUrl,
-            f"s3://{self.simcore_bucket_name}/{urllib.parse.quote(fmd.object_name)}",
+            f"s3://{self.simcore_bucket_name}/{urllib.parse.quote(s3_file_id)}",
         )
         if link_type == LinkType.PRESIGNED:
             link = await get_s3_client(self.app).create_single_presigned_download_link(
                 self.simcore_bucket_name,
-                fmd.object_name,
+                s3_file_id,
                 self.settings.STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS,
             )
 
         return link
+
+    async def _get_link_for_file_fmd(
+        self,
+        conn: SAConnection,
+        user_id: UserID,
+        file_id: StorageFileID,
+        link_type: LinkType,
+    ) -> AnyUrl:
+        # 1. the file_id maps 1:1 to `file_meta_data`
+        await self.__ensure_read_access_rights(conn, user_id, file_id)
+
+        fmd = await db_file_meta_data.get(conn, parse_obj_as(SimcoreS3FileID, file_id))
+        if not is_file_entry_valid(fmd):
+            # try lazy update
+            fmd = await self._update_database_from_storage(conn, fmd)
+
+        return await self.__get_link(fmd.object_name, link_type)
+
+    async def _get_link_for_directory_fmd(
+        self,
+        conn: SAConnection,
+        user_id: UserID,
+        directory_file_id: SimcoreS3FileID,
+        file_id: StorageFileID,
+        link_type: LinkType,
+    ) -> AnyUrl:
+        # 2. the file_id represents a file inside a directory
+        await self.__ensure_read_access_rights(conn, user_id, directory_file_id)
+        if not await get_s3_client(self.app).file_exists(
+            self.simcore_bucket_name, s3_object=f"{file_id}"
+        ):
+            raise S3KeyNotFoundError(key=file_id, bucket=self.simcore_bucket_name)
+        return await self.__get_link(parse_obj_as(SimcoreS3FileID, file_id), link_type)
 
     async def delete_file(self, user_id: UserID, file_id: StorageFileID):
         async with self.engine.acquire() as conn, conn.begin():
@@ -496,11 +557,12 @@ class SimcoreS3DataManager(BaseDataManager):
             src_project_files: list[
                 FileMetaDataAtDB
             ] = await db_file_meta_data.list_fmds(conn, project_ids=[src_project_uuid])
-        src_project_total_data_size = parse_obj_as(
-            ByteSize,
-            functools.reduce(
-                lambda a, b: a + b, [f.file_size for f in src_project_files], 0
-            ),
+        project_file_sizes: list[ByteSize] = await logged_gather(
+            *[self._get_size(fmd) for fmd in src_project_files],
+            max_concurrency=_MAX_PARALLEL_S3_CALLS,
+        )
+        src_project_total_data_size: ByteSize = parse_obj_as(
+            ByteSize, sum(project_file_sizes)
         )
         # Step 3.1: copy: files referenced from file_metadata
         copy_tasks: deque[Awaitable] = deque()
@@ -519,7 +581,7 @@ class SimcoreS3DataManager(BaseDataManager):
 
             if new_node_id := node_mapping.get(src_fmd.node_id):
                 copy_tasks.append(
-                    self._copy_file_s3_s3(
+                    self._copy_path_s3_s3(
                         user_id,
                         src_fmd,
                         SimcoreS3FileID(
@@ -548,6 +610,21 @@ class SimcoreS3DataManager(BaseDataManager):
         await logged_gather(*copy_tasks, max_concurrency=MAX_CONCURRENT_S3_TASKS)
         # ensure the full size is reported
         s3_transfered_data_cb.finalize_transfer()
+
+    async def _get_size(self, fmd: FileMetaDataAtDB) -> ByteSize:
+        if not fmd.is_directory:
+            return fmd.file_size
+
+        # in case of directory list files and return size
+        total_size: int = 0
+        async for s3_objects in get_s3_client(self.app).list_all_objects_gen(
+            self.simcore_bucket_name,
+            prefix=f"{fmd.object_name}",
+            max_yield_result_size=_MAX_ELEMENTS_TO_LIST,
+        ):
+            total_size += sum(x.get("Size", 0) for x in s3_objects)
+
+        return parse_obj_as(ByteSize, total_size)
 
     async def search_files_starting_with(
         self, user_id: UserID, prefix: str
@@ -596,7 +673,9 @@ class SimcoreS3DataManager(BaseDataManager):
         async with self.engine.acquire() as conn:
             return convert_db_to_model(await db_file_meta_data.insert(conn, target))
 
-    async def synchronise_meta_data_table(self, dry_run: bool) -> list[StorageFileID]:
+    async def synchronise_meta_data_table(
+        self, *, dry_run: bool
+    ) -> list[StorageFileID]:
         file_ids_to_remove = []
         async with self.engine.acquire() as conn:
             logger.warning(
@@ -663,7 +742,9 @@ class SimcoreS3DataManager(BaseDataManager):
         )
         list_of_fmds_to_delete = [
             expired_fmd
-            for expired_fmd, updated_fmd in zip(list_of_expired_uploads, updated_fmds)
+            for expired_fmd, updated_fmd in zip(
+                list_of_expired_uploads, updated_fmds, strict=True
+            )
             if not isinstance(updated_fmd, FileMetaDataAtDB)
         ]
         if list_of_fmds_to_delete:
@@ -870,7 +951,7 @@ class SimcoreS3DataManager(BaseDataManager):
 
         return convert_db_to_model(updated_fmd)
 
-    async def _copy_file_s3_s3(
+    async def _copy_path_s3_s3(
         self,
         user_id: UserID,
         src_fmd: FileMetaDataAtDB,
@@ -886,17 +967,46 @@ class SimcoreS3DataManager(BaseDataManager):
                 user_id,
                 dst_file_id,
                 upload_id=S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID,
-                is_directory=False,
+                is_directory=src_fmd.is_directory,
             )
             # NOTE: ensure the database is updated so cleaner does not pickup newly created uploads
             await transaction.commit()
 
-            await get_s3_client(self.app).copy_file(
-                self.simcore_bucket_name,
-                src_fmd.object_name,
-                new_fmd.object_name,
-                bytes_transfered_cb=bytes_transfered_cb,
-            )
+            s3_client: StorageS3Client = get_s3_client(self.app)
+
+            if src_fmd.is_directory:
+                async for s3_objects in s3_client.list_all_objects_gen(
+                    self.simcore_bucket_name,
+                    prefix=src_fmd.object_name,
+                    max_yield_result_size=_MAX_ELEMENTS_TO_LIST,
+                ):
+                    s3_objects_src_to_new: dict[str, str] = {
+                        x["Key"]: x["Key"].replace(
+                            f"{src_fmd.object_name}", f"{new_fmd.object_name}"
+                        )
+                        for x in s3_objects
+                    }
+
+                    await logged_gather(
+                        *[
+                            s3_client.copy_file(
+                                self.simcore_bucket_name,
+                                cast(SimcoreS3FileID, src),
+                                cast(SimcoreS3FileID, new),
+                                bytes_transfered_cb=bytes_transfered_cb,
+                            )
+                            for src, new in s3_objects_src_to_new.items()
+                        ],
+                        max_concurrency=_MAX_PARALLEL_S3_CALLS,
+                    )
+            else:
+                await s3_client.copy_file(
+                    self.simcore_bucket_name,
+                    src_fmd.object_name,
+                    new_fmd.object_name,
+                    bytes_transfered_cb=bytes_transfered_cb,
+                )
+
             updated_fmd = await self._update_database_from_storage(conn, new_fmd)
         logger.info("copied %s to %s", f"{src_fmd=}", f"{updated_fmd=}")
         return convert_db_to_model(updated_fmd)

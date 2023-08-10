@@ -99,8 +99,9 @@ async def _assert_message_received(
         reraise=True,
     ):
         with attempt:
-            # NOTE: this sleep is here to ensure that there are not multiple messages coming in
-            await asyncio.sleep(1)
+            print(
+                f"--> waiting for rabbitmq message [{attempt.retry_state.attempt_number}, {attempt.retry_state.idle_for}]"
+            )
             assert mocked_message_parser.call_count == expected_call_count
             if expected_call_count == 1:
                 assert expected_message
@@ -112,6 +113,9 @@ async def _assert_message_received(
             else:
                 assert expected_message
                 mocked_message_parser.assert_any_call(expected_message.message.encode())
+            print(
+                f"<-- rabbitmq message received after [{attempt.retry_state.attempt_number}, {attempt.retry_state.idle_for}]"
+            )
 
 
 async def test_rabbit_client_pub_sub_message_is_lost_if_no_consumer_present(

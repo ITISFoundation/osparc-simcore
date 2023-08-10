@@ -1,17 +1,26 @@
 import datetime
 from contextlib import suppress
-from typing import Any, ClassVar
+from typing import Any, ClassVar, TypedDict
 
 from models_library.clusters import DEFAULT_CLUSTER_ID, ClusterID
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
-from pydantic import BaseModel, Field, PositiveInt, validator
+from pydantic import BaseModel, PositiveInt, validator
 from simcore_postgres_database.models.comp_pipeline import StateType
 
 from ..utils.db import DB_TO_RUNNING_STATE
 
-MetadataDict = dict[str, Any]
+
+class RunMetadataDict(TypedDict, total=False):
+    node_id_names_map: dict[NodeID, str]
+    project_name: str
+    product_name: str
+    simcore_user_agent: str
+    user_email: str
+    wallet_id: int
+    wallet_name: str
 
 
 class CompRunsAtDB(BaseModel):
@@ -25,7 +34,7 @@ class CompRunsAtDB(BaseModel):
     modified: datetime.datetime
     started: datetime.datetime | None
     ended: datetime.datetime | None
-    metadata: MetadataDict = Field(default_factory=dict)
+    metadata: RunMetadataDict = RunMetadataDict()
 
     @validator("result", pre=True)
     @classmethod
@@ -44,13 +53,6 @@ class CompRunsAtDB(BaseModel):
     def convert_null_to_default_cluster_id(cls, v):
         if v is None:
             v = DEFAULT_CLUSTER_ID
-        return v
-
-    @validator("metadata", pre=True)
-    @classmethod
-    def convert_null_to_empty_metadata(cls, v):
-        if v is None:
-            v = MetadataDict()
         return v
 
     @validator("created", "modified", "started", "ended")
@@ -87,7 +89,10 @@ class CompRunsAtDB(BaseModel):
                     "started": "2021-03-01 8:07:34.19161",
                     "ended": "2021-03-01 13:07:34.10",
                     "metadata": {
+                        "node_id_names_map": {},
                         "product_name": "osparc",
+                        "project_name": "my awesome project",
+                        "simcore_user_agent": "undefined",
                         "some-other-metadata-which-is-an-array": [1, 3, 4],
                     },
                 },

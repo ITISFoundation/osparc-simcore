@@ -2,6 +2,7 @@
 # pylint: disable=no-self-use
 
 
+import datetime
 import logging
 import random
 import re
@@ -77,6 +78,8 @@ class PlacementConstraintStr(ConstrainedStr):
 
 
 class VFSCacheMode(str, Enum):
+    __slots__ = ()
+
     OFF = "off"
     MINIMAL = "minimal"
     WRITES = "writes"
@@ -115,10 +118,8 @@ class RCloneSettings(SettingsLibraryRCloneSettings):
     def enforce_r_clone_requirement(cls, v: int, values) -> PositiveInt:
         dir_cache_time = values["R_CLONE_DIR_CACHE_TIME_SECONDS"]
         if not v < dir_cache_time:
-            raise ValueError(
-                f"R_CLONE_POLL_INTERVAL_SECONDS={v} must be lower "
-                f"than R_CLONE_DIR_CACHE_TIME_SECONDS={dir_cache_time}"
-            )
+            msg = f"R_CLONE_POLL_INTERVAL_SECONDS={v} must be lower than R_CLONE_DIR_CACHE_TIME_SECONDS={dir_cache_time}"
+            raise ValueError(msg)
         return v
 
 
@@ -142,7 +143,7 @@ class DirectorV0Settings(BaseCustomSettings):
     DIRECTOR_V0_ENABLED: bool = True
 
     DIRECTOR_HOST: str = "director"
-    DIRECTOR_PORT: PortInt = 8080
+    DIRECTOR_PORT: PortInt = PortInt(8080)
     DIRECTOR_V0_VTAG: VersionTag = Field(
         default="v0", description="Director-v0 service API's version tag"
     )
@@ -164,7 +165,7 @@ class DynamicSidecarProxySettings(BaseCustomSettings):
         description="current version of the Caddy image to be pulled and used from dockerhub",
     )
     DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT: PortInt = Field(
-        default_factory=lambda: random.randint(1025, 65535),
+        default_factory=lambda: random.randint(1025, 65535),  # noqa: S311
         description="port where to expose the proxy's admin API",
     )
 
@@ -211,7 +212,7 @@ class DynamicSidecarSettings(BaseCustomSettings):
     )
 
     DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS: bool = Field(
-        False,
+        default=False,
         description="enables support for limiting service's volume size",
     )
 
@@ -340,19 +341,19 @@ class DynamicSidecarSettings(BaseCustomSettings):
     )
 
     DYNAMIC_SIDECAR_EXPOSE_PORT: bool = Field(
-        False,
+        default=False,
         description="Publishes the service on localhost for debuging and testing [DEVELOPMENT ONLY]"
         "Can be used to access swagger doc from the host as http://127.0.0.1:30023/dev/doc "
         "where 30023 is the host published port",
     )
 
     PROXY_EXPOSE_PORT: bool = Field(
-        False,
+        default=False,
         description="exposes the proxy on localhost for debuging and testing",
     )
 
     DYNAMIC_SIDECAR_DOCKER_NODE_RESOURCE_LIMITS_ENABLED: bool = Field(
-        False,
+        default=False,
         description=(
             "Limits concurrent service saves for a docker node. Guarantees "
             "that no more than X services use a resource together. "
@@ -405,7 +406,8 @@ class DynamicSidecarSettings(BaseCustomSettings):
     def validate_log_level(cls, v: str) -> str:
         valid_log_levels = {"DEBUG", "INFO", "WARNING", "ERROR"}
         if v not in valid_log_levels:
-            raise ValueError(f"Log level must be one of {valid_log_levels} not {v}")
+            msg = f"Log level must be one of {valid_log_levels} not {v}"
+            raise ValueError(msg)
         return v
 
 
@@ -429,7 +431,7 @@ class DynamicServicesSettings(BaseCustomSettings):
     # TODO: PC->ANE: refactor dynamic-sidecar settings. One settings per app module
     # WARNING: THIS IS NOT the same module as dynamic-sidecar
     DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED: bool = Field(
-        True, description="Enables/Disables the dynamic_sidecar submodule"
+        default=True, description="Enables/Disables the dynamic_sidecar submodule"
     )
 
     DYNAMIC_SIDECAR: DynamicSidecarSettings = Field(auto_default_from_env=True)
@@ -441,10 +443,10 @@ class DynamicServicesSettings(BaseCustomSettings):
 
 class ComputationalBackendSettings(BaseCustomSettings):
     COMPUTATIONAL_BACKEND_ENABLED: bool = Field(
-        True,
+        default=True,
     )
     COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED: bool = Field(
-        True,
+        default=True,
     )
     COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL: AnyUrl = Field(
         parse_obj_as(AnyUrl, "tcp://dask-scheduler:8786"),
@@ -479,7 +481,8 @@ class ComputationalBackendSettings(BaseCustomSettings):
         )
 
     @validator("COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH", pre=True)
-    def empty_auth_is_none(v):
+    @classmethod
+    def _empty_auth_is_none(cls, v):
         if not v:
             return NoAuthentication()
         return v
@@ -495,7 +498,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
         env=["DIRECTOR_V2_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
     )
     DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
-        False,
+        default=False,
         env=[
             "DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED",
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
@@ -505,7 +508,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     DIRECTOR_V2_DEV_FEATURES_ENABLED: bool = False
 
     DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED: bool = Field(
-        False,
+        default=False,
         description=(
             "Under development feature. If enabled state "
             "is saved using rclone docker volumes."
@@ -530,9 +533,13 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     EXTRA_HOSTS_SUFFIX: str = Field("undefined", env="EXTRA_HOSTS_SUFFIX")
     PUBLISHED_HOSTS_NAME: str = Field("", env="PUBLISHED_HOSTS_NAME")
     SWARM_STACK_NAME: str = Field("undefined-please-check", env="SWARM_STACK_NAME")
+    SERVICE_TRACKING_HEARTBEAT: datetime.timedelta = Field(
+        default=datetime.timedelta(seconds=60),
+        description="Service scheduler heartbeat (everytime a heartbeat is sent into RabbitMQ)",
+    )
 
     SIMCORE_SERVICES_NETWORK_NAME: str | None = Field(
-        None,
+        default=None,
         description="used to find the right network name",
     )
     SIMCORE_SERVICES_PREFIX: str | None = Field(
@@ -547,7 +554,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     DIRECTOR_V2_DEBUG: bool = False
 
     # ptvsd settings
-    DIRECTOR_V2_REMOTE_DEBUG_PORT: PortInt = 3000
+    DIRECTOR_V2_REMOTE_DEBUG_PORT: PortInt = PortInt(3000)
 
     CLIENT_REQUEST: ClientRequestSettings = Field(auto_default_from_env=True)
 
