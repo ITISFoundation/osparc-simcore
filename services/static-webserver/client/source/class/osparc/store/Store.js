@@ -408,12 +408,8 @@ qx.Class.define("osparc.store.Store", {
               }
             });
           })
-          .catch(err => {
-            console.error("failed getting services", err);
-          })
-          .finally(() => {
-            resolve(inaccessibleServices);
-          });
+          .catch(err => console.error("failed getting services", err))
+          .finally(() => resolve(inaccessibleServices));
       });
     },
 
