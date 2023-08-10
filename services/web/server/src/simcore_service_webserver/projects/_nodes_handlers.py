@@ -521,7 +521,7 @@ async def list_project_nodes_previews(request: web.Request) -> web.Response:
 
     for node_id, node in project.workbench.items():
         screenshots = await get_node_screenshots(
-            request=request,
+            app=request.app,
             user_id=req_ctx.user_id,
             project_id=path_params.project_id,
             node_id=NodeID(node_id),
@@ -570,7 +570,7 @@ async def get_project_node_preview(request: web.Request) -> web.Response:
         project_id=project.uuid,
         node_id=path_params.node_id,
         screenshots=await get_node_screenshots(
-            request=request,
+            app=request.app,
             user_id=req_ctx.user_id,
             project_id=path_params.project_id,
             node_id=path_params.node_id,
