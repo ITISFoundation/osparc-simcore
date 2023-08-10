@@ -39,7 +39,6 @@ from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserRole
 
-from .._constants import APP_SETTINGS_KEY, MSG_UNDER_DEVELOPMENT
 from .._meta import API_VTAG as VTAG
 from ..catalog import client as catalog_client
 from ..director_v2 import api
@@ -50,7 +49,7 @@ from ..users.api import get_user_role
 from ..utils_aiohttp import envelope_json_response
 from . import projects_api
 from ._common_models import ProjectPathParams, RequestContext
-from ._nodes_api import NodeScreenshot, fake_screenshots_factory
+from ._nodes_api import NodeScreenshot, get_node_screenshots
 from .db import ProjectDBAPI
 from .exceptions import (
     NodeNotFoundError,
@@ -512,9 +511,6 @@ async def list_project_nodes_previews(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     assert req_ctx  # nosec
 
-    if not request.app[APP_SETTINGS_KEY].WEBSERVER_DEV_FEATURES_ENABLED:
-        raise NotImplementedError(MSG_UNDER_DEVELOPMENT)
-
     nodes_previews: list[_ProjectNodePreview] = []
     project_data = await projects_api.get_project_for_user(
         request.app,
@@ -524,7 +520,13 @@ async def list_project_nodes_previews(request: web.Request) -> web.Response:
     project = Project.parse_obj(project_data)
 
     for node_id, node in project.workbench.items():
-        screenshots = await fake_screenshots_factory(request, NodeID(node_id), node)
+        screenshots = await get_node_screenshots(
+            app=request.app,
+            user_id=req_ctx.user_id,
+            project_id=path_params.project_id,
+            node_id=NodeID(node_id),
+            node=node,
+        )
         if screenshots:
             nodes_previews.append(
                 _ProjectNodePreview(
@@ -549,9 +551,6 @@ async def get_project_node_preview(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(_NodePathParams, request)
     assert req_ctx  # nosec
 
-    if not request.app[APP_SETTINGS_KEY].WEBSERVER_DEV_FEATURES_ENABLED:
-        raise NotImplementedError(MSG_UNDER_DEVELOPMENT)
-
     project_data = await projects_api.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
@@ -567,14 +566,15 @@ async def get_project_node_preview(request: web.Request) -> web.Response:
             node_uuid=f"{path_params.node_id}",
         )
 
-    # NOTE: keep until is not a dev-feature
-    # raise HTTPNotFound(
-    #     reason=f"Node '{path_params.project_id}/{path_params.node_id}' has no preview"
-    # )
-    #
     node_preview = _ProjectNodePreview(
         project_id=project.uuid,
         node_id=path_params.node_id,
-        screenshots=await fake_screenshots_factory(request, path_params.node_id, node),
+        screenshots=await get_node_screenshots(
+            app=request.app,
+            user_id=req_ctx.user_id,
+            project_id=path_params.project_id,
+            node_id=path_params.node_id,
+            node=node,
+        ),
     )
     return envelope_json_response(node_preview)
