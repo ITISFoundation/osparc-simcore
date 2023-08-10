@@ -43,6 +43,15 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
       return false;
     },
 
+    anyServiceInaccessible: async function(studyData) {
+      if ("workbench" in studyData) {
+        const store = osparc.store.Store.getInstance();
+        const inaccesibles = await store.getInaccessibleServices(studyData);
+        return inaccesibles.length;
+      }
+      return false;
+    },
+
     updateService: function(studyData, nodeId, newVersion) {
       if (nodeId in studyData["workbench"]) {
         if (newVersion === undefined) {
@@ -92,7 +101,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
   members: {
     __updateAllButton: null,
 
-    _populateIntroText: function() {
+    _populateIntroText: async function() {
       if (this.self().anyServiceDeprecated(this._studyData)) {
         const deprecatedText = this.tr("Services marked in yellow are deprecated, they will be retired soon. They can be updated by pressing the Update button.");
         const deprecatedLabel = new qx.ui.basic.Label(deprecatedText).set({
@@ -107,6 +116,14 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
         retiredText += this.tr("<br>- Click on the retired service, download the data");
         retiredText += this.tr("<br>- Upload the data to an updated version");
         const retiredLabel = new qx.ui.basic.Label(retiredText).set({
+          font: "text-14",
+          rich: true
+        });
+        this._introText.add(retiredLabel);
+      }
+      if (await this.self().anyServiceInaccessible(this._studyData)) {
+        let inaccessibleText = this.tr("Some services' information is not accessible. Please contact service owner:");
+        const retiredLabel = new qx.ui.basic.Label(inaccessibleText).set({
           font: "text-14",
           rich: true
         });
@@ -184,7 +201,6 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
         const latestCompatibleMetadata = osparc.utils.Services.getLatestCompatible(this._services, node["key"], node["version"]);
         if (latestCompatibleMetadata === null) {
           osparc.component.message.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
-          break;
         }
         const isUpdatable = osparc.utils.Services.isUpdatable(node);
         if (isUpdatable) {
@@ -199,14 +215,24 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
           column: this.self().GRID_POS.CURRENT_VERSION
         });
 
-        const compatibleVersionLabel = new qx.ui.basic.Label(latestCompatibleMetadata["version"]).set({
-          font: "text-14"
-        });
-        this.self().colorVersionLabel(compatibleVersionLabel, latestCompatibleMetadata);
-        this._servicesGrid.add(compatibleVersionLabel, {
-          row: i,
-          column: this.self().GRID_POS.COMPATIBLE_VERSION
-        });
+        if (latestCompatibleMetadata) {
+          const compatibleVersionLabel = new qx.ui.basic.Label(latestCompatibleMetadata["version"]).set({
+            font: "text-14"
+          });
+          this.self().colorVersionLabel(compatibleVersionLabel, latestCompatibleMetadata);
+          this._servicesGrid.add(compatibleVersionLabel, {
+            row: i,
+            column: this.self().GRID_POS.COMPATIBLE_VERSION
+          });
+        } else if (nodeMetadata === null) {
+          const compatibleVersionLabel = new qx.ui.basic.Label(this.tr("Unknown")).set({
+            font: "text-14"
+          });
+          this._servicesGrid.add(compatibleVersionLabel, {
+            row: i,
+            column: this.self().GRID_POS.COMPATIBLE_VERSION
+          });
+        }
 
         const latestMetadata = osparc.utils.Services.getLatest(this._services, node["key"]);
         const latestVersionLabel = new qx.ui.basic.Label(latestMetadata["version"]).set({
@@ -217,7 +243,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
           column: this.self().GRID_POS.LATEST_VERSION
         });
 
-        if (osparc.data.Permissions.getInstance().canDo("study.service.update") && canIWriteStudy) {
+        if (latestCompatibleMetadata && osparc.data.Permissions.getInstance().canDo("study.service.update") && canIWriteStudy) {
           const updateButton = new osparc.ui.form.FetchButton(null, "@MaterialIcons/update/14");
           updateButton.set({
             enabled: isUpdatable
