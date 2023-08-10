@@ -10,7 +10,6 @@ import pytest
 from aioresponses import aioresponses as AioResponsesMock
 from fastapi import status
 from httpx import AsyncClient
-from models_library.api_schemas_storage import FileUploadSchema
 from pydantic import parse_obj_as
 from pytest_simcore.services_api_mocks_for_aiohttp_clients import (
     _dummy_s3_url,
@@ -18,7 +17,7 @@ from pytest_simcore.services_api_mocks_for_aiohttp_clients import (
 )
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
-from simcore_service_api_server.models.schemas.files import File
+from simcore_service_api_server.models.schemas.files import ClientFileUploadSchema, File
 
 pytest_plugins = [
     "pytest_simcore.aioresponses_mocker",
@@ -151,7 +150,7 @@ async def test_get_upload_links(
     payload: dict[str, str] = response.json()
 
     assert response.status_code == status.HTTP_200_OK
-    _ = FileUploadSchema.parse_obj(payload)
+    _ = ClientFileUploadSchema.parse_obj(payload)
 
 
 async def test_complete_multipart_upload(

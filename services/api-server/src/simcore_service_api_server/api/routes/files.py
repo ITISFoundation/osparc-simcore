@@ -4,10 +4,11 @@ import io
 import logging
 from textwrap import dedent
 from typing import IO, Annotated, Final
+from urllib.parse import urlparse
 from uuid import UUID
 
 from aiohttp import ClientError
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Body, Depends
 from fastapi import File as FileParam
 from fastapi import Header, Request, UploadFile, status
 from fastapi.exceptions import HTTPException
@@ -16,11 +17,10 @@ from models_library.api_schemas_storage import (
     ETag,
     FileUploadCompleteLinks,
     FileUploadCompletionBody,
-    FileUploadSchema,
     LinkType,
 )
 from models_library.projects_nodes_io import StorageFileID
-from pydantic import AnyUrl, ByteSize, PositiveInt, ValidationError, parse_obj_as
+from pydantic import AnyUrl, ByteSize, PositiveInt, ValidationError
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect, catch_n_raise
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 from simcore_sdk.node_ports_common.exceptions import NodeportsException, S3TransferError
@@ -38,7 +38,7 @@ from starlette.responses import RedirectResponse
 from ..._meta import API_VTAG
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
-from ...models.schemas.files import ClientFile, File
+from ...models.schemas.files import ClientFile, ClientFileUploadSchema, File
 from ...services.storage import StorageApi, StorageFileMetaData, to_file_api_model
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
@@ -158,9 +158,7 @@ async def upload_file(
         user_id=user_id,
         store_id=SIMCORE_LOCATION,
         store_name=None,
-        s3_object=parse_obj_as(
-            StorageFileID, f"api/{file_meta.id}/{file_meta.filename}"
-        ),
+        s3_object=file_meta.storage_file_id,
         path_to_upload=UploadableFileObject(file.file, file.filename, file_size),
         io_log_redirect_cb=None,
     )
@@ -184,7 +182,7 @@ async def upload_files(files: list[UploadFile] = FileParam(...)):
 
 @router.post(
     "/content",
-    response_model=FileUploadSchema,
+    response_model=ClientFileUploadSchema,
 )
 @cancel_on_disconnect
 @catch_n_raise(
@@ -215,19 +213,20 @@ async def get_upload_links(
         user_id=user_id,
         store_name=None,
         store_id=SIMCORE_LOCATION,
-        s3_object=parse_obj_as(
-            StorageFileID, f"api/{file_meta.id}/{file_meta.filename}"
-        ),
+        s3_object=file_meta.storage_file_id,
         client_session=None,
         link_type=LinkType.PRESIGNED,
         file_size=ByteSize(client_file.filesize),
         is_directory=False,
     )
-    return upload_links
+    result: ClientFileUploadSchema = ClientFileUploadSchema(
+        upload_schema=upload_links, file=file_meta
+    )
+    return result
 
 
-@router.patch(
-    "/content",
+@router.post(
+    "/{file_id}:complete",
     response_model=File,
 )
 @cancel_on_disconnect
@@ -237,59 +236,76 @@ async def get_upload_links(
 )
 async def complete_multipart_upload(
     request: Request,
-    client_file: ClientFile,
+    file_id: StorageFileID,
+    file: File,
     uploaded_parts: FileUploadCompletionBody,
     completion_link: FileUploadCompleteLinks,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
 ):
-    """Complete the multipart upload of a file
+    """Complete multipart upload
 
     Arguments:
-        request: The Request
-        client_file: The ClientFile object
+        request: The Request object
+        file_id: The Storage id
+        file: The File object which is to be completed
         uploaded_parts: The uploaded parts
-        completion_link: The S3 completion link for this multipart upload
+        completion_link: The completion link -- _description_
         user_id: The user id
 
     Returns:
-        The File object
+        The completed File object
     """
     assert request  # nosec
     assert user_id  # nosec
+
+    complete_path: str = urlparse(str(completion_link.state)).path
+    if not complete_path.endswith(f"{file_id}:complete"):
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="The completion_link was invalid",
+        )
+    if not file.storage_file_id == file_id:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="The File's storage id did not match the paths file_id",
+        )
 
     e_tag: ETag = await complete_file_upload(
         uploaded_parts=uploaded_parts.parts,
         upload_completion_link=completion_link.state,
     )
 
-    file_meta: File = await File.create_from_client_file(
-        client_file,
-        datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        checksum=e_tag,
-    )
-    return file_meta
+    file.checksum = e_tag
+    return file
 
 
-@router.delete("/content")
+@router.post("/{file_id}:abort")
 @cancel_on_disconnect
 @catch_n_raise(
     (ClientError, ValidationError), lambda e: status.HTTP_500_INTERNAL_SERVER_ERROR
 )
 async def abort_multipart_upload(
     request: Request,
-    abort_upload_link: AnyUrl,
+    file_id: StorageFileID,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    abort_upload_link: Annotated[AnyUrl, Body(..., embed=True)],
 ):
     """Abort a multipart upload
 
     Arguments:
         request: The Request
+        file_id: The StorageFileID
         upload_links: The FileUploadSchema
         user_id: The user id
 
     """
     assert request  # nosec
     assert user_id  # nosec
+    if not urlparse(str(abort_multipart_upload)).path.endswith(f"{file_id}:abort"):
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="The abort_upload_link was invalid",
+        )
     await abort_upload(abort_upload_link=abort_upload_link)
 
 
