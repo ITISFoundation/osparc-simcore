@@ -181,6 +181,8 @@ class RabbitMQClient:
 
         Raises:
             aio_pika.exceptions.ChannelPreconditionFailed: In case an existing exchange with different type is used
+        Returns:
+            queue name
         """
 
         assert self._channel_pool  # nosec

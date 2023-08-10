@@ -40,6 +40,7 @@ SERVICE_PUBLISHED_PORT = {}
 DEFAULT_SERVICE_HEALTHCHECK_ENTRYPOINT = "/v0/"
 MAP_SERVICE_HEALTHCHECK_ENTRYPOINT = {
     "autoscaling": "/",
+    "clusters-keeper": "/",
     "dask-scheduler": "/health",
     "datcore-adapter": "/v0/live",
     "director-v2": "/",

@@ -35,7 +35,9 @@ def test_computation_pipeline_model_with_running_state_value_field(
     model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
 ):
     for name, example in model_cls_examples.items():
-        example["state"] = RunningState.RETRY.value  # this is a specific Runningstate
+        example[
+            "state"
+        ] = RunningState.WAITING_FOR_RESOURCES.value  # this is a specific Runningstate
         print(name, ":", pformat(example))
         model_instance = model_cls(**example)
         assert model_instance, f"Failed with {name}"

@@ -62,6 +62,7 @@ jobs:
       api-server: ${{ steps.filter.outputs.api-server }}
       autoscaling: ${{ steps.filter.outputs.autoscaling }}
       catalog: ${{ steps.filter.outputs.catalog }}
+      clusters-keeper: ${{ steps.filter.outputs.clusters-keeper }}
       dask-sidecar: ${{ steps.filter.outputs.dask-sidecar }}
       datcore-adapter: ${{ steps.filter.outputs.datcore-adapter }}
       director: ${{ steps.filter.outputs.director }}
@@ -144,6 +145,12 @@ jobs:
             catalog:
               - 'packages/**'
               - 'services/catalog/**'
+              - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
+            clusters-keeper:
+              - 'packages/**'
+              - 'services/clusters-keeper/**'
               - 'services/docker-compose*'
               - 'scripts/mypy/*'
               - 'mypy.ini'
@@ -662,6 +669,61 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/catalog/test_failures
+      - uses: codecov/codecov-action@v3.1.4
+        with:
+          flags: unittests #optional
+
+  unit-test-clusters-keeper:
+    needs: changes
+    if: ${{ needs.changes.outputs.clusters-keeper == 'true' || github.event_name == 'push' }}
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] clusters-keeper"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker-container
+      - name: setup docker-compose
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: setup python environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/clusters-keeper/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - name: install
+        run: |
+          make devenv
+          source .venv/bin/activate && \
+          pushd services/clusters-keeper && \
+          make install-ci
+      - name: typecheck
+        run: |
+          source .venv/bin/activate && \
+          pushd services/clusters-keeper && \
+          make mypy
+      - name: test
+        if: always()
+        run: |
+          source .venv/bin/activate && \
+          pushd services/clusters-keeper && \
+          make test-ci-unit
       - uses: codecov/codecov-action@v3.1.4
         with:
           flags: unittests #optional
@@ -1458,6 +1520,7 @@ jobs:
         unit-test-api-server,
         unit-test-autoscaling,
         unit-test-catalog,
+        unit-test-clusters-keeper,
         unit-test-dask-sidecar,
         unit-test-dask-task-models-library,
         unit-test-datcore-adapter,
