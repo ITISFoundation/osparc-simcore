@@ -19,7 +19,7 @@ async def _process_message(
     # NOTE: parse the message and process it
 
     _logger.debug(f"{data}")
-    return False
+    return True
 
 
 async def _subscribe_to_rabbitmq(app) -> str:
