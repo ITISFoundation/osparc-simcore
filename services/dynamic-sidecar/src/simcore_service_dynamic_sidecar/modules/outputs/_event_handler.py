@@ -9,7 +9,7 @@ from pathlib import Path
 from queue import Empty
 from threading import Thread
 from time import sleep as blocking_sleep
-from typing import Final, Optional
+from typing import Any, Final
 
 import aioprocessing
 from aioprocessing.process import AioProcess
@@ -24,7 +24,7 @@ from ._watchdog_extensions import ExtendedInotifyObserver, SafeFileSystemEventHa
 
 _HEART_BEAT_MARK: Final = 1
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class _PortKeysEventHandler(SafeFileSystemEventHandler):
@@ -33,14 +33,21 @@ class _PortKeysEventHandler(SafeFileSystemEventHandler):
     def __init__(self, outputs_path: Path, port_key_events_queue: AioQueue):
         super().__init__()
 
+        self._is_event_propagation_enabled: bool = False
         self.outputs_path: Path = outputs_path
         self.port_key_events_queue: AioQueue = port_key_events_queue
         self._outputs_port_keys: set[str] = set()
 
-    def set_outputs_port_keys(self, outputs_port_keys: set[str]) -> None:
+    def handle_set_outputs_port_keys(self, *, outputs_port_keys: set[str]) -> None:
         self._outputs_port_keys = outputs_port_keys
 
+    def handle_toggle_event_propagation(self, *, is_enabled: bool) -> None:
+        self._is_event_propagation_enabled = is_enabled
+
     def event_handler(self, event: FileSystemEvent) -> None:
+        if not self._is_event_propagation_enabled:
+            return
+
         # NOTE: ignoring all events which are not relative to modifying
         # the contents of the `port_key` folders from the outputs directory
 
@@ -78,14 +85,14 @@ class _EventHandlerProcess:
         # the process itself and is used to stop the process.
         self._stop_queue: AioQueue = aioprocessing.AioQueue()
 
-        self._file_system_event_handler: Optional[_PortKeysEventHandler] = None
-        self._process: Optional[AioProcess] = None
+        self._file_system_event_handler: _PortKeysEventHandler | None = None
+        self._process: AioProcess | None = None
 
     def start_process(self) -> None:
         # NOTE: runs in asyncio thread
 
         with log_context(
-            logger, logging.DEBUG, f"{_EventHandlerProcess.__name__} start_process"
+            _logger, logging.DEBUG, f"{_EventHandlerProcess.__name__} start_process"
         ):
             self._process = aioprocessing.AioProcess(
                 target=self._process_worker, daemon=True
@@ -96,7 +103,7 @@ class _EventHandlerProcess:
         # NOTE: runs in asyncio thread
 
         with log_context(
-            logger, logging.DEBUG, f"{_EventHandlerProcess.__name__} stop_process"
+            _logger, logging.DEBUG, f"{_EventHandlerProcess.__name__} stop_process"
         ):
             self._stop_queue.put(None)
 
@@ -113,7 +120,7 @@ class _EventHandlerProcess:
         # NOTE: runs in asyncio thread
 
         with log_context(
-            logger, logging.DEBUG, f"{_EventHandlerProcess.__name__} shutdown"
+            _logger, logging.DEBUG, f"{_EventHandlerProcess.__name__} shutdown"
         ):
             self.stop_process()
 
@@ -126,18 +133,24 @@ class _EventHandlerProcess:
 
         # Propagate `outputs_port_keys` changes to the `_PortKeysEventHandler`.
         while True:
-            outputs_port_keys: Optional[
-                set[str]
-            ] = self.outputs_context.file_type_port_keys_updates_queue.get()
-            print("outputs_port_keys", outputs_port_keys)
+            message: dict[
+                str, Any
+            ] | None = self.outputs_context.file_system_event_handler_queue.get()
+            _logger.debug("received message %s", message)
 
-            if outputs_port_keys is None:
+            # no more messages quitting
+            if message is None:
                 break
 
-            if self._file_system_event_handler is not None:
-                self._file_system_event_handler.set_outputs_port_keys(
-                    set(outputs_port_keys)
-                )
+            # do nothing
+            if self._file_system_event_handler is None:
+                continue
+
+            # handle events
+            method_kwargs: dict[str, Any] = message["kwargs"]
+            method_name = message["method_name"]
+            method_to_call = getattr(self._file_system_event_handler, method_name)
+            method_to_call(**method_kwargs)
 
     def _process_worker(self) -> None:
         # NOTE: runs in the created process
@@ -176,7 +189,7 @@ class _EventHandlerProcess:
                 blocking_sleep(self.heart_beat_interval_s)
 
         except Exception:  # pylint: disable=broad-except
-            logger.exception("Unexpected error")
+            _logger.exception("Unexpected error")
         finally:
             if watch:
                 observer.remove_handler_for_watch(
@@ -185,10 +198,10 @@ class _EventHandlerProcess:
             observer.stop()
 
             # stop created thread
-            self.outputs_context.file_type_port_keys_updates_queue.put(None)
+            self.outputs_context.file_system_event_handler_queue.put(None)
             thread_update_outputs_port_keys.join()
 
-            logger.warning("%s exited", _EventHandlerProcess.__name__)
+            _logger.warning("%s exited", _EventHandlerProcess.__name__)
 
 
 class EventHandlerObserver:
@@ -219,7 +232,7 @@ class EventHandlerObserver:
             heart_beat_interval_s=heart_beat_interval_s,
         )
         self._keep_running: bool = False
-        self._task_health_worker: Optional[Task] = None
+        self._task_health_worker: Task | None = None
 
     @property
     def wait_for_heart_beat_interval_s(self) -> PositiveFloat:
@@ -241,7 +254,7 @@ class EventHandlerObserver:
                     break
 
             if heart_beat_count == 0:
-                logger.warning(
+                _logger.warning(
                     (
                         "WatcherProcess health is no longer responsive. "
                         "%s will be uploaded when closing."
@@ -266,7 +279,7 @@ class EventHandlerObserver:
 
     async def start(self) -> None:
         with log_context(
-            logger, logging.INFO, f"{EventHandlerObserver.__name__} start"
+            _logger, logging.INFO, f"{EventHandlerObserver.__name__} start"
         ):
             self._keep_running = True
             self._task_health_worker = create_task(
@@ -275,7 +288,9 @@ class EventHandlerObserver:
             self._start_observer_process()
 
     async def stop(self) -> None:
-        with log_context(logger, logging.INFO, f"{EventHandlerObserver.__name__} stop"):
+        with log_context(
+            _logger, logging.INFO, f"{EventHandlerObserver.__name__} stop"
+        ):
             self._stop_observer_process()
             self._keep_running = False
             if self._task_health_worker is not None:
