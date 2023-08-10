@@ -15,6 +15,7 @@ from ..core.settings import ApplicationSettings
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.schemas.containers import ContainersCreate
 from ..models.shared_store import SharedStore
+from ..modules.inputs import InputsState
 from ..modules.long_running_tasks import (
     task_containers_restart,
     task_create_service_containers,
@@ -30,6 +31,7 @@ from ..modules.outputs import OutputsManager
 from ._dependencies import (
     get_application,
     get_application_health,
+    get_inputs_state,
     get_mounted_volumes,
     get_outputs_manager,
     get_settings,
@@ -183,11 +185,10 @@ async def ports_inputs_pull_task(
     tasks_manager: Annotated[TasksManager, Depends(get_tasks_manager)],
     app: Annotated[FastAPI, Depends(get_application)],
     mounted_volumes: Annotated[MountedVolumes, Depends(get_mounted_volumes)],
+    inputs_state: Annotated[InputsState, Depends(get_inputs_state)],
     port_keys: list[str] | None = None,
 ) -> TaskId:
     assert request  # nosec
-
-    # TODO: also disable pulling
 
     try:
         return start_task(
@@ -197,6 +198,7 @@ async def ports_inputs_pull_task(
             port_keys=port_keys,
             mounted_volumes=mounted_volumes,
             app=app,
+            inputs_pulling_enabled=inputs_state.inputs_pulling_enabled,
         )
     except TaskAlreadyRunningError as e:
         return e.managed_task.task_id  # pylint: disable=no-member
