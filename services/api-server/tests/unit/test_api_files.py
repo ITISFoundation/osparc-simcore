@@ -179,7 +179,6 @@ async def test_complete_multipart_upload(
     _ = File.parse_obj(payload)
 
 
-@pytest.mark.testit
 async def test_delete_multipart_upload(
     client: AsyncClient,
     auth: httpx.BasicAuth,
