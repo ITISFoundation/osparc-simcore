@@ -187,6 +187,8 @@ async def ports_inputs_pull_task(
 ) -> TaskId:
     assert request  # nosec
 
+    # TODO: also disable pulling
+
     try:
         return start_task(
             tasks_manager,
