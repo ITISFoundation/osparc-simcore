@@ -1,17 +1,26 @@
 import contextlib
+import functools
 import logging
-from typing import cast
+from typing import Final, cast
 
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import RabbitMessageBase
+from pydantic import parse_obj_as
 from servicelib.logging_utils import log_catch
-from servicelib.rabbitmq import RabbitMQClient, wait_till_rabbitmq_responsive
+
+from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient, RPCMethodName,RPCNamespace,wait_till_rabbitmq_responsive,
+
 from settings_library.rabbit import RabbitSettings
 
+from ..clusters_api import create_cluster
 from ..core.errors import ConfigurationError
 from ..core.settings import get_application_settings
 
 logger = logging.getLogger(__name__)
+
+CLUSTERS_KEEPER_RPC_NAMESPACE: Final[RPCNamespace] = parse_obj_as(
+    RPCNamespace, "clusters-keeper"
+)
 
 
 def setup(app: FastAPI) -> None:
@@ -27,10 +36,16 @@ def setup(app: FastAPI) -> None:
         app.state.rabbitmq_client = RabbitMQClient(
             client_name="clusters_keeper", settings=settings
         )
+        app.state.rabbitmq_rpc_server = rpc_server = await RabbitMQRPCClient.create(
+            client_name="clusters_keeper_rpc_server", settings=settings
+        )
+
 
     async def on_shutdown() -> None:
         if app.state.rabbitmq_client:
             await app.state.rabbitmq_client.close()
+        if app.state.rabbitmq_rpc_server:
+            await app.state.rabbitmq_rpc_server.close()
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
