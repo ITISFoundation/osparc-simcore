@@ -367,7 +367,7 @@ async def test_port_key_sequential_event_generation(
     sleep_for = max(
         max(wait_interval_for_port) + MARGIN_FOR_ALL_EVENT_PROCESSORS_TO_TRIGGER, 3
     )
-    print(f"max sleep wait interval {sleep_for}")
+    print(f"max {sleep_for=} interval")
     async for attempt in AsyncRetrying(
         **_TENACITY_RETRY_PARAMS, stop=stop_after_delay(sleep_for)
     ):
