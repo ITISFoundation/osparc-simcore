@@ -382,7 +382,3 @@ async def test_port_key_sequential_event_generation(
             for call_args in mock_long_running_upload_outputs.call_args_list:
                 uploaded_port_keys |= set(call_args.kwargs["port_keys"])
             assert uploaded_port_keys == set(port_keys)
-
-
-# TODO: add a test to stop watcher form emitting events in the middle of the emitting
-# we can test what is wrong with what is happening to users
