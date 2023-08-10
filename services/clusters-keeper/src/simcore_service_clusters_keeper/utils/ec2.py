@@ -1,4 +1,5 @@
 from textwrap import dedent
+from typing import Final
 
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -6,16 +7,23 @@ from models_library.wallets import WalletID
 from .._meta import VERSION
 from ..core.settings import ApplicationSettings
 
+_DEFAULT_CLUSTERS_KEEPER_TAGS: Final[dict[str, str]] = {
+    "io.simcore.clusters-keeper.version": f"{VERSION}"
+}
+
 
 def get_ec2_tags(
     app_settings: ApplicationSettings, *, user_id: UserID, wallet_id: WalletID
 ) -> dict[str, str]:
     assert app_settings.CLUSTERS_KEEPER_EC2_INSTANCES  # nosec
-    return {
-        "io.simcore.clusters-keeper.version": f"{VERSION}",
+    return _DEFAULT_CLUSTERS_KEEPER_TAGS | {
         # NOTE: this one gets special treatment in AWS GUI and is applied to the name of the instance
         "Name": f"osparc-gateway-server-{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME}-user_id:{user_id}-wallet_id:{wallet_id}",
     }
+
+
+def get_ec2_tags_for_listing() -> dict[str, str]:
+    return _DEFAULT_CLUSTERS_KEEPER_TAGS
 
 
 def compose_user_data(bash_command: str) -> str:
