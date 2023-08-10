@@ -24,7 +24,6 @@ from pydantic import (
 )
 from servicelib.utils import logged_gather
 
-from .._constants import RQT_USERID_KEY
 from ..application_settings import get_settings
 from ..storage.api import get_download_link, get_files_in_node_folder
 from .exceptions import ProjectStartsTooManyDynamicNodesError
@@ -177,12 +176,12 @@ async def __get_link(
     )
 
 
-async def _get_node_screenshots_parallel(
+async def _get_node_screenshots(
     app: web.Application,
     user_id: UserID,
     files_with_thumbnails: list[_FileWithThumbnail],
 ) -> list[NodeScreenshot]:
-    """resolves links in parallel before returning all NodeScreenshot"""
+    """resolves links concurrently before returning all the NodeScreenshots"""
 
     search_map: dict[str, FileMetaDataGet] = {}
 
@@ -208,7 +207,7 @@ async def _get_node_screenshots_parallel(
 
 
 async def get_node_screenshots(
-    request: web.Request,
+    app: web.Application,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
@@ -224,14 +223,13 @@ async def get_node_screenshots(
         # Example of file that can be added in file-picker:
         # Example https://github.com/Ybalrid/Ogre_glTF/raw/6a59adf2f04253a3afb9459549803ab297932e8d/Media/Monster.glb
         try:
-            user_id = request[RQT_USERID_KEY]
             text = urllib.parse.quote(node.label)
 
             assert node.outputs is not None  # nosec
 
             filelink = parse_obj_as(SimCoreFileLink, node.outputs["outFile"])
 
-            file_url = await get_download_link(request.app, user_id, filelink)
+            file_url = await get_download_link(app, user_id, filelink)
             screenshots.append(
                 NodeScreenshot(
                     thumbnail_url=f"https://placehold.co/170x120?text={text}",  # type: ignore[arg-type]
@@ -250,17 +248,15 @@ async def get_node_screenshots(
         # pull in all the assets that have been dropped in there
 
         assets_files: list[FileMetaDataGet] = await get_files_in_node_folder(
-            app=request.app,
+            app=app,
             user_id=user_id,
             project_id=project_id,
             node_id=node_id,
             folder_name=ASSETS_FOLDER,
         )
 
-        resolved_screenshots: list[
-            NodeScreenshot
-        ] = await _get_node_screenshots_parallel(
-            app=request.app,
+        resolved_screenshots: list[NodeScreenshot] = await _get_node_screenshots(
+            app=app,
             user_id=user_id,
             files_with_thumbnails=_get_files_with_thumbnails(assets_files),
         )
