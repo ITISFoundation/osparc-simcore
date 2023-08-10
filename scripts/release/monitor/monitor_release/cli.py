@@ -22,7 +22,7 @@ def main(deployment: Deployment, action: Action):
     if action == Action.containers:
         check_containers_deploys(settings, deployment)
     if action == Action.sidecars:
-        check_running_sidecars(settings)
+        check_running_sidecars(settings, deployment)
 
 
 if __name__ == "__main__":

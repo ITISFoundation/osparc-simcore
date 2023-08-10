@@ -2,6 +2,7 @@ import json
 
 import arrow
 import requests
+from models import RunningSidecar
 from settings import Settings
 
 
@@ -64,14 +65,29 @@ def get_containers(settings: Settings, bearer_token):
 
 
 def check_simcore_running_sidecars(settings: Settings, services):
-    running_sidecars = []
+    running_sidecars: list[RunningSidecar] = []
     for service in services:
         if (
             service["Spec"]["Name"].startswith("dy-sidecar")
             and service["Spec"]["Labels"]["io.simcore.runtime.swarm-stack-name"]
             == settings.swarm_stack_name
         ):
-            running_sidecars.append(service["Spec"]["Name"])
+            running_sidecars.append(
+                RunningSidecar(
+                    name=service["Spec"]["Name"],
+                    created_at=arrow.get(service["CreatedAt"]).datetime,
+                    user_id=service["Spec"]["Labels"]["io.simcore.runtime.user-id"],
+                    project_id=service["Spec"]["Labels"][
+                        "io.simcore.runtime.project-id"
+                    ],
+                    service_key=service["Spec"]["Labels"][
+                        "io.simcore.runtime.service-key"
+                    ],
+                    service_version=service["Spec"]["Labels"][
+                        "io.simcore.runtime.service-version"
+                    ],
+                )
+            )
     return running_sidecars
 
 

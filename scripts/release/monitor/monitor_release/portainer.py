@@ -1,3 +1,4 @@
+from models import RunningSidecar
 from portainer_utils import (
     check_simcore_deployed_services,
     check_simcore_running_sidecars,
@@ -57,9 +58,28 @@ def check_containers_deploys(settings, deployment):
     console.print(table)
 
 
-def check_running_sidecars(settings):
+def check_running_sidecars(settings, deployment):
     token = get_bearer_token(settings)
     services = get_services(settings, token)
 
-    output = check_simcore_running_sidecars(settings, services)
-    console.print(output)
+    sidecars: list[RunningSidecar] = check_simcore_running_sidecars(settings, services)
+    table = Table(
+        "Sidecar name",
+        "Created at",
+        "User ID",
+        "Project ID",
+        "Service Key",
+        "Service Version",
+        title=f"[bold yellow]{deployment.upper()}[/bold yellow]",
+    )
+    for sidecar in sidecars:
+        table.add_row(
+            sidecar.name,
+            f"{sidecar.created_at}",
+            sidecar.user_id,
+            sidecar.project_id,
+            sidecar.service_key,
+            sidecar.service_version,
+        )
+
+    console.print(table)

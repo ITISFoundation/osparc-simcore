@@ -14,7 +14,7 @@ class Settings(BaseModel):
 
 
 def get_settings(deployment):
-    load_dotenv(".env")
+    load_dotenv("/home/matus/Projects/osparc-simcore/scripts/release/monitor/.env")
 
     if deployment == "master":
         portainer_url = os.getenv("MASTER_PORTAINER_URL")
