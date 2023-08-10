@@ -444,7 +444,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
 
       // Block card
-      osparc.utils.Study.getUnaccessibleServices(workbench)
+      osparc.utils.Study.getInaccessibleServices(workbench)
         .then(unaccessibleServices => {
           if (unaccessibleServices.length) {
             this.setLocked(true);
@@ -545,6 +545,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
         this.set({
           toolTipText
         });
+      } else {
+        this.resetToolTipText();
       }
     },
 
