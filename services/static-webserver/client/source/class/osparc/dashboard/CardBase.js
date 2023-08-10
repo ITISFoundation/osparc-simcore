@@ -447,7 +447,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       osparc.utils.Study.getInaccessibleServices(workbench)
         .then(unaccessibleServices => {
           if (unaccessibleServices.length) {
-            this.setLocked(true);
+            this.__enableCard(false);
             const image = "@FontAwesome5Solid/ban/";
             let toolTipText = this.tr("Service info missing");
             unaccessibleServices.forEach(unSrv => {
@@ -498,13 +498,13 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     _applyState: function(state) {
       const locked = ("locked" in state) ? state["locked"]["value"] : false;
-      this.setLocked(locked);
       if (locked) {
-        this.__setLockedStatus(state["locked"]);
+        this.__showBlockedCardFromStatus(state["locked"]);
       }
+      this.setLocked(locked);
     },
 
-    __setLockedStatus: function(lockedStatus) {
+    __showBlockedCardFromStatus: function(lockedStatus) {
       const status = lockedStatus["status"];
       const owner = lockedStatus["owner"];
       let toolTip = osparc.utils.Utils.firstsUp(owner["first_name"], owner["last_name"]);
@@ -538,6 +538,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __showBlockedCard: function(lockImageSrc, toolTipText) {
+      this.getChildControl("lock-status").set({
+        opacity: 1.0,
+        visibility: "visible"
+      });
       const lockImage = this.getChildControl("lock-status").getChildControl("image");
       lockImageSrc += this.classname.includes("Grid") ? "70" : "22";
       lockImage.setSource(lockImageSrc);
@@ -554,18 +558,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
         opacity: 1.0,
         visibility: locked ? "visible" : "excluded"
       });
-    },
 
-    __enableCard: function(enabled) {
       this.set({
-        cursor: enabled ? "pointer" : "not-allowed"
-      });
-      if (enabled) {
-        this.resetToolTipText();
-      }
-
-      this._getChildren().forEach(item => {
-        item.setOpacity(enabled ? 1.0 : 0.4);
+        cursor: locked ? "not-allowed" : "pointer"
       });
 
       [
@@ -575,9 +570,26 @@ qx.Class.define("osparc.dashboard.CardBase", {
       ].forEach(childName => {
         const child = this.getChildControl(childName);
         child.set({
-          enabled
+          enabled: !locked
         });
       });
+    },
+
+    __enableCard: function(enabled) {
+      if (enabled) {
+        this.resetToolTipText();
+      }
+
+      this._getChildren().forEach(item => {
+        item.setOpacity(enabled ? 1.0 : 0.7);
+      });
+
+      if (this.getMenu() && this.getMenu().getChildren()) {
+        const openButton = this.getMenu().getChildren().find(menuBtn => "openResource" in menuBtn);
+        if (openButton) {
+          openButton.setEnabled(enabled);
+        }
+      }
     },
 
     _applyFetching: function(value) {
