@@ -1,7 +1,7 @@
 import logging
 from asyncio import CancelledError, Task, create_task
-from collections.abc import Generator
-from contextlib import contextmanager, suppress
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI
 from servicelib.logging_utils import log_context
@@ -12,7 +12,7 @@ from ._event_filter import EventFilter
 from ._event_handler import EventHandlerObserver
 from ._manager import OutputsManager
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class OutputsWatcher:
@@ -22,7 +22,6 @@ class OutputsWatcher:
         self.outputs_manager = outputs_manager
         self.outputs_context = outputs_context
 
-        self._allow_event_propagation: bool = False
         self._task_events_worker: Task | None = None
         self._event_filter = EventFilter(outputs_manager=outputs_manager)
         self._observer_monitor: EventHandlerObserver = EventHandlerObserver(
@@ -39,17 +38,16 @@ class OutputsWatcher:
             if event is None:
                 break
 
-            if self._allow_event_propagation:
-                await self._event_filter.enqueue(event)
+            await self._event_filter.enqueue(event)
 
-    def enable_event_propagation(self) -> None:
-        self._allow_event_propagation = True
+    async def enable_event_propagation(self) -> None:
+        await self.outputs_context.toggle_event_propagation(is_enabled=True)
 
-    def disable_event_propagation(self) -> None:
-        self._allow_event_propagation = False
+    async def disable_event_propagation(self) -> None:
+        await self.outputs_context.toggle_event_propagation(is_enabled=False)
 
     async def start(self) -> None:
-        with log_context(logger, logging.INFO, f"{OutputsWatcher.__name__} start"):
+        with log_context(_logger, logging.INFO, f"{OutputsWatcher.__name__} start"):
             self._task_events_worker = create_task(
                 self._worker_events(), name="outputs_watcher_events_worker"
             )
@@ -59,7 +57,7 @@ class OutputsWatcher:
 
     async def shutdown(self) -> None:
         """cleans up spawned tasks which might be pending"""
-        with log_context(logger, logging.INFO, f"{OutputsWatcher.__name__} shutdown"):
+        with log_context(_logger, logging.INFO, f"{OutputsWatcher.__name__} shutdown"):
             await self._event_filter.shutdown()
             await self._observer_monitor.stop()
 
@@ -81,7 +79,7 @@ def setup_outputs_watcher(app: FastAPI) -> None:
             outputs_context=outputs_context,
         )
         await app.state.outputs_watcher.start()
-        disable_outputs_watcher(app)
+        await disable_outputs_watcher(app)
 
     async def on_shutdown() -> None:
         outputs_watcher: OutputsWatcher | None = app.state.outputs_watcher
@@ -92,20 +90,22 @@ def setup_outputs_watcher(app: FastAPI) -> None:
     app.add_event_handler("shutdown", on_shutdown)
 
 
-def disable_outputs_watcher(app: FastAPI) -> None:
-    if app.state.outputs_watcher is not None:
-        app.state.outputs_watcher.disable_event_propagation()
+async def disable_outputs_watcher(app: FastAPI) -> None:
+    outputs_watcher: OutputsWatcher | None = app.state.outputs_watcher
+    if outputs_watcher is not None:
+        await outputs_watcher.disable_event_propagation()
 
 
-def enable_outputs_watcher(app: FastAPI) -> None:
-    if app.state.outputs_watcher is not None:
-        app.state.outputs_watcher.enable_event_propagation()
+async def enable_outputs_watcher(app: FastAPI) -> None:
+    outputs_watcher: OutputsWatcher | None = app.state.outputs_watcher
+    if outputs_watcher is not None:
+        await outputs_watcher.enable_event_propagation()
 
 
-@contextmanager
-def outputs_watcher_disabled(app: FastAPI) -> Generator[None, None, None]:
+@asynccontextmanager
+async def outputs_watcher_disabled(app: FastAPI) -> AsyncGenerator[None, None]:
     try:
-        disable_outputs_watcher(app)
+        await disable_outputs_watcher(app)
         yield None
     finally:
-        enable_outputs_watcher(app)
+        await enable_outputs_watcher(app)

@@ -3,7 +3,6 @@
 # pylint: disable=unused-argument
 
 import asyncio
-from collections import deque
 from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
@@ -47,7 +46,6 @@ from tenacity.wait import wait_fixed
 _TENACITY_RETRY_PARAMS = {
     "reraise": True,
     "retry": retry_if_exception_type(AssertionError),
-    "stop": stop_after_delay(10),
     "wait": wait_fixed(0.01),
 }
 
@@ -236,27 +234,23 @@ async def random_events_in_path(  # noqa: C901
         await os.remove(file_path)
         assert file_path.exists() is False
 
-    event_awaitables: deque[Awaitable] = deque()
-
-    for i in range(empty_files):
-        event_awaitables.append(  # noqa: PERF401
-            _empty_file(port_key_path / f"empty_file_{i}")
-        )
-    for i in range(moved_files):
-        event_awaitables.append(  # noqa: PERF401
+    event_awaitables: list[Awaitable] = [
+        *(_empty_file(port_key_path / f"empty_file_{i}") for i in range(empty_files)),
+        *(
             _move_existing_file(port_key_path / f"moved_file_{i}")
-        )
-    for i in range(removed_files):
-        event_awaitables.append(  # noqa: PERF401
+            for i in range(moved_files)
+        ),
+        *(
             _remove_file(port_key_path / f"removed_file_{i}")
-        )
-
-    for i in range(files_per_port_key):
-        event_awaitables.append(  # noqa: PERF401
+            for i in range(removed_files)
+        ),
+        *(
             _random_file(
                 port_key_path / f"big_file{i}", size=size, chunk_size=chunk_size
             )
-        )
+            for i in range(files_per_port_key)
+        ),
+    ]
 
     shuffle(event_awaitables)
     # NOTE: wait for events to be generated events in sequence
@@ -298,7 +292,7 @@ async def test_run_observer(
     outputs_watcher: OutputsWatcher,
     port_keys: list[str],
 ) -> None:
-    outputs_watcher.enable_event_propagation()
+    await outputs_watcher.enable_event_propagation()
 
     # generates the first event chain
     await _generate_event_burst(
@@ -322,7 +316,7 @@ async def test_does_not_trigger_on_attribute_change(
     outputs_watcher: OutputsWatcher,
 ):
     await _wait_for_events_to_trigger()
-    outputs_watcher.enable_event_propagation()
+    await outputs_watcher.enable_event_propagation()
 
     # crate a file in the directory
     mounted_volumes.disk_outputs_path.mkdir(parents=True, exist_ok=True)
@@ -341,9 +335,6 @@ async def test_does_not_trigger_on_attribute_change(
     assert mock_event_filter_upload_trigger.call_count == 1
 
 
-# This test was marked as flaky and DK reworked the sleeps/timeouts necessary here in Apr2023
-# If flakyness persists on github actions, please consider adding it to the flaky tests again
-# To mitigate temporarily, add `@pytest.mark.flaky(max_runs=3)`
 async def test_port_key_sequential_event_generation(
     mock_long_running_upload_outputs: AsyncMock,
     mounted_volumes: MountedVolumes,
@@ -352,10 +343,10 @@ async def test_port_key_sequential_event_generation(
     file_generation_info: FileGenerationInfo,
     port_keys: list[str],
 ):
-    outputs_watcher.enable_event_propagation()
+    await outputs_watcher.enable_event_propagation()
 
     # writing ports sequentially
-    wait_interval_for_port: deque[float] = deque()
+    wait_interval_for_port: list[float] = []
     for port_key in port_keys:
         port_dir = mounted_volumes.disk_outputs_path / port_key
         port_dir.mkdir(parents=True, exist_ok=True)
@@ -376,14 +367,22 @@ async def test_port_key_sequential_event_generation(
     sleep_for = max(
         max(wait_interval_for_port) + MARGIN_FOR_ALL_EVENT_PROCESSORS_TO_TRIGGER, 3
     )
-    print(f"Waiting {sleep_for} seconds for events to be processed")
-    await asyncio.sleep(sleep_for)
+    print(f"max sleep wait interval {sleep_for}")
+    async for attempt in AsyncRetrying(
+        **_TENACITY_RETRY_PARAMS, stop=stop_after_delay(sleep_for)
+    ):
+        with attempt:
+            assert mock_long_running_upload_outputs.call_count > 0
 
-    assert mock_long_running_upload_outputs.call_count > 0
-
-    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+    async for attempt in AsyncRetrying(
+        **_TENACITY_RETRY_PARAMS, stop=stop_after_delay(10)
+    ):
         with attempt:
             uploaded_port_keys: set[str] = set()
             for call_args in mock_long_running_upload_outputs.call_args_list:
                 uploaded_port_keys |= set(call_args.kwargs["port_keys"])
             assert uploaded_port_keys == set(port_keys)
+
+
+# TODO: add a test to stop watcher form emitting events in the middle of the emitting
+# we can test what is wrong with what is happening to users
