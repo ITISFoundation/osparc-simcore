@@ -20,6 +20,7 @@ faker
 fakeredis[lua]
 httpx
 moto[server]
+parse
 psutil
 pytest
 pytest-asyncio

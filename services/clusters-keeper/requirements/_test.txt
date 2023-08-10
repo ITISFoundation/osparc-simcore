@@ -207,6 +207,8 @@ packaging==23.1
     #   -c requirements/_base.txt
     #   docker
     #   pytest
+parse==1.19.1
+    # via -r requirements/_test.in
 pathable==0.4.3
     # via jsonschema-spec
 pbr==5.11.1
