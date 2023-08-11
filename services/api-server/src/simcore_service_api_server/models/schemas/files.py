@@ -1,6 +1,7 @@
 from mimetypes import guess_type
 from pathlib import Path
 from typing import Any, ClassVar
+from urllib.parse import quote as _quote
 from uuid import UUID, uuid3
 
 import aiofiles
@@ -121,12 +122,13 @@ class File(BaseModel):
 
     @property
     def storage_file_id(self) -> StorageFileID:
-        """Get the StorageFileId associated with this file
-
-        Returns:
-            The StorageFileId
-        """
+        """Get the StorageFileId associated with this file"""
         return parse_obj_as(StorageFileID, f"api/{self.id}/{self.filename}")
+
+    @property
+    def quoted_storage_file_id(self) -> str:
+        """Quoted version of the StorageFileId"""
+        return _quote(self.storage_file_id, safe="")
 
 
 class ClientFileUploadSchema(BaseModel):

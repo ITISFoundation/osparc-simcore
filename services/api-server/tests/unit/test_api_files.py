@@ -12,7 +12,7 @@ from fastapi import status
 from httpx import AsyncClient
 from pydantic import parse_obj_as
 from pytest_simcore.services_api_mocks_for_aiohttp_clients import (
-    _dummy_s3_url,
+    DummyFileData,
     storage_v0_service_mock,
 )
 from respx import MockRouter
@@ -153,6 +153,7 @@ async def test_get_upload_links(
     _ = ClientFileUploadSchema.parse_obj(payload)
 
 
+@pytest.mark.testit
 async def test_complete_multipart_upload(
     client: AsyncClient,
     auth: httpx.BasicAuth,
@@ -163,14 +164,15 @@ async def test_complete_multipart_upload(
     assert storage_v0_service_mock  # nosec
 
     msg = {
-        "client_file": {"filename": "string", "filesize": 0},
-        "uploaded_parts": {"parts": [{"number": 1, "e_tag": "string"}]},
-        "completion_link": {
-            "state": "http://storage:8080/v0/locations/0/files/api123something123string:complete?user_id=1"
-        },
+        "file": DummyFileData.file().dict(),
+        "uploaded_parts": DummyFileData.uploaded_parts().dict(),
+        "completion_link": DummyFileData.storage_complete_link().dict(),
     }
+    msg["file"]["id"] = str(msg["file"]["id"])
 
-    response = await client.patch(f"{API_VTAG}/files/content", json=msg, auth=auth)
+    response = await client.post(
+        f"{API_VTAG}/files/{str(DummyFileData.file().id)}:complete", json=msg, auth=auth
+    )
 
     payload: dict[str, str] = response.json()
 
@@ -187,7 +189,7 @@ async def test_delete_multipart_upload(
 
     assert storage_v0_service_mock  # nosec
 
-    query_params = {"abort_upload_link": _dummy_s3_url}
+    query_params = {"abort_upload_link": dummy_s3_abort_link}
     response = await client.delete(
         f"{API_VTAG}/files/content", params=query_params, auth=auth
     )

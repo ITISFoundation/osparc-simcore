@@ -7,18 +7,25 @@ import random
 import re
 from pathlib import Path
 from typing import Any
+from uuid import UUID
 
 import pytest
 from aiohttp import web
 from aioresponses import aioresponses as AioResponsesMock
 from aioresponses.core import CallbackResult
+from faker import Faker
 from models_library.api_schemas_storage import (
+    ETag,
     FileMetaDataGet,
+    FileUploadCompleteLinks,
     FileUploadCompleteResponse,
+    FileUploadCompleteState,
+    FileUploadCompletionBody,
     FileUploadLinks,
     FileUploadSchema,
     LinkType,
     PresignedLink,
+    UploadedPart,
 )
 from models_library.clusters import Cluster
 from models_library.generics import Envelope
@@ -26,13 +33,62 @@ from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, ByteSize, parse_obj_as
+from simcore_service_api_server.models.schemas.files import File
 from yarl import URL
 
 pytest_plugins = [
     "pytest_simcore.aioresponses_mocker",
 ]
 
-_dummy_s3_url: str = "http://my-dummy-d3.com"
+fake = Faker()
+
+
+class DummyFileData:
+    """Static class for providing consistent dummy file data for testing"""
+
+    _file_id: UUID = UUID("3fa85f64-5717-4562-b3fc-2c963f66afa6")
+    _file_name: str = "myfile.txt"
+    _future_id: str = "7182bd56-3297-4dcb-8622-2c5cf31b39b3"
+    _final_e_tag: ETag = "07d1c1a4-b073-4be7-b022-f405d90e99aa"
+
+    @classmethod
+    def file(cls) -> File:
+        return File(
+            id=cls._file_id, filename=cls._file_name, content_type="", checksum=""
+        )
+
+    @classmethod
+    def uploaded_parts(cls) -> FileUploadCompletionBody:
+        return FileUploadCompletionBody(
+            parts=[UploadedPart(number=ii + 1, e_tag=fake.uuid4()) for ii in range(5)]
+        )
+
+    @classmethod
+    def storage_complete_link(cls) -> FileUploadCompleteLinks:
+        return parse_obj_as(
+            FileUploadCompleteLinks,
+            {
+                "state": f"http://storage:8080/locations/0/files/{cls.file().quoted_storage_file_id}:complete"
+            },
+        )
+
+    @classmethod
+    def storage_complete_link_future(cls) -> FileUploadCompleteLinks:
+        return parse_obj_as(
+            FileUploadCompleteLinks,
+            {
+                "state": f"http://storage:8080/locations/0/files/{cls.file().quoted_storage_file_id}:complete/futures/{cls._future_id}"
+            },
+        )
+
+    @classmethod
+    def final_e_tag(cls) -> ETag:
+        return cls._final_e_tag
+
+    @classmethod
+    def storage_abort_link(cls) -> str:
+        return f"http://storage:8080/locations/0/files/{cls.file().quoted_storage_file_id}:abort"
+
 
 # The adjacency list is defined as a dictionary with the key to the node and its list of successors
 FULL_PROJECT_PIPELINE_ADJACENCY: dict[str, list[str]] = {
@@ -453,21 +509,36 @@ async def storage_v0_service_mock(
         payload={
             "data": parse_obj_as(
                 FileUploadCompleteResponse,
-                {"links": {"state": _dummy_s3_url}},
+                {"links": DummyFileData.storage_complete_link().dict()},
             ).dict()
         },
     )
 
     aioresponses_mocker.post(
-        _dummy_s3_url,
+        str(DummyFileData.storage_complete_link().dict()["state"]),
         status=web.HTTPOk.status_code,
         payload={
-            "data": {"state": "ok", "e_tag": "my_etag"},
+            "data": FileUploadCompleteResponse(
+                links=DummyFileData.storage_complete_link_future()
+            ).dict(),
+            "error": 200,
+        },
+    )
+
+    aioresponses_mocker.post(
+        str(DummyFileData.storage_complete_link_future().dict()["state"]),
+        status=web.HTTPOk.status_code,
+        payload={
+            "data": {
+                "state": FileUploadCompleteState.OK.value,
+                "e_tag": DummyFileData.final_e_tag(),
+            },
+            "error": 200,
         },
     )
 
     aioresponses_mocker.delete(
-        _dummy_s3_url,
+        DummyFileData.storage_abort_link(),
         status=web.HTTPOk.status_code,
     )
 

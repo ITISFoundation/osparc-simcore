@@ -19,7 +19,6 @@ from models_library.api_schemas_storage import (
     FileUploadCompletionBody,
     LinkType,
 )
-from models_library.projects_nodes_io import StorageFileID
 from pydantic import AnyUrl, ByteSize, PositiveInt, ValidationError
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect, catch_n_raise
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
@@ -236,7 +235,7 @@ async def get_upload_links(
 )
 async def complete_multipart_upload(
     request: Request,
-    file_id: StorageFileID,
+    file_id: UUID,
     file: File,
     uploaded_parts: FileUploadCompletionBody,
     completion_link: FileUploadCompleteLinks,
@@ -258,16 +257,16 @@ async def complete_multipart_upload(
     assert request  # nosec
     assert user_id  # nosec
 
+    if not file.id == file_id:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="The File's id did not match the paths file_id",
+        )
     complete_path: str = urlparse(str(completion_link.state)).path
-    if not complete_path.endswith(f"{file_id}:complete"):
+    if not complete_path.endswith(f"{file.quoted_storage_file_id}:complete"):
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="The completion_link was invalid",
-        )
-    if not file.storage_file_id == file_id:
-        raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="The File's storage id did not match the paths file_id",
         )
 
     e_tag: ETag = await complete_file_upload(
@@ -286,7 +285,6 @@ async def complete_multipart_upload(
 )
 async def abort_multipart_upload(
     request: Request,
-    file_id: StorageFileID,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     abort_upload_link: Annotated[AnyUrl, Body(..., embed=True)],
 ):
@@ -301,11 +299,6 @@ async def abort_multipart_upload(
     """
     assert request  # nosec
     assert user_id  # nosec
-    if not urlparse(str(abort_multipart_upload)).path.endswith(f"{file_id}:abort"):
-        raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="The abort_upload_link was invalid",
-        )
     await abort_upload(abort_upload_link=abort_upload_link)
 
 
