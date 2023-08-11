@@ -267,7 +267,7 @@ def mock_core_rabbitmq(mocker: MockerFixture) -> dict[str, AsyncMock]:
             return_value=None,
             autospec=True,
         ),
-        "post_log_message": mocker.patch(
+        "post_rabbit_message": mocker.patch(
             "simcore_service_dynamic_sidecar.core.rabbitmq._post_rabbit_message",
             return_value=None,
             autospec=True,

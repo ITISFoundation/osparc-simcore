@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager, contextmanager
 from inspect import getmembers, isfunction
 from pathlib import Path
 from typing import Any, Final
+from unittest.mock import AsyncMock
 
 import aiodocker
 import faker
@@ -19,6 +20,7 @@ from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from httpx import AsyncClient
+from models_library.rabbitmq_messages import SimcorePlatformStatus
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import AnyHttpUrl, parse_obj_as
@@ -49,11 +51,7 @@ ContainerTimes = namedtuple("ContainerTimes", "created, started_at, finished_at"
 
 
 def _print_routes(app: FastAPI) -> None:
-    endpoints = []
-    for route in app.routes:
-        if isinstance(route, APIRoute):
-            endpoints.append(route.path)
-
+    endpoints = [r.path for r in app.routes if isinstance(r, APIRoute)]
     print("ROUTES\n", json.dumps(endpoints, indent=2))
 
 
@@ -183,7 +181,7 @@ def client(
 @pytest.fixture
 def shared_store(httpx_async_client: AsyncClient) -> SharedStore:
     # pylint: disable=protected-access
-    return httpx_async_client._transport.app.state.shared_store
+    return httpx_async_client._transport.app.state.shared_store  # noqa: SLF001
 
 
 @pytest.fixture
@@ -252,7 +250,17 @@ def mock_node_missing(mocker: MockerFixture, missing_node_uuid: str) -> None:
 
 
 @pytest.fixture
-def mock_metrics_params() -> CreateServiceMetricsAdditionalParams:
+def mock_stop_heart_beat_task(mocker: MockerFixture) -> AsyncMock:
+    return mocker.patch(
+        "simcore_service_dynamic_sidecar.modules.resource_tracking.core.stop_heart_beat_task",
+        return_value=None,
+    )
+
+
+@pytest.fixture
+def mock_metrics_params(
+    mock_stop_heart_beat_task: AsyncMock,
+) -> CreateServiceMetricsAdditionalParams:
     return CreateServiceMetricsAdditionalParams(
         wallet_id=1,
         wallet_name="test_wallet",
@@ -451,12 +459,29 @@ async def test_same_task_id_is_returned_if_task_exists(
             pass
 
 
+def assert_simcore_platform_status(
+    mock_core_rabbitmq: dict[str, AsyncMock],
+    simcore_platform_status: SimcorePlatformStatus,
+):
+    last_rabbit_message = (
+        mock_core_rabbitmq["post_rabbit_message"].call_args_list[-1].args[1]
+    )
+    assert last_rabbit_message.simcore_platform_status == simcore_platform_status
+
+
+@pytest.mark.parametrize(
+    "expected_simcore_platform_status",
+    [SimcorePlatformStatus.OK, SimcorePlatformStatus.BAD],
+)
 async def test_containers_down_after_starting(
     httpx_async_client: AsyncClient,
     client: Client,
     compose_spec: str,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
     shared_store: SharedStore,
+    mock_core_rabbitmq: dict[str, AsyncMock],
+    expected_simcore_platform_status: SimcorePlatformStatus,
+    mocker: MockerFixture,
 ):
     # start containers
     async with periodic_task_result(
@@ -470,15 +495,29 @@ async def test_containers_down_after_starting(
     ) as result:
         assert shared_store.container_names == result
 
-    # put down containers
-    async with periodic_task_result(
-        client=client,
-        task_id=await _get_task_id_docker_compose_down(httpx_async_client),
-        task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
-        status_poll_interval=FAST_STATUS_POLL,
-        progress_callback=_debug_progress,
-    ) as result:
-        assert result is None
+    async def _put_containers_down():
+        # put down containers
+        async with periodic_task_result(
+            client=client,
+            task_id=await _get_task_id_docker_compose_down(httpx_async_client),
+            task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
+            status_poll_interval=FAST_STATUS_POLL,
+            progress_callback=_debug_progress,
+        ) as result:
+            assert result is None
+
+    if expected_simcore_platform_status == SimcorePlatformStatus.BAD:
+        # mock error form putting down containers
+        mocker.patch(
+            "simcore_service_dynamic_sidecar.modules.long_running_tasks._retry_docker_compose_down",
+            side_effect=RuntimeError(""),
+        )
+        with pytest.raises(TaskClientResultError):
+            await _put_containers_down()
+    else:
+        await _put_containers_down()
+
+    assert_simcore_platform_status(mock_core_rabbitmq, expected_simcore_platform_status)
 
 
 async def test_containers_down_missing_spec(
