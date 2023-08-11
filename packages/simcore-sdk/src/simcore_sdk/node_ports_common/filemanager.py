@@ -153,7 +153,7 @@ async def complete_file_upload(
         )
     assert (
         e_tag is not None
-    )  # nosec - should be none because we are only uploading a file here
+    )  # nosec - should not be none because we are only uploading a file here
     return e_tag
 
 
