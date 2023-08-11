@@ -2,11 +2,13 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import datetime
 import json
 import random
 import re
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse, urlunparse
 from uuid import UUID
 
 import pytest
@@ -50,11 +52,18 @@ class DummyFileData:
     _file_name: str = "myfile.txt"
     _future_id: str = "7182bd56-3297-4dcb-8622-2c5cf31b39b3"
     _final_e_tag: ETag = "07d1c1a4-b073-4be7-b022-f405d90e99aa"
+    _file_size: int = 100000
 
     @classmethod
     def file(cls) -> File:
         return File(
-            id=cls._file_id, filename=cls._file_name, content_type="", checksum=""
+            id=File.create_id(
+                cls._file_size,
+                cls._file_name,
+                datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            ),
+            filename=cls._file_name,
+            checksum="",
         )
 
     @classmethod
@@ -471,8 +480,12 @@ async def storage_v0_service_mock(
         r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/metadata.+$"
     )
 
-    complete_upload_pattern = re.compile(
-        r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/api.+:complete.+$"
+    storage_complete_link = re.compile(
+        r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+complete"
+    )
+
+    storage_complete_link_futures = re.compile(
+        r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+complete/futures/.+"
     )
 
     aioresponses_mocker.get(
@@ -503,30 +516,30 @@ async def storage_v0_service_mock(
         repeat=True,
     )
 
-    aioresponses_mocker.post(
-        complete_upload_pattern,
-        status=web.HTTPOk.status_code,
-        payload={
-            "data": parse_obj_as(
-                FileUploadCompleteResponse,
-                {"links": DummyFileData.storage_complete_link().dict()},
-            ).dict()
-        },
-    )
+    def generate_future_link(url, **kwargs):
+
+        parsed_url = urlparse(str(url))
+        new_url = urlunparse(
+            (parsed_url.scheme, parsed_url.netloc, parsed_url.path, "", "", "")
+        )
+
+        payload: FileUploadCompleteResponse = parse_obj_as(
+            FileUploadCompleteResponse,
+            {
+                "links": {"state": new_url + ":complete/futures/" + str(fake.uuid4())},
+            },
+        )
+        return CallbackResult(
+            status=web.HTTPOk.status_code,
+            payload=jsonable_encoder(
+                Envelope[FileUploadCompleteResponse](data=payload)
+            ),
+        )
+
+    aioresponses_mocker.post(storage_complete_link, callback=generate_future_link)
 
     aioresponses_mocker.post(
-        str(DummyFileData.storage_complete_link().dict()["state"]),
-        status=web.HTTPOk.status_code,
-        payload={
-            "data": FileUploadCompleteResponse(
-                links=DummyFileData.storage_complete_link_future()
-            ).dict(),
-            "error": 200,
-        },
-    )
-
-    aioresponses_mocker.post(
-        str(DummyFileData.storage_complete_link_future().dict()["state"]),
+        storage_complete_link_futures,
         status=web.HTTPOk.status_code,
         payload={
             "data": {

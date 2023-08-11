@@ -18,7 +18,7 @@ from models_library.api_schemas_storage import (
     FileUploadCompletionBody,
     LinkType,
 )
-from pydantic import AnyUrl, ByteSize, PositiveInt, ValidationError
+from pydantic import AnyUrl, ByteSize, PositiveInt, ValidationError, parse_obj_as
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 from simcore_sdk.node_ports_common.filemanager import (
@@ -35,7 +35,12 @@ from starlette.responses import RedirectResponse
 from ..._meta import API_VTAG
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
-from ...models.schemas.files import ClientFile, ClientFileUploadSchema, File
+from ...models.schemas.files import (
+    ClientFile,
+    ClientFileUploadLinks,
+    ClientFileUploadSchema,
+    File,
+)
 from ...services.storage import StorageApi, StorageFileMetaData, to_file_api_model
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
@@ -213,8 +218,21 @@ async def get_upload_links(
         file_size=ByteSize(client_file.filesize),
         is_directory=False,
     )
+    complete_upload_link: AnyUrl = parse_obj_as(
+        AnyUrl,
+        str(request.url_for("complete_multipart_upload", file_id=str(file_meta.id))),
+    )
+    abort_upload_link: AnyUrl = parse_obj_as(
+        AnyUrl,
+        str(request.url_for("abort_multipart_upload", file_id=str(file_meta.id))),
+    )
+
     result: ClientFileUploadSchema = ClientFileUploadSchema(
-        upload_schema=upload_links, file=file_meta
+        upload_schema=upload_links,
+        file=file_meta,
+        links=ClientFileUploadLinks(
+            abort_upload=abort_upload_link, complete_upload=complete_upload_link
+        ),
     )
     return result
 
@@ -255,7 +273,7 @@ async def complete_multipart_upload(
             detail="The File's id did not match the paths file_id",
         )
     complete_path: str = urlparse(str(completion_link.state)).path
-    if not complete_path.endswith(f"{file.quoted_storage_file_id}:complete"):
+    if not complete_path.endswith(file.quoted_storage_file_id):
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="The completion_link was invalid",

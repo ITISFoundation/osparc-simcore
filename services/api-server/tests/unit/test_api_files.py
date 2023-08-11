@@ -134,7 +134,10 @@ async def test_download_content(
     assert response.headers["content-type"] == "application/octet-stream"
 
 
+@pytest.mark.testit
+@pytest.mark.parametrize("follow_up_request", ["complete", "abort"])
 async def test_get_upload_links(
+    follow_up_request: str,
     client: AsyncClient,
     auth: httpx.BasicAuth,
     storage_v0_service_mock: AioResponsesMock,
@@ -143,14 +146,37 @@ async def test_get_upload_links(
 
     assert storage_v0_service_mock  # nosec
 
-    msg: dict[str, str] = {"filename": "myfile.txt", "filesize": "100000"}
+    msg = {"filename": DummyFileData.file().filename, "filesize": "100000"}
 
     response = await client.post(f"{API_VTAG}/files/content", json=msg, auth=auth)
 
     payload: dict[str, str] = response.json()
 
     assert response.status_code == status.HTTP_200_OK
-    _ = ClientFileUploadSchema.parse_obj(payload)
+    upload_schema: ClientFileUploadSchema = ClientFileUploadSchema.parse_obj(payload)
+
+    if follow_up_request == "complete":
+        msg = {
+            "file": upload_schema.file.dict(),
+            "uploaded_parts": DummyFileData.uploaded_parts().dict(),
+            "completion_link": {
+                "state": str(upload_schema.upload_schema.links.complete_upload)
+            },
+        }
+        msg["file"]["id"] = str(msg["file"]["id"])
+        response = await client.post(
+            upload_schema.links.complete_upload, json=msg, auth=auth
+        )
+        payload: dict[str, str] = response.json()
+
+        assert response.status_code == status.HTTP_200_OK
+        _ = File.parse_obj(payload)
+    elif follow_up_request == "abort":
+        msg = {"abort_upload_link": DummyFileData.storage_abort_link()}
+        response = await client.post(
+            upload_schema.links.abort_upload, json=msg, auth=auth
+        )
+        assert response.status_code == status.HTTP_200_OK
 
 
 async def test_complete_multipart_upload(
