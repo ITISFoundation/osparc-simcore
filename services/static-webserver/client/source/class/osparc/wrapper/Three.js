@@ -89,7 +89,7 @@ qx.Class.define("osparc.wrapper.Three", {
 
         this.__camera = new THREE.PerspectiveCamera();
         this.__camera.far = 10000;
-        this.__camera.up.set(0, 0, 1);
+        // this.__camera.up.set(0, 0, 1); // Z up
         this.__scene.add(this.__camera);
 
         this.__addCameraLight();
