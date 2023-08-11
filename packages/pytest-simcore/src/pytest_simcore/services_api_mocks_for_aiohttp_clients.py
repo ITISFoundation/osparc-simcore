@@ -537,7 +537,7 @@ async def storage_v0_service_mock(
         },
     )
 
-    aioresponses_mocker.delete(
+    aioresponses_mocker.post(
         DummyFileData.storage_abort_link(),
         status=web.HTTPOk.status_code,
     )

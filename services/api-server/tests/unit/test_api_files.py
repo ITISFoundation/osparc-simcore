@@ -153,7 +153,6 @@ async def test_get_upload_links(
     _ = ClientFileUploadSchema.parse_obj(payload)
 
 
-@pytest.mark.testit
 async def test_complete_multipart_upload(
     client: AsyncClient,
     auth: httpx.BasicAuth,
@@ -180,6 +179,7 @@ async def test_complete_multipart_upload(
     _ = File.parse_obj(payload)
 
 
+@pytest.mark.testit
 async def test_delete_multipart_upload(
     client: AsyncClient,
     auth: httpx.BasicAuth,
@@ -189,8 +189,8 @@ async def test_delete_multipart_upload(
 
     assert storage_v0_service_mock  # nosec
 
-    query_params = {"abort_upload_link": dummy_s3_abort_link}
-    response = await client.delete(
-        f"{API_VTAG}/files/content", params=query_params, auth=auth
+    msg = {"abort_upload_link": DummyFileData.storage_abort_link()}
+    response = await client.post(
+        f"{API_VTAG}/files/{str(DummyFileData.file().id)}:abort", json=msg, auth=auth
     )
     assert response.status_code == status.HTTP_200_OK
