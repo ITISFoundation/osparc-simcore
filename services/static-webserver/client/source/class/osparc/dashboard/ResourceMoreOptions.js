@@ -130,8 +130,16 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         alignX: "right",
         height: 35,
         width: 70,
-        center: true
+        center: true,
+        enabled: false
       });
+      if ("workbench" in resourceData) {
+        osparc.utils.Study.getInaccessibleServices(resourceData["workbench"])
+          .then(unaccessibleServices => openButton.setEnabled(unaccessibleServices.length === 0));
+      } else {
+        openButton.setEnabled(true);
+      }
+
       osparc.utils.Utils.setIdToWidget(openButton, "openResource");
       const store = osparc.store.Store.getInstance();
       store.bind("currentStudy", openButton, "visibility", {
