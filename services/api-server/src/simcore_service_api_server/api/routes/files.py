@@ -180,6 +180,7 @@ async def upload_files(files: list[UploadFile] = FileParam(...)):
 @router.post(
     "/content",
     response_model=ClientFileUploadSchema,
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 @cancel_on_disconnect
 async def get_upload_links(
@@ -221,6 +222,7 @@ async def get_upload_links(
 @router.post(
     "/{file_id}:complete",
     response_model=File,
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 @cancel_on_disconnect
 async def complete_multipart_upload(
@@ -268,7 +270,10 @@ async def complete_multipart_upload(
     return file
 
 
-@router.post("/{file_id}:abort")
+@router.post(
+    "/{file_id}:abort",
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
 @cancel_on_disconnect
 async def abort_multipart_upload(
     request: Request,
