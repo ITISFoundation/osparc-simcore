@@ -23,7 +23,7 @@ anyio==3.7.1
     #   httpcore
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
-async-timeout==4.0.2
+async-timeout==4.0.3
     # via
     #   -c requirements/_base.txt
     #   aiohttp
