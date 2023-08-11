@@ -332,7 +332,8 @@ qx.Class.define("osparc.wrapper.Three", {
     },
 
     __addCameraLight: function() {
-      const pointLight = new THREE.PointLight(0xFFFFFF);
+      // color and intensity
+      const pointLight = new THREE.PointLight(0xFFFFFF, 3);
       pointLight.position.set(1, 1, 2);
       this.__camera.add(pointLight);
     },
