@@ -1,17 +1,15 @@
 import json
-import logging
 from typing import Any
 
 from fastapi import FastAPI, status
 from httpx import Response, Timeout
+from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 
 from ....core.settings import DynamicSidecarSettings
 from ._base import BaseThinClient, expect_status, retry_on_errors
-
-logger = logging.getLogger(__name__)
 
 
 class ThinSidecarsClient(BaseThinClient):
@@ -85,7 +83,7 @@ class ThinSidecarsClient(BaseThinClient):
         self, dynamic_sidecar_endpoint: AnyHttpUrl, *, only_status: bool
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "/containers")
-        return await self.client.get(url, params=dict(only_status=only_status))
+        return await self.client.get(url, params={"only_status": only_status})
 
     @retry_on_errors
     @expect_status(status.HTTP_204_NO_CONTENT)
@@ -93,7 +91,7 @@ class ThinSidecarsClient(BaseThinClient):
         self, dynamic_sidecar_endpoint: AnyHttpUrl, *, is_enabled: bool
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "/containers/directory-watcher")
-        return await self.client.patch(url, json=dict(is_enabled=is_enabled))
+        return await self.client.patch(url, json={"is_enabled": is_enabled})
 
     @retry_on_errors
     @expect_status(status.HTTP_204_NO_CONTENT)
@@ -101,7 +99,7 @@ class ThinSidecarsClient(BaseThinClient):
         self, dynamic_sidecar_endpoint: AnyHttpUrl, *, outputs_labels: dict[str, Any]
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "/containers/ports/outputs/dirs")
-        return await self.client.post(url, json=dict(outputs_labels=outputs_labels))
+        return await self.client.post(url, json={"outputs_labels": outputs_labels})
 
     @retry_on_errors
     @expect_status(status.HTTP_200_OK)
@@ -134,7 +132,7 @@ class ThinSidecarsClient(BaseThinClient):
         )
         return await self.client.post(
             url,
-            json=dict(network_id=network_id, network_aliases=network_aliases),
+            json={"network_id": network_id, "network_aliases": network_aliases},
             timeout=self._attach_detach_network_timeout,
         )
 
@@ -152,18 +150,28 @@ class ThinSidecarsClient(BaseThinClient):
         )
         return await self.client.post(
             url,
-            json=dict(network_id=network_id),
+            json={"network_id": network_id},
             timeout=self._attach_detach_network_timeout,
         )
 
     @retry_on_errors
     @expect_status(status.HTTP_202_ACCEPTED)
     async def post_containers_tasks(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl, *, compose_spec: str
+        self,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
+        *,
+        compose_spec: str,
+        metrics_params: CreateServiceMetricsAdditionalParams,
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "/containers")
         # change introduce in OAS version==1.1.0
-        return await self.client.post(url, json={"docker_compose_yaml": compose_spec})
+        return await self.client.post(
+            url,
+            json={
+                "docker_compose_yaml": compose_spec,
+                "metrics_params": metrics_params,
+            },
+        )
 
     @retry_on_errors
     @expect_status(status.HTTP_202_ACCEPTED)
