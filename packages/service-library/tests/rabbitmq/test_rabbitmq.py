@@ -40,15 +40,15 @@ async def test_rabbit_client(
     client = RabbitMQClient(rabbit_client_name, rabbit_service)
     assert client
     # check it is correctly initialized
-    assert client._connection_pool
-    assert not client._connection_pool.is_closed
-    assert client._channel_pool
-    assert not client._channel_pool.is_closed
+    assert client._connection_pool  # noqa: SLF001
+    assert not client._connection_pool.is_closed  # noqa: SLF001
+    assert client._channel_pool  # noqa: SLF001
+    assert not client._channel_pool.is_closed  # noqa: SLF001
     assert client.client_name == rabbit_client_name
     assert client.settings == rabbit_service
     await client.close()
-    assert client._connection_pool
-    assert client._connection_pool.is_closed
+    assert client._connection_pool  # noqa: SLF001
+    assert client._connection_pool.is_closed  # noqa: SLF001
 
 
 @pytest.fixture
@@ -174,7 +174,7 @@ async def test_rabbit_client_pub_many_subs(
     await asyncio.gather(
         *(
             consumer.subscribe(exchange_name, parser)
-            for consumer, parser in zip(consumers, mocked_message_parsers)
+            for consumer, parser in zip(consumers, mocked_message_parsers, strict=True)
         )
     )
 
@@ -237,7 +237,7 @@ async def test_pub_sub_with_non_exclusive_queue(
     await asyncio.gather(
         *(
             consumer.subscribe(exchange_name, parser, exclusive_queue=False)
-            for consumer, parser in zip(consumers, mocked_message_parsers)
+            for consumer, parser in zip(consumers, mocked_message_parsers, strict=True)
         )
     )
 
