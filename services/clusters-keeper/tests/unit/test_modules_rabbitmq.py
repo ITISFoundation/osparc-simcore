@@ -151,6 +151,9 @@ async def test_post_message_when_rabbit_disconnected_does_not_raise(
     rabbit_log_message: LoggerRabbitMessage,
     async_docker_client: aiodocker.Docker,
 ):
+    # NOTE: if the connection is not initialized before pausing the container, then
+    # this test hangs forever!!! This needs investigations!
+    await post_message(initialized_app, message=rabbit_log_message)
     async with paused_container(async_docker_client, "rabbit"):
         # now posting should not raise out
         await post_message(initialized_app, message=rabbit_log_message)
