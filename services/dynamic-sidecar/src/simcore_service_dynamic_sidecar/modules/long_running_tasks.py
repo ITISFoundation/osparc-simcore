@@ -205,21 +205,23 @@ async def task_runs_docker_compose_down(
         _logger.warning("No compose-spec was found")
         return
 
-    # TODO: we need to compute how this has finished
+    try:
+        progress.update(message="running docker-compose-down", percent=0.1)
+        result = await _retry_docker_compose_down(shared_store.compose_spec, settings)
+        _raise_for_errors(result, "down")
 
-    await send_service_stopped(app, simcore_platform_status=SimcorePlatformStatus.BAD)
+        progress.update(message="stopping logs", percent=0.9)
+        for container_name in shared_store.container_names:
+            await stop_log_fetching(app, container_name)
 
-    progress.update(message="running docker-compose-down", percent=0.1)
-    result = await _retry_docker_compose_down(shared_store.compose_spec, settings)
-    _raise_for_errors(result, "down")
+        progress.update(message="removing pending resources", percent=0.95)
+        result = await docker_compose_rm(shared_store.compose_spec, settings)
+        _raise_for_errors(result, "rm")
+    except Exception:
+        await send_service_stopped(app, SimcorePlatformStatus.BAD)
+        raise
 
-    progress.update(message="stopping logs", percent=0.9)
-    for container_name in shared_store.container_names:
-        await stop_log_fetching(app, container_name)
-
-    progress.update(message="removing pending resources", percent=0.95)
-    result = await docker_compose_rm(shared_store.compose_spec, settings)
-    _raise_for_errors(result, "rm")
+    await send_service_stopped(app, SimcorePlatformStatus.OK)
 
     # removing compose-file spec
     async with shared_store:
