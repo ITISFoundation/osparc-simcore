@@ -68,10 +68,8 @@ async def test_create_cluster(
     rpc_response = await clusters_keeper_rabbitmq_rpc_client.rpc_request(
         CLUSTERS_KEEPER_NAMESPACE,
         RPCMethodName("create_cluster"),
-        kwargs={
-            "user_id": user_id,
-            "wallet_id": wallet_id,
-        },
+        user_id=user_id,
+        wallet_id=wallet_id,
     )
     assert rpc_response
     # wait for response
