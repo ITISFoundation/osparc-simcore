@@ -6,8 +6,9 @@
 
 
 import asyncio
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any
 from unittest import mock
 
 import aio_pika
@@ -202,7 +203,8 @@ async def test_rabbit_client_pub_sub_republishes_if_exception_raised(
         _raise_once_then_true.calls += 1
 
         if _raise_once_then_true.calls == 1:
-            raise KeyError("this is a test!")
+            msg = "this is a test!"
+            raise KeyError(msg)
         if _raise_once_then_true.calls == 2:
             return False
         return True
