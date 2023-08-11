@@ -26,6 +26,7 @@ CLUSTERS_KEEPER_RPC_NAMESPACE: Final[RPCNamespace] = parse_obj_as(
 def setup(app: FastAPI) -> None:
     async def on_startup() -> None:
         app.state.rabbitmq_client = None
+        app.state.rabbitmq_rpc_server = None
         settings: RabbitSettings | None = get_application_settings(
             app
         ).CLUSTERS_KEEPER_RABBITMQ
