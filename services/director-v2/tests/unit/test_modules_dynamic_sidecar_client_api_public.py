@@ -215,7 +215,7 @@ async def test_disable_service_outputs_watcher(
     dynamic_sidecar_endpoint: AnyHttpUrl,
 ) -> None:
     with get_patched_client(
-        "patch_containers_outputs_watcher",
+        "patch_containers_ports_io",
         return_value=Response(status_code=status.HTTP_204_NO_CONTENT),
     ) as client:
         assert (
@@ -229,7 +229,7 @@ async def test_enable_service_outputs_watcher(
     dynamic_sidecar_endpoint: AnyHttpUrl,
 ) -> None:
     with get_patched_client(
-        "patch_containers_outputs_watcher",
+        "patch_containers_ports_io",
         return_value=Response(status_code=status.HTTP_204_NO_CONTENT),
     ) as client:
         assert (
