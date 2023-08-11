@@ -34,7 +34,7 @@ qx.Class.define("osparc.utils.Study", {
       return services;
     },
 
-    getUnaccessibleServices: async function(workbench) {
+    getInaccessibleServices: async function(workbench) {
       return new Promise(resolve => {
         const store = osparc.store.Store.getInstance();
         store.getAllServices()
