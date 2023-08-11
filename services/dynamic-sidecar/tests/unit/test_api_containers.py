@@ -6,9 +6,10 @@
 import asyncio
 import json
 import random
+from collections.abc import AsyncIterable
 from inspect import signature
 from pathlib import Path
-from typing import Any, AsyncIterable, Final, Iterator
+from typing import Any, Final
 from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
@@ -22,7 +23,6 @@ from async_asgi_testclient import TestClient
 from faker import Faker
 from fastapi import FastAPI, status
 from models_library.services import ServiceOutput
-from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 from servicelib.fastapi.long_running_tasks.client import TaskId
@@ -54,12 +54,12 @@ class FailTestError(RuntimeError):
     pass
 
 
-_TENACITY_RETRY_PARAMS: dict[str, Any] = dict(
-    reraise=True,
-    retry=retry_if_exception_type((FailTestError, AssertionError)),
-    stop=stop_after_delay(10),
-    wait=wait_fixed(0.01),
-)
+_TENACITY_RETRY_PARAMS: dict[str, Any] = {
+    "reraise": True,
+    "retry": retry_if_exception_type((FailTestError, AssertionError)),
+    "stop": stop_after_delay(10),
+    "wait": wait_fixed(0.01),
+}
 
 
 def _create_network_aliases(network_name: str) -> list[str]:
@@ -68,7 +68,7 @@ def _create_network_aliases(network_name: str) -> list[str]:
 
 async def _assert_enable_outputs_watcher(test_client: TestClient) -> None:
     response = await test_client.patch(
-        f"/{API_VTAG}/containers/directory-watcher", json=dict(is_enabled=True)
+        f"/{API_VTAG}/containers/directory-watcher", json={"is_enabled": True}
     )
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
     assert response.text == ""
@@ -76,7 +76,7 @@ async def _assert_enable_outputs_watcher(test_client: TestClient) -> None:
 
 async def _assert_disable_outputs_watcher(test_client: TestClient) -> None:
     response = await test_client.patch(
-        f"/{API_VTAG}/containers/directory-watcher", json=dict(is_enabled=False)
+        f"/{API_VTAG}/containers/directory-watcher", json={"is_enabled": False}
     )
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
     assert response.text == ""
@@ -100,7 +100,8 @@ async def _start_containers(test_client: TestClient, compose_spec: str) -> list[
             assert response.status_code == status.HTTP_200_OK
             task_status = response.json()
             if not task_status["done"]:
-                raise RuntimeError(f"Waiting for task to complete, got: {task_status}")
+                msg = f"Waiting for task to complete, got: {task_status}"
+                raise RuntimeError(msg)
 
     response = await test_client.get(f"/task/{task_id}/result")
     assert response.status_code == status.HTTP_200_OK
@@ -277,11 +278,11 @@ async def attachable_networks_and_ids(faker: Faker) -> AsyncIterable[dict[str, s
 @pytest.fixture
 def mock_aiodocker_containers_get(mocker: MockerFixture) -> int:
     """raises a DockerError with a random HTTP status which is also returned"""
-    mock_status_code = random.randint(1, 999)
+    mock_status_code = random.randint(1, 999)  # noqa: S311
 
     async def mock_get(*args: str, **kwargs: Any) -> None:
         raise aiodocker.exceptions.DockerError(
-            status=mock_status_code, data=dict(message="aiodocker_mocked_error")
+            status=mock_status_code, data={"message": "aiodocker_mocked_error"}
         )
 
     mocker.patch("aiodocker.containers.DockerContainers.get", side_effect=mock_get)
@@ -291,12 +292,12 @@ def mock_aiodocker_containers_get(mocker: MockerFixture) -> int:
 
 @pytest.fixture
 def mock_event_filter_enqueue(
-    app: FastAPI, monkeypatch: MonkeyPatch
-) -> Iterator[AsyncMock]:
+    app: FastAPI, monkeypatch: pytest.MonkeyPatch
+) -> AsyncMock:
     mock = AsyncMock(return_value=None)
     outputs_watcher: OutputsWatcher = app.state.outputs_watcher
-    monkeypatch.setattr(outputs_watcher._event_filter, "enqueue", mock)
-    yield mock
+    monkeypatch.setattr(outputs_watcher._event_filter, "enqueue", mock)  # noqa: SLF001
+    return mock
 
 
 @pytest.fixture
@@ -305,7 +306,7 @@ async def mocked_port_key_events_queue_coro_get(
 ) -> Mock:
     outputs_context: OutputsContext = app.state.outputs_context
 
-    target = getattr(outputs_context.port_key_events_queue, "coro_get")
+    target = getattr(outputs_context.port_key_events_queue, "coro_get")  # noqa: B009
 
     mock_result_tracker = Mock()
 
@@ -370,7 +371,7 @@ async def test_containers_get_status(
     ensure_external_volumes: None,
 ):
     response = await test_client.get(
-        f"/{API_VTAG}/containers", query_string=dict(only_status=True)
+        f"/{API_VTAG}/containers", query_string={"only_status": True}
     )
     assert response.status_code == status.HTTP_200_OK, response.text
 
@@ -418,7 +419,7 @@ async def test_container_logs_with_timestamps(
         print("getting logs of container", container, "...")
         response = await test_client.get(
             f"/{API_VTAG}/containers/{container}/logs",
-            query_string=dict(timestamps=True),
+            query_string={"timestamps": True},
         )
         assert response.status_code == status.HTTP_200_OK, response.text
         assert response.json() == []
@@ -428,9 +429,9 @@ async def test_container_missing_container(
     test_client: TestClient, not_started_containers: list[str]
 ):
     def _expected_error_string(container: str) -> dict[str, str]:
-        return dict(
-            detail=f"No container '{container}' was started. Started containers '[]'"
-        )
+        return {
+            "detail": f"No container '{container}' was started. Started containers '[]'"
+        }
 
     for container in not_started_containers:
         # get container logs
@@ -468,7 +469,6 @@ async def test_container_docker_error(
         assert response.json() == _expected_error_string(mock_aiodocker_containers_get)
 
 
-@pytest.mark.flaky(max_runs=3)
 async def test_outputs_watcher_disabling(
     test_client: TestClient,
     mocked_port_key_events_queue_coro_get: Mock,
@@ -478,75 +478,60 @@ async def test_outputs_watcher_disabling(
     outputs_context: OutputsContext = test_client.application.state.outputs_context
     outputs_manager: OutputsManager = test_client.application.state.outputs_manager
     outputs_manager.task_monitor_interval_s = WAIT_FOR_OUTPUTS_WATCHER / 10
-    WAIT_PORT_KEY_PROPAGATION = outputs_manager.task_monitor_interval_s * 10
-    EXPECTED_EVENTS_PER_RANDOM_PORT_KEY = 3
 
-    async def _create_port_key_events() -> None:
+    async def _create_port_key_events(is_propagation_enabled: bool) -> None:
         random_subdir = f"{uuid4()}"
 
         await outputs_context.set_file_type_port_keys([random_subdir])
-        await asyncio.sleep(WAIT_PORT_KEY_PROPAGATION)
 
         dir_name = outputs_context.outputs_path / random_subdir
         await mkdir(dir_name)
         async with aiofiles.open(dir_name / f"file_{uuid4()}", "w") as f:
             await f.write("ok")
 
+        EXPECTED_EVENTS_PER_RANDOM_PORT_KEY = 2
+
         async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
             with attempt:
-                # check event was triggered
-                dir_event_set = [
+                # check events were triggered after generation
+                events_in_dir: list[str] = [
                     c.args[0]
                     for c in mocked_port_key_events_queue_coro_get.call_args_list
                     if c.args[0] == random_subdir
                 ]
-                # NOTE: this test can sometimes generate +/-(1 event)
-                # - when it creates +1 event ✅ using `>=` solves it
-                # - when it creates -1 event ❌ cannot deal with it from here
-                #   Will cause downstream assertions to fail since in the
-                #   event_filter_queue there will be unexpected items
-                #   NOTE: will make entire test fail with a specific
-                #   exception and rely on mark.flaky to retry it.
-                if len(dir_event_set) < EXPECTED_EVENTS_PER_RANDOM_PORT_KEY:
-                    raise FailTestError(
-                        f"Expected at least {EXPECTED_EVENTS_PER_RANDOM_PORT_KEY}"
-                        f" events, found: {dir_event_set}"
-                    )
-                assert len(dir_event_set) >= EXPECTED_EVENTS_PER_RANDOM_PORT_KEY
+
+                if is_propagation_enabled:
+                    assert len(events_in_dir) >= EXPECTED_EVENTS_PER_RANDOM_PORT_KEY
+                else:
+                    assert len(events_in_dir) == 0
 
     def _assert_events_generated(*, expected_events: int) -> None:
         events_set = {x.args[0] for x in mock_event_filter_enqueue.call_args_list}
         assert len(events_set) == expected_events
 
-    # NOTE: for some reason the first event in the queue
-    #  does not get delivered the AioQueue future handling coro_get hangs
-    await outputs_context.port_key_events_queue.coro_put("")
-    await asyncio.sleep(WAIT_PORT_KEY_PROPAGATION)
-
     # by default outputs-watcher it is disabled
-
-    # expect no events to be generated
     _assert_events_generated(expected_events=0)
-    await _create_port_key_events()
+    await _create_port_key_events(is_propagation_enabled=False)
     _assert_events_generated(expected_events=0)
 
     # after enabling new vents will be generated
     await _assert_enable_outputs_watcher(test_client)
     _assert_events_generated(expected_events=0)
-    await _create_port_key_events()
+    await _create_port_key_events(is_propagation_enabled=True)
     _assert_events_generated(expected_events=1)
 
     # disabling again, no longer generate events
     await _assert_disable_outputs_watcher(test_client)
     _assert_events_generated(expected_events=1)
-    await _create_port_key_events()
+    await _create_port_key_events(is_propagation_enabled=False)
     _assert_events_generated(expected_events=1)
 
     # enabling once more time, events are once again generated
     await _assert_enable_outputs_watcher(test_client)
     _assert_events_generated(expected_events=1)
-    await _create_port_key_events()
-    _assert_events_generated(expected_events=2)
+    for i in range(10):
+        await _create_port_key_events(is_propagation_enabled=True)
+        _assert_events_generated(expected_events=2 + i)
 
 
 async def test_container_create_outputs_dirs(
@@ -573,7 +558,7 @@ async def test_container_create_outputs_dirs(
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
     assert response.text == ""
 
-    for dir_name in mock_outputs_labels.keys():
+    for dir_name in mock_outputs_labels:
         assert (mounted_volumes.disk_outputs_path / dir_name).is_dir()
 
     await asyncio.sleep(WAIT_FOR_OUTPUTS_WATCHER)

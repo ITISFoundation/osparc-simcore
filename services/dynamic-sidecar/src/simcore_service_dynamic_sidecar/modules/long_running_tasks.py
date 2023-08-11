@@ -140,7 +140,7 @@ async def task_create_service_containers(
 
     assert shared_store.compose_spec  # nosec
 
-    with outputs_watcher_disabled(app):
+    async with outputs_watcher_disabled(app):
         # removes previous pending containers
         progress.update(message="cleanup previous used resources")
         result = await docker_compose_rm(shared_store.compose_spec, settings)
