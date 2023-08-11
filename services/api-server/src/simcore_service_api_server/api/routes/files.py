@@ -7,7 +7,6 @@ from typing import IO, Annotated, Final
 from urllib.parse import urlparse
 from uuid import UUID
 
-from aiohttp import ClientError
 from fastapi import APIRouter, Body, Depends
 from fastapi import File as FileParam
 from fastapi import Header, Request, UploadFile, status
@@ -20,9 +19,8 @@ from models_library.api_schemas_storage import (
     LinkType,
 )
 from pydantic import AnyUrl, ByteSize, PositiveInt, ValidationError
-from servicelib.fastapi.requests_decorators import cancel_on_disconnect, catch_n_raise
+from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
-from simcore_sdk.node_ports_common.exceptions import NodeportsException, S3TransferError
 from simcore_sdk.node_ports_common.filemanager import (
     UploadableFileObject,
     UploadedFile,
@@ -184,10 +182,6 @@ async def upload_files(files: list[UploadFile] = FileParam(...)):
     response_model=ClientFileUploadSchema,
 )
 @cancel_on_disconnect
-@catch_n_raise(
-    (NodeportsException, ValidationError, ClientError),
-    lambda e: status.HTTP_500_INTERNAL_SERVER_ERROR,
-)
 async def get_upload_links(
     request: Request,
     client_file: ClientFile,
@@ -229,10 +223,6 @@ async def get_upload_links(
     response_model=File,
 )
 @cancel_on_disconnect
-@catch_n_raise(
-    (ValueError, S3TransferError, ClientError, ValidationError),
-    lambda e: status.HTTP_500_INTERNAL_SERVER_ERROR,
-)
 async def complete_multipart_upload(
     request: Request,
     file_id: UUID,
@@ -280,9 +270,6 @@ async def complete_multipart_upload(
 
 @router.post("/{file_id}:abort")
 @cancel_on_disconnect
-@catch_n_raise(
-    (ClientError, ValidationError), lambda e: status.HTTP_500_INTERNAL_SERVER_ERROR
-)
 async def abort_multipart_upload(
     request: Request,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],

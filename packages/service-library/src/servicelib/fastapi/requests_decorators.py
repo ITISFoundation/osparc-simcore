@@ -2,7 +2,7 @@ import asyncio
 import inspect
 import logging
 from functools import wraps
-from typing import Any, Callable, Protocol
+from typing import Any, Protocol
 
 from fastapi import Request, status
 from fastapi.exceptions import HTTPException
@@ -119,27 +119,4 @@ def cancel_on_disconnect(handler: _HandlerWithRequestArg):
     return wrapper
 
 
-def catch_n_raise(exception_types, http_status_map: Callable[[type], int]):
-    """Catch specified exceptions and raise a FastAPI.HTTPException
-
-    Arguments:
-        exception_types: Tuple of exception types
-        http_status_map: method mapping the exception to a HTTP status
-    """
-
-    def decorator(method):
-        @wraps(method)
-        async def wrapper(*args, **kwargs):
-            try:
-                return await method(*args, **kwargs)
-            except exception_types as e:
-                raise HTTPException(
-                    status_code=http_status_map(e), detail=str(e)
-                ) from e
-
-        return wrapper
-
-    return decorator
-
-
-__all__: tuple[str, ...] = ("cancel_on_disconnect", "catch_n_raise")
+__all__: tuple[str, ...] = "cancel_on_disconnect"
