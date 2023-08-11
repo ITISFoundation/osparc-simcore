@@ -79,7 +79,7 @@ async def test_create_cluster(
     assert "Instances" in instances["Reservations"][0]
     assert len(instances["Reservations"][0]["Instances"]) == 1
     assert "Tags" in instances["Reservations"][0]["Instances"][0]
-    assert len(instances["Reservations"][0]["Instances"][0]["Tags"]) == 2
+    assert len(instances["Reservations"][0]["Instances"][0]["Tags"]) == 4
     assert "Key" in instances["Reservations"][0]["Instances"][0]["Tags"][0]
     assert (
         instances["Reservations"][0]["Instances"][0]["Tags"][0]["Key"]
