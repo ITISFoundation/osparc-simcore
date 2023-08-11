@@ -38,9 +38,9 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
   },
 
   statics: {
-    LAYOUT_HEIGHT: 300,
+    LAYOUT_HEIGHT: 320,
     NODES_TREE_WIDTH: 160,
-    THUMBNAIL_SLIDER_HEIGHT: 40
+    THUMBNAIL_SLIDER_HEIGHT: 60
   },
 
   members: {
