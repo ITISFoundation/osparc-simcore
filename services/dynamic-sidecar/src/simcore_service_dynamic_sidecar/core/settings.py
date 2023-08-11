@@ -15,7 +15,7 @@ from settings_library.r_clone import RCloneSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
-from ..modules.resource_tracking.models import ResourceTrackingSettings
+from ..modules.resource_tracking.settings import ResourceTrackingSettings
 
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):

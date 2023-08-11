@@ -20,7 +20,7 @@ from ..models.shared_store import SharedStore, setup_shared_store
 from ..modules.attribute_monitor import setup_attribute_monitor
 from ..modules.mounted_fs import MountedVolumes, setup_mounted_fs
 from ..modules.outputs import setup_outputs
-from ..modules.resource_tracking import setup_resource_tracking
+from ..modules.resource_tracking.setup import setup_resource_tracking
 from .docker_compose_utils import docker_compose_down
 from .docker_logs import setup_background_log_fetcher
 from .error_handlers import http_error_handler, node_not_found_error_handler

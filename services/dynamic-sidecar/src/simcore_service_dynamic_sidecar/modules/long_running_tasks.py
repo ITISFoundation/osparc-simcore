@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Final
 
 from fastapi import FastAPI
-from models_library.rabbitmq_messages import ProgressType
+from models_library.rabbitmq_messages import ProgressType, SimcorePlatformStatus
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
@@ -36,9 +36,10 @@ from ..core.validation import parse_compose_spec, validate_compose_spec
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.schemas.containers import ContainersCreate
 from ..models.shared_store import SharedStore
-from ..modules import nodeports, resource_tracking
+from ..modules import nodeports
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.outputs import OutputsManager, outputs_watcher_disabled
+from ..modules.resource_tracking.core import send_service_started, send_service_stopped
 
 _logger = logging.getLogger(__name__)
 
@@ -168,7 +169,7 @@ async def task_create_service_containers(
             shared_store.compose_spec, settings
         )
 
-    await resource_tracking.send_service_started(app)
+    await send_service_started(app, metrics_params=containers_create.metrics_params)
 
     message = (
         f"Finished docker-compose start with output\n{compose_start_result.message}"
@@ -204,7 +205,9 @@ async def task_runs_docker_compose_down(
         _logger.warning("No compose-spec was found")
         return
 
-    await resource_tracking.send_service_stopped(app)
+    # TODO: we need to compute how this has finished
+
+    await send_service_stopped(app, simcore_platform_status=SimcorePlatformStatus.BAD)
 
     progress.update(message="running docker-compose-down", percent=0.1)
     result = await _retry_docker_compose_down(shared_store.compose_spec, settings)
