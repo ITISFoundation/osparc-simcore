@@ -6,7 +6,9 @@ import sqlalchemy as sa
 from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import PositiveInt
-from simcore_postgres_database.models.resource_tracker import resource_tracker_container
+from simcore_postgres_database.models.resource_tracker_containers import (
+    resource_tracker_container,
+)
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from ....models.resource_tracker_container import (
