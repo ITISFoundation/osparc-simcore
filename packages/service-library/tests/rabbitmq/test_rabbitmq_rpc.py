@@ -309,9 +309,6 @@ async def test_replier_handler_raises_error(
     assert f"{exec_info.value}" == "failed as requested"
 
 
-# WARNING: This test fails with aio-pika==9.1.4
-# FAILED tests/rabbitmq/test_rabbitmq_rpc.py::test_replier_responds_with_not_locally_defined_object_instance - AttributeError: Can't pickle local object 'test_replier_responds_with_not_locally_defined_object_instance.<locals>._replier_scope.<locals>.Custom'
-#
 async def test_replier_responds_with_not_locally_defined_object_instance(
     rabbit_requester: RabbitMQClient,
     rabbit_replier: RabbitMQClient,
