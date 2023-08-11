@@ -125,7 +125,7 @@ async def test_get_containers(
 
 
 @pytest.mark.parametrize("is_enabled", [False, True])
-async def test_post_patch_containers_outputs_watcher(
+async def test_post_patch_containers_ports_io(
     thin_client: ThinSidecarsClient,
     dynamic_sidecar_endpoint: AnyHttpUrl,
     mock_request: MockRequestType,
@@ -134,12 +134,12 @@ async def test_post_patch_containers_outputs_watcher(
     mock_response = Response(status.HTTP_204_NO_CONTENT)
     mock_request(
         "PATCH",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/containers/directory-watcher",
+        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/containers/ports/io",
         mock_response,
         None,
     )
 
-    response = await thin_client.patch_containers_outputs_watcher(
+    response = await thin_client.patch_containers_ports_io(
         dynamic_sidecar_endpoint, is_enabled=is_enabled
     )
     assert_responses(mock_response, response)

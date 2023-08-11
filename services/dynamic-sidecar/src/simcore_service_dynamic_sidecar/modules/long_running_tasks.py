@@ -327,7 +327,13 @@ async def task_ports_inputs_pull(
     port_keys: list[str] | None,
     mounted_volumes: MountedVolumes,
     app: FastAPI,
+    *,
+    inputs_pulling_enabled: bool,
 ) -> int:
+    if not inputs_pulling_enabled:
+        _logger.info("Received request to pull inputs but was ignored")
+        return 0
+
     progress.update(message="starting inputs pulling", percent=0.0)
     port_keys = [] if port_keys is None else port_keys
     await post_sidecar_log_message(
