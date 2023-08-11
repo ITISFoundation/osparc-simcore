@@ -85,15 +85,15 @@ class ThinSidecarsClient(BaseThinClient):
         self, dynamic_sidecar_endpoint: AnyHttpUrl, *, only_status: bool
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "/containers")
-        return await self.client.get(url, params=dict(only_status=only_status))
+        return await self.client.get(url, params={"only_status": only_status})
 
     @retry_on_errors
     @expect_status(status.HTTP_204_NO_CONTENT)
-    async def patch_containers_outputs_watcher(
+    async def patch_containers_ports_io(
         self, dynamic_sidecar_endpoint: AnyHttpUrl, *, is_enabled: bool
     ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/containers/directory-watcher")
-        return await self.client.patch(url, json=dict(is_enabled=is_enabled))
+        url = self._get_url(dynamic_sidecar_endpoint, "/containers/ports/io")
+        return await self.client.patch(url, json={"is_enabled": is_enabled})
 
     @retry_on_errors
     @expect_status(status.HTTP_204_NO_CONTENT)
@@ -101,7 +101,7 @@ class ThinSidecarsClient(BaseThinClient):
         self, dynamic_sidecar_endpoint: AnyHttpUrl, *, outputs_labels: dict[str, Any]
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "/containers/ports/outputs/dirs")
-        return await self.client.post(url, json=dict(outputs_labels=outputs_labels))
+        return await self.client.post(url, json={"outputs_labels": outputs_labels})
 
     @retry_on_errors
     @expect_status(status.HTTP_200_OK)
@@ -134,7 +134,7 @@ class ThinSidecarsClient(BaseThinClient):
         )
         return await self.client.post(
             url,
-            json=dict(network_id=network_id, network_aliases=network_aliases),
+            json={"network_id": network_id, "network_aliases": network_aliases},
             timeout=self._attach_detach_network_timeout,
         )
 
@@ -152,7 +152,7 @@ class ThinSidecarsClient(BaseThinClient):
         )
         return await self.client.post(
             url,
-            json=dict(network_id=network_id),
+            json={"network_id": network_id},
             timeout=self._attach_detach_network_timeout,
         )
 
