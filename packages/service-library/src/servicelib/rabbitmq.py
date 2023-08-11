@@ -1,7 +1,8 @@
 import asyncio
 import logging
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from typing import Any, Awaitable, Callable, Final, Protocol
+from typing import Any, Final, Protocol
 
 import aio_pika
 import aiormq
@@ -313,7 +314,7 @@ class RabbitMQClient:
         method_name: RPCMethodName,
         *,
         timeout_s: PositiveInt | None = 5,
-        **kwargs: dict[str, Any],
+        **kwargs,
     ) -> Any:
         """
         Call a remote registered `handler` by providing it's `namespace`, `method_name`
@@ -327,7 +328,7 @@ class RabbitMQClient:
         """
 
         if not self._rpc:
-            raise RPCNotInitializedError()
+            raise RPCNotInitializedError
 
         namespaced_method_name = RPCNamespacedMethodName.from_namespace_and_method(
             namespace, method_name
@@ -362,7 +363,7 @@ class RabbitMQClient:
         """
 
         if self._rpc is None:
-            raise RPCNotInitializedError()
+            raise RPCNotInitializedError
 
         await self._rpc.register(
             RPCNamespacedMethodName.from_namespace_and_method(namespace, method_name),
@@ -374,6 +375,6 @@ class RabbitMQClient:
         """Unbind a locally added `handler`"""
 
         if self._rpc is None:
-            raise RPCNotInitializedError()
+            raise RPCNotInitializedError
 
         await self._rpc.unregister(handler)

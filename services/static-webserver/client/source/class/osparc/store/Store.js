@@ -408,12 +408,8 @@ qx.Class.define("osparc.store.Store", {
               }
             });
           })
-          .catch(err => {
-            console.error("failed getting services", err);
-          })
-          .finally(() => {
-            resolve(inaccessibleServices);
-          });
+          .catch(err => console.error("failed getting services", err))
+          .finally(() => resolve(inaccessibleServices));
       });
     },
 
@@ -433,17 +429,6 @@ qx.Class.define("osparc.store.Store", {
 
     getGroupsOrganizations: function() {
       return this.__getGroups("organizations");
-    },
-
-    getGroupsOrganizationsWithRights(checkWrite = "read") {
-      return new Promise(resolve => {
-        this.getGroupsOrganizations()
-          .then(orgs => {
-            const orgsWithRights = orgs.filter(org => org["accessRights"][checkWrite]);
-            resolve(orgsWithRights);
-          })
-          .catch(err => console.error(err));
-      });
     },
 
     getProductEveryone: function() {

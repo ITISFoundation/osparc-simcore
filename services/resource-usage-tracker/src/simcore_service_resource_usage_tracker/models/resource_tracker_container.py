@@ -9,7 +9,9 @@ from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import BaseModel, ByteSize, Field, PositiveInt
-from simcore_postgres_database.models.resource_tracker import ContainerClassification
+from simcore_postgres_database.models.resource_tracker_containers import (
+    ContainerClassification,
+)
 
 # Scraped from prometheus
 

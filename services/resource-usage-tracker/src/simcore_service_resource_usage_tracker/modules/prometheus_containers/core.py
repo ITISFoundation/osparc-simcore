@@ -11,7 +11,9 @@ from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKey, ServiceVersion
 from prometheus_api_client import PrometheusConnect
 from pydantic import BaseModel, ByteSize
-from simcore_postgres_database.models.resource_tracker import ContainerClassification
+from simcore_postgres_database.models.resource_tracker_containers import (
+    ContainerClassification,
+)
 from simcore_service_resource_usage_tracker.modules.prometheus import (
     get_prometheus_api_client,
 )

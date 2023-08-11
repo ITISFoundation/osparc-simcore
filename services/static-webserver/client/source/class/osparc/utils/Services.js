@@ -241,7 +241,6 @@ qx.Class.define("osparc.utils.Services", {
       if (services === null) {
         services = osparc.utils.Services.servicesCached;
       }
-      const srcNode = this.getFromObject(services, srcKey, srcVersion);
       let versions = this.getVersions(services, srcKey, false);
       // only allow patch versions
       versions = versions.filter(version => {
@@ -250,6 +249,8 @@ qx.Class.define("osparc.utils.Services", {
         return (v1[0] === v2[0] && v1[1] === v2[1]);
       });
       versions.reverse();
+
+      const srcNode = this.getFromObject(services, srcKey, srcVersion);
       const idx = versions.indexOf(srcVersion);
       if (idx > -1) {
         versions.length = idx+1;

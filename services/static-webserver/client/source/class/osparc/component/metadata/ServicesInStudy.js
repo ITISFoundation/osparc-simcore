@@ -160,6 +160,10 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         const infoButton = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/14");
         infoButton.addListener("execute", () => {
           const metadata = osparc.utils.Services.getMetaData(node["key"], node["version"]);
+          if (metadata === null) {
+            osparc.component.message.FlashMessenger.logAs(this.tr("Service information could not be retrieved"), "WARNING");
+            return;
+          }
           const serviceDetails = new osparc.info.ServiceLarge(metadata, {
             nodeId,
             studyId: this._studyData["uuid"],
