@@ -26,7 +26,7 @@ def setup_resource_tracking(app: FastAPI) -> None:
             resource_tracking.heart_beat_task = await start_periodic_task(
                 heart_beat_task,
                 app=app,
-                interval=settings.RESOURCE_TRACKING_INTERVAL,
+                interval=settings.RESOURCE_TRACKING_HEARTBEAT_INTERVAL,
                 task_name="resource_tracking_heart_beat",
             )
 
