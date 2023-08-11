@@ -18,7 +18,7 @@ async def _process_message(
 ) -> bool:
     # NOTE: parse the message and process it
 
-    _logger.debug(f"{data}")
+    _logger.debug("%s", data)
     return True
 
 
