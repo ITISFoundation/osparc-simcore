@@ -316,7 +316,6 @@ async def test_replier_responds_with_not_locally_defined_object_instance(
     rabbit_requester: RabbitMQClient,
     rabbit_replier: RabbitMQClient,
     namespace: RPCNamespace,
-    caplog: pytest.LogCaptureFixture,
 ):
     async def _replier_scope() -> None:
         class Custom:
@@ -335,13 +334,12 @@ async def test_replier_responds_with_not_locally_defined_object_instance(
         # the replier will say that it cannot pickle a local object and send it over
         # the server's request will just time out. I would prefer a cleaner interface.
         # There is no change of intercepting this message.
-        with pytest.raises(asyncio.TimeoutError):
+        with pytest.raises(
+            AttributeError, match=r"Can't pickle local object .+.<locals>.Custom"
+        ):
             await rabbit_requester.rpc_request(
                 namespace, RPCMethodName("a_name"), x=10, timeout_s=1
             )
-
-        assert "Can't pickle local object" in caplog.text
-        assert ".<locals>.Custom" in caplog.text
 
     await _replier_scope()
     await _requester_scope()
