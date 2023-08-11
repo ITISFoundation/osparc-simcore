@@ -93,7 +93,7 @@ qx.Class.define("osparc.wrapper.Three", {
         this.__scene.add(this.__camera);
 
         this.__addCameraLight();
-        this.__addGridHelper();
+        // this.__addGridHelper();
         this.__addAxesHelper();
 
         this.__mouse = new THREE.Vector2();
