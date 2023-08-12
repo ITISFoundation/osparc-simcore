@@ -9,17 +9,9 @@ from servicelib.rabbitmq import RabbitMQClient, RabbitSettings
 
 from .core.settings import ApplicationSettings
 from .modules.rabbitmq import get_rabbitmq_client
+from .resource_tracker_process_messages import process_message
 
 _logger = logging.getLogger(__name__)
-
-
-async def _process_message(
-    app: FastAPI, data: bytes  # pylint: disable=unused-argument
-) -> bool:
-    # NOTE: parse the message and process it
-
-    _logger.debug("%s", data)
-    return True
 
 
 async def _subscribe_to_rabbitmq(app) -> str:
@@ -27,7 +19,7 @@ async def _subscribe_to_rabbitmq(app) -> str:
         rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
         subscribed_queue: str = await rabbit_client.subscribe(
             RabbitResourceTrackingBaseMessage.get_channel_name(),
-            message_handler=functools.partial(_process_message, app),
+            message_handler=functools.partial(process_message, app),
             exclusive_queue=False,
         )
         return subscribed_queue
