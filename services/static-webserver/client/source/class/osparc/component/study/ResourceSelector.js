@@ -388,7 +388,9 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
           this.setWallet(null);
         }
       });
-      walletSelector.setSelection([]);
+      if (!osparc.desktop.credits.Utils.autoSelectActiveWallet(walletSelector)) {
+        walletSelector.setSelection([]);
+      }
     },
 
     __getCreditsLeftView: function() {
