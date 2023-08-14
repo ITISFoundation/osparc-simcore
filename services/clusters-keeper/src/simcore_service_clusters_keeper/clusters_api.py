@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from servicelib.logging_utils import log_context
+from simcore_service_clusters_keeper.core.errors import Ec2InstanceNotFoundError
 
 from .core.settings import get_application_settings
 from .modules.ec2 import get_ec2_client
@@ -54,3 +55,5 @@ async def cluster_heartbeat(
                     HEARTBEAT_TAG_KEY: f"{datetime.datetime.now(datetime.timezone.utc)}"
                 },
             )
+        else:
+            raise Ec2InstanceNotFoundError
