@@ -2,32 +2,26 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import datetime
 import json
 import random
 import re
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse, urlunparse
-from uuid import UUID
 
 import pytest
 from aiohttp import web
 from aioresponses import aioresponses as AioResponsesMock
 from aioresponses.core import CallbackResult
-from faker import Faker
 from models_library.api_schemas_storage import (
-    ETag,
     FileMetaDataGet,
     FileUploadCompleteFutureResponse,
     FileUploadCompleteResponse,
     FileUploadCompleteState,
-    FileUploadCompletionBody,
     FileUploadLinks,
     FileUploadSchema,
     LinkType,
     PresignedLink,
-    UploadedPart,
 )
 from models_library.clusters import Cluster
 from models_library.generics import Envelope
@@ -35,49 +29,11 @@ from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, ByteSize, parse_obj_as
-from simcore_service_api_server.models.schemas.files import File
 from yarl import URL
 
 pytest_plugins = [
     "pytest_simcore.aioresponses_mocker",
 ]
-
-fake = Faker()
-
-
-class DummyFileData:
-    """Static class for providing consistent dummy file data for testing"""
-
-    _file_id: UUID = UUID("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-    _file_name: str = "myfile.txt"
-    _final_e_tag: ETag = "07d1c1a4-b073-4be7-b022-f405d90e99aa"
-    _file_size: int = 100000
-
-    @classmethod
-    def file(cls) -> File:
-        return File(
-            id=File.create_id(
-                cls._file_size,
-                cls._file_name,
-                datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            ),
-            filename=cls._file_name,
-            checksum="",
-        )
-
-    @classmethod
-    def file_size(cls) -> int:
-        return cls._file_size
-
-    @classmethod
-    def uploaded_parts(cls) -> FileUploadCompletionBody:
-        return FileUploadCompletionBody(
-            parts=[UploadedPart(number=ii + 1, e_tag=fake.uuid4()) for ii in range(5)]
-        )
-
-    @classmethod
-    def final_e_tag(cls) -> ETag:
-        return cls._final_e_tag
 
 
 # The adjacency list is defined as a dictionary with the key to the node and its list of successors
@@ -531,7 +487,8 @@ async def storage_v0_service_mock(
         payload=jsonable_encoder(
             Envelope[FileUploadCompleteFutureResponse](
                 data=FileUploadCompleteFutureResponse(
-                    state=FileUploadCompleteState.OK, e_tag=DummyFileData.final_e_tag()
+                    state=FileUploadCompleteState.OK,
+                    e_tag="07d1c1a4-b073-4be7-b022-f405d90e99aa",
                 )
             )
         ),
