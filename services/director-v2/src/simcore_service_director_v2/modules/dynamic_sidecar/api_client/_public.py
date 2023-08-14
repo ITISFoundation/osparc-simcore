@@ -107,7 +107,7 @@ class SidecarsClient:
         except UnexpectedStatusError:
             return {}
 
-    @log_decorator(logger=logger)
+    @log_decorator(logger=_logger)
     async def disable_service_ports_io(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> None:
@@ -115,7 +115,7 @@ class SidecarsClient:
             dynamic_sidecar_endpoint, is_enabled=False
         )
 
-    @log_decorator(logger=logger)
+    @log_decorator(logger=_logger)
     async def enable_service_ports_io(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> None:
