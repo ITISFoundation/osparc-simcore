@@ -470,7 +470,7 @@ async def storage_v0_service_mock(
             FileUploadCompleteResponse,
             {
                 "links": {
-                    "state": stripped_url + ":complete/futures/" + str(fake.uuid4())
+                    "state": stripped_url + ":complete/futures/" + str(_FAKER.uuid4())
                 },
             },
         )

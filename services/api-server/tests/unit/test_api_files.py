@@ -25,7 +25,7 @@ from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.files import ClientFileUploadSchema, File
 
-fake = Faker()
+_FAKER = Faker()
 
 
 class DummyFileData:
@@ -55,7 +55,7 @@ class DummyFileData:
     @classmethod
     def uploaded_parts(cls) -> FileUploadCompletionBody:
         return FileUploadCompletionBody(
-            parts=[UploadedPart(number=ii + 1, e_tag=fake.uuid4()) for ii in range(5)]
+            parts=[UploadedPart(number=ii + 1, e_tag=_FAKER.uuid4()) for ii in range(5)]
         )
 
     @classmethod
