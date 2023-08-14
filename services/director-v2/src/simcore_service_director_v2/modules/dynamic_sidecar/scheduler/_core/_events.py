@@ -18,12 +18,17 @@ from models_library.service_settings_labels import (
     SimcoreServiceLabels,
     SimcoreServiceSettingsLabel,
 )
-from models_library.services import RunID, ServiceKeyVersion
-from pydantic import PositiveFloat
+from models_library.services import RunID, ServiceKeyVersion, ServiceVersion
+from models_library.services_creation import CreateServiceMetricsAdditionalParams
+from pydantic import PositiveFloat, parse_obj_as
 from servicelib.fastapi.long_running_tasks.client import TaskId
 from servicelib.json_serialization import json_dumps
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_postgres_database.models.comp_tasks import NodeClass
+from simcore_service_director_v2.constants import (
+    UNDEFINED_INT_METADATA,
+    UNDEFINED_STR_METADATA,
+)
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
@@ -42,6 +47,7 @@ from .....utils.dict_utils import nested_update
 from ....catalog import CatalogClient
 from ....db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ....db.repositories.projects import ProjectsRepository
+from ....db.repositories.users import UsersRepository
 from ....director_v0 import DirectorV0Client
 from ...api_client import (
     BaseClientHTTPError,
@@ -505,14 +511,37 @@ class CreateUserServices(DynamicSchedulerEvent):
             # of the service to pulling
             _logger.debug("%s: %.2f %s", task_id, percent, message)
 
-        # TODO: continue below
-        # metrics_params = CreateServiceMetricsAdditionalParams()
-        # await sidecars_client.create_containers(
-        #     dynamic_sidecar_endpoint,
-        #     compose_spec,
-        #     metrics_params,
-        #     progress_create_containers,
-        # )
+        # data from project
+        projects_repository = get_repository(app, ProjectsRepository)
+        project: ProjectAtDB = await projects_repository.get_project(
+            project_id=scheduler_data.project_id
+        )
+        project_name = project.name
+        node_name = project.workbench[NodeIDStr(scheduler_data.node_uuid)].label
+
+        # data from user
+        users_repository = get_repository(app, UsersRepository)
+        user_email = await users_repository.get_user_email(scheduler_data.user_id)
+
+        metrics_params = CreateServiceMetricsAdditionalParams(
+            wallet_id=UNDEFINED_INT_METADATA,
+            wallet_name=UNDEFINED_STR_METADATA,
+            product_name=scheduler_data.product_name,
+            simcore_user_agent=scheduler_data.request_simcore_user_agent,
+            user_email=user_email,
+            project_name=project_name,
+            node_name=node_name,
+            service_key=scheduler_data.key,
+            service_version=parse_obj_as(ServiceVersion, scheduler_data.version),
+            service_resources=scheduler_data.service_resources,
+            service_additional_metadata={},
+        )
+        await sidecars_client.create_containers(
+            dynamic_sidecar_endpoint,
+            compose_spec,
+            metrics_params,
+            progress_create_containers,
+        )
 
         # NOTE: when in READ ONLY mode disable the outputs watcher
         if scheduler_data.dynamic_sidecar.service_removal_state.can_save:
