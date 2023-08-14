@@ -19,6 +19,7 @@ from faker import Faker
 from models_library.api_schemas_storage import (
     ETag,
     FileMetaDataGet,
+    FileUploadCompleteFutureResponse,
     FileUploadCompleteLinks,
     FileUploadCompleteResponse,
     FileUploadCompleteState,
@@ -523,14 +524,16 @@ async def storage_v0_service_mock(
     def generate_future_link(url, **kwargs):
 
         parsed_url = urlparse(str(url))
-        new_url = urlunparse(
+        stripped_url = urlunparse(
             (parsed_url.scheme, parsed_url.netloc, parsed_url.path, "", "", "")
         )
 
         payload: FileUploadCompleteResponse = parse_obj_as(
             FileUploadCompleteResponse,
             {
-                "links": {"state": new_url + ":complete/futures/" + str(fake.uuid4())},
+                "links": {
+                    "state": stripped_url + ":complete/futures/" + str(fake.uuid4())
+                },
             },
         )
         return CallbackResult(
@@ -545,13 +548,13 @@ async def storage_v0_service_mock(
     aioresponses_mocker.post(
         storage_complete_link_futures,
         status=web.HTTPOk.status_code,
-        payload={
-            "data": {
-                "state": FileUploadCompleteState.OK.value,
-                "e_tag": DummyFileData.final_e_tag(),
-            },
-            "error": 200,
-        },
+        payload=jsonable_encoder(
+            Envelope[FileUploadCompleteFutureResponse](
+                data=FileUploadCompleteFutureResponse(
+                    state=FileUploadCompleteState.OK, e_tag=DummyFileData.final_e_tag()
+                )
+            )
+        ),
     )
 
     aioresponses_mocker.post(

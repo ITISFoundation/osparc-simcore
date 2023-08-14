@@ -228,7 +228,7 @@ async def get_upload_links(
     )
 
     result: ClientFileUploadSchema = ClientFileUploadSchema(
-        upload_schema=upload_links,
+        storage_upload_schema=upload_links,
         file=file_meta,
         links=ClientFileUploadLinks(
             abort_upload=abort_upload_link, complete_upload=complete_upload_link

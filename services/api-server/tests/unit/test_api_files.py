@@ -10,6 +10,7 @@ import pytest
 from aioresponses import aioresponses as AioResponsesMock
 from fastapi import status
 from httpx import AsyncClient
+from models_library.api_schemas_storage import FileUploadCompleteLinks
 from pydantic import parse_obj_as
 from pytest_simcore.services_api_mocks_for_aiohttp_clients import (
     DummyFileData,
@@ -159,9 +160,9 @@ async def test_get_upload_links(
         msg = {
             "file": upload_schema.file.dict(),
             "uploaded_parts": DummyFileData.uploaded_parts().dict(),
-            "completion_link": {
-                "state": str(upload_schema.upload_schema.links.complete_upload)
-            },
+            "completion_link": FileUploadCompleteLinks(
+                state=upload_schema.storage_upload_schema.links.complete_upload
+            ).dict(),
         }
         msg["file"]["id"] = str(msg["file"]["id"])
         response = await client.post(
@@ -172,7 +173,11 @@ async def test_get_upload_links(
         assert response.status_code == status.HTTP_200_OK
         _ = parse_obj_as(File, payload)
     elif follow_up_request == "abort":
-        msg = {"abort_upload_link": str(upload_schema.upload_schema.links.abort_upload)}
+        msg = {
+            "abort_upload_link": str(
+                upload_schema.storage_upload_schema.links.abort_upload
+            )
+        }
         response = await client.post(
             upload_schema.links.abort_upload, json=msg, auth=auth
         )

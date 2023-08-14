@@ -146,7 +146,7 @@ class ClientFileUploadLinks(BaseModel):
 
 class ClientFileUploadSchema(BaseModel):
     file: File = Field(..., description="The File to be created")
-    upload_schema: FileUploadSchema = Field(
+    storage_upload_schema: FileUploadSchema = Field(
         ..., description="Schema for uploading file"
     )
     links: ClientFileUploadLinks = Field(
