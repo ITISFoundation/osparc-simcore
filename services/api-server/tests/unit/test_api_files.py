@@ -11,6 +11,7 @@ from uuid import UUID
 import httpx
 import pytest
 from aioresponses import aioresponses as AioResponsesMock
+from faker import Faker
 from fastapi import status
 from httpx import AsyncClient
 from models_library.api_schemas_storage import (
@@ -30,6 +31,8 @@ from simcore_service_api_server.models.schemas.files import ClientFileUploadSche
 pytest_plugins = [
     "pytest_simcore.aioresponses_mocker",
 ]
+
+fake = Faker()
 
 
 class DummyFileData:
