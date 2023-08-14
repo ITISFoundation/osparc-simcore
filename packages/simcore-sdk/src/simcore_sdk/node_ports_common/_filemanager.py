@@ -1,7 +1,6 @@
 import logging
 
 from aiohttp import ClientError, ClientSession
-from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_storage import (
     ETag,
     FileUploadCompleteFutureResponse,
@@ -14,6 +13,7 @@ from models_library.api_schemas_storage import (
 )
 from models_library.generics import Envelope
 from models_library.users import UserID
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, parse_obj_as
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
