@@ -46,9 +46,8 @@ async def complete_file_upload(
             parts=uploaded_parts,
             is_directory=False,
         )
-    assert (
-        e_tag is not None
-    )  # nosec - should not be none because we are only uploading a file here
+    # should not be None because a file is being uploaded
+    assert e_tag is not None  # nosec
     return e_tag
 
 
