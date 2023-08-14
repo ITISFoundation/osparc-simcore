@@ -36,8 +36,6 @@ pytest_plugins = [
     "pytest_simcore.aioresponses_mocker",
 ]
 
-_FAKER = Faker()
-
 # The adjacency list is defined as a dictionary with the key to the node and its list of successors
 FULL_PROJECT_PIPELINE_ADJACENCY: dict[str, list[str]] = {
     "62bca361-8594-48c8-875e-b8577e868aec": [
@@ -397,7 +395,7 @@ def list_file_meta_data_cb(url: URL, **kwargs) -> CallbackResult:
 
 @pytest.fixture
 async def storage_v0_service_mock(
-    aioresponses_mocker: AioResponsesMock,
+    aioresponses_mocker: AioResponsesMock, faker: Faker
 ) -> AioResponsesMock:
     """mocks responses of storage API"""
 
@@ -470,7 +468,7 @@ async def storage_v0_service_mock(
             FileUploadCompleteResponse,
             {
                 "links": {
-                    "state": stripped_url + ":complete/futures/" + str(_FAKER.uuid4())
+                    "state": stripped_url + ":complete/futures/" + str(faker.uuid4())
                 },
             },
         )
