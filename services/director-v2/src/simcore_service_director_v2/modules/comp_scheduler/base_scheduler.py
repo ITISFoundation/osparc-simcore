@@ -31,7 +31,7 @@ from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 
-from ...constants import UNDEFINED_METADATA
+from ...constants import UNDEFINED_INT_METADATA, UNDEFINED_STR_METADATA
 from ...core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalSchedulerChangedError,
@@ -357,19 +357,23 @@ class BaseCompScheduler(ABC):
                     service_run_id=get_resource_tracking_run_id(
                         user_id, t.project_id, iteration
                     ),
-                    wallet_id=run_metadata.get("wallet_id", -1),
-                    wallet_name=run_metadata.get("wallet_name", UNDEFINED_METADATA),
-                    product_name=run_metadata.get("product_name", UNDEFINED_METADATA),
+                    wallet_id=run_metadata.get("wallet_id", UNDEFINED_INT_METADATA),
+                    wallet_name=run_metadata.get("wallet_name", UNDEFINED_STR_METADATA),
+                    product_name=run_metadata.get(
+                        "product_name", UNDEFINED_STR_METADATA
+                    ),
                     simcore_user_agent=run_metadata.get(
                         "simcore_user_agent", UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
                     ),
                     user_id=user_id,
-                    user_email=run_metadata.get("user_email", UNDEFINED_METADATA),
+                    user_email=run_metadata.get("user_email", UNDEFINED_STR_METADATA),
                     project_id=t.project_id,
-                    project_name=run_metadata.get("project_name", UNDEFINED_METADATA),
+                    project_name=run_metadata.get(
+                        "project_name", UNDEFINED_STR_METADATA
+                    ),
                     node_id=t.node_id,
                     node_name=run_metadata.get("node_id_names_map", {}).get(
-                        t.node_id, UNDEFINED_METADATA
+                        t.node_id, UNDEFINED_STR_METADATA
                     ),
                     service_key=ServiceKey(t.image.name),
                     service_version=ServiceVersion(t.image.tag),
