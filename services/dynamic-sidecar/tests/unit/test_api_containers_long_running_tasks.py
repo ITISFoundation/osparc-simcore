@@ -9,7 +9,6 @@ from contextlib import asynccontextmanager, contextmanager
 from inspect import getmembers, isfunction
 from pathlib import Path
 from typing import Any, Final
-from unittest.mock import AsyncMock
 
 import aiodocker
 import faker
@@ -37,6 +36,7 @@ from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.api import containers_long_running_tasks
 from simcore_service_dynamic_sidecar.models.schemas.containers import ContainersCreate
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
+from simcore_service_dynamic_sidecar.modules.inputs import enable_inputs_state_pulling
 from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
 from simcore_service_dynamic_sidecar.modules.outputs._manager import OutputsManager
 
@@ -51,7 +51,7 @@ ContainerTimes = namedtuple("ContainerTimes", "created, started_at, finished_at"
 
 
 def _print_routes(app: FastAPI) -> None:
-    endpoints = [r.path for r in app.routes if isinstance(r, APIRoute)]
+    endpoints = [route.path for route in app.routes if isinstance(route, APIRoute)]
     print("ROUTES\n", json.dumps(endpoints, indent=2))
 
 
@@ -562,12 +562,18 @@ async def test_container_save_state(
         assert result is None
 
 
+@pytest.mark.parametrize("inputs_pulling_enabled", [True, False])
 async def test_container_pull_input_ports(
     httpx_async_client: AsyncClient,
     client: Client,
+    inputs_pulling_enabled: bool,
+    app: FastAPI,
     mock_port_keys: list[str] | None,
     mock_nodeports: None,
 ):
+    if inputs_pulling_enabled:
+        enable_inputs_state_pulling(app)
+
     async with periodic_task_result(
         client=client,
         task_id=await _get_task_id_task_ports_inputs_pull(
@@ -577,7 +583,7 @@ async def test_container_pull_input_ports(
         status_poll_interval=FAST_STATUS_POLL,
         progress_callback=_debug_progress,
     ) as result:
-        assert result == 42
+        assert result == (42 if inputs_pulling_enabled else 0)
 
 
 async def test_container_pull_output_ports(

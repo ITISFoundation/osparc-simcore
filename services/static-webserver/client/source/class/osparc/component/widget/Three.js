@@ -47,8 +47,8 @@ qx.Class.define("osparc.component.widget.Three", {
       this.getContentElement().getDomElement()
         .appendChild(this.__threeWrapper.getDomElement());
 
-      // this.__threeWrapper.SetCameraPosition(18, 0, 25);
-      this.__threeWrapper.setCameraPosition(210, 210, 90); // Z up
+      // this.__threeWrapper.setCameraPosition(18, 0, 25);
+      this.__threeWrapper.setCameraPosition(300, 300, 300);
       this.__threeWrapper.setBackgroundColor("#484f54");
       this.__resized();
 

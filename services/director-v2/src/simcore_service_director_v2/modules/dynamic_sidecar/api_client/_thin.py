@@ -87,10 +87,10 @@ class ThinSidecarsClient(BaseThinClient):
 
     @retry_on_errors
     @expect_status(status.HTTP_204_NO_CONTENT)
-    async def patch_containers_outputs_watcher(
+    async def patch_containers_ports_io(
         self, dynamic_sidecar_endpoint: AnyHttpUrl, *, is_enabled: bool
     ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/containers/directory-watcher")
+        url = self._get_url(dynamic_sidecar_endpoint, "/containers/ports/io")
         return await self.client.patch(url, json={"is_enabled": is_enabled})
 
     @retry_on_errors

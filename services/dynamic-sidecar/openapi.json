@@ -323,18 +323,19 @@
         }
       }
     },
-    "/v1/containers/directory-watcher": {
+    "/v1/containers/ports/io": {
       "patch": {
         "tags": [
           "containers"
         ],
-        "summary": "Enable/disable directory-watcher event propagation",
-        "operationId": "toggle_directory_watcher_v1_containers_directory_watcher_patch",
+        "summary": "Enable/disable ports i/o",
+        "description": "enables or disables the following:\n- output ports pushing data\n- inputs ports from pulling data",
+        "operationId": "toggle_ports_io_v1_containers_ports_io_patch",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PatchDirectoryWatcherItem"
+                "$ref": "#/components/schemas/PatchPortsIOItem"
               }
             }
           },
@@ -821,7 +822,7 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
-      "PatchDirectoryWatcherItem": {
+      "PatchPortsIOItem": {
         "properties": {
           "is_enabled": {
             "type": "boolean",
@@ -832,7 +833,7 @@
         "required": [
           "is_enabled"
         ],
-        "title": "PatchDirectoryWatcherItem"
+        "title": "PatchPortsIOItem"
       },
       "PutVolumeItem": {
         "properties": {
