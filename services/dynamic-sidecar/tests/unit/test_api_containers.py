@@ -23,6 +23,7 @@ from async_asgi_testclient import TestClient
 from faker import Faker
 from fastapi import FastAPI, status
 from models_library.services import ServiceOutput
+from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pytest_mock.plugin import MockerFixture
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 from servicelib.fastapi.long_running_tasks.client import TaskId
@@ -82,10 +83,18 @@ async def _assert_disable_ports_io(test_client: TestClient) -> None:
     assert response.text == ""
 
 
-async def _start_containers(test_client: TestClient, compose_spec: str) -> list[str]:
+async def _start_containers(
+    test_client: TestClient,
+    compose_spec: str,
+    mock_metrics_params: CreateServiceMetricsAdditionalParams,
+) -> list[str]:
     # start containers
     response = await test_client.post(
-        f"/{API_VTAG}/containers", json={"docker_compose_yaml": compose_spec}
+        f"/{API_VTAG}/containers",
+        json={
+            "docker_compose_yaml": compose_spec,
+            "metrics_params": mock_metrics_params.dict(),
+        },
     )
     assert response.status_code == status.HTTP_202_ACCEPTED, response.text
     task_id: TaskId = response.json()
@@ -224,11 +233,15 @@ def selected_spec(request, compose_spec: str, compose_spec_single_service: str) 
 
 
 @pytest.fixture
-async def started_containers(test_client: TestClient, compose_spec: str) -> list[str]:
+async def started_containers(
+    test_client: TestClient,
+    compose_spec: str,
+    mock_metrics_params: CreateServiceMetricsAdditionalParams,
+) -> list[str]:
     settings: ApplicationSettings = test_client.application.state.settings
     await _assert_compose_spec_pulled(compose_spec, settings)
 
-    return await _start_containers(test_client, compose_spec)
+    return await _start_containers(test_client, compose_spec, mock_metrics_params)
 
 
 @pytest.fixture
@@ -642,8 +655,11 @@ async def test_attach_detach_container_to_network(
     test_client: TestClient,
     selected_spec: str,
     attachable_networks_and_ids: dict[str, str],
+    mock_metrics_params: CreateServiceMetricsAdditionalParams,
 ):
-    container_names = await _start_containers(test_client, selected_spec)
+    container_names = await _start_containers(
+        test_client, selected_spec, mock_metrics_params
+    )
 
     async with aiodocker.Docker() as docker:
         for container_name in container_names:

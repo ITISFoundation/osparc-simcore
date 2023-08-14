@@ -21,7 +21,6 @@ from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from httpx import AsyncClient
 from models_library.rabbitmq_messages import SimcorePlatformStatus
-from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import AnyHttpUrl, parse_obj_as
 from pytest_mock.plugin import MockerFixture
@@ -247,33 +246,6 @@ def mock_node_missing(mocker: MockerFixture, missing_node_uuid: str) -> None:
     mocker.patch(
         "simcore_service_dynamic_sidecar.modules.outputs._manager.upload_outputs",
         side_effect=_mocked,
-    )
-
-
-@pytest.fixture
-def mock_stop_heart_beat_task(mocker: MockerFixture) -> AsyncMock:
-    return mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.resource_tracking.core.stop_heart_beat_task",
-        return_value=None,
-    )
-
-
-@pytest.fixture
-def mock_metrics_params(
-    mock_stop_heart_beat_task: AsyncMock,
-) -> CreateServiceMetricsAdditionalParams:
-    return CreateServiceMetricsAdditionalParams(
-        wallet_id=1,
-        wallet_name="test_wallet",
-        product_name="test",
-        simcore_user_agent="",
-        user_email="",
-        project_name="",
-        node_name="",
-        service_key=ServiceKey("simcore/services/dynamic/test"),
-        service_version=ServiceVersion("0.0.1"),
-        service_resources={},
-        service_additional_metadata={},
     )
 
 
