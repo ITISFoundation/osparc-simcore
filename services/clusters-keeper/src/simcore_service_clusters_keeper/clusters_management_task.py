@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Awaitable, Callable
+from collections.abc import Awaitable, Callable
 
 from fastapi import FastAPI
 from servicelib.background_task import start_periodic_task, stop_periodic_task
