@@ -36,7 +36,7 @@ pytest_plugins = [
     "pytest_simcore.aioresponses_mocker",
 ]
 
-fake = Faker()
+_FAKER = Faker()
 
 # The adjacency list is defined as a dictionary with the key to the node and its list of successors
 FULL_PROJECT_PIPELINE_ADJACENCY: dict[str, list[str]] = {
