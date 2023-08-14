@@ -48,7 +48,7 @@ async def _get_running_gateways(app: FastAPI) -> list[EC2InstanceData]:
     assert app_settings.CLUSTERS_KEEPER_EC2_INSTANCES  # nosec
     return await get_ec2_client(app).get_instances(
         app_settings.CLUSTERS_KEEPER_EC2_INSTANCES,
-        ec2_utils.all_created_ec2_tags(),
+        ec2_utils.all_created_ec2_instances_filter(),
         state_names=["running"],
     )
 

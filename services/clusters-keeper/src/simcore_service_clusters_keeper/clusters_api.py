@@ -9,7 +9,11 @@ from servicelib.logging_utils import log_context
 
 from .core.settings import get_application_settings
 from .modules.ec2 import get_ec2_client
-from .utils.ec2 import HEARTBEAT_TAG_KEY, creation_ec2_tags, ec2_tags_for_user
+from .utils.ec2 import (
+    HEARTBEAT_TAG_KEY,
+    creation_ec2_tags,
+    ec2_instances_for_user_filter,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -41,7 +45,8 @@ async def cluster_heartbeat(
         app_settings = get_application_settings(app)
         assert app_settings.CLUSTERS_KEEPER_EC2_INSTANCES  # nosec
         if instances := await ec2_client.get_instances(
-            app_settings.CLUSTERS_KEEPER_EC2_INSTANCES, tags=ec2_tags_for_user(user_id)
+            app_settings.CLUSTERS_KEEPER_EC2_INSTANCES,
+            tags=ec2_instances_for_user_filter(user_id),
         ):
             await ec2_client.set_instances_tags(
                 instances,

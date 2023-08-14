@@ -1,5 +1,5 @@
 from textwrap import dedent
-from typing import Final
+from typing import Final, TypeAlias
 
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -7,16 +7,19 @@ from models_library.wallets import WalletID
 from .._meta import VERSION
 from ..core.settings import ApplicationSettings
 
+_APPLICATION_TAG_KEY_NAME: Final[str] = "io.simcore.clusters-keeper.version"
 _DEFAULT_CLUSTERS_KEEPER_TAGS: Final[dict[str, str]] = {
-    "io.simcore.clusters-keeper.version": f"{VERSION}"
+    _APPLICATION_TAG_KEY_NAME: f"{VERSION}"
 }
 
 HEARTBEAT_TAG_KEY: Final[str] = "last_heartbeat"
 
+EC2Tags: TypeAlias = dict[str, str]
+
 
 def creation_ec2_tags(
     app_settings: ApplicationSettings, *, user_id: UserID, wallet_id: WalletID
-) -> dict[str, str]:
+) -> EC2Tags:
     assert app_settings.CLUSTERS_KEEPER_EC2_INSTANCES  # nosec
     return _DEFAULT_CLUSTERS_KEEPER_TAGS | {
         # NOTE: this one gets special treatment in AWS GUI and is applied to the name of the instance
@@ -26,11 +29,11 @@ def creation_ec2_tags(
     }
 
 
-def all_created_ec2_tags() -> dict[str, str]:
+def all_created_ec2_instances_filter() -> EC2Tags:
     return _DEFAULT_CLUSTERS_KEEPER_TAGS
 
 
-def ec2_tags_for_user(user_id: UserID) -> dict[str, str]:
+def ec2_instances_for_user_filter(user_id: UserID) -> EC2Tags:
     return _DEFAULT_CLUSTERS_KEEPER_TAGS | {"user_id": f"{user_id}"}
 
 
