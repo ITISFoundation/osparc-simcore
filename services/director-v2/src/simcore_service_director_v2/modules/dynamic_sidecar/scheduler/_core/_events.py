@@ -75,9 +75,9 @@ from ._events_utils import (
     wait_for_sidecar_api,
 )
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
-DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS: Final[tuple[list[str], ...]] = (
+_DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS: Final[tuple[list[str], ...]] = (
     ["labels"],
     ["task_template", "Resources", "Limits"],
     ["task_template", "Resources", "Reservation", "MemoryBytes"],
@@ -144,7 +144,7 @@ class CreateSidecars(DynamicSchedulerEvent):
             if node is not None and node.boot_options is not None
             else {}
         )
-        logger.info("%s", f"{boot_options=}")
+        _logger.info("%s", f"{boot_options=}")
 
         settings: SimcoreServiceSettingsLabel = await merge_settings_before_use(
             director_v0_client=director_v0_client,
@@ -214,7 +214,7 @@ class CreateSidecars(DynamicSchedulerEvent):
             nested_update(
                 jsonable_encoder(dynamic_sidecar_service_spec_base, exclude_unset=True),
                 jsonable_encoder(user_specific_service_spec, exclude_unset=True),
-                include=DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS,
+                include=_DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS,
             )
         )
         rabbit_message = ProgressRabbitMessageNode(
@@ -268,7 +268,7 @@ class CreateSidecars(DynamicSchedulerEvent):
             swarm_network_id=swarm_network_id,
             swarm_network_name=swarm_network_name,
         )
-        logger.debug(
+        _logger.debug(
             "dynamic-sidecar-proxy create_service_params %s",
             json_dumps(dynamic_sidecar_proxy_create_service_params),
         )
@@ -291,7 +291,7 @@ class WaitForSidecarAPI(DynamicSchedulerEvent):
     """
 
     @classmethod
-    async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
+    async def will_trigger(cls, _: FastAPI, scheduler_data: SchedulerData) -> bool:
         return (
             scheduler_data.dynamic_sidecar.was_dynamic_sidecar_started
             and not scheduler_data.dynamic_sidecar.is_healthy
@@ -308,7 +308,7 @@ class UpdateHealth(DynamicSchedulerEvent):
     """
 
     @classmethod
-    async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
+    async def will_trigger(cls, _: FastAPI, scheduler_data: SchedulerData) -> bool:
         return scheduler_data.dynamic_sidecar.was_dynamic_sidecar_started
 
     @classmethod
@@ -327,7 +327,7 @@ class GetStatus(DynamicSchedulerEvent):
     """
 
     @classmethod
-    async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
+    async def will_trigger(cls, _: FastAPI, scheduler_data: SchedulerData) -> bool:
         return (
             scheduler_data.dynamic_sidecar.status.current == DynamicSidecarStatus.OK
             and scheduler_data.dynamic_sidecar.is_ready
@@ -396,7 +396,7 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
     """
 
     @classmethod
-    async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
+    async def will_trigger(cls, _: FastAPI, scheduler_data: SchedulerData) -> bool:
         return (
             scheduler_data.dynamic_sidecar.status.current == DynamicSidecarStatus.OK
             and scheduler_data.dynamic_sidecar.is_ready
@@ -416,7 +416,7 @@ class CreateUserServices(DynamicSchedulerEvent):
     """
 
     @classmethod
-    async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
+    async def will_trigger(cls, _: FastAPI, scheduler_data: SchedulerData) -> bool:
         return (
             scheduler_data.dynamic_sidecar.is_service_environment_ready
             and not scheduler_data.dynamic_sidecar.compose_spec_submitted
@@ -424,7 +424,7 @@ class CreateUserServices(DynamicSchedulerEvent):
 
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
-        logger.debug(
+        _logger.debug(
             "Getting docker compose spec for service %s", scheduler_data.service_name
         )
 
@@ -492,7 +492,7 @@ class CreateUserServices(DynamicSchedulerEvent):
             swarm_stack_name=dynamic_sidecar_settings.SWARM_STACK_NAME,
         )
 
-        logger.debug(
+        _logger.debug(
             "Starting containers %s with compose-specs:\n%s",
             scheduler_data.service_name,
             compose_spec,
@@ -503,11 +503,16 @@ class CreateUserServices(DynamicSchedulerEvent):
         ) -> None:
             # TODO: detect when images are pulling and change the status
             # of the service to pulling
-            logger.debug("%s: %.2f %s", task_id, percent, message)
+            _logger.debug("%s: %.2f %s", task_id, percent, message)
 
-        await sidecars_client.create_containers(
-            dynamic_sidecar_endpoint, compose_spec, progress_create_containers
-        )
+        # TODO: continue below
+        # metrics_params = CreateServiceMetricsAdditionalParams()
+        # await sidecars_client.create_containers(
+        #     dynamic_sidecar_endpoint,
+        #     compose_spec,
+        #     metrics_params,
+        #     progress_create_containers,
+        # )
 
         # NOTE: when in READ ONLY mode disable the outputs watcher
         if scheduler_data.dynamic_sidecar.service_removal_state.can_save:
@@ -529,12 +534,12 @@ class CreateUserServices(DynamicSchedulerEvent):
             ),
             wait=wait_fixed(1),
             retry_error_cls=EntrypointContainerNotFoundError,
-            before_sleep=before_sleep_log(logger, logging.WARNING),
+            before_sleep=before_sleep_log(_logger, logging.WARNING),
         ):
             with attempt:
                 if scheduler_data.dynamic_sidecar.service_removal_state.was_removed:
                     # the service was removed while waiting for the operation to finish
-                    logger.warning(
+                    _logger.warning(
                         "Stopping `get_entrypoint_container_name` operation. "
                         "Will no try to start the service."
                     )
@@ -544,7 +549,7 @@ class CreateUserServices(DynamicSchedulerEvent):
                     dynamic_sidecar_endpoint=dynamic_sidecar_endpoint,
                     dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
                 )
-                logger.info(
+                _logger.info(
                     "Fetched container entrypoint name %s", entrypoint_container
                 )
 
@@ -568,7 +573,7 @@ class AttachProjectsNetworks(DynamicSchedulerEvent):
     """
 
     @classmethod
-    async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
+    async def will_trigger(cls, _: FastAPI, scheduler_data: SchedulerData) -> bool:
         return (
             scheduler_data.dynamic_sidecar.were_containers_created
             and not scheduler_data.dynamic_sidecar.is_project_network_attached
@@ -596,7 +601,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
     """
 
     @classmethod
-    async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
+    async def will_trigger(cls, _: FastAPI, scheduler_data: SchedulerData) -> bool:
         return scheduler_data.dynamic_sidecar.service_removal_state.can_remove
 
     @classmethod
