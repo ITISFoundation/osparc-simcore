@@ -13,6 +13,7 @@ import pytest
 from aiohttp import web
 from aioresponses import aioresponses as AioResponsesMock
 from aioresponses.core import CallbackResult
+from faker import Faker
 from models_library.api_schemas_storage import (
     FileMetaDataGet,
     FileUploadCompleteFutureResponse,
@@ -35,6 +36,7 @@ pytest_plugins = [
     "pytest_simcore.aioresponses_mocker",
 ]
 
+fake = Faker()
 
 # The adjacency list is defined as a dictionary with the key to the node and its list of successors
 FULL_PROJECT_PIPELINE_ADJACENCY: dict[str, list[str]] = {
