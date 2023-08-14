@@ -50,7 +50,8 @@ def wallet_id(faker: Faker) -> WalletID:
     return faker.pyint(min_value=1)
 
 
-async def test_create_cluster(
+@pytest.fixture
+def _base_configuration(
     docker_swarm: None,
     enabled_rabbitmq: None,
     aws_subnet_id: str,
@@ -58,22 +59,16 @@ async def test_create_cluster(
     aws_ami_id: str,
     aws_allowed_ec2_instance_type_names: list[str],
     mocked_redis_server: None,
-    clusters_keeper_rabbitmq_rpc_client: RabbitMQClient,
     initialized_app: FastAPI,
+) -> None:
+    ...
+
+
+async def _assert_cluster_instance_created(
     ec2_client: EC2Client,
     user_id: UserID,
     wallet_id: WalletID,
-):
-    # send rabbitmq rpc to create_cluster
-    rpc_response = await clusters_keeper_rabbitmq_rpc_client.rpc_request(
-        CLUSTERS_KEEPER_NAMESPACE,
-        RPCMethodName("create_cluster"),
-        user_id=user_id,
-        wallet_id=wallet_id,
-    )
-    assert rpc_response
-    # wait for response
-    # check we do have a new machine in AWS
+) -> None:
     instances = await ec2_client.describe_instances()
     assert len(instances["Reservations"]) == 1
     assert "Instances" in instances["Reservations"][0]
@@ -94,3 +89,23 @@ async def test_create_cluster(
     assert isinstance(parse_result, Result)
     assert parse_result["user_id"] == user_id
     assert parse_result["wallet_id"] == wallet_id
+
+
+async def test_create_cluster(
+    _base_configuration: None,
+    clusters_keeper_rabbitmq_rpc_client: RabbitMQClient,
+    ec2_client: EC2Client,
+    user_id: UserID,
+    wallet_id: WalletID,
+):
+    # send rabbitmq rpc to create_cluster
+    rpc_response = await clusters_keeper_rabbitmq_rpc_client.rpc_request(
+        CLUSTERS_KEEPER_NAMESPACE,
+        RPCMethodName("create_cluster"),
+        user_id=user_id,
+        wallet_id=wallet_id,
+    )
+    assert rpc_response
+    # wait for response
+    # check we do have a new machine in AWS
+    await _assert_cluster_instance_created(ec2_client, user_id, wallet_id)
