@@ -21,16 +21,9 @@ from models_library.api_schemas_storage import (
     UploadedPart,
 )
 from pydantic import parse_obj_as
-from pytest_simcore.services_api_mocks_for_aiohttp_clients import (
-    storage_v0_service_mock,
-)
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.files import ClientFileUploadSchema, File
-
-pytest_plugins = [
-    "pytest_simcore.aioresponses_mocker",
-]
 
 fake = Faker()
 
