@@ -147,7 +147,10 @@ async def test_get_upload_links(
 
     assert storage_v0_service_mock  # nosec
 
-    msg = {"filename": DummyFileData.file().filename, "filesize": "100000"}
+    msg = {
+        "filename": DummyFileData.file().filename,
+        "filesize": DummyFileData.file_size(),
+    }
 
     response = await client.post(f"{API_VTAG}/files/content", json=msg, auth=auth)
 

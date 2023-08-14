@@ -66,6 +66,10 @@ class DummyFileData:
         )
 
     @classmethod
+    def file_size(cls) -> int:
+        return cls._file_size
+
+    @classmethod
     def uploaded_parts(cls) -> FileUploadCompletionBody:
         return FileUploadCompletionBody(
             parts=[UploadedPart(number=ii + 1, e_tag=fake.uuid4()) for ii in range(5)]
