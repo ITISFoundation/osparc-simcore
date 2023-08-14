@@ -1,4 +1,5 @@
 import logging
+from typing import Annotated
 
 from aiodocker.networks import DockerNetwork
 from fastapi import APIRouter, Depends, FastAPI
@@ -9,6 +10,7 @@ from pydantic.main import BaseModel
 from simcore_sdk.node_ports_v2.port_utils import is_file_type
 
 from ..core.docker_utils import docker_client
+from ..modules.inputs import disable_inputs_state_pulling, enable_inputs_state_pulling
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.outputs import (
     OutputsContext,
@@ -17,14 +19,14 @@ from ..modules.outputs import (
 )
 from ._dependencies import get_application, get_mounted_volumes, get_outputs_context
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class CreateDirsRequestItem(BaseModel):
     outputs_labels: dict[str, ServiceOutput]
 
 
-class PatchDirectoryWatcherItem(BaseModel):
+class PatchPortsIOItem(BaseModel):
     is_enabled: bool
 
 
@@ -47,19 +49,25 @@ router = APIRouter()
 
 
 @router.patch(
-    "/containers/directory-watcher",
-    summary="Enable/disable directory-watcher event propagation",
+    "/containers/ports/io",
+    summary="Enable/disable ports i/o",
     response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def toggle_directory_watcher(
-    patch_directory_watcher_item: PatchDirectoryWatcherItem,
-    app: FastAPI = Depends(get_application),
+async def toggle_ports_io(
+    patch_ports_io_item: PatchPortsIOItem,
+    app: Annotated[FastAPI, Depends(get_application)],
 ) -> None:
-    if patch_directory_watcher_item.is_enabled:
-        enable_outputs_watcher(app)
+    """enables or disables the following:
+    - output ports pushing data
+    - inputs ports from pulling data
+    """
+    if patch_ports_io_item.is_enabled:
+        await enable_outputs_watcher(app)
+        enable_inputs_state_pulling(app)
     else:
-        disable_outputs_watcher(app)
+        await disable_outputs_watcher(app)
+        disable_inputs_state_pulling(app)
 
 
 @router.post(
@@ -75,14 +83,14 @@ async def toggle_directory_watcher(
 )
 async def create_output_dirs(
     request_mode: CreateDirsRequestItem,
-    mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
-    outputs_context: OutputsContext = Depends(get_outputs_context),
+    mounted_volumes: Annotated[MountedVolumes, Depends(get_mounted_volumes)],
+    outputs_context: Annotated[OutputsContext, Depends(get_outputs_context)],
 ) -> None:
     outputs_path = mounted_volumes.disk_outputs_path
     file_type_port_keys = []
     non_file_port_keys = []
     for port_key, service_output in request_mode.outputs_labels.items():
-        logger.debug("Parsing output labels, detected: %s", f"{port_key=}")
+        _logger.debug("Parsing output labels, detected: %s", f"{port_key=}")
         if is_file_type(service_output.property_type):
             dir_to_create = outputs_path / port_key
             dir_to_create.mkdir(parents=True, exist_ok=True)
@@ -90,7 +98,9 @@ async def create_output_dirs(
         else:
             non_file_port_keys.append(port_key)
 
-    logger.debug("Setting: %s, %s", f"{file_type_port_keys=}", f"{non_file_port_keys=}")
+    _logger.debug(
+        "Setting: %s, %s", f"{file_type_port_keys=}", f"{non_file_port_keys=}"
+    )
     await outputs_context.set_file_type_port_keys(file_type_port_keys)
     outputs_context.non_file_type_port_keys = non_file_port_keys
 
@@ -104,7 +114,7 @@ async def create_output_dirs(
 async def attach_container_to_network(
     request: Request,
     item: AttachContainerToNetworkItem,
-    container_id: str = PathParam(..., alias="id"),
+    container_id: Annotated[str, PathParam(..., alias="id")],
 ) -> None:
     assert request  # nosec
 
@@ -118,7 +128,7 @@ async def attach_container_to_network(
         }
 
         if item.network_id in attached_network_ids:
-            logger.debug(
+            _logger.debug(
                 "Container %s already attached to network %s",
                 container_id,
                 item.network_id,
@@ -144,7 +154,7 @@ async def attach_container_to_network(
 )
 async def detach_container_from_network(
     item: DetachContainerFromNetworkItem,
-    container_id: str = PathParam(..., alias="id"),
+    container_id: Annotated[str, PathParam(..., alias="id")],
 ) -> None:
     async with docker_client() as docker:
         container_instance = await docker.containers.get(container_id)
@@ -156,7 +166,7 @@ async def detach_container_from_network(
         }
 
         if item.network_id not in attached_network_ids:
-            logger.debug(
+            _logger.debug(
                 "Container %s already detached from network %s",
                 container_id,
                 item.network_id,
