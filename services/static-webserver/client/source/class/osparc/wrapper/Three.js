@@ -89,11 +89,11 @@ qx.Class.define("osparc.wrapper.Three", {
 
         this.__camera = new THREE.PerspectiveCamera();
         this.__camera.far = 10000;
-        this.__camera.up.set(0, 0, 1);
+        // this.__camera.up.set(0, 0, 1); // Z up
         this.__scene.add(this.__camera);
 
         this.__addCameraLight();
-        this.__addGridHelper();
+        // this.__addGridHelper();
         this.__addAxesHelper();
 
         this.__mouse = new THREE.Vector2();
@@ -332,7 +332,8 @@ qx.Class.define("osparc.wrapper.Three", {
     },
 
     __addCameraLight: function() {
-      const pointLight = new THREE.PointLight(0xFFFFFF);
+      // color and intensity
+      const pointLight = new THREE.PointLight(0xFFFFFF, 2.5);
       pointLight.position.set(1, 1, 2);
       this.__camera.add(pointLight);
     },
