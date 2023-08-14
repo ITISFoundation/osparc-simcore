@@ -119,4 +119,4 @@ def cancel_on_disconnect(handler: _HandlerWithRequestArg):
     return wrapper
 
 
-__all__: tuple[str, ...] = "cancel_on_disconnect"
+__all__: tuple[str, ...] = ("cancel_on_disconnect",)
