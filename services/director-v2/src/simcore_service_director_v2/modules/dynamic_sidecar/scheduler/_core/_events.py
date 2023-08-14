@@ -297,7 +297,8 @@ class WaitForSidecarAPI(DynamicSchedulerEvent):
     """
 
     @classmethod
-    async def will_trigger(cls, _: FastAPI, scheduler_data: SchedulerData) -> bool:
+    async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
+        _ = app
         return (
             scheduler_data.dynamic_sidecar.was_dynamic_sidecar_started
             and not scheduler_data.dynamic_sidecar.is_healthy
@@ -314,7 +315,8 @@ class UpdateHealth(DynamicSchedulerEvent):
     """
 
     @classmethod
-    async def will_trigger(cls, _: FastAPI, scheduler_data: SchedulerData) -> bool:
+    async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
+        _ = app
         return scheduler_data.dynamic_sidecar.was_dynamic_sidecar_started
 
     @classmethod
@@ -333,7 +335,8 @@ class GetStatus(DynamicSchedulerEvent):
     """
 
     @classmethod
-    async def will_trigger(cls, _: FastAPI, scheduler_data: SchedulerData) -> bool:
+    async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
+        _ = app
         return (
             scheduler_data.dynamic_sidecar.status.current == DynamicSidecarStatus.OK
             and scheduler_data.dynamic_sidecar.is_ready
@@ -402,7 +405,8 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
     """
 
     @classmethod
-    async def will_trigger(cls, _: FastAPI, scheduler_data: SchedulerData) -> bool:
+    async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
+        _ = app
         return (
             scheduler_data.dynamic_sidecar.status.current == DynamicSidecarStatus.OK
             and scheduler_data.dynamic_sidecar.is_ready
@@ -422,7 +426,8 @@ class CreateUserServices(DynamicSchedulerEvent):
     """
 
     @classmethod
-    async def will_trigger(cls, _: FastAPI, scheduler_data: SchedulerData) -> bool:
+    async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
+        _ = app
         return (
             scheduler_data.dynamic_sidecar.is_service_environment_ready
             and not scheduler_data.dynamic_sidecar.compose_spec_submitted
@@ -598,7 +603,8 @@ class AttachProjectsNetworks(DynamicSchedulerEvent):
     """
 
     @classmethod
-    async def will_trigger(cls, _: FastAPI, scheduler_data: SchedulerData) -> bool:
+    async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
+        _ = app
         return (
             scheduler_data.dynamic_sidecar.were_containers_created
             and not scheduler_data.dynamic_sidecar.is_project_network_attached
@@ -626,7 +632,8 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
     """
 
     @classmethod
-    async def will_trigger(cls, _: FastAPI, scheduler_data: SchedulerData) -> bool:
+    async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
+        _ = app
         return scheduler_data.dynamic_sidecar.service_removal_state.can_remove
 
     @classmethod

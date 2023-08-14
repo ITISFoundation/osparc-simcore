@@ -274,7 +274,7 @@ async def test_put_volumes(
         pytest.param(
             "post_containers_tasks",
             "/containers",
-            dict(compose_spec="some_fake_compose_as_str"),
+            {"compose_spec": "some_fake_compose_as_str", "metrics_params": {}},
             id="post_containers_tasks",
         ),
         pytest.param(
