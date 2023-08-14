@@ -91,13 +91,12 @@ async def _assert_cluster_instance_created(
     assert parse_result["wallet_id"] == wallet_id
 
 
-async def test_create_cluster(
-    _base_configuration: None,
+async def _create_cluster(
     clusters_keeper_rabbitmq_rpc_client: RabbitMQClient,
     ec2_client: EC2Client,
     user_id: UserID,
     wallet_id: WalletID,
-):
+) -> None:
     # send rabbitmq rpc to create_cluster
     rpc_response = await clusters_keeper_rabbitmq_rpc_client.rpc_request(
         CLUSTERS_KEEPER_NAMESPACE,
@@ -109,3 +108,22 @@ async def test_create_cluster(
     # wait for response
     # check we do have a new machine in AWS
     await _assert_cluster_instance_created(ec2_client, user_id, wallet_id)
+
+
+async def test_create_cluster(
+    _base_configuration: None,
+    clusters_keeper_rabbitmq_rpc_client: RabbitMQClient,
+    ec2_client: EC2Client,
+    user_id: UserID,
+    wallet_id: WalletID,
+):
+    await _create_cluster(
+        clusters_keeper_rabbitmq_rpc_client, ec2_client, user_id, wallet_id
+    )
+
+
+async def test_cluster_heartbeat(
+    _base_configuration: None,
+    clusters_keeper_rabbitmq_rpc_client: RabbitMQClient,
+):
+    ...
