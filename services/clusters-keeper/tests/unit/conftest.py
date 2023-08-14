@@ -95,6 +95,26 @@ def app_environment(
 
 
 @pytest.fixture
+def disable_clusters_management_background_task(
+    mocker: MockerFixture,
+) -> Iterator[None]:
+    start_background_task = mocker.patch(
+        "simcore_service_clusters_keeper.clusters_management_task.start_periodic_task",
+        autospec=True,
+    )
+
+    stop_background_task = mocker.patch(
+        "simcore_service_clusters_keeper.clusters_management_task.stop_periodic_task",
+        autospec=True,
+    )
+
+    yield
+
+    start_background_task.assert_called_once()
+    stop_background_task.assert_called_once()
+
+
+@pytest.fixture
 def disabled_rabbitmq(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.delenv("RABBIT_HOST")
     monkeypatch.delenv("RABBIT_USER")

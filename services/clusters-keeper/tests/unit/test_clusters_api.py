@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 
 
-# Selection of core and tool services started in this swarm fixture (integration)
 import asyncio
 import datetime
 from collections.abc import Callable
@@ -196,7 +195,6 @@ async def test_cluster_heartbeat_on_non_existing_cluster_raises(
     clusters_keeper_rabbitmq_rpc_client: RabbitMQClient,
     ec2_client: EC2Client,
     user_id: UserID,
-    wallet_id: WalletID,
 ):
     with pytest.raises(Ec2InstanceNotFoundError):
         await _send_cluster_heartbeat(
