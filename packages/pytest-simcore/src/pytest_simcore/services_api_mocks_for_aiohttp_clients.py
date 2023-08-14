@@ -20,7 +20,6 @@ from models_library.api_schemas_storage import (
     ETag,
     FileMetaDataGet,
     FileUploadCompleteFutureResponse,
-    FileUploadCompleteLinks,
     FileUploadCompleteResponse,
     FileUploadCompleteState,
     FileUploadCompletionBody,
@@ -51,7 +50,6 @@ class DummyFileData:
 
     _file_id: UUID = UUID("3fa85f64-5717-4562-b3fc-2c963f66afa6")
     _file_name: str = "myfile.txt"
-    _future_id: str = "7182bd56-3297-4dcb-8622-2c5cf31b39b3"
     _final_e_tag: ETag = "07d1c1a4-b073-4be7-b022-f405d90e99aa"
     _file_size: int = 100000
 
@@ -74,30 +72,8 @@ class DummyFileData:
         )
 
     @classmethod
-    def storage_complete_link(cls) -> FileUploadCompleteLinks:
-        return parse_obj_as(
-            FileUploadCompleteLinks,
-            {
-                "state": f"http://storage:8080/locations/0/files/{cls.file().quoted_storage_file_id}:complete"
-            },
-        )
-
-    @classmethod
-    def storage_complete_link_future(cls) -> FileUploadCompleteLinks:
-        return parse_obj_as(
-            FileUploadCompleteLinks,
-            {
-                "state": f"http://storage:8080/locations/0/files/{cls.file().quoted_storage_file_id}:complete/futures/{cls._future_id}"
-            },
-        )
-
-    @classmethod
     def final_e_tag(cls) -> ETag:
         return cls._final_e_tag
-
-    @classmethod
-    def storage_abort_link(cls) -> str:
-        return f"http://storage:8080/locations/0/files/{cls.file().quoted_storage_file_id}:abort"
 
 
 # The adjacency list is defined as a dictionary with the key to the node and its list of successors
