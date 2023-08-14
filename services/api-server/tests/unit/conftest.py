@@ -35,6 +35,10 @@ from simcore_service_api_server.core.settings import ApplicationSettings
 
 ## APP + SYNC/ASYNC CLIENTS --------------------------------------------------
 
+pytest_plugins = [
+    "pytest_simcore.services_api_mocks_for_aiohttp_clients",
+]
+
 
 @pytest.fixture
 def app_environment(

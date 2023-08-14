@@ -4,21 +4,30 @@ import io
 import logging
 from textwrap import dedent
 from typing import IO, Annotated, Final
+from urllib.parse import urlparse
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Body, Depends
 from fastapi import File as FileParam
 from fastapi import Header, Request, UploadFile, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse
-from models_library.projects_nodes_io import StorageFileID
-from pydantic import ValidationError, parse_obj_as
+from models_library.api_schemas_storage import (
+    ETag,
+    FileUploadCompleteLinks,
+    FileUploadCompletionBody,
+    LinkType,
+)
+from pydantic import AnyUrl, ByteSize, PositiveInt, ValidationError, parse_obj_as
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 from simcore_sdk.node_ports_common.filemanager import (
     UploadableFileObject,
     UploadedFile,
     UploadedFolder,
+    abort_upload,
+    complete_file_upload,
+    get_upload_links_from_s3,
 )
 from simcore_sdk.node_ports_common.filemanager import upload_path as storage_upload_path
 from starlette.responses import RedirectResponse
@@ -26,7 +35,12 @@ from starlette.responses import RedirectResponse
 from ..._meta import API_VTAG
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
-from ...models.schemas.files import File
+from ...models.schemas.files import (
+    ClientFile,
+    ClientFileUploadLinks,
+    ClientFileUploadSchema,
+    File,
+)
 from ...services.storage import StorageApi, StorageFileMetaData, to_file_api_model
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
@@ -146,9 +160,7 @@ async def upload_file(
         user_id=user_id,
         store_id=SIMCORE_LOCATION,
         store_name=None,
-        s3_object=parse_obj_as(
-            StorageFileID, f"api/{file_meta.id}/{file_meta.filename}"
-        ),
+        s3_object=file_meta.storage_file_id,
         path_to_upload=UploadableFileObject(file.file, file.filename, file_size),
         io_log_redirect_cb=None,
     )
@@ -168,6 +180,136 @@ async def upload_file(
 async def upload_files(files: list[UploadFile] = FileParam(...)):
     """Uploads multiple files to the system"""
     raise NotImplementedError
+
+
+@router.post(
+    "/content",
+    response_model=ClientFileUploadSchema,
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+@cancel_on_disconnect
+async def get_upload_links(
+    request: Request,
+    client_file: ClientFile,
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+):
+    """Get upload links for uploading a file to storage
+
+    Arguments:
+        request -- Request object
+        client_file -- ClientFile object
+        user_id -- User Id
+
+    Returns:
+        FileUploadSchema
+    """
+    assert request  # nosec
+    file_meta: File = await File.create_from_client_file(
+        client_file,
+        datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    )
+    _, upload_links = await get_upload_links_from_s3(
+        user_id=user_id,
+        store_name=None,
+        store_id=SIMCORE_LOCATION,
+        s3_object=file_meta.storage_file_id,
+        client_session=None,
+        link_type=LinkType.PRESIGNED,
+        file_size=ByteSize(client_file.filesize),
+        is_directory=False,
+    )
+    complete_upload_link: AnyUrl = parse_obj_as(
+        AnyUrl,
+        str(request.url_for("complete_multipart_upload", file_id=str(file_meta.id))),
+    )
+    abort_upload_link: AnyUrl = parse_obj_as(
+        AnyUrl,
+        str(request.url_for("abort_multipart_upload", file_id=str(file_meta.id))),
+    )
+
+    result: ClientFileUploadSchema = ClientFileUploadSchema(
+        storage_upload_schema=upload_links,
+        file=file_meta,
+        links=ClientFileUploadLinks(
+            abort_upload=abort_upload_link, complete_upload=complete_upload_link
+        ),
+    )
+    return result
+
+
+@router.post(
+    "/{file_id}:complete",
+    response_model=File,
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+@cancel_on_disconnect
+async def complete_multipart_upload(
+    request: Request,
+    file_id: UUID,
+    file: File,
+    uploaded_parts: FileUploadCompletionBody,
+    completion_link: FileUploadCompleteLinks,
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+):
+    """Complete multipart upload
+
+    Arguments:
+        request: The Request object
+        file_id: The Storage id
+        file: The File object which is to be completed
+        uploaded_parts: The uploaded parts
+        completion_link: The completion link -- _description_
+        user_id: The user id
+
+    Returns:
+        The completed File object
+    """
+    assert request  # nosec
+    assert user_id  # nosec
+
+    if not file.id == file_id:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="The File's id did not match the paths file_id",
+        )
+    complete_path: str = urlparse(str(completion_link.state)).path
+    if not complete_path.endswith(file.quoted_storage_file_id):
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="The completion_link was invalid",
+        )
+
+    e_tag: ETag = await complete_file_upload(
+        uploaded_parts=uploaded_parts.parts,
+        upload_completion_link=completion_link.state,
+    )
+
+    file.checksum = e_tag
+    return file
+
+
+@router.post(
+    "/{file_id}:abort",
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+@cancel_on_disconnect
+async def abort_multipart_upload(
+    request: Request,
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    abort_upload_link: Annotated[AnyUrl, Body(..., embed=True)],
+):
+    """Abort a multipart upload
+
+    Arguments:
+        request: The Request
+        file_id: The StorageFileID
+        upload_links: The FileUploadSchema
+        user_id: The user id
+
+    """
+    assert request  # nosec
+    assert user_id  # nosec
+    await abort_upload(abort_upload_link=abort_upload_link)
 
 
 @router.get("/{file_id}", response_model=File, responses={**_COMMON_ERROR_RESPONSES})
