@@ -323,8 +323,6 @@ wrapt==1.15.0
     # via aws-xray-sdk
 xmltodict==0.13.0
     # via moto
-aioresponses==0.7.4
-
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
