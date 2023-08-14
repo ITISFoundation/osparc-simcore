@@ -488,6 +488,10 @@ async def storage_v0_service_mock(
         r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+complete/futures/.+"
     )
 
+    storage_abort_link = re.compile(
+        r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+abort"
+    )
+
     aioresponses_mocker.get(
         get_file_metadata_pattern,
         status=web.HTTPOk.status_code,
@@ -551,7 +555,7 @@ async def storage_v0_service_mock(
     )
 
     aioresponses_mocker.post(
-        DummyFileData.storage_abort_link(),
+        storage_abort_link,
         status=web.HTTPOk.status_code,
     )
 

@@ -170,53 +170,10 @@ async def test_get_upload_links(
         payload: dict[str, str] = response.json()
 
         assert response.status_code == status.HTTP_200_OK
-        _ = File.parse_obj(payload)
+        _ = parse_obj_as(File, payload)
     elif follow_up_request == "abort":
-        msg = {"abort_upload_link": DummyFileData.storage_abort_link()}
+        msg = {"abort_upload_link": str(upload_schema.upload_schema.links.abort_upload)}
         response = await client.post(
             upload_schema.links.abort_upload, json=msg, auth=auth
         )
         assert response.status_code == status.HTTP_200_OK
-
-
-async def test_complete_multipart_upload(
-    client: AsyncClient,
-    auth: httpx.BasicAuth,
-    storage_v0_service_mock: AioResponsesMock,
-):
-    """Test that we can complete multipart upload directly to S3"""
-
-    assert storage_v0_service_mock  # nosec
-
-    msg = {
-        "file": DummyFileData.file().dict(),
-        "uploaded_parts": DummyFileData.uploaded_parts().dict(),
-        "completion_link": DummyFileData.storage_complete_link().dict(),
-    }
-    msg["file"]["id"] = str(msg["file"]["id"])
-
-    response = await client.post(
-        f"{API_VTAG}/files/{str(DummyFileData.file().id)}:complete", json=msg, auth=auth
-    )
-
-    payload: dict[str, str] = response.json()
-
-    assert response.status_code == status.HTTP_200_OK
-    _ = File.parse_obj(payload)
-
-
-@pytest.mark.testit
-async def test_delete_multipart_upload(
-    client: AsyncClient,
-    auth: httpx.BasicAuth,
-    storage_v0_service_mock: AioResponsesMock,
-):
-    """Test that we can abort multipart upload directly to S3"""
-
-    assert storage_v0_service_mock  # nosec
-
-    msg = {"abort_upload_link": DummyFileData.storage_abort_link()}
-    response = await client.post(
-        f"{API_VTAG}/files/{str(DummyFileData.file().id)}:abort", json=msg, auth=auth
-    )
-    assert response.status_code == status.HTTP_200_OK
