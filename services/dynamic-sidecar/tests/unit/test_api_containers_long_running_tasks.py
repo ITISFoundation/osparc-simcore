@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager, contextmanager
 from inspect import getmembers, isfunction
 from pathlib import Path
 from typing import Any, Final
+from unittest.mock import AsyncMock
 
 import aiodocker
 import faker
