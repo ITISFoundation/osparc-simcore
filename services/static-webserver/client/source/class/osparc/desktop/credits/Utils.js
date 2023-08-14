@@ -58,7 +58,7 @@ qx.Class.define("osparc.desktop.credits.Utils", {
       const wallets = store.getWallets();
       const activeWallets = wallets.filter(wallet => wallet.getStatus() === "ACTIVE");
       if (activeWallets.length === 1) {
-        const found = walletSelector.getSelectables().find(sbItem => sbItem.walletId === activeWallets[0]);
+        const found = walletSelector.getSelectables().find(sbItem => sbItem.walletId === activeWallets[0].getWalletId());
         if (found) {
           walletSelector.setSelection([found]);
           return true;
