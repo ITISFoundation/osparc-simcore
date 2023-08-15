@@ -19,9 +19,6 @@ _FAST_POLL_INTERVAL = 1
 @pytest.fixture
 def app_environment(
     app_environment: EnvVarsDict,
-    disabled_rabbitmq: None,
-    mocked_aws_server_envs: None,
-    mocked_redis_server: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     return app_environment | setenvs_from_dict(
@@ -38,7 +35,9 @@ def mock_background_task(mocker: MockerFixture) -> mock.Mock:
 
 
 async def test_clusters_management_task_created_and_deleted(
-    app_environment: EnvVarsDict,
+    disabled_rabbitmq: None,
+    mocked_aws_server_envs: None,
+    mocked_redis_server: None,
     mock_background_task: mock.Mock,
     initialized_app: FastAPI,
     app_settings: ApplicationSettings,

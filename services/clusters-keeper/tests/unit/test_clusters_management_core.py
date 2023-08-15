@@ -37,8 +37,6 @@ _FAST_TIME_BEFORE_TERMINATION_SECONDS: Final[int] = 10
 @pytest.fixture
 def app_environment(
     app_environment: EnvVarsDict,
-    disabled_rabbitmq: None,
-    mocked_redis_server: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     # fast interval
@@ -58,6 +56,8 @@ def _base_configuration(
     aws_security_group_id: str,
     aws_ami_id: str,
     aws_allowed_ec2_instance_type_names: list[str],
+    disabled_rabbitmq: None,
+    mocked_redis_server: None,
 ) -> None:
     ...
 

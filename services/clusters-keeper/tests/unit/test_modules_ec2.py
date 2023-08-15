@@ -246,7 +246,7 @@ async def test_get_instances(
     assert not all_instances["Reservations"]
     assert (
         await clusters_keeper_ec2.get_instances(
-            app_settings.CLUSTERS_KEEPER_EC2_INSTANCES, {}
+            app_settings.CLUSTERS_KEEPER_EC2_INSTANCES, tags={}
         )
         == []
     )
