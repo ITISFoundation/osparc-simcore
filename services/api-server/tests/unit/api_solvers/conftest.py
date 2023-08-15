@@ -140,7 +140,7 @@ def mocked_catalog_service_api(
     respx_mock.get(
         # NOTE: regex does not work even if tested https://regex101.com/r/drVAGr/1
         # path__regex=r"/v0/services/(?P<service_key>[\w/%]+)/(?P<service_version>[\d\.]+)/ports\?user_id=(?P<user_id>\d+)",
-        path__startswith="/v0/services/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/2.1.4/ports",
+        path__startswith="/v0/services/simcore/services/comp/itis/sleeper/2.1.4/ports",
         name="list_service_ports",
     ).respond(
         200,
