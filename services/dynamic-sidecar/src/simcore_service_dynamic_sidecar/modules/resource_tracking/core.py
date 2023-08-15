@@ -11,12 +11,13 @@ from models_library.rabbitmq_messages import (
 from models_library.services import ServiceType
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import NonNegativeFloat
-from servicelib.background_task import stop_periodic_task
+from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.logging_utils import log_context
 
 from ...core.rabbitmq import post_resource_tracking_message
 from ...core.settings import ApplicationSettings
 from ._models import ResourceTrackingState
+from .settings import ResourceTrackingSettings
 
 _STOP_WORKER_TIMEOUT_S: Final[NonNegativeFloat] = 1.0
 
@@ -38,18 +39,30 @@ async def stop_heart_beat_task(app: FastAPI) -> None:
             )
 
 
+async def start_heart_beat_task(app: FastAPI) -> None:
+    settings: ResourceTrackingSettings = app.state.settings.RESOURCE_TRACKING
+    resource_tracking: ResourceTrackingState = app.state.resource_tracking
+
+    with log_context(_logger, logging.DEBUG, "resource tracking startup"):
+        resource_tracking.heart_beat_task = start_periodic_task(
+            heart_beat_task,
+            app=app,
+            interval=settings.RESOURCE_TRACKING_HEARTBEAT_INTERVAL,
+            task_name="resource_tracking_heart_beat",
+        )
+
+
 async def send_service_stopped(
     app: FastAPI, simcore_platform_status: SimcorePlatformStatus
 ) -> None:
-    settings: ApplicationSettings = _get_settings(app)
+    await stop_heart_beat_task(app)
 
+    settings: ApplicationSettings = _get_settings(app)
     message = RabbitResourceTrackingStoppedMessage(
         service_run_id=settings.DY_SIDECAR_RUN_ID,
         simcore_platform_status=simcore_platform_status,
     )
     await post_resource_tracking_message(app, message)
-
-    await stop_heart_beat_task(app)
 
 
 async def send_service_started(
@@ -77,11 +90,11 @@ async def send_service_started(
     )
     await post_resource_tracking_message(app, message)
 
+    await start_heart_beat_task(app)
+
 
 async def heart_beat_task(app: FastAPI):
-    # NOTE: heartbeat is sent regardless of the status of the containers
-    # while this sidecar is active it will be sent
-    # Should this be different?
+    # TODO: make sure heart beat is only sent if containers are OK
 
     settings: ApplicationSettings = _get_settings(app)
 
