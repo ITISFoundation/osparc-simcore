@@ -50,7 +50,7 @@ async function runTutorial () {
 
 
     // open kember viewer
-    await tutorial.openNode(1);
+    await tutorial.openNode(2);
 
     await tutorial.waitFor(2000);
     const frame = await tutorial.getIframe(nodeIdViewer);
@@ -72,9 +72,7 @@ async function runTutorial () {
 
     // check output
     const outFiles2 = [
-      "Hear_Rate.csv",
-      "Parasympathetic_Cell_Activity.csv",
-      "Table_Data.csv"
+      "output.zip"
     ];
     await tutorial.checkNodeOutputs(1, outFiles2);
   }
