@@ -295,6 +295,7 @@ async def complete_multipart_upload(
 @cancel_on_disconnect
 async def abort_multipart_upload(
     request: Request,
+    file_id: UUID,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     abort_upload_link: Annotated[AnyUrl, Body(..., embed=True)],
 ):
@@ -309,6 +310,7 @@ async def abort_multipart_upload(
     """
     assert request  # nosec
     assert user_id  # nosec
+    assert file_id  # nosec
     await abort_upload(abort_upload_link=abort_upload_link)
 
 
