@@ -1,6 +1,5 @@
 import datetime
 import logging
-from dataclasses import asdict
 
 from fastapi import FastAPI
 from models_library.users import UserID
@@ -28,14 +27,13 @@ async def create_cluster(app: FastAPI, *, user_id: UserID, wallet_id: WalletID):
         ec2_client = get_ec2_client(app)
         app_settings = get_application_settings(app)
         assert app_settings.CLUSTERS_KEEPER_EC2_INSTANCES  # nosec
-        ec2_instances = await ec2_client.start_aws_instance(
+        return await ec2_client.start_aws_instance(
             app_settings.CLUSTERS_KEEPER_EC2_INSTANCES,
             instance_type="t2.micro",
             tags=creation_ec2_tags(app_settings, user_id=user_id, wallet_id=wallet_id),
             startup_script="",
             number_of_instances=1,
         )
-    return [asdict(i) for i in ec2_instances]
 
 
 async def get_all_clusters(app: FastAPI) -> list[EC2InstanceData]:

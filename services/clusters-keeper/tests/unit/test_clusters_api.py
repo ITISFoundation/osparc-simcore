@@ -16,8 +16,10 @@ from parse import Result, search
 from simcore_service_clusters_keeper.clusters_api import (
     cluster_heartbeat,
     create_cluster,
+    delete_clusters,
 )
 from simcore_service_clusters_keeper.core.errors import Ec2InstanceNotFoundError
+from simcore_service_clusters_keeper.models import EC2InstanceData
 from simcore_service_clusters_keeper.utils.ec2 import HEARTBEAT_TAG_KEY
 from types_aiobotocore_ec2 import EC2Client
 
@@ -81,11 +83,12 @@ async def _create_cluster(
     ec2_client: EC2Client,
     user_id: UserID,
     wallet_id: WalletID,
-) -> None:
+) -> list[EC2InstanceData]:
     created_clusters = await create_cluster(app, user_id=user_id, wallet_id=wallet_id)
     assert len(created_clusters) == 1
     # check we do have a new machine in AWS
     await _assert_cluster_instance_created(ec2_client, user_id, wallet_id)
+    return created_clusters
 
 
 async def test_create_cluster(
@@ -147,3 +150,36 @@ async def test_cluster_heartbeat_on_non_existing_cluster_raises(
 ):
     with pytest.raises(Ec2InstanceNotFoundError):
         await cluster_heartbeat(initialized_app, user_id=user_id)
+
+
+async def _assert_all_clusters_terminated(
+    ec2_client: EC2Client,
+) -> None:
+    described_instances = await ec2_client.describe_instances()
+    if "Reservations" not in described_instances:
+        print("no reservations on AWS. ok.")
+        return
+
+    for reservation in described_instances["Reservations"]:
+        if "Instances" not in reservation:
+            print("no instance in reservation on AWS, weird but ok.")
+            continue
+
+        for instance in reservation["Instances"]:
+            assert "State" in instance
+            assert "Name" in instance["State"]
+            assert instance["State"]["Name"] == "terminated"
+
+
+async def test_delete_cluster(
+    _base_configuration: None,
+    ec2_client: EC2Client,
+    user_id: UserID,
+    wallet_id: WalletID,
+    initialized_app: FastAPI,
+):
+    created_instances = await _create_cluster(
+        initialized_app, ec2_client, user_id, wallet_id
+    )
+    await delete_clusters(initialized_app, instances=created_instances)
+    await _assert_all_clusters_terminated(ec2_client)
