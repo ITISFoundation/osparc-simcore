@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import asyncio
 from typing import Final
 
 import pytest
@@ -10,10 +11,14 @@ from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from servicelib.rabbitmq import RabbitMQClient
-from simcore_service_clusters_keeper.clusters_api import create_cluster
+from simcore_service_clusters_keeper.clusters_api import (
+    cluster_heartbeat,
+    create_cluster,
+)
 from simcore_service_clusters_keeper.clusters_management_core import check_clusters
+from simcore_service_clusters_keeper.models import EC2InstanceData
 from types_aiobotocore_ec2 import EC2Client
+from types_aiobotocore_ec2.literals import InstanceStateNameType
 
 
 @pytest.fixture
@@ -33,7 +38,6 @@ _FAST_TIME_BEFORE_TERMINATION_SECONDS: Final[int] = 10
 def app_environment(
     app_environment: EnvVarsDict,
     disabled_rabbitmq: None,
-    mocked_aws_server_envs: None,
     mocked_redis_server: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
@@ -58,10 +62,30 @@ def _base_configuration(
     ...
 
 
+async def _assert_cluster_exist_and_state(
+    ec2_client: EC2Client,
+    *,
+    instances: list[EC2InstanceData],
+    state: InstanceStateNameType,
+) -> None:
+    described_instances = await ec2_client.describe_instances(
+        InstanceIds=[i.id for i in instances]
+    )
+    assert described_instances
+    assert "Reservations" in described_instances
+
+    for reservation in described_instances["Reservations"]:
+        assert "Instances" in reservation
+
+        for instance in reservation["Instances"]:
+            assert "State" in instance
+            assert "Name" in instance["State"]
+            assert instance["State"]["Name"] == state
+
+
 async def test_cluster_management_core_properly_unused_instances(
     disable_clusters_management_background_task: None,
     _base_configuration: None,
-    clusters_keeper_rabbitmq_rpc_client: RabbitMQClient,
     ec2_client: EC2Client,
     user_id: UserID,
     wallet_id: WalletID,
@@ -74,15 +98,21 @@ async def test_cluster_management_core_properly_unused_instances(
 
     # running the cluster management task shall not remove anything
     await check_clusters(initialized_app)
-    _assert_cluster_exists()
+    await _assert_cluster_exist_and_state(
+        ec2_client, instances=created_clusters, state="running"
+    )
 
     # running the cluster management task after the heartbeat came in shall not remove anything
     await asyncio.sleep(_FAST_TIME_BEFORE_TERMINATION_SECONDS + 1)
-    await cluster_heartbeat()
+    await cluster_heartbeat(initialized_app, user_id=user_id)
     await check_clusters(initialized_app)
-    _assert_cluster_exists()
+    await _assert_cluster_exist_and_state(
+        ec2_client, instances=created_clusters, state="running"
+    )
 
     # after waiting the termination time, running the task shall remove the cluster
     await asyncio.sleep(_FAST_TIME_BEFORE_TERMINATION_SECONDS + 1)
     await check_clusters(initialized_app)
-    _assert_cluster_does_not_exists()
+    await _assert_cluster_exist_and_state(
+        ec2_client, instances=created_clusters, state="terminated"
+    )
