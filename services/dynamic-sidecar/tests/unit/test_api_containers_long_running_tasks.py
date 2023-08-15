@@ -121,14 +121,20 @@ def dynamic_sidecar_network_name() -> str:
                         _get_dynamic_sidecar_network_name(): None,
                     },
                 },
-                "second-box": {"image": "busybox:latest"},
+                "second-box": {
+                    "image": "alpine:latest",
+                    "command": ["sh", "-c", "sleep 100000"],
+                },
             },
             "networks": {_get_dynamic_sidecar_network_name(): None},
         },
         {
             "version": "3",
             "services": {
-                "solo-box": {"image": "busybox:latest"},
+                "solo-box": {
+                    "image": "alpine:latest",
+                    "command": ["sh", "-c", "sleep 100000"],
+                },
             },
         },
     ]
