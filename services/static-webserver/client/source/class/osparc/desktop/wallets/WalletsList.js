@@ -39,6 +39,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
 
     const newWalletButton = this.__getCreateWalletSection();
     newWalletButton.setVisibility(osparc.data.Permissions.getInstance().canDo("user.wallets.create") ? "visible" : "excluded");
+    this._add(newWalletButton);
 
     this.loadWallets();
   },

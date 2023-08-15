@@ -268,10 +268,12 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
           }
           if (Object.keys(lgInfo["resources"]).length) {
             const buttons = [];
+            const smallButton = this.self().createMachineToggleButton(smInfo);
+            const mediumButton = this.self().createMachineToggleButton(mdInfo);
             const largeButton = this.self().createMachineToggleButton(lgInfo);
             [
-              this.self().createMachineToggleButton(smInfo),
-              this.self().createMachineToggleButton(mdInfo),
+              smallButton,
+              mediumButton,
               largeButton
             ].forEach(btn => {
               buttons.push(btn);
@@ -294,7 +296,8 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
                 });
               }
             }));
-            largeButton.execute();
+            // small by default
+            smallButton.execute();
           }
           return machinesLayout;
         }
@@ -385,7 +388,9 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
           this.setWallet(null);
         }
       });
-      walletSelector.setSelection([]);
+      if (!osparc.desktop.credits.Utils.autoSelectActiveWallet(walletSelector)) {
+        walletSelector.setSelection([]);
+      }
     },
 
     __getCreditsLeftView: function() {

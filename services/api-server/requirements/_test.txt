@@ -4,6 +4,17 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
+aiohttp==3.8.5
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   aioresponses
+aioresponses==0.7.4
+    # via -r requirements/_test.in
+aiosignal==1.3.1
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
 alembic==1.11.1
     # via
     #   -c requirements/_base.txt
@@ -14,9 +25,14 @@ anyio==3.7.0
     #   httpcore
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
+async-timeout==4.0.2
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
 attrs==21.4.0
     # via
     #   -c requirements/_base.txt
+    #   aiohttp
     #   jschema-to-python
     #   jsonschema
     #   pytest-docker
@@ -58,6 +74,7 @@ cfn-lint==0.72.0
 charset-normalizer==3.1.0
     # via
     #   -c requirements/_base.txt
+    #   aiohttp
     #   requests
 click==8.1.3
     # via
@@ -95,6 +112,11 @@ flask==2.1.3
     #   moto
 flask-cors==4.0.0
     # via moto
+frozenlist==1.3.3
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
+    #   aiosignal
 graphql-core==3.2.3
     # via moto
 greenlet==2.0.2
@@ -121,6 +143,7 @@ idna==3.4
     #   httpx
     #   moto
     #   requests
+    #   yarl
 iniconfig==2.0.0
     # via pytest
 itsdangerous==2.1.2
@@ -172,6 +195,11 @@ moto==4.0.1
     # via
     #   -c requirements/./constraints.txt
     #   -r requirements/_test.in
+multidict==6.0.4
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
+    #   yarl
 mypy==1.4.1
     # via sqlalchemy
 mypy-extensions==1.0.0
@@ -323,6 +351,10 @@ wrapt==1.15.0
     # via aws-xray-sdk
 xmltodict==0.13.0
     # via moto
+yarl==1.9.2
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
