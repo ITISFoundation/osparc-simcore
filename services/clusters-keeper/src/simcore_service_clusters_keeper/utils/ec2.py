@@ -1,11 +1,12 @@
 from textwrap import dedent
-from typing import Final, TypeAlias
+from typing import Final
 
 from models_library.users import UserID
 from models_library.wallets import WalletID
 
 from .._meta import VERSION
 from ..core.settings import ApplicationSettings
+from ..models import EC2Tags
 
 _APPLICATION_TAG_KEY_NAME: Final[str] = "io.simcore.clusters-keeper.version"
 _DEFAULT_CLUSTERS_KEEPER_TAGS: Final[dict[str, str]] = {
@@ -13,8 +14,6 @@ _DEFAULT_CLUSTERS_KEEPER_TAGS: Final[dict[str, str]] = {
 }
 
 HEARTBEAT_TAG_KEY: Final[str] = "last_heartbeat"
-
-EC2Tags: TypeAlias = dict[str, str]
 
 
 def creation_ec2_tags(
