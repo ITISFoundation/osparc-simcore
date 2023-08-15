@@ -10,7 +10,6 @@ from pathlib import Path
 
 import aiodocker
 import httpx
-import psutil
 import pytest
 import requests
 import simcore_service_clusters_keeper
@@ -20,7 +19,6 @@ from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
 from moto.server import ThreadedMotoServer
-from pydantic import ByteSize
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
@@ -344,21 +342,6 @@ async def ec2_client(
 
 
 @pytest.fixture
-def host_cpu_count() -> int:
-    return psutil.cpu_count()
-
-
-@pytest.fixture
-def host_memory_total() -> ByteSize:
-    return ByteSize(psutil.virtual_memory().total)
-
-
-@pytest.fixture
-def aws_instance_private_dns() -> str:
-    return "ip-10-23-40-12.ec2.internal"
-
-
-@pytest.fixture
 def fake_ec2_instance_data(faker: Faker) -> Callable[..., EC2InstanceData]:
     def _creator(**overrides) -> EC2InstanceData:
         return EC2InstanceData(
@@ -369,6 +352,7 @@ def fake_ec2_instance_data(faker: Faker) -> Callable[..., EC2InstanceData]:
                     "aws_private_dns": faker.name(),
                     "type": faker.pystr(),
                     "state": faker.pystr(),
+                    "tags": faker.pydict(allowed_types=(str,)),
                 }
                 | overrides
             )
