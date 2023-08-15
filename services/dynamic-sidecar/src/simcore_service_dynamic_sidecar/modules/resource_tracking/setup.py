@@ -20,7 +20,7 @@ def setup_resource_tracking(app: FastAPI) -> None:
         app.state.resource_tracking = resource_tracking = ResourceTrackingState()
 
         with log_context(_logger, logging.DEBUG, "resource tracking startup"):
-            resource_tracking.heart_beat_task = await start_periodic_task(
+            resource_tracking.heart_beat_task = start_periodic_task(
                 heart_beat_task,
                 app=app,
                 interval=settings.RESOURCE_TRACKING_HEARTBEAT_INTERVAL,
