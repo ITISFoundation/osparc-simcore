@@ -26,13 +26,21 @@ async function runTutorial () {
     const studyId = studyData["data"]["uuid"];
 
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
-    const nodeIdViewer = workbenchData["nodeIds"][1];
+    const nodeIdViewer = workbenchData["nodeIds"][2];
 
-    await tutorial.waitFor(10000, 'Some time for loading the workbench');
-    await utils.takeScreenshot(page, screenshotPrefix + 'workbench_loaded');
+    // check the app mode steps
+    const appModeSteps = await tutorial.getAppModeSteps();
+    if (appModeSteps.length !== 2) {
+      throw "Two steps expected, got " + appModeSteps;
+    }
 
-    await tutorial.runPipeline();
+    // Run solver
+    await tutorial.waitAndClick("AppMode_RunBtn");
+    await tutorial.waitFor(5000, "Running Solver");
+    await tutorial.takeScreenshot("solver_before");
     await tutorial.waitForStudyDone(studyId, startTimeout);
+    await tutorial.takeScreenshot("solver_after");
+    await tutorial.waitFor(2000, "Solver Finished");
 
     const outFiles = [
       "logs.zip",
