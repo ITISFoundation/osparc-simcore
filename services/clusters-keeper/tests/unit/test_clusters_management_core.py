@@ -2,11 +2,14 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+from typing import Final
+
 import pytest
 from faker import Faker
-from fastapi import FastApi
+from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_service_clusters_keeper.clusters_api import create_cluster
 from simcore_service_clusters_keeper.clusters_management_core import check_clusters
@@ -62,7 +65,7 @@ async def test_cluster_management_core_properly_unused_instances(
     ec2_client: EC2Client,
     user_id: UserID,
     wallet_id: WalletID,
-    initialized_app: FastApi,
+    initialized_app: FastAPI,
 ):
     created_clusters = await create_cluster(
         initialized_app, user_id=user_id, wallet_id=wallet_id
