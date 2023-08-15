@@ -428,6 +428,7 @@ class ProjectDBAPI(BaseProjectDB):
                 project_type,
             )
 
+    # TODO: add access to project_nodes repository
     async def replace_project(
         self,
         new_project_data: dict[str, Any],
@@ -527,30 +528,28 @@ class ProjectDBAPI(BaseProjectDB):
             )
             return convert_to_schema_names(project, user_email, tags=tags)
 
-    async def update_project_without_checking_permissions(
+    async def update_project_owner_without_checking_permissions(
         self,
-        project_data: dict,
         project_uuid: ProjectIDStr,
         *,
-        hidden: bool | None = None,
-    ) -> bool:
+        new_project_owner: UserID,
+        new_project_access_rights: dict,
+    ) -> None:
         """The garbage collector needs to alter the row without passing through the
-        permissions layer."""
+        permissions layer (sic)."""
         async with self.engine.acquire() as conn:
             # update timestamps
             project_data["lastChangeDate"] = now_str()
             # now update it
-            updated_values = convert_to_db_names(project_data)
-            if hidden is not None:
-                updated_values["hidden"] = hidden
             result: ResultProxy = await conn.execute(
-                # pylint: disable=no-value-for-parameter
                 projects.update()
-                .values(**updated_values)
+                .values(
+                    prj_owner=new_project_owner, access_rights=new_project_access_rights
+                )
                 .where(projects.c.uuid == project_uuid)
             )
             result_row_count: int = result.rowcount
-            return result_row_count == 1
+            assert result_row_count == 1  # nosec
 
     async def update_project_last_change_timestamp(self, project_uuid: ProjectIDStr):
         async with self.engine.acquire() as conn:
@@ -588,7 +587,7 @@ class ProjectDBAPI(BaseProjectDB):
     #
     # Project WORKBENCH / NODES
     #
-
+    # TODO: add access to project_nodes repository
     async def update_project_workbench(
         self,
         partial_workbench_data: dict[str, Any],
@@ -774,6 +773,9 @@ class ProjectDBAPI(BaseProjectDB):
                 )
                 raise ProjectNodeResourcesInsufficientRightsError(msg)
             return await project_nodes_repo.update(conn, node_id=node_id, **values)
+
+    async def _sync_project_nodes_to_project(self, project_id: ProjectID) -> None:
+        ...
 
     async def list_project_nodes(self, project_id: ProjectID) -> list[ProjectNode]:
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)

@@ -267,9 +267,7 @@ async def create_project(
 
         # 5. unhide the project if needed since it is now complete
         if not new_project_was_hidden_before_data_was_copied:
-            await db.update_project_without_checking_permissions(
-                new_project, new_project["uuid"], hidden=False
-            )
+            await db.set_hidden_flag(new_project["uuid"], enabled=False)
 
         # update the network information in director-v2
         await api.update_dynamic_service_networks_in_project(
