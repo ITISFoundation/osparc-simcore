@@ -10,7 +10,7 @@ from unittest import mock
 import pytest
 from fastapi import FastAPI
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.utils_envs import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_clusters_keeper.core.settings import ApplicationSettings
 
 _FAST_POLL_INTERVAL = 1
@@ -24,10 +24,9 @@ def app_environment(
     mocked_redis_server: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
-    # fast interval
-    monkeypatch.setenv("CLUSTERS_KEEPER_CLEAN_INTERVAL", f"{_FAST_POLL_INTERVAL}")
-    app_environment["CLUSTERS_KEEPER_CLEAN_INTERVAL"] = f"{_FAST_POLL_INTERVAL}"
-    return app_environment
+    return app_environment | setenvs_from_dict(
+        monkeypatch, {"CLUSTERS_KEEPER_CLEAN_INTERVAL": f"{_FAST_POLL_INTERVAL}"}
+    )
 
 
 @pytest.fixture
