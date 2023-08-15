@@ -4,11 +4,11 @@
 #
 #    pip-compile --output-file=requirements/_migration.txt --strip-extras requirements/_migration.in
 #
-alembic==1.11.1
+alembic==1.11.2
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_migration.in
-certifi==2023.5.7
+certifi==2023.7.22
     # via requests
 charset-normalizer==3.2.0
     # via requests
@@ -44,7 +44,7 @@ sqlalchemy==1.4.49
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   alembic
-tenacity==8.2.2
+tenacity==8.2.3
     # via -r requirements/_migration.in
 typing-extensions==4.7.1
     # via
