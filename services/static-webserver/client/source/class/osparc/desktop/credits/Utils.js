@@ -50,6 +50,21 @@ qx.Class.define("osparc.desktop.credits.Utils", {
       store.addListener("changeWallets", () => populateSelectBox(walletSelector));
 
       return walletSelector;
+    },
+
+    autoSelectActiveWallet: function(walletSelector) {
+      // If there is only one active wallet, select it
+      const store = osparc.store.Store.getInstance();
+      const wallets = store.getWallets();
+      const activeWallets = wallets.filter(wallet => wallet.getStatus() === "ACTIVE");
+      if (activeWallets.length === 1) {
+        const found = walletSelector.getSelectables().find(sbItem => sbItem.walletId === activeWallets[0].getWalletId());
+        if (found) {
+          walletSelector.setSelection([found]);
+          return true;
+        }
+      }
+      return false;
     }
   }
 });
