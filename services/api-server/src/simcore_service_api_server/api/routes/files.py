@@ -217,8 +217,8 @@ async def get_upload_links(
         "abort_multipart_upload", file_id=file_meta.id
     ).include_query_params(**dict(item.split("=") for item in query.split("&")))
 
-    upload_links.links.complete_upload = parse_obj_as(AnyUrl, str(complete_url))
-    upload_links.links.abort_upload = parse_obj_as(AnyUrl, str(abort_url))
+    upload_links.links.complete_upload = parse_obj_as(AnyUrl, f"{complete_url}")
+    upload_links.links.abort_upload = parse_obj_as(AnyUrl, f"{abort_url}")
     return ClientFileUploadSchema(file_id=file_meta.id, upload_schema=upload_links)
 
 
