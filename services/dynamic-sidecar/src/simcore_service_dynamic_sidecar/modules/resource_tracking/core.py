@@ -14,7 +14,10 @@ from pydantic import NonNegativeFloat
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.logging_utils import log_context
 
-from ...core.docker_utils import get_accepted_container_count_from_names
+from ...core.docker_utils import (
+    get_accepted_container_count_from_names,
+    get_container_statuses,
+)
 from ...core.rabbitmq import post_resource_tracking_message
 from ...core.settings import ApplicationSettings
 from ...models.shared_store import SharedStore
@@ -73,6 +76,13 @@ async def _heart_beat_task(app: FastAPI):
             service_run_id=settings.DY_SIDECAR_RUN_ID
         )
         await post_resource_tracking_message(app, message)
+    else:
+        container_statuses = await get_container_statuses(shared_store.container_names)
+        _logger.info(
+            "heart beat skipped containers=%s container_statuses=%s",
+            shared_store.container_names,
+            container_statuses,
+        )
 
 
 async def send_service_stopped(

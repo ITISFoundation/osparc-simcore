@@ -49,9 +49,10 @@ async def get_volume_by_label(label: str, run_id: RunID) -> dict[str, Any]:
         return volume_details
 
 
-async def get_containers_details_from_names(
+async def _get_containers_details_from_names(
     container_names: list[str],
 ) -> list[DockerContainer]:
+    # NOTE: returned objects have their associated Docker client session closed
     if len(container_names) == 0:
         return []
 
@@ -63,15 +64,22 @@ async def get_containers_details_from_names(
 _ACCEPTED_STATUSES: set[str] = {"created", "running"}
 
 
+async def get_container_statuses(container_names: list[str]) -> list[str]:
+    found_container_details = await _get_containers_details_from_names(container_names)
+    # TODO: remove this one once done
+    _logger.debug("containers states %s", [x["State"] for x in found_container_details])
+    return [container["State"] for container in found_container_details]
+
+
 async def get_accepted_container_count_from_names(
     container_names: list[str],
 ) -> PositiveInt:
-    found_container_details = await get_containers_details_from_names(container_names)
-    _logger.debug("containers states %s", [x["State"] for x in found_container_details])
+    container_statuses = await get_container_statuses(container_names)
     return len(
         [
-            container["State"] in _ACCEPTED_STATUSES
-            for container in found_container_details
+            0
+            for container_state in container_statuses
+            if container_state in _ACCEPTED_STATUSES
         ]
     )
 
@@ -79,7 +87,7 @@ async def get_accepted_container_count_from_names(
 async def get_containers_count_from_names(
     container_names: list[str],
 ) -> PositiveInt:
-    return len(await get_containers_details_from_names(container_names))
+    return len(await _get_containers_details_from_names(container_names))
 
 
 def get_docker_service_images(compose_spec_yaml: str) -> set[str]:
