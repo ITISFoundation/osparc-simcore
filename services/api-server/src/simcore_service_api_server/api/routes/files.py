@@ -264,7 +264,7 @@ async def complete_multipart_upload(
 
     e_tag: ETag = await complete_file_upload(
         uploaded_parts=uploaded_parts.parts,
-        upload_completion_link=parse_obj_as(AnyUrl, str(complete_link)),
+        upload_completion_link=parse_obj_as(AnyUrl, f"{complete_link}"),
     )
 
     file.checksum = e_tag
