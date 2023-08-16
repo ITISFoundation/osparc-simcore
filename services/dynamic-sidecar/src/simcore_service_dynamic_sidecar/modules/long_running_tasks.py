@@ -25,7 +25,7 @@ from ..core.docker_compose_utils import (
     docker_compose_start,
 )
 from ..core.docker_logs import start_log_fetching, stop_log_fetching
-from ..core.docker_utils import get_running_containers_count_from_names
+from ..core.docker_utils import get_containers_count_from_names
 from ..core.rabbitmq import (
     post_event_reload_iframe,
     post_progress_message,
@@ -110,9 +110,7 @@ async def _retry_docker_compose_create(
     container_names = list(compose_spec_dict["services"].keys())
 
     expected_num_containers = len(container_names)
-    actual_num_containers = await get_running_containers_count_from_names(
-        container_names
-    )
+    actual_num_containers = await get_containers_count_from_names(container_names)
 
     return expected_num_containers == actual_num_containers
 
@@ -206,8 +204,8 @@ async def task_runs_docker_compose_down(
         _logger.warning("No compose-spec was found")
         return
 
-    running_containers_before_down: PositiveInt = (
-        await get_running_containers_count_from_names(shared_store.container_names)
+    running_containers_before_down: PositiveInt = await get_containers_count_from_names(
+        shared_store.container_names
     )
 
     async def _send_resource_tracking_stop(platform_status: SimcorePlatformStatus):
