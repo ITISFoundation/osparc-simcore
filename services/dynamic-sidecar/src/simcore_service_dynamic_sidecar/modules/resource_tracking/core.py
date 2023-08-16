@@ -29,33 +29,53 @@ def _get_settings(app: FastAPI) -> ApplicationSettings:
     return settings
 
 
-async def stop_heart_beat_task(app: FastAPI) -> None:
-    resource_tracking: ResourceTrackingState = app.state.resource_tracking
-    with log_context(_logger, logging.DEBUG, "resource tracking shutdown"):
-        if resource_tracking.heart_beat_task:
-            await stop_periodic_task(
-                resource_tracking.heart_beat_task,
-                timeout=_STOP_WORKER_TIMEOUT_S,
-            )
-
-
-async def start_heart_beat_task(app: FastAPI) -> None:
+async def _start_heart_beat_task(app: FastAPI) -> None:
     settings: ResourceTrackingSettings = app.state.settings.RESOURCE_TRACKING
     resource_tracking: ResourceTrackingState = app.state.resource_tracking
 
-    with log_context(_logger, logging.DEBUG, "resource tracking startup"):
+    if resource_tracking.heart_beat_task is not None:
+        msg = f"Unexpected task={resource_tracking.heart_beat_task} already running!"
+        raise RuntimeError(msg)
+
+    with log_context(_logger, logging.DEBUG, "starting heart beat task"):
         resource_tracking.heart_beat_task = start_periodic_task(
-            heart_beat_task,
+            _heart_beat_task,
             app=app,
             interval=settings.RESOURCE_TRACKING_HEARTBEAT_INTERVAL,
             task_name="resource_tracking_heart_beat",
         )
 
 
+async def stop_heart_beat_task(app: FastAPI) -> None:
+    # NOTE: this is only used by the teardown
+    await __stop_heart_beat_task(app)
+
+
+async def __stop_heart_beat_task(app: FastAPI) -> None:
+    resource_tracking: ResourceTrackingState = app.state.resource_tracking
+    if resource_tracking.heart_beat_task:
+        await stop_periodic_task(
+            resource_tracking.heart_beat_task, timeout=_STOP_WORKER_TIMEOUT_S
+        )
+
+
+async def _heart_beat_task(app: FastAPI):
+    settings: ApplicationSettings = _get_settings(app)
+
+    message = RabbitResourceTrackingHeartbeatMessage(
+        service_run_id=settings.DY_SIDECAR_RUN_ID
+    )
+    await post_resource_tracking_message(app, message)
+
+
 async def send_service_stopped(
     app: FastAPI, simcore_platform_status: SimcorePlatformStatus
 ) -> None:
-    await stop_heart_beat_task(app)
+    # NOTE: calling `stop_heart_beat_task` in place of `__stop_heart_beat_task` does not work.
+    # Somehow the function does not get called.
+    # After spending a lot of time on figuring this out, the current is the best I can offer.
+    # If you want to refactor this talk with ANE first before sinking more time in it.
+    await __stop_heart_beat_task(app)
 
     settings: ApplicationSettings = _get_settings(app)
     message = RabbitResourceTrackingStoppedMessage(
@@ -90,15 +110,4 @@ async def send_service_started(
     )
     await post_resource_tracking_message(app, message)
 
-    await start_heart_beat_task(app)
-
-
-async def heart_beat_task(app: FastAPI):
-    # TODO: make sure heart beat is only sent if containers are OK
-
-    settings: ApplicationSettings = _get_settings(app)
-
-    message = RabbitResourceTrackingHeartbeatMessage(
-        service_run_id=settings.DY_SIDECAR_RUN_ID
-    )
-    await post_resource_tracking_message(app, message)
+    await _start_heart_beat_task(app)
