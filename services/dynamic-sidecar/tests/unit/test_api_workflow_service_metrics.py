@@ -20,12 +20,15 @@ from models_library.rabbitmq_messages import (
     RabbitResourceTrackingMessages,
     RabbitResourceTrackingStartedMessage,
     RabbitResourceTrackingStoppedMessage,
+    SimcorePlatformStatus,
 )
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import AnyHttpUrl, parse_obj_as
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.fastapi.long_running_tasks.client import (
     Client,
+    TaskClientResultError,
     TaskId,
     periodic_task_result,
 )
@@ -110,6 +113,22 @@ def client(
     return Client(app=app, async_client=httpx_async_client, base_url=backend_url)
 
 
+@pytest.fixture
+def mock_user_services_fail_to_start(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_dynamic_sidecar.modules.long_running_tasks._retry_docker_compose_create",
+        side_effect=RuntimeError(""),
+    )
+
+
+@pytest.fixture
+def mock_user_services_fail_to_stop(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_dynamic_sidecar.modules.long_running_tasks._retry_docker_compose_down",
+        side_effect=RuntimeError(""),
+    )
+
+
 async def _get_task_id_create_service_containers(
     httpx_async_client: AsyncClient,
     compose_spec: str,
@@ -143,7 +162,7 @@ def _get_resource_tracking_messages(
     ]
 
 
-async def test_workflow_service_metrics__open_heartbeat_close(
+async def test_open_heartbeat_close(
     mock_core_rabbitmq: dict[str, AsyncMock],
     httpx_async_client: AsyncClient,
     client: Client,
@@ -179,9 +198,98 @@ async def test_workflow_service_metrics__open_heartbeat_close(
 
     start_message = resource_tracking_messages[0]
     heart_beat_messages = resource_tracking_messages[1:-1]
+    assert len(heart_beat_messages) > 0
     stop_message = resource_tracking_messages[-1]
 
     assert isinstance(start_message, RabbitResourceTrackingStartedMessage)
     for heart_beat_message in heart_beat_messages:
         assert isinstance(heart_beat_message, RabbitResourceTrackingHeartbeatMessage)
     assert isinstance(stop_message, RabbitResourceTrackingStoppedMessage)
+    assert stop_message.simcore_platform_status == SimcorePlatformStatus.OK
+
+
+@pytest.mark.parametrize("with_compose_down", [True, False])
+async def test_user_services_fail_to_start(
+    mock_core_rabbitmq: dict[str, AsyncMock],
+    httpx_async_client: AsyncClient,
+    client: Client,
+    compose_spec: str,
+    mock_metrics_params: CreateServiceMetricsAdditionalParams,
+    with_compose_down: bool,
+    mock_user_services_fail_to_start: None,
+):
+    with pytest.raises(TaskClientResultError):
+        async with periodic_task_result(
+            client=client,
+            task_id=await _get_task_id_create_service_containers(
+                httpx_async_client, compose_spec, mock_metrics_params
+            ),
+            task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
+            status_poll_interval=_FAST_STATUS_POLL,
+        ):
+            ...
+
+    if with_compose_down:
+        async with periodic_task_result(
+            client=client,
+            task_id=await _get_task_id_docker_compose_down(httpx_async_client),
+            task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
+            status_poll_interval=_FAST_STATUS_POLL,
+        ) as result:
+            assert result is None
+
+    # no messages were sent
+    resource_tracking_messages = _get_resource_tracking_messages(mock_core_rabbitmq)
+    assert len(resource_tracking_messages) == 0
+
+
+async def test_user_services_fail_to_stop_or_save_data(
+    mock_core_rabbitmq: dict[str, AsyncMock],
+    httpx_async_client: AsyncClient,
+    client: Client,
+    compose_spec: str,
+    mock_metrics_params: CreateServiceMetricsAdditionalParams,
+    mock_user_services_fail_to_stop: None,
+):
+    async with periodic_task_result(
+        client=client,
+        task_id=await _get_task_id_create_service_containers(
+            httpx_async_client, compose_spec, mock_metrics_params
+        ),
+        task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
+        status_poll_interval=_FAST_STATUS_POLL,
+    ) as result:
+        assert isinstance(result, list)
+        assert len(result) == 1
+
+    # in case of manual intervention multiple stops will be sent
+    _EXPECTED_STOP_MESSAGES = 4
+    for _ in range(_EXPECTED_STOP_MESSAGES):
+        with pytest.raises(TaskClientResultError):
+            async with periodic_task_result(
+                client=client,
+                task_id=await _get_task_id_docker_compose_down(httpx_async_client),
+                task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
+                status_poll_interval=_FAST_STATUS_POLL,
+            ):
+                ...
+
+    # NOTE: task was not properly cancelled and events where still
+    # generated. This is here to catch regressions.
+    await asyncio.sleep(_BASE_HEART_BEAT_INTERVAL * 10)
+
+    # Ensure messages arrive in the expected order
+    resource_tracking_messages = _get_resource_tracking_messages(mock_core_rabbitmq)
+    assert len(resource_tracking_messages) >= 3
+
+    start_message = resource_tracking_messages[0]
+    heart_beat_messages = resource_tracking_messages[1:-_EXPECTED_STOP_MESSAGES]
+    assert len(heart_beat_messages) > 0
+    stop_messages = resource_tracking_messages[-_EXPECTED_STOP_MESSAGES:]
+
+    assert isinstance(start_message, RabbitResourceTrackingStartedMessage)
+    for heart_beat_message in heart_beat_messages:
+        assert isinstance(heart_beat_message, RabbitResourceTrackingHeartbeatMessage)
+    for stop_message in stop_messages:
+        assert isinstance(stop_message, RabbitResourceTrackingStoppedMessage)
+        assert stop_message.simcore_platform_status == SimcorePlatformStatus.BAD
