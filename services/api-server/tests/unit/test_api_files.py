@@ -180,9 +180,7 @@ async def test_download_content(
     assert response.headers["content-type"] == "application/octet-stream"
 
 
-# @pytest.mark.parametrize("follow_up_request", ["complete", "abort"])
-@pytest.mark.testit
-@pytest.mark.parametrize("follow_up_request", ["abort"])
+@pytest.mark.parametrize("follow_up_request", ["complete", "abort"])
 async def test_get_upload_links(
     follow_up_request: str,
     client: AsyncClient,
@@ -228,3 +226,5 @@ async def test_get_upload_links(
             upload_schema.links.abort_upload, json=body, auth=auth
         )
         assert response.status_code == status.HTTP_200_OK
+    else:
+        assert False
