@@ -7,7 +7,7 @@ import asyncio
 import json
 from collections.abc import AsyncIterable
 from pathlib import Path
-from typing import Final
+from typing import Any, Final
 from unittest.mock import AsyncMock
 
 import pytest
@@ -34,26 +34,40 @@ from servicelib.fastapi.long_running_tasks.client import (
 )
 from servicelib.fastapi.long_running_tasks.client import setup as client_setup
 from simcore_service_dynamic_sidecar._meta import API_VTAG
+from simcore_service_dynamic_sidecar.core.docker_utils import (
+    get_accepted_container_count_from_names,
+)
 from simcore_service_dynamic_sidecar.models.schemas.containers import ContainersCreate
+from tenacity import AsyncRetrying, TryAgain
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 _FAST_STATUS_POLL: Final[float] = 0.1
 _CREATE_SERVICE_CONTAINERS_TIMEOUT: Final[float] = 60
 _BASE_HEART_BEAT_INTERVAL: Final[float] = 0.1
 
 
+@pytest.fixture(params=[1, 2])
+def container_names(request: pytest.FixtureRequest) -> list[str]:
+    return [f"service-{i}" for i in range(request.param)]
+
+
 @pytest.fixture
-def compose_spec() -> str:
-    return json.dumps(
-        {
-            "version": "3",
-            "services": {
-                "solo-box": {
-                    "image": "alpine:latest",
-                    "command": ["sh", "-c", "sleep 100000"],
-                }
-            },
+def raw_compose_spec(container_names: list[str]) -> dict[str, Any]:
+    base_spec: dict[str, Any] = {"version": "3", "services": {}}
+
+    for container_name in container_names:
+        base_spec["services"][container_name] = {
+            "image": "alpine:latest",
+            "command": ["sh", "-c", "sleep 100000"],
         }
-    )
+
+    return base_spec
+
+
+@pytest.fixture
+def compose_spec(raw_compose_spec: dict[str, Any]) -> str:
+    return json.dumps(raw_compose_spec)
 
 
 @pytest.fixture
@@ -162,11 +176,22 @@ def _get_resource_tracking_messages(
     ]
 
 
+async def _wait_for_containers_to_be_running(container_names: list[str]) -> None:
+    async for attempt in AsyncRetrying(wait=wait_fixed(0.1), stop=stop_after_delay(60)):
+        with attempt:
+            current_count = await get_accepted_container_count_from_names(
+                container_names
+            )
+            if current_count != len(container_names):
+                raise TryAgain
+
+
 async def test_open_heartbeat_close(
     mock_core_rabbitmq: dict[str, AsyncMock],
     httpx_async_client: AsyncClient,
     client: Client,
     compose_spec: str,
+    container_names: list[str],
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
 ):
     async with periodic_task_result(
@@ -178,7 +203,9 @@ async def test_open_heartbeat_close(
         status_poll_interval=_FAST_STATUS_POLL,
     ) as result:
         assert isinstance(result, list)
-        assert len(result) == 1
+        assert len(result) == len(container_names)
+
+    await _wait_for_containers_to_be_running(container_names)
 
     async with periodic_task_result(
         client=client,
@@ -248,6 +275,7 @@ async def test_user_services_fail_to_stop_or_save_data(
     httpx_async_client: AsyncClient,
     client: Client,
     compose_spec: str,
+    container_names: list[str],
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
     mock_user_services_fail_to_stop: None,
 ):
@@ -260,7 +288,9 @@ async def test_user_services_fail_to_stop_or_save_data(
         status_poll_interval=_FAST_STATUS_POLL,
     ) as result:
         assert isinstance(result, list)
-        assert len(result) == 1
+        assert len(result) == len(container_names)
+
+    await _wait_for_containers_to_be_running(container_names)
 
     # in case of manual intervention multiple stops will be sent
     _EXPECTED_STOP_MESSAGES = 4
@@ -286,6 +316,7 @@ async def test_user_services_fail_to_stop_or_save_data(
     heart_beat_messages = resource_tracking_messages[1:-_EXPECTED_STOP_MESSAGES]
     assert len(heart_beat_messages) > 0
     stop_messages = resource_tracking_messages[-_EXPECTED_STOP_MESSAGES:]
+    assert len(stop_messages) > 0
 
     assert isinstance(start_message, RabbitResourceTrackingStartedMessage)
     for heart_beat_message in heart_beat_messages:
