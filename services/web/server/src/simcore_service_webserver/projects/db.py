@@ -538,13 +538,13 @@ class ProjectDBAPI(BaseProjectDB):
         """The garbage collector needs to alter the row without passing through the
         permissions layer (sic)."""
         async with self.engine.acquire() as conn:
-            # update timestamps
-            project_data["lastChangeDate"] = now_str()
             # now update it
             result: ResultProxy = await conn.execute(
                 projects.update()
                 .values(
-                    prj_owner=new_project_owner, access_rights=new_project_access_rights
+                    prj_owner=new_project_owner,
+                    access_rights=new_project_access_rights,
+                    last_change_date=now_str(),
                 )
                 .where(projects.c.uuid == project_uuid)
             )
@@ -569,25 +569,44 @@ class ProjectDBAPI(BaseProjectDB):
             f"{user_id}",
         )
 
-        async with self.engine.acquire() as conn:
-            async with conn.begin():
-                project = await self._get_project(
-                    conn, user_id, project_uuid, for_update=True
-                )
-                # if we have delete access we delete the project
-                user_groups: list[RowProxy] = await self._list_user_groups(
-                    conn, user_id
-                )
-                check_project_permissions(project, user_id, user_groups, "delete")
-                await conn.execute(
-                    # pylint: disable=no-value-for-parameter
-                    projects.delete().where(projects.c.uuid == project_uuid)
-                )
+        async with self.engine.acquire() as conn, conn.begin():
+            project = await self._get_project(
+                conn, user_id, project_uuid, for_update=True
+            )
+            # if we have delete access we delete the project
+            user_groups: list[RowProxy] = await self._list_user_groups(conn, user_id)
+            check_project_permissions(project, user_id, user_groups, "delete")
+            await conn.execute(
+                # pylint: disable=no-value-for-parameter
+                projects.delete().where(projects.c.uuid == project_uuid)
+            )
 
     #
     # Project WORKBENCH / NODES
     #
-    # TODO: add access to project_nodes repository
+
+    async def update_project_node_data(
+        self,
+        *,
+        user_id: UserID,
+        project_uuid: ProjectID,
+        node_id: NodeID,
+        product_name: str | None,
+        new_node_data: dict[str, Any],
+    ) -> tuple[ProjectDict, dict[str, Any]]:
+        with log_context(
+            log,
+            logging.DEBUG,
+            msg=f"update {project_uuid=}:{node_id=} for {user_id=}",
+            extra=get_log_record_extra(user_id=user_id),
+        ):
+            partial_workbench_data: dict[str, Any] = {
+                f"{node_id}": new_node_data,
+            }
+            return await self.update_project_workbench(
+                partial_workbench_data, user_id, f"{project_uuid}", product_name
+            )
+
     async def update_project_workbench(
         self,
         partial_workbench_data: dict[str, Any],
@@ -773,9 +792,6 @@ class ProjectDBAPI(BaseProjectDB):
                 )
                 raise ProjectNodeResourcesInsufficientRightsError(msg)
             return await project_nodes_repo.update(conn, node_id=node_id, **values)
-
-    async def _sync_project_nodes_to_project(self, project_id: ProjectID) -> None:
-        ...
 
     async def list_project_nodes(self, project_id: ProjectID) -> list[ProjectNode]:
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
