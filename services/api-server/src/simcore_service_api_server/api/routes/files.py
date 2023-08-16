@@ -11,12 +11,7 @@ from fastapi import File as FileParam
 from fastapi import Header, Request, UploadFile, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse
-from models_library.api_schemas_storage import (
-    ETag,
-    FileUploadCompletionBody,
-    FileUploadSchema,
-    LinkType,
-)
+from models_library.api_schemas_storage import ETag, FileUploadCompletionBody, LinkType
 from pydantic import AnyUrl, ByteSize, PositiveInt, ValidationError, parse_obj_as
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
@@ -35,7 +30,7 @@ from starlette.responses import RedirectResponse
 from ..._meta import API_VTAG
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
-from ...models.schemas.files import ClientFile, File
+from ...models.schemas.files import ClientFile, ClientFileUploadSchema, File
 from ...services.storage import StorageApi, StorageFileMetaData, to_file_api_model
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
@@ -179,7 +174,7 @@ async def upload_files(files: list[UploadFile] = FileParam(...)):
 
 @router.post(
     "/content",
-    response_model=FileUploadSchema,
+    response_model=ClientFileUploadSchema,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 @cancel_on_disconnect
@@ -224,7 +219,7 @@ async def get_upload_links(
 
     upload_links.links.complete_upload = parse_obj_as(AnyUrl, str(complete_url))
     upload_links.links.abort_upload = parse_obj_as(AnyUrl, str(abort_url))
-    return upload_links
+    return ClientFileUploadSchema(file_id=file_meta.id, upload_schema=upload_links)
 
 
 @router.post(
@@ -248,7 +243,7 @@ async def complete_multipart_upload(
         file_id: The Storage id
         file: The File object which is to be completed
         uploaded_parts: The uploaded parts
-        completion_link: The completion link -- _description_
+        completion_link: The completion link
         user_id: The user id
 
     Returns:

@@ -145,7 +145,7 @@ class File(BaseModel):
 
 
 class ClientFileUploadSchema(BaseModel):
-    upload_file_id: StorageFileID = Field(..., description="The upload file id")
+    file_id: UUID = Field(..., description="The file id")
     upload_schema: FileUploadSchema = Field(
         ..., description="Schema for uploading file"
     )
