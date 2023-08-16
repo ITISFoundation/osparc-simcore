@@ -171,7 +171,6 @@ async def _comp_tasks_listening_task(app: web.Application) -> None:
         except Exception:  # pylint: disable=broad-except
             _logger.exception(
                 "caught unhandled comp_task db listening task exception, restarting...",
-                exc_info=True,
             )
             # wait a bit and try restart the task
             await asyncio.sleep(3)
