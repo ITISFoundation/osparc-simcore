@@ -11,8 +11,8 @@ from models_library.services import RunID
 from pydantic import PositiveInt, SecretStr
 from settings_library.docker_registry import RegistrySettings
 from simcore_service_dynamic_sidecar.core.docker_utils import (
+    _get_containers_details_from_names,
     get_containers_count_from_names,
-    get_containers_details_from_names,
     get_docker_service_images,
     get_volume_by_label,
     pull_images,
@@ -97,7 +97,7 @@ async def test_get_running_containers_details_from_names(
     if len(container_names) == 0:
         return
 
-    containers: list[DockerContainer] = await get_containers_details_from_names(
+    containers: list[DockerContainer] = await _get_containers_details_from_names(
         container_names
     )
     for container in containers:
