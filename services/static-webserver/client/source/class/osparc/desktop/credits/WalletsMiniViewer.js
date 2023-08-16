@@ -24,7 +24,8 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
     this._setLayout(new qx.ui.layout.VBox(3));
 
     this.set({
-      padding: 5
+      padding: 5,
+      paddingRight: 10
     });
 
     this.__walletListeners = [];

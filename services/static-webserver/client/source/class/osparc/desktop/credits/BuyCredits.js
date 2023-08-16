@@ -421,9 +421,17 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
           const nCredits = this.getNCredits();
           const totalPrice = this.getTotalPrice();
           const wallet = this.getWallet();
-          const title = "3rd party payment gateway";
+          const title = "AppMotion's middleware";
+          let url = "https://www.paymentservice.io";
+          url += "?user_id=2";
+          url += "&session_id=1234";
+          url += "&token=5678";
+          url += "&wallet_id=" + wallet.getWalletId();
+          url += "&wallet_name=" + encodeURIComponent(wallet.getName()); // without white spaces
+          url += "&total_price=" + totalPrice;
+          url += "&n_credits=" + nCredits;
           const paymentGateway = new osparc.desktop.credits.PaymentGateway().set({
-            url: "https://www.paymentservice.io?user_id=2&session_id=1234567890&token=5678",
+            url,
             nCredits,
             totalPrice,
             walletName: wallet.getName()
