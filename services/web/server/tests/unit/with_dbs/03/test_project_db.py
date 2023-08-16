@@ -8,11 +8,12 @@ import asyncio
 import datetime
 import json
 import re
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from itertools import combinations
 from random import randint
 from secrets import choice
-from typing import Any, AsyncIterator, Awaitable, Callable, Iterator, get_args
+from typing import Any, get_args
 from uuid import UUID, uuid5
 
 import aiopg.sa
@@ -21,7 +22,7 @@ import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID
+from models_library.projects_nodes_io import NodeID, NodeIDStr
 from psycopg2.errors import UniqueViolation
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_dict import copy_from_dict_ex
@@ -389,12 +390,12 @@ async def insert_project_in_db(
 
     async def _inserter(prj: dict[str, Any], **overrides) -> dict[str, Any]:
         # add project without user id -> by default creates a template
-        default_config: dict[str, Any] = dict(
-            project=prj,
-            user_id=None,
-            product_name=osparc_product_name,
-            project_nodes=None,
-        )
+        default_config: dict[str, Any] = {
+            "project": prj,
+            "user_id": None,
+            "product_name": osparc_product_name,
+            "project_nodes": None,
+        }
         default_config.update(**overrides)
         new_project = await db_api.insert_project(**default_config)
 
@@ -570,7 +571,7 @@ async def test_patch_user_project_workbench_raises_if_project_does_not_exist(
         }
     }
     with pytest.raises(ProjectNotFoundError):
-        await db_api.update_project_workbench(
+        await db_api._update_project_workbench(  # noqa: SLF001
             partial_workbench_data,
             logged_user["id"],
             fake_project["uuid"],
@@ -605,7 +606,10 @@ async def test_patch_user_project_workbench_creates_nodes(
         }
         for _ in range(faker.pyint(min_value=5, max_value=30))
     }
-    patched_project, changed_entries = await db_api.update_project_workbench(
+    (
+        patched_project,
+        changed_entries,
+    ) = await db_api._update_project_workbench(  # noqa: SLF001
         partial_workbench_data,
         logged_user["id"],
         new_project["uuid"],
@@ -646,7 +650,7 @@ async def test_patch_user_project_workbench_creates_nodes_raises_if_invalid_node
         for _ in range(faker.pyint(min_value=5, max_value=30))
     }
     with pytest.raises(NodeNotFoundError):
-        await db_api.update_project_workbench(
+        await db_api._update_project_workbench(  # noqa: SLF001
             partial_workbench_data,
             logged_user["id"],
             new_project["uuid"],
@@ -657,7 +661,7 @@ async def test_patch_user_project_workbench_creates_nodes_raises_if_invalid_node
     "user_role",
     [(UserRole.USER)],
 )
-@pytest.mark.parametrize("number_of_nodes", [1, randint(250, 300)])
+@pytest.mark.parametrize("number_of_nodes", [1, randint(250, 300)])  # noqa: S311
 async def test_patch_user_project_workbench_concurrently(
     fake_project: dict[str, Any],
     postgres_db: sa.engine.Engine,
@@ -709,7 +713,7 @@ async def test_patch_user_project_workbench_concurrently(
 
     # patch all the nodes concurrently
     randomly_created_outputs = [
-        {"outputs": {f"out_{k}": f"{k}"} for k in range(randint(1, 10))}
+        {"outputs": {f"out_{k}": f"{k}"} for k in range(randint(1, 10))}  # noqa: S311
         for n in range(_NUMBER_OF_NODES)
     ]
     for n in range(_NUMBER_OF_NODES):
@@ -719,8 +723,8 @@ async def test_patch_user_project_workbench_concurrently(
         tuple[dict[str, Any], dict[str, Any]]
     ] = await asyncio.gather(
         *[
-            db_api.update_project_workbench(
-                {node_uuids[n]: randomly_created_outputs[n]},
+            db_api._update_project_workbench(  # noqa: SLF001
+                {NodeIDStr(node_uuids[n]): randomly_created_outputs[n]},
                 logged_user["id"],
                 new_project["uuid"],
             )
@@ -760,8 +764,8 @@ async def test_patch_user_project_workbench_concurrently(
 
     patched_projects = await asyncio.gather(
         *[
-            db_api.update_project_workbench(
-                {node_uuids[n]: {"outputs": {}}},
+            db_api._update_project_workbench(  # noqa: SLF001
+                {NodeIDStr(node_uuids[n]): {"outputs": {}}},
                 logged_user["id"],
                 new_project["uuid"],
             )
@@ -792,8 +796,8 @@ async def test_patch_user_project_workbench_concurrently(
 
     patched_projects = await asyncio.gather(
         *[
-            db_api.update_project_workbench(
-                {node_uuids[n]: {"outputs": {}}},
+            db_api._update_project_workbench(  # noqa: SLF001
+                {NodeIDStr(node_uuids[n]): {"outputs": {}}},
                 logged_user["id"],
                 new_project["uuid"],
             )
@@ -836,7 +840,7 @@ async def some_projects_and_nodes(
         project_uuid = uuid5(BASE_UUID, f"project_{p}")
         all_created_projects[project_uuid] = []
         workbench = {}
-        for n in range(randint(7, 34)):
+        for n in range(randint(7, 34)):  # noqa: S311
             node_uuid = uuid5(project_uuid, f"node_{n}")
             all_created_projects[project_uuid].append(node_uuid)
             workbench[f"{node_uuid}"] = {
@@ -859,7 +863,7 @@ async def some_projects_and_nodes(
         *(_assert_projects_nodes_db_rows(aiopg_engine, prj) for prj in created_projects)
     )
     print(f"---> created {len(all_created_projects)} projects in the database")
-    yield all_created_projects
+    return all_created_projects
 
 
 @pytest.mark.parametrize(

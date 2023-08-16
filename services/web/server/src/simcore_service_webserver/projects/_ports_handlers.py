@@ -185,10 +185,11 @@ async def update_project_inputs(request: web.Request) -> web.Response:
 
     # patch workbench
     assert db  # nosec
-    updated_project, _ = await db.update_project_workbench(
-        jsonable_encoder(partial_workbench_data),
-        req_ctx.user_id,
-        f"{path_params.project_id}",
+    updated_project, _ = await db.update_project_multiple_node_data(
+        user_id=req_ctx.user_id,
+        project_uuid=path_params.project_id,
+        product_name=req_ctx.product_name,
+        partial_workbench_data=jsonable_encoder(partial_workbench_data),
     )
 
     workbench = parse_obj_as(dict[NodeID, Node], updated_project["workbench"])

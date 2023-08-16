@@ -18,7 +18,7 @@ from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_comments import CommentID, ProjectsCommentsDB
 from models_library.projects_nodes import Node
-from models_library.projects_nodes_io import NodeID
+from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletDB, WalletID
@@ -603,13 +603,31 @@ class ProjectDBAPI(BaseProjectDB):
             partial_workbench_data: dict[str, Any] = {
                 f"{node_id}": new_node_data,
             }
-            return await self.update_project_workbench(
+            return await self._update_project_workbench(
                 partial_workbench_data, user_id, f"{project_uuid}", product_name
             )
 
-    async def update_project_workbench(
+    async def update_project_multiple_node_data(
         self,
-        partial_workbench_data: dict[str, Any],
+        *,
+        user_id: UserID,
+        project_uuid: ProjectID,
+        product_name: str | None,
+        partial_workbench_data: dict[NodeIDStr, dict[str, Any]],
+    ) -> tuple[ProjectDict, dict[str, Any]]:
+        with log_context(
+            log,
+            logging.DEBUG,
+            msg=f"update multiple nodes on {project_uuid=} for {user_id=}",
+            extra=get_log_record_extra(user_id=user_id),
+        ):
+            return await self._update_project_workbench(
+                partial_workbench_data, user_id, f"{project_uuid}", product_name
+            )
+
+    async def _update_project_workbench(
+        self,
+        partial_workbench_data: dict[NodeIDStr, Any],
         user_id: int,
         project_uuid: str,
         product_name: str | None = None,
@@ -742,7 +760,7 @@ class ProjectDBAPI(BaseProjectDB):
                 exclude_unset=True,
             ),
         }
-        await self.update_project_workbench(
+        await self._update_project_workbench(
             partial_workbench_data, user_id, f"{project_id}", product_name
         )
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
@@ -756,7 +774,7 @@ class ProjectDBAPI(BaseProjectDB):
         partial_workbench_data: dict[str, Any] = {
             f"{node_id}": None,
         }
-        await self.update_project_workbench(
+        await self._update_project_workbench(
             partial_workbench_data, user_id, f"{project_id}"
         )
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
