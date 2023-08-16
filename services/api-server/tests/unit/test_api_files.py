@@ -18,13 +18,16 @@ from httpx import AsyncClient
 from models_library.api_schemas_storage import (
     ETag,
     FileUploadCompletionBody,
-    FileUploadSchema,
     UploadedPart,
 )
 from pydantic import parse_obj_as
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
-from simcore_service_api_server.models.schemas.files import ClientFile, File
+from simcore_service_api_server.models.schemas.files import (
+    ClientFile,
+    ClientFileUploadSchema,
+    File,
+)
 
 _FAKER = Faker()
 
@@ -201,7 +204,9 @@ async def test_get_upload_links(
     payload: dict[str, str] = response.json()
 
     assert response.status_code == status.HTTP_200_OK
-    upload_schema: FileUploadSchema = FileUploadSchema.parse_obj(payload)
+    client_upload_schema: ClientFileUploadSchema = ClientFileUploadSchema.parse_obj(
+        payload
+    )
 
     if follow_up_request == "complete":
         body = {
@@ -209,7 +214,7 @@ async def test_get_upload_links(
             "uploaded_parts": jsonable_encoder(DummyFileData.uploaded_parts()),
         }
         response = await client.post(
-            upload_schema.links.complete_upload,
+            client_upload_schema.upload_schema.links.complete_upload,
             json=body,
             auth=auth,
         )
@@ -223,7 +228,7 @@ async def test_get_upload_links(
             "client_file": jsonable_encoder(DummyFileData.client_file()),
         }
         response = await client.post(
-            upload_schema.links.abort_upload, json=body, auth=auth
+            client_upload_schema.upload_schema.links.abort_upload, json=body, auth=auth
         )
         assert response.status_code == status.HTTP_200_OK
     else:
