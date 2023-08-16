@@ -2,10 +2,8 @@ import asyncio
 import datetime
 import io
 import logging
-from pathlib import Path
 from textwrap import dedent
 from typing import IO, Annotated, Final
-from urllib.parse import urlparse
 from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends
@@ -15,8 +13,8 @@ from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse
 from models_library.api_schemas_storage import (
     ETag,
-    FileUploadCompleteLinks,
     FileUploadCompletionBody,
+    FileUploadSchema,
     LinkType,
 )
 from pydantic import AnyUrl, ByteSize, PositiveInt, ValidationError, parse_obj_as
@@ -31,12 +29,13 @@ from simcore_sdk.node_ports_common.filemanager import (
     get_upload_links_from_s3,
 )
 from simcore_sdk.node_ports_common.filemanager import upload_path as storage_upload_path
+from starlette.datastructures import URL
 from starlette.responses import RedirectResponse
 
 from ..._meta import API_VTAG
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
-from ...models.schemas.files import ClientFile, ClientFileUploadSchema, File
+from ...models.schemas.files import ClientFile, File
 from ...services.storage import StorageApi, StorageFileMetaData, to_file_api_model
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
@@ -180,7 +179,7 @@ async def upload_files(files: list[UploadFile] = FileParam(...)):
 
 @router.post(
     "/content",
-    response_model=ClientFileUploadSchema,
+    response_model=FileUploadSchema,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 @cancel_on_disconnect
@@ -214,36 +213,32 @@ async def get_upload_links(
         file_size=ByteSize(client_file.filesize),
         is_directory=False,
     )
-    processed_query = str(upload_links.links.complete_upload.query)
-    if processed_query.endswith(
-        ":complete"
-    ):  # aiohttp seems to incorrectly place the :complete at the very end of the url
-        processed_query = processed_query[: -len(":complete")]
-    query = dict(item.split("=") for item in processed_query.split("&"))
+    query = str(upload_links.links.complete_upload.query).rstrip(":complete")
     complete_url = request.url_for(
-        "complete_multipart_upload", upload_file_id=file_meta.quoted_storage_file_id
-    ).include_query_params(**query)
+        "complete_multipart_upload", file_id=file_meta.id
+    ).include_query_params(**dict(item.split("=") for item in query.split("&")))
+    query = str(upload_links.links.abort_upload.query).rstrip(":abort")
+    abort_url = request.url_for(
+        "abort_multipart_upload", file_id=file_meta.id
+    ).include_query_params(**dict(item.split("=") for item in query.split("&")))
 
-    upload_links.links.complete_upload = parse_obj_as(AnyUrl, complete_url)
-    result: ClientFileUploadSchema = ClientFileUploadSchema(
-        upload_file_id=file_meta.storage_file_id,
-        upload_schema=upload_links,
-    )
-    return result
+    upload_links.links.complete_upload = parse_obj_as(AnyUrl, str(complete_url))
+    upload_links.links.abort_upload = parse_obj_as(AnyUrl, str(abort_url))
+    return upload_links
 
 
 @router.post(
-    "/{upload_file_id}:complete",
+    "/{file_id}:complete",
     response_model=File,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 @cancel_on_disconnect
 async def complete_multipart_upload(
     request: Request,
-    upload_file_id: UUID,
-    file: File,
-    uploaded_parts: FileUploadCompletionBody,
-    completion_link: FileUploadCompleteLinks,
+    file_id: UUID,
+    client_file: Annotated[ClientFile, Body(...)],
+    uploaded_parts: Annotated[FileUploadCompletionBody, Body(...)],
+    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
 ):
     """Complete multipart upload
@@ -262,21 +257,14 @@ async def complete_multipart_upload(
     assert request  # nosec
     assert user_id  # nosec
 
-    if not file.id == file_id:
-        raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="The File's id did not match the paths file_id",
-        )
-    complete_path: str = urlparse(str(completion_link.state)).path
-    if not complete_path.endswith(file.quoted_storage_file_id):
-        raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="The completion_link was invalid",
-        )
+    file: File = File(id=file_id, filename=client_file.filename, checksum=None)
+    complete_link: URL = await storage_client.generate_complete_upload_link(
+        file, dict(request.query_params)
+    )
 
     e_tag: ETag = await complete_file_upload(
         uploaded_parts=uploaded_parts.parts,
-        upload_completion_link=completion_link.state,
+        upload_completion_link=parse_obj_as(AnyUrl, str(complete_link)),
     )
 
     file.checksum = e_tag
@@ -284,14 +272,14 @@ async def complete_multipart_upload(
 
 
 @router.post(
-    "/{upload_file_id}:abort",
+    "/{file_id}:abort",
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 @cancel_on_disconnect
 async def abort_multipart_upload(
     request: Request,
-    upload_file_id: UUID,
-    abort_upload_link: Annotated[AnyUrl, Body(..., embed=True)],
+    file_id: UUID,
+    client_file: Annotated[ClientFile, Body(..., embed=True)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
 ):
@@ -306,15 +294,11 @@ async def abort_multipart_upload(
     """
     assert request  # nosec
     assert user_id  # nosec
-    stored_files: list[StorageFileMetaData] = await storage_client.search_files(
-        user_id, file_id
+    file: File = File(id=file_id, filename=client_file.filename, checksum=None)
+    abort_link: URL = await storage_client.generate_abort_upload_link(
+        file, query=dict(request.query_params)
     )
-    if not str(stored_files[0].location_id) in Path(abort_upload_link).parts:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="The file_id did not match the abortion link.",
-        )
-    await abort_upload(abort_upload_link=abort_upload_link)
+    await abort_upload(abort_upload_link=parse_obj_as(AnyUrl, str(abort_link)))
 
 
 @router.get("/{file_id}", response_model=File, responses={**_COMMON_ERROR_RESPONSES})

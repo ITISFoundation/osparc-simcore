@@ -10,6 +10,7 @@ from models_library.api_schemas_storage import FileMetaDataGet as StorageFileMet
 from models_library.api_schemas_storage import FileUploadSchema, PresignedLink
 from models_library.generics import Envelope
 from pydantic import AnyUrl
+from starlette.datastructures import URL
 
 from ..core.settings import StorageSettings
 from ..models.schemas.files import File
@@ -104,6 +105,28 @@ class StorageApi(BaseServiceClientApi):
         enveloped_data = Envelope[FileUploadSchema].parse_obj(response.json())
         assert enveloped_data.data  # nosec
         return enveloped_data.data
+
+    async def generate_complete_upload_link(
+        self, file: File, query: dict[str, str] | None = None
+    ) -> URL:
+        url = URL(
+            str(self.client.base_url)
+            + f"locations/{self.SIMCORE_S3_ID}/files/{file.quoted_storage_file_id}:complete"
+        )
+        if query is not None:
+            url = url.include_query_params(**query)
+        return url
+
+    async def generate_abort_upload_link(
+        self, file: File, query: dict[str, str] | None = None
+    ) -> URL:
+        url = URL(
+            str(self.client.base_url)
+            + f"locations/{self.SIMCORE_S3_ID}/files/{file.quoted_storage_file_id}:abort"
+        )
+        if query:
+            url = url.include_query_params(**query)
+        return url
 
     async def create_soft_link(
         self, user_id: int, target_s3_path: str, as_file_id: UUID

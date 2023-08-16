@@ -2,6 +2,7 @@ from mimetypes import guess_type
 from pathlib import Path
 from typing import Any, ClassVar
 from urllib.parse import quote as _quote
+from urllib.parse import unquote as _unquote
 from uuid import UUID, uuid3
 
 import aiofiles
@@ -15,10 +16,14 @@ from ...utils.hash import create_md5_checksum
 NAMESPACE_FILEID_KEY = UUID("aa154444-d22d-4290-bb15-df37dba87865")
 
 
+class FileName(ConstrainedStr):
+    strip_whitespace = True
+
+
 class ClientFile(BaseModel):
     """Represents a file stored on the client side"""
 
-    filename: ConstrainedStr = Field(..., description="File name")
+    filename: FileName = Field(..., description="File name")
     filesize: ByteSize = Field(..., description="File size in bytes")
 
 
@@ -115,6 +120,14 @@ class File(BaseModel):
             filename=client_file.filename,
             checksum=checksum,
         )
+
+    @classmethod
+    async def create_from_quoted_storage_id(cls, quoted_storage_id: str) -> "File":
+        storage_file_id: StorageFileID = parse_obj_as(
+            StorageFileID, _unquote(quoted_storage_id)
+        )
+        _, fid, fname = Path(storage_file_id).parts
+        return cls(id=UUID(fid), filename=fname, checksum=None)
 
     @classmethod
     def create_id(cls, *keys) -> UUID:
