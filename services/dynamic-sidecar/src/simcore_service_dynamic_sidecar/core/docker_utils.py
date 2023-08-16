@@ -49,7 +49,7 @@ async def get_volume_by_label(label: str, run_id: RunID) -> dict[str, Any]:
         return volume_details
 
 
-async def get_running_containers_details_from_names(
+async def get_containers_details_from_names(
     container_names: list[str],
 ) -> list[DockerContainer]:
     if len(container_names) == 0:
@@ -60,10 +60,26 @@ async def get_running_containers_details_from_names(
         return await docker.containers.list(all=True, filters=filters)
 
 
-async def get_running_containers_count_from_names(
+_ACCEPTED_STATUSES: set[str] = {"created", "running"}
+
+
+async def get_accepted_container_count_from_names(
     container_names: list[str],
 ) -> PositiveInt:
-    return len(await get_running_containers_details_from_names(container_names))
+    found_container_details = await get_containers_details_from_names(container_names)
+    _logger.debug("containers states %s", [x["State"] for x in found_container_details])
+    return len(
+        [
+            container["State"] in _ACCEPTED_STATUSES
+            for container in found_container_details
+        ]
+    )
+
+
+async def get_containers_count_from_names(
+    container_names: list[str],
+) -> PositiveInt:
+    return len(await get_containers_details_from_names(container_names))
 
 
 def get_docker_service_images(compose_spec_yaml: str) -> set[str]:
