@@ -409,7 +409,11 @@ async def update_project_linked_product(
 
 
 async def update_project_node_state(
-    app: web.Application, user_id: int, project_id: str, node_id: str, new_state: str
+    app: web.Application,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    new_state: str,
 ) -> dict:
     log.debug(
         "updating node %s current state in project %s for user %s",
@@ -417,20 +421,18 @@ async def update_project_node_state(
         project_id,
         user_id,
     )
-    partial_workbench_data: dict[str, Any] = {
-        node_id: {"state": {"currentStatus": new_state}},
-    }
 
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-    updated_project, _ = await db.update_project_workbench(
-        partial_workbench_data=partial_workbench_data,
+    updated_project, _ = await db.update_project_node_data(
         user_id=user_id,
         project_uuid=project_id,
+        node_id=node_id,
+        product_name=None,
+        new_node_data={"state": {"currentStatus": new_state}},
     )
-    updated_project = await add_project_states_for_user(
+    return await add_project_states_for_user(
         user_id=user_id, project=updated_project, is_template=False, app=app
     )
-    return updated_project
 
 
 async def is_project_hidden(app: web.Application, project_id: ProjectID) -> bool:
@@ -440,9 +442,9 @@ async def is_project_hidden(app: web.Application, project_id: ProjectID) -> bool
 
 async def update_project_node_outputs(
     app: web.Application,
-    user_id: int,
-    project_id: str,
-    node_id: str,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
     new_outputs: dict | None,
     new_run_hash: str | None,
 ) -> tuple[dict, list[str]]:
@@ -460,16 +462,15 @@ async def update_project_node_outputs(
     )
     new_outputs = new_outputs or {}
 
-    partial_workbench_data = {
-        node_id: {"outputs": new_outputs, "runHash": new_run_hash},
-    }
-
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-    updated_project, changed_entries = await db.update_project_workbench(
-        partial_workbench_data=partial_workbench_data,
+    updated_project, changed_entries = await db.update_project_node_data(
         user_id=user_id,
         project_uuid=project_id,
+        node_id=node_id,
+        product_name=None,
+        new_node_data={"outputs": new_outputs, "runHash": new_run_hash},
     )
+
     log.debug(
         "patched project %s, following entries changed: %s",
         project_id,
@@ -481,7 +482,7 @@ async def update_project_node_outputs(
 
     # changed entries come in the form of {node_uuid: {outputs: {changed_key1: value1, changed_key2: value2}}}
     # we do want only the key names
-    changed_keys = changed_entries.get(node_id, {}).get("outputs", {}).keys()
+    changed_keys = changed_entries.get(f"{node_id}", {}).get("outputs", {}).keys()
     return updated_project, changed_keys
 
 
@@ -550,10 +551,19 @@ async def _trigger_connected_service_retrieve(
 
 
 async def post_trigger_connected_service_retrieve(
-    app: web.Application, **kwargs
+    app: web.Application,
+    *,
+    project: dict,
+    updated_node_uuid: str,
+    changed_keys: list[str],
 ) -> None:
     await fire_and_forget_task(
-        _trigger_connected_service_retrieve(app, **kwargs),
+        _trigger_connected_service_retrieve(
+            app,
+            project=project,
+            updated_node_uuid=updated_node_uuid,
+            changed_keys=changed_keys,
+        ),
         task_suffix_name="trigger_connected_service_retrieve",
         fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
     )
@@ -1138,7 +1148,7 @@ async def notify_project_state_update(
 async def notify_project_node_update(
     app: web.Application,
     project: dict,
-    node_id: str,
+    node_id: NodeID,
     errors: list[ErrorDict] | None,
 ) -> None:
     if await is_project_hidden(app, ProjectID(project["uuid"])):
@@ -1153,9 +1163,9 @@ async def notify_project_node_update(
             "event_type": SOCKET_IO_NODE_UPDATED_EVENT,
             "data": {
                 "project_id": project["uuid"],
-                "node_id": node_id,
+                "node_id": f"{node_id}",
                 # as GET projects/{project_id}/nodes/{node_id}
-                "data": project["workbench"][node_id],
+                "data": project["workbench"][f"{node_id}"],
                 # as GET projects/{project_id}/nodes/{node_id}/errors
                 "errors": errors,
             },

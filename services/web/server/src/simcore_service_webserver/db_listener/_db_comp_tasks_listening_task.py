@@ -15,7 +15,7 @@ from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeIDStr
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
@@ -41,8 +41,8 @@ async def _get_project_owner(conn: SAConnection, project_uuid: str) -> PositiveI
 async def _update_project_state(
     app: web.Application,
     user_id: PositiveInt,
-    project_uuid: str,
-    node_uuid: str,
+    project_uuid: ProjectID,
+    node_uuid: NodeID,
     new_state: RunningState,
     node_errors: list[ErrorDict] | None,
 ) -> None:
@@ -93,7 +93,7 @@ async def _handle_db_notification(
                 app,
                 the_project_owner,
                 ProjectID(project_uuid),
-                NodeIDStr(node_uuid),
+                NodeID(node_uuid),
                 new_outputs,
                 new_run_hash,
                 node_errors=task_data.get("errors", None),
@@ -105,8 +105,8 @@ async def _handle_db_notification(
             await _update_project_state(
                 app,
                 the_project_owner,
-                project_uuid,
-                node_uuid,
+                ProjectID(project_uuid),
+                NodeID(node_uuid),
                 new_state,
                 node_errors=task_data.get("errors", None),
             )
