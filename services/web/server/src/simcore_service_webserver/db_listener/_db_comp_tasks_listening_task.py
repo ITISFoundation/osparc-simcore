@@ -5,9 +5,10 @@ of a record in comp_task table is changed.
 import asyncio
 import json
 import logging
+from collections.abc import AsyncIterator
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import AsyncIterator, NoReturn
+from typing import NoReturn
 
 from aiohttp import web
 from aiopg.sa import Engine
@@ -140,7 +141,8 @@ async def _listen(app: web.Application, db_engine: Engine) -> NoReturn:
             # since aiopg does not reset the await in such a case (if DB was restarted or so)
             # see aiopg issue: https://github.com/aio-libs/aiopg/pull/559#issuecomment-826813082
             if conn.closed:
-                raise ConnectionError("connection with database is closed!")
+                msg = "connection with database is closed!"
+                raise ConnectionError(msg)
             if conn.connection.notifies.empty():
                 await asyncio.sleep(_LISTENING_TASK_BASE_SLEEPING_TIME_S)
                 continue
