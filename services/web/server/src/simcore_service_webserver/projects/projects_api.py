@@ -363,6 +363,30 @@ async def start_project_node(
     )
 
 
+async def _remove_service_and_its_data_folders(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    project_uuid: ProjectID,
+    node_uuid: NodeIDStr,
+    user_agent: str,
+    stop_service: bool,
+) -> None:
+    if stop_service:
+        # no need to save the state of the node when deleting it
+        await director_v2_api.stop_dynamic_service(
+            app,
+            node_uuid,
+            simcore_user_agent=user_agent,
+            save_state=False,
+        )
+
+    # remove the node's data if any
+    await storage_api.delete_data_folders_of_project_node(
+        app, f"{project_uuid}", node_uuid, user_id
+    )
+
+
 async def delete_project_node(
     request: web.Request, project_uuid: ProjectID, user_id: UserID, node_uuid: NodeIDStr
 ) -> None:
@@ -373,20 +397,22 @@ async def delete_project_node(
     list_running_dynamic_services = await director_v2_api.list_dynamic_services(
         request.app, project_id=f"{project_uuid}", user_id=user_id
     )
-    if any(s["service_uuid"] == node_uuid for s in list_running_dynamic_services):
-        # no need to save the state of the node when deleting it
-        await director_v2_api.stop_dynamic_service(
+
+    fire_and_forget_task(
+        _remove_service_and_its_data_folders(
             request.app,
-            node_uuid,
-            simcore_user_agent=request.headers.get(
+            user_id=user_id,
+            project_uuid=project_uuid,
+            node_uuid=node_uuid,
+            user_agent=request.headers.get(
                 X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
             ),
-            save_state=False,
-        )
-
-    # remove the node's data if any
-    await storage_api.delete_data_folders_of_project_node(
-        request.app, f"{project_uuid}", node_uuid, user_id
+            stop_service=any(
+                s["service_uuid"] == node_uuid for s in list_running_dynamic_services
+            ),
+        ),
+        task_suffix_name=f"_remove_service_and_its_data_folders_{user_id=}_{project_uuid=}_{node_uuid}",
+        fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
     )
 
     # remove the node from the db
