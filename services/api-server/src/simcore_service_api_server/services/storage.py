@@ -110,8 +110,7 @@ class StorageApi(BaseServiceClientApi):
         self, file: File, query: dict[str, str] | None = None
     ) -> URL:
         url = URL(
-            str(self.client.base_url)
-            + f"locations/{self.SIMCORE_S3_ID}/files/{file.quoted_storage_file_id}:complete"
+            f"{self.client.base_url}locations/{self.SIMCORE_S3_ID}/files/{file.quoted_storage_file_id}:complete"
         )
         if query is not None:
             url = url.include_query_params(**query)
