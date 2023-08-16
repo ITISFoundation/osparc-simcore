@@ -8,7 +8,7 @@ import logging
 from collections.abc import AsyncIterator
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import NoReturn
+from typing import Final, NoReturn
 
 from aiohttp import web
 from aiopg.sa import Engine
@@ -129,9 +129,12 @@ async def _handle_db_notification(
         )
 
 
+_LISTENING_TASK_BASE_SLEEPING_TIME_S: Final[int] = 1
+
+
 async def _listen(app: web.Application, db_engine: Engine) -> NoReturn:
     listen_query = f"LISTEN {DB_CHANNEL_NAME};"
-    _LISTENING_TASK_BASE_SLEEPING_TIME_S = 1
+
     async with db_engine.acquire() as conn:
         assert conn.connection  # nosec
         await conn.execute(listen_query)
