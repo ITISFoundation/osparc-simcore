@@ -5,6 +5,7 @@ from typing import Final
 
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import ProgressType, SimcorePlatformStatus
+from pydantic import PositiveInt
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
@@ -205,6 +206,16 @@ async def task_runs_docker_compose_down(
         _logger.warning("No compose-spec was found")
         return
 
+    running_containers_before_down: PositiveInt = (
+        await get_running_containers_count_from_names(shared_store.container_names)
+    )
+
+    async def _send_resource_tracking_stop(platform_status: SimcorePlatformStatus):
+        # NOTE: avoids sending a stop message without a start or any heartbeats,
+        # which makes no sense for the purpose of billing
+        if running_containers_before_down > 0:
+            await send_service_stopped(app, platform_status)
+
     try:
         progress.update(message="running docker-compose-down", percent=0.1)
         result = await _retry_docker_compose_down(shared_store.compose_spec, settings)
@@ -218,10 +229,10 @@ async def task_runs_docker_compose_down(
         result = await docker_compose_rm(shared_store.compose_spec, settings)
         _raise_for_errors(result, "rm")
     except Exception:
-        await send_service_stopped(app, SimcorePlatformStatus.BAD)
+        await _send_resource_tracking_stop(SimcorePlatformStatus.BAD)
         raise
 
-    await send_service_stopped(app, SimcorePlatformStatus.OK)
+    await _send_resource_tracking_stop(SimcorePlatformStatus.OK)
 
     # removing compose-file spec
     async with shared_store:
