@@ -6,7 +6,6 @@
 #
 aio-pika==9.1.2
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
 aioboto3==11.2.0
@@ -86,9 +85,9 @@ cloudpickle==2.2.1
     #   distributed
 colorlog==6.7.0
     # via dask-gateway-server
-coverage==7.2.7
+coverage==7.3.0
     # via pytest-cov
-cryptography==41.0.2
+cryptography==41.0.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   dask-gateway-server
@@ -112,7 +111,7 @@ exceptiongroup==1.1.2
     #   pytest
 execnet==2.0.2
     # via pytest-xdist
-faker==19.2.0
+faker==19.3.0
     # via -r requirements/_test.in
 flaky==3.7.0
     # via -r requirements/_test.in
@@ -197,11 +196,11 @@ multidict==6.0.4
     #   aiohttp
     #   async-asgi-testclient
     #   yarl
-mypy==1.4.1
+mypy==1.5.0
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
-numpy==1.25.1
+numpy==1.25.2
     # via bokeh
 packaging==23.1
     # via
