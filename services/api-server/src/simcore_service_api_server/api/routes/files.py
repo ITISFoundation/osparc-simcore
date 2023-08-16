@@ -213,12 +213,11 @@ async def get_upload_links(
         file_size=ByteSize(client_file.filesize),
         is_directory=False,
     )
-    rstrip = lambda s, rs: s[: -len(rs)] if s.endswith(rs) else s
-    query = rstrip(str(upload_links.links.complete_upload.query), ":complete")
+    query = str(upload_links.links.complete_upload.query).removesuffix(":complete")
     complete_url = request.url_for(
         "complete_multipart_upload", file_id=file_meta.id
     ).include_query_params(**dict(item.split("=") for item in query.split("&")))
-    query = rstrip(upload_links.links.abort_upload.query, ":abort")
+    query = str(upload_links.links.abort_upload.query).removesuffix(":abort")
     abort_url = request.url_for(
         "abort_multipart_upload", file_id=file_meta.id
     ).include_query_params(**dict(item.split("=") for item in query.split("&")))
