@@ -1,11 +1,13 @@
 import asyncio
 import logging
+from collections.abc import AsyncGenerator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from enum import Enum
-from typing import Any, AsyncGenerator, Awaitable, Callable, Final, TypedDict
+from typing import Any, Final, TypedDict
 
 import aiodocker
 import yaml
+from aiodocker.containers import DockerContainer
 from aiodocker.utils import clean_filters
 from models_library.basic_regex import DOCKER_GENERIC_TAG_KEY_RE
 from models_library.services import RunID
@@ -15,7 +17,7 @@ from settings_library.docker_registry import RegistrySettings
 
 from .errors import UnexpectedDockerError, VolumeNotFoundError
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -24,7 +26,7 @@ async def docker_client() -> AsyncGenerator[aiodocker.Docker, None]:
     try:
         yield docker
     except aiodocker.exceptions.DockerError as error:
-        logger.debug("An unexpected Docker error occurred", exc_info=True)
+        _logger.debug("An unexpected Docker error occurred", exc_info=True)
         raise UnexpectedDockerError(
             message=error.message, status=error.status
         ) from error
@@ -36,29 +38,32 @@ async def get_volume_by_label(label: str, run_id: RunID) -> dict[str, Any]:
     async with docker_client() as docker:
         filters = {"label": [f"source={label}", f"run_id={run_id}"]}
         params = {"filters": clean_filters(filters)}
-        data = await docker._query_json(  # pylint: disable=protected-access
+        data = await docker._query_json(  # pylint: disable=protected-access  # noqa: SLF001
             "volumes", method="GET", params=params
         )
         volumes = data["Volumes"]
-        logger.debug(  # pylint: disable=logging-fstring-interpolation
-            f"volumes query for {label=} {volumes=}"
-        )
+        _logger.debug("volumes query for label=%s volumes=%s", label, volumes)
         if len(volumes) != 1:
             raise VolumeNotFoundError(label, run_id, volumes)
-        volume_details = volumes[0]
-        return volume_details  # type: ignore
+        volume_details: dict[str, Any] = volumes[0]
+        return volume_details
+
+
+async def get_running_containers_details_from_names(
+    container_names: list[str],
+) -> list[DockerContainer]:
+    if len(container_names) == 0:
+        return []
+
+    async with docker_client() as docker:
+        filters = clean_filters({"name": container_names})
+        return await docker.containers.list(all=True, filters=filters)
 
 
 async def get_running_containers_count_from_names(
     container_names: list[str],
 ) -> PositiveInt:
-    if len(container_names) == 0:
-        return 0
-
-    async with docker_client() as docker:
-        filters = clean_filters({"name": container_names})
-        containers = await docker.containers.list(all=True, filters=filters)
-        return len(containers)
+    return len(await get_running_containers_details_from_names(container_names))
 
 
 def get_docker_service_images(compose_spec_yaml: str) -> set[str]:
@@ -217,7 +222,7 @@ async def _pull_image_with_progress(
     if match:
         registry_host = match.group("registry_host")
     else:
-        logger.error(
+        _logger.error(
             "%s does not match typical docker image pattern, please check! Image pulling will still be attempted but may fail.",
             f"{image_name=}",
         )
@@ -234,7 +239,7 @@ async def _pull_image_with_progress(
         if registry_host
         else None,
     ):
-        with log_catch(logger, reraise=False):
+        with log_catch(_logger, reraise=False):
             if _parse_docker_pull_progress(
                 parse_obj_as(_DockerProgressDict, pull_progress),
                 all_image_pulling_data[image_name],

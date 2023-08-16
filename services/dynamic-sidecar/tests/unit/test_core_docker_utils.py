@@ -1,18 +1,19 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-from typing import AsyncIterable, AsyncIterator
+from collections.abc import AsyncIterable, AsyncIterator
 
 import aiodocker
 import pytest
 import yaml
+from aiodocker.containers import DockerContainer
 from models_library.services import RunID
 from pydantic import PositiveInt, SecretStr
-from pytest import FixtureRequest
 from settings_library.docker_registry import RegistrySettings
 from simcore_service_dynamic_sidecar.core.docker_utils import (
     get_docker_service_images,
     get_running_containers_count_from_names,
+    get_running_containers_details_from_names,
     get_volume_by_label,
     pull_images,
 )
@@ -45,7 +46,7 @@ async def volume_with_label(volume_name: str, run_id: RunID) -> AsyncIterable[No
 
 
 @pytest.fixture(params=[0, 1, 2, 3])
-def container_count(request: FixtureRequest) -> PositiveInt:
+def container_count(request: pytest.FixtureRequest) -> PositiveInt:
     return request.param
 
 
@@ -60,7 +61,10 @@ async def started_services(container_names: list[str]) -> AsyncIterator[None]:
         started_containers = []
         for container_name in container_names:
             container = await docker_client.containers.create(
-                config={"Image": "busybox:latest"},
+                config={
+                    "image": "alpine:latest",
+                    "command": ["sh", "-c", "sleep 100000"],
+                },
                 name=container_name,
             )
             started_containers.append(container)
@@ -85,6 +89,19 @@ async def test_volume_label_missing(run_id: RunID) -> None:
     error_msg = f"{exc_info.value}"
     assert run_id in error_msg
     assert "not_exist" in error_msg
+
+
+async def test_get_running_containers_details_from_names(
+    started_services: None, container_names: list[str]
+):
+    if len(container_names) == 0:
+        return
+
+    containers: list[DockerContainer] = await get_running_containers_details_from_names(
+        container_names
+    )
+    for container in containers:
+        assert container["State"]
 
 
 async def test_get_running_containers_count_from_names(
