@@ -600,8 +600,8 @@ class ProjectDBAPI(BaseProjectDB):
             msg=f"update {project_uuid=}:{node_id=} for {user_id=}",
             extra=get_log_record_extra(user_id=user_id),
         ):
-            partial_workbench_data: dict[str, Any] = {
-                f"{node_id}": new_node_data,
+            partial_workbench_data: dict[NodeIDStr, Any] = {
+                NodeIDStr(f"{node_id}"): new_node_data,
             }
             return await self._update_project_workbench(
                 partial_workbench_data, user_id, f"{project_uuid}", product_name
@@ -754,8 +754,8 @@ class ProjectDBAPI(BaseProjectDB):
         product_name: str,
     ) -> None:
         # NOTE: permission check is done currently in update_project_workbench!
-        partial_workbench_data: dict[str, Any] = {
-            f"{node.node_id}": jsonable_encoder(
+        partial_workbench_data: dict[NodeIDStr, Any] = {
+            NodeIDStr(f"{node.node_id}"): jsonable_encoder(
                 old_struct_node,
                 exclude_unset=True,
             ),
@@ -771,8 +771,8 @@ class ProjectDBAPI(BaseProjectDB):
         self, user_id: UserID, project_id: ProjectID, node_id: NodeID
     ) -> None:
         # NOTE: permission check is done currently in update_project_workbench!
-        partial_workbench_data: dict[str, Any] = {
-            f"{node_id}": None,
+        partial_workbench_data: dict[NodeIDStr, Any] = {
+            NodeIDStr(f"{node_id}"): None,
         }
         await self._update_project_workbench(
             partial_workbench_data, user_id, f"{project_id}"
