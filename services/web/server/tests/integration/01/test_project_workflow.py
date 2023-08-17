@@ -16,7 +16,6 @@ from collections.abc import Awaitable, Callable, Iterator
 from copy import deepcopy
 from typing import Any
 from unittest import mock
-from uuid import uuid4
 
 import pytest
 import redis.asyncio as aioredis
@@ -57,6 +56,7 @@ pytest_simcore_core_services_selection = [
     "director",
     "migration",
     "postgres",
+    "rabbit",
     "redis",
 ]
 
@@ -209,6 +209,20 @@ async def _request_get(client, pid) -> dict:
     return project
 
 
+async def _request_add_node(
+    client, project_id, service_key: str, service_version: str
+) -> dict[str, Any]:
+    # POST /v0/projects/{project_id}/nodes
+    url = client.app.router["create_node"].url_for(project_id=project_id)
+    resp = await client.post(
+        url, json={"service_key": service_key, "service_version": service_version}
+    )
+
+    created_node, _ = await assert_status(resp, web.HTTPCreated)
+
+    return created_node
+
+
 async def _request_replace(client, project, pid):
     # PUT /v0/projects/{project_id}
     url = client.app.router["replace_project"].url_for(project_id=pid)
@@ -276,13 +290,24 @@ async def test_workflow(
     }
 
     modified_project = deepcopy(projects[0])
+    # create a new node (copy an existing one)
+    copy_from_node_id = next(iter(modified_project["workbench"].keys()))
+    copy_from_node_data = modified_project["workbench"][copy_from_node_id]
+    created_node = await _request_add_node(
+        client,
+        modified_project["uuid"],
+        copy_from_node_data["key"],
+        copy_from_node_data["version"],
+    )
+    new_node_id = next(iter(created_node))
+    # get the project
+    project = await _request_get(client, modified_project["uuid"])
+
+    # now modify it
+    modified_project = deepcopy(project)
     modified_project["name"] = "some other name"
     modified_project["description"] = "John Raynor killed Kerrigan"
 
-    new_node_id = str(uuid4())
-    modified_project["workbench"][new_node_id] = modified_project["workbench"].pop(
-        next(iter(modified_project["workbench"].keys()))
-    )
     modified_project["workbench"][new_node_id]["position"]["x"] = 0
     # share with some group
     modified_project["accessRights"].update(
