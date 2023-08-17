@@ -10,7 +10,10 @@ from pathlib import Path
 from typing import Any, Final
 from unittest.mock import AsyncMock
 
+import aiodocker
 import pytest
+from aiodocker.containers import DockerContainer
+from aiodocker.utils import clean_filters
 from aiodocker.volumes import DockerVolume
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
@@ -322,5 +325,86 @@ async def test_user_services_fail_to_stop_or_save_data(
     for heart_beat_message in heart_beat_messages:
         assert isinstance(heart_beat_message, RabbitResourceTrackingHeartbeatMessage)
     for stop_message in stop_messages:
+        assert isinstance(stop_message, RabbitResourceTrackingStoppedMessage)
+        assert stop_message.simcore_platform_status == SimcorePlatformStatus.BAD
+
+
+async def _simulate_container_crash(container_names: list[str]) -> None:
+    async with aiodocker.Docker() as docker:
+        filters = clean_filters({"name": container_names})
+        containers: list[DockerContainer] = await docker.containers.list(
+            all=True, filters=filters
+        )
+        for container in containers:
+            await container.kill()
+
+
+async def test_user_services_crash_when_running(
+    mock_core_rabbitmq: dict[str, AsyncMock],
+    httpx_async_client: AsyncClient,
+    client: Client,
+    compose_spec: str,
+    container_names: list[str],
+    mock_metrics_params: CreateServiceMetricsAdditionalParams,
+    mock_user_services_fail_to_stop: None,
+):
+    async with periodic_task_result(
+        client=client,
+        task_id=await _get_task_id_create_service_containers(
+            httpx_async_client, compose_spec, mock_metrics_params
+        ),
+        task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
+        status_poll_interval=_FAST_STATUS_POLL,
+    ) as result:
+        assert isinstance(result, list)
+        assert len(result) == len(container_names)
+
+    await _wait_for_containers_to_be_running(container_names)
+
+    # let a few heartbeats pass
+    await asyncio.sleep(_BASE_HEART_BEAT_INTERVAL * 2)
+
+    # crash the user services
+    await _simulate_container_crash(container_names)
+
+    # check only start and heartbeats are present
+    resource_tracking_messages = _get_resource_tracking_messages(mock_core_rabbitmq)
+    assert len(resource_tracking_messages) >= 2
+
+    start_message = resource_tracking_messages[0]
+    heart_beat_messages = resource_tracking_messages[1:]
+
+    assert isinstance(start_message, RabbitResourceTrackingStartedMessage)
+    for heart_beat_message in heart_beat_messages:
+        assert isinstance(heart_beat_message, RabbitResourceTrackingHeartbeatMessage)
+
+    # reset mock
+    mock_core_rabbitmq["post_rabbit_message"].reset_mock()
+
+    # wati a bit more and check no further heartbeats are sent
+    await asyncio.sleep(_BASE_HEART_BEAT_INTERVAL * 2)
+    new_resource_tracking_messages = _get_resource_tracking_messages(mock_core_rabbitmq)
+    assert len(new_resource_tracking_messages) == 0
+
+    # sending stop events, and since there was an issue multiple stops
+    # will be sent due to manual intervention
+    _EXPECTED_STOP_MESSAGES = 4
+    for _ in range(_EXPECTED_STOP_MESSAGES):
+        with pytest.raises(TaskClientResultError):
+            async with periodic_task_result(
+                client=client,
+                task_id=await _get_task_id_docker_compose_down(httpx_async_client),
+                task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
+                status_poll_interval=_FAST_STATUS_POLL,
+            ):
+                ...
+
+    # waiting a bit more to settle down events
+    await asyncio.sleep(_BASE_HEART_BEAT_INTERVAL * 2)
+
+    resource_tracking_messages = _get_resource_tracking_messages(mock_core_rabbitmq)
+    assert len(resource_tracking_messages) >= 0
+
+    for stop_message in resource_tracking_messages:
         assert isinstance(stop_message, RabbitResourceTrackingStoppedMessage)
         assert stop_message.simcore_platform_status == SimcorePlatformStatus.BAD
