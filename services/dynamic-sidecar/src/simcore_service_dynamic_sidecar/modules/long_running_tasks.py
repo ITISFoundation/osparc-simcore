@@ -1,7 +1,8 @@
 import functools
 import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Final
+from typing import AsyncGenerator, Final
 
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import ProgressType, SimcorePlatformStatus
@@ -39,7 +40,7 @@ from ..models.schemas.containers import ContainersCreate
 from ..models.shared_store import SharedStore
 from ..modules import nodeports
 from ..modules.mounted_fs import MountedVolumes
-from ..modules.outputs import OutputsManager, outputs_watcher_disabled
+from ..modules.outputs import OutputsManager, event_propagation_disabled
 from ..modules.resource_tracking.core import send_service_started, send_service_stopped
 
 _logger = logging.getLogger(__name__)
@@ -115,6 +116,19 @@ async def _retry_docker_compose_create(
     return expected_num_containers == actual_num_containers
 
 
+@asynccontextmanager
+async def _revert_on_error(
+    shared_store: SharedStore,
+) -> AsyncGenerator[None, None]:
+    try:
+        yield None
+    except Exception:
+        async with shared_store:
+            shared_store.compose_spec = None
+            shared_store.container_names = []
+        raise
+
+
 async def task_create_service_containers(
     progress: TaskProgress,
     settings: ApplicationSettings,
@@ -140,7 +154,7 @@ async def task_create_service_containers(
 
     assert shared_store.compose_spec  # nosec
 
-    async with outputs_watcher_disabled(app):
+    async with event_propagation_disabled(app), _revert_on_error(shared_store):
         # removes previous pending containers
         progress.update(message="cleanup previous used resources")
         result = await docker_compose_rm(shared_store.compose_spec, settings)
