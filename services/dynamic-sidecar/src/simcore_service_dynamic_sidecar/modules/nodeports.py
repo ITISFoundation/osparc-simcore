@@ -186,7 +186,7 @@ def _is_zip_file(file_path: Path) -> bool:
     return f"{mime_type}" == "application/zip"
 
 
-_shutil_move = aiofiles.os.wrap(shutil.move)  # type: ignore
+_shutil_move = aiofiles.os.wrap(shutil.move)
 
 
 async def _get_data_from_port(
