@@ -5,7 +5,6 @@
 
 """
 import logging
-from collections import deque
 from contextlib import AsyncExitStack
 from typing import Any
 from uuid import uuid1
@@ -88,7 +87,6 @@ ANY_USER = ANY_USER_ID_SENTINEL
 
 class ProjectDBAPI(BaseProjectDB):
     def __init__(self, app: web.Application):
-        # TODO: shall be a weak pointer since it is also contained by app??
         self._app = app
         self._engine = app.get(APP_DB_ENGINE_KEY)
 
@@ -122,6 +120,7 @@ class ProjectDBAPI(BaseProjectDB):
     async def _insert_project_in_db(
         self,
         insert_values: ProjectDict,
+        *,
         force_project_uuid: bool,
         product_name: str,
         project_tag_ids: list[int],
@@ -384,13 +383,13 @@ class ProjectDBAPI(BaseProjectDB):
             )
 
     async def list_projects_uuids(self, user_id: int) -> list[str]:
-        result: deque = deque()
         async with self.engine.acquire() as conn:
-            async for row in conn.execute(
-                sa.select(projects.c.uuid).where(projects.c.prj_owner == user_id)
-            ):
-                result.append(row[projects.c.uuid])
-            return list(result)
+            return [
+                row[projects.c.uuid]
+                async for row in conn.execute(
+                    sa.select(projects.c.uuid).where(projects.c.prj_owner == user_id)
+                )
+            ]
 
     async def get_project(
         self,
