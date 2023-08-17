@@ -20,7 +20,7 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.json_serialization import json_dumps
 
-from .._meta import api_version_prefix as VTAG
+from .._meta import api_version_prefix as VTAG  # noqa: N812
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from . import _ports_api, projects_api
@@ -77,8 +77,7 @@ async def _get_validated_workbench_model(
         include_state=False,
     )
 
-    workbench = parse_obj_as(dict[NodeID, Node], project["workbench"])
-    return workbench
+    return parse_obj_as(dict[NodeID, Node], project["workbench"])
 
 
 routes = web.RouteTableDef()
