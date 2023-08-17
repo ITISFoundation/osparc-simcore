@@ -112,20 +112,6 @@ async def _wait_for_containers_to_be_running(container_names: list[str]) -> None
                 raise TryAgain
 
 
-async def test__get_containers_inspect_from_names_with_killed(
-    started_services: None, container_names: list[str], faker: Faker
-):
-    await _wait_for_containers_to_be_running(container_names)
-
-    container_details: dict[
-        str, DockerContainer | None
-    ] = await _get_containers_inspect_from_names(container_names)
-    for container in container_details.values():
-        assert container is not None
-
-        # assert False
-
-
 async def test__get_containers_inspect_from_names(
     started_services: None, container_names: list[str], faker: Faker
 ):
