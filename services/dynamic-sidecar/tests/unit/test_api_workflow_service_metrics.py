@@ -40,6 +40,7 @@ from servicelib.fastapi.long_running_tasks.client import setup as client_setup
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.core.docker_utils import get_container_states
 from simcore_service_dynamic_sidecar.models.schemas.containers import ContainersCreate
+from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 from tenacity import AsyncRetrying, TryAgain
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -178,10 +179,13 @@ def _get_resource_tracking_messages(
     ]
 
 
-async def _wait_for_containers_to_be_running(container_names: list[str]) -> None:
+async def _wait_for_containers_to_be_running(app: FastAPI) -> None:
+    shared_store: SharedStore = app.state.shared_store
     async for attempt in AsyncRetrying(wait=wait_fixed(0.1), stop=stop_after_delay(4)):
         with attempt:
-            containers_statuses = await get_container_states(container_names)
+            containers_statuses = await get_container_states(
+                shared_store.container_names
+            )
 
             running_container_statuses = [
                 x
@@ -189,12 +193,13 @@ async def _wait_for_containers_to_be_running(container_names: list[str]) -> None
                 if x is not None and x.Status == ContainerStatus.running
             ]
 
-            if len(running_container_statuses) != len(container_names):
+            if len(running_container_statuses) != len(shared_store.container_names):
                 raise TryAgain
 
 
 async def test_open_heartbeat_close(
     mock_core_rabbitmq: dict[str, AsyncMock],
+    app: FastAPI,
     httpx_async_client: AsyncClient,
     client: Client,
     compose_spec: str,
@@ -212,7 +217,7 @@ async def test_open_heartbeat_close(
         assert isinstance(result, list)
         assert len(result) == len(container_names)
 
-    await _wait_for_containers_to_be_running(container_names)
+    await _wait_for_containers_to_be_running(app)
 
     async with periodic_task_result(
         client=client,
@@ -245,6 +250,7 @@ async def test_open_heartbeat_close(
 @pytest.mark.parametrize("with_compose_down", [True, False])
 async def test_user_services_fail_to_start(
     mock_core_rabbitmq: dict[str, AsyncMock],
+    app: FastAPI,
     httpx_async_client: AsyncClient,
     client: Client,
     compose_spec: str,
@@ -262,6 +268,8 @@ async def test_user_services_fail_to_start(
             status_poll_interval=_FAST_STATUS_POLL,
         ):
             ...
+    shared_store: SharedStore = app.state.shared_store
+    assert len(shared_store.container_names) == 0
 
     if with_compose_down:
         async with periodic_task_result(
@@ -279,6 +287,7 @@ async def test_user_services_fail_to_start(
 
 async def test_user_services_fail_to_stop_or_save_data(
     mock_core_rabbitmq: dict[str, AsyncMock],
+    app: FastAPI,
     httpx_async_client: AsyncClient,
     client: Client,
     compose_spec: str,
@@ -297,7 +306,7 @@ async def test_user_services_fail_to_stop_or_save_data(
         assert isinstance(result, list)
         assert len(result) == len(container_names)
 
-    await _wait_for_containers_to_be_running(container_names)
+    await _wait_for_containers_to_be_running(app)
 
     # in case of manual intervention multiple stops will be sent
     _EXPECTED_STOP_MESSAGES = 4
@@ -343,6 +352,7 @@ async def _simulate_container_crash(container_names: list[str]) -> None:
 
 async def test_user_services_crash_when_running(
     mock_core_rabbitmq: dict[str, AsyncMock],
+    app: FastAPI,
     httpx_async_client: AsyncClient,
     client: Client,
     compose_spec: str,
@@ -360,7 +370,7 @@ async def test_user_services_crash_when_running(
         assert isinstance(result, list)
         assert len(result) == len(container_names)
 
-    await _wait_for_containers_to_be_running(container_names)
+    await _wait_for_containers_to_be_running(app)
 
     # let a few heartbeats pass
     await asyncio.sleep(_BASE_HEART_BEAT_INTERVAL * 2)
