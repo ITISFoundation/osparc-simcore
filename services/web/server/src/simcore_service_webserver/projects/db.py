@@ -72,6 +72,7 @@ from .exceptions import (
     NodeNotFoundError,
     ProjectDeleteError,
     ProjectInvalidRightsError,
+    ProjectInvalidUsageError,
     ProjectNodeResourcesInsufficientRightsError,
     ProjectNotFoundError,
 )
@@ -604,7 +605,11 @@ class ProjectDBAPI(BaseProjectDB):
                 NodeIDStr(f"{node_id}"): new_node_data,
             }
             return await self._update_project_workbench(
-                partial_workbench_data, user_id, f"{project_uuid}", product_name
+                partial_workbench_data,
+                user_id=user_id,
+                project_uuid=f"{project_uuid}",
+                product_name=product_name,
+                allow_workbench_changes=False,
             )
 
     async def update_project_multiple_node_data(
@@ -615,6 +620,10 @@ class ProjectDBAPI(BaseProjectDB):
         product_name: str | None,
         partial_workbench_data: dict[NodeIDStr, dict[str, Any]],
     ) -> tuple[ProjectDict, dict[str, Any]]:
+        """
+        Raises:
+            ProjectInvalidUsageError if client tries to remove nodes using this method (use remove_project_node)
+        """
         with log_context(
             log,
             logging.DEBUG,
@@ -622,15 +631,21 @@ class ProjectDBAPI(BaseProjectDB):
             extra=get_log_record_extra(user_id=user_id),
         ):
             return await self._update_project_workbench(
-                partial_workbench_data, user_id, f"{project_uuid}", product_name
+                partial_workbench_data,
+                user_id=user_id,
+                project_uuid=f"{project_uuid}",
+                product_name=product_name,
+                allow_workbench_changes=False,
             )
 
     async def _update_project_workbench(
         self,
         partial_workbench_data: dict[NodeIDStr, Any],
+        *,
         user_id: int,
         project_uuid: str,
         product_name: str | None = None,
+        allow_workbench_changes: bool,
     ) -> tuple[ProjectDict, dict[str, Any]]:
         """patches an EXISTING project from a user
         new_project_data only contains the entries to modify
@@ -639,7 +654,7 @@ class ProjectDBAPI(BaseProjectDB):
         - Example: to modify a node ```{new_node_id: {"outputs": {"output_1": 2}}}```
         - Example: to remove a node ```{node_id: None}```
 
-        raises NodeNotFoundError, ProjectInvalidRightsError
+        raises NodeNotFoundError, ProjectInvalidRightsError, ProjectInvalidUsageError if allow_workbench_changes=False and nodes are added/removed
 
         """
         with log_context(
@@ -665,7 +680,7 @@ class ProjectDBAPI(BaseProjectDB):
 
                 def _patch_workbench(
                     project: dict[str, Any],
-                    new_partial_workbench_data: dict[str, Any],
+                    new_partial_workbench_data: dict[NodeIDStr, Any],
                 ) -> tuple[dict[str, Any], dict[str, Any]]:
                     """patch the project workbench with the values in new_data and returns the changed project and changed values"""
                     changed_entries = {}
@@ -676,6 +691,8 @@ class ProjectDBAPI(BaseProjectDB):
                         current_node_data = project.get("workbench", {}).get(node_key)
 
                         if current_node_data is None:
+                            if not allow_workbench_changes:
+                                raise ProjectInvalidUsageError
                             # if it's a new node, let's check that it validates
                             try:
                                 Node.parse_obj(new_node_data)
@@ -689,6 +706,8 @@ class ProjectDBAPI(BaseProjectDB):
                                 )
                                 raise NodeNotFoundError(project_uuid, node_key) from err
                         elif new_node_data is None:
+                            if not allow_workbench_changes:
+                                raise ProjectInvalidUsageError
                             # remove the node
                             project["workbench"].pop(node_key)
                             changed_entries.update({node_key: None})
@@ -761,7 +780,11 @@ class ProjectDBAPI(BaseProjectDB):
             ),
         }
         await self._update_project_workbench(
-            partial_workbench_data, user_id, f"{project_id}", product_name
+            partial_workbench_data,
+            user_id=user_id,
+            project_uuid=f"{project_id}",
+            product_name=product_name,
+            allow_workbench_changes=True,
         )
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
         async with self.engine.acquire() as conn:
@@ -775,7 +798,10 @@ class ProjectDBAPI(BaseProjectDB):
             NodeIDStr(f"{node_id}"): None,
         }
         await self._update_project_workbench(
-            partial_workbench_data, user_id, f"{project_id}"
+            partial_workbench_data,
+            user_id=user_id,
+            project_uuid=f"{project_id}",
+            allow_workbench_changes=True,
         )
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
         async with self.engine.acquire() as conn:
@@ -862,16 +888,13 @@ class ProjectDBAPI(BaseProjectDB):
         """
         raises ProjectInvalidRightsError
         """
-        async with self.engine.acquire() as conn:
-            async with conn.begin():
-                project = await self._get_project(
-                    conn, user_id, project_uuid, for_update=True
-                )
-                # if we have delete access we delete the project
-                user_groups: list[RowProxy] = await self._list_user_groups(
-                    conn, user_id
-                )
-                check_project_permissions(project, user_id, user_groups, "delete")
+        async with self.engine.acquire() as conn, conn.begin():
+            project = await self._get_project(
+                conn, user_id, project_uuid, for_update=True
+            )
+            # if we have delete access we delete the project
+            user_groups: list[RowProxy] = await self._list_user_groups(conn, user_id)
+            check_project_permissions(project, user_id, user_groups, "delete")
 
     #
     # Project TAGS
