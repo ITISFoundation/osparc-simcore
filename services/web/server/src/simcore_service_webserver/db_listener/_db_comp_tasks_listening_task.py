@@ -26,6 +26,7 @@ from ..projects import exceptions, projects_api
 from ..projects.nodes_utils import update_node_outputs
 from ._utils import convert_state_from_db
 
+_LISTENING_TASK_BASE_SLEEPING_TIME_S: Final[int] = 1
 _logger = logging.getLogger(__name__)
 
 
@@ -129,9 +130,6 @@ async def _handle_db_notification(
         )
 
 
-_LISTENING_TASK_BASE_SLEEPING_TIME_S: Final[int] = 1
-
-
 async def _listen(app: web.Application, db_engine: Engine) -> NoReturn:
     listen_query = f"LISTEN {DB_CHANNEL_NAME};"
 
@@ -164,7 +162,7 @@ async def _comp_tasks_listening_task(app: web.Application) -> None:
             db_engine = app[APP_DB_ENGINE_KEY]
             _logger.info("listening to comp_task events...")
             await _listen(app, db_engine)
-        except asyncio.CancelledError:
+        except asyncio.CancelledError:  # noqa: PERF203
             # we are closing the app..
             _logger.info("cancelled comp_tasks events")
             raise
