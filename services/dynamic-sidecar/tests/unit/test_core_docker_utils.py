@@ -2,22 +2,30 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 from collections.abc import AsyncIterable, AsyncIterator
+from contextlib import suppress
 
 import aiodocker
 import pytest
 import yaml
 from aiodocker.containers import DockerContainer
+from faker import Faker
+from models_library.generated_models.docker_rest_api import ContainerState
+from models_library.generated_models.docker_rest_api import Status2 as ContainerStatus
 from models_library.services import RunID
 from pydantic import PositiveInt, SecretStr
 from settings_library.docker_registry import RegistrySettings
 from simcore_service_dynamic_sidecar.core.docker_utils import (
-    _get_containers_details_from_names,
+    _get_containers_inspect_from_names,
+    get_container_states,
     get_containers_count_from_names,
     get_docker_service_images,
     get_volume_by_label,
     pull_images,
 )
 from simcore_service_dynamic_sidecar.core.errors import VolumeNotFoundError
+from tenacity import AsyncRetrying, TryAgain
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 
 @pytest.fixture(scope="session")
@@ -60,11 +68,8 @@ async def started_services(container_names: list[str]) -> AsyncIterator[None]:
     async with aiodocker.Docker() as docker_client:
         started_containers = []
         for container_name in container_names:
-            container = await docker_client.containers.create(
-                config={
-                    "image": "alpine:latest",
-                    "command": ["sh", "-c", "sleep 100000"],
-                },
+            container = await docker_client.containers.run(
+                config={"Image": "alpine:latest", "Cmd": ["sh", "-c", "sleep 10000"]},
                 name=container_name,
             )
             started_containers.append(container)
@@ -72,7 +77,8 @@ async def started_services(container_names: list[str]) -> AsyncIterator[None]:
         yield
 
         for container in started_containers:
-            await container.stop()
+            with suppress(aiodocker.DockerError):
+                await container.kill()
             await container.delete()
 
 
@@ -91,17 +97,69 @@ async def test_volume_label_missing(run_id: RunID) -> None:
     assert "not_exist" in error_msg
 
 
-async def test_get_running_containers_details_from_names(
-    started_services: None, container_names: list[str]
-):
-    if len(container_names) == 0:
-        return
+async def _wait_for_containers_to_be_running(container_names: list[str]) -> None:
+    async for attempt in AsyncRetrying(wait=wait_fixed(0.1), stop=stop_after_delay(4)):
+        with attempt:
+            containers_statuses = await get_container_states(container_names)
+            print(f"{containers_statuses=}")
 
-    containers: list[DockerContainer] = await _get_containers_details_from_names(
-        container_names
+            running_container_statuses = [
+                x
+                for x in containers_statuses.values()
+                if x is not None and x.Status == ContainerStatus.running
+            ]
+            print(running_container_statuses)
+
+            if len(running_container_statuses) != len(container_names):
+                raise TryAgain
+
+
+async def test__get_containers_inspect_from_names_with_killed(
+    started_services: None, container_names: list[str], faker: Faker
+):
+    await _wait_for_containers_to_be_running(container_names)
+
+    container_details: dict[
+        str, DockerContainer | None
+    ] = await _get_containers_inspect_from_names(container_names)
+    for container in container_details.values():
+        assert container is not None
+
+        # assert False
+
+
+async def test__get_containers_inspect_from_names(
+    started_services: None, container_names: list[str], faker: Faker
+):
+    MISSING_CONTAINER_NAME = f"missing-container-{faker.uuid4()}"
+    container_details: dict[
+        str, DockerContainer | None
+    ] = await _get_containers_inspect_from_names(
+        [*container_names, MISSING_CONTAINER_NAME]
     )
-    for container in containers:
-        assert container["State"]
+    # containers which do not exist always return None
+    assert MISSING_CONTAINER_NAME in container_details
+    assert container_details.pop(MISSING_CONTAINER_NAME) is None
+
+    assert set(container_details.keys()) == set(container_names)
+    for docker_container in container_details.values():
+        assert docker_container is not None
+
+
+async def test_get_container_statuses(
+    started_services: None, container_names: list[str], faker: Faker
+):
+    MISSING_CONTAINER_NAME = f"missing-container-{faker.uuid4()}"
+    container_states: dict[str, ContainerState | None] = await get_container_states(
+        [*container_names, MISSING_CONTAINER_NAME]
+    )
+    # containers which do not exist always have a None status
+    assert MISSING_CONTAINER_NAME in container_states
+    assert container_states.pop(MISSING_CONTAINER_NAME) is None
+
+    assert set(container_states.keys()) == set(container_names)
+    for docker_status in container_states.values():
+        assert docker_status is not None
 
 
 async def test_get_running_containers_count_from_names(

@@ -10,10 +10,13 @@ import yaml
 from aiodocker.containers import DockerContainer
 from aiodocker.utils import clean_filters
 from models_library.basic_regex import DOCKER_GENERIC_TAG_KEY_RE
+from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.services import RunID
 from pydantic import PositiveInt, parse_obj_as
 from servicelib.logging_utils import log_catch
+from servicelib.utils import logged_gather
 from settings_library.docker_registry import RegistrySettings
+from starlette import status
 
 from .errors import UnexpectedDockerError, VolumeNotFoundError
 
@@ -49,45 +52,61 @@ async def get_volume_by_label(label: str, run_id: RunID) -> dict[str, Any]:
         return volume_details
 
 
-async def _get_containers_details_from_names(
+async def _get_container(
+    docker: aiodocker.Docker, container_name: str
+) -> DockerContainer | None:
+    try:
+        return await docker.containers.get(container_name)
+    except aiodocker.DockerError as e:
+        if e.status == status.HTTP_404_NOT_FOUND:
+            return None
+        raise
+
+
+async def _get_containers_inspect_from_names(
     container_names: list[str],
-) -> list[DockerContainer]:
+) -> dict[str, DockerContainer | None]:
     # NOTE: returned objects have their associated Docker client session closed
     if len(container_names) == 0:
-        return []
+        return {}
+
+    containers_inspect: dict[str, DockerContainer | None] = {
+        x: None for x in container_names
+    }
 
     async with docker_client() as docker:
-        filters = clean_filters({"name": container_names})
-        return await docker.containers.list(all=True, filters=filters)
+        docker_containers: list[DockerContainer | None] = await logged_gather(
+            *(
+                _get_container(docker, container_name)
+                for container_name in container_names
+            )
+        )
+        for docker_container in docker_containers:
+            if docker_container is None:
+                continue
+
+            stripped_name = docker_container["Name"].lstrip("/")
+            if stripped_name in containers_inspect:
+                containers_inspect[stripped_name] = docker_container
+
+    return containers_inspect
 
 
-_ACCEPTED_STATUSES: set[str] = {"created", "running"}
-
-
-async def get_container_statuses(container_names: list[str]) -> list[str]:
-    found_container_details = await _get_containers_details_from_names(container_names)
-    # TODO: remove this one once done
-    _logger.debug("containers states %s", [x["State"] for x in found_container_details])
-    return [container["State"] for container in found_container_details]
-
-
-async def get_accepted_container_count_from_names(
+async def get_container_states(
     container_names: list[str],
-) -> PositiveInt:
-    container_statuses = await get_container_statuses(container_names)
-    return len(
-        [
-            0
-            for container_state in container_statuses
-            if container_state in _ACCEPTED_STATUSES
-        ]
-    )
+) -> dict[str, ContainerState | None]:
+    """if a container is not found it's status is None"""
+    containers_inspect = await _get_containers_inspect_from_names(container_names)
+    return {
+        k: None if v is None else ContainerState(**v["State"])
+        for k, v in containers_inspect.items()
+    }
 
 
 async def get_containers_count_from_names(
     container_names: list[str],
 ) -> PositiveInt:
-    return len(await _get_containers_details_from_names(container_names))
+    return len(await _get_containers_inspect_from_names(container_names))
 
 
 def get_docker_service_images(compose_spec_yaml: str) -> set[str]:
