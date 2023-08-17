@@ -5,7 +5,7 @@
 
 import asyncio
 import json
-from collections.abc import AsyncIterable
+from collections.abc import AsyncIterable, Callable
 from pathlib import Path
 from typing import Any, Final
 from unittest.mock import AsyncMock
@@ -18,6 +18,7 @@ from aiodocker.volumes import DockerVolume
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from httpx import AsyncClient
+from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.generated_models.docker_rest_api import Status2 as ContainerStatus
 from models_library.rabbitmq_messages import (
     RabbitResourceTrackingHeartbeatMessage,
@@ -350,6 +351,33 @@ async def _simulate_container_crash(container_names: list[str]) -> None:
             await container.kill()
 
 
+@pytest.fixture
+def mock_one_container_oom_killed(mocker: MockerFixture) -> Callable[[], None]:
+    def _mock() -> None:
+        async def _mocked_get_container_states(
+            container_names: list[str],
+        ) -> dict[str, ContainerState | None]:
+            results = await get_container_states(container_names)
+            for result in results.values():
+                if result:
+                    result.OOMKilled = True
+                    result.Status = ContainerStatus.exited
+                break
+            return results
+
+        mocker.patch(
+            "simcore_service_dynamic_sidecar.modules.long_running_tasks.get_container_states",
+            side_effect=_mocked_get_container_states,
+        )
+        mocker.patch(
+            "simcore_service_dynamic_sidecar.modules.resource_tracking.core.get_container_states",
+            side_effect=_mocked_get_container_states,
+        )
+
+    return _mock
+
+
+@pytest.mark.parametrize("expected_platform_state", SimcorePlatformStatus)
 async def test_user_services_crash_when_running(
     mock_core_rabbitmq: dict[str, AsyncMock],
     app: FastAPI,
@@ -358,6 +386,8 @@ async def test_user_services_crash_when_running(
     compose_spec: str,
     container_names: list[str],
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
+    mock_one_container_oom_killed: Callable[[], None],
+    expected_platform_state: SimcorePlatformStatus,
 ):
     async with periodic_task_result(
         client=client,
@@ -376,7 +406,12 @@ async def test_user_services_crash_when_running(
     await asyncio.sleep(_BASE_HEART_BEAT_INTERVAL * 2)
 
     # crash the user services
-    await _simulate_container_crash(container_names)
+    if expected_platform_state == SimcorePlatformStatus.OK:
+        # was it oom killed, not our fault
+        mock_one_container_oom_killed()
+    else:
+        # something else happened our fault and is bad
+        await _simulate_container_crash(container_names)
 
     # check only start and heartbeats are present
     resource_tracking_messages = _get_resource_tracking_messages(mock_core_rabbitmq)
@@ -417,4 +452,4 @@ async def test_user_services_crash_when_running(
 
     for stop_message in resource_tracking_messages:
         assert isinstance(stop_message, RabbitResourceTrackingStoppedMessage)
-        assert stop_message.simcore_platform_status == SimcorePlatformStatus.BAD
+        assert stop_message.simcore_platform_status == expected_platform_state
