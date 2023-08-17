@@ -2,31 +2,28 @@ from mimetypes import guess_type
 from pathlib import Path
 from typing import Any, ClassVar
 from urllib.parse import quote as _quote
+from urllib.parse import unquote as _unquote
 from uuid import UUID, uuid3
 
 import aiofiles
 from fastapi import UploadFile
 from models_library.api_schemas_storage import FileUploadSchema
 from models_library.projects_nodes_io import StorageFileID
-from pydantic import (
-    AnyUrl,
-    BaseModel,
-    ByteSize,
-    ConstrainedStr,
-    Field,
-    parse_obj_as,
-    validator,
-)
+from pydantic import BaseModel, ByteSize, ConstrainedStr, Field, parse_obj_as, validator
 
 from ...utils.hash import create_md5_checksum
 
 NAMESPACE_FILEID_KEY = UUID("aa154444-d22d-4290-bb15-df37dba87865")
 
 
+class FileName(ConstrainedStr):
+    strip_whitespace = True
+
+
 class ClientFile(BaseModel):
     """Represents a file stored on the client side"""
 
-    filename: ConstrainedStr = Field(..., description="File name")
+    filename: FileName = Field(..., description="File name")
     filesize: ByteSize = Field(..., description="File size in bytes")
 
 
@@ -125,6 +122,14 @@ class File(BaseModel):
         )
 
     @classmethod
+    async def create_from_quoted_storage_id(cls, quoted_storage_id: str) -> "File":
+        storage_file_id: StorageFileID = parse_obj_as(
+            StorageFileID, _unquote(quoted_storage_id)
+        )
+        _, fid, fname = Path(storage_file_id).parts
+        return cls(id=UUID(fid), filename=fname, checksum=None)
+
+    @classmethod
     def create_id(cls, *keys) -> UUID:
         return uuid3(NAMESPACE_FILEID_KEY, ":".join(map(str, keys)))
 
@@ -139,16 +144,8 @@ class File(BaseModel):
         return _quote(self.storage_file_id, safe="")
 
 
-class ClientFileUploadLinks(BaseModel):
-    complete_upload: AnyUrl = Field(..., description="Link for completing upload")
-    abort_upload: AnyUrl = Field(..., description="Link for aborting upload")
-
-
 class ClientFileUploadSchema(BaseModel):
-    file: File = Field(..., description="The File to be created")
-    storage_upload_schema: FileUploadSchema = Field(
+    file_id: UUID = Field(..., description="The file id")
+    upload_schema: FileUploadSchema = Field(
         ..., description="Schema for uploading file"
-    )
-    links: ClientFileUploadLinks = Field(
-        ..., description="Links for handling further upload process"
     )

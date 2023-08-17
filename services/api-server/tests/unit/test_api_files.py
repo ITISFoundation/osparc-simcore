@@ -13,17 +13,21 @@ import pytest
 from aioresponses import aioresponses as AioResponsesMock
 from faker import Faker
 from fastapi import status
+from fastapi.encoders import jsonable_encoder
 from httpx import AsyncClient
 from models_library.api_schemas_storage import (
     ETag,
-    FileUploadCompleteLinks,
     FileUploadCompletionBody,
     UploadedPart,
 )
 from pydantic import parse_obj_as
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
-from simcore_service_api_server.models.schemas.files import ClientFileUploadSchema, File
+from simcore_service_api_server.models.schemas.files import (
+    ClientFile,
+    ClientFileUploadSchema,
+    File,
+)
 
 _FAKER = Faker()
 
@@ -46,6 +50,12 @@ class DummyFileData:
             ),
             filename=cls._file_name,
             checksum="",
+        )
+
+    @classmethod
+    def client_file(cls) -> ClientFile:
+        return parse_obj_as(
+            ClientFile, {"filename": cls._file_name, "filesize": cls._file_size}
         )
 
     @classmethod
@@ -194,31 +204,32 @@ async def test_get_upload_links(
     payload: dict[str, str] = response.json()
 
     assert response.status_code == status.HTTP_200_OK
-    upload_schema: ClientFileUploadSchema = ClientFileUploadSchema.parse_obj(payload)
+    client_upload_schema: ClientFileUploadSchema = ClientFileUploadSchema.parse_obj(
+        payload
+    )
 
     if follow_up_request == "complete":
-        msg = {
-            "file": upload_schema.file.dict(),
-            "uploaded_parts": DummyFileData.uploaded_parts().dict(),
-            "completion_link": FileUploadCompleteLinks(
-                state=upload_schema.storage_upload_schema.links.complete_upload
-            ).dict(),
+        body = {
+            "client_file": jsonable_encoder(DummyFileData.client_file()),
+            "uploaded_parts": jsonable_encoder(DummyFileData.uploaded_parts()),
         }
-        msg["file"]["id"] = str(msg["file"]["id"])
         response = await client.post(
-            upload_schema.links.complete_upload, json=msg, auth=auth
+            client_upload_schema.upload_schema.links.complete_upload,
+            json=body,
+            auth=auth,
         )
+
         payload: dict[str, str] = response.json()
 
         assert response.status_code == status.HTTP_200_OK
         _ = parse_obj_as(File, payload)
     elif follow_up_request == "abort":
-        msg = {
-            "abort_upload_link": str(
-                upload_schema.storage_upload_schema.links.abort_upload
-            )
+        body = {
+            "client_file": jsonable_encoder(DummyFileData.client_file()),
         }
         response = await client.post(
-            upload_schema.links.abort_upload, json=msg, auth=auth
+            client_upload_schema.upload_schema.links.abort_upload, json=body, auth=auth
         )
         assert response.status_code == status.HTTP_200_OK
+    else:
+        assert False
