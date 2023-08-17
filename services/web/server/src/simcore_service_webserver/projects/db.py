@@ -429,7 +429,6 @@ class ProjectDBAPI(BaseProjectDB):
                 project_type,
             )
 
-    # TODO: add access to project_nodes repository
     async def replace_project(
         self,
         new_project_data: dict[str, Any],
@@ -475,8 +474,11 @@ class ProjectDBAPI(BaseProjectDB):
                 old_project: ProjectDict, new_project: ProjectDict
             ) -> None:
                 # any non set entry in the new workbench is taken from the old one if available
-                old_workbench = old_project["workbench"]
-                new_workbench = new_project["workbench"]
+                old_workbench: dict[NodeIDStr, Any] = old_project["workbench"]
+                new_workbench: dict[NodeIDStr, Any] = new_project["workbench"]
+                log.warning("%s vs %s", old_workbench.keys(), new_workbench.keys())
+                if old_workbench.keys() != new_workbench.keys():
+                    raise ProjectInvalidUsageError
                 for node_key, node in new_workbench.items():
                     old_node = old_workbench.get(node_key)
                     if not old_node:
