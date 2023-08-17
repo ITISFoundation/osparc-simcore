@@ -403,7 +403,7 @@ async def test_user_services_crash_when_running(
     await asyncio.sleep(_BASE_HEART_BEAT_INTERVAL * 2)
 
     resource_tracking_messages = _get_resource_tracking_messages(mock_core_rabbitmq)
-    assert len(resource_tracking_messages) >= 0
+    assert len(resource_tracking_messages) == _EXPECTED_STOP_MESSAGES
 
     for stop_message in resource_tracking_messages:
         assert isinstance(stop_message, RabbitResourceTrackingStoppedMessage)
