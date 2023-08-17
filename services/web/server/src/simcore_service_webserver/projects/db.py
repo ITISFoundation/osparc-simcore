@@ -437,12 +437,16 @@ class ProjectDBAPI(BaseProjectDB):
         product_name: str,
         project_uuid: str,
     ) -> dict[str, Any]:
-        """DEPRECATED!!
+        """
         replaces a project from a user
         this method completely replaces a user project with new_project_data only keeping
         the old entries from the project workbench if they exists in the new project workbench.
+        NOTE: This method does not allow to add or remove nodes. use add_project_node
+        or remove_project_node to achieve this.
 
-        :raises ProjectInvalidRightsError
+        Raises:
+          ProjectInvalidRightsError
+          ProjectInvalidUsageError in case nodes are added/removed, use add_project_node/remove_project_node
         """
         log.info("Updating project %s for user %s", project_uuid, user_id)
 
