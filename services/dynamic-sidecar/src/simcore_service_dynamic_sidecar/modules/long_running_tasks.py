@@ -1,10 +1,12 @@
 import functools
 import logging
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncGenerator, Final
+from typing import Final
 
 from fastapi import FastAPI
+from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.rabbitmq_messages import ProgressType, SimcorePlatformStatus
 from pydantic import PositiveInt
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
@@ -26,7 +28,11 @@ from ..core.docker_compose_utils import (
     docker_compose_start,
 )
 from ..core.docker_logs import start_log_fetching, stop_log_fetching
-from ..core.docker_utils import get_containers_count_from_names
+from ..core.docker_utils import (
+    are_all_containers_in_expected_states,
+    get_container_states,
+    get_containers_count_from_names,
+)
 from ..core.rabbitmq import (
     post_event_reload_iframe,
     post_progress_message,
@@ -218,15 +224,40 @@ async def task_runs_docker_compose_down(
         _logger.warning("No compose-spec was found")
         return
 
-    running_containers_before_down: PositiveInt = await get_containers_count_from_names(
+    container_states: dict[str, ContainerState | None] = await get_container_states(
+        shared_store.container_names
+    )
+    containers_were_ok = are_all_containers_in_expected_states(
+        container_states.values()
+    )
+
+    container_count_before_down: PositiveInt = await get_containers_count_from_names(
         shared_store.container_names
     )
 
     async def _send_resource_tracking_stop(platform_status: SimcorePlatformStatus):
         # NOTE: avoids sending a stop message without a start or any heartbeats,
         # which makes no sense for the purpose of billing
-        if running_containers_before_down > 0:
-            await send_service_stopped(app, platform_status)
+        if container_count_before_down > 0:
+            # if containers were not OK, we need to check their status
+            # only if oom killed we report as BAD
+            simcore_platform_status = platform_status
+            if not containers_were_ok:
+                any_container_oom_killed = any(
+                    c.OOMKilled is True
+                    for c in container_states.values()
+                    if c is not None
+                )
+                # if it's not an OOM killer (the user killed it) we set it as bad
+                # since the platform failed the container
+                if any_container_oom_killed:
+                    _logger.warning(
+                        "Containers killed to to OOMKiller: %s", container_states
+                    )
+                else:
+                    simcore_platform_status = SimcorePlatformStatus.BAD
+
+            await send_service_stopped(app, simcore_platform_status)
 
     try:
         progress.update(message="running docker-compose-down", percent=0.1)

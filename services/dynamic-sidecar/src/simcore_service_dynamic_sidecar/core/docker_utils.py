@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from collections.abc import AsyncGenerator, Awaitable, Callable
+from collections.abc import AsyncGenerator, Awaitable, Callable, Iterable
 from contextlib import asynccontextmanager
 from enum import Enum
 from typing import Any, Final, TypedDict
@@ -11,6 +11,7 @@ from aiodocker.containers import DockerContainer
 from aiodocker.utils import clean_filters
 from models_library.basic_regex import DOCKER_GENERIC_TAG_KEY_RE
 from models_library.generated_models.docker_rest_api import ContainerState
+from models_library.generated_models.docker_rest_api import Status2 as ContainerStatus
 from models_library.services import RunID
 from pydantic import PositiveInt, parse_obj_as
 from servicelib.logging_utils import log_catch
@@ -21,6 +22,12 @@ from starlette import status
 from .errors import UnexpectedDockerError, VolumeNotFoundError
 
 _logger = logging.getLogger(__name__)
+
+
+_ACCEPTED_CONTAINER_STATUSES: set[str] = {
+    ContainerStatus.created,
+    ContainerStatus.running,
+}
 
 
 @asynccontextmanager
@@ -101,6 +108,14 @@ async def get_container_states(
         k: None if v is None else ContainerState(**v["State"])
         for k, v in containers_inspect.items()
     }
+
+
+def are_all_containers_in_expected_states(
+    states: Iterable[ContainerState | None],
+) -> bool:
+    return all(
+        s is not None and s.Status in _ACCEPTED_CONTAINER_STATUSES for s in states
+    )
 
 
 async def get_containers_count_from_names(

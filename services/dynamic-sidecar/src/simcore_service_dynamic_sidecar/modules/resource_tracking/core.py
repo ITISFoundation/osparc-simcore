@@ -1,10 +1,8 @@
 import logging
-from collections.abc import Iterable
 from typing import Final
 
 from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import ContainerState
-from models_library.generated_models.docker_rest_api import Status2 as ContainerStatus
 from models_library.rabbitmq_messages import (
     RabbitResourceTrackingHeartbeatMessage,
     RabbitResourceTrackingStartedMessage,
@@ -17,17 +15,16 @@ from pydantic import NonNegativeFloat
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.logging_utils import log_context
 
-from ...core.docker_utils import get_container_states
+from ...core.docker_utils import (
+    are_all_containers_in_expected_states,
+    get_container_states,
+)
 from ...core.rabbitmq import post_resource_tracking_message
 from ...core.settings import ApplicationSettings
 from ...models.shared_store import SharedStore
 from ._models import ResourceTrackingState
 from .settings import ResourceTrackingSettings
 
-ACCEPTED_CONTAINER_STATUSES: set[str] = {
-    ContainerStatus.created,
-    ContainerStatus.running,
-}
 _STOP_WORKER_TIMEOUT_S: Final[NonNegativeFloat] = 1.0
 
 _logger = logging.getLogger(__name__)
@@ -68,14 +65,6 @@ async def __stop_heart_beat_task(app: FastAPI) -> None:
         )
 
 
-def __are_all_containers_in_expected_states(
-    states: Iterable[ContainerState | None],
-) -> bool:
-    return all(
-        s is not None and s.Status in ACCEPTED_CONTAINER_STATUSES for s in states
-    )
-
-
 async def _heart_beat_task(app: FastAPI):
     settings: ApplicationSettings = _get_settings(app)
     shared_store: SharedStore = app.state.shared_store
@@ -84,7 +73,7 @@ async def _heart_beat_task(app: FastAPI):
         shared_store.container_names
     )
 
-    if __are_all_containers_in_expected_states(container_states.values()):
+    if are_all_containers_in_expected_states(container_states.values()):
         message = RabbitResourceTrackingHeartbeatMessage(
             service_run_id=settings.DY_SIDECAR_RUN_ID
         )
