@@ -5,6 +5,7 @@
 # pylint: disable=unused-variable
 
 
+import random
 import uuid as uuidlib
 from collections.abc import Awaitable, Callable, Iterator
 from copy import deepcopy
@@ -16,7 +17,11 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
+from faker import Faker
+from models_library.projects_nodes import Node
 from models_library.projects_state import ProjectState
+from models_library.services import ServiceKey
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
@@ -668,4 +673,47 @@ async def test_replace_project_updated_readonly_inputs(
     project_update["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"][
         "Kr"
     ] = 5
+    await _replace_project(client, project_update, expected)
+
+
+@pytest.fixture
+def random_minimal_node(faker: Faker) -> Callable[[], Node]:
+    def _creator() -> Node:
+        return Node(
+            key=ServiceKey(f"simcore/services/comp/{faker.pystr().lower()}"),
+            version=faker.numerify("#.#.#"),
+            label=faker.pystr(),
+        )
+
+    return _creator
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPConflict),
+        (UserRole.USER, web.HTTPConflict),
+        (UserRole.TESTER, web.HTTPConflict),
+    ],
+)
+async def test_replace_project_adding_or_removing_nodes_raises_conflict(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected,
+    ensure_run_in_sequence_context_is_empty,
+    faker: Faker,
+    random_minimal_node: Callable[[], Node],
+):
+    # try adding a node should not work
+    project_update = deepcopy(user_project)
+    new_node = random_minimal_node()
+    project_update["workbench"][faker.uuid4()] = jsonable_encoder(new_node)
+    await _replace_project(client, project_update, expected)
+    # try removing a node should not work
+    project_update = deepcopy(user_project)
+    project_update["workbench"].pop(
+        random.choice(list(project_update["workbench"].keys()))  # noqa: S311
+    )
     await _replace_project(client, project_update, expected)
