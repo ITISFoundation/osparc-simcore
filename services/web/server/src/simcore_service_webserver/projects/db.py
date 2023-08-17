@@ -436,7 +436,8 @@ class ProjectDBAPI(BaseProjectDB):
         product_name: str,
         project_uuid: str,
     ) -> dict[str, Any]:
-        """replaces a project from a user
+        """DEPRECATED!!
+        replaces a project from a user
         this method completely replaces a user project with new_project_data only keeping
         the old entries from the project workbench if they exists in the new project workbench.
 
@@ -444,82 +445,87 @@ class ProjectDBAPI(BaseProjectDB):
         """
         log.info("Updating project %s for user %s", project_uuid, user_id)
 
-        async with self.engine.acquire() as conn:
-            async with conn.begin():
-                current_project: dict = await self._get_project(
-                    conn,
-                    user_id,
-                    project_uuid,
-                    exclude_foreign=["tags"],
-                    for_update=True,
+        async with self.engine.acquire() as conn, conn.begin():
+            current_project: dict = await self._get_project(
+                conn,
+                user_id,
+                project_uuid,
+                exclude_foreign=["tags"],
+                for_update=True,
+            )
+            user_groups: list[RowProxy] = await self._list_user_groups(conn, user_id)
+            check_project_permissions(current_project, user_id, user_groups, "write")
+            # uuid can ONLY be set upon creation
+            if current_project["uuid"] != new_project_data["uuid"]:
+                raise ProjectInvalidRightsError(user_id, new_project_data["uuid"])
+            # ensure the prj owner is always in the access rights
+            owner_primary_gid = await self._get_user_primary_group_gid(
+                conn, current_project[projects.c.prj_owner.key]
+            )
+            new_project_data.setdefault("accessRights", {}).update(
+                create_project_access_rights(
+                    owner_primary_gid, ProjectAccessRights.OWNER
                 )
-                user_groups: list[RowProxy] = await self._list_user_groups(
-                    conn, user_id
-                )
-                check_project_permissions(
-                    current_project, user_id, user_groups, "write"
-                )
-                # uuid can ONLY be set upon creation
-                if current_project["uuid"] != new_project_data["uuid"]:
-                    raise ProjectInvalidRightsError(user_id, new_project_data["uuid"])
-                # ensure the prj owner is always in the access rights
-                owner_primary_gid = await self._get_user_primary_group_gid(
-                    conn, current_project[projects.c.prj_owner.key]
-                )
-                new_project_data.setdefault("accessRights", {}).update(
-                    create_project_access_rights(
-                        owner_primary_gid, ProjectAccessRights.OWNER
-                    )
-                )
+            )
 
-                # update the workbench
-                def _update_workbench(
-                    old_project: ProjectDict, new_project: ProjectDict
-                ) -> None:
-                    # any non set entry in the new workbench is taken from the old one if available
-                    old_workbench = old_project["workbench"]
-                    new_workbench = new_project["workbench"]
-                    for node_key, node in new_workbench.items():
-                        old_node = old_workbench.get(node_key)
-                        if not old_node:
-                            continue
-                        for prop in old_node:
-                            # check if the key is missing in the new node
-                            if prop not in node:
-                                # use the old value
-                                node[prop] = old_node[prop]
+            # update the workbench
+            def _update_workbench(
+                old_project: ProjectDict, new_project: ProjectDict
+            ) -> None:
+                # any non set entry in the new workbench is taken from the old one if available
+                old_workbench = old_project["workbench"]
+                new_workbench = new_project["workbench"]
+                for node_key, node in new_workbench.items():
+                    old_node = old_workbench.get(node_key)
+                    if not old_node:
+                        continue
+                    for prop in old_node:
+                        # check if the key is missing in the new node
+                        if prop not in node:
+                            # use the old value
+                            node[prop] = old_node[prop]
 
-                _update_workbench(current_project, new_project_data)
-                # update timestamps
-                new_project_data["lastChangeDate"] = now_str()
+            _update_workbench(current_project, new_project_data)
+            # update timestamps
+            new_project_data["lastChangeDate"] = now_str()
 
-                # now update it
+            # now update it
 
-                log.debug(
-                    "DB updating with new_project_data=%s", json_dumps(new_project_data)
-                )
-                result = await conn.execute(
-                    # pylint: disable=no-value-for-parameter
-                    projects.update()
-                    .values(**convert_to_db_names(new_project_data))
-                    .where(projects.c.id == current_project[projects.c.id.key])
-                    .returning(literal_column("*"))
-                )
-                project = await result.fetchone()
-                assert project  # nosec
-                await self.upsert_project_linked_product(
-                    ProjectID(project_uuid), product_name, conn=conn
-                )
-                log.debug(
-                    "DB updated returned row project=%s",
-                    json_dumps(dict(project.items())),
-                )
-                user_email = await self._get_user_email(conn, project.prj_owner)
+            log.debug(
+                "DB updating with new_project_data=%s", json_dumps(new_project_data)
+            )
+            result = await conn.execute(
+                # pylint: disable=no-value-for-parameter
+                projects.update()
+                .values(**convert_to_db_names(new_project_data))
+                .where(projects.c.id == current_project[projects.c.id.key])
+                .returning(literal_column("*"))
+            )
+            project = await result.fetchone()
+            assert project  # nosec
+            await self.upsert_project_linked_product(
+                ProjectID(project_uuid), product_name, conn=conn
+            )
+            # ensure project_nodes are in sync
+            project_nodes_repo = ProjectNodesRepo(project_uuid=ProjectID(project_uuid))
+            list_of_nodes = await project_nodes_repo.list(conn)
+            new_workbench = project.get("workbench", {})
+            node_ids_to_delete = [
+                n.node_id for n in list_of_nodes if f"{n.node_id}" not in new_workbench
+            ]
+            for node_id in node_ids_to_delete:
+                await project_nodes_repo.delete(conn, node_id=node_id)
+            # NOTE: missing nodes are NOT taken care of in this quick fix.
+            log.debug(
+                "DB updated returned row project=%s",
+                json_dumps(dict(project.items())),
+            )
+            user_email = await self._get_user_email(conn, project.prj_owner)
 
-                tags = await self._get_tags_by_project(
-                    conn, project_id=project[projects.c.id]
-                )
-                return convert_to_schema_names(project, user_email, tags=tags)
+            tags = await self._get_tags_by_project(
+                conn, project_id=project[projects.c.id]
+            )
+            return convert_to_schema_names(project, user_email, tags=tags)
 
     async def update_project_without_checking_permissions(
         self,
