@@ -64,6 +64,7 @@ async def _list_projects(
     if not query_parameters:
         query_parameters = {}
     # GET /v0/projects
+    assert client.app
     url = client.app.router["list_projects"].url_for()
     assert str(url) == API_PREFIX + "/projects"
     if query_parameters:
@@ -72,7 +73,7 @@ async def _list_projects(
     if headers is None:
         headers = {}
 
-    resp = await client.get(url, headers=headers)
+    resp = await client.get(f"{url}", headers=headers)
     data, errors, meta, links = await assert_status(
         resp,
         expected,
@@ -90,7 +91,7 @@ async def _list_projects(
         assert meta["limit"] == exp_limit
         exp_last_page = ceil(meta["total"] / meta["limit"] - 1)
         assert links is not None
-        complete_url = client.make_url(url)
+        complete_url = client.make_url(f"{url}")
         assert links["self"] == str(
             URL(complete_url).update_query({"offset": exp_offset, "limit": exp_limit})
         )
@@ -137,9 +138,10 @@ async def _assert_get_same_project(
     # GET /v0/projects/{project_id}
 
     # with a project owned by user
+    assert client.app
     url = client.app.router["get_project"].url_for(project_id=project["uuid"])
     assert str(url) == f"{API_PREFIX}/projects/{project['uuid']}"
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, error = await assert_status(resp, expected)
 
     if not error:
@@ -382,10 +384,7 @@ async def test_new_project_from_template(
     if new_project:
         # check uuid replacement
         for node_name in new_project["workbench"]:
-            try:
-                uuidlib.UUID(node_name)
-            except ValueError:
-                pytest.fail(f"Invalid uuid in workbench node {node_name}")
+            parse_obj_as(uuidlib.UUID, node_name)
 
 
 @pytest.mark.parametrize(*standard_role_response())
@@ -414,10 +413,7 @@ async def test_new_project_from_other_study(
         # check uuid replacement
         assert new_project["name"].endswith("(Copy)")
         for node_name in new_project["workbench"]:
-            try:
-                uuidlib.UUID(node_name)
-            except ValueError:
-                pytest.fail(f"Invalid uuid in workbench node {node_name}")
+            parse_obj_as(uuidlib.UUID, node_name)
 
 
 @pytest.mark.parametrize(*standard_role_response())
@@ -471,10 +467,7 @@ async def test_new_project_from_template_with_body(
 
         # check uuid replacement
         for node_name in project["workbench"]:
-            try:
-                uuidlib.UUID(node_name)
-            except ValueError:
-                pytest.fail(f"Invalid uuid in workbench node {node_name}")
+            parse_obj_as(uuidlib.UUID, node_name)
 
 
 @pytest.mark.parametrize(*standard_role_response())
@@ -528,10 +521,7 @@ async def test_new_template_from_project(
 
         # check uuid replacement
         for node_name in template_project["workbench"]:
-            try:
-                uuidlib.UUID(node_name)
-            except ValueError:
-                pytest.fail(f"Invalid uuid in workbench node {node_name}")
+            parse_obj_as(uuidlib.UUID, node_name)
 
     # do the same with a body
     predefined = {
@@ -590,10 +580,7 @@ async def test_new_template_from_project(
 
         # check uuid replacement
         for node_name in template_project["workbench"]:
-            try:
-                uuidlib.UUID(node_name)
-            except ValueError:
-                pytest.fail(f"Invalid uuid in workbench node {node_name}")
+            parse_obj_as(uuidlib.UUID, node_name)
 
 
 # PUT --------
