@@ -1040,7 +1040,10 @@ qx.Class.define("osparc.data.model.Node", {
           disclaimer: this.tr("This might take a couple of minutes")
         });
       }
-      if (this.getKey() && this.getKey().includes("sim4life-lite")) {
+      if (
+        (this.getKey() && this.getKey().includes("sim4life-lite")) ||
+        osparc.product.Utils.isProduct("tis")
+      ) {
         // show disclaimer after 1'
         setTimeout(() => {
           if (loadingPage) {
