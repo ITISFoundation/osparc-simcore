@@ -260,6 +260,7 @@ async def create_project(
             if copy_project_nodes_coro
             else None,
         )
+
         # 4. deep copy source project's files
         if copy_file_coro:
             # NOTE: storage needs to have access to the new project prior to copying files
@@ -278,7 +279,10 @@ async def create_project(
         await api.create_or_update_pipeline(
             request.app, user_id, new_project["uuid"], product_name
         )
-
+        # get the latest state of the project (lastChangeDate for instance)
+        new_project, _ = await db.get_project(
+            user_id=user_id, project_uuid=new_project["uuid"]
+        )
         # Appends state
         new_project = await projects_api.add_project_states_for_user(
             user_id=user_id,
