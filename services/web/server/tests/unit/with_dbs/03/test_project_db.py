@@ -30,7 +30,7 @@ from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
 from servicelib.utils import logged_gather
 from simcore_postgres_database.models.groups import GroupType
-from simcore_postgres_database.models.projects import projects
+from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
@@ -131,10 +131,7 @@ def all_permission_combinations() -> list[str]:
     temp = []
     for i in range(1, len(entries_list) + 1):
         temp.extend(list(combinations(entries_list, i)))
-    res = []
-    for el in temp:
-        res.append("|".join(el))
-    return res
+    return ["|".join(el) for el in temp]
 
 
 def test_check_project_permissions_for_any_user():
@@ -166,7 +163,7 @@ def test_check_project_permissions(
         )
 
     def _project_access_rights_from_permissions(
-        permissions: str, invert: bool = False
+        permissions: str, *, invert: bool
     ) -> dict[str, bool]:
         access_rights = {}
         for p in ["read", "write", "delete"]:
@@ -178,7 +175,9 @@ def test_check_project_permissions(
     # primary group has needed access, so this should not raise
     project = {
         "access_rights": {
-            str(group_id): _project_access_rights_from_permissions(wanted_permissions)
+            str(group_id): _project_access_rights_from_permissions(
+                wanted_permissions, invert=False
+            )
         }
     }
     user_groups = [
@@ -205,7 +204,7 @@ def test_check_project_permissions(
                 wanted_permissions, invert=True
             ),
             str(group_id + 1): _project_access_rights_from_permissions(
-                wanted_permissions
+                wanted_permissions, invert=False
             ),
             str(group_id + 2): _project_access_rights_from_permissions(
                 wanted_permissions, invert=True
@@ -246,7 +245,9 @@ def test_check_project_permissions(
     # the everyone group has access so it should not raise
     project = {
         "access_rights": {
-            str(2): _project_access_rights_from_permissions(wanted_permissions),
+            str(2): _project_access_rights_from_permissions(
+                wanted_permissions, invert=False
+            ),
             str(group_id): _project_access_rights_from_permissions(
                 wanted_permissions, invert=True
             ),
@@ -268,7 +269,7 @@ async def test_setup_projects_db(client: TestClient):
     assert db_api
     assert isinstance(db_api, ProjectDBAPI)
 
-    assert db_api._app == client.app
+    assert db_api._app == client.app  # noqa: SLF001
     assert db_api.engine
 
 
@@ -354,11 +355,11 @@ def _assert_project_db_row(
 ):
     with postgres_db.connect() as conn:
         row: Row | None = conn.execute(
-            sa.DDL(f"SELECT * FROM projects WHERE \"uuid\"='{project['uuid']}'")
+            sa.select(projects).where(projects.c.uuid == f"{project['uuid']}")
         ).fetchone()
 
     expected_db_entries = {
-        "type": "STANDARD",
+        "type": ProjectType.STANDARD,
         "uuid": project["uuid"],
         "name": project["name"],
         "description": project["description"],
@@ -376,7 +377,8 @@ def _assert_project_db_row(
     }
     expected_db_entries.update(kwargs)
     assert row
-    assert {k: row[k] for k in expected_db_entries} == expected_db_entries
+    project_entries_in_db = {k: row[k] for k in expected_db_entries}
+    assert project_entries_in_db == expected_db_entries
     assert row["last_change_date"] >= row["creation_date"]
 
 
@@ -436,18 +438,20 @@ async def test_insert_project_to_db(
         new_project,
         exp_overrides={"prjOwner": "not_a_user@unknown.com"},
     )
-    _assert_project_db_row(postgres_db, new_project, type="TEMPLATE")
+    _assert_project_db_row(postgres_db, new_project, type=ProjectType.TEMPLATE)
     _assert_projects_to_product_db_row(postgres_db, new_project, osparc_product_name)
     await _assert_projects_nodes_db_rows(aiopg_engine, new_project)
 
     # adding a project with a fake user id raises
     fake_user_id = 4654654654
+
     with pytest.raises(UserNotFoundError):
         await insert_project_in_db(fake_project, user_id=fake_user_id)
+    with pytest.raises(UserNotFoundError):
         # adding a project with a fake user but forcing as template should still raise
         await insert_project_in_db(
             expected_project,
-            fake_project,
+            project=fake_project,
             user_id=fake_user_id,
             force_as_template=True,
         )
@@ -503,7 +507,7 @@ async def test_insert_project_to_db(
         access_rights={
             str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
         },
-        type="TEMPLATE",
+        type=ProjectType.TEMPLATE,
     )
     _assert_projects_to_product_db_row(postgres_db, new_project, osparc_product_name)
     await _assert_projects_nodes_db_rows(aiopg_engine, new_project)
@@ -517,7 +521,7 @@ async def test_insert_project_to_db(
 
     # add a project with a bad uuid that is already present, using force_project_uuid shall raise
     fake_project["uuid"] = "some bad uuid"
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         await insert_project_in_db(
             fake_project,
             user_id=logged_user["id"],
@@ -573,8 +577,9 @@ async def test_patch_user_project_workbench_raises_if_project_does_not_exist(
     with pytest.raises(ProjectNotFoundError):
         await db_api._update_project_workbench(  # noqa: SLF001
             partial_workbench_data,
-            logged_user["id"],
-            fake_project["uuid"],
+            user_id=logged_user["id"],
+            project_uuid=fake_project["uuid"],
+            allow_workbench_changes=False,
         )
 
 
@@ -611,8 +616,9 @@ async def test_patch_user_project_workbench_creates_nodes(
         changed_entries,
     ) = await db_api._update_project_workbench(  # noqa: SLF001
         partial_workbench_data,
-        logged_user["id"],
-        new_project["uuid"],
+        user_id=logged_user["id"],
+        project_uuid=new_project["uuid"],
+        allow_workbench_changes=True,
     )
     for node_id in partial_workbench_data:
         assert node_id in patched_project["workbench"]
@@ -652,8 +658,9 @@ async def test_patch_user_project_workbench_creates_nodes_raises_if_invalid_node
     with pytest.raises(NodeNotFoundError):
         await db_api._update_project_workbench(  # noqa: SLF001
             partial_workbench_data,
-            logged_user["id"],
-            new_project["uuid"],
+            user_id=logged_user["id"],
+            project_uuid=new_project["uuid"],
+            allow_workbench_changes=True,
         )
 
 
@@ -713,7 +720,10 @@ async def test_patch_user_project_workbench_concurrently(
 
     # patch all the nodes concurrently
     randomly_created_outputs = [
-        {"outputs": {f"out_{k}": f"{k}"} for k in range(randint(1, 10))}  # noqa: S311
+        {
+            "outputs": {f"out_{k}": f"{k}"}  # noqa: RUF011
+            for k in range(randint(1, 10))  # noqa: S311
+        }
         for n in range(_NUMBER_OF_NODES)
     ]
     for n in range(_NUMBER_OF_NODES):
@@ -725,8 +735,9 @@ async def test_patch_user_project_workbench_concurrently(
         *[
             db_api._update_project_workbench(  # noqa: SLF001
                 {NodeIDStr(node_uuids[n]): randomly_created_outputs[n]},
-                logged_user["id"],
-                new_project["uuid"],
+                user_id=logged_user["id"],
+                project_uuid=new_project["uuid"],
+                allow_workbench_changes=False,
             )
             for n in range(_NUMBER_OF_NODES)
         ]
@@ -736,7 +747,7 @@ async def test_patch_user_project_workbench_concurrently(
     # The important thing is that the final result shall contain ALL the changes
 
     for (prj, changed_entries), node_uuid, exp_outputs in zip(
-        patched_projects, node_uuids, randomly_created_outputs
+        patched_projects, node_uuids, randomly_created_outputs, strict=True
     ):
         assert prj["workbench"][node_uuid]["outputs"] == exp_outputs["outputs"]
         assert changed_entries == {node_uuid: {"outputs": exp_outputs["outputs"]}}
@@ -766,8 +777,9 @@ async def test_patch_user_project_workbench_concurrently(
         *[
             db_api._update_project_workbench(  # noqa: SLF001
                 {NodeIDStr(node_uuids[n]): {"outputs": {}}},
-                logged_user["id"],
-                new_project["uuid"],
+                user_id=logged_user["id"],
+                project_uuid=new_project["uuid"],
+                allow_workbench_changes=False,
             )
             for n in range(_NUMBER_OF_NODES)
         ]
@@ -798,8 +810,9 @@ async def test_patch_user_project_workbench_concurrently(
         *[
             db_api._update_project_workbench(  # noqa: SLF001
                 {NodeIDStr(node_uuids[n]): {"outputs": {}}},
-                logged_user["id"],
-                new_project["uuid"],
+                user_id=logged_user["id"],
+                project_uuid=new_project["uuid"],
+                allow_workbench_changes=False,
             )
             for n in range(_NUMBER_OF_NODES)
         ]
@@ -829,7 +842,7 @@ async def some_projects_and_nodes(
     fake_project: dict[str, Any],
     aiopg_engine: aiopg.sa.engine.Engine,
     insert_project_in_db: Callable[..., Awaitable[dict[str, Any]]],
-) -> AsyncIterator[dict[ProjectID, list[NodeID]]]:
+) -> dict[ProjectID, list[NodeID]]:
     """Will create a few projects, no need to go crazy here"""
     NUMBER_OF_PROJECTS = 17
 
@@ -903,7 +916,7 @@ async def test_get_node_ids_from_project(
     )
 
     for project_id, node_ids_inside_project in zip(
-        some_projects_and_nodes, node_ids_inside_project_list
+        some_projects_and_nodes, node_ids_inside_project_list, strict=True
     ):
         assert node_ids_inside_project == {
             f"{n}" for n in some_projects_and_nodes[project_id]
