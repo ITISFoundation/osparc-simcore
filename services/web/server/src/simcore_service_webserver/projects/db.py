@@ -1027,11 +1027,11 @@ class ProjectDBAPI(BaseProjectDB):
             )
         return bool(result)
 
-    async def set_hidden_flag(self, project_uuid: ProjectID, enabled: bool):
+    async def set_hidden_flag(self, project_uuid: ProjectID, *, hidden: bool):
         async with self.engine.acquire() as conn:
             stmt = (
                 projects.update()
-                .values(hidden=enabled)
+                .values(hidden=hidden)
                 .where(projects.c.uuid == f"{project_uuid}")
             )
             await conn.execute(stmt)
