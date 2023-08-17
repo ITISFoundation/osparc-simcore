@@ -101,14 +101,12 @@ async def _wait_for_containers_to_be_running(container_names: list[str]) -> None
     async for attempt in AsyncRetrying(wait=wait_fixed(0.1), stop=stop_after_delay(4)):
         with attempt:
             containers_statuses = await get_container_states(container_names)
-            print(f"{containers_statuses=}")
 
             running_container_statuses = [
                 x
                 for x in containers_statuses.values()
                 if x is not None and x.Status == ContainerStatus.running
             ]
-            print(running_container_statuses)
 
             if len(running_container_statuses) != len(container_names):
                 raise TryAgain

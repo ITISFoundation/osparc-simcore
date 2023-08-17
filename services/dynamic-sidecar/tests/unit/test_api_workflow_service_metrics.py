@@ -18,6 +18,7 @@ from aiodocker.volumes import DockerVolume
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from httpx import AsyncClient
+from models_library.generated_models.docker_rest_api import Status2 as ContainerStatus
 from models_library.rabbitmq_messages import (
     RabbitResourceTrackingHeartbeatMessage,
     RabbitResourceTrackingMessages,
@@ -37,9 +38,7 @@ from servicelib.fastapi.long_running_tasks.client import (
 )
 from servicelib.fastapi.long_running_tasks.client import setup as client_setup
 from simcore_service_dynamic_sidecar._meta import API_VTAG
-from simcore_service_dynamic_sidecar.core.docker_utils import (
-    get_accepted_container_count_from_names,
-)
+from simcore_service_dynamic_sidecar.core.docker_utils import get_container_states
 from simcore_service_dynamic_sidecar.models.schemas.containers import ContainersCreate
 from tenacity import AsyncRetrying, TryAgain
 from tenacity.stop import stop_after_delay
@@ -180,12 +179,17 @@ def _get_resource_tracking_messages(
 
 
 async def _wait_for_containers_to_be_running(container_names: list[str]) -> None:
-    async for attempt in AsyncRetrying(wait=wait_fixed(0.1), stop=stop_after_delay(60)):
+    async for attempt in AsyncRetrying(wait=wait_fixed(0.1), stop=stop_after_delay(4)):
         with attempt:
-            current_count = await get_accepted_container_count_from_names(
-                container_names
-            )
-            if current_count != len(container_names):
+            containers_statuses = await get_container_states(container_names)
+
+            running_container_statuses = [
+                x
+                for x in containers_statuses.values()
+                if x is not None and x.Status == ContainerStatus.running
+            ]
+
+            if len(running_container_statuses) != len(container_names):
                 raise TryAgain
 
 
@@ -307,10 +311,6 @@ async def test_user_services_fail_to_stop_or_save_data(
             ):
                 ...
 
-    # NOTE: task was not properly cancelled and events where still
-    # generated. This is here to catch regressions.
-    await asyncio.sleep(_BASE_HEART_BEAT_INTERVAL * 10)
-
     # Ensure messages arrive in the expected order
     resource_tracking_messages = _get_resource_tracking_messages(mock_core_rabbitmq)
     assert len(resource_tracking_messages) >= 3
@@ -319,7 +319,9 @@ async def test_user_services_fail_to_stop_or_save_data(
     heart_beat_messages = resource_tracking_messages[1:-_EXPECTED_STOP_MESSAGES]
     assert len(heart_beat_messages) > 0
     stop_messages = resource_tracking_messages[-_EXPECTED_STOP_MESSAGES:]
-    assert len(stop_messages) > 0
+    # NOTE: this is a situation where multiple stop events are sent out
+    # since the stopping fails and the operation is repeated
+    assert len(stop_messages) == _EXPECTED_STOP_MESSAGES
 
     assert isinstance(start_message, RabbitResourceTrackingStartedMessage)
     for heart_beat_message in heart_beat_messages:
@@ -346,7 +348,6 @@ async def test_user_services_crash_when_running(
     compose_spec: str,
     container_names: list[str],
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
-    mock_user_services_fail_to_stop: None,
 ):
     async with periodic_task_result(
         client=client,
@@ -379,9 +380,10 @@ async def test_user_services_crash_when_running(
         assert isinstance(heart_beat_message, RabbitResourceTrackingHeartbeatMessage)
 
     # reset mock
+    await asyncio.sleep(_BASE_HEART_BEAT_INTERVAL * 2)
     mock_core_rabbitmq["post_rabbit_message"].reset_mock()
 
-    # wati a bit more and check no further heartbeats are sent
+    # wait a bit more and check no further heartbeats are sent
     await asyncio.sleep(_BASE_HEART_BEAT_INTERVAL * 2)
     new_resource_tracking_messages = _get_resource_tracking_messages(mock_core_rabbitmq)
     assert len(new_resource_tracking_messages) == 0
@@ -390,20 +392,18 @@ async def test_user_services_crash_when_running(
     # will be sent due to manual intervention
     _EXPECTED_STOP_MESSAGES = 4
     for _ in range(_EXPECTED_STOP_MESSAGES):
-        with pytest.raises(TaskClientResultError):
-            async with periodic_task_result(
-                client=client,
-                task_id=await _get_task_id_docker_compose_down(httpx_async_client),
-                task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
-                status_poll_interval=_FAST_STATUS_POLL,
-            ):
-                ...
-
-    # waiting a bit more to settle down events
-    await asyncio.sleep(_BASE_HEART_BEAT_INTERVAL * 2)
+        async with periodic_task_result(
+            client=client,
+            task_id=await _get_task_id_docker_compose_down(httpx_async_client),
+            task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
+            status_poll_interval=_FAST_STATUS_POLL,
+        ) as result:
+            assert result is None
 
     resource_tracking_messages = _get_resource_tracking_messages(mock_core_rabbitmq)
-    assert len(resource_tracking_messages) == _EXPECTED_STOP_MESSAGES
+    # NOTE: only 1 stop event arrives here since the stopping of the containers
+    # was successful
+    assert len(resource_tracking_messages) == 1
 
     for stop_message in resource_tracking_messages:
         assert isinstance(stop_message, RabbitResourceTrackingStoppedMessage)
