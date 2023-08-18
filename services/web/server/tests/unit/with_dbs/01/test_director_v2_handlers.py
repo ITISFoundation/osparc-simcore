@@ -5,6 +5,7 @@ from typing import AsyncIterator
 
 import pytest
 from aiohttp import web
+from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from faker import Faker
 from models_library.projects import ProjectID
@@ -32,14 +33,16 @@ def project_id(faker: Faker) -> ProjectID:
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_start_computation(
     mocked_director_v2,
-    client,
+    client: TestClient,
     logged_user: dict,
     project_id: ProjectID,
     user_role: UserRole,
     expected: ExpectedResponse,
 ):
+    assert client.app
+
     url = client.app.router["start_computation"].url_for(project_id=f"{project_id}")
-    rsp = await client.post(url)
+    rsp = await client.post(f"{url}")
     data, error = await assert_status(
         rsp, web.HTTPCreated if user_role == UserRole.GUEST else expected.created
     )

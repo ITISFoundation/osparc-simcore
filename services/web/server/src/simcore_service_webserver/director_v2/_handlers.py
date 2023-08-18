@@ -16,6 +16,7 @@ from servicelib.common_headers import (
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
+from simcore_service_webserver.utils_aiohttp import envelope_json_response
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
@@ -44,7 +45,7 @@ class _ComputationStart(BaseModel):
 
 
 class _ComputationStarted(BaseModel):
-    pipeline_id: str = Field(
+    pipeline_id: ProjectID = Field(
         ..., description="ID for created pipeline (=project identifier)"
     )
     ref_ids: list[CommitID] = Field(
@@ -133,11 +134,7 @@ async def start_computation(request: web.Request) -> web.Response:
 
         assert parse_obj_as(_ComputationStarted, data) is not None  # nosec
 
-        return web.json_response(
-            {"data": data},
-            status=web.HTTPCreated.status_code,
-            dumps=json_dumps,
-        )
+        return envelope_json_response(data, status_cls=web.HTTPCreated)
 
     except DirectorServiceError as exc:
         return create_error_response(
