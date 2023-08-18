@@ -403,9 +403,7 @@ def test_patch_workbench_remove_node(faker: Faker):
     assert changed_entries == valid_partial_workbench_data
 
 
-def test_patch_workbench_update_node(
-    faker: Faker, random_minimal_node: Callable[[], Node]
-):
+def test_patch_workbench_update_node(faker: Faker):
     node_id = faker.uuid4()
     project = {"workbench": {node_id: faker.pydict()}, "uuid": faker.uuid4()}
     valid_partial_workbench_data = {node_id: faker.pydict()}
