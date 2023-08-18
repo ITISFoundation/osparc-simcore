@@ -3,7 +3,7 @@
   "name": "NIH SPARC Hackathon 2018",
   "description": "NIH SPARC Hackathon 2018 template consisting of a FilePicker, and two notebooks",
   "thumbnail": "https://placeimg.com/171/96/tech/grayscale/?18.jpg",
-  "prjOwner": "SIM-CORE",
+  "prjOwner": "foo@foo.com",
   "creationDate": "2018-12-05T21:13:13.360Z",
   "lastChangeDate": "2018-12-05T21:13:13.360Z",
   "accessRights": {},
