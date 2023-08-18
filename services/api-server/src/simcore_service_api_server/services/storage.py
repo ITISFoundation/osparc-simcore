@@ -122,7 +122,7 @@ class StorageApi(BaseServiceClientApi):
         url = URL(
             f"{self.client.base_url}locations/{self.SIMCORE_S3_ID}/files/{file.quoted_storage_file_id}:abort"
         )
-        if query:
+        if query is not None:
             url = url.include_query_params(**query)
         return url
 
