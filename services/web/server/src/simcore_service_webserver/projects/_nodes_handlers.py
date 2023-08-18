@@ -25,7 +25,7 @@ from models_library.services import ServiceKeyVersion
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import GroupID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, parse_obj_as
 from servicelib.aiohttp.long_running_tasks.server import (
     TaskProgress,
     start_long_running_task,
@@ -127,7 +127,7 @@ async def create_node(request: web.Request) -> web.Response:
             body.service_id,
         )
     }
-    assert NodeCreated.parse_obj(data)  # nosec
+    assert parse_obj_as(NodeCreated, data) is not None  # nosec
 
     return envelope_json_response(data, status_cls=web.HTTPCreated)
 

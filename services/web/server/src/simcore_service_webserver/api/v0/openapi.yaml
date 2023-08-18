@@ -6126,20 +6126,20 @@ components:
     NodeCreate:
       title: NodeCreate
       required:
-      - serviceKey
-      - serviceVersion
+      - service_key
+      - service_version
       type: object
       properties:
-        serviceKey:
-          title: Servicekey
+        service_key:
+          title: Service Key
           pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
           type: string
-        serviceVersion:
-          title: Serviceversion
+        service_version:
+          title: Service Version
           pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
           type: string
-        serviceId:
-          title: Serviceid
+        service_id:
+          title: Service Id
           type: string
     NodeCreated:
       title: NodeCreated
@@ -6246,8 +6246,8 @@ components:
       title: NodeRetrieve
       type: object
       properties:
-        portKeys:
-          title: Portkeys
+        port_keys:
+          title: Port Keys
           type: array
           items:
             pattern: ^[-_a-zA-Z0-9]+$

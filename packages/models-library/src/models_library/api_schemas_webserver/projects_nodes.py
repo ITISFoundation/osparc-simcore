@@ -8,16 +8,16 @@ from ..projects_nodes_io import NodeID
 from ..services import ServiceKey, ServicePortKey, ServiceVersion
 from ..services_enums import ServiceState
 from ..services_resources import ServiceResourcesDict
-from ._base import InputSchema, OutputSchema
+from ._base import InputSchemaWithoutCameCase, OutputSchema
 
 assert ServiceResourcesDict  # nosec
 __all__: tuple[str, ...] = ("ServiceResourcesDict",)
 
 
-class NodeCreate(InputSchema):
+class NodeCreate(InputSchemaWithoutCameCase):
     service_key: ServiceKey
     service_version: ServiceVersion
-    service_id: str | None = None
+    service_id: str | None
 
 
 class NodeCreated(OutputSchema):
@@ -83,7 +83,7 @@ class NodeGetIdle(OutputSchema):
     service_uuid: NodeID
 
 
-class NodeRetrieve(InputSchema):
+class NodeRetrieve(InputSchemaWithoutCameCase):
     port_keys: list[ServicePortKey] = []
 
 
