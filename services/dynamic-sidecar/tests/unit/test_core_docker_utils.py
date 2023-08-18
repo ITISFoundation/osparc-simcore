@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 from collections.abc import AsyncIterable, AsyncIterator
 from contextlib import suppress
+from typing import Any
 
 import aiodocker
 import pytest
@@ -12,10 +13,12 @@ from faker import Faker
 from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.generated_models.docker_rest_api import Status2 as ContainerStatus
 from models_library.services import RunID
-from pydantic import PositiveInt, SecretStr
+from pydantic import PositiveInt, SecretStr, parse_obj_as
 from settings_library.docker_registry import RegistrySettings
 from simcore_service_dynamic_sidecar.core.docker_utils import (
+    _DockerProgressDict,
     _get_containers_inspect_from_names,
+    _parse_docker_pull_progress,
     get_container_states,
     get_containers_count_from_names,
     get_docker_service_images,
@@ -247,3 +250,53 @@ async def test_pull_image(repeat: str):
         progress_cb=_print_progress,
         log_cb=_print_log,
     )
+
+
+PULL_PROGRESS_SEQUENCE: list[dict[str, Any]] = [
+    {"status": "Pulling from library/busybox", "id": "latest"},
+    {"status": "Pulling fs layer", "progressDetail": {}, "id": "3f4d90098f5b"},
+    {
+        "status": "Downloading",
+        "progressDetail": {"current": 22621, "total": 2219949},
+        "progress": "[>                                                  ]  22.62kB/2.22MB",
+        "id": "3f4d90098f5b",
+    },
+    {"status": "Download complete", "progressDetail": {}, "id": "3f4d90098f5b"},
+    {
+        "status": "Extracting",
+        "progressDetail": {"current": 32768, "total": 2219949},
+        "progress": "[>                                                  ]  32.77kB/2.22MB",
+        "id": "3f4d90098f5b",
+    },
+    {
+        "status": "Extracting",
+        "progressDetail": {"current": 884736, "total": 2219949},
+        "progress": "[===================>                               ]  884.7kB/2.22MB",
+        "id": "3f4d90098f5b",
+    },
+    {
+        "status": "Extracting",
+        "progressDetail": {"current": 2219949, "total": 2219949},
+        "progress": "[==================================================>]   2.22MB/2.22MB",
+        "id": "3f4d90098f5b",
+    },
+    {"status": "Pull complete", "progressDetail": {}, "id": "3f4d90098f5b"},
+    {
+        "status": "Digest: sha256:3fbc632167424a6d997e74f52b878d7cc478225cffac6bc977eedfe51c7f4e79"
+    },
+    {
+        "status": "Digest: sha256:3fbc632167424a6d997e74f52b878d7cc478225cffac6bc977eedfe51c7f4e79"
+    },
+    {"status": "Status: Downloaded newer image for busybox:latest"},
+]
+
+
+@pytest.mark.parametrize("pull_progress", PULL_PROGRESS_SEQUENCE)
+def test_docker_progress_dict(pull_progress: dict[str, Any]):
+    assert parse_obj_as(_DockerProgressDict, pull_progress)
+
+
+def test__parse_docker_pull_progress():
+    some_data = {}
+    for entry in PULL_PROGRESS_SEQUENCE:
+        _parse_docker_pull_progress(parse_obj_as(_DockerProgressDict, entry), some_data)

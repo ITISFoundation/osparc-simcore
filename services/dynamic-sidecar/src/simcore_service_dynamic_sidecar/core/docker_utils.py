@@ -171,7 +171,7 @@ ImageName = str
 _ImagesInfoDict = dict[ImageName, _LayersInfoDict]
 
 
-class _ProgressDetailDict(TypedDict, total=True):
+class _ProgressDetailDict(TypedDict, total=False):
     current: int
     total: int
 
@@ -214,6 +214,8 @@ def _parse_docker_pull_progress(
 
         if status == _TargetPullStatus.DOWNLOADING:
             # writes
+            assert "current" in docker_pull_progress["progressDetail"]  # nosec
+            assert "total" in docker_pull_progress["progressDetail"]  # nosec
             image_pulling_data[layer_id] = (
                 round(
                     _DOWNLOAD_RATIO * docker_pull_progress["progressDetail"]["current"]
@@ -233,6 +235,7 @@ def _parse_docker_pull_progress(
             _, layer_total_size = image_pulling_data[layer_id]
 
             # writes
+            assert "current" in docker_pull_progress["progressDetail"]  # nosec
             image_pulling_data[layer_id] = (
                 round(
                     _DOWNLOAD_RATIO * layer_total_size
