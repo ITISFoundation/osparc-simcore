@@ -124,6 +124,7 @@ def run_docker_compose_config(
     project_dir: Path,
     env_file_path: Path,
     destination_path: Path | None = None,
+    additional_envs: dict[str, str] | None = None,
 ) -> dict:
     """Runs docker compose config to validate and resolve a compose file configuration
 
@@ -182,6 +183,7 @@ def run_docker_compose_config(
         check=True,
         cwd=project_dir,
         stdout=subprocess.PIPE,
+        env=additional_envs,
     )
 
     compose_file_str = process.stdout.decode("utf-8")

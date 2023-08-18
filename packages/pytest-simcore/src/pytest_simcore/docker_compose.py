@@ -22,7 +22,7 @@ from typing import Any, Iterator
 import pytest
 import yaml
 from dotenv import dotenv_values, set_key
-from pytest import ExitCode, MonkeyPatch
+from pytest import ExitCode
 
 from .helpers import (
     FIXTURE_CONFIG_CORE_SERVICES_SELECTION,
@@ -169,11 +169,10 @@ def simcore_docker_compose(
 
 
 @pytest.fixture(scope="module")
-def inject_filestash_config_path(
+def inject_filestash_config_path_env(
     osparc_simcore_scripts_dir: Path,
-    monkeypatch_module: MonkeyPatch,
     env_file_for_testing: Path,
-) -> None:
+) -> dict[str, str]:
     create_filestash_config_py = (
         osparc_simcore_scripts_dir / "filestash" / "create_config.py"
     )
@@ -197,9 +196,7 @@ def inject_filestash_config_path(
         "TMP_PATH_TO_FILESTASH_CONFIG",
         f"{filestash_config_json_path}",
     )
-    monkeypatch_module.setenv(
-        "TMP_PATH_TO_FILESTASH_CONFIG", f"{filestash_config_json_path}"
-    )
+    return {"TMP_PATH_TO_FILESTASH_CONFIG": f"{filestash_config_json_path}"}
 
 
 @pytest.fixture(scope="module")
@@ -208,7 +205,7 @@ def ops_docker_compose(
     osparc_simcore_scripts_dir: Path,
     env_file_for_testing: Path,
     temp_folder: Path,
-    inject_filestash_config_path: None,
+    inject_filestash_config_path_env: dict[str, str],
 ) -> dict[str, Any]:
     """Filters only services in docker-compose-ops.yml and returns yaml data
 
@@ -229,6 +226,7 @@ def ops_docker_compose(
         docker_compose_paths=docker_compose_path,
         env_file_path=env_file_for_testing,
         destination_path=temp_folder / "ops_docker_compose.yml",
+        additional_envs=inject_filestash_config_path_env,
     )
     # NOTE: do not add indent. Copy&Paste log into editor instead
     print(
