@@ -17,7 +17,7 @@ class EmptyModel(BaseModel):
 
 
 class InputSchemaWithoutCameCase(BaseModel):
-    class Config:  # type: ignore[pydantic-alias]
+    class Config:
         allow_population_by_field_name = False
         extra = Extra.ignore  # Non-strict inputs policy: Used to prune extra field
         allow_mutations = False
