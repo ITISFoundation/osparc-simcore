@@ -2,14 +2,14 @@
 # pylint:disable=redefined-outer-name
 
 import json
-from typing import Any, Callable, Optional
+from collections.abc import Callable
+from typing import Any, Optional
 
 import pytest
 from fastapi import FastAPI, status
 from httpx import Response
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl, parse_obj_as
-from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx import MockRouter, Route
 from respx.types import SideEffectTypes
@@ -21,7 +21,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.api_client._thin import
 
 # NOTE: typing and callables cannot
 MockRequestType = Callable[
-    [str, str, Optional[Response], Optional[SideEffectTypes]], Route
+    [str, str, Response | None, Optional[SideEffectTypes]], Route
 ]
 
 
@@ -36,7 +36,7 @@ def assert_responses(mocked: Response, result: Response | None) -> None:
 
 
 @pytest.fixture
-def mocked_app(monkeypatch: MonkeyPatch, mock_env: EnvVarsDict) -> FastAPI:
+def mocked_app(monkeypatch: pytest.MonkeyPatch, mock_env: EnvVarsDict) -> FastAPI:
     monkeypatch.setenv("S3_ENDPOINT", "")
     monkeypatch.setenv("S3_ACCESS_KEY", "")
     monkeypatch.setenv("S3_SECRET_KEY", "")
@@ -176,10 +176,10 @@ async def test_get_containers_name(
     mock_response = Response(status.HTTP_200_OK)
 
     encoded_filters = json.dumps(
-        dict(
-            network=dynamic_sidecar_network_name,
-            exclude=SUFFIX_EGRESS_PROXY_NAME,
-        )
+        {
+            "network": dynamic_sidecar_network_name,
+            "exclude": SUFFIX_EGRESS_PROXY_NAME,
+        }
     )
     mock_request(
         "GET",
