@@ -155,11 +155,13 @@ async def _send_cluster_heartbeat(
     clusters_keeper_rabbitmq_rpc_client: RabbitMQClient,
     ec2_client: EC2Client,
     user_id: UserID,
+    wallet_id: WalletID,
 ) -> datetime.datetime:
     rpc_response = await clusters_keeper_rabbitmq_rpc_client.rpc_request(
         CLUSTERS_KEEPER_NAMESPACE,
         RPCMethodName("cluster_heartbeat"),
         user_id=user_id,
+        wallet_id=wallet_id,
     )
     assert rpc_response is None
 
@@ -178,13 +180,13 @@ async def test_cluster_heartbeat(
     )
 
     first_heartbeat_time = await _send_cluster_heartbeat(
-        clusters_keeper_rabbitmq_rpc_client, ec2_client, user_id
+        clusters_keeper_rabbitmq_rpc_client, ec2_client, user_id, wallet_id
     )
 
     await asyncio.sleep(1)
 
     next_heartbeat_time = await _send_cluster_heartbeat(
-        clusters_keeper_rabbitmq_rpc_client, ec2_client, user_id
+        clusters_keeper_rabbitmq_rpc_client, ec2_client, user_id, wallet_id
     )
 
     assert next_heartbeat_time > first_heartbeat_time
@@ -195,8 +197,9 @@ async def test_cluster_heartbeat_on_non_existing_cluster_raises(
     clusters_keeper_rabbitmq_rpc_client: RabbitMQClient,
     ec2_client: EC2Client,
     user_id: UserID,
+    wallet_id: WalletID,
 ):
     with pytest.raises(Ec2InstanceNotFoundError):
         await _send_cluster_heartbeat(
-            clusters_keeper_rabbitmq_rpc_client, ec2_client, user_id
+            clusters_keeper_rabbitmq_rpc_client, ec2_client, user_id, wallet_id
         )

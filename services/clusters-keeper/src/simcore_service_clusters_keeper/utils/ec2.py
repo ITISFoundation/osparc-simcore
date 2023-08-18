@@ -36,6 +36,16 @@ def ec2_instances_for_user_filter(user_id: UserID) -> EC2Tags:
     return _DEFAULT_CLUSTERS_KEEPER_TAGS | {"user_id": f"{user_id}"}
 
 
+def ec2_instances_for_user_wallet_filter(
+    user_id: UserID, wallet_id: WalletID
+) -> EC2Tags:
+    return (
+        _DEFAULT_CLUSTERS_KEEPER_TAGS
+        | {"user_id": f"{user_id}"}
+        | {"wallet_id": f"{wallet_id}"}
+    )
+
+
 def compose_user_data(bash_command: str) -> str:
     return dedent(
         f"""\

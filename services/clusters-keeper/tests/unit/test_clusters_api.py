@@ -131,12 +131,12 @@ async def test_cluster_heartbeat(
 ):
     await _create_cluster(initialized_app, ec2_client, user_id, wallet_id)
 
-    await cluster_heartbeat(initialized_app, user_id=user_id)
+    await cluster_heartbeat(initialized_app, user_id=user_id, wallet_id=wallet_id)
     first_heartbeat_time = await _assert_cluster_heartbeat_on_instance(ec2_client)
 
     await asyncio.sleep(1)
 
-    await cluster_heartbeat(initialized_app, user_id=user_id)
+    await cluster_heartbeat(initialized_app, user_id=user_id, wallet_id=wallet_id)
     next_heartbeat_time = await _assert_cluster_heartbeat_on_instance(ec2_client)
 
     assert next_heartbeat_time > first_heartbeat_time
@@ -146,10 +146,11 @@ async def test_cluster_heartbeat_on_non_existing_cluster_raises(
     _base_configuration: None,
     ec2_client: EC2Client,
     user_id: UserID,
+    wallet_id: WalletID,
     initialized_app: FastAPI,
 ):
     with pytest.raises(Ec2InstanceNotFoundError):
-        await cluster_heartbeat(initialized_app, user_id=user_id)
+        await cluster_heartbeat(initialized_app, user_id=user_id, wallet_id=wallet_id)
 
 
 async def _assert_all_clusters_terminated(

@@ -104,7 +104,7 @@ async def test_cluster_management_core_properly_unused_instances(
 
     # running the cluster management task after the heartbeat came in shall not remove anything
     await asyncio.sleep(_FAST_TIME_BEFORE_TERMINATION_SECONDS + 1)
-    await cluster_heartbeat(initialized_app, user_id=user_id)
+    await cluster_heartbeat(initialized_app, user_id=user_id, wallet_id=wallet_id)
     await check_clusters(initialized_app)
     await _assert_cluster_exist_and_state(
         ec2_client, instances=created_clusters, state="running"
