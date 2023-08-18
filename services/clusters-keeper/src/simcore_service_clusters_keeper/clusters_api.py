@@ -56,7 +56,6 @@ async def get_cluster(
     if instances := await get_ec2_client(app).get_instances(
         app_settings.CLUSTERS_KEEPER_EC2_INSTANCES,
         tags=ec2_instances_for_user_wallet_filter(user_id, wallet_id),
-        state_names=["running"],
     ):
         assert len(instances) == 1  # nosec
         return instances[0]
