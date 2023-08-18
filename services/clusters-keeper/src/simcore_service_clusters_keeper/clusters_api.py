@@ -20,7 +20,9 @@ from .utils.ec2 import (
 _logger = logging.getLogger(__name__)
 
 
-async def create_cluster(app: FastAPI, *, user_id: UserID, wallet_id: WalletID):
+async def create_cluster(
+    app: FastAPI, *, user_id: UserID, wallet_id: WalletID
+) -> list[EC2InstanceData]:
     with log_context(
         _logger, logging.INFO, msg=f"create_cluster for {user_id=}, {wallet_id=}"
     ):
