@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Extra
 
-from ..api_schemas_directorv2 import clusters
+from ..api_schemas_directorv2 import clusters as directorv2_clusters
 from ..clusters import ClusterID
 from ._base import InputSchema, OutputSchema
 
@@ -13,26 +13,26 @@ class ClusterPathParams(BaseModel):
         extra = Extra.forbid
 
 
-class ClusterGet(clusters.ClusterGet):
+class ClusterGet(directorv2_clusters.ClusterGet):
     class Config(OutputSchema.Config):
         ...
 
 
-class ClusterCreate(clusters.ClusterCreate):
+class ClusterCreate(directorv2_clusters.ClusterCreate):
     class Config(InputSchema.Config):
         ...
 
 
-class ClusterPatch(clusters.ClusterPatch):
+class ClusterPatch(directorv2_clusters.ClusterPatch):
     class Config(InputSchema.Config):
         ...
 
 
-class ClusterPing(clusters.ClusterPing):
+class ClusterPing(directorv2_clusters.ClusterPing):
     class Config(InputSchema.Config):
         ...
 
 
-class ClusterDetails(clusters.ClusterDetails):
+class ClusterDetails(directorv2_clusters.ClusterDetails):
     class Config(OutputSchema.Config):
         ...

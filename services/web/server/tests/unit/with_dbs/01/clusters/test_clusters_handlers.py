@@ -41,7 +41,7 @@ from simcore_service_webserver.director_v2.exceptions import (
 @pytest.fixture
 def mocked_director_v2_api(mocker: MockerFixture):
     mocked_director_v2_api = mocker.patch(
-        "simcore_service_webserver.clusters.handlers.director_v2_api", autospec=True
+        "simcore_service_webserver.clusters._handlers.director_v2_api", autospec=True
     )
 
     mocked_director_v2_api.create_cluster.return_value = Cluster.parse_obj(
@@ -65,7 +65,7 @@ def mocked_director_v2_with_error(
     mocker: MockerFixture, faker: Faker, director_v2_error: type[DirectorServiceError]
 ):
     mocked_director_v2_api = mocker.patch(
-        "simcore_service_webserver.clusters.handlers.director_v2_api", autospec=True
+        "simcore_service_webserver.clusters._handlers.director_v2_api", autospec=True
     )
     error = director_v2_error(
         status=web.HTTPServiceUnavailable.status_code,
