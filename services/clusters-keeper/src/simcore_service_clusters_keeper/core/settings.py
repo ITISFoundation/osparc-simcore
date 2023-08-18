@@ -67,17 +67,6 @@ class EC2InstancesSettings(BaseCustomSettings):
         "this is required to start a new EC2 instance",
     )
 
-    EC2_INSTANCES_TIME_BEFORE_TERMINATION: datetime.timedelta = Field(
-        default=datetime.timedelta(minutes=1),
-        description="Time after which an EC2 instance may be terminated (repeat every hour, min 0, max 59 minutes)",
-    )
-
-    EC2_INSTANCES_MACHINES_BUFFER: NonNegativeInt = Field(
-        default=0,
-        description="Constant reserve of drained ready machines for fast(er) usage,"
-        "disabled when set to 0. Uses 1st machine defined in EC2_INSTANCES_ALLOWED_TYPES",
-    )
-
     EC2_INSTANCES_MAX_START_TIME: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=3),
         description="Usual time taken an EC2 instance with the given AMI takes to be in 'running' mode",
@@ -87,15 +76,6 @@ class EC2InstancesSettings(BaseCustomSettings):
         default_factory=list,
         description="script(s) to run on EC2 instance startup (be careful!), each entry is run one after the other using '&&' operator",
     )
-
-    @validator("EC2_INSTANCES_TIME_BEFORE_TERMINATION")
-    @classmethod
-    def ensure_time_is_in_range(cls, value):
-        if value < datetime.timedelta(minutes=0):
-            value = datetime.timedelta(minutes=0)
-        elif value > datetime.timedelta(minutes=59):
-            value = datetime.timedelta(minutes=59)
-        return value
 
     @validator("EC2_INSTANCES_ALLOWED_TYPES")
     @classmethod
@@ -165,6 +145,16 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     CLUSTERS_KEEPER_CLEAN_INTERVAL: datetime.timedelta = Field(
         default=datetime.timedelta(seconds=60),
         description="interval between each clusters clean check (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+    )
+
+    SERVICE_TRACKING_HEARTBEAT: datetime.timedelta = Field(
+        default=datetime.timedelta(seconds=60),
+        description="Service heartbeat interval (everytime a heartbeat is sent into RabbitMQ)",
+    )
+
+    CLUSTERS_KEEPER_MAX_MISSED_HEARTBEATS_BEFORE_CLUSTER_TERMINATION: NonNegativeInt = Field(
+        default=5,
+        description="Max number of missed heartbeats before a cluster is terminated",
     )
 
     @cached_property

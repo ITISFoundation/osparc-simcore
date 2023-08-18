@@ -34,9 +34,9 @@ async def _find_terminateable_instances(
             datetime.datetime.now(datetime.timezone.utc) - last_heartbeat
         )
 
-        if (
-            elapsed_time_since_heartbeat
-            >= app_settings.CLUSTERS_KEEPER_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
+        if elapsed_time_since_heartbeat >= (
+            app_settings.CLUSTERS_KEEPER_MAX_MISSED_HEARTBEATS_BEFORE_CLUSTER_TERMINATION
+            * app_settings.SERVICE_TRACKING_HEARTBEAT
         ):
             # let's terminate that one
             terminateable_instances.append(instance)

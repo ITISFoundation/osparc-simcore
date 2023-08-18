@@ -11,6 +11,7 @@ from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_clusters_keeper.clusters_api import (
     cluster_heartbeat,
     create_cluster,
@@ -40,14 +41,13 @@ def app_environment(
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     # fast interval
-    monkeypatch.setenv(
-        "EC2_INSTANCES_TIME_BEFORE_TERMINATION",
-        f"{_FAST_TIME_BEFORE_TERMINATION_SECONDS}",
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        envs={
+            "CLUSTERS_KEEPER_MAX_MISSED_HEARTBEATS_BEFORE_CLUSTER_TERMINATION": "1",
+            "SERVICE_TRACKING_HEARTBEAT": f"{_FAST_TIME_BEFORE_TERMINATION_SECONDS}",
+        },
     )
-    app_environment[
-        "EC2_INSTANCES_TIME_BEFORE_TERMINATION"
-    ] = f"{_FAST_TIME_BEFORE_TERMINATION_SECONDS}"
-    return app_environment
 
 
 @pytest.fixture
