@@ -19,7 +19,6 @@ router = APIRouter(
 @router.get(
     "/activity/status",
     response_model=Envelope[ActivityStatusDict],
-    operation_id="get_activity_status",
 )
 def get_activity_status():
     pass

@@ -11,8 +11,7 @@ This OAS are the source of truth
 
 from typing import Annotated
 
-from _common import CURRENT_DIR, create_and_save_openapi_specs
-from fastapi import APIRouter, Depends, FastAPI, status
+from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.projects_metadata import (
     ProjectMetadataGet,
     ProjectMetadataUpdate,
@@ -32,7 +31,6 @@ router = APIRouter(prefix=f"/{API_VTAG}", tags=["projects", "metadata"])
 @router.get(
     "/projects/{project_id}/metadata",
     response_model=Envelope[ProjectMetadataGet],
-    operation_id="get_project_metadata",
     status_code=status.HTTP_200_OK,
 )
 async def get_project_metadata(_params: Annotated[ProjectPathParams, Depends()]):
@@ -42,17 +40,9 @@ async def get_project_metadata(_params: Annotated[ProjectPathParams, Depends()])
 @router.patch(
     "/projects/{project_id}/metadata",
     response_model=Envelope[ProjectMetadataGet],
-    operation_id="update_project_metadata",
     status_code=status.HTTP_200_OK,
 )
 async def update_project_metadata(
     _params: Annotated[ProjectPathParams, Depends()], _body: ProjectMetadataUpdate
 ):
     ...
-
-
-if __name__ == "__main__":
-    create_and_save_openapi_specs(
-        FastAPI(routes=router.routes),
-        CURRENT_DIR.parent / "openapi-projects-metadata.yaml",
-    )

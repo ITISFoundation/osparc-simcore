@@ -4,12 +4,8 @@
 # pylint: disable=too-many-arguments
 
 
-from _common import (
-    CURRENT_DIR,
-    assert_handler_signature_against_model,
-    create_and_save_openapi_specs,
-)
-from fastapi import APIRouter, FastAPI, status
+from _common import assert_handler_signature_against_model
+from fastapi import APIRouter, status
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_webserver.projects_nodes import (
     NodeCreate,
@@ -46,7 +42,6 @@ router = APIRouter(
     "/projects/{project_id}/nodes",
     response_model=Envelope[NodeCreated],
     status_code=status.HTTP_201_CREATED,
-    operation_id="create_node",
 )
 def create_node(project_id: str, body: NodeCreate):
     ...
@@ -54,7 +49,6 @@ def create_node(project_id: str, body: NodeCreate):
 
 @router.get(
     "/projects/{project_id}/nodes/{node_id}",
-    operation_id="get_node",
     response_model=Envelope[NodeGet],
     # responses={"idle": {"model": NodeGetIdle}}, TODO: check this variant
 )
@@ -67,7 +61,6 @@ def get_node(
 
 @router.delete(
     "/projects/{project_id}/nodes/{node_id}",
-    operation_id="delete_node",
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
 )
@@ -77,7 +70,6 @@ def delete_node(project_id: str, node_id: str):
 
 @router.post(
     "/projects/{project_id}/nodes/{node_id}:retrieve",
-    operation_id="retrieve_node",
     response_model=Envelope[NodeRetrieved],
 )
 def retrieve_node(project_id: str, node_id: str, _retrieve: NodeRetrieve):
@@ -86,7 +78,6 @@ def retrieve_node(project_id: str, node_id: str, _retrieve: NodeRetrieve):
 
 @router.post(
     "/projects/{project_id}/nodes/{node_id}:start",
-    operation_id="start_node",
     status_code=status.HTTP_204_NO_CONTENT,
     response_model=None,
 )
@@ -96,7 +87,6 @@ def start_node(project_id: str, node_id: str):
 
 @router.post(
     "/projects/{project_id}/nodes/{node_id}:stop",
-    operation_id="stop_node",
     response_model=Envelope[TaskGet],
 )
 def stop_node(project_id: str, node_id: str):
@@ -106,7 +96,6 @@ def stop_node(project_id: str, node_id: str):
 @router.post(
     "/projects/{project_id}/nodes/{node_id}:restart",
     response_model=None,
-    operation_id="restart_node",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def restart_node(project_id: str, node_id: str):
@@ -121,7 +110,6 @@ def restart_node(project_id: str, node_id: str):
 @router.get(
     "/projects/{project_id}/nodes/{node_id}/resources",
     response_model=Envelope[ServiceResourcesDict],
-    operation_id="get_node_resources",
 )
 def get_node_resources(project_id: str, node_id: str):
     pass
@@ -130,7 +118,6 @@ def get_node_resources(project_id: str, node_id: str):
 @router.put(
     "/projects/{project_id}/nodes/{node_id}/resources",
     response_model=Envelope[ServiceResourcesDict],
-    operation_id="replace_node_resources",
 )
 def replace_node_resources(project_id: str, node_id: str, _new: ServiceResourcesDict):
     pass
@@ -143,7 +130,6 @@ def replace_node_resources(project_id: str, node_id: str, _new: ServiceResources
 
 @router.get(
     "/projects/{project_id}/nodes/-/services:access",
-    operation_id="get_project_services_access_for_gid",
     response_model=Envelope[_ProjectGroupAccess],
     summary="Check whether provided group has access to the project services",
 )
@@ -164,7 +150,6 @@ assert_handler_signature_against_model(
 @router.get(
     "/projects/{project_id}/nodes/-/preview",
     response_model=Envelope[list[_ProjectNodePreview]],
-    operation_id="list_project_nodes_previews",
     summary="Lists all previews in the node's project",
 )
 async def list_project_nodes_previews(project_id: ProjectID):
@@ -177,7 +162,6 @@ assert_handler_signature_against_model(list_project_nodes_previews, ProjectPathP
 @router.get(
     "/projects/{project_id}/nodes/{node_id}/preview",
     response_model=Envelope[_ProjectNodePreview],
-    operation_id="get_project_node_preview",
     summary="Gets a give node's preview",
     responses={status.HTTP_404_NOT_FOUND: {"description": "Node has no preview"}},
 )
@@ -186,10 +170,3 @@ async def get_project_node_preview(project_id: ProjectID, node_id: NodeID):
 
 
 assert_handler_signature_against_model(get_project_node_preview, _NodePathParams)
-
-
-if __name__ == "__main__":
-    create_and_save_openapi_specs(
-        FastAPI(routes=router.routes),
-        CURRENT_DIR.parent / "openapi-projects-nodes.yaml",
-    )

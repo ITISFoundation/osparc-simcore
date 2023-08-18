@@ -8,7 +8,7 @@
 # pylint: disable=unused-variable
 
 
-from fastapi import APIRouter, FastAPI, status
+from fastapi import APIRouter, status
 from fastapi.responses import RedirectResponse
 from models_library.projects import ProjectID
 from models_library.services import ServiceKey, ServiceKeyVersion
@@ -27,7 +27,6 @@ router = APIRouter(
     response_class=RedirectResponse,
     response_description="Opens osparc and starts viewer for selected data",
     status_code=status.HTTP_302_FOUND,
-    operation_id="get_redirection_to_viewer",
 )
 async def get_redirection_to_viewer(
     file_type: str,
@@ -45,15 +44,6 @@ async def get_redirection_to_viewer(
     response_class=RedirectResponse,
     response_description="Opens osparc and opens a copy of publised study",
     status_code=status.HTTP_302_FOUND,
-    operation_id="get_redirection_to_study_page",
 )
 async def get_redirection_to_study_page(id: ProjectID):
     """Opens a study published in osparc"""
-
-
-if __name__ == "__main__":
-    from _common import CURRENT_DIR, create_and_save_openapi_specs
-
-    create_and_save_openapi_specs(
-        FastAPI(routes=router.routes), CURRENT_DIR.parent / "openapi-nih-sparc.yaml"
-    )

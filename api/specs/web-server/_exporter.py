@@ -20,7 +20,6 @@ router = APIRouter(
 @router.post(
     "/projects/{project_id}:xport",
     response_class=FileResponse,
-    operation_id="export_project",
 )
 def export_project(project_id: str):
     """

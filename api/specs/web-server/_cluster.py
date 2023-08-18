@@ -22,7 +22,6 @@ router = APIRouter(
 
 @router.get(
     "/clusters",
-    operation_id="list_clusters",
     response_model=Envelope[list[ClusterGet]],
 )
 def list_clusters():
@@ -31,7 +30,6 @@ def list_clusters():
 
 @router.post(
     "/clusters",
-    operation_id="create_cluster",
     response_model=Envelope[ClusterGet],
     status_code=status.HTTP_201_CREATED,
 )
@@ -43,7 +41,6 @@ def create_cluster(
 
 @router.post(
     "/clusters:ping",
-    operation_id="ping_cluster",
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
 )
@@ -57,7 +54,6 @@ def ping_cluster(
 
 @router.get(
     "/clusters/{cluster_id}",
-    operation_id="get_cluster",
     response_model=Envelope[ClusterGet],
 )
 def get_cluster(_path_params: Annotated[ClusterPathParams, Depends()]):
@@ -66,7 +62,6 @@ def get_cluster(_path_params: Annotated[ClusterPathParams, Depends()]):
 
 @router.patch(
     "/clusters/{cluster_id}",
-    operation_id="update_cluster",
     response_model=Envelope[ClusterGet],
 )
 def update_cluster(
@@ -77,7 +72,6 @@ def update_cluster(
 
 @router.delete(
     "/clusters/{cluster_id}",
-    operation_id="delete_cluster",
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
 )
@@ -89,7 +83,6 @@ def delete_cluster(
 
 @router.get(
     "/clusters/{cluster_id}/details",
-    operation_id="get_cluster_details",
     response_model=Envelope[ClusterDetails],
 )
 def get_cluster_details(
@@ -100,7 +93,6 @@ def get_cluster_details(
 
 @router.post(
     "/clusters/{cluster_id}:ping",
-    operation_id="ping_cluster_cluster_id",
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
 )

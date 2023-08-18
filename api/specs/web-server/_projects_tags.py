@@ -22,7 +22,6 @@ router = APIRouter(
 @router.put(
     "/projects/{project_uuid}/tags/{tag_id}",
     response_model=Envelope[ProjectGet],
-    operation_id="add_tag",
 )
 def add_tag(
     project_uuid: ProjectID,
@@ -36,7 +35,6 @@ def add_tag(
 @router.delete(
     "/projects/{project_uuid}/tags/{tag_id}",
     response_model=Envelope[ProjectGet],
-    operation_id="remove_tag",
 )
 def remove_tag(
     project_uuid: ProjectID,

@@ -20,7 +20,6 @@ router = APIRouter(
 @router.get(
     "/computations/{project_id}",
     response_model=Envelope[ComputationTaskGet],
-    operation_id="get_computation",
 )
 async def get_computation(project_id: ProjectID):
     ...
@@ -29,7 +28,6 @@ async def get_computation(project_id: ProjectID):
 @router.post(
     "/computations/{project_id}:start",
     response_model=Envelope[_ComputationStarted],
-    operation_id="start_computation",
 )
 async def start_computation(project_id: ProjectID, _start: _ComputationStart):
     ...
@@ -38,7 +36,6 @@ async def start_computation(project_id: ProjectID, _start: _ComputationStart):
 @router.post(
     "/computations/{project_id}:stop",
     status_code=status.HTTP_204_NO_CONTENT,
-    operation_id="stop_computation",
 )
 async def stop_computation(project_id: ProjectID):
     ...

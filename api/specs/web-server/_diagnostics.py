@@ -21,7 +21,6 @@ router = APIRouter(
 @router.get(
     "/",
     response_model=Envelope[HealthInfoDict],
-    operation_id="healthcheck_readiness_probe",
 )
 async def healthcheck_readiness_probe():
     """Readiness probe: check if the container is ready to receive traffic"""
@@ -30,7 +29,6 @@ async def healthcheck_readiness_probe():
 @router.get(
     "/health",
     response_model=Envelope[dict[str, Any]],
-    operation_id="healthcheck_liveness_probe",
 )
 async def healthcheck_liveness_probe():
     """Liveness probe: check if the container is alive"""
@@ -40,7 +38,6 @@ async def healthcheck_liveness_probe():
     "/config",
     summary="Front end runtime configuration",
     response_model=Envelope[dict[str, Any]],
-    operation_id="get_config",
 )
 async def get_config():
     """Returns app and products configs"""
@@ -49,7 +46,6 @@ async def get_config():
 @router.get(
     "/scheduled_maintenance",
     response_model=Envelope[str],
-    operation_id="get_scheduled_maintenance",
 )
 async def get_scheduled_maintenance():
     ...
@@ -60,7 +56,6 @@ async def get_scheduled_maintenance():
     summary="checks status of self and connected services",
     response_model=Envelope[AppStatusCheck],
     response_description="Returns app status check",
-    operation_id="get_app_status",
 )
 async def get_app_status():
     ...
@@ -69,7 +64,6 @@ async def get_app_status():
 @router.get(
     "/status/diagnostics",
     response_model=Envelope[StatusDiagnosticsGet],
-    operation_id="get_app_diagnostics",
     response_description="Returns app diagnostics report",
 )
 async def get_app_diagnostics(
@@ -82,7 +76,6 @@ async def get_app_diagnostics(
     "/status/{service_name}",
     response_model=Envelope[AppStatusCheck],
     response_description="Returns app status check",
-    operation_id="get_service_status",
 )
 async def get_service_status(service_name: str):
     ...

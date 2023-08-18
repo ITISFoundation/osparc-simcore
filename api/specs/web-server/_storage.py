@@ -6,7 +6,7 @@
 
 from typing import TypeAlias
 
-from fastapi import APIRouter, FastAPI, Query, status
+from fastapi import APIRouter, Query, status
 from models_library.api_schemas_storage import (
     FileMetaDataGet,
     FileUploadCompleteFutureResponse,
@@ -39,7 +39,6 @@ StorageFileIDStr: TypeAlias = str
 @router.get(
     "/storage/locations",
     response_model=list[DatasetMetaData],
-    operation_id="get_storage_locations",
     summary="Get available storage locations",
 )
 async def get_storage_locations():
@@ -49,7 +48,6 @@ async def get_storage_locations():
 @router.post(
     "/storage/locations/{location_id}:sync",
     response_model=Envelope[TableSynchronisation],
-    operation_id="synchronise_meta_data_table",
     summary="Manually triggers the synchronisation of the file meta data table in the database",
 )
 async def synchronise_meta_data_table(
@@ -61,7 +59,6 @@ async def synchronise_meta_data_table(
 @router.get(
     "/storage/locations/{location_id}/datasets",
     response_model=Envelope[list[DatasetMetaData]],
-    operation_id="get_datasets_metadata",
     summary="Get datasets metadata",
 )
 async def get_datasets_metadata(location_id: LocationID):
@@ -71,7 +68,6 @@ async def get_datasets_metadata(location_id: LocationID):
 @router.get(
     "/storage/locations/{location_id}/files/metadata",
     response_model=Envelope[list[DatasetMetaData]],
-    operation_id="get_files_metadata",
     summary="Get datasets metadata",
 )
 async def get_files_metadata(
@@ -90,7 +86,6 @@ async def get_files_metadata(
 @router.get(
     "/storage/locations/{location_id}/datasets/{dataset_id}/metadata",
     response_model=Envelope[list[FileMetaDataGet]],
-    operation_id="get_files_metadata_dataset",
     summary="Get Files Metadata",
 )
 async def get_files_metadata_dataset(
@@ -110,7 +105,6 @@ async def get_files_metadata_dataset(
     "/storage/locations/{location_id}/files/{file_id}/metadata",
     response_model=FileMetaData | Envelope[FileMetaDataGet],
     summary="Get File Metadata",
-    operation_id="get_file_metadata",
 )
 async def get_file_metadata(location_id: LocationID, file_id: StorageFileIDStr):
     """returns the file meta data of file_id if user_id has the rights to"""
@@ -119,7 +113,6 @@ async def get_file_metadata(location_id: LocationID, file_id: StorageFileIDStr):
 @router.get(
     "/storage/locations/{location_id}/files/{file_id}",
     response_model=Envelope[PresignedLink],
-    operation_id="download_file",
     summary="Returns download link for requested file",
 )
 async def download_file(
@@ -133,7 +126,6 @@ async def download_file(
 @router.put(
     "/storage/locations/{location_id}/files/{file_id}",
     response_model=Envelope[FileUploadSchema] | Envelope[AnyUrl],
-    operation_id="upload_file",
     summary="Returns upload link",
 )
 async def upload_file(
@@ -149,7 +141,6 @@ async def upload_file(
 @router.delete(
     "/storage/locations/{location_id}/files/{file_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    operation_id="delete_file",
     summary="Deletes File",
 )
 async def delete_file(location_id: LocationID, file_id: StorageFileIDStr):
@@ -159,7 +150,6 @@ async def delete_file(location_id: LocationID, file_id: StorageFileIDStr):
 @router.post(
     "/storage/locations/{location_id}/files/{file_id}:abort",
     status_code=status.HTTP_204_NO_CONTENT,
-    operation_id="abort_upload_file",
 )
 async def abort_upload_file(location_id: LocationID, file_id: StorageFileIDStr):
     """aborts an upload if user has the rights to, and reverts
@@ -170,7 +160,6 @@ async def abort_upload_file(location_id: LocationID, file_id: StorageFileIDStr):
     "/storage/locations/{location_id}/files/{file_id}:complete",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=Envelope[FileUploadCompleteResponse],
-    operation_id="complete_upload_file",
 )
 async def complete_upload_file(
     body_item: Envelope[FileUploadCompletionBody],
@@ -184,17 +173,8 @@ async def complete_upload_file(
     "/storage/locations/{location_id}/files/{file_id}:complete/futures/{future_id}",
     response_model=Envelope[FileUploadCompleteFutureResponse],
     summary="Check for upload completion",
-    operation_id="is_completed_upload_file",
 )
 async def is_completed_upload_file(
     location_id: LocationID, file_id: StorageFileIDStr, future_id: str
 ):
     """Returns state of upload completion"""
-
-
-if __name__ == "__main__":
-    from _common import CURRENT_DIR, create_and_save_openapi_specs
-
-    create_and_save_openapi_specs(
-        FastAPI(routes=router.routes), CURRENT_DIR.parent / "openapi-storage.yaml"
-    )

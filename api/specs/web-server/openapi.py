@@ -75,7 +75,6 @@ def main():
         for route in module.router.routes:
             if isinstance(route, APIRoute) and route.operation_id is None:
                 route.operation_id = route.endpoint.__name__
-        #
         app.include_router(module.router)
 
     openapi = create_openapi_specs(app, remove_main_sections=False)
@@ -86,8 +85,6 @@ def main():
     with oas_path.open("wt") as fh:
         yaml.safe_dump(openapi, stream=fh, sort_keys=False)
     print("done")
-
-    # .json
 
 
 if __name__ == "__main__":

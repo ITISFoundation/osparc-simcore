@@ -5,7 +5,7 @@
 # pylint: disable=unused-variable
 
 
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.studies_dispatcher._rest_handlers import (
@@ -24,7 +24,6 @@ router = APIRouter(
 @router.get(
     "/services",
     response_model=Envelope[list[ServiceGet]],
-    operation_id="list_latest_services",
 )
 async def list_latest_services():
     """Returns a list latest version of services"""
@@ -33,7 +32,6 @@ async def list_latest_services():
 @router.get(
     "/viewers",
     response_model=Envelope[list[Viewer]],
-    operation_id="list_viewers",
 )
 async def list_viewers(file_type: str | None = None):
     """Lists all publically available viewers
@@ -47,7 +45,6 @@ async def list_viewers(file_type: str | None = None):
 @router.get(
     "/viewers/default",
     response_model=Envelope[list[Viewer]],
-    operation_id="list_default_viewers",
 )
 async def list_default_viewers(file_type: str | None = None):
     """Lists the default viewer for each supported filetype
@@ -58,11 +55,3 @@ async def list_default_viewers(file_type: str | None = None):
 
     If file_type is provided, then it filters viewer for that filetype
     """
-
-
-if __name__ == "__main__":
-    from _common import CURRENT_DIR, create_and_save_openapi_specs
-
-    create_and_save_openapi_specs(
-        FastAPI(routes=router.routes), CURRENT_DIR.parent / "openapi-nih-sparc.yaml"
-    )

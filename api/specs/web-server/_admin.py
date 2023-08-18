@@ -6,7 +6,7 @@
 
 from typing import Union
 
-from fastapi import APIRouter, FastAPI, Header
+from fastapi import APIRouter, Header
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.email._handlers import TestEmail, TestFailed, TestPassed
@@ -22,18 +22,9 @@ router = APIRouter(
 @router.post(
     "/email:test",
     response_model=Envelope[Union[TestFailed, TestPassed]],
-    operation_id="test_email",
 )
 async def test_email(
     _test: TestEmail, x_simcore_products_name: str | None = Header(default=None)
 ):
     # X-Simcore-Products-Name
     ...
-
-
-if __name__ == "__main__":
-    from _common import CURRENT_DIR, create_and_save_openapi_specs
-
-    create_and_save_openapi_specs(
-        FastAPI(routes=router.routes), CURRENT_DIR.parent / "openapi-admin.yaml"
-    )

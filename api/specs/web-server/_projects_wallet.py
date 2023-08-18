@@ -9,11 +9,7 @@ This OAS are the source of truth
 # pylint: disable=too-many-arguments
 
 
-from _common import (
-    CURRENT_DIR,
-    assert_handler_signature_against_model,
-    create_openapi_specs,
-)
+from _common import assert_handler_signature_against_model
 from fastapi import APIRouter
 from models_library.api_schemas_webserver.wallets import WalletGet
 from models_library.generics import Envelope
@@ -33,7 +29,6 @@ router = APIRouter(
 @router.get(
     "/projects/{project_id}/wallet",
     response_model=Envelope[WalletGet | None],
-    operation_id="get_project_wallet",
     summary="Get current connected wallet to the project.",
 )
 async def get_project_wallet(project_id: ProjectID):
@@ -46,7 +41,6 @@ assert_handler_signature_against_model(get_project_wallet, ProjectPathParams)
 @router.put(
     "/projects/{project_id}/wallet/{wallet_id}",
     response_model=Envelope[WalletGet],
-    operation_id="connect_wallet_to_project",
     summary="Connect wallet to the project (Project can have only one wallet)",
 )
 async def connect_wallet_to_project(
@@ -57,7 +51,3 @@ async def connect_wallet_to_project(
 
 
 assert_handler_signature_against_model(connect_wallet_to_project, ProjectPathParams)
-
-if __name__ == "__main__":
-
-    create_openapi_specs(router, CURRENT_DIR.parent / "openapi-projects-wallet.yaml")

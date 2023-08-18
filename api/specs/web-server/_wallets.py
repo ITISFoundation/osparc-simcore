@@ -36,7 +36,6 @@ router = APIRouter(
 @router.post(
     "/wallets",
     response_model=Envelope[WalletGet],
-    operation_id="create_wallet",
     status_code=201,
 )
 async def create_wallet(body: _CreateWalletBodyParams):
@@ -46,7 +45,6 @@ async def create_wallet(body: _CreateWalletBodyParams):
 @router.get(
     "/wallets",
     response_model=Envelope[list[WalletGetWithAvailableCredits]],
-    operation_id="list_wallets",
 )
 async def list_wallets():
     ...
@@ -55,7 +53,6 @@ async def list_wallets():
 @router.put(
     "/wallets/{wallet_id}",
     response_model=Envelope[WalletGet],
-    operation_id="update_wallet",
 )
 async def update_wallet(wallet_id: WalletID, body: _PutWalletBodyParams):
     ...
@@ -67,7 +64,6 @@ async def update_wallet(wallet_id: WalletID, body: _PutWalletBodyParams):
 @router.post(
     "/wallets/{wallet_id}/groups/{group_id}",
     response_model=Envelope[WalletGroupGet],
-    operation_id="create_wallet_group",
     status_code=201,
 )
 async def create_wallet_group(
@@ -79,7 +75,6 @@ async def create_wallet_group(
 @router.get(
     "/wallets/{wallet_id}/groups",
     response_model=Envelope[list[WalletGroupGet]],
-    operation_id="list_wallet_groups",
 )
 async def list_wallet_groups(wallet_id: WalletID):
     ...
@@ -88,7 +83,6 @@ async def list_wallet_groups(wallet_id: WalletID):
 @router.put(
     "/wallets/{wallet_id}/groups/{group_id}",
     response_model=Envelope[WalletGroupGet],
-    operation_id="update_wallet_group",
 )
 async def update_wallet_group(
     wallet_id: WalletID, group_id: GroupID, body: _WalletsGroupsBodyParams
@@ -99,14 +93,6 @@ async def update_wallet_group(
 @router.delete(
     "/wallets/{wallet_id}/groups/{group_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    operation_id="delete_wallet_group",
 )
 async def delete_wallet_group(wallet_id: WalletID, group_id: GroupID):
     ...
-
-
-if __name__ == "__main__":
-
-    from _common import CURRENT_DIR, create_openapi_specs
-
-    create_openapi_specs(router, CURRENT_DIR.parent / "openapi-wallets.yaml")
