@@ -113,7 +113,7 @@ async def test_create_cluster(
     print(f"--> creating {cluster_create=!r}")
     # check we can create a cluster
     assert client.app
-    url = client.app.router["create_cluster_handler"].url_for()
+    url = client.app.router["create_cluster"].url_for()
     rsp = await client.post(
         f"{url}",
         json=json.loads(cluster_create.json(by_alias=True, exclude_unset=True)),
@@ -142,7 +142,7 @@ async def test_list_clusters(
 ):
     # check empty clusters
     assert client.app
-    url = client.app.router["list_clusters_handler"].url_for()
+    url = client.app.router["list_clusters"].url_for()
     rsp = await client.get(f"{url}")
     data, error = await assert_status(rsp, expected.ok)
     if not error:
@@ -160,7 +160,7 @@ async def test_get_cluster(
 ):
     # check not found
     assert client.app
-    url = client.app.router["get_cluster_handler"].url_for(cluster_id=f"{25}")
+    url = client.app.router["get_cluster"].url_for(cluster_id=f"{25}")
     rsp = await client.get(f"{url}")
     data, error = await assert_status(rsp, expected.ok)
     if not error:
@@ -178,7 +178,7 @@ async def test_get_cluster_details(
 ):
     # check not found
     assert client.app
-    url = client.app.router["get_cluster_details_handler"].url_for(cluster_id=f"{25}")
+    url = client.app.router["get_cluster_details"].url_for(cluster_id=f"{25}")
     rsp = await client.get(f"{url}")
     data, error = await assert_status(rsp, expected.ok)
     if not error:
@@ -207,7 +207,7 @@ async def test_update_cluster(
     print(f"--> updating {cluster_patch=!r}")
     _PATCH_EXPORT = {"by_alias": True, "exclude_unset": True, "exclude_none": True}
     assert client.app
-    url = client.app.router["update_cluster_handler"].url_for(cluster_id=f"{25}")
+    url = client.app.router["update_cluster"].url_for(cluster_id=f"{25}")
     rsp = await client.patch(
         f"{url}",
         json=json.loads(cluster_patch.json(**_PATCH_EXPORT)),
@@ -226,7 +226,7 @@ async def test_delete_cluster(
     expected: ExpectedResponse,
 ):
     assert client.app
-    url = client.app.router["delete_cluster_handler"].url_for(cluster_id=f"{25}")
+    url = client.app.router["delete_cluster"].url_for(cluster_id=f"{25}")
     rsp = await client.delete(f"{url}")
     data, error = await assert_status(rsp, expected.no_content)
     if not error:
@@ -254,7 +254,7 @@ async def test_ping_cluster(
 ):
     print(f"--> pinging {cluster_ping=!r}")
     assert client.app
-    url = client.app.router["ping_cluster_handler"].url_for()
+    url = client.app.router["ping_cluster"].url_for()
     rsp = await client.post(f"{url}", json=json.loads(cluster_ping.json(by_alias=True)))
     data, error = await assert_status(rsp, expected.no_content)
     if not error:
@@ -271,7 +271,7 @@ async def test_ping_specific_cluster(
     expected: ExpectedResponse,
 ):
     assert client.app
-    url = client.app.router["ping_cluster_cluster_id_handler"].url_for(
+    url = client.app.router["ping_cluster_cluster_id"].url_for(
         cluster_id=f"{faker.pyint(min_value=1)}"
     )
     rsp = await client.post(f"{url}")
@@ -300,7 +300,7 @@ async def test_create_cluster_with_error(
     print(f"--> creating {cluster_create=!r}")
     # check we can create a cluster
     assert client.app
-    url = client.app.router["create_cluster_handler"].url_for()
+    url = client.app.router["create_cluster"].url_for()
     rsp = await client.post(
         f"{url}",
         json=json.loads(cluster_create.json(by_alias=True, exclude_unset=True)),
@@ -326,7 +326,7 @@ async def test_list_clusters_with_error(
 ):
     # check empty clusters
     assert client.app
-    url = client.app.router["list_clusters_handler"].url_for()
+    url = client.app.router["list_clusters"].url_for()
     rsp = await client.get(f"{url}")
     data, error = await assert_status(rsp, expected_http_error)
     assert not data
@@ -351,7 +351,7 @@ async def test_get_cluster_with_error(
 ):
     # check empty clusters
     assert client.app
-    url = client.app.router["get_cluster_handler"].url_for(cluster_id=f"{25}")
+    url = client.app.router["get_cluster"].url_for(cluster_id=f"{25}")
     rsp = await client.get(f"{url}")
     data, error = await assert_status(rsp, expected_http_error)
     assert not data
@@ -376,7 +376,7 @@ async def test_get_cluster_details_with_error(
 ):
     # check not found
     assert client.app
-    url = client.app.router["get_cluster_details_handler"].url_for(cluster_id=f"{25}")
+    url = client.app.router["get_cluster_details"].url_for(cluster_id=f"{25}")
     rsp = await client.get(f"{url}")
     data, error = await assert_status(rsp, expected_http_error)
     assert not data
@@ -401,7 +401,7 @@ async def test_update_cluster_with_error(
 ):
     _PATCH_EXPORT = {"by_alias": True, "exclude_unset": True, "exclude_none": True}
     assert client.app
-    url = client.app.router["update_cluster_handler"].url_for(cluster_id=f"{25}")
+    url = client.app.router["update_cluster"].url_for(cluster_id=f"{25}")
     rsp = await client.patch(
         f"{url}",
         json=json.loads(ClusterPatch().json(**_PATCH_EXPORT)),
@@ -428,7 +428,7 @@ async def test_delete_cluster_with_error(
     expected_http_error: type[web.HTTPException],
 ):
     assert client.app
-    url = client.app.router["delete_cluster_handler"].url_for(cluster_id=f"{25}")
+    url = client.app.router["delete_cluster"].url_for(cluster_id=f"{25}")
     rsp = await client.delete(f"{url}")
     data, error = await assert_status(rsp, expected_http_error)
     assert not data
@@ -458,7 +458,7 @@ async def test_ping_cluster_with_error(
         ),
     )
     assert client.app
-    url = client.app.router["ping_cluster_handler"].url_for()
+    url = client.app.router["ping_cluster"].url_for()
     rsp = await client.post(f"{url}", json=json.loads(cluster_ping.json(by_alias=True)))
     data, error = await assert_status(rsp, expected_http_error)
     assert not data
@@ -482,7 +482,7 @@ async def test_ping_specific_cluster_with_error(
     expected_http_error,
 ):
     assert client.app
-    url = client.app.router["ping_cluster_cluster_id_handler"].url_for(
+    url = client.app.router["ping_cluster_cluster_id"].url_for(
         cluster_id=f"{faker.pyint(min_value=1)}"
     )
     rsp = await client.post(f"{url}")

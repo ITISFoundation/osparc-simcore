@@ -177,8 +177,6 @@ class _BaseModelGet(BaseModel):
         ..., description="Reference to the the meta-project that created this iteration"
     )
 
-    url: HttpUrl = Field(..., description="self reference")
-
 
 class ProjectIterationItem(_BaseModelGet):
     iteration_index: IterationID = Field(...)
@@ -213,12 +211,6 @@ class ProjectIterationItem(_BaseModelGet):
                 "get_project",
                 project_id=project_id,
             ),
-            url=url_for(
-                f"{__name__}._get_meta_project_iterations_handler",
-                project_uuid=meta_project_uuid,
-                ref_id=meta_project_commit_id,
-                iter_id=iteration_index,
-            ),
         )
 
 
@@ -247,12 +239,6 @@ class ProjectIterationResultItem(ProjectIterationItem):
                 "get_project",
                 project_id=project_id,
             ),
-            url=url_for(
-                f"{__name__}._get_meta_project_iteration_results_handler",
-                project_uuid=meta_project_uuid,
-                ref_id=meta_project_commit_id,
-                iter_id=iteration_index,
-            ),
         )
 
 
@@ -267,7 +253,7 @@ routes = web.RouteTableDef()
 )
 @login_required
 @permission_required("project.snapshot.read")
-async def _list_project_iterations(request: web.Request) -> web.Response:
+async def list_project_iterations(request: web.Request) -> web.Response:
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735
 
     # parse and validate request ----
@@ -326,7 +312,7 @@ async def _list_project_iterations(request: web.Request) -> web.Response:
 #
 # @routes.post(
 @permission_required("project.snapshot.create")
-async def _create_project_iteration(request: web.Request) -> web.Response:
+async def create_project_iteration(request: web.Request) -> web.Response:
     q = parse_query_parameters(request)
     meta_project_uuid = q.project_uuid
     meta_project_commit_id = q.ref_id
@@ -360,7 +346,7 @@ async def _create_project_iteration(request: web.Request) -> web.Response:
 )
 @login_required
 @permission_required("project.snapshot.read")
-async def _list_project_iterations_results(
+async def list_project_iterations_results(
     request: web.Request,
 ) -> web.Response:
     # parse and validate request ----
