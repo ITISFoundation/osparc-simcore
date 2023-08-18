@@ -1,6 +1,7 @@
 from typing import Any
 
 from models_library.services import RunID
+from pydantic.errors import PydanticErrorMixin
 
 
 class BaseDynamicSidecarError(Exception):
@@ -28,3 +29,15 @@ class UnexpectedDockerError(BaseDynamicSidecarError):
         super().__init__(
             f"An unexpected Docker error occurred {status=}, {message=}", status=status
         )
+
+
+class BaseError(PydanticErrorMixin, BaseDynamicSidecarError):
+    code = "dy_sidecar.error"
+
+
+class ContainerExecContainerNotFoundError(BaseError):
+    msg_template = "Could not find specified container {container_name}"
+
+
+class ContainerExecTimeoutError(BaseError):
+    msg_template = "Timed out after {timeout} while executing: {command}"
