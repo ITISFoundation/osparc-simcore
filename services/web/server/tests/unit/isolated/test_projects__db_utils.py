@@ -2,6 +2,7 @@ import datetime
 import json
 import re
 from copy import deepcopy
+from dataclasses import dataclass
 from itertools import combinations
 from typing import Any
 
@@ -13,9 +14,12 @@ from simcore_service_webserver.projects._db_utils import (
 )
 from simcore_service_webserver.projects.db import (
     ANY_USER,
+    ProjectAccessRights,
+    assemble_array_groups,
     check_project_permissions,
     convert_to_db_names,
     convert_to_schema_names,
+    create_project_access_rights,
 )
 from simcore_service_webserver.projects.exceptions import ProjectInvalidRightsError
 
@@ -245,3 +249,26 @@ def test_check_project_permissions(
     }
 
     check_project_permissions(project, user_id, user_groups, wanted_permissions)
+
+
+@pytest.mark.parametrize("project_access_rights", list(ProjectAccessRights))
+def test_project_access_rights_creation(
+    group_id: int, project_access_rights: ProjectAccessRights
+):
+    git_to_access_rights = create_project_access_rights(group_id, project_access_rights)
+    assert str(group_id) in git_to_access_rights
+    assert git_to_access_rights[str(group_id)] == project_access_rights.value
+
+
+def test_assemble_array_groups_empty_user_groups():
+    assert assemble_array_groups([]) == "array[]::text[]"
+
+
+@dataclass
+class FakeUserGroup:
+    gid: int
+
+
+def test_assemble_array_groups():
+    fake_user_groups = [FakeUserGroup(gid=n) for n in range(5)]
+    assert assemble_array_groups(fake_user_groups) == "array['0','1','2','3','4']"

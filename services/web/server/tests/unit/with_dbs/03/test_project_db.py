@@ -30,11 +30,7 @@ from simcore_postgres_database.models.projects_to_products import projects_to_pr
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 from simcore_service_webserver.projects._db_utils import PermissionStr
-from simcore_service_webserver.projects.db import (
-    ProjectAccessRights,
-    ProjectDBAPI,
-    create_project_access_rights,
-)
+from simcore_service_webserver.projects.db import ProjectAccessRights, ProjectDBAPI
 from simcore_service_webserver.projects.exceptions import (
     NodeNotFoundError,
     ProjectNotFoundError,
@@ -53,15 +49,6 @@ def group_id() -> int:
 @pytest.fixture
 def user_id() -> int:
     return 132
-
-
-@pytest.mark.parametrize("project_access_rights", list(ProjectAccessRights))
-def test_project_access_rights_creation(
-    group_id: int, project_access_rights: ProjectAccessRights
-):
-    git_to_access_rights = create_project_access_rights(group_id, project_access_rights)
-    assert str(group_id) in git_to_access_rights
-    assert git_to_access_rights[str(group_id)] == project_access_rights.value
 
 
 async def test_setup_projects_db(client: TestClient):
