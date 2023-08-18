@@ -109,7 +109,7 @@ async function __dashboardServicesBrowser(page) {
   await utils.waitAndClick(page, '[osparc-test-id="servicesTabBtn"]');
 }
 
-async function dashboardNewPlan(page) {
+async function dashboardNewTIPlan(page) {
   console.log("Creating New Plan");
 
   await dashboardStudiesBrowser(page);
@@ -405,7 +405,7 @@ module.exports = {
   dashboardAbout,
   dashboardStudiesBrowser,
   dashboardPreferences,
-  dashboardNewPlan,
+  dashboardNewTIPlan,
   dashboardStartSim4LifeLite,
   dashboardOpenFirstTemplate,
   dashboardOpenService,
