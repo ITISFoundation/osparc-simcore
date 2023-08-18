@@ -75,7 +75,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
                 project_uuid=project_uuid,
                 user_id=user_id,
             )
-        except (web.HTTPNotFound, ProjectNotFoundError) as err:  # noqa: PERF203
+        except (web.HTTPNotFound, ProjectNotFoundError) as err:
             _logger.warning(
                 "Could not find project %s for user with %s to be removed: %s. Skipping.",
                 f"{project_uuid=}",

@@ -20,7 +20,7 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.json_serialization import json_dumps
 
-from .._meta import api_version_prefix as VTAG
+from .._meta import api_version_prefix as VTAG  # noqa: N812
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from . import _ports_api, projects_api
@@ -77,8 +77,7 @@ async def _get_validated_workbench_model(
         include_state=False,
     )
 
-    workbench = parse_obj_as(dict[NodeID, Node], project["workbench"])
-    return workbench
+    return parse_obj_as(dict[NodeID, Node], project["workbench"])
 
 
 routes = web.RouteTableDef()
@@ -175,7 +174,7 @@ async def update_project_inputs(request: web.Request) -> web.Response:
     partial_workbench_data = {}
     for input_update in inputs_updates:
         node_id = input_update.key
-        if node_id not in current_inputs.keys():
+        if node_id not in current_inputs:
             raise web.HTTPBadRequest(reason=f"Invalid input key [{node_id}]")
 
         workbench[node_id].outputs = {"out_1": input_update.value}
@@ -185,10 +184,11 @@ async def update_project_inputs(request: web.Request) -> web.Response:
 
     # patch workbench
     assert db  # nosec
-    updated_project, _ = await db.update_project_workbench(
-        jsonable_encoder(partial_workbench_data),
-        req_ctx.user_id,
-        f"{path_params.project_id}",
+    updated_project, _ = await db.update_project_multiple_node_data(
+        user_id=req_ctx.user_id,
+        project_uuid=path_params.project_id,
+        product_name=req_ctx.product_name,
+        partial_workbench_data=jsonable_encoder(partial_workbench_data),
     )
 
     workbench = parse_obj_as(dict[NodeID, Node], updated_project["workbench"])

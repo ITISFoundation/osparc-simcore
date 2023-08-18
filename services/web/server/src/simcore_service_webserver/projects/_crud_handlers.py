@@ -55,6 +55,7 @@ from .db import ProjectDBAPI
 from .exceptions import (
     ProjectDeleteError,
     ProjectInvalidRightsError,
+    ProjectInvalidUsageError,
     ProjectNotFoundError,
 )
 from .lock import get_project_locked_state
@@ -525,6 +526,10 @@ async def replace_project(request: web.Request):
     except ProjectInvalidRightsError as exc:
         raise web.HTTPForbidden(
             reason="You do not have sufficient rights to replace the project"
+        ) from exc
+    except ProjectInvalidUsageError as exc:
+        raise web.HTTPConflict(
+            reason="You may not add or remove nodes in the workbench using this entrypoint. TIP: use dedicated add/remove node entrypoints"
         ) from exc
 
     except ProjectNotFoundError as exc:
