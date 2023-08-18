@@ -1,12 +1,21 @@
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+
 import datetime
 import json
 import re
 from copy import deepcopy
 from dataclasses import dataclass
 from itertools import combinations
-from typing import Any
+from typing import Any, Callable
 
 import pytest
+from faker import Faker
+from models_library.projects_nodes import Node
+from models_library.services import ServiceKey
+from models_library.users import GroupID, UserID
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from simcore_postgres_database.models.groups import GroupType
 from simcore_service_webserver.projects._db_utils import (
     DB_EXCLUSIVE_COLUMNS,
@@ -20,8 +29,14 @@ from simcore_service_webserver.projects.db import (
     convert_to_db_names,
     convert_to_schema_names,
     create_project_access_rights,
+    patch_workbench,
+    update_workbench,
 )
-from simcore_service_webserver.projects.exceptions import ProjectInvalidRightsError
+from simcore_service_webserver.projects.exceptions import (
+    NodeNotFoundError,
+    ProjectInvalidRightsError,
+    ProjectInvalidUsageError,
+)
 
 
 @pytest.fixture
@@ -85,7 +100,7 @@ def test_convert_to_schema_names(fake_project: dict[str, Any]):
         assert col is not None
 
     # test date time conversion
-    date = datetime.datetime.utcnow()
+    date = datetime.datetime.now(datetime.timezone.utc)
     db_entries["creation_date"] = date
     schema_entries = convert_to_schema_names(db_entries, fake_project["prjOwner"])
     assert "creationDate" in schema_entries
@@ -100,7 +115,7 @@ def test_convert_to_schema_names_camel_casing(fake_db_dict):
     assert "anEntryThatUsesSnakeCase" in db_entries
     assert "anotherEntryThatUsesSnakeCase" in db_entries
     # test date time conversion
-    date = datetime.datetime.utcnow()
+    date = datetime.datetime.now(datetime.timezone.utc)
     fake_db_dict["time_entry"] = date
     db_entries = convert_to_schema_names(fake_db_dict, fake_email)
     assert "timeEntry" in db_entries
@@ -133,10 +148,20 @@ def all_permission_combinations() -> list[str]:
     return ["|".join(el) for el in temp]
 
 
+@pytest.fixture
+def user_id(faker: Faker) -> UserID:
+    return faker.pyint(min_value=1)
+
+
+@pytest.fixture
+def group_id(faker: Faker) -> GroupID:
+    return faker.pyint(min_value=1)
+
+
 @pytest.mark.parametrize("wanted_permissions", all_permission_combinations())
 def test_check_project_permissions(
-    user_id: int,
-    group_id: int,
+    user_id: UserID,
+    group_id: GroupID,
     wanted_permissions: str,
 ):
     project = {"access_rights": {}}
@@ -271,4 +296,143 @@ class FakeUserGroup:
 
 def test_assemble_array_groups():
     fake_user_groups = [FakeUserGroup(gid=n) for n in range(5)]
-    assert assemble_array_groups(fake_user_groups) == "array['0','1','2','3','4']"
+    assert assemble_array_groups(fake_user_groups) == "array['0', '1', '2', '3', '4']"  # type: ignore
+
+
+def test_update_workbench_with_new_nodes_raises(faker: Faker):
+    old_project = {"workbench": {faker.uuid4(): faker.pydict()}}
+    new_project = {"workbench": {faker.uuid4(): faker.pydict()}}
+    with pytest.raises(ProjectInvalidUsageError):
+        update_workbench(old_project, new_project)
+
+
+def test_update_workbench(faker: Faker):
+    node_id = faker.uuid4()
+    old_project = {"workbench": {node_id: faker.pydict()}}
+    new_project = {"workbench": {node_id: faker.pydict()}}
+    expected_updated_project = {
+        "workbench": {
+            node_id: old_project["workbench"][node_id]
+            | new_project["workbench"][node_id]
+        }
+    }
+    received_project_with_updated_workbench = update_workbench(old_project, new_project)
+    assert received_project_with_updated_workbench != old_project
+    assert received_project_with_updated_workbench != new_project
+    assert received_project_with_updated_workbench == expected_updated_project
+
+
+def test_patch_workbench_with_empty_changes(faker: Faker):
+    node_id = faker.uuid4()
+    project = {"workbench": {node_id: faker.pydict()}}
+    patched_project, changed_entries = patch_workbench(
+        project, new_partial_workbench_data={}, allow_workbench_changes=False
+    )
+    assert patched_project == project
+    assert changed_entries == {}
+
+
+@pytest.fixture
+def random_minimal_node(faker: Faker) -> Callable[[], Node]:
+    def _creator() -> Node:
+        return Node(
+            key=ServiceKey(f"simcore/services/comp/{faker.pystr().lower()}"),
+            version=faker.numerify("#.#.#"),
+            label=faker.pystr(),
+        )
+
+    return _creator
+
+
+def test_patch_workbench_add_node(
+    faker: Faker, random_minimal_node: Callable[[], Node]
+):
+    node_id = faker.uuid4()
+    project = {"workbench": {node_id: faker.pydict()}, "uuid": faker.uuid4()}
+    new_node_id = faker.uuid4()
+    invalid_partial_workbench_data = {new_node_id: faker.pydict()}
+
+    # with disallowed workbench changes this fails
+    with pytest.raises(ProjectInvalidUsageError):
+        patch_workbench(
+            project,
+            new_partial_workbench_data=invalid_partial_workbench_data,
+            allow_workbench_changes=False,
+        )
+    # with allowed workbench changes this works but a non validated node data this fails
+    with pytest.raises(NodeNotFoundError):
+        patch_workbench(
+            project,
+            new_partial_workbench_data=invalid_partial_workbench_data,
+            allow_workbench_changes=True,
+        )
+    # now with a correct node that should work
+    valid_partial_workbench_data = {
+        new_node_id: jsonable_encoder(random_minimal_node())
+    }
+    patched_project, changed_entries = patch_workbench(
+        project,
+        new_partial_workbench_data=valid_partial_workbench_data,
+        allow_workbench_changes=True,
+    )
+    assert patched_project != project
+    assert new_node_id in changed_entries
+    assert changed_entries == valid_partial_workbench_data
+
+
+def test_patch_workbench_remove_node(faker: Faker):
+    node_id = faker.uuid4()
+    project = {"workbench": {node_id: faker.pydict()}, "uuid": faker.uuid4()}
+    valid_partial_workbench_data = {node_id: None}
+
+    # with disallowed workbench changes this fails
+    with pytest.raises(ProjectInvalidUsageError):
+        patch_workbench(
+            project,
+            new_partial_workbench_data=valid_partial_workbench_data,
+            allow_workbench_changes=False,
+        )
+    # with allowed workbench changes this works
+    patched_project, changed_entries = patch_workbench(
+        project,
+        new_partial_workbench_data=valid_partial_workbench_data,
+        allow_workbench_changes=True,
+    )
+    assert patched_project != project
+    assert node_id in changed_entries
+    assert changed_entries == valid_partial_workbench_data
+
+
+def test_patch_workbench_update_node(
+    faker: Faker, random_minimal_node: Callable[[], Node]
+):
+    node_id = faker.uuid4()
+    project = {"workbench": {node_id: faker.pydict()}, "uuid": faker.uuid4()}
+    valid_partial_workbench_data = {node_id: faker.pydict()}
+
+    # with disallowed workbench changes this works as we do not add/remove a node
+    patched_project, changed_entries = patch_workbench(
+        project,
+        new_partial_workbench_data=valid_partial_workbench_data,
+        allow_workbench_changes=False,
+    )
+    assert patched_project != project
+    assert (
+        patched_project["workbench"][node_id]
+        == project["workbench"][node_id] | valid_partial_workbench_data[node_id]
+    )
+    assert node_id in changed_entries
+    assert changed_entries == valid_partial_workbench_data
+    # with allowed workbench changes this works
+    patched_project, changed_entries = patch_workbench(
+        project,
+        new_partial_workbench_data=valid_partial_workbench_data,
+        allow_workbench_changes=True,
+    )
+    assert patched_project != project
+    assert (
+        patched_project["workbench"][node_id]
+        == project["workbench"][node_id] | valid_partial_workbench_data[node_id]
+    )
+    assert node_id in changed_entries
+    assert changed_entries == valid_partial_workbench_data

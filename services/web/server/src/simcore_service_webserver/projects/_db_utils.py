@@ -420,27 +420,23 @@ def patch_workbench(
     - Example: to modify a node ```{new_node_id: {"outputs": {"output_1": 2}}}```
     - Example: to remove a node ```{node_id: None}```
 
-    Arguments:
-        project -- _description_
-        new_partial_workbench_data -- _description_
-        allow_workbench_changes -- _description_
 
     Raises:
         ProjectInvalidUsageError: if allow_workbench_changes is False and user tries to add/remove nodes
-        NodeNotFoundError:
+        NodeNotFoundError: obviously the node does not exist and cannot be patched
 
     Returns:
         patched project and changed entries
     """
-
+    patched_project = deepcopy(project)
     changed_entries = {}
     for (
         node_key,
         new_node_data,
     ) in new_partial_workbench_data.items():
-        current_node_data: dict[str, Any] | None = project.get("workbench", {}).get(
-            node_key
-        )
+        current_node_data: dict[str, Any] | None = patched_project.get(
+            "workbench", {}
+        ).get(node_key)
 
         if current_node_data is None:
             if not allow_workbench_changes:
@@ -448,15 +444,15 @@ def patch_workbench(
             # if it's a new node, let's check that it validates
             try:
                 Node.parse_obj(new_node_data)
-                project["workbench"][node_key] = new_node_data
+                patched_project["workbench"][node_key] = new_node_data
                 changed_entries.update({node_key: new_node_data})
             except ValidationError as err:
-                raise NodeNotFoundError(project["uuid"], node_key) from err
+                raise NodeNotFoundError(patched_project["uuid"], node_key) from err
         elif new_node_data is None:
             if not allow_workbench_changes:
                 raise ProjectInvalidUsageError
             # remove the node
-            project["workbench"].pop(node_key)
+            patched_project["workbench"].pop(node_key)
             changed_entries.update({node_key: None})
         else:
             # find changed keys
@@ -471,4 +467,4 @@ def patch_workbench(
             )
             # patch
             current_node_data.update(new_node_data)
-    return (project, changed_entries)
+    return (patched_project, changed_entries)
