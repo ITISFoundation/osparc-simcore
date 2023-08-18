@@ -40,8 +40,8 @@ async function runTutorial() {
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
     console.log(workbenchData);
     const esId = workbenchData["nodeIds"][0];
-    const tiId = workbenchData["nodeIds"][2];
-    const ppId = workbenchData["nodeIds"][3];
+    const tiId = workbenchData["nodeIds"][1];
+    const ppId = workbenchData["nodeIds"][2];
 
     // wait for the three services, except the optimizer
     await tutorial.waitForServices(
