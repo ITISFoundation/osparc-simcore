@@ -895,6 +895,7 @@ async def test_get_active_project(
         assert not error
 
 
+@pytest.mark.testit
 @pytest.mark.parametrize(
     "user_role, expected_response_on_Create, expected_response_on_Get, expected_response_on_Delete",
     [

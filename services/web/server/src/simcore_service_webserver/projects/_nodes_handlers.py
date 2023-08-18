@@ -171,7 +171,7 @@ async def get_node(request: web.Request) -> web.Response:
             return envelope_json_response(service_data)
 
         # LEGACY-service NODE STATE
-        assert NodeGet.parse_obj(service_data)  # nosec
+        assert NodeGet.parse_obj(service_data["data"])  # nosec
         return envelope_json_response(service_data["data"])
 
     except DirectorServiceError as exc:
