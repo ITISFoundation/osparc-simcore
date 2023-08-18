@@ -135,7 +135,17 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       const walletsViewer = this.getChildControl("wallets-viewer");
       walletsViewer.exclude();
       osparc.utils.Utils.isDevelopmentPlatform()
-        .then(isDevel => isDevel && osparc.product.Utils.isProduct("s4l") ? walletsViewer.show() : walletsViewer.exclude());
+        .then(isDevel => {
+          if (isDevel && osparc.product.Utils.isProduct("s4l")) {
+            walletsViewer.show();
+          }
+        });
+      osparc.utils.Utils.isStagingPlatform()
+        .then(isStaging => {
+          if (isStaging && osparc.product.Utils.isProduct("s4l")) {
+            walletsViewer.show();
+          }
+        });
       this.getChildControl("tasks-button");
       this.getChildControl("notifications-button");
       this.getChildControl("expiration-icon");

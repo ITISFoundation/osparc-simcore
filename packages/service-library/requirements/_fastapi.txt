@@ -16,7 +16,7 @@ attrs==23.1.0
     # via
     #   jsonschema
     #   referencing
-certifi==2023.5.7
+certifi==2023.7.22
     # via
     #   httpcore
     #   httpx
@@ -24,11 +24,11 @@ click==8.1.6
     # via
     #   typer
     #   uvicorn
-dnspython==2.4.0
+dnspython==2.4.2
     # via email-validator
 email-validator==2.0.0.post2
     # via pydantic
-exceptiongroup==1.1.2
+exceptiongroup==1.1.3
     # via anyio
 fastapi==0.99.1
     # via
@@ -41,9 +41,7 @@ h11==0.14.0
     #   httpcore
     #   uvicorn
 httpcore==0.17.3
-    # via
-    #   dnspython
-    #   httpx
+    # via httpx
 httpx==0.24.1
     # via
     #   -c requirements/./../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -55,7 +53,7 @@ idna==3.4
     #   anyio
     #   email-validator
     #   httpx
-jsonschema==4.18.4
+jsonschema==4.19.0
     # via -r requirements/./../../../packages/models-library/requirements/_base.in
 jsonschema-specifications==2023.7.1
     # via jsonschema
@@ -63,7 +61,7 @@ markdown-it-py==3.0.0
     # via rich
 mdurl==0.1.2
     # via markdown-it-py
-pydantic==1.10.11
+pydantic==1.10.12
     # via
     #   -c requirements/./../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/./../../../packages/settings-library/requirements/../../../requirements/constraints.txt
@@ -72,7 +70,7 @@ pydantic==1.10.11
     #   -r requirements/./../../../packages/models-library/requirements/_base.in
     #   -r requirements/./../../../packages/settings-library/requirements/_base.in
     #   fastapi
-pygments==2.15.1
+pygments==2.16.1
     # via rich
 python-dateutil==2.8.2
     # via arrow
@@ -81,7 +79,7 @@ referencing==0.29.3
     #   -c requirements/././constraints.txt
     #   jsonschema
     #   jsonschema-specifications
-rich==13.4.2
+rich==13.5.2
     # via -r requirements/./../../../packages/settings-library/requirements/_base.in
 rpds-py==0.9.2
     # via
@@ -92,7 +90,6 @@ six==1.16.0
 sniffio==1.3.0
     # via
     #   anyio
-    #   dnspython
     #   httpcore
     #   httpx
 starlette==0.27.0
@@ -109,5 +106,5 @@ typing-extensions==4.7.1
     #   pydantic
     #   typer
     #   uvicorn
-uvicorn==0.23.1
+uvicorn==0.23.2
     # via -r requirements/_fastapi.in
