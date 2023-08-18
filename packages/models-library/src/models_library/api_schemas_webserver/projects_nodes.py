@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Any, ClassVar, Literal
 
 from pydantic import Field
 
@@ -28,17 +28,14 @@ class NodeGet(OutputSchema):
     published_port: PortInt = Field(
         ...,
         description="The ports where the service provides its interface",
-        example=30000,
     )
     entry_point: str | None = Field(
         None,
         description="The entry point where the service provides its interface if specified",
-        example="/the/entry/point/is/here",
     )
     service_uuid: str = Field(
         ...,
         description="The UUID attached to this service",
-        example="123e4567-e89b-12d3-a456-426655440000",
     )
     service_key: ServiceKey = Field(
         ...,
@@ -54,15 +51,13 @@ class NodeGet(OutputSchema):
     service_host: str = Field(
         ...,
         description="service host name within the network",
-        example="jupyter_E1O2E-LAH",
     )
     service_port: PortInt = Field(
-        ..., description="port to access the service within the network", example=8081
+        ..., description="port to access the service within the network"
     )
     service_basepath: str | None = Field(
         "",
         description="different base path where current service is mounted otherwise defaults to root",
-        example="/x/E1O2E-LAH",
     )
     service_state: ServiceState = Field(
         ...,
@@ -71,11 +66,25 @@ class NodeGet(OutputSchema):
     service_message: str | None = Field(
         None,
         description="the service message",
-        example="no suitable node (insufficient resources on 1 node)",
     )
-    user_id: str = Field(
-        ..., description="the user that started the service", example="123"
-    )
+    user_id: str = Field(..., description="the user that started the service")
+
+    class Config:
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "example": {
+                "published_port": 30000,
+                "entrypoint": "/the/entry/point/is/here",
+                "service_uuid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                "service_key": "simcore/services/comp/itis/sleeper",
+                "service_version": "1.2.3",
+                "service_host": "jupyter_E1O2E-LAH",
+                "service_port": 8081,
+                "service_basepath": "/x/E1O2E-LAH",
+                "service_state": "pending",
+                "service_message": "no suitable node (insufficient resources on 1 node)",
+                "user_id": 123,
+            }
+        }
 
 
 class NodeGetIdle(OutputSchema):
