@@ -17,6 +17,9 @@ class EmptyModel(BaseModel):
 
 
 class InputSchemaWithoutCameCase(BaseModel):
+    # Added to tmp keep backwards compatibility
+    # until all bodies are updated
+    #
     class Config:
         allow_population_by_field_name = False
         extra = Extra.ignore  # Non-strict inputs policy: Used to prune extra field
@@ -24,10 +27,7 @@ class InputSchemaWithoutCameCase(BaseModel):
 
 
 class InputSchema(BaseModel):
-    class Config:  # type: ignore[pydantic-alias]
-        allow_population_by_field_name = False
-        extra = Extra.ignore  # Non-strict inputs policy: Used to prune extra field
-        allow_mutations = False
+    class Config(InputSchemaWithoutCameCase.Config):  # type: ignore[pydantic-alias]
         alias_generator = snake_to_camel
 
 
