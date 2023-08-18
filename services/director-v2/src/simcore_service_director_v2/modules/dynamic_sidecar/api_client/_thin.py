@@ -169,7 +169,7 @@ class ThinSidecarsClient(BaseThinClient):
             url,
             json={
                 "docker_compose_yaml": compose_spec,
-                "metrics_params": metrics_params,
+                "metrics_params": metrics_params.dict(),
             },
         )
 
