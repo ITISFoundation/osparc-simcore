@@ -51,7 +51,10 @@ def mocked_director_v2_api(mocker: MockerFixture):
     mocked_director_v2_api.get_cluster.return_value = Cluster.parse_obj(
         random.choice(Cluster.Config.schema_extra["examples"])
     )
-    mocked_director_v2_api.get_cluster_details.return_value = {}
+    mocked_director_v2_api.get_cluster_details.return_value = {
+        "scheduler": {"status": "running"},
+        "dashboardLink": "https://link.to.dashboard",
+    }
     mocked_director_v2_api.update_cluster.return_value = Cluster.parse_obj(
         random.choice(Cluster.Config.schema_extra["examples"])
     )
