@@ -3,7 +3,7 @@
 
 import json
 from collections.abc import Callable
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from fastapi import FastAPI, status
@@ -20,9 +20,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.api_client._thin import
 )
 
 # NOTE: typing and callables cannot
-MockRequestType = Callable[
-    [str, str, Response | None, Optional[SideEffectTypes]], Route
-]
+MockRequestType = Callable[[str, str, Response | None, SideEffectTypes | None], Route]
 
 
 # UTILS
