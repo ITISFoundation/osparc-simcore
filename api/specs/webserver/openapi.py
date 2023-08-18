@@ -36,12 +36,14 @@ openapi_modules = [
         "_projects_ports",
         "_projects_states",
         "_projects_tags",
+        "_projects_wallet",
         "_publications",
         "_resource_usage",
         "_storage",
         "_tags",
         "_users",
         "_version_control",
+        "_wallets",
     )
 ]
 

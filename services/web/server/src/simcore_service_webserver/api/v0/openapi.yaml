@@ -1254,7 +1254,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.groups.schemas.GroupUser__'
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.groups.GroupUser__'
     post:
       tags:
       - groups
@@ -2748,6 +2748,56 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_ProjectGet_'
+  /v0/projects/{project_id}/wallet:
+    get:
+      tags:
+      - projects
+      summary: Get current connected wallet to the project.
+      operationId: get_project_wallet
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_Union_WalletGet__NoneType__'
+  /v0/projects/{project_id}/wallet/{wallet_id}:
+    put:
+      tags:
+      - projects
+      summary: Connect wallet to the project (Project can have only one wallet)
+      operationId: connect_wallet_to_project
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WalletGet_'
   /v0/publications/service-submission:
     post:
       tags:
@@ -3081,182 +3131,7 @@ paths:
         name: file_id
         in: path
       responses:
-        '200':
-          description: The tag has been successfully linked to the study
-          content:
-            application/json:
-              schema:
-                $ref: '#/paths/~1v0~1projects~1%7Bproject_id%7D%3Aopen/post/responses/200/content/application~1json/schema'
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-    delete:
-      tags:
-        - project
-      summary: Removes an existing link between a label and a study
-      operationId: remove_tag
-      responses:
-        '200':
-          description: The tag has been successfully removed from the study
-          content:
-            application/json:
-              schema:
-                $ref: '#/paths/~1v0~1projects~1%7Bproject_id%7D%3Aopen/post/responses/200/content/application~1json/schema'
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/v0/projects/{project_id}/wallet':
-    get:
-      tags:
-        - project
-      summary: Get current connected wallet to the project.
-      operationId: get_project_wallet
-      parameters:
-        - required: true
-          schema:
-            type: string
-            format: uuid
-            title: Project Id
-          name: project_id
-          in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                properties:
-                  data:
-                    properties:
-                      wallet_id:
-                        type: integer
-                        exclusiveMinimum: true
-                        title: Wallet Id
-                        minimum: 0
-                      name:
-                        type: string
-                        title: Name
-                      description:
-                        type: string
-                        title: Description
-                      owner:
-                        type: integer
-                        exclusiveMinimum: true
-                        title: Owner
-                        minimum: 0
-                      thumbnail:
-                        type: string
-                        title: Thumbnail
-                      status:
-                        type: string
-                        enum:
-                          - ACTIVE
-                          - INACTIVE
-                        title: WalletStatus
-                        description: An enumeration.
-                      created:
-                        type: string
-                        format: date-time
-                        title: Created
-                      modified:
-                        type: string
-                        format: date-time
-                        title: Modified
-                    type: object
-                    required:
-                      - wallet_id
-                      - name
-                      - owner
-                      - status
-                      - created
-                      - modified
-                    title: WalletGet
-                  error:
-                    title: Error
-                type: object
-                title: 'Envelope[Union[WalletGet, NoneType]]'
-  '/v0/projects/{project_id}/wallet/{wallet_id}':
-    put:
-      tags:
-        - project
-      summary: Connect wallet to the project (Project can have only one wallet)
-      operationId: connect_wallet_to_project
-      parameters:
-        - required: true
-          schema:
-            type: string
-            format: uuid
-            title: Project Id
-          name: project_id
-          in: path
-        - required: true
-          schema:
-            type: integer
-            exclusiveMinimum: true
-            title: Wallet Id
-            minimum: 0
-          name: wallet_id
-          in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                properties:
-                  data:
-                    $ref: '#/paths/~1v0~1projects~1%7Bproject_id%7D~1wallet/get/responses/200/content/application~1json/schema/properties/data'
-                  error:
-                    title: Error
-                type: object
-                title: 'Envelope[WalletGet]'
-  '/v0/projects/{project_uuid}/checkpoint/{ref_id}/iterations':
-    get:
-      tags:
-        - meta-projects
-      summary: List Project Iterations
-      description: Lists current project's iterations
-      operationId: simcore_service_webserver.meta_modeling._rest_handlers._list_meta_project_iterations_handler
-      parameters:
-        - description: Project unique identifier
-          required: true
-          schema:
-            title: Project Uuid
-            type: string
-            description: Project unique identifier
-            format: uuid
-          name: project_uuid
-          in: path
-        - required: true
-          schema:
-            title: Ref Id
-            anyOf:
-              - type: integer
-              - type: string
-          name: ref_id
-          in: path
-        - description: index to the first item to return (pagination)
-          required: false
-          schema:
-            title: Offset
-            exclusiveMinimum: false
-            type: integer
-            description: index to the first item to return (pagination)
-            default: 0
-            minimum: 0
-          name: offset
-          in: query
-        - description: maximum number of items to return (pagination)
-          required: false
-          schema:
-            title: Limit
-            maximum: 50
-            minimum: 1
-            type: integer
-            description: maximum number of items to return (pagination)
-            default: 20
-          name: limit
-          in: query
-      responses:
-        '200':
+        '204':
           description: Successful Response
   /v0/storage/locations/{location_id}/files/{file_id}:abort:
     post:
@@ -3402,562 +3277,7 @@ paths:
       summary: Update Tag
       operationId: update_tag
       parameters:
-        - required: true
-          schema:
-            title: Tag Id
-            type: integer
-          name: tag_id
-          in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              title: TagUpdate
-              type: object
-              properties:
-                name:
-                  title: Name
-                  type: string
-                description:
-                  title: Description
-                  type: string
-                color:
-                  title: Color
-                  pattern: '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$'
-                  type: string
-              additionalProperties: false
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/paths/~1v0~1tags/post/responses/200/content/application~1json/schema'
-  /v0/wallets:
-    get:
-      tags:
-        - wallets
-      summary: List Wallets
-      operationId: list_wallets
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                properties:
-                  data:
-                    items:
-                      properties:
-                        wallet_id:
-                          type: integer
-                          exclusiveMinimum: true
-                          title: Wallet Id
-                          minimum: 0
-                        name:
-                          type: string
-                          title: Name
-                        description:
-                          type: string
-                          title: Description
-                        owner:
-                          type: integer
-                          exclusiveMinimum: true
-                          title: Owner
-                          minimum: 0
-                        thumbnail:
-                          type: string
-                          title: Thumbnail
-                        status:
-                          $ref: '#/paths/~1v0~1wallets~1%7Bwallet_id%7D/put/requestBody/content/application~1json/schema/properties/status'
-                        created:
-                          type: string
-                          format: date-time
-                          title: Created
-                        modified:
-                          type: string
-                          format: date-time
-                          title: Modified
-                        available_credits:
-                          type: number
-                          title: Available Credits
-                      type: object
-                      required:
-                        - wallet_id
-                        - name
-                        - owner
-                        - status
-                        - created
-                        - modified
-                        - available_credits
-                      title: WalletGetWithAvailableCredits
-                    type: array
-                    title: Data
-                  error:
-                    title: Error
-                type: object
-                title: 'Envelope[list[models_library.api_schemas_webserver.wallets.WalletGetWithAvailableCredits]]'
-    post:
-      tags:
-        - wallets
-      summary: Create Wallet
-      operationId: create_wallet
-      requestBody:
-        content:
-          application/json:
-            schema:
-              properties:
-                name:
-                  type: string
-                  title: Name
-                description:
-                  type: string
-                  title: Description
-                thumbnail:
-                  type: string
-                  title: Thumbnail
-              additionalProperties: false
-              type: object
-              required:
-                - name
-              title: _CreateWalletBodyParams
-        required: true
-      responses:
-        '201':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                properties:
-                  data:
-                    properties:
-                      wallet_id:
-                        type: integer
-                        exclusiveMinimum: true
-                        title: Wallet Id
-                        minimum: 0
-                      name:
-                        type: string
-                        title: Name
-                      description:
-                        type: string
-                        title: Description
-                      owner:
-                        type: integer
-                        exclusiveMinimum: true
-                        title: Owner
-                        minimum: 0
-                      thumbnail:
-                        type: string
-                        title: Thumbnail
-                      status:
-                        $ref: '#/paths/~1v0~1wallets~1%7Bwallet_id%7D/put/requestBody/content/application~1json/schema/properties/status'
-                      created:
-                        type: string
-                        format: date-time
-                        title: Created
-                      modified:
-                        type: string
-                        format: date-time
-                        title: Modified
-                    type: object
-                    required:
-                      - wallet_id
-                      - name
-                      - owner
-                      - status
-                      - created
-                      - modified
-                    title: WalletGet
-                  error:
-                    title: Error
-                type: object
-                title: 'Envelope[WalletGet]'
-  '/v0/wallets/{wallet_id}':
-    put:
-      tags:
-        - wallets
-      summary: Update Wallet
-      operationId: update_wallet
-      parameters:
-        - required: true
-          schema:
-            type: integer
-            exclusiveMinimum: true
-            title: Wallet Id
-            minimum: 0
-          name: wallet_id
-          in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              properties:
-                name:
-                  type: string
-                  title: Name
-                description:
-                  type: string
-                  title: Description
-                thumbnail:
-                  type: string
-                  title: Thumbnail
-                status:
-                  type: string
-                  enum:
-                    - ACTIVE
-                    - INACTIVE
-                  title: WalletStatus
-                  description: An enumeration.
-              additionalProperties: false
-              type: object
-              required:
-                - name
-                - description
-                - thumbnail
-                - status
-              title: _PutWalletBodyParams
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/paths/~1v0~1wallets/post/responses/201/content/application~1json/schema'
-  '/v0/wallets/{wallet_id}/groups':
-    get:
-      tags:
-        - wallets
-      summary: List Wallet Groups
-      operationId: list_wallet_groups
-      parameters:
-        - required: true
-          schema:
-            type: integer
-            exclusiveMinimum: true
-            title: Wallet Id
-            minimum: 0
-          name: wallet_id
-          in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                properties:
-                  data:
-                    items:
-                      $ref: '#/paths/~1v0~1wallets~1%7Bwallet_id%7D~1groups~1%7Bgroup_id%7D/put/responses/200/content/application~1json/schema/properties/data'
-                    type: array
-                    title: Data
-                  error:
-                    title: Error
-                type: object
-                title: 'Envelope[list[simcore_service_webserver.wallets._groups_api.WalletGroupGet]]'
-  '/v0/wallets/{wallet_id}/groups/{group_id}':
-    put:
-      tags:
-        - wallets
-      summary: Update Wallet Group
-      operationId: update_wallet_group
-      parameters:
-        - required: true
-          schema:
-            type: integer
-            exclusiveMinimum: true
-            title: Wallet Id
-            minimum: 0
-          name: wallet_id
-          in: path
-        - required: true
-          schema:
-            type: integer
-            exclusiveMinimum: true
-            title: Group Id
-            minimum: 0
-          name: group_id
-          in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              properties:
-                read:
-                  type: boolean
-                  title: Read
-                write:
-                  type: boolean
-                  title: Write
-                delete:
-                  type: boolean
-                  title: Delete
-              additionalProperties: false
-              type: object
-              required:
-                - read
-                - write
-                - delete
-              title: _WalletsGroupsBodyParams
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                properties:
-                  data:
-                    properties:
-                      gid:
-                        type: integer
-                        exclusiveMinimum: true
-                        title: Gid
-                        minimum: 0
-                      read:
-                        type: boolean
-                        title: Read
-                      write:
-                        type: boolean
-                        title: Write
-                      delete:
-                        type: boolean
-                        title: Delete
-                      created:
-                        type: string
-                        format: date-time
-                        title: Created
-                      modified:
-                        type: string
-                        format: date-time
-                        title: Modified
-                    type: object
-                    required:
-                      - gid
-                      - read
-                      - write
-                      - delete
-                      - created
-                      - modified
-                    title: WalletGroupGet
-                  error:
-                    title: Error
-                type: object
-                title: 'Envelope[WalletGroupGet]'
-    post:
-      tags:
-        - wallets
-      summary: Create Wallet Group
-      operationId: create_wallet_group
-      parameters:
-        - required: true
-          schema:
-            type: integer
-            exclusiveMinimum: true
-            title: Wallet Id
-            minimum: 0
-          name: wallet_id
-          in: path
-        - required: true
-          schema:
-            type: integer
-            exclusiveMinimum: true
-            title: Group Id
-            minimum: 0
-          name: group_id
-          in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/paths/~1v0~1wallets~1%7Bwallet_id%7D~1groups~1%7Bgroup_id%7D/put/requestBody/content/application~1json/schema'
-        required: true
-      responses:
-        '201':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/paths/~1v0~1wallets~1%7Bwallet_id%7D~1groups~1%7Bgroup_id%7D/put/responses/200/content/application~1json/schema'
-    delete:
-      tags:
-        - wallets
-      summary: Delete Wallet Group
-      operationId: delete_wallet_group
-      parameters:
-        - required: true
-          schema:
-            type: integer
-            exclusiveMinimum: true
-            title: Wallet Id
-            minimum: 0
-          name: wallet_id
-          in: path
-        - required: true
-          schema:
-            type: integer
-            exclusiveMinimum: true
-            title: Group Id
-            minimum: 0
-          name: group_id
-          in: path
-      responses:
-        '204':
-          description: Successful Response
-  /v0/resource-usage/containers:
-    get:
-      tags:
-        - usage
-      summary: Retrieve containers that were running for a user and product taken from context.
-      operationId: list_resource_usage_containers
-      parameters:
-        - required: false
-          schema:
-            type: integer
-            title: Limit
-            default: 20
-          name: limit
-          in: query
-        - required: false
-          schema:
-            type: integer
-            minimum: 0
-            title: Offset
-            default: 0
-          name: offset
-          in: query
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                properties:
-                  data:
-                    items:
-                      properties:
-                        project_uuid:
-                          type: string
-                          format: uuid
-                          title: Project Uuid
-                        project_name:
-                          type: string
-                          title: Project Name
-                        node_uuid:
-                          type: string
-                          format: uuid
-                          title: Node Uuid
-                        node_label:
-                          type: string
-                          title: Node Label
-                        service_key:
-                          type: string
-                          pattern: '^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$'
-                          title: Service Key
-                        service_version:
-                          type: string
-                          pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
-                          title: Service Version
-                        start_time:
-                          type: string
-                          format: date-time
-                          title: Start Time
-                        duration:
-                          type: number
-                          title: Duration
-                        processors:
-                          type: number
-                          title: Processors
-                        core_hours:
-                          type: number
-                          title: Core Hours
-                        status:
-                          type: string
-                          enum:
-                            - running
-                            - finished
-                          title: ContainerStatus
-                          description: An enumeration.
-                      type: object
-                      required:
-                        - project_uuid
-                        - node_uuid
-                        - service_key
-                        - service_version
-                        - start_time
-                        - duration
-                        - processors
-                        - core_hours
-                        - status
-                      title: ContainerGet
-                    type: array
-                    title: Data
-                  error:
-                    title: Error
-                type: object
-                title: 'Envelope[list[models_library.api_schemas_webserver.resource_usage.ContainerGet]]'
-  /v0/publications/service-submission:
-    post:
-      tags:
-        - publication
-      summary: Submits a new service candidate
-      operationId: service_submission
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              required:
-                - metadata
-              properties:
-                metadata:
-                  type: string
-                  format: binary
-                attachment:
-                  type: string
-                  format: binary
-      responses:
-        '204':
-          description: Submission has been registered
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  /v0/catalog/dags:
-    get:
-      tags:
-        - catalog
-      operationId: list_catalog_dags
-      responses:
-        '200':
-          description: List of catalog dags
-        '422':
-          description: Validation Error
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-    post:
-      tags:
-        - catalog
-      summary: Creates a new dag in catalog
-      operationId: create_catalog_dag
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: true
-      responses:
-        '201':
-          description: The dag was successfully created
-        '422':
-          description: Validation Error
-        default:
-          $ref: '#/components/responses/DefaultErrorResponse'
-  '/v0/catalog/dags/{dag_id}':
-    parameters:
-      - in: path
-        name: dag_id
-        required: true
+      - required: true
         schema:
           title: Tag Id
           type: integer
@@ -4372,6 +3692,183 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_CheckpointApiModel_'
+  /v0/wallets:
+    get:
+      tags:
+      - wallets
+      summary: List Wallets
+      operationId: list_wallets
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.wallets.WalletGetWithAvailableCredits__'
+    post:
+      tags:
+      - wallets
+      summary: Create Wallet
+      operationId: create_wallet
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_CreateWalletBodyParams'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WalletGet_'
+  /v0/wallets/{wallet_id}:
+    put:
+      tags:
+      - wallets
+      summary: Update Wallet
+      operationId: update_wallet
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_PutWalletBodyParams'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WalletGet_'
+  /v0/wallets/{wallet_id}/groups/{group_id}:
+    put:
+      tags:
+      - wallets
+      summary: Update Wallet Group
+      operationId: update_wallet_group
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_WalletsGroupsBodyParams'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WalletGroupGet_'
+    post:
+      tags:
+      - wallets
+      summary: Create Wallet Group
+      operationId: create_wallet_group
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_WalletsGroupsBodyParams'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WalletGroupGet_'
+    delete:
+      tags:
+      - wallets
+      summary: Delete Wallet Group
+      operationId: delete_wallet_group
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
+  /v0/wallets/{wallet_id}/groups:
+    get:
+      tags:
+      - wallets
+      summary: List Wallet Groups
+      operationId: list_wallet_groups
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.wallets._groups_api.WalletGroupGet__'
 components:
   schemas:
     AccessEnum:
@@ -4408,7 +3905,6 @@ components:
       required:
       - stats
       - limits
-      - queued
       type: object
       properties:
         stats:
@@ -5515,12 +5011,36 @@ components:
           - $ref: '#/components/schemas/TestPassed'
         error:
           title: Error
+    Envelope_Union_WalletGet__NoneType__:
+      title: Envelope[Union[WalletGet, NoneType]]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/WalletGet'
+        error:
+          title: Error
     Envelope_UsersGroup_:
       title: Envelope[UsersGroup]
       type: object
       properties:
         data:
           $ref: '#/components/schemas/UsersGroup'
+        error:
+          title: Error
+    Envelope_WalletGet_:
+      title: Envelope[WalletGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/WalletGet'
+        error:
+          title: Error
+    Envelope_WalletGroupGet_:
+      title: Envelope[WalletGroupGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/WalletGroupGet'
         error:
           title: Error
     Envelope_WorkbenchViewApiModel_:
@@ -5685,6 +5205,17 @@ components:
             $ref: '#/components/schemas/ClusterGet'
         error:
           title: Error
+    Envelope_list_models_library.api_schemas_webserver.groups.GroupUser__:
+      title: Envelope[list[models_library.api_schemas_webserver.groups.GroupUser]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupUser'
+        error:
+          title: Error
     Envelope_list_models_library.api_schemas_webserver.resource_usage.ContainerGet__:
       title: Envelope[list[models_library.api_schemas_webserver.resource_usage.ContainerGet]]
       type: object
@@ -5694,6 +5225,17 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ContainerGet'
+        error:
+          title: Error
+    Envelope_list_models_library.api_schemas_webserver.wallets.WalletGetWithAvailableCredits__:
+      title: Envelope[list[models_library.api_schemas_webserver.wallets.WalletGetWithAvailableCredits]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/WalletGetWithAvailableCredits'
         error:
           title: Error
     Envelope_list_models_library.projects_comments.ProjectsCommentsAPI__:
@@ -5728,17 +5270,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Announcement'
-        error:
-          title: Error
-    Envelope_list_simcore_service_webserver.groups.schemas.GroupUser__:
-      title: Envelope[list[simcore_service_webserver.groups.schemas.GroupUser]]
-      type: object
-      properties:
-        data:
-          title: Data
-          type: array
-          items:
-            $ref: '#/components/schemas/GroupUser'
         error:
           title: Error
     Envelope_list_simcore_service_webserver.projects._nodes_handlers._ProjectNodePreview__:
@@ -5849,6 +5380,17 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Token'
+        error:
+          title: Error
+    Envelope_list_simcore_service_webserver.wallets._groups_api.WalletGroupGet__:
+      title: Envelope[list[simcore_service_webserver.wallets._groups_api.WalletGroupGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/WalletGroupGet'
         error:
           title: Error
     Envelope_str_:
@@ -6527,10 +6069,12 @@ components:
           description: url of the latest screenshot of the node
           format: uri
         runHash:
-          title: Runhash
-          type: string
-          description: the hex digest of the resolved inputs +outputs hash at the
-            time when the last outputs were generated
+          anyOf:
+          - type: 'null'
+          - title: Runhash
+            type: string
+            description: the hex digest of the resolved inputs +outputs hash at the
+              time when the last outputs were generated
         inputs:
           title: Inputs
           type: object
@@ -6566,10 +6110,12 @@ components:
             format: uuid
           description: Used in group-nodes. Node IDs of those connected to the output
         parent:
-          title: Parent
-          type: string
-          description: Parent's (group-nodes') node ID s. Used to group
-          format: uuid
+          anyOf:
+          - type: 'null'
+          - title: Parent
+            type: string
+            description: Parent's (group-nodes') node ID s. Used to group
+            format: uuid
         position:
           title: Position
           allOf:
@@ -8038,7 +7584,6 @@ components:
       - PENDING
       - WAITING_FOR_RESOURCES
       - STARTED
-      - RETRY
       - SUCCESS
       - FAILED
       - ABORTED
@@ -8574,7 +8119,7 @@ components:
       title: Stats
       required:
       - cpuUsage
-      - memoryUsage
+      - memUsage
       type: object
       properties:
         cpuUsage:
@@ -8582,8 +8127,8 @@ components:
           exclusiveMinimum: true
           type: number
           minimum: 0.0
-        memoryUsage:
-          title: Memoryusage
+        memUsage:
+          title: Memusage
           exclusiveMinimum: true
           type: number
           minimum: 0.0
@@ -9132,6 +8677,130 @@ components:
         \ can be in two different viewer resources\n  - viewer1=(JPEG, RawGraph service)\n\
         \  - viewer2=(CSV, RawGraph service)\n\nA viewer can be dispatched using the\
         \ view_url and appending the"
+    WalletGet:
+      title: WalletGet
+      required:
+      - wallet_id
+      - name
+      - owner
+      - status
+      - created
+      - modified
+      type: object
+      properties:
+        wallet_id:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name:
+          title: Name
+          type: string
+        description:
+          title: Description
+          type: string
+        owner:
+          title: Owner
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        thumbnail:
+          title: Thumbnail
+          type: string
+        status:
+          $ref: '#/components/schemas/WalletStatus'
+        created:
+          title: Created
+          type: string
+          format: date-time
+        modified:
+          title: Modified
+          type: string
+          format: date-time
+    WalletGetWithAvailableCredits:
+      title: WalletGetWithAvailableCredits
+      required:
+      - wallet_id
+      - name
+      - owner
+      - status
+      - created
+      - modified
+      - available_credits
+      type: object
+      properties:
+        wallet_id:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name:
+          title: Name
+          type: string
+        description:
+          title: Description
+          type: string
+        owner:
+          title: Owner
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        thumbnail:
+          title: Thumbnail
+          type: string
+        status:
+          $ref: '#/components/schemas/WalletStatus'
+        created:
+          title: Created
+          type: string
+          format: date-time
+        modified:
+          title: Modified
+          type: string
+          format: date-time
+        available_credits:
+          title: Available Credits
+          type: number
+    WalletGroupGet:
+      title: WalletGroupGet
+      required:
+      - gid
+      - read
+      - write
+      - delete
+      - created
+      - modified
+      type: object
+      properties:
+        gid:
+          title: Gid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        read:
+          title: Read
+          type: boolean
+        write:
+          title: Write
+          type: boolean
+        delete:
+          title: Delete
+          type: boolean
+        created:
+          title: Created
+          type: string
+          format: date-time
+        modified:
+          title: Modified
+          type: string
+          format: date-time
+    WalletStatus:
+      title: WalletStatus
+      enum:
+      - ACTIVE
+      - INACTIVE
+      type: string
+      description: An enumeration.
     Widget:
       title: Widget
       required:
@@ -9288,6 +8957,22 @@ components:
           items:
             type: integer
           description: Checkpoints IDs for created pipeline
+    _CreateWalletBodyParams:
+      title: _CreateWalletBodyParams
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          title: Name
+          type: string
+        description:
+          title: Description
+          type: string
+        thumbnail:
+          title: Thumbnail
+          type: string
+      additionalProperties: false
     _PageParams:
       title: _PageParams
       type: object
@@ -9347,6 +9032,43 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/NodeScreenshot'
+    _PutWalletBodyParams:
+      title: _PutWalletBodyParams
+      required:
+      - name
+      - status
+      type: object
+      properties:
+        name:
+          title: Name
+          type: string
+        description:
+          title: Description
+          type: string
+        thumbnail:
+          title: Thumbnail
+          type: string
+        status:
+          $ref: '#/components/schemas/WalletStatus'
+      additionalProperties: false
+    _WalletsGroupsBodyParams:
+      title: _WalletsGroupsBodyParams
+      required:
+      - read
+      - write
+      - delete
+      type: object
+      properties:
+        read:
+          title: Read
+          type: boolean
+        write:
+          title: Write
+          type: boolean
+        delete:
+          title: Delete
+          type: boolean
+      additionalProperties: false
     models_library__api_schemas_webserver__catalog__ServiceGet:
       title: ServiceGet
       required:
