@@ -8,6 +8,8 @@ from typing import Any
 import pytest
 from fastapi import FastAPI, status
 from httpx import Response
+from models_library.services import ServiceKey, ServiceVersion
+from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl, parse_obj_as
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -272,7 +274,22 @@ async def test_put_volumes(
         pytest.param(
             "post_containers_tasks",
             "/containers",
-            {"compose_spec": "some_fake_compose_as_str", "metrics_params": {}},
+            {
+                "compose_spec": "some_fake_compose_as_str",
+                "metrics_params": CreateServiceMetricsAdditionalParams(
+                    wallet_id=1,
+                    wallet_name="test_wallet",
+                    product_name="test",
+                    simcore_user_agent="",
+                    user_email="",
+                    project_name="",
+                    node_name="",
+                    service_key=ServiceKey("simcore/services/dynamic/test"),
+                    service_version=ServiceVersion("0.0.1"),
+                    service_resources={},
+                    service_additional_metadata={},
+                ),
+            },
             id="post_containers_tasks",
         ),
         pytest.param(
