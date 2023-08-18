@@ -1,28 +1,22 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-from typing import AsyncIterator
+
 
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from aioresponses import aioresponses
 from faker import Faker
 from models_library.projects import ProjectID
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_login import LoggedUser
 from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     ExpectedResponse,
     standard_role_response,
 )
+from pytest_simcore.services_api_mocks_for_aiohttp_clients import AioResponsesMock
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.director_v2 import api
-
-
-@pytest.fixture()
-async def mocked_director_v2(
-    director_v2_service_mock: aioresponses,
-) -> AsyncIterator[aioresponses]:
-    yield director_v2_service_mock
 
 
 @pytest.fixture
@@ -32,9 +26,9 @@ def project_id(faker: Faker) -> ProjectID:
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_start_computation(
-    mocked_director_v2,
+    director_v2_service_mock: AioResponsesMock,
     client: TestClient,
-    logged_user: dict,
+    logged_user: LoggedUser,
     project_id: ProjectID,
     user_role: UserRole,
     expected: ExpectedResponse,
@@ -58,16 +52,18 @@ async def test_start_computation(
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_start_partial_computation(
-    mocked_director_v2,
-    client,
-    logged_user: dict,
+    director_v2_service_mock: AioResponsesMock,
+    client: TestClient,
+    logged_user: LoggedUser,
     project_id: ProjectID,
     user_role: UserRole,
     expected: ExpectedResponse,
 ):
+    assert client.app
+
     url = client.app.router["start_computation"].url_for(project_id=f"{project_id}")
     rsp = await client.post(
-        url, json={"subgraph": ["node_id1", "node_id2", "node_id498"]}
+        f"{url}", json={"subgraph": ["node_id1", "node_id2", "node_id498"]}
     )
     data, error = await assert_status(
         rsp, web.HTTPCreated if user_role == UserRole.GUEST else expected.created
@@ -84,37 +80,40 @@ async def test_start_partial_computation(
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_get_computation(
-    mocked_director_v2,
-    client,
-    logged_user: dict,
+    director_v2_service_mock: AioResponsesMock,
+    client: TestClient,
+    logged_user: LoggedUser,
     project_id: ProjectID,
     user_role: UserRole,
     expected: ExpectedResponse,
 ):
+    assert client.app
     url = client.app.router["get_computation"].url_for(project_id=f"{project_id}")
-    rsp = await client.get(url)
+    rsp = await client.get(f"{url}")
     await assert_status(rsp, web.HTTPOk if user_role == UserRole.GUEST else expected.ok)
 
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_stop_computation(
-    mocked_director_v2,
-    client,
-    logged_user: dict,
+    director_v2_service_mock: AioResponsesMock,
+    client: TestClient,
+    logged_user: LoggedUser,
     project_id: ProjectID,
     user_role: UserRole,
     expected: ExpectedResponse,
 ):
+    assert client.app
     url = client.app.router["stop_computation"].url_for(project_id=f"{project_id}")
-    rsp = await client.post(url)
+    rsp = await client.post(f"{url}")
     await assert_status(
         rsp, web.HTTPNoContent if user_role == UserRole.GUEST else expected.no_content
     )
 
 
 async def test_regression_get_dynamic_services_empty_params(
-    mocked_director_v2,
-    client,
+    director_v2_service_mock: AioResponsesMock,
+    client: TestClient,
 ):
+    assert client.app
     list_of_services = await api.list_dynamic_services(client.app)
     assert list_of_services == []
