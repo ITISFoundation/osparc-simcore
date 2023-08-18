@@ -17,7 +17,7 @@ from pydantic import PositiveInt, parse_obj_as
 from servicelib.logging_utils import log_catch
 from servicelib.utils import logged_gather
 from settings_library.docker_registry import RegistrySettings
-from starlette import status
+from starlette import status as http_status
 
 from .errors import UnexpectedDockerError, VolumeNotFoundError
 
@@ -65,7 +65,7 @@ async def _get_container(
     try:
         return await docker.containers.get(container_name)
     except aiodocker.DockerError as e:
-        if e.status == status.HTTP_404_NOT_FOUND:
+        if e.status == http_status.HTTP_404_NOT_FOUND:
             return None
         raise
 
