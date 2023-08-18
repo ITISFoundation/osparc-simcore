@@ -25,6 +25,7 @@ from fastapi import FastAPI, status
 from models_library.services import ServiceOutput
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 from servicelib.fastapi.long_running_tasks.client import TaskId
 from simcore_service_dynamic_sidecar._meta import API_VTAG
@@ -151,6 +152,24 @@ async def _assert_compose_spec_pulled(compose_spec: str, settings: ApplicationSe
         if x.startswith(settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE)
     ]
     assert len(started_containers) == expected_services_count
+
+
+@pytest.fixture
+def mock_environment(
+    mock_core_rabbitmq: dict[str, AsyncMock],
+    monkeypatch: pytest.MonkeyPatch,
+    mock_environment: EnvVarsDict,
+) -> EnvVarsDict:
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "RABBIT_HOST": "mocked_host",
+            "RABBIT_SECURE": "false",
+            "RABBIT_USER": "mocked_user",
+            "RABBIT_PASSWORD": "mocked_password",
+        },
+    )
+    return mock_environment
 
 
 @pytest.fixture
