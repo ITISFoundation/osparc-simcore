@@ -6,6 +6,7 @@ from collections.abc import AsyncIterable
 import aiodocker
 import pytest
 from simcore_service_dynamic_sidecar.modules.container_utils import (
+    ContainerExecCommandFailedError,
     ContainerExecContainerNotFoundError,
     ContainerExecTimeoutError,
     run_command_in_container,
@@ -42,6 +43,13 @@ async def test_run_command_in_container_command_timed_out(running_container_name
         )
 
 
-async def test_(running_container_name: str):
+async def test_run_command_in_container_none_zero_exit_code(
+    running_container_name: str,
+):
+    with pytest.raises(ContainerExecCommandFailedError):
+        await run_command_in_container(running_container_name, command="exit 1")
+
+
+async def test_run_command_in_container(running_container_name: str):
     result = await run_command_in_container(running_container_name, command="ls -lah")
     assert len(result) > 0

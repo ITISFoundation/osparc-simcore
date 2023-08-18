@@ -36,8 +36,15 @@ class BaseError(PydanticErrorMixin, BaseDynamicSidecarError):
 
 
 class ContainerExecContainerNotFoundError(BaseError):
-    msg_template = "Could not find specified container {container_name}"
+    msg_template = "Could not find specified container '{container_name}'"
 
 
 class ContainerExecTimeoutError(BaseError):
-    msg_template = "Timed out after {timeout} while executing: {command}"
+    msg_template = "Timed out after {timeout} while executing: '{command}'"
+
+
+class ContainerExecCommandFailedError(BaseError):
+    msg_template = (
+        "Command '{command}' exited with code '{exit_code}'"
+        "and output: '{command_result}'"
+    )

@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from collections.abc import Sequence
+from typing import Any
 
 from aiodocker import Docker, DockerError
 from aiodocker.execs import Exec
@@ -8,7 +9,11 @@ from aiodocker.stream import Stream
 from pydantic import NonNegativeFloat
 from starlette import status
 
-from ..core.errors import ContainerExecContainerNotFoundError, ContainerExecTimeoutError
+from ..core.errors import (
+    ContainerExecCommandFailedError,
+    ContainerExecContainerNotFoundError,
+    ContainerExecTimeoutError,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -30,6 +35,13 @@ async def _execute_command(container_name: str, command: str | Sequence[str]) ->
             while stream_message := await stream.read_out():
                 command_result += stream_message.data.decode()
 
+        inspect_result: dict[str, Any] = await exec_instance.inspect()
+        exit_code: int | None = inspect_result.get("ExitCode", None)
+        if exit_code != 0:
+            raise ContainerExecCommandFailedError(
+                command=command, exit_code=exit_code, command_result=command_result
+            )
+
     _logger.debug("Command output:\n%s", command_result)
     return command_result
 
@@ -40,7 +52,9 @@ async def run_command_in_container(
     command: str | Sequence[str],
     timeout: NonNegativeFloat = 1.0,
 ):
-    """runs a given command in a target container
+    """
+    Runs `command` in target container and returns the command's output if
+    command's exit code is 0.
 
     Arguments:
         container_name -- name of the container in which to run the command
@@ -52,11 +66,11 @@ async def run_command_in_container(
     Raises:
         ContainerExecTimeoutError: command execution did not finish in time
         ContainerExecContainerNotFoundError: target container is not present
+        ContainerExecCommandFailedError: command finished with not 0 exit code
         DockerError: propagates error from docker engine
 
-
     Returns:
-        stdout + stderr from command
+        stdout + stderr produced by the command is returned
     """
     try:
         return await asyncio.wait_for(
