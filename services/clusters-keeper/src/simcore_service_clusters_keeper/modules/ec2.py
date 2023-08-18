@@ -226,7 +226,7 @@ class ClustersKeeperEC2:
                 == "InvalidInstanceID.NotFound"
             ):
                 raise Ec2InstanceNotFoundError from exc
-            raise
+            raise  # pragma: no cover
 
     async def set_instances_tags(
         self, instances: list[EC2InstanceData], *, tags: EC2Tags
@@ -268,7 +268,7 @@ def setup(app: FastAPI) -> None:
             with attempt:
                 connected = await client.ping()
                 if not connected:
-                    raise Ec2NotConnectedError
+                    raise Ec2NotConnectedError  # pragma: no cover
 
     async def on_shutdown() -> None:
         if app.state.ec2_client:
