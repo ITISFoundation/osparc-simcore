@@ -71,7 +71,8 @@ async function runTutorial() {
     await tutorial.waitFor(5000, "Finish Electrode Selector SetUp");
     await tutorial.takeScreenshot("electrodeSelector_after");
 
-    // Load Post Pro Analysis
+    // ti-postpro
+    await tutorial.waitAndClick("AppMode_NextBtn");
     await tutorial.takeScreenshot("postpro_start");
     // wait for iframe to be ready, it might take a while in Voila
     const postProIframe = await tutorial.waitForVoilaIframe(tiId);
@@ -80,15 +81,20 @@ async function runTutorial() {
 
     await tutorial.waitFor(5000, "Extra waiting to make sure, again, it renders");
 
+    // Click "Run optimization" button
+    const buttonsRunOptimization = await utils.getButtonsWithText(postProIframe, "Run Optimization");
+    await buttonsRunOptimization[0].click();
+    await tutorial.waitFor(20000, "Run Optimization");
+    await tutorial.takeScreenshot("postpro_run_optimization");
     // Click "Load Analysis" button
     const buttonsLoadAnalysis = await utils.getButtonsWithText(postProIframe, "Load Analysis");
     await buttonsLoadAnalysis[0].click();
-    await tutorial.waitFor(10000, "Loading anaylsis");
+    await tutorial.waitFor(20000, "Loading anaylsis");
     await tutorial.takeScreenshot("postpro_load_analysis");
     // Click on the first "Load" button
     const buttonsLoad = await utils.getButtonsWithText(postProIframe, "Load");
     await buttonsLoad[1].click();
-    await tutorial.waitFor(30000, "Loading Fields");
+    await tutorial.waitFor(20000, "Loading Fields");
     await tutorial.takeScreenshot("postpro_load_field");
     // Click on the "Add to Report" buttons
     const buttonsAddToReport = await utils.getButtonsWithText(postProIframe, "Add to Report");
