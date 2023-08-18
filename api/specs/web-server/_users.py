@@ -33,7 +33,7 @@ router = APIRouter(prefix=f"/{API_VTAG}", tags=["user"])
     "/me",
     response_model=Envelope[ProfileGet],
 )
-async def get_user_profile():
+async def get_my_profile():
     ...
 
 

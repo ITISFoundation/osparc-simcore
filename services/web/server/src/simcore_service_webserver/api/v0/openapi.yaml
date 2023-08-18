@@ -1254,7 +1254,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.groups.GroupUser__'
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.groups.GroupUserGet__'
     post:
       tags:
       - groups
@@ -1273,7 +1273,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GroupUser'
+              $ref: '#/components/schemas/GroupUserGet'
         required: true
       responses:
         '204':
@@ -1307,7 +1307,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_GroupUser_'
+                $ref: '#/components/schemas/Envelope_GroupUserGet_'
     delete:
       tags:
       - groups
@@ -1359,7 +1359,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GroupUser'
+              $ref: '#/components/schemas/GroupUserGet'
         required: true
       responses:
         '200':
@@ -1367,7 +1367,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_GroupUser_'
+                $ref: '#/components/schemas/Envelope_GroupUserGet_'
   /v0/groups/{gid}/classifiers:
     get:
       tags:
@@ -3300,7 +3300,7 @@ paths:
     get:
       tags:
       - user
-      summary: Get User Profile
+      summary: Get My Profile
       operationId: get_my_profile
       responses:
         '200':
@@ -4808,12 +4808,12 @@ components:
           $ref: '#/components/schemas/FileUploadSchema'
         error:
           title: Error
-    Envelope_GroupUser_:
-      title: Envelope[GroupUser]
+    Envelope_GroupUserGet_:
+      title: Envelope[GroupUserGet]
       type: object
       properties:
         data:
-          $ref: '#/components/schemas/GroupUser'
+          $ref: '#/components/schemas/GroupUserGet'
         error:
           title: Error
     Envelope_HealthInfoDict_:
@@ -5205,15 +5205,15 @@ components:
             $ref: '#/components/schemas/ClusterGet'
         error:
           title: Error
-    Envelope_list_models_library.api_schemas_webserver.groups.GroupUser__:
-      title: Envelope[list[models_library.api_schemas_webserver.groups.GroupUser]]
+    Envelope_list_models_library.api_schemas_webserver.groups.GroupUserGet__:
+      title: Envelope[list[models_library.api_schemas_webserver.groups.GroupUserGet]]
       type: object
       properties:
         data:
           title: Data
           type: array
           items:
-            $ref: '#/components/schemas/GroupUser'
+            $ref: '#/components/schemas/GroupUserGet'
         error:
           title: Error
     Envelope_list_models_library.api_schemas_webserver.resource_usage.ContainerGet__:
@@ -5715,23 +5715,21 @@ components:
           title: Delete
           type: boolean
       description: defines acesss rights for the user
-    GroupUser:
-      title: GroupUser
+    GroupUserGet:
+      title: GroupUserGet
       required:
-      - read
-      - write
-      - delete
+      - accessRights
       type: object
       properties:
-        read:
-          title: Read
-          type: boolean
-        write:
-          title: Write
-          type: boolean
-        delete:
-          title: Delete
-          type: boolean
+        id:
+          title: Id
+          type: string
+          description: the user id
+        login:
+          title: Login
+          type: string
+          description: the user login email
+          format: email
         first_name:
           title: First Name
           type: string
@@ -5740,34 +5738,27 @@ components:
           title: Last Name
           type: string
           description: the user last name
-        login:
-          title: Login
-          type: string
-          description: the user login email
-          format: email
         gravatar_id:
           title: Gravatar Id
           type: string
           description: the user gravatar id hash
-        id:
-          title: Id
-          type: string
-          description: the user id
         gid:
           title: Gid
           type: string
           description: the user primary gid
-      description: defines acesss rights for the user
+        accessRights:
+          $ref: '#/components/schemas/GroupAccessRights'
       example:
+        id: '1'
+        login: mr.smith@matrix.com
         first_name: Mr
         last_name: Smith
-        login: mr.smith@matrix.com
         gravatar_id: a1af5c6ecc38e81f29695f01d6ceb540
-        id: '1'
         gid: '3'
-        read: true
-        write: false
-        delete: false
+        accessRights:
+          read: true
+          write: false
+          delete: false
     HealthInfoDict:
       title: HealthInfoDict
       required:
@@ -6871,7 +6862,6 @@ components:
       required:
       - name
       - parent
-      - url
       - iteration_index
       - workcopy_project_id
       - workcopy_project_url
@@ -6886,13 +6876,6 @@ components:
           allOf:
           - $ref: '#/components/schemas/ParentMetaProjectRef'
           description: Reference to the the meta-project that created this iteration
-        url:
-          title: Url
-          maxLength: 2083
-          minLength: 1
-          type: string
-          description: self reference
-          format: uri
         iteration_index:
           title: Iteration Index
           exclusiveMinimum: true
@@ -6916,7 +6899,6 @@ components:
       required:
       - name
       - parent
-      - url
       - iteration_index
       - workcopy_project_id
       - workcopy_project_url
@@ -6932,13 +6914,6 @@ components:
           allOf:
           - $ref: '#/components/schemas/ParentMetaProjectRef'
           description: Reference to the the meta-project that created this iteration
-        url:
-          title: Url
-          maxLength: 2083
-          minLength: 1
-          type: string
-          description: self reference
-          format: uri
         iteration_index:
           title: Iteration Index
           exclusiveMinimum: true
@@ -8949,6 +8924,7 @@ components:
           title: Pipeline Id
           type: string
           description: ID for created pipeline (=project identifier)
+          format: uuid
         ref_ids:
           title: Ref Ids
           type: array

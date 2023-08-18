@@ -42,6 +42,7 @@ router = APIRouter(prefix=f"/{API_VTAG}", tags=["auth"])
 @router.post(
     "/auth/register/invitations:check",
     response_model=Envelope[InvitationInfo],
+    operation_id="auth_check_registration_invitation",
 )
 async def check_registration_invitation(check: InvitationCheck):
     """Check invitation and returns associated email or None"""
@@ -50,6 +51,7 @@ async def check_registration_invitation(check: InvitationCheck):
 @router.post(
     "/auth/register",
     response_model=Envelope[Log],
+    operation_id="auth_register",
 )
 async def register(registration: RegisterBody):
     """User registration"""
@@ -58,6 +60,7 @@ async def register(registration: RegisterBody):
 @router.post(
     "/auth/verify-phone-number",
     response_model=Envelope[RegisterPhoneNextPage],
+    operation_id="auth_register_phone",
 )
 async def register_phone(registration: RegisterPhoneBody):
     """user tries to verify phone number for 2 Factor Authentication when registering"""
@@ -66,6 +69,7 @@ async def register_phone(registration: RegisterPhoneBody):
 @router.post(
     "/auth/validate-code-register",
     response_model=Envelope[Log],
+    operation_id="auth_phone_confirmation",
 )
 async def phone_confirmation(confirmation: PhoneConfirmationBody):
     """user enters 2 Factor Authentication code when registering"""
@@ -75,6 +79,7 @@ async def phone_confirmation(confirmation: PhoneConfirmationBody):
     "/auth/login",
     response_model=Envelope[LoginNextPage],
     status_code=status.HTTP_201_CREATED,
+    operation_id="auth_login",
     responses={
         # status.HTTP_503_SERVICE_UNAVAILABLE
         status.HTTP_401_UNAUTHORIZED: {
@@ -90,6 +95,7 @@ async def login(authentication: LoginBody):
 @router.post(
     "/auth/validate-code-login",
     response_model=Envelope[Log],
+    operation_id="auth_login_2fa",
     responses={
         status.HTTP_401_UNAUTHORIZED: {
             "model": Envelope[Error],
@@ -104,6 +110,7 @@ async def login_2fa(authentication: LoginTwoFactorAuthBody):
 @router.post(
     "/auth/two_factor:resend",
     response_model=Envelope[Log],
+    operation_id="auth_resend_2fa_code",
     responses={
         status.HTTP_401_UNAUTHORIZED: {
             "model": Envelope[Error],
@@ -118,6 +125,7 @@ async def resend_2fa_code(resend: Resend2faBody):
 @router.post(
     "/auth/logout",
     response_model=Envelope[Log],
+    operation_id="auth_logout",
 )
 async def logout(data: LogoutBody):
     """user logout"""
@@ -126,6 +134,7 @@ async def logout(data: LogoutBody):
 @router.post(
     "/auth/reset-password",
     response_model=Envelope[Log],
+    operation_id="auth_reset_password",
     responses={status.HTTP_503_SERVICE_UNAVAILABLE: {"model": Envelope[Error]}},
 )
 async def reset_password(data: ResetPasswordBody):
@@ -135,6 +144,7 @@ async def reset_password(data: ResetPasswordBody):
 @router.post(
     "/auth/reset-password/{code}",
     response_model=Envelope[Log],
+    operation_id="auth_reset_password_allowed",
     responses={
         status.HTTP_401_UNAUTHORIZED: {
             "model": Envelope[Error],
@@ -149,6 +159,7 @@ async def reset_password_allowed(code: str, data: ResetPasswordConfirmation):
 @router.post(
     "/auth/change-email",
     response_model=Envelope[Log],
+    operation_id="auth_change_email",
     responses={
         status.HTTP_401_UNAUTHORIZED: {
             "model": Envelope[Error],
@@ -178,6 +189,7 @@ class PasswordCheckSchema(BaseModel):
 @router.post(
     "/auth/change-password",
     response_model=Envelope[Log],
+    operation_id="auth_change_password",
     responses={
         status.HTTP_401_UNAUTHORIZED: {
             "model": Envelope[Error],
@@ -200,6 +212,7 @@ async def change_password(data: ChangePasswordBody):
 @router.get(
     "/auth/confirmation/{code}",
     response_model=Envelope[Log],
+    operation_id="auth_confirmation",
     responses={
         "3XX": {
             "description": "redirection to specific ui application page",
@@ -212,6 +225,7 @@ async def email_confirmation(code: str):
 
 @router.get(
     "/auth/api-keys",
+    operation_id="list_api_keys",
     responses={
         status.HTTP_200_OK: {
             "description": "returns the display names of API keys",
@@ -234,6 +248,7 @@ async def list_api_keys(code: str):
 
 @router.post(
     "/auth/api-keys",
+    operation_id="create_api_key",
     responses={
         status.HTTP_200_OK: {
             "description": "Authorization granted returning API key",
@@ -256,6 +271,7 @@ async def create_api_key(data: ApiKeyCreate):
 
 @router.delete(
     "/auth/api-keys",
+    operation_id="delete_api_key",
     status_code=status.HTTP_204_NO_CONTENT,
     responses={
         status.HTTP_204_NO_CONTENT: {
