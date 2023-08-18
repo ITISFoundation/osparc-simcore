@@ -88,7 +88,6 @@ def mock_environment(
     setenvs_from_dict(
         monkeypatch,
         {
-            "LOG_LEVEL": "DEBUG",
             "RESOURCE_TRACKING_HEARTBEAT_INTERVAL": f"{_BASE_HEART_BEAT_INTERVAL}",
             "RABBIT_HOST": "mocked_host",
             "RABBIT_SECURE": "false",
