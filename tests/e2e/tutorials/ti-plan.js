@@ -27,7 +27,7 @@ async function runTutorial() {
     await tutorial.closeQuickStart();
 
     // create New Plan
-    const studyData = await tutorial.startNewPlan();
+    const studyData = await tutorial.startClassicTIPlan();
     studyId = studyData["data"]["uuid"];
 
     // check the app mode steps
