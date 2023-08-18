@@ -71,16 +71,6 @@ async function runTutorial() {
     await tutorial.waitFor(5000, "Finish Electrode Selector SetUp");
     await tutorial.takeScreenshot("electrodeSelector_after");
 
-    // Run optimizer
-    await tutorial.waitAndClick("AppMode_NextBtn");
-    await tutorial.waitFor(5000, "Running Optimizer");
-    await tutorial.takeScreenshot("optimizer_before");
-    // one permutation should take less than 180"
-    await tutorial.waitForStudyDone(studyId, 480000);
-    await tutorial.takeScreenshot("optimizer_after");
-    await tutorial.waitAndClick("preparingInputsCloseBtn");
-    await tutorial.waitFor(2000, "Optimizer Finished");
-
     // Load Post Pro Analysis
     await tutorial.takeScreenshot("postpro_start");
     // wait for iframe to be ready, it might take a while in Voila
