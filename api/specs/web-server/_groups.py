@@ -9,7 +9,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.groups import (
     AllUsersGroups,
-    GroupUser,
+    GroupUserGet,
     UsersGroup,
 )
 from models_library.generics import Envelope
@@ -56,7 +56,6 @@ async def get_group(gid: GroupID):
     response_model=Envelope[UsersGroup],
 )
 async def update_group(gid: GroupID, _update: UsersGroup):
-    # FIXME: update type
     ...
 
 
@@ -70,7 +69,7 @@ async def delete_group(gid: GroupID):
 
 @router.get(
     "/groups/{gid}/users",
-    response_model=Envelope[list[GroupUser]],
+    response_model=Envelope[list[GroupUserGet]],
 )
 async def get_group_users(gid: GroupID):
     ...
@@ -82,14 +81,14 @@ async def get_group_users(gid: GroupID):
 )
 async def add_group_user(
     gid: GroupID,
-    _new: GroupUser,
+    _new: GroupUserGet,
 ):
     ...
 
 
 @router.get(
     "/groups/{gid}/users/{uid}",
-    response_model=Envelope[GroupUser],
+    response_model=Envelope[GroupUserGet],
 )
 async def get_group_user(
     gid: GroupID,
@@ -100,12 +99,12 @@ async def get_group_user(
 
 @router.patch(
     "/groups/{gid}/users/{uid}",
-    response_model=Envelope[GroupUser],
+    response_model=Envelope[GroupUserGet],
 )
 async def update_group_user(
     gid: GroupID,
     uid: UserID,
-    _update: GroupUser,
+    _update: GroupUserGet,
 ):
     # FIXME: update type
     ...

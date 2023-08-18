@@ -132,25 +132,28 @@ class AllUsersGroups(BaseModel):
         }
 
 
-class GroupUser(GroupAccessRights):
+class GroupUserGet(BaseModel):
+    id: str | None = Field(None, description="the user id")
+    login: LowerCaseEmailStr | None = Field(None, description="the user login email")
     first_name: str | None = Field(None, description="the user first name")
     last_name: str | None = Field(None, description="the user last name")
-    login: LowerCaseEmailStr | None = Field(None, description="the user login email")
     gravatar_id: str | None = Field(None, description="the user gravatar id hash")
-    id: str | None = Field(None, description="the user id")
     gid: str | None = Field(None, description="the user primary gid")
+    access_rights: GroupAccessRights = Field(..., alias="accessRights")
 
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
+                "id": "1",
+                "login": "mr.smith@matrix.com",
                 "first_name": "Mr",
                 "last_name": "Smith",
-                "login": "mr.smith@matrix.com",
                 "gravatar_id": "a1af5c6ecc38e81f29695f01d6ceb540",
-                "id": "1",
                 "gid": "3",
-                "read": True,
-                "write": False,
-                "delete": False,
+                "accessRights": {
+                    "read": True,
+                    "write": False,
+                    "delete": False,
+                },
             }
         }

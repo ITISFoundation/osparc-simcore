@@ -7,7 +7,7 @@ from typing import Literal
 from aiohttp import web
 from models_library.api_schemas_webserver.groups import (
     AllUsersGroups,
-    GroupUser,
+    GroupUserGet,
     UsersGroup,
 )
 from models_library.emails import LowerCaseEmailStr
@@ -19,6 +19,7 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from simcore_service_webserver.utils_aiohttp import envelope_json_response
 
 from .._constants import RQT_USERID_KEY
 from .._meta import API_VTAG
@@ -143,7 +144,7 @@ async def update_group(request: web.Request):
         request.app, user_id, gid, new_group_values
     )
     assert parse_obj_as(UsersGroup, updated_group) is not None  # nosec
-    return update_group
+    return envelope_json_response(updated_group)
 
 
 @routes.delete(f"/{API_VTAG}/groups/{{gid}}", name="delete_group")
@@ -167,8 +168,8 @@ async def get_group_users(request: web.Request):
     gid = request.match_info["gid"]
 
     group_user = await api.list_users_in_group(request.app, user_id, gid)
-    assert parse_obj_as(list[GroupUser], group_user) is not None  # nosec
-    return group_user
+    assert parse_obj_as(list[GroupUserGet], group_user) is not None  # nosec
+    return envelope_json_response(group_user)
 
 
 @routes.post(f"/{API_VTAG}/groups/{{gid}}/users", name="add_group_user")
@@ -214,8 +215,8 @@ async def get_group_user(request: web.Request):
     gid = request.match_info["gid"]
     the_user_id_in_group = request.match_info["uid"]
     user = await api.get_user_in_group(request.app, user_id, gid, the_user_id_in_group)
-    assert parse_obj_as(GroupUser, user) is not None  # nosec
-    return user
+    assert parse_obj_as(GroupUserGet, user) is not None  # nosec
+    return envelope_json_response(user)
 
 
 @routes.patch(f"/{API_VTAG}/groups/{{gid}}/users/{{uid}}", name="update_group_user")
@@ -237,8 +238,8 @@ async def update_group_user(request: web.Request):
         the_user_id_in_group,
         new_values_for_user_in_group,
     )
-    assert parse_obj_as(GroupUser, user) is not None  # nosec
-    return user
+    assert parse_obj_as(GroupUserGet, user) is not None  # nosec
+    return envelope_json_response(user)
 
 
 @routes.delete(f"/{API_VTAG}/groups/{{gid}}/users/{{uid}}", name="delete_group_user")
@@ -279,11 +280,13 @@ async def get_group_classifiers(request: web.Request):
             return await repo.get_classifiers_from_bundle(path_params.gid)
 
         # otherwise, build dynamic tree with RRIDs
-        return await build_rrids_tree_view(
+        view = await build_rrids_tree_view(
             request.app, tree_view_mode=query_params.tree_view
         )
     except ScicrunchError:
-        return {}
+        view = {}
+
+    return envelope_json_response(view)
 
 
 def _handle_scicrunch_exceptions(handler: Handler):
@@ -297,7 +300,7 @@ def _handle_scicrunch_exceptions(handler: Handler):
 
         except ScicrunchError as err:
             user_msg = "Cannot get RRID since scicrunch.org service is not reachable."
-            _logger.error("%s -> %s", err, user_msg)
+            _logger.exception("%s", user_msg)
             raise web.HTTPServiceUnavailable(reason=user_msg) from err
 
     return wrapper
@@ -322,7 +325,7 @@ async def get_scicrunch_resource(request: web.Request):
         scicrunch = SciCrunch.get_instance(request.app)
         resource = await scicrunch.get_resource_fields(rrid)
 
-    return resource.dict()
+    return envelope_json_response(resource.dict())
 
 
 @routes.post(
@@ -346,7 +349,7 @@ async def add_scicrunch_resource(request: web.Request):
         # insert new or if exists, then update
         await repo.upsert(resource)
 
-    return resource.dict()
+    return envelope_json_response(resource.dict())
 
 
 @routes.get(
@@ -362,4 +365,4 @@ async def search_scicrunch_resources(request: web.Request):
     scicrunch = SciCrunch.get_instance(request.app)
     hits: list[ResourceHit] = await scicrunch.search_resource(guess_name)
 
-    return [hit.dict() for hit in hits]
+    return envelope_json_response([hit.dict() for hit in hits])
