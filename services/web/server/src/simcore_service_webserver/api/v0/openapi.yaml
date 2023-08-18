@@ -6069,12 +6069,11 @@ components:
           description: url of the latest screenshot of the node
           format: uri
         runHash:
-          anyOf:
-          - type: 'null'
-          - title: Runhash
-            type: string
-            description: the hex digest of the resolved inputs +outputs hash at the
-              time when the last outputs were generated
+          title: Runhash
+          type: string
+          description: the hex digest of the resolved inputs +outputs hash at the
+            time when the last outputs were generated
+          nullable: true
         inputs:
           title: Inputs
           type: object
@@ -6110,12 +6109,11 @@ components:
             format: uuid
           description: Used in group-nodes. Node IDs of those connected to the output
         parent:
-          anyOf:
-          - type: 'null'
-          - title: Parent
-            type: string
-            description: Parent's (group-nodes') node ID s. Used to group
-            format: uuid
+          title: Parent
+          type: string
+          description: Parent's (group-nodes') node ID s. Used to group
+          format: uuid
+          nullable: true
         position:
           title: Position
           allOf:
