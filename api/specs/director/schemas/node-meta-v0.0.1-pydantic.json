@@ -1,0 +1,2419 @@
+{
+  "title": "ServiceDockerData",
+  "description": "Static metadata for a service injected in the image labels\n\nThis is one to one with node-meta-v0.0.1.json",
+  "type": "object",
+  "properties": {
+    "name": {
+      "title": "Name",
+      "description": "short, human readable name for the node",
+      "example": "Fast Counter",
+      "type": "string"
+    },
+    "thumbnail": {
+      "title": "Thumbnail",
+      "description": "url to the thumbnail",
+      "examples": [
+        "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png"
+      ],
+      "minLength": 1,
+      "maxLength": 2083,
+      "format": "uri",
+      "type": "string"
+    },
+    "description": {
+      "title": "Description",
+      "description": "human readable description of the purpose of the node",
+      "examples": [
+        "Our best node type",
+        "The mother of all nodes, makes your numbers shine!"
+      ],
+      "type": "string"
+    },
+    "key": {
+      "title": "Key",
+      "description": "distinctive name for the node based on the docker registry path",
+      "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
+      "type": "string"
+    },
+    "version": {
+      "title": "Version",
+      "description": "service version number",
+      "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+      "type": "string"
+    },
+    "integration-version": {
+      "title": "Integration-Version",
+      "description": "integration version number",
+      "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+      "examples": [
+        "1.0.0"
+      ],
+      "type": "string"
+    },
+    "type": {
+      "description": "service type",
+      "examples": [
+        "computational"
+      ],
+      "allOf": [
+        {
+          "title": "ServiceType",
+          "description": "An enumeration.",
+          "enum": [
+            "computational",
+            "dynamic",
+            "frontend",
+            "backend"
+          ],
+          "type": "string"
+        }
+      ]
+    },
+    "badges": {
+      "title": "Badges",
+      "type": "array",
+      "items": {
+        "title": "Badge",
+        "type": "object",
+        "properties": {
+          "name": {
+            "title": "Name",
+            "description": "Name of the subject",
+            "examples": [
+              "travis-ci",
+              "coverals.io",
+              "github.io"
+            ],
+            "type": "string"
+          },
+          "image": {
+            "title": "Image",
+            "description": "Url to the badge",
+            "examples": [
+              "https://travis-ci.org/ITISFoundation/osparc-simcore.svg?branch=master",
+              "https://coveralls.io/repos/github/ITISFoundation/osparc-simcore/badge.svg?branch=master",
+              "https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation"
+            ],
+            "minLength": 1,
+            "maxLength": 2083,
+            "format": "uri",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "description": "Link to the status",
+            "examples": [
+              "https://travis-ci.org/ITISFoundation/osparc-simcore 'State of CI: build, test and pushing images'",
+              "https://coveralls.io/github/ITISFoundation/osparc-simcore?branch=master 'Test coverage'",
+              "https://itisfoundation.github.io/"
+            ],
+            "minLength": 1,
+            "maxLength": 2083,
+            "format": "uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "image",
+          "url"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "authors": {
+      "title": "Authors",
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "title": "Author",
+        "type": "object",
+        "properties": {
+          "name": {
+            "title": "Name",
+            "description": "Name of the author",
+            "example": "Jim Knopf",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "description": "Email address",
+            "examples": [
+              "sun@sense.eight",
+              "deleen@minbar.bab"
+            ],
+            "type": "string",
+            "format": "email"
+          },
+          "affiliation": {
+            "title": "Affiliation",
+            "description": "Affiliation of the author",
+            "examples": [
+              "Sense8",
+              "Babylon 5"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "email"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "contact": {
+      "title": "Contact",
+      "description": "email to correspond to the authors about the node",
+      "examples": [
+        "lab@net.flix"
+      ],
+      "type": "string",
+      "format": "email"
+    },
+    "inputs": {
+      "title": "Inputs",
+      "description": "definition of the inputs of this node",
+      "type": "object",
+      "patternProperties": {
+        "^[-_a-zA-Z0-9]+$": {
+          "title": "ServiceInput",
+          "description": "Metadata on a service input port",
+          "type": "object",
+          "properties": {
+            "displayOrder": {
+              "title": "Displayorder",
+              "description": "DEPRECATED: new display order is taken from the item position. This will be removed.",
+              "deprecated": true,
+              "type": "number"
+            },
+            "label": {
+              "title": "Label",
+              "description": "short name for the property",
+              "example": "Age",
+              "type": "string"
+            },
+            "description": {
+              "title": "Description",
+              "description": "description of the property",
+              "example": "Age in seconds since 1970",
+              "type": "string"
+            },
+            "type": {
+              "title": "Type",
+              "description": "data type expected on this input glob matching for data type is allowed",
+              "pattern": "^(number|integer|boolean|string|ref_contentSchema|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
+              "examples": [
+                "number",
+                "boolean",
+                "data:*/*",
+                "data:text/*",
+                "data:[image/jpeg,image/png]",
+                "data:application/json",
+                "data:application/json;schema=https://my-schema/not/really/schema.json",
+                "data:application/vnd.ms-excel",
+                "data:text/plain",
+                "data:application/hdf5",
+                "data:application/edu.ucdavis@ceclancy.xyz"
+              ],
+              "type": "string"
+            },
+            "contentSchema": {
+              "title": "Contentschema",
+              "description": "jsonschema of this input/output. Required when type='ref_contentSchema'",
+              "type": "object"
+            },
+            "fileToKeyMap": {
+              "title": "Filetokeymap",
+              "description": "Place the data associated with the named keys in files",
+              "examples": [
+                {
+                  "dir/input1.txt": "key_1",
+                  "dir33/input2.txt": "key2"
+                }
+              ],
+              "type": "object",
+              "patternProperties": {
+                ".+": {
+                  "type": "string",
+                  "pattern": "^[-_a-zA-Z0-9]+$"
+                }
+              },
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "^[-_a-zA-Z0-9]+$"
+              }
+            },
+            "unit": {
+              "title": "Unit",
+              "description": "Units, when it refers to a physical quantity",
+              "type": "string"
+            },
+            "defaultValue": {
+              "title": "Defaultvalue",
+              "examples": [
+                "Dog",
+                true
+              ],
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "widget": {
+              "title": "Widget",
+              "description": "custom widget to use instead of the default one determined from the data-type",
+              "allOf": [
+                {
+                  "title": "Widget",
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "description": "type of the property",
+                      "allOf": [
+                        {
+                          "title": "WidgetType",
+                          "description": "An enumeration.",
+                          "enum": [
+                            "TextArea",
+                            "SelectBox"
+                          ],
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "details": {
+                      "title": "Details",
+                      "anyOf": [
+                        {
+                          "title": "TextArea",
+                          "type": "object",
+                          "properties": {
+                            "minHeight": {
+                              "title": "Minheight",
+                              "description": "minimum Height of the textarea",
+                              "exclusiveMinimum": 0,
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "minHeight"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "title": "SelectBox",
+                          "type": "object",
+                          "properties": {
+                            "structure": {
+                              "title": "Structure",
+                              "minItems": 1,
+                              "type": "array",
+                              "items": {
+                                "title": "Structure",
+                                "type": "object",
+                                "properties": {
+                                  "key": {
+                                    "title": "Key",
+                                    "anyOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "boolean"
+                                      },
+                                      {
+                                        "type": "number"
+                                      }
+                                    ]
+                                  },
+                                  "label": {
+                                    "title": "Label",
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "key",
+                                  "label"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "structure"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "details"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "required": [
+            "label",
+            "description",
+            "type"
+          ],
+          "additionalProperties": false,
+          "examples": [
+            {
+              "displayOrder": 1,
+              "label": "Input files - file-wo-widget",
+              "description": "Files downloaded from service connected at the input",
+              "type": "data:*/*"
+            },
+            {
+              "displayOrder": 2,
+              "label": "Sleep Time - v2",
+              "description": "Time to wait before completion",
+              "type": "number",
+              "defaultValue": 0,
+              "unit": "second",
+              "widget": {
+                "type": "TextArea",
+                "details": {
+                  "minHeight": 3
+                }
+              }
+            },
+            {
+              "label": "Sleep Time - latest",
+              "description": "Time to wait before completion",
+              "type": "number",
+              "defaultValue": 0,
+              "unit": "second",
+              "widget": {
+                "type": "TextArea",
+                "details": {
+                  "minHeight": 3
+                }
+              }
+            },
+            {
+              "label": "array_numbers",
+              "description": "Some array of numbers",
+              "type": "ref_contentSchema",
+              "contentSchema": {
+                "title": "list[number]",
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            {
+              "label": "my_object",
+              "description": "Some object",
+              "type": "ref_contentSchema",
+              "contentSchema": {
+                "title": "an object named A",
+                "type": "object",
+                "properties": {
+                  "i": {
+                    "title": "Int",
+                    "type": "integer",
+                    "default": 3
+                  },
+                  "b": {
+                    "title": "Bool",
+                    "type": "boolean"
+                  },
+                  "s": {
+                    "title": "Str",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "b",
+                  "s"
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "additionalProperties": {
+        "title": "ServiceInput",
+        "description": "Metadata on a service input port",
+        "type": "object",
+        "properties": {
+          "displayOrder": {
+            "title": "Displayorder",
+            "description": "DEPRECATED: new display order is taken from the item position. This will be removed.",
+            "deprecated": true,
+            "type": "number"
+          },
+          "label": {
+            "title": "Label",
+            "description": "short name for the property",
+            "example": "Age",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "description": "description of the property",
+            "example": "Age in seconds since 1970",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "description": "data type expected on this input glob matching for data type is allowed",
+            "pattern": "^(number|integer|boolean|string|ref_contentSchema|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
+            "examples": [
+              "number",
+              "boolean",
+              "data:*/*",
+              "data:text/*",
+              "data:[image/jpeg,image/png]",
+              "data:application/json",
+              "data:application/json;schema=https://my-schema/not/really/schema.json",
+              "data:application/vnd.ms-excel",
+              "data:text/plain",
+              "data:application/hdf5",
+              "data:application/edu.ucdavis@ceclancy.xyz"
+            ],
+            "type": "string"
+          },
+          "contentSchema": {
+            "title": "Contentschema",
+            "description": "jsonschema of this input/output. Required when type='ref_contentSchema'",
+            "type": "object"
+          },
+          "fileToKeyMap": {
+            "title": "Filetokeymap",
+            "description": "Place the data associated with the named keys in files",
+            "examples": [
+              {
+                "dir/input1.txt": "key_1",
+                "dir33/input2.txt": "key2"
+              }
+            ],
+            "type": "object",
+            "patternProperties": {
+              ".+": {
+                "type": "string",
+                "pattern": "^[-_a-zA-Z0-9]+$"
+              }
+            },
+            "additionalProperties": {
+              "type": "string",
+              "pattern": "^[-_a-zA-Z0-9]+$"
+            }
+          },
+          "unit": {
+            "title": "Unit",
+            "description": "Units, when it refers to a physical quantity",
+            "type": "string"
+          },
+          "defaultValue": {
+            "title": "Defaultvalue",
+            "examples": [
+              "Dog",
+              true
+            ],
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "widget": {
+            "title": "Widget",
+            "description": "custom widget to use instead of the default one determined from the data-type",
+            "allOf": [
+              {
+                "title": "Widget",
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "description": "type of the property",
+                    "allOf": [
+                      {
+                        "title": "WidgetType",
+                        "description": "An enumeration.",
+                        "enum": [
+                          "TextArea",
+                          "SelectBox"
+                        ],
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "details": {
+                    "title": "Details",
+                    "anyOf": [
+                      {
+                        "title": "TextArea",
+                        "type": "object",
+                        "properties": {
+                          "minHeight": {
+                            "title": "Minheight",
+                            "description": "minimum Height of the textarea",
+                            "exclusiveMinimum": 0,
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "minHeight"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "title": "SelectBox",
+                        "type": "object",
+                        "properties": {
+                          "structure": {
+                            "title": "Structure",
+                            "minItems": 1,
+                            "type": "array",
+                            "items": {
+                              "title": "Structure",
+                              "type": "object",
+                              "properties": {
+                                "key": {
+                                  "title": "Key",
+                                  "anyOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "boolean"
+                                    },
+                                    {
+                                      "type": "number"
+                                    }
+                                  ]
+                                },
+                                "label": {
+                                  "title": "Label",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "key",
+                                "label"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "structure"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "type",
+                  "details"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "required": [
+          "label",
+          "description",
+          "type"
+        ],
+        "additionalProperties": false,
+        "examples": [
+          {
+            "displayOrder": 1,
+            "label": "Input files - file-wo-widget",
+            "description": "Files downloaded from service connected at the input",
+            "type": "data:*/*"
+          },
+          {
+            "displayOrder": 2,
+            "label": "Sleep Time - v2",
+            "description": "Time to wait before completion",
+            "type": "number",
+            "defaultValue": 0,
+            "unit": "second",
+            "widget": {
+              "type": "TextArea",
+              "details": {
+                "minHeight": 3
+              }
+            }
+          },
+          {
+            "label": "Sleep Time - latest",
+            "description": "Time to wait before completion",
+            "type": "number",
+            "defaultValue": 0,
+            "unit": "second",
+            "widget": {
+              "type": "TextArea",
+              "details": {
+                "minHeight": 3
+              }
+            }
+          },
+          {
+            "label": "array_numbers",
+            "description": "Some array of numbers",
+            "type": "ref_contentSchema",
+            "contentSchema": {
+              "title": "list[number]",
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          {
+            "label": "my_object",
+            "description": "Some object",
+            "type": "ref_contentSchema",
+            "contentSchema": {
+              "title": "an object named A",
+              "type": "object",
+              "properties": {
+                "i": {
+                  "title": "Int",
+                  "type": "integer",
+                  "default": 3
+                },
+                "b": {
+                  "title": "Bool",
+                  "type": "boolean"
+                },
+                "s": {
+                  "title": "Str",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "b",
+                "s"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "outputs": {
+      "title": "Outputs",
+      "description": "definition of the outputs of this node",
+      "type": "object",
+      "patternProperties": {
+        "^[-_a-zA-Z0-9]+$": {
+          "title": "ServiceOutput",
+          "description": "Base class for service input/outputs",
+          "type": "object",
+          "properties": {
+            "displayOrder": {
+              "title": "Displayorder",
+              "description": "DEPRECATED: new display order is taken from the item position. This will be removed.",
+              "deprecated": true,
+              "type": "number"
+            },
+            "label": {
+              "title": "Label",
+              "description": "short name for the property",
+              "example": "Age",
+              "type": "string"
+            },
+            "description": {
+              "title": "Description",
+              "description": "description of the property",
+              "example": "Age in seconds since 1970",
+              "type": "string"
+            },
+            "type": {
+              "title": "Type",
+              "description": "data type expected on this input glob matching for data type is allowed",
+              "pattern": "^(number|integer|boolean|string|ref_contentSchema|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
+              "examples": [
+                "number",
+                "boolean",
+                "data:*/*",
+                "data:text/*",
+                "data:[image/jpeg,image/png]",
+                "data:application/json",
+                "data:application/json;schema=https://my-schema/not/really/schema.json",
+                "data:application/vnd.ms-excel",
+                "data:text/plain",
+                "data:application/hdf5",
+                "data:application/edu.ucdavis@ceclancy.xyz"
+              ],
+              "type": "string"
+            },
+            "contentSchema": {
+              "title": "Contentschema",
+              "description": "jsonschema of this input/output. Required when type='ref_contentSchema'",
+              "type": "object"
+            },
+            "fileToKeyMap": {
+              "title": "Filetokeymap",
+              "description": "Place the data associated with the named keys in files",
+              "examples": [
+                {
+                  "dir/input1.txt": "key_1",
+                  "dir33/input2.txt": "key2"
+                }
+              ],
+              "type": "object",
+              "patternProperties": {
+                ".+": {
+                  "type": "string",
+                  "pattern": "^[-_a-zA-Z0-9]+$"
+                }
+              },
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "^[-_a-zA-Z0-9]+$"
+              }
+            },
+            "unit": {
+              "title": "Unit",
+              "description": "Units, when it refers to a physical quantity",
+              "type": "string"
+            },
+            "widget": {
+              "title": "Widget",
+              "description": "custom widget to use instead of the default one determined from the data-type",
+              "deprecated": true,
+              "allOf": [
+                {
+                  "title": "Widget",
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "description": "type of the property",
+                      "allOf": [
+                        {
+                          "title": "WidgetType",
+                          "description": "An enumeration.",
+                          "enum": [
+                            "TextArea",
+                            "SelectBox"
+                          ],
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "details": {
+                      "title": "Details",
+                      "anyOf": [
+                        {
+                          "title": "TextArea",
+                          "type": "object",
+                          "properties": {
+                            "minHeight": {
+                              "title": "Minheight",
+                              "description": "minimum Height of the textarea",
+                              "exclusiveMinimum": 0,
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "minHeight"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "title": "SelectBox",
+                          "type": "object",
+                          "properties": {
+                            "structure": {
+                              "title": "Structure",
+                              "minItems": 1,
+                              "type": "array",
+                              "items": {
+                                "title": "Structure",
+                                "type": "object",
+                                "properties": {
+                                  "key": {
+                                    "title": "Key",
+                                    "anyOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "boolean"
+                                      },
+                                      {
+                                        "type": "number"
+                                      }
+                                    ]
+                                  },
+                                  "label": {
+                                    "title": "Label",
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "key",
+                                  "label"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "structure"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "details"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "required": [
+            "label",
+            "description",
+            "type"
+          ],
+          "additionalProperties": false,
+          "examples": [
+            {
+              "displayOrder": 2,
+              "label": "Time Slept",
+              "description": "Time the service waited before completion",
+              "type": "number"
+            },
+            {
+              "displayOrder": 2,
+              "label": "Time Slept - units",
+              "description": "Time the service waited before completion",
+              "type": "number",
+              "unit": "second"
+            },
+            {
+              "label": "Time Slept - w/o displayorder",
+              "description": "Time the service waited before completion",
+              "type": "number",
+              "unit": "second"
+            },
+            {
+              "label": "Output file 1",
+              "displayOrder": 4.0,
+              "description": "Output file uploaded from the outputs folder",
+              "type": "data:*/*"
+            }
+          ]
+        }
+      },
+      "additionalProperties": {
+        "title": "ServiceOutput",
+        "description": "Base class for service input/outputs",
+        "type": "object",
+        "properties": {
+          "displayOrder": {
+            "title": "Displayorder",
+            "description": "DEPRECATED: new display order is taken from the item position. This will be removed.",
+            "deprecated": true,
+            "type": "number"
+          },
+          "label": {
+            "title": "Label",
+            "description": "short name for the property",
+            "example": "Age",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "description": "description of the property",
+            "example": "Age in seconds since 1970",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "description": "data type expected on this input glob matching for data type is allowed",
+            "pattern": "^(number|integer|boolean|string|ref_contentSchema|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
+            "examples": [
+              "number",
+              "boolean",
+              "data:*/*",
+              "data:text/*",
+              "data:[image/jpeg,image/png]",
+              "data:application/json",
+              "data:application/json;schema=https://my-schema/not/really/schema.json",
+              "data:application/vnd.ms-excel",
+              "data:text/plain",
+              "data:application/hdf5",
+              "data:application/edu.ucdavis@ceclancy.xyz"
+            ],
+            "type": "string"
+          },
+          "contentSchema": {
+            "title": "Contentschema",
+            "description": "jsonschema of this input/output. Required when type='ref_contentSchema'",
+            "type": "object"
+          },
+          "fileToKeyMap": {
+            "title": "Filetokeymap",
+            "description": "Place the data associated with the named keys in files",
+            "examples": [
+              {
+                "dir/input1.txt": "key_1",
+                "dir33/input2.txt": "key2"
+              }
+            ],
+            "type": "object",
+            "patternProperties": {
+              ".+": {
+                "type": "string",
+                "pattern": "^[-_a-zA-Z0-9]+$"
+              }
+            },
+            "additionalProperties": {
+              "type": "string",
+              "pattern": "^[-_a-zA-Z0-9]+$"
+            }
+          },
+          "unit": {
+            "title": "Unit",
+            "description": "Units, when it refers to a physical quantity",
+            "type": "string"
+          },
+          "widget": {
+            "title": "Widget",
+            "description": "custom widget to use instead of the default one determined from the data-type",
+            "deprecated": true,
+            "allOf": [
+              {
+                "title": "Widget",
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "description": "type of the property",
+                    "allOf": [
+                      {
+                        "title": "WidgetType",
+                        "description": "An enumeration.",
+                        "enum": [
+                          "TextArea",
+                          "SelectBox"
+                        ],
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "details": {
+                    "title": "Details",
+                    "anyOf": [
+                      {
+                        "title": "TextArea",
+                        "type": "object",
+                        "properties": {
+                          "minHeight": {
+                            "title": "Minheight",
+                            "description": "minimum Height of the textarea",
+                            "exclusiveMinimum": 0,
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "minHeight"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "title": "SelectBox",
+                        "type": "object",
+                        "properties": {
+                          "structure": {
+                            "title": "Structure",
+                            "minItems": 1,
+                            "type": "array",
+                            "items": {
+                              "title": "Structure",
+                              "type": "object",
+                              "properties": {
+                                "key": {
+                                  "title": "Key",
+                                  "anyOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "boolean"
+                                    },
+                                    {
+                                      "type": "number"
+                                    }
+                                  ]
+                                },
+                                "label": {
+                                  "title": "Label",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "key",
+                                "label"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "structure"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "type",
+                  "details"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "required": [
+          "label",
+          "description",
+          "type"
+        ],
+        "additionalProperties": false,
+        "examples": [
+          {
+            "displayOrder": 2,
+            "label": "Time Slept",
+            "description": "Time the service waited before completion",
+            "type": "number"
+          },
+          {
+            "displayOrder": 2,
+            "label": "Time Slept - units",
+            "description": "Time the service waited before completion",
+            "type": "number",
+            "unit": "second"
+          },
+          {
+            "label": "Time Slept - w/o displayorder",
+            "description": "Time the service waited before completion",
+            "type": "number",
+            "unit": "second"
+          },
+          {
+            "label": "Output file 1",
+            "displayOrder": 4.0,
+            "description": "Output file uploaded from the outputs folder",
+            "type": "data:*/*"
+          }
+        ]
+      }
+    },
+    "boot-options": {
+      "title": "Boot-Options",
+      "description": "Service defined boot options. These get injected in the service as env variables.",
+      "type": "object",
+      "patternProperties": {
+        "[a-zA-Z][a-azA-Z0-9_]*": {
+          "title": "BootOption",
+          "type": "object",
+          "properties": {
+            "label": {
+              "title": "Label",
+              "type": "string"
+            },
+            "description": {
+              "title": "Description",
+              "type": "string"
+            },
+            "default": {
+              "title": "Default",
+              "type": "string"
+            },
+            "items": {
+              "title": "Items",
+              "type": "object",
+              "additionalProperties": {
+                "title": "BootChoice",
+                "type": "object",
+                "properties": {
+                  "label": {
+                    "title": "Label",
+                    "type": "string"
+                  },
+                  "description": {
+                    "title": "Description",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "label",
+                  "description"
+                ],
+                "examples": [
+                  {
+                    "label": "Boot mode",
+                    "description": "Start it in web page mode",
+                    "default": "0",
+                    "items": {
+                      "0": {
+                        "label": "Non Voila",
+                        "description": "Tooltip for non Voila boot mode"
+                      },
+                      "1": {
+                        "label": "Voila",
+                        "description": "Tooltip for Voila boot mode"
+                      }
+                    }
+                  },
+                  {
+                    "label": "Application theme",
+                    "description": "Select a theme for the application",
+                    "default": "b",
+                    "items": {
+                      "a": {
+                        "label": "Clear",
+                        "description": "Using white background"
+                      },
+                      "b": {
+                        "label": "Dark",
+                        "description": "Using black and gray tones"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "required": [
+            "label",
+            "description",
+            "default",
+            "items"
+          ],
+          "examples": [
+            {
+              "label": "Boot mode",
+              "description": "Start it in web page mode",
+              "default": "0",
+              "items": {
+                "0": {
+                  "label": "Non Voila",
+                  "description": "Tooltip for non Voila boot mode"
+                },
+                "1": {
+                  "label": "Voila",
+                  "description": "Tooltip for Voila boot mode"
+                }
+              }
+            },
+            {
+              "label": "Application theme",
+              "description": "Select a theme for the application",
+              "default": "b",
+              "items": {
+                "a": {
+                  "label": "Clear",
+                  "description": "Using white background"
+                },
+                "b": {
+                  "label": "Dark",
+                  "description": "Using black and gray tones"
+                }
+              }
+            }
+          ]
+        }
+      },
+      "additionalProperties": {
+        "title": "BootOption",
+        "type": "object",
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "default": {
+            "title": "Default",
+            "type": "string"
+          },
+          "items": {
+            "title": "Items",
+            "type": "object",
+            "additionalProperties": {
+              "title": "BootChoice",
+              "type": "object",
+              "properties": {
+                "label": {
+                  "title": "Label",
+                  "type": "string"
+                },
+                "description": {
+                  "title": "Description",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "label",
+                "description"
+              ],
+              "examples": [
+                {
+                  "label": "Boot mode",
+                  "description": "Start it in web page mode",
+                  "default": "0",
+                  "items": {
+                    "0": {
+                      "label": "Non Voila",
+                      "description": "Tooltip for non Voila boot mode"
+                    },
+                    "1": {
+                      "label": "Voila",
+                      "description": "Tooltip for Voila boot mode"
+                    }
+                  }
+                },
+                {
+                  "label": "Application theme",
+                  "description": "Select a theme for the application",
+                  "default": "b",
+                  "items": {
+                    "a": {
+                      "label": "Clear",
+                      "description": "Using white background"
+                    },
+                    "b": {
+                      "label": "Dark",
+                      "description": "Using black and gray tones"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "label",
+          "description",
+          "default",
+          "items"
+        ],
+        "examples": [
+          {
+            "label": "Boot mode",
+            "description": "Start it in web page mode",
+            "default": "0",
+            "items": {
+              "0": {
+                "label": "Non Voila",
+                "description": "Tooltip for non Voila boot mode"
+              },
+              "1": {
+                "label": "Voila",
+                "description": "Tooltip for Voila boot mode"
+              }
+            }
+          },
+          {
+            "label": "Application theme",
+            "description": "Select a theme for the application",
+            "default": "b",
+            "items": {
+              "a": {
+                "label": "Clear",
+                "description": "Using white background"
+              },
+              "b": {
+                "label": "Dark",
+                "description": "Using black and gray tones"
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "required": [
+    "name",
+    "description",
+    "key",
+    "version",
+    "type",
+    "authors",
+    "contact",
+    "inputs",
+    "outputs"
+  ],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "name": "oSparc Python Runner",
+      "key": "simcore/services/comp/osparc-python-runner",
+      "type": "computational",
+      "integration-version": "1.0.0",
+      "version": "1.7.0",
+      "description": "oSparc Python Runner",
+      "contact": "smith@company.com",
+      "authors": [
+        {
+          "name": "John Smith",
+          "email": "smith@company.com",
+          "affiliation": "Company"
+        },
+        {
+          "name": "Richard Brown",
+          "email": "brown@uni.edu",
+          "affiliation": "University"
+        }
+      ],
+      "inputs": {
+        "input_1": {
+          "displayOrder": 1,
+          "label": "Input data",
+          "description": "Any code, requirements or data file",
+          "type": "data:*/*"
+        }
+      },
+      "outputs": {
+        "output_1": {
+          "displayOrder": 1,
+          "label": "Output data",
+          "description": "All data produced by the script is zipped as output_data.zip",
+          "type": "data:*/*",
+          "fileToKeyMap": {
+            "output_data.zip": "output_1"
+          }
+        }
+      }
+    },
+    {
+      "name": "oSparc Python Runner",
+      "key": "simcore/services/comp/osparc-python-runner",
+      "type": "computational",
+      "integration-version": "1.0.0",
+      "version": "1.7.0",
+      "description": "oSparc Python Runner with boot options",
+      "contact": "smith@company.com",
+      "authors": [
+        {
+          "name": "John Smith",
+          "email": "smith@company.com",
+          "affiliation": "Company"
+        },
+        {
+          "name": "Richard Brown",
+          "email": "brown@uni.edu",
+          "affiliation": "University"
+        }
+      ],
+      "inputs": {
+        "input_1": {
+          "label": "Input data",
+          "description": "Any code, requirements or data file",
+          "type": "data:*/*"
+        }
+      },
+      "outputs": {
+        "output_1": {
+          "label": "Output data",
+          "description": "All data produced by the script is zipped as output_data.zip",
+          "type": "data:*/*",
+          "fileToKeyMap": {
+            "output_data.zip": "output_1"
+          }
+        }
+      },
+      "boot-options": {
+        "example_service_defined_boot_mode": {
+          "label": "Boot mode",
+          "description": "Start it in web page mode",
+          "default": "0",
+          "items": {
+            "0": {
+              "label": "Non Voila",
+              "description": "Tooltip for non Voila boot mode"
+            },
+            "1": {
+              "label": "Voila",
+              "description": "Tooltip for Voila boot mode"
+            }
+          }
+        },
+        "example_service_defined_theme_selection": {
+          "label": "Application theme",
+          "description": "Select a theme for the application",
+          "default": "b",
+          "items": {
+            "a": {
+              "label": "Clear",
+              "description": "Using white background"
+            },
+            "b": {
+              "label": "Dark",
+              "description": "Using black and gray tones"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "definitions": {
+    "ServiceType": {
+      "title": "ServiceType",
+      "description": "An enumeration.",
+      "enum": [
+        "computational",
+        "dynamic",
+        "frontend",
+        "backend"
+      ],
+      "type": "string"
+    },
+    "Badge": {
+      "title": "Badge",
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "description": "Name of the subject",
+          "examples": [
+            "travis-ci",
+            "coverals.io",
+            "github.io"
+          ],
+          "type": "string"
+        },
+        "image": {
+          "title": "Image",
+          "description": "Url to the badge",
+          "examples": [
+            "https://travis-ci.org/ITISFoundation/osparc-simcore.svg?branch=master",
+            "https://coveralls.io/repos/github/ITISFoundation/osparc-simcore/badge.svg?branch=master",
+            "https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation"
+          ],
+          "minLength": 1,
+          "maxLength": 2083,
+          "format": "uri",
+          "type": "string"
+        },
+        "url": {
+          "title": "Url",
+          "description": "Link to the status",
+          "examples": [
+            "https://travis-ci.org/ITISFoundation/osparc-simcore 'State of CI: build, test and pushing images'",
+            "https://coveralls.io/github/ITISFoundation/osparc-simcore?branch=master 'Test coverage'",
+            "https://itisfoundation.github.io/"
+          ],
+          "minLength": 1,
+          "maxLength": 2083,
+          "format": "uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "image",
+        "url"
+      ],
+      "additionalProperties": false
+    },
+    "Author": {
+      "title": "Author",
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "description": "Name of the author",
+          "example": "Jim Knopf",
+          "type": "string"
+        },
+        "email": {
+          "title": "Email",
+          "description": "Email address",
+          "examples": [
+            "sun@sense.eight",
+            "deleen@minbar.bab"
+          ],
+          "type": "string",
+          "format": "email"
+        },
+        "affiliation": {
+          "title": "Affiliation",
+          "description": "Affiliation of the author",
+          "examples": [
+            "Sense8",
+            "Babylon 5"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "email"
+      ],
+      "additionalProperties": false
+    },
+    "WidgetType": {
+      "title": "WidgetType",
+      "description": "An enumeration.",
+      "enum": [
+        "TextArea",
+        "SelectBox"
+      ],
+      "type": "string"
+    },
+    "TextArea": {
+      "title": "TextArea",
+      "type": "object",
+      "properties": {
+        "minHeight": {
+          "title": "Minheight",
+          "description": "minimum Height of the textarea",
+          "exclusiveMinimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "minHeight"
+      ],
+      "additionalProperties": false
+    },
+    "Structure": {
+      "title": "Structure",
+      "type": "object",
+      "properties": {
+        "key": {
+          "title": "Key",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "number"
+            }
+          ]
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "label"
+      ],
+      "additionalProperties": false
+    },
+    "SelectBox": {
+      "title": "SelectBox",
+      "type": "object",
+      "properties": {
+        "structure": {
+          "title": "Structure",
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "title": "Structure",
+            "type": "object",
+            "properties": {
+              "key": {
+                "title": "Key",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "label": {
+                "title": "Label",
+                "type": "string"
+              }
+            },
+            "required": [
+              "key",
+              "label"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "structure"
+      ],
+      "additionalProperties": false
+    },
+    "Widget": {
+      "title": "Widget",
+      "type": "object",
+      "properties": {
+        "type": {
+          "description": "type of the property",
+          "allOf": [
+            {
+              "title": "WidgetType",
+              "description": "An enumeration.",
+              "enum": [
+                "TextArea",
+                "SelectBox"
+              ],
+              "type": "string"
+            }
+          ]
+        },
+        "details": {
+          "title": "Details",
+          "anyOf": [
+            {
+              "title": "TextArea",
+              "type": "object",
+              "properties": {
+                "minHeight": {
+                  "title": "Minheight",
+                  "description": "minimum Height of the textarea",
+                  "exclusiveMinimum": 0,
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "minHeight"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "title": "SelectBox",
+              "type": "object",
+              "properties": {
+                "structure": {
+                  "title": "Structure",
+                  "minItems": 1,
+                  "type": "array",
+                  "items": {
+                    "title": "Structure",
+                    "type": "object",
+                    "properties": {
+                      "key": {
+                        "title": "Key",
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "boolean"
+                          },
+                          {
+                            "type": "number"
+                          }
+                        ]
+                      },
+                      "label": {
+                        "title": "Label",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "key",
+                      "label"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "structure"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "details"
+      ],
+      "additionalProperties": false
+    },
+    "ServiceInput": {
+      "title": "ServiceInput",
+      "description": "Metadata on a service input port",
+      "type": "object",
+      "properties": {
+        "displayOrder": {
+          "title": "Displayorder",
+          "description": "DEPRECATED: new display order is taken from the item position. This will be removed.",
+          "deprecated": true,
+          "type": "number"
+        },
+        "label": {
+          "title": "Label",
+          "description": "short name for the property",
+          "example": "Age",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "description": "description of the property",
+          "example": "Age in seconds since 1970",
+          "type": "string"
+        },
+        "type": {
+          "title": "Type",
+          "description": "data type expected on this input glob matching for data type is allowed",
+          "pattern": "^(number|integer|boolean|string|ref_contentSchema|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
+          "examples": [
+            "number",
+            "boolean",
+            "data:*/*",
+            "data:text/*",
+            "data:[image/jpeg,image/png]",
+            "data:application/json",
+            "data:application/json;schema=https://my-schema/not/really/schema.json",
+            "data:application/vnd.ms-excel",
+            "data:text/plain",
+            "data:application/hdf5",
+            "data:application/edu.ucdavis@ceclancy.xyz"
+          ],
+          "type": "string"
+        },
+        "contentSchema": {
+          "title": "Contentschema",
+          "description": "jsonschema of this input/output. Required when type='ref_contentSchema'",
+          "type": "object"
+        },
+        "fileToKeyMap": {
+          "title": "Filetokeymap",
+          "description": "Place the data associated with the named keys in files",
+          "examples": [
+            {
+              "dir/input1.txt": "key_1",
+              "dir33/input2.txt": "key2"
+            }
+          ],
+          "type": "object",
+          "patternProperties": {
+            ".+": {
+              "type": "string",
+              "pattern": "^[-_a-zA-Z0-9]+$"
+            }
+          },
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[-_a-zA-Z0-9]+$"
+          }
+        },
+        "unit": {
+          "title": "Unit",
+          "description": "Units, when it refers to a physical quantity",
+          "type": "string"
+        },
+        "defaultValue": {
+          "title": "Defaultvalue",
+          "examples": [
+            "Dog",
+            true
+          ],
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "widget": {
+          "title": "Widget",
+          "description": "custom widget to use instead of the default one determined from the data-type",
+          "allOf": [
+            {
+              "title": "Widget",
+              "type": "object",
+              "properties": {
+                "type": {
+                  "description": "type of the property",
+                  "allOf": [
+                    {
+                      "title": "WidgetType",
+                      "description": "An enumeration.",
+                      "enum": [
+                        "TextArea",
+                        "SelectBox"
+                      ],
+                      "type": "string"
+                    }
+                  ]
+                },
+                "details": {
+                  "title": "Details",
+                  "anyOf": [
+                    {
+                      "title": "TextArea",
+                      "type": "object",
+                      "properties": {
+                        "minHeight": {
+                          "title": "Minheight",
+                          "description": "minimum Height of the textarea",
+                          "exclusiveMinimum": 0,
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "minHeight"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "title": "SelectBox",
+                      "type": "object",
+                      "properties": {
+                        "structure": {
+                          "title": "Structure",
+                          "minItems": 1,
+                          "type": "array",
+                          "items": {
+                            "title": "Structure",
+                            "type": "object",
+                            "properties": {
+                              "key": {
+                                "title": "Key",
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "boolean"
+                                  },
+                                  {
+                                    "type": "number"
+                                  }
+                                ]
+                              },
+                              "label": {
+                                "title": "Label",
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "key",
+                              "label"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "structure"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "type",
+                "details"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "required": [
+        "label",
+        "description",
+        "type"
+      ],
+      "additionalProperties": false,
+      "examples": [
+        {
+          "displayOrder": 1,
+          "label": "Input files - file-wo-widget",
+          "description": "Files downloaded from service connected at the input",
+          "type": "data:*/*"
+        },
+        {
+          "displayOrder": 2,
+          "label": "Sleep Time - v2",
+          "description": "Time to wait before completion",
+          "type": "number",
+          "defaultValue": 0,
+          "unit": "second",
+          "widget": {
+            "type": "TextArea",
+            "details": {
+              "minHeight": 3
+            }
+          }
+        },
+        {
+          "label": "Sleep Time - latest",
+          "description": "Time to wait before completion",
+          "type": "number",
+          "defaultValue": 0,
+          "unit": "second",
+          "widget": {
+            "type": "TextArea",
+            "details": {
+              "minHeight": 3
+            }
+          }
+        },
+        {
+          "label": "array_numbers",
+          "description": "Some array of numbers",
+          "type": "ref_contentSchema",
+          "contentSchema": {
+            "title": "list[number]",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        {
+          "label": "my_object",
+          "description": "Some object",
+          "type": "ref_contentSchema",
+          "contentSchema": {
+            "title": "an object named A",
+            "type": "object",
+            "properties": {
+              "i": {
+                "title": "Int",
+                "type": "integer",
+                "default": 3
+              },
+              "b": {
+                "title": "Bool",
+                "type": "boolean"
+              },
+              "s": {
+                "title": "Str",
+                "type": "string"
+              }
+            },
+            "required": [
+              "b",
+              "s"
+            ]
+          }
+        }
+      ]
+    },
+    "ServiceOutput": {
+      "title": "ServiceOutput",
+      "description": "Base class for service input/outputs",
+      "type": "object",
+      "properties": {
+        "displayOrder": {
+          "title": "Displayorder",
+          "description": "DEPRECATED: new display order is taken from the item position. This will be removed.",
+          "deprecated": true,
+          "type": "number"
+        },
+        "label": {
+          "title": "Label",
+          "description": "short name for the property",
+          "example": "Age",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "description": "description of the property",
+          "example": "Age in seconds since 1970",
+          "type": "string"
+        },
+        "type": {
+          "title": "Type",
+          "description": "data type expected on this input glob matching for data type is allowed",
+          "pattern": "^(number|integer|boolean|string|ref_contentSchema|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
+          "examples": [
+            "number",
+            "boolean",
+            "data:*/*",
+            "data:text/*",
+            "data:[image/jpeg,image/png]",
+            "data:application/json",
+            "data:application/json;schema=https://my-schema/not/really/schema.json",
+            "data:application/vnd.ms-excel",
+            "data:text/plain",
+            "data:application/hdf5",
+            "data:application/edu.ucdavis@ceclancy.xyz"
+          ],
+          "type": "string"
+        },
+        "contentSchema": {
+          "title": "Contentschema",
+          "description": "jsonschema of this input/output. Required when type='ref_contentSchema'",
+          "type": "object"
+        },
+        "fileToKeyMap": {
+          "title": "Filetokeymap",
+          "description": "Place the data associated with the named keys in files",
+          "examples": [
+            {
+              "dir/input1.txt": "key_1",
+              "dir33/input2.txt": "key2"
+            }
+          ],
+          "type": "object",
+          "patternProperties": {
+            ".+": {
+              "type": "string",
+              "pattern": "^[-_a-zA-Z0-9]+$"
+            }
+          },
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[-_a-zA-Z0-9]+$"
+          }
+        },
+        "unit": {
+          "title": "Unit",
+          "description": "Units, when it refers to a physical quantity",
+          "type": "string"
+        },
+        "widget": {
+          "title": "Widget",
+          "description": "custom widget to use instead of the default one determined from the data-type",
+          "deprecated": true,
+          "allOf": [
+            {
+              "title": "Widget",
+              "type": "object",
+              "properties": {
+                "type": {
+                  "description": "type of the property",
+                  "allOf": [
+                    {
+                      "title": "WidgetType",
+                      "description": "An enumeration.",
+                      "enum": [
+                        "TextArea",
+                        "SelectBox"
+                      ],
+                      "type": "string"
+                    }
+                  ]
+                },
+                "details": {
+                  "title": "Details",
+                  "anyOf": [
+                    {
+                      "title": "TextArea",
+                      "type": "object",
+                      "properties": {
+                        "minHeight": {
+                          "title": "Minheight",
+                          "description": "minimum Height of the textarea",
+                          "exclusiveMinimum": 0,
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "minHeight"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "title": "SelectBox",
+                      "type": "object",
+                      "properties": {
+                        "structure": {
+                          "title": "Structure",
+                          "minItems": 1,
+                          "type": "array",
+                          "items": {
+                            "title": "Structure",
+                            "type": "object",
+                            "properties": {
+                              "key": {
+                                "title": "Key",
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "boolean"
+                                  },
+                                  {
+                                    "type": "number"
+                                  }
+                                ]
+                              },
+                              "label": {
+                                "title": "Label",
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "key",
+                              "label"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "structure"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "type",
+                "details"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "required": [
+        "label",
+        "description",
+        "type"
+      ],
+      "additionalProperties": false,
+      "examples": [
+        {
+          "displayOrder": 2,
+          "label": "Time Slept",
+          "description": "Time the service waited before completion",
+          "type": "number"
+        },
+        {
+          "displayOrder": 2,
+          "label": "Time Slept - units",
+          "description": "Time the service waited before completion",
+          "type": "number",
+          "unit": "second"
+        },
+        {
+          "label": "Time Slept - w/o displayorder",
+          "description": "Time the service waited before completion",
+          "type": "number",
+          "unit": "second"
+        },
+        {
+          "label": "Output file 1",
+          "displayOrder": 4.0,
+          "description": "Output file uploaded from the outputs folder",
+          "type": "data:*/*"
+        }
+      ]
+    },
+    "BootChoice": {
+      "title": "BootChoice",
+      "type": "object",
+      "properties": {
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "description"
+      ],
+      "examples": [
+        {
+          "label": "Boot mode",
+          "description": "Start it in web page mode",
+          "default": "0",
+          "items": {
+            "0": {
+              "label": "Non Voila",
+              "description": "Tooltip for non Voila boot mode"
+            },
+            "1": {
+              "label": "Voila",
+              "description": "Tooltip for Voila boot mode"
+            }
+          }
+        },
+        {
+          "label": "Application theme",
+          "description": "Select a theme for the application",
+          "default": "b",
+          "items": {
+            "a": {
+              "label": "Clear",
+              "description": "Using white background"
+            },
+            "b": {
+              "label": "Dark",
+              "description": "Using black and gray tones"
+            }
+          }
+        }
+      ]
+    },
+    "BootOption": {
+      "title": "BootOption",
+      "type": "object",
+      "properties": {
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "default": {
+          "title": "Default",
+          "type": "string"
+        },
+        "items": {
+          "title": "Items",
+          "type": "object",
+          "additionalProperties": {
+            "title": "BootChoice",
+            "type": "object",
+            "properties": {
+              "label": {
+                "title": "Label",
+                "type": "string"
+              },
+              "description": {
+                "title": "Description",
+                "type": "string"
+              }
+            },
+            "required": [
+              "label",
+              "description"
+            ],
+            "examples": [
+              {
+                "label": "Boot mode",
+                "description": "Start it in web page mode",
+                "default": "0",
+                "items": {
+                  "0": {
+                    "label": "Non Voila",
+                    "description": "Tooltip for non Voila boot mode"
+                  },
+                  "1": {
+                    "label": "Voila",
+                    "description": "Tooltip for Voila boot mode"
+                  }
+                }
+              },
+              {
+                "label": "Application theme",
+                "description": "Select a theme for the application",
+                "default": "b",
+                "items": {
+                  "a": {
+                    "label": "Clear",
+                    "description": "Using white background"
+                  },
+                  "b": {
+                    "label": "Dark",
+                    "description": "Using black and gray tones"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "required": [
+        "label",
+        "description",
+        "default",
+        "items"
+      ],
+      "examples": [
+        {
+          "label": "Boot mode",
+          "description": "Start it in web page mode",
+          "default": "0",
+          "items": {
+            "0": {
+              "label": "Non Voila",
+              "description": "Tooltip for non Voila boot mode"
+            },
+            "1": {
+              "label": "Voila",
+              "description": "Tooltip for Voila boot mode"
+            }
+          }
+        },
+        {
+          "label": "Application theme",
+          "description": "Select a theme for the application",
+          "default": "b",
+          "items": {
+            "a": {
+              "label": "Clear",
+              "description": "Using white background"
+            },
+            "b": {
+              "label": "Dark",
+              "description": "Using black and gray tones"
+            }
+          }
+        }
+      ]
+    }
+  }
+}
