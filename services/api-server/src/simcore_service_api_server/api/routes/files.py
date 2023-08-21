@@ -222,6 +222,53 @@ async def get_upload_links(
     return ClientFileUploadSchema(file_id=file_meta.id, upload_schema=upload_links)
 
 
+@router.get("/{file_id}", response_model=File, responses={**_COMMON_ERROR_RESPONSES})
+async def get_file(
+    file_id: UUID,
+    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
+    user_id: Annotated[int, Depends(get_current_user_id)],
+):
+    """Gets metadata for a given file resource"""
+
+    try:
+        stored_files: list[StorageFileMetaData] = await storage_client.search_files(
+            user_id, file_id
+        )
+        if not stored_files:
+            msg = "Not found in storage"
+            raise ValueError(msg)  # noqa: TRY301
+
+        stored_file_meta = stored_files[0]
+        assert stored_file_meta.file_id  # nosec
+
+        # Adapts storage API model to API model
+        return to_file_api_model(stored_file_meta)
+
+    except (ValueError, ValidationError) as err:
+        _logger.debug("File %d not found: %s", file_id, err)
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail=f"File with identifier {file_id} not found",
+        ) from err
+
+
+@router.delete(
+    "/{file_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={**_COMMON_ERROR_RESPONSES},
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def delete_file(
+    file_id: UUID,
+    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
+    user_id: Annotated[int, Depends(get_current_user_id)],
+):
+    assert storage_client  # nsoec
+
+    msg = f"delete file {file_id=} of {user_id=}. SEE https://github.com/ITISFoundation/osparc-issues/issues/952"
+    raise NotImplementedError(msg)
+
+
 @router.post(
     "/{file_id}:complete",
     response_model=File,
@@ -294,53 +341,6 @@ async def abort_multipart_upload(
         file, query=dict(request.query_params)
     )
     await abort_upload(abort_upload_link=parse_obj_as(AnyUrl, str(abort_link)))
-
-
-@router.get("/{file_id}", response_model=File, responses={**_COMMON_ERROR_RESPONSES})
-async def get_file(
-    file_id: UUID,
-    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
-    user_id: Annotated[int, Depends(get_current_user_id)],
-):
-    """Gets metadata for a given file resource"""
-
-    try:
-        stored_files: list[StorageFileMetaData] = await storage_client.search_files(
-            user_id, file_id
-        )
-        if not stored_files:
-            msg = "Not found in storage"
-            raise ValueError(msg)  # noqa: TRY301
-
-        stored_file_meta = stored_files[0]
-        assert stored_file_meta.file_id  # nosec
-
-        # Adapts storage API model to API model
-        return to_file_api_model(stored_file_meta)
-
-    except (ValueError, ValidationError) as err:
-        _logger.debug("File %d not found: %s", file_id, err)
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND,
-            detail=f"File with identifier {file_id} not found",
-        ) from err
-
-
-@router.delete(
-    "/{file_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    responses={**_COMMON_ERROR_RESPONSES},
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
-)
-async def delete_file(
-    file_id: UUID,
-    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
-    user_id: Annotated[int, Depends(get_current_user_id)],
-):
-    assert storage_client  # nsoec
-
-    msg = f"delete file {file_id=} of {user_id=}. SEE https://github.com/ITISFoundation/osparc-issues/issues/952"
-    raise NotImplementedError(msg)
 
 
 @router.get(

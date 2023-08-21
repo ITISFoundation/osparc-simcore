@@ -127,11 +127,7 @@ async def get_jobs_page(
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
 ):
-    """List of jobs on a specific released solver (includes pagination)
-
-
-    Breaking change in *version 0.5*: response model changed from list[Job] to pagination Page[Job].
-    """
+    """List of jobs on a specific released solver (includes pagination)"""
 
     # NOTE: Different entry to keep backwards compatibility with list_jobs.
     # Eventually use a header with agent version to switch to new interface
