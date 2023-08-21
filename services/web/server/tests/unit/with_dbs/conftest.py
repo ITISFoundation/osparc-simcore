@@ -85,7 +85,7 @@ def docker_compose_file(
 
     cfg = deepcopy(default_app_cfg["db"]["postgres"])
 
-    # docker-compose reads these environs
+    # docker compose reads these environs
     monkeypatch_session.setenv("TEST_POSTGRES_DB", cfg["database"])
     monkeypatch_session.setenv("TEST_POSTGRES_USER", cfg["user"])
     monkeypatch_session.setenv("TEST_POSTGRES_PASSWORD", cfg["password"])

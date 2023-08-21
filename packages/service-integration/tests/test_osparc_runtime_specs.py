@@ -12,8 +12,7 @@ from service_integration.osparc_config import PathMappingsLabel, SettingsItem
 
 
 def test_create_runtime_spec_impl(tests_data_dir: Path):
-
-    # have spec on how to run -> assemble mounts, network etc of the compose -> ready to run with `docker-compose up`
+    # have spec on how to run -> assemble mounts, network etc of the compose -> ready to run with `docker compose up`
     # run-spec for devel, prod, etc ...
 
     osparc_spec: dict = yaml.safe_load((tests_data_dir / "runtime.yml").read_text())

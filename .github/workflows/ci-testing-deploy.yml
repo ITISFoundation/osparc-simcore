@@ -236,10 +236,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     name: "[build] docker images"
     steps:
@@ -250,8 +246,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v2
       - name: show system environs
@@ -278,10 +272,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -291,8 +281,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -325,10 +313,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -338,8 +322,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -367,10 +349,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -380,8 +358,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -409,10 +385,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -422,8 +394,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -454,10 +424,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -467,8 +433,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -501,10 +465,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -514,8 +474,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -540,10 +498,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -553,8 +507,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -588,10 +540,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -601,8 +549,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -633,10 +579,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -646,8 +588,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -684,10 +624,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -697,8 +633,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -739,10 +673,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -752,8 +682,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -792,10 +720,6 @@ jobs:
         python: [3.6]
         os: [ubuntu-20.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -805,8 +729,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -834,10 +756,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -847,8 +765,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -885,10 +801,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -898,8 +810,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -930,10 +840,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -943,8 +849,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -975,10 +879,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -988,8 +888,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -1030,10 +928,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -1043,8 +937,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -1085,10 +977,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -1098,8 +986,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -1130,10 +1016,6 @@ jobs:
         node: [14]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -1143,8 +1025,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - uses: actions/setup-node@v3.8.0
         with:
           node-version: ${{ matrix.node }}
@@ -1167,10 +1047,6 @@ jobs:
         python: ["3.10", "3.11"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -1180,8 +1056,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -1206,10 +1080,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -1219,8 +1089,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -1251,10 +1119,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -1264,8 +1128,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -1296,10 +1158,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -1309,8 +1167,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -1341,10 +1197,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -1354,8 +1206,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -1385,10 +1235,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -1398,8 +1244,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -1430,10 +1274,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -1443,8 +1283,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -1474,10 +1312,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -1487,8 +1321,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: setup python environment
@@ -1565,10 +1397,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -1578,8 +1406,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -1623,10 +1449,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -1636,8 +1458,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -1683,10 +1503,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -1696,8 +1512,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -1743,10 +1557,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -1756,9 +1566,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup rclone docker volume plugin
         run: sudo ./ci/github/helpers/install_rclone_docker_volume_plugin.bash
       - name: setup python environment
@@ -1808,10 +1615,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -1821,8 +1624,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -1870,10 +1671,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -1884,8 +1681,6 @@ jobs:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
 
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -1945,10 +1740,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -1958,8 +1749,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: setup python environment
@@ -2029,10 +1818,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -2042,8 +1827,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -2088,10 +1871,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -2101,8 +1880,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -2153,10 +1930,6 @@ jobs:
         node: [14]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -2166,8 +1939,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -2229,10 +2000,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -2242,8 +2009,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
         uses: actions/setup-python@v4
         with:
@@ -2291,10 +2056,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     env:
       # secrets can be set in settings/secrets on github
@@ -2309,8 +2070,6 @@ jobs:
         with:
           version: ${{ matrix.docker_buildx }}
           driver: docker-container
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: download docker images
         uses: actions/download-artifact@v3
         with:

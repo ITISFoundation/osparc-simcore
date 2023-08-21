@@ -125,7 +125,7 @@ def run_docker_compose_config(
     env_file_path: Path,
     destination_path: Path | None = None,
 ) -> dict:
-    """Runs docker-compose config to validate and resolve a compose file configuration
+    """Runs docker compose config to validate and resolve a compose file configuration
 
     - Composes all configurations passed in 'docker_compose_paths'
     - Takes 'project_dir' as current working directory to resolve relative paths in the docker-compose correctly
