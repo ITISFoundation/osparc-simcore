@@ -44,7 +44,6 @@ async def assert_status_and_body(
     return expected_model.parse_obj(data)
 
 
-@pytest.mark.testit
 @pytest.mark.acceptance_test()
 async def test_workflow(
     client: TestClient,
