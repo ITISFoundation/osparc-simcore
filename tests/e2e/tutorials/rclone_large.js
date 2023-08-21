@@ -1,4 +1,4 @@
-// node rclone_small.js [url] [--user user] [--pass password] [--demo]
+// node rclone_large.js [url] [--user user] [--pass password] [--demo]
 
 const utils = require('../utils/utils');
 const tutorialBase = require('./tutorialBase');
