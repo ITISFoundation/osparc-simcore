@@ -6,9 +6,9 @@
 import json
 import logging
 import sys
+from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from pathlib import Path
-from typing import AsyncIterator, Awaitable, Callable
 
 import pytest
 import simcore_service_webserver
@@ -204,6 +204,7 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
                 expected_data["name"] = f"{from_study['name']} (Copy)"
 
         if not from_study or project:
+            assert NEW_PROJECT.request_payload
             project_data = deepcopy(NEW_PROJECT.request_payload)
 
             if project:
@@ -343,7 +344,7 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
                 "permalink",
             ]
 
-            for key in new_project.keys():
+            for key in new_project:
                 if key not in modified_fields:
                     assert expected_data[key] == new_project[key]
 

@@ -52,14 +52,14 @@ REGISTRY_NAMESPACE=$(subst http://,,${REGISTRY_URL})
 
 up-extra: .env down # starts pg stack fixture
 	# resolving $@ under environ $<
-	docker-compose -f docker-compose-extra.yml config
+	docker compose -f docker-compose-extra.yml config
 	# starting database stack as defined in  ...
-	docker-compose -f docker-compose-extra.yml up --detach
+	docker compose -f docker-compose-extra.yml up --detach
 
 
 down down-extra:  ## stops extra stack
 	# stopping extra services
-	-@docker-compose -f docker-compose-extra.yml down
+	-@docker compose -f docker-compose-extra.yml down
 
 
 

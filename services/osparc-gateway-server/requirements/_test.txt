@@ -30,7 +30,7 @@ charset-normalizer==3.2.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   requests
-click==8.1.6
+click==8.1.7
     # via
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
     #   dask
@@ -41,7 +41,7 @@ cloudpickle==2.2.1
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
     #   dask
     #   distributed
-coverage==7.2.7
+coverage==7.3.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -52,7 +52,7 @@ dask==2023.3.2
     #   distributed
 dask-gateway==2023.1.1
     # via -r requirements/_test.in
-debugpy==1.6.7
+debugpy==1.6.7.post1
     # via -r requirements/_test.in
 distributed==2023.3.2
     # via
@@ -64,7 +64,7 @@ exceptiongroup==1.1.2
     # via
     #   -c requirements/_base.txt
     #   pytest
-faker==19.2.0
+faker==19.3.0
     # via -r requirements/_test.in
 frozenlist==1.4.0
     # via
@@ -115,7 +115,7 @@ multidict==6.0.4
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-mypy==1.4.1
+mypy==1.5.0
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
@@ -188,7 +188,7 @@ tblib==2.0.0
     # via
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
-tenacity==8.2.2
+tenacity==8.2.3
     # via -r requirements/_test.in
 termcolor==2.3.0
     # via pytest-sugar
@@ -203,7 +203,7 @@ toolz==0.12.0
     #   dask
     #   distributed
     #   partd
-tornado==6.3.2
+tornado==6.3.3
     # via
     #   -c requirements/../../dask-sidecar/requirements/_dask-distributed.txt
     #   dask-gateway

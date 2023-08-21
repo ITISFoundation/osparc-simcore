@@ -14,6 +14,15 @@ from .resource_tracker_process_messages import process_message
 _logger = logging.getLogger(__name__)
 
 
+async def _process_message(
+    app: FastAPI, data: bytes  # pylint: disable=unused-argument
+) -> bool:
+    # NOTE: parse the message and process it
+
+    _logger.debug("%s", data)
+    return True
+
+
 async def _subscribe_to_rabbitmq(app) -> str:
     with log_context(_logger, logging.INFO, msg="Subscribing to rabbitmq channel"):
         rabbit_client: RabbitMQClient = get_rabbitmq_client(app)

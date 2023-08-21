@@ -238,6 +238,13 @@ qx.Class.define("osparc.utils.Utils", {
       });
     },
 
+    isStagingPlatform: function() {
+      return new Promise(resolve => {
+        osparc.store.StaticInfo.getInstance().getPlatformName()
+          .then(platformName => resolve(platformName === "staging"));
+      });
+    },
+
     getEditButton: function() {
       const button = new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/12").set({
         allowGrowY: false,

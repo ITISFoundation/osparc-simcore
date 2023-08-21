@@ -10,6 +10,8 @@ from aiohttp import ClientResponse, web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.projects import Project
+from models_library.projects_nodes import Node
+from models_library.services_resources import ServiceResourcesDict
 from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -67,7 +69,7 @@ async def context_with_logged_user(client: TestClient, logged_user: UserInfoDict
         await conn.execute(projects.delete())
 
 
-@pytest.mark.acceptance_test
+@pytest.mark.acceptance_test()
 async def test_iterators_workflow(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -101,6 +103,16 @@ async def test_iterators_workflow(
         "simcore_service_webserver.director_v2.api.get_computation_task",
         return_value=None,
     )
+    mocker.patch(
+        "simcore_service_webserver.projects._nodes_handlers.projects_api.is_service_deprecated",
+        autospec=True,
+        return_value=False,
+    )
+    mocker.patch(
+        "simcore_service_webserver.projects._nodes_handlers.projects_api.catalog_client.get_service_resources",
+        autospec=True,
+        return_value=ServiceResourcesDict(),
+    )
     # ----
     project_data = await request_create_project(
         client,
@@ -116,6 +128,20 @@ async def test_iterators_workflow(
     # CREATE meta-project: iterator 0:3 -> sleeper -> sleeper_2 ---------------
     modifications = REPLACE_PROJECT_ON_MODIFIED.request_payload
     assert modifications
+    create_node_url = client.app.router["create_node"].url_for(
+        project_id=project_data["uuid"]
+    )
+    for node_id, node_data in modifications["workbench"].items():
+        node = Node.parse_obj(node_data)
+        response = await client.post(
+            f"{create_node_url}",
+            json={
+                "service_key": node.key,
+                "service_version": node.version,
+                "service_id": f"{node_id}",
+            },
+        )
+        assert response.status == HTTPStatus.CREATED
     project_data.update({key: modifications[key] for key in ("workbench", "ui")})
     project_data["ui"].setdefault("currentNodeId", project_uuid)
 
@@ -168,7 +194,7 @@ async def test_iterators_workflow(
     assert len(first_iterlist) == 3
 
     # GET workcopy project for iter 0 ----------------------------------------------
-    async def _mock_catalog_get(app, user_id, product_name, only_key_versions):
+    async def _mock_catalog_get(*args, **kwarg):
         return [
             {"key": s["key"], "version": s["version"]}
             for _, s in project_data["workbench"].items()
@@ -182,6 +208,7 @@ async def test_iterators_workflow(
 
     # extract outputs
     for i, prj_iter in enumerate(first_iterlist):
+        assert prj_iter.workcopy_project_url.path
         response = await client.get(prj_iter.workcopy_project_url.path)
         assert response.status == HTTPStatus.OK
 

@@ -38,7 +38,7 @@ pytest_plugins = [
 
 @pytest.fixture(scope="session")
 def postgres_service(docker_services, docker_ip, docker_compose_file) -> str:
-    """Deploys docker-compose and postgres service is responsive"""
+    """Deploys postgres and service is responsive"""
     # container environment
     with open(docker_compose_file) as fh:
         config = yaml.safe_load(fh)

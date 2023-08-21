@@ -32,7 +32,6 @@ def app_cfg(default_app_cfg, unused_tcp_port_factory, monkeypatch) -> dict[str, 
 
     exclude = {
         "activity",
-        "catalog",
         "clusters",
         "computation",
         "diagnostics",
@@ -48,6 +47,7 @@ def app_cfg(default_app_cfg, unused_tcp_port_factory, monkeypatch) -> dict[str, 
         "tracing",
     }
     include = {
+        "catalog",
         "db",
         "login",
         "meta_modeling",  # MODULE UNDER TEST

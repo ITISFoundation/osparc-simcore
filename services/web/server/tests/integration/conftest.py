@@ -123,7 +123,7 @@ def _default_app_config_for_integration_tests(
 
     # DEFAULTS if not defined in environ
     # NOTE: unfortunately, trafaret does not allow defining default directly in the config.yaml
-    # as docker-compose does: i.e. x = ${VARIABLE:default}.
+    # as docker compose does: i.e. x = ${VARIABLE:default}.
     #
     # Instead, the variables have to be defined here ------------
     test_environ["SMTP_USERNAME"] = "None"
