@@ -81,6 +81,9 @@ class ContainerGetDB(BaseModel):
     service_key: ServiceKey
     service_version: ServiceVersion
 
+    class Config:
+        orm_mode = True
+
 
 class ContainersPage(NamedTuple):
     items: list[ContainerGet]

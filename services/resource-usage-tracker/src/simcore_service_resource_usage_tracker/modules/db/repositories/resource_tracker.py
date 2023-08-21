@@ -107,8 +107,7 @@ class ResourceTrackerRepository(BaseRepository):
 
             result = await conn.execute(query)
             containers_list = [
-                ContainerGetDB(**row)  # type: ignore[arg-type]
-                for row in result.fetchall()
+                ContainerGetDB.from_orm(row) for row in result.fetchall()
             ]
 
             return containers_list

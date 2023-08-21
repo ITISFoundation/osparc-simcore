@@ -4,8 +4,8 @@
 # pylint: disable=unused-variable
 
 import uuid
+from collections.abc import AsyncIterable, Iterator
 from random import randint
-from typing import AsyncIterable, Iterator
 from unittest import mock
 
 import httpx
@@ -16,7 +16,6 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.rawdata_fakers import random_project
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -27,8 +26,8 @@ from simcore_service_resource_usage_tracker.core.application import create_app
 from simcore_service_resource_usage_tracker.core.settings import ApplicationSettings
 
 
-@pytest.fixture(scope="function")
-def mock_env(monkeypatch: MonkeyPatch) -> EnvVarsDict:
+@pytest.fixture()
+def mock_env(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     """This is the base mock envs used to configure the app.
 
     Do override/extend this fixture to change configurations
@@ -41,7 +40,7 @@ def mock_env(monkeypatch: MonkeyPatch) -> EnvVarsDict:
     return env_vars
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 async def initialized_app(
     mock_env: EnvVarsDict,
     postgres_db: sa.engine.Engine,
@@ -53,7 +52,7 @@ async def initialized_app(
         yield app
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 async def async_client(initialized_app: FastAPI) -> AsyncIterable[httpx.AsyncClient]:
     async with httpx.AsyncClient(
         app=initialized_app,
@@ -65,11 +64,10 @@ async def async_client(initialized_app: FastAPI) -> AsyncIterable[httpx.AsyncCli
 
 @pytest.fixture
 def mocked_prometheus(mocker: MockerFixture) -> mock.Mock:
-    mocked_get_prometheus_api_client = mocker.patch(
+    return mocker.patch(
         "simcore_service_resource_usage_tracker.modules.prometheus_containers.core.get_prometheus_api_client",
         autospec=True,
     )
-    return mocked_get_prometheus_api_client
 
 
 @pytest.fixture()
@@ -96,7 +94,7 @@ def user_db(postgres_db: sa.engine.Engine, user_id: UserID) -> Iterator[dict]:
         )
         # this is needed to get the primary_gid correctly
         result = con.execute(sa.select(users).where(users.c.id == user_id))
-        user = result.first()
+        user = result.mappings().first()
         assert user
         yield dict(user)
 
@@ -137,7 +135,7 @@ def project_db(
             )
             .returning(projects)
         )
-        project = result.first()
+        project = result.mappings().first()
         assert project
         yield dict(project)
 
