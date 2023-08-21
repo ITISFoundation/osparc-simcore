@@ -1,6 +1,5 @@
 import json
 import logging
-import warnings
 from collections.abc import Mapping
 from typing import Any, Final
 
@@ -250,28 +249,21 @@ async def _list_docker_services(
     # shall be removed after 1-2 releases without issues
     # backwards compatibility part
 
-    def _make_filters(*, backwards_compatible: bool) -> Mapping[str, Any]:
+    def _make_filters() -> Mapping[str, Any]:
         filters = {
             "label": [
-                f"{'swarm_stack_name' if backwards_compatible else to_simcore_runtime_docker_label_key('swarm_stack_name')}={swarm_stack_name}",
+                f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}={swarm_stack_name}",
             ],
         }
         if node_id:
             filters["label"].append(
-                f"{'uuid'  if backwards_compatible else to_simcore_runtime_docker_label_key('node_id')}={node_id}"
+                f"{to_simcore_runtime_docker_label_key('node_id')}={node_id}"
             )
         if return_only_sidecars:
             filters["name"] = [f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}"]
         return filters
 
-    warnings.warn(
-        "After PR#4453 [https://github.com/ITISFoundation/osparc-simcore/pull/4453] reaches"
-        " production, the backwards compatible code may be removed",
-        stacklevel=2,
-    )
-    services_list: list[Mapping] = await client.services.list(
-        filters=_make_filters(backwards_compatible=True)
-    ) + await client.services.list(filters=_make_filters(backwards_compatible=False))
+    services_list: list[Mapping] = await client.services.list(filters=_make_filters())
     return services_list
 
 
