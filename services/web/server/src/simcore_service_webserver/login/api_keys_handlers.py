@@ -94,9 +94,7 @@ class ApiKeyRepo:
     async def list_names(self):
         async with self.engine.acquire() as conn:
             stmt = sa.select(
-                [
-                    orm.api_keys.c.display_name,
-                ]
+                orm.api_keys.c.display_name,
             ).where(orm.api_keys.c.user_id == self.user_id)
 
             result: ResultProxy = await conn.execute(stmt)
