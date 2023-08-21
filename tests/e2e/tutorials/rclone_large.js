@@ -1,4 +1,4 @@
-// node rclone_small.js [url] [--user user] [--pass password] [--demo]
+// node rclone_large.js [url] [--user user] [--pass password] [--demo]
 
 const utils = require('../utils/utils');
 const tutorialBase = require('./tutorialBase');
@@ -28,7 +28,7 @@ async function runTutorial() {
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
     await tutorial.waitForServices(
       workbenchData["studyId"],
-      [workbenchData["nodeIds"][1], workbenchData["nodeIds"][2]],
+      [workbenchData["nodeIds"][0], workbenchData["nodeIds"][1], workbenchData["nodeIds"][2], workbenchData["nodeIds"][3], workbenchData["nodeIds"][4]],
       startTimeout,
       false
     );
