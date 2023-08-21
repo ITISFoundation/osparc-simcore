@@ -51,6 +51,14 @@ def docker_compose_in_ci_scripts(osparc_simcore_root_dir: Path) -> tuple[Path, s
     return (ci_workflows_path, versions_in_workflow_files.pop())
 
 
+def test_there_are_no_docker_compose_v1_anywhere(
+    docker_compose_in_requirement_files,
+    docker_compose_in_ci_scripts,
+):
+    assert not docker_compose_in_requirement_files
+    assert not docker_compose_in_ci_scripts
+
+
 def test_all_docker_compose_have_same_version(
     docker_compose_in_requirement_files,
     docker_compose_in_ci_scripts,

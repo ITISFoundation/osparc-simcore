@@ -208,7 +208,7 @@ class DynamicSidecarSettings(BaseCustomSettings):
     )
 
     DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION: str = Field(
-        "3.8", description="docker-compose version used in the compose-specs"
+        "3.8", description="docker-compose spec version used in the compose-specs"
     )
 
     DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS: bool = Field(

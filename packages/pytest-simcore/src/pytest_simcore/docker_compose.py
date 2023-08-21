@@ -4,7 +4,7 @@
 
 """ Fixtures to create docker-compose.yaml configuration files (as in Makefile)
 
-    - Basically runs `docker-compose config
+    - Basically runs `docker compose config
     - Services in stack can be selected using 'core_services_selection', 'ops_services_selection' fixtures
 
 """
@@ -95,7 +95,7 @@ def env_file_for_testing(
 ) -> Iterator[Path]:
     """Dumps all the environment variables into an $(temp_folder)/.env.test file
 
-    Pass path as argument in 'docker-compose --env-file ... '
+    Pass path as argument in 'docker compose --env-file ... '
     """
     # SEE:
     #   https://docs.docker.com/compose/env-file/
@@ -143,7 +143,7 @@ def simcore_docker_compose(
     # ensures .env at git_root_dir
     assert env_file_for_testing.exists()
 
-    # target docker-compose path
+    # target docker compose path
     docker_compose_paths = [
         osparc_simcore_root_dir / "services" / filename
         for filename in COMPOSE_FILENAMES
@@ -217,7 +217,7 @@ def ops_docker_compose(
     # ensures .env at git_root_dir, which will be used as current directory
     assert env_file_for_testing.exists()
 
-    # target docker-compose path
+    # target docker compose path
     docker_compose_path = (
         osparc_simcore_root_dir / "services" / "docker-compose-ops.yml"
     )
@@ -256,7 +256,7 @@ def core_docker_compose_file(
 ) -> Path:
     """A compose with a selection of services from simcore_docker_compose
 
-    Creates a docker-compose config file for every stack of services in 'core_services_selection' module variable
+    Creates a docker compose config file for every stack of services in 'core_services_selection' module variable
     File is created in a temp folder
     """
     docker_compose_path = Path(temp_folder / "simcore_docker_compose.filtered.yml")
@@ -281,7 +281,7 @@ def ops_docker_compose_file(
 ) -> Path:
     """A compose with a selection of services from ops_docker_compose
 
-    Creates a docker-compose config file for every stack of services in 'ops_services_selection' module variable
+    Creates a docker compose config file for every stack of services in 'ops_services_selection' module variable
     File is created in a temp folder
     """
     docker_compose_path = Path(temp_folder / "ops_docker_compose.filtered.yml")
@@ -347,7 +347,7 @@ def _escape_cpus(serialized_yaml: str) -> str:
     # below is equivalent to the following sed operation fixes above issue
     # `sed -E "s/cpus: ([0-9\\.]+)/cpus: '\\1'/"`
     # remove when this issues is fixed, this will most likely occur
-    # when upgrading the version of docker-compose
+    # when upgrading the version of docker compose
 
     return re.sub(
         pattern=r"cpus: (\d+\.\d+|\d+)", repl="cpus: '\\1'", string=serialized_yaml
