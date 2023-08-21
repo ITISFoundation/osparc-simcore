@@ -260,6 +260,7 @@ async def create_project(
             if copy_project_nodes_coro
             else None,
         )
+
         # 4. deep copy source project's files
         if copy_file_coro:
             # NOTE: storage needs to have access to the new project prior to copying files
@@ -267,9 +268,7 @@ async def create_project(
 
         # 5. unhide the project if needed since it is now complete
         if not new_project_was_hidden_before_data_was_copied:
-            await db.update_project_without_checking_permissions(
-                new_project, new_project["uuid"], hidden=False
-            )
+            await db.set_hidden_flag(new_project["uuid"], hidden=False)
 
         # update the network information in director-v2
         await api.update_dynamic_service_networks_in_project(
@@ -280,7 +279,10 @@ async def create_project(
         await api.create_or_update_pipeline(
             request.app, user_id, new_project["uuid"], product_name
         )
-
+        # get the latest state of the project (lastChangeDate for instance)
+        new_project, _ = await db.get_project(
+            user_id=user_id, project_uuid=new_project["uuid"]
+        )
         # Appends state
         new_project = await projects_api.add_project_states_for_user(
             user_id=user_id,
