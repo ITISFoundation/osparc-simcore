@@ -89,7 +89,7 @@ def simcore_docker_stack_and_registry_ready(
     event_loop: asyncio.AbstractEventLoop,
     docker_registry: UrlStr,
     docker_stack: StacksDeployedDict,
-    simcore_services_ready: None,
+    simcore_services_ready_module: None,
 ) -> StacksDeployedDict:
     # At this point `simcore_services_ready` waited until all services
     # are running. Let's make one more check on the web-api

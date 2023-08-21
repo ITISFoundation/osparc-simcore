@@ -5,6 +5,7 @@
 import asyncio
 import json
 import logging
+import warnings
 from dataclasses import dataclass
 
 import aiohttp
@@ -133,16 +134,7 @@ def services_endpoint(
     return services_endpoint
 
 
-@pytest.fixture(scope="module")
-def simcore_services_ready(
-    services_endpoint: dict[str, URL], monkeypatch_module: MonkeyPatch
-) -> None:
-    """
-    - Waits for services in `core_services_selection` to be healthy
-    - Sets environment with these (host:port) endpoitns
-
-    WARNING: not all services in the selection can be health-checked (see services_endpoint)
-    """
+def _wait_for_services_ready(services_endpoint: dict[str, URL]) -> None:
     # Compose and log healthcheck url entpoints
 
     health_endpoints = [
@@ -163,6 +155,33 @@ def simcore_services_ready(
     # check ready
     asyncio.run(_check_all_services_are_healthy())
 
+
+@pytest.fixture
+def simcore_services_ready(
+    services_endpoint: dict[str, URL], monkeypatch: MonkeyPatch
+) -> None:
+    _wait_for_services_ready(services_endpoint)
+    # patches environment variables with right host/port per service
+    for service, endpoint in services_endpoint.items():
+        env_prefix = service.upper().replace("-", "_")
+
+        assert endpoint.host
+
+        monkeypatch.setenv(f"{env_prefix}_HOST", endpoint.host)
+        monkeypatch.setenv(f"{env_prefix}_PORT", str(endpoint.port))
+
+
+@pytest.fixture(scope="module")
+def simcore_services_ready_module(
+    services_endpoint: dict[str, URL], monkeypatch_module: MonkeyPatch
+) -> None:
+    warnings.warn(
+        "This fixture uses deprecated monkeypatch_module fixture"
+        "Please do NOT use it!",
+        DeprecationWarning,
+        stacklevel=1,
+    )
+    _wait_for_services_ready(services_endpoint)
     # patches environment variables with right host/port per service
     for service, endpoint in services_endpoint.items():
         env_prefix = service.upper().replace("-", "_")
