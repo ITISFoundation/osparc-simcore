@@ -5,6 +5,7 @@
 import asyncio
 import json
 import logging
+import warnings
 from dataclasses import dataclass
 
 import aiohttp
@@ -174,6 +175,12 @@ def simcore_services_ready(
 def simcore_services_ready_module(
     services_endpoint: dict[str, URL], monkeypatch_module: MonkeyPatch
 ) -> None:
+    warnings.warn(
+        "This fixture uses deprecated monkeypatch_module fixture"
+        "Please do NOT use it!",
+        DeprecationWarning,
+        stacklevel=1,
+    )
     _wait_for_services_ready(services_endpoint)
     # patches environment variables with right host/port per service
     for service, endpoint in services_endpoint.items():

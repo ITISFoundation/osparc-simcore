@@ -66,7 +66,6 @@ pytest_plugins = [
     "pytest_simcore.environment_configs",
     "pytest_simcore.file_extra",
     "pytest_simcore.httpbin_service",
-    "pytest_simcore.monkeypatch_extra",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.repository_paths",
@@ -77,7 +76,6 @@ pytest_plugins = [
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-# TODO: replace by pytest_simcore
 sys.path.append(str(CURRENT_DIR / "helpers"))
 
 
