@@ -125,7 +125,7 @@ async def metrics_handler(request: web.Request):
     registry = get_collector_registry(request.app)
 
     # NOTE: Cannot use ProcessPoolExecutor because registry is not pickable
-    result = await request.loop.run_in_executor(
+    result = await asyncio.get_event_loop().run_in_executor(
         None, prometheus_client.generate_latest, registry
     )
     response = web.Response(body=result)
