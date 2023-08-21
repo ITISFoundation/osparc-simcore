@@ -20,7 +20,7 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.json_serialization import json_dumps
 
-from .._meta import api_version_prefix as VTAG  # noqa: N812
+from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from . import _ports_api, projects_api
