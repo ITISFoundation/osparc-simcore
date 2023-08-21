@@ -1,4 +1,4 @@
-from typing import Optional, cast
+from typing import cast
 
 import sqlalchemy as sa
 from models_library.emails import LowerCaseEmailStr
@@ -31,7 +31,8 @@ class GroupsRepository(BaseRepository):
             )
             row = result.first()
         if not row:
-            raise RepositoryError(f"{GroupType.EVERYONE} groups was never initialized")
+            msg = f"{GroupType.EVERYONE} groups was never initialized"
+            raise RepositoryError(msg)
         return GroupAtDB.from_orm(row)
 
     async def get_user_gid_from_email(
@@ -39,7 +40,7 @@ class GroupsRepository(BaseRepository):
     ) -> PositiveInt | None:
         async with self.db_engine.connect() as conn:
             return cast(
-                Optional[PositiveInt],
+                PositiveInt | None,
                 await conn.scalar(
                     sa.select(users.c.primary_gid).where(users.c.email == user_email)
                 ),
@@ -48,7 +49,7 @@ class GroupsRepository(BaseRepository):
     async def get_gid_from_affiliation(self, affiliation: str) -> PositiveInt | None:
         async with self.db_engine.connect() as conn:
             return cast(
-                Optional[PositiveInt],
+                PositiveInt | None,
                 await conn.scalar(
                     sa.select(groups.c.gid).where(groups.c.name == affiliation)
                 ),
@@ -73,9 +74,10 @@ class GroupsRepository(BaseRepository):
                     users.c.primary_gid.in_(gids)
                 )
             ):
-                service_owners[row[users.c.primary_gid]] = (
-                    LowerCaseEmailStr(row[users.c.email])
-                    if row[users.c.email]
+                # pylint: disable=protected-access
+                service_owners[row._mapping[users.c.primary_gid]] = (  # noqa: SLF001
+                    LowerCaseEmailStr(row._mapping[users.c.email])  # noqa: SLF001
+                    if row._mapping[users.c.email]  # noqa: SLF001
                     else None
                 )
         return service_owners

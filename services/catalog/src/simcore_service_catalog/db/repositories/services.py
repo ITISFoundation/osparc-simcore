@@ -301,10 +301,11 @@ class ServicesRepository(BaseRepository):
         )
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(query):
+                # pylint: disable=protected-access
                 service_to_access_rights[
                     (
-                        row[services_access_rights.c.key],
-                        row[services_access_rights.c.version],
+                        row._mapping[services_access_rights.c.key],  # noqa: SLF001
+                        row._mapping[services_access_rights.c.version],  # noqa: SLF001
                     )
                 ].append(ServiceAccessRightsAtDB.from_orm(row))
         return service_to_access_rights
