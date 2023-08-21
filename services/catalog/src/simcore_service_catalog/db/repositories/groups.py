@@ -69,7 +69,7 @@ class GroupsRepository(BaseRepository):
         service_owners = {}
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(
-                sa.select([users.c.primary_gid, users.c.email]).where(
+                sa.select(users.c.primary_gid, users.c.email).where(
                     users.c.primary_gid.in_(gids)
                 )
             ):
