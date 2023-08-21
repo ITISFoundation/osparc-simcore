@@ -72,7 +72,7 @@ def _update_networking_configuration(
 
 
 class _EnvironmentSection:
-    """the 'environment' field in a docker-compose can be either a dict (EnvVarsMap)
+    """the 'environment' field in a docker-compose spec can be either a dict (EnvVarsMap)
     or a list of "key=value" (EnvKeyEqValueList)
 
     These helpers can resolve parsing and exporting between these formats

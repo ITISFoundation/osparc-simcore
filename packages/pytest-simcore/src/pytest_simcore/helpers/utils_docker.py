@@ -10,6 +10,7 @@ from typing import Any
 
 import docker
 import yaml
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from tenacity import retry
 from tenacity.after import after_log
 from tenacity.stop import stop_after_attempt
@@ -124,8 +125,9 @@ def run_docker_compose_config(
     project_dir: Path,
     env_file_path: Path,
     destination_path: Path | None = None,
+    additional_envs: EnvVarsDict | None = None,
 ) -> dict:
-    """Runs docker-compose config to validate and resolve a compose file configuration
+    """Runs docker compose config to validate and resolve a compose file configuration
 
     - Composes all configurations passed in 'docker_compose_paths'
     - Takes 'project_dir' as current working directory to resolve relative paths in the docker-compose correctly
@@ -182,6 +184,7 @@ def run_docker_compose_config(
         check=True,
         cwd=project_dir,
         stdout=subprocess.PIPE,
+        env=additional_envs,
     )
 
     compose_file_str = process.stdout.decode("utf-8")

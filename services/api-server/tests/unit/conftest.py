@@ -35,6 +35,10 @@ from simcore_service_api_server.core.settings import ApplicationSettings
 
 ## APP + SYNC/ASYNC CLIENTS --------------------------------------------------
 
+pytest_plugins = [
+    "pytest_simcore.services_api_mocks_for_aiohttp_clients",
+]
+
 
 @pytest.fixture
 def app_environment(
@@ -255,9 +259,9 @@ def mocked_webserver_service_api_base(
 
         # healthcheck_readiness_probe, healthcheck_liveness_probe
         response_body = {
-            "data": openapi["paths"]["/v0/"]["get"]["responses"]["200"]["content"][
-                "application/json"
-            ]["schema"]["properties"]["data"]["example"]
+            "name": "webserver",
+            "version": "1.0.0",
+            "api_version": "1.0.0",
         }
 
         respx_mock.get(path="/", name="healthcheck_readiness_probe").respond(

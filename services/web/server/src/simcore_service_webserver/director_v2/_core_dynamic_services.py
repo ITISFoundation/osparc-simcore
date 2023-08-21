@@ -12,6 +12,7 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.rabbitmq_messages import ProgressRabbitMessageProject, ProgressType
+from models_library.services import ServicePortKey
 from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
@@ -231,7 +232,7 @@ async def stop_dynamic_services_in_project(
 # NOTE: ANE https://github.com/ITISFoundation/osparc-simcore/issues/3191
 @log_decorator(logger=_log)
 async def retrieve(
-    app: web.Application, service_uuid: str, port_keys: list[str]
+    app: web.Application, service_uuid: str, port_keys: list[ServicePortKey]
 ) -> DataType:
     """Pulls data from connections to the dynamic service inputs"""
     settings: DirectorV2Settings = get_plugin_settings(app)

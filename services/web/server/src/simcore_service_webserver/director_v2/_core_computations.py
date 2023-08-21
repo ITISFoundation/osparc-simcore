@@ -3,24 +3,29 @@
 Wraps interactions to the director-v2 service
 
 """
-
-
 import json
 import logging
 from typing import Any
 from uuid import UUID
 
 from aiohttp import web
+from models_library.api_schemas_directorv2.clusters import (
+    ClusterCreate,
+    ClusterDetails,
+    ClusterGet,
+    ClusterPatch,
+    ClusterPing,
+)
 from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_pipeline import ComputationTask
 from models_library.users import UserID
+from pydantic import parse_obj_as
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_decorator
 from settings_library.utils_cli import create_json_encoder_wo_secrets
 
 from ._core_base import DataType, request_director_v2
-from ._models import ClusterCreate, ClusterPatch, ClusterPing
 from .exceptions import (
     ClusterAccessForbidden,
     ClusterDefinedPingError,
@@ -30,7 +35,7 @@ from .exceptions import (
 )
 from .settings import DirectorV2Settings, get_plugin_settings
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class ComputationsApi:
@@ -97,7 +102,7 @@ def set_client(app: web.Application, obj: ComputationsApi):
 # TODO: REFACTOR! the client class above and the free functions below are duplicates of the same interface!
 
 
-@log_decorator(logger=log)
+@log_decorator(logger=_logger)
 async def create_or_update_pipeline(
     app: web.Application, user_id: UserID, project_id: ProjectID, product_name: str
 ) -> DataType | None:
@@ -118,11 +123,15 @@ async def create_or_update_pipeline(
         return computation_task_out
 
     except DirectorServiceError as exc:
-        log.error("could not create pipeline from project %s: %s", project_id, exc)
+        _logger.error(
+            "could not create pipeline from project %s: %s",
+            project_id,
+            exc,
+        )
     return None
 
 
-@log_decorator(logger=log)
+@log_decorator(logger=_logger)
 async def is_pipeline_running(
     app: web.Application, user_id: PositiveInt, project_id: UUID
 ) -> bool | None:
@@ -142,7 +151,7 @@ async def is_pipeline_running(
     return pipeline_state
 
 
-@log_decorator(logger=log)
+@log_decorator(logger=_logger)
 async def get_computation_task(
     app: web.Application, user_id: UserID, project_id: ProjectID
 ) -> ComputationTask | None:
@@ -157,19 +166,19 @@ async def get_computation_task(
             app, "GET", backend_url, expected_status=web.HTTPOk
         )
         task_out = ComputationTask.parse_obj(computation_task_out_dict)
-        log.debug("found computation task: %s", f"{task_out=}")
+        _logger.debug("found computation task: %s", f"{task_out=}")
         return task_out
     except DirectorServiceError as exc:
         if exc.status == web.HTTPNotFound.status_code:
             # the pipeline might not exist and that is ok
             return None
-        log.warning(
+        _logger.warning(
             "getting pipeline for project %s failed: %s.", f"{project_id=}", exc
         )
         return None
 
 
-@log_decorator(logger=log)
+@log_decorator(logger=_logger)
 async def delete_pipeline(
     app: web.Application, user_id: PositiveInt, project_id: UUID
 ) -> None:
@@ -189,7 +198,7 @@ async def delete_pipeline(
 #
 
 
-@log_decorator(logger=log)
+@log_decorator(logger=_logger)
 async def create_cluster(
     app: web.Application, user_id: UserID, new_cluster: ClusterCreate
 ) -> DataType:
@@ -207,8 +216,8 @@ async def create_cluster(
             )
         ),
     )
-
     assert isinstance(cluster, dict)  # nosec
+    assert parse_obj_as(ClusterGet, cluster) is not None  # nosec
     return cluster
 
 
@@ -222,6 +231,7 @@ async def list_clusters(app: web.Application, user_id: UserID) -> list[DataType]
     )
 
     assert isinstance(clusters, list)  # nosec
+    assert parse_obj_as(list[ClusterGet], clusters) is not None  # nosec
     return clusters
 
 
@@ -249,6 +259,7 @@ async def get_cluster(
     )
 
     assert isinstance(cluster, dict)  # nosec
+    assert parse_obj_as(ClusterGet, cluster) is not None  # nosec
     return cluster
 
 
@@ -275,8 +286,8 @@ async def get_cluster_details(
             ),
         },
     )
-
     assert isinstance(cluster, dict)  # nosec
+    assert parse_obj_as(ClusterDetails, cluster) is not None  # nosec
     return cluster
 
 
@@ -314,6 +325,7 @@ async def update_cluster(
     )
 
     assert isinstance(cluster, dict)  # nosec
+    assert parse_obj_as(ClusterGet, cluster) is not None  # nosec
     return cluster
 
 

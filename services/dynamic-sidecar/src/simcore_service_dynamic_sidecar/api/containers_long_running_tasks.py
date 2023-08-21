@@ -1,6 +1,5 @@
-import logging
 from textwrap import dedent
-from typing import Optional
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, FastAPI, Request, status
 from servicelib.fastapi.long_running_tasks.server import (
@@ -16,6 +15,7 @@ from ..core.settings import ApplicationSettings
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.schemas.containers import ContainersCreate
 from ..models.shared_store import SharedStore
+from ..modules.inputs import InputsState
 from ..modules.long_running_tasks import (
     task_containers_restart,
     task_create_service_containers,
@@ -31,13 +31,13 @@ from ..modules.outputs import OutputsManager
 from ._dependencies import (
     get_application,
     get_application_health,
+    get_inputs_state,
     get_mounted_volumes,
     get_outputs_manager,
     get_settings,
     get_shared_store,
 )
 
-logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -61,17 +61,17 @@ router = APIRouter()
 async def create_service_containers_task(  # pylint: disable=too-many-arguments
     request: Request,
     containers_create: ContainersCreate,
-    tasks_manager: TasksManager = Depends(get_tasks_manager),
-    settings: ApplicationSettings = Depends(get_settings),
-    shared_store: SharedStore = Depends(get_shared_store),
-    app: FastAPI = Depends(get_application),
-    application_health: ApplicationHealth = Depends(get_application_health),
-    mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
+    tasks_manager: Annotated[TasksManager, Depends(get_tasks_manager)],
+    settings: Annotated[ApplicationSettings, Depends(get_settings)],
+    shared_store: Annotated[SharedStore, Depends(get_shared_store)],
+    app: Annotated[FastAPI, Depends(get_application)],
+    application_health: Annotated[ApplicationHealth, Depends(get_application_health)],
+    mounted_volumes: Annotated[MountedVolumes, Depends(get_mounted_volumes)],
 ) -> TaskId:
     assert request  # nosec
 
     try:
-        task_id = start_task(
+        return start_task(
             tasks_manager,
             task=task_create_service_containers,
             unique=True,
@@ -82,7 +82,6 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
             app=app,
             application_health=application_health,
         )
-        return task_id
     except TaskAlreadyRunningError as e:
         return e.managed_task.task_id  # pylint: disable=no-member
 
@@ -96,15 +95,15 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
 @cancel_on_disconnect
 async def runs_docker_compose_down_task(
     request: Request,
-    tasks_manager: TasksManager = Depends(get_tasks_manager),
-    settings: ApplicationSettings = Depends(get_settings),
-    shared_store: SharedStore = Depends(get_shared_store),
-    app: FastAPI = Depends(get_application),
+    tasks_manager: Annotated[TasksManager, Depends(get_tasks_manager)],
+    settings: Annotated[ApplicationSettings, Depends(get_settings)],
+    shared_store: Annotated[SharedStore, Depends(get_shared_store)],
+    app: Annotated[FastAPI, Depends(get_application)],
 ) -> TaskId:
     assert request  # nosec
 
     try:
-        task_id = start_task(
+        return start_task(
             tasks_manager,
             task=task_runs_docker_compose_down,
             unique=True,
@@ -112,7 +111,6 @@ async def runs_docker_compose_down_task(
             shared_store=shared_store,
             settings=settings,
         )
-        return task_id
     except TaskAlreadyRunningError as e:
         return e.managed_task.task_id  # pylint: disable=no-member
 
@@ -126,15 +124,15 @@ async def runs_docker_compose_down_task(
 @cancel_on_disconnect
 async def state_restore_task(
     request: Request,
-    tasks_manager: TasksManager = Depends(get_tasks_manager),
-    settings: ApplicationSettings = Depends(get_settings),
-    mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
-    app: FastAPI = Depends(get_application),
+    tasks_manager: Annotated[TasksManager, Depends(get_tasks_manager)],
+    settings: Annotated[ApplicationSettings, Depends(get_settings)],
+    mounted_volumes: Annotated[MountedVolumes, Depends(get_mounted_volumes)],
+    app: Annotated[FastAPI, Depends(get_application)],
 ) -> TaskId:
     assert request  # nosec
 
     try:
-        task_id = start_task(
+        return start_task(
             tasks_manager,
             task=task_restore_state,
             unique=True,
@@ -142,7 +140,6 @@ async def state_restore_task(
             mounted_volumes=mounted_volumes,
             app=app,
         )
-        return task_id
     except TaskAlreadyRunningError as e:
         return e.managed_task.task_id  # pylint: disable=no-member
 
@@ -156,15 +153,15 @@ async def state_restore_task(
 @cancel_on_disconnect
 async def state_save_task(
     request: Request,
-    tasks_manager: TasksManager = Depends(get_tasks_manager),
-    app: FastAPI = Depends(get_application),
-    mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
-    settings: ApplicationSettings = Depends(get_settings),
+    tasks_manager: Annotated[TasksManager, Depends(get_tasks_manager)],
+    app: Annotated[FastAPI, Depends(get_application)],
+    mounted_volumes: Annotated[MountedVolumes, Depends(get_mounted_volumes)],
+    settings: Annotated[ApplicationSettings, Depends(get_settings)],
 ) -> TaskId:
     assert request  # nosec
 
     try:
-        task_id = start_task(
+        return start_task(
             tasks_manager,
             task=task_save_state,
             unique=True,
@@ -172,7 +169,6 @@ async def state_save_task(
             mounted_volumes=mounted_volumes,
             app=app,
         )
-        return task_id
     except TaskAlreadyRunningError as e:
         return e.managed_task.task_id  # pylint: disable=no-member
 
@@ -186,23 +182,24 @@ async def state_save_task(
 @cancel_on_disconnect
 async def ports_inputs_pull_task(
     request: Request,
-    port_keys: Optional[list[str]] = None,
-    tasks_manager: TasksManager = Depends(get_tasks_manager),
-    app: FastAPI = Depends(get_application),
-    mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
+    tasks_manager: Annotated[TasksManager, Depends(get_tasks_manager)],
+    app: Annotated[FastAPI, Depends(get_application)],
+    mounted_volumes: Annotated[MountedVolumes, Depends(get_mounted_volumes)],
+    inputs_state: Annotated[InputsState, Depends(get_inputs_state)],
+    port_keys: list[str] | None = None,
 ) -> TaskId:
     assert request  # nosec
 
     try:
-        task_id = start_task(
+        return start_task(
             tasks_manager,
             task=task_ports_inputs_pull,
             unique=True,
             port_keys=port_keys,
             mounted_volumes=mounted_volumes,
             app=app,
+            inputs_pulling_enabled=inputs_state.inputs_pulling_enabled,
         )
-        return task_id
     except TaskAlreadyRunningError as e:
         return e.managed_task.task_id  # pylint: disable=no-member
 
@@ -216,15 +213,15 @@ async def ports_inputs_pull_task(
 @cancel_on_disconnect
 async def ports_outputs_pull_task(
     request: Request,
-    port_keys: Optional[list[str]] = None,
-    tasks_manager: TasksManager = Depends(get_tasks_manager),
-    app: FastAPI = Depends(get_application),
-    mounted_volumes: MountedVolumes = Depends(get_mounted_volumes),
+    tasks_manager: Annotated[TasksManager, Depends(get_tasks_manager)],
+    app: Annotated[FastAPI, Depends(get_application)],
+    mounted_volumes: Annotated[MountedVolumes, Depends(get_mounted_volumes)],
+    port_keys: list[str] | None = None,
 ) -> TaskId:
     assert request  # nosec
 
     try:
-        task_id = start_task(
+        return start_task(
             tasks_manager,
             task=task_ports_outputs_pull,
             unique=True,
@@ -232,7 +229,6 @@ async def ports_outputs_pull_task(
             mounted_volumes=mounted_volumes,
             app=app,
         )
-        return task_id
     except TaskAlreadyRunningError as e:
         return e.managed_task.task_id  # pylint: disable=no-member
 
@@ -246,21 +242,20 @@ async def ports_outputs_pull_task(
 @cancel_on_disconnect
 async def ports_outputs_push_task(
     request: Request,
-    tasks_manager: TasksManager = Depends(get_tasks_manager),
-    outputs_manager: OutputsManager = Depends(get_outputs_manager),
-    app: FastAPI = Depends(get_application),
+    tasks_manager: Annotated[TasksManager, Depends(get_tasks_manager)],
+    outputs_manager: Annotated[OutputsManager, Depends(get_outputs_manager)],
+    app: Annotated[FastAPI, Depends(get_application)],
 ) -> TaskId:
     assert request  # nosec
 
     try:
-        task_id = start_task(
+        return start_task(
             tasks_manager,
             task=task_ports_outputs_push,
             unique=True,
             outputs_manager=outputs_manager,
             app=app,
         )
-        return task_id
     except TaskAlreadyRunningError as e:
         return e.managed_task.task_id  # pylint: disable=no-member
 
@@ -274,15 +269,15 @@ async def ports_outputs_push_task(
 @cancel_on_disconnect
 async def containers_restart_task(
     request: Request,
-    tasks_manager: TasksManager = Depends(get_tasks_manager),
-    app: FastAPI = Depends(get_application),
-    settings: ApplicationSettings = Depends(get_settings),
-    shared_store: SharedStore = Depends(get_shared_store),
+    tasks_manager: Annotated[TasksManager, Depends(get_tasks_manager)],
+    app: Annotated[FastAPI, Depends(get_application)],
+    settings: Annotated[ApplicationSettings, Depends(get_settings)],
+    shared_store: Annotated[SharedStore, Depends(get_shared_store)],
 ) -> TaskId:
     assert request  # nosec
 
     try:
-        task_id = start_task(
+        return start_task(
             tasks_manager,
             task=task_containers_restart,
             unique=True,
@@ -290,6 +285,5 @@ async def containers_restart_task(
             settings=settings,
             shared_store=shared_store,
         )
-        return task_id
     except TaskAlreadyRunningError as e:
         return e.managed_task.task_id  # pylint: disable=no-member

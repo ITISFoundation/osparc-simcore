@@ -6,7 +6,7 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 from . import _handlers
 from .settings import get_plugin_settings
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @app_module_setup(
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
     category=ModuleCategory.ADDON,
     settings_name="WEBSERVER_ACTIVITY",
     depends=["simcore_service_webserver.rest"],
-    logger=logger,
+    logger=_logger,
 )
 def setup_activity(app: web.Application):
     assert get_plugin_settings(app)  # nosec
