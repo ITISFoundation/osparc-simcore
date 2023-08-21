@@ -194,16 +194,14 @@ async def drained_host_node(
     assert drained_node.Version.Index
     assert drained_node.Spec
     assert drained_node.Spec.Role
-    (
-        await async_docker_client.nodes.update(
-            node_id=drained_node.ID,
-            version=drained_node.Version.Index,
-            spec={
-                "Availability": old_availability.value,
-                "Labels": drained_node.Spec.Labels,
-                "Role": drained_node.Spec.Role.value,
-            },
-        ),
+    await async_docker_client.nodes.update(
+        node_id=drained_node.ID,
+        version=drained_node.Version.Index,
+        spec={
+            "Availability": old_availability.value,
+            "Labels": drained_node.Spec.Labels,
+            "Role": drained_node.Spec.Role.value,
+        },
     )
 
 
