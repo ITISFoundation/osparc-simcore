@@ -2238,7 +2238,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_NodeGet_'
+                $ref: '#/components/schemas/Envelope_Union_NodeGet__NodeGetIdle__'
     delete:
       tags:
       - projects
@@ -4856,14 +4856,6 @@ components:
           $ref: '#/components/schemas/NodeCreated'
         error:
           title: Error
-    Envelope_NodeGet_:
-      title: Envelope[NodeGet]
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/NodeGet'
-        error:
-          title: Error
     Envelope_NodeRetrieved_:
       title: Envelope[NodeRetrieved]
       type: object
@@ -4998,6 +4990,17 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/Token'
+        error:
+          title: Error
+    Envelope_Union_NodeGet__NodeGetIdle__:
+      title: Envelope[Union[NodeGet, NodeGetIdle]]
+      type: object
+      properties:
+        data:
+          title: Data
+          anyOf:
+          - $ref: '#/components/schemas/NodeGet'
+          - $ref: '#/components/schemas/NodeGetIdle'
         error:
           title: Error
     Envelope_Union_TestFailed__TestPassed__:
@@ -6170,7 +6173,6 @@ components:
           exclusiveMinimum: true
           type: integer
           description: The ports where the service provides its interface
-          example: 30000
           maximum: 65535
           minimum: 0
         entryPoint:
@@ -6178,12 +6180,10 @@ components:
           type: string
           description: The entry point where the service provides its interface if
             specified
-          example: /the/entry/point/is/here
         serviceUuid:
           title: Serviceuuid
           type: string
           description: The UUID attached to this service
-          example: 123e4567-e89b-12d3-a456-426655440000
         serviceKey:
           title: Servicekey
           pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
@@ -6205,14 +6205,12 @@ components:
           title: Servicehost
           type: string
           description: service host name within the network
-          example: jupyter_E1O2E-LAH
         servicePort:
           title: Serviceport
           exclusiveMaximum: true
           exclusiveMinimum: true
           type: integer
           description: port to access the service within the network
-          example: 8081
           maximum: 65535
           minimum: 0
         serviceBasepath:
@@ -6221,7 +6219,6 @@ components:
           description: different base path where current service is mounted otherwise
             defaults to root
           default: ''
-          example: /x/E1O2E-LAH
         serviceState:
           allOf:
           - $ref: '#/components/schemas/ServiceState'
@@ -6236,12 +6233,38 @@ components:
           title: Servicemessage
           type: string
           description: the service message
-          example: no suitable node (insufficient resources on 1 node)
         userId:
           title: Userid
           type: string
           description: the user that started the service
-          example: '123'
+      example:
+        published_port: 30000
+        entrypoint: /the/entry/point/is/here
+        service_uuid: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        service_key: simcore/services/comp/itis/sleeper
+        service_version: 1.2.3
+        service_host: jupyter_E1O2E-LAH
+        service_port: 8081
+        service_basepath: /x/E1O2E-LAH
+        service_state: pending
+        service_message: no suitable node (insufficient resources on 1 node)
+        user_id: 123
+    NodeGetIdle:
+      title: NodeGetIdle
+      required:
+      - serviceState
+      - serviceUuid
+      type: object
+      properties:
+        serviceState:
+          title: Servicestate
+          enum:
+          - idle
+          type: string
+        serviceUuid:
+          title: Serviceuuid
+          type: string
+          format: uuid
     NodeRetrieve:
       title: NodeRetrieve
       type: object

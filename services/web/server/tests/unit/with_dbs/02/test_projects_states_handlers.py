@@ -44,15 +44,15 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (
 from servicelib.aiohttp.web_exceptions_extension import HTTPLockedError
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.products import products
+from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.socketio.messages import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.utils import to_datetime
 from socketio.exceptions import ConnectionError as SocketConnectionError
 
-API_VERSION = "v0"
 RESOURCE_NAME = "projects"
-API_PREFIX = "/" + API_VERSION
+API_PREFIX = f"/{API_VTAG}"
 
 
 @pytest.fixture
@@ -896,7 +896,6 @@ async def test_get_active_project(
         assert not error
 
 
-@pytest.mark.testit
 @pytest.mark.parametrize(
     "user_role, expected_response_on_Create, expected_response_on_Get, expected_response_on_Delete",
     [

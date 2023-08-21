@@ -15,6 +15,7 @@ from models_library.api_schemas_webserver.projects_nodes import (
     NodeCreate,
     NodeCreated,
     NodeGet,
+    NodeGetIdle,
     NodeRetrieve,
 )
 from models_library.groups import EVERYONE_GROUP_ID
@@ -167,11 +168,13 @@ async def get_node(request: web.Request) -> web.Response:
 
         if "data" not in service_data:
             # dynamic-service NODE STATE
-            assert NodeGet.parse_obj(service_data)  # nosec
+            assert (
+                parse_obj_as(NodeGet | NodeGetIdle, service_data) is not None
+            )  # nosec
             return envelope_json_response(service_data)
 
         # LEGACY-service NODE STATE
-        assert NodeGet.parse_obj(service_data["data"])  # nosec
+        assert parse_obj_as(NodeGet | NodeGetIdle, service_data) is not None  # nosec
         return envelope_json_response(service_data["data"])
 
     except DirectorServiceError as exc:

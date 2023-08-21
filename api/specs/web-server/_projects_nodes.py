@@ -11,6 +11,7 @@ from models_library.api_schemas_webserver.projects_nodes import (
     NodeCreate,
     NodeCreated,
     NodeGet,
+    NodeGetIdle,
     NodeRetrieve,
     NodeRetrieved,
     ServiceResourcesDict,
@@ -49,7 +50,7 @@ def create_node(project_id: str, body: NodeCreate):
 
 @router.get(
     "/projects/{project_id}/nodes/{node_id}",
-    response_model=Envelope[NodeGet],
+    response_model=Envelope[NodeGet | NodeGetIdle],
     # responses={"idle": {"model": NodeGetIdle}}, TODO: check this variant
 )
 def get_node(
