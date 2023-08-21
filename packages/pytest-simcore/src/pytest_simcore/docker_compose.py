@@ -172,7 +172,7 @@ def simcore_docker_compose(
 def inject_filestash_config_path_env(
     osparc_simcore_scripts_dir: Path,
     env_file_for_testing: Path,
-) -> dict[str, str]:
+) -> EnvVarsDict:
     create_filestash_config_py = (
         osparc_simcore_scripts_dir / "filestash" / "create_config.py"
     )

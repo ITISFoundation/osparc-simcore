@@ -133,13 +133,7 @@ def services_endpoint(
     return services_endpoint
 
 
-def _check_services_ready(services_endpoint: dict[str, URL]) -> None:
-    """
-    - Waits for services in `core_services_selection` to be healthy
-    - Sets environment with these (host:port) endpoitns
-
-    WARNING: not all services in the selection can be health-checked (see services_endpoint)
-    """
+def _wait_for_services_ready(services_endpoint: dict[str, URL]) -> None:
     # Compose and log healthcheck url entpoints
 
     health_endpoints = [
@@ -165,7 +159,7 @@ def _check_services_ready(services_endpoint: dict[str, URL]) -> None:
 def simcore_services_ready(
     services_endpoint: dict[str, URL], monkeypatch: MonkeyPatch
 ) -> None:
-    _check_services_ready(services_endpoint)
+    _wait_for_services_ready(services_endpoint)
     # patches environment variables with right host/port per service
     for service, endpoint in services_endpoint.items():
         env_prefix = service.upper().replace("-", "_")
@@ -180,7 +174,7 @@ def simcore_services_ready(
 def simcore_services_ready_module(
     services_endpoint: dict[str, URL], monkeypatch_module: MonkeyPatch
 ) -> None:
-    _check_services_ready(services_endpoint)
+    _wait_for_services_ready(services_endpoint)
     # patches environment variables with right host/port per service
     for service, endpoint in services_endpoint.items():
         env_prefix = service.upper().replace("-", "_")
