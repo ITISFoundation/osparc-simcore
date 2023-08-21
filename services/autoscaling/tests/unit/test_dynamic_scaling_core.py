@@ -9,10 +9,9 @@ import asyncio
 import base64
 import dataclasses
 import datetime
-import pickle
-import warnings
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Awaitable, Callable, Iterator
+from typing import Any
 from unittest import mock
 
 import aiodocker
@@ -61,11 +60,10 @@ def cluster() -> Callable[..., Cluster]:
 
 @pytest.fixture
 def mock_terminate_instances(mocker: MockerFixture) -> Iterator[mock.Mock]:
-    mocked_terminate_instance = mocker.patch(
+    return mocker.patch(
         "simcore_service_autoscaling.modules.ec2.AutoscalingEC2.terminate_instances",
         autospec=True,
     )
-    yield mocked_terminate_instance
 
 
 @pytest.fixture
@@ -74,32 +72,29 @@ def mock_start_aws_instance(
     aws_instance_private_dns: str,
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ) -> Iterator[mock.Mock]:
-    mocked_start_aws_instance = mocker.patch(
+    return mocker.patch(
         "simcore_service_autoscaling.modules.ec2.AutoscalingEC2.start_aws_instance",
         autospec=True,
         return_value=fake_ec2_instance_data(aws_private_dns=aws_instance_private_dns),
     )
-    yield mocked_start_aws_instance
 
 
 @pytest.fixture
 def mock_rabbitmq_post_message(mocker: MockerFixture) -> Iterator[mock.Mock]:
-    mocked_post_message = mocker.patch(
+    return mocker.patch(
         "simcore_service_autoscaling.utils.rabbitmq.post_message", autospec=True
     )
-    yield mocked_post_message
 
 
 @pytest.fixture
 def mock_find_node_with_name(
     mocker: MockerFixture, fake_node: Node
 ) -> Iterator[mock.Mock]:
-    mocked_wait_for_node = mocker.patch(
+    return mocker.patch(
         "simcore_service_autoscaling.dynamic_scaling_core.utils_docker.find_node_with_name",
         autospec=True,
         return_value=fake_node,
     )
-    yield mocked_wait_for_node
 
 
 @pytest.fixture
@@ -107,57 +102,52 @@ def mock_tag_node(mocker: MockerFixture) -> Iterator[mock.Mock]:
     async def fake_tag_node(*args, **kwargs) -> Node:
         return args[1]
 
-    mocked_tag_node = mocker.patch(
+    return mocker.patch(
         "simcore_service_autoscaling.utils.utils_docker.tag_node",
         autospec=True,
         side_effect=fake_tag_node,
     )
-    yield mocked_tag_node
 
 
 @pytest.fixture
 def mock_set_node_availability(mocker: MockerFixture) -> Iterator[mock.Mock]:
-    mocked_tag_node = mocker.patch(
+    return mocker.patch(
         "simcore_service_autoscaling.utils.utils_docker.set_node_availability",
         autospec=True,
     )
-    yield mocked_tag_node
 
 
 @pytest.fixture
 def mock_remove_nodes(mocker: MockerFixture) -> Iterator[mock.Mock]:
-    mocked_tag_node = mocker.patch(
+    return mocker.patch(
         "simcore_service_autoscaling.utils.utils_docker.remove_nodes",
         autospec=True,
     )
-    yield mocked_tag_node
 
 
 @pytest.fixture
 def mock_cluster_used_resources(mocker: MockerFixture) -> Iterator[mock.Mock]:
-    mocked_cluster_used_resources = mocker.patch(
+    return mocker.patch(
         "simcore_service_autoscaling.utils.utils_docker.compute_cluster_used_resources",
         autospec=True,
         return_value=Resources.create_as_empty(),
     )
-    yield mocked_cluster_used_resources
 
 
 @pytest.fixture
 def mock_compute_node_used_resources(mocker: MockerFixture) -> Iterator[mock.Mock]:
-    mocked_cluster_used_resources = mocker.patch(
+    return mocker.patch(
         "simcore_service_autoscaling.utils.utils_docker.compute_node_used_resources",
         autospec=True,
         return_value=Resources.create_as_empty(),
     )
-    yield mocked_cluster_used_resources
 
 
 @pytest.fixture
 def mock_machines_buffer(monkeypatch: pytest.MonkeyPatch) -> Iterator[int]:
     num_machines_in_buffer = 5
     monkeypatch.setenv("EC2_INSTANCES_MACHINES_BUFFER", f"{num_machines_in_buffer}")
-    yield num_machines_in_buffer
+    return num_machines_in_buffer
 
 
 @pytest.fixture
@@ -204,7 +194,7 @@ async def drained_host_node(
     assert drained_node.Version.Index
     assert drained_node.Spec
     assert drained_node.Spec.Role
-    reverted_node = (
+    (
         await async_docker_client.nodes.update(
             node_id=drained_node.ID,
             version=drained_node.Version.Index,
@@ -228,7 +218,7 @@ def minimal_configuration(
     aws_allowed_ec2_instance_type_names: list[str],
     mocked_redis_server: None,
 ) -> Iterator[None]:
-    yield
+    return
 
 
 def _assert_rabbit_autoscaling_message_sent(
@@ -271,35 +261,8 @@ async def test_cluster_scaling_from_labelled_services_with_no_services_does_noth
     )
 
 
-@pytest.fixture
-def patch_get_ec2_tags(mocker: MockerFixture, faker: Faker) -> Iterator[mock.Mock]:
-    # NOTE: this is needed because of a bug in Moto
-    # https://github.com/getmoto/moto/issues/5966
-    warnings.warn(
-        "patching get_ec2_tags due to issue https://github.com/getmoto/moto/issues/5966 in moto library...",
-        UserWarning,
-    )
-
-    def _json_without_square_brackets(obj) -> str:
-        return str(pickle.dumps(obj))
-
-    mocked_terminate_instance = mocker.patch(
-        "simcore_service_autoscaling.utils.ec2.get_ec2_tags",
-        autospec=True,
-        return_value={
-            "io.simcore.autoscaling.version": faker.pystr(),
-            "io.simcore.autoscaling.monitored_nodes_labels": faker.pystr(),
-            "io.simcore.autoscaling.monitored_services_labels": faker.pystr(),
-            # NOTE: this one gets special treatment in AWS GUI and is applied to the name of the instance
-            "Name": faker.pystr(),
-        },
-    )
-    yield mocked_terminate_instance
-
-
 async def test_cluster_scaling_from_labelled_services_with_no_services_and_machine_buffer_starts_expected_machines(
     minimal_configuration: None,
-    patch_get_ec2_tags: mock.MagicMock,
     mock_machines_buffer: int,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
@@ -458,7 +421,6 @@ async def _assert_ec2_instances(
 
 async def test_cluster_scaling_up(
     minimal_configuration: None,
-    patch_get_ec2_tags: mock.MagicMock,
     service_monitored_labels: dict[DockerLabelKey, str],
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
