@@ -81,10 +81,7 @@ async def _list_repos_handler(request: web.Request):
     repos_list = [
         RepoApiModel.parse_obj(
             {
-                "url": url_for(
-                    "list_repos",
-                    project_uuid=row.project_uuid,
-                ),
+                "url": url_for("list_repos"),
                 **dict(row.items()),
             }
         )
@@ -190,15 +187,7 @@ async def _list_checkpoints_handler(request: web.Request):
     )
 
 
-@routes.get(
-    f"/{VTAG}/repos/projects/{{project_uuid}}/checkpoints/HEAD",
-    name="get_head_checkpoint",
-)
-async def _get_checkpoint_handler_head(request: web.Request):
-    # NOTE: added a function so below the route can be named
-    return await _get_checkpoint_handler(request)
-
-
+# includes repos/projects/{project_uuid}/checkpoints/HEAD
 @routes.get(
     f"/{VTAG}/repos/projects/{{project_uuid}}/checkpoints/{{ref_id}}",
     name="get_checkpoint",

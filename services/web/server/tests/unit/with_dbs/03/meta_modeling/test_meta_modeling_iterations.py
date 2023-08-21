@@ -12,7 +12,6 @@ from faker import Faker
 from models_library.projects import Project
 from models_library.projects_nodes import Node
 from models_library.services_resources import ServiceResourcesDict
-from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
@@ -47,7 +46,7 @@ REQUEST_MODEL_POLICY = {
 
 @pytest.fixture
 def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: MonkeyPatch
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ) -> EnvVarsDict:
     envs_plugins = setenvs_from_dict(
         monkeypatch,
@@ -69,6 +68,7 @@ async def context_with_logged_user(client: TestClient, logged_user: UserInfoDict
         await conn.execute(projects.delete())
 
 
+@pytest.mark.testit
 @pytest.mark.acceptance_test()
 async def test_iterators_workflow(
     client: TestClient,
