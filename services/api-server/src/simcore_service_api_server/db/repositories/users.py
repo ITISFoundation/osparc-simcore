@@ -18,18 +18,14 @@ class UsersRepository(BaseRepository):
 
     async def any_user_with_id(self, user_id: int) -> bool:
         stmt = sa.select(
-            [
-                api_keys.c.user_id,
-            ]
+            api_keys.c.user_id,
         ).where(api_keys.c.user_id == user_id)
         async with self.db_engine.acquire() as conn:
             return (await conn.scalar(stmt)) is not None
 
     async def get_email_from_user_id(self, user_id: int) -> str | None:
         stmt = sa.select(
-            [
-                users.c.email,
-            ]
+            users.c.email,
         ).where(users.c.id == user_id)
         async with self.db_engine.acquire() as conn:
             email: str | None = await conn.scalar(stmt)
