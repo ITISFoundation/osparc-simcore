@@ -105,11 +105,11 @@ def mock_webserver_service_environment(
     mock_env_auto_deployer_agent: EnvVarsDict,
 ) -> EnvVarsDict:
     """
-    Mocks environment produce in the docker-compose config with a .env (.env-devel)
+    Mocks environment produce in the docker compose config with a .env (.env-devel)
     and launched with a makefile
     """
-    # @docker-compose config (overrides)
-    # TODO: get from docker-compose config
+    # @docker compose config (overrides)
+    # TODO: get from docker compose config
     # r'- ([A-Z2_]+)=\$\{\1:-([\w-]+)\}'
 
     # - .env-devel + docker-compose service environs

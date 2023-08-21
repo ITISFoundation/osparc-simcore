@@ -159,7 +159,7 @@ async def async_command(command: str, timeout: float | None = None) -> CommandRe
         #
         # There is a chance that the launched process ignores SIGTERM
         # in that case, it would proc.wait() forever. This code will be
-        # used only to run docker-compose CLI which behaves well. Nonetheless,
+        # used only to run docker compose CLI which behaves well. Nonetheless,
         # we add here some asserts.
         assert await proc.wait() == -signal.SIGTERM  # nosec
         assert not psutil.pid_exists(proc.pid)  # nosec

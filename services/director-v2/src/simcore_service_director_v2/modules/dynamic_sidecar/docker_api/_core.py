@@ -75,7 +75,7 @@ async def create_network(network_config: dict[str, Any]) -> NetworkId:
             # The environment is trashed because there seems to be an issue
             # when stopping previous services.
             # It is not possible to immediately remove the network after
-            # a docker-compose down involving and external overlay network
+            # a docker compose down involving and external overlay network
             # has removed a container; it results as already attached
             for network_details in await client.networks.list():
                 if network_name == network_details["Name"]:
