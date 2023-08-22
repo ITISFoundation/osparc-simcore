@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from aiohttp import web
 from servicelib.aiohttp.incidents import LimitedOrderedStack, SlowCallback
 
-from ..rest.healthcheck import HealthCheckFailed
+from ..rest.healthcheck import HealthCheckError
 from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -110,7 +110,7 @@ def assert_healthy_app(app: web.Application) -> None:
                 max_delay,
                 max_delay_allowed,
             )
-            raise HealthCheckFailed(msg)
+            raise HealthCheckError(msg)
 
     # CRITERIA 2: Mean latency of the last N request slower than 1 sec
     probe: DelayWindowProbe | None = app.get(HEALTH_LATENCY_PROBE)
@@ -125,6 +125,6 @@ def assert_healthy_app(app: web.Application) -> None:
         )
 
         if max_latency_allowed < latency:
-            raise HealthCheckFailed(
+            raise HealthCheckError(
                 f"Last requests average latency is {latency} secs and surpasses {max_latency_allowed} secs"
             )

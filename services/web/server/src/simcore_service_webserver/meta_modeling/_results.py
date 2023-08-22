@@ -13,7 +13,7 @@ from models_library.projects_nodes import OutputsDict
 from models_library.projects_nodes_io import NodeIDStr
 from pydantic import BaseModel, ConstrainedInt, Field
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class ProgressInt(ConstrainedInt):

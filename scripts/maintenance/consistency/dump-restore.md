@@ -11,7 +11,7 @@ pg_dump --host POSTGRESHOST --username POSTGRES_USER --format c --blobs --verbos
 First a postgres instance must be setup, and the following will allow saving its contents into a docker-volume name POSTGRES_DATA_VOLUME
 
 ```bash
-export POSTGRES_DATA_VOLUME=aws-production-simcore_postgres_data; docker-compose up
+export POSTGRES_DATA_VOLUME=aws-production-simcore_postgres_data; docker compose up
 ```
 
 This allows connecting to the local postgres instance

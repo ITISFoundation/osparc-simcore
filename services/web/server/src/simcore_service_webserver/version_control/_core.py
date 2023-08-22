@@ -18,7 +18,7 @@ from .db import VersionControlRepository
 from .errors import CleanRequiredError
 from .models import Checkpoint, CommitLog, RefID, WorkbenchView
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 async def list_repos(
@@ -27,7 +27,6 @@ async def list_repos(
     offset: NonNegativeInt = 0,
     limit: PositiveInt | None = None,
 ) -> tuple[list[RowProxy], PositiveInt]:
-
     # NOTE: this layer does NOT add much .. why not use vc_repo directly?
     repos_rows, total_number_of_repos = await vc_repo.list_repos(offset, limit)
 
@@ -42,7 +41,6 @@ async def list_checkpoints(
     offset: NonNegativeInt = 0,
     limit: PositiveInt | None = None,
 ) -> tuple[list[Checkpoint], PositiveInt]:
-
     repo_id = await vc_repo.get_repo_id(project_uuid)
     if not repo_id:
         return [], 0
@@ -82,7 +80,6 @@ async def get_checkpoint(
     project_uuid: UUID,
     ref_id: RefID,
 ) -> Checkpoint:
-
     repo_id, commit_id = await vc_repo.as_repo_and_commit_ids(project_uuid, ref_id)
     assert repo_id  # nosec
 
@@ -98,11 +95,10 @@ async def update_checkpoint(
     message: str | None = None,
     tag: str | None = None,
 ) -> Checkpoint:
-
     repo_id, commit_id = await vc_repo.as_repo_and_commit_ids(project_uuid, ref_id)
 
     if message is None and tag is None:
-        log.warning(
+        _logger.warning(
             "Nothing to update. Skipping updating ref %s of %s", ref_id, project_uuid
         )
     else:
@@ -123,7 +119,7 @@ async def checkout_checkpoint(
     try:
         commit_id = await vc_repo.checkout(repo_id, commit_id)
     except CleanRequiredError:
-        log.info("Local changes found. Auto-commiting project %s", project_uuid)
+        _logger.info("Local changes found. Auto-commiting project %s", project_uuid)
         await vc_repo.commit(repo_id, message="auto commit")
         commit_id = await vc_repo.checkout(repo_id, commit_id)
 

@@ -10,7 +10,7 @@ export VCS_REF:=$(shell git rev-parse --short HEAD)
 export VCS_REF_CLIENT:=$(shell git log --pretty=tformat:"%h" -n1 .)
 export VCS_STATUS_CLIENT:=$(if $(shell git status -s),'modified/untracked','clean')
 
-docker_compose := docker-compose -f tools/docker-compose.yml
+docker_compose := docker compose -f tools/docker-compose.yml
 docker_file    := tools/qooxdoo-kit/builder/Dockerfile
 docker_image   := client/$(subst /Dockerfile,,$(docker_file)):latest
 

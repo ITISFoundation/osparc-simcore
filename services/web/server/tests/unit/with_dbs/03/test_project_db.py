@@ -5,14 +5,11 @@
 # pylint: disable=unused-variable
 
 import asyncio
-import datetime
-import json
-import re
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
-from itertools import combinations
 from random import randint
 from secrets import choice
-from typing import Any, AsyncIterator, Awaitable, Callable, Iterator, get_args
+from typing import Any, get_args
 from uuid import UUID, uuid5
 
 import aiopg.sa
@@ -21,33 +18,19 @@ import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID
+from models_library.projects_nodes_io import NodeID, NodeIDStr
 from psycopg2.errors import UniqueViolation
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_dict import copy_from_dict_ex
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
 from servicelib.utils import logged_gather
-from simcore_postgres_database.models.groups import GroupType
-from simcore_postgres_database.models.projects import projects
+from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
-from simcore_service_webserver.projects._db_utils import (
-    DB_EXCLUSIVE_COLUMNS,
-    SCHEMA_NON_NULL_KEYS,
-    PermissionStr,
-)
-from simcore_service_webserver.projects.db import (
-    ANY_USER,
-    ProjectAccessRights,
-    ProjectDBAPI,
-    ProjectInvalidRightsError,
-    check_project_permissions,
-    convert_to_db_names,
-    convert_to_schema_names,
-    create_project_access_rights,
-)
+from simcore_service_webserver.projects._db_utils import PermissionStr
+from simcore_service_webserver.projects.db import ProjectAccessRights, ProjectDBAPI
 from simcore_service_webserver.projects.exceptions import (
     NodeNotFoundError,
     ProjectNotFoundError,
@@ -56,54 +39,6 @@ from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.users.exceptions import UserNotFoundError
 from simcore_service_webserver.utils import to_datetime
 from sqlalchemy.engine.result import Row
-
-
-def test_convert_to_db_names(fake_project: dict[str, Any]):
-    db_entries = convert_to_db_names(fake_project)
-    assert "tags" not in db_entries
-    assert "prjOwner" not in db_entries
-
-    # there should be not camelcasing in the keys, except inside the workbench
-    assert re.match(r"[A-Z]", json.dumps(list(db_entries.keys()))) is None
-
-
-def test_convert_to_schema_names(fake_project: dict[str, Any]):
-    db_entries = convert_to_db_names(fake_project)
-
-    schema_entries = convert_to_schema_names(db_entries, fake_project["prjOwner"])
-    fake_project.pop("tags")
-    expected_project = deepcopy(fake_project)
-    expected_project.pop("prjOwner")
-    assert schema_entries == expected_project
-
-    # if there is a prj_owner, it should be replaced with the email of the owner
-    db_entries["prj_owner"] = 321
-    schema_entries = convert_to_schema_names(db_entries, fake_project["prjOwner"])
-    expected_project = deepcopy(fake_project)
-    assert schema_entries == expected_project
-
-    # test DB exclusive columns
-    for col in DB_EXCLUSIVE_COLUMNS:
-        db_entries[col] = "some fake stuff"
-    schema_entries = convert_to_schema_names(db_entries, fake_project["prjOwner"])
-    for col in DB_EXCLUSIVE_COLUMNS:
-        assert col not in schema_entries
-
-    # test non null keys
-    for col in SCHEMA_NON_NULL_KEYS:
-        db_entries[col] = None
-    schema_entries = convert_to_schema_names(db_entries, fake_project["prjOwner"])
-    for col in SCHEMA_NON_NULL_KEYS:
-        assert col is not None
-
-    # test date time conversion
-    date = datetime.datetime.utcnow()
-    db_entries["creation_date"] = date
-    schema_entries = convert_to_schema_names(db_entries, fake_project["prjOwner"])
-    assert "creationDate" in schema_entries
-    assert schema_entries["creationDate"] == "{}Z".format(
-        date.isoformat(timespec="milliseconds")
-    )
 
 
 @pytest.fixture
@@ -116,158 +51,13 @@ def user_id() -> int:
     return 132
 
 
-@pytest.mark.parametrize("project_access_rights", list(ProjectAccessRights))
-def test_project_access_rights_creation(
-    group_id: int, project_access_rights: ProjectAccessRights
-):
-    git_to_access_rights = create_project_access_rights(group_id, project_access_rights)
-    assert str(group_id) in git_to_access_rights
-    assert git_to_access_rights[str(group_id)] == project_access_rights.value
-
-
-def all_permission_combinations() -> list[str]:
-    entries_list = ["read", "write", "delete"]
-    temp = []
-    for i in range(1, len(entries_list) + 1):
-        temp.extend(list(combinations(entries_list, i)))
-    res = []
-    for el in temp:
-        res.append("|".join(el))
-    return res
-
-
-def test_check_project_permissions_for_any_user():
-    project = {"access_rights": {"1": {"read": True, "write": False, "delete": False}}}
-
-    check_project_permissions(
-        project,
-        user_id=ANY_USER,
-        user_groups=[{"gid": 1, "type": GroupType.EVERYONE}],
-        permission="read",
-    )
-
-
-@pytest.mark.parametrize("wanted_permissions", all_permission_combinations())
-def test_check_project_permissions(
-    user_id: int,
-    group_id: int,
-    wanted_permissions: str,
-):
-    project = {"access_rights": {}}
-
-    # this should not raise as needed permissions is empty
-    check_project_permissions(project, user_id, user_groups=[], permission="")
-
-    # this should raise cause we have no user groups defined and we want permission
-    with pytest.raises(ProjectInvalidRightsError):
-        check_project_permissions(
-            project, user_id, user_groups=[], permission=wanted_permissions
-        )
-
-    def _project_access_rights_from_permissions(
-        permissions: str, invert: bool = False
-    ) -> dict[str, bool]:
-        access_rights = {}
-        for p in ["read", "write", "delete"]:
-            access_rights[p] = (
-                p in permissions if invert is False else p not in permissions
-            )
-        return access_rights
-
-    # primary group has needed access, so this should not raise
-    project = {
-        "access_rights": {
-            str(group_id): _project_access_rights_from_permissions(wanted_permissions)
-        }
-    }
-    user_groups = [
-        {"type": GroupType.PRIMARY, "gid": group_id},
-        {"type": GroupType.EVERYONE, "gid": 2},
-    ]
-    check_project_permissions(project, user_id, user_groups, wanted_permissions)
-
-    # primary group does not have access, it should raise
-    project = {
-        "access_rights": {
-            str(group_id): _project_access_rights_from_permissions(
-                wanted_permissions, invert=True
-            )
-        }
-    }
-    with pytest.raises(ProjectInvalidRightsError):
-        check_project_permissions(project, user_id, user_groups, wanted_permissions)
-
-    # if no primary group, we rely on standard groups and the most permissive access are used. so this should not raise
-    project = {
-        "access_rights": {
-            str(group_id): _project_access_rights_from_permissions(
-                wanted_permissions, invert=True
-            ),
-            str(group_id + 1): _project_access_rights_from_permissions(
-                wanted_permissions
-            ),
-            str(group_id + 2): _project_access_rights_from_permissions(
-                wanted_permissions, invert=True
-            ),
-        }
-    }
-    user_groups = [
-        {"type": GroupType.PRIMARY, "gid": group_id},
-        {"type": GroupType.EVERYONE, "gid": 2},
-        {"type": GroupType.STANDARD, "gid": group_id + 1},
-        {"type": GroupType.STANDARD, "gid": group_id + 2},
-    ]
-    check_project_permissions(project, user_id, user_groups, wanted_permissions)
-
-    # if both primary and standard do not have rights it should raise
-    project = {
-        "access_rights": {
-            str(group_id): _project_access_rights_from_permissions(
-                wanted_permissions, invert=True
-            ),
-            str(group_id + 1): _project_access_rights_from_permissions(
-                wanted_permissions, invert=True
-            ),
-            str(group_id + 2): _project_access_rights_from_permissions(
-                wanted_permissions, invert=True
-            ),
-        }
-    }
-    user_groups = [
-        {"type": GroupType.PRIMARY, "gid": group_id},
-        {"type": GroupType.EVERYONE, "gid": 2},
-        {"type": GroupType.STANDARD, "gid": group_id + 1},
-        {"type": GroupType.STANDARD, "gid": group_id + 2},
-    ]
-    with pytest.raises(ProjectInvalidRightsError):
-        check_project_permissions(project, user_id, user_groups, wanted_permissions)
-
-    # the everyone group has access so it should not raise
-    project = {
-        "access_rights": {
-            str(2): _project_access_rights_from_permissions(wanted_permissions),
-            str(group_id): _project_access_rights_from_permissions(
-                wanted_permissions, invert=True
-            ),
-            str(group_id + 1): _project_access_rights_from_permissions(
-                wanted_permissions, invert=True
-            ),
-            str(group_id + 2): _project_access_rights_from_permissions(
-                wanted_permissions, invert=True
-            ),
-        }
-    }
-
-    check_project_permissions(project, user_id, user_groups, wanted_permissions)
-
-
 async def test_setup_projects_db(client: TestClient):
     assert client.app
     db_api = ProjectDBAPI.get_from_app_context(app=client.app)
     assert db_api
     assert isinstance(db_api, ProjectDBAPI)
 
-    assert db_api._app == client.app
+    assert db_api._app == client.app  # noqa: SLF001
     assert db_api.engine
 
 
@@ -353,11 +143,11 @@ def _assert_project_db_row(
 ):
     with postgres_db.connect() as conn:
         row: Row | None = conn.execute(
-            sa.DDL(f"SELECT * FROM projects WHERE \"uuid\"='{project['uuid']}'")
+            sa.select(projects).where(projects.c.uuid == f"{project['uuid']}")
         ).fetchone()
 
     expected_db_entries = {
-        "type": "STANDARD",
+        "type": ProjectType.STANDARD,
         "uuid": project["uuid"],
         "name": project["name"],
         "description": project["description"],
@@ -375,7 +165,8 @@ def _assert_project_db_row(
     }
     expected_db_entries.update(kwargs)
     assert row
-    assert {k: row[k] for k in expected_db_entries} == expected_db_entries
+    project_entries_in_db = {k: row[k] for k in expected_db_entries}
+    assert project_entries_in_db == expected_db_entries
     assert row["last_change_date"] >= row["creation_date"]
 
 
@@ -389,12 +180,12 @@ async def insert_project_in_db(
 
     async def _inserter(prj: dict[str, Any], **overrides) -> dict[str, Any]:
         # add project without user id -> by default creates a template
-        default_config: dict[str, Any] = dict(
-            project=prj,
-            user_id=None,
-            product_name=osparc_product_name,
-            project_nodes=None,
-        )
+        default_config: dict[str, Any] = {
+            "project": prj,
+            "user_id": None,
+            "product_name": osparc_product_name,
+            "project_nodes": None,
+        }
         default_config.update(**overrides)
         new_project = await db_api.insert_project(**default_config)
 
@@ -435,18 +226,20 @@ async def test_insert_project_to_db(
         new_project,
         exp_overrides={"prjOwner": "not_a_user@unknown.com"},
     )
-    _assert_project_db_row(postgres_db, new_project, type="TEMPLATE")
+    _assert_project_db_row(postgres_db, new_project, type=ProjectType.TEMPLATE)
     _assert_projects_to_product_db_row(postgres_db, new_project, osparc_product_name)
     await _assert_projects_nodes_db_rows(aiopg_engine, new_project)
 
     # adding a project with a fake user id raises
     fake_user_id = 4654654654
+
     with pytest.raises(UserNotFoundError):
         await insert_project_in_db(fake_project, user_id=fake_user_id)
+    with pytest.raises(UserNotFoundError):
         # adding a project with a fake user but forcing as template should still raise
         await insert_project_in_db(
             expected_project,
-            fake_project,
+            project=fake_project,
             user_id=fake_user_id,
             force_as_template=True,
         )
@@ -502,7 +295,7 @@ async def test_insert_project_to_db(
         access_rights={
             str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
         },
-        type="TEMPLATE",
+        type=ProjectType.TEMPLATE,
     )
     _assert_projects_to_product_db_row(postgres_db, new_project, osparc_product_name)
     await _assert_projects_nodes_db_rows(aiopg_engine, new_project)
@@ -516,7 +309,7 @@ async def test_insert_project_to_db(
 
     # add a project with a bad uuid that is already present, using force_project_uuid shall raise
     fake_project["uuid"] = "some bad uuid"
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         await insert_project_in_db(
             fake_project,
             user_id=logged_user["id"],
@@ -570,10 +363,11 @@ async def test_patch_user_project_workbench_raises_if_project_does_not_exist(
         }
     }
     with pytest.raises(ProjectNotFoundError):
-        await db_api.update_project_workbench(
+        await db_api._update_project_workbench(  # noqa: SLF001
             partial_workbench_data,
-            logged_user["id"],
-            fake_project["uuid"],
+            user_id=logged_user["id"],
+            project_uuid=fake_project["uuid"],
+            allow_workbench_changes=False,
         )
 
 
@@ -605,10 +399,14 @@ async def test_patch_user_project_workbench_creates_nodes(
         }
         for _ in range(faker.pyint(min_value=5, max_value=30))
     }
-    patched_project, changed_entries = await db_api.update_project_workbench(
+    (
+        patched_project,
+        changed_entries,
+    ) = await db_api._update_project_workbench(  # noqa: SLF001
         partial_workbench_data,
-        logged_user["id"],
-        new_project["uuid"],
+        user_id=logged_user["id"],
+        project_uuid=new_project["uuid"],
+        allow_workbench_changes=True,
     )
     for node_id in partial_workbench_data:
         assert node_id in patched_project["workbench"]
@@ -646,10 +444,11 @@ async def test_patch_user_project_workbench_creates_nodes_raises_if_invalid_node
         for _ in range(faker.pyint(min_value=5, max_value=30))
     }
     with pytest.raises(NodeNotFoundError):
-        await db_api.update_project_workbench(
+        await db_api._update_project_workbench(  # noqa: SLF001
             partial_workbench_data,
-            logged_user["id"],
-            new_project["uuid"],
+            user_id=logged_user["id"],
+            project_uuid=new_project["uuid"],
+            allow_workbench_changes=True,
         )
 
 
@@ -657,7 +456,7 @@ async def test_patch_user_project_workbench_creates_nodes_raises_if_invalid_node
     "user_role",
     [(UserRole.USER)],
 )
-@pytest.mark.parametrize("number_of_nodes", [1, randint(250, 300)])
+@pytest.mark.parametrize("number_of_nodes", [1, randint(250, 300)])  # noqa: S311
 async def test_patch_user_project_workbench_concurrently(
     fake_project: dict[str, Any],
     postgres_db: sa.engine.Engine,
@@ -709,7 +508,10 @@ async def test_patch_user_project_workbench_concurrently(
 
     # patch all the nodes concurrently
     randomly_created_outputs = [
-        {"outputs": {f"out_{k}": f"{k}"} for k in range(randint(1, 10))}
+        {
+            "outputs": {f"out_{k}": f"{k}"}  # noqa: RUF011
+            for k in range(randint(1, 10))  # noqa: S311
+        }
         for n in range(_NUMBER_OF_NODES)
     ]
     for n in range(_NUMBER_OF_NODES):
@@ -719,10 +521,11 @@ async def test_patch_user_project_workbench_concurrently(
         tuple[dict[str, Any], dict[str, Any]]
     ] = await asyncio.gather(
         *[
-            db_api.update_project_workbench(
-                {node_uuids[n]: randomly_created_outputs[n]},
-                logged_user["id"],
-                new_project["uuid"],
+            db_api._update_project_workbench(  # noqa: SLF001
+                {NodeIDStr(node_uuids[n]): randomly_created_outputs[n]},
+                user_id=logged_user["id"],
+                project_uuid=new_project["uuid"],
+                allow_workbench_changes=False,
             )
             for n in range(_NUMBER_OF_NODES)
         ]
@@ -732,7 +535,7 @@ async def test_patch_user_project_workbench_concurrently(
     # The important thing is that the final result shall contain ALL the changes
 
     for (prj, changed_entries), node_uuid, exp_outputs in zip(
-        patched_projects, node_uuids, randomly_created_outputs
+        patched_projects, node_uuids, randomly_created_outputs, strict=True
     ):
         assert prj["workbench"][node_uuid]["outputs"] == exp_outputs["outputs"]
         assert changed_entries == {node_uuid: {"outputs": exp_outputs["outputs"]}}
@@ -760,10 +563,11 @@ async def test_patch_user_project_workbench_concurrently(
 
     patched_projects = await asyncio.gather(
         *[
-            db_api.update_project_workbench(
-                {node_uuids[n]: {"outputs": {}}},
-                logged_user["id"],
-                new_project["uuid"],
+            db_api._update_project_workbench(  # noqa: SLF001
+                {NodeIDStr(node_uuids[n]): {"outputs": {}}},
+                user_id=logged_user["id"],
+                project_uuid=new_project["uuid"],
+                allow_workbench_changes=False,
             )
             for n in range(_NUMBER_OF_NODES)
         ]
@@ -792,10 +596,11 @@ async def test_patch_user_project_workbench_concurrently(
 
     patched_projects = await asyncio.gather(
         *[
-            db_api.update_project_workbench(
-                {node_uuids[n]: {"outputs": {}}},
-                logged_user["id"],
-                new_project["uuid"],
+            db_api._update_project_workbench(  # noqa: SLF001
+                {NodeIDStr(node_uuids[n]): {"outputs": {}}},
+                user_id=logged_user["id"],
+                project_uuid=new_project["uuid"],
+                allow_workbench_changes=False,
             )
             for n in range(_NUMBER_OF_NODES)
         ]
@@ -825,7 +630,7 @@ async def some_projects_and_nodes(
     fake_project: dict[str, Any],
     aiopg_engine: aiopg.sa.engine.Engine,
     insert_project_in_db: Callable[..., Awaitable[dict[str, Any]]],
-) -> AsyncIterator[dict[ProjectID, list[NodeID]]]:
+) -> dict[ProjectID, list[NodeID]]:
     """Will create a few projects, no need to go crazy here"""
     NUMBER_OF_PROJECTS = 17
 
@@ -836,7 +641,7 @@ async def some_projects_and_nodes(
         project_uuid = uuid5(BASE_UUID, f"project_{p}")
         all_created_projects[project_uuid] = []
         workbench = {}
-        for n in range(randint(7, 34)):
+        for n in range(randint(7, 34)):  # noqa: S311
             node_uuid = uuid5(project_uuid, f"node_{n}")
             all_created_projects[project_uuid].append(node_uuid)
             workbench[f"{node_uuid}"] = {
@@ -859,7 +664,7 @@ async def some_projects_and_nodes(
         *(_assert_projects_nodes_db_rows(aiopg_engine, prj) for prj in created_projects)
     )
     print(f"---> created {len(all_created_projects)} projects in the database")
-    yield all_created_projects
+    return all_created_projects
 
 
 @pytest.mark.parametrize(
@@ -899,7 +704,7 @@ async def test_get_node_ids_from_project(
     )
 
     for project_id, node_ids_inside_project in zip(
-        some_projects_and_nodes, node_ids_inside_project_list
+        some_projects_and_nodes, node_ids_inside_project_list, strict=True
     ):
         assert node_ids_inside_project == {
             f"{n}" for n in some_projects_and_nodes[project_id]

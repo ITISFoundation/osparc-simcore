@@ -56,60 +56,6 @@ def mock_catalog_service_api_responses(
         (UserRole.TESTER, web.HTTPOk),
     ],
 )
-async def test_dag_entrypoints(
-    client: TestClient,
-    logged_user: UserInfoDict,
-    api_version_prefix: str,
-    mock_catalog_service_api_responses: AioResponsesMock,
-    expected: type[web.HTTPException],
-):
-    VTAG = api_version_prefix
-
-    # list resources
-    def assert_route(name, expected_url, **kargs):
-        assert client.app
-        assert client.app.router
-        url = client.app.router[name].url_for(**{k: str(v) for k, v in kargs.items()})
-        assert str(url) == expected_url
-        return url
-
-    url = assert_route("list_catalog_dags", f"/{VTAG}/catalog/dags")
-    response = await client.get(f"{url}")
-    await assert_status(response, expected)
-
-    # create resource
-    url = assert_route("create_catalog_dag", f"/{VTAG}/catalog/dags")
-    data = {}
-    response = await client.post(f"{url}", json=data)
-    await assert_status(response, expected)
-
-    # replace resource
-    dag_id = 1
-    new_data = {}
-
-    url = assert_route(
-        "replace_catalog_dag", f"/{VTAG}/catalog/dags/{dag_id}", dag_id=dag_id
-    )
-    response = await client.put(f"{url}", json=new_data)
-    await assert_status(response, expected)
-
-    # delete
-    url = assert_route(
-        "delete_catalog_dag", f"/{VTAG}/catalog/dags/{dag_id}", dag_id=dag_id
-    )
-    response = await client.delete(f"{url}")
-    await assert_status(response, expected)
-
-
-@pytest.mark.parametrize(
-    "user_role,expected",
-    [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
-    ],
-)
 async def test_get_service_resources(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -118,7 +64,7 @@ async def test_get_service_resources(
 ):
     assert client.app
     assert client.app.router
-    url = client.app.router["get_service_resources_handler"].url_for(
+    url = client.app.router["get_service_resources"].url_for(
         service_key=urllib.parse.quote("simcore/services/dynamic/someservice", safe=""),
         service_version="3.4.5",
     )
@@ -152,7 +98,7 @@ async def test_get_undefined_service_resources_raises_not_found_error(
 ):
     assert client.app
     assert client.app.router
-    url = client.app.router["get_service_resources_handler"].url_for(
+    url = client.app.router["get_service_resources"].url_for(
         service_key="simcore%2Fservices%2Fdynamic%2Fsomeservice",
         service_version="3.4.5",
     )

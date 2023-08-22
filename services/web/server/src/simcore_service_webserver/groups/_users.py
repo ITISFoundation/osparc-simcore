@@ -2,7 +2,8 @@
 NOTE: Coupling with user's plugin api modules should be added here to avoid cyclic dependencies
 """
 
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 from ..users.schemas import convert_user_db_to_schema
 

@@ -32,7 +32,7 @@ async def managed_docker_compose(
     compose_file = Path.cwd() / "consistency" / "docker-compose.yml"
     try:
         subprocess.run(
-            ["docker-compose", "--file", compose_file, "up", "--detach"],
+            ["docker compose", "--file", compose_file, "up", "--detach"],
             shell=False,
             check=True,
             cwd=compose_file.parent,
@@ -59,7 +59,7 @@ async def managed_docker_compose(
         yield
     finally:
         subprocess.run(
-            ["docker-compose", "--file", compose_file, "down"],
+            ["docker compose", "--file", compose_file, "down"],
             shell=False,
             check=True,
             cwd=compose_file.parent,
@@ -224,7 +224,6 @@ async def main_async(
     s3_secret: str,
     s3_bucket: str,
 ):
-
     # ---------------------- GET FILE ENTRIES FROM DB PROKECT TABLE -------------------------------------------------------------
     async with managed_docker_compose(
         postgres_volume_name, postgres_username, postgres_password

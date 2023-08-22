@@ -2,16 +2,14 @@
 
 """
 import re
-from copy import deepcopy
 from pathlib import Path
-from typing import Dict
 
 import yaml
 
 VARIABLE_SUBSTITUTION = re.compile(r"\$\{(\w+)+")  #
 
 
-def load_env(file_handler) -> Dict:
+def load_env(file_handler) -> dict:
     """Deserializes an environment file like .env-devel and
     returns a key-value map of the environment
 
@@ -29,30 +27,10 @@ def load_env(file_handler) -> Dict:
     return environ
 
 
-def eval_environs_in_docker_compose(
-    docker_compose: Dict,
-    docker_compose_dir: Path,
-    host_environ: Dict = None,
-    *,
-    use_env_devel=True,
-):
-    """Resolves environments in docker compose and sets them under 'environment' section
-
-    TODO: deprecated. Use instead docker-compose config in services/web/server/tests/integration/fixtures/docker_compose.py
-    SEE https://docs.docker.com/compose/environment-variables/
-    """
-    content = deepcopy(docker_compose)
-    for _name, service in content["services"].items():
-        replace_environs_in_docker_compose_service(
-            service, docker_compose_dir, host_environ, use_env_devel=use_env_devel
-        )
-    return content
-
-
 def replace_environs_in_docker_compose_service(
-    service_section: Dict,
+    service_section: dict,
     docker_compose_dir: Path,
-    host_environ: Dict = None,
+    host_environ: dict = None,
     *,
     use_env_devel=True,
 ):
@@ -80,7 +58,7 @@ def replace_environs_in_docker_compose_service(
     # explicit environment [overrides env_file]
     environ_items = service_section.get("environment", [])
     if environ_items and isinstance(environ_items, list):
-        # TODO: use docker-compose config first
+        # TODO: use docker compose config first
         for item in environ_items:
             key, value = item.split("=")
 
@@ -100,11 +78,11 @@ def replace_environs_in_docker_compose_service(
 def eval_service_environ(
     docker_compose_path: Path,
     service_name: str,
-    host_environ: Dict = None,
-    image_environ: Dict = None,
+    host_environ: dict = None,
+    image_environ: dict = None,
     *,
     use_env_devel=True,
-) -> Dict:
+) -> dict:
     """Deduces a service environment with it runs in a stack from confirmation
 
     :param docker_compose_path: path to stack configuration

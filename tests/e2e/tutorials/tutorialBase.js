@@ -225,25 +225,25 @@ class TutorialBase {
     return resp;
   }
 
-  async startNewPlan() {
-    await this.takeScreenshot("startNewPlan_before");
+  async startClassicTIPlan() {
+    await this.takeScreenshot("startClassicTIPlan_before");
     this.__responsesQueue.addResponseListener("projects?from_study=");
     this.__responsesQueue.addResponseListener(":open");
     let resp = null;
     try {
       await this.waitFor(2000);
-      await auto.dashboardNewPlan(this.__page);
+      await auto.dashboardNewTIPlan(this.__page);
       await this.__responsesQueue.waitUntilResponse("projects?from_study=");
       resp = await this.__responsesQueue.waitUntilResponse(":open");
       const studyId = resp["data"]["uuid"];
       console.log("Study ID:", studyId);
     }
     catch (err) {
-      console.error(`New Plan could not be started:\n`, err);
+      console.error(`Classic TI could not be started:\n`, err);
       throw (err);
     }
     await this.waitFor(2000);
-    await this.takeScreenshot("startNewPlan_after");
+    await this.takeScreenshot("startClassicTIPlan_after");
     return resp;
   }
 

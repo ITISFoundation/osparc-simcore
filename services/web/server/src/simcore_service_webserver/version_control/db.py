@@ -35,7 +35,7 @@ from .models import HEAD, CommitID, CommitLog, CommitProxy, RefID, RepoProxy, Ta
 from .vc_changes import compute_workbench_checksum
 from .vc_tags import parse_workcopy_project_tag_name
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class VersionControlRepository(BaseRepository):
@@ -146,7 +146,6 @@ class VersionControlRepository(BaseRepository):
     async def _update_state(
         self, repo_id: int, conn: SAConnection
     ) -> tuple[RepoProxy, CommitProxy | None, ProjectProxy]:
-
         head_commit: CommitProxy | None = await self._get_HEAD_commit(repo_id, conn)
 
         # current repo
@@ -183,7 +182,6 @@ class VersionControlRepository(BaseRepository):
         project: RowProxy | SimpleNamespace,
         conn: SAConnection,
     ):
-
         # has changes wrt previous commit
         assert project_checksum  # nosec
         insert_stmt = pg_insert(projects_vc_snapshots).values(
@@ -206,7 +204,6 @@ class VersionControlRepository(BaseRepository):
         offset: NonNegativeInt = 0,
         limit: PositiveInt | None = None,
     ) -> tuple[list[RowProxy], NonNegativeInt]:
-
         async with self.engine.acquire() as conn:
             repo_orm = self.ReposOrm(conn)
 
@@ -225,7 +222,6 @@ class VersionControlRepository(BaseRepository):
 
     async def init_repo(self, project_uuid: UUID) -> int:
         async with self.engine.acquire() as conn:
-
             async with conn.begin():
                 # create repo
                 repo_orm = self.ReposOrm(conn)
@@ -268,7 +264,7 @@ class VersionControlRepository(BaseRepository):
             if not branch:
                 raise NotImplementedError("Detached heads still not implemented")
 
-            log.info("On branch %s", branch.name)
+            _logger.info("On branch %s", branch.name)
 
             # get head commit
             repo, head_commit, workcopy_project = await self._update_state(
@@ -318,7 +314,7 @@ class VersionControlRepository(BaseRepository):
                         )
                         await conn.execute(upsert_tag)
                 else:
-                    log.info("Nothing to commit, working tree clean")
+                    _logger.info("Nothing to commit, working tree clean")
 
             assert isinstance(commit_id, int)  # nosec
             return commit_id
@@ -343,7 +339,6 @@ class VersionControlRepository(BaseRepository):
         offset: NonNegativeInt = 0,
         limit: PositiveInt | None = None,
     ) -> tuple[list[CommitLog], NonNegativeInt]:
-
         async with self.engine.acquire() as conn:
             commits_orm = self.CommitsOrm(conn).set_filter(repo_id=repo_id)
             tags_orm = self.TagsOrm(conn)
@@ -501,7 +496,6 @@ class VersionControlRepository(BaseRepository):
         self, repo_id: int, commit_id: int
     ) -> dict[str, Any]:
         async with self.engine.acquire() as conn:
-
             if (
                 commit := await self.CommitsOrm(conn)
                 .set_filter(repo_id=repo_id, id=commit_id)

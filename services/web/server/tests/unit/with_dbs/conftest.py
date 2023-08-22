@@ -78,20 +78,21 @@ def disable_swagger_doc_generation(
 
 
 @pytest.fixture(scope="session")
-def docker_compose_file(
-    default_app_cfg: ConfigDict, monkeypatch_session: pytest.MonkeyPatch
-) -> str:
-    """Overrides pytest-docker fixture"""
-
-    cfg = deepcopy(default_app_cfg["db"]["postgres"])
+def docker_compose_env(default_app_cfg: ConfigDict) -> Iterator[pytest.MonkeyPatch]:
+    postgres_cfg = default_app_cfg["db"]["postgres"]
 
     # docker-compose reads these environs
-    monkeypatch_session.setenv("TEST_POSTGRES_DB", cfg["database"])
-    monkeypatch_session.setenv("TEST_POSTGRES_USER", cfg["user"])
-    monkeypatch_session.setenv("TEST_POSTGRES_PASSWORD", cfg["password"])
+    with pytest.MonkeyPatch().context() as patcher:
+        patcher.setenv("TEST_POSTGRES_DB", postgres_cfg["database"])
+        patcher.setenv("TEST_POSTGRES_USER", postgres_cfg["user"])
+        patcher.setenv("TEST_POSTGRES_PASSWORD", postgres_cfg["password"])
+        yield patcher
 
+
+@pytest.fixture(scope="session")
+def docker_compose_file(docker_compose_env: pytest.MonkeyPatch) -> str:
+    """Overrides pytest-docker fixture"""
     compose_path = CURRENT_DIR / "docker-compose-devel.yml"
-
     assert compose_path.exists()
     return f"{compose_path}"
 

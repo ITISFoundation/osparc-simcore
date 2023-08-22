@@ -10,10 +10,10 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 
 from .._constants import APP_SETTINGS_KEY
 from ..director_v2.api import get_project_run_policy, set_project_run_policy
-from . import _rest_handlers
+from . import _handlers
 from ._projects import meta_project_policy, projects_redirection_middleware
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @app_module_setup(
@@ -23,17 +23,17 @@ log = logging.getLogger(__name__)
         "simcore_service_webserver.projects",
     ],
     settings_name="WEBSERVER_META_MODELING",
-    logger=log,
+    logger=_logger,
 )
 def setup_meta_modeling(app: web.Application):
     assert app[APP_SETTINGS_KEY].WEBSERVER_META_MODELING  # nosec
 
-    log.warning(
+    _logger.warning(
         "'meta_modeling' plugin is STILL UNDER DEVELOPMENT and should not be used in production."
         "Can only be activated with WEBSERVER_DEV_FEATURES_ENABLED=1"
     )
 
-    app.add_routes(_rest_handlers.routes)
+    app.add_routes(_handlers.routes)
     app.middlewares.append(projects_redirection_middleware)
 
     # Overrides run-policy from directorv2

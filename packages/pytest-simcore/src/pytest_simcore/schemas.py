@@ -1,19 +1,16 @@
 # pylint:disable=redefined-outer-name
 
 import json
-import logging
 import subprocess
 from pathlib import Path
 from typing import Any, Callable, Iterable
 
 import pytest
 
-log = logging.getLogger(__name__)
-
 
 @pytest.fixture(scope="session")
 def common_schemas_specs_dir(osparc_simcore_root_dir: Path) -> Path:
-    specs_dir = osparc_simcore_root_dir / "api" / "specs" / "common" / "schemas"
+    specs_dir = osparc_simcore_root_dir / "api" / "specs" / "director" / "schemas"
     assert specs_dir.exists()
     return specs_dir
 

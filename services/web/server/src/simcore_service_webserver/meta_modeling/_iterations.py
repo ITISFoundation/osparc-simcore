@@ -6,8 +6,9 @@ import itertools
 import json
 import logging
 import re
+from collections.abc import Generator, Iterator
 from copy import deepcopy
-from typing import Any, Generator, Iterator, Literal, Optional
+from typing import Any, Literal, Optional
 
 from aiohttp import web
 from models_library.basic_types import MD5Str, SHA1Str
@@ -21,12 +22,12 @@ from pydantic.types import PositiveInt
 
 from ..projects.models import ProjectDict
 from ..utils import compute_sha1_on_small_dataset, now_str
-from ..version_control.errors import UserUndefined
+from ..version_control.errors import UserUndefinedError
 from ..version_control.models import CommitID
 from . import _function_nodes
 from ._version_control import VersionControlForMetaModeling
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 NodesDict = dict[NodeID, Node]
@@ -99,8 +100,6 @@ def _build_project_iterations(project_nodes: NodesDict) -> list[_ParametersNodes
             #       Currently it does not work because front-end needs to change
             # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735
             #
-            # _param_node = create_param_node_from_iterator_with_outputs(_iter_node)
-            # updated_nodes[node_id] = _param_node
             updated_nodes[node_id] = _iter_node
 
         parameters_per_iter.append(parameters)
@@ -114,7 +113,7 @@ def extract_parameters(
     project_uuid: ProjectID,
     commit_id: CommitID,
 ) -> Parameters:
-    raise NotImplementedError()
+    raise NotImplementedError
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735
 
 
@@ -155,7 +154,7 @@ class ProjectIteration(BaseModel):
             return cls.parse_obj(parse_iteration_tag_name(tag_name))
         except ValidationError as err:
             if return_none_if_fails:
-                log.debug("%s", f"{err=}")
+                _logger.debug("%s", f"{err=}")
                 return None
             raise
 
@@ -209,7 +208,7 @@ async def get_or_create_runnable_projects(
 
     try:
         project: ProjectDict = await vc_repo.get_project(str(project_uuid))
-    except UserUndefined as err:
+    except UserUndefinedError as err:
         raise web.HTTPForbidden(reason="Unauthenticated request") from err
 
     project_nodes: dict[NodeID, Node] = {
@@ -248,7 +247,7 @@ async def get_or_create_runnable_projects(
     runnable_project_vc_commits = []
 
     iterations = _build_project_iterations(project_nodes)
-    log.debug(
+    _logger.debug(
         "Project %s with %s parameters, produced %s variants",
         project_uuid,
         len(iterations[0]) if iterations else 0,
@@ -264,7 +263,7 @@ async def get_or_create_runnable_projects(
     original_name = project["name"]
 
     for iteration_index, (parameters, updated_nodes) in enumerate(iterations, start=1):
-        log.debug(
+        _logger.debug(
             "Creating snapshot of project %s with parameters=%s [%s]",
             f"{project_uuid=}",
             f"{parameters=}",
@@ -334,5 +333,5 @@ async def get_runnable_projects_ids(
         runnable_project_ids.append(project_uuid)
         return runnable_project_ids
 
-    raise NotImplementedError()
+    raise NotImplementedError
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735
