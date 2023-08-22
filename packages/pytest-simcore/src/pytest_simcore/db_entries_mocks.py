@@ -47,11 +47,11 @@ def registered_user(
             result = con.execute(
                 sa.select(users).where(users.c.id == user_config["id"])
             )
-            user = result.first()
+            user = result.mappings().first()
             assert user
             print(f"--> created {user=}")
             created_user_ids.append(user["id"])
-        return dict(user._asdict())
+        return dict(user)
 
     yield creator
 
@@ -138,7 +138,7 @@ def pipeline(
                 .values(**pipeline_config)
                 .returning(sa.literal_column("*"))
             )
-            new_pipeline = result.first()
+            new_pipeline = result.mappings().first()
             assert new_pipeline
             new_pipeline = dict(new_pipeline)
             created_pipeline_ids.append(new_pipeline["project_id"])
