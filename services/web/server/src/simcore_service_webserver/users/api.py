@@ -68,7 +68,7 @@ async def get_user_profile(app: web.Application, user_id: UserID) -> ProfileGet:
             .order_by(sa.asc(groups.c.name))
             .set_label_style(sa.LABEL_STYLE_TABLENAME_PLUS_COL)
         ):
-            row_dict = dict(row.items())  # type: ignore
+            row_dict = dict(row.items())
             user_profile.update(convert_user_db_to_schema(row_dict, prefix="users_"))
             if row_dict["groups_type"] == GroupType.EVERYONE:
                 all_group = convert_groups_db_to_schema(
