@@ -39,10 +39,11 @@ async def test_project_wallets_user_role_access(
     user_role: UserRole,
     expected: type[web.HTTPException],
 ):
+    assert client.app
     base_url = client.app.router["get_project_wallet"].url_for(
         project_id=user_project["uuid"]
     )
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     assert resp.status == 401 if user_role == UserRole.ANONYMOUS else 200
 
 
@@ -54,19 +55,20 @@ async def test_project_wallets_user_project_access(
     expected: type[web.HTTPException],
     # postgres_db: sa.engine.Engine,
 ):
+    assert client.app
     base_url = client.app.router["get_project_wallet"].url_for(
         project_id=user_project["uuid"]
     )
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, expected)
-    assert data == None
+    assert data is None
 
     # Now we will log as a different user who doesnt have access to the project
-    async with LoggedUser(client) as new_logged_user:
+    async with LoggedUser(client):
         base_url = client.app.router["get_project_wallet"].url_for(
             project_id=user_project["uuid"]
         )
-        resp = await client.get(base_url)
+        resp = await client.get(f"{base_url}")
         _, errors = await assert_status(resp, web.HTTPNotFound)
         assert errors
 
@@ -96,25 +98,26 @@ async def test_project_wallets_full_workflow(
     expected: type[web.HTTPException],
     setup_wallets_db: list[WalletGet],
 ):
+    assert client.app
     base_url = client.app.router["get_project_wallet"].url_for(
         project_id=user_project["uuid"]
     )
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, expected)
-    assert data == None
+    assert data is None
 
     # Now we will connect the wallet
     base_url = client.app.router["connect_wallet_to_project"].url_for(
         project_id=user_project["uuid"], wallet_id=f"{setup_wallets_db[0].wallet_id}"
     )
-    resp = await client.put(base_url)
+    resp = await client.put(f"{base_url}")
     data, _ = await assert_status(resp, expected)
     assert data["wallet_id"] == setup_wallets_db[0].wallet_id
 
     base_url = client.app.router["get_project_wallet"].url_for(
         project_id=user_project["uuid"]
     )
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, expected)
     assert data["wallet_id"] == setup_wallets_db[0].wallet_id
 
@@ -122,13 +125,13 @@ async def test_project_wallets_full_workflow(
     base_url = client.app.router["connect_wallet_to_project"].url_for(
         project_id=user_project["uuid"], wallet_id=f"{setup_wallets_db[1].wallet_id}"
     )
-    resp = await client.put(base_url)
+    resp = await client.put(f"{base_url}")
     data, _ = await assert_status(resp, expected)
     assert data["wallet_id"] == setup_wallets_db[1].wallet_id
 
     base_url = client.app.router["get_project_wallet"].url_for(
         project_id=user_project["uuid"]
     )
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, expected)
     assert data["wallet_id"] == setup_wallets_db[1].wallet_id
