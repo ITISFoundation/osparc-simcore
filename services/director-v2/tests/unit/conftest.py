@@ -52,6 +52,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.vo
     DIND_VERSION,
     DockerVersion,
 )
+from sqlalchemy import exc as sa_exceptions
 from yarl import URL
 
 
@@ -270,7 +271,8 @@ async def local_dask_gateway_server(
     dask_gateway_server = DaskGateway(config=local_dask_gateway_server_config)
     dask_gateway_server.initialize([])  # that is a shitty one!
     print("--> local dask gateway server initialized")
-    await dask_gateway_server.setup()
+    with pytest.warns(sa_exceptions.Base20DeprecationWarning):
+        await dask_gateway_server.setup()
     await dask_gateway_server.backend.proxy._proxy_contacted  # pylint: disable=protected-access
 
     print("--> local dask gateway server setup completed")
