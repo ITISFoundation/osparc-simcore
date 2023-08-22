@@ -53,7 +53,6 @@ async def get_user_profile(app: web.Application, user_id: UserID) -> ProfileGet:
     user_id = _parse_as_user(user_id)
 
     async with engine.acquire() as conn:
-        row: RowProxy
         async for row in conn.execute(
             sa.select(users, groups, user_to_groups.c.access_rights)
             .select_from(
@@ -67,27 +66,28 @@ async def get_user_profile(app: web.Application, user_id: UserID) -> ProfileGet:
             )
             .where(users.c.id == user_id)
             .order_by(sa.asc(groups.c.name))
-            .apply_labels()
+            .set_label_style(sa.LABEL_STYLE_TABLENAME_PLUS_COL)
         ):
-            user_profile.update(convert_user_db_to_schema(row, prefix="users_"))
-            if row["groups_type"] == GroupType.EVERYONE:
+            row_dict = dict(row.items())
+            user_profile.update(convert_user_db_to_schema(row_dict, prefix="users_"))
+            if row_dict["groups_type"] == GroupType.EVERYONE:
                 all_group = convert_groups_db_to_schema(
-                    row,
+                    row_dict,
                     prefix="groups_",
-                    accessRights=row["user_to_groups_access_rights"],
+                    accessRights=row_dict["user_to_groups_access_rights"],
                 )
-            elif row["groups_type"] == GroupType.PRIMARY:
+            elif row_dict["groups_type"] == GroupType.PRIMARY:
                 user_primary_group = convert_groups_db_to_schema(
-                    row,
+                    row_dict,
                     prefix="groups_",
-                    accessRights=row["user_to_groups_access_rights"],
+                    accessRights=row_dict["user_to_groups_access_rights"],
                 )
             else:
                 user_standard_groups.append(
                     convert_groups_db_to_schema(
-                        row,
+                        row_dict,
                         prefix="groups_",
-                        accessRights=row["user_to_groups_access_rights"],
+                        accessRights=row_dict["user_to_groups_access_rights"],
                     )
                 )
     if not user_profile:
