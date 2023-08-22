@@ -578,18 +578,6 @@ qx.Class.define("osparc.data.model.Node", {
         });
     },
 
-    __deleteInBackend: function() {
-      // remove node in the backend
-      const params = {
-        url: {
-          studyId: this.getStudy().getUuid(),
-          nodeId: this.getNodeId()
-        }
-      };
-      osparc.data.Resources.fetch("studies", "deleteNode", params)
-        .catch(err => console.error(err));
-    },
-
     __applyPropsForm: function() {
       const checkIsPipelineRunning = () => {
         const isPipelineRunning = this.getStudy().isPipelineRunning();
@@ -1503,8 +1491,28 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     removeNode: function() {
-      this.__deleteInBackend();
-      this.removeIFrame();
+      return new Promise((resolve, reject) => {
+        this.__deleteInBackend()
+          .then(() => {
+            this.removeIFrame();
+            resolve();
+          })
+          .catch(err => {
+            console.error(err);
+            reject();
+          });
+      });
+    },
+
+    __deleteInBackend: function() {
+      // remove node in the backend
+      const params = {
+        url: {
+          studyId: this.getStudy().getUuid(),
+          nodeId: this.getNodeId()
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "deleteNode", params);
     },
 
     stopRequestingStatus: function() {
