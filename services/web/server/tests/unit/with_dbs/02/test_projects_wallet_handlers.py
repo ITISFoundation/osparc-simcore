@@ -85,7 +85,7 @@ def setup_wallets_db(
                 .values(name=name, owner=logged_user["primary_gid"], status="ACTIVE")
                 .returning(sa.literal_column("*"))
             )
-            output.append(parse_obj_as(WalletGet, result.fetchone()))
+            output.append(parse_obj_as(WalletGet, result.mappings().fetchone()))
         yield output
         con.execute(wallets.delete())
 
