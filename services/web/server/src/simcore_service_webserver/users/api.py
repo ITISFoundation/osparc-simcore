@@ -123,6 +123,7 @@ async def update_user_profile(
                 sa.select(users.c.name).where(users.c.id == user_id)
             )
             try:
+                assert isinstance(name, str)  # nosec
                 first_name, last_name = name.rsplit(".", maxsplit=2)
             except ValueError:
                 first_name = name
@@ -222,18 +223,19 @@ async def get_user(app: web.Application, user_id: UserID) -> dict:
     user_id = _parse_as_user(user_id)
     async with engine.acquire() as conn:
         result = await conn.execute(sa.select(users).where(users.c.id == user_id))
-        row: RowProxy = await result.fetchone()
+        row: RowProxy | None = await result.fetchone()
         if not row:
             raise UserNotFoundError(uid=user_id)
-        return dict(row)
+        return dict(row.items())
 
 
 async def get_user_id_from_gid(app: web.Application, primary_gid: int) -> UserID:
     engine = get_database_engine(app)
     async with engine.acquire() as conn:
-        user_id: UserID = await conn.scalar(
+        user_id: UserID | None = await conn.scalar(
             sa.select(users.c.id).where(users.c.primary_gid == primary_gid)
         )
+        assert user_id is not None  # nosec
         return user_id
 
 
