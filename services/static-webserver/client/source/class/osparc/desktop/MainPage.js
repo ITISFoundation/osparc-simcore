@@ -58,8 +58,13 @@ qx.Class.define("osparc.desktop.MainPage", {
     store.reloadWallets()
       .then(() => {
         if (openView && openView === "wallets") {
-          const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow();
-          creditsWindow.openWallets();
+          osparc.desktop.credits.Utils.areWalletsEnabled()
+            .then(walletsEnabled => {
+              if (walletsEnabled) {
+                const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow();
+                creditsWindow.openWallets();
+              }
+            });
         }
       });
 
