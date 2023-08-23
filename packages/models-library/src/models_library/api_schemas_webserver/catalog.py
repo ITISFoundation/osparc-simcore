@@ -113,7 +113,42 @@ class ServiceGet(api_schemas_catalog_services.ServiceGet):
 
     # pylint: disable=too-many-ancestors
     class Config(OutputSchema.Config):
-        ...
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "example": {
+                "name": "File Picker",
+                "thumbnail": None,
+                "description": "description",
+                "classifiers": [],
+                "quality": {},
+                "accessRights": {
+                    "1": {"execute_access": True, "write_access": False},
+                    "4": {"execute_access": True, "write_access": True},
+                },
+                "key": "simcore/services/frontend/file-picker",
+                "version": "1.0.0",
+                "integration-version": None,
+                "type": "dynamic",
+                "badges": None,
+                "authors": [
+                    {
+                        "name": "Red Pandas",
+                        "email": "redpandas@wonderland.com",
+                        "affiliation": None,
+                    }
+                ],
+                "contact": "redpandas@wonderland.com",
+                "inputs": {
+                    f"input{i}": example
+                    for i, example in enumerate(
+                        ServiceInputGet.Config.schema_extra["examples"]
+                    )
+                },
+                "outputs": {
+                    "outFile": ServiceOutputGet.Config.schema_extra["example"],
+                },
+                "owner": "redpandas@wonderland.com",
+            }
+        }
 
 
 class ServiceUpdate(api_schemas_catalog_services.ServiceUpdate):
