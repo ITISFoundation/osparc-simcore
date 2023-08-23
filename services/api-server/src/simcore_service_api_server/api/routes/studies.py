@@ -63,7 +63,7 @@ async def list_studies(
 
 
 @router.get(
-    "/{study_id}",
+    "/{study_id:uuid}",
     response_model=Study,
     responses={**_COMMON_ERROR_RESPONSES},
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
@@ -87,8 +87,19 @@ async def get_study(
         )
 
 
+@router.post(
+    "/{study_id:uuid}",
+    response_model=Study,
+    responses={**_COMMON_ERROR_RESPONSES},
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def clone_study(study_id: StudyID):
+    msg = f"cloning study with study_id={study_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4651"
+    raise NotImplementedError(msg)
+
+
 @router.get(
-    "/{study_id}/ports",
+    "/{study_id:uuid}/ports",
     response_model=OnePage[StudyPort],
     responses={**_COMMON_ERROR_RESPONSES},
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
