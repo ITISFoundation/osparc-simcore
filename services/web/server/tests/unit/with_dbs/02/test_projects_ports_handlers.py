@@ -289,7 +289,6 @@ async def test_io_workflow(
     project_inputs, error = await assert_status(resp, expected_cls=expected)
 
     if not error:
-
         assert project_inputs == {
             "38a0d401-af4b-4ea7-ab4c-5005c712a546": {
                 "key": "38a0d401-af4b-4ea7-ab4c-5005c712a546",
@@ -330,3 +329,76 @@ async def test_io_workflow(
                 "label": "Random sleep interval",
             },
         }
+
+
+@pytest.mark.testit()
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPUnauthorized),
+        (UserRole.USER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk),
+    ],
+)
+async def test_clone_project_and_set_inputs(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    mock_catalog_service_api_responses: None,
+    expected: type[web.HTTPException],
+):
+    assert client.app
+
+    parent_project_id = user_project["uuid"]
+
+    # - clone project_id -> project_clone_id ----------------------------------------------
+    url = client.app.router["clone_project"].url_for(project_id=parent_project_id)
+    assert f"/v0/projects/{parent_project_id}:clone" == url.path
+
+    response = await client.post(url.path)
+    cloned_project, error = await assert_status(response, expected_cls=expected)
+    if not error:
+        assert parent_project_id != cloned_project["uuid"]
+        assert user_project["description"] == cloned_project["description"]
+        assert user_project["creation_date"] < cloned_project["creation_date"]
+
+        # - set_inputs project_clone_id ----------------------------------------------
+        job_inputs_values = {"X": 42}  # like JobInputs.values
+
+        url = client.app.router["get_project_inputs"].url_for(
+            project_id=cloned_project["uuid"]
+        )
+        assert f"/v0/projects/{cloned_project['uuid']}/inputs" == url.path
+
+        response = await client.get(url.path)
+        project_inputs, error = await assert_status(response, expected_cls=expected)
+        if not error:
+            # Emulates transformation between JobInputs.values and body format which relies on keys
+            body = []
+            for label, value in job_inputs_values.items():
+                # raise StopIteration if label not found!
+                selected_input = next(p for p in project_inputs if p["label"] == label)
+                if selected_input["value"] != value:  # only patch if value changed
+                    body.append({"key": selected_input["key"], "value": value})
+
+            assert (
+                client.app.router["update_project_inputs"].url_for(
+                    project_id=cloned_project["uuid"]
+                )
+                == url
+            )
+            response = await client.patch(url.path, json=body)
+            project_inputs, error = await assert_status(response, expected_cls=expected)
+            assert (
+                project_inputs["38a0d401-af4b-4ea7-ab4c-5005c712a546"]["value"]
+                == job_inputs_values["X"]
+            )
+
+    # - run project_clone_id
+    #    - raise if error
+    #    - print progress
+    #    - stop if f cancelled
+    # - get_outputs project_clone_id
+    #    - raise if error
+    # - soft_delete project_clone_id
