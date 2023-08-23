@@ -54,7 +54,10 @@ _COMMON_ERROR_RESPONSES: Final[dict] = {
 }
 
 
-@router.get("", response_model=list[File])
+@router.get(
+    "",
+    response_model=list[File],
+)
 async def list_files(
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
     user_id: Annotated[int, Depends(get_current_user_id)],
@@ -74,7 +77,7 @@ async def list_files(
 
             file_meta: File = to_file_api_model(stored_file_meta)
 
-        except (ValidationError, ValueError, AttributeError) as err:
+        except (ValidationError, ValueError, AttributeError) as err:  # noqa: PERF203
             _logger.warning(
                 "Skipping corrupted entry in storage '%s' (%s)"
                 "TIP: check this entry in file_meta_data table.",
@@ -112,7 +115,10 @@ def _get_spooled_file_size(file_io: IO) -> int:
     return file_size
 
 
-@router.put("/content", response_model=File)
+@router.put(
+    "/content",
+    response_model=File,
+)
 @cancel_on_disconnect
 async def upload_file(
     request: Request,
@@ -128,6 +134,9 @@ async def upload_file(
     # avoiding the data trafic via this service
 
     assert request  # nosec
+
+    if file.filename is None:
+        file.filename = "Undefined"
 
     file_size = await asyncio.get_event_loop().run_in_executor(
         None, _get_spooled_file_size, file.file
@@ -151,16 +160,20 @@ async def upload_file(
         store_id=SIMCORE_LOCATION,
         store_name=None,
         s3_object=file_meta.storage_file_id,
-        path_to_upload=UploadableFileObject(file.file, file.filename, file_size),
+        path_to_upload=UploadableFileObject(
+            file_object=file.file,
+            file_name=file.filename,
+            file_size=file_size,
+        ),
         io_log_redirect_cb=None,
     )
-    assert isinstance(upload_result, UploadedFile)
+    assert isinstance(upload_result, UploadedFile)  # nosec
 
     file_meta.checksum = upload_result.etag
     return file_meta
 
 
-# MaG suggested a single function that can upload one or multiple files instead of having
+# NOTE: MaG suggested a single function that can upload one or multiple files instead of having
 # two of them. Tried something like upload_file( files: Union[list[UploadFile], File] ) but it
 # produces an error in the generated openapi.json
 #
@@ -183,16 +196,7 @@ async def get_upload_links(
     client_file: ClientFile,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
 ):
-    """Get upload links for uploading a file to storage
-
-    Arguments:
-        request -- Request object
-        client_file -- ClientFile object
-        user_id -- User Id
-
-    Returns:
-        FileUploadSchema
-    """
+    """Get upload links for uploading a file to storage"""
     assert request  # nosec
     file_meta: File = await File.create_from_client_file(
         client_file,
@@ -208,21 +212,27 @@ async def get_upload_links(
         file_size=ByteSize(client_file.filesize),
         is_directory=False,
     )
-    query = str(upload_links.links.complete_upload.query).removesuffix(":complete")
-    complete_url = request.url_for(
+
+    query = f"{upload_links.links.complete_upload.query}".removesuffix(":complete")
+    url = request.url_for(
         "complete_multipart_upload", file_id=file_meta.id
     ).include_query_params(**dict(item.split("=") for item in query.split("&")))
-    query = str(upload_links.links.abort_upload.query).removesuffix(":abort")
-    abort_url = request.url_for(
+    upload_links.links.complete_upload = parse_obj_as(AnyUrl, f"{url}")
+
+    query = f"{upload_links.links.abort_upload.query}".removesuffix(":abort")
+    url = request.url_for(
         "abort_multipart_upload", file_id=file_meta.id
     ).include_query_params(**dict(item.split("=") for item in query.split("&")))
+    upload_links.links.abort_upload = parse_obj_as(AnyUrl, f"{url}")
 
-    upload_links.links.complete_upload = parse_obj_as(AnyUrl, f"{complete_url}")
-    upload_links.links.abort_upload = parse_obj_as(AnyUrl, f"{abort_url}")
     return ClientFileUploadSchema(file_id=file_meta.id, upload_schema=upload_links)
 
 
-@router.get("/{file_id}", response_model=File, responses={**_COMMON_ERROR_RESPONSES})
+@router.get(
+    "/{file_id}",
+    response_model=File,
+    responses={**_COMMON_ERROR_RESPONSES},
+)
 async def get_file(
     file_id: UUID,
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
@@ -270,6 +280,26 @@ async def delete_file(
 
 
 @router.post(
+    "/{file_id}:abort",
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+)
+async def abort_multipart_upload(
+    request: Request,
+    file_id: UUID,
+    client_file: Annotated[ClientFile, Body(..., embed=True)],
+    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+):
+    assert request  # nosec
+    assert user_id  # nosec
+    file: File = File(id=file_id, filename=client_file.filename, checksum=None)
+    abort_link: URL = await storage_client.create_abort_upload_link(
+        file, query=dict(request.query_params)
+    )
+    await abort_upload(abort_upload_link=parse_obj_as(AnyUrl, str(abort_link)))
+
+
+@router.post(
     "/{file_id}:complete",
     response_model=File,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
@@ -283,24 +313,11 @@ async def complete_multipart_upload(
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
 ):
-    """Complete multipart upload
-
-    Arguments:
-        request: The Request object
-        file_id: The Storage id
-        file: The File object which is to be completed
-        uploaded_parts: The uploaded parts
-        completion_link: The completion link
-        user_id: The user id
-
-    Returns:
-        The completed File object
-    """
     assert request  # nosec
     assert user_id  # nosec
 
     file: File = File(id=file_id, filename=client_file.filename, checksum=None)
-    complete_link: URL = await storage_client.generate_complete_upload_link(
+    complete_link: URL = await storage_client.create_complete_upload_link(
         file, dict(request.query_params)
     )
 
@@ -311,36 +328,6 @@ async def complete_multipart_upload(
 
     file.checksum = e_tag
     return file
-
-
-@router.post(
-    "/{file_id}:abort",
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
-)
-@cancel_on_disconnect
-async def abort_multipart_upload(
-    request: Request,
-    file_id: UUID,
-    client_file: Annotated[ClientFile, Body(..., embed=True)],
-    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
-):
-    """Abort a multipart upload
-
-    Arguments:
-        request: The Request
-        file_id: The StorageFileID
-        upload_links: The FileUploadSchema
-        user_id: The user id
-
-    """
-    assert request  # nosec
-    assert user_id  # nosec
-    file: File = File(id=file_id, filename=client_file.filename, checksum=None)
-    abort_link: URL = await storage_client.generate_abort_upload_link(
-        file, query=dict(request.query_params)
-    )
-    await abort_upload(abort_upload_link=parse_obj_as(AnyUrl, str(abort_link)))
 
 
 @router.get(
@@ -370,7 +357,9 @@ async def download_file(
 
     # download from S3 using pre-signed link
     presigned_download_link = await storage_client.get_download_link(
-        user_id, file_meta.id, file_meta.filename
+        user_id=user_id,
+        file_id=file_meta.id,
+        file_name=file_meta.filename,
     )
 
     _logger.info("Downloading %s to %s ...", file_meta, presigned_download_link)
