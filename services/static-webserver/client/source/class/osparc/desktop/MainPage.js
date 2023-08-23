@@ -40,8 +40,8 @@
 qx.Class.define("osparc.desktop.MainPage", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
-    this.base();
+  construct: function(openView) {
+    this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(null, null, "separator-vertical"));
 
@@ -55,7 +55,13 @@ qx.Class.define("osparc.desktop.MainPage", {
     osparc.MaintenanceTracker.getInstance().startTracker();
 
     const store = osparc.store.Store.getInstance();
-    store.reloadWallets();
+    store.reloadWallets()
+      .then(() => {
+        if (openView && openView === "wallets") {
+          const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow();
+          creditsWindow.openWallets();
+        }
+      });
 
     Promise.all([
       store.getAllClassifiers(true),

@@ -398,12 +398,8 @@ qx.Class.define("osparc.Application", {
             osparc.store.Store.getInstance().setCurrentStudyId(studyId);
           }
 
-          const mainPage = this.__mainPage = new osparc.desktop.MainPage();
+          const mainPage = this.__mainPage = new osparc.desktop.MainPage(this.__openViewAfterLogin);
           this.__loadView(mainPage);
-
-          if (this.__openViewAfterLogin) {
-            console.log("Show wallets");
-          }
         });
     },
 
