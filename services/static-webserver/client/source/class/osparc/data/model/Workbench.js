@@ -503,34 +503,35 @@ qx.Class.define("osparc.data.model.Workbench", {
       this.fireEvent("pipelineChanged");
     },
 
-    removeNode: function(nodeId) {
+    removeNode: async function(nodeId) {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.delete", true)) {
         return false;
       }
 
-      // remove first the connected edges
-      const connectedEdges = this.getConnectedEdges(nodeId);
-      connectedEdges.forEach(connectedEdgeId => {
-        this.removeEdge(connectedEdgeId);
-      });
-
       let node = this.getNode(nodeId);
       if (node) {
-        node.removeNode();
+        const removed = await node.removeNode();
+        if (removed) {
+          // remove first the connected edges
+          const connectedEdges = this.getConnectedEdges(nodeId);
+          connectedEdges.forEach(connectedEdgeId => {
+            this.removeEdge(connectedEdgeId);
+          });
 
-        const isTopLevel = Object.prototype.hasOwnProperty.call(this.__rootNodes, nodeId);
-        if (isTopLevel) {
-          delete this.__rootNodes[nodeId];
+          const isTopLevel = Object.prototype.hasOwnProperty.call(this.__rootNodes, nodeId);
+          if (isTopLevel) {
+            delete this.__rootNodes[nodeId];
+          }
+
+          // remove it from slideshow
+          if (this.getStudy()) {
+            this.getStudy().getUi().getSlideshow()
+              .removeNode(nodeId);
+          }
+
+          this.fireEvent("pipelineChanged");
+          return true;
         }
-
-        // remove it from slideshow
-        if (this.getStudy()) {
-          this.getStudy().getUi().getSlideshow()
-            .removeNode(nodeId);
-        }
-
-        this.fireEvent("pipelineChanged");
-        return true;
       }
       return false;
     },

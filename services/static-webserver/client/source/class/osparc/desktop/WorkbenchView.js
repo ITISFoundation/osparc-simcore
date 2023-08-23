@@ -1276,10 +1276,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    __doRemoveNode: function(nodeId) {
+    __doRemoveNode: async function(nodeId) {
       const workbench = this.getStudy().getWorkbench();
       const connectedEdges = workbench.getConnectedEdges(nodeId);
-      if (workbench.removeNode(nodeId)) {
+      const removed = await workbench.removeNode(nodeId);
+      if (removed) {
         // remove first the connected edges
         for (let i = 0; i < connectedEdges.length; i++) {
           const edgeId = connectedEdges[i];
