@@ -274,8 +274,10 @@ class UploadedPart(BaseModel):
 class FileUploadCompletionBody(BaseModel):
     parts: list[UploadedPart]
 
-    def sort(self) -> None:
-        self.parts = sorted(self.parts, key=lambda uploaded_part: uploaded_part.number)
+    @validator("parts")
+    @classmethod
+    def ensure_sorted(cls, value: list[UploadedPart]) -> list[UploadedPart]:
+        return sorted(value, key=lambda uploaded_part: uploaded_part.number)
 
 
 class FileUploadCompleteLinks(BaseModel):
