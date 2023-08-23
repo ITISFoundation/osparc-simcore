@@ -236,7 +236,6 @@ async def _wait_until_project_cloned_or_timeout(
     return task_result
 
 
-@pytest.mark.xfail(reason="Under dev")
 @pytest.mark.parametrize(
     "user_role",
     [UserRole.USER],
