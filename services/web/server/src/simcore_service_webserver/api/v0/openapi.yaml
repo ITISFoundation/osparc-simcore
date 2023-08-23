@@ -9091,13 +9091,28 @@ components:
         - name: Red Pandas
           email: redpandas@wonderland.com
         contact: redpandas@wonderland.com
-        inputs: {}
+        inputs:
+          input0:
+            label: Acceleration
+            description: acceleration with units
+            type: ref_contentSchema
+            contentSchema:
+              title: Acceleration
+              type: number
+              x_unit: m/s**2
+            keyId: input_1
+            unitLong: meter/second<sup>3</sup>
+            unitShort: m/s<sup>3</sup>
         outputs:
           outFile:
-            displayOrder: 0
-            label: File
-            description: Chosen File
-            type: data:*/*
+            displayOrder: 2
+            label: Time Slept
+            description: Time the service waited before completion
+            type: number
+            unit: second
+            unitLong: seconds
+            unitShort: sec
+            keyId: output_2
         owner: redpandas@wonderland.com
     simcore_service_webserver__studies_dispatcher___rest_handlers__ServiceGet:
       title: ServiceGet
