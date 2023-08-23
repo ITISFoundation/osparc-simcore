@@ -34,6 +34,7 @@ qx.Class.define("osparc.Application", {
     __current: null,
     __themeSwitcher: null,
     __mainPage: null,
+    __openViewAfterLogin: null,
 
     /**
      * This method contains the initial application code and gets called
@@ -125,6 +126,7 @@ qx.Class.define("osparc.Application", {
     },
 
     __rerouteNav: function(urlFragment) {
+      this.__openViewAfterLogin = null;
       const page = urlFragment.nav[0];
       switch (page) {
         case "study": {
@@ -179,6 +181,22 @@ qx.Class.define("osparc.Application", {
             osparc.utils.Utils.cookie.deleteCookie("user");
             this.__restart();
           }
+          break;
+        }
+        case "wallets": {
+          // Route: /#/wallets
+          this.__openViewAfterLogin = "wallets";
+          osparc.utils.Utils.cookie.deleteCookie("user");
+          osparc.auth.Manager.getInstance().validateToken()
+            .then(() => this.__loadMainPage())
+            .catch(() => {
+              osparc.store.VendorInfo.getInstance().getVendor()
+                .then(vendor => {
+                  const landingPage = "has_landing_page" in vendor ? vendor["has_landing_page"] : false;
+                  this.__loadLoginPage(landingPage);
+                })
+                .catch(() => this.__loadLoginPage(false));
+            });
           break;
         }
         case "error": {
@@ -382,6 +400,10 @@ qx.Class.define("osparc.Application", {
 
           const mainPage = this.__mainPage = new osparc.desktop.MainPage();
           this.__loadView(mainPage);
+
+          if (this.__openViewAfterLogin) {
+            console.log("Show wallets");
+          }
         });
     },
 
