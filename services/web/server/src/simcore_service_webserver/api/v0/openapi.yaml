@@ -7630,63 +7630,6 @@ components:
           type: boolean
           description: defines whether the group can modify the service
           default: false
-    ServiceInput:
-      title: ServiceInput
-      required:
-      - label
-      - description
-      - type
-      type: object
-      properties:
-        displayOrder:
-          title: Displayorder
-          type: number
-          description: 'DEPRECATED: new display order is taken from the item position.
-            This will be removed.'
-          deprecated: true
-        label:
-          title: Label
-          type: string
-          description: short name for the property
-          example: Age
-        description:
-          title: Description
-          type: string
-          description: description of the property
-          example: Age in seconds since 1970
-        type:
-          title: Type
-          pattern: ^(number|integer|boolean|string|ref_contentSchema|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$
-          type: string
-          description: data type expected on this input glob matching for data type
-            is allowed
-        contentSchema:
-          title: Contentschema
-          type: object
-          description: jsonschema of this input/output. Required when type='ref_contentSchema'
-        fileToKeyMap:
-          title: Filetokeymap
-          type: object
-          description: Place the data associated with the named keys in files
-        unit:
-          title: Unit
-          type: string
-          description: Units, when it refers to a physical quantity
-        defaultValue:
-          title: Defaultvalue
-          anyOf:
-          - type: boolean
-          - type: integer
-          - type: number
-          - type: string
-        widget:
-          title: Widget
-          allOf:
-          - $ref: '#/components/schemas/Widget'
-          description: custom widget to use instead of the default one determined
-            from the data-type
-      additionalProperties: false
-      description: Metadata on a service input port
     ServiceInputGet:
       title: ServiceInputGet
       required:
@@ -7757,7 +7700,7 @@ components:
           type: string
           description: Unique name identifier for this input
       additionalProperties: false
-      description: Metadata on a service input port
+      description: Extends fields of api_schemas_catalog.services.ServiceGet.outputs[*]
       example:
         displayOrder: 2
         label: Sleep Time
@@ -7791,57 +7734,6 @@ components:
           type: string
           description: service version number
       description: This pair uniquely identifies a services
-    ServiceOutput:
-      title: ServiceOutput
-      required:
-      - label
-      - description
-      - type
-      type: object
-      properties:
-        displayOrder:
-          title: Displayorder
-          type: number
-          description: 'DEPRECATED: new display order is taken from the item position.
-            This will be removed.'
-          deprecated: true
-        label:
-          title: Label
-          type: string
-          description: short name for the property
-          example: Age
-        description:
-          title: Description
-          type: string
-          description: description of the property
-          example: Age in seconds since 1970
-        type:
-          title: Type
-          pattern: ^(number|integer|boolean|string|ref_contentSchema|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$
-          type: string
-          description: data type expected on this input glob matching for data type
-            is allowed
-        contentSchema:
-          title: Contentschema
-          type: object
-          description: jsonschema of this input/output. Required when type='ref_contentSchema'
-        fileToKeyMap:
-          title: Filetokeymap
-          type: object
-          description: Place the data associated with the named keys in files
-        unit:
-          title: Unit
-          type: string
-          description: Units, when it refers to a physical quantity
-        widget:
-          title: Widget
-          allOf:
-          - $ref: '#/components/schemas/Widget'
-          description: custom widget to use instead of the default one determined
-            from the data-type
-          deprecated: true
-      additionalProperties: false
-      description: Base class for service input/outputs
     ServiceOutputGet:
       title: ServiceOutputGet
       required:
@@ -7906,7 +7798,7 @@ components:
           type: string
           description: Unique name identifier for this input
       additionalProperties: false
-      description: Base class for service input/outputs
+      description: Extends fields of api_schemas_catalog.services.ServiceGet.outputs[*]
       example:
         displayOrder: 2
         label: Time Slept
@@ -9156,11 +9048,11 @@ components:
         inputs:
           title: Inputs
           type: object
-          description: definition of the inputs of this node
+          description: inputs with extended information
         outputs:
           title: Outputs
           type: object
-          description: definition of the outputs of this node
+          description: outputs with extended information
         boot-options:
           title: Boot-Options
           type: object
@@ -9199,13 +9091,28 @@ components:
         - name: Red Pandas
           email: redpandas@wonderland.com
         contact: redpandas@wonderland.com
-        inputs: {}
+        inputs:
+          input0:
+            label: Acceleration
+            description: acceleration with units
+            type: ref_contentSchema
+            contentSchema:
+              title: Acceleration
+              type: number
+              x_unit: m/s**2
+            keyId: input_1
+            unitLong: meter/second<sup>3</sup>
+            unitShort: m/s<sup>3</sup>
         outputs:
           outFile:
-            displayOrder: 0
-            label: File
-            description: Chosen File
-            type: data:*/*
+            displayOrder: 2
+            label: Time Slept
+            description: Time the service waited before completion
+            type: number
+            unit: second
+            unitLong: seconds
+            unitShort: sec
+            keyId: output_2
         owner: redpandas@wonderland.com
     simcore_service_webserver__studies_dispatcher___rest_handlers__ServiceGet:
       title: ServiceGet
