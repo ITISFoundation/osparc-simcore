@@ -105,10 +105,10 @@ ServiceOutputsGetDict: TypeAlias = dict[ServicePortKey, ServiceOutputGet]
 
 class ServiceGet(api_schemas_catalog_services.ServiceGet):
     # pylint: disable=too-many-ancestors
-    inputs: ServiceInputsGetDict = Field(
+    inputs: ServiceInputsGetDict = Field(  # type: ignore[assignment]
         ..., description="inputs with extended information"
     )
-    outputs: ServiceOutputsGetDict = Field(
+    outputs: ServiceOutputsGetDict = Field(  # type: ignore[assignment]
         ..., description="outputs with extended information"
     )
 
