@@ -27,8 +27,8 @@ from models_library.rest_pagination import Page
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.projects._common_models import ProjectPathParams
 from simcore_service_webserver.projects._crud_handlers import (
-    _ProjectCreateParams,
-    _ProjectListParams,
+    ProjectCreateParams,
+    ProjectListParams,
 )
 
 router = APIRouter(
@@ -46,7 +46,7 @@ router = APIRouter(
     status_code=status.HTTP_201_CREATED,
 )
 async def create_project(
-    _params: Annotated[_ProjectCreateParams, Depends()],
+    _params: Annotated[ProjectCreateParams, Depends()],
     _create: ProjectCreateNew | ProjectCopyOverride,
 ):
     ...
@@ -56,7 +56,7 @@ async def create_project(
     "/projects",
     response_model=Page[ProjectListItem],
 )
-async def list_projects(_params: Annotated[_ProjectListParams, Depends()]):
+async def list_projects(_params: Annotated[ProjectListParams, Depends()]):
     ...
 
 
