@@ -24,7 +24,7 @@ from ..models.schemas.jobs import (
     PercentageInt,
 )
 from ..models.schemas.solvers import Solver, SolverKeyId
-from ..services.director_v2 import ComputationTaskGet
+from .director_v2 import ComputationTaskGet
 
 # UTILS ------
 _BASE_UUID = uuid.UUID("231e13db-6bc6-4f64-ba56-2ee2c73b9f09")
