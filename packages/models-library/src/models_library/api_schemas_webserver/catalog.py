@@ -104,6 +104,7 @@ ServiceOutputsGetDict: TypeAlias = dict[ServicePortKey, ServiceOutputGet]
 
 
 class ServiceGet(api_schemas_catalog_services.ServiceGet):
+    # pylint: disable=too-many-ancestors
     inputs: ServiceInputsGetDict = Field(
         ..., description="inputs with extended information"
     )
@@ -111,7 +112,6 @@ class ServiceGet(api_schemas_catalog_services.ServiceGet):
         ..., description="outputs with extended information"
     )
 
-    # pylint: disable=too-many-ancestors
     class Config(OutputSchema.Config):
         schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
