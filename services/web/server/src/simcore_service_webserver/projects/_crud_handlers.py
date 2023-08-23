@@ -155,13 +155,11 @@ async def create_project(request: web.Request):
     )
 
 
-#
 # - List https://google.aip.dev/132
 #
 
 
 class _ProjectListParams(PageQueryParameters):
-
     project_type: ProjectTypeAPI = Field(default=ProjectTypeAPI.all, alias="type")
     show_hidden: bool = Field(
         default=False, description="includes projects marked as hidden in the listing"
@@ -625,3 +623,38 @@ async def delete_project(request: web.Request):
         raise web.HTTPConflict(reason=f"{err}") from err
 
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+
+
+#
+# - Clone (as custom method)
+#   - https://google.aip.dev/136
+#   - https://cloud.google.com/apis/design/custom_methods#http_mapping
+#
+
+
+@routes.post(f"/{VTAG}/projects/{{project_id}}:clone", name="clone_project")
+@login_required
+@permission_required("project.create")
+@permission_required("services.pipeline.*")  # due to update_pipeline_db
+async def clone_project(request: web.Request):
+    req_ctx = RequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(ProjectPathParams, request)
+
+    return await start_long_running_task(
+        request,
+        _crud_api_create.create_project,
+        fire_and_forget=True,
+        task_context=jsonable_encoder(req_ctx),
+        # arguments
+        request=request,
+        new_project_was_hidden_before_data_was_copied=False,
+        from_study=path_params.project_id,
+        as_template=False,
+        copy_data=True,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        simcore_user_agent=request.headers.get(
+            X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+        ),
+        predefined_project=None,
+    )
