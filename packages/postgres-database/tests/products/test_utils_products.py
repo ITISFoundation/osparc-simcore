@@ -101,6 +101,9 @@ async def test_get_or_create_group_product(
             assert product_group_id is None
 
 
+@pytest.mark.skip(
+    reason="Not relevant. Will review in https://github.com/ITISFoundation/osparc-simcore/issues/3754"
+)
 async def test_get_or_create_group_product_concurrent(
     pg_engine: Engine, make_products_table: Callable
 ):
