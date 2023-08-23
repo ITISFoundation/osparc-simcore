@@ -1,1 +1,6 @@
-To modify the OpenAPI Specs, please run `make openapi-specs` in the current dir
+To modify the OpenAPI Specs, please run
+```cmd
+cd api/specs/web-server
+make install
+make all
+```
