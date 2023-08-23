@@ -1,1 +1,1 @@
-To modify the OpenAPI Specs, please do it in api/specs/webserver and then run `make openapi-specs` in the current dir
+To modify the OpenAPI Specs, please run `make openapi-specs` in the current dir
