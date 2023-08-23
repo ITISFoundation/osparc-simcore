@@ -6,7 +6,7 @@ import types
 from typing import get_args, get_origin
 
 from simcore_service_api_server.models.schemas.jobs import ArgumentTypes, File
-from simcore_service_api_server.utils.solver_job_outputs import (
+from simcore_service_api_server.services.solver_job_outputs import (
     BaseFileLink,
     ResultsTypes,
 )
