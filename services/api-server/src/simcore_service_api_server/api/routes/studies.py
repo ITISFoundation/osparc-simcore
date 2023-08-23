@@ -47,7 +47,7 @@ async def list_studies(
 
     New in *version 0.5.0* (only with API_SERVER_DEV_FEATURES_ENABLED=1)
     """
-    projects_page = await webserver_api.list_user_projects(
+    projects_page = await webserver_api.get_projects_page(
         limit=page_params.limit, offset=page_params.offset
     )
 
