@@ -3,7 +3,7 @@ info:
   title: simcore-service-webserver
   description: ' Main service with an interface (http-API & websockets) to the web
     front-end'
-  version: 0.25.0
+  version: 0.26.0
 servers:
 - url: ''
   description: webserver
