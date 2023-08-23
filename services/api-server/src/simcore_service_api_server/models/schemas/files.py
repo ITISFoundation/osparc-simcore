@@ -13,7 +13,7 @@ from pydantic import BaseModel, ByteSize, ConstrainedStr, Field, parse_obj_as, v
 
 from ...utils.hash import create_md5_checksum
 
-NAMESPACE_FILEID_KEY = UUID("aa154444-d22d-4290-bb15-df37dba87865")
+_NAMESPACE_FILEID_KEY = UUID("aa154444-d22d-4290-bb15-df37dba87865")
 
 
 class FileName(ConstrainedStr):
@@ -106,7 +106,7 @@ class File(BaseModel):
 
         return cls(
             id=cls.create_id(md5check or file_size, file.filename, created_at),
-            filename=file.filename,
+            filename=file.filename or "Undefined",
             content_type=file.content_type,
             checksum=md5check,
         )
@@ -131,7 +131,7 @@ class File(BaseModel):
 
     @classmethod
     def create_id(cls, *keys) -> UUID:
-        return uuid3(NAMESPACE_FILEID_KEY, ":".join(map(str, keys)))
+        return uuid3(_NAMESPACE_FILEID_KEY, ":".join(map(str, keys)))
 
     @property
     def storage_file_id(self) -> StorageFileID:
@@ -145,7 +145,7 @@ class File(BaseModel):
 
 
 class ClientFileUploadSchema(BaseModel):
-    file_id: UUID = Field(..., description="The file id")
+    file_id: UUID = Field(..., description="The file resource id")
     upload_schema: FileUploadSchema = Field(
         ..., description="Schema for uploading file"
     )
