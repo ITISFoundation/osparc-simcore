@@ -219,6 +219,9 @@ async def test_clone_project_and_set_inputs(
     mock_catalog_service_api_responses: None,
     project_db_cleaner: None,
 ):
+    #
+    # NOTE: this is part of the workflow necessary to create study-jobs
+    #
     assert client.app
 
     parent_project_id = user_project["uuid"]
