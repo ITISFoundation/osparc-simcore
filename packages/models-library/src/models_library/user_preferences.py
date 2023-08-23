@@ -1,10 +1,32 @@
 from enum import auto
-from typing import Any, TypeAlias
+from typing import Any, ClassVar, TypeAlias
 
 from pydantic import BaseModel, Field
+from pydantic.main import ModelMetaclass
 
 from .services import ServiceKey
 from .utils.enums import StrAutoEnum
+
+
+class _AutoRegisterMeta(ModelMetaclass):
+    _registered_user_preference_classes: ClassVar[dict[str, type]] = {}
+
+    def __new__(cls, name, bases, attrs):
+        new_class = super().__new__(cls, name, bases, attrs)
+
+        if name != BaseModel.__name__:
+            cls._registered_user_preference_classes[name] = new_class
+
+        return new_class
+
+
+class _ExtendedBaseModel(BaseModel, metaclass=_AutoRegisterMeta):
+    ...
+
+
+def get_registered_classes() -> dict[str, type]:
+    # pylint: disable=protected-access
+    return _AutoRegisterMeta._registered_user_preference_classes  # noqa: SLF001
 
 
 class PreferenceType(StrAutoEnum):
@@ -17,7 +39,7 @@ class PreferenceWidgetType(StrAutoEnum):
     CHECKBOX = auto()
 
 
-class BaseUserPreferenceModel(BaseModel):
+class BaseUserPreferenceModel(_ExtendedBaseModel):
     identifier: str = Field(..., description="has to be unique per preference_type")
 
     preference_type: PreferenceType = Field(
@@ -63,7 +85,7 @@ class BaseUserServiceUserPreference(BaseUserPreferenceModel):
     )
 
 
-UserPreferenceModel: TypeAlias = (
+BaseUserPreference: TypeAlias = (
     BaseBackendUserPreference
     | BaseFrontendUserPreference
     | BaseUserServiceUserPreference

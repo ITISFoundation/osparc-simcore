@@ -1,5 +1,7 @@
 # pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
 
+from collections.abc import Iterator
 from typing import Any
 from uuid import uuid4
 
@@ -14,6 +16,8 @@ from models_library.user_preferences import (
     BaseUserServiceUserPreference,
     PreferenceType,
     PreferenceWidgetType,
+    _AutoRegisterMeta,
+    get_registered_classes,
 )
 from pydantic import parse_obj_as
 
@@ -87,10 +91,22 @@ def test_user_service_preferences(value: Any, service_key: ServiceKey):
     assert parse_obj_as(BaseUserServiceUserPreference, base_data)
 
 
-def test_user_defined_backend_preference(value: Any):
+@pytest.fixture
+def unregister_defined_classes() -> Iterator[None]:
+    yield
+    # pylint: disable=protected-access
+    _AutoRegisterMeta._registered_user_preference_classes.pop(  # noqa: SLF001
+        "Pref1", None
+    )
+
+
+def test_user_defined_backend_preference(value: Any, unregister_defined_classes: None):
     # definition of a new custom property
     class Pref1(BaseBackendUserPreference):
         identifier: str = "pref1"
+
+    registered_classes = get_registered_classes()
+    assert registered_classes[Pref1.__name__] == Pref1
 
     # usage
     pref1 = Pref1(value=value)
@@ -99,7 +115,9 @@ def test_user_defined_backend_preference(value: Any):
 
 @pytest.mark.parametrize("widget_type_value", PreferenceWidgetType)
 def test_user_defined_frontend_preference(
-    value: Any, widget_type_value: PreferenceWidgetType
+    value: Any,
+    widget_type_value: PreferenceWidgetType,
+    unregister_defined_classes: None,
 ):
     # definition of a new custom property
     class Pref1(BaseFrontendUserPreference):
@@ -108,6 +126,9 @@ def test_user_defined_frontend_preference(
         display_label: str = "test display label"
         tooltip_message: str = "test tooltip message"
 
+    registered_classes = get_registered_classes()
+    assert registered_classes[Pref1.__name__] == Pref1
+
     # usage
     pref1 = Pref1(value=value)
     assert isinstance(pref1, BaseFrontendUserPreference)
@@ -115,12 +136,15 @@ def test_user_defined_frontend_preference(
 
 @pytest.mark.parametrize("service_key_value", _SERVICE_KEY_SAMPLES)
 def test_user_defined_user_service_preference(
-    value: Any, service_key_value: ServiceKey
+    value: Any, service_key_value: ServiceKey, unregister_defined_classes: None
 ):
     # definition of a new custom property
     class Pref1(BaseUserServiceUserPreference):
         identifier: str = "pref1"
         service_key: ServiceKey = service_key_value
+
+    registered_classes = get_registered_classes()
+    assert registered_classes[Pref1.__name__] == Pref1
 
     # usage
     pref1 = Pref1(value=value, last_changed_utc_timestamp=_get_utc_timestamp())
