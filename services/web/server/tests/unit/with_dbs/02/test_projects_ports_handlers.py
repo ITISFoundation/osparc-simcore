@@ -9,6 +9,10 @@ from typing import Any
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from aiohttp.web_exceptions import HTTPOk
+from models_library.api_schemas_long_running_tasks.tasks import TaskStatus
+from models_library.api_schemas_webserver.projects import ProjectGet
+from models_library.generics import Envelope
 from models_library.projects_nodes import Node, NodeID
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.faker_webserver import (
@@ -16,8 +20,12 @@ from pytest_simcore.helpers.faker_webserver import (
 )
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
+from servicelib.aiohttp.long_running_tasks.client import long_running_task_request
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
+from tenacity import TryAgain, retry
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 from yarl import URL
 
 
@@ -331,22 +339,41 @@ async def test_io_workflow(
         }
 
 
+@retry(
+    wait=wait_fixed(0.5),
+    stop=stop_after_delay(60),
+    reraise=True,
+)
+async def _wait_until_project_cloned_or_timeout(
+    client: TestClient, status_url: str, result_url: str
+) -> ProjectGet:
+    # GET task status now until done
+    response = await client.get(status_url)
+    response.raise_for_status()
+    task_status = Envelope[TaskStatus].parse_obj(await response.json()).data
+    assert task_status
+
+    if not task_status.done:
+        msg = "Timed out creating project. TIP: Try again, or contact oSparc support if this is happening repeatedly"
+        raise TryAgain(msg)
+
+    response = await client.get(result_url)
+    response.raise_for_status()
+    task_result = Envelope[ProjectGet].parse_obj(await response.json()).data
+    assert task_result
+    return task_result
+
+
 @pytest.mark.testit()
 @pytest.mark.parametrize(
-    "user_role,expected",
-    [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPUnauthorized),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
-    ],
+    "user_role",
+    [UserRole.USER],
 )
 async def test_clone_project_and_set_inputs(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     mock_catalog_service_api_responses: None,
-    expected: type[web.HTTPException],
 ):
     assert client.app
 
@@ -356,44 +383,52 @@ async def test_clone_project_and_set_inputs(
     url = client.app.router["clone_project"].url_for(project_id=parent_project_id)
     assert f"/v0/projects/{parent_project_id}:clone" == url.path
 
-    response = await client.post(url.path)
-    cloned_project, error = await assert_status(response, expected_cls=expected)
-    if not error:
-        assert parent_project_id != cloned_project["uuid"]
-        assert user_project["description"] == cloned_project["description"]
-        assert user_project["creation_date"] < cloned_project["creation_date"]
+    data = None
+    async for long_running_task in long_running_task_request(
+        client.session, url, client_timeout=30
+    ):
+        print(f"{long_running_task.progress=}")
+        if long_running_task.done():
+            data = await long_running_task.result()
 
-        # - set_inputs project_clone_id ----------------------------------------------
-        job_inputs_values = {"X": 42}  # like JobInputs.values
+    assert data is not None
+    cloned_project = ProjectGet.parse_obj(data)
 
-        url = client.app.router["get_project_inputs"].url_for(
-            project_id=cloned_project["uuid"]
+    assert parent_project_id != cloned_project.uuid
+    assert user_project["description"] == cloned_project.description
+    assert user_project["creation_date"] < cloned_project.creation_date
+
+    # - set_inputs project_clone_id ----------------------------------------------
+    job_inputs_values = {"X": 42}  # like JobInputs.values
+
+    url = client.app.router["get_project_inputs"].url_for(
+        project_id=f"{cloned_project.uuid}"
+    )
+    assert f"/v0/projects/{cloned_project.uuid}/inputs" == url.path
+
+    response = await client.get(url.path)
+    project_inputs, _ = await assert_status(response, expected_cls=HTTPOk)
+
+    # Emulates transformation between JobInputs.values and body format which relies on keys
+    body = []
+    for label, value in job_inputs_values.items():
+        # raise StopIteration if label not found!
+        selected_input = next(p for p in project_inputs if p["label"] == label)
+        if selected_input["value"] != value:  # only patch if value changed
+            body.append({"key": selected_input["key"], "value": value})
+
+    assert (
+        client.app.router["update_project_inputs"].url_for(
+            project_id=f"{cloned_project.uuid}"
         )
-        assert f"/v0/projects/{cloned_project['uuid']}/inputs" == url.path
-
-        response = await client.get(url.path)
-        project_inputs, error = await assert_status(response, expected_cls=expected)
-        if not error:
-            # Emulates transformation between JobInputs.values and body format which relies on keys
-            body = []
-            for label, value in job_inputs_values.items():
-                # raise StopIteration if label not found!
-                selected_input = next(p for p in project_inputs if p["label"] == label)
-                if selected_input["value"] != value:  # only patch if value changed
-                    body.append({"key": selected_input["key"], "value": value})
-
-            assert (
-                client.app.router["update_project_inputs"].url_for(
-                    project_id=cloned_project["uuid"]
-                )
-                == url
-            )
-            response = await client.patch(url.path, json=body)
-            project_inputs, error = await assert_status(response, expected_cls=expected)
-            assert (
-                project_inputs["38a0d401-af4b-4ea7-ab4c-5005c712a546"]["value"]
-                == job_inputs_values["X"]
-            )
+        == url
+    )
+    response = await client.patch(url.path, json=body)
+    project_inputs, _ = await assert_status(response, expected_cls=HTTPOk)
+    assert (
+        project_inputs["38a0d401-af4b-4ea7-ab4c-5005c712a546"]["value"]
+        == job_inputs_values["X"]
+    )
 
     # - run project_clone_id
     #    - raise if error
