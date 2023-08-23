@@ -99,9 +99,17 @@ class ServiceOutputGet(ServiceOutput, _BaseCommonApiExtension):
         }
 
 
+ServiceInputsGetDict: TypeAlias = dict[ServicePortKey, ServiceInputGet]
+ServiceOutputsGetDict: TypeAlias = dict[ServicePortKey, ServiceOutputGet]
+
+
 class ServiceGet(api_schemas_catalog_services.ServiceGet):
-    inputs: dict[ServicePortKey, ServiceInputGet] | None
-    outputs: dict[ServicePortKey, ServiceOutputGet] | None
+    inputs: ServiceInputsGetDict = Field(
+        ..., description="inputs with extended information"
+    )
+    outputs: ServiceOutputsGetDict = Field(
+        ..., description="outputs with extended information"
+    )
 
     # pylint: disable=too-many-ancestors
     class Config(OutputSchema.Config):
