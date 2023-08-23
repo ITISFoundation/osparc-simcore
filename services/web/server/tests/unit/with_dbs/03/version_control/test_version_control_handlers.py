@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import Awaitable, Callable
+from collections.abc import Awaitable, Callable
 from uuid import UUID
 
 import aiohttp
@@ -41,11 +41,10 @@ async def assert_status_and_body(
     resp, expected_cls: type[web.HTTPException], expected_model: type[BaseModel]
 ) -> BaseModel:
     data, _ = await assert_status(resp, expected_cls)
-    model = expected_model.parse_obj(data)
-    return model
+    return expected_model.parse_obj(data)
 
 
-@pytest.mark.acceptance_test
+@pytest.mark.acceptance_test()
 async def test_workflow(
     client: TestClient,
     user_project: ProjectDict,
@@ -99,7 +98,8 @@ async def test_workflow(
     with pytest.raises(aiohttp.ClientResponseError) as excinfo:
         resp = await client.get(f"/{VX}/repos/projects/{project_uuid}/checkpoints/v1")
         resp.raise_for_status()
-        assert CheckpointApiModel.parse_obj(data) == checkpoint1
+
+    assert CheckpointApiModel.parse_obj(data) == checkpoint1
 
     assert excinfo.value.status == web.HTTPNotImplemented.status_code
 

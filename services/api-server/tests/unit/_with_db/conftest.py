@@ -47,7 +47,7 @@ def docker_compose_file(
 ) -> Path:
     # Overrides fixture in https://github.com/avast/pytest-docker
 
-    # NOTE: do not forget to add the current environ here, otherwise docker-compose fails
+    # NOTE: do not forget to add the current environ here, otherwise docker compose fails
     environ = dict(os.environ)
     environ.update(default_app_env_vars)
 
@@ -61,7 +61,7 @@ def docker_compose_file(
 
     # configs
     subprocess.run(
-        f'docker-compose --file "{src_path}" config > "{dst_path}"',
+        f'docker compose --file "{src_path}" config > "{dst_path}"',
         shell=True,
         check=True,
         env=environ,

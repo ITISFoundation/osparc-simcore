@@ -9,6 +9,8 @@ from servicelib.logging_utils import config_all_loggers
 
 LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
 NOISY_LOGGERS = (
+    "aio_pika",
+    "aiormq",
     "engineio",
     "openapi_spec_validator",
     "sqlalchemy",

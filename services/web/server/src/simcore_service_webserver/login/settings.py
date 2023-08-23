@@ -22,7 +22,7 @@ APP_LOGIN_OPTIONS_KEY = f"{__name__}.APP_LOGIN_OPTIONS_KEY"
 
 class LoginSettings(BaseCustomSettings):
     LOGIN_REGISTRATION_CONFIRMATION_REQUIRED: bool = Field(
-        True,
+        default=True,
     )
 
     LOGIN_REGISTRATION_INVITATION_REQUIRED: bool = Field(
@@ -53,16 +53,16 @@ class LoginSettings(BaseCustomSettings):
     def login_2fa_needs_email_registration(cls, v, values):
         # NOTE: this constraint ensures that a phone is registered in current workflow
         if v and not values.get("LOGIN_REGISTRATION_CONFIRMATION_REQUIRED", False):
-            raise ValueError("Cannot enable 2FA w/o email confirmation")
+            msg = "Cannot enable 2FA w/o email confirmation"
+            raise ValueError(msg)
         return v
 
     @validator("LOGIN_2FA_REQUIRED")
     @classmethod
     def login_2fa_needs_sms_service(cls, v, values):
         if v and values.get("LOGIN_TWILIO") is None:
-            raise ValueError(
-                "Cannot enable 2FA w/o twilio settings which is used to send SMS"
-            )
+            msg = "Cannot enable 2FA w/o twilio settings which is used to send SMS"
+            raise ValueError(msg)
         return v
 
 

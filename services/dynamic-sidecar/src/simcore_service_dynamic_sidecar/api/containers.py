@@ -3,7 +3,7 @@
 import json
 import logging
 from asyncio import Lock
-from typing import Any, Optional, Union
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi import Path as PathParam
@@ -157,7 +157,7 @@ async def get_containers_name(
         ),
     ),
     shared_store: SharedStore = Depends(get_shared_store),
-) -> Union[str, dict[str, Any]]:
+) -> str | dict[str, Any]:
     """
     Searches for the container's name given the network
     on which the proxy communicates with it.
@@ -176,14 +176,14 @@ async def get_containers_name(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"Provided filters, could not parsed {filters_dict}",
         )
-    network_name: Optional[str] = filters_dict.get("network", None)
-    exclude: Optional[str] = filters_dict.get("exclude", None)
+    network_name: str | None = filters_dict.get("network", None)
+    exclude: str | None = filters_dict.get("exclude", None)
 
     stored_compose_content = shared_store.compose_spec
     if stored_compose_content is None:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
-            detail="No spec for docker-compose down was found",
+            detail="No spec for docker compose down was found",
         )
 
     compose_spec = parse_compose_spec(stored_compose_content)

@@ -4,7 +4,7 @@
 
 """ Fixtures to create docker-compose.yaml configuration files (as in Makefile)
 
-    - Basically runs `docker-compose config
+    - Basically runs `docker compose config
     - Services in stack can be selected using 'core_services_selection', 'ops_services_selection' fixtures
 
 """
@@ -22,7 +22,7 @@ from typing import Any, Iterator
 import pytest
 import yaml
 from dotenv import dotenv_values, set_key
-from pytest import ExitCode, MonkeyPatch
+from pytest import ExitCode
 
 from .helpers import (
     FIXTURE_CONFIG_CORE_SERVICES_SELECTION,
@@ -95,7 +95,7 @@ def env_file_for_testing(
 ) -> Iterator[Path]:
     """Dumps all the environment variables into an $(temp_folder)/.env.test file
 
-    Pass path as argument in 'docker-compose --env-file ... '
+    Pass path as argument in 'docker compose --env-file ... '
     """
     # SEE:
     #   https://docs.docker.com/compose/env-file/
@@ -143,7 +143,7 @@ def simcore_docker_compose(
     # ensures .env at git_root_dir
     assert env_file_for_testing.exists()
 
-    # target docker-compose path
+    # target docker compose path
     docker_compose_paths = [
         osparc_simcore_root_dir / "services" / filename
         for filename in COMPOSE_FILENAMES
@@ -169,11 +169,10 @@ def simcore_docker_compose(
 
 
 @pytest.fixture(scope="module")
-def inject_filestash_config_path(
+def inject_filestash_config_path_env(
     osparc_simcore_scripts_dir: Path,
-    monkeypatch_module: MonkeyPatch,
     env_file_for_testing: Path,
-) -> None:
+) -> EnvVarsDict:
     create_filestash_config_py = (
         osparc_simcore_scripts_dir / "filestash" / "create_config.py"
     )
@@ -197,9 +196,7 @@ def inject_filestash_config_path(
         "TMP_PATH_TO_FILESTASH_CONFIG",
         f"{filestash_config_json_path}",
     )
-    monkeypatch_module.setenv(
-        "TMP_PATH_TO_FILESTASH_CONFIG", f"{filestash_config_json_path}"
-    )
+    return {"TMP_PATH_TO_FILESTASH_CONFIG": f"{filestash_config_json_path}"}
 
 
 @pytest.fixture(scope="module")
@@ -208,7 +205,7 @@ def ops_docker_compose(
     osparc_simcore_scripts_dir: Path,
     env_file_for_testing: Path,
     temp_folder: Path,
-    inject_filestash_config_path: None,
+    inject_filestash_config_path_env: dict[str, str],
 ) -> dict[str, Any]:
     """Filters only services in docker-compose-ops.yml and returns yaml data
 
@@ -217,7 +214,7 @@ def ops_docker_compose(
     # ensures .env at git_root_dir, which will be used as current directory
     assert env_file_for_testing.exists()
 
-    # target docker-compose path
+    # target docker compose path
     docker_compose_path = (
         osparc_simcore_root_dir / "services" / "docker-compose-ops.yml"
     )
@@ -229,6 +226,7 @@ def ops_docker_compose(
         docker_compose_paths=docker_compose_path,
         env_file_path=env_file_for_testing,
         destination_path=temp_folder / "ops_docker_compose.yml",
+        additional_envs=inject_filestash_config_path_env,
     )
     # NOTE: do not add indent. Copy&Paste log into editor instead
     print(
@@ -256,7 +254,7 @@ def core_docker_compose_file(
 ) -> Path:
     """A compose with a selection of services from simcore_docker_compose
 
-    Creates a docker-compose config file for every stack of services in 'core_services_selection' module variable
+    Creates a docker compose config file for every stack of services in 'core_services_selection' module variable
     File is created in a temp folder
     """
     docker_compose_path = Path(temp_folder / "simcore_docker_compose.filtered.yml")
@@ -281,7 +279,7 @@ def ops_docker_compose_file(
 ) -> Path:
     """A compose with a selection of services from ops_docker_compose
 
-    Creates a docker-compose config file for every stack of services in 'ops_services_selection' module variable
+    Creates a docker compose config file for every stack of services in 'ops_services_selection' module variable
     File is created in a temp folder
     """
     docker_compose_path = Path(temp_folder / "ops_docker_compose.filtered.yml")
@@ -347,7 +345,7 @@ def _escape_cpus(serialized_yaml: str) -> str:
     # below is equivalent to the following sed operation fixes above issue
     # `sed -E "s/cpus: ([0-9\\.]+)/cpus: '\\1'/"`
     # remove when this issues is fixed, this will most likely occur
-    # when upgrading the version of docker-compose
+    # when upgrading the version of docker compose
 
     return re.sub(
         pattern=r"cpus: (\d+\.\d+|\d+)", repl="cpus: '\\1'", string=serialized_yaml

@@ -20,6 +20,7 @@ import sqlalchemy as sa
 from aiohttp import ClientResponse, web
 from aiohttp.test_utils import TestClient, TestServer
 from faker import Faker
+from models_library.api_schemas_webserver.projects_nodes import NodeGet
 from models_library.projects import ProjectID
 from models_library.projects_access import Owner, PositiveIntWithExclusiveMinimumRemoved
 from models_library.projects_state import (
@@ -43,15 +44,15 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (
 from servicelib.aiohttp.web_exceptions_extension import HTTPLockedError
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.products import products
+from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.socketio.messages import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.utils import to_datetime
 from socketio.exceptions import ConnectionError as SocketConnectionError
 
-API_VERSION = "v0"
 RESOURCE_NAME = "projects"
-API_PREFIX = "/" + API_VERSION
+API_PREFIX = f"/{API_VTAG}"
 
 
 @pytest.fixture
@@ -934,7 +935,7 @@ async def test_project_node_lifetime(
     # create a new dynamic node...
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
     body = {"service_key": "simcore/services/dynamic/key", "service_version": "1.3.4"}
-    resp = await client.post(f"{url}", json=body)
+    resp = await client.post(url.path, json=body)
     data, errors = await assert_status(resp, expected_response_on_Create)
     node_id = None
     if resp.status == web.HTTPCreated.status_code:
@@ -976,8 +977,11 @@ async def test_project_node_lifetime(
     url = client.app.router["get_node"].url_for(
         project_id=user_project["uuid"], node_id=node_id
     )
+
+    node_sample = deepcopy(NodeGet.Config.schema_extra["example"])
     mocked_director_v2_api["director_v2.api.get_dynamic_service"].return_value = {
-        "service_state": "running"
+        **node_sample,
+        "service_state": "running",
     }
     resp = await client.get(f"{url}")
     data, errors = await assert_status(resp, expected_response_on_Get)
@@ -992,7 +996,8 @@ async def test_project_node_lifetime(
         project_id=user_project["uuid"], node_id=node_id_2
     )
     mocked_director_v2_api["director_v2.api.get_dynamic_service"].return_value = {
-        "service_state": "idle"
+        "service_uuid": node_sample["service_uuid"],
+        "service_state": "idle",
     }
     resp = await client.get(f"{url}")
     data, errors = await assert_status(resp, expected_response_on_Get)
@@ -1002,7 +1007,7 @@ async def test_project_node_lifetime(
 
     # delete the node
     mocked_director_v2_api["director_v2.api.list_dynamic_services"].return_value = [
-        {"service_uuid": node_id}
+        {**node_sample, "service_uuid": node_id}
     ]
     url = client.app.router["delete_node"].url_for(
         project_id=user_project["uuid"], node_id=node_id
