@@ -10,3 +10,4 @@
 dask[distributed]
 blosc # for compression
 lz4 # for compression
+numpy

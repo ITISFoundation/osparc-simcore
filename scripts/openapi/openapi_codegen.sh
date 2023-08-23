@@ -1,15 +1,14 @@
-#/bin/bash
+#!/bin/bash
+
 # SAN this allows to know whether we are running in the Windows linux environment or under linux/mac
 VERSION=$(uname -a);
 MICROSOFT_STRING="Microsoft"
 
 if echo "$VERSION" | grep -q "$MICROSOFT_STRING"; then
-  DOCKER_COMPOSE=docker-compose
   DOCKER=docker
   export COMPOSE_CONVERT_WINDOWS_PATHS=1
   export IS_WINDOWS=1
 else
-  DOCKER_COMPOSE=docker-compose
   DOCKER=docker
   export IS_WINDOWS=0
 fi

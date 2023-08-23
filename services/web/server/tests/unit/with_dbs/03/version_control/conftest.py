@@ -4,6 +4,7 @@
 
 import logging
 from copy import deepcopy
+from http import HTTPStatus
 from pathlib import Path
 from typing import Any, AsyncIterator, Awaitable, Callable
 from unittest import mock
@@ -14,7 +15,10 @@ import pytest
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.projects import ProjectID
+from models_library.projects_nodes import Node
+from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.rawdata_fakers import random_project
 from pytest_simcore.helpers.utils_login import UserInfoDict
@@ -82,7 +86,6 @@ def app_cfg(
 
     exclude = {
         "activity",
-        "catalog",
         "clusters",
         "computation",
         "diagnostics",
@@ -98,6 +101,7 @@ def app_cfg(
         "tracing",
     }
     include = {
+        "catalog",
         "db",
         "login",
         "products",
@@ -151,14 +155,12 @@ async def user_project(
         tests_data_dir=tests_data_dir,
         product_name=osparc_product_name,
     ) as project:
-
         yield project
 
         # cleanup repos
         assert client.app
         engine = client.app[APP_DB_ENGINE_KEY]
         async with engine.acquire() as conn:
-
             # cascade deletes everything except projects_vc_snapshot
             await conn.execute(projects_vc_repos.delete())
             await conn.execute(projects_vc_snapshots.delete())
@@ -166,8 +168,25 @@ async def user_project(
 
 @pytest.fixture
 def request_update_project(
-    logged_user: UserInfoDict, faker: Faker
+    logged_user: UserInfoDict,
+    faker: Faker,
+    mocker: MockerFixture,
 ) -> Callable[[TestClient, UUID], Awaitable]:
+    mocker.patch(
+        "simcore_service_webserver.projects._nodes_handlers.projects_api.is_service_deprecated",
+        autospec=True,
+        return_value=False,
+    )
+    mocker.patch(
+        "simcore_service_webserver.projects._nodes_handlers.projects_api.catalog_client.get_service_resources",
+        autospec=True,
+        return_value=ServiceResourcesDict(),
+    )
+    mocker.patch(
+        "simcore_service_webserver.director_v2.api.list_dynamic_services",
+        return_value={},
+    )
+
     async def _go(client: TestClient, project_uuid: UUID) -> None:
         resp: aiohttp.ClientResponse = await client.get(f"{VX}/projects/{project_uuid}")
 
@@ -176,14 +195,40 @@ def request_update_project(
         assert body
 
         project = body["data"]
-        project["workbench"] = {
-            faker.uuid4(): {
+
+        # remove all the nodes first
+        assert client.app
+        for node_id in project.get("workbench", {}):
+            delete_node_url = client.app.router["delete_node"].url_for(
+                project_id=f"{project_uuid}", node_id=node_id
+            )
+            response = await client.delete(f"{delete_node_url}")
+            assert response.status == HTTPStatus.NO_CONTENT
+
+        # add a node
+        node_id = faker.uuid4()
+        node = Node.parse_obj(
+            {
                 "key": f"simcore/services/comp/test_{__name__}",
                 "version": "1.0.0",
                 "label": f"test_{__name__}",
                 "inputs": {"x": faker.pyint(), "y": faker.pyint()},
             }
-        }
+        )
+
+        create_node_url = client.app.router["create_node"].url_for(
+            project_id=f"{project_uuid}"
+        )
+        response = await client.post(
+            f"{create_node_url}",
+            json={
+                "service_key": node.key,
+                "service_version": node.version,
+                "service_id": f"{node_id}",
+            },
+        )
+        assert response.status == HTTPStatus.CREATED
+        project["workbench"] = {node_id: jsonable_encoder(node)}
         resp = await client.put(f"{VX}/projects/{project_uuid}", json=project)
         body = await resp.json()
         assert resp.status == 200, str(body)
@@ -210,7 +255,6 @@ async def request_delete_project(
     )
 
     async def _go(client: TestClient, project_uuid: UUID) -> None:
-
         resp: aiohttp.ClientResponse = await client.delete(
             f"{VX}/projects/{project_uuid}"
         )

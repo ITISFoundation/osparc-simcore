@@ -1,15 +1,16 @@
+from collections.abc import Mapping
 from datetime import date
-from typing import Any, Literal, Mapping
+from typing import Any, ClassVar, Literal
 from uuid import UUID
 
 from models_library.api_schemas_webserver._base import OutputSchema
+from models_library.api_schemas_webserver.groups import AllUsersGroups
 from models_library.basic_types import IdInt
 from models_library.emails import LowerCaseEmailStr
 from pydantic import BaseModel, Field, validator
 from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.models.users import UserRole
 
-from ..groups.schemas import AllUsersGroups
 from ..utils import gravatar_hash
 
 
@@ -28,7 +29,7 @@ class Token(BaseModel):
     token_secret: UUID | None = None
 
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "service": "github-api-v1",
                 "token_key": "5f21abf5-c596-47b7-bfd1-c0e436ef1107",
@@ -54,7 +55,7 @@ class _ProfileCommon(BaseModel):
     last_name: str | None = None
 
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "first_name": "Pedro",
                 "last_name": "Crespo",
@@ -84,7 +85,7 @@ class ProfileGet(_ProfileCommon):
         allow_population_by_field_name = True
         json_dumps = json_dumps
 
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "id": 1,
@@ -121,7 +122,7 @@ def convert_user_db_to_schema(
 ) -> dict[str, Any]:
     # NOTE: this type of functions will be replaced by pydantic.
     assert prefix is not None  # nosec
-    parts = row[f"{prefix}name"].split(".") + [""]
+    parts = [*row[f"{prefix}name"].split("."), ""]
     data = {
         "id": row[f"{prefix}id"],
         "login": row[f"{prefix}email"],

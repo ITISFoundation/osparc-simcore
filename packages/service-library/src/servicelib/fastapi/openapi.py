@@ -43,9 +43,9 @@ def get_common_oas_options(is_devel_mode: bool) -> dict[str, Any]:
     }
 
 
-def redefine_operation_id_in_router(router: APIRouter, operation_id_prefix: str):
+def set_operation_id_as_handler_function_name(router: APIRouter):
     """
-    Overrides default operation_ids assigning the same name as the handler functions and a prefix
+    Overrides default operation_ids assigning the same name as the handler function
 
     MUST be called only after all routes have been added.
 
@@ -55,9 +55,7 @@ def redefine_operation_id_in_router(router: APIRouter, operation_id_prefix: str)
     for route in router.routes:
         if isinstance(route, APIRoute):
             assert isinstance(route.endpoint, types.FunctionType)  # nosec
-            route.operation_id = (
-                f"{operation_id_prefix}._{route.endpoint.__name__}_handler"
-            )
+            route.operation_id = route.endpoint.__name__
 
 
 # https://swagger.io/docs/specification/data-models/data-types/#numbers

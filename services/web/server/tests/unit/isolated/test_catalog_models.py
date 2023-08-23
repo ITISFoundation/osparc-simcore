@@ -4,43 +4,16 @@
 
 import json
 from copy import deepcopy
-from pprint import pformat
-from typing import Any, Mapping
 
 import pytest
 from pint import UnitRegistry
-from pydantic import BaseModel
+from simcore_service_webserver.catalog._api_units import replace_service_input_outputs
 from simcore_service_webserver.catalog._handlers import RESPONSE_MODEL_POLICY
-from simcore_service_webserver.catalog._schemas import (
-    ServiceInputGet,
-    ServiceOutputGet,
-    replace_service_input_outputs,
-)
 
 
 @pytest.fixture(scope="module")
-def unit_registry():
+def unit_registry() -> UnitRegistry:
     return UnitRegistry()
-
-
-@pytest.mark.parametrize(
-    "model_cls",
-    (
-        ServiceInputGet,
-        ServiceOutputGet,
-    ),
-)
-def test_webserver_catalog_api_models(
-    model_cls: type[BaseModel], model_cls_examples: dict[str, Mapping[str, Any]]
-):
-    for name, example in model_cls_examples.items():
-        print(name, ":", pformat(example))
-        model_instance = model_cls(**example)
-        assert model_instance, f"Failed with {name}"
-
-        # tests export policy w/o errors
-        data = model_instance.dict(**RESPONSE_MODEL_POLICY)
-        assert model_cls(**data) == model_instance
 
 
 def test_from_catalog_to_webapi_service(unit_registry: UnitRegistry):
@@ -63,12 +36,12 @@ def test_from_catalog_to_webapi_service(unit_registry: UnitRegistry):
         "badges": None,
         "authors": [
             {
-                "name": "Odei Maiz",
-                "email": "maiz@itis.swiss",
+                "name": "Foo Bar",
+                "email": "foo@fake.com",
                 "affiliation": None,
             }
         ],
-        "contact": "maiz@itis.swiss",
+        "contact": "foo@fake.com",
         "inputs": {
             "uno": {
                 "displayOrder": 0,
@@ -90,7 +63,7 @@ def test_from_catalog_to_webapi_service(unit_registry: UnitRegistry):
                 "widget": None,
             }
         },
-        "owner": "maiz@itis.swiss",
+        "owner": "foo@fake.com",
     }
 
     webapi_service = deepcopy(catalog_service)

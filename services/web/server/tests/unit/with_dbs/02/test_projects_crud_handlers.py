@@ -5,6 +5,7 @@
 # pylint: disable=unused-variable
 
 
+import random
 import uuid as uuidlib
 from collections.abc import Awaitable, Callable, Iterator
 from copy import deepcopy
@@ -16,7 +17,11 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
+from faker import Faker
+from models_library.projects_nodes import Node
 from models_library.projects_state import ProjectState
+from models_library.services import ServiceKey
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
@@ -64,6 +69,7 @@ async def _list_projects(
     if not query_parameters:
         query_parameters = {}
     # GET /v0/projects
+    assert client.app
     url = client.app.router["list_projects"].url_for()
     assert str(url) == API_PREFIX + "/projects"
     if query_parameters:
@@ -72,7 +78,7 @@ async def _list_projects(
     if headers is None:
         headers = {}
 
-    resp = await client.get(url, headers=headers)
+    resp = await client.get(f"{url}", headers=headers)
     data, errors, meta, links = await assert_status(
         resp,
         expected,
@@ -90,7 +96,7 @@ async def _list_projects(
         assert meta["limit"] == exp_limit
         exp_last_page = ceil(meta["total"] / meta["limit"] - 1)
         assert links is not None
-        complete_url = client.make_url(url)
+        complete_url = client.make_url(f"{url}")
         assert links["self"] == str(
             URL(complete_url).update_query({"offset": exp_offset, "limit": exp_limit})
         )
@@ -137,9 +143,10 @@ async def _assert_get_same_project(
     # GET /v0/projects/{project_id}
 
     # with a project owned by user
+    assert client.app
     url = client.app.router["get_project"].url_for(project_id=project["uuid"])
     assert str(url) == f"{API_PREFIX}/projects/{project['uuid']}"
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, error = await assert_status(resp, expected)
 
     if not error:
@@ -382,10 +389,7 @@ async def test_new_project_from_template(
     if new_project:
         # check uuid replacement
         for node_name in new_project["workbench"]:
-            try:
-                uuidlib.UUID(node_name)
-            except ValueError:
-                pytest.fail(f"Invalid uuid in workbench node {node_name}")
+            parse_obj_as(uuidlib.UUID, node_name)
 
 
 @pytest.mark.parametrize(*standard_role_response())
@@ -414,10 +418,7 @@ async def test_new_project_from_other_study(
         # check uuid replacement
         assert new_project["name"].endswith("(Copy)")
         for node_name in new_project["workbench"]:
-            try:
-                uuidlib.UUID(node_name)
-            except ValueError:
-                pytest.fail(f"Invalid uuid in workbench node {node_name}")
+            parse_obj_as(uuidlib.UUID, node_name)
 
 
 @pytest.mark.parametrize(*standard_role_response())
@@ -471,10 +472,7 @@ async def test_new_project_from_template_with_body(
 
         # check uuid replacement
         for node_name in project["workbench"]:
-            try:
-                uuidlib.UUID(node_name)
-            except ValueError:
-                pytest.fail(f"Invalid uuid in workbench node {node_name}")
+            parse_obj_as(uuidlib.UUID, node_name)
 
 
 @pytest.mark.parametrize(*standard_role_response())
@@ -528,10 +526,7 @@ async def test_new_template_from_project(
 
         # check uuid replacement
         for node_name in template_project["workbench"]:
-            try:
-                uuidlib.UUID(node_name)
-            except ValueError:
-                pytest.fail(f"Invalid uuid in workbench node {node_name}")
+            parse_obj_as(uuidlib.UUID, node_name)
 
     # do the same with a body
     predefined = {
@@ -590,10 +585,7 @@ async def test_new_template_from_project(
 
         # check uuid replacement
         for node_name in template_project["workbench"]:
-            try:
-                uuidlib.UUID(node_name)
-            except ValueError:
-                pytest.fail(f"Invalid uuid in workbench node {node_name}")
+            parse_obj_as(uuidlib.UUID, node_name)
 
 
 # PUT --------
@@ -681,4 +673,47 @@ async def test_replace_project_updated_readonly_inputs(
     project_update["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"][
         "Kr"
     ] = 5
+    await _replace_project(client, project_update, expected)
+
+
+@pytest.fixture
+def random_minimal_node(faker: Faker) -> Callable[[], Node]:
+    def _creator() -> Node:
+        return Node(
+            key=ServiceKey(f"simcore/services/comp/{faker.pystr().lower()}"),
+            version=faker.numerify("#.#.#"),
+            label=faker.pystr(),
+        )
+
+    return _creator
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPConflict),
+        (UserRole.USER, web.HTTPConflict),
+        (UserRole.TESTER, web.HTTPConflict),
+    ],
+)
+async def test_replace_project_adding_or_removing_nodes_raises_conflict(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected,
+    ensure_run_in_sequence_context_is_empty,
+    faker: Faker,
+    random_minimal_node: Callable[[], Node],
+):
+    # try adding a node should not work
+    project_update = deepcopy(user_project)
+    new_node = random_minimal_node()
+    project_update["workbench"][faker.uuid4()] = jsonable_encoder(new_node)
+    await _replace_project(client, project_update, expected)
+    # try removing a node should not work
+    project_update = deepcopy(user_project)
+    project_update["workbench"].pop(
+        random.choice(list(project_update["workbench"].keys()))  # noqa: S311
+    )
     await _replace_project(client, project_update, expected)
