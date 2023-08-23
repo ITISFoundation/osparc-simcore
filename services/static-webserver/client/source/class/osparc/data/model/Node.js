@@ -1491,15 +1491,15 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     removeNode: function() {
-      return new Promise((resolve, reject) => {
+      return new Promise(resolve => {
         this.__deleteInBackend()
           .then(() => {
+            resolve(true);
             this.removeIFrame();
-            resolve();
           })
           .catch(err => {
             console.error(err);
-            reject();
+            resolve(false);
           });
       });
     },
