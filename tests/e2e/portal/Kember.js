@@ -1,4 +1,4 @@
-// node kember.js [url_prefix] [template_uuid] [--start_timeout timeout] [--demo]
+// node Kember.js [url_prefix] [template_uuid] [timeout] [--demo]
 
 const tutorialBase = require('../tutorials/tutorialBase');
 const utils = require('../utils/utils');
@@ -21,6 +21,7 @@ async function runTutorial () {
   const tutorial = new tutorialBase.TutorialBase(anonURL, screenshotPrefix, null, null, null, basicauthUsername, basicauthPassword, enableDemoMode);
 
   try {
+    await tutorial.beforeScript();
     const studyData = await tutorial.openStudyLink();
     const studyId = studyData["data"]["uuid"];
 
