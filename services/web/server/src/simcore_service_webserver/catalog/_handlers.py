@@ -72,7 +72,8 @@ async def list_services(request: Request):
         unit_registry=req_ctx.unit_registry,
     )
 
-    assert parse_obj_as(list[ServiceGet], data_array) is not None  # nosec
+    # NOTE: this is too heave in devel-mode. Temporary removed
+    # assert parse_obj_as(list[ServiceGet], data_array) is not None  # nosec
 
     return envelope_json_response(data_array)
 
