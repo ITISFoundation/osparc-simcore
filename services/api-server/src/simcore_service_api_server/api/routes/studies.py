@@ -88,7 +88,7 @@ async def get_study(
 
 
 @router.post(
-    "/{study_id:uuid}",
+    "/{study_id:uuid}:clone",
     response_model=Study,
     responses={**_COMMON_ERROR_RESPONSES},
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
