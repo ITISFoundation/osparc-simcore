@@ -4,7 +4,7 @@ import orjson
 from pydantic import Extra, Field
 from pydantic.main import BaseModel
 
-from ..api_schemas_catalog import services
+from ..api_schemas_catalog import services as api_schemas_catalog_services
 from ..services import ServiceInput, ServiceOutput, ServicePortKey
 from ..utils.change_case import snake_to_camel
 from ._base import InputSchema, OutputSchema
@@ -17,21 +17,6 @@ def _orjson_dumps(v, *, default=None) -> str:
     # orjson.dumps returns bytes, to match standard json.dumps we need to decode
     dump: str = orjson.dumps(v, default=default).decode()
     return dump
-
-
-class ServiceGet(services.ServiceGet):  # pylint: disable=too-many-ancestors
-    class Config(OutputSchema.Config):
-        ...
-
-
-class ServiceUpdate(services.ServiceUpdate):
-    class Config(InputSchema.Config):
-        ...
-
-
-class ServiceResourcesGet(services.ServiceResourcesGet):
-    class Config(OutputSchema.Config):
-        ...
 
 
 class _BaseCommonApiExtension(BaseModel):
@@ -53,6 +38,8 @@ class _BaseCommonApiExtension(BaseModel):
 
 
 class ServiceInputGet(ServiceInput, _BaseCommonApiExtension):
+    """Extends fields of api_schemas_catalog.services.ServiceGet.outputs[*]"""
+
     key_id: ServiceInputKey = Field(
         ..., description="Unique name identifier for this input"
     )
@@ -91,6 +78,8 @@ class ServiceInputGet(ServiceInput, _BaseCommonApiExtension):
 
 
 class ServiceOutputGet(ServiceOutput, _BaseCommonApiExtension):
+    """Extends fields of api_schemas_catalog.services.ServiceGet.outputs[*]"""
+
     key_id: ServiceOutputKey = Field(
         ..., description="Unique name identifier for this input"
     )
@@ -108,3 +97,65 @@ class ServiceOutputGet(ServiceOutput, _BaseCommonApiExtension):
                 "keyId": "output_2",
             }
         }
+
+
+ServiceInputsGetDict: TypeAlias = dict[ServicePortKey, ServiceInputGet]
+ServiceOutputsGetDict: TypeAlias = dict[ServicePortKey, ServiceOutputGet]
+
+
+class ServiceGet(api_schemas_catalog_services.ServiceGet):
+    # pylint: disable=too-many-ancestors
+    inputs: ServiceInputsGetDict = Field(  # type: ignore[assignment]
+        ..., description="inputs with extended information"
+    )
+    outputs: ServiceOutputsGetDict = Field(  # type: ignore[assignment]
+        ..., description="outputs with extended information"
+    )
+
+    class Config(OutputSchema.Config):
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "example": {
+                "name": "File Picker",
+                "thumbnail": None,
+                "description": "description",
+                "classifiers": [],
+                "quality": {},
+                "accessRights": {
+                    "1": {"execute_access": True, "write_access": False},
+                    "4": {"execute_access": True, "write_access": True},
+                },
+                "key": "simcore/services/frontend/file-picker",
+                "version": "1.0.0",
+                "integration-version": None,
+                "type": "dynamic",
+                "badges": None,
+                "authors": [
+                    {
+                        "name": "Red Pandas",
+                        "email": "redpandas@wonderland.com",
+                        "affiliation": None,
+                    }
+                ],
+                "contact": "redpandas@wonderland.com",
+                "inputs": {
+                    f"input{i}": example
+                    for i, example in enumerate(
+                        ServiceInputGet.Config.schema_extra["examples"]
+                    )
+                },
+                "outputs": {
+                    "outFile": ServiceOutputGet.Config.schema_extra["example"],
+                },
+                "owner": "redpandas@wonderland.com",
+            }
+        }
+
+
+class ServiceUpdate(api_schemas_catalog_services.ServiceUpdate):
+    class Config(InputSchema.Config):
+        ...
+
+
+class ServiceResourcesGet(api_schemas_catalog_services.ServiceResourcesGet):
+    class Config(OutputSchema.Config):
+        ...

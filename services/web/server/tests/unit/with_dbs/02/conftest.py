@@ -17,6 +17,7 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from faker import Faker
+from models_library.projects_nodes import Node, NodeID
 from models_library.projects_state import ProjectState
 from models_library.services_resources import (
     ServiceResourcesDict,
@@ -225,7 +226,8 @@ def fake_services():
 
 
 @pytest.fixture
-async def project_db_cleaner(client):
+async def project_db_cleaner(client: TestClient):
+    assert client.app
     yield
     await delete_all_projects(client.app)
 
@@ -372,3 +374,132 @@ def mock_get_total_project_dynamic_nodes_creation_interval(
         ".get_total_project_dynamic_nodes_creation_interval",
         return_value=_VERY_LONG_LOCK_TIMEOUT_S,
     )
+
+
+@pytest.fixture
+def workbench_db_column() -> dict[str, Any]:
+    return {
+        "13220a1d-a569-49de-b375-904301af9295": {
+            "key": "simcore/services/comp/itis/sleeper",
+            "version": "2.1.4",
+            "label": "sleeper",
+            "inputs": {
+                "input_2": {
+                    "nodeUuid": "38a0d401-af4b-4ea7-ab4c-5005c712a546",
+                    "output": "out_1",
+                },
+                "input_3": False,
+                "input_4": 0,
+            },
+            "inputsUnits": {},
+            "inputNodes": ["38a0d401-af4b-4ea7-ab4c-5005c712a546"],
+            "parent": None,
+            "thumbnail": "",
+        },
+        "38a0d401-af4b-4ea7-ab4c-5005c712a546": {
+            "key": "simcore/services/frontend/parameter/integer",
+            "version": "1.0.0",
+            "label": "X",
+            "inputs": {},
+            "inputsUnits": {},
+            "inputNodes": [],
+            "parent": None,
+            "thumbnail": "",
+            "outputs": {"out_1": 43},
+            "runHash": None,
+        },
+        "08d15a6c-ae7b-4ea1-938e-4ce81a360ffa": {
+            "key": "simcore/services/comp/itis/sleeper",
+            "version": "2.1.4",
+            "label": "sleeper_2",
+            "inputs": {
+                "input_2": 2,
+                "input_3": {
+                    "nodeUuid": "7bf0741f-bae4-410b-b662-fc34b47c27c9",
+                    "output": "out_1",
+                },
+                "input_4": {
+                    "nodeUuid": "fc48252a-9dbb-4e07-bf9a-7af65a18f612",
+                    "output": "out_1",
+                },
+            },
+            "inputsUnits": {},
+            "inputNodes": [
+                "fc48252a-9dbb-4e07-bf9a-7af65a18f612",
+                "7bf0741f-bae4-410b-b662-fc34b47c27c9",
+            ],
+            "parent": None,
+            "thumbnail": "",
+            "state": {"currentStatus": "SUCCESS"},
+            "progress": 100,
+            "outputs": {
+                "output_1": {
+                    "store": 0,
+                    "path": "e08316a8-5afc-11ed-bab7-02420a00002b/08d15a6c-ae7b-4ea1-938e-4ce81a360ffa/single_number.txt",
+                    "eTag": "1679091c5a880faf6fb5e6087eb1b2dc",
+                },
+                "output_2": 6,
+            },
+            "runHash": "5d55ebe569aa0abeb5287104dc5989eabc755f160c9a5c9a1cc783fe1e058b66",
+        },
+        "fc48252a-9dbb-4e07-bf9a-7af65a18f612": {
+            "key": "simcore/services/frontend/parameter/integer",
+            "version": "1.0.0",
+            "label": "Z",
+            "inputs": {},
+            "inputsUnits": {},
+            "inputNodes": [],
+            "parent": None,
+            "thumbnail": "",
+            "outputs": {"out_1": 1},
+            "runHash": None,
+        },
+        "7bf0741f-bae4-410b-b662-fc34b47c27c9": {
+            "key": "simcore/services/frontend/parameter/boolean",
+            "version": "1.0.0",
+            "label": "on",
+            "inputs": {},
+            "inputsUnits": {},
+            "inputNodes": [],
+            "parent": None,
+            "thumbnail": "",
+            "outputs": {"out_1": False},
+            "runHash": None,
+        },
+        "09fd512e-0768-44ca-81fa-0cecab74ec1a": {
+            "key": "simcore/services/frontend/iterator-consumer/probe/integer",
+            "version": "1.0.0",
+            "label": "Random sleep interval_2",
+            "inputs": {
+                "in_1": {
+                    "nodeUuid": "13220a1d-a569-49de-b375-904301af9295",
+                    "output": "output_2",
+                }
+            },
+            "inputsUnits": {},
+            "inputNodes": ["13220a1d-a569-49de-b375-904301af9295"],
+            "parent": None,
+            "thumbnail": "",
+        },
+        "76f607b4-8761-4f96-824d-cab670bc45f5": {
+            "key": "simcore/services/frontend/iterator-consumer/probe/integer",
+            "version": "1.0.0",
+            "label": "Random sleep interval",
+            "inputs": {
+                "in_1": {
+                    "nodeUuid": "08d15a6c-ae7b-4ea1-938e-4ce81a360ffa",
+                    "output": "output_2",
+                }
+            },
+            "inputsUnits": {},
+            "inputNodes": ["08d15a6c-ae7b-4ea1-938e-4ce81a360ffa"],
+            "parent": None,
+            "thumbnail": "",
+        },
+    }
+
+
+@pytest.fixture
+def workbench(workbench_db_column: dict[str, Any]) -> dict[NodeID, Node]:
+    # convert to  model
+    return parse_obj_as(dict[NodeID, Node], workbench_db_column)
