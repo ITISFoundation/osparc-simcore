@@ -74,6 +74,7 @@ async def list_services(request: Request):
 
     # NOTE: this is too heave in devel-mode. Temporary removed
     # assert parse_obj_as(list[ServiceGet], data_array) is not None  # nosec
+    #
 
     return envelope_json_response(data_array)
 
