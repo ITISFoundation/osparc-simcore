@@ -93,9 +93,19 @@ async def get_study(
     responses={**_COMMON_ERROR_RESPONSES},
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
-async def clone_study(study_id: StudyID):
-    msg = f"cloning study with study_id={study_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4651"
-    raise NotImplementedError(msg)
+async def clone_study(
+    study_id: StudyID,
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+):
+    try:
+        project: ProjectGet = await webserver_api.clone_project(project_id=study_id)
+        return _create_study_from_project(project)
+
+    except ProjectNotFoundError:
+        return create_error_json_response(
+            f"Cannot find study={study_id!r}.",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
 
 
 @router.get(
