@@ -105,8 +105,7 @@ def diff_json_schemas(json_diff_script: Path, tmp_path_factory) -> Callable:
 
         # NOTE: When debugging the differences, as of now both schemas come from
         # pydantic model, now it is possible to visually compare the difference. To do so,
-        # just dereference the current pydantic schema. Example can be seen here:
-        # /osparc-simcore/api/specs/webserver/scripts/openapi_project.py
+        # just dereference the current pydantic schema.
 
         return subprocess.run(
             [json_diff_script, schema_lhs_path, schema_rhs_path],
