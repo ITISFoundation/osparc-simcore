@@ -14,6 +14,7 @@ from ..clusters_management_task import setup as setup_clusters_management
 from ..modules.ec2 import setup as setup_ec2
 from ..modules.rabbitmq import setup as setup_rabbitmq
 from ..modules.redis import setup as setup_redis
+from ..rpc.rpc_routes import setup_rpc_routes
 from .settings import ApplicationSettings
 
 logger = logging.getLogger(__name__)
@@ -41,6 +42,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_ec2(app)
     setup_redis(app)
     setup_clusters_management(app)
+    setup_rpc_routes(app)
 
     # ERROR HANDLERS
 

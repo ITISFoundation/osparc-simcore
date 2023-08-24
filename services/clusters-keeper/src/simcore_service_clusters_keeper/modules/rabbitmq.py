@@ -32,6 +32,7 @@ def setup(app: FastAPI) -> None:
             logger.warning("Rabbit MQ client is de-activated in the settings")
             return
         await wait_till_rabbitmq_responsive(settings.dsn)
+        # create the clients
         app.state.rabbitmq_client = RabbitMQClient(
             client_name="clusters_keeper", settings=settings
         )
@@ -56,6 +57,10 @@ def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
             msg="RabbitMQ client is not available. Please check the configuration."
         )
     return cast(RabbitMQClient, app.state.rabbitmq_client)
+
+
+def is_rabbitmq_enabled(app: FastAPI) -> bool:
+    return app.state.rabbitmq_client is not None
 
 
 def get_rabbitmq_rpc_client(app: FastAPI) -> RabbitMQClient:
