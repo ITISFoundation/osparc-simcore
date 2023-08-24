@@ -4,150 +4,25 @@
 # pylint: disable=unused-variable
 
 from copy import deepcopy
+from datetime import datetime
 from typing import Any
 
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from models_library.projects_nodes import Node, NodeID
+from aiohttp.web_exceptions import HTTPOk
+from models_library.api_schemas_webserver.projects import ProjectGet
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.faker_webserver import (
     PROJECTS_METADATA_PORTS_RESPONSE_BODY_DATA,
 )
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
+from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
+from servicelib.aiohttp.long_running_tasks.client import long_running_task_request
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
 from yarl import URL
-
-
-@pytest.fixture
-def workbench_db_column() -> dict[str, Any]:
-    return {
-        "13220a1d-a569-49de-b375-904301af9295": {
-            "key": "simcore/services/comp/itis/sleeper",
-            "version": "2.1.4",
-            "label": "sleeper",
-            "inputs": {
-                "input_2": {
-                    "nodeUuid": "38a0d401-af4b-4ea7-ab4c-5005c712a546",
-                    "output": "out_1",
-                },
-                "input_3": False,
-                "input_4": 0,
-            },
-            "inputsUnits": {},
-            "inputNodes": ["38a0d401-af4b-4ea7-ab4c-5005c712a546"],
-            "parent": None,
-            "thumbnail": "",
-        },
-        "38a0d401-af4b-4ea7-ab4c-5005c712a546": {
-            "key": "simcore/services/frontend/parameter/integer",
-            "version": "1.0.0",
-            "label": "X",
-            "inputs": {},
-            "inputsUnits": {},
-            "inputNodes": [],
-            "parent": None,
-            "thumbnail": "",
-            "outputs": {"out_1": 43},
-            "runHash": None,
-        },
-        "08d15a6c-ae7b-4ea1-938e-4ce81a360ffa": {
-            "key": "simcore/services/comp/itis/sleeper",
-            "version": "2.1.4",
-            "label": "sleeper_2",
-            "inputs": {
-                "input_2": 2,
-                "input_3": {
-                    "nodeUuid": "7bf0741f-bae4-410b-b662-fc34b47c27c9",
-                    "output": "out_1",
-                },
-                "input_4": {
-                    "nodeUuid": "fc48252a-9dbb-4e07-bf9a-7af65a18f612",
-                    "output": "out_1",
-                },
-            },
-            "inputsUnits": {},
-            "inputNodes": [
-                "fc48252a-9dbb-4e07-bf9a-7af65a18f612",
-                "7bf0741f-bae4-410b-b662-fc34b47c27c9",
-            ],
-            "parent": None,
-            "thumbnail": "",
-            "state": {"currentStatus": "SUCCESS"},
-            "progress": 100,
-            "outputs": {
-                "output_1": {
-                    "store": 0,
-                    "path": "e08316a8-5afc-11ed-bab7-02420a00002b/08d15a6c-ae7b-4ea1-938e-4ce81a360ffa/single_number.txt",
-                    "eTag": "1679091c5a880faf6fb5e6087eb1b2dc",
-                },
-                "output_2": 6,
-            },
-            "runHash": "5d55ebe569aa0abeb5287104dc5989eabc755f160c9a5c9a1cc783fe1e058b66",
-        },
-        "fc48252a-9dbb-4e07-bf9a-7af65a18f612": {
-            "key": "simcore/services/frontend/parameter/integer",
-            "version": "1.0.0",
-            "label": "Z",
-            "inputs": {},
-            "inputsUnits": {},
-            "inputNodes": [],
-            "parent": None,
-            "thumbnail": "",
-            "outputs": {"out_1": 1},
-            "runHash": None,
-        },
-        "7bf0741f-bae4-410b-b662-fc34b47c27c9": {
-            "key": "simcore/services/frontend/parameter/boolean",
-            "version": "1.0.0",
-            "label": "on",
-            "inputs": {},
-            "inputsUnits": {},
-            "inputNodes": [],
-            "parent": None,
-            "thumbnail": "",
-            "outputs": {"out_1": False},
-            "runHash": None,
-        },
-        "09fd512e-0768-44ca-81fa-0cecab74ec1a": {
-            "key": "simcore/services/frontend/iterator-consumer/probe/integer",
-            "version": "1.0.0",
-            "label": "Random sleep interval_2",
-            "inputs": {
-                "in_1": {
-                    "nodeUuid": "13220a1d-a569-49de-b375-904301af9295",
-                    "output": "output_2",
-                }
-            },
-            "inputsUnits": {},
-            "inputNodes": ["13220a1d-a569-49de-b375-904301af9295"],
-            "parent": None,
-            "thumbnail": "",
-        },
-        "76f607b4-8761-4f96-824d-cab670bc45f5": {
-            "key": "simcore/services/frontend/iterator-consumer/probe/integer",
-            "version": "1.0.0",
-            "label": "Random sleep interval",
-            "inputs": {
-                "in_1": {
-                    "nodeUuid": "08d15a6c-ae7b-4ea1-938e-4ce81a360ffa",
-                    "output": "output_2",
-                }
-            },
-            "inputsUnits": {},
-            "inputNodes": ["08d15a6c-ae7b-4ea1-938e-4ce81a360ffa"],
-            "parent": None,
-            "thumbnail": "",
-        },
-    }
-
-
-@pytest.fixture
-def workbench(workbench_db_column: dict[str, Any]) -> dict[NodeID, Node]:
-    # convert to  model
-    return parse_obj_as(dict[NodeID, Node], workbench_db_column)
 
 
 @pytest.fixture
@@ -160,7 +35,7 @@ def fake_project(
     return project
 
 
-@pytest.mark.acceptance_test
+@pytest.mark.acceptance_test()
 @pytest.mark.parametrize(
     "user_role,expected",
     [
@@ -289,7 +164,6 @@ async def test_io_workflow(
     project_inputs, error = await assert_status(resp, expected_cls=expected)
 
     if not error:
-
         assert project_inputs == {
             "38a0d401-af4b-4ea7-ab4c-5005c712a546": {
                 "key": "38a0d401-af4b-4ea7-ab4c-5005c712a546",
@@ -330,3 +204,78 @@ async def test_io_workflow(
                 "label": "Random sleep interval",
             },
         }
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_clone_project_and_set_inputs(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    # mocks backend
+    storage_subsystem_mock: MockedStorageSubsystem,
+    mock_catalog_service_api_responses: None,
+    project_db_cleaner: None,
+):
+    #
+    # NOTE: this is part of the workflow necessary to create study-jobs
+    #
+    assert client.app
+
+    parent_project_id = user_project["uuid"]
+
+    # - clone project_id -> project_clone_id ----------------------------------------------
+    url = client.app.router["clone_project"].url_for(project_id=parent_project_id)
+    assert f"/v0/projects/{parent_project_id}:clone" == url.path
+
+    data = None
+
+    async for long_running_task in long_running_task_request(
+        client.session, url=client.make_url(url.path), json=None, client_timeout=30
+    ):
+        print(f"{long_running_task.progress=}")
+        if long_running_task.done():
+            data = await long_running_task.result()
+
+    assert data is not None
+    cloned_project = ProjectGet.parse_obj(data)
+
+    assert parent_project_id != cloned_project.uuid
+    assert user_project["description"] == cloned_project.description
+    assert parse_obj_as(datetime, user_project["creationDate"]) < parse_obj_as(
+        datetime, cloned_project.creation_date
+    )
+
+    # - set_inputs project_clone_id ----------------------------------------------
+    job_inputs_values = {"X": 42}  # like JobInputs.values
+
+    url = client.app.router["get_project_inputs"].url_for(
+        project_id=f"{cloned_project.uuid}"
+    )
+    assert f"/v0/projects/{cloned_project.uuid}/inputs" == url.path
+
+    response = await client.get(url.path)
+    project_inputs, _ = await assert_status(response, expected_cls=HTTPOk)
+
+    # Emulates transformation between JobInputs.values and body format which relies on keys
+    update_inputs = []
+    for label, value in job_inputs_values.items():
+        # raise StopIteration if label not found!
+        found_input = next(p for p in project_inputs.values() if p["label"] == label)
+        if found_input["value"] != value:  # only patch if value changed
+            update_inputs.append({"key": found_input["key"], "value": value})
+
+    assert (
+        client.app.router["update_project_inputs"].url_for(
+            project_id=f"{cloned_project.uuid}"
+        )
+        == url
+    )
+    response = await client.patch(url.path, json=update_inputs)
+    project_inputs, _ = await assert_status(response, expected_cls=HTTPOk)
+    assert (
+        next(p for p in project_inputs.values() if p["label"] == "X")["value"]
+        == job_inputs_values["X"]
+    )
