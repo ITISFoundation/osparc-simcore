@@ -3,7 +3,7 @@ info:
   title: simcore-service-webserver
   description: ' Main service with an interface (http-API & websockets) to the web
     front-end'
-  version: 0.25.0
+  version: 0.26.0
 servers:
 - url: ''
   description: webserver
@@ -2136,6 +2136,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_ProjectGet_'
+  /v0/projects/{project_id}:clone:
+    post:
+      tags:
+      - projects
+      summary: Clone Project
+      operationId: clone_project
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_TaskGet_'
   /v0/projects/{project_id}/metadata:
     get:
       tags:
@@ -6968,13 +6989,11 @@ components:
             exclusiveMinimum: true
             type: integer
             minimum: 0
-          default: []
         classifiers:
           title: Classifiers
           type: array
           items:
             type: string
-          default: []
       additionalProperties: false
       description: 'inspired by Docker API https://docs.docker.com/engine/api/v1.43/#tag/Container/operation/ContainerList.
 
