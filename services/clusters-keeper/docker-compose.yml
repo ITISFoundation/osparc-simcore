@@ -34,5 +34,30 @@ services:
     ports:
       - "18081:8081"
     environment:
-      - REDIS_HOSTS=resources:redis:6379:0,locks:redis:6379:1,validation_codes:redis:6379:2,scheduled_maintenance:redis:6379:3,user_notifications:redis:6379:4,announcements:redis:6379:5
+      - REDIS_HOSTS=resources:${REDIS_HOST}:${REDIS_PORT}:0,locks:${REDIS_HOST}:${REDIS_PORT}:1,validation_codes:${REDIS_HOST}:${REDIS_PORT}:2,scheduled_maintenance:${REDIS_HOST}:${REDIS_PORT}:3,user_notifications:${REDIS_HOST}:${REDIS_PORT}:4,announcements:${REDIS_HOST}:${REDIS_PORT}:5
       # If you add/remove a db, do not forget to update the --databases entry in the docker-compose.yml
+
+  clusters-keeper:
+    image: local/clusters-keeper:development
+    init: true
+    environment:
+      - EC2_ACCESS_KEY_ID=${EC2_ACCESS_KEY_ID}
+      - EC2_SECRET_ACCESS_KEY=${EC2_SECRET_ACCESS_KEY}
+      - EC2_INSTANCES_ALLOWED_TYPES=${EC2_INSTANCES_ALLOWED_TYPES}
+      - EC2_INSTANCES_AMI_ID=${EC2_INSTANCES_AMI_ID}
+      - EC2_INSTANCES_SECURITY_GROUP_IDS=${EC2_INSTANCES_SECURITY_GROUP_IDS}
+      - EC2_INSTANCES_SUBNET_ID=${EC2_INSTANCES_SUBNET_ID}
+      - EC2_INSTANCES_KEY_NAME=${EC2_INSTANCES_KEY_NAME}
+      - LOG_LEVEL=${LOG_LEVEL:-WARNING}
+      - LOG_FORMAT_LOCAL_DEV_ENABLED=${LOG_FORMAT_LOCAL_DEV_ENABLED}
+      - CLUSTERS_KEEPER_LOGLEVEL=${LOG_LEVEL:-INFO}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - RABBIT_HOST=${RABBIT_HOST}
+      - RABBIT_PASSWORD=${RABBIT_PASSWORD}
+      - RABBIT_PORT=${RABBIT_PORT}
+      - RABBIT_SECURE=${RABBIT_SECURE}
+      - RABBIT_USER=${RABBIT_USER}
+    volumes:
+      - ./:/devel/services/clusters-keeper
+      - ../../packages:/devel/packages
