@@ -27,6 +27,9 @@ class _AutoRegisterMeta(ModelMetaclass):
         return new_class
 
 
+PreferenceName: TypeAlias = str
+
+
 class _ExtendedBaseModel(BaseModel, metaclass=_AutoRegisterMeta):
     ...
 
@@ -50,7 +53,7 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
         ..., description="distinguish between the types of preferences"
     )
 
-    value: Any | None = Field(
+    value: Any = Field(
         ...,
         description="the value of the preference. Stored as is and cannot be queried over",
     )
@@ -68,7 +71,7 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
         return preference_class
 
     @classmethod
-    def get_preference_name(cls) -> str:
+    def get_preference_name(cls) -> PreferenceName:
         # NOTE: this will be `unique` among all subclasses.
         # No class inherited from this one, can be defined using the same name,
         # even if the context is different.
