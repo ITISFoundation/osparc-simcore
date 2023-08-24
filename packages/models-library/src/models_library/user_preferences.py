@@ -46,11 +46,17 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
         ..., description="distinguish between the types of preferences"
     )
 
-    # needs to be encoded to bytes and decoded from bytes
     value: Any | None = Field(
         ...,
         description="the value of the preference. Stored as is and cannot be queried over",
     )
+
+    def to_bytes(self) -> bytes:
+        return self.json().encode("utf-8")
+
+    @classmethod
+    def from_bytes(cls, data: bytes):
+        return cls.parse_raw(data.decode("utf-8"))
 
     @classmethod
     def get_storage_key(cls) -> str:
@@ -92,7 +98,7 @@ class BaseUserServiceUserPreference(_BaseUserPreferenceModel):
     )
 
 
-BaseUserPreference: TypeAlias = (
+AnyBaseUserPreference: TypeAlias = (
     BaseBackendUserPreference
     | BaseFrontendUserPreference
     | BaseUserServiceUserPreference

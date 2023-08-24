@@ -7,7 +7,6 @@ from typing import Any
 import arrow
 import pytest
 from models_library.services import ServiceKey
-from models_library.services_ui import WidgetType
 from models_library.user_preferences import (
     BaseBackendUserPreference,
     BaseFrontendUserPreference,
@@ -103,6 +102,11 @@ def test_user_defined_backend_preference(value: Any, unregister_defined_classes:
     pref1 = Pref1(value=value)
     assert isinstance(pref1, BaseBackendUserPreference)
 
+    # check bytes serialization/deserialization
+    pref1_as_bytes = pref1.to_bytes()
+    new_instance = Pref1.from_bytes(pref1_as_bytes)
+    assert new_instance == pref1
+
 
 @pytest.mark.parametrize("widget_type_value", PreferenceWidgetType)
 def test_user_defined_frontend_preference(
@@ -112,13 +116,18 @@ def test_user_defined_frontend_preference(
 ):
     # definition of a new custom property
     class Pref1(BaseFrontendUserPreference):
-        widget_type: WidgetType = widget_type_value
+        widget_type: PreferenceWidgetType = widget_type_value
         display_label: str = "test display label"
         tooltip_message: str = "test tooltip message"
 
     # usage
     pref1 = Pref1(value=value)
     assert isinstance(pref1, BaseFrontendUserPreference)
+
+    # check bytes serialization/deserialization
+    pref1_as_bytes = pref1.to_bytes()
+    new_instance = Pref1.from_bytes(pref1_as_bytes)
+    assert new_instance == pref1
 
 
 @pytest.mark.parametrize("service_key_value", _SERVICE_KEY_SAMPLES)
@@ -132,6 +141,11 @@ def test_user_defined_user_service_preference(
     # usage
     pref1 = Pref1(value=value, last_changed_utc_timestamp=_get_utc_timestamp())
     assert isinstance(pref1, BaseUserServiceUserPreference)
+
+    # check bytes serialization/deserialization
+    pref1_as_bytes = pref1.to_bytes()
+    new_instance = Pref1.from_bytes(pref1_as_bytes)
+    assert new_instance == pref1
 
 
 def test_redefine_class_with_same_name_is_not_allowed(unregister_defined_classes: None):
