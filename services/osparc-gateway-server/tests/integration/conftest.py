@@ -20,7 +20,6 @@ from osparc_gateway_server.backend.utils import (
     OSPARC_SCHEDULER_DASHBOARD_PORT,
 )
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
-from sqlalchemy import exc as sa_exceptions
 from tenacity._asyncio import AsyncRetrying
 from tenacity.wait import wait_fixed
 
@@ -103,8 +102,7 @@ async def local_dask_gateway_server(
     dask_gateway_server = DaskGateway(config=c)
     dask_gateway_server.initialize([])  # that is a shitty one!
     print("--> local dask gateway server initialized")
-    with pytest.warns(sa_exceptions.Base20DeprecationWarning):
-        await dask_gateway_server.setup()
+    await dask_gateway_server.setup()
     await dask_gateway_server.backend.proxy._proxy_contacted  # pylint: disable=protected-access
     print("--> local dask gateway server setup completed")
     yield DaskGatewayServer(
