@@ -248,7 +248,7 @@ class AuthSession:
         data: JSON | None = self._get_data_or_raise_http_exception(response)
         return ProjectGet.parse_obj(data)
 
-    async def list_projects(
+    async def get_projects_w_solver_page(
         self, solver_name: str, limit: int, offset: int
     ) -> Page[ProjectGet]:
         return await self._page_projects(
@@ -260,7 +260,7 @@ class AuthSession:
             search=urllib.parse.quote(solver_name, safe=""),
         )
 
-    async def list_user_projects(self, limit: int, offset: int):
+    async def get_projects_page(self, limit: int, offset: int):
         return await self._page_projects(
             limit=limit,
             offset=offset,
