@@ -1,10 +1,4 @@
-# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
-# pylint: disable=too-many-arguments
-# pylint: disable=unused-argument
-# pylint: disable=unused-variable
-
-from typing import Any
 
 import pytest
 from aiopg.sa.connection import SAConnection
@@ -12,17 +6,6 @@ from faker import Faker
 from pytest_simcore.helpers.rawdata_fakers import random_user
 from simcore_postgres_database.models.users import UserRole, users
 from simcore_postgres_database.utils_user_preferences import UserPreferencesRepo
-
-
-@pytest.fixture
-async def user(connection: SAConnection, faker: Faker) -> dict[str, Any]:
-    data = random_user(role=faker.random_element(elements=UserRole))
-    user_id = await connection.scalar(
-        users.insert().values(**data).returning(users.c.id)
-    )
-    assert user_id
-    data["id"] = user_id
-    return data
 
 
 @pytest.fixture
@@ -51,18 +34,36 @@ async def _assert_save_get_preference(
     assert get_res_2 == payload
 
 
+async def _assert_preference_not_saved(
+    connection: SAConnection, *, user_id: int, preference_name: str
+) -> None:
+    not_found: bytes | None = await UserPreferencesRepo().get_preference_payload(
+        connection, user_id=user_id, preference_name=preference_name
+    )
+    assert not_found is None
+
+
 def _get_random_payload(faker: Faker) -> bytes:
     return faker.pystr(max_chars=10000).encode()
 
 
-async def test_user_preference_repo_workflow(
-    connection: SAConnection, user: dict[str, Any], preference_one: str, faker: Faker
-):
-    # preference is not saved
-    not_found: bytes | None = await UserPreferencesRepo().get_preference_payload(
-        connection, user_id=user["id"], preference_name=preference_one
+async def _get_user_id(connection: SAConnection, faker: Faker) -> int:
+    data = random_user(role=faker.random_element(elements=UserRole))
+    user_id = await connection.scalar(
+        users.insert().values(**data).returning(users.c.id)
     )
-    assert not_found is None
+    assert user_id
+    return user_id
+
+
+async def test_user_preference_repo_workflow(
+    connection: SAConnection, preference_one: str, faker: Faker
+):
+    user_id = await _get_user_id(connection, faker)
+    # preference is not saved
+    await _assert_preference_not_saved(
+        connection, user_id=user_id, preference_name=preference_one
+    )
 
     payload_1 = _get_random_payload(faker)
     payload_2 = _get_random_payload(faker)
@@ -71,7 +72,7 @@ async def test_user_preference_repo_workflow(
     # store the preference for the first time
     await _assert_save_get_preference(
         connection,
-        user_id=user["id"],
+        user_id=user_id,
         preference_name=preference_one,
         payload=payload_1,
     )
@@ -79,10 +80,72 @@ async def test_user_preference_repo_workflow(
     # updating the preference still works
     await _assert_save_get_preference(
         connection,
-        user_id=user["id"],
+        user_id=user_id,
         preference_name=preference_one,
         payload=payload_2,
     )
 
 
-# TEST same preference name with different users do not get overwritten
+async def test_same_preference_name_different_users(
+    connection: SAConnection, preference_one: str, faker: Faker
+):
+    user_id_1 = await _get_user_id(connection, faker)
+    user_id_2 = await _get_user_id(connection, faker)
+
+    payload_1 = _get_random_payload(faker)
+    payload_2 = _get_random_payload(faker)
+    assert payload_1 != payload_2
+
+    # save preference for first user
+    await _assert_preference_not_saved(
+        connection, user_id=user_id_1, preference_name=preference_one
+    )
+    await _assert_save_get_preference(
+        connection,
+        user_id=user_id_1,
+        preference_name=preference_one,
+        payload=payload_1,
+    )
+
+    # save preference for second user
+    await _assert_preference_not_saved(
+        connection, user_id=user_id_2, preference_name=preference_one
+    )
+    await _assert_save_get_preference(
+        connection,
+        user_id=user_id_2,
+        preference_name=preference_one,
+        payload=payload_2,
+    )
+
+
+async def test_different_preferences_same_user(
+    connection: SAConnection, preference_one: str, preference_two: str, faker: Faker
+):
+    user_id = await _get_user_id(connection, faker)
+
+    payload_1 = _get_random_payload(faker)
+    payload_2 = _get_random_payload(faker)
+    assert payload_1 != payload_2
+
+    # save first preference
+    await _assert_preference_not_saved(
+        connection, user_id=user_id, preference_name=preference_one
+    )
+    await _assert_save_get_preference(
+        connection,
+        user_id=user_id,
+        preference_name=preference_one,
+        payload=payload_1,
+    )
+
+    # save second preference
+    await _assert_preference_not_saved(
+        connection, user_id=user_id, preference_name=preference_two
+    )
+    await _assert_save_get_preference(
+        connection,
+        user_id=user_id,
+        preference_name=preference_two,
+        payload=payload_2,
+    )
