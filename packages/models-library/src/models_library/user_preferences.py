@@ -41,6 +41,10 @@ class PreferenceWidgetType(StrAutoEnum):
     CHECKBOX = auto()
 
 
+class NoPreferenceFoundError(RuntimeError):
+    ...
+
+
 class _BaseUserPreferenceModel(_ExtendedBaseModel):
     preference_type: PreferenceType = Field(
         ..., description="distinguish between the types of preferences"
@@ -50,6 +54,18 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
         ...,
         description="the value of the preference. Stored as is and cannot be queried over",
     )
+
+    @classmethod
+    def get_preference_class_from_name(
+        cls, preference_name: str
+    ) -> "_BaseUserPreferenceModel":
+        preference_class: "_BaseUserPreferenceModel" | None = (
+            cls._registered_user_preference_classes.get(preference_name, None)
+        )
+        if preference_class is None:
+            msg = f"No preference class found for provided {preference_name=}"
+            raise NoPreferenceFoundError(msg)
+        return preference_class
 
     @classmethod
     def get_preference_name(cls) -> str:
