@@ -1,27 +1,25 @@
-from typing import TypeAlias
+from typing import Any, TypeAlias
 
 from pydantic import BaseModel
 
-from ..user_preferences import PreferenceName, PreferenceWidgetType
-
-# NOTE: this field needs to be a tuple of all the field
-# types defined inside `_preferences_models.py`
-ValueType: TypeAlias = bool
+from ..services_ui import WidgetType
+from ..user_preferences import PreferenceName, ValueType
 
 
 class UserPreference(BaseModel):
-    widget_type: PreferenceWidgetType
+    render_widget: bool
+    widget_type: WidgetType
     display_label: str
     tooltip_message: str
-
-    value: ValueType
+    value_type: ValueType
+    value: Any
 
 
 UserPreferencesGet: TypeAlias = dict[PreferenceName, UserPreference]
 
 
 class UserPreferencePatchRequestBody(BaseModel):
-    value: ValueType
+    value: Any
 
 
 class UserPreferencePatchPathParams(BaseModel):

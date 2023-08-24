@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 from pydantic.main import ModelMetaclass
 
 from .services import ServiceKey
+from .services_ui import WidgetType
 from .utils.enums import StrAutoEnum
 
 
@@ -34,14 +35,19 @@ class _ExtendedBaseModel(BaseModel, metaclass=_AutoRegisterMeta):
     ...
 
 
+class ValueType(StrAutoEnum):
+    BOOL = auto()
+    STR = auto()
+    FLOAT = auto()
+    INT = auto()
+    LIST = auto()
+    DICT = auto()
+
+
 class PreferenceType(StrAutoEnum):
     BACKEND = auto()
     FRONTEND = auto()
     USER_SERVICE = auto()
-
-
-class PreferenceWidgetType(StrAutoEnum):
-    CHECKBOX = auto()
 
 
 class NoPreferenceFoundError(RuntimeError):
@@ -86,11 +92,16 @@ class BaseFrontendUserPreference(_BaseUserPreferenceModel):
     preference_type: PreferenceType = PreferenceType.FRONTEND
 
     # NOTE: below fields do not require storage in the DB
-    widget_type: PreferenceWidgetType = Field(
+    # TODO: exclude from model
+    render_widget: bool = Field(
+        ..., description="when True a widget will automatically be rendered"
+    )
+    value_type: ValueType = Field(..., description="content type of the value")
+    widget_type: WidgetType | None = Field(
         ..., description="type of widget to display in the frontend"
     )
-    display_label: str = Field(..., description="short label to display")
-    tooltip_message: str = Field(
+    display_label: str | None = Field(..., description="short label to display")
+    tooltip_message: str | None = Field(
         ..., description="more information to display when hovering"
     )
 
@@ -104,6 +115,7 @@ class BaseUserServiceUserPreference(_BaseUserPreferenceModel):
     )
 
     # NOTE: below fields do not require storage in the DB
+    # TODO: exclude from model
     last_changed_utc_timestamp: float = Field(
         ...,
         description="needs to be provided to signal that the value of the property changed",
