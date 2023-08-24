@@ -1,5 +1,6 @@
 # pylint: disable=inconsistent-return-statements
 # pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
 
 from collections.abc import AsyncIterator
 from typing import Any
