@@ -11,11 +11,11 @@ from models_library.services_ui import WidgetType
 from models_library.user_preferences import (
     BaseBackendUserPreference,
     BaseFrontendUserPreference,
-    BaseUserPreferenceModel,
     BaseUserServiceUserPreference,
     PreferenceType,
     PreferenceWidgetType,
     _AutoRegisterMeta,
+    _BaseUserPreferenceModel,
     get_registered_classes,
 )
 from pydantic import parse_obj_as
@@ -47,7 +47,7 @@ def test_base_user_preference_model(value: Any, preference_type: PreferenceType)
     base_data = _get_base_user_preferences_data(
         preference_type=preference_type, value=value
     )
-    assert parse_obj_as(BaseUserPreferenceModel, base_data)
+    assert parse_obj_as(_BaseUserPreferenceModel, base_data)
 
 
 def test_backend_preferences(value: Any):
@@ -142,3 +142,18 @@ def test_user_defined_user_service_preference(
     # usage
     pref1 = Pref1(value=value, last_changed_utc_timestamp=_get_utc_timestamp())
     assert isinstance(pref1, BaseUserServiceUserPreference)
+
+
+def test_redefine_class_with_same_name_is_not_allowed(unregister_defined_classes: None):
+    # pylint: disable=unused-variable
+    def def_class_1():
+        class APreference(_BaseUserPreferenceModel):
+            ...
+
+    def def_class_2():
+        class APreference(_BaseUserPreferenceModel):
+            ...
+
+    def_class_1()
+    with pytest.raises(TypeError, match="was already defined"):
+        def_class_2()

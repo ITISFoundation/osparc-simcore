@@ -15,6 +15,13 @@ class _AutoRegisterMeta(ModelMetaclass):
         new_class = super().__new__(cls, name, bases, attrs)
 
         if name != BaseModel.__name__:
+            if name in cls._registered_user_preference_classes:
+                msg = (
+                    f"Class named '{name}' was already defined at "
+                    f"{cls._registered_user_preference_classes[name]}."
+                    " Please choose a different class name!"
+                )
+                raise TypeError(msg)
             cls._registered_user_preference_classes[name] = new_class
 
         return new_class
@@ -39,7 +46,7 @@ class PreferenceWidgetType(StrAutoEnum):
     CHECKBOX = auto()
 
 
-class BaseUserPreferenceModel(_ExtendedBaseModel):
+class _BaseUserPreferenceModel(_ExtendedBaseModel):
     preference_type: PreferenceType = Field(
         ..., description="distinguish between the types of preferences"
     )
@@ -55,11 +62,11 @@ class BaseUserPreferenceModel(_ExtendedBaseModel):
         return cls.__name__
 
 
-class BaseBackendUserPreference(BaseUserPreferenceModel):
+class BaseBackendUserPreference(_BaseUserPreferenceModel):
     preference_type: PreferenceType = PreferenceType.BACKEND
 
 
-class BaseFrontendUserPreference(BaseUserPreferenceModel):
+class BaseFrontendUserPreference(_BaseUserPreferenceModel):
     preference_type: PreferenceType = PreferenceType.FRONTEND
 
     # NOTE: below fields do not require storage in the DB
@@ -72,7 +79,7 @@ class BaseFrontendUserPreference(BaseUserPreferenceModel):
     )
 
 
-class BaseUserServiceUserPreference(BaseUserPreferenceModel):
+class BaseUserServiceUserPreference(_BaseUserPreferenceModel):
     preference_type: PreferenceType = PreferenceType.USER_SERVICE
 
     # NOTE: preferences are stored per service and the version is not considered
