@@ -16,7 +16,6 @@ from models_library.user_preferences import (
     PreferenceWidgetType,
     _AutoRegisterMeta,
     _BaseUserPreferenceModel,
-    get_registered_classes,
 )
 from pydantic import parse_obj_as
 
@@ -100,9 +99,6 @@ def test_user_defined_backend_preference(value: Any, unregister_defined_classes:
     class Pref1(BaseBackendUserPreference):
         ...
 
-    registered_classes = get_registered_classes()
-    assert registered_classes[Pref1.__name__] == Pref1
-
     # usage
     pref1 = Pref1(value=value)
     assert isinstance(pref1, BaseBackendUserPreference)
@@ -120,9 +116,6 @@ def test_user_defined_frontend_preference(
         display_label: str = "test display label"
         tooltip_message: str = "test tooltip message"
 
-    registered_classes = get_registered_classes()
-    assert registered_classes[Pref1.__name__] == Pref1
-
     # usage
     pref1 = Pref1(value=value)
     assert isinstance(pref1, BaseFrontendUserPreference)
@@ -135,9 +128,6 @@ def test_user_defined_user_service_preference(
     # definition of a new custom property
     class Pref1(BaseUserServiceUserPreference):
         service_key: ServiceKey = service_key_value
-
-    registered_classes = get_registered_classes()
-    assert registered_classes[Pref1.__name__] == Pref1
 
     # usage
     pref1 = Pref1(value=value, last_changed_utc_timestamp=_get_utc_timestamp())

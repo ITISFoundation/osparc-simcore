@@ -31,11 +31,6 @@ class _ExtendedBaseModel(BaseModel, metaclass=_AutoRegisterMeta):
     ...
 
 
-def get_registered_classes() -> dict[str, type]:
-    # pylint: disable=protected-access
-    return _AutoRegisterMeta._registered_user_preference_classes  # noqa: SLF001
-
-
 class PreferenceType(StrAutoEnum):
     BACKEND = auto()
     FRONTEND = auto()
@@ -59,6 +54,9 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
 
     @classmethod
     def get_storage_key(cls) -> str:
+        # NOTE: this will be `unique` among all subclasses.
+        # No class inherited from this one, can be defined using the same name,
+        # even if the context is different.
         return cls.__name__
 
 
