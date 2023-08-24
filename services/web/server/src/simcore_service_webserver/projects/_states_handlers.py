@@ -24,7 +24,7 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import ProjectType
 from simcore_service_webserver.utils_aiohttp import envelope_json_response
 
-from .._meta import api_version_prefix as VTAG
+from .._meta import API_VTAG as VTAG
 from ..director_v2.exceptions import DirectorServiceError
 from ..login.decorators import login_required
 from ..notifications import project_logs

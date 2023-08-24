@@ -43,7 +43,7 @@ class PackageInfo:
 
     @property
     def api_prefix_path_tag(self) -> str:
-        """Used as prefix in the api path"""
+        """Used as prefix in the api path e.g. 'v0'"""
         return f"v{self.version.major}"
 
     def get_summary(self) -> str:

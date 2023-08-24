@@ -474,19 +474,19 @@ components:
 
   schemas:
     ErrorEnveloped:
-      $ref: "../common/schemas/error.yaml#/components/schemas/ErrorEnveloped"
+      $ref: "./schemas/error.yaml#/components/schemas/ErrorEnveloped"
 
     RunningServiceEnveloped:
-      $ref: "../common/schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped"
+      $ref: "./schemas/running_service.yaml#/components/schemas/RunningServiceEnveloped"
 
     RunningServicesEnveloped:
-      $ref: "../common/schemas/running_service.yaml#/components/schemas/RunningServicesEnveloped"
+      $ref: "./schemas/running_service.yaml#/components/schemas/RunningServicesEnveloped"
 
     ServicesEnveloped:
-      $ref: "../common/schemas/services.yaml#/components/schemas/ServicesEnveloped"
+      $ref: "./schemas/services.yaml#/components/schemas/ServicesEnveloped"
 
     ServiceExtrasEnveloped:
-      $ref: "../common/schemas/services.yaml#/components/schemas/ServiceExtrasEnveloped"
+      $ref: "./schemas/services.yaml#/components/schemas/ServiceExtrasEnveloped"
 
     HealthCheckEnveloped:
-      $ref: "../common/schemas/health_check.yaml#/components/schemas/HealthCheckEnveloped"
+      $ref: "./schemas/health_check.yaml#/components/schemas/HealthCheckEnveloped"

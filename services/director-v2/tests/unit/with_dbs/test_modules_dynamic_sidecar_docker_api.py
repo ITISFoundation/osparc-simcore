@@ -17,6 +17,7 @@ from aiodocker.utils import clean_filters
 from aiodocker.volumes import DockerVolume
 from faker import Faker
 from fastapi.encoders import jsonable_encoder
+from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_enums import ServiceState
@@ -180,15 +181,15 @@ def dynamic_sidecar_service_spec(
         "name": dynamic_sidecar_service_name,
         "task_template": {"ContainerSpec": {"Image": "joseluisq/static-web-server"}},
         "labels": {
-            "swarm_stack_name": f"{dynamic_sidecar_settings.SWARM_STACK_NAME}",
-            "uuid": f"{uuid4()}",
-            "service_key": "simcore/services/dynamic/3dviewer",
-            "service_tag": "2.4.5",
             "traefik.docker.network": "",
             "io.simcore.zone": "",
-            "service_port": "80",
-            "study_id": f"{uuid4()}",
-            "user_id": "123",
+            f"{to_simcore_runtime_docker_label_key('project_id')}": f"{uuid4()}",
+            f"{to_simcore_runtime_docker_label_key('user_id')}": "123",
+            f"{to_simcore_runtime_docker_label_key('node_id')}": f"{uuid4()}",
+            f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}": f"{dynamic_sidecar_settings.SWARM_STACK_NAME}",
+            f"{to_simcore_runtime_docker_label_key('service_port')}": "80",
+            f"{to_simcore_runtime_docker_label_key('service_key')}": "simcore/services/dynamic/3dviewer",
+            f"{to_simcore_runtime_docker_label_key('service_version')}": "2.4.5",
             DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: scheduler_data_from_http_request.json(),
         },
     }
@@ -234,10 +235,13 @@ def dynamic_sidecar_stack_specs(
                 "ContainerSpec": {"Image": "joseluisq/static-web-server"}
             },
             "labels": {
-                "swarm_stack_name": f"{dynamic_sidecar_settings.SWARM_STACK_NAME}",
-                "uuid": f"{node_uuid}",
-                "user_id": f"{user_id}",
-                "study_id": f"{project_id}",
+                f"{to_simcore_runtime_docker_label_key('project_id')}": f"{project_id}",
+                f"{to_simcore_runtime_docker_label_key('user_id')}": f"{user_id}",
+                f"{to_simcore_runtime_docker_label_key('node_id')}": f"{node_uuid}",
+                f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}": f"{dynamic_sidecar_settings.SWARM_STACK_NAME}",
+                f"{to_simcore_runtime_docker_label_key('service_port')}": "80",
+                f"{to_simcore_runtime_docker_label_key('service_key')}": "simcore/services/dynamic/3dviewer",
+                f"{to_simcore_runtime_docker_label_key('service_version')}": "2.4.5",
             },
         },
         {
@@ -246,10 +250,13 @@ def dynamic_sidecar_stack_specs(
                 "ContainerSpec": {"Image": "joseluisq/static-web-server"}
             },
             "labels": {
-                "swarm_stack_name": f"{dynamic_sidecar_settings.SWARM_STACK_NAME}",
-                "uuid": f"{node_uuid}",
-                "user_id": f"{user_id}",
-                "study_id": f"{project_id}",
+                f"{to_simcore_runtime_docker_label_key('project_id')}": f"{project_id}",
+                f"{to_simcore_runtime_docker_label_key('user_id')}": f"{user_id}",
+                f"{to_simcore_runtime_docker_label_key('node_id')}": f"{node_uuid}",
+                f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}": f"{dynamic_sidecar_settings.SWARM_STACK_NAME}",
+                f"{to_simcore_runtime_docker_label_key('service_port')}": "80",
+                f"{to_simcore_runtime_docker_label_key('service_key')}": "simcore/services/dynamic/3dviewer",
+                f"{to_simcore_runtime_docker_label_key('service_version')}": "2.4.5",
             },
         },
     ]
@@ -573,8 +580,8 @@ async def test_remove_dynamic_sidecar_stack(
         services = await async_docker_client.services.list(
             filters={
                 "label": [
-                    f"swarm_stack_name={dynamic_sidecar_settings.SWARM_STACK_NAME}",
-                    f"uuid={node_uuid}",
+                    f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}={dynamic_sidecar_settings.SWARM_STACK_NAME}",
+                    f"{to_simcore_runtime_docker_label_key('node_id')}={node_uuid}",
                 ]
             }
         )

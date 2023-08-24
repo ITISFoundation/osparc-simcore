@@ -19,7 +19,6 @@ from typing import Any, Callable, Iterable
 
 import pytest
 import yaml
-from models_library.projects import Project
 from openapi_core.schema.specs.models import Spec as OpenApiSpecs
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_projects import empty_project_data
@@ -97,8 +96,3 @@ def disable_gc_manual_guest_users(mocker):
 def openapi_specs(api_version_prefix) -> OpenApiSpecs:
     spec_path = get_openapi_specs_path(api_version_prefix)
     return load_openapi_specs(spec_path)
-
-
-@pytest.fixture
-def project_jsonschema() -> dict[str, Any]:
-    return Project.schema(by_alias=True)

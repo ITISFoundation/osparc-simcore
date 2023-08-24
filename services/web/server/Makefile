@@ -15,4 +15,4 @@ requirements: ## compiles pip requirements (.in -> .txt)
 
 .PHONY: openapi-specs
 openapi-specs: ## updates and validates openapi specifications
-	$(MAKE_C) $(CURDIR)/src/simcore_service_${APP_NAME}/api $@
+	$(MAKE_C) $(REPO_BASE_DIR)/api/specs/web-server all

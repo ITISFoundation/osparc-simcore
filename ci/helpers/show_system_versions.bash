@@ -36,3 +36,8 @@ echo "------------------------------ docker-compose ----------------------------
 if command -v docker-compose; then
     docker-compose version
 fi
+
+echo "------------------------------ docker compose -----------------------------------"
+if command -v docker; then
+    docker compose version
+fi

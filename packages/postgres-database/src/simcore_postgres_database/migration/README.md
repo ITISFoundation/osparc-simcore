@@ -80,7 +80,7 @@ We create a revision script for the change by using the local db as follows:
 
 ```bash
 pip install -r packages/postgres-database/requirements/dev.txt # install sc-pg package
-docker-compose -f services/docker-compose.yml -f services/docker-compose-ops.yml up adminer # bring db and ui up
+docker compose -f services/docker-compose.yml -f services/docker-compose-ops.yml up adminer # bring db and ui up
 docker ps # find the published port for the db
 sc-pg discover -u scu -p adminadmin --port=5432 # discover the db
 sc-pg info # what revision are we at?

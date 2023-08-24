@@ -62,6 +62,13 @@ class CompRunsAtDB(BaseModel):
             v = v.replace(tzinfo=datetime.timezone.utc)
         return v
 
+    @validator("metadata", pre=True)
+    @classmethod
+    def convert_null_to_empty_metadata(cls, v):
+        if v is None:
+            v = RunMetadataDict()
+        return v
+
     class Config:
         orm_mode = True
         schema_extra: ClassVar[dict[str, Any]] = {

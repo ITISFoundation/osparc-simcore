@@ -578,18 +578,6 @@ qx.Class.define("osparc.data.model.Node", {
         });
     },
 
-    __deleteInBackend: function() {
-      // remove node in the backend
-      const params = {
-        url: {
-          studyId: this.getStudy().getUuid(),
-          nodeId: this.getNodeId()
-        }
-      };
-      osparc.data.Resources.fetch("studies", "deleteNode", params)
-        .catch(err => console.error(err));
-    },
-
     __applyPropsForm: function() {
       const checkIsPipelineRunning = () => {
         const isPipelineRunning = this.getStudy().isPipelineRunning();
@@ -1040,7 +1028,10 @@ qx.Class.define("osparc.data.model.Node", {
           disclaimer: this.tr("This might take a couple of minutes")
         });
       }
-      if (this.getKey() && this.getKey().includes("sim4life-lite")) {
+      if (
+        (this.getKey() && this.getKey().includes("sim4life-lite")) ||
+        osparc.product.Utils.isProduct("tis")
+      ) {
         // show disclaimer after 1'
         setTimeout(() => {
           if (loadingPage) {
@@ -1500,8 +1491,28 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     removeNode: function() {
-      this.__deleteInBackend();
-      this.removeIFrame();
+      return new Promise(resolve => {
+        this.__deleteInBackend()
+          .then(() => {
+            resolve(true);
+            this.removeIFrame();
+          })
+          .catch(err => {
+            console.error(err);
+            resolve(false);
+          });
+      });
+    },
+
+    __deleteInBackend: function() {
+      // remove node in the backend
+      const params = {
+        url: {
+          studyId: this.getStudy().getUuid(),
+          nodeId: this.getNodeId()
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "deleteNode", params);
     },
 
     stopRequestingStatus: function() {

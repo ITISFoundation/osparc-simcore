@@ -3,8 +3,6 @@
 """
 
 
-from typing import Optional
-
 from service_integration.compose_spec_model import (
     BuildItem,
     ComposeSpecification,
@@ -19,14 +17,14 @@ def create_image_spec(
     settings: AppSettings,
     meta_cfg: MetaConfig,
     docker_compose_overwrite_cfg: DockerComposeOverwriteCfg,
-    runtime_cfg: Optional[RuntimeConfig] = None,
+    runtime_cfg: RuntimeConfig | None = None,
     *,
     extra_labels: dict[str, str] = None,
     **_context
 ) -> ComposeSpecification:
     """Creates the image-spec provided the osparc-config and a given context (e.g. development)
 
-    - the image-spec simplifies building an image to ``docker-compose build``
+    - the image-spec simplifies building an image to ``docker compose build``
     """
     labels = {**meta_cfg.to_labels_annotations()}
     if extra_labels:

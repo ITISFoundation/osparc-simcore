@@ -17,7 +17,6 @@ import simcore_service_director_v2
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from models_library.projects import Node, NodesDict
-from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict, setenvs_from_envfile
@@ -70,7 +69,7 @@ def package_dir() -> Path:
 
 @pytest.fixture()
 def project_env_devel_environment(
-    monkeypatch: MonkeyPatch, project_slug_dir: Path
+    monkeypatch: pytest.MonkeyPatch, project_slug_dir: Path
 ) -> EnvVarsDict:
     env_devel_file = project_slug_dir / ".env-devel"
     assert env_devel_file.exists()
@@ -141,7 +140,7 @@ def dynamic_sidecar_docker_image_name() -> str:
 
 @pytest.fixture()
 def mock_env(
-    monkeypatch: MonkeyPatch, dynamic_sidecar_docker_image_name: str
+    monkeypatch: pytest.MonkeyPatch, dynamic_sidecar_docker_image_name: str
 ) -> EnvVarsDict:
     """This is the base mock envs used to configure the app.
 
