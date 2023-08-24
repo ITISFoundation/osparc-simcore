@@ -12,7 +12,7 @@ def test_module_setup_defaults_to_false(client: TestClient):
     settings: ApplicationSettings = client.app[APP_SETTINGS_KEY]
 
     assert settings.WEBSERVER_CLUSTERS
-    assert "list_clusters_handler" in client.app.router
+    assert "list_clusters" in client.app.router
 
 
 def test_module_setup_can_be_properly_enabled(
@@ -23,4 +23,4 @@ def test_module_setup_can_be_properly_enabled(
     settings: ApplicationSettings = client.app[APP_SETTINGS_KEY]
 
     assert settings.WEBSERVER_CLUSTERS
-    assert "list_clusters_handler" in client.app.router
+    assert "list_clusters" in client.app.router

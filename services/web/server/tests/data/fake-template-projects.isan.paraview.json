@@ -3,9 +3,9 @@
   "name": "ISAN: 3D Paraview",
   "description": "3D Paraview viewer with two inputs",
   "thumbnail": "",
-  "prjOwner": "maiz",
+  "prjOwner": "foo@foo.com",
   "creationDate": "2019-05-24T10:36:57.813Z",
-  "lastChangeDate": " 2019-05-24T10:38:12.888Z",
+  "lastChangeDate": "2019-05-24T10:38:12.888Z",
   "tags": [],
   "accessRights": {},
   "workbench": {

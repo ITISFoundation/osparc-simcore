@@ -28,7 +28,6 @@ def client(
     mock_env_devel_environment: EnvVarsDict,
     mock_env_auto_deployer_agent: EnvVarsDict,
 ) -> TestClient:
-
     app = create_safe_application()
 
     MAX_DELAY_SECS_ALLOWED = 1  # secs
@@ -137,8 +136,7 @@ async def test_get_scheduled_maintenance(
 
     # test url
     assert str(url) == f"/{api_version_prefix}/scheduled_maintenance"
-
-    response = await client.get(url)
+    response = await client.get(f"{url}")
 
     # test response
     data, error = await assert_status(response, expected)

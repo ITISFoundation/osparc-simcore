@@ -17,7 +17,7 @@ from simcore_postgres_database.models.users import UserNameConverter, UserRole
 
 from ..db.models import GroupType, groups, user_to_groups, users
 from ..db.plugin import get_database_engine
-from ..groups.schemas import convert_groups_db_to_schema
+from ..groups.models import convert_groups_db_to_schema
 from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..security.api import clean_auth_policy_cache
 from . import _db

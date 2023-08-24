@@ -1,19 +1,16 @@
 # pylint:disable=redefined-outer-name
 
 import json
-import logging
 import subprocess
 from pathlib import Path
 from typing import Any, Callable, Iterable
 
 import pytest
 
-log = logging.getLogger(__name__)
-
 
 @pytest.fixture(scope="session")
 def common_schemas_specs_dir(osparc_simcore_root_dir: Path) -> Path:
-    specs_dir = osparc_simcore_root_dir / "api" / "specs" / "common" / "schemas"
+    specs_dir = osparc_simcore_root_dir / "api" / "specs" / "director" / "schemas"
     assert specs_dir.exists()
     return specs_dir
 
@@ -108,8 +105,7 @@ def diff_json_schemas(json_diff_script: Path, tmp_path_factory) -> Callable:
 
         # NOTE: When debugging the differences, as of now both schemas come from
         # pydantic model, now it is possible to visually compare the difference. To do so,
-        # just dereference the current pydantic schema. Example can be seen here:
-        # /osparc-simcore/api/specs/webserver/scripts/openapi_project.py
+        # just dereference the current pydantic schema.
 
         return subprocess.run(
             [json_diff_script, schema_lhs_path, schema_rhs_path],

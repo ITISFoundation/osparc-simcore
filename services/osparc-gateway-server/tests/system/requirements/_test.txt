@@ -23,7 +23,7 @@ charset-normalizer==3.2.0
     # via
     #   aiohttp
     #   requests
-click==8.1.6
+click==8.1.7
     # via
     #   -c requirements/../../../../dask-sidecar/requirements/_dask-distributed.txt
     #   dask
@@ -100,7 +100,9 @@ multidict==6.0.4
     #   aiohttp
     #   yarl
 numpy==1.25.2
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/../../../../dask-sidecar/requirements/_dask-distributed.txt
+    #   -r requirements/_test.in
 packaging==23.1
     # via
     #   -c requirements/../../../../dask-sidecar/requirements/_dask-distributed.txt
@@ -179,7 +181,7 @@ toolz==0.12.0
     #   dask
     #   distributed
     #   partd
-tornado==6.3.2
+tornado==6.3.3
     # via
     #   -c requirements/../../../../dask-sidecar/requirements/_dask-distributed.txt
     #   dask-gateway

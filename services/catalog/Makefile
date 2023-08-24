@@ -23,7 +23,7 @@ requirements reqs: ## (or reqs) compiles pip requirements (.in -> .txt)
 
 up-extra: .env down-extra ## creates and starts adjacent services and migrates postgres database
 	# starting all adjacent services
-	docker-compose -f docker-compose-extra.yml up --detach
+	docker compose -f docker-compose-extra.yml up --detach
 	sleep 1
 	# discovering postgres services
 	@export $(shell grep -v '^#' .env | xargs) && sc-pg discover
@@ -35,7 +35,7 @@ down down-extra: docker-compose-extra.yml ## stops pg fixture
 	# cleanup discover cache
 	-@sc-pg clean
 	# stopping extra services
-	-@docker-compose -f docker-compose-extra.yml down
+	-@docker compose -f docker-compose-extra.yml down
 	# killing any process using port 8000
 	-@fuser --kill --verbose --namespace tcp 8000
 
