@@ -25,8 +25,3 @@ class EC2InstanceData:
     type: InstanceTypeType  # noqa: A003
     state: InstanceStateNameType
     tags: EC2Tags
-
-
-@dataclass(frozen=True)
-class Cluster:
-    ...
