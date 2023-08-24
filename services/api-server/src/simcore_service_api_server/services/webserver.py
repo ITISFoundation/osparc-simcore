@@ -237,6 +237,17 @@ class AuthSession:
         data = await self.get(f"{result_url}")
         return ProjectGet.parse_obj(data)
 
+    async def clone_project(self, project_id: UUID) -> ProjectGet:
+        response = await self.client.post(
+            f"/projects/{project_id}:clone",
+            cookies=self.session_cookies,
+        )
+        if response.status_code == status.HTTP_404_NOT_FOUND:
+            raise ProjectNotFoundError(project_id=project_id)
+
+        data: JSON | None = self._get_data_or_raise_http_exception(response)
+        return ProjectGet.parse_obj(data)
+
     async def get_project(self, project_id: UUID) -> ProjectGet:
         response = await self.client.get(
             f"/projects/{project_id}",
