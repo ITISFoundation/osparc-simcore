@@ -24,6 +24,7 @@ from .models import ProjectDict, ProjectTypeAPI
 
 async def _append_fields(
     request: web.Request,
+    *,
     user_id: UserID,
     project: ProjectDict,
     is_template: bool,
@@ -41,8 +42,7 @@ async def _append_fields(
     await update_or_pop_permalink_in_project(request, project)
 
     # validate
-    project_data = model_schema_cls.parse_obj(project).data(exclude_unset=True)
-    return project_data
+    return model_schema_cls.parse_obj(project).data(exclude_unset=True)
 
 
 async def list_projects(
@@ -55,7 +55,6 @@ async def list_projects(
     limit: int,
     search: str | None,
 ) -> tuple[list[ProjectDict], int]:
-
     app = request.app
     db = ProjectDBAPI.get_from_app_context(app)
 
@@ -78,7 +77,7 @@ async def list_projects(
         *(
             _append_fields(
                 request,
-                user_id,
+                user_id=user_id,
                 project=prj,
                 is_template=prj_type == ProjectTypeDB.TEMPLATE,
                 model_schema_cls=ProjectListItem,
@@ -99,7 +98,7 @@ async def get_project(
     project_uuid: ProjectID,
     project_type: ProjectTypeAPI,
 ):
-    raise NotImplementedError()
+    raise NotImplementedError
 
 
 class OrderDirection(str, Enum):
@@ -112,8 +111,8 @@ class ProjectListFilters(BaseModel):
     Encoded as JSON. Each available filter can have its own logic (should be well documented)
     """
 
-    tags: list[PositiveInt] = Field(default=[])
-    classifiers: list[str] = Field(default=[])
+    tags: list[PositiveInt] = Field(default_factory=list)
+    classifiers: list[str] = Field(default_factory=list)
 
     class Config:
         extra = Extra.forbid

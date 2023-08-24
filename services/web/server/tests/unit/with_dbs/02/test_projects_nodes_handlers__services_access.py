@@ -13,8 +13,6 @@ from aiohttp.test_utils import TestClient
 from models_library.api_schemas_catalog.service_access_rights import (
     ServiceAccessRightsGet,
 )
-from models_library.projects_nodes import Node, NodeID
-from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_service_webserver.db.models import UserRole
@@ -41,12 +39,6 @@ def workbench_db_column() -> dict[str, Any]:
             "label": "sleeper_2",
         },
     }
-
-
-@pytest.fixture
-def workbench(workbench_db_column: dict[str, Any]) -> dict[NodeID, Node]:
-    # convert to  model
-    return parse_obj_as(dict[NodeID, Node], workbench_db_column)
 
 
 @pytest.fixture

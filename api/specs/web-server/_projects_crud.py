@@ -12,6 +12,7 @@ This OAS are the source of truth
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
+from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_webserver.projects import (
     ProjectCopyOverride,
     ProjectCreateNew,
@@ -19,16 +20,15 @@ from models_library.api_schemas_webserver.projects import (
     ProjectListItem,
     ProjectReplace,
     ProjectUpdate,
-    TaskGet,
 )
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.rest_pagination import Page
-from servicelib.aiohttp.long_running_tasks.server import TaskGet
 from simcore_service_webserver._meta import API_VTAG
+from simcore_service_webserver.projects._common_models import ProjectPathParams
 from simcore_service_webserver.projects._crud_handlers import (
-    _ProjectCreateParams,
-    _ProjectListParams,
+    ProjectCreateParams,
+    ProjectListParams,
 )
 
 router = APIRouter(
@@ -39,11 +39,6 @@ router = APIRouter(
 )
 
 
-#
-# API entrypoints
-#
-
-
 @router.post(
     "/projects",
     response_model=Envelope[TaskGet],
@@ -51,7 +46,7 @@ router = APIRouter(
     status_code=status.HTTP_201_CREATED,
 )
 async def create_project(
-    _params: Annotated[_ProjectCreateParams, Depends()],
+    _params: Annotated[ProjectCreateParams, Depends()],
     _create: ProjectCreateNew | ProjectCopyOverride,
 ):
     ...
@@ -61,7 +56,7 @@ async def create_project(
     "/projects",
     response_model=Page[ProjectListItem],
 )
-async def list_projects(_params: Annotated[_ProjectListParams, Depends()]):
+async def list_projects(_params: Annotated[ProjectListParams, Depends()]):
     ...
 
 
@@ -102,4 +97,15 @@ async def update_project(project_id: ProjectID, update: ProjectUpdate):
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_project(project_id: ProjectID):
+    ...
+
+
+@router.post(
+    "/projects/{project_id}:clone",
+    response_model=Envelope[TaskGet],
+    status_code=status.HTTP_201_CREATED,
+)
+async def clone_project(
+    _params: Annotated[ProjectPathParams, Depends()],
+):
     ...
