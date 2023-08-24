@@ -1,12 +1,12 @@
 from aiohttp import web
-from models_library.user_preferences import AnyBaseUserPreference
+from models_library.user_preferences import AnyBaseUserPreference, PreferenceName
 from models_library.users import UserID
 from simcore_postgres_database.utils_user_preferences import UserPreferencesRepo
 
 from ..db.plugin import get_database_engine
 
 
-def _get_user_preference_name(user_id: UserID, preference_name: str) -> str:
+def _get_user_preference_name(user_id: UserID, preference_name: PreferenceName) -> str:
     return f"{user_id}/{preference_name}"
 
 
