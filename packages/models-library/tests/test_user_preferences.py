@@ -3,7 +3,6 @@
 
 from collections.abc import Iterator
 from typing import Any
-from uuid import uuid4
 
 import arrow
 import pytest
@@ -36,11 +35,7 @@ def value(request: pytest.FixtureRequest) -> Any:
 def _get_base_user_preferences_data(
     preference_type: PreferenceType, value: Any
 ) -> dict[str, Any]:
-    return {
-        "identifier": f"{uuid4()}",
-        "preference_type": preference_type,
-        "value": value,
-    }
+    return {"preference_type": preference_type, "value": value}
 
 
 def _get_utc_timestamp() -> float:
@@ -103,7 +98,7 @@ def unregister_defined_classes() -> Iterator[None]:
 def test_user_defined_backend_preference(value: Any, unregister_defined_classes: None):
     # definition of a new custom property
     class Pref1(BaseBackendUserPreference):
-        identifier: str = "pref1"
+        ...
 
     registered_classes = get_registered_classes()
     assert registered_classes[Pref1.__name__] == Pref1
@@ -121,7 +116,6 @@ def test_user_defined_frontend_preference(
 ):
     # definition of a new custom property
     class Pref1(BaseFrontendUserPreference):
-        identifier: str = "pref1"
         widget_type: WidgetType = widget_type_value
         display_label: str = "test display label"
         tooltip_message: str = "test tooltip message"
@@ -140,7 +134,6 @@ def test_user_defined_user_service_preference(
 ):
     # definition of a new custom property
     class Pref1(BaseUserServiceUserPreference):
-        identifier: str = "pref1"
         service_key: ServiceKey = service_key_value
 
     registered_classes = get_registered_classes()

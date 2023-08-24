@@ -40,8 +40,6 @@ class PreferenceWidgetType(StrAutoEnum):
 
 
 class BaseUserPreferenceModel(_ExtendedBaseModel):
-    identifier: str = Field(..., description="has to be unique per preference_type")
-
     preference_type: PreferenceType = Field(
         ..., description="distinguish between the types of preferences"
     )
@@ -51,6 +49,10 @@ class BaseUserPreferenceModel(_ExtendedBaseModel):
         ...,
         description="the value of the preference. Stored as is and cannot be queried over",
     )
+
+    @classmethod
+    def get_storage_key(cls) -> str:
+        return cls.__name__
 
 
 class BaseBackendUserPreference(BaseUserPreferenceModel):
