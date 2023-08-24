@@ -18,13 +18,13 @@
 /* global THREE */
 
 /**
-  * ignore THREE
   * eslint new-cap: [2, {capIsNewExceptions: ["THREE", "Blob"]}]
   * eslint no-underscore-dangle: ["error", { "allowAfterThis": true, "enforceInMethodNames": true }]
   */
 
 /**
   * @asset(threejs/*)
+  * @ignore(THREE)
   */
 
 /**
