@@ -22,6 +22,7 @@ class EC2InstanceData:
     launch_time: datetime.datetime
     id: str  # noqa: A003
     aws_private_dns: InstancePrivateDNSName
+    aws_public_ip: str
     type: InstanceTypeType  # noqa: A003
     state: InstanceStateNameType
     tags: EC2Tags
