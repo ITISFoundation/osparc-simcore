@@ -20,6 +20,7 @@ APP_NAME: Final[str] = _current_distribution.project_name
 API_VERSION: Final[str] = __version__
 VERSION: Final[Version] = Version(__version__)
 API_VTAG: Final[VersionTag] = parse_obj_as(VersionTag, f"v{VERSION.major}")
+RPC_VTAG: Final[VersionTag] = parse_obj_as(VersionTag, f"v{VERSION.major}")
 
 
 def get_summary() -> str:
