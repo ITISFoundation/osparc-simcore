@@ -1,7 +1,7 @@
 import re
 from datetime import datetime
 from enum import Enum
-from typing import Any, ClassVar, Final
+from typing import Any, ClassVar, Final, TypeAlias
 from uuid import uuid4
 
 import arrow
@@ -476,8 +476,8 @@ class _BaseServiceCommonDataModel(BaseModel):
         return value
 
 
-ServiceInputsDict = dict[ServicePortKey, ServiceInput]
-ServiceOutputsDict = dict[ServicePortKey, ServiceOutput]
+ServiceInputsDict: TypeAlias = dict[ServicePortKey, ServiceInput]
+ServiceOutputsDict: TypeAlias = dict[ServicePortKey, ServiceOutput]
 
 
 class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):

@@ -214,7 +214,8 @@ qx.Class.define("osparc.Error", {
           control = new qx.ui.form.Button().set({
             icon: "@FontAwesome5Solid/sign-in-alt/14",
             label: this.tr("Log in"),
-            appearance: "strong-button"
+            appearance: "strong-button",
+            center: true
           });
           control.addListener("execute", () => this.__logIn(), this);
           const actionsLayout = this.getChildControl("actions-layout");

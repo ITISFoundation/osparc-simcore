@@ -128,3 +128,15 @@ async def test_list_study_ports(
     resp = await client.get(f"/v0/studies/{study_id}/ports", auth=auth)
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == {"items": fake_study_ports, "total": len(fake_study_ports)}
+
+
+@pytest.mark.xfail(
+    reason="Under dev: https://github.com/ITISFoundation/osparc-simcore/issues/4651"
+)
+async def test_clone_study(
+    client: httpx.AsyncClient,
+    auth: httpx.BasicAuth,
+    study_id: StudyID,
+):
+    resp = await client.post(f"/v0/studies/{study_id}:clone", auth=auth)
+    assert resp.status_code == status.HTTP_201_CREATED

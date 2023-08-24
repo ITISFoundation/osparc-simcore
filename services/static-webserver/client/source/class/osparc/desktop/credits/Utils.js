@@ -19,6 +19,24 @@ qx.Class.define("osparc.desktop.credits.Utils", {
   type: "static",
 
   statics: {
+    areWalletsEnabled: function() {
+      return new Promise(resolve => {
+        Promise.all([
+          osparc.utils.Utils.isDevelopmentPlatform(),
+          osparc.utils.Utils.isStagingPlatform()
+        ])
+          .then(values => {
+            const isDevel = values[0];
+            const isStaging = values[1];
+            if ((isDevel || isStaging) && osparc.product.Utils.isProduct("s4l")) {
+              resolve(true);
+            } else {
+              resolve(false);
+            }
+          });
+      });
+    },
+
     createWalletSelector: function(accessRight = "read", onlyActive = false, emptySelection = false) {
       const store = osparc.store.Store.getInstance();
 
