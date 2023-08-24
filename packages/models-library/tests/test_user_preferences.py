@@ -103,8 +103,8 @@ def test_user_defined_backend_preference(value: Any, unregister_defined_classes:
     assert isinstance(pref1, BaseBackendUserPreference)
 
     # check bytes serialization/deserialization
-    pref1_as_bytes = pref1.to_bytes()
-    new_instance = Pref1.from_bytes(pref1_as_bytes)
+    pref1_as_bytes = pref1.json().encode()
+    new_instance = Pref1.parse_raw(pref1_as_bytes)
     assert new_instance == pref1
 
 
@@ -125,8 +125,8 @@ def test_user_defined_frontend_preference(
     assert isinstance(pref1, BaseFrontendUserPreference)
 
     # check bytes serialization/deserialization
-    pref1_as_bytes = pref1.to_bytes()
-    new_instance = Pref1.from_bytes(pref1_as_bytes)
+    pref1_as_bytes = pref1.json().encode()
+    new_instance = Pref1.parse_raw(pref1_as_bytes)
     assert new_instance == pref1
 
 
@@ -143,8 +143,8 @@ def test_user_defined_user_service_preference(
     assert isinstance(pref1, BaseUserServiceUserPreference)
 
     # check bytes serialization/deserialization
-    pref1_as_bytes = pref1.to_bytes()
-    new_instance = Pref1.from_bytes(pref1_as_bytes)
+    pref1_as_bytes = pref1.json().encode()
+    new_instance = Pref1.parse_raw(pref1_as_bytes)
     assert new_instance == pref1
 
 
