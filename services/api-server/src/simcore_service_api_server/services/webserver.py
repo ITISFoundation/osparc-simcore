@@ -45,6 +45,7 @@ class ProjectNotFoundError(PydanticErrorMixin, ValueError):
 
 @contextmanager
 def _handle_webserver_api_errors():
+    # Transforms httpx.errors and ValidationError -> fastapi.HTTPException
     try:
         yield
 
@@ -146,7 +147,9 @@ class AuthSession:
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
 
         if resp.is_client_error:
-            # NOTE: error is can be a dict
+            if isinstance(error, dict):
+                error = error.get("message")
+
             msg = error or resp.reason_phrase
             raise HTTPException(resp.status_code, detail=msg)
 
@@ -247,8 +250,6 @@ class AuthSession:
             f"/projects/{project_id}:clone",
             cookies=self.session_cookies,
         )
-        if response.status_code == status.HTTP_404_NOT_FOUND:
-            raise ProjectNotFoundError(project_id=project_id)
 
         data: JSON | None = self._get_data_or_raise_http_exception(response)
         result = await self._wait_for_long_running_task_results(data)
