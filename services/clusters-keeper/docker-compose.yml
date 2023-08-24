@@ -1,0 +1,38 @@
+services:
+  rabbit:
+    image: itisfoundation/rabbitmq:3.11.2-management
+    init: true
+    ports:
+      - "5672"
+      - "15672:15672"
+      - "15692"
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBIT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBIT_PASSWORD}
+    healthcheck:
+      # see https://www.rabbitmq.com/monitoring.html#individual-checks for info about health-checks available in rabbitmq
+      test: rabbitmq-diagnostics -q status
+      interval: 5s
+      timeout: 30s
+      retries: 5
+      start_period: 5s
+
+  redis:
+    image: "redis:6.2.6@sha256:4bed291aa5efb9f0d77b76ff7d4ab71eee410962965d052552db1fb80576431d"
+    init: true
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 30s
+      retries: 50
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    init: true
+    ports:
+      - "18081:8081"
+    environment:
+      - REDIS_HOSTS=resources:redis:6379:0,locks:redis:6379:1,validation_codes:redis:6379:2,scheduled_maintenance:redis:6379:3,user_notifications:redis:6379:4,announcements:redis:6379:5
+      # If you add/remove a db, do not forget to update the --databases entry in the docker-compose.yml
