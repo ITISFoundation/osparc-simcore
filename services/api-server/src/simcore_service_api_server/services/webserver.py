@@ -204,7 +204,29 @@ class AuthSession:
 
             return Page[ProjectGet].parse_raw(resp.text)
 
-    # PROJECTS resource ---
+    async def _wait_for_long_running_task_results(self, data):
+        # NOTE: /v0 is already included in the http client base_url
+        status_url = data["status_href"].lstrip(f"/{self.vtag}")
+        result_url = data["result_href"].lstrip(f"/{self.vtag}")
+
+        # GET task status now until done
+        async for attempt in AsyncRetrying(
+            wait=wait_fixed(0.5),
+            stop=stop_after_delay(60),
+            reraise=True,
+            before_sleep=before_sleep_log(_logger, logging.INFO),
+        ):
+            with attempt:
+                status_data = await self.get(status_url)
+                task_status = TaskStatus.parse_obj(status_data)
+                if not task_status.done:
+                    msg = "Timed out creating project. TIP: Try again, or contact oSparc support if this is happening repeatedly"
+                    raise TryAgain(msg)
+
+        return await self.get(f"{result_url}")
+
+    # PROJECTS -------------------------------------------------
+
     async def create_project(self, project: ProjectCreateNew) -> ProjectGet:
         # POST /projects --> 202
         resp = await self.client.post(
@@ -217,25 +239,8 @@ class AuthSession:
         assert data  # nosec
         assert isinstance(data, dict)  # nosec
 
-        # NOTE: /v0 is already included in the http client base_url
-        status_url = data["status_href"].lstrip(f"/{self.vtag}")
-        result_url = data["result_href"].lstrip(f"/{self.vtag}")
-        # GET task status now until done
-        async for attempt in AsyncRetrying(
-            wait=wait_fixed(0.5),
-            stop=stop_after_delay(60),
-            reraise=True,
-            before_sleep=before_sleep_log(_logger, logging.INFO),
-        ):
-            with attempt:
-                data = await self.get(status_url)
-                task_status = TaskStatus.parse_obj(data)
-                if not task_status.done:
-                    msg = "Timed out creating project. TIP: Try again, or contact oSparc support if this is happening repeatedly"
-                    raise TryAgain(msg)
-
-        data = await self.get(f"{result_url}")
-        return ProjectGet.parse_obj(data)
+        result = await self._wait_for_long_running_task_results(data)
+        return ProjectGet.parse_obj(result)
 
     async def clone_project(self, project_id: UUID) -> ProjectGet:
         response = await self.client.post(
@@ -246,7 +251,8 @@ class AuthSession:
             raise ProjectNotFoundError(project_id=project_id)
 
         data: JSON | None = self._get_data_or_raise_http_exception(response)
-        return ProjectGet.parse_obj(data)
+        result = await self._wait_for_long_running_task_results(data)
+        return ProjectGet.parse_obj(result)
 
     async def get_project(self, project_id: UUID) -> ProjectGet:
         response = await self.client.get(

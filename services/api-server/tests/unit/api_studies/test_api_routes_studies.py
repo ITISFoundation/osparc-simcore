@@ -8,6 +8,7 @@ from typing import Any, TypedDict
 
 import httpx
 import pytest
+from faker import Faker
 from fastapi import status
 from pydantic import parse_file_as, parse_obj_as
 from respx import MockRouter
@@ -130,13 +131,27 @@ async def test_list_study_ports(
     assert resp.json() == {"items": fake_study_ports, "total": len(fake_study_ports)}
 
 
-@pytest.mark.xfail(
-    reason="Under dev: https://github.com/ITISFoundation/osparc-simcore/issues/4651"
+@pytest.mark.testit()
+@pytest.mark.acceptance_test(
+    "Implements https://github.com/ITISFoundation/osparc-simcore/issues/4651"
 )
 async def test_clone_study(
     client: httpx.AsyncClient,
     auth: httpx.BasicAuth,
     study_id: StudyID,
+    faker: Faker,
+    mocked_webserver_service_api: MockRouter,
 ):
+    mocked_webserver_service_api.get(
+        path__regex=r"/projects/(?P<project_id>[\w-]+):clone$",
+        name="list_project_metadata_ports",
+    ).respond(
+        status.HTTP_404_NOT_FOUND,
+    )
+
+    invalid_study_id = faker.uuid4()
+    resp = await client.post(f"/v0/studies/{invalid_study_id}:clone", auth=auth)
+    assert resp.status_code == status.HTTP_404_NOT_FOUND
+
     resp = await client.post(f"/v0/studies/{study_id}:clone", auth=auth)
     assert resp.status_code == status.HTTP_201_CREATED
