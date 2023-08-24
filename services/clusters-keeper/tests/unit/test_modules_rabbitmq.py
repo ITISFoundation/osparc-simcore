@@ -17,6 +17,8 @@ from settings_library.rabbit import RabbitSettings
 from simcore_service_clusters_keeper.core.errors import ConfigurationError
 from simcore_service_clusters_keeper.modules.rabbitmq import (
     get_rabbitmq_client,
+    get_rabbitmq_rpc_client,
+    is_rabbitmq_enabled,
     post_message,
 )
 from tenacity._asyncio import AsyncRetrying
@@ -67,8 +69,12 @@ def test_rabbitmq_does_not_initialize_if_deactivated(
 ):
     assert hasattr(initialized_app.state, "rabbitmq_client")
     assert initialized_app.state.rabbitmq_client is None
+    assert initialized_app.state.rabbitmq_rpc_server is None
     with pytest.raises(ConfigurationError):
         get_rabbitmq_client(initialized_app)
+    with pytest.raises(ConfigurationError):
+        get_rabbitmq_rpc_client(initialized_app)
+    assert is_rabbitmq_enabled(initialized_app) is False
 
 
 def test_rabbitmq_initializes(
@@ -79,7 +85,13 @@ def test_rabbitmq_initializes(
 ):
     assert hasattr(initialized_app.state, "rabbitmq_client")
     assert initialized_app.state.rabbitmq_client is not None
+    assert initialized_app.state.rabbitmq_rpc_server is not None
     assert get_rabbitmq_client(initialized_app) == initialized_app.state.rabbitmq_client
+    assert (
+        get_rabbitmq_rpc_client(initialized_app)
+        == initialized_app.state.rabbitmq_rpc_server
+    )
+    assert is_rabbitmq_enabled(initialized_app) is True
 
 
 async def test_post_message(
