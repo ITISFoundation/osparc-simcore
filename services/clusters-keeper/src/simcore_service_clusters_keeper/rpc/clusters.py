@@ -1,7 +1,7 @@
 from enum import auto
 
 from fastapi import FastAPI
-from models_library.clusters import Cluster, ClusterAuthentication, SimpleAuthentication
+from models_library.clusters import ClusterAuthentication, SimpleAuthentication
 from models_library.users import UserID
 from models_library.utils.enums import StrAutoEnum
 from models_library.wallets import WalletID
@@ -20,15 +20,19 @@ class ClusterState(StrAutoEnum):
     STARTED = auto()
     RUNNING = auto()
     TERMINATED = auto()
-    ERROR = auto()
 
 
-
-
-def _convert_ec2_state_to_cluster_state(ec2_state: InstanceStateNameType) -> ClusterState:
+def _convert_ec2_state_to_cluster_state(
+    ec2_state: InstanceStateNameType,
+) -> ClusterState:
     match ec2_state:
-        ...
-    ...
+        case "pending":
+            return ClusterState.STARTED
+        case "running":
+            return ClusterState.RUNNING
+        case _:
+            return ClusterState.TERMINATED
+    return ClusterState.TERMINATED
 
 
 class ClusterGet(BaseModel):
