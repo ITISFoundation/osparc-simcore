@@ -30,7 +30,13 @@ from starlette.responses import RedirectResponse
 from ..._meta import API_VTAG
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
-from ...models.schemas.files import ClientFile, ClientFileUploadSchema, File
+from ...models.schemas.files import (
+    ClientFile,
+    ClientFileUploadData,
+    File,
+    FileUploadData,
+    UploadLinks,
+)
 from ...services.storage import StorageApi, StorageFileMetaData, to_file_api_model
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
@@ -187,7 +193,7 @@ async def upload_files(files: list[UploadFile] = FileParam(...)):
 
 @router.post(
     "/content",
-    response_model=ClientFileUploadSchema,
+    response_model=ClientFileUploadData,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 @cancel_on_disconnect
@@ -212,20 +218,24 @@ async def get_upload_links(
         file_size=ByteSize(client_file.filesize),
         is_directory=False,
     )
-
-    query = f"{upload_links.links.complete_upload.query}".removesuffix(":complete")
-    url = request.url_for(
+    completion_url: URL = request.url_for(
         "complete_multipart_upload", file_id=file_meta.id
-    ).include_query_params(**dict(item.split("=") for item in query.split("&")))
-    upload_links.links.complete_upload = parse_obj_as(AnyUrl, f"{url}")
-
-    query = f"{upload_links.links.abort_upload.query}".removesuffix(":abort")
-    url = request.url_for(
-        "abort_multipart_upload", file_id=file_meta.id
-    ).include_query_params(**dict(item.split("=") for item in query.split("&")))
-    upload_links.links.abort_upload = parse_obj_as(AnyUrl, f"{url}")
-
-    return ClientFileUploadSchema(file_id=file_meta.id, upload_schema=upload_links)
+    )
+    complete_upload_link: str = (
+        f"{completion_url.path}?{upload_links.links.complete_upload.query}"
+    )
+    abortion_url: URL = request.url_for("abort_multipart_upload", file_id=file_meta.id)
+    abort_upload_link: str = (
+        f"{abortion_url.path}?{upload_links.links.abort_upload.query}"
+    )
+    upload_data: FileUploadData = FileUploadData(
+        chunk_size=upload_links.chunk_size,
+        urls=upload_links.urls,
+        links=UploadLinks(
+            complete_upload=complete_upload_link, abort_upload=abort_upload_link
+        ),
+    )
+    return ClientFileUploadData(file_id=file_meta.id, upload_schema=upload_data)
 
 
 @router.get(
