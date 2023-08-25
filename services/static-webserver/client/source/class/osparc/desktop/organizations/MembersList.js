@@ -211,9 +211,10 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         return;
       }
 
-      const canDelete = orgModel.getAccessRights().getDelete();
+      const canIWrite = orgModel.getAccessRights().getWrite();
+      const canIDelete = orgModel.getAccessRights().getDelete();
       this.__memberInvitation.set({
-        visibility: canDelete ? "visible" : "excluded"
+        visibility: canIWrite ? "visible" : "excluded"
       });
 
       const params = {
@@ -227,7 +228,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
           members.forEach(member => {
             member["thumbnail"] = osparc.utils.Avatar.getUrl(member["login"], 32);
             member["name"] = osparc.utils.Utils.firstsUp(member["first_name"], member["last_name"]);
-            member["showOptions"] = canDelete;
+            member["showOptions"] = canIDelete;
             membersList.push(member);
           });
           membersList.sort(this.self().sortOrgMembers);
