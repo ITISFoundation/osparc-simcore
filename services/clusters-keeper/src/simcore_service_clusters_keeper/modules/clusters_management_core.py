@@ -5,9 +5,9 @@ import arrow
 from fastapi import FastAPI
 from simcore_service_clusters_keeper.utils.ec2 import HEARTBEAT_TAG_KEY
 
-from .clusters_api import delete_clusters, get_all_clusters
-from .core.settings import get_application_settings
-from .models import EC2InstanceData
+from ..core.settings import get_application_settings
+from ..models import EC2InstanceData
+from ..modules.clusters import delete_clusters, get_all_clusters
 
 _logger = logging.getLogger(__name__)
 

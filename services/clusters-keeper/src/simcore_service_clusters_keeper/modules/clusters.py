@@ -5,16 +5,16 @@ from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID
 
-from .core.errors import Ec2InstanceNotFoundError
-from .core.settings import get_application_settings
-from .models import EC2InstanceData
-from .modules.ec2 import get_ec2_client
-from .utils.ec2 import (
+from ..core.errors import Ec2InstanceNotFoundError
+from ..core.settings import get_application_settings
+from ..models import EC2InstanceData
+from ..utils.ec2 import (
     HEARTBEAT_TAG_KEY,
     all_created_ec2_instances_filter,
     creation_ec2_tags,
     ec2_instances_for_user_wallet_filter,
 )
+from .ec2 import get_ec2_client
 
 _logger = logging.getLogger(__name__)
 

@@ -11,7 +11,7 @@ from .._meta import (
     APP_STARTED_BANNER_MSG,
 )
 from ..api.routes import setup_api_routes
-from ..clusters_management_task import setup as setup_clusters_management
+from ..modules.clusters_management_task import setup as setup_clusters_management
 from ..modules.ec2 import setup as setup_ec2
 from ..modules.rabbitmq import setup as setup_rabbitmq
 from ..modules.redis import setup as setup_redis

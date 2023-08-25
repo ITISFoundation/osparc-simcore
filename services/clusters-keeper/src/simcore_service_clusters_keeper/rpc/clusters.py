@@ -9,9 +9,9 @@ from models_library.wallets import WalletID
 from pydantic import AnyUrl, BaseModel, SecretStr, parse_obj_as
 from types_aiobotocore_ec2.literals import InstanceStateNameType
 
-from .. import clusters_api
 from ..core.errors import Ec2InstanceNotFoundError
 from ..models import EC2InstanceData
+from ..modules import clusters
 from .rpc_router import RPCRouter
 
 router = RPCRouter()
@@ -51,11 +51,11 @@ async def get_or_create_cluster(
 ) -> ClusterGet:
     ec2_instance = None
     try:
-        ec2_instance = await clusters_api.get_cluster(
+        ec2_instance = await clusters.get_cluster(
             app, user_id=user_id, wallet_id=wallet_id
         )
     except Ec2InstanceNotFoundError:
-        new_ec2_instances = await clusters_api.create_cluster(
+        new_ec2_instances = await clusters.create_cluster(
             app, user_id=user_id, wallet_id=wallet_id
         )
         assert new_ec2_instances  # nosec
@@ -78,13 +78,11 @@ async def get_or_create_cluster(
 async def create_cluster(
     app: FastAPI, *, user_id: UserID, wallet_id: WalletID
 ) -> list[EC2InstanceData]:
-    return await clusters_api.create_cluster(app, user_id=user_id, wallet_id=wallet_id)
+    return await clusters.create_cluster(app, user_id=user_id, wallet_id=wallet_id)
 
 
 @router.expose()
 async def cluster_heartbeat(
     app: FastAPI, *, user_id: UserID, wallet_id: WalletID
 ) -> None:
-    return await clusters_api.cluster_heartbeat(
-        app, user_id=user_id, wallet_id=wallet_id
-    )
+    return await clusters.cluster_heartbeat(app, user_id=user_id, wallet_id=wallet_id)

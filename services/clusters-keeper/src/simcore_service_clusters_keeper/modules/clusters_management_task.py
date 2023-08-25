@@ -6,9 +6,9 @@ from fastapi import FastAPI
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.redis_utils import exclusive
 
+from ..core.settings import ApplicationSettings
+from ..modules.redis import get_redis_client
 from .clusters_management_core import check_clusters
-from .core.settings import ApplicationSettings
-from .modules.redis import get_redis_client
 
 _TASK_NAME = "Clusters-keeper EC2 instances check"
 

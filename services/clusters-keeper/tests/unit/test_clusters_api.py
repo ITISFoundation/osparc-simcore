@@ -13,13 +13,13 @@ from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from parse import Result, search
-from simcore_service_clusters_keeper.clusters_api import (
+from simcore_service_clusters_keeper.core.errors import Ec2InstanceNotFoundError
+from simcore_service_clusters_keeper.models import EC2InstanceData
+from simcore_service_clusters_keeper.modules.clusters import (
     cluster_heartbeat,
     create_cluster,
     delete_clusters,
 )
-from simcore_service_clusters_keeper.core.errors import Ec2InstanceNotFoundError
-from simcore_service_clusters_keeper.models import EC2InstanceData
 from simcore_service_clusters_keeper.utils.ec2 import HEARTBEAT_TAG_KEY
 from types_aiobotocore_ec2 import EC2Client
 
