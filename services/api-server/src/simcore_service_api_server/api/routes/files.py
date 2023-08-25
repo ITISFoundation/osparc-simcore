@@ -283,10 +283,7 @@ async def delete_file(
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
     user_id: Annotated[int, Depends(get_current_user_id)],
 ):
-    assert storage_client  # nsoec
-
-    msg = f"delete file {file_id=} of {user_id=}. SEE https://github.com/ITISFoundation/osparc-issues/issues/952"
-    raise NotImplementedError(msg)
+    await storage_client.delete_file(file_id=file_id, user_id=user_id)
 
 
 @router.post(
