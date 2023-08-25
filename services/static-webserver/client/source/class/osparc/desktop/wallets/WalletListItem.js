@@ -251,12 +251,15 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
     },
 
     __applyDefaultWallet: function(isDefaultWallet) {
-      const favouriteButtonIcon = this.getChildControl("favourite-button").getChildControl("icon");
+      const favouriteButton = this.getChildControl("favourite-button");
+      const favouriteButtonIcon = favouriteButton.getChildControl("icon");
       if (isDefaultWallet) {
-        this.getChildControl("favourite-button").setIcon("@FontAwesome5Solid/star/24");
+        this.setToolTipText(this.tr("Default Wallet"));
+        favouriteButton.setIcon("@FontAwesome5Solid/star/24");
         favouriteButtonIcon.setTextColor("strong-main");
       } else {
-        this.getChildControl("favourite-button").setIcon("@FontAwesome5Regular/star/24");
+        this.setToolTipText(this.tr("Make it Default Wallet"));
+        favouriteButton.setIcon("@FontAwesome5Regular/star/24");
         favouriteButtonIcon.resetTextColor();
       }
     }
