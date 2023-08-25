@@ -141,12 +141,13 @@ class BaseFrontendUserPreference(_BaseUserPreferenceModel):
 
     class Config:
         exclude_from_serialization: ClassVar[set[str]] = {
+            "display_label",
             "preference_identifier",
+            "preference_type",
             "render_widget",
+            "tooltip_message",
             "value_type",
             "widget_type",
-            "display_label",
-            "tooltip_message",
         }
 
 

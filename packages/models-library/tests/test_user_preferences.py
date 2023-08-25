@@ -81,10 +81,7 @@ def test_frontend_preferences(
     with_rendered_widget_instance = parse_obj_as(
         BaseFrontendUserPreference, data_with_rendered_widget
     )
-    assert set(with_rendered_widget_instance.dict().keys()) == {
-        "preference_type",
-        "value",
-    }
+    assert set(with_rendered_widget_instance.dict().keys()) == {"value"}
 
     data_no_rendered_widget = deepcopy(base_data)
     data_no_rendered_widget.update(
@@ -101,10 +98,7 @@ def test_frontend_preferences(
     no_rendered_widget_instance = parse_obj_as(
         BaseFrontendUserPreference, data_no_rendered_widget
     )
-    assert set(no_rendered_widget_instance.dict().keys()) == {
-        "preference_type",
-        "value",
-    }
+    assert set(no_rendered_widget_instance.dict().keys()) == {"value"}
 
 
 @pytest.mark.parametrize("service_key", _SERVICE_KEY_SAMPLES)
@@ -119,11 +113,7 @@ def test_user_service_preferences(value: Any, service_key: ServiceKey):
         }
     )
     instance = parse_obj_as(BaseUserServiceUserPreference, base_data)
-    assert set(instance.dict().keys()) == {
-        "preference_type",
-        "service_key",
-        "value",
-    }
+    assert set(instance.dict().keys()) == {"service_key", "value"}
 
 
 @pytest.fixture
