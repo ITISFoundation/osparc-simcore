@@ -24,7 +24,7 @@ class MockedBackendApiDict(TypedDict):
 
 @pytest.fixture
 def mocked_backend(
-    mocked_webserver_service_api: MockRouter,
+    mocked_webserver_service_api_base: MockRouter,
     project_tests_dir: Path,
 ) -> MockedBackendApiDict:
     mock_name = "for_test_api_routes_studies.json"
@@ -47,7 +47,7 @@ def mocked_backend(
         capture = captures[name]
         assert capture.host == "webserver"
 
-        route = mocked_webserver_service_api.request(
+        route = mocked_webserver_service_api_base.request(
             method=capture.method,
             path__regex=capture.path.removeprefix("/v0") + "$",
             name=capture.name,
@@ -56,7 +56,9 @@ def mocked_backend(
             json=capture.response_body,
         )
         print(route)
-    return MockedBackendApiDict(webserver=mocked_webserver_service_api, catalog=None)
+    return MockedBackendApiDict(
+        webserver=mocked_webserver_service_api_base, catalog=None
+    )
 
 
 @pytest.mark.acceptance_test(
@@ -111,13 +113,13 @@ async def test_studies_read_workflow(
 async def test_list_study_ports(
     client: httpx.AsyncClient,
     auth: httpx.BasicAuth,
-    mocked_webserver_service_api: MockRouter,
+    mocked_webserver_service_api_base: MockRouter,
     fake_study_ports: list[dict[str, Any]],
     study_id: StudyID,
 ):
     # Mocks /projects/{*}/metadata/ports
 
-    mocked_webserver_service_api.get(
+    mocked_webserver_service_api_base.get(
         path__regex=r"/projects/(?P<project_id>[\w-]+)/metadata/ports$",
         name="list_project_metadata_ports",
     ).respond(
@@ -131,7 +133,6 @@ async def test_list_study_ports(
     assert resp.json() == {"items": fake_study_ports, "total": len(fake_study_ports)}
 
 
-@pytest.mark.testit()
 @pytest.mark.acceptance_test(
     "Implements https://github.com/ITISFoundation/osparc-simcore/issues/4651"
 )
@@ -140,17 +141,21 @@ async def test_clone_study(
     auth: httpx.BasicAuth,
     study_id: StudyID,
     faker: Faker,
-    mocked_webserver_service_api: MockRouter,
+    mocked_webserver_service_api_base: MockRouter,
 ):
-    mocked_webserver_service_api.post(
+    # Mocks /projects/{project_id}:clone
+
+    mocked_webserver_service_api_base.post(
         path__regex=r"/projects/(?P<project_id>[\w-]+):clone$",
         name="project_clone",
     ).respond(
         status.HTTP_404_NOT_FOUND,
     )
 
+    # tests invalid
     invalid_study_id = faker.uuid4()
     resp = await client.post(f"/v0/studies/{invalid_study_id}:clone", auth=auth)
+
     assert resp.status_code == status.HTTP_404_NOT_FOUND
     assert len(resp.json()["errors"]) == 1
     assert invalid_study_id in resp.json()["errors"][0]

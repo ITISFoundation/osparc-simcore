@@ -219,7 +219,6 @@ def mocked_directorv2_service_api_base(
         assert_all_called=False,
         assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as respx_mock:
-
         assert openapi
         assert (
             openapi["paths"]["/"]["get"]["operationId"] == "check_service_health__get"
