@@ -15,7 +15,7 @@ class ConfirmationBackToDashboardFrontendUserPreference(BaseFrontendUserPreferen
         "If checked, asks for confirmation when the user goes back to the dashboard"
     )
     value_type = ValueType.BOOL
-    value = True
+    value: bool = True
 
 
 class ConfirmationDeleteStudyFrontendUserPreference(BaseFrontendUserPreference):
@@ -24,7 +24,7 @@ class ConfirmationDeleteStudyFrontendUserPreference(BaseFrontendUserPreference):
     display_label = "Delete a study"
     tooltip_message = "If checked, asks for confirmation before deleting a study"
     value_type = ValueType.BOOL
-    value = True
+    value: bool = True
 
 
 class ConfirmationDeleteNodeFrontendUserPreference(BaseFrontendUserPreference):
@@ -33,7 +33,7 @@ class ConfirmationDeleteNodeFrontendUserPreference(BaseFrontendUserPreference):
     display_label = "Delete a Node"
     tooltip_message = "If checked, asks for confirmation before deleting a Node"
     value_type = ValueType.BOOL
-    value = True
+    value: bool = True
 
 
 class ConfirmationStopNodeFrontendUserPreference(BaseFrontendUserPreference):
@@ -42,7 +42,7 @@ class ConfirmationStopNodeFrontendUserPreference(BaseFrontendUserPreference):
     display_label = "Stop Node"
     tooltip_message = "If checked, asks for confirmation before stopping a Node"
     value_type = ValueType.BOOL
-    value = True
+    value: bool = True
 
 
 class SnapNodeToGridFrontendUserPreference(BaseFrontendUserPreference):
@@ -51,7 +51,7 @@ class SnapNodeToGridFrontendUserPreference(BaseFrontendUserPreference):
     display_label = "Snap Node to grid"
     tooltip_message = "If checked Nodes will be automatically snapped to a grid"
     value_type = ValueType.BOOL
-    value = True
+    value: bool = True
 
 
 class ConnectPortsAutomaticallyFrontendUserPreference(BaseFrontendUserPreference):
@@ -63,17 +63,17 @@ class ConnectPortsAutomaticallyFrontendUserPreference(BaseFrontendUserPreference
         "on their supported types and the order in which they appear"
     )
     value_type = ValueType.BOOL
-    value = True
+    value: bool = True
 
 
 class ServicesFrontendUserPreference(BaseFrontendUserPreference):
     render_widget: bool = False
-    widget_type = None
-    display_label = None
-    tooltip_message = None
+    widget_type: WidgetType | None = None
+    display_label: str | None = None
+    tooltip_message: str | None = None
 
     value_type = ValueType.DICT
-    value = Field(default_factory=dict)
+    value: dict = Field(default_factory=dict)
 
     @classmethod
     def get_preference_name(cls) -> PreferenceName:
@@ -82,9 +82,9 @@ class ServicesFrontendUserPreference(BaseFrontendUserPreference):
 
 class ThemeNameFrontendUserPreference(BaseFrontendUserPreference):
     render_widget: bool = False
-    widget_type = None
-    display_label = None
-    tooltip_message = None
+    widget_type: WidgetType | None = None
+    display_label: str | None = None
+    tooltip_message: str | None = None
 
     value_type = ValueType.STR
     value: str | None = None
@@ -96,9 +96,9 @@ class ThemeNameFrontendUserPreference(BaseFrontendUserPreference):
 
 class LastVcsRefUIFrontendUserPreference(BaseFrontendUserPreference):
     render_widget: bool = False
-    widget_type = None
-    display_label = None
-    tooltip_message = None
+    widget_type: WidgetType | None = None
+    display_label: str | None = None
+    tooltip_message: str | None = None
 
     value_type = ValueType.STR
     value: str | None = None
