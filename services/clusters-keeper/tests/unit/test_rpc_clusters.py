@@ -19,6 +19,7 @@ from pydantic import parse_obj_as
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq_utils import RPCMethodName, RPCNamespace
 from simcore_service_clusters_keeper.core.errors import Ec2InstanceNotFoundError
+from simcore_service_clusters_keeper.models import ClusterGet
 from simcore_service_clusters_keeper.utils.ec2 import HEARTBEAT_TAG_KEY
 from types_aiobotocore_ec2 import EC2Client
 
@@ -113,7 +114,6 @@ async def _create_cluster(
         wallet_id=wallet_id,
     )
     assert rpc_response
-    # wait for response
     # check we do have a new machine in AWS
     await _assert_cluster_instance_created(ec2_client, user_id, wallet_id)
 
@@ -203,3 +203,39 @@ async def test_cluster_heartbeat_on_non_existing_cluster_raises(
         await _send_cluster_heartbeat(
             clusters_keeper_rabbitmq_rpc_client, ec2_client, user_id, wallet_id
         )
+
+
+async def test_get_or_create_cluster(
+    _base_configuration: None,
+    clusters_keeper_rabbitmq_rpc_client: RabbitMQClient,
+    ec2_client: EC2Client,
+    user_id: UserID,
+    wallet_id: WalletID,
+):
+    # send rabbitmq rpc to create_cluster
+    rpc_response = await clusters_keeper_rabbitmq_rpc_client.rpc_request(
+        CLUSTERS_KEEPER_NAMESPACE,
+        RPCMethodName("get_or_create_cluster"),
+        user_id=user_id,
+        wallet_id=wallet_id,
+    )
+    assert rpc_response
+    created_cluster = rpc_response
+    assert isinstance(created_cluster, ClusterGet)
+    # check we do have a new machine in AWS
+    await _assert_cluster_instance_created(ec2_client, user_id, wallet_id)
+
+    # calling it again returns the existing cluster
+    rpc_response = await clusters_keeper_rabbitmq_rpc_client.rpc_request(
+        CLUSTERS_KEEPER_NAMESPACE,
+        RPCMethodName("get_or_create_cluster"),
+        user_id=user_id,
+        wallet_id=wallet_id,
+    )
+    assert rpc_response
+    returned_cluster = rpc_response
+    assert isinstance(created_cluster, ClusterGet)
+    # check we still have only 1 instance
+    await _assert_cluster_instance_created(ec2_client, user_id, wallet_id)
+
+    assert created_cluster == returned_cluster
