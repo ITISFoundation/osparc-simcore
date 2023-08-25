@@ -109,11 +109,11 @@ async def test_post_message(
     mocked_redis_server: None,
     initialized_app: FastAPI,
     rabbit_message: RabbitMessageBase,
-    rabbitmq_client: Callable[[str], RabbitMQClient],
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
     mocker: MockerFixture,
 ):
     mocked_message_handler = mocker.AsyncMock(return_value=True)
-    client = rabbitmq_client("pytest_consumer")
+    client = create_rabbitmq_client("pytest_consumer")
     await client.subscribe(
         rabbit_message.channel_name,
         mocked_message_handler,
