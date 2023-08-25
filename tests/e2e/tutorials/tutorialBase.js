@@ -81,7 +81,7 @@ class TutorialBase {
       await this.__page.goto(this.__url);
     }
     catch (err) {
-      console.error(this.__url, "can't be reached", err);
+      console.error("Error:", this.__url, "can't be reached", err);
       throw (err);
     }
     const domain = utils.getDomain(this.__url);
@@ -202,7 +202,7 @@ class TutorialBase {
         }
       }
       catch (err) {
-        console.error(resource.name + " could not be fetched", err);
+        console.error("Error:", resource.name + " could not be fetched", err);
         throw (err);
       }
     }
@@ -219,7 +219,7 @@ class TutorialBase {
       resp = await this.__responsesQueue.waitUntilResponse(":open");
     }
     catch (err) {
-      console.error(this.__templateName, "could not be started", err);
+      console.error("Error:", this.__templateName, "could not be started", err);
       throw (err);
     }
     return resp;
@@ -239,7 +239,7 @@ class TutorialBase {
       console.log("Study ID:", studyId);
     }
     catch (err) {
-      console.error(`Classic TI could not be started:\n`, err);
+      console.error(`Error: Classic TI could not be started:\n`, err);
       throw (err);
     }
     await this.waitFor(2000);
@@ -259,7 +259,7 @@ class TutorialBase {
       console.log("Study ID:", studyId);
     }
     catch (err) {
-      console.error(`Sim4Life Lite could not be started:\n`, err);
+      console.error(`Error: Sim4Life Lite could not be started:\n`, err);
       throw (err);
     }
     await this.waitFor(2000);
@@ -279,7 +279,7 @@ class TutorialBase {
       console.log("Study ID:", studyId);
     }
     catch (err) {
-      console.error(this.__templateName, "could not be started", err);
+      console.error("Error:", this.__templateName, "could not be started", err);
       throw (err);
     }
     return resp;
@@ -299,7 +299,7 @@ class TutorialBase {
       console.log("Study ID:", studyId);
     }
     catch (err) {
-      console.error(`"${this.__templateName}" template could not be started:\n`, err);
+      console.error(`Error: "${this.__templateName}" template could not be started:\n`, err);
       throw (err);
     }
     await this.waitFor(waitFor);
@@ -319,7 +319,7 @@ class TutorialBase {
       console.log("Study ID:", studyId);
     }
     catch (err) {
-      console.error(`"${this.__templateName}" service could not be started:\n`, err);
+      console.error(`Error: "${this.__templateName}" service could not be started:\n`, err);
       throw (err);
     }
     await this.waitFor(waitFor);
@@ -450,7 +450,7 @@ class TutorialBase {
       await this.__responsesQueue.waitUntilResponse("storage/locations/0/files/metadata?uuid_filter=" + nodeId);
     }
     catch (err) {
-      console.error(err);
+      console.error("Error: open node files", err);
       throw (err);
     }
   }
@@ -462,7 +462,7 @@ class TutorialBase {
       await this.__responsesQueue.waitUntilResponse("storage/locations/0/files/metadata?uuid_filter=" + nodeId);
     }
     catch (err) {
-      console.error(err);
+      console.error("Error: open node files", err);
       throw (err);
     }
   }
@@ -785,7 +785,7 @@ class TutorialBase {
       await this.__responsesQueue.waitUntilResponse("training-set-generation/distribution");
     }
     catch (err) {
-      console.error(this.__templateName, "training-set can't be generated", err);
+      console.error("Error:", this.__templateName, "training-set can't be generated", err);
       throw (err);
     }
 
@@ -796,7 +796,7 @@ class TutorialBase {
       await this.__responsesQueue.waitUntilResponse("training-set-generation/xport");
     }
     catch (err) {
-      console.error(this.__templateName, "training-set can't be exported", err);
+      console.error("Error:", this.__templateName, "training-set can't be exported", err);
       throw (err);
     }
 
