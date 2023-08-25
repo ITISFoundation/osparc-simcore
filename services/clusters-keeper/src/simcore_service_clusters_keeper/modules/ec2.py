@@ -153,7 +153,9 @@ class ClustersKeeperEC2:
                     launch_time=instance["LaunchTime"],
                     id=instance["InstanceId"],
                     aws_private_dns=instance["PrivateDnsName"],
-                    aws_public_ip=instance["PublicIpAddress"],
+                    aws_public_ip=instance["PublicIpAddress"]
+                    if "PublicIpAddress" in instance
+                    else None,
                     type=instance["InstanceType"],
                     state=instance["State"]["Name"],
                     tags={tag["Key"]: tag["Value"] for tag in instance["Tags"]},
