@@ -30,7 +30,7 @@ qx.Class.define("osparc.data.model.Wallet", {
       status: walletData["status"] ? walletData["status"] : "INACTIVE",
       creditsAvailable: walletData["available_credits"] ? walletData["available_credits"] : 20,
       accessRights: walletData["accessRights"] ? walletData["accessRights"] : [],
-      defaultWallet: Math.random() < 0.5
+      defaultWallet: walletData["name"].includes("Shared")
     });
   },
 
