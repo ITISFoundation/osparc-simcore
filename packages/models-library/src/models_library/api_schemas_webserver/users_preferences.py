@@ -8,9 +8,10 @@ from ..user_preferences import PreferenceName, ValueType
 
 class UserPreference(BaseModel):
     render_widget: bool
-    widget_type: WidgetType
-    display_label: str
-    tooltip_message: str
+    widget_type: WidgetType | None
+    display_label: str | None
+    tooltip_message: str | None
+
     value_type: ValueType
     value: Any
 
