@@ -21,13 +21,7 @@ show-local-settings: .env ## shows local test settings (running bare metal again
 .PHONY: test-local
 up-local: .env ## starts local test application (running bare metal against AWS)
 	# setting up dependencies
-	@docker compose up --detach
-	@set -o allexport \
-	&& source $(CURDIR)/.env \
-	&& set +o allexport \
-	&& uvicorn simcore_service_clusters_keeper.main:the_app \
-	--host 0.0.0.0 \
-	--reload
+	@docker compose up
 
 down-local: .env ## stops local test app dependencies (running bare metal against AWS)
 	-@docker compose down

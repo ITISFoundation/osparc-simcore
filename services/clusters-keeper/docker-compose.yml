@@ -61,6 +61,8 @@ services:
       - RABBIT_PORT=${RABBIT_PORT}
       - RABBIT_SECURE=${RABBIT_SECURE}
       - RABBIT_USER=${RABBIT_USER}
+      - SC_BOOT_MODE=debug-ptvsd
+      - SC_BUILD_TARGET=development
     volumes:
       - ./:/devel/services/clusters-keeper
       - ../../packages:/devel/packages
