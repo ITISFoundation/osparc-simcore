@@ -29,7 +29,7 @@ def app_environment(
 @pytest.fixture
 def mock_background_task(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
-        "simcore_service_clusters_keeper.clusters_management_task.check_clusters",
+        "simcore_service_clusters_keeper.modules.clusters_management_task.check_clusters",
         autospec=True,
     )
 

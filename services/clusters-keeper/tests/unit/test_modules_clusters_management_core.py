@@ -12,11 +12,13 @@ from models_library.users import UserID
 from models_library.wallets import WalletID
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from simcore_service_clusters_keeper.clusters_management_core import check_clusters
 from simcore_service_clusters_keeper.models import EC2InstanceData
 from simcore_service_clusters_keeper.modules.clusters import (
     cluster_heartbeat,
     create_cluster,
+)
+from simcore_service_clusters_keeper.modules.clusters_management_core import (
+    check_clusters,
 )
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceStateNameType
