@@ -40,7 +40,7 @@ class TutorialBase {
       utils.createScreenshotsDir();
     }
     catch (err) {
-      console.error("Error creating screenshots directory", err);
+      console.error("Error: Error creating screenshots directory", err);
       throw (err);
     }
 
@@ -139,7 +139,7 @@ class TutorialBase {
       await this.__printMe();
     }
     catch (err) {
-      console.error("Error starting", err);
+      console.error("Error: Error starting", err);
       throw (err);
     }
   }
@@ -182,7 +182,7 @@ class TutorialBase {
       await auto.logIn(this.__page, this.__user, this.__pass);
     }
     catch (err) {
-      console.error("Failed logging in", err);
+      console.error("Error: Failed logging in", err);
       throw (err);
     }
 
@@ -530,7 +530,7 @@ class TutorialBase {
       await this.__checkNItemsInFolder(fileNames, openOutputsFolder);
     }
     catch (err) {
-      console.error("Results don't match", err);
+      console.error("Error: Checking Node Outputs:", err);
       throw (err)
     }
   }
@@ -541,7 +541,7 @@ class TutorialBase {
       await this.__checkNItemsInFolder(fileNames, openOutputsFolder);
     }
     catch (err) {
-      console.error("Results don't match", err);
+      console.error("Error: Checking Node Outputs:", err);
       throw (err)
     }
   }
@@ -565,7 +565,7 @@ class TutorialBase {
       await this.__responsesQueue.waitUntilResponse(":close");
     }
     catch (err) {
-      console.error("Failed going to dashboard study", err);
+      console.error("Error: Failed going to dashboard", err);
       throw (err);
     }
     await this.waitFor(5000, 'Going back to Dashboard');
@@ -591,7 +591,7 @@ class TutorialBase {
       }
     }
     catch (err) {
-      console.error("Failed deleting study", err);
+      console.error("Error: Failed deleting study", err);
       throw (err);
     }
     await this.takeScreenshot("deleteFirstStudy_after");
