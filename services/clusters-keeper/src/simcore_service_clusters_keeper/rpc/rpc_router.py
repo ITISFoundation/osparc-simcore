@@ -1,8 +1,14 @@
+import functools
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any, TypeVar
 
+from servicelib.logging_utils import log_catch, log_context
+
 DecoratedCallable = TypeVar("DecoratedCallable", bound=Callable[..., Any])
+
+_logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -11,7 +17,16 @@ class RPCRouter:
 
     def expose(self) -> Callable[[DecoratedCallable], DecoratedCallable]:
         def decorator(func: DecoratedCallable) -> DecoratedCallable:
-            self.routes[func.__name__] = func
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                with log_catch(_logger, reraise=True), log_context(
+                    _logger,
+                    logging.INFO,
+                    msg=f"calling {func.__name__}",
+                ):
+                    return func(*args, **kwargs)
+
+            self.routes[func.__name__] = wrapper
             return func
 
         return decorator
