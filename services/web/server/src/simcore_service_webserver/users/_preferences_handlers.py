@@ -2,7 +2,6 @@ import functools
 
 from aiohttp import web
 from models_library.api_schemas_webserver.users_preferences import (
-    UserPreference,
     UserPreferencePatchPathParams,
     UserPreferencePatchRequestBody,
     UserPreferencesGet,
@@ -48,21 +47,11 @@ def _handle_users_exceptions(handler: Handler):
 async def get_user_preferences(request: web.Request) -> web.Response:
     req_ctx = _RequestContext.parse_obj(request)
 
-    all_preferences = await _preferences_api.get_frontend_user_preferences(
-        request.app, user_id=req_ctx.user_id
-    )
-
-    user_preferences_get: UserPreferencesGet = {
-        p.get_preference_name(): UserPreference(
-            render_widget=p.render_widget,
-            widget_type=p.widget_type,
-            display_label=p.display_label,
-            tooltip_message=p.tooltip_message,
-            value=p.value,
-            value_type=p.value_type,
+    user_preferences_get: UserPreferencesGet = (
+        await _preferences_api.get_frontend_user_preferences(
+            request.app, user_id=req_ctx.user_id
         )
-        for p in all_preferences
-    }
+    )
     return envelope_json_response(user_preferences_get)
 
 

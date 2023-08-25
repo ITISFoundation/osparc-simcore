@@ -1,6 +1,10 @@
 from typing import Any, Final
 
 from aiohttp import web
+from models_library.api_schemas_webserver.users_preferences import (
+    UserPreference,
+    UserPreferencesGet,
+)
 from models_library.user_preferences import BaseFrontendUserPreference
 from models_library.users import UserID
 from pydantic import NonNegativeInt, parse_obj_as
@@ -12,10 +16,8 @@ from ._preferences_models import ALL_FRONTEND_PREFERENCES
 _MAX_PARALLEL_DB_QUERIES: Final[NonNegativeInt] = 2
 
 
-async def get_frontend_user_preferences(
-    app: web.Application,
-    *,
-    user_id: UserID,
+async def _get_frontend_user_preferences_list(
+    app: web.Application, user_id: UserID
 ) -> list[BaseFrontendUserPreference]:
     saved_user_preferences: list[
         BaseFrontendUserPreference | None
@@ -33,6 +35,22 @@ async def get_frontend_user_preferences(
             saved_user_preferences, ALL_FRONTEND_PREFERENCES, strict=True
         )
     ]
+
+
+async def get_frontend_user_preferences(
+    app: web.Application, *, user_id: UserID
+) -> UserPreferencesGet:
+    return {
+        p.preference_identifier: UserPreference(
+            render_widget=p.render_widget,
+            widget_type=p.widget_type,
+            display_label=p.display_label,
+            tooltip_message=p.tooltip_message,
+            value=p.value,
+            value_type=p.value_type,
+        )
+        for p in await _get_frontend_user_preferences_list(app, user_id)
+    }
 
 
 async def set_frontend_user_preference(
