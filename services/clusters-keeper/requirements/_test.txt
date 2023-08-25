@@ -83,6 +83,8 @@ cryptography==41.0.3
     #   moto
     #   python-jose
     #   sshpubkeys
+debugpy==1.6.7.post1
+    # via -r requirements/_test.in
 deepdiff==6.3.1
     # via -r requirements/_test.in
 docker==6.1.3

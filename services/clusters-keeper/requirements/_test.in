@@ -14,6 +14,7 @@
 aiodocker
 asgi-lifespan
 coverage
+debugpy
 deepdiff
 docker
 faker

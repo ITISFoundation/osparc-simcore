@@ -1,5 +1,4 @@
 import datetime
-import logging
 
 from fastapi import FastAPI
 from models_library.users import UserID
@@ -15,8 +14,6 @@ from ..utils.ec2 import (
     ec2_instances_for_user_wallet_filter,
 )
 from .ec2 import get_ec2_client
-
-_logger = logging.getLogger(__name__)
 
 
 def _create_startup_script() -> str:
