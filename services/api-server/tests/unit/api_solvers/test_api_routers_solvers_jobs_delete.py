@@ -110,6 +110,7 @@ def mocked_backend_services_apis_for_create_and_delete_solver_job(
     )
 
 
+@pytest.mark.testit
 @pytest.mark.acceptance_test(
     "For https://github.com/ITISFoundation/osparc-simcore/issues/4111"
 )
@@ -131,7 +132,7 @@ async def test_create_and_delete_solver_job(
             }
         ).dict(),
     )
-    assert resp.status_code == status.HTTP_200_OK
+    assert resp.status_code == status.HTTP_201_CREATED
     job = Job.parse_obj(resp.json())
 
     # Delete Job after creation
