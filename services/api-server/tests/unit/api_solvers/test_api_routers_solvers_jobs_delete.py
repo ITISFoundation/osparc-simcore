@@ -110,7 +110,6 @@ def mocked_backend_services_apis_for_create_and_delete_solver_job(
     )
 
 
-@pytest.mark.testit
 @pytest.mark.acceptance_test(
     "For https://github.com/ITISFoundation/osparc-simcore/issues/4111"
 )

@@ -45,6 +45,7 @@ class WebServerValueError(PydanticErrorMixin, ValueError):
 
 class ProjectNotFoundError(WebServerValueError):
     code = "webserver.project_not_found"
+    msg_template = "Project '{project_id}' not found"
 
 
 @contextmanager
