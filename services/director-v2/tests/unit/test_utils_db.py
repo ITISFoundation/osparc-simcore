@@ -15,7 +15,7 @@ from simcore_service_director_v2.utils.db import (
 
 @pytest.mark.parametrize(
     "model_cls",
-    (Cluster,),
+    [Cluster],
 )
 def test_export_clusters_to_db(
     model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
