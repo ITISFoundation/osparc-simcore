@@ -55,6 +55,9 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
       const activeWallet = this.getActiveWallet();
       if (activeWallet) {
         this.__showOneWallet(activeWallet);
+      } else if (osparc.store.Store.getInstance().getWallets().find(wallet => wallet.isDefaultWallet())) {
+        const found = osparc.store.Store.getInstance().getWallets().find(wallet => wallet.isDefaultWallet());
+        this.__showOneWallet(found);
       } else if (osparc.store.Store.getInstance().getWallets().length) {
         this.__showAllWallets();
       } else {
@@ -108,11 +111,7 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
       });
 
       this.__addWallet(wallet);
-      const id = wallet.addListener("changeStatus", () => this.__reloadLayout());
-      this.__walletListeners.push({
-        walletId: wallet.getWalletId(),
-        listenerId: id
-      });
+      this.__addWalletListener(wallet);
 
       this._add(new qx.ui.core.Spacer(), {
         flex: 1
@@ -133,11 +132,7 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
         if (wallet.getStatus() === "ACTIVE") {
           this.__addWallet(wallet);
         }
-        const id = wallet.addListener("changeStatus", () => this.__reloadLayout());
-        this.__walletListeners.push({
-          walletId: wallet.getWalletId(),
-          listenerId: id
-        });
+        this.__addWalletListener(wallet);
       }
 
       this._add(new qx.ui.core.Spacer(), {
@@ -151,6 +146,20 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
       });
       this._add(progressBar, {
         flex: 1
+      });
+    },
+
+    __addWalletListener: function(wallet) {
+      const changeStatusId = wallet.addListener("changeStatus", () => this.__reloadLayout());
+      this.__walletListeners.push({
+        walletId: wallet.getWalletId(),
+        listenerId: changeStatusId
+      });
+
+      const defaultWalletId = wallet.addListener("changeDefaultWallet", () => this.__reloadLayout());
+      this.__walletListeners.push({
+        walletId: wallet.getWalletId(),
+        listenerId: defaultWalletId
       });
     }
   }
