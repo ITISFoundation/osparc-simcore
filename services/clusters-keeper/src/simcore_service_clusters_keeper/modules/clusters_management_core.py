@@ -3,11 +3,11 @@ import logging
 
 import arrow
 from fastapi import FastAPI
-from simcore_service_clusters_keeper.utils.ec2 import HEARTBEAT_TAG_KEY
 
 from ..core.settings import get_application_settings
 from ..models import EC2InstanceData
 from ..modules.clusters import delete_clusters, get_all_clusters
+from ..utils.ec2 import HEARTBEAT_TAG_KEY
 
 _logger = logging.getLogger(__name__)
 
