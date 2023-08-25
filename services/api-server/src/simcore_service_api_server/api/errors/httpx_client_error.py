@@ -6,10 +6,11 @@
 import logging
 
 from fastapi import status
-from fastapi.encoders import jsonable_encoder
 from httpx import HTTPStatusError
 from starlette.requests import Request
 from starlette.responses import JSONResponse
+
+from .http_error import create_error_json_response
 
 _logger = logging.getLogger(__file__)
 
@@ -46,6 +47,4 @@ async def httpx_client_error_handler(_: Request, exc: HTTPStatusError) -> JSONRe
             exc.response.text,
         )
 
-    return JSONResponse(
-        content=jsonable_encoder({"errors": errors}), status_code=status_code
-    )
+    return create_error_json_response(*errors, status_code=status_code)
