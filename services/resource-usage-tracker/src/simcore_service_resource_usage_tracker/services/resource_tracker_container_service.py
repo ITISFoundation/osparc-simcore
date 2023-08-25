@@ -13,7 +13,9 @@ from pydantic import PositiveInt
 from ..api.dependencies import get_repository
 from ..models.pagination import LimitOffsetParamsWithDefault
 from ..models.resource_tracker_container import ContainerGetDB, ContainersPage
-from ..modules.db.repositories.resource_tracker import ResourceTrackerRepository
+from ..modules.db.repositories.resource_tracker_container import (
+    ResourceTrackerContainerRepository,
+)
 
 _OSPARC_TOKEN_PRICE = 3.5  # We will need to store pricing in the DB
 
@@ -23,7 +25,8 @@ async def list_containers(
     product_name: ProductName,
     page_params: Annotated[LimitOffsetParamsWithDefault, Depends()],
     resource_tacker_repo: Annotated[
-        ResourceTrackerRepository, Depends(get_repository(ResourceTrackerRepository))
+        ResourceTrackerContainerRepository,
+        Depends(get_repository(ResourceTrackerContainerRepository)),
     ],
 ) -> ContainersPage:
     # Prepare helper variables

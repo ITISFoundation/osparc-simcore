@@ -19,7 +19,9 @@ from simcore_service_resource_usage_tracker.modules.prometheus import (
 )
 
 from ...models.resource_tracker_container import ContainerScrapedResourceUsage
-from ...modules.db.repositories.resource_tracker import ResourceTrackerRepository
+from ...modules.db.repositories.resource_tracker_container import (
+    ResourceTrackerContainerRepository,
+)
 from ...modules.db.repositories.user_and_project import UserAndProjectRepository
 
 _logger = logging.getLogger(__name__)
@@ -198,7 +200,7 @@ def _prepare_prom_query_parameters(
 
 async def collect_container_resource_usage(
     prometheus_client: PrometheusConnect,
-    resource_tracker_repo: ResourceTrackerRepository,
+    resource_tracker_repo: ResourceTrackerContainerRepository,
     osparc_repo: UserAndProjectRepository,
     machine_fqdn: str,
 ) -> None:
@@ -242,7 +244,7 @@ async def collect_container_resource_usage(
 async def collect_container_resource_usage_task(app: FastAPI) -> None:
     await collect_container_resource_usage(
         get_prometheus_api_client(app),
-        ResourceTrackerRepository(db_engine=app.state.engine),
+        ResourceTrackerContainerRepository(db_engine=app.state.engine),
         UserAndProjectRepository(
             db_engine=app.state.engine
         ),  # potencionally, will point to different database in the future

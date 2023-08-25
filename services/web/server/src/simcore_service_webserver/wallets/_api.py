@@ -109,32 +109,3 @@ async def delete_wallet(
         )
 
     raise NotImplementedError
-
-
-### API that can be exposed
-
-
-async def can_wallet_be_used_by_user(
-    app: web.Application,
-    user_id: UserID,
-    wallet_id: WalletID,
-) -> WalletGet:
-    wallet: UserWalletDB = await db.get_wallet_for_user(
-        app=app, user_id=user_id, wallet_id=wallet_id
-    )
-    if wallet.read is False:
-        raise WalletAccessForbiddenError(
-            reason=f"Wallet {wallet_id} does not have read permission"
-        )
-
-    wallet_api: WalletGet = WalletGet(
-        wallet_id=wallet.wallet_id,
-        name=wallet.name,
-        description=wallet.description,
-        owner=wallet.owner,
-        thumbnail=wallet.thumbnail,
-        status=wallet.status,
-        created=wallet.created,
-        modified=wallet.modified,
-    )
-    return wallet_api

@@ -14,15 +14,6 @@ from .resource_tracker_process_messages import process_message
 _logger = logging.getLogger(__name__)
 
 
-async def _process_message(
-    app: FastAPI, data: bytes  # pylint: disable=unused-argument
-) -> bool:
-    # NOTE: parse the message and process it
-
-    _logger.debug("%s", data)
-    return True
-
-
 async def _subscribe_to_rabbitmq(app) -> str:
     with log_context(_logger, logging.INFO, msg="Subscribing to rabbitmq channel"):
         rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
@@ -66,6 +57,7 @@ def on_app_shutdown(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _stop() -> None:
         if app.state.resource_tracker_rabbitmq_consumer:
             await _unsubscribe_from_rabbitmq(app)
+            await app.state.rabbitmq_client.close()
 
     return _stop
 
