@@ -19,6 +19,7 @@ async def get_or_create_cluster(
         ec2_instance = await clusters.get_cluster(
             app, user_id=user_id, wallet_id=wallet_id
         )
+        await clusters.cluster_heartbeat(app, user_id=user_id, wallet_id=wallet_id)
     except Ec2InstanceNotFoundError:
         new_ec2_instances = await clusters.create_cluster(
             app, user_id=user_id, wallet_id=wallet_id
