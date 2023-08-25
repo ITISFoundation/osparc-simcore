@@ -6,10 +6,10 @@ from models_library.users import UserID
 from models_library.utils.enums import StrAutoEnum
 from models_library.wallets import WalletID
 from pydantic import AnyUrl, BaseModel, SecretStr, parse_obj_as
-from simcore_service_clusters_keeper.core.errors import Ec2InstanceNotFoundError
 from types_aiobotocore_ec2.literals import InstanceStateNameType
 
 from .. import clusters_api
+from ..core.errors import Ec2InstanceNotFoundError
 from ..models import EC2InstanceData
 from .rpc_router import RPCRouter
 
