@@ -13,6 +13,7 @@ from .._meta import (
 from ..api.routes import setup_api_routes
 from ..clusters_management_task import setup as setup_clusters_management
 from ..modules.ec2 import setup as setup_ec2
+from ..modules.rabbitmq import is_rabbitmq_enabled
 from ..modules.rabbitmq import setup as setup_rabbitmq
 from ..modules.redis import setup as setup_redis
 from ..modules.remote_debug import setup_remote_debugging
@@ -43,10 +44,11 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
         setup_remote_debugging(app)
     setup_api_routes(app)
     setup_rabbitmq(app)
+    if is_rabbitmq_enabled(app):
+        setup_rpc_routes(app)
     setup_ec2(app)
     setup_redis(app)
     setup_clusters_management(app)
-    setup_rpc_routes(app)
 
     # ERROR HANDLERS
 

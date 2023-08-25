@@ -5,11 +5,7 @@ from fastapi import FastAPI
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq_utils import RPCMethodName
 
-from ..modules.rabbitmq import (
-    CLUSTERS_KEEPER_RPC_NAMESPACE,
-    get_rabbitmq_rpc_client,
-    is_rabbitmq_enabled,
-)
+from ..modules.rabbitmq import CLUSTERS_KEEPER_RPC_NAMESPACE, get_rabbitmq_rpc_client
 from . import clusters
 from .rpc_router import RPCRouter
 
@@ -27,9 +23,8 @@ async def _include_router(
 
 def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _start() -> None:
-        if is_rabbitmq_enabled(app):
-            rpc_client = get_rabbitmq_rpc_client(app)
-            await _include_router(app, rpc_client, clusters.router)
+        rpc_client = get_rabbitmq_rpc_client(app)
+        await _include_router(app, rpc_client, clusters.router)
 
     return _start
 
