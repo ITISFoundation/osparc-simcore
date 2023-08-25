@@ -42,7 +42,8 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
 
   events: {
     "openEditWallet": "qx.event.type.Data",
-    "buyCredits": "qx.event.type.Data"
+    "buyCredits": "qx.event.type.Data",
+    "makeMeFavourite": "qx.event.type.Data"
   },
 
   members: {
@@ -135,7 +136,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
             maxHeight: 30,
             alignY: "middle"
           });
-          control.addListener("execute", () => this.fireDataEvent("buyCredits", {
+          control.addListener("execute", () => this.fireDataEvent("makeMeFavourite", {
             walletId: this.getKey()
           }), this);
           this._add(control, {
