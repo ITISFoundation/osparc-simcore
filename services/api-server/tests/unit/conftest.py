@@ -4,7 +4,7 @@
 # pylint: disable=unused-variable
 
 import json
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import AsyncIterator, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -19,15 +19,24 @@ from cryptography.fernet import Fernet
 from faker import Faker
 from fastapi import FastAPI, status
 from httpx._transports.asgi import ASGITransport
+from models_library.api_schemas_long_running_tasks.tasks import (
+    TaskGet,
+    TaskProgress,
+    TaskStatus,
+)
 from models_library.api_schemas_storage import HealthCheck
+from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.app_diagnostics import AppStatusCheck
 from models_library.generics import Envelope
+from models_library.projects import ProjectID
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from moto.server import ThreadedMotoServer
 from packaging.version import Version
 from pydantic import HttpUrl, parse_obj_as
 from pytest import MonkeyPatch  # noqa: PT013
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
 from requests.auth import HTTPBasicAuth
 from respx import MockRouter
 from simcore_service_api_server.core.application import init_app
@@ -349,3 +358,111 @@ def mocked_catalog_service_api_base(
         )
 
         yield respx_mock
+
+
+@pytest.fixture
+def patch_webserver_service_project_workflow(
+    app: FastAPI, faker: Faker
+) -> Callable[[MockRouter], MockRouter]:
+    # HELPER for projects side-effects
+    settings: ApplicationSettings = app.state.settings
+    assert settings.API_SERVER_WEBSERVER is not None
+
+    class _LongRunningTaskSideEffects:
+        def __init__(self):
+            self._results: dict[str, ProjectGet] = {}
+
+        @staticmethod
+        def _create_httpx_response_TaskGet(task_id):  # noqa: N802
+            return httpx.Response(
+                status.HTTP_202_ACCEPTED,
+                json={
+                    "data": TaskGet(
+                        task_id=task_id,
+                        task_name="fake-task-name",
+                        status_href=f"{settings.API_SERVER_WEBSERVER.api_base_url}/tasks/{task_id}",
+                        result_href=f"{settings.API_SERVER_WEBSERVER.api_base_url}/tasks/{task_id}/result",
+                        abort_href=f"{settings.API_SERVER_WEBSERVER.api_base_url}/tasks/{task_id}",
+                    ).dict()
+                },
+            )
+
+        def create_project_task(self, request: httpx.Request):
+            # create result: use the request-body
+            project_create = json.loads(request.content)
+            project_get = ProjectGet.parse_obj(
+                {
+                    "creationDate": "2018-07-01T11:13:43Z",
+                    "lastChangeDate": "2018-07-01T11:13:43Z",
+                    "prjOwner": "owner@email.com",
+                    **project_create,
+                }
+            )
+
+            # set result and respond
+            task_id = faker.uuid4()
+            self._results[task_id] = project_get
+            return self._create_httpx_response_TaskGet(task_id)
+
+        def clone_project_task(self, request: httpx.Request, *, project_id: str):
+            assert GET_PROJECT.response_body
+
+            project_get = ProjectGet.parse_obj(
+                {
+                    "creationDate": "2018-07-01T11:13:43Z",
+                    "lastChangeDate": "2018-07-01T11:13:43Z",
+                    "prjOwner": "owner@email.com",
+                    **GET_PROJECT.response_body["data"],
+                }
+            )
+            project_get.uuid = ProjectID(project_id)
+
+            # set result and respond
+            task_id = faker.uuid4()
+            self._results[task_id] = project_get
+            return self._create_httpx_response_TaskGet(task_id)
+
+        def get_result(self, request: httpx.Request, task_id: str):
+            result = jsonable_encoder(self._results[task_id].dict(by_alias=True))
+            return httpx.Response(status.HTTP_200_OK, json={"data": result})
+
+    def _mock(webserver_mock_router: MockRouter) -> MockRouter:
+        long_running_task_workflow = _LongRunningTaskSideEffects()
+
+        webserver_mock_router.post(
+            path__regex="/projects$",
+            name="create_projects",
+        ).mock(side_effect=long_running_task_workflow.create_project_task)
+
+        webserver_mock_router.post(
+            path__regex=r"/projects/(?P<project_id>[\w-]+):clone$",
+            name="project_clone",
+        ).mock(side_effect=long_running_task_workflow.clone_project_task)
+
+        # Tasks routes ----------------
+
+        webserver_mock_router.get(
+            path__regex=r"/tasks/(?P<task_id>[\w-]+)$",
+            name="get_task_status",
+        ).respond(
+            status.HTTP_200_OK,
+            json={
+                "data": jsonable_encoder(
+                    TaskStatus(
+                        task_progress=TaskProgress(message="fake job done", percent=1),
+                        done=True,
+                        started="2018-07-01T11:13:43Z",
+                    ),
+                    by_alias=True,
+                )
+            },
+        )
+
+        webserver_mock_router.get(
+            path__regex=r"/tasks/(?P<task_id>[\w-]+)/result$",
+            name="get_task_result",
+        ).mock(side_effect=long_running_task_workflow.get_result)
+
+        return webserver_mock_router
+
+    return _mock

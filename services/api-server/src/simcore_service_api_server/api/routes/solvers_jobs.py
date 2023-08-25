@@ -161,6 +161,7 @@ async def get_jobs_page(
 @router.post(
     "/{solver_key:path}/releases/{version}/jobs",
     response_model=Job,
+    status_code=status.HTTP_201_CREATED,
 )
 async def create_job(
     solver_key: SolverKeyId,
