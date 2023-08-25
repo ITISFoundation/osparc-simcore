@@ -7,7 +7,6 @@ from models_library.users import UserID
 from models_library.utils.enums import StrAutoEnum
 from models_library.wallets import WalletID
 from pydantic import AnyUrl, BaseModel, SecretStr, parse_obj_as
-from servicelib.logging_utils import log_context
 from types_aiobotocore_ec2.literals import InstanceStateNameType
 
 from .. import clusters_api
@@ -79,25 +78,13 @@ async def get_or_create_cluster(
 async def create_cluster(
     app: FastAPI, *, user_id: UserID, wallet_id: WalletID
 ) -> list[EC2InstanceData]:
-    with log_context(
-        _logger,
-        logging.INFO,
-        msg=f"create_cluster for {user_id=}, {wallet_id=}",
-    ):
-        return await clusters_api.create_cluster(
-            app, user_id=user_id, wallet_id=wallet_id
-        )
+    return await clusters_api.create_cluster(app, user_id=user_id, wallet_id=wallet_id)
 
 
 @router.expose()
 async def cluster_heartbeat(
     app: FastAPI, *, user_id: UserID, wallet_id: WalletID
 ) -> None:
-    with log_context(
-        _logger,
-        logging.INFO,
-        msg=f"cluster_heartbeat for {user_id=}, {wallet_id=}",
-    ):
-        return await clusters_api.cluster_heartbeat(
-            app, user_id=user_id, wallet_id=wallet_id
-        )
+    return await clusters_api.cluster_heartbeat(
+        app, user_id=user_id, wallet_id=wallet_id
+    )
