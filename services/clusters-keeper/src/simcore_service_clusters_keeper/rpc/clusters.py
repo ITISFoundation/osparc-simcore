@@ -1,48 +1,13 @@
-import logging
-from enum import auto
-
 from fastapi import FastAPI
-from models_library.clusters import ClusterAuthentication, SimpleAuthentication
 from models_library.users import UserID
-from models_library.utils.enums import StrAutoEnum
 from models_library.wallets import WalletID
-from pydantic import AnyUrl, BaseModel, SecretStr, parse_obj_as
-from types_aiobotocore_ec2.literals import InstanceStateNameType
 
 from ..core.errors import Ec2InstanceNotFoundError
-from ..models import EC2InstanceData
+from ..models import ClusterGet, EC2InstanceData
 from ..modules import clusters
 from .rpc_router import RPCRouter
 
 router = RPCRouter()
-_logger = logging.getLogger(__name__)
-
-
-class ClusterState(StrAutoEnum):
-    STARTED = auto()
-    RUNNING = auto()
-    TERMINATED = auto()
-
-
-def _convert_ec2_state_to_cluster_state(
-    ec2_state: InstanceStateNameType,
-) -> ClusterState:
-    match ec2_state:
-        case "pending":
-            return ClusterState.STARTED
-        case "running":
-            return ClusterState.RUNNING
-        case _:
-            return ClusterState.TERMINATED
-    return ClusterState.TERMINATED
-
-
-class ClusterGet(BaseModel):
-    endpoint: AnyUrl
-    authentication: ClusterAuthentication
-    state: ClusterState
-    user_id: UserID
-    wallet_id: WalletID
 
 
 @router.expose()
@@ -63,15 +28,7 @@ async def get_or_create_cluster(
         ec2_instance = new_ec2_instances[0]
     assert ec2_instance is not None  # nosec
 
-    return ClusterGet(
-        endpoint=parse_obj_as(AnyUrl, f"http://{ec2_instance.aws_public_ip}"),
-        authentication=SimpleAuthentication(
-            username="bing", password=SecretStr("bing")
-        ),
-        state=_convert_ec2_state_to_cluster_state(ec2_instance.state),
-        user_id=user_id,
-        wallet_id=wallet_id,
-    )
+    return ClusterGet.from_ec2_instance_data(ec2_instance, user_id, wallet_id)
 
 
 @router.expose()
