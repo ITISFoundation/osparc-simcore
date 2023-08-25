@@ -5,7 +5,6 @@
 from collections.abc import AsyncIterator
 from typing import Any
 
-import aiopg.sa
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
@@ -17,7 +16,6 @@ from pydantic import BaseModel
 from pydantic.fields import ModelField
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import NewUser
-from simcore_postgres_database.models.user_preferences import user_preferences
 from simcore_postgres_database.models.users import UserStatus
 from simcore_service_webserver.users._preferences_api import (
     ALL_FRONTEND_PREFERENCES,
@@ -50,15 +48,6 @@ async def user_id(client: TestClient, faker: Faker) -> AsyncIterator[UserID]:
         client.app,
     ) as user:
         yield user["id"]
-
-
-@pytest.fixture
-async def drop_all_preferences(
-    aiopg_engine: aiopg.sa.engine.Engine,
-) -> AsyncIterator[None]:
-    yield
-    async with aiopg_engine.acquire() as conn:
-        await conn.execute(user_preferences.delete())
 
 
 def _get_model_field(model_class: type[BaseModel], field_name: str) -> ModelField:
