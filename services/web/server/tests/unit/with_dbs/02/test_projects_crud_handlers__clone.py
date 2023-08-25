@@ -82,7 +82,6 @@ async def test_clone_project(
     ), "clone does NOT preserve node ids"
 
 
-@pytest.mark.testit()
 @pytest.mark.parametrize(
     "user_role",
     [UserRole.USER],
