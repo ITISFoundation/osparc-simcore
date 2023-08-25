@@ -40,6 +40,9 @@ services:
   clusters-keeper:
     image: local/clusters-keeper:development
     init: true
+    ports:
+      - "8010:8000"
+      - "3015:3000"
     environment:
       - EC2_ACCESS_KEY_ID=${EC2_ACCESS_KEY_ID}
       - EC2_SECRET_ACCESS_KEY=${EC2_SECRET_ACCESS_KEY}
