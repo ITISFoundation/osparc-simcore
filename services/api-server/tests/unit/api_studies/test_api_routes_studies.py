@@ -142,10 +142,10 @@ async def test_clone_study(
     auth: httpx.BasicAuth,
     study_id: StudyID,
     mocked_webserver_service_api_base: MockRouter,
-    patch_webserver_service_project_workflow: Callable[[MockRouter], MockRouter],
+    patch_webserver_long_running_project_tasks: Callable[[MockRouter], MockRouter],
 ):
     # Mocks /projects/{project_id}:clone
-    patch_webserver_service_project_workflow(mocked_webserver_service_api_base)
+    patch_webserver_long_running_project_tasks(mocked_webserver_service_api_base)
 
     resp = await client.post(f"/v0/studies/{study_id}:clone", auth=auth)
 

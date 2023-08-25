@@ -361,19 +361,24 @@ def mocked_catalog_service_api_base(
 
 
 @pytest.fixture
-def patch_webserver_service_project_workflow(
+def patch_webserver_long_running_project_tasks(
     app: FastAPI, faker: Faker
 ) -> Callable[[MockRouter], MockRouter]:
-    # HELPER for projects side-effects
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_WEBSERVER is not None
 
-    class _LongRunningTaskSideEffects:
-        def __init__(self):
-            self._results: dict[str, ProjectGet] = {}
+    class _LongRunningProjectTasks:
+        """
+        Preserves results per task_id
+        """
 
-        @staticmethod
-        def _create_httpx_response_TaskGet(task_id):  # noqa: N802
+        def __init__(self):
+            self._results: dict[str, Any] = {}
+
+        def _set_result_and_get_reponse(self, result: Any):
+            task_id = faker.uuid4()
+            self._results[task_id] = jsonable_encoder(result, by_alias=True)
+
             return httpx.Response(
                 status.HTTP_202_ACCEPTED,
                 json={
@@ -387,6 +392,8 @@ def patch_webserver_service_project_workflow(
                 },
             )
 
+        # SIDE EFFECT functions ---
+
         def create_project_task(self, request: httpx.Request):
             # create result: use the request-body
             project_create = json.loads(request.content)
@@ -399,10 +406,7 @@ def patch_webserver_service_project_workflow(
                 }
             )
 
-            # set result and respond
-            task_id = faker.uuid4()
-            self._results[task_id] = project_get
-            return self._create_httpx_response_TaskGet(task_id)
+            return self._set_result_and_get_reponse(project_get)
 
         def clone_project_task(self, request: httpx.Request, *, project_id: str):
             assert GET_PROJECT.response_body
@@ -417,17 +421,19 @@ def patch_webserver_service_project_workflow(
             )
             project_get.uuid = ProjectID(project_id)
 
-            # set result and respond
-            task_id = faker.uuid4()
-            self._results[task_id] = project_get
-            return self._create_httpx_response_TaskGet(task_id)
+            return self._set_result_and_get_reponse(project_get)
 
-        def get_result(self, request: httpx.Request, task_id: str):
-            result = jsonable_encoder(self._results[task_id].dict(by_alias=True))
-            return httpx.Response(status.HTTP_200_OK, json={"data": result})
+        def get_result(self, request: httpx.Request, *, task_id: str):
+            return httpx.Response(
+                status.HTTP_200_OK, json={"data": self._results[task_id]}
+            )
+
+        # NOTE: Due to lack of time, i will leave it here but I believe
+        # it is possible to have a generic long-running task workflow
+        # that preserves the resultswith state
 
     def _mock(webserver_mock_router: MockRouter) -> MockRouter:
-        long_running_task_workflow = _LongRunningTaskSideEffects()
+        long_running_task_workflow = _LongRunningProjectTasks()
 
         webserver_mock_router.post(
             path__regex="/projects$",
