@@ -1,9 +1,11 @@
 import functools
+import json
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any, TypeVar
 
+from fastapi.encoders import jsonable_encoder
 from servicelib.logging_utils import log_catch, log_context
 
 DecoratedCallable = TypeVar("DecoratedCallable", bound=Callable[..., Any])
@@ -24,7 +26,7 @@ class RPCRouter:
                     logging.INFO,
                     msg=f"calling {func.__name__} with {args}, {kwargs}",
                 ), log_catch(_logger, reraise=True):
-                    return await func(*args, **kwargs)
+                    return json.dumps(jsonable_encoder(await func(*args, **kwargs)))
 
             self.routes[func.__name__] = wrapper
             return func
