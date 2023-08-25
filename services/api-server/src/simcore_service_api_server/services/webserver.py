@@ -33,7 +33,7 @@ from tenacity.wait import wait_fixed
 from ..core.settings import WebServerSettings
 from ..models.pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from ..models.schemas.jobs import MetaValueType
-from ..models.types import JSON
+from ..models.types import AnyJson
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
 _logger = logging.getLogger(__name__)
@@ -131,7 +131,7 @@ class AuthSession:
         resp: Response,
         client_status_code_to_exception_map: dict[int, WebServerValueError]
         | None = None,
-    ) -> JSON | None:
+    ) -> AnyJson | None:
         """
         Raises:
             WebServerValueError: any client error converted to module error
@@ -139,8 +139,8 @@ class AuthSession:
 
         """
         # enveloped answer
-        data = None
-        error: JSON | None = None
+        data: AnyJson | None = None
+        error: AnyJson | None = None
 
         if resp.status_code != status.HTTP_204_NO_CONTENT:
             try:
@@ -185,7 +185,7 @@ class AuthSession:
     def client(self):
         return self._api.client
 
-    async def get(self, path: str) -> JSON | None:
+    async def get(self, path: str) -> AnyJson | None:
         url = path.lstrip("/")
         try:
             resp = await self.client.get(url, cookies=self.session_cookies)
@@ -195,7 +195,7 @@ class AuthSession:
 
         return self._get_data_or_raise(resp)
 
-    async def put(self, path: str, body: dict) -> JSON | None:
+    async def put(self, path: str, body: dict) -> AnyJson | None:
         url = path.lstrip("/")
         try:
             resp = await self.client.put(url, json=body, cookies=self.session_cookies)
