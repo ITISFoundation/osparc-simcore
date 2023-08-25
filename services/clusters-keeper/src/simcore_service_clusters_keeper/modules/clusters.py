@@ -1,8 +1,10 @@
 import datetime
+from typing import cast
 
 from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID
+from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.errors import Ec2InstanceNotFoundError
 from ..core.settings import get_application_settings
@@ -34,7 +36,14 @@ async def create_cluster(
     assert app_settings.CLUSTERS_KEEPER_EC2_INSTANCES  # nosec
     return await ec2_client.start_aws_instance(
         app_settings.CLUSTERS_KEEPER_EC2_INSTANCES,
-        instance_type="t2.micro",
+        instance_type=cast(
+            InstanceTypeType,
+            next(
+                iter(
+                    app_settings.CLUSTERS_KEEPER_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES
+                )
+            ),
+        ),
         tags=creation_ec2_tags(app_settings, user_id=user_id, wallet_id=wallet_id),
         startup_script=_create_startup_script(),
         number_of_instances=1,
