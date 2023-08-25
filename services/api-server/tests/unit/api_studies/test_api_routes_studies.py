@@ -159,18 +159,20 @@ async def test_clone_study_not_found(
     mocked_webserver_service_api_base: MockRouter,
 ):
     # Mocks /projects/{project_id}:clone
-
     mocked_webserver_service_api_base.post(
         path__regex=r"/projects/(?P<project_id>[\w-]+):clone$",
         name="project_clone",
     ).respond(
         status.HTTP_404_NOT_FOUND,
+        json={"message": "you should not read this message from the WEBSERVER_MARK"},
     )
 
-    # tests invalid
-    invalid_study_id = faker.uuid4()
-    resp = await client.post(f"/v0/studies/{invalid_study_id}:clone", auth=auth)
+    # tests unknown study
+    unknown_study_id = faker.uuid4()
+    resp = await client.post(f"/v0/studies/{unknown_study_id}:clone", auth=auth)
 
     assert resp.status_code == status.HTTP_404_NOT_FOUND
-    assert len(resp.json()["errors"]) == 1
-    assert invalid_study_id in resp.json()["errors"][0]
+
+    errors: list[str] = resp.json()["errors"]
+    assert any("WEBSERVER_MARK" not in error_msg for error_msg in errors)
+    assert any(unknown_study_id in error_msg for error_msg in errors)

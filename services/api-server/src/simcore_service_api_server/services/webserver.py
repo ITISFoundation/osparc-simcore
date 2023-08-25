@@ -254,16 +254,15 @@ class AuthSession:
     # PROJECTS -------------------------------------------------
 
     async def create_project(self, project: ProjectCreateNew) -> ProjectGet:
-        # POST /projects --> 202
-        resp = await self.client.post(
+        # POST /projects --> 202 Accepted
+        response = await self.client.post(
             "/projects",
             params={"hidden": True},
             json=jsonable_encoder(project, by_alias=True, exclude={"state"}),
             cookies=self.session_cookies,
         )
-        data = self._get_data_or_raise(resp)
-        assert data  # nosec
-        assert isinstance(data, dict)  # nosec
+        data = self._get_data_or_raise(response)
+        assert data is not None  # nosec
 
         result = await self._wait_for_long_running_task_results(data)
         return ProjectGet.parse_obj(result)
@@ -273,8 +272,12 @@ class AuthSession:
             f"/projects/{project_id}:clone",
             cookies=self.session_cookies,
         )
+        data = self._get_data_or_raise(
+            response,
+            {status.HTTP_404_NOT_FOUND: ProjectNotFoundError(project_id=project_id)},
+        )
+        assert data is not None  # nosec
 
-        data = self._get_data_or_raise(response)
         result = await self._wait_for_long_running_task_results(data)
         return ProjectGet.parse_obj(result)
 
@@ -310,10 +313,14 @@ class AuthSession:
         )
 
     async def delete_project(self, project_id: ProjectID) -> None:
-        resp = await self.client.delete(
+        response = await self.client.delete(
             f"/projects/{project_id}", cookies=self.session_cookies
         )
-        self._get_data_or_raise(resp)
+        data = self._get_data_or_raise(
+            response,
+            {status.HTTP_404_NOT_FOUND: ProjectNotFoundError(project_id=project_id)},
+        )
+        assert data is None  # nosec
 
     async def get_project_metadata_ports(
         self, project_id: ProjectID
@@ -326,10 +333,11 @@ class AuthSession:
             f"/projects/{project_id}/metadata/ports",
             cookies=self.session_cookies,
         )
-        if response.status_code == status.HTTP_404_NOT_FOUND:
-            raise ProjectNotFoundError(project_id=project_id)
 
-        data = self._get_data_or_raise(response)
+        data = self._get_data_or_raise(
+            response,
+            {status.HTTP_404_NOT_FOUND: ProjectNotFoundError(project_id=project_id)},
+        )
         assert data is not None
         assert isinstance(data, list)
         return data
