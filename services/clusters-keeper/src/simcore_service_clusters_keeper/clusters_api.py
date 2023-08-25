@@ -20,6 +20,16 @@ from .utils.ec2 import (
 _logger = logging.getLogger(__name__)
 
 
+def _create_startup_script() -> str:
+    return "\n".join(
+        [
+            "git clone https://github.com/ITISFoundation/osparc-simcore.git",
+            "cd osparc-simcore/services/osparc-gateway-server",
+            "make up-latest",
+        ]
+    )
+
+
 async def create_cluster(
     app: FastAPI, *, user_id: UserID, wallet_id: WalletID
 ) -> list[EC2InstanceData]:
@@ -33,7 +43,7 @@ async def create_cluster(
             app_settings.CLUSTERS_KEEPER_EC2_INSTANCES,
             instance_type="t2.micro",
             tags=creation_ec2_tags(app_settings, user_id=user_id, wallet_id=wallet_id),
-            startup_script="",
+            startup_script=_create_startup_script(),
             number_of_instances=1,
         )
 
