@@ -9,6 +9,7 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 from ..core.errors import Ec2InstanceNotFoundError
 from ..core.settings import get_application_settings
 from ..models import EC2InstanceData
+from ..utils.clusters import create_startup_script
 from ..utils.ec2 import (
     HEARTBEAT_TAG_KEY,
     all_created_ec2_instances_filter,
@@ -16,16 +17,6 @@ from ..utils.ec2 import (
     ec2_instances_for_user_wallet_filter,
 )
 from .ec2 import get_ec2_client
-
-
-def _create_startup_script() -> str:
-    return "\n".join(
-        [
-            "git clone https://github.com/ITISFoundation/osparc-simcore.git",
-            "cd osparc-simcore/services/osparc-gateway-server",
-            "make up-latest",
-        ]
-    )
 
 
 async def create_cluster(
@@ -45,7 +36,7 @@ async def create_cluster(
             ),
         ),
         tags=creation_ec2_tags(app_settings, user_id=user_id, wallet_id=wallet_id),
-        startup_script=_create_startup_script(),
+        startup_script=create_startup_script(),
         number_of_instances=1,
     )
 
