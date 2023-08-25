@@ -115,7 +115,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     CLUSTERS_KEEPER_DEBUG: bool = Field(
         default=False, description="Debug mode", env=["CLUSTERS_KEEPER_DEBUG", "DEBUG"]
     )
-
     CLUSTERS_KEEPER_LOGLEVEL: LogLevel = Field(
         LogLevel.INFO, env=["CLUSTERS_KEEPER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
     )
