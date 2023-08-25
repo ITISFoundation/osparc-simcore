@@ -18,13 +18,13 @@ class RPCRouter:
     def expose(self) -> Callable[[DecoratedCallable], DecoratedCallable]:
         def decorator(func: DecoratedCallable) -> DecoratedCallable:
             @functools.wraps(func)
-            def wrapper(*args, **kwargs):
-                with log_catch(_logger, reraise=True), log_context(
+            async def wrapper(*args, **kwargs):
+                with log_context(
                     _logger,
                     logging.INFO,
-                    msg=f"calling {func.__name__}",
-                ):
-                    return func(*args, **kwargs)
+                    msg=f"calling {func.__name__} with {args}, {kwargs}",
+                ), log_catch(_logger, reraise=True):
+                    return await func(*args, **kwargs)
 
             self.routes[func.__name__] = wrapper
             return func
