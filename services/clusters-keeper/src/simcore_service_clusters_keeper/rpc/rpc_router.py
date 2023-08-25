@@ -1,17 +1,17 @@
 import functools
-import json
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any, TypeVar
 
+import orjson
 from fastapi.encoders import jsonable_encoder
 from pydantic import SecretStr
 from servicelib.logging_utils import log_catch, log_context
 
 DecoratedCallable = TypeVar("DecoratedCallable", bound=Callable[..., Any])
 
-_logger = logging.getLogger(__name__)
+_logger = logging.getLogger("rpc.access")
 
 _RPC_CUSTOM_ENCODER: dict[Any, Callable[[Any], Any]] = {
     SecretStr: SecretStr.get_secret_value
@@ -31,9 +31,10 @@ class RPCRouter:
                     logging.INFO,
                     msg=f"calling {func.__name__} with {args}, {kwargs}",
                 ), log_catch(_logger, reraise=True):
-                    return json.dumps(
+                    result = await func(*args, **kwargs)
+                    return orjson.dumps(
                         jsonable_encoder(
-                            await func(*args, **kwargs),
+                            result,
                             custom_encoder=_RPC_CUSTOM_ENCODER,
                         )
                     )
