@@ -39,7 +39,11 @@ from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 _logger = logging.getLogger(__name__)
 
 
-class ProjectNotFoundError(PydanticErrorMixin, ValueError):
+class WebServerValueError(PydanticErrorMixin, ValueError):
+    ...
+
+
+class ProjectNotFoundError(WebServerValueError):
     code = "webserver.project_not_found"
 
 
@@ -121,9 +125,20 @@ class AuthSession:
         )
 
     @classmethod
-    def _get_data_or_raise_http_exception(cls, resp: Response) -> JSON | None:
+    def _get_data_or_raise(
+        cls,
+        resp: Response,
+        client_status_code_to_exception_map: dict[int, WebServerValueError]
+        | None = None,
+    ) -> JSON | None:
+        """
+        Raises:
+            WebServerValueError: any client error converted to module error
+            HTTPException: the rest are pre-process and raised as http errors
+
+        """
         # enveloped answer
-        data: JSON | None = None
+        data = None
         error: JSON | None = None
 
         if resp.status_code != status.HTTP_204_NO_CONTENT:
@@ -147,6 +162,14 @@ class AuthSession:
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
 
         if resp.is_client_error:
+            # Maps client status code to webserver local module error
+            if client_status_code_to_exception_map and (
+                exc := client_status_code_to_exception_map.get(resp.status_code)
+            ):
+                raise exc
+
+            # Otherwise, go thru with some pre-processing to make
+            # message cleaner
             if isinstance(error, dict):
                 error = error.get("message")
 
@@ -169,7 +192,7 @@ class AuthSession:
             _logger.exception("Failed to get %s", url)
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
 
-        return self._get_data_or_raise_http_exception(resp)
+        return self._get_data_or_raise(resp)
 
     async def put(self, path: str, body: dict) -> JSON | None:
         url = path.lstrip("/")
@@ -179,7 +202,7 @@ class AuthSession:
             _logger.exception("Failed to put %s", url)
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
 
-        return self._get_data_or_raise_http_exception(resp)
+        return self._get_data_or_raise(resp)
 
     async def _page_projects(
         self, *, limit: int, offset: int, show_hidden: bool, search: str | None = None
@@ -238,7 +261,7 @@ class AuthSession:
             json=jsonable_encoder(project, by_alias=True, exclude={"state"}),
             cookies=self.session_cookies,
         )
-        data: JSON | None = self._get_data_or_raise_http_exception(resp)
+        data = self._get_data_or_raise(resp)
         assert data  # nosec
         assert isinstance(data, dict)  # nosec
 
@@ -251,7 +274,7 @@ class AuthSession:
             cookies=self.session_cookies,
         )
 
-        data: JSON | None = self._get_data_or_raise_http_exception(response)
+        data = self._get_data_or_raise(response)
         result = await self._wait_for_long_running_task_results(data)
         return ProjectGet.parse_obj(result)
 
@@ -260,10 +283,11 @@ class AuthSession:
             f"/projects/{project_id}",
             cookies=self.session_cookies,
         )
-        if response.status_code == status.HTTP_404_NOT_FOUND:
-            raise ProjectNotFoundError(project_id=project_id)
 
-        data: JSON | None = self._get_data_or_raise_http_exception(response)
+        data = self._get_data_or_raise(
+            response,
+            {status.HTTP_404_NOT_FOUND: ProjectNotFoundError(project_id=project_id)},
+        )
         return ProjectGet.parse_obj(data)
 
     async def get_projects_w_solver_page(
@@ -289,7 +313,7 @@ class AuthSession:
         resp = await self.client.delete(
             f"/projects/{project_id}", cookies=self.session_cookies
         )
-        self._get_data_or_raise_http_exception(resp)
+        self._get_data_or_raise(resp)
 
     async def get_project_metadata_ports(
         self, project_id: ProjectID
@@ -305,7 +329,7 @@ class AuthSession:
         if response.status_code == status.HTTP_404_NOT_FOUND:
             raise ProjectNotFoundError(project_id=project_id)
 
-        data = self._get_data_or_raise_http_exception(response)
+        data = self._get_data_or_raise(response)
         assert data is not None
         assert isinstance(data, list)
         return data

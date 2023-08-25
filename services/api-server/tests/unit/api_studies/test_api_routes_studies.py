@@ -137,6 +137,21 @@ async def test_list_study_ports(
 @pytest.mark.acceptance_test(
     "Implements https://github.com/ITISFoundation/osparc-simcore/issues/4651"
 )
+async def test_clone_study(
+    client: httpx.AsyncClient,
+    auth: httpx.BasicAuth,
+    study_id: StudyID,
+    mocked_webserver_service_api_base: MockRouter,
+    patch_webserver_service_project_workflow: Callable[[MockRouter], MockRouter],
+):
+    # Mocks /projects/{project_id}:clone
+    patch_webserver_service_project_workflow(mocked_webserver_service_api_base)
+
+    resp = await client.post(f"/v0/studies/{study_id}:clone", auth=auth)
+
+    assert resp.status_code == status.HTTP_201_CREATED
+
+
 async def test_clone_study_not_found(
     client: httpx.AsyncClient,
     auth: httpx.BasicAuth,
@@ -159,21 +174,3 @@ async def test_clone_study_not_found(
     assert resp.status_code == status.HTTP_404_NOT_FOUND
     assert len(resp.json()["errors"]) == 1
     assert invalid_study_id in resp.json()["errors"][0]
-
-
-@pytest.mark.acceptance_test(
-    "Implements https://github.com/ITISFoundation/osparc-simcore/issues/4651"
-)
-async def test_clone_study(
-    client: httpx.AsyncClient,
-    auth: httpx.BasicAuth,
-    study_id: StudyID,
-    mocked_webserver_service_api_base: MockRouter,
-    patch_webserver_service_project_workflow: Callable[[MockRouter], MockRouter],
-):
-    # Mocks /projects/{project_id}:clone
-    patch_webserver_service_project_workflow(mocked_webserver_service_api_base)
-
-    resp = await client.post(f"/v0/studies/{study_id}:clone", auth=auth)
-
-    assert resp.status_code == status.HTTP_201_CREATED
