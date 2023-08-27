@@ -44,7 +44,6 @@ def resource_tracker_service_run_db(postgres_db: sa.engine.Engine) -> Iterator[l
         con.execute(resource_tracker_service_runs.delete())
 
 
-@pytest.mark.testit
 async def test_list_service_run_without_wallet(
     mocked_redis_server: None,
     mocked_setup_rabbitmq: mock.Mock,

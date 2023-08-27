@@ -91,7 +91,7 @@ def setup_wallets_db(
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
-async def test_wallets_full_workflow(
+async def test_list_service_usage(
     client: TestClient,
     logged_user: UserInfoDict,
     setup_wallets_db,

@@ -1,6 +1,5 @@
 from datetime import datetime, timezone
 
-import pytest
 import sqlalchemy as sa
 from models_library.rabbitmq_messages import (
     RabbitResourceTrackingHeartbeatMessage,
@@ -27,70 +26,6 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
-# @pytest.fixture
-# def rabbit_client_name(faker: Faker) -> str:
-#     return faker.pystr()
-
-
-# @pytest.fixture
-# def mocked_message_parser(mocker: MockerFixture) -> mock.AsyncMock:
-#     return mocker.AsyncMock(return_value=True)
-
-
-# @pytest.fixture
-# def random_rabbit_message_heartbeat(
-#     faker: Faker,
-# ) -> Callable[..., RabbitResourceTrackingHeartbeatMessage]:
-#     def _creator(**kwargs: dict[str, Any]) -> RabbitResourceTrackingHeartbeatMessage:
-#         msg_config = {"service_run_id": faker.uuid4(), **kwargs}
-
-#         return RabbitResourceTrackingHeartbeatMessage(**msg_config)
-
-#     return _creator
-
-
-# @pytest.fixture
-# def random_rabbit_message_start(
-#     faker: Faker,
-# ) -> Callable[..., RabbitResourceTrackingStartedMessage]:
-#     def _creator(**kwargs: dict[str, Any]) -> RabbitResourceTrackingStartedMessage:
-#         msg_config = {
-#             "channel_name": "io.simcore.service.tracking",
-#             "service_run_id": faker.uuid4(),
-#             "created_at": datetime.now(timezone.utc),
-#             "wallet_id": faker.pyint(),
-#             "wallet_name": faker.pystr(),
-#             "product_name": "osparc",
-#             "simcore_user_agent": faker.pystr(),
-#             "user_id": faker.pyint(),
-#             "user_email": faker.email(),
-#             "project_id": faker.uuid4(),
-#             "project_name": faker.pystr(),
-#             "node_id": faker.uuid4(),
-#             "node_name": faker.pystr(),
-#             "service_key": "simcore/services/comp/itis/sleeper",
-#             "service_version": "2.1.6",
-#             "service_type": "computational",
-#             "service_resources": {
-#                 "container": {
-#                     "image": "simcore/services/comp/itis/sleeper:2.1.6",
-#                     "resources": {
-#                         "CPU": {"limit": 0.1, "reservation": 0.1},
-#                         "RAM": {"limit": 134217728, "reservation": 134217728},
-#                     },
-#                     "boot_modes": ["CPU"],
-#                 }
-#             },
-#             "service_additional_metadata": {},
-#             **kwargs,
-#         }
-
-#         return RabbitResourceTrackingStartedMessage(**msg_config)
-
-#     return _creator
-
-
-@pytest.mark.testit
 async def test_process_event_functions(
     mocked_setup_rabbitmq,
     random_rabbit_message_start,

@@ -27,7 +27,7 @@ async def process_message(
     app: FastAPI, data: bytes  # pylint: disable=unused-argument
 ) -> bool:
     rabbit_message = parse_raw_as(RabbitResourceTrackingMessages, data)
-    rabbit_message_type = type(rabbit_message)  # is instance
+    rabbit_message_type = type(rabbit_message)
 
     resource_tacker_repo: ResourceTrackerRepository = ResourceTrackerRepository(
         db_engine=app.state.engine
