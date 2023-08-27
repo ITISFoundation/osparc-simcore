@@ -1,7 +1,6 @@
 from datetime import datetime, timezone
 from typing import Callable
 
-import pytest
 import sqlalchemy as sa
 from models_library.rabbitmq_messages import (
     RabbitResourceTrackingBaseMessage,
@@ -22,9 +21,6 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
-@pytest.mark.skip(
-    reason="Failes when connected through VPN: Temporary failure in name resolution [Errno -3]"
-)
 async def test_process_events_via_rabbit(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_rabbit_message_start,

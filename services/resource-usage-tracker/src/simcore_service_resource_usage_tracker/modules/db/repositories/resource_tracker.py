@@ -19,9 +19,6 @@ from ....models.resource_tracker_service_run import (
 )
 from ._base import BaseRepository
 
-# from sqlalchemy.dialects.postgresql import insert as pg_insert
-
-
 _logger = logging.getLogger(__name__)
 
 

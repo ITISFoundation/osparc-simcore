@@ -35,7 +35,7 @@ async def list_usage_services(
         )
         access_all_wallet_usage = wallet.write is True
 
-        data: dict = await resource_tracker_client.list_service_runs_by_user_and_product_and_wallet(
+        data: dict = await resource_tracker_client.list_service_runs_by_user_and_product_and_wallet(  # type: ignore[no-redef]
             app=app,
             user_id=user_id,
             product_name=product_name,
