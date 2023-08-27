@@ -90,7 +90,7 @@ def setup_wallets_db(
         con.execute(wallets.delete())
 
 
-@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
+@pytest.mark.parametrize("user_role", [(UserRole.USER)])
 async def test_list_service_usage(
     client: TestClient,
     logged_user: UserInfoDict,
