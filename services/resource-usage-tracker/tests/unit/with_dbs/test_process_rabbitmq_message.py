@@ -19,7 +19,6 @@ from .conftest import assert_service_runs_db_row
 
 pytest_simcore_core_services_selection = [
     "postgres",
-    # "rabbit",
 ]
 pytest_simcore_ops_services_selection = [
     "adminer",

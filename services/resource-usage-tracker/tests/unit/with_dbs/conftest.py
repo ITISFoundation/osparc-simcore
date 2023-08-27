@@ -111,7 +111,9 @@ def resource_tracker_service_run_db(postgres_db: sa.engine.Engine):
         con.execute(resource_tracker_service_runs.delete())
 
 
-async def assert_service_runs_db_row(postgres_db, service_run_id: str) -> dict | None:
+async def assert_service_runs_db_row(
+    postgres_db, service_run_id: str, status: str | None = None
+) -> dict | None:
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.2),
         stop=stop_after_delay(10),
@@ -129,6 +131,8 @@ async def assert_service_runs_db_row(postgres_db, service_run_id: str) -> dict |
                 )
                 row: dict | None = result.first()
                 assert row
+                if status:
+                    assert row[20] == status
                 return row
 
 

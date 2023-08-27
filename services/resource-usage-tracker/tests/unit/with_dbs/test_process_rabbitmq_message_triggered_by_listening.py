@@ -21,6 +21,7 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
+# NOTE: This test fails when running locally and you are connected through VPN: Temporary failure in name resolution [Errno -3]
 async def test_process_events_via_rabbit(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_rabbit_message_start,
@@ -32,8 +33,7 @@ async def test_process_events_via_rabbit(
     publisher = rabbitmq_client("publisher")
     msg = random_rabbit_message_start()
     await publisher.publish(RabbitResourceTrackingBaseMessage.get_channel_name(), msg)
-    output = await assert_service_runs_db_row(postgres_db, msg.service_run_id)
-    assert output[20] == "RUNNING"  # status
+    await assert_service_runs_db_row(postgres_db, msg.service_run_id, "RUNNING")
 
     heartbeat_msg = RabbitResourceTrackingHeartbeatMessage(
         service_run_id=msg.service_run_id, created_at=datetime.now(tz=timezone.utc)
@@ -41,8 +41,7 @@ async def test_process_events_via_rabbit(
     await publisher.publish(
         RabbitResourceTrackingBaseMessage.get_channel_name(), heartbeat_msg
     )
-    output = await assert_service_runs_db_row(postgres_db, msg.service_run_id)
-    assert output[20] == "RUNNING"  # status
+    await assert_service_runs_db_row(postgres_db, msg.service_run_id, "RUNNING")
 
     stopped_msg = RabbitResourceTrackingStoppedMessage(
         service_run_id=msg.service_run_id,
@@ -52,5 +51,4 @@ async def test_process_events_via_rabbit(
     await publisher.publish(
         RabbitResourceTrackingBaseMessage.get_channel_name(), stopped_msg
     )
-    output = await assert_service_runs_db_row(postgres_db, msg.service_run_id)
-    assert output[20] == "SUCCESS"  # status
+    await assert_service_runs_db_row(postgres_db, msg.service_run_id, "SUCCESS")
