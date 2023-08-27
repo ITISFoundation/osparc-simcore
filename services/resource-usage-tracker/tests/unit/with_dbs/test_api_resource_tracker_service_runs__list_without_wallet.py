@@ -1,8 +1,6 @@
-from datetime import datetime, timezone
-from typing import Any, Final, Iterator
+from typing import Iterator
 from unittest import mock
 
-import faker
 import httpx
 import pytest
 import sqlalchemy as sa
@@ -12,46 +10,14 @@ from simcore_postgres_database.models.resource_tracker_service_runs import (
 from starlette import status
 from yarl import URL
 
+from .conftest import random_resource_tracker_service_run
+
 pytest_simcore_core_services_selection = [
     "postgres",
 ]
 pytest_simcore_ops_services_selection = [
     "adminer",
 ]
-
-FAKE: Final = faker.Faker()
-
-
-def random_resource_tracker_service_run(**overrides) -> dict[str, Any]:
-    """Generates random fake data resource tracker DATABASE table"""
-    data = dict(
-        product_name="osparc",
-        service_run_id=FAKE.uuid4(),
-        wallet_id=FAKE.pyint(),
-        wallet_name=FAKE.word(),
-        pricing_plan_id=FAKE.pyint(),
-        pricing_detail_id=FAKE.pyint(),
-        simcore_user_agent=FAKE.word(),
-        user_id=FAKE.pyint(),
-        user_email=FAKE.email(),
-        project_id=FAKE.uuid4(),
-        project_name=FAKE.word(),
-        node_id=FAKE.uuid4(),
-        node_name=FAKE.word(),
-        service_key="simcore/services/dynamic/jupyter-smash",
-        service_version="3.0.7",
-        service_type="DYNAMIC_SERVICE",
-        service_resources={},
-        service_additional_metadata={},
-        started_at=datetime.now(tz=timezone.utc),
-        stopped_at=None,
-        service_run_status="RUNNING",
-        modified=datetime.now(tz=timezone.utc),
-        last_heartbeat_at=datetime.now(tz=timezone.utc),
-    )
-
-    data.update(overrides)
-    return data
 
 
 _TOTAL_GENERATED_RESOURCE_TRACKER_SERVICE_RUNS_ROWS = 30
@@ -81,9 +47,7 @@ def resource_tracker_service_run_db(postgres_db: sa.engine.Engine) -> Iterator[l
 @pytest.mark.testit
 async def test_list_service_run_without_wallet(
     mocked_redis_server: None,
-    # mocked_setup_background_task: mock.Mock,
     mocked_setup_rabbitmq: mock.Mock,
-    # mocked_setup_prometheus_api_client: mock.Mock,
     postgres_db: sa.engine.Engine,
     resource_tracker_service_run_db: dict,
     async_client: httpx.AsyncClient,

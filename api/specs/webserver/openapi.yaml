@@ -315,8 +315,8 @@ paths:
 
   # RESOURCE USAGE ------------------------------------------------------------------
 
-  /v0/resource-usage/containers:
-    $ref: "./openapi-resource-usage.yaml#/paths/~1resource-usage~1containers"
+  /v0/resource-usage/services:
+    $ref: "./openapi-resource-usage.yaml#/paths/~1resource-usage~1services"
 
   # PUBLICATIONS -------------------------------------------------------------------------
   /v0/publications/service-submission:

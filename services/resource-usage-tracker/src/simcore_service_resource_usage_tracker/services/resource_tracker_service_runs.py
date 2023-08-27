@@ -4,27 +4,13 @@ from fastapi import Depends, Query
 from models_library.api_schemas_webserver.resource_usage import ServiceRunGet
 from models_library.products import ProductName
 from models_library.users import UserID
-from models_library.utils.common_validators import empty_str_to_none_pre_validator
 from models_library.wallets import WalletID
-from pydantic import BaseModel, PositiveInt, validator
+from pydantic import PositiveInt
 
 from ..api.dependencies import get_repository
 from ..models.pagination import LimitOffsetParamsWithDefault
 from ..models.resource_tracker_service_run import ServiceRunDB, ServiceRunPage
 from ..modules.db.repositories.resource_tracker import ResourceTrackerRepository
-
-
-class ListServiceQueryParamsWithValidators(BaseModel):
-    wallet_id: WalletID | None = None
-    access_all_wallet_usage: bool | None = None
-
-    # validators
-    _empty_wallet_id_is_none = validator("wallet_id", allow_reuse=True, pre=True)(
-        empty_str_to_none_pre_validator
-    )
-    _empty_access_all_wallet_usage_is_none = validator(
-        "access_all_wallet_usage", allow_reuse=True, pre=True
-    )(empty_str_to_none_pre_validator)
 
 
 async def list_service_runs(
@@ -37,9 +23,6 @@ async def list_service_runs(
     wallet_id: WalletID = Query(None),
     access_all_wallet_usage: bool = Query(None),
 ) -> ServiceRunPage:
-    service_runs_db_model: list[ServiceRunDB] = []
-    total_service_runs = 0
-
     # Situation when we want to see all usage of a specific user
     if wallet_id is None and access_all_wallet_usage is None:
         total_service_runs: PositiveInt = (
@@ -54,28 +37,30 @@ async def list_service_runs(
         )
     # Ex. Accountant user can see all users usage of the wallet
     elif wallet_id and access_all_wallet_usage is True:
-        total_service_runs: PositiveInt = (
+        total_service_runs: PositiveInt = (  # type: ignore[no-redef]
             await resource_tacker_repo.total_service_runs_by_product_and_wallet(
                 product_name, wallet_id
             )
         )
-        service_runs_db_model: list[
+        service_runs_db_model: list[  # type: ignore[no-redef]
             ServiceRunDB
         ] = await resource_tacker_repo.list_service_runs_by_product_and_wallet(
             product_name, wallet_id, page_params.offset, page_params.limit
         )
     # Ex. Regular user can see only his usage of the wallet
     elif wallet_id and access_all_wallet_usage is False:
-        total_service_runs: PositiveInt = await resource_tacker_repo.total_service_runs_by_user_and_product_and_wallet(
+        total_service_runs: PositiveInt = await resource_tacker_repo.total_service_runs_by_user_and_product_and_wallet(  # type: ignore[no-redef]
             user_id, product_name, wallet_id
         )
-        service_runs_db_model: list[
+        service_runs_db_model: list[  # type: ignore[no-redef]
             ServiceRunDB
         ] = await resource_tacker_repo.list_service_runs_by_user_and_product_and_wallet(
             user_id, product_name, wallet_id, page_params.offset, page_params.limit
         )
     else:
-        raise ValueError("")  # 422
+        raise ValueError(
+            "wallet_id and access_all_wallet_usage parameters must be specified together"
+        )
 
     # Prepare response
     service_runs_api_model: list[ServiceRunGet] = []

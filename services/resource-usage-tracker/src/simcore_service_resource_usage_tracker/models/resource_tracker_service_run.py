@@ -55,10 +55,10 @@ class UpdateServiceRunStoppedAt(BaseModel):
 
 class ServiceRunDB(BaseModel):
     service_run_id: ServiceRunId
-    wallet_id: WalletID
-    wallet_name: str
-    pricing_plan_id: PricingPlanId
-    pricing_detail_id: PricingDetailId
+    wallet_id: WalletID | None
+    wallet_name: str | None
+    pricing_plan_id: PricingPlanId | None
+    pricing_detail_id: PricingDetailId | None
     user_id: UserID
     user_email: str
     project_id: ProjectID

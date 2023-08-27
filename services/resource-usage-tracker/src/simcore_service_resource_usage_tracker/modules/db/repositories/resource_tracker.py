@@ -30,7 +30,8 @@ class ResourceTrackerRepository(BaseRepository):
     # Service Run
     #############
 
-    def service_runs_select_stmt(self):
+    @staticmethod
+    def service_runs_select_stmt():
         return sa.select(
             resource_tracker_service_runs.c.service_run_id,
             resource_tracker_service_runs.c.wallet_id,

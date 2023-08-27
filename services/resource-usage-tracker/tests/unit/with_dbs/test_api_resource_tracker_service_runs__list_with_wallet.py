@@ -1,8 +1,6 @@
-from datetime import datetime, timezone
-from typing import Any, Final, Iterator
+from typing import Iterator
 from unittest import mock
 
-import faker
 import httpx
 import pytest
 import sqlalchemy as sa
@@ -12,6 +10,8 @@ from simcore_postgres_database.models.resource_tracker_service_runs import (
 from starlette import status
 from yarl import URL
 
+from .conftest import random_resource_tracker_service_run
+
 pytest_simcore_core_services_selection = [
     "postgres",
 ]
@@ -19,42 +19,8 @@ pytest_simcore_ops_services_selection = [
     "adminer",
 ]
 
-FAKE: Final = faker.Faker()
 
-
-def random_resource_tracker_service_run(**overrides) -> dict[str, Any]:
-    """Generates random fake data resource tracker DATABASE table"""
-    data = dict(
-        product_name="osparc",
-        service_run_id=FAKE.uuid4(),
-        wallet_id=FAKE.pyint(),
-        wallet_name=FAKE.word(),
-        pricing_plan_id=FAKE.pyint(),
-        pricing_detail_id=FAKE.pyint(),
-        simcore_user_agent=FAKE.word(),
-        user_id=FAKE.pyint(),
-        user_email=FAKE.email(),
-        project_id=FAKE.uuid4(),
-        project_name=FAKE.word(),
-        node_id=FAKE.uuid4(),
-        node_name=FAKE.word(),
-        service_key="simcore/services/dynamic/jupyter-smash",
-        service_version="3.0.7",
-        service_type="DYNAMIC_SERVICE",
-        service_resources={},
-        service_additional_metadata={},
-        started_at=datetime.now(tz=timezone.utc),
-        stopped_at=None,
-        service_run_status="RUNNING",
-        modified=datetime.now(tz=timezone.utc),
-        last_heartbeat_at=datetime.now(tz=timezone.utc),
-    )
-
-    data.update(overrides)
-    return data
-
-
-_TOTAL_GENERATED_RESOURCE_TRACKER_CONTAINER_ROWS = 10
+_TOTAL_GENERATED_RESOURCE_TRACKER_SERVICE_RUNS_ROWS = 10
 _USER_ID_1 = 1
 _USER_ID_2 = 2
 _WALLET_ID = 6
@@ -63,10 +29,9 @@ _WALLET_ID = 6
 @pytest.fixture()
 def resource_tracker_service_run_db(postgres_db: sa.engine.Engine) -> Iterator[list]:
     with postgres_db.connect() as con:
-        # removes all projects before continuing
         con.execute(resource_tracker_service_runs.delete())
         created_services = []
-        for _ in range(_TOTAL_GENERATED_RESOURCE_TRACKER_CONTAINER_ROWS):
+        for _ in range(_TOTAL_GENERATED_RESOURCE_TRACKER_SERVICE_RUNS_ROWS):
             result = con.execute(
                 resource_tracker_service_runs.insert()
                 .values(
@@ -80,7 +45,7 @@ def resource_tracker_service_run_db(postgres_db: sa.engine.Engine) -> Iterator[l
             assert row
             created_services.append(row)
 
-        for _ in range(_TOTAL_GENERATED_RESOURCE_TRACKER_CONTAINER_ROWS):
+        for _ in range(_TOTAL_GENERATED_RESOURCE_TRACKER_SERVICE_RUNS_ROWS):
             result = con.execute(
                 resource_tracker_service_runs.insert()
                 .values(

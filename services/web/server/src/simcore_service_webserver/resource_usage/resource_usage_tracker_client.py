@@ -21,28 +21,6 @@ from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
 
-# OBSOLETE
-async def list_containers_by_user_and_product(
-    app: web.Application,
-    user_id: UserID,
-    product_name: str,
-    offset: int,
-    limit: NonNegativeInt,
-) -> dict:
-    settings: ResourceUsageTrackerSettings = get_plugin_settings(app)
-    url = (URL(settings.api_base_url) / "usage" / "containers").with_query(
-        {
-            "user_id": user_id,
-            "product_name": product_name,
-            "offset": offset,
-            "limit": limit,
-        }
-    )
-    with handle_client_exceptions(app) as session:
-        async with session.get(url) as response:
-            body: dict = await response.json()
-            return body
-
 
 async def list_service_runs_by_user_and_product(
     app: web.Application,

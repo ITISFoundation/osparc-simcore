@@ -33,7 +33,7 @@ async def list_usage_services(
                 app=app, user_id=user_id, wallet_id=wallet_id
             )
         )
-        access_all_wallet_usage = True if wallet.write is True else False
+        access_all_wallet_usage = wallet.write is True
 
         data: dict = await resource_tracker_client.list_service_runs_by_user_and_product_and_wallet(
             app=app,

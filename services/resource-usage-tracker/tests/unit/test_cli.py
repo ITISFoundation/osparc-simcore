@@ -34,7 +34,7 @@ def test_list_settings(cli_runner: CliRunner, app_environment: EnvVarsDict):
 def test_evaluate_without_configuration_raises(
     cli_runner: CliRunner,
 ):
-    result = cli_runner.invoke(app, ["evaluate", "1234"])
+    result = cli_runner.invoke(app, ["evaluate"])
     assert result.exit_code == 1, result.output
 
 
@@ -43,5 +43,5 @@ def test_evaluate(
     app_environment: EnvVarsDict,
     mocked_prometheus_with_query: requests_mock.Mocker,
 ):
-    result = cli_runner.invoke(app, ["evaluate", "43817"])
+    result = cli_runner.invoke(app, ["evaluate"])
     assert result.exit_code == os.EX_OK, result.output

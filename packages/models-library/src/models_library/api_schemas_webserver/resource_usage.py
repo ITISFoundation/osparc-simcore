@@ -1,5 +1,4 @@
 from datetime import datetime
-from enum import Enum
 
 from models_library.resource_tracker import ServiceRunId, ServiceRunStatus
 from models_library.users import UserID
@@ -16,8 +15,8 @@ from ..services import ServiceKey, ServiceVersion
 
 class ServiceRunGet(BaseModel):
     service_run_id: ServiceRunId
-    wallet_id: WalletID
-    wallet_name: str
+    wallet_id: WalletID | None
+    wallet_name: str | None
     user_id: UserID
     project_id: ProjectID
     project_name: str
@@ -30,24 +29,3 @@ class ServiceRunGet(BaseModel):
     started_at: datetime
     stopped_at: datetime | None
     service_run_status: ServiceRunStatus
-
-
-### OBSOLETE
-class ContainerStatus(str, Enum):
-    RUNNING = "running"
-    FINISHED = "finished"
-
-
-### OBSOLETE
-class ContainerGet(BaseModel):
-    project_uuid: ProjectID
-    project_name: str | None
-    node_uuid: NodeID
-    node_label: str | None
-    service_key: ServiceKey
-    service_version: ServiceVersion
-    start_time: datetime
-    duration: float
-    processors: float
-    core_hours: float
-    status: ContainerStatus
