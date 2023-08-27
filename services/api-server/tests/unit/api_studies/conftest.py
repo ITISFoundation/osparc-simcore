@@ -66,7 +66,6 @@ def mocked_webserver_service_api(
             json={
                 "data": {
                     "name": "simcore-director-service",
-                    "status": "SERVICE_RUNNING",
                     "api_version": "0.1.0-dev+NJuzzD9S",
                     "version": "0.1.0-dev+N127Mfv9H",
                 }

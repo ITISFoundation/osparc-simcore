@@ -246,7 +246,7 @@ def test_model_examples(
 async def test_api_list_services(client: TestClient):
     assert client.app
 
-    url = client.app.router["list_services"].url_for()
+    url = client.app.router["list_latest_services"].url_for()
     response = await client.get(f"{url}")
 
     data, error = await assert_status(response, web.HTTPOk)

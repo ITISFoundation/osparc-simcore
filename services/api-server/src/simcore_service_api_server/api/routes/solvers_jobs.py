@@ -32,13 +32,13 @@ from ...models.schemas.jobs import (
 from ...models.schemas.solvers import Solver, SolverKeyId
 from ...services.catalog import CatalogApi
 from ...services.director_v2 import DirectorV2Api, DownloadLink, NodeName
-from ...services.storage import StorageApi, to_file_api_model
-from ...utils.solver_job_models_converters import (
+from ...services.solver_job_models_converters import (
     create_job_from_project,
     create_jobstatus_from_task,
     create_new_project_for_job,
 )
-from ...utils.solver_job_outputs import ResultsTypes, get_solver_output_results
+from ...services.solver_job_outputs import ResultsTypes, get_solver_output_results
+from ...services.storage import StorageApi, to_file_api_model
 from ..dependencies.application import get_product_name, get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.database import Engine, get_db_engine
@@ -99,7 +99,9 @@ async def list_jobs(
     )
     _logger.debug("Listing Jobs in Solver '%s'", solver.name)
 
-    projects_page = await webserver_api.list_projects(solver.name, limit=20, offset=0)
+    projects_page = await webserver_api.get_projects_w_solver_page(
+        solver.name, limit=20, offset=0
+    )
 
     jobs: deque[Job] = deque()
     for prj in projects_page.data:
@@ -127,11 +129,7 @@ async def get_jobs_page(
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
 ):
-    """List of jobs on a specific released solver (includes pagination)
-
-
-    Breaking change in *version 0.5*: response model changed from list[Job] to pagination Page[Job].
-    """
+    """List of jobs on a specific released solver (includes pagination)"""
 
     # NOTE: Different entry to keep backwards compatibility with list_jobs.
     # Eventually use a header with agent version to switch to new interface
@@ -144,7 +142,7 @@ async def get_jobs_page(
     )
     _logger.debug("Listing Jobs in Solver '%s'", solver.name)
 
-    projects_page = await webserver_api.list_projects(
+    projects_page = await webserver_api.get_projects_w_solver_page(
         solver.name, limit=page_params.limit, offset=page_params.offset
     )
 

@@ -1,4 +1,4 @@
-// node Mattward.js [url_prefix] [template_uuid] [--start_timeout timeout] [--demo]
+// node Mattward.js [url_prefix] [template_uuid] [timeout] [--demo]
 
 const tutorialBase = require('../tutorials/tutorialBase');
 const utils = require('../utils/utils');

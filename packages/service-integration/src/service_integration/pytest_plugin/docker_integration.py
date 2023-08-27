@@ -6,6 +6,7 @@ import filecmp
 import json
 import os
 import shutil
+import urllib.error
 import urllib.request
 from contextlib import suppress
 from pathlib import Path
@@ -72,11 +73,19 @@ def osparc_service_labels_jsonschema(tmp_path: Path) -> dict:
             shutil.copyfileobj(response, out_file)
         assert file.exists()
 
-    url = "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/api/specs/common/schemas/node-meta-v0.0.1.json"
-    # TODO: Make sure this is installed with this package!!!
-
     file_name = tmp_path / "service_label.json"
-    _download_url(url, file_name)
+    try:
+        _download_url(
+            "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/api/specs/common/schemas/node-meta-v0.0.1.json",
+            file_name,
+        )
+    except urllib.error.URLError:
+        # New url after this commit
+        _download_url(
+            "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/api/specs/director/schemas/node-meta-v0.0.1.json",
+            file_name,
+        )
+
     with file_name.open() as fp:
         json_schema: dict = json.load(fp)
         return json_schema

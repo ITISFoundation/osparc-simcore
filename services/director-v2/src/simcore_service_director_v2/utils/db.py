@@ -20,8 +20,8 @@ DB_TO_RUNNING_STATE = {
     StateType.WAITING_FOR_RESOURCES: RunningState.WAITING_FOR_RESOURCES,
 }
 
-RUNNING_STATE_TO_DB = {
-    **{v: k for k, v in DB_TO_RUNNING_STATE.items()},
+RUNNING_STATE_TO_DB = {v: k for k, v in DB_TO_RUNNING_STATE.items()} | {
+    RunningState.UNKNOWN: StateType.FAILED
 }
 
 

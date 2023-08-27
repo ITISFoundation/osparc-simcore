@@ -20,6 +20,8 @@ jsonschema==4.19.0
     # via -r requirements/_base.in
 jsonschema-specifications==2023.7.1
     # via jsonschema
+orjson==3.9.2
+    # via -r requirements/_base.in
 pydantic==1.10.12
     # via
     #   -c requirements/../../../requirements/constraints.txt

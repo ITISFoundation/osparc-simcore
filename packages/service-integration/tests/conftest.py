@@ -15,7 +15,6 @@ from typer.testing import CliRunner
 pytest_plugins = [
     "pytest_simcore.pydantic_models",
     "pytest_simcore.repository_paths",
-    "pytest_simcore.schemas",
     "pytest_simcore.pytest_global_environs",
 ]
 

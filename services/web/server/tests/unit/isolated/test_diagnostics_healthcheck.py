@@ -7,7 +7,7 @@
 import asyncio
 import logging
 import time
-from typing import Coroutine
+from collections.abc import Coroutine
 
 import pytest
 import simcore_service_webserver
@@ -18,7 +18,7 @@ from simcore_service_webserver._constants import APP_SETTINGS_KEY
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.diagnostics._healthcheck import (
     HEALTH_LATENCY_PROBE,
-    HealthCheckFailed,
+    HealthCheckError,
     assert_healthy_app,
 )
 from simcore_service_webserver.diagnostics.plugin import setup_diagnostics
@@ -93,13 +93,12 @@ def client(
 
     @routes.get("/error")
     async def unexpected_error(request: web.Request):
-        raise Exception(  # pylint: disable=broad-exception-raised
-            "boom shall produce 500"
-        )
+        msg = "boom shall produce 500"
+        raise Exception(msg)  # pylint: disable=broad-exception-raised
 
     @routes.get(r"/fail")
     async def expected_failure(request: web.Request):
-        raise web.HTTPServiceUnavailable()
+        raise web.HTTPServiceUnavailable
 
     @routes.get(r"/slow")
     async def blocking_slow(request: web.Request):
@@ -146,10 +145,9 @@ def client(
 
     app.router.add_routes(routes)
 
-    cli = event_loop.run_until_complete(
+    return event_loop.run_until_complete(
         aiohttp_client(app, server_kwargs={key: main[key] for key in ("host", "port")})
     )
-    return cli
 
 
 def test_diagnostics_setup(client):
@@ -213,7 +211,7 @@ async def test_diagnose_on_response_delays(client):
     assert latency_observed > tmax
 
     # diagnostics
-    with pytest.raises(HealthCheckFailed):
+    with pytest.raises(HealthCheckError):
         assert_healthy_app(client.app)
 
 

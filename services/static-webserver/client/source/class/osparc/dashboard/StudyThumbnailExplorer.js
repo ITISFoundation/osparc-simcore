@@ -123,31 +123,35 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
       });
       */
       const scrollThumbnails = this.getChildControl("thumbnail-suggestions");
-      const thumbnailViewerLayout = this.getChildControl("thumbnail-viewer-layout");
       scrollThumbnails.addListener("thumbnailTapped", e => {
         const thumbnailData = e.getData();
-        let control = null;
-        switch (thumbnailData["type"]) {
-          case "workbenchUIPreview":
-            control = this.__getWorkbenchUIPreview();
-            break;
-          case null:
-            control = this.__getThreeSceneViewer(thumbnailData["source"]);
-            break;
-          default:
-            control = this.__getThumbnail(thumbnailData["source"]);
-            break;
-        }
-        if (control) {
-          thumbnailViewerLayout.removeAll();
-          thumbnailViewerLayout.add(control, {
-            top: 0,
-            right: 0,
-            bottom: 0,
-            left: 0
-          });
-        }
+        this.__showInThumbnailViewer(thumbnailData["tpye"], thumbnailData["source"]);
       });
+    },
+
+    __showInThumbnailViewer: function(type, source) {
+      let control = null;
+      switch (type) {
+        case "workbenchUIPreview":
+          control = this.__getWorkbenchUIPreview();
+          break;
+        case null:
+          control = this.__getThreeSceneViewer(source);
+          break;
+        default:
+          control = this.__getThumbnail(source);
+          break;
+      }
+      if (control) {
+        const thumbnailViewerLayout = this.getChildControl("thumbnail-viewer-layout");
+        thumbnailViewerLayout.removeAll();
+        thumbnailViewerLayout.add(control, {
+          top: 0,
+          right: 0,
+          bottom: 0,
+          left: 0
+        });
+      }
     },
 
     __getThumbnail: function(thumbnailSource) {
@@ -203,9 +207,7 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
 
       // Do not add the preview if the study is in App Mode
       if (this.__showWorkbenchUIPreview()) {
-        const workbenchUIPreview = this.__getWorkbenchUIPreview();
-        const thumbnailViewerLayout = this.getChildControl("thumbnail-viewer-layout");
-        thumbnailViewerLayout.add(workbenchUIPreview);
+        this.__showInThumbnailViewer("workbenchUIPreview");
       }
     },
 

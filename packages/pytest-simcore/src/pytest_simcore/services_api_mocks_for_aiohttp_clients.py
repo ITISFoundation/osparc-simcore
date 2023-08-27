@@ -201,7 +201,10 @@ def get_cluster_details_cb(url, **kwargs) -> CallbackResult:
     assert cluster_id
     return CallbackResult(
         status=200,
-        payload={"scheduler": {}, "cluster": {}, "dashboard_link": "some_faked_link"},
+        payload={
+            "scheduler": {"status": "RUNNING"},
+            "dashboard_link": "https://dashboard.link.com",
+        },
     )
 
 
@@ -458,7 +461,6 @@ async def storage_v0_service_mock(
     )
 
     def generate_future_link(url, **kwargs):
-
         parsed_url = urlparse(str(url))
         stripped_url = urlunparse(
             (parsed_url.scheme, parsed_url.netloc, parsed_url.path, "", "", "")

@@ -1,7 +1,5 @@
 """ Projects table
 
-    - Every row fits a project document schemed as api/specs/webserver/v0/components/schemas/project-v0.0.1.json
-
 """
 import enum
 

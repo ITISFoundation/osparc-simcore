@@ -5,4 +5,5 @@
 
 arrow
 jsonschema
+orjson
 pydantic[email]
