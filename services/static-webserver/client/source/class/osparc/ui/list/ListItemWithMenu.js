@@ -32,6 +32,13 @@ qx.Class.define("osparc.ui.list.ListItemWithMenu", {
       apply: "__applyShowOptions",
       event: "changeShowOptions",
       nullable: true
+    },
+
+    options: {
+      check: "Array",
+      nullable: true,
+      event: "changeOptions",
+      apply: "__applyOptions"
     }
   },
 
@@ -71,7 +78,7 @@ qx.Class.define("osparc.ui.list.ListItemWithMenu", {
           });
           this._add(control, {
             row: 0,
-            column: 3,
+            column: 4,
             rowSpan: 2
           });
           break;
@@ -92,11 +99,6 @@ qx.Class.define("osparc.ui.list.ListItemWithMenu", {
       this._setSubtitle();
 
       this._getInfoButton();
-
-      const menu = this._getOptionsMenu();
-      if (menu) {
-        optionsMenu.setMenu(menu);
-      }
     },
 
     _setSubtitle: function() {
@@ -132,6 +134,14 @@ qx.Class.define("osparc.ui.list.ListItemWithMenu", {
     __applyShowOptions: function(value) {
       const optionsMenu = this.getChildControl("options");
       optionsMenu.setVisibility(value ? "visible" : "hidden");
+    },
+
+    __applyOptions: function() {
+      const optionsMenu = this.getChildControl("options");
+      const menu = this._getOptionsMenu();
+      if (menu) {
+        optionsMenu.setMenu(menu);
+      }
     }
   }
 });
