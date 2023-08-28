@@ -42,6 +42,7 @@ async def list_study_jobs(
 @router.post(
     "/{study_id:uuid}/jobs",
     response_model=Job,
+    status_code=status.HTTP_201_CREATED,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def create_study_job(study_id: StudyID):
