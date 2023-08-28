@@ -25,7 +25,7 @@ from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.files import (
     ClientFile,
-    ClientFileUploadSchema,
+    ClientFileUploadData,
     File,
 )
 
@@ -160,15 +160,19 @@ async def test_get_file(
     }
 
 
-@pytest.mark.xfail(reason="Under dev")
+@pytest.mark.testit
 async def test_delete_file(
-    client: AsyncClient, mocked_storage_service_api_base: MockRouter, tmp_path: Path
+    client: AsyncClient,
+    storage_v0_service_mock: AioResponsesMock,
+    tmp_path: Path,
+    auth: httpx.BasicAuth,
 ):
+    assert storage_v0_service_mock
     response = await client.delete(
-        f"{API_VTAG}/files/3fa85f64-5717-4562-b3fc-2c963f66afa6"
+        f"{API_VTAG}/files/3fa85f64-5717-4562-b3fc-2c963f66afa6", auth=auth
     )
 
-    assert response.status_code == status.HTTP_204_NO_CONTENT
+    assert response.status_code == status.HTTP_200_OK
 
 
 @pytest.mark.xfail(reason="Under dev")
@@ -204,9 +208,7 @@ async def test_get_upload_links(
     payload: dict[str, str] = response.json()
 
     assert response.status_code == status.HTTP_200_OK
-    client_upload_schema: ClientFileUploadSchema = ClientFileUploadSchema.parse_obj(
-        payload
-    )
+    client_upload_schema: ClientFileUploadData = ClientFileUploadData.parse_obj(payload)
 
     if follow_up_request == "complete":
         body = {

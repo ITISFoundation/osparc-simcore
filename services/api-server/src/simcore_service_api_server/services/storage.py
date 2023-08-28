@@ -97,7 +97,7 @@ class StorageApi(BaseServiceClientApi):
 
     async def delete_file(self, user_id: int, file_id: UUID) -> None:
         response = await self.client.delete(
-            f"/locations/{self.SIMCORE_S3_ID}/files/{file_id}",
+            f"{self.client.base_url}locations/{self.SIMCORE_S3_ID}/files/{file_id}",
             params={"user_id": user_id},
         )
         response.raise_for_status()
