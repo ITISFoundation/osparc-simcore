@@ -71,6 +71,7 @@ jobs:
       invitations: ${{ steps.filter.outputs.invitations }}
       migration: ${{ steps.filter.outputs.migration }}
       osparc-gateway-server: ${{ steps.filter.outputs.osparc-gateway-server }}
+      payments: ${{ steps.filter.outputs.payments }}
       resource-usage-tracker: ${{ steps.filter.outputs.resource-usage-tracker }}
       static-webserver: ${{ steps.filter.outputs.static-webserver }}
       storage: ${{ steps.filter.outputs.storage }}
@@ -198,6 +199,12 @@ jobs:
               - 'services/docker-compose*'
               - 'scripts/mypy/*'
               - 'mypy.ini'
+            payments:
+                - 'packages/**'
+                - 'services/payments/**'
+                - 'services/docker-compose*'
+                - 'scripts/mypy/*'
+                - 'mypy.ini'
             resource-usage-tracker:
               - 'packages/**'
               - 'services/resource-usage-tracker/**'
@@ -913,6 +920,45 @@ jobs:
           source .venv/bin/activate && \
           pushd services/osparc-gateway-server && \
           make test-ci-unit
+      - uses: codecov/codecov-action@v3.1.4
+        with:
+          flags: unittests #optional
+
+  unit-test-payments:
+    needs: changes
+    if: ${{ needs.changes.outputs.payments == 'true' || github.event_name == 'push' }}
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] payments"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/payments/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - name: install
+        run: ./ci/github/unit-testing/payments.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/payments.bash typecheck
+      - name: test
+        if: always()
+        run: ./ci/github/unit-testing/payments.bash test
       - uses: codecov/codecov-action@v3.1.4
         with:
           flags: unittests #optional
