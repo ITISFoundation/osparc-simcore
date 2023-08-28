@@ -5,15 +5,26 @@
 # pylint:disable=no-value-for-parameter
 
 
+import datetime
 from dataclasses import dataclass
 from typing import Any
+from uuid import uuid4
 
 import networkx as nx
 import pytest
 from models_library.projects import NodesDict
+from models_library.projects_nodes import NodeState
 from models_library.projects_nodes_io import NodeID
+from models_library.projects_pipeline import PipelineDetails
+from models_library.projects_state import RunningState
 from simcore_postgres_database.models.comp_tasks import NodeClass
+from simcore_service_director_v2.models.comp_tasks import (
+    CompTaskAtDB,
+    Image,
+    NodeSchema,
+)
 from simcore_service_director_v2.utils.dags import (
+    compute_pipeline_details,
     create_complete_dag,
     create_minimal_computational_graph_based_on_selection,
     find_computational_node_cycles,
@@ -362,3 +373,187 @@ def test_find_computational_node_cycles(
     assert len(list_of_cycles) == len(exp_cycles), "expected number of cycles not found"
     for cycle in list_of_cycles:
         assert sorted(cycle) in exp_cycles
+
+
+@dataclass
+class PipelineDetailsTestParams:
+    complete_dag: nx.DiGraph
+    pipeline_dag: nx.DiGraph
+    comp_tasks: list[CompTaskAtDB]
+    expected_pipeline_details: PipelineDetails
+
+
+@pytest.fixture()
+def pipeline_test_params(
+    dag_adjacency: dict[str, list[str]],
+    node_keys: dict[str, dict[str, Any]],
+    list_comp_tasks: list[CompTaskAtDB],
+    expected_pipeline_details_output: PipelineDetails,
+) -> PipelineDetailsTestParams:
+    # check the inputs make sense
+    assert len(set(dag_adjacency)) == len(node_keys) == len(list_comp_tasks)
+    assert dag_adjacency.keys() == node_keys.keys()
+    assert len(
+        {t.node_id for t in list_comp_tasks}.intersection(node_keys.keys())
+    ) == len(set(dag_adjacency))
+
+    # resolve the naming
+    node_name_to_uuid_map = {}
+    resolved_dag_adjacency: dict[str, list[str]] = {}
+    for node_a, next_nodes in dag_adjacency.items():
+        resolved_dag_adjacency[
+            node_name_to_uuid_map.setdefault(node_a, f"{uuid4()}")
+        ] = [node_name_to_uuid_map.setdefault(n, f"{uuid4()}") for n in next_nodes]
+
+    # create the complete dag
+    complete_dag = nx.from_dict_of_lists(
+        resolved_dag_adjacency, create_using=nx.DiGraph
+    )
+    # add node attributes
+    for non_resolved_key, values in node_keys.items():
+        for attr, attr_value in values.items():
+            complete_dag.nodes[node_name_to_uuid_map[non_resolved_key]][
+                attr
+            ] = attr_value
+
+    pipeline_dag = nx.from_dict_of_lists(
+        resolved_dag_adjacency, create_using=nx.DiGraph
+    )
+
+    # resolve the comp_tasks
+    resolved_list_comp_tasks = [
+        c.copy(update={"node_id": node_name_to_uuid_map[c.node_id]})
+        for c in list_comp_tasks
+    ]
+
+    # resolved the expected output
+
+    resolved_expected_pipeline_details = expected_pipeline_details_output.copy(
+        update={
+            "adjacency_list": {
+                NodeID(node_name_to_uuid_map[node_a]): [
+                    NodeID(node_name_to_uuid_map[n]) for n in next_nodes
+                ]
+                for node_a, next_nodes in expected_pipeline_details_output.adjacency_list.items()
+            },
+            "node_states": {
+                NodeID(node_name_to_uuid_map[node]): state
+                for node, state in expected_pipeline_details_output.node_states.items()
+            },
+        }
+    )
+
+    return PipelineDetailsTestParams(
+        complete_dag=complete_dag,
+        pipeline_dag=pipeline_dag,
+        comp_tasks=resolved_list_comp_tasks,
+        expected_pipeline_details=resolved_expected_pipeline_details,
+    )
+
+
+@pytest.mark.parametrize(
+    "dag_adjacency, node_keys, list_comp_tasks, expected_pipeline_details_output",
+    [
+        pytest.param(
+            {},
+            {},
+            [],
+            PipelineDetails(adjacency_list={}, progress=None, node_states={}),
+            id="empty dag",
+        ),
+        pytest.param(
+            {"node_1": ["node_2", "node_3"], "node_2": ["node_3"], "node_3": []},
+            {
+                "node_1": {
+                    "key": "simcore/services/comp/fake",
+                    "node_class": NodeClass.COMPUTATIONAL,
+                    "state": RunningState.NOT_STARTED,
+                    "outputs": None,
+                },
+                "node_2": {
+                    "key": "simcore/services/comp/fake",
+                    "node_class": NodeClass.COMPUTATIONAL,
+                    "state": RunningState.NOT_STARTED,
+                    "outputs": None,
+                },
+                "node_3": {
+                    "key": "simcore/services/comp/fake",
+                    "node_class": NodeClass.COMPUTATIONAL,
+                    "state": RunningState.NOT_STARTED,
+                    "outputs": None,
+                },
+            },
+            [
+                # NOTE: we use construct here to be able to use non uuid names to simplify test setup
+                CompTaskAtDB.construct(
+                    project_id=uuid4(),
+                    node_id="node_1",
+                    schema=NodeSchema(inputs={}, outputs={}),
+                    inputs=None,
+                    image=Image(name="simcore/services/comp/fake", tag="1.3.4"),
+                    state=RunningState.NOT_STARTED,
+                    internal_id=3,
+                    node_class=NodeClass.COMPUTATIONAL,
+                    submit=datetime.datetime.now(tz=datetime.timezone.utc),
+                    created=datetime.datetime.now(tz=datetime.timezone.utc),
+                    modified=datetime.datetime.now(tz=datetime.timezone.utc),
+                    last_heartbeat=None,
+                ),
+                CompTaskAtDB.construct(
+                    project_id=uuid4(),
+                    node_id="node_2",
+                    schema=NodeSchema(inputs={}, outputs={}),
+                    inputs=None,
+                    image=Image(name="simcore/services/comp/fake", tag="1.3.4"),
+                    state=RunningState.NOT_STARTED,
+                    internal_id=3,
+                    node_class=NodeClass.COMPUTATIONAL,
+                    submit=datetime.datetime.now(tz=datetime.timezone.utc),
+                    created=datetime.datetime.now(tz=datetime.timezone.utc),
+                    modified=datetime.datetime.now(tz=datetime.timezone.utc),
+                    last_heartbeat=None,
+                ),
+                CompTaskAtDB.construct(
+                    project_id=uuid4(),
+                    node_id="node_3",
+                    schema=NodeSchema(inputs={}, outputs={}),
+                    inputs=None,
+                    image=Image(name="simcore/services/comp/fake", tag="1.3.4"),
+                    state=RunningState.NOT_STARTED,
+                    internal_id=3,
+                    node_class=NodeClass.COMPUTATIONAL,
+                    submit=datetime.datetime.now(tz=datetime.timezone.utc),
+                    created=datetime.datetime.now(tz=datetime.timezone.utc),
+                    modified=datetime.datetime.now(tz=datetime.timezone.utc),
+                    last_heartbeat=None,
+                    progress=12.00,  # NOTE: this should not be able to happen but it does, this test reproduces it
+                ),
+            ],
+            PipelineDetails.construct(
+                adjacency_list={
+                    "node_1": ["node_2", "node_3"],
+                    "node_2": ["node_3"],
+                    "node_3": [],
+                },
+                progress=0.3333333333333333,
+                node_states={
+                    "node_1": NodeState(modified=True, progress=None),
+                    "node_2": NodeState(modified=True, progress=None),
+                    "node_3": NodeState(modified=True, progress=1),
+                },
+            ),
+            id="dag reproducing issue with progress >1 in one node produces error",
+        ),
+    ],
+)
+async def test_compute_pipeline_details(
+    pipeline_test_params: PipelineDetailsTestParams,
+):
+    received_details = await compute_pipeline_details(
+        pipeline_test_params.complete_dag,
+        pipeline_test_params.pipeline_dag,
+        pipeline_test_params.comp_tasks,
+    )
+    assert (
+        received_details.dict() == pipeline_test_params.expected_pipeline_details.dict()
+    )
