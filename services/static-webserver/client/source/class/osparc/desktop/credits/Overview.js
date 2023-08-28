@@ -145,7 +145,7 @@ qx.Class.define("osparc.desktop.credits.Overview", {
         // name
         const walletName = new qx.ui.basic.Label().set({
           font: "text-14",
-          maxWidth: 50
+          maxWidth: 100
         });
         wallet.bind("name", walletName, "value");
         layout.add(walletName, {
