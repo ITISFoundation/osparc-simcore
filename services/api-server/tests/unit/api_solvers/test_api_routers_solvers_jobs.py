@@ -349,7 +349,7 @@ async def test_run_solver_job(
             }
         ).dict(),
     )
-    assert resp.status_code == status.HTTP_200_OK
+    assert resp.status_code == status.HTTP_201_CREATED
 
     assert mocked_webserver_service_api["create_projects"].called
     assert mocked_webserver_service_api["get_task_status"].called

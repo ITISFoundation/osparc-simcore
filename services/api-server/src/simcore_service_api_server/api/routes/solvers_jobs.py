@@ -39,6 +39,7 @@ from ...services.solver_job_models_converters import (
 )
 from ...services.solver_job_outputs import ResultsTypes, get_solver_output_results
 from ...services.storage import StorageApi, to_file_api_model
+from ...services.webserver import ProjectNotFoundError
 from ..dependencies.application import get_product_name, get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.database import Engine, get_db_engine
@@ -161,6 +162,7 @@ async def get_jobs_page(
 @router.post(
     "/{solver_key:path}/releases/{version}/jobs",
     response_model=Job,
+    status_code=status.HTTP_201_CREATED,
 )
 async def create_job(
     solver_key: SolverKeyId,
@@ -252,12 +254,11 @@ async def delete_job(
     try:
         await webserver_api.delete_project(project_id=job_id)
 
-    except HTTPException as err:
-        if err.status_code == status.HTTP_404_NOT_FOUND:
-            return create_error_json_response(
-                f"Cannot find job={job_name} to delete",
-                status_code=status.HTTP_404_NOT_FOUND,
-            )
+    except ProjectNotFoundError:
+        return create_error_json_response(
+            f"Cannot find job={job_name} to delete",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
 
 
 @router.post(
