@@ -29,6 +29,10 @@ async def get_or_create_cluster(
         ec2_instance = new_ec2_instances[0]
     assert ec2_instance is not None  # nosec
 
+    # if ec2_instance.state == "running":
+    #     # check gateway is up?
+    #     gateway.ping(ec2_instance)
+
     return ClusterGet.from_ec2_instance_data(ec2_instance, user_id, wallet_id)
 
 

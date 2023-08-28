@@ -57,6 +57,7 @@ class ClusterGet(BaseModel):
     state: ClusterState
     user_id: UserID
     wallet_id: WalletID
+    gateway_ready: bool = False
 
     @classmethod
     def from_ec2_instance_data(
