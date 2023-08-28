@@ -50,22 +50,6 @@ qx.Class.define("osparc.ui.list.ListItemWithMenu", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "info-button": {
-          control = new qx.ui.form.Button().set({
-            maxWidth: 28,
-            maxHeight: 28,
-            alignX: "center",
-            alignY: "middle",
-            icon: "@MaterialIcons/info_outline/14",
-            focusable: false
-          });
-          this._add(control, {
-            row: 0,
-            column: 3,
-            rowSpan: 2
-          });
-          break;
-        }
         case "options": {
           const iconSize = this.self().ICON_SIZE;
           control = new qx.ui.form.MenuButton().set({
@@ -78,7 +62,7 @@ qx.Class.define("osparc.ui.list.ListItemWithMenu", {
           });
           this._add(control, {
             row: 0,
-            column: 4,
+            column: 3,
             rowSpan: 2
           });
           break;
@@ -137,9 +121,9 @@ qx.Class.define("osparc.ui.list.ListItemWithMenu", {
     },
 
     __applyOptions: function() {
-      const optionsMenu = this.getChildControl("options");
       const menu = this._getOptionsMenu();
-      if (menu) {
+      if (menu && menu.getChildren() && menu.getChildren().length) {
+        const optionsMenu = this.getChildControl("options");
         optionsMenu.setMenu(menu);
       }
     }
