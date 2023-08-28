@@ -15,7 +15,7 @@ from typer.testing import CliRunner
 
 
 def test_cli_help_and_version(cli_runner: CliRunner):
-    # payments-maker --help
+    # simcore-service-payments --help
     result = cli_runner.invoke(cli_main, "--help")
     assert result.exit_code == os.EX_OK, result.output
 
@@ -24,9 +24,8 @@ def test_cli_help_and_version(cli_runner: CliRunner):
     assert result.stdout.strip() == API_VERSION
 
 
-@pytest.mark.skip(reason="UNDER DEV")
 def test_generate_dotenv(cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch):
-    # payments-maker --generate-dotenv
+    # simcore-service-payments generate-dotenv --auto-password
     result = cli_runner.invoke(cli_main, "generate-dotenv --auto-password")
     assert result.exit_code == os.EX_OK, result.output
 
@@ -40,6 +39,7 @@ def test_generate_dotenv(cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch)
 
 
 def test_list_settings(cli_runner: CliRunner, app_environment: EnvVarsDict):
+    # simcore-service-payments settings --show-secrets --as-json
     result = cli_runner.invoke(cli_main, ["settings", "--show-secrets", "--as-json"])
     assert result.exit_code == os.EX_OK, result.output
 

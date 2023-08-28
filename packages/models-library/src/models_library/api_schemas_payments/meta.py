@@ -15,5 +15,6 @@ class Meta(BaseModel):
             "example": {
                 "name": "simcore_service_payments",
                 "version": "2.4.45",
+                "docs_url": "https://foo.io/doc",
             }
         }
