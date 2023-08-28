@@ -637,7 +637,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "description": "Successful Response",
             "content": {
               "application/json": {
