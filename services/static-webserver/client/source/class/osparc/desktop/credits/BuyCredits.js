@@ -424,14 +424,24 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         maxWidth: 150,
         center: true
       });
-      buyBtn.addListener("execute", () => {
-        const nCredits = this.getNCredits();
-        const totalPrice = this.getTotalPrice();
-        const wallet = this.getWallet();
+
+      const buying = () => {
         buyBtn.set({
           fetching: true,
           label: this.tr("Buying...")
         });
+      };
+      const transactionFinished = () => {
+        buyBtn.set({
+          fetching: false,
+          label: this.tr("Buy Credits")
+        });
+      };
+      buyBtn.addListener("execute", () => {
+        const nCredits = this.getNCredits();
+        const totalPrice = this.getTotalPrice();
+        const wallet = this.getWallet();
+        buying();
         setTimeout(() => {
           if (nCredits < 100) {
             let url = "https://www.payment.appmotion.de";
@@ -448,6 +458,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             win.center();
             win.open();
             paymentGateway.addListener("paymentSuccessful", () => {
+              transactionFinished();
               let msg = "Payment Successful";
               msg += "<br>";
               msg += "You now have " + nCredits + " more credits";
@@ -460,17 +471,18 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
               });
             });
             paymentGateway.addListener("paymentFailed", () => {
+              transactionFinished();
               let msg = "Payment Failed";
               msg += "<br>";
               msg += "Please try again";
               osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR", null, 10000);
             });
-            paymentGateway.addListener("close", () => win.close());
-          } else {
-            buyBtn.set({
-              fetching: false,
-              label: this.tr("Buy Credits")
+            paymentGateway.addListener("close", () => {
+              win.close();
+              transactionFinished();
             });
+          } else {
+            transactionFinished();
 
             const options = {
               width: 400,
