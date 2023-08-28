@@ -7,7 +7,7 @@
 
 import datetime
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Final
 from uuid import uuid4
 
 import networkx as nx
@@ -451,6 +451,9 @@ def pipeline_test_params(
     )
 
 
+_MANY_NODES: Final[int] = 60
+
+
 @pytest.mark.parametrize(
     "dag_adjacency, node_keys, list_comp_tasks, expected_pipeline_details_output",
     [
@@ -460,6 +463,45 @@ def pipeline_test_params(
             [],
             PipelineDetails(adjacency_list={}, progress=None, node_states={}),
             id="empty dag",
+        ),
+        pytest.param(
+            {f"node_{x}": [] for x in range(_MANY_NODES)},
+            {
+                f"node_{x}": {
+                    "key": "simcore/services/comp/fake",
+                    "node_class": NodeClass.COMPUTATIONAL,
+                    "state": RunningState.NOT_STARTED,
+                    "outputs": None,
+                }
+                for x in range(_MANY_NODES)
+            },
+            [
+                CompTaskAtDB.construct(
+                    project_id=uuid4(),
+                    node_id=f"node_{x}",
+                    schema=NodeSchema(inputs={}, outputs={}),
+                    inputs=None,
+                    image=Image(name="simcore/services/comp/fake", tag="1.3.4"),
+                    state=RunningState.NOT_STARTED,
+                    internal_id=3,
+                    node_class=NodeClass.COMPUTATIONAL,
+                    submit=datetime.datetime.now(tz=datetime.timezone.utc),
+                    created=datetime.datetime.now(tz=datetime.timezone.utc),
+                    modified=datetime.datetime.now(tz=datetime.timezone.utc),
+                    last_heartbeat=None,
+                    progress=1.00,
+                )
+                for x in range(_MANY_NODES)
+            ],
+            PipelineDetails.construct(
+                adjacency_list={f"node_{x}": [] for x in range(_MANY_NODES)},
+                progress=1.0,
+                node_states={
+                    f"node_{x}": NodeState(modified=True, progress=1)
+                    for x in range(_MANY_NODES)
+                },
+            ),
+            id="when summing many node progresses there are issues with floating point pipeline progress",
         ),
         pytest.param(
             {"node_1": ["node_2", "node_3"], "node_2": ["node_3"], "node_3": []},
@@ -526,7 +568,7 @@ def pipeline_test_params(
                     created=datetime.datetime.now(tz=datetime.timezone.utc),
                     modified=datetime.datetime.now(tz=datetime.timezone.utc),
                     last_heartbeat=None,
-                    progress=12.00,  # NOTE: this should not be able to happen but it does, this test reproduces it
+                    progress=1.00,
                 ),
             ],
             PipelineDetails.construct(
@@ -542,7 +584,7 @@ def pipeline_test_params(
                     "node_3": NodeState(modified=True, progress=1),
                 },
             ),
-            id="dag reproducing issue with progress >1 in one node produces error",
+            id="proper dag",
         ),
     ],
 )

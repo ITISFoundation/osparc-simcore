@@ -242,10 +242,12 @@ async def compute_pipeline_details(
     }
     pipeline_progress = None
     if len(pipeline_dag.nodes) > 0:
-        pipeline_progress = 0.0
-        for node_id in pipeline_dag.nodes:
-            if node_progress := node_id_to_comp_task[node_id].progress:
-                pipeline_progress += min(node_progress, 1.0) / len(pipeline_dag.nodes)
+        pipeline_progress = sum(
+            node_id_to_comp_task[node_id].progress / len(pipeline_dag.nodes)
+            for node_id in pipeline_dag.nodes
+            if node_id_to_comp_task[node_id].progress is not None
+        )
+        pipeline_progress = max(0.0, min(pipeline_progress, 1.0))
 
     return PipelineDetails(
         adjacency_list=nx.convert.to_dict_of_lists(pipeline_dag),
@@ -255,7 +257,7 @@ async def compute_pipeline_details(
                 modified=node_data.get(kNODE_MODIFIED_STATE, False),
                 dependencies=node_data.get(kNODE_DEPENDENCIES_TO_COMPUTE, set()),
                 currentStatus=node_id_to_comp_task[node_id].state,
-                progress=min(node_id_to_comp_task[node_id].progress, 1.0)
+                progress=node_id_to_comp_task[node_id].progress
                 if node_id_to_comp_task[node_id].progress is not None
                 else None,
             )
