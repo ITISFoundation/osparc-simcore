@@ -58,7 +58,7 @@ qx.Class.define("osparc.desktop.credits.Overview", {
           break;
         }
         case "usage-card": {
-          const content = this.__createWalletsView();
+          const content = this.__createUsageView();
           control = this.__createOverviewCard("Usage", content, "toUsageOverview");
           this._add(control, {
             column: 0,
@@ -205,6 +205,37 @@ qx.Class.define("osparc.desktop.credits.Overview", {
         125,
         "My Wallet",
         "A payment"
+      ]];
+      entries.forEach((entry, row) => {
+        entry.forEach((data, column) => {
+          const text = new qx.ui.basic.Label(data.toString()).set({
+            font: "text-13"
+          });
+          layout.add(text, {
+            row,
+            column
+          });
+        });
+      });
+      return layout;
+    },
+
+    __createUsageView: function() {
+      const grid = new qx.ui.layout.Grid(12, 8);
+      const layout = new qx.ui.container.Composite(grid);
+
+      const entries = [[
+        "Sim4life project",
+        "My Wallet",
+        osparc.utils.Utils.formatDateAndTime(new Date()),
+        "20:14",
+        "Finished"
+      ], [
+        "Sim4life project (2)",
+        "My Wallet",
+        osparc.utils.Utils.formatDateAndTime(new Date()),
+        "13:14",
+        "Running"
       ]];
       entries.forEach((entry, row) => {
         entry.forEach((data, column) => {
