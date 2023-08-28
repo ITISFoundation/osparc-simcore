@@ -3,11 +3,13 @@
 # pylint: disable=unused-variable
 
 
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any, TypedDict
 
 import httpx
 import pytest
+from faker import Faker
 from fastapi import status
 from pydantic import parse_file_as, parse_obj_as
 from respx import MockRouter
@@ -23,7 +25,7 @@ class MockedBackendApiDict(TypedDict):
 
 @pytest.fixture
 def mocked_backend(
-    mocked_webserver_service_api: MockRouter,
+    mocked_webserver_service_api_base: MockRouter,
     project_tests_dir: Path,
 ) -> MockedBackendApiDict:
     mock_name = "for_test_api_routes_studies.json"
@@ -46,7 +48,7 @@ def mocked_backend(
         capture = captures[name]
         assert capture.host == "webserver"
 
-        route = mocked_webserver_service_api.request(
+        route = mocked_webserver_service_api_base.request(
             method=capture.method,
             path__regex=capture.path.removeprefix("/v0") + "$",
             name=capture.name,
@@ -55,7 +57,9 @@ def mocked_backend(
             json=capture.response_body,
         )
         print(route)
-    return MockedBackendApiDict(webserver=mocked_webserver_service_api, catalog=None)
+    return MockedBackendApiDict(
+        webserver=mocked_webserver_service_api_base, catalog=None
+    )
 
 
 @pytest.mark.acceptance_test(
@@ -110,13 +114,13 @@ async def test_studies_read_workflow(
 async def test_list_study_ports(
     client: httpx.AsyncClient,
     auth: httpx.BasicAuth,
-    mocked_webserver_service_api: MockRouter,
+    mocked_webserver_service_api_base: MockRouter,
     fake_study_ports: list[dict[str, Any]],
     study_id: StudyID,
 ):
     # Mocks /projects/{*}/metadata/ports
 
-    mocked_webserver_service_api.get(
+    mocked_webserver_service_api_base.get(
         path__regex=r"/projects/(?P<project_id>[\w-]+)/metadata/ports$",
         name="list_project_metadata_ports",
     ).respond(
@@ -130,13 +134,45 @@ async def test_list_study_ports(
     assert resp.json() == {"items": fake_study_ports, "total": len(fake_study_ports)}
 
 
-@pytest.mark.xfail(
-    reason="Under dev: https://github.com/ITISFoundation/osparc-simcore/issues/4651"
+@pytest.mark.acceptance_test(
+    "Implements https://github.com/ITISFoundation/osparc-simcore/issues/4651"
 )
 async def test_clone_study(
     client: httpx.AsyncClient,
     auth: httpx.BasicAuth,
     study_id: StudyID,
+    mocked_webserver_service_api_base: MockRouter,
+    patch_webserver_long_running_project_tasks: Callable[[MockRouter], MockRouter],
 ):
+    # Mocks /projects/{project_id}:clone
+    patch_webserver_long_running_project_tasks(mocked_webserver_service_api_base)
+
     resp = await client.post(f"/v0/studies/{study_id}:clone", auth=auth)
+
     assert resp.status_code == status.HTTP_201_CREATED
+
+
+async def test_clone_study_not_found(
+    client: httpx.AsyncClient,
+    auth: httpx.BasicAuth,
+    faker: Faker,
+    mocked_webserver_service_api_base: MockRouter,
+):
+    # Mocks /projects/{project_id}:clone
+    mocked_webserver_service_api_base.post(
+        path__regex=r"/projects/(?P<project_id>[\w-]+):clone$",
+        name="project_clone",
+    ).respond(
+        status.HTTP_404_NOT_FOUND,
+        json={"message": "you should not read this message from the WEBSERVER_MARK"},
+    )
+
+    # tests unknown study
+    unknown_study_id = faker.uuid4()
+    resp = await client.post(f"/v0/studies/{unknown_study_id}:clone", auth=auth)
+
+    assert resp.status_code == status.HTTP_404_NOT_FOUND
+
+    errors: list[str] = resp.json()["errors"]
+    assert any("WEBSERVER_MARK" not in error_msg for error_msg in errors)
+    assert any(unknown_study_id in error_msg for error_msg in errors)

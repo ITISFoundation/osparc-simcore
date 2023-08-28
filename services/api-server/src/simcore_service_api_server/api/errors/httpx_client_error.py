@@ -6,12 +6,13 @@
 import logging
 
 from fastapi import status
-from fastapi.encoders import jsonable_encoder
 from httpx import HTTPStatusError
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-log = logging.getLogger(__file__)
+from .http_error import create_error_json_response
+
+_logger = logging.getLogger(__file__)
 
 
 async def httpx_client_error_handler(_: Request, exc: HTTPStatusError) -> JSONResponse:
@@ -24,27 +25,26 @@ async def httpx_client_error_handler(_: Request, exc: HTTPStatusError) -> JSONRe
     The response had an error HTTP status of 4xx or 5xx, and this is how is
     transformed in the api-server API
     """
-    if 400 <= exc.response.status_code < 500:
-        # Forward backend client errors
+    if exc.response.is_client_error:
+        assert exc.response.is_server_error  # nosec
+        # Forward api-server's client from backend client errors
         status_code = exc.response.status_code
         errors = exc.response.json()["errors"]
-
     else:
-        # Hide api-server client from backend server errors
-        assert exc.response.status_code >= 500  # nosec
+        assert exc.response.is_server_error  # nosec
+        # Hide api-server's client from backend server errors
         status_code = status.HTTP_503_SERVICE_UNAVAILABLE
         message = f"{exc.request.url.host.capitalize()} service unexpectedly failed"
-        log.exception(
+        errors = [
+            message,
+        ]
+
+        _logger.exception(
             "%s. host=%s status-code=%s msg=%s",
             message,
             exc.request.url.host,
             exc.response.status_code,
             exc.response.text,
         )
-        errors = [
-            message,
-        ]
 
-    return JSONResponse(
-        content=jsonable_encoder({"errors": errors}), status_code=status_code
-    )
+    return create_error_json_response(*errors, status_code=status_code)
