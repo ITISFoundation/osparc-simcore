@@ -120,7 +120,23 @@ qx.Class.define("osparc.desktop.credits.Overview", {
       for (let i=0; i<wallets.length && i<maxIndicators; i++) {
         const wallet = wallets[i];
 
-        // shared or not shared
+        // thumbnail or shared or not shared
+        const thumbnail = new qx.ui.basic.Image().set({
+          backgroundColor: "transparent",
+          alignY: "middle"
+        });
+        const value = wallet.getThumbnail();
+        if (value) {
+          thumbnail.setSource(value);
+        } else if (wallet.getAccessRights() && wallet.getAccessRights().length > 1) {
+          thumbnail.setSource(osparc.utils.Icons.organization(20));
+        } else {
+          thumbnail.setSource(osparc.utils.Icons.user(20));
+        }
+        layout.add(thumbnail, {
+          column: 0,
+          row: i
+        });
 
         // indicator
         const progressBar = new osparc.desktop.credits.CreditsIndicatorWText(wallet, "horizontal").set({
@@ -136,7 +152,7 @@ qx.Class.define("osparc.desktop.credits.Overview", {
 
         // favourite
         const starImage = new qx.ui.basic.Image().set({
-          backgroundColor: "transparent",
+          // backgroundColor: "transparent",
           alignY: "middle"
         });
         wallet.bind("defaultWallet", starImage, "source", {
