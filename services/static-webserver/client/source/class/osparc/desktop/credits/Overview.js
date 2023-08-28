@@ -94,6 +94,7 @@ qx.Class.define("osparc.desktop.credits.Overview", {
       });
       layout.add(title);
 
+      content.setPadding(5);
       layout.add(content, {
         flex: 1
       });
@@ -111,27 +112,27 @@ qx.Class.define("osparc.desktop.credits.Overview", {
     },
 
     __createWalletsView: function() {
-      const grid = new qx.ui.layout.Grid(5, 5);
-      grid.setColumnFlex(1, 1);
+      const grid = new qx.ui.layout.Grid(12, 8);
       const layout = new qx.ui.container.Composite(grid);
 
       const wallets = osparc.store.Store.getInstance().getWallets();
-      const maxIndicators = 5;
-      for (let i=0; i<wallets.length && i<maxIndicators; i++) {
+      const maxWallets = 5;
+      for (let i=0; i<wallets.length && i<maxWallets; i++) {
         const wallet = wallets[i];
 
         // thumbnail or shared or not shared
         const thumbnail = new qx.ui.basic.Image().set({
           backgroundColor: "transparent",
+          alignX: "center",
           alignY: "middle"
         });
         const value = wallet.getThumbnail();
         if (value) {
           thumbnail.setSource(value);
         } else if (wallet.getAccessRights() && wallet.getAccessRights().length > 1) {
-          thumbnail.setSource(osparc.utils.Icons.organization(20));
+          thumbnail.setSource(osparc.utils.Icons.organization(18));
         } else {
-          thumbnail.setSource(osparc.utils.Icons.user(20));
+          thumbnail.setSource(osparc.utils.Icons.user(18));
         }
         layout.add(thumbnail, {
           column: 0,
@@ -152,7 +153,6 @@ qx.Class.define("osparc.desktop.credits.Overview", {
 
         // favourite
         const starImage = new qx.ui.basic.Image().set({
-          // backgroundColor: "transparent",
           alignY: "middle"
         });
         wallet.bind("defaultWallet", starImage, "source", {
