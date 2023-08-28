@@ -24,6 +24,7 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
     this._setLayout(new qx.ui.layout.VBox(3));
 
     this.set({
+      cursor: "pointer",
       padding: 5,
       paddingRight: 10
     });
@@ -31,6 +32,11 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
     this.__walletListeners = [];
 
     this.__buildLayout();
+
+    this.addListener("tap", () => {
+      const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow();
+      creditsWindow.openOverview();
+    }, this);
   },
 
   properties: {
@@ -141,7 +147,7 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
     },
 
     __addWallet: function(wallet) {
-      const progressBar = new osparc.desktop.credits.CreditsIndicator(wallet, true).set({
+      const progressBar = new osparc.desktop.credits.CreditsIndicator(wallet).set({
         allowShrinkY: true
       });
       this._add(progressBar, {
