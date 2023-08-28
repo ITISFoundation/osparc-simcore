@@ -7,7 +7,7 @@ from servicelib.fastapi.dependencies import get_app, get_reverse_url_mapper
 
 from ..core.settings import ApplicationSettings
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 #
@@ -34,11 +34,11 @@ def get_validated_credentials(
     if not credentials or not (
         _is_valid(
             credentials.username,
-            expected=settings.INVITATIONS_USERNAME,
+            expected=settings.PAYMENTS_USERNAME,
         )
         and _is_valid(
             credentials.password,
-            expected=settings.INVITATIONS_PASSWORD.get_secret_value(),
+            expected=settings.PAYMENTS_PASSWORD.get_secret_value(),
         )
     ):
         raise HTTPException(

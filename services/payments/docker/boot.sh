@@ -43,7 +43,7 @@ if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
 
   exec sh -c "
     cd services/payments/src/simcore_service_payments && \
-    uvicorn web_main:the_app \
+    uvicorn main:the_app \
       --host 0.0.0.0 \
       --reload \
       $reload_dir_packages
@@ -51,7 +51,7 @@ if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
       --log-level \"${SERVER_LOG_LEVEL}\"
   "
 else
-  exec uvicorn simcore_service_payments.web_main:the_app \
+  exec uvicorn simcore_service_payments.main:the_app \
     --host 0.0.0.0 \
     --log-level "${SERVER_LOG_LEVEL}"
 fi
