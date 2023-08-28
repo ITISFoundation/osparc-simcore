@@ -49,7 +49,7 @@ qx.Class.define("osparc.desktop.credits.Overview", {
           break;
         }
         case "transactions-card": {
-          const content = this.__createWalletsView();
+          const content = this.__createTransactionsView();
           control = this.__createOverviewCard("Transactions", content, "toTransactions");
           this._add(control, {
             column: 1,
@@ -81,7 +81,7 @@ qx.Class.define("osparc.desktop.credits.Overview", {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
         minWidth: 200,
         minHeight: 200,
-        padding: 10,
+        padding: 15,
         backgroundColor: "background-main-1"
       });
       layout.getContentElement().setStyles({
@@ -167,6 +167,37 @@ qx.Class.define("osparc.desktop.credits.Overview", {
         });
       }
 
+      return layout;
+    },
+
+    __createTransactionsView: function() {
+      const grid = new qx.ui.layout.Grid(12, 8);
+      const layout = new qx.ui.container.Composite(grid);
+
+      const entries = [[
+        osparc.utils.Utils.formatDateAndTime(new Date()),
+        10,
+        0,
+        "My Wallet",
+        "Welcome to Sim4Life"
+      ], [
+        osparc.utils.Utils.formatDateAndTime(new Date()),
+        50,
+        125,
+        "My Wallet",
+        "A payment"
+      ]];
+      entries.forEach((entry, row) => {
+        entry.forEach((data, column) => {
+          const text = new qx.ui.basic.Label(data.toString()).set({
+            font: "text-13"
+          });
+          layout.add(text, {
+            row,
+            column
+          });
+        });
+      });
       return layout;
     }
   }
