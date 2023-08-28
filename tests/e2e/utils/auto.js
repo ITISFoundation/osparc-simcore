@@ -285,7 +285,7 @@ async function runStudy(page) {
     await responsesQueue.waitUntilResponse(":start");
   }
   catch (err) {
-    console.error(err);
+    console.error("Error: running study", err);
     throw (err);
   }
 }
@@ -388,7 +388,7 @@ async function downloadSelectedFile(page) {
     console.log("valid output file value", value)
   }
   catch (err) {
-    console.error(err);
+    console.error("Error: downloading Selected File", err);
     throw (err);
   }
 }

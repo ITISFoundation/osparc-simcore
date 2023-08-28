@@ -39,6 +39,30 @@ qx.Class.define("osparc.desktop.organizations.SharedResourceListItem", {
   },
 
   members: {
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "info-button": {
+          control = new qx.ui.form.Button().set({
+            maxWidth: 28,
+            maxHeight: 28,
+            alignX: "center",
+            alignY: "middle",
+            icon: "@MaterialIcons/info_outline/14",
+            focusable: false
+          });
+          this._add(control, {
+            row: 0,
+            column: 4,
+            rowSpan: 2
+          });
+          break;
+        }
+      }
+
+      return control || this.base(arguments, id);
+    },
+
     // overridden
     _getInfoButton: function() {
       const accessRights = this.getAccessRights();
