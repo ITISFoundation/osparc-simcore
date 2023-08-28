@@ -222,18 +222,12 @@ async def get_upload_links(
     completion_url: URL = request.url_for(
         "complete_multipart_upload", file_id=file_meta.id
     )
-    complete_upload_link: str = (
-        f"{completion_url.path}?{upload_links.links.complete_upload.query}"
-    )
     abortion_url: URL = request.url_for("abort_multipart_upload", file_id=file_meta.id)
-    abort_upload_link: str = (
-        f"{abortion_url.path}?{upload_links.links.abort_upload.query}"
-    )
     upload_data: FileUploadData = FileUploadData(
         chunk_size=upload_links.chunk_size,
         urls=upload_links.urls,
         links=UploadLinks(
-            complete_upload=complete_upload_link, abort_upload=abort_upload_link
+            complete_upload=completion_url.path, abort_upload=abortion_url.path
         ),
     )
     return ClientFileUploadData(file_id=file_meta.id, upload_schema=upload_data)
@@ -305,7 +299,7 @@ async def abort_multipart_upload(
     assert user_id  # nosec
     file: File = File(id=file_id, filename=client_file.filename, checksum=None)
     abort_link: URL = await storage_client.create_abort_upload_link(
-        file, query=dict(request.query_params)
+        file, query={"user_id": user_id}
     )
     await abort_upload(abort_upload_link=parse_obj_as(AnyUrl, str(abort_link)))
 
@@ -329,7 +323,7 @@ async def complete_multipart_upload(
 
     file: File = File(id=file_id, filename=client_file.filename, checksum=None)
     complete_link: URL = await storage_client.create_complete_upload_link(
-        file, dict(request.query_params)
+        file, {"user_id": user_id}
     )
 
     e_tag: ETag = await complete_file_upload(
