@@ -275,7 +275,12 @@ async def delete_file(
     user_id: Annotated[int, Depends(get_current_user_id)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
 ):
-    await storage_client.delete_file(user_id=user_id, file_id=file_id)
+    file: File = await get_file(
+        file_id=file_id, storage_client=storage_client, user_id=user_id
+    )
+    await storage_client.delete_file(
+        user_id=user_id, quoted_storage_file_id=file.quoted_storage_file_id
+    )
 
 
 @router.post(
