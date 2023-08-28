@@ -131,7 +131,7 @@ async def test_create_and_delete_solver_job(
             }
         ).dict(),
     )
-    assert resp.status_code == status.HTTP_200_OK
+    assert resp.status_code == status.HTTP_201_CREATED
     job = Job.parse_obj(resp.json())
 
     # Delete Job after creation
