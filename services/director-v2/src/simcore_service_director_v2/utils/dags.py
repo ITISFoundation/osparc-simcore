@@ -1,3 +1,4 @@
+import contextlib
 import datetime
 import logging
 from copy import deepcopy
@@ -224,23 +225,16 @@ def compute_pipeline_submitted_timestamp(
     node_id_to_comp_task: dict[NodeIDStr, CompTaskAtDB] = {
         NodeIDStr(f"{task.node_id}"): task for task in comp_tasks
     }
-    pipeline_submitted_at = max(
-        node_id_to_comp_task[node_id].submit for node_id in pipeline_dag.nodes
-    )
-
-    return pipeline_submitted_at
+    return max(node_id_to_comp_task[node_id].submit for node_id in pipeline_dag.nodes)
 
 
 async def compute_pipeline_details(
     complete_dag: nx.DiGraph, pipeline_dag: nx.DiGraph, comp_tasks: list[CompTaskAtDB]
 ) -> PipelineDetails:
-    try:
+    with contextlib.suppress(nx.exception.NetworkXUnfeasible):
         # NOTE: this problem of cyclic graphs for control loops create all kinds of issues that must be fixed
         # first pass, traversing in topological order to correctly get the dependencies, set the nodes states
         await _set_computational_nodes_states(complete_dag)
-    except nx.exception.NetworkXUnfeasible:
-        # not acyclic
-        pass
 
     # NOTE: the latest progress is available in comp_tasks only
     node_id_to_comp_task: dict[NodeIDStr, CompTaskAtDB] = {
@@ -248,10 +242,12 @@ async def compute_pipeline_details(
     }
     pipeline_progress = None
     if len(pipeline_dag.nodes) > 0:
-        pipeline_progress = 0.0
-        for node_id in pipeline_dag.nodes:
-            if node_progress := node_id_to_comp_task[node_id].progress:
-                pipeline_progress += node_progress / len(pipeline_dag.nodes)
+        pipeline_progress = sum(
+            node_id_to_comp_task[node_id].progress / len(pipeline_dag.nodes)
+            for node_id in pipeline_dag.nodes
+            if node_id_to_comp_task[node_id].progress is not None
+        )
+        pipeline_progress = max(0.0, min(pipeline_progress, 1.0))
 
     return PipelineDetails(
         adjacency_list=nx.convert.to_dict_of_lists(pipeline_dag),
@@ -261,7 +257,9 @@ async def compute_pipeline_details(
                 modified=node_data.get(kNODE_MODIFIED_STATE, False),
                 dependencies=node_data.get(kNODE_DEPENDENCIES_TO_COMPUTE, set()),
                 currentStatus=node_id_to_comp_task[node_id].state,
-                progress=node_id_to_comp_task[node_id].progress,
+                progress=node_id_to_comp_task[node_id].progress
+                if node_id_to_comp_task[node_id].progress is not None
+                else None,
             )
             for node_id, node_data in complete_dag.nodes.data()
             if node_data["node_class"] is NodeClass.COMPUTATIONAL
