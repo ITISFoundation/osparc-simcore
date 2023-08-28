@@ -118,6 +118,8 @@ qx.Class.define("osparc.desktop.credits.Overview", {
       const wallets = osparc.store.Store.getInstance().getWallets();
       const maxWallets = 5;
       for (let i=0; i<wallets.length && i<maxWallets; i++) {
+        let column = 0;
+
         const wallet = wallets[i];
 
         // thumbnail or shared or not shared
@@ -135,9 +137,24 @@ qx.Class.define("osparc.desktop.credits.Overview", {
           thumbnail.setSource(osparc.utils.Icons.user(18));
         }
         layout.add(thumbnail, {
-          column: 0,
+          column,
           row: i
         });
+        column++;
+
+        // name
+        const walletName = new qx.ui.basic.Label().set({
+          font: "text-14",
+          rich: true,
+          wrap: true,
+          maxWidth: 100
+        });
+        wallet.bind("name", walletName, "value");
+        layout.add(walletName, {
+          column,
+          row: i
+        });
+        column++;
 
         // indicator
         const progressBar = new osparc.desktop.credits.CreditsIndicatorWText(wallet, "horizontal").set({
@@ -147,9 +164,10 @@ qx.Class.define("osparc.desktop.credits.Overview", {
           minWidth: 100
         });
         layout.add(progressBar, {
-          column: 1,
+          column,
           row: i
         });
+        column++;
 
         // favourite
         const starImage = new qx.ui.basic.Image().set({
@@ -162,9 +180,10 @@ qx.Class.define("osparc.desktop.credits.Overview", {
           converter: isDefault => isDefault ? "strong-main" : null
         });
         layout.add(starImage, {
-          column: 2,
+          column,
           row: i
         });
+        column++;
       }
 
       return layout;
