@@ -147,7 +147,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     __buildLayout: function() {
       this.getChildControl("wallet-selector");
       this.getChildControl("credits-left-view");
-      this.getChildControl("credit-offers-view");
+      // this.getChildControl("credit-offers-view");
       this.getChildControl("credit-selector");
       this.getChildControl("summary-view");
       this.getChildControl("buy-button");
@@ -254,6 +254,14 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     },
 
     __getCreditSelector: function() {
+      const vLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+
+      const label = new qx.ui.basic.Label().set({
+        value: this.tr("Credits:"),
+        font: "text-14"
+      });
+      vLayout.add(label);
+
       const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(0));
 
       const minBtn = new qx.ui.form.Button().set({
@@ -281,7 +289,9 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       moreBtn.addListener("execute", () => this.setNCredits(this.getNCredits()+1));
       layout.add(moreBtn);
 
-      return layout;
+      vLayout.add(layout);
+
+      return vLayout;
     },
 
     __getSummaryView: function() {
