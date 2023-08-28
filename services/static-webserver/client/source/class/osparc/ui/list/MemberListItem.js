@@ -71,16 +71,6 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
         });
         menu.add(promoteButton);
       }
-      if (options.includes("demoteToUser")) {
-        const demoteButton = new qx.ui.menu.Button(this.tr("Demote to ") + osparc.data.Roles.ORG[0].label);
-        demoteButton.addListener("execute", () => {
-          this.fireDataEvent("demoteToUser", {
-            id: this.getKey(),
-            name: this.getTitle()
-          });
-        });
-        menu.add(demoteButton);
-      }
       if (options.includes("promoteToAdministrator")) {
         const promoteButton = new qx.ui.menu.Button(this.tr("Promote to ") + osparc.data.Roles.ORG[3].label);
         promoteButton.addListener("execute", () => {
@@ -90,6 +80,16 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
           });
         });
         menu.add(promoteButton);
+      }
+      if (options.includes("demoteToUser")) {
+        const demoteButton = new qx.ui.menu.Button(this.tr("Demote to ") + osparc.data.Roles.ORG[0].label);
+        demoteButton.addListener("execute", () => {
+          this.fireDataEvent("demoteToUser", {
+            id: this.getKey(),
+            name: this.getTitle()
+          });
+        });
+        menu.add(demoteButton);
       }
       if (options.includes("demoteToMember")) {
         const demoteButton = new qx.ui.menu.Button(this.tr("Demote to ") + osparc.data.Roles.ORG[1].label);
