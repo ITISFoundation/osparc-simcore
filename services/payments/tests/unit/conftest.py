@@ -69,7 +69,7 @@ def app_environment(
         monkeypatch,
         {
             "PAYMENTS_SECRET_KEY": secret_key,
-            "PAYMENTS_GATEWAY_URL": "https://some-payment-gateway.com",
+            "PAYMENTS_GATEWAY_URL": "https://fake-payment-gateway.com",
             "PAYMENTS_USERNAME": fake_user_name,
             "PAYMENTS_PASSWORD": fake_password,
         },

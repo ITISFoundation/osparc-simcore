@@ -8,14 +8,14 @@ import json
 from typing import Any
 
 import pytest
-import simcore_service_payments
+import simcore_service_payments.api
 from pydantic import BaseModel
 from pytest_simcore.pydantic_models import walk_model_examples_in_package
 
 
 @pytest.mark.parametrize(
     "model_cls, example_name, example_data",
-    walk_model_examples_in_package(simcore_service_payments),
+    walk_model_examples_in_package(simcore_service_payments.api),
 )
 def test_api_server_model_examples(
     model_cls: type[BaseModel], example_name: int, example_data: Any

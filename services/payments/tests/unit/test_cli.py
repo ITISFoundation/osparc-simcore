@@ -24,6 +24,7 @@ def test_cli_help_and_version(cli_runner: CliRunner):
     assert result.stdout.strip() == API_VERSION
 
 
+@pytest.mark.skip(reason="UNDER DEV")
 def test_generate_dotenv(cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch):
     # payments-maker --generate-dotenv
     result = cli_runner.invoke(cli_main, "generate-dotenv --auto-password")

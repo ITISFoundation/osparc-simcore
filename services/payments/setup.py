@@ -30,6 +30,7 @@ README = (CURRENT_DIR / "README.md").read_text()
 PROD_REQUIREMENTS = tuple(
     read_reqs(CURRENT_DIR / "requirements" / "_base.txt")
     | {
+        "simcore-postgres-database",
         "simcore-service-library[fastapi]",
         "simcore-settings-library",
     }
@@ -56,7 +57,7 @@ SETUP = {
     "extras_require": {"test": TEST_REQUIREMENTS},
     "entry_points": {
         "console_scripts": [
-            "simcore-service-payments = simcore_service_payments.cli:app",
+            "simcore-service-payments = simcore_service_payments.cli:main",
         ],
     },
 }
