@@ -21,9 +21,8 @@ from simcore_sdk.node_ports_common.filemanager import (
     UploadedFolder,
     abort_upload,
     complete_file_upload,
+    get_upload_links_from_s3,
 )
-from simcore_sdk.node_ports_common.filemanager import delete_file as storage_delete_file
-from simcore_sdk.node_ports_common.filemanager import get_upload_links_from_s3
 from simcore_sdk.node_ports_common.filemanager import upload_path as storage_upload_path
 from starlette.datastructures import URL
 from starlette.responses import RedirectResponse
@@ -276,12 +275,7 @@ async def delete_file(
     user_id: Annotated[int, Depends(get_current_user_id)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
 ):
-    file: File = await get_file(
-        file_id=file_id, user_id=user_id, storage_client=storage_client
-    )
-    await storage_delete_file(
-        user_id=user_id, store_id=SIMCORE_LOCATION, s3_object=file.storage_file_id
-    )
+    await storage_client.delete_file(user_id=user_id, file_id=file_id)
 
 
 @router.post(
