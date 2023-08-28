@@ -1,0 +1,21 @@
+#
+# Specifies third-party dependencies for 'services/invitations/src'
+#
+# NOTE: ALL version constraints MUST be commented
+--constraint ../../../requirements/constraints.txt
+--constraint ./constraints.txt
+
+# intra-repo required dependencies
+--requirement ../../../packages/models-library/requirements/_base.in
+--requirement ../../../packages/postgres-database/requirements/_base.in
+--requirement ../../../packages/settings-library/requirements/_base.in
+# service-library[fastapi]
+--requirement ../../../packages/service-library/requirements/_base.in
+--requirement ../../../packages/service-library/requirements/_fastapi.in
+
+
+cryptography~=39.0.0 # security
+fastapi
+packaging
+typer[all]
+uvicorn[standard]
