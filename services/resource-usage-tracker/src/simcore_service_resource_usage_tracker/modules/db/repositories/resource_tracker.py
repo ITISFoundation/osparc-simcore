@@ -6,16 +6,17 @@ from models_library.products import ProductName
 from models_library.resource_tracker import ServiceRunId, ServiceRunStatus
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import PositiveInt, parse_obj_as
+from pydantic import PositiveInt
 from simcore_postgres_database.models.resource_tracker_service_runs import (
     resource_tracker_service_runs,
 )
 
+from ....core.errors import CreateServiceRunError
 from ....models.resource_tracker_service_run import (
-    CreateServiceRun,
+    ServiceRunCreate,
     ServiceRunDB,
-    UpdateServiceRunLastHeartbeat,
-    UpdateServiceRunStoppedAt,
+    ServiceRunLastHeartbeatUpdate,
+    ServiceRunStoppedAtUpdate,
 )
 from ._base import BaseRepository
 
@@ -28,7 +29,7 @@ class ResourceTrackerRepository(BaseRepository):
     #############
 
     @staticmethod
-    def service_runs_select_stmt():
+    def _service_runs_select_stmt():
         return sa.select(
             resource_tracker_service_runs.c.service_run_id,
             resource_tracker_service_runs.c.wallet_id,
@@ -50,7 +51,7 @@ class ResourceTrackerRepository(BaseRepository):
             resource_tracker_service_runs.c.service_run_status,
         )
 
-    async def create_service_run(self, data: CreateServiceRun):  # -> ServiceRunId:
+    async def create_service_run(self, data: ServiceRunCreate) -> ServiceRunId:
         async with self.db_engine.begin() as conn:
             insert_stmt = (
                 resource_tracker_service_runs.insert()
@@ -84,11 +85,11 @@ class ResourceTrackerRepository(BaseRepository):
             result = await conn.execute(insert_stmt)
         row = result.first()
         if row is None:
-            return None
-        return parse_obj_as(ServiceRunId, row[0])
+            raise CreateServiceRunError(msg=f"Service was not created: {data}")
+        return row[0]
 
     async def update_service_run_last_heartbeat(
-        self, data: UpdateServiceRunLastHeartbeat
+        self, data: ServiceRunLastHeartbeatUpdate
     ) -> ServiceRunId | None:
         async with self.db_engine.begin() as conn:
             update_stmt = (
@@ -116,10 +117,10 @@ class ResourceTrackerRepository(BaseRepository):
         row = result.first()
         if row is None:
             return None
-        return parse_obj_as(ServiceRunId, row[0])
+        return row[0]
 
     async def update_service_run_stopped_at(
-        self, data: UpdateServiceRunStoppedAt
+        self, data: ServiceRunStoppedAtUpdate
     ) -> ServiceRunId | None:
         async with self.db_engine.begin() as conn:
             update_stmt = (
@@ -145,27 +146,14 @@ class ResourceTrackerRepository(BaseRepository):
         row = result.first()
         if row is None:
             return None
-        return parse_obj_as(ServiceRunId, row[0])
-
-    async def get_service_run(self, service_run_id: ServiceRunId) -> list[ServiceRunDB]:
-        async with self.db_engine.begin() as conn:
-            query = self.service_runs_select_stmt().where(
-                resource_tracker_service_runs.c.service_run_id == service_run_id
-            )
-
-            result = await conn.execute(query)
-
-        services_runs = [
-            ServiceRunDB(**row) for row in result.fetchall()  # type: ignore[arg-type]
-        ]
-        return services_runs
+        return row[0]
 
     async def list_service_runs_by_user_and_product(
         self, user_id: UserID, product_name: ProductName, offset: int, limit: int
     ) -> list[ServiceRunDB]:
         async with self.db_engine.begin() as conn:
             query = (
-                self.service_runs_select_stmt()
+                self._service_runs_select_stmt()
                 .where(
                     (resource_tracker_service_runs.c.user_id == user_id)
                     & (resource_tracker_service_runs.c.product_name == product_name)
@@ -176,9 +164,7 @@ class ResourceTrackerRepository(BaseRepository):
             )
             result = await conn.execute(query)
 
-        services_runs = [
-            ServiceRunDB(**row) for row in result.fetchall()  # type: ignore[arg-type]
-        ]
+        services_runs = [ServiceRunDB.from_orm(row) for row in result.fetchall()]
         return services_runs
 
     async def total_service_runs_by_user_and_product(
@@ -207,7 +193,7 @@ class ResourceTrackerRepository(BaseRepository):
     ) -> list[ServiceRunDB]:
         async with self.db_engine.begin() as conn:
             query = (
-                self.service_runs_select_stmt()
+                self._service_runs_select_stmt()
                 .where(
                     (resource_tracker_service_runs.c.user_id == user_id)
                     & (resource_tracker_service_runs.c.product_name == product_name)
@@ -219,9 +205,7 @@ class ResourceTrackerRepository(BaseRepository):
             )
             result = await conn.execute(query)
 
-        services_runs = [
-            ServiceRunDB(**row) for row in result.fetchall()  # type: ignore[arg-type]
-        ]
+        services_runs = [ServiceRunDB.from_orm(row) for row in result.fetchall()]
         return services_runs
 
     async def total_service_runs_by_user_and_product_and_wallet(
@@ -251,7 +235,7 @@ class ResourceTrackerRepository(BaseRepository):
     ) -> list[ServiceRunDB]:
         async with self.db_engine.begin() as conn:
             query = (
-                self.service_runs_select_stmt()
+                self._service_runs_select_stmt()
                 .where(
                     (resource_tracker_service_runs.c.wallet_id == wallet_id)
                     & (resource_tracker_service_runs.c.product_name == product_name)
@@ -262,9 +246,7 @@ class ResourceTrackerRepository(BaseRepository):
             )
             result = await conn.execute(query)
 
-        services_runs = [
-            ServiceRunDB(**row) for row in result.fetchall()  # type: ignore[arg-type]
-        ]
+        services_runs = [ServiceRunDB.from_orm(row) for row in result.fetchall()]
         return services_runs
 
     async def total_service_runs_by_product_and_wallet(

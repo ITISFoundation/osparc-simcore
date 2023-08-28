@@ -18,7 +18,7 @@ from models_library.wallets import WalletID
 from pydantic import BaseModel, PositiveInt
 
 
-class CreateServiceRun(BaseModel):
+class ServiceRunCreate(BaseModel):
     product_name: ProductName
     service_run_id: ServiceRunId
     wallet_id: WalletID
@@ -42,12 +42,12 @@ class CreateServiceRun(BaseModel):
     last_heartbeat_at: datetime
 
 
-class UpdateServiceRunLastHeartbeat(BaseModel):
+class ServiceRunLastHeartbeatUpdate(BaseModel):
     service_run_id: ServiceRunId
     last_heartbeat_at: datetime
 
 
-class UpdateServiceRunStoppedAt(BaseModel):
+class ServiceRunStoppedAtUpdate(BaseModel):
     service_run_id: ServiceRunId
     stopped_at: datetime
     service_run_status: ServiceRunStatus
@@ -72,6 +72,9 @@ class ServiceRunDB(BaseModel):
     started_at: datetime
     stopped_at: datetime | None
     service_run_status: ServiceRunStatus
+
+    class Config:
+        orm_mode = True
 
 
 class ServiceRunPage(NamedTuple):

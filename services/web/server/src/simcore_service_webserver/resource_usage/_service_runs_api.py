@@ -1,5 +1,5 @@
 from aiohttp import web
-from models_library.api_schemas_webserver.wallets import WalletWithUserPermissions
+from models_library.api_schemas_webserver.wallets import WalletGetPermissions
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -16,7 +16,7 @@ async def list_usage_services(
     wallet_id: WalletID | None,
     offset: int,
     limit: NonNegativeInt,
-):
+) -> dict:
     if not wallet_id:
         data: dict = (
             await resource_tracker_client.list_service_runs_by_user_and_product(
@@ -28,7 +28,7 @@ async def list_usage_services(
             )
         )
     else:
-        wallet: WalletWithUserPermissions = (
+        wallet: WalletGetPermissions = (
             await wallet_api.get_wallet_with_permissions_by_user(
                 app=app, user_id=user_id, wallet_id=wallet_id
             )

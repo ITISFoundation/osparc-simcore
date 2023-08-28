@@ -4,7 +4,7 @@
 # pylint: disable=unused-variable
 
 from datetime import datetime, timezone
-from typing import Any, AsyncIterable, Callable, Final
+from typing import Any, AsyncIterable, Callable
 
 import faker
 import httpx
@@ -67,39 +67,38 @@ async def async_client(initialized_app: FastAPI) -> AsyncIterable[httpx.AsyncCli
         yield client
 
 
-FAKE: Final = faker.Faker()
+@pytest.fixture
+def random_resource_tracker_service_run(faker: Faker) -> Callable[..., dict[str, Any]]:
+    def _creator(**overrides) -> dict[str, Any]:
+        data = dict(
+            product_name="osparc",
+            service_run_id=faker.uuid4(),
+            wallet_id=faker.pyint(),
+            wallet_name=faker.word(),
+            pricing_plan_id=faker.pyint(),
+            pricing_detail_id=faker.pyint(),
+            simcore_user_agent=faker.word(),
+            user_id=faker.pyint(),
+            user_email=faker.email(),
+            project_id=faker.uuid4(),
+            project_name=faker.word(),
+            node_id=faker.uuid4(),
+            node_name=faker.word(),
+            service_key="simcore/services/dynamic/jupyter-smash",
+            service_version="3.0.7",
+            service_type="DYNAMIC_SERVICE",
+            service_resources={},
+            service_additional_metadata={},
+            started_at=datetime.now(tz=timezone.utc),
+            stopped_at=None,
+            service_run_status="RUNNING",
+            modified=datetime.now(tz=timezone.utc),
+            last_heartbeat_at=datetime.now(tz=timezone.utc),
+        )
+        data.update(overrides)
+        return data
 
-
-def random_resource_tracker_service_run(**overrides) -> dict[str, Any]:
-    """Generates random fake data resource tracker service runs DATABASE table"""
-    data = dict(
-        product_name="osparc",
-        service_run_id=FAKE.uuid4(),
-        wallet_id=FAKE.pyint(),
-        wallet_name=FAKE.word(),
-        pricing_plan_id=FAKE.pyint(),
-        pricing_detail_id=FAKE.pyint(),
-        simcore_user_agent=FAKE.word(),
-        user_id=FAKE.pyint(),
-        user_email=FAKE.email(),
-        project_id=FAKE.uuid4(),
-        project_name=FAKE.word(),
-        node_id=FAKE.uuid4(),
-        node_name=FAKE.word(),
-        service_key="simcore/services/dynamic/jupyter-smash",
-        service_version="3.0.7",
-        service_type="DYNAMIC_SERVICE",
-        service_resources={},
-        service_additional_metadata={},
-        started_at=datetime.now(tz=timezone.utc),
-        stopped_at=None,
-        service_run_status="RUNNING",
-        modified=datetime.now(tz=timezone.utc),
-        last_heartbeat_at=datetime.now(tz=timezone.utc),
-    )
-
-    data.update(overrides)
-    return data
+    return _creator
 
 
 @pytest.fixture()

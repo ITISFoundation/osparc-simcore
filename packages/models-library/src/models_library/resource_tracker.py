@@ -1,19 +1,21 @@
-import enum
+from enum import auto
 from typing import TypeAlias
 
 from pydantic import PositiveInt
+
+from .utils.enums import StrAutoEnum
 
 ServiceRunId: TypeAlias = str
 PricingPlanId: TypeAlias = PositiveInt
 PricingDetailId: TypeAlias = PositiveInt
 
 
-class ResourceTrackerServiceType(str, enum.Enum):
-    COMPUTATIONAL_SERVICE = "COMPUTATIONAL_SERVICE"
-    DYNAMIC_SERVICE = "DYNAMIC_SERVICE"
+class ResourceTrackerServiceType(StrAutoEnum):
+    COMPUTATIONAL_SERVICE = auto()
+    DYNAMIC_SERVICE = auto()
 
 
-class ServiceRunStatus(str, enum.Enum):
-    RUNNING = "RUNNING"
-    SUCCESS = "SUCCESS"
-    ERROR = "ERROR"
+class ServiceRunStatus(StrAutoEnum):
+    RUNNING = auto()
+    SUCCESS = auto()
+    ERROR = auto()

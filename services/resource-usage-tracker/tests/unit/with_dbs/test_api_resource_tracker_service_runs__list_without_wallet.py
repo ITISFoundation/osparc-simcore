@@ -10,8 +10,6 @@ from simcore_postgres_database.models.resource_tracker_service_runs import (
 from starlette import status
 from yarl import URL
 
-from .conftest import random_resource_tracker_service_run
-
 pytest_simcore_core_services_selection = [
     "postgres",
 ]
@@ -25,7 +23,9 @@ _USER_ID = 1
 
 
 @pytest.fixture()
-def resource_tracker_service_run_db(postgres_db: sa.engine.Engine) -> Iterator[list]:
+def resource_tracker_service_run_db(
+    postgres_db: sa.engine.Engine, random_resource_tracker_service_run
+) -> Iterator[list]:
     with postgres_db.connect() as con:
         # removes all projects before continuing
         con.execute(resource_tracker_service_runs.delete())
@@ -54,7 +54,7 @@ async def test_list_service_run_without_wallet(
     url = URL("/v1/usage/services")
 
     response = await async_client.get(
-        f'{url.with_query({"user_id": _USER_ID, "product_name": "osparc"})}'  # , "wallet_id": "", "access_all_wallet_usage": ""
+        f'{url.with_query({"user_id": _USER_ID, "product_name": "osparc"})}'
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()

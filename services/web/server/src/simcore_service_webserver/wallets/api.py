@@ -1,10 +1,7 @@
 import logging
 
 from aiohttp import web
-from models_library.api_schemas_webserver.wallets import (
-    WalletGet,
-    WalletWithUserPermissions,
-)
+from models_library.api_schemas_webserver.wallets import WalletGet, WalletGetPermissions
 from models_library.users import UserID
 from models_library.wallets import UserWalletDB, WalletID
 
@@ -44,10 +41,10 @@ async def get_wallet_with_permissions_by_user(
     app: web.Application,
     user_id: UserID,
     wallet_id: WalletID,
-) -> WalletWithUserPermissions:
+) -> WalletGetPermissions:
     wallet: UserWalletDB = await db.get_wallet_for_user(
         app=app, user_id=user_id, wallet_id=wallet_id
     )
 
-    output = WalletWithUserPermissions.construct(**wallet.dict())
+    output = WalletGetPermissions.construct(**wallet.dict())
     return output

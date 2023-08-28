@@ -21,7 +21,7 @@ class WalletGetWithAvailableCredits(WalletGet):
     available_credits: float
 
 
-class WalletWithUserPermissions(WalletGet):
+class WalletGetPermissions(WalletGet):
     read: bool
     write: bool
     delete: bool

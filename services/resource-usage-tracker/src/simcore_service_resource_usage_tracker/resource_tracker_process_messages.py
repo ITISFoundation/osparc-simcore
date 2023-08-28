@@ -14,9 +14,9 @@ from models_library.resource_tracker import ResourceTrackerServiceType, ServiceR
 from pydantic import parse_raw_as
 
 from .models.resource_tracker_service_run import (
-    CreateServiceRun,
-    UpdateServiceRunLastHeartbeat,
-    UpdateServiceRunStoppedAt,
+    ServiceRunCreate,
+    ServiceRunLastHeartbeatUpdate,
+    ServiceRunStoppedAtUpdate,
 )
 from .modules.db.repositories.resource_tracker import ResourceTrackerRepository
 
@@ -65,7 +65,7 @@ async def _process_start_event(
         else ResourceTrackerServiceType.DYNAMIC_SERVICE
     )
 
-    create_service_run = CreateServiceRun(
+    create_service_run = ServiceRunCreate(
         product_name=msg.product_name,
         service_run_id=msg.service_run_id,
         wallet_id=msg.wallet_id,
@@ -95,7 +95,7 @@ async def _process_heartbeat_event(
     resource_tacker_repo: ResourceTrackerRepository,
     msg: RabbitResourceTrackingHeartbeatMessage,
 ):
-    update_service_run_last_heartbeat = UpdateServiceRunLastHeartbeat(
+    update_service_run_last_heartbeat = ServiceRunLastHeartbeatUpdate(
         service_run_id=msg.service_run_id, last_heartbeat_at=msg.created_at
     )
 
@@ -108,7 +108,7 @@ async def _process_stop_event(
     resource_tacker_repo: ResourceTrackerRepository,
     msg: RabbitResourceTrackingStoppedMessage,
 ):
-    update_service_run_stopped_at = UpdateServiceRunStoppedAt(
+    update_service_run_stopped_at = ServiceRunStoppedAtUpdate(
         service_run_id=msg.service_run_id,
         stopped_at=msg.created_at,
         service_run_status=ServiceRunStatus.SUCCESS

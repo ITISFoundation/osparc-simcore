@@ -10,8 +10,6 @@ from simcore_postgres_database.models.resource_tracker_service_runs import (
 from starlette import status
 from yarl import URL
 
-from .conftest import random_resource_tracker_service_run
-
 pytest_simcore_core_services_selection = [
     "postgres",
 ]
@@ -27,7 +25,9 @@ _WALLET_ID = 6
 
 
 @pytest.fixture()
-def resource_tracker_service_run_db(postgres_db: sa.engine.Engine) -> Iterator[list]:
+def resource_tracker_service_run_db(
+    postgres_db: sa.engine.Engine, random_resource_tracker_service_run
+) -> Iterator[list]:
     with postgres_db.connect() as con:
         con.execute(resource_tracker_service_runs.delete())
         created_services = []
