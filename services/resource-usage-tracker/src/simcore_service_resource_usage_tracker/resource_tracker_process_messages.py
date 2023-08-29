@@ -1,5 +1,5 @@
 import logging
-from typing import cast
+from typing import Awaitable, Callable
 
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
@@ -27,29 +27,13 @@ async def process_message(
     app: FastAPI, data: bytes  # pylint: disable=unused-argument
 ) -> bool:
     rabbit_message = parse_raw_as(RabbitResourceTrackingMessages, data)
-    rabbit_message_type = type(rabbit_message)
-
     resource_tacker_repo: ResourceTrackerRepository = ResourceTrackerRepository(
         db_engine=app.state.engine
     )
 
-    if rabbit_message_type == RabbitResourceTrackingStartedMessage:
-        await _process_start_event(
-            resource_tacker_repo,
-            cast(RabbitResourceTrackingStartedMessage, rabbit_message),
-        )
-    elif rabbit_message_type == RabbitResourceTrackingHeartbeatMessage:
-        await _process_heartbeat_event(
-            resource_tacker_repo,
-            cast(RabbitResourceTrackingHeartbeatMessage, rabbit_message),
-        )
-    elif rabbit_message_type == RabbitResourceTrackingStoppedMessage:
-        await _process_stop_event(
-            resource_tacker_repo,
-            cast(RabbitResourceTrackingStoppedMessage, rabbit_message),
-        )
-    else:
-        raise NotImplementedError
+    await RABBIT_MSG_TYPE_TO_PROCESS_HANDLER[rabbit_message.message_type](
+        resource_tacker_repo, rabbit_message
+    )
 
     _logger.debug("%s", data)
     return True
@@ -72,6 +56,7 @@ async def _process_start_event(
         wallet_name=msg.wallet_name,
         pricing_plan_id=None,
         pricing_detail_id=None,
+        pricing_detail_cost_per_unit=None,
         simcore_user_agent=msg.simcore_user_agent,
         user_id=msg.user_id,
         user_email=msg.user_email,
@@ -119,3 +104,10 @@ async def _process_stop_event(
     await resource_tacker_repo.update_service_run_stopped_at(
         update_service_run_stopped_at
     )
+
+
+RABBIT_MSG_TYPE_TO_PROCESS_HANDLER: dict[str, Callable[..., Awaitable[None]],] = {
+    "tracking_started": _process_start_event,
+    "tracking_heartbeat": _process_heartbeat_event,
+    "tracking_stopped": _process_stop_event,
+}

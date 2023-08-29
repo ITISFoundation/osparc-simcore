@@ -41,18 +41,18 @@ async def test_process_event_functions(
     )
     await _process_start_event(resource_tacker_repo, msg)
     output = await assert_service_runs_db_row(postgres_db, msg.service_run_id)
-    assert output[19] is None  # stopped_at
-    assert output[20] == "RUNNING"  # status
-    first_occurence_of_last_heartbeat_at = output[22]  # last_heartbeat_at
+    assert output[20] is None  # stopped_at
+    assert output[21] == "RUNNING"  # status
+    first_occurence_of_last_heartbeat_at = output[23]  # last_heartbeat_at
 
     heartbeat_msg = RabbitResourceTrackingHeartbeatMessage(
         service_run_id=msg.service_run_id, created_at=datetime.now(tz=timezone.utc)
     )
     await _process_heartbeat_event(resource_tacker_repo, heartbeat_msg)
     output = await assert_service_runs_db_row(postgres_db, msg.service_run_id)
-    assert output[19] is None  # stopped_at
-    assert output[20] == "RUNNING"  # status
-    first_occurence_of_last_heartbeat_at < output[22]  # last_heartbeat_at
+    assert output[20] is None  # stopped_at
+    assert output[21] == "RUNNING"  # status
+    first_occurence_of_last_heartbeat_at < output[23]  # last_heartbeat_at
 
     stopped_msg = RabbitResourceTrackingStoppedMessage(
         service_run_id=msg.service_run_id,
@@ -61,5 +61,5 @@ async def test_process_event_functions(
     )
     await _process_stop_event(resource_tacker_repo, stopped_msg)
     output = await assert_service_runs_db_row(postgres_db, msg.service_run_id)
-    assert output[19] is not None  # stopped_at
-    assert output[20] == "SUCCESS"  # status
+    assert output[20] is not None  # stopped_at
+    assert output[21] == "SUCCESS"  # status

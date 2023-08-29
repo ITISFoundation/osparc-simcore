@@ -21,10 +21,11 @@ from pydantic import BaseModel, PositiveInt
 class ServiceRunCreate(BaseModel):
     product_name: ProductName
     service_run_id: ServiceRunId
-    wallet_id: WalletID
-    wallet_name: str
+    wallet_id: WalletID | None
+    wallet_name: str | None
     pricing_plan_id: PricingPlanId | None
     pricing_detail_id: PricingDetailId | None
+    pricing_detail_cost_per_unit: float | None
     simcore_user_agent: str
     user_id: UserID
     user_email: str
@@ -59,6 +60,7 @@ class ServiceRunDB(BaseModel):
     wallet_name: str | None
     pricing_plan_id: PricingPlanId | None
     pricing_detail_id: PricingDetailId | None
+    pricing_detail_cost_per_unit: float | None
     user_id: UserID
     user_email: str
     project_id: ProjectID

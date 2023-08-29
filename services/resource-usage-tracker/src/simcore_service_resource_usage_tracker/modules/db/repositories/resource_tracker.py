@@ -36,6 +36,7 @@ class ResourceTrackerRepository(BaseRepository):
             resource_tracker_service_runs.c.wallet_name,
             resource_tracker_service_runs.c.pricing_plan_id,
             resource_tracker_service_runs.c.pricing_detail_id,
+            resource_tracker_service_runs.c.pricing_detail_cost_per_unit,
             resource_tracker_service_runs.c.user_id,
             resource_tracker_service_runs.c.user_email,
             resource_tracker_service_runs.c.project_id,
@@ -62,6 +63,7 @@ class ResourceTrackerRepository(BaseRepository):
                     wallet_name=data.wallet_name,
                     pricing_plan_id=data.pricing_plan_id,
                     pricing_detail_id=data.pricing_detail_id,
+                    pricing_detail_cost_per_unit=data.pricing_detail_cost_per_unit,
                     simcore_user_agent=data.simcore_user_agent,
                     user_id=data.user_id,
                     user_email=data.user_email,
@@ -136,7 +138,7 @@ class ResourceTrackerRepository(BaseRepository):
                         == data.service_run_id
                     )
                     & (
-                        resource_tracker_service_runs.c.service_run_status  ## .is_
+                        resource_tracker_service_runs.c.service_run_status
                         == ServiceRunStatus.RUNNING
                     )
                 )

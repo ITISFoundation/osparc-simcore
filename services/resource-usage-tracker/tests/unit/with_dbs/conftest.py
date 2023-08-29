@@ -131,7 +131,7 @@ async def assert_service_runs_db_row(
                 row: dict | None = result.first()
                 assert row
                 if status:
-                    assert row[20] == status
+                    assert row[21] == status
                 return row
 
 
@@ -156,8 +156,11 @@ def random_rabbit_message_start(
             "channel_name": "io.simcore.service.tracking",
             "service_run_id": faker.uuid4(),
             "created_at": datetime.now(timezone.utc),
+            "message_type": "tracking_started",
             "wallet_id": faker.pyint(),
             "wallet_name": faker.pystr(),
+            "pricing_plan_id": faker.pyint(),
+            "pricing_detail_id": faker.pyint(),
             "product_name": "osparc",
             "simcore_user_agent": faker.pystr(),
             "user_id": faker.pyint(),
