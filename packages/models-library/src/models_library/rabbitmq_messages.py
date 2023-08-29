@@ -188,8 +188,11 @@ class RabbitResourceTrackingStartedMessage(RabbitResourceTrackingBaseMessage):
         default="tracking_started", const=True
     )
 
-    wallet_id: WalletID
-    wallet_name: str
+    wallet_id: WalletID | None
+    wallet_name: str | None
+
+    pricing_plan_id: int | None
+    pricing_detail_id: int | None
 
     product_name: str
     simcore_user_agent: str

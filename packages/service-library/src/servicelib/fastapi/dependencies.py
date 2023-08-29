@@ -1,7 +1,8 @@
 """ Common utils for api/dependencies
 """
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from fastapi import FastAPI, Request
 
