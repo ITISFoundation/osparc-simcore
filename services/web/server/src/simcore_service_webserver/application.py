@@ -27,6 +27,7 @@ from .login.plugin import setup_login
 from .long_running_tasks import setup_long_running_tasks
 from .meta_modeling.plugin import setup_meta_modeling
 from .notifications.plugin import setup_notifications
+from .payments.plugin import setup_payments
 from .products.plugin import setup_products
 from .projects.plugin import setup_projects
 from .publications.plugin import setup_publications
@@ -60,9 +61,8 @@ def create_application() -> web.Application:
     settings = setup_settings(app)
 
     # WARNING: setup order matters
-    # TODO: create dependency mechanism
-    # and compute setup order https://github.com/ITISFoundation/osparc-simcore/issues/1142
-    #
+    # NOTE: compute setup order https://github.com/ITISFoundation/osparc-simcore/issues/1142
+
     setup_remote_debugging(app)
 
     # core modules
@@ -118,6 +118,7 @@ def create_application() -> web.Application:
     setup_tags(app)
 
     # wallets
+    setup_payments(app)
     setup_wallets(app)
 
     setup_announcements(app)
@@ -127,14 +128,14 @@ def create_application() -> web.Application:
     setup_clusters(app)
 
     async def welcome_banner(_app: web.Application):
-        print(WELCOME_MSG, flush=True)
+        print(WELCOME_MSG, flush=True)  # noqa: T201
         if settings.WEBSERVER_GARBAGE_COLLECTOR:
-            print("with", WELCOME_GC_MSG, flush=True)
+            print("with", WELCOME_GC_MSG, flush=True)  # noqa: T201
         if settings.WEBSERVER_DB_LISTENER:
-            print("with", WELCOME_DB_LISTENER_MSG, flush=True)
+            print("with", WELCOME_DB_LISTENER_MSG, flush=True)  # noqa: T201
 
     async def finished_banner(_app: web.Application):
-        print(info.get_finished_banner(), flush=True)
+        print(info.get_finished_banner(), flush=True)  # noqa: T201
 
     # NOTE: *last* events
     app.on_startup.append(welcome_banner)
@@ -155,4 +156,7 @@ def run_service(app: web.Application, config: dict[str, Any]):
     )
 
 
-__all__ = ("create_application", "run_service")
+__all__: tuple[str, ...] = (
+    "create_application",
+    "run_service",
+)

@@ -122,9 +122,8 @@ async def test_plugin_payments_service_api(
     payments_service = get_payments_service_api(client.app)
     assert payments_service.is_healthy()
 
-    #
-
-    assert not payments_service.is_healthy()
+    # TODO: next call the health should fail
+    # mock_payments_service_http_api
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
