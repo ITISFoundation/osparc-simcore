@@ -4,7 +4,6 @@ from abc import abstractmethod
 from enum import Enum, auto
 from typing import Any, Literal, TypeAlias
 
-from models_library.resource_tracker import PricingDetailId, PricingPlanId
 from pydantic import BaseModel, Field
 from pydantic.types import NonNegativeFloat
 
@@ -192,8 +191,8 @@ class RabbitResourceTrackingStartedMessage(RabbitResourceTrackingBaseMessage):
     wallet_id: WalletID | None
     wallet_name: str | None
 
-    pricing_plan_id: PricingPlanId | None
-    pricing_detail_id: PricingDetailId | None
+    pricing_plan_id: int | None
+    pricing_detail_id: int | None
 
     product_name: str
     simcore_user_agent: str
