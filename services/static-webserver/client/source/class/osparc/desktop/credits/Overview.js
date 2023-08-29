@@ -175,7 +175,7 @@ qx.Class.define("osparc.desktop.credits.Overview", {
           converter: isDefault => isDefault ? "@FontAwesome5Solid/star/20" : "@FontAwesome5Regular/star/20"
         });
         wallet.bind("defaultWallet", starImage, "textColor", {
-          converter: isDefault => isDefault ? "strong-main" : null
+          converter: isDefault => isDefault ? "strong-main" : "text"
         });
         layout.add(starImage, {
           column,
