@@ -2,9 +2,9 @@
 
 import logging
 from threading import Thread
+from typing import Any
 
 import pytest
-from pytest import LogCaptureFixture
 from servicelib.logging_utils import (
     LogLevelInt,
     LogMessageStr,
@@ -20,7 +20,7 @@ _logger = logging.getLogger(__name__)
 @pytest.mark.parametrize("logger", [None, _logger])
 @pytest.mark.parametrize("log_traceback", [True, False])
 async def test_error_regression_async_def(
-    caplog: LogCaptureFixture, logger: logging.Logger | None, log_traceback: bool
+    caplog: pytest.LogCaptureFixture, logger: logging.Logger | None, log_traceback: bool
 ):
     @log_decorator(logger, log_traceback=log_traceback)
     async def _raising_error() -> None:
@@ -39,7 +39,7 @@ async def test_error_regression_async_def(
 @pytest.mark.parametrize("logger", [None, _logger])
 @pytest.mark.parametrize("log_traceback", [True, False])
 async def test_error_regression_def(
-    caplog: LogCaptureFixture, logger: logging.Logger | None, log_traceback: bool
+    caplog: pytest.LogCaptureFixture, logger: logging.Logger | None, log_traceback: bool
 ):
     @log_decorator(logger, log_traceback=log_traceback)
     def _raising_error() -> None:
@@ -83,7 +83,9 @@ def test_guess_message_log_level(
 
 
 @pytest.mark.parametrize("with_log_duration", [True, False])
-def test_log_context(caplog: LogCaptureFixture, with_log_duration: bool):
+def test_log_context_with_log_duration(
+    caplog: pytest.LogCaptureFixture, with_log_duration: bool
+):
     caplog.clear()
 
     with log_context(_logger, logging.INFO, "test", log_duration=with_log_duration):
@@ -94,3 +96,25 @@ def test_log_context(caplog: LogCaptureFixture, with_log_duration: bool):
         assert "Finished test in " in caplog.text
     else:
         assert "Finished test" in caplog.text
+
+
+@pytest.mark.parametrize(
+    "msg, args, extra",
+    [
+        ("nothing", (), None),
+        ("format %s", ("this_arg",), None),
+        ("only extra", (), {"only": "extra"}),
+        ("format %s", ("this_arg",), {"me": "he"}),
+    ],
+)
+def test_log_context(
+    caplog: pytest.LogCaptureFixture,
+    msg: str,
+    args: tuple[Any, ...],
+    extra: dict[str, Any] | None,
+):
+    caplog.clear()
+
+    with log_context(_logger, logging.INFO, msg, *args, extra=extra):
+        ...
+    assert len(caplog.messages) == 2

@@ -14,7 +14,7 @@ from collections.abc import Callable
 from contextlib import contextmanager
 from datetime import datetime
 from inspect import getframeinfo, stack
-from typing import TypeAlias, TypedDict
+from typing import Any, TypeAlias, TypedDict
 
 log = logging.getLogger(__name__)
 
@@ -242,19 +242,24 @@ def log_context(
     msg: str,
     *args,
     log_duration: bool = False,
-    **kwargs,
+    extra: dict[str, Any] | None = None,
 ):
     # NOTE: preserves original signature https://docs.python.org/3/library/logging.html#logging.Logger.log
     start = datetime.now()  # noqa: DTZ005
     msg = un_capitalize(msg.strip())
-    logger.log(level, "Starting %s ...", msg, *args, **kwargs)
+
+    kwargs: dict[str, Any] = {}
+    if extra:
+        kwargs["extra"] = extra
+
+    logger.log(level, "Starting " + msg + " ...", *args, **kwargs)
     yield
     duration = (
         f" in {(datetime.now() - start ).total_seconds()}s"  # noqa: DTZ005
         if log_duration
         else ""
     )
-    logger.log(level, "Finished %s%s", msg, duration, *args, **kwargs)
+    logger.log(level, "Finished " + msg + duration, *args, **kwargs)
 
 
 class LogExtra(TypedDict, total=False):
