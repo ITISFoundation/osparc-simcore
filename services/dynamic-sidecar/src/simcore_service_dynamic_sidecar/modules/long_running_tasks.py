@@ -208,7 +208,7 @@ async def task_create_service_containers(
             "Marked sidecar as unhealthy, see below for details\n:%s", message
         )
         await post_sidecar_log_message(
-            app, "could not user services", log_level=logging.ERROR
+            app, "could not start user services", log_level=logging.ERROR
         )
 
     return shared_store.container_names
