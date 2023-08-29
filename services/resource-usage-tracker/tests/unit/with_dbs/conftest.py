@@ -15,6 +15,7 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import (
     RabbitResourceTrackingHeartbeatMessage,
+    RabbitResourceTrackingMessageType,
     RabbitResourceTrackingStartedMessage,
 )
 from pytest import MonkeyPatch
@@ -156,7 +157,7 @@ def random_rabbit_message_start(
             "channel_name": "io.simcore.service.tracking",
             "service_run_id": faker.uuid4(),
             "created_at": datetime.now(timezone.utc),
-            "message_type": "tracking_started",
+            "message_type": RabbitResourceTrackingMessageType.TRACKING_STARTED,
             "wallet_id": faker.pyint(),
             "wallet_name": faker.pystr(),
             "pricing_plan_id": faker.pyint(),

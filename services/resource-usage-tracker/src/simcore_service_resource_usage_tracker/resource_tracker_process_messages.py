@@ -6,6 +6,7 @@ from fastapi.encoders import jsonable_encoder
 from models_library.rabbitmq_messages import (
     RabbitResourceTrackingHeartbeatMessage,
     RabbitResourceTrackingMessages,
+    RabbitResourceTrackingMessageType,
     RabbitResourceTrackingStartedMessage,
     RabbitResourceTrackingStoppedMessage,
     SimcorePlatformStatus,
@@ -54,8 +55,8 @@ async def _process_start_event(
         service_run_id=msg.service_run_id,
         wallet_id=msg.wallet_id,
         wallet_name=msg.wallet_name,
-        pricing_plan_id=None,
-        pricing_detail_id=None,
+        pricing_plan_id=msg.pricing_plan_id,
+        pricing_detail_id=msg.pricing_detail_id,
         pricing_detail_cost_per_unit=None,
         simcore_user_agent=msg.simcore_user_agent,
         user_id=msg.user_id,
@@ -107,7 +108,7 @@ async def _process_stop_event(
 
 
 RABBIT_MSG_TYPE_TO_PROCESS_HANDLER: dict[str, Callable[..., Awaitable[None]],] = {
-    "tracking_started": _process_start_event,
-    "tracking_heartbeat": _process_heartbeat_event,
-    "tracking_stopped": _process_stop_event,
+    RabbitResourceTrackingMessageType.TRACKING_STARTED: _process_start_event,
+    RabbitResourceTrackingMessageType.TRACKING_HEARTBEAT: _process_heartbeat_event,
+    RabbitResourceTrackingMessageType.TRACKING_STOPPED: _process_stop_event,
 }
