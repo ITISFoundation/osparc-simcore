@@ -221,16 +221,19 @@ qx.Class.define("osparc.desktop.credits.Overview", {
         "My Wallet",
         "A payment"
       ]];
+      const maxTransactions = 4;
       entries.forEach((entry, row) => {
-        entry.forEach((data, column) => {
-          const text = new qx.ui.basic.Label(data.toString()).set({
-            font: "text-13"
+        if (row < maxTransactions) {
+          entry.forEach((data, column) => {
+            const text = new qx.ui.basic.Label(data.toString()).set({
+              font: "text-13"
+            });
+            layout.add(text, {
+              row: row+1,
+              column
+            });
           });
-          layout.add(text, {
-            row: row+1,
-            column
-          });
-        });
+        }
       });
       return layout;
     },
@@ -269,16 +272,19 @@ qx.Class.define("osparc.desktop.credits.Overview", {
         "13:14",
         "Running"
       ]];
+      const maxUsage = 4;
       entries.forEach((entry, row) => {
-        entry.forEach((data, column) => {
-          const text = new qx.ui.basic.Label(data.toString()).set({
-            font: "text-13"
+        if (row < maxUsage) {
+          entry.forEach((data, column) => {
+            const text = new qx.ui.basic.Label(data.toString()).set({
+              font: "text-13"
+            });
+            layout.add(text, {
+              row: row+1,
+              column
+            });
           });
-          layout.add(text, {
-            row: row+1,
-            column
-          });
-        });
+        }
       });
       return layout;
     }
