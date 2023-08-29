@@ -130,6 +130,10 @@ async def test_cluster_management_core_properly_unused_instances(
     await _assert_cluster_exist_and_state(
         ec2_client, instances=created_clusters, state="running"
     )
+    mocked_dask_ping_gateway.ping_gateway.assert_called_once()
+    mocked_dask_ping_gateway.ping_gateway.reset_mock()
+    mocked_dask_ping_gateway.is_gateway_busy.assert_called_once()
+    mocked_dask_ping_gateway.is_gateway_busy.reset_mock()
 
     # running the cluster management task after the heartbeat came in shall not remove anything
     await asyncio.sleep(_FAST_TIME_BEFORE_TERMINATION_SECONDS + 1)
@@ -138,6 +142,10 @@ async def test_cluster_management_core_properly_unused_instances(
     await _assert_cluster_exist_and_state(
         ec2_client, instances=created_clusters, state="running"
     )
+    mocked_dask_ping_gateway.ping_gateway.assert_called_once()
+    mocked_dask_ping_gateway.ping_gateway.reset_mock()
+    mocked_dask_ping_gateway.is_gateway_busy.assert_called_once()
+    mocked_dask_ping_gateway.is_gateway_busy.reset_mock()
 
     # after waiting the termination time, running the task shall remove the cluster
     await asyncio.sleep(_FAST_TIME_BEFORE_TERMINATION_SECONDS + 1)
@@ -145,3 +153,5 @@ async def test_cluster_management_core_properly_unused_instances(
     await _assert_cluster_exist_and_state(
         ec2_client, instances=created_clusters, state="terminated"
     )
+    mocked_dask_ping_gateway.ping_gateway.assert_called_once()
+    mocked_dask_ping_gateway.is_gateway_busy.assert_called_once()
