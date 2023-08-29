@@ -122,19 +122,22 @@ qx.Class.define("osparc.desktop.credits.Overview", {
 
         const wallet = wallets[i];
 
+        const maxSize = 20;
         // thumbnail or shared or not shared
         const thumbnail = new qx.ui.basic.Image().set({
           backgroundColor: "transparent",
           alignX: "center",
-          alignY: "middle"
+          alignY: "middle",
+          maxHeight: maxSize,
+          maxWidth: maxSize
         });
         const value = wallet.getThumbnail();
         if (value) {
           thumbnail.setSource(value);
         } else if (wallet.getAccessRights() && wallet.getAccessRights().length > 1) {
-          thumbnail.setSource(osparc.utils.Icons.organization(18));
+          thumbnail.setSource(osparc.utils.Icons.organization(maxSize-4));
         } else {
-          thumbnail.setSource(osparc.utils.Icons.user(18));
+          thumbnail.setSource(osparc.utils.Icons.user(maxSize-4));
         }
         layout.add(thumbnail, {
           column,
