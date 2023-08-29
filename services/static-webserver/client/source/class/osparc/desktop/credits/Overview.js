@@ -191,6 +191,23 @@ qx.Class.define("osparc.desktop.credits.Overview", {
       const grid = new qx.ui.layout.Grid(12, 8);
       const layout = new qx.ui.container.Composite(grid);
 
+      const headers = [
+        "Date",
+        "Credits",
+        "Price",
+        "Wallet",
+        "Comment"
+      ];
+      headers.forEach((header, column) => {
+        const text = new qx.ui.basic.Label(header).set({
+          font: "text-14"
+        });
+        layout.add(text, {
+          row: 0,
+          column
+        });
+      });
+
       const entries = [[
         osparc.utils.Utils.formatDateAndTime(new Date()),
         10,
@@ -210,7 +227,7 @@ qx.Class.define("osparc.desktop.credits.Overview", {
             font: "text-13"
           });
           layout.add(text, {
-            row,
+            row: row+1,
             column
           });
         });
@@ -221,6 +238,23 @@ qx.Class.define("osparc.desktop.credits.Overview", {
     __createUsageView: function() {
       const grid = new qx.ui.layout.Grid(12, 8);
       const layout = new qx.ui.container.Composite(grid);
+
+      const headers = [
+        "Project",
+        "Wallet",
+        "Date",
+        "Duration",
+        "Status"
+      ];
+      headers.forEach((header, column) => {
+        const text = new qx.ui.basic.Label(header).set({
+          font: "text-14"
+        });
+        layout.add(text, {
+          row: 0,
+          column
+        });
+      });
 
       const entries = [[
         "Sim4life project",
@@ -241,7 +275,7 @@ qx.Class.define("osparc.desktop.credits.Overview", {
             font: "text-13"
           });
           layout.add(text, {
-            row,
+            row: row+1,
             column
           });
         });
