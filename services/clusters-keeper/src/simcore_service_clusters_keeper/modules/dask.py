@@ -9,7 +9,8 @@ from ..models import EC2InstanceData
 
 _logger = logging.getLogger(__name__)
 
-_USERNAME = "anderegg@itis.swiss"
+# NOTE: this needs to be returned, or maybe we should just ditch the dask gateway completely
+_USERNAME = "osparc-cluster"
 
 
 async def ping_gateway(
@@ -27,8 +28,12 @@ async def ping_gateway(
             cluster_reports = await asyncio.wait_for(gateway.list_clusters(), timeout=5)
         _logger.info("found %s clusters", len(cluster_reports))
         return True
-    except (ClientError, asyncio.TimeoutError):
-        _logger.info("dask-gateway is unavailable", exc_info=True)
+    except asyncio.TimeoutError:
+        _logger.debug("gateway ping timed-out, it is still starting...")
+    except ClientError:
+        # this could happen if the gateway is not properly started, but it should not last
+        # unless the wrong password is used.
+        _logger.info("dask-gateway is not reachable", exc_info=True)
 
     return False
 

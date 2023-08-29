@@ -4,12 +4,15 @@
 
 import asyncio
 from typing import Final
+from unittest.mock import MagicMock
 
 import pytest
+from attr import dataclass
 from faker import Faker
 from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_clusters_keeper.models import EC2InstanceData
@@ -20,6 +23,7 @@ from simcore_service_clusters_keeper.modules.clusters import (
 from simcore_service_clusters_keeper.modules.clusters_management_core import (
     check_clusters,
 )
+from simcore_service_clusters_keeper.modules.dask import is_gateway_busy, ping_gateway
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceStateNameType
 
@@ -85,6 +89,28 @@ async def _assert_cluster_exist_and_state(
             assert instance["State"]["Name"] == state
 
 
+@dataclass
+class MockedDaskModule:
+    ping_gateway: MagicMock
+    is_gateway_busy: MagicMock
+
+
+@pytest.fixture
+def mocked_dask_ping_gateway(mocker: MockerFixture) -> MockedDaskModule:
+    return MockedDaskModule(
+        ping_gateway=mocker.patch(
+            "simcore_service_clusters_keeper.modules.clusters_management_core.ping_gateway",
+            autospec=True,
+            return_value=True,
+        ),
+        is_gateway_busy=mocker.patch(
+            "simcore_service_clusters_keeper.modules.clusters_management_core.is_gateway_busy",
+            autospec=True,
+            return_value=True,
+        ),
+    )
+
+
 async def test_cluster_management_core_properly_unused_instances(
     disable_clusters_management_background_task: None,
     _base_configuration: None,
@@ -92,6 +118,7 @@ async def test_cluster_management_core_properly_unused_instances(
     user_id: UserID,
     wallet_id: WalletID,
     initialized_app: FastAPI,
+    mocked_dask_ping_gateway: MockedDaskModule,
 ):
     created_clusters = await create_cluster(
         initialized_app, user_id=user_id, wallet_id=wallet_id
