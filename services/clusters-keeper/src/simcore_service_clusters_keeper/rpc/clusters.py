@@ -20,7 +20,7 @@ async def get_or_create_cluster(
     It will also check that the underlying computational backend is up and running.
     Calling several time will always return the same cluster.
     """
-    ec2_instance = None
+    ec2_instance: EC2InstanceData | None = None
     try:
         ec2_instance = await clusters.get_cluster(
             app, user_id=user_id, wallet_id=wallet_id
@@ -37,8 +37,8 @@ async def get_or_create_cluster(
 
     cluster_get = ClusterGet.from_ec2_instance_data(ec2_instance, user_id, wallet_id)
 
-    if ec2_instance.state == "running" and await ping_gateway(ec2_instance):
-        ...
+    if ec2_instance.state == "running":
+        cluster_get.gateway_ready = await ping_gateway(ec2_instance)
 
     return cluster_get
 
