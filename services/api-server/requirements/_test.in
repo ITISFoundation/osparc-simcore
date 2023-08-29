@@ -28,3 +28,4 @@ respx
 sqlalchemy[mypy] # adds Mypy / Pep-484 Support for ORM Mappings SEE https://docs.sqlalchemy.org/en/20/orm/extensions/mypy.html
 types-boto3
 aioresponses
+openapi-core
