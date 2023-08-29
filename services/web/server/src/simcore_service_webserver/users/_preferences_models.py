@@ -81,7 +81,7 @@ class DoNotShowAnnouncementsFrontendUserPreference(BaseFrontendUserPreference):
 
     preference_identifier = "dontShowAnnouncements"
     value_type = ValueType.LIST
-    value: dict = Field(default_factory=list)
+    value: list = Field(default_factory=list)
 
 
 class ServicesFrontendUserPreference(BaseFrontendUserPreference):
