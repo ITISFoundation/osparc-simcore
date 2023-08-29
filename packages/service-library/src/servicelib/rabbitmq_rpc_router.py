@@ -8,6 +8,7 @@ import orjson
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import SecretStr
 from servicelib.logging_utils import log_catch, log_context
+from servicelib.rabbitmq_utils import RPCMethodName
 
 DecoratedCallable = TypeVar("DecoratedCallable", bound=Callable[..., Any])
 
@@ -20,7 +21,7 @@ _RPC_CUSTOM_ENCODER: dict[Any, Callable[[Any], Any]] = {
 
 @dataclass
 class RPCRouter:
-    routes: dict[str, Callable] = field(default_factory=dict)
+    routes: dict[RPCMethodName, Callable] = field(default_factory=dict)
 
     def expose(self) -> Callable[[DecoratedCallable], DecoratedCallable]:
         def decorator(func: DecoratedCallable) -> DecoratedCallable:
@@ -39,7 +40,7 @@ class RPCRouter:
                         )
                     )
 
-            self.routes[func.__name__] = wrapper
+            self.routes[RPCMethodName(func.__name__)] = wrapper
             return func
 
         return decorator
