@@ -61,12 +61,16 @@ class ClusterGet(BaseModel):
 
     @classmethod
     def from_ec2_instance_data(
-        cls, instance: EC2InstanceData, user_id: UserID, wallet_id: WalletID
+        cls,
+        instance: EC2InstanceData,
+        user_id: UserID,
+        wallet_id: WalletID,
+        gateway_password: SecretStr,
     ) -> "ClusterGet":
         return cls(
             endpoint=parse_obj_as(AnyUrl, f"http://{instance.aws_public_ip}"),
             authentication=SimpleAuthentication(
-                username="bing", password=SecretStr("bingo")
+                username=f"{user_id}", password=gateway_password
             ),
             state=_convert_ec2_state_to_cluster_state(instance.state),
             user_id=user_id,

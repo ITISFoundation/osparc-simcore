@@ -36,7 +36,7 @@ async def create_cluster(
             ),
         ),
         tags=creation_ec2_tags(app_settings, user_id=user_id, wallet_id=wallet_id),
-        startup_script=create_startup_script(),
+        startup_script=create_startup_script(app_settings),
         number_of_instances=1,
     )
 

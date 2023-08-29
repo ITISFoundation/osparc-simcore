@@ -9,7 +9,14 @@ from models_library.basic_types import (
     LogLevel,
     VersionTag,
 )
-from pydantic import Field, NonNegativeInt, PositiveInt, parse_obj_as, validator
+from pydantic import (
+    Field,
+    NonNegativeInt,
+    PositiveInt,
+    SecretStr,
+    parse_obj_as,
+    validator,
+)
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.rabbit import RabbitSettings
@@ -154,6 +161,16 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     CLUSTERS_KEEPER_MAX_MISSED_HEARTBEATS_BEFORE_CLUSTER_TERMINATION: NonNegativeInt = Field(
         default=5,
         description="Max number of missed heartbeats before a cluster is terminated",
+    )
+
+    CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG: str = Field(
+        default="master-github-latest",
+        description="defines the image tag to use for the computational backend",
+    )
+
+    CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_GATEWAY_PASSWORD: SecretStr = Field(
+        default=SecretStr("my_secure_P1ssword"),
+        description="very secure password, should change soon",
     )
 
     @cached_property

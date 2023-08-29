@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID
+from simcore_service_clusters_keeper.core.settings import get_application_settings
 
 from ..core.errors import Ec2InstanceNotFoundError
 from ..models import ClusterGet, EC2InstanceData
@@ -34,11 +35,19 @@ async def get_or_create_cluster(
         assert len(new_ec2_instances) == 1  # nosec
         ec2_instance = new_ec2_instances[0]
     assert ec2_instance is not None  # nosec
-
-    cluster_get = ClusterGet.from_ec2_instance_data(ec2_instance, user_id, wallet_id)
+    app_settings = get_application_settings(app)
+    cluster_get = ClusterGet.from_ec2_instance_data(
+        ec2_instance,
+        user_id,
+        wallet_id,
+        app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_GATEWAY_PASSWORD,
+    )
 
     if ec2_instance.state == "running":
-        cluster_get.gateway_ready = await ping_gateway(ec2_instance)
+        cluster_get.gateway_ready = await ping_gateway(
+            ec2_instance,
+            app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_GATEWAY_PASSWORD,
+        )
 
     return cluster_get
 
