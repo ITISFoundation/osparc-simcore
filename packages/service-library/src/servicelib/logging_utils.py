@@ -227,12 +227,13 @@ def log_catch(logger: logging.Logger, reraise: bool = True):
         logger.debug("call was cancelled")
         raise
     except Exception as exc:  # pylint: disable=broad-except
-        logger.error("Unhandled exception: %s", f"{exc}", exc_info=True)
+        logger.exception("Unhandled exception:")
         if reraise:
             raise exc from exc
 
 
-un_capitalize = lambda s: s[:1].lower() + s[1:] if s else ""
+def _un_capitalize(s):
+    return s[:1].lower() + s[1:] if s else ""
 
 
 @contextmanager
@@ -246,7 +247,7 @@ def log_context(
 ):
     # NOTE: preserves original signature https://docs.python.org/3/library/logging.html#logging.Logger.log
     start = datetime.now()  # noqa: DTZ005
-    msg = un_capitalize(msg.strip())
+    msg = _un_capitalize(msg.strip())
 
     kwargs: dict[str, Any] = {}
     if extra:
