@@ -297,6 +297,8 @@ def mock_metrics_params(
     return CreateServiceMetricsAdditionalParams(
         wallet_id=1,
         wallet_name="test_wallet",
+        pricing_plan_id=1,
+        pricing_detail_id=1,
         product_name="test",
         simcore_user_agent="",
         user_email="",

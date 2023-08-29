@@ -36,7 +36,8 @@ def _get_settings(app: FastAPI) -> ApplicationSettings:
 
 
 async def _start_heart_beat_task(app: FastAPI) -> None:
-    settings: ResourceTrackingSettings = app.state.settings.RESOURCE_TRACKING
+    settings: ApplicationSettings = _get_settings(app)
+    resource_tracking_settings: ResourceTrackingSettings = settings.RESOURCE_TRACKING
     resource_tracking: ResourceTrackingState = app.state.resource_tracking
 
     if resource_tracking.heart_beat_task is not None:
@@ -47,7 +48,7 @@ async def _start_heart_beat_task(app: FastAPI) -> None:
         resource_tracking.heart_beat_task = start_periodic_task(
             _heart_beat_task,
             app=app,
-            interval=settings.RESOURCE_TRACKING_HEARTBEAT_INTERVAL,
+            interval=resource_tracking_settings.RESOURCE_TRACKING_HEARTBEAT_INTERVAL,
             task_name="resource_tracking_heart_beat",
         )
 
@@ -123,6 +124,8 @@ async def send_service_started(
         service_type=ServiceType.DYNAMIC,
         service_resources=metrics_params.service_resources,
         service_additional_metadata=metrics_params.service_additional_metadata,
+        pricing_plan_id=metrics_params.pricing_plan_id,
+        pricing_detail_id=metrics_params.pricing_detail_id,
     )
     await post_resource_tracking_message(app, message)
 

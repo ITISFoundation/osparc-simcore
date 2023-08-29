@@ -125,6 +125,8 @@ async def create_user_services(app: FastAPI, scheduler_data: SchedulerData):
     metrics_params = CreateServiceMetricsAdditionalParams(
         wallet_id=None,
         wallet_name=None,
+        pricing_plan_id=None,
+        pricing_detail_id=None,
         product_name=scheduler_data.product_name,
         simcore_user_agent=scheduler_data.request_simcore_user_agent,
         user_email=user_email,
