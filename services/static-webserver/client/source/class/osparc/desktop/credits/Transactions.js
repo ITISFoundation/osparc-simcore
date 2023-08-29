@@ -44,6 +44,7 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
       });
       table.setColumnWidth(0, 100);
       table.setColumnWidth(1, 100);
+      table.makeItLoose();
       this._add(table);
 
       this.__rawData = [];
