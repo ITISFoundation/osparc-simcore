@@ -1,19 +1,23 @@
 from typing import Any, TypeAlias
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from ..services_ui import WidgetType
 from ..user_preferences import PreferenceName, ValueType
 
 
 class UserPreference(BaseModel):
-    render_widget: bool
-    widget_type: WidgetType | None
-    display_label: str | None
-    tooltip_message: str | None
+    render_widget: bool = Field(default=..., alias="exposeInPreferences")
+    widget_type: WidgetType | None = Field(default=..., alias="widget")
+    display_label: str | None = Field(default=..., alias="label")
+    tooltip_message: str | None = Field(default=..., alias="description")
 
-    value_type: ValueType
+    value_type: ValueType = Field(default=..., alias="type")
+    default_value: Any = Field(default=..., alias="defaultValue")
     value: Any
+
+    class Config:
+        allow_population_by_field_name = True
 
 
 UserPreferencesGet: TypeAlias = dict[PreferenceName, UserPreference]
@@ -24,4 +28,4 @@ class UserPreferencePatchRequestBody(BaseModel):
 
 
 class UserPreferencePatchPathParams(BaseModel):
-    preference_name: PreferenceName
+    frontend_preference_name: PreferenceName

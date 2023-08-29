@@ -190,7 +190,7 @@ async def test_get_profile(
 async def test_update_profile(
     logged_user: UserInfoDict,
     client: TestClient,
-    user_role,
+    user_role: UserRole,
     expected: type[web.HTTPException],
 ):
     assert client.app

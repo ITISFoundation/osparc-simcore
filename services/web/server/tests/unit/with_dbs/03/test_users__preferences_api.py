@@ -113,7 +113,7 @@ async def test_set_frontend_user_preference(
         await set_frontend_user_preference(
             app,
             user_id=user_id,
-            preference_name=preference_class.get_preference_name(),
+            frontend_preference_name=preference_class.get_preference_name(),
             value=_get_non_default_value(
                 _get_default_field_value(preference_class),
                 _get_model_field(preference_class, "value_type").default,
@@ -133,7 +133,7 @@ async def test_set_frontend_user_preference(
         await set_frontend_user_preference(
             app,
             user_id=user_id,
-            preference_name=preference_class.get_preference_name(),
+            frontend_preference_name=preference_class.get_preference_name(),
             value=_get_default_field_value(preference_class),
         )
 

@@ -11,7 +11,7 @@ class ConfirmationBackToDashboardFrontendUserPreference(BaseFrontendUserPreferen
         "If checked, asks for confirmation when the user goes back to the dashboard"
     )
 
-    preference_identifier = "confirmationBackToDashboard"
+    preference_identifier = "confirmBackToDashboard"
     value_type = ValueType.BOOL
     value: bool = True
 
@@ -22,7 +22,7 @@ class ConfirmationDeleteStudyFrontendUserPreference(BaseFrontendUserPreference):
     display_label = "Delete a study"
     tooltip_message = "If checked, asks for confirmation before deleting a study"
 
-    preference_identifier = "confirmationDeleteStudy"
+    preference_identifier = "confirmDeleteStudy"
     value_type = ValueType.BOOL
     value: bool = True
 
@@ -33,7 +33,7 @@ class ConfirmationDeleteNodeFrontendUserPreference(BaseFrontendUserPreference):
     display_label = "Delete a Node"
     tooltip_message = "If checked, asks for confirmation before deleting a Node"
 
-    preference_identifier = "confirmationDeleteNode"
+    preference_identifier = "confirmDeleteNode"
     value_type = ValueType.BOOL
     value: bool = True
 
@@ -44,7 +44,7 @@ class ConfirmationStopNodeFrontendUserPreference(BaseFrontendUserPreference):
     display_label = "Stop Node"
     tooltip_message = "If checked, asks for confirmation before stopping a Node"
 
-    preference_identifier = "confirmationStopNode"
+    preference_identifier = "confirmStopNode"
     value_type = ValueType.BOOL
     value: bool = True
 
@@ -68,9 +68,20 @@ class ConnectPortsAutomaticallyFrontendUserPreference(BaseFrontendUserPreference
         "If checked ports will be connected automatically based "
         "on their supported types and the order in which they appear"
     )
-    preference_identifier = "connectPortsAutomatically"
+    preference_identifier = "autoConnectPorts"
     value_type = ValueType.BOOL
     value: bool = True
+
+
+class DoNotShowAnnouncementsFrontendUserPreference(BaseFrontendUserPreference):
+    render_widget: bool = False
+    widget_type: WidgetType | None = None
+    display_label: str | None = None
+    tooltip_message: str | None = None
+
+    preference_identifier = "dontShowAnnouncements"
+    value_type = ValueType.LIST
+    value: dict = Field(default_factory=list)
 
 
 class ServicesFrontendUserPreference(BaseFrontendUserPreference):
@@ -113,7 +124,18 @@ ALL_FRONTEND_PREFERENCES: list[type[BaseFrontendUserPreference]] = [
     ConfirmationStopNodeFrontendUserPreference,
     SnapNodeToGridFrontendUserPreference,
     ConnectPortsAutomaticallyFrontendUserPreference,
+    DoNotShowAnnouncementsFrontendUserPreference,
     ServicesFrontendUserPreference,
     ThemeNameFrontendUserPreference,
     LastVcsRefUIFrontendUserPreference,
 ]
+
+
+def get_preference_name_to_class_name_map() -> dict[str, str]:
+    mapping: dict[str, str] = {}
+    for preference in ALL_FRONTEND_PREFERENCES:
+        preference_name = preference.__fields__["preference_identifier"].default
+        preference_class_name = preference.__name__
+        mapping[preference_name] = preference_class_name
+
+    return mapping

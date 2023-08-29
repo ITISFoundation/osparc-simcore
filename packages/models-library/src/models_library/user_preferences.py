@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from enum import auto
+from enum import Enum, auto
 from typing import Any, ClassVar, TypeAlias
 
 from pydantic import BaseModel, Field
@@ -41,13 +41,13 @@ class _ExtendedBaseModel(BaseModel, metaclass=_AutoRegisterMeta):
     ...
 
 
-class ValueType(StrAutoEnum):
-    BOOL = auto()
-    STR = auto()
-    FLOAT = auto()
-    INT = auto()
-    LIST = auto()
-    DICT = auto()
+class ValueType(str, Enum):
+    BOOL = "boolean"
+    STR = "string"
+    FLOAT = "number"
+    INT = "integer"
+    LIST = "array"
+    DICT = "dictionary"
 
 
 class PreferenceType(StrAutoEnum):
@@ -88,6 +88,14 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
         # No class inherited from this one, can be defined using the same name,
         # even if the context is different.
         return cls.__name__
+
+    @classmethod
+    def get_default_value(cls) -> Any:
+        return (
+            cls.__fields__["value"].default_factory()
+            if cls.__fields__["value"].default_factory
+            else cls.__fields__["value"].default
+        )
 
     def dict(  # noqa: A003
         self,

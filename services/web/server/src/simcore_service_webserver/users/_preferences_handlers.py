@@ -20,6 +20,7 @@ from simcore_postgres_database.utils_user_preferences import (
 )
 
 from .._meta import API_VTAG
+from ..login.decorators import login_required
 from ..utils_aiohttp import envelope_json_response
 from . import _preferences_api
 
@@ -36,13 +37,17 @@ def _handle_users_exceptions(handler: Handler):
         try:
             return await handler(request)
 
-        except CouldNotCreateOrUpdateUserPreferenceError as exc:
+        except (
+            CouldNotCreateOrUpdateUserPreferenceError,
+            _preferences_api.FrontendUserPreferenceIsNotDefinedError,
+        ) as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
 
     return wrapper
 
 
 @routes.get(f"/{API_VTAG}/me/preferences", name="get_user_preferences")
+@login_required
 @_handle_users_exceptions
 async def get_user_preferences(request: web.Request) -> web.Response:
     req_ctx = _RequestContext.parse_obj(request)
@@ -56,10 +61,12 @@ async def get_user_preferences(request: web.Request) -> web.Response:
 
 
 @routes.patch(
-    f"/{API_VTAG}/me/preference/{{preference_name}}", name="set_user_preference"
+    f"/{API_VTAG}/me/preference/{{frontend_preference_name}}",
+    name="set_frontend_preference_name",
 )
+@login_required
 @_handle_users_exceptions
-async def set_user_preference(request: web.Request) -> web.Response:
+async def set_frontend_preference_name(request: web.Request) -> web.Response:
     req_ctx = _RequestContext.parse_obj(request)
     req_body = await parse_request_body_as(UserPreferencePatchRequestBody, request)
     req_path_params = parse_request_path_parameters_as(
@@ -69,7 +76,7 @@ async def set_user_preference(request: web.Request) -> web.Response:
     await _preferences_api.set_frontend_user_preference(
         request.app,
         user_id=req_ctx.user_id,
-        preference_name=req_path_params.preference_name,
+        frontend_preference_name=req_path_params.frontend_preference_name,
         value=req_body.value,
     )
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
