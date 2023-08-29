@@ -197,7 +197,7 @@ async def _wait_for_containers_to_be_running(app: FastAPI) -> None:
                 raise TryAgain
 
 
-async def test_open_heartbeat_close(
+async def test_service_starts_and_closes_as_expected(
     mock_core_rabbitmq: dict[str, AsyncMock],
     app: FastAPI,
     httpx_async_client: AsyncClient,
@@ -227,7 +227,7 @@ async def test_open_heartbeat_close(
     ) as result:
         assert result is None
 
-    # NOTE: task was not properly cancelled and events where still
+    # NOTE: task was not properly cancelled and events were still
     # generated. This is here to catch regressions.
     await asyncio.sleep(_BASE_HEART_BEAT_INTERVAL * 10)
 
