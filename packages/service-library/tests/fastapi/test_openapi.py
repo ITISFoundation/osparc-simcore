@@ -6,16 +6,17 @@ from openapi_spec_validator import openapi_v31_spec_validator, validate_spec
 from openapi_spec_validator.exceptions import OpenAPISpecValidatorError
 from servicelib.fastapi.openapi import (
     override_fastapi_openapi_method,
-    redefine_operation_id_in_router,
+    set_operation_id_as_handler_function_name,
 )
 
 
 def test_naming_operation_id(app: FastAPI):
-    redefine_operation_id_in_router(app.router, __name__)
+    set_operation_id_as_handler_function_name(app.router)
 
     for route in app.router.routes:
         if isinstance(route, APIRouter):
-            assert route.operation_id.startswith(__name__)
+            assert route.operation_id
+            assert "handler" not in route.operation_id
         else:
             # e.g. /docs etc
             assert isinstance(route, starlette.routing.Route)

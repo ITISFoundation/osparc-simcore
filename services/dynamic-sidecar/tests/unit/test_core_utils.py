@@ -55,7 +55,7 @@ services:
     )
 
     print("docker-compose from cmd fixture:\n", docker_compose.read_text(), "\n")
-    return f"docker-compose -f {docker_compose} up"
+    return f"docker compose -f {docker_compose} up"
 
 
 @pytest.mark.parametrize(

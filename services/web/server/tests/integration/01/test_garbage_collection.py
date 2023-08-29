@@ -125,13 +125,6 @@ async def director_v2_service_mock() -> AsyncIterable[aioresponses]:
         yield mock
 
 
-@pytest.fixture(autouse=True)
-async def auto_mock_director_v2(
-    director_v2_service_mock: aioresponses,
-) -> aioresponses:
-    return director_v2_service_mock
-
-
 @pytest.fixture
 def client(
     event_loop: asyncio.AbstractEventLoop,
@@ -143,6 +136,7 @@ def client(
     redis_client: aioredis.Redis,
     rabbit_service: RabbitSettings,
     simcore_services_ready: None,
+    director_v2_service_mock: aioresponses,
 ) -> TestClient:
     cfg = deepcopy(app_config)
 

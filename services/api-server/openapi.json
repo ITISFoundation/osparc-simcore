@@ -637,7 +637,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "description": "Successful Response",
             "content": {
               "application/json": {
@@ -1570,8 +1570,8 @@
           "PUBLISHED",
           "NOT_STARTED",
           "PENDING",
+          "WAITING_FOR_RESOURCES",
           "STARTED",
-          "RETRY",
           "SUCCESS",
           "FAILED",
           "ABORTED"

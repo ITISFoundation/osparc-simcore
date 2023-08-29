@@ -2,7 +2,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import importlib
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -15,7 +14,6 @@ from aiohttp.test_utils import TestClient
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp.application import create_safe_application
-from simcore_service_webserver.activity import _handlers
 from simcore_service_webserver.activity.plugin import setup_activity
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.rest.plugin import setup_rest
@@ -25,11 +23,11 @@ from simcore_service_webserver.session.plugin import setup_session
 
 @pytest.fixture
 def mocked_login_required(mocker: MockerFixture):
-    mock = mocker.patch(
-        "simcore_service_webserver.login.decorators.login_required", lambda h: h
+    return mocker.patch(
+        "aiohttp_security.api.authorized_userid",
+        autospec=True,
+        return_value=1,  # user_id
     )
-    importlib.reload(_handlers)
-    return mock
 
 
 @pytest.fixture
@@ -58,7 +56,7 @@ def mocked_monitoring(mocker: MockerFixture, activity_data: dict[str, Any]) -> N
 @pytest.fixture
 def mocked_monitoring_down(mocker):
     mocker.patch(
-        "simcore_service_webserver.activity._handlers.query_prometheus",
+        "simcore_service_webserver.activity._api.query_prometheus",
         side_effect=ClientConnectionError,
     )
     return mocker

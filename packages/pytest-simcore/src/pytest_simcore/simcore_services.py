@@ -5,6 +5,7 @@
 import asyncio
 import json
 import logging
+import warnings
 from dataclasses import dataclass
 
 import aiohttp
@@ -45,6 +46,7 @@ MAP_SERVICE_HEALTHCHECK_ENTRYPOINT = {
     "datcore-adapter": "/v0/live",
     "director-v2": "/",
     "invitations": "/",
+    "payments": "/",
     "resource-usage-tracker": "/",
 }
 AIOHTTP_BASED_SERVICE_PORT: int = 8080
@@ -69,14 +71,15 @@ async def wait_till_service_healthy(service_name: str, endpoint: URL):
         reraise=True,
     ):
         with attempt:
-            async with aiohttp.ClientSession(timeout=_ONE_SEC_TIMEOUT) as session:
-                async with session.get(endpoint) as response:
-                    # NOTE: Health-check endpoint require only a status code 200
-                    # (see e.g. services/web/server/docker/healthcheck.py)
-                    # regardless of the payload content
-                    assert (
-                        response.status == 200
-                    ), f"Connection to {service_name=} at {endpoint=} failed with {response=}"
+            async with aiohttp.ClientSession(
+                timeout=_ONE_SEC_TIMEOUT
+            ) as session, session.get(endpoint) as response:
+                # NOTE: Health-check endpoint require only a status code 200
+                # (see e.g. services/web/server/docker/healthcheck.py)
+                # regardless of the payload content
+                assert (
+                    response.status == 200
+                ), f"Connection to {service_name=} at {endpoint=} failed with {response=}"
 
             log.info(
                 "Connection to %s succeeded [%s]",
@@ -133,16 +136,7 @@ def services_endpoint(
     return services_endpoint
 
 
-@pytest.fixture(scope="module")
-def simcore_services_ready(
-    services_endpoint: dict[str, URL], monkeypatch_module: MonkeyPatch
-) -> None:
-    """
-    - Waits for services in `core_services_selection` to be healthy
-    - Sets environment with these (host:port) endpoitns
-
-    WARNING: not all services in the selection can be health-checked (see services_endpoint)
-    """
+def _wait_for_services_ready(services_endpoint: dict[str, URL]) -> None:
     # Compose and log healthcheck url entpoints
 
     health_endpoints = [
@@ -163,6 +157,33 @@ def simcore_services_ready(
     # check ready
     asyncio.run(_check_all_services_are_healthy())
 
+
+@pytest.fixture
+def simcore_services_ready(
+    services_endpoint: dict[str, URL], monkeypatch: MonkeyPatch
+) -> None:
+    _wait_for_services_ready(services_endpoint)
+    # patches environment variables with right host/port per service
+    for service, endpoint in services_endpoint.items():
+        env_prefix = service.upper().replace("-", "_")
+
+        assert endpoint.host
+
+        monkeypatch.setenv(f"{env_prefix}_HOST", endpoint.host)
+        monkeypatch.setenv(f"{env_prefix}_PORT", str(endpoint.port))
+
+
+@pytest.fixture(scope="module")
+def simcore_services_ready_module(
+    services_endpoint: dict[str, URL], monkeypatch_module: MonkeyPatch
+) -> None:
+    warnings.warn(
+        "This fixture uses deprecated monkeypatch_module fixture"
+        "Please do NOT use it!",
+        DeprecationWarning,
+        stacklevel=1,
+    )
+    _wait_for_services_ready(services_endpoint)
     # patches environment variables with right host/port per service
     for service, endpoint in services_endpoint.items():
         env_prefix = service.upper().replace("-", "_")

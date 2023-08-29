@@ -31,7 +31,7 @@ from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 
-from ...constants import UNDEFINED_INT_METADATA, UNDEFINED_STR_METADATA
+from ...constants import UNDEFINED_STR_METADATA
 from ...core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalSchedulerChangedError,
@@ -357,8 +357,10 @@ class BaseCompScheduler(ABC):
                     service_run_id=get_resource_tracking_run_id(
                         user_id, t.project_id, iteration
                     ),
-                    wallet_id=run_metadata.get("wallet_id", UNDEFINED_INT_METADATA),
-                    wallet_name=run_metadata.get("wallet_name", UNDEFINED_STR_METADATA),
+                    wallet_id=run_metadata.get("wallet_id"),
+                    wallet_name=run_metadata.get("wallet_name"),
+                    pricing_plan_id=run_metadata.get("pricing_plan_id"),
+                    pricing_detail_id=run_metadata.get("pricing_detail_id"),
                     product_name=run_metadata.get(
                         "product_name", UNDEFINED_STR_METADATA
                     ),

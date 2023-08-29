@@ -95,9 +95,7 @@ pyyaml==6.0.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
 six==1.16.0
-    # via
-    #   -c requirements/_migration.txt
-    #   python-dateutil
+    # via python-dateutil
 sqlalchemy==1.4.49
     # via
     #   -c requirements/../../../requirements/constraints.txt

@@ -5,16 +5,17 @@ of a record in comp_task table is changed.
 import asyncio
 import json
 import logging
+from collections.abc import AsyncIterator
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import AsyncIterator, NoReturn
+from typing import Final, NoReturn
 
 from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeIDStr
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
@@ -25,6 +26,7 @@ from ..projects import exceptions, projects_api
 from ..projects.nodes_utils import update_node_outputs
 from ._utils import convert_state_from_db
 
+_LISTENING_TASK_BASE_SLEEPING_TIME_S: Final[int] = 1
 _logger = logging.getLogger(__name__)
 
 
@@ -40,8 +42,8 @@ async def _get_project_owner(conn: SAConnection, project_uuid: str) -> PositiveI
 async def _update_project_state(
     app: web.Application,
     user_id: PositiveInt,
-    project_uuid: str,
-    node_uuid: str,
+    project_uuid: ProjectID,
+    node_uuid: NodeID,
     new_state: RunningState,
     node_errors: list[ErrorDict] | None,
 ) -> None:
@@ -92,7 +94,7 @@ async def _handle_db_notification(
                 app,
                 the_project_owner,
                 ProjectID(project_uuid),
-                NodeIDStr(node_uuid),
+                NodeID(node_uuid),
                 new_outputs,
                 new_run_hash,
                 node_errors=task_data.get("errors", None),
@@ -104,8 +106,8 @@ async def _handle_db_notification(
             await _update_project_state(
                 app,
                 the_project_owner,
-                project_uuid,
-                node_uuid,
+                ProjectID(project_uuid),
+                NodeID(node_uuid),
                 new_state,
                 node_errors=task_data.get("errors", None),
             )
@@ -130,7 +132,7 @@ async def _handle_db_notification(
 
 async def _listen(app: web.Application, db_engine: Engine) -> NoReturn:
     listen_query = f"LISTEN {DB_CHANNEL_NAME};"
-    _LISTENING_TASK_BASE_SLEEPING_TIME_S = 1
+
     async with db_engine.acquire() as conn:
         assert conn.connection  # nosec
         await conn.execute(listen_query)
@@ -140,7 +142,8 @@ async def _listen(app: web.Application, db_engine: Engine) -> NoReturn:
             # since aiopg does not reset the await in such a case (if DB was restarted or so)
             # see aiopg issue: https://github.com/aio-libs/aiopg/pull/559#issuecomment-826813082
             if conn.closed:
-                raise ConnectionError("connection with database is closed!")
+                msg = "connection with database is closed!"
+                raise ConnectionError(msg)
             if conn.connection.notifies.empty():
                 await asyncio.sleep(_LISTENING_TASK_BASE_SLEEPING_TIME_S)
                 continue
@@ -159,14 +162,13 @@ async def _comp_tasks_listening_task(app: web.Application) -> None:
             db_engine = app[APP_DB_ENGINE_KEY]
             _logger.info("listening to comp_task events...")
             await _listen(app, db_engine)
-        except asyncio.CancelledError:
+        except asyncio.CancelledError:  # noqa: PERF203
             # we are closing the app..
             _logger.info("cancelled comp_tasks events")
             raise
         except Exception:  # pylint: disable=broad-except
             _logger.exception(
                 "caught unhandled comp_task db listening task exception, restarting...",
-                exc_info=True,
             )
             # wait a bit and try restart the task
             await asyncio.sleep(3)

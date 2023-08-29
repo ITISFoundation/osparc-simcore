@@ -2,15 +2,16 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+from collections.abc import Awaitable, Callable
 from http import HTTPStatus
-from typing import Awaitable, Callable
 
 import pytest
 from aiohttp import ClientResponse, web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.projects import Project
-from pytest import MonkeyPatch
+from models_library.projects_nodes import Node
+from models_library.services_resources import ServiceResourcesDict
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
@@ -24,14 +25,14 @@ from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.models.projects import projects
 from simcore_service_webserver._constants import APP_DB_ENGINE_KEY
 from simcore_service_webserver.director_v2.api import get_project_run_policy
-from simcore_service_webserver.meta_modeling._projects import (
-    meta_project_policy,
-    projects_redirection_middleware,
-)
-from simcore_service_webserver.meta_modeling._rest_handlers import (
+from simcore_service_webserver.meta_modeling._handlers import (
     Page,
     ProjectIterationItem,
     ProjectIterationResultItem,
+)
+from simcore_service_webserver.meta_modeling._projects import (
+    meta_project_policy,
+    projects_redirection_middleware,
 )
 from simcore_service_webserver.projects.models import ProjectDict
 
@@ -45,7 +46,7 @@ REQUEST_MODEL_POLICY = {
 
 @pytest.fixture
 def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: MonkeyPatch
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ) -> EnvVarsDict:
     envs_plugins = setenvs_from_dict(
         monkeypatch,
@@ -67,7 +68,7 @@ async def context_with_logged_user(client: TestClient, logged_user: UserInfoDict
         await conn.execute(projects.delete())
 
 
-@pytest.mark.acceptance_test
+@pytest.mark.acceptance_test()
 async def test_iterators_workflow(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -101,6 +102,16 @@ async def test_iterators_workflow(
         "simcore_service_webserver.director_v2.api.get_computation_task",
         return_value=None,
     )
+    mocker.patch(
+        "simcore_service_webserver.projects._nodes_handlers.projects_api.is_service_deprecated",
+        autospec=True,
+        return_value=False,
+    )
+    mocker.patch(
+        "simcore_service_webserver.projects._nodes_handlers.projects_api.catalog_client.get_service_resources",
+        autospec=True,
+        return_value=ServiceResourcesDict(),
+    )
     # ----
     project_data = await request_create_project(
         client,
@@ -116,6 +127,20 @@ async def test_iterators_workflow(
     # CREATE meta-project: iterator 0:3 -> sleeper -> sleeper_2 ---------------
     modifications = REPLACE_PROJECT_ON_MODIFIED.request_payload
     assert modifications
+    create_node_url = client.app.router["create_node"].url_for(
+        project_id=project_data["uuid"]
+    )
+    for node_id, node_data in modifications["workbench"].items():
+        node = Node.parse_obj(node_data)
+        response = await client.post(
+            f"{create_node_url}",
+            json={
+                "service_key": node.key,
+                "service_version": node.version,
+                "service_id": f"{node_id}",
+            },
+        )
+        assert response.status == HTTPStatus.CREATED
     project_data.update({key: modifications[key] for key in ("workbench", "ui")})
     project_data["ui"].setdefault("currentNodeId", project_uuid)
 
@@ -168,7 +193,7 @@ async def test_iterators_workflow(
     assert len(first_iterlist) == 3
 
     # GET workcopy project for iter 0 ----------------------------------------------
-    async def _mock_catalog_get(app, user_id, product_name, only_key_versions):
+    async def _mock_catalog_get(*args, **kwarg):
         return [
             {"key": s["key"], "version": s["version"]}
             for _, s in project_data["workbench"].items()
@@ -182,6 +207,7 @@ async def test_iterators_workflow(
 
     # extract outputs
     for i, prj_iter in enumerate(first_iterlist):
+        assert prj_iter.workcopy_project_url.path
         response = await client.get(prj_iter.workcopy_project_url.path)
         assert response.status == HTTPStatus.OK
 
@@ -206,7 +232,7 @@ async def test_iterators_workflow(
     assert response.status == HTTPStatus.OK, await response.text()
     body = await response.json()
 
-    results = Page[ProjectIterationResultItem].parse_obj(body).data
+    assert Page[ProjectIterationResultItem].parse_obj(body).data is not None
 
     # GET project and MODIFY iterator values----------------------------------------------
     #  - Change iterations from 0:4 -> HEAD+1

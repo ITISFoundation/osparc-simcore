@@ -168,6 +168,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
             column: 1
           });
           break;
+        // or
         case "subtitle-md":
           control = new osparc.ui.markdown.Markdown().set({
             font: "text-13",

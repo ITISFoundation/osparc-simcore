@@ -24,10 +24,6 @@ jobs:
         python: ["3.10"]
         os: [ubuntu-22.04]
         docker_buildx: [v0.10.4]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     env:
       TO_TAG_PREFIX: staging-github
@@ -38,15 +34,11 @@ jobs:
       - name: find branch name
         shell: bash
         run: echo "BRANCH_NAME=$(git name-rev --refs="refs/remotes/origin/master" --refs="refs/remotes/origin/hotfix_v*" --refs="refs/remotes/origin/hotfix_staging_*" --name-only ${GITHUB_SHA})" >> $GITHUB_ENV
-
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v2
         with:
           version: ${{ matrix.docker_buildx }}
-
-      - name: setup docker-compose
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: set owner variable
         run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
       - name: set git tag

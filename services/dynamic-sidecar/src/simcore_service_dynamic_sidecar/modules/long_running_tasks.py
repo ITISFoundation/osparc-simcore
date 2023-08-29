@@ -64,7 +64,7 @@ def _raise_for_errors(
 ) -> None:
     if not command_result.success:
         _logger.warning(
-            "docker-compose %s command finished with errors\n%s",
+            "docker compose %s command finished with errors\n%s",
             docker_compose_command,
             command_result.message,
         )
@@ -494,7 +494,7 @@ async def task_containers_restart(
     async with app.state.container_restart_lock:
         progress.update(message="starting containers restart", percent=0.0)
         if shared_store.compose_spec is None:
-            msg = "No spec for docker-compose command was found"
+            msg = "No spec for docker compose command was found"
             raise RuntimeError(msg)
 
         for container_name in shared_store.container_names:

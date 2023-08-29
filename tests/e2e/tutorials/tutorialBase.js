@@ -40,7 +40,7 @@ class TutorialBase {
       utils.createScreenshotsDir();
     }
     catch (err) {
-      console.error("Error creating screenshots directory", err);
+      console.error("Error: Error creating screenshots directory", err);
       throw (err);
     }
 
@@ -81,7 +81,7 @@ class TutorialBase {
       await this.__page.goto(this.__url);
     }
     catch (err) {
-      console.error(this.__url, "can't be reached", err);
+      console.error("Error:", this.__url, "can't be reached", err);
       throw (err);
     }
     const domain = utils.getDomain(this.__url);
@@ -139,7 +139,7 @@ class TutorialBase {
       await this.__printMe();
     }
     catch (err) {
-      console.error("Error starting", err);
+      console.error("Error: Error starting", err);
       throw (err);
     }
   }
@@ -182,7 +182,7 @@ class TutorialBase {
       await auto.logIn(this.__page, this.__user, this.__pass);
     }
     catch (err) {
-      console.error("Failed logging in", err);
+      console.error("Error: Failed logging in", err);
       throw (err);
     }
 
@@ -202,7 +202,7 @@ class TutorialBase {
         }
       }
       catch (err) {
-        console.error(resource.name + " could not be fetched", err);
+        console.error("Error:", resource.name + " could not be fetched", err);
         throw (err);
       }
     }
@@ -219,31 +219,31 @@ class TutorialBase {
       resp = await this.__responsesQueue.waitUntilResponse(":open");
     }
     catch (err) {
-      console.error(this.__templateName, "could not be started", err);
+      console.error("Error:", this.__templateName, "could not be started", err);
       throw (err);
     }
     return resp;
   }
 
-  async startNewPlan() {
-    await this.takeScreenshot("startNewPlan_before");
+  async startClassicTIPlan() {
+    await this.takeScreenshot("startClassicTIPlan_before");
     this.__responsesQueue.addResponseListener("projects?from_study=");
     this.__responsesQueue.addResponseListener(":open");
     let resp = null;
     try {
       await this.waitFor(2000);
-      await auto.dashboardNewPlan(this.__page);
+      await auto.dashboardNewTIPlan(this.__page);
       await this.__responsesQueue.waitUntilResponse("projects?from_study=");
       resp = await this.__responsesQueue.waitUntilResponse(":open");
       const studyId = resp["data"]["uuid"];
       console.log("Study ID:", studyId);
     }
     catch (err) {
-      console.error(`New Plan could not be started:\n`, err);
+      console.error(`Error: Classic TI could not be started:\n`, err);
       throw (err);
     }
     await this.waitFor(2000);
-    await this.takeScreenshot("startNewPlan_after");
+    await this.takeScreenshot("startClassicTIPlan_after");
     return resp;
   }
 
@@ -259,7 +259,7 @@ class TutorialBase {
       console.log("Study ID:", studyId);
     }
     catch (err) {
-      console.error(`Sim4Life Lite could not be started:\n`, err);
+      console.error(`Error: Sim4Life Lite could not be started:\n`, err);
       throw (err);
     }
     await this.waitFor(2000);
@@ -279,7 +279,7 @@ class TutorialBase {
       console.log("Study ID:", studyId);
     }
     catch (err) {
-      console.error(this.__templateName, "could not be started", err);
+      console.error("Error:", this.__templateName, "could not be started", err);
       throw (err);
     }
     return resp;
@@ -299,7 +299,7 @@ class TutorialBase {
       console.log("Study ID:", studyId);
     }
     catch (err) {
-      console.error(`"${this.__templateName}" template could not be started:\n`, err);
+      console.error(`Error: "${this.__templateName}" template could not be started:\n`, err);
       throw (err);
     }
     await this.waitFor(waitFor);
@@ -319,7 +319,7 @@ class TutorialBase {
       console.log("Study ID:", studyId);
     }
     catch (err) {
-      console.error(`"${this.__templateName}" service could not be started:\n`, err);
+      console.error(`Error: "${this.__templateName}" service could not be started:\n`, err);
       throw (err);
     }
     await this.waitFor(waitFor);
@@ -450,7 +450,7 @@ class TutorialBase {
       await this.__responsesQueue.waitUntilResponse("storage/locations/0/files/metadata?uuid_filter=" + nodeId);
     }
     catch (err) {
-      console.error(err);
+      console.error("Error: open node files", err);
       throw (err);
     }
   }
@@ -462,7 +462,7 @@ class TutorialBase {
       await this.__responsesQueue.waitUntilResponse("storage/locations/0/files/metadata?uuid_filter=" + nodeId);
     }
     catch (err) {
-      console.error(err);
+      console.error("Error: open node files", err);
       throw (err);
     }
   }
@@ -530,7 +530,7 @@ class TutorialBase {
       await this.__checkNItemsInFolder(fileNames, openOutputsFolder);
     }
     catch (err) {
-      console.error("Results don't match", err);
+      console.error("Error: Checking Node Outputs:", err);
       throw (err)
     }
   }
@@ -541,7 +541,7 @@ class TutorialBase {
       await this.__checkNItemsInFolder(fileNames, openOutputsFolder);
     }
     catch (err) {
-      console.error("Results don't match", err);
+      console.error("Error: Checking Node Outputs:", err);
       throw (err)
     }
   }
@@ -565,7 +565,7 @@ class TutorialBase {
       await this.__responsesQueue.waitUntilResponse(":close");
     }
     catch (err) {
-      console.error("Failed going to dashboard study", err);
+      console.error("Error: Failed going to dashboard", err);
       throw (err);
     }
     await this.waitFor(5000, 'Going back to Dashboard');
@@ -591,7 +591,7 @@ class TutorialBase {
       }
     }
     catch (err) {
-      console.error("Failed deleting study", err);
+      console.error("Error: Failed deleting study", err);
       throw (err);
     }
     await this.takeScreenshot("deleteFirstStudy_after");
@@ -785,7 +785,7 @@ class TutorialBase {
       await this.__responsesQueue.waitUntilResponse("training-set-generation/distribution");
     }
     catch (err) {
-      console.error(this.__templateName, "training-set can't be generated", err);
+      console.error("Error:", this.__templateName, "training-set can't be generated", err);
       throw (err);
     }
 
@@ -796,7 +796,7 @@ class TutorialBase {
       await this.__responsesQueue.waitUntilResponse("training-set-generation/xport");
     }
     catch (err) {
-      console.error(this.__templateName, "training-set can't be exported", err);
+      console.error("Error:", this.__templateName, "training-set can't be exported", err);
       throw (err);
     }
 

@@ -3,7 +3,7 @@
   "uuid": "de2578c5-431e-6257-a462-d7bf73b76c0c",
   "name": "fake-project-name",
   "description": "anim sint pariatur do dolore",
-  "prjOwner": "dolore ad do consectetur",
+  "prjOwner": "foo@foo.com",
   "creationDate": "1865-11-30T04:00:14.000Z",
   "lastChangeDate": "7364-11-30T10:04:52.000Z",
   "thumbnail": "https://some_fake_project_thumbnail.com/fake",

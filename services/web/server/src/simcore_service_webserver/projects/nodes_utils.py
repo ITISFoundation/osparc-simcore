@@ -5,7 +5,7 @@ from typing import Any, Coroutine
 from aiohttp import web
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeIDStr
+from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.logging_utils import log_decorator
@@ -18,16 +18,16 @@ log = logging.getLogger(__name__)
 
 
 async def project_get_depending_nodes(
-    project: dict[str, Any], node_uuid: str
-) -> set[str]:
+    project: dict[str, Any], node_uuid: NodeID
+) -> set[NodeID]:
     depending_node_uuids = set()
     for dep_node_uuid, dep_node_data in project.get("workbench", {}).items():
         for dep_node_inputs_key_data in dep_node_data.get("inputs", {}).values():
             if (
                 isinstance(dep_node_inputs_key_data, dict)
-                and dep_node_inputs_key_data.get("nodeUuid") == node_uuid
+                and dep_node_inputs_key_data.get("nodeUuid") == f"{node_uuid}"
             ):
-                depending_node_uuids.add(dep_node_uuid)
+                depending_node_uuids.add(NodeID(dep_node_uuid))
 
     return depending_node_uuids
 
@@ -37,7 +37,7 @@ async def update_node_outputs(
     app: web.Application,
     user_id: UserID,
     project_uuid: ProjectID,
-    node_uuid: NodeIDStr,
+    node_uuid: NodeID,
     outputs: dict,
     run_hash: str | None,
     node_errors: list[ErrorDict] | None,
@@ -48,7 +48,7 @@ async def update_node_outputs(
     project, keys_changed = await projects_api.update_project_node_outputs(
         app,
         user_id,
-        f"{project_uuid}",
+        project_uuid,
         node_uuid,
         new_outputs=outputs,
         new_run_hash=run_hash,
@@ -86,7 +86,7 @@ async def update_node_outputs(
 
     # fire&forget to notify connected nodes to retrieve its inputs **if necessary**
     await projects_api.post_trigger_connected_service_retrieve(
-        app=app, project=project, updated_node_uuid=node_uuid, changed_keys=keys
+        app=app, project=project, updated_node_uuid=f"{node_uuid}", changed_keys=keys
     )
 
 

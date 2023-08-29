@@ -184,8 +184,15 @@ class RabbitResourceTrackingBaseMessage(RabbitMessageBase):
 
 
 class RabbitResourceTrackingStartedMessage(RabbitResourceTrackingBaseMessage):
-    wallet_id: WalletID
-    wallet_name: str
+    message_type: Literal["tracking_started"] = Field(
+        default="tracking_started", const=True
+    )
+
+    wallet_id: WalletID | None
+    wallet_name: str | None
+
+    pricing_plan_id: int | None
+    pricing_detail_id: int | None
 
     product_name: str
     simcore_user_agent: str
@@ -209,7 +216,9 @@ class RabbitResourceTrackingStartedMessage(RabbitResourceTrackingBaseMessage):
 
 
 class RabbitResourceTrackingHeartbeatMessage(RabbitResourceTrackingBaseMessage):
-    ...
+    message_type: Literal["tracking_heartbeat"] = Field(
+        default="tracking_heartbeat", const=True
+    )
 
 
 class SimcorePlatformStatus(StrAutoEnum):
@@ -218,6 +227,10 @@ class SimcorePlatformStatus(StrAutoEnum):
 
 
 class RabbitResourceTrackingStoppedMessage(RabbitResourceTrackingBaseMessage):
+    message_type: Literal["tracking_stopped"] = Field(
+        default="tracking_stopped", const=True
+    )
+
     simcore_platform_status: SimcorePlatformStatus = Field(
         ...,
         description=f"{SimcorePlatformStatus.BAD} if simcore failed to run the service properly",
