@@ -7,7 +7,6 @@ from rich.console import Console
 from settings_library.utils_cli import create_settings_command
 
 from ._meta import PROJECT_NAME, __version__
-from .core.errors import ConfigurationError
 from .core.settings import ApplicationSettings, MinimalApplicationSettings
 
 # SEE setup entrypoint 'simcore_service_invitations.cli:app'
@@ -56,5 +55,3 @@ def evaluate(ctx: typer.Context) -> None:
     err_console.print(
         f"[yellow]running with configuration:\n{settings.json()}[/yellow]"
     )
-    if not settings.RESOURCE_USAGE_TRACKER_PROMETHEUS:
-        raise ConfigurationError(msg="no valid prometheus endpoint defined!")
