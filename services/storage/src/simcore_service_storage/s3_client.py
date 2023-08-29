@@ -1,4 +1,3 @@
-import asyncio
 import datetime
 import json
 import logging
@@ -276,20 +275,12 @@ class StorageS3Client:
         # NOTE: deletion of objects is done in batches of max 1000 elements,
         # the maximum accepted by the S3 API
         with log_context(_logger, logging.INFO, "deleting objects", log_duration=True):
-            delete_tasks: list[asyncio.Task] = []
             async for s3_objects in self.list_all_objects_gen(bucket, prefix=prefix):
                 if objects_to_delete := [f["Key"] for f in s3_objects if "Key" in f]:
-                    delete_task = asyncio.create_task(
-                        self.client.delete_objects(
-                            Bucket=bucket,
-                            Delete={
-                                "Objects": [{"Key": key} for key in objects_to_delete]
-                            },
-                        )
+                    await self.client.delete_objects(
+                        Bucket=bucket,
+                        Delete={"Objects": [{"Key": key} for key in objects_to_delete]},
                     )
-                    delete_tasks.append(delete_task)
-
-            await logged_gather(*delete_tasks)
 
     @s3_exception_handler(_logger)
     async def delete_files_in_project_node(
