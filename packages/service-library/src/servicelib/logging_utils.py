@@ -10,9 +10,11 @@ import logging
 import os
 import sys
 from asyncio import iscoroutinefunction
+from collections.abc import Callable
 from contextlib import contextmanager
+from datetime import datetime
 from inspect import getframeinfo, stack
-from typing import Callable, TypeAlias, TypedDict
+from typing import Any, TypeAlias, TypedDict
 
 log = logging.getLogger(__name__)
 
@@ -234,12 +236,30 @@ un_capitalize = lambda s: s[:1].lower() + s[1:] if s else ""
 
 
 @contextmanager
-def log_context(logger: logging.Logger, level: int, msg: str, *args, **kwargs):
+def log_context(
+    logger: logging.Logger,
+    level: int,
+    msg: str,
+    *args,
+    log_duration: bool = False,
+    extra: dict[str, Any] | None = None,
+):
     # NOTE: preserves original signature https://docs.python.org/3/library/logging.html#logging.Logger.log
+    start = datetime.now()  # noqa: DTZ005
     msg = un_capitalize(msg.strip())
+
+    kwargs: dict[str, Any] = {}
+    if extra:
+        kwargs["extra"] = extra
+
     logger.log(level, "Starting " + msg + " ...", *args, **kwargs)
     yield
-    logger.log(level, "Finished " + msg, *args, **kwargs)
+    duration = (
+        f" in {(datetime.now() - start ).total_seconds()}s"  # noqa: DTZ005
+        if log_duration
+        else ""
+    )
+    logger.log(level, "Finished " + msg + duration, *args, **kwargs)
 
 
 class LogExtra(TypedDict, total=False):
