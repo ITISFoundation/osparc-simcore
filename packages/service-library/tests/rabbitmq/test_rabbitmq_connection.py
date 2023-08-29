@@ -5,12 +5,15 @@
 
 import asyncio
 import contextlib
+from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass
-from typing import Callable, Iterator, cast
+from typing import Any
 
+import aiodocker
 import docker
+import pytest
 import requests
-from docker.models.containers import Container
+from faker import Faker
 from pydantic import HttpUrl
 from servicelib.rabbitmq import RabbitMQClient
 from settings_library.rabbit import RabbitSettings
@@ -24,36 +27,44 @@ pytest_simcore_core_services_selection = [
 ]
 
 
-@contextlib.contextmanager
-def paused_container(
-    docker_client: docker.client.DockerClient, container_name: str
-) -> Iterator[None]:
-    paused_containers = []
-    containers = docker_client.containers.list(filters={"name": container_name})
-    for container in containers:
-        container = cast(Container, container)
-        container.pause()
-        container.reload()
-        assert container.status == "paused"
-        paused_containers.append(container)
+@contextlib.asynccontextmanager
+async def paused_container(
+    async_docker_client: aiodocker.Docker, container_name: str
+) -> AsyncIterator[None]:
+    containers = await async_docker_client.containers.list(
+        filters={"name": [container_name]}
+    )
+    await asyncio.gather(*(c.pause() for c in containers))
+    # refresh
+    container_attrs = await asyncio.gather(*(c.show() for c in containers))
+    for container_status in container_attrs:
+        assert container_status["State"]["Status"] == "paused"
 
     yield
 
-    for container in paused_containers:
-        container = cast(Container, container)
-        container.unpause()
-        container.reload()
-        assert container.status == "running"
+    await asyncio.gather(*(c.unpause() for c in containers))
+    # refresh
+    container_attrs = await asyncio.gather(*(c.show() for c in containers))
+    for container_status in container_attrs:
+        assert container_status["State"]["Status"] == "running"
+    # NOTE: let the container some time to recover...
+    await asyncio.sleep(3)
+
+
+@pytest.fixture
+async def async_docker_client() -> AsyncIterator[aiodocker.Docker]:
+    async with aiodocker.Docker() as docker_client:
+        yield docker_client
 
 
 async def test_rabbit_client_lose_connection(
     cleanup_check_rabbitmq_server_has_no_errors: None,
     rabbitmq_client: Callable[[str], RabbitMQClient],
-    docker_client: docker.client.DockerClient,
+    async_docker_client: aiodocker.Docker,
 ):
     rabbit_client = rabbitmq_client("pinger")
     assert await rabbit_client.ping() is True
-    with paused_container(docker_client, "rabbit"):
+    async with paused_container(async_docker_client, "rabbit"):
         # check that connection was lost
         async for attempt in AsyncRetrying(
             stop=stop_after_delay(15), wait=wait_fixed(0.5), reraise=True
@@ -76,14 +87,53 @@ class PytestRabbitMessage:
         return self.message.encode()
 
 
+@pytest.fixture
+def random_exchange_name(faker: Faker) -> Callable[[], str]:
+    def _creator() -> str:
+        return f"pytest_fake_exchange_{faker.pystr()}"
+
+    return _creator
+
+
+@pytest.fixture
+def random_rabbit_message(
+    faker: Faker,
+) -> Callable[..., PytestRabbitMessage]:
+    def _creator(**kwargs: dict[str, Any]) -> PytestRabbitMessage:
+        msg_config = {"message": faker.text(), "topic": None, **kwargs}
+
+        return PytestRabbitMessage(**msg_config)
+
+    return _creator
+
+
+async def test_rabbit_client_with_paused_container(
+    cleanup_check_rabbitmq_server_has_no_errors: None,
+    random_exchange_name: Callable[[], str],
+    random_rabbit_message: Callable[..., PytestRabbitMessage],
+    rabbitmq_client: Callable[[str], RabbitMQClient],
+    async_docker_client: aiodocker.Docker,
+):
+    rabbit_client = rabbitmq_client("pinger")
+    assert await rabbit_client.ping() is True
+    exchange_name = random_exchange_name()
+    message = random_rabbit_message()
+    await rabbit_client.publish(exchange_name, message)
+    async with paused_container(async_docker_client, "rabbit"):
+        # check that connection was lost
+        with pytest.raises(asyncio.TimeoutError):
+            await rabbit_client.publish(exchange_name, message)
+    await rabbit_client.publish(exchange_name, message)
+
+
 def _get_rabbitmq_api_params(rabbit_service: RabbitSettings) -> dict[str, str]:
-    return dict(
-        scheme="http",
-        user=rabbit_service.RABBIT_USER,
-        password=rabbit_service.RABBIT_PASSWORD.get_secret_value(),
-        host=rabbit_service.RABBIT_HOST,
-        port="15672",
-    )
+    return {
+        "scheme": "http",
+        "user": rabbit_service.RABBIT_USER,
+        "password": rabbit_service.RABBIT_PASSWORD.get_secret_value(),
+        "host": rabbit_service.RABBIT_HOST,
+        "port": "15672",
+    }
 
 
 @retry(
