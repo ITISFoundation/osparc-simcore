@@ -44,7 +44,7 @@ async def _logs_fetcher_worker(
                 await dispatch_log(image_name=image_name, message=line)
         except DockerError as e:
             logger.warning(
-                "Cannot stream logs form %s, image %s, because: %s",
+                "Cannot stream logs from %s, image %s, because: %s",
                 container_name,
                 image_name,
                 e,
