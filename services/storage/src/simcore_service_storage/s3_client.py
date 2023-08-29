@@ -34,7 +34,7 @@ from .s3_utils import compute_num_file_chunks, s3_exception_handler
 _logger = logging.getLogger(__name__)
 
 
-_MAX_ITEMS_PER_PAGE: Final[NonNegativeInt] = 1000
+_MAX_ITEMS_PER_PAGE: Final[NonNegativeInt] = 500
 
 
 NextContinuationToken: TypeAlias = str
