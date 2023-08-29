@@ -195,6 +195,20 @@ services:
       - INVITATIONS_PASSWORD=${INVITATIONS_PASSWORD}
       - LOG_FORMAT_LOCAL_DEV_ENABLED=${LOG_FORMAT_LOCAL_DEV_ENABLED}
 
+  payments:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/payments:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    networks:
+      - default
+    environment:
+      - PAYMENTS_LOGLEVEL=${LOG_LEVEL:-INFO}
+      - PAYMENTS_SECRET_KEY=${PAYMENTS_SECRET_KEY}
+      - PAYMENTS_GATEWAY_URL=${PAYMENTS_GATEWAY_URL}
+      - PAYMENTS_USERNAME=${PAYMENTS_USERNAME}
+      - PAYMENTS_PASSWORD=${PAYMENTS_PASSWORD}
+      - LOG_FORMAT_LOCAL_DEV_ENABLED=${LOG_FORMAT_LOCAL_DEV_ENABLED}
+
   resource-usage-tracker:
     image: ${DOCKER_REGISTRY:-itisfoundation}/resource-usage-tracker:${DOCKER_IMAGE_TAG:-latest}
     init: true

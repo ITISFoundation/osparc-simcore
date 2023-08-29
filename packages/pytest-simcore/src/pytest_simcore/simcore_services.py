@@ -46,6 +46,7 @@ MAP_SERVICE_HEALTHCHECK_ENTRYPOINT = {
     "datcore-adapter": "/v0/live",
     "director-v2": "/",
     "invitations": "/",
+    "payments": "/",
     "resource-usage-tracker": "/",
 }
 AIOHTTP_BASED_SERVICE_PORT: int = 8080
@@ -70,14 +71,15 @@ async def wait_till_service_healthy(service_name: str, endpoint: URL):
         reraise=True,
     ):
         with attempt:
-            async with aiohttp.ClientSession(timeout=_ONE_SEC_TIMEOUT) as session:
-                async with session.get(endpoint) as response:
-                    # NOTE: Health-check endpoint require only a status code 200
-                    # (see e.g. services/web/server/docker/healthcheck.py)
-                    # regardless of the payload content
-                    assert (
-                        response.status == 200
-                    ), f"Connection to {service_name=} at {endpoint=} failed with {response=}"
+            async with aiohttp.ClientSession(
+                timeout=_ONE_SEC_TIMEOUT
+            ) as session, session.get(endpoint) as response:
+                # NOTE: Health-check endpoint require only a status code 200
+                # (see e.g. services/web/server/docker/healthcheck.py)
+                # regardless of the payload content
+                assert (
+                    response.status == 200
+                ), f"Connection to {service_name=} at {endpoint=} failed with {response=}"
 
             log.info(
                 "Connection to %s succeeded [%s]",
