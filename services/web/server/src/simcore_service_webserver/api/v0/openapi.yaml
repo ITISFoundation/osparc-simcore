@@ -3761,6 +3761,53 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_WalletGet_'
+  /v0/wallets/{wallet_id}/payments:
+    post:
+      tags:
+      - wallets
+      summary: Create Payment
+      operationId: create_payment
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentCreateBody'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_PaymentGet_'
+  /v0/wallets/-/payments:
+    get:
+      tags:
+      - wallets
+      summary: List All Payments
+      operationId: list_all_payments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PageQueryParameters'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_PaymentGet_'
   /v0/wallets/{wallet_id}/groups/{group_id}:
     put:
       tags:
@@ -4829,6 +4876,14 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/NodeRetrieved'
+        error:
+          title: Error
+    Envelope_PaymentGet_:
+      title: Envelope[PaymentGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/PaymentGet'
         error:
           title: Error
     Envelope_PresignedLink_:
@@ -6412,6 +6467,25 @@ components:
           minimum: 0
           type: integer
       additionalProperties: false
+    PageQueryParameters:
+      title: PageQueryParameters
+      type: object
+      properties:
+        limit:
+          title: Limit
+          exclusiveMaximum: true
+          minimum: 1
+          type: integer
+          description: maximum number of items to return (pagination)
+          default: 20
+          maximum: 50
+        offset:
+          title: Offset
+          minimum: 0
+          type: integer
+          description: index to the first item to return (pagination)
+          default: 0
+      description: Use as pagination options in query parameters
     Page_CheckpointApiModel_:
       title: Page[CheckpointApiModel]
       required:
@@ -6429,6 +6503,25 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CheckpointApiModel'
+      additionalProperties: false
+      description: Paginated response model of ItemTs
+    Page_PaymentGet_:
+      title: Page[PaymentGet]
+      required:
+      - _meta
+      - _links
+      - data
+      type: object
+      properties:
+        _meta:
+          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
+        _links:
+          $ref: '#/components/schemas/PageLinks'
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentGet'
       additionalProperties: false
       description: Paginated response model of ItemTs
     Page_ProjectIterationItem_:
@@ -6523,6 +6616,81 @@ components:
           exclusiveMinimum: true
           type: integer
           minimum: 0
+    PaymentCreateBody:
+      title: PaymentCreateBody
+      required:
+      - prize
+      - credit
+      type: object
+      properties:
+        prize:
+          title: Prize
+          exclusiveMinimum: true
+          type: number
+          minimum: 0.0
+        credit:
+          title: Credit
+          exclusiveMinimum: true
+          type: number
+          minimum: 0.0
+    PaymentGet:
+      title: PaymentGet
+      required:
+      - idr
+      - prize
+      - walletId
+      - credit
+      - comment
+      - state
+      - created
+      - submissionLink
+      type: object
+      properties:
+        idr:
+          title: Idr
+          minLength: 1
+          type: string
+        prize:
+          title: Prize
+          exclusiveMinimum: true
+          type: number
+          minimum: 0.0
+        walletId:
+          title: Walletid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        credit:
+          title: Credit
+          exclusiveMinimum: true
+          type: number
+          minimum: 0.0
+        comment:
+          title: Comment
+          type: string
+        state:
+          $ref: '#/components/schemas/PaymentTransactionState'
+        created:
+          title: Created
+          type: string
+          format: date-time
+        completed:
+          title: Completed
+          type: string
+          format: date-time
+        submissionLink:
+          title: Submissionlink
+          maxLength: 2083
+          minLength: 1
+          type: string
+          format: uri
+    PaymentTransactionState:
+      title: PaymentTransactionState
+      enum:
+      - CREATED
+      - COMPLETED
+      type: string
+      description: An enumeration.
     PermissionGet:
       title: PermissionGet
       required:

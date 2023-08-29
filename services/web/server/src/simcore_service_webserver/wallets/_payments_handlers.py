@@ -42,7 +42,7 @@ async def create_payment(request: web.Request):
     return envelope_json_response(PaymentGet.parse_obj(payment), web.HTTPCreated)
 
 
-@routes.post(f"/{VTAG}/wallets/-/payments", name="list_all_wallets_payments")
+@routes.get(f"/{VTAG}/wallets/-/payments", name="list_all_payments")
 @login_required
 @permission_required("wallets.*")
 async def list_all_payments(request: web.Request):

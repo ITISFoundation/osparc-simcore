@@ -62,11 +62,11 @@ async def update_wallet(wallet_id: WalletID, body: PutWalletBodyParams):
 ### Wallets payments
 
 
-@router.get(
+@router.post(
     "/wallets/{wallet_id}/payments",
     response_model=Envelope[PaymentGet],
 )
-async def create_payment(body: PaymentCreateBody):
+async def create_payment(wallet_id: WalletID, body: PaymentCreateBody):
     ...
 
 
