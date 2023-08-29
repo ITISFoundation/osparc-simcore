@@ -15,9 +15,10 @@ import simcore_service_dynamic_sidecar
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
-from models_library.services import RunID, ServiceKey, ServiceVersion
+from models_library.services import RunID
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.users import UserID
+from pydantic import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_envs import (
     EnvVarsDict,
@@ -292,20 +293,9 @@ def mock_stop_heart_beat_task(mocker: MockerFixture) -> AsyncMock:
 
 @pytest.fixture
 def mock_metrics_params(
-    mock_stop_heart_beat_task: AsyncMock,
+    mock_stop_heart_beat_task: AsyncMock, faker: Faker
 ) -> CreateServiceMetricsAdditionalParams:
-    return CreateServiceMetricsAdditionalParams(
-        wallet_id=1,
-        wallet_name="test_wallet",
-        pricing_plan_id=1,
-        pricing_detail_id=1,
-        product_name="test",
-        simcore_user_agent="",
-        user_email="",
-        project_name="",
-        node_name="",
-        service_key=ServiceKey("simcore/services/dynamic/test"),
-        service_version=ServiceVersion("0.0.1"),
-        service_resources={},
-        service_additional_metadata={},
+    return parse_obj_as(
+        CreateServiceMetricsAdditionalParams,
+        CreateServiceMetricsAdditionalParams.Config.schema_extra["example"],
     )

@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, ClassVar
 
 from pydantic import BaseModel
 
@@ -21,3 +21,22 @@ class CreateServiceMetricsAdditionalParams(BaseModel):
     service_version: ServiceVersion
     service_resources: ServiceResourcesDict
     service_additional_metadata: dict[str, Any]
+
+    class Config:
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "example": {
+                "wallet_id": 1,
+                "wallet_name": "a private wallet for me",
+                "pricing_plan_id": 1,
+                "pricing_detail_id": 1,
+                "product_name": "osparc",
+                "simcore_user_agent": "",
+                "user_email": "test@test.com",
+                "project_name": "_!New Study",
+                "node_name": "the service of a lifetime _ *!",
+                "service_key": ServiceKey("simcore/services/dynamic/test"),
+                "service_version": ServiceVersion("0.0.1"),
+                "service_resources": {},
+                "service_additional_metadata": {},
+            }
+        }
