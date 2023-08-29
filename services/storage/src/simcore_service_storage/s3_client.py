@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import json
 import logging
@@ -262,7 +263,6 @@ class StorageS3Client:
         async for s3_objects in _list_objects_v2_paginated_gen(
             self.client, bucket=bucket, prefix=prefix
         ):
-            _logger.error("list objects found %s", len(s3_objects))
             yield s3_objects
 
     @s3_exception_handler(_logger)
@@ -276,21 +276,20 @@ class StorageS3Client:
         # NOTE: deletion of objects is done in batches of max 1000 elements,
         # the maximum accepted by the S3 API
         with log_context(_logger, logging.INFO, "deleting objects", log_duration=True):
-            object_groups_to_delete: list[list[str]] = []
+            delete_tasks: list[asyncio.Task] = []
             async for s3_objects in self.list_all_objects_gen(bucket, prefix=prefix):
                 if objects_to_delete := [f["Key"] for f in s3_objects if "Key" in f]:
-                    object_groups_to_delete.append(objects_to_delete)  # noqa: PERF401
-
-            # items are deleted in parallel now
-            await logged_gather(
-                *[
-                    self.client.delete_objects(
-                        Bucket=bucket,
-                        Delete={"Objects": [{"Key": key} for key in group_of_objects]},
+                    delete_task = asyncio.create_task(
+                        self.client.delete_objects(
+                            Bucket=bucket,
+                            Delete={
+                                "Objects": [{"Key": key} for key in objects_to_delete]
+                            },
+                        )
                     )
-                    for group_of_objects in object_groups_to_delete
-                ],
-            )
+                    delete_tasks.append(delete_task)
+
+            await logged_gather(*delete_tasks)
 
     @s3_exception_handler(_logger)
     async def delete_files_in_project_node(
