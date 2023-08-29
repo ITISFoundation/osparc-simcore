@@ -40,6 +40,9 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
       contentPadding: 0
     });
 
+    const overviewPage = this.__overviewPage = this.__getOverviewPage();
+    tabViews.add(overviewPage);
+
     const walletsPage = this.__walletsPage = this.__getWalletsPage();
     tabViews.add(walletsPage);
 
@@ -66,12 +69,28 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
 
   members: {
     __tabsView: null,
+    __overviewPage: null,
     __walletsPage: null,
     __buyCreditsPage: null,
     __transactionsPage: null,
     __usageOverviewPage: null,
     __buyCredits: null,
     __transactions: null,
+
+    __getOverviewPage: function() {
+      const title = this.tr("Overview");
+      const iconSrc = "@FontAwesome5Solid/table/22";
+      const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
+      const walletsView = new osparc.desktop.credits.Overview();
+      walletsView.set({
+        margin: 10
+      });
+      walletsView.addListener("toWallets", () => this.openWallets());
+      walletsView.addListener("toTransactions", () => this.openTransactions());
+      walletsView.addListener("toUsageOverview", () => this.openUsageOverview());
+      page.add(walletsView);
+      return page;
+    },
 
     __getWalletsPage: function() {
       const title = this.tr("Wallets");
@@ -145,6 +164,10 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
       if (page) {
         this.__tabsView.setSelection([page]);
       }
+    },
+
+    openOverview: function() {
+      this.__openPage(this.__overviewPage);
     },
 
     openWallets: function() {
