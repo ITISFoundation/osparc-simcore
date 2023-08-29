@@ -30,12 +30,20 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       init: null,
       nullable: false,
       apply: "__applyStatus"
+    },
+
+    defaultWallet: {
+      check: "Boolean",
+      init: null,
+      nullable: false,
+      apply: "__applyDefaultWallet"
     }
   },
 
   events: {
     "openEditWallet": "qx.event.type.Data",
-    "buyCredits": "qx.event.type.Data"
+    "buyCredits": "qx.event.type.Data",
+    "toggleFavourite": "qx.event.type.Data"
   },
 
   members: {
@@ -119,6 +127,21 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
           this._add(control, {
             row: 0,
             column: 6,
+            rowSpan: 2
+          });
+          break;
+        case "favourite-button":
+          control = new qx.ui.form.Button().set({
+            backgroundColor: "transparent",
+            maxHeight: 30,
+            alignY: "middle"
+          });
+          control.addListener("execute", () => this.fireDataEvent("toggleFavourite", {
+            walletId: this.getKey()
+          }), this);
+          this._add(control, {
+            row: 0,
+            column: 7,
             rowSpan: 2
           });
           break;
@@ -224,6 +247,20 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
           toolTipText: status === "ACTIVE" ? this.tr("Wallet enabled") : this.tr("Wallet blocked"),
           enabled: this.__canIWrite()
         });
+      }
+    },
+
+    __applyDefaultWallet: function(isDefaultWallet) {
+      const favouriteButton = this.getChildControl("favourite-button");
+      const favouriteButtonIcon = favouriteButton.getChildControl("icon");
+      if (isDefaultWallet) {
+        this.setToolTipText(this.tr("Default Wallet"));
+        favouriteButton.setIcon("@FontAwesome5Solid/star/24");
+        favouriteButtonIcon.setTextColor("strong-main");
+      } else {
+        this.setToolTipText(this.tr("Make it Default Wallet"));
+        favouriteButton.setIcon("@FontAwesome5Regular/star/24");
+        favouriteButtonIcon.resetTextColor();
       }
     }
   }

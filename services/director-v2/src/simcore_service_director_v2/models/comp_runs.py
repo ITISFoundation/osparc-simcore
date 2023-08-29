@@ -19,8 +19,10 @@ class RunMetadataDict(TypedDict, total=False):
     product_name: str
     simcore_user_agent: str
     user_email: str
-    wallet_id: int
-    wallet_name: str
+    wallet_id: int | None
+    wallet_name: str | None
+    pricing_plan_id: int | None
+    pricing_detail_id: int | None
 
 
 class CompRunsAtDB(BaseModel):

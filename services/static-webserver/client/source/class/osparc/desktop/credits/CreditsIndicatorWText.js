@@ -18,10 +18,14 @@
 qx.Class.define("osparc.desktop.credits.CreditsIndicatorWText", {
   extend: qx.ui.core.Widget,
 
-  construct: function(wallet) {
+  construct: function(wallet, textOrientation = "vertical") {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(5));
+    if (textOrientation === "vertical") {
+      this._setLayout(new qx.ui.layout.VBox(5));
+    } else if (textOrientation === "horizontal") {
+      this._setLayout(new qx.ui.layout.HBox(5));
+    }
 
     this.getChildControl("credits-indicator");
     this.getChildControl("credits-text");
@@ -59,6 +63,7 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicatorWText", {
           break;
         case "credits-text":
           control = new qx.ui.basic.Label().set({
+            alignY: "middle",
             font: "text-14"
           });
           this.bind("creditsAvailable", control, "value", {
