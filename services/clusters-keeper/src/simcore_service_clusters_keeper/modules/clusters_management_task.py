@@ -10,7 +10,7 @@ from ..core.settings import ApplicationSettings
 from ..modules.redis import get_redis_client
 from .clusters_management_core import check_clusters
 
-_TASK_NAME = "Clusters-keeper EC2 instances check"
+_TASK_NAME = "Clusters-keeper EC2 instances management"
 
 logger = logging.getLogger(__name__)
 
@@ -19,13 +19,13 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _startup() -> None:
         app_settings: ApplicationSettings = app.state.settings
 
-        lock_key = f"{app.title}:cluster-keeper_cleaning_lock"
+        lock_key = f"{app.title}:clusters-management_lock"
         lock_value = json.dumps({})
         app.state.clusters_cleaning_task = start_periodic_task(
             exclusive(get_redis_client(app), lock_key=lock_key, lock_value=lock_value)(
                 check_clusters
             ),
-            interval=app_settings.CLUSTERS_KEEPER_CLEAN_INTERVAL,
+            interval=app_settings.CLUSTERS_KEEPER_TASK_INTERVAL,
             task_name=_TASK_NAME,
             app=app,
         )
@@ -50,7 +50,7 @@ def setup(app: FastAPI):
         ]
     ):
         logger.warning(
-            "the clusters-keeper clean background task is disabled by settings, nothing will happen!"
+            "the clusters management background task is disabled by settings, nothing will happen!"
         )
         return
     app.add_event_handler("startup", on_app_startup(app))

@@ -22,7 +22,7 @@ def app_environment(
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     return app_environment | setenvs_from_dict(
-        monkeypatch, {"CLUSTERS_KEEPER_CLEAN_INTERVAL": f"{_FAST_POLL_INTERVAL}"}
+        monkeypatch, {"CLUSTERS_KEEPER_TASK_INTERVAL": f"{_FAST_POLL_INTERVAL}"}
     )
 
 
@@ -43,7 +43,7 @@ async def test_clusters_management_task_created_and_deleted(
     app_settings: ApplicationSettings,
 ):
     assert (
-        app_settings.CLUSTERS_KEEPER_CLEAN_INTERVAL.total_seconds()
+        app_settings.CLUSTERS_KEEPER_TASK_INTERVAL.total_seconds()
         == _FAST_POLL_INTERVAL
     )
     assert hasattr(initialized_app.state, "clusters_cleaning_task")

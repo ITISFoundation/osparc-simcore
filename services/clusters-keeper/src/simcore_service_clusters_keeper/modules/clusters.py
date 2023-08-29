@@ -1,9 +1,11 @@
 import datetime
+import logging
 from typing import cast
 
 from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID
+from servicelib.logging_utils import log_context
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.errors import Ec2InstanceNotFoundError
@@ -17,6 +19,8 @@ from ..utils.ec2 import (
     ec2_instances_for_user_wallet_filter,
 )
 from .ec2 import get_ec2_client
+
+_logger = logging.getLogger(__name__)
 
 
 async def create_cluster(
@@ -68,14 +72,21 @@ async def get_cluster(
 async def cluster_heartbeat(
     app: FastAPI, *, user_id: UserID, wallet_id: WalletID
 ) -> None:
-    ec2_client = get_ec2_client(app)
     app_settings = get_application_settings(app)
     assert app_settings.CLUSTERS_KEEPER_EC2_INSTANCES  # nosec
     instance = await get_cluster(app, user_id=user_id, wallet_id=wallet_id)
-    await ec2_client.set_instances_tags(
-        [instance],
-        tags={HEARTBEAT_TAG_KEY: f"{datetime.datetime.now(datetime.timezone.utc)}"},
-    )
+    await set_instance_heartbeat(app, instance=instance)
+
+
+async def set_instance_heartbeat(app: FastAPI, *, instance: EC2InstanceData) -> None:
+    with log_context(
+        _logger, logging.INFO, msg=f"set instance heartbeat for {instance.id}"
+    ):
+        ec2_client = get_ec2_client(app)
+        await ec2_client.set_instances_tags(
+            [instance],
+            tags={HEARTBEAT_TAG_KEY: f"{datetime.datetime.now(datetime.timezone.utc)}"},
+        )
 
 
 async def delete_clusters(app: FastAPI, *, instances: list[EC2InstanceData]) -> None:

@@ -6,8 +6,9 @@ from fastapi import FastAPI
 
 from ..core.settings import get_application_settings
 from ..models import EC2InstanceData
-from ..modules.clusters import delete_clusters, get_all_clusters
+from ..modules.clusters import delete_clusters, get_all_clusters, set_instance_heartbeat
 from ..utils.ec2 import HEARTBEAT_TAG_KEY
+from .dask import is_gateway_busy, ping_gateway
 
 _logger = logging.getLogger(__name__)
 
@@ -46,5 +47,24 @@ async def _find_terminateable_instances(
 
 async def check_clusters(app: FastAPI) -> None:
     instances = await get_all_clusters(app)
-    if terminateable_instances := await _find_terminateable_instances(app, instances):
+    app_settings = get_application_settings(app)
+    connected_intances = [
+        instance
+        for instance in instances
+        if await ping_gateway(
+            instance,
+            app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_GATEWAY_PASSWORD,
+        )
+    ]
+    for instance in connected_intances:
+        is_busy = await is_gateway_busy(
+            instance,
+            app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_GATEWAY_PASSWORD,
+        )
+        _logger.info("%s currently runs with %s", f"{instance=}", f"{is_busy}")
+        if is_busy:
+            await set_instance_heartbeat(app, instance=instance)
+    if terminateable_instances := await _find_terminateable_instances(
+        app, connected_intances
+    ):
         await delete_clusters(app, instances=terminateable_instances)
