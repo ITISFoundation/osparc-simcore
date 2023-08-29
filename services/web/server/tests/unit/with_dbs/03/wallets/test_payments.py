@@ -5,7 +5,6 @@
 
 
 import json
-from enum import auto
 from pathlib import Path
 from typing import Any, TypeAlias
 
@@ -15,16 +14,19 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
-from models_library.api_schemas_webserver._base import OutputSchema
-from models_library.api_schemas_webserver.wallets import WalletGet, WalletID
-from models_library.utils.enums import StrAutoEnum
+from models_library.api_schemas_webserver.wallets import PaymentGet, WalletGet
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import HttpUrl, PositiveFloat
-from pydantic.types import ConstrainedStr
+from models_library.wallets import PaymentTransactionState
+from pydantic import parse_obj_as
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.payments.api import get_payments_service_api
+from simcore_service_webserver.payments.settings import (
+    PaymentsSettings,
+    get_plugin_settings,
+)
 from toolz.dicttoolz import get_in
 from yarl import URL
 
@@ -43,13 +45,22 @@ def payments_service_openapi_specs(osparc_simcore_services_dir: Path) -> OpenApi
 
 
 @pytest.fixture
+def app_payments_plugin_settings(client: TestClient) -> PaymentsSettings:
+    assert client.app
+    settings = get_plugin_settings(app=client.app)
+    assert settings
+    return settings
+
+
+@pytest.fixture
 def mock_payments_service_http_api(
     aioresponses_mocker: AioResponsesMock,
     payments_service_openapi_specs: dict[str, Any],
-    base_url: URL,
+    app_payments_plugin_settings: PaymentsSettings,
 ) -> AioResponsesMock:
     """Mocks responses from payments service API"""
     oas = payments_service_openapi_specs
+    base_url = URL(app_payments_plugin_settings.base_url)
 
     # healthcheck
     assert "/" in oas["paths"]
@@ -103,25 +114,17 @@ def mock_payments_service_http_api(
 ## ---------------------------------
 
 
-class IDStr(ConstrainedStr):
-    strip_whitespace = True
-    min_length = 1
+async def test_plugin_payments_service_api(
+    client: TestClient, mock_payments_service_http_api: AioResponsesMock
+):
+    assert client.app
 
+    payments_service = get_payments_service_api(client.app)
+    assert payments_service.is_healthy()
 
-class PaymentTransactionState(StrAutoEnum):
-    # TODO: define state diagram for a transaction ???
-    CREATED = auto()
-    ## SUBMITTED = auto() # We do not know this
-    COMPLETED = auto()
+    #
 
-
-class PaymentGet(OutputSchema):
-    idr: IDStr  # resource identifier
-    wallet_id: WalletID  # parent
-    amount: PositiveFloat
-    credits: PositiveFloat  # noqa: A003
-    submission_url: HttpUrl  # redirection
-    state: PaymentTransactionState
+    assert not payments_service.is_healthy()
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
@@ -142,11 +145,8 @@ async def test_payments_worfklow(
     response = await client.post(
         f"/v0/wallet/{wallet.wallet_id}/payments",
         json={
-            # "product_id": "osparc" -> headers
-            # "user_id": 1, -> auth
-            "wallet_id": wallet.wallet_id,
             "credits": 50,
-            "amount_total": 25,  # dollars?
+            "prize": 25,  # dollars?
         },
     )
 
@@ -155,12 +155,13 @@ async def test_payments_worfklow(
     payment = PaymentGet.parse_obj(data)
 
     assert payment.state == PaymentTransactionState.CREATED
-    assert payment.amount == 50
+    assert payment.prize == 50
+    assert payment.submission_link
 
     # some time later
     # payment gets acknoledged -> socketio
 
-    # inspect payment
+    # inspect payment in wallet
     response = await client.get(
         f"/v0/wallet/{wallet.wallet_id}/payments/{payment.idr}",
     )
@@ -169,5 +170,17 @@ async def test_payments_worfklow(
     payment = PaymentGet.parse_obj(data)
 
     assert payment.state == PaymentTransactionState.COMPLETED
+
+    # list all payment transactions of a wallet
+    response = await client.get(f"/v0/wallet/{wallet.wallet_id}/payments")
+    data, error = await assert_status(response, web.HTTPOk)
+
+    assert parse_obj_as(list[PaymentGet], data) is not None
+
+    # list all payment transactions in all my wallets
+    response = await client.get("/v0/wallet/-/payments")
+    data, error = await assert_status(response, web.HTTPOk)
+
+    assert parse_obj_as(list[PaymentGet], data) is not None
 
     # check email was sent to user
