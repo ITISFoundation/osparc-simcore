@@ -10,6 +10,7 @@ from models_library.rabbitmq_messages import (
     RabbitResourceTrackingStoppedMessage,
     SimcorePlatformStatus,
 )
+from models_library.resource_tracker import PricingDetailId, PricingPlanId
 from models_library.services import ServiceKey, ServiceType, ServiceVersion
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
@@ -67,8 +68,10 @@ async def publish_service_resource_tracking_started(  # noqa: PLR0913
     rabbitmq_client: RabbitMQClient,
     service_run_id: str,
     *,
-    wallet_id: WalletID,
-    wallet_name: str,
+    wallet_id: WalletID | None,
+    wallet_name: str | None,
+    pricing_plan_id: PricingPlanId | None,
+    pricing_detail_id: PricingDetailId | None,
     product_name: str,
     simcore_user_agent: str,
     user_id: UserID,
@@ -87,6 +90,8 @@ async def publish_service_resource_tracking_started(  # noqa: PLR0913
         service_run_id=service_run_id,
         wallet_id=wallet_id,
         wallet_name=wallet_name,
+        pricing_plan_id=pricing_plan_id,
+        pricing_detail_id=pricing_detail_id,
         product_name=product_name,
         simcore_user_agent=simcore_user_agent,
         user_id=user_id,
