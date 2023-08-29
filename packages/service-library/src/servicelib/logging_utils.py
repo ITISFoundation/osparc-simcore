@@ -250,7 +250,7 @@ def log_context(
     logger.log(level, "Starting %s ...", msg, *args, **kwargs)
     yield
     duration = (
-        f" in {(datetime.now() - start ).total_seconds()}"  # noqa: DTZ005
+        f" in {(datetime.now() - start ).total_seconds()}s"  # noqa: DTZ005
         if log_duration
         else ""
     )
