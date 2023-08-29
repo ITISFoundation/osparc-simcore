@@ -5,6 +5,7 @@
 
 
 import json
+from enum import auto
 from pathlib import Path
 from typing import Any, TypeAlias
 
@@ -14,10 +15,16 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.api_schemas_webserver._base import OutputSchema
+from models_library.api_schemas_webserver.wallets import WalletGet, WalletID
+from models_library.utils.enums import StrAutoEnum
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from pydantic import HttpUrl, PositiveFloat
+from pydantic.types import ConstrainedStr
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
+from simcore_service_webserver.db.models import UserRole
 from toolz.dicttoolz import get_in
 from yarl import URL
 
@@ -93,32 +100,74 @@ def mock_payments_service_http_api(
     return aioresponses_mocker
 
 
+## ---------------------------------
+
+
+class IDStr(ConstrainedStr):
+    strip_whitespace = True
+    min_length = 1
+
+
+class PaymentTransactionState(StrAutoEnum):
+    # TODO: define state diagram for a transaction ???
+    CREATED = auto()
+    ## SUBMITTED = auto() # We do not know this
+    COMPLETED = auto()
+
+
+class PaymentGet(OutputSchema):
+    idr: IDStr  # resource identifier
+    wallet_id: WalletID  # parent
+    amount: PositiveFloat
+    credits: PositiveFloat  # noqa: A003
+    submission_url: HttpUrl  # redirection
+    state: PaymentTransactionState
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_payments_worfklow(
-    client: TestClient,
-    faker: Faker,
-    logged_user: UserInfoDict,
+    client: TestClient, faker: Faker, logged_user: UserInfoDict, wallets_clean_db: None
 ):
     assert client.app
 
-    wallet_id = 123
+    # create a new wallet
+    url = client.app.router["create_wallet"].url_for()
+    resp = await client.post(
+        url.path, json={"name": "My first wallet", "description": "Custom description"}
+    )
+    data, _ = await assert_status(resp, web.HTTPCreated)
+    wallet = WalletGet.parse_obj(data)
 
+    # pay with wallet
     response = await client.post(
-        f"/v0/wallet/{wallet_id}/payments",
+        f"/v0/wallet/{wallet.wallet_id}/payments",
         json={
             # "product_id": "osparc" -> headers
             # "user_id": 1, -> auth
-            "wallet_id": wallet_id,
+            "wallet_id": wallet.wallet_id,
             "credits": 50,
-            "amount_total": {"value": 25, "currency": "dollars"},
+            "amount_total": 25,  # dollars?
         },
     )
 
     data, error = await assert_status(response, web.HTTPCreated)
-    assert data == {"id": 1234, "status": "CREATED", "submission_url": faker.url()}
     assert error is None
+    payment = PaymentGet.parse_obj(data)
+
+    assert payment.state == PaymentTransactionState.CREATED
+    assert payment.amount == 50
 
     # some time later
     # payment gets acknoledged -> socketio
-    # send to front-end
-    # send email
-    #
+
+    # inspect payment
+    response = await client.get(
+        f"/v0/wallet/{wallet.wallet_id}/payments/{payment.idr}",
+    )
+    data, error = await assert_status(response, web.HTTPOk)
+    assert error is None
+    payment = PaymentGet.parse_obj(data)
+
+    assert payment.state == PaymentTransactionState.COMPLETED
+
+    # check email was sent to user
