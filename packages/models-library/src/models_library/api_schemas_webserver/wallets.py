@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from pydantic import PositiveFloat
+
 from ..api_schemas_payments import payments as payments_service
 from ..users import GroupID
 from ..wallets import WalletID, WalletStatus
@@ -48,3 +50,8 @@ class PutWalletBodyParams(OutputSchema):
 class PaymentGet(payments_service.PaymentGet):
     class Config(OutputSchema.Config):
         ...
+
+
+class PaymentCreateBody(OutputSchema):
+    prize: PositiveFloat
+    credit: PositiveFloat  # NOTE: should I recompute? or should be in the backend?

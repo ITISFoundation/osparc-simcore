@@ -1,11 +1,9 @@
 import logging
 
 from aiohttp import web
-from models_library.api_schemas_webserver._base import OutputSchema
 from models_library.api_schemas_webserver.wallets import PaymentGet
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
-from pydantic import PositiveFloat
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -23,11 +21,6 @@ _logger = logging.getLogger(__name__)
 
 
 routes = web.RouteTableDef()
-
-
-class PaymentCreateBody(OutputSchema):
-    prize: PositiveFloat
-    credit: PositiveFloat  # NOTE: should I recompute? or should be in the backend?
 
 
 @routes.post(f"/{VTAG}/wallets/{{wallet_id}}/payments", name="create_payment")

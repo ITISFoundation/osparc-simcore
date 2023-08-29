@@ -10,11 +10,14 @@
 from fastapi import APIRouter, status
 from models_library.api_schemas_webserver.wallets import (
     CreateWalletBodyParams,
+    PaymentCreateBody,
+    PaymentGet,
     PutWalletBodyParams,
     WalletGet,
     WalletGetWithAvailableCredits,
 )
 from models_library.generics import Envelope
+from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.users import GroupID
 from models_library.wallets import WalletID
 from simcore_service_webserver._meta import API_VTAG
@@ -53,6 +56,25 @@ async def list_wallets():
     response_model=Envelope[WalletGet],
 )
 async def update_wallet(wallet_id: WalletID, body: PutWalletBodyParams):
+    ...
+
+
+### Wallets payments
+
+
+@router.get(
+    "/wallets/{wallet_id}/payments",
+    response_model=Envelope[PaymentGet],
+)
+async def create_payment(body: PaymentCreateBody):
+    ...
+
+
+@router.get(
+    "/wallets/-/payments",
+    response_model=Page[PaymentGet],
+)
+async def list_all_payments(params: PageQueryParameters):
     ...
 
 
