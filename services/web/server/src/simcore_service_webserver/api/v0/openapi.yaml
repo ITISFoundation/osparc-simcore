@@ -2835,14 +2835,22 @@ paths:
       responses:
         '204':
           description: Successful Response
-  /v0/resource-usage/containers:
+  /v0/resource-usage/services:
     get:
       tags:
       - usage
-      summary: Retrieve containers that were running for a user and product taken
-        from context.
-      operationId: list_resource_usage_containers
+      summary: Retrieve finished and currently running user services (user and product
+        are taken from context, optionally wallet_id parameter might be provided).
+      operationId: list_resource_usage_services
       parameters:
+      - required: false
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: query
       - required: false
         schema:
           title: Limit
@@ -2864,7 +2872,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.resource_usage.ContainerGet__'
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.resource_usage.ServiceRunGet__'
   /v0/storage/locations:
     get:
       tags:
@@ -4582,64 +4590,6 @@ components:
           title: Cluster Id
           minimum: 0
           type: integer
-    ContainerGet:
-      title: ContainerGet
-      required:
-      - project_uuid
-      - node_uuid
-      - service_key
-      - service_version
-      - start_time
-      - duration
-      - processors
-      - core_hours
-      - status
-      type: object
-      properties:
-        project_uuid:
-          title: Project Uuid
-          type: string
-          format: uuid
-        project_name:
-          title: Project Name
-          type: string
-        node_uuid:
-          title: Node Uuid
-          type: string
-          format: uuid
-        node_label:
-          title: Node Label
-          type: string
-        service_key:
-          title: Service Key
-          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
-          type: string
-        service_version:
-          title: Service Version
-          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
-          type: string
-        start_time:
-          title: Start Time
-          type: string
-          format: date-time
-        duration:
-          title: Duration
-          type: number
-        processors:
-          title: Processors
-          type: number
-        core_hours:
-          title: Core Hours
-          type: number
-        status:
-          $ref: '#/components/schemas/ContainerStatus'
-    ContainerStatus:
-      title: ContainerStatus
-      enum:
-      - running
-      - finished
-      type: string
-      description: An enumeration.
     DatCoreFileLink:
       title: DatCoreFileLink
       required:
@@ -5240,15 +5190,15 @@ components:
             $ref: '#/components/schemas/GroupUserGet'
         error:
           title: Error
-    Envelope_list_models_library.api_schemas_webserver.resource_usage.ContainerGet__:
-      title: Envelope[list[models_library.api_schemas_webserver.resource_usage.ContainerGet]]
+    Envelope_list_models_library.api_schemas_webserver.resource_usage.ServiceRunGet__:
+      title: Envelope[list[models_library.api_schemas_webserver.resource_usage.ServiceRunGet]]
       type: object
       properties:
         data:
           title: Data
           type: array
           items:
-            $ref: '#/components/schemas/ContainerGet'
+            $ref: '#/components/schemas/ServiceRunGet'
         error:
           title: Error
     Envelope_list_models_library.api_schemas_webserver.wallets.WalletGetWithAvailableCredits__:
@@ -7827,6 +7777,85 @@ components:
         unitLong: seconds
         unitShort: sec
         keyId: output_2
+    ServiceRunGet:
+      title: ServiceRunGet
+      required:
+      - service_run_id
+      - user_id
+      - project_id
+      - project_name
+      - node_id
+      - node_name
+      - service_key
+      - service_version
+      - service_type
+      - service_resources
+      - started_at
+      - service_run_status
+      type: object
+      properties:
+        service_run_id:
+          title: Service Run Id
+          type: string
+        wallet_id:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        wallet_name:
+          title: Wallet Name
+          type: string
+        user_id:
+          title: User Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        project_id:
+          title: Project Id
+          type: string
+          format: uuid
+        project_name:
+          title: Project Name
+          type: string
+        node_id:
+          title: Node Id
+          type: string
+          format: uuid
+        node_name:
+          title: Node Name
+          type: string
+        service_key:
+          title: Service Key
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
+        service_version:
+          title: Service Version
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
+        service_type:
+          title: Service Type
+          type: string
+        service_resources:
+          title: Service Resources
+          type: object
+        started_at:
+          title: Started At
+          type: string
+          format: date-time
+        stopped_at:
+          title: Stopped At
+          type: string
+          format: date-time
+        service_run_status:
+          $ref: '#/components/schemas/ServiceRunStatus'
+    ServiceRunStatus:
+      title: ServiceRunStatus
+      enum:
+      - RUNNING
+      - SUCCESS
+      - ERROR
+      type: string
+      description: An enumeration.
     ServiceState:
       title: ServiceState
       enum:

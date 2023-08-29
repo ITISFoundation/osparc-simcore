@@ -8,6 +8,7 @@ from models_library.rest_pagination import (
 )
 from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
+from models_library.wallets import WalletID
 from pydantic import BaseModel, Extra, Field, NonNegativeInt
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -18,7 +19,7 @@ from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
-from . import _containers_api as api
+from . import _service_runs_api as api
 
 #
 # API components/schemas
@@ -30,7 +31,7 @@ class _RequestContext(BaseModel):
     product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[pydantic-alias]
 
 
-class _ListContainersPathParams(BaseModel):
+class _ListServicesPathParams(BaseModel):
     limit: int = Field(
         default=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
         description="maximum number of items to return (pagination)",
@@ -40,6 +41,7 @@ class _ListContainersPathParams(BaseModel):
     offset: NonNegativeInt = Field(
         default=0, description="index to the first item to return (pagination)"
     )
+    wallet_id: WalletID = Field(default=None)
 
     class Config:
         extra = Extra.forbid
@@ -52,26 +54,27 @@ class _ListContainersPathParams(BaseModel):
 routes = web.RouteTableDef()
 
 
-@routes.get(f"/{VTAG}/resource-usage/containers", name="list_resource_usage_containers")
+@routes.get(f"/{VTAG}/resource-usage/services", name="list_resource_usage_services")
 @login_required
 @permission_required("resource-usage.read")
-async def list_resource_usage_containers(request: web.Request):
+async def list_resource_usage_services(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
-    query_params = parse_request_query_parameters_as(_ListContainersPathParams, request)
+    query_params = parse_request_query_parameters_as(_ListServicesPathParams, request)
 
-    containers: dict = await api.list_containers_usage_by_user_name_and_product(
+    services: dict = await api.list_usage_services(
         app=request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
+        wallet_id=query_params.wallet_id,
         offset=query_params.offset,
         limit=query_params.limit,
     )
 
     page = Page[dict[str, Any]].parse_obj(
         paginate_data(
-            chunk=containers["items"],
+            chunk=services["items"],
             request_url=request.url,
-            total=containers["total"],
+            total=services["total"],
             limit=query_params.limit,
             offset=query_params.offset,
         )
