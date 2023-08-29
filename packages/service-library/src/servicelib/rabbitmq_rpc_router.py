@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from typing import Any, TypeVar
 
 import orjson
-from fastapi.encoders import jsonable_encoder
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import SecretStr
 from servicelib.logging_utils import log_catch, log_context
 

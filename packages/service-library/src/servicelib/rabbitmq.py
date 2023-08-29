@@ -1,4 +1,5 @@
 import asyncio
+import functools
 import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
@@ -12,6 +13,7 @@ from servicelib.logging_utils import log_catch, log_context
 from settings_library.rabbit import RabbitSettings
 
 from .rabbitmq_errors import RemoteMethodNotRegisteredError, RPCNotInitializedError
+from .rabbitmq_rpc_router import RPCRouter
 from .rabbitmq_utils import (
     RPCMethodName,
     RPCNamespace,
@@ -375,6 +377,20 @@ class RabbitMQClient:
             handler,
             auto_delete=True,
         )
+
+    async def rpc_register_router(
+        self,
+        router: RPCRouter,
+        namespace: RPCNamespace,
+        *handler_args,
+        **handler_kwargs,
+    ) -> None:
+        for rpc_method_name, handler in router.routes.items():
+            await self.rpc_register_handler(
+                namespace,
+                rpc_method_name,
+                functools.partial(handler, *handler_args, **handler_kwargs),
+            )
 
     async def rpc_unregister_handler(self, handler: Callable[..., Any]) -> None:
         """Unbind a locally added `handler`"""
