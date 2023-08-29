@@ -37,6 +37,7 @@ aiohttp==3.8.5
     #   -c requirements/../../../requirements/constraints.txt
     #   aiobotocore
     #   aiodocker
+    #   dask-gateway
 aioitertools==0.11.0
     # via aiobotocore
 aiormq==6.7.7
@@ -82,6 +83,7 @@ click==8.1.7
     # via
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
+    #   dask-gateway
     #   distributed
     #   typer
     #   uvicorn
@@ -94,11 +96,15 @@ dask==2023.3.2
     # via
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   -r requirements/_base.in
+    #   dask-gateway
     #   distributed
+dask-gateway==2023.1.1
+    # via -r requirements/_base.in
 distributed==2023.3.2
     # via
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
+    #   dask-gateway
 dnspython==2.4.2
     # via email-validator
 email-validator==2.0.0.post2
@@ -265,6 +271,7 @@ pyyaml==6.0.1
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   dask
+    #   dask-gateway
     #   distributed
 redis==5.0.0
     # via
@@ -338,6 +345,7 @@ toolz==0.12.0
 tornado==6.3.3
     # via
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   dask-gateway
     #   distributed
 tqdm==4.66.1
     # via
