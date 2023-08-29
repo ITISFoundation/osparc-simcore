@@ -3344,6 +3344,41 @@ paths:
       responses:
         '204':
           description: Successful Response
+  /v0/me/preferences:
+    get:
+      tags:
+      - user
+      summary: Get User Preferences
+      operationId: get_user_preferences
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_dict_str__models_library.api_schemas_webserver.users_preferences.UserPreference__'
+  /v0/me/preference/{frontend_preference_name}:
+    patch:
+      tags:
+      - user
+      summary: Set Frontend Preference
+      operationId: set_frontend_preference
+      parameters:
+      - required: true
+        schema:
+          title: Frontend Preference Name
+          type: string
+        name: frontend_preference_name
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPreferencePatchRequestBody'
+        required: true
+      responses:
+        '204':
+          description: Successful Response
   /v0/me/tokens:
     get:
       tags:
@@ -5128,6 +5163,17 @@ components:
         data:
           title: Data
           type: object
+        error:
+          title: Error
+    Envelope_dict_str__models_library.api_schemas_webserver.users_preferences.UserPreference__:
+      title: Envelope[dict[str, models_library.api_schemas_webserver.users_preferences.UserPreference]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/UserPreference'
         error:
           title: Error
     Envelope_dict_uuid.UUID__models_library.api_schemas_webserver.activity.Activity__:
@@ -8517,6 +8563,40 @@ components:
         read:
           title: Read
           type: boolean
+    UserPreference:
+      title: UserPreference
+      required:
+      - exposeInPreferences
+      - widget
+      - label
+      - description
+      - type
+      - defaultValue
+      type: object
+      properties:
+        exposeInPreferences:
+          title: Exposeinpreferences
+          type: boolean
+        widget:
+          $ref: '#/components/schemas/WidgetType'
+        label:
+          title: Label
+          type: string
+        description:
+          title: Description
+          type: string
+        type:
+          $ref: '#/components/schemas/ValueType'
+        defaultValue:
+          title: Defaultvalue
+        value:
+          title: Value
+    UserPreferencePatchRequestBody:
+      title: UserPreferencePatchRequestBody
+      type: object
+      properties:
+        value:
+          title: Value
     UsersGroup:
       title: UsersGroup
       required:
@@ -8553,6 +8633,17 @@ components:
           additionalProperties:
             type: string
           description: Maps user's column and regular expression
+    ValueType:
+      title: ValueType
+      enum:
+      - boolean
+      - string
+      - number
+      - integer
+      - array
+      - dictionary
+      type: string
+      description: An enumeration.
     Viewer:
       title: Viewer
       required:
@@ -8730,6 +8821,7 @@ components:
       enum:
       - TextArea
       - SelectBox
+      - CheckBox
       type: string
       description: An enumeration.
     WorkbenchUI:

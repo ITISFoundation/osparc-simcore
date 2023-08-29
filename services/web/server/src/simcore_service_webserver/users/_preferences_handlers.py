@@ -62,11 +62,11 @@ async def get_user_preferences(request: web.Request) -> web.Response:
 
 @routes.patch(
     f"/{API_VTAG}/me/preference/{{frontend_preference_name}}",
-    name="set_frontend_preference_name",
+    name="set_frontend_preference",
 )
 @login_required
 @_handle_users_exceptions
-async def set_frontend_preference_name(request: web.Request) -> web.Response:
+async def set_frontend_preference(request: web.Request) -> web.Response:
     req_ctx = _RequestContext.parse_obj(request)
     req_body = await parse_request_body_as(UserPreferencePatchRequestBody, request)
     req_path_params = parse_request_path_parameters_as(

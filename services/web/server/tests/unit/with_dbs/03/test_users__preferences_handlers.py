@@ -52,11 +52,11 @@ async def _request_get_user_preferences(client: TestClient) -> ClientResponse:
     return await client.get(url)
 
 
-async def _request_set_frontend_preference_name(
+async def _request_set_frontend_preference(
     client: TestClient, frontend_preference_name: PreferenceName, value: Any
 ) -> ClientResponse:
     assert client.app
-    url = f"{client.app.router['set_frontend_preference_name'].url_for(frontend_preference_name=frontend_preference_name)}"
+    url = f"{client.app.router['set_frontend_preference'].url_for(frontend_preference_name=frontend_preference_name)}"
     assert f"{url}" == f"/v0/me/preference/{frontend_preference_name}"
     return await client.patch(url, json={"value": value})
 
@@ -95,7 +95,7 @@ async def test_get_user_preferences(
         (UserRole.TESTER, web.HTTPNoContent),
     ],
 )
-async def test_set_frontend_preference_name_expected_access_rights_response(
+async def test_set_frontend_preference_expected_access_rights_response(
     logged_user: UserInfoDict,
     client: TestClient,
     expected: type[web.HTTPException],
@@ -103,7 +103,7 @@ async def test_set_frontend_preference_name_expected_access_rights_response(
     drop_all_preferences: None,
 ):
     frontend_preference = ALL_FRONTEND_PREFERENCES[0]()
-    resp = await _request_set_frontend_preference_name(
+    resp = await _request_set_frontend_preference(
         client,
         frontend_preference.preference_identifier,
         frontend_preference.get_default_value(),
@@ -117,14 +117,14 @@ def frontend_preference(request: pytest.FixtureRequest) -> BaseFrontendUserPrefe
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_set_frontend_preference_name(
+async def test_set_frontend_preference(
     logged_user: UserInfoDict,
     client: TestClient,
     frontend_preference: BaseFrontendUserPreference,
     user_role: UserRole,
     drop_all_preferences: None,
 ):
-    resp = await _request_set_frontend_preference_name(
+    resp = await _request_set_frontend_preference(
         client,
         frontend_preference.preference_identifier,
         frontend_preference.get_default_value(),
@@ -135,13 +135,13 @@ async def test_set_frontend_preference_name(
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_set_frontend_preference_name_not_found(
+async def test_set_frontend_preference_not_found(
     logged_user: UserInfoDict,
     client: TestClient,
     user_role: UserRole,
     drop_all_preferences: None,
 ):
-    resp = await _request_set_frontend_preference_name(
+    resp = await _request_set_frontend_preference(
         client, "__undefined_frontend_preference_name__", None
     )
     _, error = await assert_status(resp, web.HTTPNotFound)
