@@ -8,10 +8,6 @@ from models_library.services import ServiceKeyVersion, ServiceVersion
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import PositiveFloat, parse_obj_as
 from servicelib.fastapi.long_running_tasks.client import TaskId
-from simcore_service_director_v2.constants import (
-    UNDEFINED_INT_METADATA,
-    UNDEFINED_STR_METADATA,
-)
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
@@ -127,8 +123,8 @@ async def create_user_services(app: FastAPI, scheduler_data: SchedulerData):
     user_email = await users_repository.get_user_email(scheduler_data.user_id)
 
     metrics_params = CreateServiceMetricsAdditionalParams(
-        wallet_id=UNDEFINED_INT_METADATA,
-        wallet_name=UNDEFINED_STR_METADATA,
+        wallet_id=None,
+        wallet_name=None,
         product_name=scheduler_data.product_name,
         simcore_user_agent=scheduler_data.request_simcore_user_agent,
         user_email=user_email,

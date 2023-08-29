@@ -8,8 +8,8 @@ from .wallets import WalletID
 
 
 class CreateServiceMetricsAdditionalParams(BaseModel):
-    wallet_id: WalletID
-    wallet_name: str
+    wallet_id: WalletID | None
+    wallet_name: str | None
     product_name: str
     simcore_user_agent: str
     user_email: str
