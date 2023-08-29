@@ -33,6 +33,15 @@ services:
       - ./invitations:/devel/services/invitations
       - ../packages:/devel/packages
 
+  payments:
+    environment:
+      - SC_BOOT_MODE=debug-ptvsd
+      - PAYMENTS_LOGLEVEL=DEBUG
+      - DEBUG=true
+    volumes:
+      - ./payments:/devel/services/payments
+      - ../packages:/devel/packages
+
   catalog:
     environment:
       - SC_BOOT_MODE=debug-ptvsd
