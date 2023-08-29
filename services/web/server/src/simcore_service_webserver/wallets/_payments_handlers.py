@@ -1,7 +1,7 @@
 import logging
 
 from aiohttp import web
-from models_library.api_schemas_webserver.wallets import PaymentGet
+from models_library.api_schemas_webserver.wallets import PaymentCreateBody, PaymentGet
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
 from servicelib.aiohttp.requests_validation import (
