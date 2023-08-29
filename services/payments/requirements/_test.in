@@ -13,10 +13,10 @@
 
 coverage
 faker
-httpx
 pytest
 pytest-asyncio
 pytest-cov
+pytest-icdiff
 pytest-runner
 pytest-sugar
 python-dotenv

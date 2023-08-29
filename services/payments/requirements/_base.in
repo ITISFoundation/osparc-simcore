@@ -16,6 +16,7 @@
 
 cryptography~=39.0.0 # security
 fastapi
+httpx
 packaging
 typer[all]
 uvicorn[standard]
