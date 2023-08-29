@@ -123,7 +123,7 @@ async def _retry_docker_compose_create(
 
 
 @asynccontextmanager
-async def _revert_on_error(
+async def _reset_on_error(
     shared_store: SharedStore,
 ) -> AsyncGenerator[None, None]:
     try:
@@ -160,7 +160,7 @@ async def task_create_service_containers(
 
     assert shared_store.compose_spec  # nosec
 
-    async with event_propagation_disabled(app), _revert_on_error(shared_store):
+    async with event_propagation_disabled(app), _reset_on_error(shared_store):
         # removes previous pending containers
         progress.update(message="cleanup previous used resources")
         result = await docker_compose_rm(shared_store.compose_spec, settings)
