@@ -20,7 +20,7 @@ from simcore_service_api_server.models.schemas.studies import Study, StudyID
 async def test_studies_jobs_workflow(
     client: httpx.AsyncClient,
     auth: httpx.BasicAuth,
-    mocked_webserver_service_api: MockRouter,
+    mocked_webserver_service_api_base: MockRouter,
     study_id: StudyID,
 ):
     # get_study
