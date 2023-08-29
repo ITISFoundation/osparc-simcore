@@ -88,7 +88,7 @@ def test_log_context_with_log_duration(
 ):
     caplog.clear()
 
-    with log_context(_logger, logging.INFO, "test", log_duration=with_log_duration):
+    with log_context(_logger, logging.ERROR, "test", log_duration=with_log_duration):
         ...
 
     assert "Starting test ..." in caplog.text
@@ -115,6 +115,6 @@ def test_log_context(
 ):
     caplog.clear()
 
-    with log_context(_logger, logging.INFO, msg, *args, extra=extra):
+    with log_context(_logger, logging.ERROR, msg, *args, extra=extra):
         ...
     assert len(caplog.messages) == 2
