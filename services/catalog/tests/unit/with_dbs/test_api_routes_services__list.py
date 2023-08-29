@@ -28,7 +28,7 @@ pytest_simcore_ops_services_selection = [
 
 @pytest.fixture
 def disable_service_caching(monkeypatch):
-    monkeypatch.setenv("AIOCACHE_DISABLE", 1)
+    monkeypatch.setenv("AIOCACHE_DISABLE", "1")
 
 
 async def test_list_services_with_details(

@@ -5,10 +5,11 @@
 
 import itertools
 import random
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from datetime import datetime
 from random import randint
-from typing import Any, AsyncIterator, Awaitable, Callable, Iterator
+from typing import Any
 
 import pytest
 import respx
@@ -82,9 +83,7 @@ def app(
 
     monkeypatch.setenv("SC_BOOT_MODE", "local-development")
     monkeypatch.setenv("POSTGRES_CLIENT_NAME", "pytest_client")
-    app = init_app()
-
-    return app
+    return init_app()
 
 
 @pytest.fixture
@@ -151,7 +150,7 @@ def user_db(postgres_db: sa.engine.Engine, user_id: UserID) -> Iterator[dict]:
         )
         # this is needed to get the primary_gid correctly
         result = con.execute(sa.select(users).where(users.c.id == user_id))
-        user = result.first()
+        user = result.mappings().first()
         assert user
         yield dict(user)
 
@@ -374,29 +373,29 @@ async def service_catalog_faker(
     everyone_gid, user_gid, team_gid = user_groups_ids
 
     def _random_service(**overrides) -> dict[str, Any]:
-        data = dict(
-            key=f"simcore/services/{random.choice(['dynamic', 'computational'])}/{faker.name()}",
-            version=".".join([str(faker.pyint()) for _ in range(3)]),
-            owner=user_gid,
-            name=faker.name(),
-            description=faker.sentence(),
-            thumbnail=random.choice([faker.image_url(), None]),
-            classifiers=[],
-            quality={},
-            deprecated=None,
-        )
+        data = {
+            "key": f"simcore/services/{random.choice(['dynamic', 'computational'])}/{faker.name()}",
+            "version": ".".join([str(faker.pyint()) for _ in range(3)]),
+            "owner": user_gid,
+            "name": faker.name(),
+            "description": faker.sentence(),
+            "thumbnail": random.choice([faker.image_url(), None]),
+            "classifiers": [],
+            "quality": {},
+            "deprecated": None,
+        }
         data.update(overrides)
         return data
 
     def _random_access(service, **overrides) -> dict[str, Any]:
-        data = dict(
-            key=service["key"],
-            version=service["version"],
-            gid=random.choice(user_groups_ids),
-            execute_access=faker.pybool(),
-            write_access=faker.pybool(),
-            product_name=random.choice(products_names),
-        )
+        data = {
+            "key": service["key"],
+            "version": service["version"],
+            "gid": random.choice(user_groups_ids),
+            "execute_access": faker.pybool(),
+            "write_access": faker.pybool(),
+            "product_name": random.choice(products_names),
+        }
         data.update(overrides)
         return data
 

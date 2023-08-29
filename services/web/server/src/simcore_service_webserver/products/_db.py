@@ -1,5 +1,5 @@
 import logging
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -34,7 +34,7 @@ class ProductRepository(BaseRepository):
     async def get_product(self, product_name: str) -> Product | None:
         async with self.engine.acquire() as conn:
             result: ResultProxy = await conn.execute(
-                sa.select(_COLUMNS_IN_MODEL).where(products.c.name == product_name)
+                sa.select(*_COLUMNS_IN_MODEL).where(products.c.name == product_name)
             )
             row: RowProxy | None = await result.first()
             return Product.from_orm(row) if row else None

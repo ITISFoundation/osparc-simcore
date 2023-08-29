@@ -297,6 +297,7 @@ jobs:
         if: always()
         run: ./ci/github/unit-testing/webserver.bash test_isolated
       - name: test
+        if: always()
         run: ./ci/github/unit-testing/webserver.bash test_with_db 01
       - uses: codecov/codecov-action@v3.1.4
         with:

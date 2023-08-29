@@ -210,7 +210,7 @@ async def get_file_access_rights(
     #
     # 1. file registered in file_meta_data table
     #
-    stmt = sa.select([file_meta_data.c.project_id, file_meta_data.c.user_id]).where(
+    stmt = sa.select(file_meta_data.c.project_id, file_meta_data.c.user_id).where(
         file_meta_data.c.file_id == f"{file_id}"
     )
     result: ResultProxy = await conn.execute(stmt)

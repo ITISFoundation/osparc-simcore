@@ -23,7 +23,8 @@ async def test_error_regression_async_def(
 ):
     @log_decorator(logger, log_traceback=log_traceback)
     async def _raising_error() -> None:
-        raise RuntimeError("Raising as expected")
+        msg = "Raising as expected"
+        raise RuntimeError(msg)
 
     caplog.clear()
 
@@ -42,7 +43,8 @@ async def test_error_regression_def(
 ):
     @log_decorator(logger, log_traceback=log_traceback)
     def _raising_error() -> None:
-        raise RuntimeError("Raising as expected")
+        msg = "Raising as expected"
+        raise RuntimeError(msg)
 
     caplog.clear()
 

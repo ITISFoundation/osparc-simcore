@@ -16,9 +16,7 @@ async def _get_tokens_from_db(engine: Engine, user_id: UserID) -> dict[str, Any]
     async with engine.acquire() as conn:
         result = await conn.execute(
             sa.select(
-                [
-                    tokens,
-                ]
+                tokens,
             ).where(tokens.c.user_id == user_id)
         )
         row = await result.first()

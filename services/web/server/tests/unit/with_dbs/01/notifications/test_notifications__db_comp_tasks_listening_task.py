@@ -80,7 +80,7 @@ def comp_task(
                 .values(**task_config)
                 .returning(sa.literal_column("*"))
             )
-            new_task = result.first()
+            new_task = result.mappings().first()
             assert new_task
             new_task = dict(new_task)
             created_task_ids.append(new_task["task_id"])

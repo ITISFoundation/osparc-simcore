@@ -38,6 +38,7 @@ class TestEmail(BaseModel):
 
 
 class TestFailed(BaseModel):
+    __test__ = False  # prevents PytestCollectionWarning: cannot collect test class 'TestFailed' because it has a __init__ constructor
     test_name: str
     error_type: str
     error_message: str
@@ -54,6 +55,7 @@ class TestFailed(BaseModel):
 
 
 class TestPassed(BaseModel):
+    __test__ = False  # prevents PytestCollectionWarning: cannot collect test class 'TestPassed' because it has a __init__ constructor
     fixtures: dict[str, Any]
     info: dict[str, Any]
 

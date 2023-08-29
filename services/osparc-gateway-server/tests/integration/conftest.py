@@ -4,7 +4,7 @@
 
 import asyncio
 import json
-from typing import Any, AsyncIterator, Awaitable, Callable, Union
+from typing import Any, AsyncIterator, Awaitable, Callable
 
 import aiodocker
 import dask_gateway
@@ -56,7 +56,7 @@ def gateway_password(faker: Faker) -> str:
     return faker.password()
 
 
-def _convert_to_dict(c: Union[traitlets.config.Config, dict]) -> dict[str, Any]:
+def _convert_to_dict(c: traitlets.config.Config | dict) -> dict[str, Any]:
     converted_dict = {}
     for x, y in c.items():
         if isinstance(y, (dict, traitlets.config.Config)):

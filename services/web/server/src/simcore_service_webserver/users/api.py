@@ -53,7 +53,6 @@ async def get_user_profile(app: web.Application, user_id: UserID) -> ProfileGet:
     user_id = _parse_as_user(user_id)
 
     async with engine.acquire() as conn:
-        row: RowProxy
         async for row in conn.execute(
             sa.select(users, groups, user_to_groups.c.access_rights)
             .select_from(
@@ -67,27 +66,28 @@ async def get_user_profile(app: web.Application, user_id: UserID) -> ProfileGet:
             )
             .where(users.c.id == user_id)
             .order_by(sa.asc(groups.c.name))
-            .apply_labels()
+            .set_label_style(sa.LABEL_STYLE_TABLENAME_PLUS_COL)
         ):
-            user_profile.update(convert_user_db_to_schema(row, prefix="users_"))
-            if row["groups_type"] == GroupType.EVERYONE:
+            row_dict = dict(row.items())
+            user_profile.update(convert_user_db_to_schema(row_dict, prefix="users_"))
+            if row_dict["groups_type"] == GroupType.EVERYONE:
                 all_group = convert_groups_db_to_schema(
-                    row,
+                    row_dict,
                     prefix="groups_",
-                    accessRights=row["user_to_groups_access_rights"],
+                    accessRights=row_dict["user_to_groups_access_rights"],
                 )
-            elif row["groups_type"] == GroupType.PRIMARY:
+            elif row_dict["groups_type"] == GroupType.PRIMARY:
                 user_primary_group = convert_groups_db_to_schema(
-                    row,
+                    row_dict,
                     prefix="groups_",
-                    accessRights=row["user_to_groups_access_rights"],
+                    accessRights=row_dict["user_to_groups_access_rights"],
                 )
             else:
                 user_standard_groups.append(
                     convert_groups_db_to_schema(
-                        row,
+                        row_dict,
                         prefix="groups_",
-                        accessRights=row["user_to_groups_access_rights"],
+                        accessRights=row_dict["user_to_groups_access_rights"],
                     )
                 )
     if not user_profile:
@@ -123,6 +123,7 @@ async def update_user_profile(
                 sa.select(users.c.name).where(users.c.id == user_id)
             )
             try:
+                assert isinstance(name, str)  # nosec
                 first_name, last_name = name.rsplit(".", maxsplit=2)
             except ValueError:
                 first_name = name
@@ -222,18 +223,19 @@ async def get_user(app: web.Application, user_id: UserID) -> dict:
     user_id = _parse_as_user(user_id)
     async with engine.acquire() as conn:
         result = await conn.execute(sa.select(users).where(users.c.id == user_id))
-        row: RowProxy = await result.fetchone()
+        row: RowProxy | None = await result.fetchone()
         if not row:
             raise UserNotFoundError(uid=user_id)
-        return dict(row)
+        return dict(row.items())
 
 
 async def get_user_id_from_gid(app: web.Application, primary_gid: int) -> UserID:
     engine = get_database_engine(app)
     async with engine.acquire() as conn:
-        user_id: UserID = await conn.scalar(
+        user_id: UserID | None = await conn.scalar(
             sa.select(users.c.id).where(users.c.primary_gid == primary_gid)
         )
+        assert user_id is not None  # nosec
         return user_id
 
 

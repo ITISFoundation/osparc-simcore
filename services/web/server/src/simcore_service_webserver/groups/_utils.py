@@ -1,4 +1,4 @@
-from typing import TypedDict
+from typing import Any, Mapping, TypedDict
 
 from aiopg.sa.result import RowProxy
 
@@ -29,7 +29,7 @@ def check_group_permissions(
 
 
 def convert_groups_db_to_schema(
-    db_row: RowProxy, *, prefix: str | None = "", **kwargs
+    db_row: Mapping[str, Any], *, prefix: str | None = "", **kwargs
 ) -> dict:
     converted_dict = {
         k: db_row[f"{prefix}{v}"]
