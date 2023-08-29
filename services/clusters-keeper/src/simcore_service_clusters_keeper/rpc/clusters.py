@@ -50,17 +50,3 @@ async def get_or_create_cluster(
         )
 
     return cluster_get
-
-
-@router.expose()
-async def create_cluster(
-    app: FastAPI, *, user_id: UserID, wallet_id: WalletID
-) -> list[EC2InstanceData]:
-    return await clusters.create_cluster(app, user_id=user_id, wallet_id=wallet_id)
-
-
-@router.expose()
-async def cluster_heartbeat(
-    app: FastAPI, *, user_id: UserID, wallet_id: WalletID
-) -> None:
-    return await clusters.cluster_heartbeat(app, user_id=user_id, wallet_id=wallet_id)

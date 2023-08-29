@@ -3,10 +3,11 @@
 # pylint: disable=unused-variable
 
 
-import asyncio
 import datetime
 from collections.abc import Callable
+from dataclasses import dataclass
 from typing import Final
+from unittest.mock import MagicMock
 
 import arrow
 import pytest
@@ -16,9 +17,9 @@ from models_library.users import UserID
 from models_library.wallets import WalletID
 from parse import Result, search
 from pydantic import parse_obj_as
+from pytest_mock.plugin import MockerFixture
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq_utils import RPCMethodName, RPCNamespace
-from simcore_service_clusters_keeper.core.errors import Ec2InstanceNotFoundError
 from simcore_service_clusters_keeper.models import ClusterGet
 from simcore_service_clusters_keeper.utils.ec2 import HEARTBEAT_TAG_KEY
 from types_aiobotocore_ec2 import EC2Client
@@ -100,36 +101,6 @@ async def _assert_cluster_instance_created(
     assert parse_result["wallet_id"] == wallet_id
 
 
-async def _create_cluster(
-    clusters_keeper_rabbitmq_rpc_client: RabbitMQClient,
-    ec2_client: EC2Client,
-    user_id: UserID,
-    wallet_id: WalletID,
-) -> None:
-    # send rabbitmq rpc to create_cluster
-    rpc_response = await clusters_keeper_rabbitmq_rpc_client.rpc_request(
-        CLUSTERS_KEEPER_NAMESPACE,
-        RPCMethodName("create_cluster"),
-        user_id=user_id,
-        wallet_id=wallet_id,
-    )
-    assert rpc_response
-    # check we do have a new machine in AWS
-    await _assert_cluster_instance_created(ec2_client, user_id, wallet_id)
-
-
-async def test_create_cluster(
-    _base_configuration: None,
-    clusters_keeper_rabbitmq_rpc_client: RabbitMQClient,
-    ec2_client: EC2Client,
-    user_id: UserID,
-    wallet_id: WalletID,
-):
-    await _create_cluster(
-        clusters_keeper_rabbitmq_rpc_client, ec2_client, user_id, wallet_id
-    )
-
-
 async def _assert_cluster_heartbeat_on_instance(
     ec2_client: EC2Client,
 ) -> datetime.datetime:
@@ -151,58 +122,20 @@ async def _assert_cluster_heartbeat_on_instance(
     return this_heartbeat_time
 
 
-async def _send_cluster_heartbeat(
-    clusters_keeper_rabbitmq_rpc_client: RabbitMQClient,
-    ec2_client: EC2Client,
-    user_id: UserID,
-    wallet_id: WalletID,
-) -> datetime.datetime:
-    rpc_response = await clusters_keeper_rabbitmq_rpc_client.rpc_request(
-        CLUSTERS_KEEPER_NAMESPACE,
-        RPCMethodName("cluster_heartbeat"),
-        user_id=user_id,
-        wallet_id=wallet_id,
+@dataclass
+class MockedDaskModule:
+    ping_gateway: MagicMock
+
+
+@pytest.fixture
+def mocked_dask_ping_gateway(mocker: MockerFixture) -> MockedDaskModule:
+    return MockedDaskModule(
+        ping_gateway=mocker.patch(
+            "simcore_service_clusters_keeper.rpc.clusters.ping_gateway",
+            autospec=True,
+            return_value=True,
+        ),
     )
-    assert rpc_response is None
-
-    return await _assert_cluster_heartbeat_on_instance(ec2_client)
-
-
-async def test_cluster_heartbeat(
-    _base_configuration: None,
-    clusters_keeper_rabbitmq_rpc_client: RabbitMQClient,
-    ec2_client: EC2Client,
-    user_id: UserID,
-    wallet_id: WalletID,
-):
-    await _create_cluster(
-        clusters_keeper_rabbitmq_rpc_client, ec2_client, user_id, wallet_id
-    )
-
-    first_heartbeat_time = await _send_cluster_heartbeat(
-        clusters_keeper_rabbitmq_rpc_client, ec2_client, user_id, wallet_id
-    )
-
-    await asyncio.sleep(1)
-
-    next_heartbeat_time = await _send_cluster_heartbeat(
-        clusters_keeper_rabbitmq_rpc_client, ec2_client, user_id, wallet_id
-    )
-
-    assert next_heartbeat_time > first_heartbeat_time
-
-
-async def test_cluster_heartbeat_on_non_existing_cluster_raises(
-    _base_configuration: None,
-    clusters_keeper_rabbitmq_rpc_client: RabbitMQClient,
-    ec2_client: EC2Client,
-    user_id: UserID,
-    wallet_id: WalletID,
-):
-    with pytest.raises(Ec2InstanceNotFoundError):
-        await _send_cluster_heartbeat(
-            clusters_keeper_rabbitmq_rpc_client, ec2_client, user_id, wallet_id
-        )
 
 
 async def test_get_or_create_cluster(
@@ -211,6 +144,7 @@ async def test_get_or_create_cluster(
     ec2_client: EC2Client,
     user_id: UserID,
     wallet_id: WalletID,
+    mocked_dask_ping_gateway: MockedDaskModule,
 ):
     # send rabbitmq rpc to create_cluster
     rpc_response = await clusters_keeper_rabbitmq_rpc_client.rpc_request(
@@ -220,10 +154,12 @@ async def test_get_or_create_cluster(
         wallet_id=wallet_id,
     )
     assert rpc_response
-    created_cluster = rpc_response
-    assert isinstance(created_cluster, ClusterGet)
+    created_cluster = ClusterGet.parse_raw(rpc_response)
     # check we do have a new machine in AWS
     await _assert_cluster_instance_created(ec2_client, user_id, wallet_id)
+    # it is called once as moto server creates instances instantly
+    mocked_dask_ping_gateway.ping_gateway.assert_called_once()
+    mocked_dask_ping_gateway.ping_gateway.reset_mock()
 
     # calling it again returns the existing cluster
     rpc_response = await clusters_keeper_rabbitmq_rpc_client.rpc_request(
@@ -233,9 +169,9 @@ async def test_get_or_create_cluster(
         wallet_id=wallet_id,
     )
     assert rpc_response
-    returned_cluster = rpc_response
-    assert isinstance(created_cluster, ClusterGet)
+    returned_cluster = ClusterGet.parse_raw(rpc_response)
     # check we still have only 1 instance
-    await _assert_cluster_instance_created(ec2_client, user_id, wallet_id)
+    await _assert_cluster_heartbeat_on_instance(ec2_client)
+    mocked_dask_ping_gateway.ping_gateway.assert_called_once()
 
     assert created_cluster == returned_cluster
