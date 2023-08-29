@@ -59,7 +59,7 @@ async def get_user_preferences():
 
 
 @router.patch(
-    "/me/preference/{frontend_preference_name}",
+    "/me/preferences/{frontend_preference_name}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def set_frontend_preference(

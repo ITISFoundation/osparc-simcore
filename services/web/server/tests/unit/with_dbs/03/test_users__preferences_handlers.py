@@ -57,7 +57,7 @@ async def _request_set_frontend_preference(
 ) -> ClientResponse:
     assert client.app
     url = f"{client.app.router['set_frontend_preference'].url_for(frontend_preference_name=frontend_preference_name)}"
-    assert f"{url}" == f"/v0/me/preference/{frontend_preference_name}"
+    assert f"{url}" == f"/v0/me/preferences/{frontend_preference_name}"
     return await client.patch(url, json={"value": value})
 
 

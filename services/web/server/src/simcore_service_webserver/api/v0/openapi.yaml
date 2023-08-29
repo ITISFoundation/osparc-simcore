@@ -3357,7 +3357,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_dict_str__models_library.api_schemas_webserver.users_preferences.UserPreference__'
-  /v0/me/preference/{frontend_preference_name}:
+  /v0/me/preferences/{frontend_preference_name}:
     patch:
       tags:
       - user

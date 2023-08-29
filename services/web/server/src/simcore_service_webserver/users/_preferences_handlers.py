@@ -61,7 +61,7 @@ async def get_user_preferences(request: web.Request) -> web.Response:
 
 
 @routes.patch(
-    f"/{API_VTAG}/me/preference/{{frontend_preference_name}}",
+    f"/{API_VTAG}/me/preferences/{{frontend_preference_name}}",
     name="set_frontend_preference",
 )
 @login_required
