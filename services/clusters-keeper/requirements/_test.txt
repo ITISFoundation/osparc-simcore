@@ -42,12 +42,12 @@ aws-xray-sdk==2.12.0
     # via moto
 blinker==1.6.2
     # via flask
-boto3==1.26.76
+boto3==1.28.17
     # via
     #   -c requirements/_base.txt
     #   aws-sam-translator
     #   moto
-botocore==1.29.76
+botocore==1.31.17
     # via
     #   -c requirements/_base.txt
     #   aws-xray-sdk
@@ -101,11 +101,11 @@ exceptiongroup==1.1.3
     #   -c requirements/_base.txt
     #   anyio
     #   pytest
-faker==19.3.0
+faker==19.3.1
     # via -r requirements/_test.in
 fakeredis==2.18.0
     # via -r requirements/_test.in
-flask==2.3.2
+flask==2.3.3
     # via
     #   flask-cors
     #   moto
@@ -146,6 +146,7 @@ itsdangerous==2.1.2
 jinja2==3.1.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
     #   flask
     #   moto
 jmespath==1.0.1
@@ -185,9 +186,10 @@ lupa==2.0
     # via fakeredis
 markupsafe==2.1.3
     # via
+    #   -c requirements/_base.txt
     #   jinja2
     #   werkzeug
-moto==4.1.14
+moto==4.2.0
     # via -r requirements/_test.in
 mpmath==1.3.0
     # via sympy
@@ -217,10 +219,12 @@ pbr==5.11.1
     # via
     #   jschema-to-python
     #   sarif-om
-pluggy==1.2.0
+pluggy==1.3.0
     # via pytest
 psutil==5.9.5
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 py-partiql-parser==0.3.6
     # via moto
 pyasn1==0.5.0
@@ -293,7 +297,7 @@ respx==0.20.2
     # via -r requirements/_test.in
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
-rpds-py==0.9.2
+rpds-py==0.10.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema
@@ -323,7 +327,9 @@ sniffio==1.3.0
     #   httpcore
     #   httpx
 sortedcontainers==2.4.0
-    # via fakeredis
+    # via
+    #   -c requirements/_base.txt
+    #   fakeredis
 sshpubkeys==3.3.1
     # via moto
 sympy==1.12
@@ -348,7 +354,7 @@ urllib3==1.26.16
     #   docker
     #   requests
     #   responses
-websocket-client==1.6.1
+websocket-client==1.6.2
     # via docker
 werkzeug==2.3.7
     # via
