@@ -46,10 +46,11 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
 
 
 def on_app_shutdown(
-    app: FastAPI,  # pylint: disable=unused-argument
+    _app: FastAPI,
 ) -> Callable[[], Awaitable[None]]:
     async def _stop() -> None:
         # NOTE: We want to have persistent queue, therefore we will not unsubscribe
+        assert _app  # nosec
         return None
 
     return _stop
