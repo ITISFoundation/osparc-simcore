@@ -45,17 +45,17 @@ async def test_wallets_full_workflow(
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, web.HTTPOk)
     assert len(data) == 1
-    assert data[0]["wallet_id"] == added_wallet["wallet_id"]
+    assert data[0]["walletId"] == added_wallet["walletId"]
     assert data[0]["name"] == "My first wallet"
     assert data[0]["description"] == "Custom description"
     assert data[0]["thumbnail"] is None
     assert data[0]["status"] == "ACTIVE"
-    assert data[0]["available_credits"] == 0.0
+    assert data[0]["availableCredits"] == 0.0
     store_modified_field = arrow.get(data[0]["modified"])
 
     # update user wallet
     url = client.app.router["update_wallet"].url_for(
-        wallet_id=f"{added_wallet['wallet_id']}"
+        wallet_id=f"{added_wallet['walletId']}"
     )
     resp = await client.put(
         f"{url}",
@@ -67,7 +67,7 @@ async def test_wallets_full_workflow(
         },
     )
     data, _ = await assert_status(resp, web.HTTPOk)
-    assert data["wallet_id"] == added_wallet["wallet_id"]
+    assert data["walletId"] == added_wallet["walletId"]
     assert data["name"] == "My first wallet"
     assert data["description"] is None
     assert data["thumbnail"] == "New thumbnail"
@@ -79,7 +79,7 @@ async def test_wallets_full_workflow(
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, web.HTTPOk)
     assert len(data) == 1
-    assert data[0]["wallet_id"] == added_wallet["wallet_id"]
+    assert data[0]["walletId"] == added_wallet["walletId"]
     assert data[0]["name"] == "My first wallet"
     assert data[0]["description"] is None
     assert data[0]["thumbnail"] == "New thumbnail"
@@ -110,7 +110,7 @@ async def test_wallets_full_workflow(
     async with LoggedUser(client):
         # User who does not have access will try to access the wallet
         url = client.app.router["update_wallet"].url_for(
-            wallet_id=f"{added_wallet['wallet_id']}"
+            wallet_id=f"{added_wallet['walletId']}"
         )
         resp = await client.put(
             f"{url}",
