@@ -81,21 +81,13 @@ def backend_url() -> AnyHttpUrl:
 
 @pytest.fixture
 def mock_environment(
-    mock_core_rabbitmq: dict[str, AsyncMock],
-    monkeypatch: pytest.MonkeyPatch,
-    mock_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch, mock_rabbitmq_envs: EnvVarsDict
 ) -> EnvVarsDict:
     setenvs_from_dict(
         monkeypatch,
-        {
-            "RESOURCE_TRACKING_HEARTBEAT_INTERVAL": f"{_BASE_HEART_BEAT_INTERVAL}",
-            "RABBIT_HOST": "mocked_host",
-            "RABBIT_SECURE": "false",
-            "RABBIT_USER": "mocked_user",
-            "RABBIT_PASSWORD": "mocked_password",
-        },
+        {"RESOURCE_TRACKING_HEARTBEAT_INTERVAL": f"{_BASE_HEART_BEAT_INTERVAL}"},
     )
-    return mock_environment
+    return mock_rabbitmq_envs
 
 
 @pytest.fixture

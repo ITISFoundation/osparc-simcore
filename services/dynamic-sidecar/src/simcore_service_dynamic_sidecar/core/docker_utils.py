@@ -121,6 +121,7 @@ def are_all_containers_in_expected_states(
 async def get_containers_count_from_names(
     container_names: list[str],
 ) -> PositiveInt:
+    # this one could handle the error
     return len(await _get_containers_inspect_from_names(container_names))
 
 

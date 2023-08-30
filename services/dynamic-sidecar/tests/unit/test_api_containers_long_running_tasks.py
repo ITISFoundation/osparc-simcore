@@ -23,7 +23,7 @@ from httpx import AsyncClient
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import AnyHttpUrl, parse_obj_as
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from servicelib.fastapi.long_running_tasks.client import (
     Client,
     TaskClientResultError,
@@ -150,21 +150,8 @@ def backend_url() -> AnyHttpUrl:
 
 
 @pytest.fixture
-def mock_environment(
-    mock_core_rabbitmq: dict[str, AsyncMock],
-    monkeypatch: pytest.MonkeyPatch,
-    mock_environment: EnvVarsDict,
-) -> EnvVarsDict:
-    setenvs_from_dict(
-        monkeypatch,
-        {
-            "RABBIT_HOST": "mocked_host",
-            "RABBIT_SECURE": "false",
-            "RABBIT_USER": "mocked_user",
-            "RABBIT_PASSWORD": "mocked_password",
-        },
-    )
-    return mock_environment
+def mock_environment(mock_rabbitmq_envs: EnvVarsDict) -> EnvVarsDict:
+    return mock_rabbitmq_envs
 
 
 @pytest.fixture
