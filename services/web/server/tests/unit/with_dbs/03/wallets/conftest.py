@@ -2,14 +2,16 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+from collections.abc import AsyncIterator, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
-from typing import AsyncIterator, Callable
 
 import pytest
+import sqlalchemy as sa
 from aioresponses import aioresponses
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from servicelib.aiohttp.application import create_safe_application
+from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db.plugin import setup_db
 from simcore_service_webserver.director_v2.plugin import setup_director_v2
@@ -77,11 +79,18 @@ def client(
     setup_wallets(app)
 
     # server and client
-    yield event_loop.run_until_complete(
+    return event_loop.run_until_complete(
         aiohttp_client(app, server_kwargs={"port": port, "host": "localhost"})
     )
 
     # teardown here ...
+
+
+@pytest.fixture
+def wallets_clean_db(postgres_db: sa.engine.Engine) -> Iterator[None]:
+    with postgres_db.connect() as con:
+        yield
+        con.execute(wallets.delete())
 
 
 @pytest.fixture
@@ -144,10 +153,9 @@ async def template_project(
 @pytest.fixture
 def fake_services():
     def create_fakes(number_services: int) -> list[dict]:
-        fake_services = [{"service_uuid": f"{i}_uuid"} for i in range(number_services)]
-        return fake_services
+        return [{"service_uuid": f"{i}_uuid"} for i in range(number_services)]
 
-    yield create_fakes
+    return create_fakes
 
 
 @pytest.fixture
@@ -160,4 +168,4 @@ async def project_db_cleaner(client):
 async def director_v2_automock(
     director_v2_service_mock: aioresponses,
 ) -> AsyncIterator[aioresponses]:
-    yield director_v2_service_mock
+    return director_v2_service_mock
