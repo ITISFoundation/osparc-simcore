@@ -1,3 +1,4 @@
+import json
 from typing import Any
 
 import sqlalchemy as sa
@@ -11,16 +12,28 @@ class CouldNotCreateOrUpdateUserPreferenceError(Exception):
     ...
 
 
-def _get_user_preference_name(user_id: int, preference_name: str) -> str:
-    return f"{user_id}/{preference_name}"
+class UserPreferenceNameHelper:
+    @classmethod
+    def get_preference_name(
+        cls, user_id: int, preference_name: str, product_name: str
+    ) -> str:
+        # store the key with a minimum of structure
+        return json.dumps([user_id, preference_name, product_name])
 
 
 class UserPreferencesRepo:
     @staticmethod
     async def save_preference(
-        conn: SAConnection, *, user_id: int, preference_name: str, payload: bytes
+        conn: SAConnection,
+        *,
+        user_id: int,
+        preference_name: str,
+        product_name: str,
+        payload: bytes,
     ) -> None:
-        user_preference_name = _get_user_preference_name(user_id, preference_name)
+        user_preference_name = UserPreferenceNameHelper.get_preference_name(
+            user_id, preference_name, product_name
+        )
 
         data: dict[str, Any] = {
             "user_preference_name": user_preference_name,
@@ -38,9 +51,11 @@ class UserPreferencesRepo:
 
     @staticmethod
     async def get_preference_payload(
-        conn: SAConnection, *, user_id: int, preference_name: str
+        conn: SAConnection, *, user_id: int, preference_name: str, product_name: str
     ) -> bytes | None:
-        user_preference_name = _get_user_preference_name(user_id, preference_name)
+        user_preference_name = UserPreferenceNameHelper.get_preference_name(
+            user_id, preference_name, product_name
+        )
         value: bytes | None = await conn.scalar(
             sa.select(user_preferences.c.payload).where(
                 user_preferences.c.user_preference_name == user_preference_name

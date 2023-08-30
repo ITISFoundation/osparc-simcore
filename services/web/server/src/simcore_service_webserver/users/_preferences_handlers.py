@@ -6,6 +6,7 @@ from models_library.api_schemas_webserver.users_preferences import (
     FrontendUserPreferencePatchRequestBody,
     FrontendUserPreferencesGet,
 )
+from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import BaseModel, Field
 from servicelib.aiohttp.requests_validation import (
@@ -19,6 +20,7 @@ from simcore_postgres_database.utils_user_preferences import (
     CouldNotCreateOrUpdateUserPreferenceError,
 )
 
+from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..utils_aiohttp import envelope_json_response
@@ -29,6 +31,7 @@ routes = web.RouteTableDef()
 
 class _RequestContext(BaseModel):
     user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[pydantic-alias]
+    product_name: ProductName = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[pydantic-alias]
 
 
 def _handle_users_exceptions(handler: Handler):
@@ -54,7 +57,7 @@ async def get_user_preferences(request: web.Request) -> web.Response:
 
     user_preferences_get: FrontendUserPreferencesGet = (
         await _preferences_api.get_frontend_user_preferences(
-            request.app, user_id=req_ctx.user_id
+            request.app, user_id=req_ctx.user_id, product_name=req_ctx.product_name
         )
     )
     return envelope_json_response(user_preferences_get)
@@ -78,6 +81,7 @@ async def set_frontend_preference(request: web.Request) -> web.Response:
     await _preferences_api.set_frontend_user_preference(
         request.app,
         user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
         frontend_preference_name=req_path_params.frontend_preference_name,
         value=req_body.value,
     )

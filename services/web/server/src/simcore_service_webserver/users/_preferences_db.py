@@ -1,4 +1,5 @@
 from aiohttp import web
+from models_library.products import ProductName
 from models_library.user_preferences import AnyBaseUserPreference, PreferenceName
 from models_library.users import UserID
 from simcore_postgres_database.utils_user_preferences import UserPreferencesRepo
@@ -14,6 +15,7 @@ async def get_user_preference(
     app: web.Application,
     *,
     user_id: UserID,
+    product_name: ProductName,
     preference_class: type[AnyBaseUserPreference],
 ) -> AnyBaseUserPreference | None:
     async with get_database_engine(app).acquire() as conn:
@@ -24,6 +26,7 @@ async def get_user_preference(
                 preference_name=_get_user_preference_name(
                     user_id, preference_class.get_preference_name()
                 ),
+                product_name=product_name,
             )
         )
 
@@ -38,6 +41,7 @@ async def set_user_preference(
     app: web.Application,
     *,
     user_id: UserID,
+    product_name: ProductName,
     preference: AnyBaseUserPreference,
 ) -> None:
     async with get_database_engine(app).acquire() as conn:
@@ -47,5 +51,6 @@ async def set_user_preference(
             preference_name=_get_user_preference_name(
                 user_id, preference.get_preference_name()
             ),
+            product_name=product_name,
             payload=preference.json().encode(),
         )

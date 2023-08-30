@@ -18,27 +18,44 @@ def preference_two() -> str:
     return "pref_two"
 
 
+@pytest.fixture
+def product_name() -> str:
+    return "osparc"
+
+
 async def _assert_save_get_preference(
-    connection: SAConnection, *, user_id: int, preference_name: str, payload: bytes
+    connection: SAConnection,
+    *,
+    user_id: int,
+    preference_name: str,
+    product_name: str,
+    payload: bytes,
 ) -> None:
     await UserPreferencesRepo().save_preference(
         connection,
         user_id=user_id,
         preference_name=preference_name,
+        product_name=product_name,
         payload=payload,
     )
     get_res_2: bytes | None = await UserPreferencesRepo().get_preference_payload(
-        connection, user_id=user_id, preference_name=preference_name
+        connection,
+        user_id=user_id,
+        preference_name=preference_name,
+        product_name=product_name,
     )
     assert get_res_2 is not None
     assert get_res_2 == payload
 
 
 async def _assert_preference_not_saved(
-    connection: SAConnection, *, user_id: int, preference_name: str
+    connection: SAConnection, *, user_id: int, preference_name: str, product_name: str
 ) -> None:
     not_found: bytes | None = await UserPreferencesRepo().get_preference_payload(
-        connection, user_id=user_id, preference_name=preference_name
+        connection,
+        user_id=user_id,
+        preference_name=preference_name,
+        product_name=product_name,
     )
     assert not_found is None
 
@@ -57,12 +74,15 @@ async def _get_user_id(connection: SAConnection, faker: Faker) -> int:
 
 
 async def test_user_preference_repo_workflow(
-    connection: SAConnection, preference_one: str, faker: Faker
+    connection: SAConnection, preference_one: str, product_name: str, faker: Faker
 ):
     user_id = await _get_user_id(connection, faker)
     # preference is not saved
     await _assert_preference_not_saved(
-        connection, user_id=user_id, preference_name=preference_one
+        connection,
+        user_id=user_id,
+        preference_name=preference_one,
+        product_name=product_name,
     )
 
     payload_1 = _get_random_payload(faker)
@@ -74,6 +94,7 @@ async def test_user_preference_repo_workflow(
         connection,
         user_id=user_id,
         preference_name=preference_one,
+        product_name=product_name,
         payload=payload_1,
     )
 
@@ -82,12 +103,13 @@ async def test_user_preference_repo_workflow(
         connection,
         user_id=user_id,
         preference_name=preference_one,
+        product_name=product_name,
         payload=payload_2,
     )
 
 
 async def test_same_preference_name_different_users(
-    connection: SAConnection, preference_one: str, faker: Faker
+    connection: SAConnection, preference_one: str, product_name: str, faker: Faker
 ):
     user_id_1 = await _get_user_id(connection, faker)
     user_id_2 = await _get_user_id(connection, faker)
@@ -98,29 +120,41 @@ async def test_same_preference_name_different_users(
 
     # save preference for first user
     await _assert_preference_not_saved(
-        connection, user_id=user_id_1, preference_name=preference_one
+        connection,
+        user_id=user_id_1,
+        preference_name=preference_one,
+        product_name=product_name,
     )
     await _assert_save_get_preference(
         connection,
         user_id=user_id_1,
         preference_name=preference_one,
+        product_name=product_name,
         payload=payload_1,
     )
 
     # save preference for second user
     await _assert_preference_not_saved(
-        connection, user_id=user_id_2, preference_name=preference_one
+        connection,
+        user_id=user_id_2,
+        preference_name=preference_one,
+        product_name=product_name,
     )
     await _assert_save_get_preference(
         connection,
         user_id=user_id_2,
         preference_name=preference_one,
+        product_name=product_name,
         payload=payload_2,
     )
 
 
 async def test_different_preferences_same_user(
-    connection: SAConnection, preference_one: str, preference_two: str, faker: Faker
+    connection: SAConnection,
+    preference_one: str,
+    preference_two: str,
+    product_name: str,
+    faker: Faker,
 ):
     user_id = await _get_user_id(connection, faker)
 
@@ -130,22 +164,30 @@ async def test_different_preferences_same_user(
 
     # save first preference
     await _assert_preference_not_saved(
-        connection, user_id=user_id, preference_name=preference_one
+        connection,
+        user_id=user_id,
+        preference_name=preference_one,
+        product_name=product_name,
     )
     await _assert_save_get_preference(
         connection,
         user_id=user_id,
         preference_name=preference_one,
+        product_name=product_name,
         payload=payload_1,
     )
 
     # save second preference
     await _assert_preference_not_saved(
-        connection, user_id=user_id, preference_name=preference_two
+        connection,
+        user_id=user_id,
+        preference_name=preference_two,
+        product_name=product_name,
     )
     await _assert_save_get_preference(
         connection,
         user_id=user_id,
         preference_name=preference_two,
+        product_name=product_name,
         payload=payload_2,
     )

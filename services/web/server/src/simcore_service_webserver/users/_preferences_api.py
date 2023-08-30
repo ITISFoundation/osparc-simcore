@@ -5,6 +5,7 @@ from models_library.api_schemas_webserver.users_preferences import (
     FrontendUserPreference,
     FrontendUserPreferencesGet,
 )
+from models_library.products import ProductName
 from models_library.user_preferences import BaseFrontendUserPreference
 from models_library.users import UserID
 from pydantic import NonNegativeInt, parse_obj_as
@@ -26,13 +27,20 @@ class FrontendUserPreferenceIsNotDefinedError(Exception):
 
 
 async def _get_frontend_user_preferences_list(
-    app: web.Application, user_id: UserID
+    app: web.Application,
+    user_id: UserID,
+    product_name: ProductName,
 ) -> list[BaseFrontendUserPreference]:
     saved_user_preferences: list[
         BaseFrontendUserPreference | None
     ] = await logged_gather(
         *(
-            get_user_preference(app, user_id=user_id, preference_class=preference_class)
+            get_user_preference(
+                app,
+                user_id=user_id,
+                product_name=product_name,
+                preference_class=preference_class,
+            )
             for preference_class in ALL_FRONTEND_PREFERENCES
         ),
         max_concurrency=_MAX_PARALLEL_DB_QUERIES,
@@ -47,7 +55,7 @@ async def _get_frontend_user_preferences_list(
 
 
 async def get_frontend_user_preferences(
-    app: web.Application, *, user_id: UserID
+    app: web.Application, *, user_id: UserID, product_name: ProductName
 ) -> FrontendUserPreferencesGet:
     return {
         p.preference_identifier: FrontendUserPreference.parse_obj(
@@ -61,12 +69,17 @@ async def get_frontend_user_preferences(
                 "default_value": p.get_default_value(),
             }
         )
-        for p in await _get_frontend_user_preferences_list(app, user_id)
+        for p in await _get_frontend_user_preferences_list(app, user_id, product_name)
     }
 
 
 async def set_frontend_user_preference(
-    app: web.Application, *, user_id: UserID, frontend_preference_name: str, value: Any
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    frontend_preference_name: str,
+    value: Any,
 ) -> None:
     try:
         preference_class_name = get_preference_name_to_class_name_map()[
@@ -83,4 +96,5 @@ async def set_frontend_user_preference(
         app,
         user_id=user_id,
         preference=parse_obj_as(preference_class, {"value": value}),
+        product_name=product_name,
     )
