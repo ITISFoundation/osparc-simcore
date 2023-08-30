@@ -3364,7 +3364,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_dict_str__models_library.api_schemas_webserver.users_preferences.UserPreference__'
+                $ref: '#/components/schemas/Envelope_dict_str__models_library.api_schemas_webserver.users_preferences.FrontendUserPreference__'
   /v0/me/preferences/{frontend_preference_name}:
     patch:
       tags:
@@ -3382,7 +3382,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserPreferencePatchRequestBody'
+              $ref: '#/components/schemas/FrontendUserPreferencePatchRequestBody'
         required: true
       responses:
         '204':
@@ -5115,15 +5115,15 @@ components:
           type: object
         error:
           title: Error
-    Envelope_dict_str__models_library.api_schemas_webserver.users_preferences.UserPreference__:
-      title: Envelope[dict[str, models_library.api_schemas_webserver.users_preferences.UserPreference]]
+    Envelope_dict_str__models_library.api_schemas_webserver.users_preferences.FrontendUserPreference__:
+      title: Envelope[dict[str, models_library.api_schemas_webserver.users_preferences.FrontendUserPreference]]
       type: object
       properties:
         data:
           title: Data
           type: object
           additionalProperties:
-            $ref: '#/components/schemas/UserPreference'
+            $ref: '#/components/schemas/FrontendUserPreference'
         error:
           title: Error
     Envelope_dict_uuid.UUID__models_library.api_schemas_webserver.activity.Activity__:
@@ -5717,6 +5717,40 @@ components:
             format: uri
         links:
           $ref: '#/components/schemas/FileUploadLinks'
+    FrontendUserPreference:
+      title: FrontendUserPreference
+      required:
+      - exposeInPreferences
+      - widget
+      - label
+      - description
+      - type
+      - defaultValue
+      type: object
+      properties:
+        exposeInPreferences:
+          title: Exposeinpreferences
+          type: boolean
+        widget:
+          $ref: '#/components/schemas/WidgetType'
+        label:
+          title: Label
+          type: string
+        description:
+          title: Description
+          type: string
+        type:
+          $ref: '#/components/schemas/ValueType'
+        defaultValue:
+          title: Defaultvalue
+        value:
+          title: Value
+    FrontendUserPreferencePatchRequestBody:
+      title: FrontendUserPreferencePatchRequestBody
+      type: object
+      properties:
+        value:
+          title: Value
     GroupAccessRights:
       title: GroupAccessRights
       required:
@@ -8592,40 +8626,6 @@ components:
         read:
           title: Read
           type: boolean
-    UserPreference:
-      title: UserPreference
-      required:
-      - exposeInPreferences
-      - widget
-      - label
-      - description
-      - type
-      - defaultValue
-      type: object
-      properties:
-        exposeInPreferences:
-          title: Exposeinpreferences
-          type: boolean
-        widget:
-          $ref: '#/components/schemas/WidgetType'
-        label:
-          title: Label
-          type: string
-        description:
-          title: Description
-          type: string
-        type:
-          $ref: '#/components/schemas/ValueType'
-        defaultValue:
-          title: Defaultvalue
-        value:
-          title: Value
-    UserPreferencePatchRequestBody:
-      title: UserPreferencePatchRequestBody
-      type: object
-      properties:
-        value:
-          title: Value
     UsersGroup:
       title: UsersGroup
       required:
