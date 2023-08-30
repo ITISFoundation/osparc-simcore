@@ -77,9 +77,11 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
     @classmethod
     def get_preference_class_from_name(
         cls, preference_name: str
-    ) -> "_BaseUserPreferenceModel":
-        preference_class: "_BaseUserPreferenceModel" | None = (
-            cls._registered_user_preference_classes.get(preference_name, None)
+    ) -> type["_BaseUserPreferenceModel"]:
+        preference_class: type[
+            "_BaseUserPreferenceModel"
+        ] | None = cls._registered_user_preference_classes.get(
+            preference_name, None
         )  # type: ignore
         if preference_class is None:
             msg = f"No preference class found for provided {preference_name=}"
@@ -131,7 +133,7 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
 
 
 class BaseBackendUserPreference(_BaseUserPreferenceModel):
-    preference_type: PreferenceType = PreferenceType.BACKEND
+    preference_type: PreferenceType = Field(PreferenceType.BACKEND, frozen=True)
 
     class Config:
         exclude_from_serialization: ClassVar[set[str]] = {
@@ -140,7 +142,9 @@ class BaseBackendUserPreference(_BaseUserPreferenceModel):
 
 
 class BaseFrontendUserPreference(_BaseUserPreferenceModel):
-    preference_type: PreferenceType = PreferenceType.FRONTEND
+    preference_type: PreferenceType = Field(
+        default=PreferenceType.FRONTEND, frozen=True
+    )
 
     # NOTE: below fields do not require storage in the DB
     preference_identifier: str = Field(..., description="used by the frontend client")
@@ -169,7 +173,7 @@ class BaseFrontendUserPreference(_BaseUserPreferenceModel):
 
 
 class BaseUserServiceUserPreference(_BaseUserPreferenceModel):
-    preference_type: PreferenceType = PreferenceType.USER_SERVICE
+    preference_type: PreferenceType = Field(PreferenceType.USER_SERVICE, frozen=True)
 
     # NOTE: preferences are stored per service and the version is not considered
     service_key: ServiceKey = Field(
