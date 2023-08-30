@@ -173,17 +173,7 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
         params.url.offset = osparc.utils.Utils.getParamFromURL(this.__prevRequestParams, "offset");
         params.url.limit = osparc.utils.Utils.getParamFromURL(this.__prevRequestParams, "limit");
       }
-      const options = {
-        resolveWResponse: true
-      };
-
-      const walletSelector = this.getChildControl("wallet-selector");
-      let walletId = walletSelector.getSelection()[0].walletId;
-      if (walletId) {
-        params.url["walletId"] = walletId.toString();
-        return osparc.data.Resources.fetch("resourceUsagePerWallet", "getPage", params, undefined, options);
-      }
-      return osparc.data.Resources.fetch("resourceUsage", "getPage", params, undefined, options);
+      return this.__getCommonRequest(params);
     },
 
     __getNextRequest: function() {
@@ -197,6 +187,10 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
         params.url.offset = osparc.utils.Utils.getParamFromURL(this.__nextRequestParams, "offset");
         params.url.limit = osparc.utils.Utils.getParamFromURL(this.__nextRequestParams, "limit");
       }
+      return this.__getCommonRequest(params);
+    },
+
+    __getCommonRequest: function(params) {
       const options = {
         resolveWResponse: true
       };
