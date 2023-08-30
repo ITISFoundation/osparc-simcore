@@ -1,17 +1,17 @@
-import datetime
-import time
-from collections.abc import AsyncIterator, Coroutine
+from collections.abc import AsyncIterator, Callable, Coroutine
 from typing import cast
 
 import aiodocker
+import arrow
 import pytest
+from faker import Faker
 
 
 @pytest.fixture(autouse=True)
 async def cleanup_check_rabbitmq_server_has_no_errors(
     request: pytest.FixtureRequest,
 ) -> AsyncIterator[None]:
-    now = datetime.datetime.now(datetime.timezone.utc)
+    now = arrow.utcnow()
     yield
     if "no_cleanup_check_rabbitmq_server_has_no_errors" in request.keywords:
         return
@@ -27,7 +27,7 @@ async def cleanup_check_rabbitmq_server_has_no_errors(
                 stdout=True,
                 stderr=True,
                 follow=False,
-                since=time.mktime(now.timetuple()),
+                since=now.timestamp(),
             ),
         )
 
@@ -41,6 +41,17 @@ async def cleanup_check_rabbitmq_server_has_no_errors(
         for log in warning_logs
         if all(w not in log for w in RABBIT_SKIPPED_WARNINGS)
     ]
-    assert not filtered_warning_logs
-    assert not error_logs
+    assert (
+        not filtered_warning_logs
+    ), f"warning(s) found in rabbitmq logs for {request.function}"
+    assert not error_logs, f"error(s) found in rabbitmq logs for {request.function}"
     print("<-- no error founds in rabbitmq server logs, that's great. good job!")
+
+
+@pytest.fixture
+def random_exchange_name() -> Callable[[], str]:
+    def _creator() -> str:
+        faker = Faker()
+        return f"pytest_fake_exchange_{faker.pystr()}"
+
+    return _creator
