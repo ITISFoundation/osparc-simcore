@@ -4,9 +4,9 @@
 
 
 import datetime
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Awaitable, Final
+from typing import Final
 from unittest.mock import MagicMock
 
 import arrow
