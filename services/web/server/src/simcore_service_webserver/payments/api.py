@@ -66,11 +66,18 @@ async def get_user_payments_page(
 ) -> tuple[list, int]:
     assert limit > 1  # nosec
     assert offset >= 0  # nosec
+    assert product_name  # nosec
 
     payments_service = get_payments_service_api(app)
-    await payments_service.is_healthy()
+    assert payments_service
 
-    raise NotImplementedError
+    user_payments: list[PaymentGet] = list(
+        _FAKE_PAYMENTS_TRANSACTIONS[user_id].values()
+    )
+    total_number_of_items = len(user_payments)
+    payments = user_payments[offset : offset + limit]
+
+    return payments, total_number_of_items
 
 
 assert get_payments_service_api  # nosec
