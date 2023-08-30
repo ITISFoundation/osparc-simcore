@@ -13,7 +13,7 @@ from contextlib import contextmanager
 from typing import TypeAlias, TypeVar, Union
 
 from aiohttp import web
-from pydantic import BaseModel, ValidationError, parse_obj_as
+from pydantic import BaseModel, Extra, ValidationError, parse_obj_as
 
 from ..json_serialization import json_dumps
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -21,6 +21,13 @@ from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 ModelClass = TypeVar("ModelClass", bound=BaseModel)
 ModelOrListOrDictType = TypeVar("ModelOrListOrDictType", bound=BaseModel | list | dict)
 UnionOfModelTypes: TypeAlias = Union[type[ModelClass], type[ModelClass]]  # noqa: UP007
+
+
+class StrictRequestParams(BaseModel):
+    """Use a base class for context, path and query parameters"""
+
+    class Config:
+        extra = Extra.forbid  # strict
 
 
 @contextmanager
