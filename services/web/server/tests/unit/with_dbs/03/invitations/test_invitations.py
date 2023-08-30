@@ -70,6 +70,7 @@ async def test_invitation_service_unavailable(
     client: TestClient,
     expected_invitation: InvitationContent,
 ):
+    assert client.app
     invitations_api: InvitationsServiceApi = get_invitations_service_api(app=client.app)
 
     assert not await invitations_api.ping()
@@ -103,6 +104,7 @@ async def test_valid_invitation(
     mock_invitations_service_http_api: AioResponsesMock,
     expected_invitation: InvitationContent,
 ):
+    assert client.app
     invitation = await validate_invitation_url(
         app=client.app,
         guest_email=expected_invitation.guest,
@@ -117,13 +119,14 @@ async def test_invalid_invitation_if_guest_is_already_registered(
     mock_invitations_service_http_api: AioResponsesMock,
     expected_invitation: InvitationContent,
 ):
+    assert client.app
     async with NewUser(
         params={
             "name": "test-user",
             "email": expected_invitation.guest,
         },
         app=client.app,
-    ) as registered_user:
+    ):
         with pytest.raises(InvalidInvitation):
             await validate_invitation_url(
                 app=client.app,
@@ -132,11 +135,12 @@ async def test_invalid_invitation_if_guest_is_already_registered(
             )
 
 
-async def test_invatlid_invitation_if_not_guest(
+async def test_invalid_invitation_if_not_guest(
     client: TestClient,
     mock_invitations_service_http_api: AioResponsesMock,
     expected_invitation: InvitationContent,
 ):
+    assert client.app
     assert expected_invitation.guest != "unexpected_guest@email.me"
     with pytest.raises(InvalidInvitation):
         await validate_invitation_url(

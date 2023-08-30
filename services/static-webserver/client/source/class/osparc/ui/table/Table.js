@@ -34,6 +34,11 @@ qx.Class.define("osparc.ui.table.Table", {
 
     _applyData: function(data) {
       this.getTableModel().setData(data, false);
+    },
+
+    makeItLoose: function() {
+      this.setHeaderCellHeight(26);
+      this.setRowHeight(26);
     }
   }
 });

@@ -1116,12 +1116,12 @@ qx.Class.define("osparc.data.Resources", {
     dummy: {
       newWalletData: function() {
         return {
-          "wallet_id": Math.floor(Math.random() * 1000),
+          "walletId": Math.floor(Math.random() * 1000),
           name: "New Wallet",
           description: "",
           thumbnail: null,
           owner: null,
-          "available_credits": 0,
+          "availableCredits": 0,
           status: "ACTIVE",
           accessRights: []
         };

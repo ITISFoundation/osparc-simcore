@@ -27,7 +27,10 @@ def setup(app: FastAPI) -> None:
         )
 
     async def on_shutdown() -> None:
-        if app.state.rabbitmq_client:
+        if (
+            app.state.rabbitmq_client
+            and not app.state.resource_tracker_rabbitmq_consumer
+        ):
             await app.state.rabbitmq_client.close()
 
     app.add_event_handler("startup", on_startup)

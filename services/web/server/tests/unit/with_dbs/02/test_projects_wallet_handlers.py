@@ -109,14 +109,14 @@ async def test_project_wallets_full_workflow(
     )
     resp = await client.put(base_url)
     data, _ = await assert_status(resp, expected)
-    assert data["wallet_id"] == setup_wallets_db[0].wallet_id
+    assert data["walletId"] == setup_wallets_db[0].wallet_id
 
     base_url = client.app.router["get_project_wallet"].url_for(
         project_id=user_project["uuid"]
     )
     resp = await client.get(base_url)
     data, _ = await assert_status(resp, expected)
-    assert data["wallet_id"] == setup_wallets_db[0].wallet_id
+    assert data["walletId"] == setup_wallets_db[0].wallet_id
 
     # Now we will connect different wallet
     base_url = client.app.router["connect_wallet_to_project"].url_for(
@@ -124,11 +124,11 @@ async def test_project_wallets_full_workflow(
     )
     resp = await client.put(base_url)
     data, _ = await assert_status(resp, expected)
-    assert data["wallet_id"] == setup_wallets_db[1].wallet_id
+    assert data["walletId"] == setup_wallets_db[1].wallet_id
 
     base_url = client.app.router["get_project_wallet"].url_for(
         project_id=user_project["uuid"]
     )
     resp = await client.get(base_url)
     data, _ = await assert_status(resp, expected)
-    assert data["wallet_id"] == setup_wallets_db[1].wallet_id
+    assert data["walletId"] == setup_wallets_db[1].wallet_id
