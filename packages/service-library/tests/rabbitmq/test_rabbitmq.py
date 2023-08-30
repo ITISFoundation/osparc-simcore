@@ -51,14 +51,6 @@ async def test_rabbit_client(
 
 
 @pytest.fixture
-def random_exchange_name(faker: Faker) -> Callable[[], str]:
-    def _creator() -> str:
-        return f"pytest_fake_exchange_{faker.pystr()}"
-
-    return _creator
-
-
-@pytest.fixture
 def mocked_message_parser(mocker: MockerFixture) -> mock.AsyncMock:
     return mocker.AsyncMock(return_value=True)
 
