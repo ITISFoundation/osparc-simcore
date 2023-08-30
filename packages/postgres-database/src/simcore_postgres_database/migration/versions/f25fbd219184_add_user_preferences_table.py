@@ -1,16 +1,16 @@
-"""add user preferences table
+"""add_user_preferences_table
 
-Revision ID: d4a26cf4e9cb
-Revises: e987caaec81b
-Create Date: 2023-08-24 09:48:19.726664+00:00
+Revision ID: f25fbd219184
+Revises: 2dda922a3261
+Create Date: 2023-08-30 08:26:45.834009+00:00
 
 """
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "d4a26cf4e9cb"
-down_revision = "e987caaec81b"
+revision = "f25fbd219184"
+down_revision = "2dda922a3261"
 branch_labels = None
 depends_on = None
 
