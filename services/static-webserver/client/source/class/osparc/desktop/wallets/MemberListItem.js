@@ -62,52 +62,53 @@ qx.Class.define("osparc.desktop.wallets.MemberListItem", {
         position: "bottom-right"
       });
 
-      const accessRights = this.getAccessRights();
-      let currentRole = osparc.data.Roles.WALLET[1];
-      if (accessRights.getWrite()) {
-        currentRole = osparc.data.Roles.WALLET[2];
+      const options = this.getOptions();
+      if (options === null) {
+        return menu;
       }
 
-      // promote/demote actions
-      switch (currentRole.id) {
-        case "read": {
-          const promoteButton = new qx.ui.menu.Button(this.tr("Promote to ") + osparc.data.Roles.WALLET[2].label);
-          promoteButton.addListener("execute", () => {
-            this.fireDataEvent("promoteToAccountant", {
-              gid: this.getGid(),
-              name: this.getTitle()
-            });
+      if (options.includes("promoteToAccountant")) {
+        const promoteButton = new qx.ui.menu.Button(this.tr("Promote to ") + osparc.data.Roles.WALLET[2].label);
+        promoteButton.addListener("execute", () => {
+          this.fireDataEvent("promoteToAccountant", {
+            gid: this.getGid(),
+            name: this.getTitle()
           });
-          menu.add(promoteButton);
-          break;
-        }
-        case "write": {
-          const demoteButton = new qx.ui.menu.Button(this.tr("Demote to ") + osparc.data.Roles.WALLET[1].label);
-          demoteButton.addListener("execute", () => {
-            this.fireDataEvent("demoteToMember", {
-              gid: this.getGid(),
-              name: this.getTitle()
-            });
+        });
+        menu.add(promoteButton);
+      }
+      if (options.includes("demoteToMember")) {
+        const demoteButton = new qx.ui.menu.Button(this.tr("Demote to ") + osparc.data.Roles.WALLET[1].label);
+        demoteButton.addListener("execute", () => {
+          this.fireDataEvent("demoteToMember", {
+            gid: this.getGid(),
+            name: this.getTitle()
           });
-          menu.add(demoteButton);
-          break;
-        }
+        });
+        menu.add(demoteButton);
       }
 
       if (menu.getChildren().length) {
         menu.addSeparator();
       }
 
-      const removeButton = new qx.ui.menu.Button(this.tr("Remove ") + currentRole.label).set({
-        textColor: "danger-red"
-      });
-      removeButton.addListener("execute", () => {
-        this.fireDataEvent("removeMember", {
-          gid: this.getGid(),
-          name: this.getTitle()
+      if (options.includes("removeMember")) {
+        const accessRights = this.getAccessRights();
+        let currentRole = osparc.data.Roles.WALLET[1];
+        if (accessRights.getWrite()) {
+          currentRole = osparc.data.Roles.WALLET[2];
+        }
+        const removeButton = new qx.ui.menu.Button(this.tr("Remove ") + currentRole.label).set({
+          textColor: "danger-red"
         });
-      });
-      menu.add(removeButton);
+        removeButton.addListener("execute", () => {
+          this.fireDataEvent("removeMember", {
+            gid: this.getGid(),
+            name: this.getTitle()
+          });
+        });
+        menu.add(removeButton);
+      }
 
       return menu;
     }
