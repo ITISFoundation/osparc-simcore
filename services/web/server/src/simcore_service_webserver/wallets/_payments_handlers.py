@@ -16,6 +16,7 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.logging_utils import get_log_record_extra, log_context
 
 from .._meta import API_VTAG as VTAG
+from ..application_settings import get_settings
 from ..login.decorators import login_required
 from ..payments.api import create_payment_to_wallet, get_user_payments_page
 from ..security.decorators import permission_required
@@ -33,6 +34,13 @@ _logger = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
 
+def _raise_if_not_dev_mode(app):
+    app_settings = get_settings(app)
+    if not app_settings.WEBSERVER_DEV_FEATURES_ENABLED:
+        msg = "This feature is only available in development mode"
+        raise NotImplementedError(msg)
+
+
 @routes.post(f"/{VTAG}/wallets/{{wallet_id}}/payments", name="create_payment")
 @login_required
 @permission_required("wallets.*")
@@ -41,6 +49,8 @@ async def create_payment(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
     body_params = await parse_request_body_as(PaymentCreateBody, request)
+
+    _raise_if_not_dev_mode(request.app)
 
     # ensure the wallet can be used by the user
     wallet: WalletGet = await get_wallet_by_user(
@@ -80,6 +90,8 @@ async def list_all_payments(request: web.Request):
 
     req_ctx = WalletsRequestContext.parse_obj(request)
     query_params = parse_request_query_parameters_as(PageQueryParameters, request)
+
+    _raise_if_not_dev_mode(request.app)
 
     payments, total_number_of_items = await get_user_payments_page(
         request.app,
