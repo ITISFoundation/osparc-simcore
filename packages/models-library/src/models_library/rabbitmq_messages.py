@@ -182,7 +182,7 @@ class RabbitResourceTrackingBaseMessage(RabbitMessageBase):
         ..., description="uniquely identitifies the service run"
     )
     created_at: datetime.datetime = Field(
-        default_factory=lambda: arrow.utcnow(),
+        default_factory=lambda: arrow.utcnow().datetime,
         description="message creation datetime",
     )
 
