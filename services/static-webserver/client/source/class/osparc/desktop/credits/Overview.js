@@ -122,19 +122,25 @@ qx.Class.define("osparc.desktop.credits.Overview", {
 
         const wallet = wallets[i];
 
+        const maxSize = 20;
         // thumbnail or shared or not shared
         const thumbnail = new qx.ui.basic.Image().set({
           backgroundColor: "transparent",
           alignX: "center",
-          alignY: "middle"
+          alignY: "middle",
+          scale: true,
+          allowShrinkX: true,
+          allowShrinkY: true,
+          maxHeight: maxSize,
+          maxWidth: maxSize
         });
         const value = wallet.getThumbnail();
         if (value) {
           thumbnail.setSource(value);
         } else if (wallet.getAccessRights() && wallet.getAccessRights().length > 1) {
-          thumbnail.setSource(osparc.utils.Icons.organization(18));
+          thumbnail.setSource(osparc.utils.Icons.organization(maxSize-4));
         } else {
-          thumbnail.setSource(osparc.utils.Icons.user(18));
+          thumbnail.setSource(osparc.utils.Icons.user(maxSize-4));
         }
         layout.add(thumbnail, {
           column,
@@ -172,10 +178,10 @@ qx.Class.define("osparc.desktop.credits.Overview", {
           alignY: "middle"
         });
         wallet.bind("defaultWallet", starImage, "source", {
-          converter: isDefault => isDefault ? "@FontAwesome5Solid/star/20" : "@FontAwesome5Regular/star/20"
+          converter: isDefault => isDefault ? "@FontAwesome5Solid/star/18" : "@FontAwesome5Regular/star/18"
         });
         wallet.bind("defaultWallet", starImage, "textColor", {
-          converter: isDefault => isDefault ? "strong-main" : null
+          converter: isDefault => isDefault ? "strong-main" : "text"
         });
         layout.add(starImage, {
           column,
@@ -191,6 +197,23 @@ qx.Class.define("osparc.desktop.credits.Overview", {
       const grid = new qx.ui.layout.Grid(12, 8);
       const layout = new qx.ui.container.Composite(grid);
 
+      const headers = [
+        "Date",
+        "Credits",
+        "Price",
+        "Wallet",
+        "Comment"
+      ];
+      headers.forEach((header, column) => {
+        const text = new qx.ui.basic.Label(header).set({
+          font: "text-14"
+        });
+        layout.add(text, {
+          row: 0,
+          column
+        });
+      });
+
       const entries = [[
         osparc.utils.Utils.formatDateAndTime(new Date()),
         10,
@@ -204,16 +227,19 @@ qx.Class.define("osparc.desktop.credits.Overview", {
         "My Wallet",
         "A payment"
       ]];
+      const maxTransactions = 4;
       entries.forEach((entry, row) => {
-        entry.forEach((data, column) => {
-          const text = new qx.ui.basic.Label(data.toString()).set({
-            font: "text-13"
+        if (row < maxTransactions) {
+          entry.forEach((data, column) => {
+            const text = new qx.ui.basic.Label(data.toString()).set({
+              font: "text-13"
+            });
+            layout.add(text, {
+              row: row+1,
+              column
+            });
           });
-          layout.add(text, {
-            row,
-            column
-          });
-        });
+        }
       });
       return layout;
     },
@@ -221,6 +247,23 @@ qx.Class.define("osparc.desktop.credits.Overview", {
     __createUsageView: function() {
       const grid = new qx.ui.layout.Grid(12, 8);
       const layout = new qx.ui.container.Composite(grid);
+
+      const headers = [
+        "Project",
+        "Wallet",
+        "Date",
+        "Duration",
+        "Status"
+      ];
+      headers.forEach((header, column) => {
+        const text = new qx.ui.basic.Label(header).set({
+          font: "text-14"
+        });
+        layout.add(text, {
+          row: 0,
+          column
+        });
+      });
 
       const entries = [[
         "Sim4life project",
@@ -235,16 +278,19 @@ qx.Class.define("osparc.desktop.credits.Overview", {
         "13:14",
         "Running"
       ]];
+      const maxUsage = 4;
       entries.forEach((entry, row) => {
-        entry.forEach((data, column) => {
-          const text = new qx.ui.basic.Label(data.toString()).set({
-            font: "text-13"
+        if (row < maxUsage) {
+          entry.forEach((data, column) => {
+            const text = new qx.ui.basic.Label(data.toString()).set({
+              font: "text-13"
+            });
+            layout.add(text, {
+              row: row+1,
+              column
+            });
           });
-          layout.add(text, {
-            row,
-            column
-          });
-        });
+        }
       });
       return layout;
     }

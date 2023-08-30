@@ -28,6 +28,8 @@ qx.Class.define("osparc.component.resourceUsage.OverviewTable", {
       tableColumnModel: obj => new qx.ui.table.columnmodel.Resize(obj),
       statusBarVisible: false
     });
+    this.makeItLoose();
+
     const columnModel = this.getTableColumnModel();
     columnModel.getBehavior().setWidth(this.self().COLUMNS.duration.pos, 60);
     columnModel.getBehavior().setWidth(this.self().COLUMNS.processors.pos, 80);
