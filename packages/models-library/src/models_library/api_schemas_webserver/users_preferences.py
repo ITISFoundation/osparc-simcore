@@ -2,19 +2,22 @@ from typing import Any, TypeAlias
 
 from pydantic import BaseModel, Field
 
-from ..user_preferences import PreferenceName
+from ..user_preferences import PreferenceIdentifier
 
 
 class FrontendUserPreference(BaseModel):
-    # these fields are inherited from `BaseFrontendUserPreference``
-    default_value: Any = Field(default=..., alias="defaultValue")
-    value: Any
+    default_value: Any = Field(
+        default=..., alias="defaultValue", description="used by the frontend"
+    )
+    value: Any = Field(default=..., description="preference value")
 
     class Config:
         allow_population_by_field_name = True
 
 
-FrontendUserPreferencesGet: TypeAlias = dict[PreferenceName, FrontendUserPreference]
+FrontendUserPreferencesGet: TypeAlias = dict[
+    PreferenceIdentifier, FrontendUserPreference
+]
 
 
 class FrontendUserPreferencePatchRequestBody(BaseModel):
@@ -22,4 +25,4 @@ class FrontendUserPreferencePatchRequestBody(BaseModel):
 
 
 class FrontendUserPreferencePatchPathParams(BaseModel):
-    frontend_preference_name: PreferenceName
+    preference: PreferenceIdentifier

@@ -38,6 +38,7 @@ class _AutoRegisterMeta(ModelMetaclass):
 
 
 PreferenceName: TypeAlias = str
+PreferenceIdentifier: TypeAlias = str
 
 
 class _ExtendedBaseModel(BaseModel, metaclass=_AutoRegisterMeta):
@@ -66,7 +67,7 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
 
     @classmethod
     def get_preference_class_from_name(
-        cls, preference_name: str
+        cls, preference_name: PreferenceName
     ) -> type["_BaseUserPreferenceModel"]:
         preference_class: type[
             "_BaseUserPreferenceModel"
@@ -137,7 +138,9 @@ class BaseFrontendUserPreference(_BaseUserPreferenceModel):
     )
 
     # NOTE: below fields do not require storage in the DB
-    preference_identifier: str = Field(..., description="used by the frontend client")
+    preference_identifier: PreferenceIdentifier = Field(
+        ..., description="used by the frontend"
+    )
 
     class Config:
         exclude_from_serialization: ClassVar[set[str]] = {

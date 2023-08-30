@@ -64,7 +64,7 @@ async def get_user_preferences(request: web.Request) -> web.Response:
 
 
 @routes.patch(
-    f"/{API_VTAG}/me/preferences/{{frontend_preference_name}}",
+    f"/{API_VTAG}/me/preferences/{{preference}}",
     name="set_frontend_preference",
 )
 @login_required
@@ -82,7 +82,7 @@ async def set_frontend_preference(request: web.Request) -> web.Response:
         request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
-        frontend_preference_name=req_path_params.frontend_preference_name,
+        frontend_preference_identifier=req_path_params.preference,
         value=req_body.value,
     )
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)

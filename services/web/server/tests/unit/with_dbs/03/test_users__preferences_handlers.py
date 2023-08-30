@@ -12,7 +12,10 @@ from faker import Faker
 from models_library.api_schemas_webserver.users_preferences import (
     FrontendUserPreferencesGet,
 )
-from models_library.user_preferences import BaseFrontendUserPreference, PreferenceName
+from models_library.user_preferences import (
+    BaseFrontendUserPreference,
+    PreferenceIdentifier,
+)
 from models_library.users import UserID
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -55,11 +58,11 @@ async def _request_get_user_preferences(client: TestClient) -> ClientResponse:
 
 
 async def _request_set_frontend_preference(
-    client: TestClient, frontend_preference_name: PreferenceName, value: Any
+    client: TestClient, preference_identifier: PreferenceIdentifier, value: Any
 ) -> ClientResponse:
     assert client.app
-    url = f"{client.app.router['set_frontend_preference'].url_for(frontend_preference_name=frontend_preference_name)}"
-    assert f"{url}" == f"/v0/me/preferences/{frontend_preference_name}"
+    url = f"{client.app.router['set_frontend_preference'].url_for(preference=preference_identifier)}"
+    assert f"{url}" == f"/v0/me/preferences/{preference_identifier}"
     return await client.patch(url, json={"value": value})
 
 
@@ -144,7 +147,7 @@ async def test_set_frontend_preference_not_found(
     drop_all_preferences: None,
 ):
     resp = await _request_set_frontend_preference(
-        client, "__undefined_frontend_preference_name__", None
+        client, "__undefined_preference_identifier__", None
     )
     _, error = await assert_status(resp, web.HTTPNotFound)
     assert "not found" in error["message"]

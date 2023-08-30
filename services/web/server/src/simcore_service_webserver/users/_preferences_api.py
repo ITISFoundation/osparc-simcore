@@ -1,4 +1,4 @@
-from typing import Any, Final
+from typing import Any, Final, cast
 
 from aiohttp import web
 from models_library.api_schemas_webserver.users_preferences import (
@@ -6,7 +6,12 @@ from models_library.api_schemas_webserver.users_preferences import (
     FrontendUserPreferencesGet,
 )
 from models_library.products import ProductName
-from models_library.user_preferences import BaseFrontendUserPreference
+from models_library.user_preferences import (
+    AnyBaseUserPreference,
+    BaseFrontendUserPreference,
+    PreferenceIdentifier,
+    PreferenceName,
+)
 from models_library.users import UserID
 from pydantic import NonNegativeInt, parse_obj_as
 from servicelib.utils import logged_gather
@@ -14,7 +19,7 @@ from servicelib.utils import logged_gather
 from ._preferences_db import get_user_preference, set_user_preference
 from ._preferences_models import (
     ALL_FRONTEND_PREFERENCES,
-    get_preference_name_to_class_name_map,
+    get_preference_identifier_to_preference_name_map,
 )
 
 _MAX_PARALLEL_DB_QUERIES: Final[NonNegativeInt] = 2
@@ -59,15 +64,7 @@ async def get_frontend_user_preferences(
 ) -> FrontendUserPreferencesGet:
     return {
         p.preference_identifier: FrontendUserPreference.parse_obj(
-            {
-                "expose_in_preferences": p.expose_in_preferences,
-                "widget_type": p.widget_type,
-                "label": p.label,
-                "description": p.description,
-                "value": p.value,
-                "value_type": p.value_type,
-                "default_value": p.get_default_value(),
-            }
+            {"value": p.value, "default_value": p.get_default_value()}
         )
         for p in await _get_frontend_user_preferences_list(app, user_id, product_name)
     }
@@ -78,18 +75,23 @@ async def set_frontend_user_preference(
     *,
     user_id: UserID,
     product_name: ProductName,
-    frontend_preference_name: str,
+    frontend_preference_identifier: PreferenceIdentifier,
     value: Any,
 ) -> None:
     try:
-        preference_class_name = get_preference_name_to_class_name_map()[
-            frontend_preference_name
-        ]
+        preference_name: PreferenceName = (
+            get_preference_identifier_to_preference_name_map()[
+                frontend_preference_identifier
+            ]
+        )
     except KeyError as e:
-        raise FrontendUserPreferenceIsNotDefinedError(frontend_preference_name) from e
+        raise FrontendUserPreferenceIsNotDefinedError(
+            frontend_preference_identifier
+        ) from e
 
-    preference_class = BaseFrontendUserPreference.get_preference_class_from_name(
-        preference_class_name
+    preference_class = cast(
+        type[AnyBaseUserPreference],
+        BaseFrontendUserPreference.get_preference_class_from_name(preference_name),
     )
 
     await set_user_preference(

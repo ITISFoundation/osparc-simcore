@@ -3374,10 +3374,10 @@ paths:
       parameters:
       - required: true
         schema:
-          title: Frontend Preference Name
+          title: Preference
           type: string
-        name: frontend_preference_name
-        in: path
+        name: preference
+        in: query
       requestBody:
         content:
           application/json:
@@ -5720,31 +5720,16 @@ components:
     FrontendUserPreference:
       title: FrontendUserPreference
       required:
-      - exposeInPreferences
-      - widget
-      - label
-      - description
-      - type
       - defaultValue
+      - value
       type: object
       properties:
-        exposeInPreferences:
-          title: Exposeinpreferences
-          type: boolean
-        widget:
-          $ref: '#/components/schemas/WidgetType'
-        label:
-          title: Label
-          type: string
-        description:
-          title: Description
-          type: string
-        type:
-          $ref: '#/components/schemas/ValueType'
         defaultValue:
           title: Defaultvalue
+          description: used by the frontend
         value:
           title: Value
+          description: preference value
     FrontendUserPreferencePatchRequestBody:
       title: FrontendUserPreferencePatchRequestBody
       type: object
@@ -8662,17 +8647,6 @@ components:
           additionalProperties:
             type: string
           description: Maps user's column and regular expression
-    ValueType:
-      title: ValueType
-      enum:
-      - boolean
-      - string
-      - number
-      - integer
-      - array
-      - dictionary
-      type: string
-      description: An enumeration.
     Viewer:
       title: Viewer
       required:
@@ -8850,7 +8824,6 @@ components:
       enum:
       - TextArea
       - SelectBox
-      - CheckBox
       type: string
       description: An enumeration.
     WorkbenchUI:
