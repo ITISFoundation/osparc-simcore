@@ -20,20 +20,20 @@ _logger = logging.getLogger(__name__)
 
 @dataclass
 class RabbitMQRPCClient(RabbitMQClientBase):
-    _rpc_connection: aio_pika.abc.AbstractConnection | None = None
-    _rpc_channel: aio_pika.abc.AbstractChannel | None = None
+    _connection: aio_pika.abc.AbstractConnection | None = None
+    _channel: aio_pika.abc.AbstractChannel | None = None
     _rpc: aio_pika.patterns.RPC | None = None
 
     async def rpc_initialize(self) -> None:
-        self._rpc_connection = await aio_pika.connect_robust(
+        self._connection = await aio_pika.connect_robust(
             self.settings.dsn,
             client_properties={
                 "connection_name": f"{get_rabbitmq_client_unique_name(self.client_name)}.rpc"
             },
         )
-        self._rpc_channel = await self._rpc_connection.channel()
+        self._channel = await self._connection.channel()
 
-        self._rpc = aio_pika.patterns.RPC(self._rpc_channel)
+        self._rpc = aio_pika.patterns.RPC(self._channel)
         await self._rpc.initialize()
 
     async def close(self) -> None:
@@ -45,10 +45,10 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             # rpc is not always initialized
             if self._rpc is not None:
                 await self._rpc.close()
-            if self._rpc_channel is not None:
-                await self._rpc_channel.close()
-            if self._rpc_connection is not None:
-                await self._rpc_connection.close()
+            if self._channel is not None:
+                await self._channel.close()
+            if self._connection is not None:
+                await self._connection.close()
 
     async def request(
         self,
