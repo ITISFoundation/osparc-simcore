@@ -4,10 +4,10 @@ from pydantic import Field
 
 
 class ConfirmationBackToDashboardFrontendUserPreference(BaseFrontendUserPreference):
-    render_widget = True
+    expose_in_preferences = True
     widget_type = WidgetType.CheckBox
-    display_label = "Go back to Dashboard"
-    tooltip_message = (
+    label = "Go back to Dashboard"
+    description = (
         "If checked, asks for confirmation when the user goes back to the dashboard"
     )
 
@@ -17,10 +17,10 @@ class ConfirmationBackToDashboardFrontendUserPreference(BaseFrontendUserPreferen
 
 
 class ConfirmationDeleteStudyFrontendUserPreference(BaseFrontendUserPreference):
-    render_widget = True
+    expose_in_preferences = True
     widget_type = WidgetType.CheckBox
-    display_label = "Delete a study"
-    tooltip_message = "If checked, asks for confirmation before deleting a study"
+    label = "Delete a study"
+    description = "If checked, asks for confirmation before deleting a study"
 
     preference_identifier = "confirmDeleteStudy"
     value_type = ValueType.BOOL
@@ -28,10 +28,10 @@ class ConfirmationDeleteStudyFrontendUserPreference(BaseFrontendUserPreference):
 
 
 class ConfirmationDeleteNodeFrontendUserPreference(BaseFrontendUserPreference):
-    render_widget = True
+    expose_in_preferences = True
     widget_type = WidgetType.CheckBox
-    display_label = "Delete a Node"
-    tooltip_message = "If checked, asks for confirmation before deleting a Node"
+    label = "Delete a Node"
+    description = "If checked, asks for confirmation before deleting a Node"
 
     preference_identifier = "confirmDeleteNode"
     value_type = ValueType.BOOL
@@ -39,10 +39,10 @@ class ConfirmationDeleteNodeFrontendUserPreference(BaseFrontendUserPreference):
 
 
 class ConfirmationStopNodeFrontendUserPreference(BaseFrontendUserPreference):
-    render_widget = True
+    expose_in_preferences = True
     widget_type = WidgetType.CheckBox
-    display_label = "Stop Node"
-    tooltip_message = "If checked, asks for confirmation before stopping a Node"
+    label = "Stop Node"
+    description = "If checked, asks for confirmation before stopping a Node"
 
     preference_identifier = "confirmStopNode"
     value_type = ValueType.BOOL
@@ -50,10 +50,10 @@ class ConfirmationStopNodeFrontendUserPreference(BaseFrontendUserPreference):
 
 
 class SnapNodeToGridFrontendUserPreference(BaseFrontendUserPreference):
-    render_widget = True
+    expose_in_preferences = True
     widget_type = WidgetType.CheckBox
-    display_label = "Snap Node to grid"
-    tooltip_message = "If checked Nodes will be automatically snapped to a grid"
+    label = "Snap Node to grid"
+    description = "If checked Nodes will be automatically snapped to a grid"
 
     preference_identifier = "snapNodeToGrid"
     value_type = ValueType.BOOL
@@ -61,10 +61,10 @@ class SnapNodeToGridFrontendUserPreference(BaseFrontendUserPreference):
 
 
 class ConnectPortsAutomaticallyFrontendUserPreference(BaseFrontendUserPreference):
-    render_widget = True
+    expose_in_preferences = True
     widget_type = WidgetType.CheckBox
-    display_label = "Connect ports automatically"
-    tooltip_message = (
+    label = "Connect ports automatically"
+    description = (
         "If checked ports will be connected automatically based "
         "on their supported types and the order in which they appear"
     )
@@ -74,10 +74,10 @@ class ConnectPortsAutomaticallyFrontendUserPreference(BaseFrontendUserPreference
 
 
 class DoNotShowAnnouncementsFrontendUserPreference(BaseFrontendUserPreference):
-    render_widget: bool = False
+    expose_in_preferences: bool = False
     widget_type: WidgetType | None = None
-    display_label: str | None = None
-    tooltip_message: str | None = None
+    label: str | None = None
+    description: str | None = None
 
     preference_identifier = "dontShowAnnouncements"
     value_type = ValueType.LIST
@@ -85,10 +85,10 @@ class DoNotShowAnnouncementsFrontendUserPreference(BaseFrontendUserPreference):
 
 
 class ServicesFrontendUserPreference(BaseFrontendUserPreference):
-    render_widget: bool = False
+    expose_in_preferences: bool = False
     widget_type: WidgetType | None = None
-    display_label: str | None = None
-    tooltip_message: str | None = None
+    label: str | None = None
+    description: str | None = None
 
     preference_identifier = "services"
     value_type = ValueType.DICT
@@ -96,10 +96,10 @@ class ServicesFrontendUserPreference(BaseFrontendUserPreference):
 
 
 class ThemeNameFrontendUserPreference(BaseFrontendUserPreference):
-    render_widget: bool = False
+    expose_in_preferences: bool = False
     widget_type: WidgetType | None = None
-    display_label: str | None = None
-    tooltip_message: str | None = None
+    label: str | None = None
+    description: str | None = None
 
     preference_identifier = "themeName"
     value_type = ValueType.STR
@@ -107,10 +107,10 @@ class ThemeNameFrontendUserPreference(BaseFrontendUserPreference):
 
 
 class LastVcsRefUIFrontendUserPreference(BaseFrontendUserPreference):
-    render_widget: bool = False
+    expose_in_preferences: bool = False
     widget_type: WidgetType | None = None
-    display_label: str | None = None
-    tooltip_message: str | None = None
+    label: str | None = None
+    description: str | None = None
 
     preference_identifier = "lastVcsRefUI"
     value_type = ValueType.STR

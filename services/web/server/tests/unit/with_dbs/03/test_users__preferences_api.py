@@ -71,6 +71,8 @@ def _get_non_default_value(value: Any, value_type: ValueType) -> Any:
         return not value
     if isinstance(value, dict):
         return {**value, "non_default_key": "non_default_value"}
+    if isinstance(value, list):
+        return [*value, "non_default_value"]
     if value is None and value_type == ValueType.STR:
         return ""
 
@@ -112,10 +114,11 @@ async def test_set_frontend_user_preference(
         assert preference.value == _get_default_field_value(preference.__class__)
 
     for preference_class in ALL_FRONTEND_PREFERENCES:
+        instance = preference_class()
         await set_frontend_user_preference(
             app,
             user_id=user_id,
-            frontend_preference_name=preference_class.get_preference_name(),
+            frontend_preference_name=instance.preference_identifier,
             value=_get_non_default_value(
                 _get_default_field_value(preference_class),
                 _get_model_field(preference_class, "value_type").default,
@@ -132,10 +135,11 @@ async def test_set_frontend_user_preference(
 
     # set the original values back again and check
     for preference_class in ALL_FRONTEND_PREFERENCES:
+        instance = preference_class()
         await set_frontend_user_preference(
             app,
             user_id=user_id,
-            frontend_preference_name=preference_class.get_preference_name(),
+            frontend_preference_name=instance.preference_identifier,
             value=_get_default_field_value(preference_class),
         )
 

@@ -52,10 +52,10 @@ async def get_frontend_user_preferences(
     return {
         p.preference_identifier: FrontendUserPreference.parse_obj(
             {
-                "render_widget": p.expose_in_preferences,
+                "expose_in_preferences": p.expose_in_preferences,
                 "widget_type": p.widget_type,
-                "display_label": p.label,
-                "tooltip_message": p.description,
+                "label": p.label,
+                "description": p.description,
                 "value": p.value,
                 "value_type": p.value_type,
                 "default_value": p.get_default_value(),
