@@ -1,61 +1,25 @@
 import logging
 import os
-import re
 import socket
 from collections.abc import Callable
-from re import Pattern
 from typing import Any, Final
 
 import aio_pika
-from pydantic import ConstrainedStr, parse_obj_as
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from .logging_utils import log_context
+from .models import RPCMethodName, RPCNamespace
 
 _logger = logging.getLogger(__file__)
 
 
 _MINUTE: Final[int] = 60
 
-REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS: Final[str] = r"^[\w\-\.]*$"
+
 _RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_S: Final[int] = 15 * _MINUTE
-
-
-class RPCMethodName(ConstrainedStr):
-    min_length: int = 1
-    max_length: int = 252
-    regex: Pattern[str] | None = re.compile(REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS)
-
-
-class RPCNamespace(ConstrainedStr):
-    min_length: int = 1
-    max_length: int = 252
-    regex: Pattern[str] | None = re.compile(REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS)
-
-    @classmethod
-    def from_entries(cls, entries: dict[str, str]) -> "RPCNamespace":
-        """
-        Given a list of entries creates a namespace to be used in declaring the rabbitmq queue.
-        Keeping this to a predefined length
-        """
-        composed_string = "-".join(f"{k}_{v}" for k, v in sorted(entries.items()))
-        return parse_obj_as(cls, composed_string)
-
-
-class RPCNamespacedMethodName(ConstrainedStr):
-    min_length: int = 1
-    max_length: int = 255
-    regex: Pattern[str] | None = re.compile(REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS)
-
-    @classmethod
-    def from_namespace_and_method(
-        cls, namespace: RPCNamespace, method_name: RPCMethodName
-    ) -> "RPCNamespacedMethodName":
-        namespaced_method_name = f"{namespace}.{method_name}"
-        return parse_obj_as(cls, namespaced_method_name)
 
 
 class RabbitMQRetryPolicyUponInitialization:

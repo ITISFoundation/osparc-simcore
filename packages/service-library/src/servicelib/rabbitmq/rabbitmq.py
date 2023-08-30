@@ -1,9 +1,9 @@
 import asyncio
 import functools
 import logging
-from collections.abc import Awaitable, Callable
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Final, Protocol
+from typing import Any, Final
 
 import aio_pika
 import aiormq
@@ -12,30 +12,18 @@ from pydantic import PositiveInt
 from servicelib.logging_utils import log_catch, log_context
 from settings_library.rabbit import RabbitSettings
 
-from .rabbitmq_errors import RemoteMethodNotRegisteredError, RPCNotInitializedError
-from .rabbitmq_rpc_router import RPCRouter
-from .rabbitmq_utils import (
+from .errors import RemoteMethodNotRegisteredError, RPCNotInitializedError
+from .models import (
+    MessageHandler,
+    RabbitMessage,
     RPCMethodName,
     RPCNamespace,
     RPCNamespacedMethodName,
-    declare_queue,
-    get_rabbitmq_client_unique_name,
 )
+from .rpc_router import RPCRouter
+from .utils import declare_queue, get_rabbitmq_client_unique_name
 
 _logger = logging.getLogger(__name__)
-
-
-MessageHandler = Callable[[Any], Awaitable[bool]]
-
-BIND_TO_ALL_TOPICS: Final[str] = "#"
-
-
-class RabbitMessage(Protocol):
-    def body(self) -> bytes:
-        ...
-
-    def routing_key(self) -> str | None:
-        ...
 
 
 _DEFAULT_RABBITMQ_SERVER_HEARTBEAT_S: Final[int] = 60
