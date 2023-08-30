@@ -171,6 +171,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
           ctrl.bindProperty("name", "title", null, item, id);
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
           ctrl.bindProperty("login", "subtitleMD", null, item, id);
+          ctrl.bindProperty("options", "options", null, item, id);
           ctrl.bindProperty("showOptions", "showOptions", null, item, id);
         },
         configureItem: item => {
@@ -208,6 +209,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
 
       const membersList = [];
       const potentialCollaborators = await osparc.store.Store.getInstance().getPotentialCollaborators();
+      const canIWrite = wallet.getMyAccessRights()["write"];
       wallet.getAccessRights().forEach(accessRights => {
         const gid = accessRights["gid"];
         if (Object.prototype.hasOwnProperty.call(potentialCollaborators, parseInt(gid))) {
@@ -219,46 +221,25 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
             collaborator["name"] = osparc.utils.Utils.firstsUp(collaborator["first_name"], collaborator["last_name"]);
           }
           collaborator["accessRights"] = accessRights;
-          const canIWrite = accessRights["write"];
-          const canIDelete = accessRights["delete"];
           let options = [];
-          if (canIDelete) {
-            // admin...
-            if (collaborator["accessRights"]["delete"]) {
-              // ...on admin
-              options = [];
-            } else if (collaborator["accessRights"]["write"]) {
-              // ...on manager
+          if (canIWrite) {
+            // accountant...
+            if (collaborator["accessRights"]["write"]) {
+              // ...on accountant
               options = [
-                "promoteToAdministrator",
                 "demoteToMember",
                 "removeMember"
               ];
             } else if (collaborator["accessRights"]["read"]) {
-              // ...on collaborator
+              // ...on member
               options = [
-                "promoteToManager",
-                "removeMember"
-              ];
-            }
-          } else if (canIWrite) {
-            // manager...
-            if (collaborator["accessRights"]["delete"]) {
-              // ...on admin
-              options = [];
-            } else if (collaborator["accessRights"]["write"]) {
-              // ...on manager
-              options = [];
-            } else if (collaborator["accessRights"]["read"]) {
-              // ...on collaborator
-              options = [
-                "promoteToManager",
+                "promoteToAccountant",
                 "removeMember"
               ];
             }
           }
           collaborator["options"] = options;
-          collaborator["showOptions"] = this.__canIWrite();
+          collaborator["showOptions"] = Boolean(options.length);
           membersList.push(collaborator);
         }
       });
