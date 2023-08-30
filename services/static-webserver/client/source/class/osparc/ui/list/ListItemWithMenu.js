@@ -83,6 +83,8 @@ qx.Class.define("osparc.ui.list.ListItemWithMenu", {
       this._setSubtitle();
 
       this._getInfoButton();
+
+      this.__applyOptions();
     },
 
     _setSubtitle: function() {
