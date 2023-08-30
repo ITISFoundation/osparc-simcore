@@ -59,7 +59,7 @@ async def list_service_runs_by_user_and_product_and_wallet(
             "user_id": user_id,
             "product_name": product_name,
             "wallet_id": wallet_id,
-            "access_all_wallet_usage": access_all_wallet_usage,
+            "access_all_wallet_usage": f"{access_all_wallet_usage}".lower(),
             "offset": offset,
             "limit": limit,
         }
