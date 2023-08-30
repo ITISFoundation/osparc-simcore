@@ -50,7 +50,7 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             if self._rpc_connection is not None:
                 await self._rpc_connection.close()
 
-    async def rpc_request(
+    async def request(
         self,
         namespace: RPCNamespace,
         method_name: RPCMethodName,
@@ -90,7 +90,7 @@ class RabbitMQRPCClient(RabbitMQClientBase):
                 ) from e
             raise
 
-    async def rpc_register_handler(
+    async def register_handler(
         self,
         namespace: RPCNamespace,
         method_name: RPCMethodName,
@@ -113,7 +113,7 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             auto_delete=True,
         )
 
-    async def rpc_register_router(
+    async def register_router(
         self,
         router: RPCRouter,
         namespace: RPCNamespace,
@@ -121,13 +121,13 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         **handler_kwargs,
     ) -> None:
         for rpc_method_name, handler in router.routes.items():
-            await self.rpc_register_handler(
+            await self.register_handler(
                 namespace,
                 rpc_method_name,
                 functools.partial(handler, *handler_args, **handler_kwargs),
             )
 
-    async def rpc_unregister_handler(self, handler: Callable[..., Any]) -> None:
+    async def unregister_handler(self, handler: Callable[..., Any]) -> None:
         """Unbind a locally added `handler`"""
 
         if self._rpc is None:
