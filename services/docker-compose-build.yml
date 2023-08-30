@@ -295,11 +295,11 @@ services:
         - ${DOCKER_REGISTRY:-itisfoundation}/payments:release-github-latest
       target: ${BUILD_TARGET:?build_target_required}
       labels:
-        org.label-schema.schema-version: "1.0"
-        org.label-schema.build-date: "${BUILD_DATE}"
-        org.label-schema.vcs-url: "${VCS_URL}"
-        org.label-schema.vcs-ref: "${VCS_REF}"
         io.osparc.api-version: "${PAYMENTS_API_VERSION}"
+        org.opencontainers.image.created: "${BUILD_DATE}"
+        org.opencontainers.image.source: "${VCS_URL}"
+        org.opencontainers.image.revision: "${VCS_REF}"
+
 
   datcore-adapter:
     image: local/datcore-adapter:${BUILD_TARGET:?build_target_required}

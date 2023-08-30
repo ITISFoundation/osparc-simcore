@@ -5,10 +5,11 @@ import datetime
 import json
 import sys
 import time
+from collections.abc import AsyncIterator, Iterable
 from contextlib import AsyncExitStack, asynccontextmanager
 from itertools import groupby
 from pathlib import Path
-from typing import Any, AsyncIterator, Iterable, TypeAlias, TypedDict
+from typing import Any, TypeAlias, TypedDict
 from uuid import uuid4
 
 import pytest
@@ -16,7 +17,6 @@ from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from pydantic import BaseModel, ByteSize, parse_file_as, parse_obj_as
-from pytest import FixtureRequest
 from pytest_mock import MockerFixture
 from servicelib.utils import logged_gather
 from settings_library.s3 import S3Settings
@@ -38,7 +38,7 @@ def _get_benchmark_s3_settings() -> list[S3Settings]:
 
 
 @pytest.fixture(params=_get_benchmark_s3_settings())
-async def benchmark_s3_settings(request: FixtureRequest) -> S3Settings:
+async def benchmark_s3_settings(request: pytest.FixtureRequest) -> S3Settings:
     return request.param
 
 
@@ -180,7 +180,9 @@ async def metrics(tests_session_id: str, tags: dict[str, str]) -> AsyncIterator[
 @pytest.fixture
 def mock_max_items(mocker: MockerFixture) -> None:
     # pylint: disable=protected-access
-    mocker.patch.object(s3_client._list_objects_v2_paginated, "__defaults__", (None,))
+    mocker.patch.object(
+        s3_client._list_objects_v2_paginated_gen, "__defaults__", (None,)
+    )
 
 
 @pytest.mark.parametrize("total_queries", [3])
