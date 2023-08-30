@@ -23,8 +23,8 @@ class TransactionClassification(str, enum.Enum):
     )
 
 
-resource_tracker_wallets_credit_transactions = sa.Table(
-    "resource_tracker_wallets_credit_transactions",
+resource_tracker_credit_transactions = sa.Table(
+    "resource_tracker_credit_transactions",
     metadata,
     sa.Column(
         "transaction_id",
@@ -92,6 +92,25 @@ resource_tracker_wallets_credit_transactions = sa.Table(
         nullable=True,
         doc="Service run id connected with this transaction",
         index=True,
+    ),
+    sa.Column(
+        "payment_transaction_id",
+        sa.String,
+        nullable=True,
+        doc="Service run id connected with this transaction",
+        index=True,
+    ),
+    sa.Column(
+        "created_at",
+        sa.DateTime(timezone=True),
+        nullable=False,
+        doc="Timestamp when the transaction was created",
+    ),
+    sa.Column(
+        "last_heartbeat_at",
+        sa.DateTime(timezone=True),
+        nullable=False,
+        doc="Timestamp when was the last heartbeat",
     ),
     column_modified_datetime(timezone=True),
     # ---------------------------

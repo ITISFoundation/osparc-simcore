@@ -1,6 +1,12 @@
 from datetime import datetime
 
-from models_library.resource_tracker import ServiceRunId, ServiceRunStatus
+from models_library.resource_tracker import (
+    PricingDetailId,
+    PricingPlanClassification,
+    PricingPlanId,
+    ServiceRunId,
+    ServiceRunStatus,
+)
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import BaseModel
@@ -29,3 +35,19 @@ class ServiceRunGet(BaseModel):
     started_at: datetime
     stopped_at: datetime | None
     service_run_status: ServiceRunStatus
+
+
+class PricingDetailMinimalGet(BaseModel):
+    pricing_detail_id: PricingDetailId
+    unit_name: str
+    cost_per_unit: float
+    valid_from: datetime
+
+
+class PricingPlanGet(BaseModel):
+    pricing_plan_id: PricingPlanId
+    name: str
+    description: str
+    classification: PricingPlanClassification
+    created: datetime
+    details: list[PricingDetailMinimalGet]

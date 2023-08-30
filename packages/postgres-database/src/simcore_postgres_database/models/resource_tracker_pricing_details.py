@@ -38,11 +38,10 @@ resource_tracker_pricing_details = sa.Table(
         sa.String,
         nullable=False,
         doc="The custom name of the pricing plan, ex. DYNAMIC_SERVICES_TIERS, COMPUTATIONAL_SERVICES_TIERS, CPU_HOURS, STORAGE",
-        index=True,
     ),
     sa.Column(
         "cost_per_unit",
-        sa.Numeric(precision=3, scale=2),
+        sa.Numeric(precision=15, scale=2),
         nullable=True,
         doc="The cost per unit of the pricing plan in credits.",
     ),
@@ -57,6 +56,7 @@ resource_tracker_pricing_details = sa.Table(
         sa.DateTime(timezone=True),
         nullable=True,
         doc="To when the pricing unit was active, if null it is still active",
+        index=True,
     ),
     sa.Column(
         "specific_info",

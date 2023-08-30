@@ -55,6 +55,7 @@ class ServiceRunStoppedAtUpdate(BaseModel):
 
 
 class ServiceRunDB(BaseModel):
+    product_name: ProductName
     service_run_id: ServiceRunId
     wallet_id: WalletID | None
     wallet_name: str | None
@@ -77,6 +78,12 @@ class ServiceRunDB(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class ServiceRunOnUpdateDB(BaseModel):
+    pricing_plan_id: PricingPlanId
+    pricing_detail_id: PricingDetailId
+    started_at: datetime
 
 
 class ServiceRunPage(NamedTuple):
