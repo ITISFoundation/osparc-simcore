@@ -30,7 +30,7 @@ class CreateServiceMetricsAdditionalParams(BaseModel):
                 "pricing_plan_id": 1,
                 "pricing_detail_id": 1,
                 "product_name": "osparc",
-                "simcore_user_agent": "",
+                "simcore_user_agent": "undefined",
                 "user_email": "test@test.com",
                 "project_name": "_!New Study",
                 "node_name": "the service of a lifetime _ *!",
