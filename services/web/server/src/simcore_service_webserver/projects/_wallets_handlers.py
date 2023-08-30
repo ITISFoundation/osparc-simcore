@@ -12,12 +12,13 @@ from models_library.wallets import WalletDB, WalletID
 from pydantic import BaseModel, Extra
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
+from simcore_service_webserver.utils_aiohttp import envelope_json_response
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
-from ..wallets import api as wallet_api
-from ..wallets.exceptions import WalletAccessForbiddenError
+from ..wallets import _api as wallet_api
+from ..wallets.errors import WalletAccessForbiddenError
 from . import projects_api
 from ._common_models import ProjectPathParams, RequestContext
 from .db import ProjectDBAPI
@@ -64,8 +65,8 @@ async def get_project_wallet(request: web.Request):
     wallet_db: WalletDB | None = await db.get_project_wallet(
         project_uuid=path_params.project_id
     )
-    output: WalletGet | None = WalletGet(**wallet_db.dict()) if wallet_db else None
-    return output
+    wallet: WalletGet | None = WalletGet(**wallet_db.dict()) if wallet_db else None
+    return envelope_json_response(wallet)
 
 
 class _ProjectWalletPathParams(BaseModel):
@@ -104,4 +105,4 @@ async def connect_wallet_to_project(request: web.Request):
         project_uuid=path_params.project_id, wallet_id=path_params.wallet_id
     )
 
-    return wallet
+    return envelope_json_response(wallet)
