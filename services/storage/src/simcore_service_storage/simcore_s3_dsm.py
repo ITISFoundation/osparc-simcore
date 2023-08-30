@@ -515,9 +515,9 @@ class SimcoreS3DataManager(BaseDataManager):
             else:
                 await db_file_meta_data.delete_all_from_node(conn, node_id)
 
-        await get_s3_client(self.app).delete_files_in_project_node(
-            self.simcore_bucket_name, project_id, node_id
-        )
+            await get_s3_client(self.app).delete_files_in_project_node(
+                self.simcore_bucket_name, project_id, node_id
+            )
 
     async def deep_copy_project_simcore_s3(
         self,
