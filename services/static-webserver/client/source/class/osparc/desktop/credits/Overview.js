@@ -128,6 +128,9 @@ qx.Class.define("osparc.desktop.credits.Overview", {
           backgroundColor: "transparent",
           alignX: "center",
           alignY: "middle",
+          scale: true,
+          allowShrinkX: true,
+          allowShrinkY: true,
           maxHeight: maxSize,
           maxWidth: maxSize
         });
