@@ -219,6 +219,45 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
             collaborator["name"] = osparc.utils.Utils.firstsUp(collaborator["first_name"], collaborator["last_name"]);
           }
           collaborator["accessRights"] = accessRights;
+          const canIWrite = accessRights["write"];
+          const canIDelete = accessRights["delete"];
+          let options = [];
+          if (canIDelete) {
+            // admin...
+            if (collaborator["accessRights"]["delete"]) {
+              // ...on admin
+              options = [];
+            } else if (collaborator["accessRights"]["write"]) {
+              // ...on manager
+              options = [
+                "promoteToAdministrator",
+                "demoteToMember",
+                "removeMember"
+              ];
+            } else if (collaborator["accessRights"]["read"]) {
+              // ...on collaborator
+              options = [
+                "promoteToManager",
+                "removeMember"
+              ];
+            }
+          } else if (canIWrite) {
+            // manager...
+            if (collaborator["accessRights"]["delete"]) {
+              // ...on admin
+              options = [];
+            } else if (collaborator["accessRights"]["write"]) {
+              // ...on manager
+              options = [];
+            } else if (collaborator["accessRights"]["read"]) {
+              // ...on collaborator
+              options = [
+                "promoteToManager",
+                "removeMember"
+              ];
+            }
+          }
+          collaborator["options"] = options;
           collaborator["showOptions"] = this.__canIWrite();
           membersList.push(collaborator);
         }
