@@ -56,9 +56,9 @@ class UserPreferencesRepo:
         user_preference_name = UserPreferenceNameHelper.get_preference_name(
             user_id, preference_name, product_name
         )
-        value: bytes | None = await conn.scalar(
+        payload: bytes | None = await conn.scalar(
             sa.select(user_preferences.c.payload).where(
                 user_preferences.c.user_preference_name == user_preference_name
             )
         )
-        return value
+        return payload
