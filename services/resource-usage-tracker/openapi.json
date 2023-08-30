@@ -554,7 +554,11 @@
             "format": "date-time"
           },
           "details": {
-            "$ref": "#/components/schemas/PricingDetailMinimalGet"
+            "title": "Details",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PricingDetailMinimalGet"
+            }
           }
         }
       },
