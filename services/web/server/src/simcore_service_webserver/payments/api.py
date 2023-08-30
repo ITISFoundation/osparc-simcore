@@ -50,7 +50,7 @@ async def create_payment_to_wallet(
         completed=None,
         submission_link=f"{submission_link}",
     )
-    assert payment.idr not in _FAKE_PAYMENTS_TRANSACTIONS[user_id]  # nose
+    assert payment.idr not in _FAKE_PAYMENTS_TRANSACTIONS[user_id]  # nosec
     _FAKE_PAYMENTS_TRANSACTIONS[user_id][payment.idr] = payment
 
     return payment
@@ -69,7 +69,7 @@ async def get_user_payments_page(
     assert product_name  # nosec
 
     payments_service = get_payments_service_api(app)
-    assert payments_service
+    assert payments_service  # nosec
 
     user_payments: list[PaymentGet] = list(
         _FAKE_PAYMENTS_TRANSACTIONS[user_id].values()
