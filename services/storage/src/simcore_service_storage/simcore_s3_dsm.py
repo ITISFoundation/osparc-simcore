@@ -24,6 +24,7 @@ from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, NonNegativeInt, parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
+from servicelib.logging_utils import log_context
 from servicelib.utils import ensure_ends_with, logged_gather
 
 from . import db_file_meta_data, db_projects, db_tokens
@@ -528,7 +529,11 @@ class SimcoreS3DataManager(BaseDataManager):
     ) -> None:
         src_project_uuid: ProjectID = ProjectID(src_project["uuid"])
         dst_project_uuid: ProjectID = ProjectID(dst_project["uuid"])
-        # Step 1: check access rights (read of src and write of dst)
+        _logger.info(
+            "%s -> %s: Step 1: check access rights (read of src and write of dst)",
+            src_project_uuid,
+            dst_project_uuid,
+        )
         update_task_progress(task_progress, "Checking study access rights...")
         async with self.engine.acquire() as conn:
             for prj_uuid in [src_project_uuid, dst_project_uuid]:
@@ -549,7 +554,11 @@ class SimcoreS3DataManager(BaseDataManager):
                 access_right="write", project_id=dst_project_uuid
             )
 
-        # Step 2: start copying by listing what to copy
+        _logger.info(
+            "%s -> %s: Step 2: start copying by listing what to copy",
+            src_project_uuid,
+            dst_project_uuid,
+        )
         update_task_progress(
             task_progress, f"Collecting files of '{src_project['name']}'..."
         )
@@ -557,14 +566,28 @@ class SimcoreS3DataManager(BaseDataManager):
             src_project_files: list[
                 FileMetaDataAtDB
             ] = await db_file_meta_data.list_fmds(conn, project_ids=[src_project_uuid])
-        project_file_sizes: list[ByteSize] = await logged_gather(
-            *[self._get_size(fmd) for fmd in src_project_files],
-            max_concurrency=_MAX_PARALLEL_S3_CALLS,
-        )
+
+        with log_context(
+            _logger,
+            logging.INFO,
+            (
+                f"{src_project_uuid} -> {dst_project_uuid}: total file size for "
+                "{[f.object_name for f in src_project_files]}"
+            ),
+            log_duration=True,
+        ):
+            project_file_sizes: list[ByteSize] = await logged_gather(
+                *[self._get_size(fmd) for fmd in src_project_files],
+                max_concurrency=_MAX_PARALLEL_S3_CALLS,
+            )
         src_project_total_data_size: ByteSize = parse_obj_as(
             ByteSize, sum(project_file_sizes)
         )
-        # Step 3.1: copy: files referenced from file_metadata
+        _logger.info(
+            "%s -> %s: Step 3.1: copy: files referenced from file_metadata",
+            src_project_uuid,
+            dst_project_uuid,
+        )
         copy_tasks: deque[Awaitable] = deque()
         s3_transfered_data_cb = S3TransferDataCB(
             task_progress,
@@ -590,7 +613,11 @@ class SimcoreS3DataManager(BaseDataManager):
                         bytes_transfered_cb=s3_transfered_data_cb.copy_transfer_cb,
                     )
                 )
-        # Step 3.2: copy files referenced from file-picker from DAT-CORE
+        _logger.info(
+            "%s -> %s: Step 3.2: copy files referenced from file-picker from DAT-CORE",
+            src_project_uuid,
+            dst_project_uuid,
+        )
         for node_id, node in dst_project.get("workbench", {}).items():
             copy_tasks.extend(
                 [
