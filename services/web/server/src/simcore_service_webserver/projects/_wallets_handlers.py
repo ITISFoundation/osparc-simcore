@@ -16,7 +16,7 @@ from servicelib.aiohttp.typing_extension import Handler
 from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
-from ..wallets import _api as wallet_api
+from ..wallets import api as wallet_api
 from ..wallets.exceptions import WalletAccessForbiddenError
 from . import projects_api
 from ._common_models import ProjectPathParams, RequestContext
@@ -96,7 +96,7 @@ async def connect_wallet_to_project(request: web.Request):
         include_state=False,
     )
     # ensure the wallet can be used by the user
-    wallet: WalletGet = await wallet_api.can_wallet_be_used_by_user(
+    wallet: WalletGet = await wallet_api.get_wallet_by_user(
         request.app, user_id=req_ctx.user_id, wallet_id=path_params.wallet_id
     )
 
