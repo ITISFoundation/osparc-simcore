@@ -1,7 +1,11 @@
 import logging
 
 from aiohttp import web
-from models_library.api_schemas_webserver.wallets import PaymentCreateBody, PaymentGet
+from models_library.api_schemas_webserver.wallets import (
+    PaymentCreateBody,
+    PaymentGet,
+    WalletGet,
+)
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
 from servicelib.aiohttp.requests_validation import (
@@ -15,7 +19,12 @@ from ..login.decorators import login_required
 from ..payments.api import create_payment_to_wallet, get_user_payments_page
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from ._handlers import WalletsPathParams, WalletsRequestContext
+from ._handlers import (
+    WalletsPathParams,
+    WalletsRequestContext,
+    handle_wallets_exceptions,
+)
+from .api import get_wallet_by_user
 
 _logger = logging.getLogger(__name__)
 
@@ -26,16 +35,25 @@ routes = web.RouteTableDef()
 @routes.post(f"/{VTAG}/wallets/{{wallet_id}}/payments", name="create_payment")
 @login_required
 @permission_required("wallets.*")
+@handle_wallets_exceptions
 async def create_payment(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
     body_params = await parse_request_body_as(PaymentCreateBody, request)
 
+    # ensure the wallet can be used by the user
+    wallet: WalletGet = await get_wallet_by_user(
+        request.app,
+        user_id=req_ctx.user_id,
+        wallet_id=path_params.wallet_id,
+        has_write_permission=True,  # Can only pay to wallets that user owns
+    )
+
     payment = await create_payment_to_wallet(
         request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
-        wallet_id=path_params.wallet_id,
+        wallet_id=wallet.wallet_id,
         credit=body_params.credit,
         prize=body_params.prize,
     )
@@ -45,7 +63,10 @@ async def create_payment(request: web.Request):
 @routes.get(f"/{VTAG}/wallets/-/payments", name="list_all_payments")
 @login_required
 @permission_required("wallets.*")
+@handle_wallets_exceptions
 async def list_all_payments(request: web.Request):
+    """Lists all user payments to his/her wallets (only the ones he/she created)"""
+
     req_ctx = WalletsRequestContext.parse_obj(request)
     query_params = parse_request_query_parameters_as(PageQueryParameters, request)
 

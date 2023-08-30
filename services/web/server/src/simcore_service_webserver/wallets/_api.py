@@ -116,6 +116,8 @@ async def get_wallet_by_user(
     app: web.Application,
     user_id: UserID,
     wallet_id: WalletID,
+    *,
+    has_write_permission: bool = False,
 ) -> WalletGet:
     wallet: UserWalletDB = await db.get_wallet_for_user(
         app=app, user_id=user_id, wallet_id=wallet_id
@@ -123,6 +125,10 @@ async def get_wallet_by_user(
     if wallet.read is False:
         raise WalletAccessForbiddenError(
             reason=f"User {user_id} does not have read permission on wallet {wallet_id}"
+        )
+    if has_write_permission and wallet.write is False:
+        raise WalletAccessForbiddenError(
+            reason=f"User {user_id} does not have write permission on wallet {wallet_id}"
         )
 
     wallet_api: WalletGet = WalletGet(

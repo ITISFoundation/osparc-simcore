@@ -67,7 +67,7 @@ async def update_wallet(wallet_id: WalletID, body: PutWalletBodyParams):
     response_model=Envelope[PaymentGet],
 )
 async def create_payment(wallet_id: WalletID, body: PaymentCreateBody):
-    ...
+    """Creates payment to wallet `wallet_id`"""
 
 
 @router.get(
@@ -75,7 +75,7 @@ async def create_payment(wallet_id: WalletID, body: PaymentCreateBody):
     response_model=Page[PaymentGet],
 )
 async def list_all_payments(params: PageQueryParameters):
-    ...
+    """Lists all user payments to his/her wallets (only the ones he/she created)"""
 
 
 ### Wallets groups

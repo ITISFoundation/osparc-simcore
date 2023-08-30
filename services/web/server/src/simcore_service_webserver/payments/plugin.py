@@ -1,5 +1,5 @@
 """
-    Plugin to interact with the payments service
+    Plugin to interact with the 'payments' service
 """
 
 import logging

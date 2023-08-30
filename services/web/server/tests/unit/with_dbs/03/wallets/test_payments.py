@@ -140,7 +140,20 @@ async def test_payments_worfklow(
     data, _ = await assert_status(resp, web.HTTPCreated)
     wallet = WalletGet.parse_obj(data)
 
-    # pay with wallet
+    # TEST add payment to unauth wallet
+    # TODO: test other user's wallet
+    invalid_wallet = 1234
+    response = await client.post(
+        f"/v0/wallet/{invalid_wallet}/payments",
+        json={
+            "credits": 50,
+            "prize": 25,  # dollars?
+        },
+    )
+    data, error = await assert_status(response, web.HTTPForbidden)
+    assert error is None
+
+    # TEST add payment to wallet
     response = await client.post(
         f"/v0/wallet/{wallet.wallet_id}/payments",
         json={
@@ -148,7 +161,6 @@ async def test_payments_worfklow(
             "prize": 25,  # dollars?
         },
     )
-
     data, error = await assert_status(response, web.HTTPCreated)
     assert error is None
     payment = PaymentGet.parse_obj(data)
