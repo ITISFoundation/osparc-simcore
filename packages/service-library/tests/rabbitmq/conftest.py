@@ -51,7 +51,9 @@ async def cleanup_check_rabbitmq_server_has_no_errors(
 @pytest.fixture
 def random_exchange_name() -> Callable[[], str]:
     def _creator() -> str:
-        faker = Faker()
+        faker = (
+            Faker()
+        )  # NOTE: this ensure the faker seed is new each time, since we do not clean the exchanges
         return f"pytest_fake_exchange_{faker.pystr()}"
 
     return _creator
