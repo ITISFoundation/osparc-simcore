@@ -118,16 +118,13 @@ qx.Class.define("osparc.ui.list.MemberListItem", {
 
       if (options.includes("removeMember")) {
         const accessRights = this.getAccessRights();
-        let currentRole = "";
-        if (accessRights) {
-          currentRole = osparc.data.Roles.ORG[0];
-          if (accessRights.getDelete()) {
-            currentRole = osparc.data.Roles.ORG[3];
-          } else if (accessRights.getWrite()) {
-            currentRole = osparc.data.Roles.ORG[2];
-          } else if (accessRights.getRead()) {
-            currentRole = osparc.data.Roles.ORG[1];
-          }
+        let currentRole = osparc.data.Roles.ORG[0];
+        if (accessRights.getDelete()) {
+          currentRole = osparc.data.Roles.ORG[3];
+        } else if (accessRights.getWrite()) {
+          currentRole = osparc.data.Roles.ORG[2];
+        } else if (accessRights.getRead()) {
+          currentRole = osparc.data.Roles.ORG[1];
         }
         const removeButton = new qx.ui.menu.Button(this.tr("Remove ") + currentRole.label).set({
           textColor: "danger-red"
