@@ -9,7 +9,7 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import SecretStr
 
 from ..logging_utils import log_catch, log_context
-from .models import RPCMethodName
+from ._models import RPCMethodName
 
 DecoratedCallable = TypeVar("DecoratedCallable", bound=Callable[..., Any])
 

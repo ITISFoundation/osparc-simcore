@@ -4,7 +4,7 @@ from typing import Any, Protocol
 
 from pydantic import ConstrainedStr, parse_obj_as
 
-from .constants import REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS
+from ._constants import REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS
 
 MessageHandler = Callable[[Any], Awaitable[bool]]
 
