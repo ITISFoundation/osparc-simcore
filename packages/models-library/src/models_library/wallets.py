@@ -14,11 +14,6 @@ class WalletStatus(StrAutoEnum):
     INACTIVE = auto()
 
 
-class PaymentTransactionState(StrAutoEnum):
-    CREATED = auto()
-    COMPLETED = auto()
-
-
 ### DB
 
 
