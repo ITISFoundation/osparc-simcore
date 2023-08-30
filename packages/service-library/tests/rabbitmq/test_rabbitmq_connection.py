@@ -87,14 +87,6 @@ class PytestRabbitMessage:
 
 
 @pytest.fixture
-def random_exchange_name(faker: Faker) -> Callable[[], str]:
-    def _creator() -> str:
-        return f"pytest_fake_exchange_{faker.pystr()}"
-
-    return _creator
-
-
-@pytest.fixture
 def random_rabbit_message(
     faker: Faker,
 ) -> Callable[..., PytestRabbitMessage]:
@@ -106,6 +98,7 @@ def random_rabbit_message(
     return _creator
 
 
+@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors()
 async def test_rabbit_client_with_paused_container(
     random_exchange_name: Callable[[], str],
     random_rabbit_message: Callable[..., PytestRabbitMessage],
@@ -196,6 +189,7 @@ async def _assert_rabbit_client_state(
     assert rabbit_client.healthy == healthy
 
 
+@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors()
 async def test_rabbit_server_closes_connection(
     rabbit_service: RabbitSettings,
     rabbitmq_client: Callable[[str, int], RabbitMQClient],
