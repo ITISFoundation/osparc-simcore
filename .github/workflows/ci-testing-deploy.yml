@@ -1265,6 +1265,7 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/service-library.bash typecheck
       - name: test
+        if: always()
         run: ./ci/github/unit-testing/service-library.bash test_all
       - uses: codecov/codecov-action@v3.1.4
         with:
