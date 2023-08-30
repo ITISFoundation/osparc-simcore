@@ -71,7 +71,7 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
           control = osparc.desktop.credits.Utils.createWalletSelector("read", false, true).set({
             allowGrowX: false
           });
-          // select all by default
+          // select "All wallets" by default
           control.getSelectables()[0].setLabel("All wallets");
           const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
           const selectLabel = new qx.ui.basic.Label(this.tr("Select Wallet")).set({
