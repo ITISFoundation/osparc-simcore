@@ -620,7 +620,6 @@ class SimcoreS3DataManager(BaseDataManager):
         async for s3_objects in get_s3_client(self.app).list_all_objects_gen(
             self.simcore_bucket_name,
             prefix=f"{fmd.object_name}",
-            max_yield_result_size=_MAX_ELEMENTS_TO_LIST,
         ):
             total_size += sum(x.get("Size", 0) for x in s3_objects)
 
@@ -978,7 +977,6 @@ class SimcoreS3DataManager(BaseDataManager):
                 async for s3_objects in s3_client.list_all_objects_gen(
                     self.simcore_bucket_name,
                     prefix=src_fmd.object_name,
-                    max_yield_result_size=_MAX_ELEMENTS_TO_LIST,
                 ):
                     s3_objects_src_to_new: dict[str, str] = {
                         x["Key"]: x["Key"].replace(
