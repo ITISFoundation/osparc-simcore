@@ -4,12 +4,12 @@
 
 import asyncio
 import logging
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 
 import aio_pika
 import pytest
 import tenacity
-from servicelib.rabbitmq import RabbitMQClient
+from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 from settings_library.basic_types import PortInt
 from settings_library.rabbit import RabbitSettings
 from tenacity.before_sleep import before_sleep_log
@@ -93,6 +93,28 @@ async def rabbitmq_client(
         assert not client._channel_pool.is_closed  # pylint: disable=protected-access
         assert client.client_name == f"pytest_{client_name}"
         assert client.settings == rabbit_service
+        created_clients.append(client)
+        return client
+
+    yield _creator
+    # cleanup, properly close the clients
+    await asyncio.gather(*(client.close() for client in created_clients))
+
+
+@pytest.fixture
+async def rabbitmq_rpc_client(
+    rabbit_service: RabbitSettings,
+) -> AsyncIterator[Callable[[str], Awaitable[RabbitMQRPCClient]]]:
+    created_clients = []
+
+    async def _creator(client_name: str, *, heartbeat: int = 60) -> RabbitMQRPCClient:
+        client = RabbitMQRPCClient(
+            f"pytest_{client_name}", rabbit_service, heartbeat=heartbeat
+        )
+        assert client
+        assert client.client_name == f"pytest_{client_name}"
+        assert client.settings == rabbit_service
+        await client.rpc_initialize()
         created_clients.append(client)
         return client
 
