@@ -8,13 +8,11 @@ from typing import Any
 import arrow
 import pytest
 from models_library.services import ServiceKey
-from models_library.services_ui import WidgetType
 from models_library.user_preferences import (
     BaseBackendUserPreference,
     BaseFrontendUserPreference,
     BaseUserServiceUserPreference,
     PreferenceType,
-    ValueType,
     _AutoRegisterMeta,
     _BaseUserPreferenceModel,
 )
@@ -59,11 +57,7 @@ def test_backend_preferences(value: Any):
     assert set(backend_preference.dict().keys()) == {"value"}
 
 
-@pytest.mark.parametrize("widget_type", WidgetType)
-@pytest.mark.parametrize("value_type", ValueType)
-def test_frontend_preferences(
-    value: Any, widget_type: WidgetType, value_type: ValueType
-):
+def test_frontend_preferences(value: Any):
     base_data = _get_base_user_preferences_data(
         preference_type=PreferenceType.FRONTEND, value=value
     )
@@ -71,36 +65,14 @@ def test_frontend_preferences(
     data_with_rendered_widget = deepcopy(base_data)
     data_with_rendered_widget.update(
         {
-            "expose_in_preferences": True,
             "preference_identifier": "pref-name",
-            "widget_type": widget_type,
-            "label": "test display label",
-            "description": "test tooltip message",
-            "value_type": value_type,
         }
     )
     # check serialization
-    with_rendered_widget_instance = parse_obj_as(
+    frontend_preference = parse_obj_as(
         BaseFrontendUserPreference, data_with_rendered_widget
     )
-    assert set(with_rendered_widget_instance.dict().keys()) == {"value"}
-
-    data_no_rendered_widget = deepcopy(base_data)
-    data_no_rendered_widget.update(
-        {
-            "expose_in_preferences": False,
-            "preference_identifier": "pref-name",
-            "widget_type": None,
-            "label": None,
-            "description": None,
-            "value_type": value_type,
-        }
-    )
-    # check serialization
-    no_rendered_widget_instance = parse_obj_as(
-        BaseFrontendUserPreference, data_no_rendered_widget
-    )
-    assert set(no_rendered_widget_instance.dict().keys()) == {"value"}
+    assert set(frontend_preference.dict().keys()) == {"value"}
 
 
 @pytest.mark.parametrize("service_key", _SERVICE_KEY_SAMPLES)
@@ -142,20 +114,10 @@ def test_user_defined_backend_preference(value: Any, unregister_defined_classes:
     assert new_instance == pref1
 
 
-@pytest.mark.parametrize("widget_type_value", WidgetType)
-def test_user_defined_frontend_preference(
-    value: Any,
-    widget_type_value: WidgetType,
-    unregister_defined_classes: None,
-):
+def test_user_defined_frontend_preference(value: Any, unregister_defined_classes: None):
     # definition of a new custom property
     class Pref1(BaseFrontendUserPreference):
-        expose_in_preferences = True
-        value_type = ValueType.STR
         preference_identifier = "pref1"
-        widget_type: WidgetType = widget_type_value
-        label = "test display label"
-        description = "test tooltip message"
 
     # usage
     pref1 = Pref1(value=value)

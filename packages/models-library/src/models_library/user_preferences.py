@@ -1,12 +1,11 @@
 from collections.abc import Mapping
-from enum import Enum, auto
+from enum import auto
 from typing import Any, ClassVar, TypeAlias
 
 from pydantic import BaseModel, Field
 from pydantic.main import ModelMetaclass
 
 from .services import ServiceKey
-from .services_ui import WidgetType
 from .utils.enums import StrAutoEnum
 
 IntStr: TypeAlias = int | str
@@ -43,15 +42,6 @@ PreferenceName: TypeAlias = str
 
 class _ExtendedBaseModel(BaseModel, metaclass=_AutoRegisterMeta):
     ...
-
-
-class ValueType(str, Enum):
-    BOOL = "boolean"
-    STR = "string"
-    FLOAT = "number"
-    INT = "integer"
-    LIST = "array"
-    DICT = "dictionary"
 
 
 class PreferenceType(StrAutoEnum):
@@ -148,27 +138,11 @@ class BaseFrontendUserPreference(_BaseUserPreferenceModel):
 
     # NOTE: below fields do not require storage in the DB
     preference_identifier: str = Field(..., description="used by the frontend client")
-    expose_in_preferences: bool = Field(
-        ..., description="when True a widget will automatically be rendered"
-    )
-    value_type: ValueType = Field(..., description="content type of the value")
-    widget_type: WidgetType | None = Field(
-        ..., description="type of widget to display in the frontend"
-    )
-    label: str | None = Field(..., description="user readable name for the preference")
-    description: str | None = Field(
-        ..., description="more information about this preference"
-    )
 
     class Config:
         exclude_from_serialization: ClassVar[set[str]] = {
-            "description",
-            "expose_in_preferences",
-            "label",
             "preference_identifier",
             "preference_type",
-            "value_type",
-            "widget_type",
         }
 
 

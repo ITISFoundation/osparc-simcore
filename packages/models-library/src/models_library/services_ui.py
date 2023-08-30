@@ -7,7 +7,6 @@ from pydantic.types import PositiveInt
 class WidgetType(str, Enum):
     TextArea = "TextArea"
     SelectBox = "SelectBox"
-    CheckBox = "CheckBox"
 
 
 class TextArea(BaseModel):
