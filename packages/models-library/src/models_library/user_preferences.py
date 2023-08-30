@@ -135,25 +135,25 @@ class BaseFrontendUserPreference(_BaseUserPreferenceModel):
 
     # NOTE: below fields do not require storage in the DB
     preference_identifier: str = Field(..., description="used by the frontend client")
-    render_widget: bool = Field(
+    expose_in_preferences: bool = Field(
         ..., description="when True a widget will automatically be rendered"
     )
     value_type: ValueType = Field(..., description="content type of the value")
     widget_type: WidgetType | None = Field(
         ..., description="type of widget to display in the frontend"
     )
-    display_label: str | None = Field(..., description="short label to display")
-    tooltip_message: str | None = Field(
-        ..., description="more information to display when hovering"
+    label: str | None = Field(..., description="user readable name for the preference")
+    description: str | None = Field(
+        ..., description="more information about this preference"
     )
 
     class Config:
         exclude_from_serialization: ClassVar[set[str]] = {
-            "display_label",
+            "description",
+            "expose_in_preferences",
+            "label",
             "preference_identifier",
             "preference_type",
-            "render_widget",
-            "tooltip_message",
             "value_type",
             "widget_type",
         }

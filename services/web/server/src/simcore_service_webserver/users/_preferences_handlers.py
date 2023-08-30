@@ -2,9 +2,9 @@ import functools
 
 from aiohttp import web
 from models_library.api_schemas_webserver.users_preferences import (
-    UserPreferencePatchPathParams,
-    UserPreferencePatchRequestBody,
-    UserPreferencesGet,
+    FrontendUserPreferencePatchPathParams,
+    FrontendUserPreferencePatchRequestBody,
+    FrontendUserPreferencesGet,
 )
 from models_library.users import UserID
 from pydantic import BaseModel, Field
@@ -52,7 +52,7 @@ def _handle_users_exceptions(handler: Handler):
 async def get_user_preferences(request: web.Request) -> web.Response:
     req_ctx = _RequestContext.parse_obj(request)
 
-    user_preferences_get: UserPreferencesGet = (
+    user_preferences_get: FrontendUserPreferencesGet = (
         await _preferences_api.get_frontend_user_preferences(
             request.app, user_id=req_ctx.user_id
         )
@@ -68,9 +68,11 @@ async def get_user_preferences(request: web.Request) -> web.Response:
 @_handle_users_exceptions
 async def set_frontend_preference(request: web.Request) -> web.Response:
     req_ctx = _RequestContext.parse_obj(request)
-    req_body = await parse_request_body_as(UserPreferencePatchRequestBody, request)
+    req_body = await parse_request_body_as(
+        FrontendUserPreferencePatchRequestBody, request
+    )
     req_path_params = parse_request_path_parameters_as(
-        UserPreferencePatchPathParams, request
+        FrontendUserPreferencePatchPathParams, request
     )
 
     await _preferences_api.set_frontend_user_preference(

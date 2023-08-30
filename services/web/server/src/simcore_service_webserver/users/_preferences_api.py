@@ -2,8 +2,8 @@ from typing import Any, Final
 
 from aiohttp import web
 from models_library.api_schemas_webserver.users_preferences import (
-    UserPreference,
-    UserPreferencesGet,
+    FrontendUserPreference,
+    FrontendUserPreferencesGet,
 )
 from models_library.user_preferences import BaseFrontendUserPreference
 from models_library.users import UserID
@@ -48,14 +48,14 @@ async def _get_frontend_user_preferences_list(
 
 async def get_frontend_user_preferences(
     app: web.Application, *, user_id: UserID
-) -> UserPreferencesGet:
+) -> FrontendUserPreferencesGet:
     return {
-        p.preference_identifier: UserPreference.parse_obj(
+        p.preference_identifier: FrontendUserPreference.parse_obj(
             {
-                "render_widget": p.render_widget,
+                "render_widget": p.expose_in_preferences,
                 "widget_type": p.widget_type,
-                "display_label": p.display_label,
-                "tooltip_message": p.tooltip_message,
+                "display_label": p.label,
+                "tooltip_message": p.description,
                 "value": p.value,
                 "value_type": p.value_type,
                 "default_value": p.get_default_value(),

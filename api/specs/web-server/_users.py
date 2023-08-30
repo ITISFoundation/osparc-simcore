@@ -8,9 +8,9 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.users_preferences import (
-    UserPreferencePatchPathParams,
-    UserPreferencePatchRequestBody,
-    UserPreferencesGet,
+    FrontendUserPreferencePatchPathParams,
+    FrontendUserPreferencePatchRequestBody,
+    FrontendUserPreferencesGet,
 )
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
@@ -52,7 +52,7 @@ async def update_my_profile(_profile: ProfileUpdate):
 
 @router.get(
     "/me/preferences",
-    response_model=Envelope[UserPreferencesGet],
+    response_model=Envelope[FrontendUserPreferencesGet],
 )
 async def get_user_preferences():
     ...
@@ -63,8 +63,8 @@ async def get_user_preferences():
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def set_frontend_preference(
-    _params: Annotated[UserPreferencePatchPathParams, Depends()],
-    _preference: UserPreferencePatchRequestBody,
+    _params: Annotated[FrontendUserPreferencePatchPathParams, Depends()],
+    _preference: FrontendUserPreferencePatchRequestBody,
 ):
     ...
 

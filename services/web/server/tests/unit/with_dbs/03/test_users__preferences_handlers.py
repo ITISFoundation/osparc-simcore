@@ -9,7 +9,9 @@ import pytest
 from aiohttp import ClientResponse, web
 from aiohttp.test_utils import TestClient
 from faker import Faker
-from models_library.api_schemas_webserver.users_preferences import UserPreferencesGet
+from models_library.api_schemas_webserver.users_preferences import (
+    FrontendUserPreferencesGet,
+)
 from models_library.user_preferences import BaseFrontendUserPreference, PreferenceName
 from models_library.users import UserID
 from pydantic import parse_obj_as
@@ -83,7 +85,7 @@ async def test_get_user_preferences(
     if not error:
         resp = await _request_get_user_preferences(client)
         data, _ = await assert_status(resp, web.HTTPOk)
-        assert parse_obj_as(UserPreferencesGet, data)
+        assert parse_obj_as(FrontendUserPreferencesGet, data)
 
 
 @pytest.mark.parametrize(
