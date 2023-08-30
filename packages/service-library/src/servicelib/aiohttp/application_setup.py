@@ -1,4 +1,3 @@
-import datetime
 import functools
 import inspect
 import logging
@@ -7,6 +6,7 @@ from copy import deepcopy
 from enum import Enum
 from typing import Any, Protocol, TypedDict
 
+import arrow
 from aiohttp import web
 from pydantic import parse_obj_as
 
@@ -54,7 +54,7 @@ class DependencyError(ApplicationSetupError):
 class SetupMetadataDict(TypedDict):
     module_name: str
     dependencies: list[str]
-    config_section: str
+    config_section: str | None
     config_enabled: str
 
 
@@ -62,8 +62,11 @@ class SetupMetadataDict(TypedDict):
 
 
 def _parse_and_validate_arguments(
-    module_name, depends, config_section, config_enabled
-) -> tuple:
+    module_name: str,
+    depends: list[str] | None = None,
+    config_section: str | None = None,
+    config_enabled: str | None = None,
+) -> tuple[str, list[str], str | None, str]:
     module_name = module_name.replace(".__init__", "")
     depends = depends or []
 
@@ -200,7 +203,7 @@ def app_module_setup(
         def _wrapper(app: web.Application, *args, **kargs) -> bool:
             # pre-setup
             head_msg = f"Setup of {module_name}"
-            started = datetime.datetime.now(tz=datetime.timezone.utc)
+            started = arrow.utcnow()
             logger.info(
                 "%s (%s, %s) started ... ",
                 head_msg,
@@ -261,7 +264,7 @@ def app_module_setup(
             # execution of setup
             try:
                 if is_setup_completed(module_name, app):
-                    raise SkipModuleSetupError(
+                    raise SkipModuleSetupError(  # noqa: TRY301
                         reason=f"'{module_name}' was already initialized in {app}."
                         " Setup can only be executed once per app."
                     )
@@ -275,7 +278,7 @@ def app_module_setup(
                 if completed:  # registers completed setup
                     app[APP_SETUP_COMPLETED_KEY].append(module_name)
                 else:
-                    raise SkipModuleSetupError(
+                    raise SkipModuleSetupError(  # noqa: TRY301
                         reason="Undefined (setup function returned false)"
                     )
 
@@ -283,7 +286,7 @@ def app_module_setup(
                 logger.info("Skipping '%s' setup: %s", module_name, exc.reason)
                 completed = False
 
-            elapsed = datetime.datetime.now(tz=datetime.timezone.utc) - started
+            elapsed = arrow.utcnow() - started
             logger.info(
                 "%s %s [Elapsed: %3.1f secs]",
                 head_msg,
