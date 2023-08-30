@@ -15,13 +15,17 @@ AbstractSetIntStr: TypeAlias = set[IntStr]
 MappingIntStrAny: TypeAlias = Mapping[IntStr, Any]
 
 
+# NOTE: for pyndatic-2 from pydantic._internal.import _model_construction
+# use _model_construction.ModelMetaclass instead!
+
+
 class _AutoRegisterMeta(ModelMetaclass):
     _registered_user_preference_classes: ClassVar[dict[str, type]] = {}
 
-    def __new__(cls, name, bases, attrs):
-        new_class = super().__new__(cls, name, bases, attrs)
+    def __new__(cls, name, bases, attrs, *args, **kwargs):
+        new_class = super().__new__(cls, name, bases, attrs, *args, **kwargs)
 
-        if name != BaseModel.__name__:
+        if name != cls.__name__:
             if name in cls._registered_user_preference_classes:
                 msg = (
                     f"Class named '{name}' was already defined at "
