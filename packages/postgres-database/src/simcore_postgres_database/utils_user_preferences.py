@@ -17,7 +17,8 @@ class UserPreferenceNameHelper:
     def get_preference_name(
         cls, user_id: int, preference_name: str, product_name: str
     ) -> str:
-        # store the key with a minimum of structure
+        # NOTE: key is encoded with a minimal structure, allows for
+        # 100% certainty when decoding in the future if needed
         return json.dumps([user_id, preference_name, product_name])
 
 
