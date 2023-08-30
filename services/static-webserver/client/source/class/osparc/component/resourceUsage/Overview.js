@@ -147,6 +147,11 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
       const options = {
         resolveWResponse: true
       };
+      const walletId = 20;
+      if (walletId) {
+        params.url["walletId"] = walletId.toString();
+        return osparc.data.Resources.fetch("resourceUsagePerWallet", "getPage", params, undefined, options);
+      }
       return osparc.data.Resources.fetch("resourceUsage", "getPage", params, undefined, options);
     },
 
@@ -164,6 +169,11 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
       const options = {
         resolveWResponse: true
       };
+      const walletId = 20;
+      if (walletId) {
+        params.url["walletId"] = walletId.toString();
+        return osparc.data.Resources.fetch("resourceUsagePerWallet", "getPage", params, undefined, options);
+      }
       return osparc.data.Resources.fetch("resourceUsage", "getPage", params, undefined, options);
     },
 
