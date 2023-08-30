@@ -4,14 +4,13 @@ from ._constants import BIND_TO_ALL_TOPICS
 from ._errors import RemoteMethodNotRegisteredError, RPCNotInitializedError
 from ._models import RPCMethodName, RPCNamespace
 from ._rpc_router import RPCRouter
-from ._utils import rpc_register_entries, wait_till_rabbitmq_responsive
+from ._utils import wait_till_rabbitmq_responsive
 
 __all__: tuple[str, ...] = (
     "BIND_TO_ALL_TOPICS",
     "RabbitMQClient",
     "RabbitMQRPCClient",
     "RemoteMethodNotRegisteredError",
-    "rpc_register_entries",
     "RPCMethodName",
     "RPCNamespace",
     "RPCNotInitializedError",

@@ -13,7 +13,6 @@ from servicelib.rabbitmq import (
     RPCMethodName,
     RPCNamespace,
     RPCNotInitializedError,
-    rpc_register_entries,
 )
 from settings_library.rabbit import RabbitSettings
 
@@ -335,30 +334,6 @@ async def test_register_handler_under_same_name_raises_error(
             namespace, RPCMethodName("same_name"), _another_handler
         )
     assert "Method name already used for" in f"{exec_info.value}"
-
-
-async def test_rpc_register_for_is_equivalent_to_rpc_register(
-    rpc_server: RabbitMQRPCClient,
-):
-    namespace_entries = {"hello": "test", "1": "me"}
-    namespace = RPCNamespace.from_entries(namespace_entries)
-
-    async def _a_handler() -> int:
-        return 42
-
-    async def _assert_call_ok():
-        result = await rpc_server.request(namespace, RPCMethodName("_a_handler"))
-        assert result == 42
-
-    await rpc_server.register_handler(
-        namespace, RPCMethodName("_a_handler"), _a_handler
-    )
-    await _assert_call_ok()
-
-    await rpc_server.unregister_handler(_a_handler)
-
-    await rpc_register_entries(rpc_server, namespace_entries, _a_handler)
-    await _assert_call_ok()
 
 
 @pytest.mark.parametrize(

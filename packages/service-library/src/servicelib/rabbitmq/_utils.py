@@ -1,8 +1,7 @@
 import logging
 import os
 import socket
-from collections.abc import Callable
-from typing import Any, Final
+from typing import Final
 
 import aio_pika
 from tenacity import retry
@@ -11,7 +10,6 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from ..logging_utils import log_context
-from ._models import RPCMethodName, RPCNamespace
 
 _logger = logging.getLogger(__file__)
 
@@ -45,25 +43,6 @@ async def wait_till_rabbitmq_responsive(url: str) -> bool:
         async with await aio_pika.connect(url):
             _logger.info("rabbitmq connection established")
         return True
-
-
-async def rpc_register_entries(
-    rabbit_client,
-    entries: dict[str, str],
-    handler: Callable[..., Any],
-) -> None:
-    """
-    Bind a local `handler` to a `namespace` derived from the provided `entries`
-    dictionary.
-
-    NOTE: This is a helper enforce the pattern defined in `rpc_register`'s
-    docstring.
-    """
-    await rabbit_client.rpc_register_handler(
-        RPCNamespace.from_entries(entries),
-        method_name=RPCMethodName(handler.__name__),
-        handler=handler,
-    )
 
 
 def get_rabbitmq_client_unique_name(base_name: str) -> str:
