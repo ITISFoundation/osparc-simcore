@@ -12,6 +12,7 @@ from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import Field
 from servicelib.aiohttp.requests_validation import (
+    RequestParams,
     StrictRequestParams,
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -52,9 +53,9 @@ def _handle_wallets_exceptions(handler: Handler):
 routes = web.RouteTableDef()
 
 
-class WalletsRequestContext(StrictRequestParams):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[pydantic-alias]
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[pydantic-alias]
+class WalletsRequestContext(RequestParams):
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
+    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
 
 
 class WalletsPathParams(StrictRequestParams):

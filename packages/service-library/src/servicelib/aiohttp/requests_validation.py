@@ -23,6 +23,10 @@ ModelOrListOrDictType = TypeVar("ModelOrListOrDictType", bound=BaseModel | list 
 UnionOfModelTypes: TypeAlias = Union[type[ModelClass], type[ModelClass]]  # noqa: UP007
 
 
+class RequestParams(BaseModel):
+    ...
+
+
 class StrictRequestParams(BaseModel):
     """Use a base class for context, path and query parameters"""
 
