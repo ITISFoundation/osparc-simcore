@@ -6,6 +6,7 @@ import datetime
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 from pathlib import Path
+from typing import Callable, Iterator
 from uuid import UUID
 
 import httpx
@@ -163,11 +164,11 @@ async def test_get_file(
 @pytest.mark.testit
 async def test_delete_file(
     client: AsyncClient,
-    storage_v0_service_mock: AioResponsesMock,
-    tmp_path: Path,
+    respx_mock_from_capture: Callable[[Path], Iterator[MockRouter]],
     auth: httpx.BasicAuth,
 ):
-    assert storage_v0_service_mock
+    respx_mock_from_capture(Path(__file__).parent.parent / "mocks" / "delete_file.json")
+
     response = await client.delete(
         f"{API_VTAG}/files/3fa85f64-5717-4562-b3fc-2c963f66afa6", auth=auth
     )
