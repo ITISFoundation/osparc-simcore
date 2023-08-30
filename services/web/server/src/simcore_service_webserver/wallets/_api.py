@@ -3,6 +3,7 @@ import logging
 from aiohttp import web
 from models_library.api_schemas_webserver.wallets import (
     WalletGet,
+    WalletGetPermissions,
     WalletGetWithAvailableCredits,
 )
 from models_library.users import UserID
@@ -111,10 +112,7 @@ async def delete_wallet(
     raise NotImplementedError
 
 
-### API that can be exposed
-
-
-async def can_wallet_be_used_by_user(
+async def get_wallet_by_user(
     app: web.Application,
     user_id: UserID,
     wallet_id: WalletID,
@@ -124,7 +122,7 @@ async def can_wallet_be_used_by_user(
     )
     if wallet.read is False:
         raise WalletAccessForbiddenError(
-            reason=f"Wallet {wallet_id} does not have read permission"
+            reason=f"User {user_id} does not have read permission on wallet {wallet_id}"
         )
 
     wallet_api: WalletGet = WalletGet(
@@ -138,3 +136,16 @@ async def can_wallet_be_used_by_user(
         modified=wallet.modified,
     )
     return wallet_api
+
+
+async def get_wallet_with_permissions_by_user(
+    app: web.Application,
+    user_id: UserID,
+    wallet_id: WalletID,
+) -> WalletGetPermissions:
+    wallet: UserWalletDB = await db.get_wallet_for_user(
+        app=app, user_id=user_id, wallet_id=wallet_id
+    )
+
+    output = WalletGetPermissions.construct(**wallet.dict())
+    return output

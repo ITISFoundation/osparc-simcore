@@ -19,3 +19,9 @@ class WalletGet(BaseModel):
 
 class WalletGetWithAvailableCredits(WalletGet):
     available_credits: float
+
+
+class WalletGetPermissions(WalletGet):
+    read: bool
+    write: bool
+    delete: bool

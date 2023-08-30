@@ -166,6 +166,12 @@ class RabbitAutoscalingStatusMessage(_RabbitAutoscalingBaseMessage):
     )
 
 
+class RabbitResourceTrackingMessageType(StrAutoEnum):
+    TRACKING_STARTED = auto()
+    TRACKING_HEARTBEAT = auto()
+    TRACKING_STOPPED = auto()
+
+
 class RabbitResourceTrackingBaseMessage(RabbitMessageBase):
     channel_name: Literal["io.simcore.service.tracking"] = Field(
         default="io.simcore.service.tracking", const=True
@@ -184,12 +190,15 @@ class RabbitResourceTrackingBaseMessage(RabbitMessageBase):
 
 
 class RabbitResourceTrackingStartedMessage(RabbitResourceTrackingBaseMessage):
-    message_type: Literal["tracking_started"] = Field(
-        default="tracking_started", const=True
+    message_type: RabbitResourceTrackingMessageType = Field(
+        default=RabbitResourceTrackingMessageType.TRACKING_STARTED, const=True
     )
 
-    wallet_id: WalletID
-    wallet_name: str
+    wallet_id: WalletID | None
+    wallet_name: str | None
+
+    pricing_plan_id: int | None
+    pricing_detail_id: int | None
 
     product_name: str
     simcore_user_agent: str
@@ -213,8 +222,8 @@ class RabbitResourceTrackingStartedMessage(RabbitResourceTrackingBaseMessage):
 
 
 class RabbitResourceTrackingHeartbeatMessage(RabbitResourceTrackingBaseMessage):
-    message_type: Literal["tracking_heartbeat"] = Field(
-        default="tracking_heartbeat", const=True
+    message_type: RabbitResourceTrackingMessageType = Field(
+        default=RabbitResourceTrackingMessageType.TRACKING_HEARTBEAT, const=True
     )
 
 
@@ -224,8 +233,8 @@ class SimcorePlatformStatus(StrAutoEnum):
 
 
 class RabbitResourceTrackingStoppedMessage(RabbitResourceTrackingBaseMessage):
-    message_type: Literal["tracking_stopped"] = Field(
-        default="tracking_stopped", const=True
+    message_type: RabbitResourceTrackingMessageType = Field(
+        default=RabbitResourceTrackingMessageType.TRACKING_STOPPED, const=True
     )
 
     simcore_platform_status: SimcorePlatformStatus = Field(

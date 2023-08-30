@@ -183,6 +183,8 @@ async def test_publish_service_resource_tracking_started(
         service_run_id=random_service_run_id,
         wallet_id=faker.pyint(min_value=1),
         wallet_name=faker.pystr(),
+        pricing_plan_id=None,
+        pricing_detail_id=None,
         product_name=osparc_product_name,
         simcore_user_agent=simcore_user_agent,
         user_id=user["id"],

@@ -514,6 +514,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 await db_file_meta_data.delete_all_from_project(conn, project_id)
             else:
                 await db_file_meta_data.delete_all_from_node(conn, node_id)
+
             await get_s3_client(self.app).delete_files_in_project_node(
                 self.simcore_bucket_name, project_id, node_id
             )
@@ -620,7 +621,6 @@ class SimcoreS3DataManager(BaseDataManager):
         async for s3_objects in get_s3_client(self.app).list_all_objects_gen(
             self.simcore_bucket_name,
             prefix=f"{fmd.object_name}",
-            max_yield_result_size=_MAX_ELEMENTS_TO_LIST,
         ):
             total_size += sum(x.get("Size", 0) for x in s3_objects)
 
@@ -978,7 +978,6 @@ class SimcoreS3DataManager(BaseDataManager):
                 async for s3_objects in s3_client.list_all_objects_gen(
                     self.simcore_bucket_name,
                     prefix=src_fmd.object_name,
-                    max_yield_result_size=_MAX_ELEMENTS_TO_LIST,
                 ):
                     s3_objects_src_to_new: dict[str, str] = {
                         x["Key"]: x["Key"].replace(

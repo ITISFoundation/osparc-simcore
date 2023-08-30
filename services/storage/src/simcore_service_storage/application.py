@@ -3,7 +3,7 @@
     Functions to create, setup and run an aiohttp application provided a settingsuration object
 """
 import logging
-from typing import Optional
+from typing import Final
 
 from aiohttp import web
 from servicelib.aiohttp.application import APP_CONFIG_KEY, create_safe_application
@@ -21,11 +21,15 @@ from .s3 import setup_s3
 from .settings import Settings
 from .utils_handlers import dsm_exception_handler
 
-log = logging.getLogger(__name__)
+_ACCESS_LOG_FORMAT: Final[
+    str
+] = '%a %t "%r" %s %b [%Dus] "%{Referer}i" "%{User-Agent}i"'
+
+_logger = logging.getLogger(__name__)
 
 
 def create(settings: Settings) -> web.Application:
-    log.debug(
+    _logger.debug(
         "Initializing app with settings:\n%s",
         settings.json(indent=2, sort_keys=True),
     )
@@ -68,8 +72,8 @@ def create(settings: Settings) -> web.Application:
     return app
 
 
-def run(settings: Settings, app: Optional[web.Application] = None):
-    log.debug("Serving application ")
+def run(settings: Settings, app: web.Application | None = None):
+    _logger.debug("Serving application ")
     if not app:
         app = create(settings)
 
@@ -78,4 +82,9 @@ def run(settings: Settings, app: Optional[web.Application] = None):
 
     app.on_startup.append(welcome_banner)
 
-    web.run_app(app, host=settings.STORAGE_HOST, port=settings.STORAGE_PORT)
+    web.run_app(
+        app,
+        host=settings.STORAGE_HOST,
+        port=settings.STORAGE_PORT,
+        access_log_format=_ACCESS_LOG_FORMAT,
+    )

@@ -1,4 +1,5 @@
 import asyncio
+import functools
 import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
@@ -12,6 +13,7 @@ from servicelib.logging_utils import log_catch, log_context
 from settings_library.rabbit import RabbitSettings
 
 from .rabbitmq_errors import RemoteMethodNotRegisteredError, RPCNotInitializedError
+from .rabbitmq_rpc_router import RPCRouter
 from .rabbitmq_utils import (
     RPCMethodName,
     RPCNamespace,
@@ -36,8 +38,9 @@ class RabbitMessage(Protocol):
         ...
 
 
-_DEFAULT_RABBITMQ_SERVER_HEARTBEAT_S = 60
-_DEFAULT_PREFETCH_VALUE = 10
+_DEFAULT_RABBITMQ_SERVER_HEARTBEAT_S: Final[int] = 60
+_DEFAULT_PREFETCH_VALUE: Final[int] = 10
+_DEFAULT_RABBITMQ_EXECUTION_TIMEOUT_S: Final[int] = 5
 
 
 @dataclass
@@ -82,7 +85,7 @@ class RabbitMQClient:
 
     def _channel_close_callback(
         self,
-        sender: Any,  # pylint: disable=unused-argument
+        sender: Any,  # pylint: disable=unused-argument  # noqa: ARG002
         exc: BaseException | None,
     ) -> None:
         if exc:
@@ -108,6 +111,7 @@ class RabbitMQClient:
         connection = await aio_pika.connect_robust(
             url,
             client_properties={"connection_name": connection_name},
+            timeout=_DEFAULT_RABBITMQ_EXECUTION_TIMEOUT_S,
         )
         connection.close_callbacks.add(self._connection_close_callback)
         return connection
@@ -197,6 +201,7 @@ class RabbitMQClient:
                 if topics is None
                 else aio_pika.ExchangeType.TOPIC,
                 durable=True,
+                timeout=_DEFAULT_RABBITMQ_EXECUTION_TIMEOUT_S,
             )
 
             # NOTE: durable=True makes the queue persistent between RabbitMQ restarts/crashes
@@ -295,6 +300,7 @@ class RabbitMQClient:
         """
         assert self._channel_pool  # nosec
         topic = message.routing_key()
+
         async with self._channel_pool.acquire() as channel:
             exchange = await channel.declare_exchange(
                 exchange_name,
@@ -302,6 +308,7 @@ class RabbitMQClient:
                 if topic is None
                 else aio_pika.ExchangeType.TOPIC,
                 durable=True,
+                timeout=_DEFAULT_RABBITMQ_EXECUTION_TIMEOUT_S,
             )
             await exchange.publish(
                 aio_pika.Message(message.body()),
@@ -346,7 +353,7 @@ class RabbitMQClient:
                 raise RemoteMethodNotRegisteredError(
                     method_name=namespaced_method_name, incoming_message=e.args[1]
                 ) from e
-            raise e
+            raise
 
     async def rpc_register_handler(
         self,
@@ -370,6 +377,20 @@ class RabbitMQClient:
             handler,
             auto_delete=True,
         )
+
+    async def rpc_register_router(
+        self,
+        router: RPCRouter,
+        namespace: RPCNamespace,
+        *handler_args,
+        **handler_kwargs,
+    ) -> None:
+        for rpc_method_name, handler in router.routes.items():
+            await self.rpc_register_handler(
+                namespace,
+                rpc_method_name,
+                functools.partial(handler, *handler_args, **handler_kwargs),
+            )
 
     async def rpc_unregister_handler(self, handler: Callable[..., Any]) -> None:
         """Unbind a locally added `handler`"""
