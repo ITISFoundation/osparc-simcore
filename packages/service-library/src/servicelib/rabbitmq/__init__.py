@@ -6,12 +6,12 @@ from .rpc_router import RPCRouter
 from .utils import rpc_register_entries
 
 __all__: tuple[str, ...] = (
+    "BIND_TO_ALL_TOPICS",
     "RabbitMQClient",
+    "RemoteMethodNotRegisteredError",
+    "rpc_register_entries",
     "RPCMethodName",
     "RPCNamespace",
-    "BIND_TO_ALL_TOPICS",
-    "RemoteMethodNotRegisteredError",
     "RPCNotInitializedError",
-    "rpc_register_entries",
     "RPCRouter",
 )
