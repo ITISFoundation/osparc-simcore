@@ -7,6 +7,7 @@ from typing import Any
 
 import aio_pika
 from pydantic import PositiveInt
+from settings_library.rabbit import RabbitSettings
 
 from ..logging_utils import log_context
 from ._client_base import RabbitMQClientBase
@@ -24,7 +25,15 @@ class RabbitMQRPCClient(RabbitMQClientBase):
     _channel: aio_pika.abc.AbstractChannel | None = None
     _rpc: aio_pika.patterns.RPC | None = None
 
-    async def rpc_initialize(self) -> None:
+    @classmethod
+    async def create(
+        cls, *, client_name: str, settings: RabbitSettings, **kwargs
+    ) -> "RabbitMQRPCClient":
+        client = cls(client_name=client_name, settings=settings, **kwargs)
+        await client._rpc_initialize()  # noqa: SLF001
+        return client
+
+    async def _rpc_initialize(self) -> None:
         self._connection = await aio_pika.connect_robust(
             self.settings.dsn,
             client_properties={

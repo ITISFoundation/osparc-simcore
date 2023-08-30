@@ -152,12 +152,10 @@ async def test_multiple_requests_parallel_same_replier_different_requesters(
 
     clients: list[RabbitMQRPCClient] = []
     for _ in range(MULTIPLE_REQUESTS_COUNT):
-        client = RabbitMQRPCClient("", rabbit_service)
+        client = await RabbitMQRPCClient.create(client_name="", settings=rabbit_service)
         clients.append(client)
 
     # worst case scenario
-    await asyncio.gather(*[c.rpc_initialize() for c in clients])
-
     requests: list[Awaitable] = []
     expected_result: list[int] = []
     for i in range(MULTIPLE_REQUESTS_COUNT):

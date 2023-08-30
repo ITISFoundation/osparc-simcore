@@ -108,13 +108,14 @@ async def rabbitmq_rpc_client(
     created_clients = []
 
     async def _creator(client_name: str, *, heartbeat: int = 60) -> RabbitMQRPCClient:
-        client = RabbitMQRPCClient(
-            f"pytest_{client_name}", rabbit_service, heartbeat=heartbeat
+        client = await RabbitMQRPCClient.create(
+            client_name=f"pytest_{client_name}",
+            settings=rabbit_service,
+            heartbeat=heartbeat,
         )
         assert client
         assert client.client_name == f"pytest_{client_name}"
         assert client.settings == rabbit_service
-        await client.rpc_initialize()
         created_clients.append(client)
         return client
 
