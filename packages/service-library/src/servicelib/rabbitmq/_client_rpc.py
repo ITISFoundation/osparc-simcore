@@ -19,7 +19,7 @@ _logger = logging.getLogger(__name__)
 
 
 @dataclass
-class RabbitMQClient(RabbitMQClientBase):
+class RabbitMQRPCClient(RabbitMQClientBase):
     _rpc_connection: aio_pika.abc.AbstractConnection | None = None
     _rpc_channel: aio_pika.abc.AbstractChannel | None = None
     _rpc: aio_pika.patterns.RPC | None = None
