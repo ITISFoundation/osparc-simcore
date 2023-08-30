@@ -90,8 +90,8 @@ qx.Class.define("osparc.component.resourceUsage.OverviewTable", {
           const stopTime = new Date(data["stopped_at"]);
           const durationTimeSec = (stopTime - startTime)/1000;
           newData[cols["duration"].pos] = durationTimeSec;
-          newData[cols["status"].pos] = qx.lang.String.firstUp(data["service_run_status"]);
-          newData[cols["wallet"].pos] = data["wallet_label"] ? data["wallet_label"] : "Wallet ID?";
+          newData[cols["status"].pos] = qx.lang.String.firstUp(data["service_run_status"].toLowerCase());
+          newData[cols["wallet"].pos] = data["wallet_label"] ? data["wallet_label"] : "unknown";
           newDatas.push(newData);
         });
       }
