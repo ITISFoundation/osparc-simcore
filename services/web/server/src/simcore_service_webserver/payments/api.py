@@ -24,6 +24,7 @@ async def create_payment_to_wallet(
     wallet_name: str,
     prize: PositiveFloat,
     credit: PositiveFloat,
+    comment: str | None,
 ) -> PaymentGet:
     # TODO: user's wallet is verified or should we verify it here?
 
@@ -44,7 +45,7 @@ async def create_payment_to_wallet(
         prize=prize,
         wallet_id=wallet_id,
         credit=credit,
-        comment=f"Payments to top wallet {wallet_name}",
+        comment=comment or f"Payments to top wallet {wallet_name}",
         state=PaymentTransactionState.INIT,
         created=arrow.utcnow().datetime,
         completed=None,

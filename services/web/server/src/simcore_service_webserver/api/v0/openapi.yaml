@@ -3766,6 +3766,7 @@ paths:
       tags:
       - wallets
       summary: Create Payment
+      description: Creates payment to wallet `wallet_id`
       operationId: create_payment
       parameters:
       - required: true
@@ -3794,6 +3795,8 @@ paths:
       tags:
       - wallets
       summary: List All Payments
+      description: Lists all user payments to his/her wallets (only the ones he/she
+        created)
       operationId: list_all_payments
       requestBody:
         content:
@@ -6633,6 +6636,10 @@ components:
           exclusiveMinimum: true
           type: number
           minimum: 0.0
+        comment:
+          title: Comment
+          maxLength: 100
+          type: string
     PaymentGet:
       title: PaymentGet
       required:
@@ -6683,11 +6690,12 @@ components:
           maxLength: 2083
           minLength: 1
           type: string
+          description: Link to external site that holds the payment submission form
           format: uri
     PaymentTransactionState:
       title: PaymentTransactionState
       enum:
-      - CREATED
+      - INIT
       - COMPLETED
       type: string
       description: An enumeration.

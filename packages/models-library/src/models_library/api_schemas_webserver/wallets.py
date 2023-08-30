@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from models_library.utils.pydantic_tools_extension import FieldNotRequired
 from pydantic import PositiveFloat
 
 from ..api_schemas_payments import payments as payments_service
@@ -55,3 +56,4 @@ class PaymentGet(payments_service.PaymentGet):
 class PaymentCreateBody(OutputSchema):
     prize: PositiveFloat
     credit: PositiveFloat  # NOTE: should I recompute? or should be in the backend?
+    comment: str = FieldNotRequired(max_length=100)
