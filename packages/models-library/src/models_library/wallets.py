@@ -1,15 +1,22 @@
-import enum
 from datetime import datetime
+from enum import auto
 from typing import TypeAlias
 
 from pydantic import BaseModel, Field, PositiveInt
 
+from .utils.enums import StrAutoEnum
+
 WalletID: TypeAlias = PositiveInt
 
 
-class WalletStatus(str, enum.Enum):
-    ACTIVE = "ACTIVE"
-    INACTIVE = "INACTIVE"
+class WalletStatus(StrAutoEnum):
+    ACTIVE = auto()
+    INACTIVE = auto()
+
+
+class PaymentTransactionState(StrAutoEnum):
+    CREATED = auto()
+    COMPLETED = auto()
 
 
 ### DB
