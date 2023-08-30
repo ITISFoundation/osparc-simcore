@@ -23,7 +23,8 @@ from yarl import URL
 
 
 @pytest.fixture
-def app_invitation_plugin_settings(client: TestClient) -> InvitationsSettings:
+def app_invitations_plugin_settings(client: TestClient) -> InvitationsSettings:
+    assert client.app
     settings = get_plugin_settings(app=client.app)
     assert settings
     return settings
@@ -34,8 +35,7 @@ def invitations_service_openapi_specs(
     osparc_simcore_services_dir: Path,
 ) -> dict[str, Any]:
     oas_path = osparc_simcore_services_dir / "invitations" / "openapi.json"
-    openapi_specs = json.loads(oas_path.read_text())
-    return openapi_specs
+    return json.loads(oas_path.read_text())
 
 
 @pytest.fixture
@@ -49,8 +49,8 @@ def expected_invitation(
 
 
 @pytest.fixture()
-def base_url(app_invitation_plugin_settings: InvitationsSettings) -> URL:
-    return URL(app_invitation_plugin_settings.base_url)
+def base_url(app_invitations_plugin_settings: InvitationsSettings) -> URL:
+    return URL(app_invitations_plugin_settings.base_url)
 
 
 @pytest.fixture
