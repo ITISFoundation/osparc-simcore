@@ -1,35 +1,22 @@
-import functools
 from collections.abc import Awaitable, Callable
 
 from fastapi import FastAPI
-from servicelib.rabbitmq import RabbitMQClient
-from servicelib.rabbitmq_utils import RPCMethodName
 
 from ..modules.rabbitmq import (
     CLUSTERS_KEEPER_RPC_NAMESPACE,
     get_rabbitmq_rpc_client,
     is_rabbitmq_enabled,
 )
-from . import clusters
-from .rpc_router import RPCRouter
-
-
-async def _include_router(
-    app: FastAPI, rpc_client: RabbitMQClient, router: RPCRouter
-) -> None:
-    for rpc_method_name, handler in router.routes.items():
-        await rpc_client.rpc_register_handler(
-            CLUSTERS_KEEPER_RPC_NAMESPACE,
-            RPCMethodName(rpc_method_name),
-            functools.partial(handler, app),
-        )
+from .clusters import router as clusters_router
 
 
 def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _start() -> None:
         if is_rabbitmq_enabled(app):
             rpc_client = get_rabbitmq_rpc_client(app)
-            await _include_router(app, rpc_client, clusters.router)
+            await rpc_client.register_router(
+                clusters_router, CLUSTERS_KEEPER_RPC_NAMESPACE, app
+            )
 
     return _start
 

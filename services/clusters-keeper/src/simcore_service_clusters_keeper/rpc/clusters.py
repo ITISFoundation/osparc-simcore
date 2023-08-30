@@ -1,13 +1,13 @@
 from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from simcore_service_clusters_keeper.core.settings import get_application_settings
+from servicelib.rabbitmq import RPCRouter
 
 from ..core.errors import Ec2InstanceNotFoundError
+from ..core.settings import get_application_settings
 from ..models import ClusterGet, EC2InstanceData
 from ..modules import clusters
 from ..modules.dask import ping_gateway
-from .rpc_router import RPCRouter
 
 router = RPCRouter()
 

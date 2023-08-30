@@ -6,9 +6,12 @@ from fastapi import FastAPI
 from models_library.rabbitmq_messages import RabbitMessageBase
 from pydantic import parse_obj_as
 from servicelib.logging_utils import log_catch
-
-from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient, RPCMethodName,RPCNamespace,wait_till_rabbitmq_responsive,
-
+from servicelib.rabbitmq import (
+    RabbitMQClient,
+    RabbitMQRPCClient,
+    RPCNamespace,
+    wait_till_rabbitmq_responsive,
+)
 from settings_library.rabbit import RabbitSettings
 
 from ..core.errors import ConfigurationError
@@ -40,7 +43,6 @@ def setup(app: FastAPI) -> None:
             client_name="clusters_keeper_rpc_server", settings=settings
         )
 
-
     async def on_shutdown() -> None:
         if app.state.rabbitmq_client:
             await app.state.rabbitmq_client.close()
@@ -63,12 +65,12 @@ def is_rabbitmq_enabled(app: FastAPI) -> bool:
     return app.state.rabbitmq_client is not None
 
 
-def get_rabbitmq_rpc_client(app: FastAPI) -> RabbitMQClient:
+def get_rabbitmq_rpc_client(app: FastAPI) -> RabbitMQRPCClient:
     if not app.state.rabbitmq_rpc_server:
         raise ConfigurationError(
             msg="RabbitMQ client for RPC is not available. Please check the configuration."
         )
-    return cast(RabbitMQClient, app.state.rabbitmq_rpc_server)
+    return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_server)
 
 
 async def post_message(app: FastAPI, message: RabbitMessageBase) -> None:

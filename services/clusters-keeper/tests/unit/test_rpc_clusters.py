@@ -6,7 +6,7 @@
 import datetime
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Final
+from typing import Awaitable, Final
 from unittest.mock import MagicMock
 
 import arrow
@@ -18,8 +18,7 @@ from models_library.wallets import WalletID
 from parse import Result, search
 from pydantic import parse_obj_as
 from pytest_mock.plugin import MockerFixture
-from servicelib.rabbitmq import RabbitMQClient
-from servicelib.rabbitmq_utils import RPCMethodName, RPCNamespace
+from servicelib.rabbitmq import RabbitMQRPCClient, RPCMethodName, RPCNamespace
 from simcore_service_clusters_keeper.models import ClusterGet
 from simcore_service_clusters_keeper.utils.ec2 import HEARTBEAT_TAG_KEY
 from types_aiobotocore_ec2 import EC2Client
@@ -33,11 +32,10 @@ pytest_simcore_ops_services_selection = []
 
 @pytest.fixture
 async def clusters_keeper_rabbitmq_rpc_client(
-    rabbitmq_client: Callable[[str], RabbitMQClient]
-) -> RabbitMQClient:
-    rpc_client = rabbitmq_client("pytest_clusters_keeper_rpc_client")
+    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]]
+) -> RabbitMQRPCClient:
+    rpc_client = await rabbitmq_rpc_client("pytest_clusters_keeper_rpc_client")
     assert rpc_client
-    await rpc_client.rpc_initialize()
     return rpc_client
 
 
@@ -140,14 +138,14 @@ def mocked_dask_ping_gateway(mocker: MockerFixture) -> MockedDaskModule:
 
 async def test_get_or_create_cluster(
     _base_configuration: None,
-    clusters_keeper_rabbitmq_rpc_client: RabbitMQClient,
+    clusters_keeper_rabbitmq_rpc_client: RabbitMQRPCClient,
     ec2_client: EC2Client,
     user_id: UserID,
     wallet_id: WalletID,
     mocked_dask_ping_gateway: MockedDaskModule,
 ):
     # send rabbitmq rpc to create_cluster
-    rpc_response = await clusters_keeper_rabbitmq_rpc_client.rpc_request(
+    rpc_response = await clusters_keeper_rabbitmq_rpc_client.request(
         CLUSTERS_KEEPER_NAMESPACE,
         RPCMethodName("get_or_create_cluster"),
         user_id=user_id,
@@ -162,7 +160,7 @@ async def test_get_or_create_cluster(
     mocked_dask_ping_gateway.ping_gateway.reset_mock()
 
     # calling it again returns the existing cluster
-    rpc_response = await clusters_keeper_rabbitmq_rpc_client.rpc_request(
+    rpc_response = await clusters_keeper_rabbitmq_rpc_client.request(
         CLUSTERS_KEEPER_NAMESPACE,
         RPCMethodName("get_or_create_cluster"),
         user_id=user_id,
