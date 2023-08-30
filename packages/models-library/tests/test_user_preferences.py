@@ -54,7 +54,9 @@ def test_backend_preferences(value: Any):
     base_data = _get_base_user_preferences_data(
         preference_type=PreferenceType.BACKEND, value=value
     )
-    assert parse_obj_as(BaseBackendUserPreference, base_data)
+    backend_preference = parse_obj_as(BaseBackendUserPreference, base_data)
+    # check serialization
+    assert set(backend_preference.dict().keys()) == {"value"}
 
 
 @pytest.mark.parametrize("widget_type", WidgetType)
@@ -69,11 +71,11 @@ def test_frontend_preferences(
     data_with_rendered_widget = deepcopy(base_data)
     data_with_rendered_widget.update(
         {
-            "render_widget": True,
+            "expose_in_preferences": True,
             "preference_identifier": "pref-name",
             "widget_type": widget_type,
-            "display_label": "test display label",
-            "tooltip_message": "test tooltip message",
+            "label": "test display label",
+            "description": "test tooltip message",
             "value_type": value_type,
         }
     )
@@ -86,11 +88,11 @@ def test_frontend_preferences(
     data_no_rendered_widget = deepcopy(base_data)
     data_no_rendered_widget.update(
         {
-            "render_widget": False,
+            "expose_in_preferences": False,
             "preference_identifier": "pref-name",
             "widget_type": None,
-            "display_label": None,
-            "tooltip_message": None,
+            "label": None,
+            "description": None,
             "value_type": value_type,
         }
     )
@@ -148,12 +150,12 @@ def test_user_defined_frontend_preference(
 ):
     # definition of a new custom property
     class Pref1(BaseFrontendUserPreference):
-        render_widget = True
+        expose_in_preferences = True
         value_type = ValueType.STR
         preference_identifier = "pref1"
         widget_type: WidgetType = widget_type_value
-        display_label = "test display label"
-        tooltip_message = "test tooltip message"
+        label = "test display label"
+        description = "test tooltip message"
 
     # usage
     pref1 = Pref1(value=value)

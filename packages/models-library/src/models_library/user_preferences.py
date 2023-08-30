@@ -129,6 +129,11 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
 class BaseBackendUserPreference(_BaseUserPreferenceModel):
     preference_type: PreferenceType = PreferenceType.BACKEND
 
+    class Config:
+        exclude_from_serialization: ClassVar[set[str]] = {
+            "preference_type",
+        }
+
 
 class BaseFrontendUserPreference(_BaseUserPreferenceModel):
     preference_type: PreferenceType = PreferenceType.FRONTEND
@@ -176,6 +181,7 @@ class BaseUserServiceUserPreference(_BaseUserPreferenceModel):
     class Config:
         exclude_from_serialization: ClassVar[set[str]] = {
             "last_changed_utc_timestamp",
+            "preference_type",
         }
 
 

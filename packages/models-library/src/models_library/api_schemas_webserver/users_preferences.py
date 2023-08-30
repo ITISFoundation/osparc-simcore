@@ -7,6 +7,7 @@ from ..user_preferences import PreferenceName, ValueType
 
 
 class FrontendUserPreference(BaseModel):
+    # these fields are inherited from `BaseFrontendUserPreference``
     expose_in_preferences: bool = Field(default=..., alias="exposeInPreferences")
     widget_type: WidgetType | None = Field(default=..., alias="widget")
     label: str | None = Field(default=...)
