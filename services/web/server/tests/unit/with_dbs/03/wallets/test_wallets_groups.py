@@ -32,7 +32,7 @@ async def test_wallets_groups_full_workflow(
 
     # check the default wallet permissions
     url = client.app.router["list_wallet_groups"].url_for(
-        wallet_id=f"{added_wallet['wallet_id']}"
+        wallet_id=f"{added_wallet['walletId']}"
     )
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, web.HTTPOk)
@@ -47,7 +47,7 @@ async def test_wallets_groups_full_workflow(
     ) as new_user:
         # We add new user to the wallet
         url = client.app.router["create_wallet_group"].url_for(
-            wallet_id=f"{added_wallet['wallet_id']}",
+            wallet_id=f"{added_wallet['walletId']}",
             group_id=f"{new_user['primary_gid']}",
         )
         resp = await client.post(
@@ -57,7 +57,7 @@ async def test_wallets_groups_full_workflow(
 
         # Check the wallet permissions of added user
         url = client.app.router["list_wallet_groups"].url_for(
-            wallet_id=f"{added_wallet['wallet_id']}"
+            wallet_id=f"{added_wallet['walletId']}"
         )
         resp = await client.get(f"{url}")
         data, _ = await assert_status(resp, web.HTTPOk)
@@ -69,7 +69,7 @@ async def test_wallets_groups_full_workflow(
 
         # Update the wallet permissions of the added user
         url = client.app.router["update_wallet_group"].url_for(
-            wallet_id=f"{added_wallet['wallet_id']}",
+            wallet_id=f"{added_wallet['walletId']}",
             group_id=f"{new_user['primary_gid']}",
         )
         resp = await client.put(
@@ -83,7 +83,7 @@ async def test_wallets_groups_full_workflow(
 
         # List the wallet groups
         url = client.app.router["list_wallet_groups"].url_for(
-            wallet_id=f"{added_wallet['wallet_id']}"
+            wallet_id=f"{added_wallet['walletId']}"
         )
         resp = await client.get(f"{url}")
         data, _ = await assert_status(resp, web.HTTPOk)
@@ -95,7 +95,7 @@ async def test_wallets_groups_full_workflow(
 
         # Delete the wallet group
         url = client.app.router["delete_wallet_group"].url_for(
-            wallet_id=f"{added_wallet['wallet_id']}",
+            wallet_id=f"{added_wallet['walletId']}",
             group_id=f"{new_user['primary_gid']}",
         )
         resp = await client.delete(f"{url}")
@@ -103,7 +103,7 @@ async def test_wallets_groups_full_workflow(
 
         # List the wallet groups
         url = client.app.router["list_wallet_groups"].url_for(
-            wallet_id=f"{added_wallet['wallet_id']}"
+            wallet_id=f"{added_wallet['walletId']}"
         )
         resp = await client.get(f"{url}")
         data, _ = await assert_status(resp, web.HTTPOk)
