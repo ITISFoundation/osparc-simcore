@@ -6,9 +6,7 @@ from collections.abc import Awaitable, Callable
 import orjson
 import pytest
 from faker import Faker
-from servicelib.rabbitmq import RabbitMQClient
-from servicelib.rabbitmq_rpc_router import RPCRouter
-from servicelib.rabbitmq_utils import RPCMethodName, RPCNamespace
+from servicelib.rabbitmq import RabbitMQClient, RPCMethodName, RPCNamespace, RPCRouter
 
 pytest_simcore_core_services_selection = [
     "rabbit",

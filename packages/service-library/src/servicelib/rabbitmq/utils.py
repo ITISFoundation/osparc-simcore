@@ -10,7 +10,7 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-from .logging_utils import log_context
+from ..logging_utils import log_context
 from .models import RPCMethodName, RPCNamespace
 
 _logger = logging.getLogger(__file__)

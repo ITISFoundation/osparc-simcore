@@ -1,6 +1,6 @@
 import pytest
 from pydantic import ValidationError
-from servicelib.rabbitmq_utils import RPCNamespace
+from servicelib.rabbitmq import RPCNamespace
 
 
 @pytest.mark.parametrize(

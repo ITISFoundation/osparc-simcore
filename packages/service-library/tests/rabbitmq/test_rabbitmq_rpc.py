@@ -7,12 +7,14 @@ from typing import Any, Final
 
 import pytest
 from pydantic import NonNegativeInt, ValidationError
-from servicelib.rabbitmq import RabbitMQClient
-from servicelib.rabbitmq_errors import (
+from servicelib.rabbitmq import (
+    RabbitMQClient,
     RemoteMethodNotRegisteredError,
+    RPCMethodName,
+    RPCNamespace,
     RPCNotInitializedError,
+    rpc_register_entries,
 )
-from servicelib.rabbitmq_utils import RPCMethodName, RPCNamespace, rpc_register_entries
 from settings_library.rabbit import RabbitSettings
 
 pytest_simcore_core_services_selection = [

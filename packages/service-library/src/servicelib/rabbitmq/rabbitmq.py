@@ -9,9 +9,9 @@ import aio_pika
 import aiormq
 from aio_pika.patterns import RPC
 from pydantic import PositiveInt
-from servicelib.logging_utils import log_catch, log_context
 from settings_library.rabbit import RabbitSettings
 
+from ..logging_utils import log_catch, log_context
 from .errors import RemoteMethodNotRegisteredError, RPCNotInitializedError
 from .models import (
     MessageHandler,
