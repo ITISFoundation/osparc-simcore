@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, HttpUrl, PositiveFloat
+from pydantic import BaseModel, Field, HttpUrl, PositiveFloat
 
 from ..basic_types import IDStr
 from ..wallets import PaymentTransactionState, WalletID
@@ -16,4 +16,6 @@ class PaymentGet(BaseModel):
     created: datetime
     completed: datetime | None
 
-    payment_form_link: HttpUrl  # redirection
+    submission_link: HttpUrl = Field(
+        ..., description="Link to external site that holds the payment submission form"
+    )

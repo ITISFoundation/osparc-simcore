@@ -1,9 +1,13 @@
+import asyncio
 import contextlib
 import logging
+import os
 from dataclasses import dataclass
+from uuid import uuid4
 
 from aiohttp import BasicAuth, ClientSession, web
 from aiohttp.client_exceptions import ClientError
+from models_library.users import UserID
 from yarl import URL
 
 from .._constants import APP_SETTINGS_KEY
@@ -65,6 +69,33 @@ class PaymentsServiceApi:
             _logger.debug("Payments service is not healty: %s", err)
             return False
 
+    # NOTE: Functions below FAKE behaviour of payments service
+    async def create_payment(
+        self,
+        product_name: str,
+        user_id: UserID,
+        name: str,
+        email: str,
+        credit: float,
+    ):
+        assert credit > 0  # nosec
+        assert name  # nosec
+        assert email  # nosec
+        assert product_name  # nosec
+
+        body = {"credits": credit, "user_id": user_id, "name": name, "email": email}
+        _logger.info("Sending -> payments-service %s", body)
+
+        await asyncio.sleep(1)
+
+        # Fake response of payment service --------
+        transaction_id = f"{uuid4()}"
+        base_url = URL(
+            os.environ.get("PAYMENTS_GATEWAY_URL", "https://faker-payment-gateway.com")
+        )
+        submission_link = base_url.with_path("/pay").with_query(id=transaction_id)
+        return submission_link, transaction_id
+
 
 #
 # EVENTS
@@ -74,7 +105,6 @@ _APP_PAYMENTS_SERVICE_API_KEY = f"{__name__}.{PaymentsServiceApi.__name__}"
 
 
 async def payments_service_api_cleanup_ctx(app: web.Application):
-
     service_api = await PaymentsServiceApi.create(
         settings=app[APP_SETTINGS_KEY].WEBSERVER_PAYMENTS
     )

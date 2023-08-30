@@ -165,7 +165,7 @@ async def test_payments_worfklow(
     assert error is None
     payment = PaymentGet.parse_obj(data)
 
-    assert payment.state == PaymentTransactionState.CREATED
+    assert payment.state == PaymentTransactionState.INIT
     assert payment.prize == 50
     assert payment.submission_link
 

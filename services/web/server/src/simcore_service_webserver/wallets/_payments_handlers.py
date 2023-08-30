@@ -64,6 +64,7 @@ async def create_payment(request: web.Request):
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
             wallet_id=wallet.wallet_id,
+            wallet_name=wallet.name,
             credit=body_params.credit,
             prize=body_params.prize,
         )

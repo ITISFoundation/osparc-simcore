@@ -15,7 +15,7 @@ class WalletStatus(StrAutoEnum):
 
 
 class PaymentTransactionState(StrAutoEnum):
-    CREATED = auto()
+    INIT = auto()
     COMPLETED = auto()
 
 
