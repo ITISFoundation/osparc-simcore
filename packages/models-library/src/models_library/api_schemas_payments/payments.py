@@ -16,4 +16,4 @@ class PaymentGet(BaseModel):
     created: datetime
     completed: datetime | None
 
-    submission_link: HttpUrl  # redirection
+    payment_form_link: HttpUrl  # redirection

@@ -13,6 +13,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
+from servicelib.logging_utils import get_log_record_extra, log_context
 
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
@@ -48,15 +49,24 @@ async def create_payment(request: web.Request):
         wallet_id=path_params.wallet_id,
         has_write_permission=True,  # Can only pay to wallets that user owns
     )
+    wallet_id = wallet.wallet_id
 
-    payment = await create_payment_to_wallet(
-        request.app,
-        user_id=req_ctx.user_id,
-        product_name=req_ctx.product_name,
-        wallet_id=wallet.wallet_id,
-        credit=body_params.credit,
-        prize=body_params.prize,
-    )
+    with log_context(
+        _logger,
+        logging.INFO,
+        "Payment transaction started to %s",
+        f"{wallet_id=}",
+        log_duration=True,
+        extra=get_log_record_extra(user_id=req_ctx.user_id),
+    ):
+        payment = await create_payment_to_wallet(
+            request.app,
+            user_id=req_ctx.user_id,
+            product_name=req_ctx.product_name,
+            wallet_id=wallet.wallet_id,
+            credit=body_params.credit,
+            prize=body_params.prize,
+        )
     return envelope_json_response(PaymentGet.parse_obj(payment), web.HTTPCreated)
 
 
