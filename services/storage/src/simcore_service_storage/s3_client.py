@@ -274,7 +274,9 @@ class StorageS3Client:
 
         # NOTE: deletion of objects is done in batches of max 1000 elements,
         # the maximum accepted by the S3 API
-        with log_context(_logger, logging.INFO, "deleting objects", log_duration=True):
+        with log_context(
+            _logger, logging.INFO, f"deleting objects in {prefix=}", log_duration=True
+        ):
             async for s3_objects in self.list_all_objects_gen(bucket, prefix=prefix):
                 if objects_to_delete := [f["Key"] for f in s3_objects if "Key" in f]:
                     await self.client.delete_objects(
