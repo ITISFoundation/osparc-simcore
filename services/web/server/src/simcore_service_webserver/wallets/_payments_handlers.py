@@ -77,6 +77,7 @@ async def create_payment(request: web.Request):
             wallet_name=wallet.name,
             credit=body_params.credit,
             prize=body_params.prize,
+            comment=body_params.comment,
         )
     return envelope_json_response(PaymentGet.parse_obj(payment), web.HTTPCreated)
 
