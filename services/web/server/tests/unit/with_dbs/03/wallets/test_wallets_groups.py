@@ -4,24 +4,15 @@
 # pylint: disable=too-many-arguments
 
 
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import AsyncIterator
 
 import pytest
-import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict
-from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
-
-
-@pytest.fixture()
-def wallets_clean_db(postgres_db: sa.engine.Engine) -> Iterator[None]:
-    with postgres_db.connect() as con:
-        yield
-        con.execute(wallets.delete())
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
