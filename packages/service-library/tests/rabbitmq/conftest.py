@@ -1,15 +1,20 @@
 import datetime
 import time
-from typing import AsyncIterator, Coroutine, cast
+from collections.abc import AsyncIterator, Coroutine
+from typing import cast
 
 import aiodocker
 import pytest
 
 
-@pytest.fixture
-async def cleanup_check_rabbitmq_server_has_no_errors() -> AsyncIterator[None]:
-    now = datetime.datetime.now()
+@pytest.fixture(autouse=True)
+async def cleanup_check_rabbitmq_server_has_no_errors(
+    request: pytest.FixtureRequest,
+) -> AsyncIterator[None]:
+    now = datetime.datetime.now(datetime.timezone.utc)
     yield
+    if "no_cleanup_check_rabbitmq_server_has_no_errors" in request.keywords:
+        return
     print("--> checking for errors/warnings in rabbitmq logs...")
     async with aiodocker.Docker() as docker_client:
         containers = await docker_client.containers.list(filters=({"name": ["rabbit"]}))

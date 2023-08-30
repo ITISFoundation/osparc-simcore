@@ -107,7 +107,6 @@ def random_rabbit_message(
 
 
 async def test_rabbit_client_with_paused_container(
-    cleanup_check_rabbitmq_server_has_no_errors: None,
     random_exchange_name: Callable[[], str],
     random_rabbit_message: Callable[..., PytestRabbitMessage],
     rabbitmq_client: Callable[[str], RabbitMQClient],
