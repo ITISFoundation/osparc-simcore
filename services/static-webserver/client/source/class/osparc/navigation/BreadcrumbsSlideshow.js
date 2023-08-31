@@ -23,7 +23,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
   extend: osparc.navigation.BreadcrumbNavigation,
 
   events: {
-    "nodeSelected": "qx.event.type.Data"
+    "nodeSelectionRequested": "qx.event.type.Data"
   },
 
   members: {
@@ -161,7 +161,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
       btn.addListener("execute", e => {
         if (btn.getValue()) {
           // Unselected button clicked
-          this.fireDataEvent("nodeSelected", nodeId);
+          this.fireDataEvent("nodeSelectionRequested", nodeId);
         } else {
           // Selected button clicked. Don't allo
           btn.setValue(true);

@@ -35,10 +35,6 @@ qx.Class.define("osparc.desktop.Toolbar", {
     this._buildLayout();
   },
 
-  events: {
-    "nodeSelected": "qx.event.type.Data"
-  },
-
   properties: {
     study: {
       check: "osparc.data.model.Study",
