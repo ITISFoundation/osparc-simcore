@@ -100,7 +100,7 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
     __transactionsTable: null,
 
     __getMiniProfileView: function() {
-      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(8)).set({
         alignX: "center",
         maxWidth: 150
       });
@@ -131,7 +131,7 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
       });
       layout.add(emailLabel);
 
-      layout.add(new qx.ui.core.Spacer(20, 20), {
+      layout.add(new qx.ui.core.Spacer(15, 15), {
         flex: 1
       });
 
