@@ -43,7 +43,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
           }
           btns.push(btn);
         });
-        this._buttonsToBreadcrumb(btns, "separator");
+        this.__buttonsToBreadcrumb(btns, "separator");
       } else {
         this._removeAll();
         const label = new qx.ui.basic.Label();
