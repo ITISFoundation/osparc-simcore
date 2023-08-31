@@ -9,9 +9,7 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
-from models_library.api_schemas_webserver.users_preferences import (
-    FrontendUserPreference,
-)
+from models_library.api_schemas_webserver.users_preferences import Preference
 from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import BaseModel
@@ -125,7 +123,7 @@ async def test_get_frontend_user_preferences_aggregation(
     )
     assert len(frontend_user_preferences_aggregation) == len(ALL_FRONTEND_PREFERENCES)
     for value in frontend_user_preferences_aggregation.values():
-        assert isinstance(value, FrontendUserPreference)
+        assert isinstance(value, Preference)
 
 
 async def test_set_frontend_user_preference(

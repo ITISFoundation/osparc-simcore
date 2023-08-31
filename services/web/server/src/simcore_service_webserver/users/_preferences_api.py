@@ -3,7 +3,7 @@ from typing import Any, Final, cast
 from aiohttp import web
 from models_library.api_schemas_webserver.users_preferences import (
     AggregatedPreferences,
-    FrontendUserPreference,
+    Preference,
 )
 from models_library.products import ProductName
 from models_library.user_preferences import (
@@ -60,12 +60,13 @@ async def _get_frontend_user_preferences(
 async def get_frontend_user_preferences_aggregation(
     app: web.Application, *, user_id: UserID, product_name: ProductName
 ) -> AggregatedPreferences:
-    return {
-        p.preference_identifier: FrontendUserPreference.parse_obj(
+    aggregated_preferences: AggregatedPreferences = {
+        p.preference_identifier: Preference.parse_obj(
             {"value": p.value, "default_value": p.get_default_value()}
         )
         for p in await _get_frontend_user_preferences(app, user_id, product_name)
     }
+    return aggregated_preferences
 
 
 async def set_frontend_user_preference(
