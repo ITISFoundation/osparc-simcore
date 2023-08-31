@@ -238,10 +238,12 @@ qx.Class.define("osparc.info.StudyUtils", {
           column: 0
         });
 
-        moreInfo.add(extraInfo.view, {
-          row: idx,
-          column: 1
-        });
+        if (extraInfo.view) {
+          moreInfo.add(extraInfo.view, {
+            row: idx,
+            column: 1
+          });
+        }
       });
 
       return moreInfo;

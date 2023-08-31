@@ -223,7 +223,7 @@ class DaskScheduler(BaseCompScheduler):
             # resource tracking
             await publish_service_resource_tracking_stopped(
                 self.rabbitmq_client,
-                get_resource_tracking_run_id(user_id, project_id, iteration),
+                get_resource_tracking_run_id(user_id, project_id, node_id, iteration),
                 simcore_platform_status=simcore_platform_status,
             )
             # instrumentation
