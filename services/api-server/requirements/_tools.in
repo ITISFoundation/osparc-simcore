@@ -7,3 +7,4 @@
 change_case # for tools/get_api
 jinja2 # for tools/get_api
 watchdog[watchmedo]
+jsonref
