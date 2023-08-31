@@ -31,9 +31,14 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
         "studyId": studyId
       }
     };
-    osparc.data.Resources.getOne("studies", params)
-      .then(studyData => {
+    Promise.all([
+      osparc.data.Resources.getOne("studies", params),
+      osparc.data.Resources.fetch("studies", "getWallet", params)
+    ])
+      .then(values => {
+        const studyData = values[0];
         this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
+        this.__projectWalletId = values[1];
         this.__buildLayout();
       });
   },
@@ -133,6 +138,7 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
   members: {
     __studyId: null,
     __studyData: null,
+    __projectWalletId: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -352,7 +358,7 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
 
       // Wallet Selector
       const walletSelector = this.getChildControl("wallet-selector");
-      this.getChildControl("credits-left-view");
+      this._createChildControlImpl("credits-left-view");
 
       // Credits Summary
       const summaryLayout = this.getChildControl("summary-layout");
@@ -361,16 +367,25 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
       }));
       this.getChildControl("summary-label");
 
-      walletSelector.addListener("changeSelection", e => {
-        const selection = e.getData();
-        const found = store.getWallets().find(wallet => wallet.getWalletId() === parseInt(selection[0].walletId));
+      const wallets = store.getWallets();
+      const selectWallet = walletId => {
+        const found = wallets.find(wallet => wallet.getWalletId() === parseInt(walletId));
         if (found) {
           this.setWallet(found);
         } else {
           this.setWallet(null);
         }
+      };
+      walletSelector.addListener("changeSelection", e => {
+        const selection = e.getData();
+        selectWallet(selection[0].walletId);
       });
-      if (!osparc.desktop.credits.Utils.autoSelectActiveWallet(walletSelector)) {
+      const favWallet = osparc.desktop.credits.Utils.getFavouriteWallet();
+      if (this.__projectWalletId) {
+        selectWallet(this.__projectWalletId);
+      } else if (favWallet) {
+        selectWallet(favWallet.getWalletId());
+      } else if (!osparc.desktop.credits.Utils.autoSelectActiveWallet(walletSelector)) {
         walletSelector.setSelection([]);
       }
 
