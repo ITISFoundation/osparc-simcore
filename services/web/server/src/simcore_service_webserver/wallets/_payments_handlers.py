@@ -2,9 +2,10 @@ import logging
 
 from aiohttp import web
 from models_library.api_schemas_webserver.wallets import (
-    PaymentCreateBody,
-    PaymentGet,
     WalletGet,
+    WalletPaymentCreateBody,
+    WalletPaymentGet,
+    WalletPaymentItemList,
 )
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
@@ -48,7 +49,7 @@ def _raise_if_not_dev_mode(app):
 async def create_payment(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
-    body_params = await parse_request_body_as(PaymentCreateBody, request)
+    body_params = await parse_request_body_as(WalletPaymentCreateBody, request)
 
     _raise_if_not_dev_mode(request.app)
 
@@ -75,11 +76,11 @@ async def create_payment(request: web.Request):
             product_name=req_ctx.product_name,
             wallet_id=wallet.wallet_id,
             wallet_name=wallet.name,
-            credit=body_params.credit,
-            prize=body_params.prize,
+            osparc_credit=body_params.osparc_credits,
+            prize_dollars=body_params.prize_dollars,
             comment=body_params.comment,
         )
-    return envelope_json_response(PaymentGet.parse_obj(payment), web.HTTPCreated)
+    return envelope_json_response(WalletPaymentGet.parse_obj(payment), web.HTTPCreated)
 
 
 @routes.get(f"/{VTAG}/wallets/-/payments", name="list_all_payments")
@@ -87,7 +88,12 @@ async def create_payment(request: web.Request):
 @permission_required("wallets.*")
 @handle_wallets_exceptions
 async def list_all_payments(request: web.Request):
-    """Lists all user payments to his/her wallets (only the ones he/she created)"""
+    """Lists all user's payments to any of his wallets
+
+    NOTE that only payments attributed to this user will be listed here
+    e.g. if another user did some payments to a shared wallet, it will not
+    be listed here.
+    """
 
     req_ctx = WalletsRequestContext.parse_obj(request)
     query_params = parse_request_query_parameters_as(PageQueryParameters, request)
@@ -102,7 +108,7 @@ async def list_all_payments(request: web.Request):
         offset=query_params.offset,
     )
 
-    page = Page[PaymentGet].parse_obj(
+    page = Page[WalletPaymentItemList].parse_obj(
         paginate_data(
             chunk=payments,
             request_url=request.url,

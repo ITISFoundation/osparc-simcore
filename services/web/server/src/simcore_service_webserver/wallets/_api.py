@@ -47,21 +47,20 @@ async def list_wallets_with_available_credits_for_user(
     available_credits: float = 0.0
 
     # Now we return the user wallets with available credits
-    wallets_api: list[WalletGetWithAvailableCredits] = []
-    for wallet in user_wallets:
-        wallets_api.append(
-            WalletGetWithAvailableCredits(
-                wallet_id=wallet.wallet_id,
-                name=wallet.name,
-                description=wallet.description,
-                owner=wallet.owner,
-                thumbnail=wallet.thumbnail,
-                status=wallet.status,
-                created=wallet.created,
-                modified=wallet.modified,
-                available_credits=available_credits,
-            )
+    wallets_api: list[WalletGetWithAvailableCredits] = [
+        WalletGetWithAvailableCredits(
+            wallet_id=wallet.wallet_id,
+            name=wallet.name,
+            description=wallet.description,
+            owner=wallet.owner,
+            thumbnail=wallet.thumbnail,
+            status=wallet.status,
+            created=wallet.created,
+            modified=wallet.modified,
+            available_credits=available_credits,
         )
+        for wallet in user_wallets
+    ]
 
     return wallets_api
 
@@ -153,5 +152,5 @@ async def get_wallet_with_permissions_by_user(
         app=app, user_id=user_id, wallet_id=wallet_id
     )
 
-    output = WalletGetPermissions.construct(**wallet.dict())
+    output: WalletGetPermissions = WalletGetPermissions.construct(**wallet.dict())
     return output

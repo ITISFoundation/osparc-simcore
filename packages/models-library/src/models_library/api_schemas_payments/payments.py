@@ -1,6 +1,7 @@
 from datetime import datetime
+from decimal import Decimal
 
-from pydantic import BaseModel, Field, HttpUrl, PositiveFloat
+from pydantic import BaseModel, Field, HttpUrl
 
 from ..basic_types import IDStr
 from ..utils.pydantic_tools_extension import FieldNotRequired
@@ -9,14 +10,17 @@ from ..wallets import PaymentTransactionState, WalletID
 
 class PaymentGet(BaseModel):
     idr: IDStr
-    prize: PositiveFloat
+    submission_link: HttpUrl = Field(
+        ..., description="Link to external site that holds the payment submission form"
+    )
+
+
+class PaymentItemList(BaseModel):
+    idr: IDStr
+    prize: Decimal
     wallet_id: WalletID
-    credit: PositiveFloat
+    credit: Decimal
     comment: str = FieldNotRequired()
     state: PaymentTransactionState
     created: datetime
     completed: datetime | None
-
-    submission_link: HttpUrl = Field(
-        ..., description="Link to external site that holds the payment submission form"
-    )

@@ -14,7 +14,7 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
-from models_library.api_schemas_webserver.wallets import PaymentGet, WalletGet
+from models_library.api_schemas_webserver.wallets import WalletGet, WalletPaymentGet
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import PaymentTransactionState
 from pydantic import parse_obj_as
@@ -163,7 +163,7 @@ async def test_payments_worfklow(
     )
     data, error = await assert_status(response, web.HTTPCreated)
     assert error is None
-    payment = PaymentGet.parse_obj(data)
+    payment = WalletPaymentGet.parse_obj(data)
 
     assert payment.state == PaymentTransactionState.INIT
     assert payment.prize == 50
@@ -178,7 +178,7 @@ async def test_payments_worfklow(
     )
     data, error = await assert_status(response, web.HTTPOk)
     assert error is None
-    payment = PaymentGet.parse_obj(data)
+    payment = WalletPaymentGet.parse_obj(data)
 
     assert payment.state == PaymentTransactionState.COMPLETED
 
@@ -186,12 +186,12 @@ async def test_payments_worfklow(
     response = await client.get(f"/v0/wallet/{wallet.wallet_id}/payments")
     data, error = await assert_status(response, web.HTTPOk)
 
-    assert parse_obj_as(list[PaymentGet], data) is not None
+    assert parse_obj_as(list[WalletPaymentGet], data) is not None
 
     # list all payment transactions in all my wallets
     response = await client.get("/v0/wallet/-/payments")
     data, error = await assert_status(response, web.HTTPOk)
 
-    assert parse_obj_as(list[PaymentGet], data) is not None
+    assert parse_obj_as(list[WalletPaymentGet], data) is not None
 
     # check email was sent to user

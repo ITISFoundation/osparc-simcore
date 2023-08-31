@@ -3,6 +3,7 @@ import contextlib
 import logging
 import os
 from dataclasses import dataclass
+from decimal import Decimal
 from uuid import uuid4
 
 from aiohttp import BasicAuth, ClientSession, web
@@ -72,18 +73,26 @@ class PaymentsServiceApi:
     # NOTE: Functions below FAKE behaviour of payments service
     async def create_payment(
         self,
+        prize_dollars: Decimal,
+        osparc_credits: Decimal,
         product_name: str,
         user_id: UserID,
         name: str,
         email: str,
-        credit: float,
     ):
-        assert credit > 0  # nosec
+        assert osparc_credits > 0  # nosec
         assert name  # nosec
         assert email  # nosec
         assert product_name  # nosec
+        assert prize_dollars > 0  # nosec
 
-        body = {"credits": credit, "user_id": user_id, "name": name, "email": email}
+        body = {
+            "prize_dollars": prize_dollars,
+            "osparc_credits": osparc_credits,
+            "user_id": user_id,
+            "name": name,
+            "email": email,
+        }
         _logger.info("Sending -> payments-service %s", body)
 
         await asyncio.sleep(1)
