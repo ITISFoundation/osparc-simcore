@@ -3577,28 +3577,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_CheckpointApiModel_'
-  /v0/repos/projects/{project_uuid}/checkpoints/HEAD:
-    get:
-      tags:
-      - repository
-      summary: Get Head Checkpoint
-      description: Gets HEAD (i.e. current) checkpoint
-      operationId: get_head_checkpoint
-      parameters:
-      - required: true
-        schema:
-          title: Project Uuid
-          type: string
-          format: uuid
-        name: project_uuid
-        in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_CheckpointApiModel_'
   /v0/repos/projects/{project_uuid}/checkpoints/{ref_id}:
     get:
       tags:
@@ -3612,6 +3590,9 @@ paths:
           anyOf:
           - type: integer
           - type: string
+          - enum:
+            - HEAD
+            type: string
         name: ref_id
         in: path
       - required: true
@@ -3743,7 +3724,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/_CreateWalletBodyParams'
+              $ref: '#/components/schemas/CreateWalletBodyParams'
         required: true
       responses:
         '201':
@@ -3771,7 +3752,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/_PutWalletBodyParams'
+              $ref: '#/components/schemas/PutWalletBodyParams'
         required: true
       responses:
         '200':
@@ -4590,6 +4571,21 @@ components:
           title: Cluster Id
           minimum: 0
           type: integer
+    CreateWalletBodyParams:
+      title: CreateWalletBodyParams
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          title: Name
+          type: string
+        description:
+          title: Description
+          type: string
+        thumbnail:
+          title: Thumbnail
+          type: string
     DatCoreFileLink:
       title: DatCoreFileLink
       required:
@@ -7343,6 +7339,24 @@ components:
           description: Timestamp with last update
           format: date-time
       additionalProperties: false
+    PutWalletBodyParams:
+      title: PutWalletBodyParams
+      required:
+      - name
+      - status
+      type: object
+      properties:
+        name:
+          title: Name
+          type: string
+        description:
+          title: Description
+          type: string
+        thumbnail:
+          title: Thumbnail
+          type: string
+        status:
+          $ref: '#/components/schemas/WalletStatus'
     RegisterBody:
       title: RegisterBody
       required:
@@ -8616,7 +8630,7 @@ components:
     WalletGet:
       title: WalletGet
       required:
-      - wallet_id
+      - walletId
       - name
       - owner
       - status
@@ -8624,8 +8638,8 @@ components:
       - modified
       type: object
       properties:
-        wallet_id:
-          title: Wallet Id
+        walletId:
+          title: Walletid
           exclusiveMinimum: true
           type: integer
           minimum: 0
@@ -8656,17 +8670,17 @@ components:
     WalletGetWithAvailableCredits:
       title: WalletGetWithAvailableCredits
       required:
-      - wallet_id
+      - walletId
       - name
       - owner
       - status
       - created
       - modified
-      - available_credits
+      - availableCredits
       type: object
       properties:
-        wallet_id:
-          title: Wallet Id
+        walletId:
+          title: Walletid
           exclusiveMinimum: true
           type: integer
           minimum: 0
@@ -8694,8 +8708,8 @@ components:
           title: Modified
           type: string
           format: date-time
-        available_credits:
-          title: Available Credits
+        availableCredits:
+          title: Availablecredits
           type: number
     WalletGroupGet:
       title: WalletGroupGet
@@ -8894,22 +8908,6 @@ components:
           items:
             type: integer
           description: Checkpoints IDs for created pipeline
-    _CreateWalletBodyParams:
-      title: _CreateWalletBodyParams
-      required:
-      - name
-      type: object
-      properties:
-        name:
-          title: Name
-          type: string
-        description:
-          title: Description
-          type: string
-        thumbnail:
-          title: Thumbnail
-          type: string
-      additionalProperties: false
     _PageParams:
       title: _PageParams
       type: object
@@ -8969,25 +8967,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/NodeScreenshot'
-    _PutWalletBodyParams:
-      title: _PutWalletBodyParams
-      required:
-      - name
-      - status
-      type: object
-      properties:
-        name:
-          title: Name
-          type: string
-        description:
-          title: Description
-          type: string
-        thumbnail:
-          title: Thumbnail
-          type: string
-        status:
-          $ref: '#/components/schemas/WalletStatus'
-      additionalProperties: false
     _WalletsGroupsBodyParams:
       title: _WalletsGroupsBodyParams
       required:

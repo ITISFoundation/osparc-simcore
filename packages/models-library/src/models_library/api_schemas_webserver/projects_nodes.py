@@ -25,7 +25,7 @@ class NodeCreated(OutputSchema):
 
 
 class NodeGet(OutputSchema):
-    published_port: PortInt = Field(
+    published_port: PortInt | None = Field(
         ...,
         description="The ports where the service provides its interface",
     )

@@ -6,20 +6,20 @@
 from pydantic.errors import PydanticErrorMixin
 
 
-class WalletsErrors(PydanticErrorMixin, ValueError):
+class WalletsValueError(PydanticErrorMixin, ValueError):
     ...
 
 
-class WalletNotFoundError(WalletsErrors):
+class WalletNotFoundError(WalletsValueError):
     msg_template = "Wallet not found. {reason}"
 
 
-class WalletAccessForbiddenError(WalletsErrors):
+class WalletAccessForbiddenError(WalletsValueError):
     msg_template = "Wallet access forbidden. {reason}"
 
 
 # Wallet groups
 
 
-class WalletGroupNotFoundError(WalletsErrors):
+class WalletGroupNotFoundError(WalletsValueError):
     msg_template = "Wallet group not found. {reason}"

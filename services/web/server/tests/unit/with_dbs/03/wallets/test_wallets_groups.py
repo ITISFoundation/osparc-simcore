@@ -4,24 +4,15 @@
 # pylint: disable=too-many-arguments
 
 
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import AsyncIterator
 
 import pytest
-import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict
-from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
-
-
-@pytest.fixture()
-def wallets_clean_db(postgres_db: sa.engine.Engine) -> Iterator[None]:
-    with postgres_db.connect() as con:
-        yield
-        con.execute(wallets.delete())
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
@@ -41,7 +32,7 @@ async def test_wallets_groups_full_workflow(
 
     # check the default wallet permissions
     url = client.app.router["list_wallet_groups"].url_for(
-        wallet_id=f"{added_wallet['wallet_id']}"
+        wallet_id=f"{added_wallet['walletId']}"
     )
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, web.HTTPOk)
@@ -56,7 +47,7 @@ async def test_wallets_groups_full_workflow(
     ) as new_user:
         # We add new user to the wallet
         url = client.app.router["create_wallet_group"].url_for(
-            wallet_id=f"{added_wallet['wallet_id']}",
+            wallet_id=f"{added_wallet['walletId']}",
             group_id=f"{new_user['primary_gid']}",
         )
         resp = await client.post(
@@ -66,7 +57,7 @@ async def test_wallets_groups_full_workflow(
 
         # Check the wallet permissions of added user
         url = client.app.router["list_wallet_groups"].url_for(
-            wallet_id=f"{added_wallet['wallet_id']}"
+            wallet_id=f"{added_wallet['walletId']}"
         )
         resp = await client.get(f"{url}")
         data, _ = await assert_status(resp, web.HTTPOk)
@@ -78,7 +69,7 @@ async def test_wallets_groups_full_workflow(
 
         # Update the wallet permissions of the added user
         url = client.app.router["update_wallet_group"].url_for(
-            wallet_id=f"{added_wallet['wallet_id']}",
+            wallet_id=f"{added_wallet['walletId']}",
             group_id=f"{new_user['primary_gid']}",
         )
         resp = await client.put(
@@ -92,7 +83,7 @@ async def test_wallets_groups_full_workflow(
 
         # List the wallet groups
         url = client.app.router["list_wallet_groups"].url_for(
-            wallet_id=f"{added_wallet['wallet_id']}"
+            wallet_id=f"{added_wallet['walletId']}"
         )
         resp = await client.get(f"{url}")
         data, _ = await assert_status(resp, web.HTTPOk)
@@ -104,7 +95,7 @@ async def test_wallets_groups_full_workflow(
 
         # Delete the wallet group
         url = client.app.router["delete_wallet_group"].url_for(
-            wallet_id=f"{added_wallet['wallet_id']}",
+            wallet_id=f"{added_wallet['walletId']}",
             group_id=f"{new_user['primary_gid']}",
         )
         resp = await client.delete(f"{url}")
@@ -112,7 +103,7 @@ async def test_wallets_groups_full_workflow(
 
         # List the wallet groups
         url = client.app.router["list_wallet_groups"].url_for(
-            wallet_id=f"{added_wallet['wallet_id']}"
+            wallet_id=f"{added_wallet['walletId']}"
         )
         resp = await client.get(f"{url}")
         data, _ = await assert_status(resp, web.HTTPOk)
