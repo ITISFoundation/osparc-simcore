@@ -50,8 +50,11 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
         cursor: "pointer"
       });
       this.addListener("tap", () => {
-        const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow();
-        creditsWindow.openWallets();
+        osparc.desktop.credits.Utils.areWalletsEnabled()
+          .then(walletsEnabled => {
+            const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow(walletsEnabled);
+            creditsWindow.openWallets();
+          });
       }, this);
     }
   },

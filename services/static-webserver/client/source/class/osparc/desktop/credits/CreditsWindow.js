@@ -18,11 +18,13 @@
 qx.Class.define("osparc.desktop.credits.CreditsWindow", {
   extend: osparc.ui.window.SingletonWindow,
 
-  construct: function() {
+  construct: function(walletsEnabled = false) {
     this.base(arguments, "credits", this.tr("Account"));
 
-    const viewWidth = 1200;
-    const viewHeight = 700;
+    this.__walletsEnabled = walletsEnabled;
+
+    const viewWidth = walletsEnabled ? 1200 : 800;
+    const viewHeight = walletsEnabled ? 700 : 600;
 
     this.set({
       layout: new qx.ui.layout.Grow(),
@@ -40,10 +42,10 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
       contentPadding: 0
     });
 
-    const overviewPage = this.__overviewPage = this.__getOverviewPage();
-    tabViews.add(overviewPage);
-    osparc.utils.Utils.isDevelopmentPlatform()
-      .then(isDevel => isDevel && osparc.product.Utils.isProduct("s4l") ? overviewPage.show() : overviewPage.exclude());
+    if (this.__walletsEnabled) {
+      const overviewPage = this.__overviewPage = this.__getOverviewPage();
+      tabViews.add(overviewPage);
+    }
 
     const profilePage = this.__profilePage = this.__getProfilePage();
     tabViews.add(profilePage);
@@ -51,20 +53,20 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
     const securityPage = this.__securityPage = this.__getSecurityPage();
     tabViews.add(securityPage);
 
-    const walletsPage = this.__walletsPage = this.__getWalletsPage();
-    tabViews.add(walletsPage);
-    osparc.utils.Utils.isDevelopmentPlatform()
-      .then(isDevel => isDevel && osparc.product.Utils.isProduct("s4l") ? walletsPage.show() : walletsPage.exclude());
+    if (this.__walletsEnabled) {
+      const walletsPage = this.__walletsPage = this.__getWalletsPage();
+      tabViews.add(walletsPage);
+    }
 
-    const buyCreditsPage = this.__buyCreditsPage = this.__getBuyCreditsPage();
-    tabViews.add(buyCreditsPage);
-    osparc.utils.Utils.isDevelopmentPlatform()
-      .then(isDevel => isDevel && osparc.product.Utils.isProduct("s4l") ? buyCreditsPage.show() : buyCreditsPage.exclude());
+    if (this.__walletsEnabled) {
+      const buyCreditsPage = this.__buyCreditsPage = this.__getBuyCreditsPage();
+      tabViews.add(buyCreditsPage);
+    }
 
-    const transactionsPage = this.__transactionsPage = this.__getTransactionsPage();
-    tabViews.add(transactionsPage);
-    osparc.utils.Utils.isDevelopmentPlatform()
-      .then(isDevel => isDevel && osparc.product.Utils.isProduct("s4l") ? transactionsPage.show() : transactionsPage.exclude());
+    if (this.__walletsEnabled) {
+      const transactionsPage = this.__transactionsPage = this.__getTransactionsPage();
+      tabViews.add(transactionsPage);
+    }
 
     if (osparc.data.Permissions.getInstance().canDo("usage.all.read")) {
       const usageOverviewPage = this.__usageOverviewPage = this.__getUsageOverviewPage();
@@ -75,8 +77,8 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
   },
 
   statics: {
-    openWindow: function() {
-      const accountWindow = new osparc.desktop.credits.CreditsWindow();
+    openWindow: function(walletsEnabled = false) {
+      const accountWindow = new osparc.desktop.credits.CreditsWindow(walletsEnabled);
       accountWindow.center();
       accountWindow.open();
       return accountWindow;
@@ -84,6 +86,7 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
   },
 
   members: {
+    __walletsEnabled: null,
     __tabsView: null,
     __overviewPage: null,
     __profilePage: null,
@@ -204,7 +207,7 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
     },
 
     openOverview: function() {
-      if (this.__overviewPage && this.__overviewPage.isVisible()) {
+      if (this.__overviewPage) {
         this.__openPage(this.__overviewPage);
       } else {
         // fallback
@@ -213,7 +216,7 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
     },
 
     openWallets: function() {
-      if (this.__walletsPage && this.__walletsPage.isVisible()) {
+      if (this.__walletsPage) {
         this.__openPage(this.__walletsPage);
       } else {
         // fallback

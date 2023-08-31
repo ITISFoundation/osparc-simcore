@@ -90,8 +90,11 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
         case "account":
           control = new qx.ui.menu.Button(this.tr("Account"));
           control.addListener("execute", () => {
-            const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow();
-            creditsWindow.openOverview();
+            osparc.desktop.credits.Utils.areWalletsEnabled()
+              .then(walletsEnabled => {
+                const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow(walletsEnabled);
+                creditsWindow.openOverview();
+              });
           }, this);
           this.getMenu().add(control);
           break;
