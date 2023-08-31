@@ -5,6 +5,7 @@ from uuid import UUID
 
 from models_library.api_schemas_webserver._base import OutputSchema
 from models_library.api_schemas_webserver.groups import AllUsersGroups
+from models_library.api_schemas_webserver.users_preferences import AggregatedPreferences
 from models_library.basic_types import IdInt
 from models_library.emails import LowerCaseEmailStr
 from pydantic import BaseModel, Field, validator
@@ -78,6 +79,7 @@ class ProfileGet(_ProfileCommon):
         description="If user has a trial account, it sets the expiration date, otherwise None",
         alias="expirationDate",
     )
+    preferences: AggregatedPreferences
 
     class Config:
         # NOTE: old models have an hybrid between snake and camel cases!

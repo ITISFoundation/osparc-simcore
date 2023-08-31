@@ -2,7 +2,6 @@ import functools
 
 from aiohttp import web
 from models_library.api_schemas_webserver.users_preferences import (
-    AggregatedPreferencesResponse,
     PatchPathParams,
     PatchRequestBody,
 )
@@ -23,7 +22,6 @@ from simcore_postgres_database.utils_user_preferences import (
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG
 from ..login.decorators import login_required
-from ..utils_aiohttp import envelope_json_response
 from . import _preferences_api
 
 routes = web.RouteTableDef()
@@ -47,22 +45,6 @@ def _handle_users_exceptions(handler: Handler):
             raise web.HTTPNotFound(reason=f"{exc}") from exc
 
     return wrapper
-
-
-@routes.post(
-    f"/{API_VTAG}/me/preferences:aggregate", name="get_aggregated_frontend_preferences"
-)
-@login_required
-@_handle_users_exceptions
-async def get_aggregated_frontend_preferences(request: web.Request) -> web.Response:
-    req_ctx = _RequestContext.parse_obj(request)
-
-    preferences_aggregation: AggregatedPreferencesResponse = (
-        await _preferences_api.get_frontend_user_preferences_aggregation(
-            request.app, user_id=req_ctx.user_id, product_name=req_ctx.product_name
-        )
-    )
-    return envelope_json_response(preferences_aggregation)
 
 
 @routes.patch(

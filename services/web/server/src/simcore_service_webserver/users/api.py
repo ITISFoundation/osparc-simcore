@@ -12,6 +12,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
+from models_library.products import ProductName
 from models_library.users import GroupID, UserID
 from simcore_postgres_database.models.users import UserNameConverter, UserRole
 
@@ -22,6 +23,7 @@ from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..security.api import clean_auth_policy_cache
 from . import _db
 from ._db import list_user_permissions as db_list_of_permissions
+from ._preferences_api import get_frontend_user_preferences_aggregation
 from .exceptions import UserNotFoundError
 from .schemas import Permission, ProfileGet, ProfileUpdate, convert_user_db_to_schema
 
@@ -41,7 +43,9 @@ def _parse_as_user(user_id: Any) -> UserID:
     return user_id
 
 
-async def get_user_profile(app: web.Application, user_id: UserID) -> ProfileGet:
+async def get_user_profile(
+    app: web.Application, user_id: UserID, product_name: ProductName
+) -> ProfileGet:
     """
     :raises UserNotFoundError:
     """
@@ -90,6 +94,9 @@ async def get_user_profile(app: web.Application, user_id: UserID) -> ProfileGet:
                         accessRights=row["user_to_groups_access_rights"],
                     )
                 )
+        user_profile["preferences"] = await get_frontend_user_preferences_aggregation(
+            app, user_id=user_id, product_name=product_name
+        )
     if not user_profile:
         raise UserNotFoundError(uid=user_id)
 

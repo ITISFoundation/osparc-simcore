@@ -70,8 +70,13 @@ def _get_default_field_value(model_class: type[BaseModel]) -> Any:
     )
 
 
-def _get_non_default_value(value: Any) -> Any:
+def _get_non_default_value(model_class: type[BaseModel]) -> Any:
     """given a default value transforms into something that is different"""
+
+    model_field = _get_model_field(model_class, "value")
+    value_type = model_field.type_
+    value = _get_default_field_value(model_class)
+
     if isinstance(value, bool):
         return not value
     if isinstance(value, dict):
@@ -79,9 +84,14 @@ def _get_non_default_value(value: Any) -> Any:
     if isinstance(value, list):
         return [*value, "non_default_value"]
     if value is None:
-        return ""
+        if value_type == int:
+            return 0
+        if value_type == str:
+            return ""
 
-    pytest.fail(f"case type={type(value)}, {value=} not implemented. Please add it.")
+    pytest.fail(
+        f"case type={type(value)}, {value=} {value_type=} not implemented. Please add it."
+    )
 
 
 async def test__get_frontend_user_preferences_list_defaults(
@@ -138,9 +148,7 @@ async def test_set_frontend_user_preference(
             user_id=user_id,
             frontend_preference_identifier=instance.preference_identifier,
             product_name=product_name,
-            value=_get_non_default_value(
-                _get_default_field_value(preference_class),
-            ),
+            value=_get_non_default_value(preference_class),
         )
 
     # after a query all preferences should contain a non default value
@@ -149,9 +157,7 @@ async def test_set_frontend_user_preference(
     )
     assert len(found_preferences) == len(ALL_FRONTEND_PREFERENCES)
     for preference in found_preferences:
-        assert preference.value == _get_non_default_value(
-            _get_default_field_value(preference.__class__)
-        )
+        assert preference.value == _get_non_default_value(preference.__class__)
 
     # set the original values back again and check
     for preference_class in ALL_FRONTEND_PREFERENCES:

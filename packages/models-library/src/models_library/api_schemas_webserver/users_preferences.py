@@ -11,9 +11,7 @@ class FrontendUserPreference(OutputSchema):
     value: Any = Field(default=..., description="preference value")
 
 
-AggregatedPreferencesResponse: TypeAlias = dict[
-    PreferenceIdentifier, FrontendUserPreference
-]
+AggregatedPreferences: TypeAlias = dict[PreferenceIdentifier, FrontendUserPreference]
 
 
 class PatchRequestBody(InputSchema):

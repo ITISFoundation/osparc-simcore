@@ -3352,19 +3352,6 @@ paths:
       responses:
         '204':
           description: Successful Response
-  /v0/me/preferences:aggregate:
-    post:
-      tags:
-      - user
-      summary: Get Aggregated Frontend Preferences
-      operationId: get_aggregated_frontend_preferences
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_dict_str__models_library.api_schemas_webserver.users_preferences.FrontendUserPreference__'
   /v0/me/preferences/{preference_id}:
     patch:
       tags:
@@ -5111,17 +5098,6 @@ components:
           type: object
         error:
           title: Error
-    Envelope_dict_str__models_library.api_schemas_webserver.users_preferences.FrontendUserPreference__:
-      title: Envelope[dict[str, models_library.api_schemas_webserver.users_preferences.FrontendUserPreference]]
-      type: object
-      properties:
-        data:
-          title: Data
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/FrontendUserPreference'
-        error:
-          title: Error
     Envelope_dict_uuid.UUID__models_library.api_schemas_webserver.activity.Activity__:
       title: Envelope[dict[uuid.UUID, models_library.api_schemas_webserver.activity.Activity]]
       type: object
@@ -6681,6 +6657,7 @@ components:
       - id
       - login
       - role
+      - preferences
       type: object
       properties:
         first_name:
@@ -6718,6 +6695,11 @@ components:
           description: If user has a trial account, it sets the expiration date, otherwise
             None
           format: date
+        preferences:
+          title: Preferences
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/FrontendUserPreference'
     ProfileUpdate:
       title: ProfileUpdate
       type: object

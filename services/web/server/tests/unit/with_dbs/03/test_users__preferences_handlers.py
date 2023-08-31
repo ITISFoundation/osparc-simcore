@@ -9,15 +9,11 @@ import pytest
 from aiohttp import ClientResponse, web
 from aiohttp.test_utils import TestClient
 from faker import Faker
-from models_library.api_schemas_webserver.users_preferences import (
-    AggregatedPreferencesResponse,
-)
 from models_library.user_preferences import (
     BaseFrontendUserPreference,
     PreferenceIdentifier,
 )
 from models_library.users import UserID
-from pydantic import parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict
@@ -50,15 +46,6 @@ async def user_id(client: TestClient, faker: Faker) -> AsyncIterator[UserID]:
         yield user["id"]
 
 
-async def _request_get_aggregated_frontend_preferences(
-    client: TestClient,
-) -> ClientResponse:
-    assert client.app
-    url = f"{client.app.router['get_aggregated_frontend_preferences'].url_for()}"
-    assert f"{url}" == "/v0/me/preferences:aggregate"
-    return await client.post(url)
-
-
 async def _request_set_frontend_preference(
     client: TestClient, preference_identifier: PreferenceIdentifier, value: Any
 ) -> ClientResponse:
@@ -66,31 +53,6 @@ async def _request_set_frontend_preference(
     url = f"{client.app.router['set_frontend_preference'].url_for(preference_id=preference_identifier)}"
     assert f"{url}" == f"/v0/me/preferences/{preference_identifier}"
     return await client.patch(url, json={"value": value})
-
-
-@pytest.mark.parametrize(
-    "user_role, expected",
-    [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
-    ],
-)
-async def test_get_aggregated_user_preferences(
-    logged_user: UserInfoDict,
-    client: TestClient,
-    expected: type[web.HTTPException],
-    user_role: UserRole,
-    drop_all_preferences: None,
-):
-    resp = await _request_get_aggregated_frontend_preferences(client)
-    _, error = await assert_status(resp, expected)
-
-    if not error:
-        resp = await _request_get_aggregated_frontend_preferences(client)
-        data, _ = await assert_status(resp, web.HTTPOk)
-        assert parse_obj_as(AggregatedPreferencesResponse, data)
 
 
 @pytest.mark.parametrize(
