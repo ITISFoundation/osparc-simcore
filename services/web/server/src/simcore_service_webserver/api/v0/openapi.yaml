@@ -3781,7 +3781,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PaymentCreateBody'
+              $ref: '#/components/schemas/WalletPaymentCreateBody'
         required: true
       responses:
         '200':
@@ -3789,7 +3789,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_PaymentGet_'
+                $ref: '#/components/schemas/Envelope_WalletPaymentGet_'
   /v0/wallets/-/payments:
     get:
       tags:
@@ -3810,7 +3810,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Page_PaymentGet_'
+                $ref: '#/components/schemas/Page_WalletPaymentGet_'
   /v0/wallets/{wallet_id}/groups/{group_id}:
     put:
       tags:
@@ -4881,14 +4881,6 @@ components:
           $ref: '#/components/schemas/NodeRetrieved'
         error:
           title: Error
-    Envelope_PaymentGet_:
-      title: Envelope[PaymentGet]
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/PaymentGet'
-        error:
-          title: Error
     Envelope_PresignedLink_:
       title: Envelope[PresignedLink]
       type: object
@@ -5069,6 +5061,14 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/WalletGroupGet'
+        error:
+          title: Error
+    Envelope_WalletPaymentGet_:
+      title: Envelope[WalletPaymentGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/WalletPaymentGet'
         error:
           title: Error
     Envelope_WorkbenchViewApiModel_:
@@ -6508,25 +6508,6 @@ components:
             $ref: '#/components/schemas/CheckpointApiModel'
       additionalProperties: false
       description: Paginated response model of ItemTs
-    Page_PaymentGet_:
-      title: Page[PaymentGet]
-      required:
-      - _meta
-      - _links
-      - data
-      type: object
-      properties:
-        _meta:
-          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
-        _links:
-          $ref: '#/components/schemas/PageLinks'
-        data:
-          title: Data
-          type: array
-          items:
-            $ref: '#/components/schemas/PaymentGet'
-      additionalProperties: false
-      description: Paginated response model of ItemTs
     Page_ProjectIterationItem_:
       title: Page[ProjectIterationItem]
       required:
@@ -6603,6 +6584,25 @@ components:
             $ref: '#/components/schemas/RepoApiModel'
       additionalProperties: false
       description: Paginated response model of ItemTs
+    Page_WalletPaymentGet_:
+      title: Page[WalletPaymentGet]
+      required:
+      - _meta
+      - _links
+      - data
+      type: object
+      properties:
+        _meta:
+          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
+        _links:
+          $ref: '#/components/schemas/PageLinks'
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/WalletPaymentGet'
+      additionalProperties: false
+      description: Paginated response model of ItemTs
     ParentMetaProjectRef:
       title: ParentMetaProjectRef
       required:
@@ -6619,86 +6619,6 @@ components:
           exclusiveMinimum: true
           type: integer
           minimum: 0
-    PaymentCreateBody:
-      title: PaymentCreateBody
-      required:
-      - prize
-      - credit
-      type: object
-      properties:
-        prize:
-          title: Prize
-          exclusiveMinimum: true
-          type: number
-          minimum: 0.0
-        credit:
-          title: Credit
-          exclusiveMinimum: true
-          type: number
-          minimum: 0.0
-        comment:
-          title: Comment
-          maxLength: 100
-          type: string
-    PaymentGet:
-      title: PaymentGet
-      required:
-      - idr
-      - prize
-      - walletId
-      - credit
-      - comment
-      - state
-      - created
-      - submissionLink
-      type: object
-      properties:
-        idr:
-          title: Idr
-          minLength: 1
-          type: string
-        prize:
-          title: Prize
-          exclusiveMinimum: true
-          type: number
-          minimum: 0.0
-        walletId:
-          title: Walletid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        credit:
-          title: Credit
-          exclusiveMinimum: true
-          type: number
-          minimum: 0.0
-        comment:
-          title: Comment
-          type: string
-        state:
-          $ref: '#/components/schemas/PaymentTransactionState'
-        created:
-          title: Created
-          type: string
-          format: date-time
-        completed:
-          title: Completed
-          type: string
-          format: date-time
-        submissionLink:
-          title: Submissionlink
-          maxLength: 2083
-          minLength: 1
-          type: string
-          description: Link to external site that holds the payment submission form
-          format: uri
-    PaymentTransactionState:
-      title: PaymentTransactionState
-      enum:
-      - INIT
-      - COMPLETED
-      type: string
-      description: An enumeration.
     PermissionGet:
       title: PermissionGet
       required:
@@ -8920,6 +8840,41 @@ components:
           title: Modified
           type: string
           format: date-time
+    WalletPaymentCreateBody:
+      title: WalletPaymentCreateBody
+      required:
+      - prizeDollars
+      - osparcCredits
+      type: object
+      properties:
+        prizeDollars:
+          title: Prizedollars
+          type: number
+        osparcCredits:
+          title: Osparccredits
+          type: number
+        comment:
+          title: Comment
+          maxLength: 100
+          type: string
+    WalletPaymentGet:
+      title: WalletPaymentGet
+      required:
+      - idr
+      - submissionLink
+      type: object
+      properties:
+        idr:
+          title: Idr
+          minLength: 1
+          type: string
+        submissionLink:
+          title: Submissionlink
+          maxLength: 2083
+          minLength: 1
+          type: string
+          description: Link to external site that holds the payment submission form
+          format: uri
     WalletStatus:
       title: WalletStatus
       enum:
