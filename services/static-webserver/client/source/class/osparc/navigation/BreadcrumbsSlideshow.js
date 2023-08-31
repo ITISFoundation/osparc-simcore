@@ -30,7 +30,6 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
     populateButtons: function(nodesIds = []) {
       const btns = [];
       const study = osparc.store.Store.getInstance().getCurrentStudy();
-      const currentNodeId = study.getUi().getCurrentNodeId();
       const slideshow = study.getUi().getSlideshow();
       if (nodesIds.length) {
         nodesIds.forEach(nodeId => {
@@ -38,9 +37,6 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
             return;
           }
           const btn = this.__createBtn(nodeId);
-          if (nodeId === currentNodeId) {
-            btn.setValue(true);
-          }
           btns.push(btn);
         });
         this.__buttonsToBreadcrumb(btns, "separator");
@@ -92,28 +88,8 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
       }
     },
 
-    __setButtonStyle: function(btn) {
-      const colorManager = qx.theme.manager.Color.getInstance();
-      const updateStyle = button => {
-        osparc.utils.Utils.addBorder(button, 1, colorManager.resolve("text"));
-      };
-      colorManager.addListener("changeTheme", () => updateStyle(btn), this);
-      updateStyle(btn);
-
-      btn.addListener("changeValue", e => {
-        if (e.getData()) {
-          btn.setFont("text-14");
-          btn.setAppearance("strong-button");
-        } else {
-          btn.resetFont();
-          btn.resetAppearance();
-        }
-      });
-    },
-
     __createBtn: function(nodeId) {
       const btn = this.__createNodeBtn(nodeId);
-      this.__setButtonStyle(btn);
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const slideshow = study.getUi().getSlideshow().getData();
       const node = study.getWorkbench().getNode(nodeId);
@@ -153,20 +129,33 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
     },
 
     __createNodeBtn: function(nodeId) {
-      const btn = new qx.ui.form.ToggleButton().set({
+      const btn = new qx.ui.form.Button().set({
         ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
         maxWidth: 200
       });
       osparc.utils.Utils.setIdToWidget(btn, "appModeButton_"+nodeId);
-      btn.addListener("execute", e => {
-        if (btn.getValue()) {
-          // Unselected button clicked
-          this.fireDataEvent("nodeSelectionRequested", nodeId);
+      btn.addListener("execute", () => this.fireDataEvent("nodeSelectionRequested", nodeId));
+
+      const colorManager = qx.theme.manager.Color.getInstance();
+      const updateStyle = () => {
+        osparc.utils.Utils.addBorder(btn, 1, colorManager.resolve("text"));
+      };
+      colorManager.addListener("changeTheme", () => updateStyle(btn), this);
+      updateStyle(btn);
+
+      const updateCurrentNodeId = currentNodeId => {
+        if (nodeId === currentNodeId) {
+          btn.setFont("text-14");
+          btn.setAppearance("strong-button");
         } else {
-          // Selected button clicked. Don't allo
-          btn.setValue(true);
+          btn.resetFont();
+          btn.resetAppearance();
         }
-      }, this);
+      };
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      updateCurrentNodeId(study.getUi().getCurrentNodeId());
+      study.getUi().addListener("changeCurrentNodeId", e => updateCurrentNodeId(e.getData()));
+
       return btn;
     }
   }
