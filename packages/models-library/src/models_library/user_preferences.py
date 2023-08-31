@@ -1,7 +1,7 @@
 from collections.abc import Mapping
 from enum import auto
 from pathlib import Path
-from typing import Any, ClassVar, TypeAlias
+from typing import Annotated, Any, ClassVar, TypeAlias
 
 from pydantic import BaseModel, Field
 from pydantic.main import ModelMetaclass
@@ -49,7 +49,6 @@ class _ExtendedBaseModel(BaseModel, metaclass=_AutoRegisterMeta):
 
 
 class PreferenceType(StrAutoEnum):
-    BACKEND = auto()
     FRONTEND = auto()
     USER_SERVICE = auto()
 
@@ -154,4 +153,7 @@ class UserServiceUserPreference(_BaseUserPreferenceModel):
         }
 
 
-AnyUserPreference: TypeAlias = FrontendUserPreference | UserServiceUserPreference
+AnyUserPreference: TypeAlias = Annotated[
+    FrontendUserPreference | UserServiceUserPreference,
+    Field(discriminator="preference_type"),
+]
