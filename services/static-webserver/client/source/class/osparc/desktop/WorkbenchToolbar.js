@@ -63,6 +63,11 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
     },
 
     // overridden
+    _populateNodesNavigationLayout: function() {
+      return;
+    },
+
+    // overridden
     _applyStudy: function(study) {
       this.base(arguments, study);
 
