@@ -51,7 +51,7 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
             resource_tracker_pricing_details.insert().values(
                 pricing_plan_id=1,
                 unit_name="M",
-                cost_per_unit=8.5,
+                cost_per_unit=15.6,
                 valid_from=datetime.now(tz=timezone.utc),
             ),
             simcore_default=False,
@@ -61,7 +61,7 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
             resource_tracker_pricing_details.insert().values(
                 pricing_plan_id=1,
                 unit_name="L",
-                cost_per_unit=9.88,
+                cost_per_unit=28.9,
                 valid_from=datetime.now(tz=timezone.utc),
             ),
             simcore_default=False,

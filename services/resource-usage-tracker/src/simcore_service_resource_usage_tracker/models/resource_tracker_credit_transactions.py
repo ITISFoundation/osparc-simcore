@@ -17,8 +17,8 @@ class CreditTransactionCreate(BaseModel):
     product_name: ProductName
     wallet_id: WalletID
     wallet_name: str
-    pricing_plan_id: PricingPlanId | None  # MATUS
-    pricing_detail_id: PricingDetailId | None  # MATUS
+    pricing_plan_id: PricingPlanId | None
+    pricing_detail_id: PricingDetailId | None
     user_id: UserID
     user_email: str
     credits: float
