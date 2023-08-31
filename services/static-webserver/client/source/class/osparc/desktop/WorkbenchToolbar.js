@@ -25,8 +25,6 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
   },
 
   members: {
-    __startStopBtns: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -54,7 +52,7 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
 
     // overridden
     _buildLayout: function() {
-      const startStopBtns = this.__startStopBtns = this.getChildControl("start-stop-btns");
+      const startStopBtns = this.getChildControl("start-stop-btns");
       startStopBtns.exclude();
 
       this._add(new qx.ui.core.Spacer(), {
@@ -69,12 +67,8 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
       this.base(arguments, study);
 
       if (study) {
-        this.__startStopBtns.setStudy(study);
+        this.getChildControl("start-stop-btns").setStudy(study);
       }
-    },
-
-    getStartStopButtons: function() {
-      return this.__startStopBtns;
     }
   }
 });
