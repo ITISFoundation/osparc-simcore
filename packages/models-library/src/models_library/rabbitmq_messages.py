@@ -4,6 +4,7 @@ from abc import abstractmethod
 from enum import Enum, auto
 from typing import Any, Literal, TypeAlias
 
+import arrow
 from pydantic import BaseModel, Field
 from pydantic.types import NonNegativeFloat
 
@@ -181,7 +182,7 @@ class RabbitResourceTrackingBaseMessage(RabbitMessageBase):
         ..., description="uniquely identitifies the service run"
     )
     created_at: datetime.datetime = Field(
-        default_factory=lambda: datetime.datetime.now(datetime.timezone.utc),
+        default_factory=lambda: arrow.utcnow().datetime,
         description="message creation datetime",
     )
 

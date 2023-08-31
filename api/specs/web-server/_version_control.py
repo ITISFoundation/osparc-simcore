@@ -4,7 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends
 from models_library.generics import Envelope
@@ -52,22 +52,10 @@ def create_checkpoint(project_uuid: ProjectID, _new: CheckpointNew):
 
 
 @router.get(
-    "/repos/projects/{project_uuid}/checkpoints/HEAD",
-    response_model=Envelope[CheckpointApiModel],
-)
-def get_head_checkpoint(
-    project_uuid: ProjectID,
-):
-    """
-    Gets HEAD (i.e. current) checkpoint
-    """
-
-
-@router.get(
     "/repos/projects/{project_uuid}/checkpoints/{ref_id}",
     response_model=Envelope[CheckpointApiModel],
 )
-def get_checkpoint(ref_id: RefID, project_uuid: ProjectID):
+def get_checkpoint(ref_id: RefID | Literal["HEAD"], project_uuid: ProjectID):
     ...
 
 

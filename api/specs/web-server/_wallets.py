@@ -9,6 +9,8 @@
 
 from fastapi import APIRouter, status
 from models_library.api_schemas_webserver.wallets import (
+    CreateWalletBodyParams,
+    PutWalletBodyParams,
     WalletGet,
     WalletGetWithAvailableCredits,
 )
@@ -18,10 +20,6 @@ from models_library.wallets import WalletID
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.wallets._groups_api import WalletGroupGet
 from simcore_service_webserver.wallets._groups_handlers import _WalletsGroupsBodyParams
-from simcore_service_webserver.wallets._handlers import (
-    _CreateWalletBodyParams,
-    _PutWalletBodyParams,
-)
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",
@@ -36,9 +34,9 @@ router = APIRouter(
 @router.post(
     "/wallets",
     response_model=Envelope[WalletGet],
-    status_code=201,
+    status_code=status.HTTP_201_CREATED,
 )
-async def create_wallet(body: _CreateWalletBodyParams):
+async def create_wallet(body: CreateWalletBodyParams):
     ...
 
 
@@ -54,7 +52,7 @@ async def list_wallets():
     "/wallets/{wallet_id}",
     response_model=Envelope[WalletGet],
 )
-async def update_wallet(wallet_id: WalletID, body: _PutWalletBodyParams):
+async def update_wallet(wallet_id: WalletID, body: PutWalletBodyParams):
     ...
 
 
@@ -64,7 +62,7 @@ async def update_wallet(wallet_id: WalletID, body: _PutWalletBodyParams):
 @router.post(
     "/wallets/{wallet_id}/groups/{group_id}",
     response_model=Envelope[WalletGroupGet],
-    status_code=201,
+    status_code=status.HTTP_201_CREATED,
 )
 async def create_wallet_group(
     wallet_id: WalletID, group_id: GroupID, body: _WalletsGroupsBodyParams

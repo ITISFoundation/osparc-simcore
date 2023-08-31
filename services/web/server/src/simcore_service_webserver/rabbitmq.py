@@ -5,8 +5,7 @@ from aiohttp import web
 from servicelib.aiohttp.application_keys import APP_RABBITMQ_CLIENT_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.logging_utils import log_context
-from servicelib.rabbitmq import RabbitMQClient
-from servicelib.rabbitmq_utils import wait_till_rabbitmq_responsive
+from servicelib.rabbitmq import RabbitMQClient, wait_till_rabbitmq_responsive
 
 from .rabbitmq_settings import RabbitSettings, get_plugin_settings
 from .rest.healthcheck import HealthCheck, HealthCheckError
