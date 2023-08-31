@@ -103,6 +103,11 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/projects/{studyId}:open"
           },
+          getWallet: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/wallet"
+          },
           selectWallet: {
             method: "PUT",
             url: statics.API + "/projects/{studyId}/wallet/{walletId}"
