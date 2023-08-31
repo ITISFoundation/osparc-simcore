@@ -24,7 +24,7 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicatorWText", {
     if (textOrientation === "vertical") {
       this._setLayout(new qx.ui.layout.VBox(5));
     } else if (textOrientation === "horizontal") {
-      this._setLayout(new qx.ui.layout.HBox(5));
+      this._setLayout(new qx.ui.layout.HBox(10));
     }
 
     this.getChildControl("credits-indicator");
