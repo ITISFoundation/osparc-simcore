@@ -22,7 +22,7 @@
  *
  */
 
-qx.Class.define("osparc.desktop.preferences.pages.SecurityPage", {
+qx.Class.define("osparc.desktop.credits.SecurityPage", {
   extend: osparc.desktop.preferences.pages.BasePage,
 
   construct: function() {

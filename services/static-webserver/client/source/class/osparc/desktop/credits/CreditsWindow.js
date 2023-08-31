@@ -19,10 +19,10 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
   extend: osparc.ui.window.SingletonWindow,
 
   construct: function() {
-    this.base(arguments, "credits", this.tr("Credits"));
+    this.base(arguments, "credits", this.tr("Account"));
 
-    const viewWidth = 900;
-    const viewHeight = 600;
+    const viewWidth = 1200;
+    const viewHeight = 700;
 
     this.set({
       layout: new qx.ui.layout.Grow(),
@@ -31,7 +31,7 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
       height: viewHeight,
       showMaximize: false,
       showMinimize: false,
-      resizable: false,
+      resizable: true,
       appearance: "service-window"
     });
 
@@ -42,53 +42,86 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
 
     const overviewPage = this.__overviewPage = this.__getOverviewPage();
     tabViews.add(overviewPage);
+    osparc.utils.Utils.isDevelopmentPlatform()
+      .then(isDevel => isDevel && osparc.product.Utils.isProduct("s4l") ? overviewPage.show() : overviewPage.exclude());
+
+    const profilePage = this.__profilePage = this.__getProfilePage();
+    tabViews.add(profilePage);
+
+    const securityPage = this.__securityPage = this.__getSecurityPage();
+    tabViews.add(securityPage);
 
     const walletsPage = this.__walletsPage = this.__getWalletsPage();
     tabViews.add(walletsPage);
+    osparc.utils.Utils.isDevelopmentPlatform()
+      .then(isDevel => isDevel && osparc.product.Utils.isProduct("s4l") ? walletsPage.show() : walletsPage.exclude());
 
     const buyCreditsPage = this.__buyCreditsPage = this.__getBuyCreditsPage();
     tabViews.add(buyCreditsPage);
+    osparc.utils.Utils.isDevelopmentPlatform()
+      .then(isDevel => isDevel && osparc.product.Utils.isProduct("s4l") ? buyCreditsPage.show() : buyCreditsPage.exclude());
 
     const transactionsPage = this.__transactionsPage = this.__getTransactionsPage();
     tabViews.add(transactionsPage);
+    osparc.utils.Utils.isDevelopmentPlatform()
+      .then(isDevel => isDevel && osparc.product.Utils.isProduct("s4l") ? transactionsPage.show() : transactionsPage.exclude());
 
-    const usageOverviewPage = this.__usageOverviewPage = this.__getUsageOverviewPage();
-    tabViews.add(usageOverviewPage);
+    if (osparc.data.Permissions.getInstance().canDo("usage.all.read")) {
+      const usageOverviewPage = this.__usageOverviewPage = this.__getUsageOverviewPage();
+      tabViews.add(usageOverviewPage);
+    }
 
     this.add(tabViews);
   },
 
   statics: {
     openWindow: function() {
-      const preferencesWindow = new osparc.desktop.credits.CreditsWindow();
-      preferencesWindow.center();
-      preferencesWindow.open();
-      return preferencesWindow;
+      const accountWindow = new osparc.desktop.credits.CreditsWindow();
+      accountWindow.center();
+      accountWindow.open();
+      return accountWindow;
     }
   },
 
   members: {
     __tabsView: null,
     __overviewPage: null,
+    __profilePage: null,
+    __securityPage: null,
     __walletsPage: null,
     __buyCreditsPage: null,
     __transactionsPage: null,
     __usageOverviewPage: null,
     __buyCredits: null,
-    __transactions: null,
+    __transactionsTable: null,
 
     __getOverviewPage: function() {
       const title = this.tr("Overview");
       const iconSrc = "@FontAwesome5Solid/table/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
-      const walletsView = new osparc.desktop.credits.Overview();
-      walletsView.set({
+      page.showLabelOnTab();
+      const overview = new osparc.desktop.credits.Overview();
+      overview.set({
         margin: 10
       });
-      walletsView.addListener("toWallets", () => this.openWallets());
-      walletsView.addListener("toTransactions", () => this.openTransactions());
-      walletsView.addListener("toUsageOverview", () => this.openUsageOverview());
-      page.add(walletsView);
+      overview.addListener("toWallets", () => this.openWallets());
+      overview.addListener("toTransactions", () => this.__openTransactions());
+      overview.addListener("toUsageOverview", () => this.__openUsageOverview());
+      page.add(overview);
+      return page;
+    },
+
+    __getProfilePage: function() {
+      const page = new osparc.desktop.credits.ProfilePage();
+      page.showLabelOnTab();
+      return page;
+    },
+
+    __getSecurityPage: function() {
+      const page = new osparc.desktop.credits.SecurityPage();
+      page.showLabelOnTab();
+      const secBtn = page.getChildControl("button");
+      osparc.utils.Utils.setIdToWidget(secBtn, "preferencesSecurityTabBtn");
       return page;
     },
 
@@ -96,12 +129,13 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
       const title = this.tr("Wallets");
       const iconSrc = "@MaterialIcons/account_balance_wallet/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
+      page.showLabelOnTab();
       const walletsView = new osparc.desktop.wallets.WalletsView();
       walletsView.set({
         margin: 10
       });
       walletsView.addListener("buyCredits", e => {
-        this.openBuyCredits();
+        this.__openBuyCredits();
         const {
           walletId
         } = e.getData();
@@ -119,6 +153,7 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
       const title = this.tr("Buy Credits");
       const iconSrc = "@FontAwesome5Solid/dollar-sign/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
+      page.showLabelOnTab();
       const buyCredits = this.__buyCredits = new osparc.desktop.credits.BuyCredits();
       buyCredits.set({
         margin: 10
@@ -129,8 +164,8 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
           totalPrice,
           walletName
         } = e.getData();
-        this.__transactions.addRow(nCredits, totalPrice, walletName);
-        this.openTransactions();
+        this.__transactionsTable.addRow(nCredits, totalPrice, walletName);
+        this.__openTransactions();
       }, this);
       page.add(buyCredits);
       return page;
@@ -140,7 +175,8 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
       const title = this.tr("Transactions");
       const iconSrc = "@FontAwesome5Solid/exchange-alt/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
-      const transactions = this.__transactions = new osparc.desktop.credits.Transactions();
+      page.showLabelOnTab();
+      const transactions = this.__transactionsTable = new osparc.desktop.credits.Transactions();
       transactions.set({
         margin: 10
       });
@@ -152,6 +188,7 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
       const title = this.tr("Usage Overview");
       const iconSrc = "@FontAwesome5Solid/list/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
+      page.showLabelOnTab();
       const usageOverview = new osparc.component.resourceUsage.Overview();
       usageOverview.set({
         margin: 10
@@ -167,22 +204,32 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
     },
 
     openOverview: function() {
-      this.__openPage(this.__overviewPage);
+      if (this.__overviewPage && this.__overviewPage.isVisible()) {
+        this.__openPage(this.__overviewPage);
+      } else {
+        // fallback
+        this.__openPage(this.__profilePage);
+      }
     },
 
     openWallets: function() {
-      this.__openPage(this.__walletsPage);
+      if (this.__walletsPage && this.__walletsPage.isVisible()) {
+        this.__openPage(this.__walletsPage);
+      } else {
+        // fallback
+        this.__openPage(this.__profilePage);
+      }
     },
 
-    openBuyCredits: function() {
+    __openBuyCredits: function() {
       this.__openPage(this.__buyCreditsPage);
     },
 
-    openTransactions: function() {
+    __openTransactions: function() {
       this.__openPage(this.__transactionsPage);
     },
 
-    openUsageOverview: function() {
+    __openUsageOverview: function() {
       this.__openPage(this.__usageOverviewPage);
     }
   }

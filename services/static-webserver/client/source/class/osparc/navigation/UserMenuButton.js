@@ -87,6 +87,14 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           control.addListener("execute", () => window.open(window.location.href, "_blank"));
           this.getMenu().add(control);
           break;
+        case "account":
+          control = new qx.ui.menu.Button(this.tr("Account"));
+          control.addListener("execute", () => {
+            const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow();
+            creditsWindow.openOverview();
+          }, this);
+          this.getMenu().add(control);
+          break;
         case "preferences":
           control = new qx.ui.menu.Button(this.tr("Preferences"));
           control.addListener("execute", () => osparc.navigation.UserMenuButton.openPreferences(), this);
@@ -97,14 +105,6 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           control = new qx.ui.menu.Button(this.tr("Organizations"));
           osparc.desktop.organizations.OrganizationsWindow.evaluateOrganizationsButton(control);
           control.addListener("execute", () => osparc.desktop.organizations.OrganizationsWindow.openWindow(), this);
-          this.getMenu().add(control);
-          break;
-        case "usage-overview":
-          control = new qx.ui.menu.Button(this.tr("Usage Overview"));
-          control.addListener("execute", () => {
-            const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow();
-            creditsWindow.openUsageOverview();
-          }, this);
           this.getMenu().add(control);
           break;
         case "clusters":
@@ -162,15 +162,9 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       if (authData.isGuest()) {
         this.getChildControl("log-in");
       } else {
+        this.getChildControl("account");
         this.getChildControl("preferences");
-        const usageOverview = this.getChildControl("usage-overview");
-        usageOverview.exclude();
-        osparc.utils.Utils.isDevelopmentPlatform()
-          .then(isDevel => isDevel && osparc.product.Utils.isProduct("s4l") ? usageOverview.show() : usageOverview.exclude());
         this.getChildControl("organizations");
-        if (osparc.data.Permissions.getInstance().canDo("usage.all.read")) {
-          this.getChildControl("usage-overview");
-        }
         this.getChildControl("clusters");
       }
       if (osparc.product.tutorial.Utils.getTutorial()) {
@@ -200,11 +194,9 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           if (authData.isGuest()) {
             this.getChildControl("log-in");
           } else {
+            this.getChildControl("account");
             this.getChildControl("preferences");
             this.getChildControl("organizations");
-            if (osparc.data.Permissions.getInstance().canDo("usage.all.read")) {
-              this.getChildControl("usage-overview");
-            }
             this.getChildControl("clusters");
           }
           this.getMenu().addSeparator();
