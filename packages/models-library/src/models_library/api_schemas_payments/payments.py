@@ -3,6 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field, HttpUrl, PositiveFloat
 
 from ..basic_types import IDStr
+from ..utils.pydantic_tools_extension import FieldNotRequired
 from ..wallets import PaymentTransactionState, WalletID
 
 
@@ -11,7 +12,7 @@ class PaymentGet(BaseModel):
     prize: PositiveFloat
     wallet_id: WalletID
     credit: PositiveFloat
-    comment: str
+    comment: str = FieldNotRequired()
     state: PaymentTransactionState
     created: datetime
     completed: datetime | None
