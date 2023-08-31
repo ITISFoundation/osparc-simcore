@@ -214,11 +214,20 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       "resourceUsage": {
-        useCache: true,
+        useCache: false,
         endpoints: {
           getPage: {
             method: "GET",
-            url: statics.API + "/resource-usage/containers?offset={offset}&limit={limit}"
+            url: statics.API + "/resource-usage/services?offset={offset}&limit={limit}"
+          }
+        }
+      },
+      "resourceUsagePerWallet": {
+        useCache: false,
+        endpoints: {
+          getPage: {
+            method: "GET",
+            url: statics.API + "/resource-usage/services?wallet_id={walletId}&offset={offset}&limit={limit}"
           }
         }
       },
