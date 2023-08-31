@@ -28,7 +28,6 @@ qx.Class.define("osparc.desktop.WorkbenchPanel", {
     toolbar.set({
       margin: 5
     });
-    toolbar.getChildControl("breadcrumbs-navigation").exclude();
     toolbar.getContentElement().setStyles({
       "border-radius": "12px"
     });
