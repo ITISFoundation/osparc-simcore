@@ -73,7 +73,7 @@ class PaymentsServiceApi:
     # NOTE: Functions below FAKE behaviour of payments service
     async def create_payment(
         self,
-        prize_dollars: Decimal,
+        price_dollars: Decimal,
         osparc_credits: Decimal,
         product_name: str,
         user_id: UserID,
@@ -84,10 +84,10 @@ class PaymentsServiceApi:
         assert name  # nosec
         assert email  # nosec
         assert product_name  # nosec
-        assert prize_dollars > 0  # nosec
+        assert price_dollars > 0  # nosec
 
         body = {
-            "prize_dollars": prize_dollars,
+            "price_dollars": price_dollars,
             "osparc_credits": osparc_credits,
             "user_id": user_id,
             "name": name,

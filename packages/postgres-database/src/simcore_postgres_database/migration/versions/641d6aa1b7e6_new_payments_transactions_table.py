@@ -52,7 +52,7 @@ def upgrade():
     op.create_table(
         "payments_transactions",
         sa.Column("payment_id", sa.String(), nullable=False),
-        sa.Column("prize_dollars", sa.Numeric(scale=2), nullable=False),
+        sa.Column("price_dollars", sa.Numeric(scale=2), nullable=False),
         sa.Column("osparc_credits", sa.Numeric(scale=2), nullable=False),
         sa.Column("product_name", sa.String(), nullable=False),
         sa.Column("user_id", sa.BigInteger(), nullable=False),

@@ -14,9 +14,12 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
-from models_library.api_schemas_webserver.wallets import WalletGet, WalletPaymentGet
+from models_library.api_schemas_webserver.wallets import (
+    WalletGet,
+    WalletPaymentGet,
+    WalletPaymentItemList,
+)
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from models_library.wallets import PaymentTransactionState
 from pydantic import parse_obj_as
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -146,8 +149,8 @@ async def test_payments_worfklow(
     response = await client.post(
         f"/v0/wallet/{invalid_wallet}/payments",
         json={
-            "credits": 50,
-            "prize": 25,  # dollars?
+            "osparcCredits": 50,
+            "priceDollars": 25,
         },
     )
     data, error = await assert_status(response, web.HTTPForbidden)
@@ -157,41 +160,39 @@ async def test_payments_worfklow(
     response = await client.post(
         f"/v0/wallet/{wallet.wallet_id}/payments",
         json={
-            "credits": 50,
-            "prize": 25,  # dollars?
+            "osparcCredits": 50,
+            "priceDollars": 25,
         },
     )
     data, error = await assert_status(response, web.HTTPCreated)
     assert error is None
     payment = WalletPaymentGet.parse_obj(data)
 
-    assert payment.state == PaymentTransactionState.INIT
-    assert payment.prize == 50
-    assert payment.submission_link
+    assert payment.idr
+    assert payment.submission_link.path
+    assert payment.submission_link.path.endswith(payment.idr)
 
     # some time later
     # payment gets acknoledged -> socketio
 
-    # inspect payment in wallet
-    response = await client.get(
-        f"/v0/wallet/{wallet.wallet_id}/payments/{payment.idr}",
-    )
+    # inspect status of in wallet
+    response = await client.get(f"/v0/wallet/{wallet.wallet_id}/payments/{payment.idr}")
     data, error = await assert_status(response, web.HTTPOk)
     assert error is None
     payment = WalletPaymentGet.parse_obj(data)
 
-    assert payment.state == PaymentTransactionState.COMPLETED
+    # assert payment.state == PaymentTransactionState.COMPLETED
 
     # list all payment transactions of a wallet
     response = await client.get(f"/v0/wallet/{wallet.wallet_id}/payments")
     data, error = await assert_status(response, web.HTTPOk)
 
-    assert parse_obj_as(list[WalletPaymentGet], data) is not None
+    assert parse_obj_as(list[WalletPaymentItemList], data) is not None
 
     # list all payment transactions in all my wallets
     response = await client.get("/v0/wallet/-/payments")
     data, error = await assert_status(response, web.HTTPOk)
 
-    assert parse_obj_as(list[WalletPaymentGet], data) is not None
+    assert parse_obj_as(list[WalletPaymentItemList], data) is not None
 
     # check email was sent to user

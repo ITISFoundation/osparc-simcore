@@ -49,7 +49,7 @@ class PutWalletBodyParams(OutputSchema):
 
 
 class WalletPaymentCreateBody(InputSchema):
-    prize_dollars: Decimal
+    price_dollars: Decimal
     osparc_credits: Decimal  # NOTE: should I recompute? or should be in the backend?
     comment: str = FieldNotRequired(max_length=100)
 

@@ -26,7 +26,7 @@ def random_payment_transaction(
     """Generates Metadata + concept/info (excludes state)"""
     data = {
         "payment_id": FAKE.uuid4(),
-        "prize_dollars": "123456.78",
+        "price_dollars": "123456.78",
         "osparc_credits": "123456.78",
         "product_name": "osparc",
         "user_id": FAKE.pyint(),
@@ -51,8 +51,8 @@ async def test_numerics_precission_and_scale(connection: SAConnection):
         expected = 10**order_of_magnitude + 0.123
         got = await connection.scalar(
             payments_transactions.insert()
-            .values(**random_payment_transaction(prize_dollars=expected))
-            .returning(payments_transactions.c.prize_dollars)
+            .values(**random_payment_transaction(price_dollars=expected))
+            .returning(payments_transactions.c.price_dollars)
         )
         assert isinstance(got, decimal.Decimal)
         # TODO: not sure about Decimal user

@@ -17,7 +17,7 @@ class PaymentGet(BaseModel):
 
 class PaymentItemList(BaseModel):
     idr: IDStr
-    prize: Decimal
+    price_dollars: Decimal
     wallet_id: WalletID
     credit: Decimal
     comment: str = FieldNotRequired()

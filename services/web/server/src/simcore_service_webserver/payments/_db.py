@@ -24,7 +24,7 @@ _logger = logging.getLogger(__name__)
 # NOTE: with https://sqlmodel.tiangolo.com/ we would only define this once!
 class PaymentsTransactionsDB(BaseModel):
     payment_id: IDStr
-    prize_dollars: Decimal  # accepts negatives
+    price_dollars: Decimal  # accepts negatives
     osparc_credits: Decimal  # accepts negatives
     product_name: ProductName
     user_id: UserID
@@ -47,7 +47,7 @@ async def create_payment_transaction(  # noqa: PLR0913
     app: web.Application,
     *,
     payment_id: str,
-    prize_dollars: Decimal,
+    price_dollars: Decimal,
     osparc_credits: Decimal,
     product_name: str,
     user_id: UserID,
@@ -62,7 +62,7 @@ async def create_payment_transaction(  # noqa: PLR0913
             payments_transactions.insert()
             .values(
                 payment_id=payment_id,
-                prize_dollars=prize_dollars,
+                price_dollars=price_dollars,
                 osparc_credits=osparc_credits,
                 product_name=product_name,
                 user_id=user_id,

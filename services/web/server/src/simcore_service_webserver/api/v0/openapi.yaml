@@ -8843,12 +8843,12 @@ components:
     WalletPaymentCreateBody:
       title: WalletPaymentCreateBody
       required:
-      - prizeDollars
+      - priceDollars
       - osparcCredits
       type: object
       properties:
-        prizeDollars:
-          title: Prizedollars
+        priceDollars:
+          title: pricedollars
           type: number
         osparcCredits:
           title: Osparccredits

@@ -77,7 +77,7 @@ async def create_payment(request: web.Request):
             wallet_id=wallet.wallet_id,
             wallet_name=wallet.name,
             osparc_credit=body_params.osparc_credits,
-            prize_dollars=body_params.prize_dollars,
+            price_dollars=body_params.price_dollars,
             comment=body_params.comment,
         )
     return envelope_json_response(WalletPaymentGet.parse_obj(payment), web.HTTPCreated)

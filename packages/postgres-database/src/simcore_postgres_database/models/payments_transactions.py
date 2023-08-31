@@ -18,7 +18,7 @@ payments_transactions = sa.Table(
         doc="Identifer of the payment provided by payment gateway",
     ),
     sa.Column(
-        "prize_dollars",
+        "price_dollars",
         sa.Numeric(scale=2),
         nullable=False,
         doc="Total amount of the transaction (in dollars). E.g. 1234.12 $",

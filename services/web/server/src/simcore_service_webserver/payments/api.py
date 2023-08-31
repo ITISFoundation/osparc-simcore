@@ -16,7 +16,7 @@ _logger = logging.getLogger(__name__)
 async def create_payment_to_wallet(
     app: web.Application,
     *,
-    prize_dollars: Decimal,
+    price_dollars: Decimal,
     osparc_credit: Decimal,
     product_name: str,
     user_id: UserID,
@@ -33,7 +33,7 @@ async def create_payment_to_wallet(
     # payment service
     payment_service_api = get_payments_service_api(app)
     submission_link, payment_id = await payment_service_api.create_payment(
-        prize_dollars=prize_dollars,
+        price_dollars=price_dollars,
         product_name=product_name,
         user_id=user_id,
         name=user_name,
@@ -44,7 +44,7 @@ async def create_payment_to_wallet(
     transaction = await _db.create_payment_transaction(
         app,
         payment_id=payment_id,
-        prize_dollars=prize_dollars,
+        price_dollars=price_dollars,
         osparc_credits=osparc_credit,
         product_name=product_name,
         user_id=user_id,
@@ -83,7 +83,7 @@ async def get_user_payments_page(
     return [
         PaymentItemList(
             idr=t.payment_id,
-            prize=t.prize_dollars,
+            price_dollars=t.price_dollars,
             credit=t.osparc_credits,
             comment=t.comment,
             wallet_id=t.wallet_id,
