@@ -61,11 +61,11 @@ user_preferences_frontend = sa.Table(
     ),
 )
 
-user_preferences_user_services = sa.Table(
-    "user_preferences_user_services",
+user_preferences_user_service = sa.Table(
+    "user_preferences_user_service",
     metadata,
-    _user_id_column("fk_user_preferences_user_services_id_users"),
-    _product_name_column("fk_user_preferences_user_services_name_products"),
+    _user_id_column("fk_user_preferences_user_service_id_users"),
+    _product_name_column("fk_user_preferences_user_service_name_products"),
     _preference_name_column(),
     sa.Column(
         "payload",
@@ -77,6 +77,6 @@ user_preferences_user_services = sa.Table(
         "user_id",
         "product_name",
         "preference_name",
-        name="user_preferences_user_services_pk",
+        name="user_preferences_user_service_pk",
     ),
 )
