@@ -21,8 +21,8 @@ from pytest_simcore.helpers.utils_login import NewUser
 from simcore_postgres_database.models.users import UserStatus
 from simcore_service_webserver.users._preferences_api import (
     ALL_FRONTEND_PREFERENCES,
-    _get_frontend_user_preferences_list,
-    get_frontend_user_preferences,
+    _get_frontend_user_preferences,
+    get_frontend_user_preferences_aggregation,
     set_frontend_user_preference,
 )
 
@@ -91,7 +91,7 @@ async def test__get_frontend_user_preferences_list_defaults(
     drop_all_preferences: None,
 ):
     # get preferences which were not saved, return default values
-    found_preferences = await _get_frontend_user_preferences_list(
+    found_preferences = await _get_frontend_user_preferences(
         app, user_id=user_id, product_name=product_name
     )
     assert len(found_preferences) == len(ALL_FRONTEND_PREFERENCES)
@@ -101,18 +101,20 @@ async def test__get_frontend_user_preferences_list_defaults(
         assert preference.value == _get_default_field_value(preference.__class__)
 
 
-async def test_get_frontend_user_preferences(
+async def test_get_frontend_user_preferences_aggregation(
     app: web.Application,
     user_id: UserID,
     product_name: ProductName,
     drop_all_preferences: None,
 ):
     # checks that values get properly converted
-    frontend_user_preferences = await get_frontend_user_preferences(
-        app, user_id=user_id, product_name=product_name
+    frontend_user_preferences_aggregation = (
+        await get_frontend_user_preferences_aggregation(
+            app, user_id=user_id, product_name=product_name
+        )
     )
-    assert len(frontend_user_preferences) == len(ALL_FRONTEND_PREFERENCES)
-    for value in frontend_user_preferences.values():
+    assert len(frontend_user_preferences_aggregation) == len(ALL_FRONTEND_PREFERENCES)
+    for value in frontend_user_preferences_aggregation.values():
         assert isinstance(value, FrontendUserPreference)
 
 
@@ -123,7 +125,7 @@ async def test_set_frontend_user_preference(
     drop_all_preferences: None,
 ):
     # check all preferences contain the default value (since non was saved before)
-    found_preferences = await _get_frontend_user_preferences_list(
+    found_preferences = await _get_frontend_user_preferences(
         app, user_id=user_id, product_name=product_name
     )
     for preference in found_preferences:
@@ -142,7 +144,7 @@ async def test_set_frontend_user_preference(
         )
 
     # after a query all preferences should contain a non default value
-    found_preferences = await _get_frontend_user_preferences_list(
+    found_preferences = await _get_frontend_user_preferences(
         app, user_id=user_id, product_name=product_name
     )
     assert len(found_preferences) == len(ALL_FRONTEND_PREFERENCES)
@@ -162,7 +164,7 @@ async def test_set_frontend_user_preference(
             value=_get_default_field_value(preference_class),
         )
 
-    found_preferences = await _get_frontend_user_preferences_list(
+    found_preferences = await _get_frontend_user_preferences(
         app, user_id=user_id, product_name=product_name
     )
     assert len(found_preferences) == len(ALL_FRONTEND_PREFERENCES)

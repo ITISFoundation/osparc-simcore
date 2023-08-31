@@ -3352,12 +3352,12 @@ paths:
       responses:
         '204':
           description: Successful Response
-  /v0/me/preferences:
-    get:
+  /v0/me/preferences:aggregate:
+    post:
       tags:
       - user
-      summary: Get User Preferences
-      operationId: get_user_preferences
+      summary: Get Aggregated Frontend Preferences
+      operationId: get_aggregated_frontend_preferences
       responses:
         '200':
           description: Successful Response
@@ -3365,7 +3365,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_dict_str__models_library.api_schemas_webserver.users_preferences.FrontendUserPreference__'
-  /v0/me/preferences/{frontend_preference_name}:
+  /v0/me/preferences/{preference_id}:
     patch:
       tags:
       - user
@@ -3374,15 +3374,15 @@ paths:
       parameters:
       - required: true
         schema:
-          title: Preference
+          title: Preference Id
           type: string
-        name: preference
-        in: query
+        name: preference_id
+        in: path
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/FrontendUserPreferencePatchRequestBody'
+              $ref: '#/components/schemas/PatchRequestBody'
         required: true
       responses:
         '204':
@@ -5726,12 +5726,6 @@ components:
         value:
           title: Value
           description: preference value
-    FrontendUserPreferencePatchRequestBody:
-      title: FrontendUserPreferencePatchRequestBody
-      type: object
-      properties:
-        value:
-          title: Value
     GroupAccessRights:
       title: GroupAccessRights
       required:
@@ -6588,6 +6582,12 @@ components:
           exclusiveMinimum: true
           type: integer
           minimum: 0
+    PatchRequestBody:
+      title: PatchRequestBody
+      type: object
+      properties:
+        value:
+          title: Value
     PermissionGet:
       title: PermissionGet
       required:

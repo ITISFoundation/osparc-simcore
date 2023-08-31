@@ -2,9 +2,9 @@ import functools
 
 from aiohttp import web
 from models_library.api_schemas_webserver.users_preferences import (
-    FrontendUserPreferencePatchPathParams,
-    FrontendUserPreferencePatchRequestBody,
-    FrontendUserPreferencesGet,
+    AggregatedPreferencesResponse,
+    PatchPathParams,
+    PatchRequestBody,
 )
 from models_library.products import ProductName
 from models_library.users import UserID
@@ -49,40 +49,38 @@ def _handle_users_exceptions(handler: Handler):
     return wrapper
 
 
-@routes.get(f"/{API_VTAG}/me/preferences", name="get_user_preferences")
+@routes.post(
+    f"/{API_VTAG}/me/preferences:aggregate", name="get_aggregated_frontend_preferences"
+)
 @login_required
 @_handle_users_exceptions
-async def get_user_preferences(request: web.Request) -> web.Response:
+async def get_aggregated_frontend_preferences(request: web.Request) -> web.Response:
     req_ctx = _RequestContext.parse_obj(request)
 
-    user_preferences_get: FrontendUserPreferencesGet = (
-        await _preferences_api.get_frontend_user_preferences(
+    preferences_aggregation: AggregatedPreferencesResponse = (
+        await _preferences_api.get_frontend_user_preferences_aggregation(
             request.app, user_id=req_ctx.user_id, product_name=req_ctx.product_name
         )
     )
-    return envelope_json_response(user_preferences_get)
+    return envelope_json_response(preferences_aggregation)
 
 
 @routes.patch(
-    f"/{API_VTAG}/me/preferences/{{preference}}",
+    f"/{API_VTAG}/me/preferences/{{preference_id}}",
     name="set_frontend_preference",
 )
 @login_required
 @_handle_users_exceptions
 async def set_frontend_preference(request: web.Request) -> web.Response:
     req_ctx = _RequestContext.parse_obj(request)
-    req_body = await parse_request_body_as(
-        FrontendUserPreferencePatchRequestBody, request
-    )
-    req_path_params = parse_request_path_parameters_as(
-        FrontendUserPreferencePatchPathParams, request
-    )
+    req_body = await parse_request_body_as(PatchRequestBody, request)
+    req_path_params = parse_request_path_parameters_as(PatchPathParams, request)
 
     await _preferences_api.set_frontend_user_preference(
         request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
-        frontend_preference_identifier=req_path_params.preference,
+        frontend_preference_identifier=req_path_params.preference_id,
         value=req_body.value,
     )
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
