@@ -8,13 +8,15 @@ from pydantic.main import ModelMetaclass
 from .services import ServiceKey
 from .utils.enums import StrAutoEnum
 
+# NOTE: these match the definitions insidepydantic's internals,
+# which cannot be imported (defined under TYPE_CHECKING)
 IntStr: TypeAlias = int | str
 DictStrAny = dict[str, Any]
 AbstractSetIntStr: TypeAlias = set[IntStr]
 MappingIntStrAny: TypeAlias = Mapping[IntStr, Any]
 
 
-# NOTE: for pyndatic-2 from pydantic._internal.import _model_construction
+# NOTE: for pydantic-2 from pydantic._internal.import _model_construction
 # use _model_construction.ModelMetaclass instead!
 
 
