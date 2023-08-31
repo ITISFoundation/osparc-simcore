@@ -42,6 +42,7 @@ class PricingDetailMinimalGet(BaseModel):
     unit_name: str
     cost_per_unit: float
     valid_from: datetime
+    simcore_default: bool
 
 
 class PricingPlanGet(BaseModel):

@@ -57,6 +57,7 @@ async def create_credit_transaction(
         transaction_create
     )
 
+    # Shoot and forget
     wallet_total_credits = (
         await resource_tracker_repo.sum_credit_transactions_by_product_and_wallet(
             credit_transaction_create_body.product_name,

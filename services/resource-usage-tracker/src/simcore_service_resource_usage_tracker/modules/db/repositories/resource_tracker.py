@@ -14,11 +14,18 @@ from models_library.resource_tracker import (
     ServiceRunStatus,
     TransactionBillingStatus,
 )
+from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import PositiveInt
+from simcore_postgres_database.models.resource_tracker_credit_transactions import (
+    resource_tracker_credit_transactions,
+)
 from simcore_postgres_database.models.resource_tracker_pricing_details import (
     resource_tracker_pricing_details,
+)
+from simcore_postgres_database.models.resource_tracker_pricing_plan_to_service import (
+    resource_tracker_pricing_plan_to_service,
 )
 from simcore_postgres_database.models.resource_tracker_pricing_plans import (
     resource_tracker_pricing_plans,
@@ -26,9 +33,7 @@ from simcore_postgres_database.models.resource_tracker_pricing_plans import (
 from simcore_postgres_database.models.resource_tracker_service_runs import (
     resource_tracker_service_runs,
 )
-from simcore_postgres_database.models.resource_tracker_wallets_credit_transactions import (
-    resource_tracker_credit_transactions,
-)
+from sqlalchemy.dialects.postgresql import ARRAY, INTEGER
 
 from ....core.errors import CreateServiceRunError, CreateTransactionError
 from ....models.resource_tracker_credit_transactions import (
@@ -318,7 +323,7 @@ class ResourceTrackerRepository(BaseRepository):
                     transaction_classification=data.transaction_classification,
                     service_run_id=data.service_run_id,
                     payment_transaction_id=data.payment_transaction_id,
-                    created_at=data.created_at,
+                    created=data.created_at,
                     last_heartbeat_at=data.last_heartbeat_at,
                     modified=sa.func.now(),
                 )
@@ -392,37 +397,34 @@ class ResourceTrackerRepository(BaseRepository):
         self, product_name: ProductName, wallet_id: WalletID
     ) -> WalletTotalCredits:
         async with self.db_engine.begin() as conn:
-            sum_stmt = (
+            sum_stmt = sa.select(
                 sa.func.sum(resource_tracker_credit_transactions.c.credits)
-                .where(
-                    (
-                        resource_tracker_credit_transactions.c.product_name
-                        == product_name
-                    )
-                    & (resource_tracker_credit_transactions.c.wallet_id == wallet_id)
-                    & (
-                        resource_tracker_credit_transactions.c.transaction_status.in_(
-                            [
-                                TransactionBillingStatus.BILLED,
-                                TransactionBillingStatus.PENDING,
-                            ]
-                        )
+            ).where(
+                (resource_tracker_credit_transactions.c.product_name == product_name)
+                & (resource_tracker_credit_transactions.c.wallet_id == wallet_id)
+                & (
+                    resource_tracker_credit_transactions.c.transaction_status.in_(
+                        [
+                            TransactionBillingStatus.BILLED,
+                            TransactionBillingStatus.PENDING,
+                        ]
                     )
                 )
-                .returning(resource_tracker_credit_transactions.c.service_run_id)
             )
             result = await conn.execute(sum_stmt)
         row = result.first()
         if row is None:
-            raise
-        return WalletTotalCredits(row[0])
+            raise ValueError(
+                "product_name and wallet_id combination does not exists in DB"
+            )
+        return WalletTotalCredits(wallet_id=wallet_id, available_credits=row[0])
 
     #################################
     # Pricing plans
     #################################
 
     async def list_active_pricing_plans_by_product(
-        self, product: ProductName
+        self, product_name: ProductName
     ) -> list[PricingPlanDB]:
         async with self.db_engine.begin() as conn:
             query = (
@@ -435,7 +437,7 @@ class ResourceTrackerRepository(BaseRepository):
                     resource_tracker_pricing_plans.c.created,
                 )
                 .where(
-                    (resource_tracker_pricing_plans.c.product == product)
+                    (resource_tracker_pricing_plans.c.product_name == product_name)
                     & (resource_tracker_pricing_plans.c.is_active.is_(True))
                 )
                 .order_by(resource_tracker_pricing_plans.c.created.asc())
@@ -444,6 +446,66 @@ class ResourceTrackerRepository(BaseRepository):
 
         pricing_plans = [PricingPlanDB.from_orm(row) for row in result.fetchall()]
         return pricing_plans
+
+    async def get_pricing_plan(self, pricing_plan_id: PricingPlanId) -> PricingPlanDB:
+        async with self.db_engine.begin() as conn:
+            query = sa.select(
+                resource_tracker_pricing_plans.c.pricing_plan_id,
+                resource_tracker_pricing_plans.c.name,
+                resource_tracker_pricing_plans.c.description,
+                resource_tracker_pricing_plans.c.classification,
+                resource_tracker_pricing_plans.c.is_active,
+                resource_tracker_pricing_plans.c.created,
+            ).where(resource_tracker_pricing_plans.c.pricing_plan_id == pricing_plan_id)
+            result = await conn.execute(query)
+        row = result.first()
+        return PricingPlanDB.from_orm(row)
+
+    async def get_pricing_plan_by_product_and_service(
+        self,
+        product_name: ProductName,
+        service_key: ServiceKey,
+        service_version: ServiceVersion,
+    ) -> PricingPlanId | None:
+        # NOTE: consilidate with utils_services_environmnets.py
+        def _version(column_or_value):
+            # converts version value string to array[integer] that can be compared
+            return sa.func.string_to_array(column_or_value, ".").cast(ARRAY(INTEGER))
+
+        async with self.db_engine.begin() as conn:
+            query = sa.select(
+                resource_tracker_pricing_plan_to_service.c.pricing_plan_id
+            )
+            query = (
+                query.where(
+                    (
+                        _version(
+                            resource_tracker_pricing_plan_to_service.c.service_version
+                        )
+                        <= _version(service_version)
+                    )
+                    & (
+                        resource_tracker_pricing_plan_to_service.c.service_key
+                        == service_key
+                    )
+                    & (
+                        resource_tracker_pricing_plan_to_service.c.product
+                        == product_name
+                    )
+                )
+                .order_by(
+                    _version(
+                        resource_tracker_pricing_plan_to_service.c.service_version
+                    ).desc()
+                )
+                .limit(1)
+            )
+
+            result = await conn.execute(query)
+        row = result.first()
+        if row is None:
+            return None
+        return PricingPlanId(row[0])
 
     #################################
     # Pricing details
@@ -459,8 +521,8 @@ class ResourceTrackerRepository(BaseRepository):
                 == pricing_detail_id
             )
             result = await conn.execute(query)
-            row = result.first()
 
+        row = result.first()
         if row is None:
             raise ValueError
         return row[0]
@@ -480,6 +542,7 @@ class ResourceTrackerRepository(BaseRepository):
                     resource_tracker_pricing_details.c.valid_to,
                     resource_tracker_pricing_details.c.specific_info,
                     resource_tracker_pricing_details.c.created,
+                    resource_tracker_pricing_details.c.simcore_default,
                 )
                 .where(
                     (
@@ -488,7 +551,7 @@ class ResourceTrackerRepository(BaseRepository):
                     )
                     & (resource_tracker_pricing_details.c.valid_to.is_(None))
                 )
-                .order_by(resource_tracker_pricing_plans.c.created.asc())
+                .order_by(resource_tracker_pricing_details.c.created.asc())
             )
             result = await conn.execute(query)
 

@@ -10,7 +10,6 @@ from models_library.api_schemas_webserver.resource_usage import (
     PricingPlanGet,
     ServiceRunGet,
 )
-from models_library.generics import Envelope
 from models_library.resource_tracker import CreditTransactionId
 
 from ..models.pagination import LimitOffsetPage, LimitOffsetParamsWithDefault
@@ -60,12 +59,12 @@ async def list_usage_services(
 
 @router.post(
     "/credit-transactions/credits:sum",
-    response_model=Envelope[WalletTotalCredits],
+    response_model=WalletTotalCredits,
     summary="Sum total available credits in the wallet",
 )
 async def get_credit_transactions_sum(
     wallet_total_credits: Annotated[
-        float,
+        WalletTotalCredits,
         Depends(
             resource_tracker_credit_transactions.sum_credit_transactions_by_product_and_wallet
         ),
@@ -76,9 +75,7 @@ async def get_credit_transactions_sum(
 
 @router.post(
     "/credit-transactions",
-    response_model=Envelope[
-        dict[Literal["credit_transaction_id"], CreditTransactionId]
-    ],
+    response_model=dict[Literal["credit_transaction_id"], CreditTransactionId],
     summary="Top up credits for specific wallet",
     status_code=status.HTTP_201_CREATED,
 )
@@ -98,7 +95,7 @@ async def create_credit_transaction(
 
 @router.get(
     "/pricing-plans",
-    response_model=Envelope[list[PricingPlanGet]],
+    response_model=list[PricingPlanGet],
     summary="Retrieve all pricing plans with pricing details for a specific product.",
 )
 async def get_pricing_plans(
@@ -108,4 +105,4 @@ async def get_pricing_plans(
     ],
 ):
 
-    return []
+    return pricing_plans

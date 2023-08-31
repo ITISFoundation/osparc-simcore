@@ -40,38 +40,3 @@ class CreditTransactionCreditsAndStatusUpdate(BaseModel):
     service_run_id: ServiceRunId
     credits: float
     transaction_status: TransactionBillingStatus
-
-
-# class ServiceRunStoppedAtUpdate(BaseModel):
-#     service_run_id: ServiceRunId
-#     stopped_at: datetime
-#     service_run_status: ServiceRunStatus
-
-
-# class ServiceRunDB(BaseModel):
-#     service_run_id: ServiceRunId
-#     wallet_id: WalletID | None
-#     wallet_name: str | None
-#     pricing_plan_id: PricingPlanId | None
-#     pricing_detail_id: PricingDetailId | None
-#     user_id: UserID
-#     user_email: str
-#     project_id: ProjectID
-#     project_name: str
-#     node_id: NodeID
-#     node_name: str
-#     service_key: ServiceKey
-#     service_version: ServiceVersion
-#     service_type: str
-#     service_resources: dict
-#     started_at: datetime
-#     stopped_at: datetime | None
-#     service_run_status: ServiceRunStatus
-
-#     class Config:
-#         orm_mode = True
-
-
-# class ServiceRunPage(NamedTuple):
-#     items: list[ServiceRunGet]
-#     total: PositiveInt

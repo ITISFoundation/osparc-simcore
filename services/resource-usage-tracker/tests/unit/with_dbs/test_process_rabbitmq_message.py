@@ -35,7 +35,9 @@ async def test_process_event_functions(
 ):
     engine = initialized_app.state.engine
 
-    msg = random_rabbit_message_start()
+    msg = random_rabbit_message_start(
+        wallet_id=None, wallet_name=None, pricing_plan_id=None, pricing_detail_id=None
+    )
     resource_tacker_repo: ResourceTrackerRepository = ResourceTrackerRepository(
         db_engine=engine
     )

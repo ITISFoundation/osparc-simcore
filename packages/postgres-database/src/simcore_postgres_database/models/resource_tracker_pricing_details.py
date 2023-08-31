@@ -42,7 +42,7 @@ resource_tracker_pricing_details = sa.Table(
     sa.Column(
         "cost_per_unit",
         sa.Numeric(precision=15, scale=2),
-        nullable=True,
+        nullable=False,
         doc="The cost per unit of the pricing plan in credits.",
     ),
     sa.Column(
@@ -57,6 +57,13 @@ resource_tracker_pricing_details = sa.Table(
         nullable=True,
         doc="To when the pricing unit was active, if null it is still active",
         index=True,
+    ),
+    sa.Column(
+        "simcore_default",
+        sa.Boolean(),
+        nullable=False,
+        default=False,
+        doc="Option to mark default pricing plan by creator",
     ),
     sa.Column(
         "specific_info",

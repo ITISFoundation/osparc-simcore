@@ -177,7 +177,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope_WalletTotalCredits_"
+                  "$ref": "#/components/schemas/WalletTotalCredits"
                 }
               }
             }
@@ -218,7 +218,13 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope_dict_Literal__credit_transaction_id____pydantic.types.PositiveInt__"
+                  "title": "Response Create Credit Transaction V1 Credit Transactions Post",
+                  "type": "object",
+                  "additionalProperties": {
+                    "exclusiveMinimum": true,
+                    "type": "integer",
+                    "minimum": 0
+                  }
                 }
               }
             }
@@ -247,10 +253,10 @@
           {
             "required": true,
             "schema": {
-              "title": "Product",
+              "title": "Product Name",
               "type": "string"
             },
-            "name": "product",
+            "name": "product_name",
             "in": "query"
           },
           {
@@ -280,7 +286,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope_list_models_library.api_schemas_webserver.resource_usage.PricingPlanGet__"
+                  "title": "Response Get Pricing Plans V1 Pricing Plans Get",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PricingPlanGet"
+                  }
                 }
               }
             }
@@ -351,52 +361,6 @@
             "title": "Created At",
             "type": "string",
             "format": "date-time"
-          }
-        }
-      },
-      "Envelope_WalletTotalCredits_": {
-        "title": "Envelope[WalletTotalCredits]",
-        "type": "object",
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/WalletTotalCredits"
-          },
-          "error": {
-            "title": "Error"
-          }
-        }
-      },
-      "Envelope_dict_Literal__credit_transaction_id____pydantic.types.PositiveInt__": {
-        "title": "Envelope[dict[Literal['credit_transaction_id'], pydantic.types.PositiveInt]]",
-        "type": "object",
-        "properties": {
-          "data": {
-            "title": "Data",
-            "type": "object",
-            "additionalProperties": {
-              "exclusiveMinimum": true,
-              "type": "integer",
-              "minimum": 0
-            }
-          },
-          "error": {
-            "title": "Error"
-          }
-        }
-      },
-      "Envelope_list_models_library.api_schemas_webserver.resource_usage.PricingPlanGet__": {
-        "title": "Envelope[list[models_library.api_schemas_webserver.resource_usage.PricingPlanGet]]",
-        "type": "object",
-        "properties": {
-          "data": {
-            "title": "Data",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PricingPlanGet"
-            }
-          },
-          "error": {
-            "title": "Error"
           }
         }
       },
@@ -486,7 +450,8 @@
           "pricing_detail_id",
           "unit_name",
           "cost_per_unit",
-          "valid_from"
+          "valid_from",
+          "simcore_default"
         ],
         "type": "object",
         "properties": {
@@ -508,6 +473,10 @@
             "title": "Valid From",
             "type": "string",
             "format": "date-time"
+          },
+          "simcore_default": {
+            "title": "Simcore Default",
+            "type": "boolean"
           }
         }
       },

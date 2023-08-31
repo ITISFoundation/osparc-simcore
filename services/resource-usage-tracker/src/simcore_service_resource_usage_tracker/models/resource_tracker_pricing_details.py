@@ -13,6 +13,7 @@ class PricingDetailDB(BaseModel):
     valid_to: datetime | None
     specific_info: dict
     created: datetime
+    simcore_default: bool
 
     class Config:
         orm_mode = True
