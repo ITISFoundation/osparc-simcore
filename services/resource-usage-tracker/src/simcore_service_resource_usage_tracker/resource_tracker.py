@@ -26,14 +26,6 @@ async def _subscribe_to_rabbitmq(app) -> str:
         return subscribed_queue
 
 
-async def _unsubscribe_from_rabbitmq(app) -> None:
-    with log_context(
-        _logger, logging.INFO, msg="Unsubscribing from rabbitmq channels"
-    ), log_catch(_logger, reraise=False):
-        rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
-        await rabbit_client.unsubscribe(app.state.resource_tracker_rabbitmq_consumer)
-
-
 def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _startup() -> None:
         with log_context(
@@ -54,11 +46,13 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
     return _startup
 
 
-def on_app_shutdown(app: FastAPI) -> Callable[[], Awaitable[None]]:
+def on_app_shutdown(
+    _app: FastAPI,
+) -> Callable[[], Awaitable[None]]:
     async def _stop() -> None:
-        if app.state.resource_tracker_rabbitmq_consumer:
-            await _unsubscribe_from_rabbitmq(app)
-            await app.state.rabbitmq_client.close()
+        # NOTE: We want to have persistent queue, therefore we will not unsubscribe
+        assert _app  # nosec
+        return None
 
     return _stop
 
