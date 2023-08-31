@@ -525,7 +525,8 @@ class ResourceTrackerRepository(BaseRepository):
         row = result.first()
         if row is None:
             raise ValueError
-        return row[0]
+        output: float = row[0]
+        return output
 
     async def list_pricing_details_by_pricing_plan(
         self,
