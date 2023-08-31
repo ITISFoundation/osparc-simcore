@@ -2,8 +2,7 @@ import logging
 from typing import cast
 
 from fastapi import FastAPI
-from servicelib.rabbitmq import RabbitMQClient
-from servicelib.rabbitmq_utils import wait_till_rabbitmq_responsive
+from servicelib.rabbitmq import RabbitMQClient, wait_till_rabbitmq_responsive
 from settings_library.rabbit import RabbitSettings
 
 from ..core.errors import ConfigurationError
