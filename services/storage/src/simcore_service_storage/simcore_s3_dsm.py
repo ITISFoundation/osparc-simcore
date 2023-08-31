@@ -1029,6 +1029,8 @@ class SimcoreS3DataManager(BaseDataManager):
                     }
 
                     for src, new in s3_objects_src_to_new.items():
+                        # NOTE: copy_file cannot be called concurrently or it will hang.
+                        # test this with copying multiple 1GB files if you do not believe me
                         await s3_client.copy_file(
                             self.simcore_bucket_name,
                             cast(SimcoreS3FileID, src),
