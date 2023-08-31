@@ -7,8 +7,9 @@ from typing import Any, TypeVar
 import orjson
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import SecretStr
-from servicelib.logging_utils import log_catch, log_context
-from servicelib.rabbitmq_utils import RPCMethodName
+
+from ..logging_utils import log_catch, log_context
+from ._models import RPCMethodName
 
 DecoratedCallable = TypeVar("DecoratedCallable", bound=Callable[..., Any])
 

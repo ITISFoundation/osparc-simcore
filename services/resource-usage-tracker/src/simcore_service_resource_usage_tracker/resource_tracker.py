@@ -1,11 +1,12 @@
 import functools
 import logging
-from typing import Awaitable, Callable
+from collections.abc import Awaitable, Callable
 
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import RabbitResourceTrackingBaseMessage
 from servicelib.logging_utils import log_catch, log_context
-from servicelib.rabbitmq import RabbitMQClient, RabbitSettings
+from servicelib.rabbitmq import RabbitMQClient
+from settings_library.rabbit import RabbitSettings
 
 from .core.settings import ApplicationSettings
 from .modules.rabbitmq import get_rabbitmq_client
