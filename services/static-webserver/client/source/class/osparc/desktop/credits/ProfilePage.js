@@ -45,6 +45,10 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
     __createProfileUser: function() {
       // layout
       const box = this._createSectionBox(this.tr("User"));
+      box.set({
+        alignX: "left",
+        maxWidth: 500
+      });
 
       const email = new qx.ui.form.TextField().set({
         tabIndex: 1,

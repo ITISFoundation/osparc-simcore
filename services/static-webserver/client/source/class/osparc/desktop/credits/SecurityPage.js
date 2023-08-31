@@ -37,6 +37,10 @@ qx.Class.define("osparc.desktop.credits.SecurityPage", {
     __createPasswordSection: function() {
       // layout
       const box = this._createSectionBox(this.tr("Password"));
+      box.set({
+        alignX: "left",
+        maxWidth: 500
+      });
 
       const currentPassword = new osparc.ui.form.PasswordField().set({
         tabIndex: 1,
