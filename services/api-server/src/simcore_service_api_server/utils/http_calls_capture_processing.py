@@ -64,8 +64,8 @@ class ParamSchema(BaseModel):
             )
 
         # now deal with non-recursive cases
-        if (pattern := self.pattern) is not None:
-            return pattern
+        if self.pattern is not None:
+            return self.pattern
         else:
             if self.param_type == "int":
                 return r"^[+-]?[1-9][0-9]*|0$"

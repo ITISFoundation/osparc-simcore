@@ -40,8 +40,6 @@ jinja2==3.1.2
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   -r requirements/_tools.in
-jsonref==1.1.0
-    # via -r requirements/_tools.in
 lazy-object-proxy==1.9.0
     # via astroid
 markupsafe==2.1.3

@@ -11,12 +11,13 @@
 --constraint _base.txt
 
 
-
+aioresponses
 alembic
 asgi_lifespan
 click
 docker
 faker
+jsonref
 moto[server] # mock out tests based on AWS-S3
 pytest
 pytest-asyncio
@@ -27,5 +28,3 @@ pytest-runner
 respx
 sqlalchemy[mypy] # adds Mypy / Pep-484 Support for ORM Mappings SEE https://docs.sqlalchemy.org/en/20/orm/extensions/mypy.html
 types-boto3
-aioresponses
-openapi-core
