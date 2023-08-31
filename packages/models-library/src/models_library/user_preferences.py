@@ -122,9 +122,7 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
 
 
 class FrontendUserPreference(_BaseUserPreferenceModel):
-    preference_type: PreferenceType = Field(
-        default=PreferenceType.FRONTEND, frozen=True
-    )
+    preference_type: PreferenceType = Field(default=PreferenceType.FRONTEND, const=True)
 
     preference_identifier: PreferenceIdentifier = Field(
         ..., description="used by the frontend"
@@ -138,7 +136,7 @@ class FrontendUserPreference(_BaseUserPreferenceModel):
 
 
 class UserServiceUserPreference(_BaseUserPreferenceModel):
-    preference_type: PreferenceType = Field(PreferenceType.USER_SERVICE, frozen=True)
+    preference_type: PreferenceType = Field(PreferenceType.USER_SERVICE, const=True)
 
     # NOTE: preferences are stored per service and the version is not considered
     service_key: ServiceKey = Field(

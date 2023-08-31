@@ -2,11 +2,9 @@
 # pylint: disable=unused-argument
 
 from collections.abc import Iterator
-from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
-import arrow
 import pytest
 from models_library.services import ServiceKey
 from models_library.user_preferences import (
@@ -19,10 +17,10 @@ from models_library.user_preferences import (
 )
 from pydantic import parse_obj_as
 
-_SERVICE_KEY_SAMPLES: list[str] = [
-    "simcore/services/comp/something-1231",
-    "simcore/services/dynamic/something-1231",
-    "simcore/services/frontend/something-1231",
+_SERVICE_KEY_SAMPLES: list[ServiceKey] = [
+    parse_obj_as(ServiceKey, "simcore/services/comp/something-1231"),
+    parse_obj_as(ServiceKey, "simcore/services/dynamic/something-1231"),
+    parse_obj_as(ServiceKey, "simcore/services/frontend/something-1231"),
 ]
 
 
@@ -42,10 +40,6 @@ def _get_base_user_preferences_data(
     return {"preference_type": preference_type, "value": value}
 
 
-def _get_utc_timestamp() -> float:
-    return arrow.utcnow().datetime.timestamp()
-
-
 @pytest.mark.parametrize("preference_type", PreferenceType)
 def test_base_user_preference_model(value: Any, preference_type: PreferenceType):
     base_data = _get_base_user_preferences_data(
@@ -59,16 +53,9 @@ def test_frontend_preferences(value: Any):
         preference_type=PreferenceType.FRONTEND, value=value
     )
 
-    data_with_rendered_widget = deepcopy(base_data)
-    data_with_rendered_widget.update(
-        {
-            "preference_identifier": "pref-name",
-        }
-    )
+    base_data.update({"preference_identifier": "pref-name"})
     # check serialization
-    frontend_preference = parse_obj_as(
-        FrontendUserPreference, data_with_rendered_widget
-    )
+    frontend_preference = parse_obj_as(FrontendUserPreference, base_data)
     assert set(frontend_preference.dict().keys()) == {"value"}
 
 
