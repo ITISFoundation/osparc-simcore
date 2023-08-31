@@ -63,10 +63,7 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
         ..., description="distinguish between the types of preferences"
     )
 
-    value: Any = Field(
-        ...,
-        description="the value of the preference. Stored as is and cannot be queried over",
-    )
+    value: Any = Field(..., description="value of the preference")
 
     @classmethod
     def get_preference_class_from_name(
