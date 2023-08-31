@@ -8848,7 +8848,7 @@ components:
       type: object
       properties:
         priceDollars:
-          title: pricedollars
+          title: Pricedollars
           type: number
         osparcCredits:
           title: Osparccredits
