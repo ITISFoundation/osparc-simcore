@@ -1,5 +1,6 @@
 from collections.abc import Mapping
 from enum import auto
+from pathlib import Path
 from typing import Any, ClassVar, TypeAlias
 
 from pydantic import BaseModel, Field
@@ -125,21 +126,11 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
         )
 
 
-class BaseBackendUserPreference(_BaseUserPreferenceModel):
-    preference_type: PreferenceType = Field(PreferenceType.BACKEND, frozen=True)
-
-    class Config:
-        exclude_from_serialization: ClassVar[set[str]] = {
-            "preference_type",
-        }
-
-
-class BaseFrontendUserPreference(_BaseUserPreferenceModel):
+class FrontendUserPreference(_BaseUserPreferenceModel):
     preference_type: PreferenceType = Field(
         default=PreferenceType.FRONTEND, frozen=True
     )
 
-    # NOTE: below fields do not require storage in the DB
     preference_identifier: PreferenceIdentifier = Field(
         ..., description="used by the frontend"
     )
@@ -151,29 +142,20 @@ class BaseFrontendUserPreference(_BaseUserPreferenceModel):
         }
 
 
-class BaseUserServiceUserPreference(_BaseUserPreferenceModel):
+class UserServiceUserPreference(_BaseUserPreferenceModel):
     preference_type: PreferenceType = Field(PreferenceType.USER_SERVICE, frozen=True)
 
     # NOTE: preferences are stored per service and the version is not considered
     service_key: ServiceKey = Field(
         ..., description="the service which manages the preferences"
     )
-
-    # NOTE: below fields do not require storage in the DB
-    last_changed_utc_timestamp: float = Field(
-        ...,
-        description="needs to be provided to signal that the value of the property changed",
-    )
+    file_path: Path = Field(..., description="path of the file")
 
     class Config:
         exclude_from_serialization: ClassVar[set[str]] = {
-            "last_changed_utc_timestamp",
             "preference_type",
+            "service_key",
         }
 
 
-AnyBaseUserPreference: TypeAlias = (
-    BaseBackendUserPreference
-    | BaseFrontendUserPreference
-    | BaseUserServiceUserPreference
-)
+AnyUserPreference: TypeAlias = FrontendUserPreference | UserServiceUserPreference

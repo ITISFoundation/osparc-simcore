@@ -3,16 +3,16 @@
 
 from collections.abc import Iterator
 from copy import deepcopy
+from pathlib import Path
 from typing import Any
 
 import arrow
 import pytest
 from models_library.services import ServiceKey
 from models_library.user_preferences import (
-    BaseBackendUserPreference,
-    BaseFrontendUserPreference,
-    BaseUserServiceUserPreference,
+    FrontendUserPreference,
     PreferenceType,
+    UserServiceUserPreference,
     _AutoRegisterMeta,
     _BaseUserPreferenceModel,
 )
@@ -28,6 +28,11 @@ _SERVICE_KEY_SAMPLES: list[str] = [
 @pytest.fixture(params=[None, 1, 1.0, "str", {"a": "dict"}, ["a", "list"]])
 def value(request: pytest.FixtureRequest) -> Any:
     return request.param
+
+
+@pytest.fixture
+def mock_file_path() -> Path:
+    return Path("/a/file/path")
 
 
 def _get_base_user_preferences_data(
@@ -48,15 +53,6 @@ def test_base_user_preference_model(value: Any, preference_type: PreferenceType)
     assert parse_obj_as(_BaseUserPreferenceModel, base_data)
 
 
-def test_backend_preferences(value: Any):
-    base_data = _get_base_user_preferences_data(
-        preference_type=PreferenceType.BACKEND, value=value
-    )
-    backend_preference = parse_obj_as(BaseBackendUserPreference, base_data)
-    # check serialization
-    assert set(backend_preference.dict().keys()) == {"value"}
-
-
 def test_frontend_preferences(value: Any):
     base_data = _get_base_user_preferences_data(
         preference_type=PreferenceType.FRONTEND, value=value
@@ -70,24 +66,20 @@ def test_frontend_preferences(value: Any):
     )
     # check serialization
     frontend_preference = parse_obj_as(
-        BaseFrontendUserPreference, data_with_rendered_widget
+        FrontendUserPreference, data_with_rendered_widget
     )
     assert set(frontend_preference.dict().keys()) == {"value"}
 
 
-@pytest.mark.parametrize("service_key", _SERVICE_KEY_SAMPLES)
-def test_user_service_preferences(value: Any, service_key: ServiceKey):
+def test_user_service_preferences(value: Any, mock_file_path: Path):
     base_data = _get_base_user_preferences_data(
         preference_type=PreferenceType.USER_SERVICE, value=value
     )
     base_data.update(
-        {
-            "service_key": service_key,
-            "last_changed_utc_timestamp": _get_utc_timestamp(),
-        }
+        {"service_key": _SERVICE_KEY_SAMPLES[0], "file_path": mock_file_path}
     )
-    instance = parse_obj_as(BaseUserServiceUserPreference, base_data)
-    assert set(instance.dict().keys()) == {"service_key", "value"}
+    instance = parse_obj_as(UserServiceUserPreference, base_data)
+    assert set(instance.dict().keys()) == {"file_path", "value"}
 
 
 @pytest.fixture
@@ -99,51 +91,29 @@ def unregister_defined_classes() -> Iterator[None]:
     )
 
 
-def test_user_defined_backend_preference(value: Any, unregister_defined_classes: None):
-    # definition of a new custom property
-    class Pref1(BaseBackendUserPreference):
-        ...
-
-    # usage
-    pref1 = Pref1(value=value)
-    assert isinstance(pref1, BaseBackendUserPreference)
-
-    # check bytes serialization/deserialization
-    pref1_as_bytes = pref1.json().encode()
-    new_instance = Pref1.parse_raw(pref1_as_bytes)
-    assert new_instance == pref1
-
-
-def test_user_defined_frontend_preference(value: Any, unregister_defined_classes: None):
-    # definition of a new custom property
-    class Pref1(BaseFrontendUserPreference):
-        preference_identifier = "pref1"
-
-    # usage
-    pref1 = Pref1(value=value)
-    assert isinstance(pref1, BaseFrontendUserPreference)
-
-    # check bytes serialization/deserialization
-    pref1_as_bytes = pref1.json().encode()
-    new_instance = Pref1.parse_raw(pref1_as_bytes)
-    assert new_instance == pref1
+def test__frontend__user_preference(value: Any, unregister_defined_classes: None):
+    pref1 = FrontendUserPreference.parse_obj(
+        {"preference_identifier": "pref_id", "value": value}
+    )
+    assert isinstance(pref1, FrontendUserPreference)
 
 
 @pytest.mark.parametrize("service_key_value", _SERVICE_KEY_SAMPLES)
-def test_user_defined_user_service_preference(
-    value: Any, service_key_value: ServiceKey, unregister_defined_classes: None
+def test__user_service__user_preference(
+    value: Any,
+    service_key_value: ServiceKey,
+    mock_file_path: Path,
+    unregister_defined_classes: None,
 ):
-    # definition of a new custom property
-    class Pref1(BaseUserServiceUserPreference):
-        service_key: ServiceKey = service_key_value
+    pref1 = UserServiceUserPreference.parse_obj(
+        {"value": value, "service_key": service_key_value, "file_path": mock_file_path}
+    )
+    assert isinstance(pref1, UserServiceUserPreference)
 
-    # usage
-    pref1 = Pref1(value=value, last_changed_utc_timestamp=_get_utc_timestamp())
-    assert isinstance(pref1, BaseUserServiceUserPreference)
-
+    # NOTE: these will be stored as bytes,
     # check bytes serialization/deserialization
     pref1_as_bytes = pref1.json().encode()
-    new_instance = Pref1.parse_raw(pref1_as_bytes)
+    new_instance = UserServiceUserPreference.parse_raw(pref1_as_bytes)
     assert new_instance == pref1
 
 

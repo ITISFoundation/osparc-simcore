@@ -1,67 +1,67 @@
 from models_library.user_preferences import (
-    BaseFrontendUserPreference,
+    FrontendUserPreference,
     PreferenceIdentifier,
     PreferenceName,
 )
 from pydantic import Field
 
 
-class ConfirmationBackToDashboardFrontendUserPreference(BaseFrontendUserPreference):
+class ConfirmationBackToDashboardFrontendUserPreference(FrontendUserPreference):
     preference_identifier = "confirmBackToDashboard"
     value: bool = True
 
 
-class ConfirmationDeleteStudyFrontendUserPreference(BaseFrontendUserPreference):
+class ConfirmationDeleteStudyFrontendUserPreference(FrontendUserPreference):
     preference_identifier = "confirmDeleteStudy"
     value: bool = True
 
 
-class ConfirmationDeleteNodeFrontendUserPreference(BaseFrontendUserPreference):
+class ConfirmationDeleteNodeFrontendUserPreference(FrontendUserPreference):
     preference_identifier = "confirmDeleteNode"
     value: bool = True
 
 
-class ConfirmationStopNodeFrontendUserPreference(BaseFrontendUserPreference):
+class ConfirmationStopNodeFrontendUserPreference(FrontendUserPreference):
     preference_identifier = "confirmStopNode"
     value: bool = True
 
 
-class SnapNodeToGridFrontendUserPreference(BaseFrontendUserPreference):
+class SnapNodeToGridFrontendUserPreference(FrontendUserPreference):
     preference_identifier = "snapNodeToGrid"
     value: bool = True
 
 
-class ConnectPortsAutomaticallyFrontendUserPreference(BaseFrontendUserPreference):
+class ConnectPortsAutomaticallyFrontendUserPreference(FrontendUserPreference):
     preference_identifier = "autoConnectPorts"
     value: bool = True
 
 
-class DoNotShowAnnouncementsFrontendUserPreference(BaseFrontendUserPreference):
+class DoNotShowAnnouncementsFrontendUserPreference(FrontendUserPreference):
     preference_identifier = "dontShowAnnouncements"
     value: list = Field(default_factory=list)
 
 
-class ServicesFrontendUserPreference(BaseFrontendUserPreference):
+class ServicesFrontendUserPreference(FrontendUserPreference):
     preference_identifier = "services"
     value: dict = Field(default_factory=dict)
 
 
-class ThemeNameFrontendUserPreference(BaseFrontendUserPreference):
+class ThemeNameFrontendUserPreference(FrontendUserPreference):
     preference_identifier = "themeName"
     value: str | None = None
 
 
-class LastVcsRefUIFrontendUserPreference(BaseFrontendUserPreference):
+class LastVcsRefUIFrontendUserPreference(FrontendUserPreference):
     preference_identifier = "lastVcsRefUI"
     value: str | None = None
 
 
-class PreferredWalletIdFrontendUserPreference(BaseFrontendUserPreference):
+class PreferredWalletIdFrontendUserPreference(FrontendUserPreference):
     preference_identifier = "preferredWalletId"
     value: int | None = None
 
 
-ALL_FRONTEND_PREFERENCES: list[type[BaseFrontendUserPreference]] = [
+ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [
     ConfirmationBackToDashboardFrontendUserPreference,
     ConfirmationDeleteStudyFrontendUserPreference,
     ConfirmationDeleteNodeFrontendUserPreference,

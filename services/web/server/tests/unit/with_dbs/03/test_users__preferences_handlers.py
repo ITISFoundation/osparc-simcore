@@ -9,10 +9,7 @@ import pytest
 from aiohttp import ClientResponse, web
 from aiohttp.test_utils import TestClient
 from faker import Faker
-from models_library.user_preferences import (
-    BaseFrontendUserPreference,
-    PreferenceIdentifier,
-)
+from models_library.user_preferences import FrontendUserPreference, PreferenceIdentifier
 from models_library.users import UserID
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
@@ -81,7 +78,7 @@ async def test_set_frontend_preference_expected_access_rights_response(
 
 
 @pytest.fixture(params=ALL_FRONTEND_PREFERENCES)
-def frontend_preference(request: pytest.FixtureRequest) -> BaseFrontendUserPreference:
+def frontend_preference(request: pytest.FixtureRequest) -> FrontendUserPreference:
     return request.param()
 
 
@@ -89,7 +86,7 @@ def frontend_preference(request: pytest.FixtureRequest) -> BaseFrontendUserPrefe
 async def test_set_frontend_preference(
     logged_user: UserInfoDict,
     client: TestClient,
-    frontend_preference: BaseFrontendUserPreference,
+    frontend_preference: FrontendUserPreference,
     user_role: UserRole,
     drop_all_preferences: None,
 ):

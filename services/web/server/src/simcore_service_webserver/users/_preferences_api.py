@@ -7,8 +7,8 @@ from models_library.api_schemas_webserver.users_preferences import (
 )
 from models_library.products import ProductName
 from models_library.user_preferences import (
-    AnyBaseUserPreference,
-    BaseFrontendUserPreference,
+    AnyUserPreference,
+    FrontendUserPreference,
     PreferenceIdentifier,
     PreferenceName,
 )
@@ -35,10 +35,8 @@ async def _get_frontend_user_preferences(
     app: web.Application,
     user_id: UserID,
     product_name: ProductName,
-) -> list[BaseFrontendUserPreference]:
-    saved_user_preferences: list[
-        BaseFrontendUserPreference | None
-    ] = await logged_gather(
+) -> list[FrontendUserPreference]:
+    saved_user_preferences: list[FrontendUserPreference | None] = await logged_gather(
         *(
             get_user_preference(
                 app,
@@ -90,8 +88,8 @@ async def set_frontend_user_preference(
         ) from e
 
     preference_class = cast(
-        type[AnyBaseUserPreference],
-        BaseFrontendUserPreference.get_preference_class_from_name(preference_name),
+        type[AnyUserPreference],
+        FrontendUserPreference.get_preference_class_from_name(preference_name),
     )
 
     await set_user_preference(
