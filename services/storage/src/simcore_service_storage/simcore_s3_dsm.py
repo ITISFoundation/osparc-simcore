@@ -571,8 +571,8 @@ class SimcoreS3DataManager(BaseDataManager):
             _logger,
             logging.INFO,
             (
-                f"{src_project_uuid} -> {dst_project_uuid}: total file size for "
-                "{[f.object_name for f in src_project_files]}"
+                f"{src_project_uuid} -> {dst_project_uuid}: getting total file size for "
+                f"{len(src_project_files)} files"
             ),
             log_duration=True,
         ):
@@ -637,6 +637,11 @@ class SimcoreS3DataManager(BaseDataManager):
         await logged_gather(*copy_tasks, max_concurrency=MAX_CONCURRENT_S3_TASKS)
         # ensure the full size is reported
         s3_transfered_data_cb.finalize_transfer()
+        _logger.info(
+            "%s -> %s: completed copy",
+            src_project_uuid,
+            dst_project_uuid,
+        )
 
     async def _get_size(self, fmd: FileMetaDataAtDB) -> ByteSize:
         if not fmd.is_directory:
@@ -1012,18 +1017,13 @@ class SimcoreS3DataManager(BaseDataManager):
                         for x in s3_objects
                     }
 
-                    await logged_gather(
-                        *[
-                            s3_client.copy_file(
-                                self.simcore_bucket_name,
-                                cast(SimcoreS3FileID, src),
-                                cast(SimcoreS3FileID, new),
-                                bytes_transfered_cb=bytes_transfered_cb,
-                            )
-                            for src, new in s3_objects_src_to_new.items()
-                        ],
-                        max_concurrency=_MAX_PARALLEL_S3_CALLS,
-                    )
+                    for src, new in s3_objects_src_to_new.items():
+                        await s3_client.copy_file(
+                            self.simcore_bucket_name,
+                            cast(SimcoreS3FileID, src),
+                            cast(SimcoreS3FileID, new),
+                            bytes_transfered_cb=bytes_transfered_cb,
+                        )
             else:
                 await s3_client.copy_file(
                     self.simcore_bucket_name,
