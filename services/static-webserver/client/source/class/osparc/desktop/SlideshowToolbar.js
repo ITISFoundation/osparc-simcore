@@ -19,6 +19,7 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
   extend: osparc.desktop.Toolbar,
 
   events: {
+    "nodeSelectionRequested": "qx.event.type.Data",
     "saveSlideshow": "qx.event.type.Event",
     "addServiceBetween": "qx.event.type.Data",
     "removeNode": "qx.event.type.Data",
@@ -101,7 +102,7 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
         case "breadcrumbs-navigation": {
           control = new osparc.navigation.BreadcrumbsSlideshow();
           osparc.utils.Utils.setIdToWidget(control, "appModeButtons");
-          control.addListener("nodeSelected", e => this.fireDataEvent("nodeSelected", e.getData()), this);
+          control.addListener("nodeSelectionRequested", e => this.fireDataEvent("nodeSelectionRequested", e.getData()), this);
           const scroll = this.getChildControl("breadcrumbs-scroll");
           scroll.add(control);
           break;

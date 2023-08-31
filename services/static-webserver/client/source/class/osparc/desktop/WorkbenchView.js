@@ -739,7 +739,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     getStartStopButtons: function() {
-      return this.__workbenchPanel.getToolbar().getStartStopButtons();
+      return this.__workbenchPanel.getToolbar().getChildControl("start-stop-btns");
     },
 
     getSelectedNodeIDs: function() {
