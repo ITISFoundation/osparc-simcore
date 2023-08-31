@@ -25,24 +25,11 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
   },
 
   members: {
-    __navNodes: null,
     __startStopBtns: null,
 
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "breadcrumbs-navigation": {
-          const breadcrumbNavigation = this.__navNodes = new osparc.navigation.BreadcrumbsWorkbench();
-          breadcrumbNavigation.addListener("nodeSelected", e => {
-            this.fireDataEvent("nodeSelected", e.getData());
-          }, this);
-          control = new qx.ui.container.Scroll();
-          control.add(breadcrumbNavigation);
-          this._add(control, {
-            flex: 1
-          });
-          break;
-        }
         case "start-stop-btns":
           control = new osparc.desktop.StartStopButtons();
           this._add(control);
@@ -67,8 +54,6 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
 
     // overridden
     _buildLayout: function() {
-      this._createChildControl("breadcrumbs-navigation");
-
       const startStopBtns = this.__startStopBtns = this.getChildControl("start-stop-btns");
       startStopBtns.exclude();
 
@@ -85,15 +70,6 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
 
       if (study) {
         this.__startStopBtns.setStudy(study);
-      }
-    },
-
-    // overridden
-    _populateNodesNavigationLayout: function() {
-      const study = this.getStudy();
-      if (study) {
-        const nodeIds = study.getWorkbench().getPathIds(study.getUi().getCurrentNodeId());
-        this.__navNodes.populateButtons(nodeIds);
       }
     },
 
