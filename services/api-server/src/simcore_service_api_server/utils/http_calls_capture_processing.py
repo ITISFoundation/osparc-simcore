@@ -68,7 +68,7 @@ class ParamSchema(BaseModel):
             return self.pattern
         else:
             if self.param_type == "int":
-                return r"^[+-]?[1-9][0-9]*|0$"
+                return r"^[-+]?\d+$"
             elif self.param_type == "float":
                 return r"^[+-]?\d+(?:\.\d+)?$"
             elif self.param_type == "str":
