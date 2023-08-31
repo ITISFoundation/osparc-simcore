@@ -72,7 +72,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
     },
 
     __createBtn: function(nodeId) {
-      const btn = this._createNodeBtn(nodeId);
+      const btn = this.__createNodeBtn(nodeId);
       this.__setButtonStyle(btn);
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const slideshow = study.getUi().getSlideshow().getData();
@@ -109,6 +109,24 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
           converter: status => `${node.getLabel()} - ${status}`
         });
       }
+      return btn;
+    },
+
+    __createNodeBtn: function(nodeId) {
+      const btn = new qx.ui.form.ToggleButton().set({
+        ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
+        maxWidth: 200
+      });
+      osparc.utils.Utils.setIdToWidget(btn, "appModeButton_"+nodeId);
+      btn.addListener("execute", e => {
+        if (btn.getValue()) {
+          // Unselected button clicked
+          this.fireDataEvent("nodeSelected", nodeId);
+        } else {
+          // Selected button clicked. Don't allo
+          btn.setValue(true);
+        }
+      }, this);
       return btn;
     }
   }
