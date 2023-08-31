@@ -22,6 +22,10 @@
 qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
   extend: osparc.navigation.BreadcrumbNavigation,
 
+  events: {
+    "nodeSelected": "qx.event.type.Data"
+  },
+
   members: {
     populateButtons: function(nodesIds = []) {
       const btns = [];
@@ -49,6 +53,42 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
           label.setValue(this.tr("There are no visible nodes, enable some by editing the App Mode"));
         }
         this._add(label);
+      }
+    },
+
+    __buttonsToBreadcrumb: function(btns, shape = "separator") {
+      this._removeAll();
+      for (let i=0; i<btns.length; i++) {
+        const thisBtn = btns[i];
+        let nextBtn = null;
+        if (i+1<btns.length) {
+          nextBtn = btns[i+1];
+        }
+
+        this._add(thisBtn);
+
+        const breadcrumbSplitter = new osparc.navigation.BreadcrumbSplitter(16, 32).set({
+          shape,
+          marginLeft: -1,
+          marginRight: -1
+        });
+        const addLeftRightWidgets = (leftBtn, rightBtn) => {
+          if (shape === "separator" && (!leftBtn || !rightBtn)) {
+            return;
+          }
+          breadcrumbSplitter.setLeftWidget(leftBtn);
+          if (rightBtn) {
+            breadcrumbSplitter.setRightWidget(rightBtn);
+          }
+        };
+        if (breadcrumbSplitter.getReady()) {
+          addLeftRightWidgets(thisBtn, nextBtn);
+        } else {
+          breadcrumbSplitter.addListenerOnce("SvgWidgetReady", () => {
+            addLeftRightWidgets(thisBtn, nextBtn);
+          }, this);
+        }
+        this._add(breadcrumbSplitter);
       }
     },
 
