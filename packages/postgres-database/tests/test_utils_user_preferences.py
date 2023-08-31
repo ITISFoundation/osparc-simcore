@@ -1,7 +1,11 @@
 # pylint: disable=redefined-outer-name
 
+from collections.abc import Awaitable, Callable
+from typing import Any
+
 import pytest
 from aiopg.sa.connection import SAConnection
+from aiopg.sa.result import RowProxy
 from faker import Faker
 from pytest_simcore.helpers.rawdata_fakers import random_user
 from simcore_postgres_database.models.users import UserRole, users
@@ -19,8 +23,9 @@ def preference_two() -> str:
 
 
 @pytest.fixture
-def product_name() -> str:
-    return "osparc"
+async def product_name(create_fake_product: Callable[..., Awaitable[RowProxy]]) -> str:
+    product = await create_fake_product("fake-product")
+    return product[0]
 
 
 async def _assert_save_get_preference(
@@ -31,18 +36,20 @@ async def _assert_save_get_preference(
     product_name: str,
     payload: bytes,
 ) -> None:
-    await UserPreferencesRepo().save_preference(
+    await UserPreferencesRepo.save_frontend_preference_payload(
         connection,
         user_id=user_id,
         preference_name=preference_name,
         product_name=product_name,
         payload=payload,
     )
-    get_res_2: bytes | None = await UserPreferencesRepo().get_preference_payload(
-        connection,
-        user_id=user_id,
-        preference_name=preference_name,
-        product_name=product_name,
+    get_res_2: bytes | None = (
+        await UserPreferencesRepo.load_frontend_preference_payload(
+            connection,
+            user_id=user_id,
+            preference_name=preference_name,
+            product_name=product_name,
+        )
     )
     assert get_res_2 is not None
     assert get_res_2 == payload
@@ -51,17 +58,19 @@ async def _assert_save_get_preference(
 async def _assert_preference_not_saved(
     connection: SAConnection, *, user_id: int, preference_name: str, product_name: str
 ) -> None:
-    not_found: bytes | None = await UserPreferencesRepo().get_preference_payload(
-        connection,
-        user_id=user_id,
-        preference_name=preference_name,
-        product_name=product_name,
+    not_found: bytes | None = (
+        await UserPreferencesRepo.load_frontend_preference_payload(
+            connection,
+            user_id=user_id,
+            preference_name=preference_name,
+            product_name=product_name,
+        )
     )
     assert not_found is None
 
 
-def _get_random_payload(faker: Faker) -> bytes:
-    return faker.pystr(max_chars=10000).encode()
+def _get_random_payload(faker: Faker) -> Any:
+    return {faker.pystr(): faker.pystr()}
 
 
 async def _get_user_id(connection: SAConnection, faker: Faker) -> int:

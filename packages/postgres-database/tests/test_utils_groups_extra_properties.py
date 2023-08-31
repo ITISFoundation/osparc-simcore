@@ -15,7 +15,6 @@ from simcore_postgres_database.models.groups import GroupType, groups, user_to_g
 from simcore_postgres_database.models.groups_extra_properties import (
     groups_extra_properties,
 )
-from simcore_postgres_database.models.products import products
 from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraProperties,
     GroupExtraPropertiesNotFound,
@@ -44,24 +43,6 @@ async def registered_user(
 @pytest.fixture
 def product_name(faker: Faker) -> str:
     return faker.pystr()
-
-
-@pytest.fixture
-def create_fake_product(
-    connection: aiopg.sa.connection.SAConnection,
-) -> Callable[..., Awaitable[RowProxy]]:
-    async def _creator(product_name: str) -> RowProxy:
-        result = await connection.execute(
-            sqlalchemy.insert(products)
-            .values(name=product_name, host_regex=".*")
-            .returning(literal_column("*"))
-        )
-        assert result
-        row = await result.first()
-        assert row
-        return row
-
-    return _creator
 
 
 @pytest.fixture
