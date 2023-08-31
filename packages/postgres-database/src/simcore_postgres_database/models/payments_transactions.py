@@ -18,7 +18,7 @@ payments_transactions = sa.Table(
         doc="Identifer of the payment provided by payment gateway",
     ),
     sa.Column(
-        "amount",
+        "prize_dollars",
         sa.Numeric(scale=2),
         nullable=False,
         doc="Total amount of the transaction (in dollars). E.g. 1234.12 $",
@@ -27,7 +27,7 @@ payments_transactions = sa.Table(
     # Concept/Info
     #
     sa.Column(
-        "credits",
+        "osparc_credits",
         sa.Numeric(scale=2),
         nullable=False,
         doc="Amount of credits that will be added to the wallet_id "
