@@ -55,7 +55,9 @@ class PreferenceType(StrAutoEnum):
 
 
 class NoPreferenceFoundError(RuntimeError):
-    ...
+    def __init__(self, preference_name) -> None:
+        self.preference_name = preference_name
+        super().__init__(f"No preference class found for provided {preference_name=}")
 
 
 class _BaseUserPreferenceModel(_ExtendedBaseModel):
@@ -71,12 +73,9 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
     ) -> type["_BaseUserPreferenceModel"]:
         preference_class: type[
             "_BaseUserPreferenceModel"
-        ] | None = cls._registered_user_preference_classes.get(
-            preference_name, None
-        )  # type: ignore
+        ] | None = cls._registered_user_preference_classes.get(preference_name, None)
         if preference_class is None:
-            msg = f"No preference class found for provided {preference_name=}"
-            raise NoPreferenceFoundError(msg)
+            raise NoPreferenceFoundError(preference_name)
         return preference_class
 
     @classmethod

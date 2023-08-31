@@ -11,6 +11,7 @@ import pytest
 from models_library.services import ServiceKey
 from models_library.user_preferences import (
     FrontendUserPreference,
+    NoPreferenceFoundError,
     PreferenceType,
     UserServiceUserPreference,
     _AutoRegisterMeta,
@@ -130,3 +131,10 @@ def test_redefine_class_with_same_name_is_not_allowed(unregister_defined_classes
     def_class_1()
     with pytest.raises(TypeError, match="was already defined"):
         def_class_2()
+
+
+def test_get_preference_class_from_name_not_found():
+    with pytest.raises(NoPreferenceFoundError, match="No preference class found"):
+        _BaseUserPreferenceModel.get_preference_class_from_name(
+            "__missing_preference_name__"
+        )
