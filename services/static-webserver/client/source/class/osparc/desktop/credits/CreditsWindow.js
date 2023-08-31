@@ -23,7 +23,7 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
 
     this.__walletsEnabled = walletsEnabled;
 
-    const viewWidth = walletsEnabled ? 1200 : 800;
+    const viewWidth = walletsEnabled ? 1100 : 800;
     const viewHeight = walletsEnabled ? 700 : 600;
 
     this.set({
