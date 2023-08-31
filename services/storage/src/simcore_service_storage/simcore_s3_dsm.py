@@ -576,12 +576,14 @@ class SimcoreS3DataManager(BaseDataManager):
             ),
             log_duration=True,
         ):
-            project_file_sizes: list[ByteSize] = await logged_gather(
-                *[self._get_size(fmd) for fmd in src_project_files],
+            sizes_and_num_files: list[tuple[ByteSize, int]] = await logged_gather(
+                *[self._get_size_and_num_files(fmd) for fmd in src_project_files],
                 max_concurrency=_MAX_PARALLEL_S3_CALLS,
             )
+            total_bytes_to_copy = sum(n for n, _ in sizes_and_num_files)
+            total_num_of_files = sum(n for _, n in sizes_and_num_files)
         src_project_total_data_size: ByteSize = parse_obj_as(
-            ByteSize, sum(project_file_sizes)
+            ByteSize, total_bytes_to_copy
         )
         _logger.info(
             "%s -> %s: Step 3.1: copy: files referenced from file_metadata",
@@ -592,7 +594,7 @@ class SimcoreS3DataManager(BaseDataManager):
         s3_transfered_data_cb = S3TransferDataCB(
             task_progress,
             src_project_total_data_size,
-            task_progress_message_prefix=f"Copying {len(src_project_files)} files to '{dst_project['name']}'",
+            task_progress_message_prefix=f"Copying {total_num_of_files} files to '{dst_project['name']}'",
         )
         for src_fmd in src_project_files:
             if not src_fmd.node_id or (src_fmd.location_id != self.location_id):
@@ -643,19 +645,23 @@ class SimcoreS3DataManager(BaseDataManager):
             dst_project_uuid,
         )
 
-    async def _get_size(self, fmd: FileMetaDataAtDB) -> ByteSize:
+    async def _get_size_and_num_files(
+        self, fmd: FileMetaDataAtDB
+    ) -> tuple[ByteSize, int]:
         if not fmd.is_directory:
-            return fmd.file_size
+            return fmd.file_size, 1
 
         # in case of directory list files and return size
         total_size: int = 0
+        total_num_s3_objects = 0
         async for s3_objects in get_s3_client(self.app).list_all_objects_gen(
             self.simcore_bucket_name,
             prefix=f"{fmd.object_name}",
         ):
             total_size += sum(x.get("Size", 0) for x in s3_objects)
+            total_num_s3_objects += len(s3_objects)
 
-        return parse_obj_as(ByteSize, total_size)
+        return parse_obj_as(ByteSize, total_size), total_num_s3_objects
 
     async def search_files_starting_with(
         self, user_id: UserID, prefix: str
@@ -989,7 +995,12 @@ class SimcoreS3DataManager(BaseDataManager):
         dst_file_id: SimcoreS3FileID,
         bytes_transfered_cb: Callable[[int], None],
     ) -> FileMetaData:
-        _logger.debug("copying %s to %s", f"{src_fmd=}", f"{dst_file_id=}")
+        _logger.debug(
+            "copying %s to %s, %s",
+            f"{src_fmd=}",
+            f"{dst_file_id=}",
+            f"{src_fmd.is_directory=}",
+        )
         # copying will happen using aioboto3, therefore multipart might happen
         # NOTE: connection must be released to ensure database update
         async with self.engine.acquire() as conn, conn.begin() as transaction:
