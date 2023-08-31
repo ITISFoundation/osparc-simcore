@@ -56,6 +56,11 @@ class LastVcsRefUIFrontendUserPreference(BaseFrontendUserPreference):
     value: str | None = None
 
 
+class PreferredWalletIdFrontendUserPreference(BaseFrontendUserPreference):
+    preference_identifier = "preferredWalletId"
+    value: int | None = None
+
+
 ALL_FRONTEND_PREFERENCES: list[type[BaseFrontendUserPreference]] = [
     ConfirmationBackToDashboardFrontendUserPreference,
     ConfirmationDeleteStudyFrontendUserPreference,
@@ -67,6 +72,7 @@ ALL_FRONTEND_PREFERENCES: list[type[BaseFrontendUserPreference]] = [
     ServicesFrontendUserPreference,
     ThemeNameFrontendUserPreference,
     LastVcsRefUIFrontendUserPreference,
+    PreferredWalletIdFrontendUserPreference,
 ]
 
 
