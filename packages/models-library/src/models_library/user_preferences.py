@@ -96,10 +96,10 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
     def dict(  # noqa: A003
         self,
         *,
-        include: AbstractSetIntStr | MappingIntStrAny = None,  # type: ignore
-        exclude: AbstractSetIntStr | MappingIntStrAny = None,  # type: ignore
+        include: AbstractSetIntStr | MappingIntStrAny | None = None,
+        exclude: AbstractSetIntStr | MappingIntStrAny | None = None,
         by_alias: bool = False,
-        skip_defaults: bool = None,  # type: ignore  # noqa: RUF013
+        skip_defaults: bool | None = None,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
