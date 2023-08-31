@@ -45,14 +45,14 @@
         }
       }
     },
-    "/v1/usage/containers": {
+    "/v1/usage/services": {
       "get": {
         "tags": [
           "resource-usage-tracker"
         ],
-        "summary": "List Containers",
+        "summary": "List Usage Services",
         "description": "Returns a list of tracked containers for a given user and product",
-        "operationId": "list_containers",
+        "operationId": "list_usage_services",
         "parameters": [
           {
             "required": false,
@@ -96,6 +96,26 @@
             },
             "name": "product_name",
             "in": "query"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "Wallet Id",
+              "exclusiveMinimum": true,
+              "type": "integer",
+              "minimum": 0
+            },
+            "name": "wallet_id",
+            "in": "query"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "Access All Wallet Usage",
+              "type": "boolean"
+            },
+            "name": "access_all_wallet_usage",
+            "in": "query"
           }
         ],
         "responses": {
@@ -104,7 +124,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LimitOffsetPage_ContainerGet_"
+                  "$ref": "#/components/schemas/LimitOffsetPage_ServiceRunGet_"
                 }
               }
             }
@@ -125,80 +145,6 @@
   },
   "components": {
     "schemas": {
-      "ContainerGet": {
-        "title": "ContainerGet",
-        "required": [
-          "project_uuid",
-          "node_uuid",
-          "service_key",
-          "service_version",
-          "start_time",
-          "duration",
-          "processors",
-          "core_hours",
-          "status"
-        ],
-        "type": "object",
-        "properties": {
-          "project_uuid": {
-            "title": "Project Uuid",
-            "type": "string",
-            "format": "uuid"
-          },
-          "project_name": {
-            "title": "Project Name",
-            "type": "string"
-          },
-          "node_uuid": {
-            "title": "Node Uuid",
-            "type": "string",
-            "format": "uuid"
-          },
-          "node_label": {
-            "title": "Node Label",
-            "type": "string"
-          },
-          "service_key": {
-            "title": "Service Key",
-            "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
-            "type": "string"
-          },
-          "service_version": {
-            "title": "Service Version",
-            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
-            "type": "string"
-          },
-          "start_time": {
-            "title": "Start Time",
-            "type": "string",
-            "format": "date-time"
-          },
-          "duration": {
-            "title": "Duration",
-            "type": "number"
-          },
-          "processors": {
-            "title": "Processors",
-            "type": "number"
-          },
-          "core_hours": {
-            "title": "Core Hours",
-            "type": "number"
-          },
-          "status": {
-            "$ref": "#/components/schemas/ContainerStatus"
-          }
-        }
-      },
-      "ContainerStatus": {
-        "title": "ContainerStatus",
-        "enum": [
-          "running",
-          "finished"
-        ],
-        "type": "string",
-        "description": "An enumeration."
-      },
       "HTTPValidationError": {
         "title": "HTTPValidationError",
         "type": "object",
@@ -212,8 +158,8 @@
           }
         }
       },
-      "LimitOffsetPage_ContainerGet_": {
-        "title": "LimitOffsetPage[ContainerGet]",
+      "LimitOffsetPage_ServiceRunGet_": {
+        "title": "LimitOffsetPage[ServiceRunGet]",
         "required": [
           "items",
           "total",
@@ -225,7 +171,7 @@
             "title": "Items",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ContainerGet"
+              "$ref": "#/components/schemas/ServiceRunGet"
             }
           },
           "total": {
@@ -278,6 +224,105 @@
             "example": "/api/v1/users?limit=1&offset1"
           }
         }
+      },
+      "ServiceRunGet": {
+        "title": "ServiceRunGet",
+        "required": [
+          "service_run_id",
+          "user_id",
+          "project_id",
+          "project_name",
+          "node_id",
+          "node_name",
+          "service_key",
+          "service_version",
+          "service_type",
+          "service_resources",
+          "started_at",
+          "service_run_status"
+        ],
+        "type": "object",
+        "properties": {
+          "service_run_id": {
+            "title": "Service Run Id",
+            "type": "string"
+          },
+          "wallet_id": {
+            "title": "Wallet Id",
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "minimum": 0
+          },
+          "wallet_name": {
+            "title": "Wallet Name",
+            "type": "string"
+          },
+          "user_id": {
+            "title": "User Id",
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "minimum": 0
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string",
+            "format": "uuid"
+          },
+          "project_name": {
+            "title": "Project Name",
+            "type": "string"
+          },
+          "node_id": {
+            "title": "Node Id",
+            "type": "string",
+            "format": "uuid"
+          },
+          "node_name": {
+            "title": "Node Name",
+            "type": "string"
+          },
+          "service_key": {
+            "title": "Service Key",
+            "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+            "type": "string"
+          },
+          "service_version": {
+            "title": "Service Version",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "type": "string"
+          },
+          "service_type": {
+            "title": "Service Type",
+            "type": "string"
+          },
+          "service_resources": {
+            "title": "Service Resources",
+            "type": "object"
+          },
+          "started_at": {
+            "title": "Started At",
+            "type": "string",
+            "format": "date-time"
+          },
+          "stopped_at": {
+            "title": "Stopped At",
+            "type": "string",
+            "format": "date-time"
+          },
+          "service_run_status": {
+            "$ref": "#/components/schemas/ServiceRunStatus"
+          }
+        }
+      },
+      "ServiceRunStatus": {
+        "title": "ServiceRunStatus",
+        "enum": [
+          "RUNNING",
+          "SUCCESS",
+          "ERROR"
+        ],
+        "type": "string",
+        "description": "An enumeration."
       },
       "ValidationError": {
         "title": "ValidationError",

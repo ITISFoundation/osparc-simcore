@@ -1,25 +1,18 @@
 import functools
 import logging
-from typing import Awaitable, Callable
+from collections.abc import Awaitable, Callable
 
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import RabbitResourceTrackingBaseMessage
 from servicelib.logging_utils import log_catch, log_context
-from servicelib.rabbitmq import RabbitMQClient, RabbitSettings
+from servicelib.rabbitmq import RabbitMQClient
+from settings_library.rabbit import RabbitSettings
 
 from .core.settings import ApplicationSettings
 from .modules.rabbitmq import get_rabbitmq_client
+from .resource_tracker_process_messages import process_message
 
 _logger = logging.getLogger(__name__)
-
-
-async def _process_message(
-    app: FastAPI, data: bytes  # pylint: disable=unused-argument
-) -> bool:
-    # NOTE: parse the message and process it
-
-    _logger.debug("%s", data)
-    return True
 
 
 async def _subscribe_to_rabbitmq(app) -> str:
@@ -27,7 +20,7 @@ async def _subscribe_to_rabbitmq(app) -> str:
         rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
         subscribed_queue: str = await rabbit_client.subscribe(
             RabbitResourceTrackingBaseMessage.get_channel_name(),
-            message_handler=functools.partial(_process_message, app),
+            message_handler=functools.partial(process_message, app),
             exclusive_queue=False,
         )
         return subscribed_queue
@@ -65,6 +58,7 @@ def on_app_shutdown(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _stop() -> None:
         if app.state.resource_tracker_rabbitmq_consumer:
             await _unsubscribe_from_rabbitmq(app)
+            await app.state.rabbitmq_client.close()
 
     return _stop
 

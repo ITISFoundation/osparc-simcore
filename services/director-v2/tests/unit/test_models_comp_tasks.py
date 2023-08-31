@@ -41,7 +41,7 @@ def test_computation_task_model_export_to_db_model(
         db_model = model_instance.to_db_model()
 
         assert isinstance(db_model, dict)
-        StateType(db_model["state"])
+        assert StateType(db_model["state"])
 
 
 @pytest.mark.parametrize(

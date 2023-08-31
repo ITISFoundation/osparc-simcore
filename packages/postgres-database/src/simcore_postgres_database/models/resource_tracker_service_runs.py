@@ -38,8 +38,9 @@ resource_tracker_service_runs = sa.Table(
     sa.Column(
         "wallet_id",
         sa.BigInteger,
-        nullable=False,
+        nullable=True,
         doc="We want to store the wallet id for tracking/billing purposes and be sure it stays there even when the wallet is deleted (that's also reason why we do not introduce foreign key)",
+        index=True,
     ),
     sa.Column(
         "wallet_name",
@@ -51,14 +52,20 @@ resource_tracker_service_runs = sa.Table(
     sa.Column(
         "pricing_plan_id",
         sa.BigInteger,
-        nullable=False,
+        nullable=True,
         doc="Pricing plan id for billing purposes",
     ),
     sa.Column(
         "pricing_detail_id",
         sa.BigInteger,
-        nullable=False,
+        nullable=True,
         doc="Pricing detail id for billing purposes",
+    ),
+    sa.Column(
+        "pricing_detail_cost_per_unit",
+        sa.Numeric(precision=15, scale=2),
+        nullable=True,
+        doc="Pricing detail cost per unit used for billing purposes",
     ),
     # User agent field
     sa.Column(
@@ -73,6 +80,7 @@ resource_tracker_service_runs = sa.Table(
         sa.BigInteger,
         nullable=False,
         doc="We want to store the user id for tracking/billing purposes and be sure it stays there even when the user is deleted (that's also reason why we do not introduce foreign key)",
+        index=True,
     ),
     sa.Column(
         "user_email",
@@ -149,7 +157,7 @@ resource_tracker_service_runs = sa.Table(
     sa.Column(
         "stopped_at",
         sa.DateTime(timezone=True),
-        nullable=False,
+        nullable=True,
         doc="Timestamp when the service was stopped",
     ),
     # Run status
@@ -159,4 +167,11 @@ resource_tracker_service_runs = sa.Table(
         nullable=False,
     ),
     column_modified_datetime(timezone=True),
+    # Last Heartbeat
+    sa.Column(
+        "last_heartbeat_at",
+        sa.DateTime(timezone=True),
+        nullable=False,
+        doc="Timestamp when was the last heartbeat",
+    ),
 )

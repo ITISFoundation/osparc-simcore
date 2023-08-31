@@ -160,6 +160,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
           ctrl.bindProperty("name", "title", null, item, id);
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
           ctrl.bindProperty("login", "subtitleMD", null, item, id);
+          ctrl.bindProperty("options", "options", null, item, id);
           ctrl.bindProperty("showOptions", "showOptions", null, item, id);
         },
         configureItem: item => {
@@ -211,9 +212,10 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         return;
       }
 
-      const canDelete = orgModel.getAccessRights().getDelete();
+      const canIWrite = orgModel.getAccessRights().getWrite();
+      const canIDelete = orgModel.getAccessRights().getDelete();
       this.__memberInvitation.set({
-        visibility: canDelete ? "visible" : "excluded"
+        visibility: canIWrite ? "visible" : "excluded"
       });
 
       const params = {
@@ -227,7 +229,58 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
           members.forEach(member => {
             member["thumbnail"] = osparc.utils.Avatar.getUrl(member["login"], 32);
             member["name"] = osparc.utils.Utils.firstsUp(member["first_name"], member["last_name"]);
-            member["showOptions"] = canDelete;
+            let options = [];
+            if (canIDelete) {
+              // admin...
+              if (member["accessRights"]["delete"]) {
+                // ...on admin
+                options = [];
+              } else if (member["accessRights"]["write"]) {
+                // ...on manager
+                options = [
+                  "promoteToAdministrator",
+                  "demoteToMember",
+                  "removeMember"
+                ];
+              } else if (member["accessRights"]["read"]) {
+                // ...on member
+                options = [
+                  "promoteToManager",
+                  "demoteToUser",
+                  "removeMember"
+                ];
+              } else if (!member["accessRights"]["read"]) {
+                // ...on user
+                options = [
+                  "promoteToMember",
+                  "removeMember"
+                ];
+              }
+            } else if (canIWrite) {
+              // manager...
+              if (member["accessRights"]["delete"]) {
+                // ...on admin
+                options = [];
+              } else if (member["accessRights"]["write"]) {
+                // ...on manager
+                options = [];
+              } else if (member["accessRights"]["read"]) {
+                // ...on member
+                options = [
+                  "promoteToManager",
+                  "demoteToUser",
+                  "removeMember"
+                ];
+              } else if (!member["accessRights"]["read"]) {
+                // ...on user
+                options = [
+                  "promoteToMember",
+                  "removeMember"
+                ];
+              }
+            }
+            member["options"] = options;
+            member["showOptions"] = Boolean(options.length);
             membersList.push(member);
           });
           membersList.sort(this.self().sortOrgMembers);

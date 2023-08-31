@@ -2,8 +2,7 @@ import logging
 from typing import cast
 
 from fastapi import FastAPI
-from servicelib.rabbitmq import RabbitMQClient
-from servicelib.rabbitmq_utils import wait_till_rabbitmq_responsive
+from servicelib.rabbitmq import RabbitMQClient, wait_till_rabbitmq_responsive
 from settings_library.rabbit import RabbitSettings
 
 from ..core.errors import ConfigurationError
@@ -27,7 +26,10 @@ def setup(app: FastAPI) -> None:
         )
 
     async def on_shutdown() -> None:
-        if app.state.rabbitmq_client:
+        if (
+            app.state.rabbitmq_client
+            and not app.state.resource_tracker_rabbitmq_consumer
+        ):
             await app.state.rabbitmq_client.close()
 
     app.add_event_handler("startup", on_startup)
