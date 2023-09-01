@@ -4,12 +4,9 @@
 # pylint: disable=too-many-arguments
 
 
-import json
-from pathlib import Path
+from collections.abc import Callable
 from typing import Any, TypeAlias
 
-import arrow
-import jsonref
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
@@ -19,146 +16,81 @@ from models_library.api_schemas_webserver.wallets import (
     WalletPaymentGet,
     WalletPaymentItemList,
 )
-from models_library.utils.fastapi_encoders import jsonable_encoder
+from models_library.rest_pagination import Page
 from pydantic import parse_obj_as
-from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.payments.api import get_payments_service_api
-from simcore_service_webserver.payments.settings import (
-    PaymentsSettings,
-    get_plugin_settings,
-)
-from toolz.dicttoolz import get_in
-from yarl import URL
 
 OpenApiDict: TypeAlias = dict[str, Any]
 
 
 @pytest.fixture
-def payments_service_openapi_specs(osparc_simcore_services_dir: Path) -> OpenApiDict:
-    oas = jsonref.replace_refs(
-        json.loads(
-            (osparc_simcore_services_dir / "payments" / "openapi.json").read_text()
-        )
-    )
-    assert isinstance(oas, dict)
-    return oas
+def user_role():
+    return UserRole.USER
 
 
 @pytest.fixture
-def app_payments_plugin_settings(client: TestClient) -> PaymentsSettings:
+def create_new_wallet(client: TestClient, faker: Faker) -> Callable:
     assert client.app
-    settings = get_plugin_settings(app=client.app)
-    assert settings
-    return settings
-
-
-@pytest.fixture
-def mock_payments_service_http_api(
-    aioresponses_mocker: AioResponsesMock,
-    payments_service_openapi_specs: dict[str, Any],
-    app_payments_plugin_settings: PaymentsSettings,
-) -> AioResponsesMock:
-    """Mocks responses from payments service API"""
-    oas = payments_service_openapi_specs
-    base_url = URL(app_payments_plugin_settings.base_url)
-
-    # healthcheck
-    assert "/" in oas["paths"]
-    aioresponses_mocker.get(
-        f"{base_url}/",
-        status=web.HTTPOk.status_code,
-        repeat=False,  # NOTE: this is only usable once!
-    )
-
-    # meta
-    assert "/v1/meta" in oas["paths"]
-    schema = get_in(
-        [
-            "paths",
-            "/v1/meta",
-            "get",
-            "responses",
-            "200",
-            "content",
-            "application/json",
-            "schema",
-        ],
-        oas,
-        no_default=True,
-    )
-    assert isinstance(schema, dict)
-
-    aioresponses_mocker.get(
-        f"{base_url}/v1/meta",
-        status=web.HTTPOk.status_code,
-        payload=jsonable_encoder(schema["example"]),
-    )
-
-    # create payment started
-    assert "/v1/payments" in oas["paths"]
-    aioresponses_mocker.post(
-        f"{base_url}/v1/payments",
-        status=web.HTTPOk.status_code,
-        payload=jsonable_encoder(
-            {
-                "payment_id": 1234,
-                "status": "CREATED",
-                "updated": arrow.now(),
-            }
-        ),
-    )
-
-    return aioresponses_mocker
-
-
-## ---------------------------------
-
-
-async def test_plugin_payments_service_api(
-    client: TestClient, mock_payments_service_http_api: AioResponsesMock
-):
-    assert client.app
-
-    payments_service = get_payments_service_api(client.app)
-    assert payments_service.is_healthy()
-
-    # TODO: next call the health should fail
-    # mock_payments_service_http_api
-
-
-@pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_payments_worfklow(
-    client: TestClient, faker: Faker, logged_user: UserInfoDict, wallets_clean_db: None
-):
-    assert client.app
-
-    # create a new wallet
     url = client.app.router["create_wallet"].url_for()
-    resp = await client.post(
-        url.path, json={"name": "My first wallet", "description": "Custom description"}
-    )
-    data, _ = await assert_status(resp, web.HTTPCreated)
-    wallet = WalletGet.parse_obj(data)
 
-    # TEST add payment to unauth wallet
+    async def _create():
+        resp = await client.post(
+            url.path,
+            json={
+                "name": f"wallet {faker.word()}",
+                "description": "Fake wallet from create_new_wallet",
+            },
+        )
+        data, _ = await assert_status(resp, web.HTTPCreated)
+        return WalletGet.parse_obj(data)
+
+    return _create
+
+
+async def test_payment_on_invalid_wallet(
+    client: TestClient,
+    faker: Faker,
+    logged_user: UserInfoDict,
+    wallets_clean_db: None,
+    create_new_wallet: Callable,
+):
+    assert client.app
+    wallet = await create_new_wallet()
+
     # TODO: test other user's wallet
     invalid_wallet = 1234
+    assert wallet.wallet_id != invalid_wallet
+
     response = await client.post(
-        f"/v0/wallet/{invalid_wallet}/payments",
+        f"/v0/wallets/{invalid_wallet}/payments",
         json={
             "osparcCredits": 50,
             "priceDollars": 25,
         },
     )
     data, error = await assert_status(response, web.HTTPForbidden)
-    assert error is None
+    assert data is None
+    assert error
+
+
+@pytest.mark.acceptance_test(
+    "For https://github.com/ITISFoundation/osparc-simcore/issues/4657"
+)
+async def test_payments_worfklow(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_new_wallet: Callable,
+    wallets_clean_db: None,
+):
+    assert client.app
+
+    wallet = await create_new_wallet()
 
     # TEST add payment to wallet
     response = await client.post(
-        f"/v0/wallet/{wallet.wallet_id}/payments",
+        f"/v0/wallets/{wallet.wallet_id}/payments",
         json={
             "osparcCredits": 50,
             "priceDollars": 25,
@@ -169,30 +101,22 @@ async def test_payments_worfklow(
     payment = WalletPaymentGet.parse_obj(data)
 
     assert payment.idr
-    assert payment.submission_link.path
-    assert payment.submission_link.path.endswith(payment.idr)
-
-    # some time later
-    # payment gets acknoledged -> socketio
-
-    # inspect status of in wallet
-    response = await client.get(f"/v0/wallet/{wallet.wallet_id}/payments/{payment.idr}")
-    data, error = await assert_status(response, web.HTTPOk)
-    assert error is None
-    payment = WalletPaymentGet.parse_obj(data)
-
-    # assert payment.state == PaymentTransactionState.COMPLETED
-
-    # list all payment transactions of a wallet
-    response = await client.get(f"/v0/wallet/{wallet.wallet_id}/payments")
-    data, error = await assert_status(response, web.HTTPOk)
-
-    assert parse_obj_as(list[WalletPaymentItemList], data) is not None
+    assert payment.submission_link.query
+    assert payment.submission_link.query.endswith(payment.idr)
 
     # list all payment transactions in all my wallets
-    response = await client.get("/v0/wallet/-/payments")
+    response = await client.get("/v0/wallets/-/payments")
     data, error = await assert_status(response, web.HTTPOk)
 
-    assert parse_obj_as(list[WalletPaymentItemList], data) is not None
+    page = parse_obj_as(Page[WalletPaymentItemList], data)
 
-    # check email was sent to user
+    assert page.data
+    assert page.meta.total == 1
+    assert page.meta.offset == 0
+    assert page.data[0].idr == payment.idr
+
+    # TODO: test completed
+    # some time later - > completed
+    # payment gets acknoledged -> socketio
+    # list payments and get completion
+    #
