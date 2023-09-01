@@ -2,6 +2,7 @@ from typing import TypeAlias
 
 from models_library.docker import DockerGenericTag
 from models_library.projects import ProjectID
+from models_library.projects_nodes import NodeID
 from models_library.projects_state import RunningState
 from models_library.services_resources import (
     ResourceValue,
@@ -47,9 +48,9 @@ Iteration: TypeAlias = PositiveInt
 
 
 def get_resource_tracking_run_id(
-    user_id: UserID, project_id: ProjectID, iteration: Iteration
+    user_id: UserID, project_id: ProjectID, node_id: NodeID, iteration: Iteration
 ) -> str:
-    return f"comp_{user_id}_{project_id}_{iteration}"
+    return f"comp_{user_id}_{project_id}_{node_id}_{iteration}"
 
 
 def create_service_resources_from_task(task: CompTaskAtDB) -> ServiceResourcesDict:

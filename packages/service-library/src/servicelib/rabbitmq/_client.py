@@ -125,7 +125,9 @@ class RabbitMQClient(RabbitMQClientBase):
                 async with message.process(requeue=True, ignore_processed=True):
                     try:
                         with log_context(
-                            _logger, logging.DEBUG, msg=f"Message received {message}"
+                            _logger,
+                            logging.DEBUG,
+                            msg=f"Received message from {message.exchange=}, {message.routing_key=}",
                         ):
                             if not await message_handler(message.body):
                                 await message.nack()
