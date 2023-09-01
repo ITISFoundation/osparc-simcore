@@ -225,7 +225,7 @@ qx.Class.define("osparc.desktop.credits.Overview", {
         50,
         125,
         "My Wallet",
-        "A payment"
+        ""
       ]];
       const maxTransactions = 4;
       entries.forEach((entry, row) => {
@@ -248,10 +248,10 @@ qx.Class.define("osparc.desktop.credits.Overview", {
       const grid = new qx.ui.layout.Grid(12, 8);
       const layout = new qx.ui.container.Composite(grid);
 
-      const headers = [];
-      Object.values(osparc.component.resourceUsage.OverviewTable.COLUMNS).forEach(col => headers.push(col.title));
-      headers.forEach((header, column) => {
-        const text = new qx.ui.basic.Label(header).set({
+      const cols = osparc.component.resourceUsage.OverviewTable.COLUMNS;
+      const colNames = Object.values(cols).map(col => col.title);
+      colNames.forEach((colName, column) => {
+        const text = new qx.ui.basic.Label(colName).set({
           font: "text-14"
         });
         layout.add(text, {

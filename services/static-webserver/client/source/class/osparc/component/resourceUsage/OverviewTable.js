@@ -19,8 +19,8 @@ qx.Class.define("osparc.component.resourceUsage.OverviewTable", {
   extend: osparc.ui.table.Table,
 
   construct: function() {
-    const cols = this.self().COLUMNS;
     const model = this.__model = new qx.ui.table.model.Simple();
+    const cols = this.self().COLUMNS;
     const colNames = Object.values(cols).map(col => col.title);
     model.setColumns(colNames);
 
@@ -40,35 +40,35 @@ qx.Class.define("osparc.component.resourceUsage.OverviewTable", {
     COLUMNS: {
       project: {
         pos: 0,
-        title: "Project"
+        title: qx.locale.Manager.tr("Project")
       },
       node: {
         pos: 1,
-        title: "Node"
+        title: qx.locale.Manager.tr("Node")
       },
       service: {
         pos: 2,
-        title: "Service"
+        title: qx.locale.Manager.tr("Service")
       },
       start: {
         pos: 3,
-        title: "Start"
+        title: qx.locale.Manager.tr("Start")
       },
       duration: {
         pos: 4,
-        title: "Duration"
+        title: qx.locale.Manager.tr("Duration")
       },
       status: {
         pos: 5,
-        title: "Status"
+        title: qx.locale.Manager.tr("Status")
       },
       wallet: {
         pos: 6,
-        title: "Wallet"
+        title: qx.locale.Manager.tr("Wallet")
       },
       cost: {
         pos: 7,
-        title: "Cost"
+        title: qx.locale.Manager.tr("Cost")
       }
     },
 
