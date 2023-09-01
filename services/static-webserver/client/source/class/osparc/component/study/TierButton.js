@@ -37,11 +37,11 @@ qx.Class.define("osparc.component.study.TierButton", {
   },
 
   properties: {
-    simplified: {
+    advanced: {
       check: "Boolean",
       init: null,
       nullable: true,
-      event: "changeSimplified",
+      event: "changeAdvanced",
       apply: "__buildLayout"
     }
   },
@@ -54,30 +54,28 @@ qx.Class.define("osparc.component.study.TierButton", {
 
       const toFixedIfNecessary = (value, dp) => Number(parseFloat(value).toFixed(dp));
 
-      if (this.isSimplified()) {
-        this._setLayout(new qx.ui.layout.HBox(5));
-        this._add(new qx.ui.basic.Label().set({
-          value: tierInfo.title + ": " + tierInfo.price,
-          font: "text-16"
-        }));
-      } else {
+      if (this.isAdvanced()) {
         this._setLayout(new qx.ui.layout.VBox(5));
 
         this._add(new qx.ui.basic.Label().set({
           value: tierInfo.title,
           font: "text-16"
         }));
-        if (!this.isSimplified()) {
-          Object.keys(tierInfo.resources).forEach(resourceKey => {
-            this._add(new qx.ui.basic.Label().set({
-              value: resourceKey + ": " + toFixedIfNecessary(tierInfo.resources[resourceKey]),
-              font: "text-12"
-            }));
-          });
-        }
+        Object.keys(tierInfo.resources).forEach(resourceKey => {
+          this._add(new qx.ui.basic.Label().set({
+            value: resourceKey + ": " + toFixedIfNecessary(tierInfo.resources[resourceKey]),
+            font: "text-12"
+          }));
+        });
         this._add(new qx.ui.basic.Label().set({
           value: qx.locale.Manager.tr("Credits/h") + ": " + tierInfo.price,
           font: "text-14"
+        }));
+      } else {
+        this._setLayout(new qx.ui.layout.HBox(5));
+        this._add(new qx.ui.basic.Label().set({
+          value: tierInfo.title + ": " + tierInfo.price,
+          font: "text-16"
         }));
       }
     },
