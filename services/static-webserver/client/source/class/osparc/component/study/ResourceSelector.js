@@ -98,40 +98,6 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
       });
       box.setLayout(new qx.ui.layout.VBox(5));
       return box;
-    },
-
-    createMachineToggleButton: function(machineInfo) {
-      const toFixedIfNecessary = (value, dp) => Number(parseFloat(value).toFixed(dp));
-      const rButton = new qx.ui.form.ToggleButton().set({
-        padding: 10,
-        minWidth: 120,
-        maxWidth: 120,
-        center: true
-      });
-      // eslint-disable-next-line no-underscore-dangle
-      rButton._setLayout(new qx.ui.layout.VBox(5));
-      rButton.info = machineInfo;
-      // eslint-disable-next-line no-underscore-dangle
-      rButton._add(new qx.ui.basic.Label().set({
-        value: machineInfo.title,
-        font: "text-16"
-      }));
-      Object.keys(machineInfo.resources).forEach(resourceKey => {
-        // eslint-disable-next-line no-underscore-dangle
-        rButton._add(new qx.ui.basic.Label().set({
-          value: resourceKey + ": " + toFixedIfNecessary(machineInfo.resources[resourceKey]),
-          font: "text-12"
-        }));
-      });
-      // eslint-disable-next-line no-underscore-dangle
-      rButton._add(new qx.ui.basic.Label().set({
-        value: qx.locale.Manager.tr("Credits/h") + ": " + machineInfo.price,
-        font: "text-14"
-      }));
-      rButton.getContentElement().setStyles({
-        "border-radius": "4px"
-      });
-      return rButton;
     }
   },
 
@@ -283,9 +249,9 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
           }
           if (Object.keys(lgInfo["resources"]).length) {
             const buttons = [];
-            const smallButton = this.self().createMachineToggleButton(smInfo);
-            const mediumButton = this.self().createMachineToggleButton(mdInfo);
-            const largeButton = this.self().createMachineToggleButton(lgInfo);
+            const smallButton = new osparc.component.study.TierButton(smInfo);
+            const mediumButton = new osparc.component.study.TierButton(mdInfo);
+            const largeButton = new osparc.component.study.TierButton(lgInfo);
             [
               smallButton,
               mediumButton,
@@ -307,12 +273,12 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
             buttons.forEach(btn => btn.addListener("changeValue", e => {
               if (e.getData()) {
                 this.getChildControl("summary-label").set({
-                  value: serviceLabel + ": " + btn.info.price
+                  value: serviceLabel + ": " + btn.getTierInfo().price
                 });
               }
             }));
-            // small by default
-            smallButton.execute();
+            // medium by default
+            mediumButton.execute();
           }
           return machinesLayout;
         }
