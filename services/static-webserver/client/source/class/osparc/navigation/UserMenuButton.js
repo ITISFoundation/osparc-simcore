@@ -90,14 +90,12 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
         case "account":
           control = new qx.ui.menu.Button(this.tr("User Center"));
           control.addListener("execute", () => {
-            /*
             osparc.desktop.credits.Utils.areWalletsEnabled()
               .then(walletsEnabled => {
-                // const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow(walletsEnabled);
-                // creditsWindow.openOverview();
+                const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow(walletsEnabled);
+                creditsWindow.openOverview();
               });
-              */
-            osparc.desktop.MainPageHandler.getInstance().showUserCenter();
+            // osparc.desktop.MainPageHandler.getInstance().showUserCenter();
           }, this);
           this.getMenu().add(control);
           break;

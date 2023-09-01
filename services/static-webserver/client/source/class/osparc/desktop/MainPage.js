@@ -65,6 +65,7 @@ qx.Class.define("osparc.desktop.MainPage", {
                 creditsWindow.openOverview();
               }
             });
+          // setTimeout(() => osparc.desktop.MainPageHandler.getInstance().showUserCenter(), 1000);
         }
       });
 

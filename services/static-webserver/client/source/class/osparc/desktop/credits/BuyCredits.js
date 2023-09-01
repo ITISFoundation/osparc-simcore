@@ -373,6 +373,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       });
       row++;
 
+      /*
       const vatTitle = new qx.ui.basic.Label().set({
         value: "VAT 7.7%",
         font: "text-13"
@@ -392,6 +393,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         column: 1
       });
       row++;
+      */
 
       const walletTitle = new qx.ui.basic.Label().set({
         value: "Wallet",
