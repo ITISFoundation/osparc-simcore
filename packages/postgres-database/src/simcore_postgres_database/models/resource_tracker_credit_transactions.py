@@ -79,7 +79,7 @@ resource_tracker_credit_transactions = sa.Table(
     ),
     sa.Column(
         "credits",
-        sa.Numeric(scale=2),
+        sa.Numeric(precision=15, scale=2),
         nullable=False,
         doc="Credits",
     ),
@@ -99,7 +99,7 @@ resource_tracker_credit_transactions = sa.Table(
     ),
     sa.Column(
         "service_run_id",
-        sa.BigInteger,
+        sa.String,
         nullable=True,
         doc="Service run id connected with this transaction",
         index=True,
@@ -109,7 +109,6 @@ resource_tracker_credit_transactions = sa.Table(
         sa.String,
         nullable=True,
         doc="Service run id connected with this transaction",
-        index=True,
     ),
     column_created_datetime(timezone=True),
     sa.Column(

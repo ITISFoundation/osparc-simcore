@@ -21,6 +21,9 @@ from models_library.rabbitmq_messages import (
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
+from simcore_postgres_database.models.resource_tracker_credit_transactions import (
+    resource_tracker_credit_transactions,
+)
 from simcore_postgres_database.models.resource_tracker_service_runs import (
     resource_tracker_service_runs,
 )
@@ -133,6 +136,31 @@ async def assert_service_runs_db_row(
                 assert row
                 if status:
                     assert row[21] == status
+                return row
+
+
+async def assert_credit_transactions_db_row(
+    postgres_db, service_run_id: str, modified_at: datetime | None = None
+) -> dict | None:
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.2),
+        stop=stop_after_delay(10),
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+    ):
+        with attempt:
+            with postgres_db.connect() as con:
+                con.execute(resource_tracker_credit_transactions.select())
+                result = con.execute(
+                    sa.select(resource_tracker_credit_transactions).where(
+                        resource_tracker_credit_transactions.c.service_run_id
+                        == service_run_id
+                    )
+                )
+                row: dict | None = result.first()
+                assert row
+                if modified_at:
+                    assert row[15] > modified_at
                 return row
 
 

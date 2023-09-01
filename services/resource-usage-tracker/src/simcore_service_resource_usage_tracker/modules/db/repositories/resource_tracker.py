@@ -341,7 +341,11 @@ class ResourceTrackerRepository(BaseRepository):
         async with self.db_engine.begin() as conn:
             update_stmt = (
                 resource_tracker_credit_transactions.update()
-                .values(modified=sa.func.now(), credits=data.credits)
+                .values(
+                    modified=sa.func.now(),
+                    credits=data.credits,
+                    last_heartbeat_at=data.last_heartbeat_at,
+                )
                 .where(
                     (
                         resource_tracker_credit_transactions.c.service_run_id

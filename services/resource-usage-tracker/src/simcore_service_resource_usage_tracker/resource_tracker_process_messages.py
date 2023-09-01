@@ -128,7 +128,7 @@ async def _process_heartbeat_event(
         update_service_run_last_heartbeat
     )
     if running_service is None:
-        _logger.info("Nothing to update")  # MATUS: improve message
+        _logger.info("Nothing to update: %s", msg)
         return None
 
     if running_service.wallet_id and running_service.pricing_detail_cost_per_unit:
@@ -175,9 +175,7 @@ async def _process_stop_event(
     )
 
     if running_service is None:
-        _logger.error(
-            "Nothing to update? this should not happen"
-        )  # MATUS: improve message
+        _logger.error("Nothing to update. This should not happen investigate.")
         return None
 
     if running_service.wallet_id and running_service.pricing_detail_cost_per_unit:
@@ -223,4 +221,6 @@ async def _compute_service_run_credit_costs(
         time_delta = stop - start
         computed_credits = round(time_delta.seconds / 3600 * cost_per_unit, 2)
         return computed_credits
-    raise ValueError  # MATUS add error -> should not happen!
+    raise ValueError(
+        "Stop {stop} is smaller then {start} this should not happen. Investigate."
+    )
