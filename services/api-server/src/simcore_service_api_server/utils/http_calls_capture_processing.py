@@ -202,7 +202,7 @@ def _get_params(
             raise VerbNotInPath(
                 f"the verb '{verb}' was not available in '{path}' in {openapi_spec}"
             )
-        if (params := verb_spec["parameters"]) is None:
+        if (params := verb_spec.get("parameters")) is None:
             continue
         all_params += parse_obj_as(list[Param], params)
     return set(all_params)

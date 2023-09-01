@@ -235,7 +235,18 @@ _API_SERVER_PATHS: list[tuple[str, Path, str]] = [
         "get_solver",
         Path("/v0/solvers/{solver_key}/latest"),
         "/v0/solvers/simcore/services/comp/itis/sleeper/latest",
-    )
+    ),
+    (
+        "get_job",
+        Path("/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}"),
+        "/v0/solvers/simcore/services/comp/itis/sleeper/releases/2.0.2/jobs/3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ),
+    (
+        "start_job",
+        Path("/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}:start"),
+        "/v0/solvers/simcore/services/comp/itis/sleeper/releases/2.0.2/jobs/3fa85f64-5717-4562-b3fc-2c963f66afa6:start",
+    ),
+    ("get_service_metadata", Path("/v0/meta"), "/v0/meta"),
 ]
 
 
@@ -248,9 +259,6 @@ def test_capture_respx_api_server(params: tuple[str, Path, str]):
     url_path: UrlPath = _determine_path(
         openapi_spec=openapi_spec, response_path=openapi_path
     )
-    assert (
-        len(url_path.path_parameters) > 0
-    ), f"{url_path.path_parameters=} and this test only makes sense if there are path parameters"
     path_pattern = str(openapi_path)
     for p in url_path.path_parameters:
         path_pattern = path_pattern.replace("{" + p.name + "}", p.regex_lookup)
