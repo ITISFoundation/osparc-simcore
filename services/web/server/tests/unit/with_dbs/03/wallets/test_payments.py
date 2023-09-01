@@ -100,9 +100,9 @@ async def test_payments_worfklow(
     assert error is None
     payment = WalletPaymentGet.parse_obj(data)
 
-    assert payment.idr
+    assert payment.payment_id
     assert payment.submission_link.query
-    assert payment.submission_link.query.endswith(payment.idr)
+    assert payment.submission_link.query.endswith(payment.payment_id)
 
     # list all payment transactions in all my wallets
     response = await client.get("/v0/wallets/-/payments")
@@ -113,7 +113,7 @@ async def test_payments_worfklow(
     assert page.data
     assert page.meta.total == 1
     assert page.meta.offset == 0
-    assert page.data[0].idr == payment.idr
+    assert page.data[0].payment_id == payment.payment_id
 
     # TODO: test completed
     # some time later - > completed
