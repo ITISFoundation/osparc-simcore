@@ -55,9 +55,6 @@ async def test_numerics_precission_and_scale(connection: SAConnection):
             .returning(payments_transactions.c.price_dollars)
         )
         assert isinstance(got, decimal.Decimal)
-        # TODO: not sure about Decimal user
-        # TODO: review https://docs.python.org/3/library/decimal.html#quick-start-tutorial
-
         assert float(got) == expected
 
 
@@ -68,7 +65,7 @@ def init_transaction(connection: SAConnection):
         data = random_payment_transaction(payment_id=payment_id)
 
         # init successful: set timestamp
-        data["initiated"] = utcnow()
+        data["initiated_at"] = utcnow()
 
         # insert
         await connection.execute(payments_transactions.insert().values(data))
@@ -85,7 +82,7 @@ async def test_create_transaction(connection: SAConnection, init_transaction: Ca
     # insert
     result = await connection.execute(
         sa.select(
-            payments_transactions.c.completed,
+            payments_transactions.c.completed_at,
             payments_transactions.c.success,
             payments_transactions.c.errors,
         ).where(payments_transactions.c.payment_id == payment_id)
@@ -93,9 +90,9 @@ async def test_create_transaction(connection: SAConnection, init_transaction: Ca
     row: RowProxy | None = await result.fetchone()
     assert row is not None
 
-    # defaults are right?
+    # tests that defaults are right?
     assert dict(row.items()) == {
-        "completed": None,
+        "completed_at": None,
         "success": None,
         "errors": None,
     }
@@ -109,7 +106,7 @@ async def test_complete_transaction_with_success(
 
     errors = await connection.scalar(
         payments_transactions.update()
-        .values(completed=True, success=True)
+        .values(completed_at=utcnow(), success=True)
         .where(payments_transactions.c.payment_id == payment_id)
         .returning(payments_transactions.c.errors)
     )
@@ -125,21 +122,13 @@ async def test_complete_transaction_with_failure(
     data = await (
         await connection.execute(
             payments_transactions.update()
-            .values(completed=True, success=False, error="some error message")
+            .values(completed_at=utcnow(), success=False, error="some error message")
             .where(payments_transactions.c.payment_id == payment_id)
             .returning(sa.literal_column("*"))
         )
     ).fetchone()
 
     assert data is not None
-    assert data["completed"]
+    assert data["completed_at"]
     assert not data["success"]
     assert data["error"] is not None
-
-
-async def test_detect_incompleted_transactions_after_timeout():
-    ...
-
-
-async def test_list_user_transactions():
-    ...

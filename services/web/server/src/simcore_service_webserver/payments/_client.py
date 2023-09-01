@@ -65,7 +65,7 @@ class PaymentsServiceApi:
     async def is_healthy(self) -> bool:
         try:
             response = await self.client.get(self._url(self.healthcheck_path))
-            return response.ok
+            return bool(response.ok)
         except ClientError as err:
             _logger.debug("Payments service is not healty: %s", err)
             return False
