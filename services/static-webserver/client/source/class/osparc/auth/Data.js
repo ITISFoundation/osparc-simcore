@@ -80,7 +80,8 @@ qx.Class.define("osparc.auth.Data", {
     lastName: {
       init: "",
       nullable: true,
-      check: "String"
+      check: "String",
+      event: "changeLastName"
     },
 
     role: {

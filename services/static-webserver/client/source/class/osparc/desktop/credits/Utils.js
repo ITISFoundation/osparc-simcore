@@ -83,6 +83,16 @@ qx.Class.define("osparc.desktop.credits.Utils", {
         }
       }
       return false;
+    },
+
+    getFavouriteWallet: function() {
+      const store = osparc.store.Store.getInstance();
+      const wallets = store.getWallets();
+      const favouriteWallet = wallets.find(wallet => wallet.isDefaultWallet());
+      if (favouriteWallet) {
+        return favouriteWallet;
+      }
+      return null;
     }
   }
 });
