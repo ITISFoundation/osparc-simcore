@@ -2,6 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import json
 from collections.abc import AsyncIterator, Iterator
 from copy import deepcopy
 from pathlib import Path
@@ -22,22 +23,23 @@ def app_environment(
     env_devel_dict: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
 ):
-    new_envs = (
-        app_environment
-        | env_devel_dict
-        | setenvs_from_dict(
-            monkeypatch,
-            {
-                "WEBSERVER_DB_LISTENER": "0",
-                "WEBSERVER_DEV_FEATURES_ENABLED": "1",
-                "WEBSERVER_GARBAGE_COLLECTOR": "null",
-            },
-        )
+    new_envs = setenvs_from_dict(
+        monkeypatch,
+        {
+            **app_environment,
+            **env_devel_dict,
+            "WEBSERVER_DB_LISTENER": "0",
+            "WEBSERVER_DEV_FEATURES_ENABLED": "1",
+            "WEBSERVER_GARBAGE_COLLECTOR": "null",
+        },
     )
+
     settings = ApplicationSettings.create_from_envs()
 
-    assert settings.WEBSERVER_WALLETS is True, f"{new_envs}"
-    assert settings.WEBSERVER_PAYMENTS is not None, f"{new_envs}"
+    new_envs_json = json.dumps(new_envs, sort_keys=True, indent=1)
+
+    assert settings.WEBSERVER_WALLETS is True, f"{new_envs_json}"
+    assert settings.WEBSERVER_PAYMENTS is not None, f"{new_envs_json}"
 
     return new_envs
 

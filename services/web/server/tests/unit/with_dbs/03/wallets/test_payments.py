@@ -60,7 +60,6 @@ async def test_payment_on_invalid_wallet(
     assert client.app
     wallet = await create_new_wallet()
 
-    # TODO: test other user's wallet
     invalid_wallet = 1234
     assert wallet.wallet_id != invalid_wallet
 
@@ -76,7 +75,6 @@ async def test_payment_on_invalid_wallet(
     assert error
 
 
-@pytest.mark.testit
 @pytest.mark.acceptance_test(
     "For https://github.com/ITISFoundation/osparc-simcore/issues/4657"
 )
