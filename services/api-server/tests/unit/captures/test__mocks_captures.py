@@ -219,6 +219,7 @@ def test_param_regex_pattern(params: tuple[str, str, str, str]):
     _, openapi_param, match, non_match = params
     param: Param = Param(**json.loads(openapi_param))
     pattern = param.param_schema.regex_pattern
+    pattern = "^" + pattern + "$"
     if match is not None:
         assert re.match(
             pattern=pattern, string=match
@@ -233,12 +234,13 @@ _API_SERVER_PATHS: list[tuple[str, Path, str]] = [
     (
         "get_solver",
         Path("/v0/solvers/{solver_key}/latest"),
-        f"/v0/solvers/simcore/services/comp/itis/sleeper/latest",
+        "/v0/solvers/simcore/services/comp/itis/sleeper/latest",
     )
 ]
 
 
 @pytest.mark.parametrize("params", _API_SERVER_PATHS, ids=lambda x: x[0])
+@respx.mock
 def test_capture_respx_api_server(params: tuple[str, Path, str]):
     _, openapi_path, example = params
     assert _DUMMY_API_SERVER_OPENAPI.is_file()
@@ -249,13 +251,17 @@ def test_capture_respx_api_server(params: tuple[str, Path, str]):
     assert (
         len(url_path.path_parameters) > 0
     ), f"{url_path.path_parameters=} and this test only makes sense if there are path parameters"
-    path_pattern: str = str(openapi_path)
+    path_pattern = str(openapi_path)
     for p in url_path.path_parameters:
-        path_pattern = path_pattern.replace(
-            "{" + p.name + "}", p.param_schema.regex_pattern
-        )
-    assert re.match(path_pattern, example)
-    my_route = respx.get(path__regex="https://example.org" + path_pattern)
+        path_pattern = path_pattern.replace("{" + p.name + "}", p.regex_lookup)
+
+    def side_effect(request, **kwargs):
+        return httpx.Response(status_code=200, json=kwargs)
+
+    my_route = respx.get(url__regex="https://example.org" + path_pattern).mock(
+        side_effect=side_effect
+    )
     response = httpx.get("https://example.org" + example)
     assert my_route.called
     assert response.status_code == 200
+    assert all(param.name in response.json() for param in url_path.path_parameters)

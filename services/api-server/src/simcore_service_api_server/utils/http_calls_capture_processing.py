@@ -47,35 +47,45 @@ class ParamSchema(BaseModel):
             raise ValueError(
                 "all of 'param_type', 'oneOf', 'anyOf' and 'allOf' were None"
             )
+
+        def check_no_recursion(v: list["ParamSchema"]):
+            if v is not None and not all(
+                elm.anyOf is None and elm.oneOf is None and elm.allOf is None
+                for elm in v
+            ):
+                raise ValueError(
+                    "For simplicity we only allow top level schema have oneOf, anyOf or allOf"
+                )
+
+        check_no_recursion(anyOf)
+        check_no_recursion(allOf)
+        check_no_recursion(oneOf)
         return values  # this validator ONLY validates - no modification
 
     @property
     def regex_pattern(self) -> str:
         # first deal with recursive types:
-        if self.anyOf:
-            return r"|".join([elm.regex_pattern for elm in self.anyOf])
-        if self.allOf:
-            return r"(?=.*{})".format(
-                ")(?=.*".join([elm.regex_pattern for elm in self.allOf])
-            )
-        if self.oneOf:
-            return r"^(?:{})$".format(
-                "|".join([elm.regex_pattern for elm in self.oneOf])
+        if self.anyOf or self.oneOf or self.allOf:
+            raise ValueError(
+                "Current version cannot compute regex patterns in case of allOf, anyOf or oneOf. Please go ahead and implement it yourself."
             )
 
         # now deal with non-recursive cases
         if self.pattern is not None:
-            return self.pattern
+            pattern: str = str(self.pattern)
+            pattern = pattern.removeprefix("^")
+            pattern = pattern.removesuffix("$")
+            return pattern
         else:
             if self.param_type == "int":
-                return r"^[-+]?\d+$"
+                return r"[-+]?\d+"
             elif self.param_type == "float":
-                return r"^[+-]?\d+(?:\.\d+)?$"
+                return r"[+-]?\d+(?:\.\d+)?"
             elif self.param_type == "str":
                 if self.param_format == "uuid":
-                    return r"^[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12}$"
+                    return r"[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12}"
                 else:
-                    return ".*"  # should match any string
+                    return r".*"  # should match any string
         raise OpenApiSpecIssue(
             f"Encountered invalid {self.param_type=} and {self.param_format=} combination"
         )
@@ -106,6 +116,10 @@ class Param(BaseModel):
     @property
     def is_query(self) -> bool:
         return self.variable_type == "query"
+
+    @property
+    def regex_lookup(self) -> str:
+        return rf"(?P<{self.name}>{self.param_schema.regex_pattern})"
 
 
 class UrlPath(BaseModel):
