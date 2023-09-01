@@ -1,3 +1,4 @@
+# pylint: disable=inconsistent-return-statements
 # pylint: disable=redefined-outer-name
 
 from collections.abc import Awaitable, Callable
