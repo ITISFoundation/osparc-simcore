@@ -10,6 +10,7 @@ from pydantic import ValidationError
 
 from .app_data import AppDataMixin
 from .http_calls_capture import get_captured_as_json
+from .http_calls_capture_processing import CaptureProcessingException
 
 _logger = logging.getLogger(__name__)
 
@@ -52,9 +53,17 @@ class _AsyncClientForDevelopmentOnly(httpx.AsyncClient):
         _logger.info("Capturing %s ... [might be slow]", capture_name)
         try:
             capture_json = get_captured_as_json(name=capture_name, response=response)
-            _capture_logger.info("%s", capture_json)
-        except ValidationError:
-            _capture_logger.exception("Failed capturing %s", capture_name)
+            _capture_logger.info("%s,", capture_json)
+        except (
+            ValidationError,
+            CaptureProcessingException,
+            NotImplementedError,
+        ) as err:
+            _capture_logger.exception(
+                "Failed capturing %s with the following exception:\n%s",
+                capture_name,
+                str(err),
+            )
 
         return response
 
@@ -65,7 +74,7 @@ _capture_logger = logging.getLogger(f"{__name__}.capture")
 
 
 def _setup_capture_logger_once(capture_path: Path) -> None:
-    """NOTE: this is only to capture during developmetn"""
+    """NOTE: this is only to capture during development"""
 
     if not any(
         isinstance(hnd, logging.FileHandler) for hnd in _capture_logger.handlers
@@ -73,12 +82,11 @@ def _setup_capture_logger_once(capture_path: Path) -> None:
         file_handler = logging.FileHandler(filename=f"{capture_path}")
         file_handler.setLevel(logging.INFO)
 
-        formatter = logging.Formatter("%(asctime)s - %(message)s")
+        formatter = logging.Formatter("%(message)s")
         file_handler.setFormatter(formatter)
 
         _capture_logger.addHandler(file_handler)
         _logger.info("Setup capture logger at %s", capture_path)
-        _capture_logger.info("Started capture session ...")
 
 
 def setup_client_instance(

@@ -66,7 +66,7 @@ class ParamSchema(BaseModel):
     def regex_pattern(self) -> str:
         # first deal with recursive types:
         if self.anyOf or self.oneOf or self.allOf:
-            raise ValueError(
+            raise NotImplementedError(
                 "Current version cannot compute regex patterns in case of allOf, anyOf or oneOf. Please go ahead and implement it yourself."
             )
 
@@ -141,7 +141,7 @@ def get_openapi_specs(host: str) -> dict[str, Any]:
         url = settings.base_url + "/dev/doc/swagger.json"
     else:
         raise OpenApiSpecIssue(
-            f"{host} has not been added yet to the testing system. Please do so yourself"
+            f"{host=} has not been added yet to the testing system. Please do so yourself"
         )
     with httpx.Client() as session:
         # http://127.0.0.1:30010/dev/doc/swagger.json
@@ -208,13 +208,18 @@ def _get_params(
     return set(all_params)
 
 
-class VerbNotInPath(Exception):
+class CaptureProcessingException(Exception):
+    # base for all the exceptions in this submodule
     pass
 
 
-class PathNotInOpenApiSpecification(Exception):
+class VerbNotInPath(CaptureProcessingException):
     pass
 
 
-class OpenApiSpecIssue(Exception):
+class PathNotInOpenApiSpecification(CaptureProcessingException):
+    pass
+
+
+class OpenApiSpecIssue(CaptureProcessingException):
     pass
