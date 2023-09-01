@@ -94,12 +94,14 @@ class ProfileGet(_ProfileCommon):
                     "login": "bla@foo.com",
                     "role": "Admin",
                     "gravatar_id": "205e460b479e2e5b48aec07710c08d50",
+                    "preferences": {},
                 },
                 {
                     "id": 42,
                     "login": "bla@foo.com",
                     "role": UserRole.ADMIN,
                     "expirationDate": "2022-09-14",
+                    "preferences": {},
                 },
             ]
         }
