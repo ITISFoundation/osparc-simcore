@@ -4,7 +4,7 @@ from typing import Any, Literal
 import httpx
 import jsonref
 from pydantic import BaseModel, Field, parse_obj_as, root_validator, validator
-from simcore_service_api_server.core.settings import StorageSettings
+from simcore_service_api_server.core.settings import CatalogSettings, StorageSettings
 
 
 class ParamSchema(BaseModel):
@@ -139,6 +139,9 @@ def get_openapi_specs(host: str) -> dict[str, Any]:
     if host == "storage":
         settings = StorageSettings()
         url = settings.base_url + "/dev/doc/swagger.json"
+    if host == "catalog":
+        settings = CatalogSettings()
+        url = settings.base_url + "/api/v0/openapi.json"
     else:
         raise OpenApiSpecIssue(
             f"{host=} has not been added yet to the testing system. Please do so yourself"

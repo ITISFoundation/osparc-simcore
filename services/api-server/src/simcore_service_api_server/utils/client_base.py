@@ -6,11 +6,9 @@ from pathlib import Path
 import httpx
 from fastapi import FastAPI
 from httpx._types import URLTypes
-from pydantic import ValidationError
 
 from .app_data import AppDataMixin
 from .http_calls_capture import get_captured_as_json
-from .http_calls_capture_processing import CaptureProcessingException
 
 _logger = logging.getLogger(__name__)
 
@@ -54,11 +52,7 @@ class _AsyncClientForDevelopmentOnly(httpx.AsyncClient):
         try:
             capture_json = get_captured_as_json(name=capture_name, response=response)
             _capture_logger.info("%s,", capture_json)
-        except (
-            ValidationError,
-            CaptureProcessingException,
-            NotImplementedError,
-        ) as err:
+        except Exception as err:
             _capture_logger.exception(
                 "Failed capturing %s with the following exception:\n%s",
                 capture_name,
