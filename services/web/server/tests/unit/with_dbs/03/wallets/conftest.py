@@ -36,8 +36,8 @@ def app_environment(
     )
     settings = ApplicationSettings.create_from_envs()
 
-    assert settings.WEBSERVER_WALLETS is True
-    assert settings.WEBSERVER_PAYMENTS is not None
+    assert settings.WEBSERVER_WALLETS is True, f"{new_envs}"
+    assert settings.WEBSERVER_PAYMENTS is not None, f"{new_envs}"
 
     return new_envs
 
