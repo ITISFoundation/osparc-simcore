@@ -47,34 +47,11 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
       comment: {
         pos: 4,
         title: qx.locale.Manager.tr("Comment")
+      },
+      invoice: {
+        pos: 5,
+        title: qx.locale.Manager.tr("Invoice")
       }
-    },
-
-    respDataToTableData: function(datas) {
-      const newDatas = [];
-      if (datas) {
-        const cols = this.COLUMNS;
-        datas.forEach(data => {
-          const newData = [];
-          newData[cols["project"].pos] = data["project_name"] ? data["project_name"] : data["project_id"];
-          newData[cols["node"].pos] = data["node_name"] ? data["node_name"] : data["node_id"];
-          if (data["service_key"]) {
-            const parts = data["service_key"].split("/");
-            const serviceName = parts.pop();
-            newData[cols["service"].pos] = serviceName + ":" + data["service_version"];
-          }
-          const startTime = new Date(data["started_at"]);
-          newData[cols["start"].pos] = osparc.utils.Utils.formatDateAndTime(startTime);
-          const stopTime = new Date(data["stopped_at"]);
-          const durationTimeSec = (stopTime - startTime)/1000;
-          newData[cols["duration"].pos] = durationTimeSec;
-          newData[cols["status"].pos] = qx.lang.String.firstUp(data["service_run_status"].toLowerCase());
-          newData[cols["wallet"].pos] = data["wallet_label"] ? data["wallet_label"] : "unknown";
-          newData[cols["cost"].pos] = "unknown";
-          newDatas.push(newData);
-        });
-      }
-      return newDatas;
     }
   },
 
@@ -90,8 +67,9 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
       const table = this.__table = new osparc.ui.table.Table(tableModel, {
         tableColumnModel: obj => new qx.ui.table.columnmodel.Resize(obj)
       });
-      table.setColumnWidth(0, 100);
-      table.setColumnWidth(1, 100);
+      const imageRenderer = new qx.ui.table.cellrenderer.Html();
+      table.getTableColumnModel().setDataCellRenderer(cols.invoice.pos, imageRenderer);
+      table.setColumnWidth(cols.invoice.pos, 50);
       table.makeItLoose();
       this._add(table);
 
@@ -102,7 +80,8 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
         20,
         0,
         "My Wallet",
-        "Welcome to Sim4Life"
+        "Welcome to Sim4Life",
+        null
       );
 
       // one payment
@@ -110,17 +89,23 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
         50,
         125,
         "My Wallet",
-        ""
+        "",
+        "https://assets.website-files.com/63206faf68ab2dc3ee3e623b/634ea60a9381021f775e7a28_Placeholder%20PDF.pdf"
       );
     },
 
-    addRow: function(nCredits, price, walletName, comment) {
+    __createPdfIconWithLink: function(link) {
+      return `<a href='${link}' target='_blank'><img src='https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/PDF_file_icon.svg/833px-PDF_file_icon.svg.png' alt='Invoice' width='16' height='20'></a>`;
+    },
+
+    addRow: function(nCredits, price, walletName, comment, invoiceUrl) {
       const newData = [
         osparc.utils.Utils.formatDateAndTime(new Date()),
         nCredits ? nCredits : 0,
         price ? price : 0,
         walletName ? walletName : "Unknown Wallet",
-        comment ? comment : ""
+        comment ? comment : "",
+        invoiceUrl ? this.__createPdfIconWithLink(invoiceUrl) : null
       ];
       this.__rawData.push(newData);
       this.__table.setData(this.__rawData);

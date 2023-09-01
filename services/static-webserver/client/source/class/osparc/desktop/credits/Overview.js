@@ -268,7 +268,6 @@ qx.Class.define("osparc.desktop.credits.Overview", {
       };
       osparc.data.Resources.fetch("resourceUsage", "getPage", params)
         .then(datas => {
-          console.log(datas);
           const entries = osparc.component.resourceUsage.OverviewTable.respDataToTableData(datas);
           entries.forEach((entry, row) => {
             entry.forEach((data, column) => {
