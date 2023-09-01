@@ -6,6 +6,7 @@
 import pytest
 from models_library.docker import DockerGenericTag
 from models_library.projects import ProjectID
+from models_library.projects_nodes import NodeID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
@@ -49,21 +50,27 @@ def test_scheduler_knows_all_the_states():
 
 
 @pytest.mark.parametrize(
-    "user_id, project_id, iteration, expected_result",
+    "user_id, project_id, node_id, iteration, expected_result",
     [
         (
             2,
             ProjectID("e08356e4-eb74-49e9-b769-2c26e34c61d9"),
+            NodeID("a08356e4-eb74-49e9-b769-2c26e34c61d1"),
             5,
-            "comp_2_e08356e4-eb74-49e9-b769-2c26e34c61d9_5",
+            "comp_2_e08356e4-eb74-49e9-b769-2c26e34c61d9_a08356e4-eb74-49e9-b769-2c26e34c61d1_5",
         )
     ],
 )
 def test_get_resource_tracking_run_id(
-    user_id: UserID, project_id: ProjectID, iteration: Iteration, expected_result: str
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    iteration: Iteration,
+    expected_result: str,
 ):
     assert (
-        get_resource_tracking_run_id(user_id, project_id, iteration) == expected_result
+        get_resource_tracking_run_id(user_id, project_id, node_id, iteration)
+        == expected_result
     )
 
 

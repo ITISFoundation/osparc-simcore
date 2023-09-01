@@ -14,8 +14,7 @@ from models_library.rabbitmq_messages import (
 )
 from pydantic import NonNegativeFloat
 from servicelib.logging_utils import LogLevelInt, LogMessageStr, log_catch, log_context
-from servicelib.rabbitmq import RabbitMQClient
-from servicelib.rabbitmq_utils import wait_till_rabbitmq_responsive
+from servicelib.rabbitmq import RabbitMQClient, wait_till_rabbitmq_responsive
 
 from ..core.settings import ApplicationSettings
 

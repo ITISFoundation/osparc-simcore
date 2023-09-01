@@ -30,10 +30,6 @@ qx.Class.define("osparc.navigation.BreadcrumbNavigation", {
     }));
   },
 
-  events: {
-    "nodeSelected": "qx.event.type.Data"
-  },
-
   members: {
     /**
       * @abstract
@@ -47,60 +43,6 @@ qx.Class.define("osparc.navigation.BreadcrumbNavigation", {
       */
     _createBtns: function(nodeId) {
       throw new Error("Abstract method called!");
-    },
-
-    _createNodeBtn: function(nodeId) {
-      const btn = new qx.ui.form.ToggleButton().set({
-        ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
-        maxWidth: 200
-      });
-      osparc.utils.Utils.setIdToWidget(btn, "appModeButton_"+nodeId);
-      btn.addListener("execute", e => {
-        if (btn.getValue()) {
-          // Unselected button clicked
-          this.fireDataEvent("nodeSelected", nodeId);
-        } else {
-          // Selected button clicked. Don't allo
-          btn.setValue(true);
-        }
-      }, this);
-      return btn;
-    },
-
-    _buttonsToBreadcrumb: function(btns, shape = "slash") {
-      this._removeAll();
-      for (let i=0; i<btns.length; i++) {
-        const thisBtn = btns[i];
-        let nextBtn = null;
-        if (i+1<btns.length) {
-          nextBtn = btns[i+1];
-        }
-
-        this._add(thisBtn);
-
-        const breadcrumbSplitter = new osparc.navigation.BreadcrumbSplitter(16, 32).set({
-          shape,
-          marginLeft: -1,
-          marginRight: -1
-        });
-        const addLeftRightWidgets = (leftBtn, rightBtn) => {
-          if (shape === "separator" && (!leftBtn || !rightBtn)) {
-            return;
-          }
-          breadcrumbSplitter.setLeftWidget(leftBtn);
-          if (rightBtn) {
-            breadcrumbSplitter.setRightWidget(rightBtn);
-          }
-        };
-        if (breadcrumbSplitter.getReady()) {
-          addLeftRightWidgets(thisBtn, nextBtn);
-        } else {
-          breadcrumbSplitter.addListenerOnce("SvgWidgetReady", () => {
-            addLeftRightWidgets(thisBtn, nextBtn);
-          }, this);
-        }
-        this._add(breadcrumbSplitter);
-      }
     }
   }
 });
