@@ -5,14 +5,16 @@ from decimal import Decimal
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.result import ResultProxy
+from models_library.api_schemas_webserver.wallets import PaymentID
 from models_library.basic_types import IDStr
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from models_library.users import UserID
-from models_library.wallets import PaymentTransactionState, WalletID
+from models_library.wallets import WalletID
 from pydantic import BaseModel, PositiveInt, parse_obj_as
 from simcore_postgres_database.models.payments_transactions import payments_transactions
 from sqlalchemy import literal_column
+from sqlalchemy.sql import func
 
 from ..db.plugin import get_database_engine
 
@@ -36,11 +38,6 @@ class PaymentsTransactionsDB(BaseModel):
     completed_at: datetime.datetime | None
     success: bool | None
     errors: str | None
-
-    def get_state(self):
-        if self.completed_at:
-            return PaymentTransactionState.COMPLETED
-        return PaymentTransactionState.INIT
 
 
 async def create_payment_transaction(  # noqa: PLR0913
@@ -113,3 +110,22 @@ async def list_user_payment_transactions(
         rows = await result.fetchall() or []
         page = parse_obj_as(list[PaymentsTransactionsDB], rows)
         return total_number_of_items, page
+
+
+async def complete_payment_transaction(
+    app: web.Application, *, payment_id: PaymentID, success: bool, error_msg: str | None
+) -> PaymentsTransactionsDB:
+    optional = {}
+    if error_msg:
+        optional["error"] = error_msg
+
+    async with get_database_engine(app).acquire() as conn:
+        result = await conn.execute(
+            payments_transactions.update()
+            .values(completed_at=func.now(), success=success, **optional)
+            .where(payments_transactions.c.payment_id == payment_id)
+            .returning(literal_column("*"))
+        )
+        row = await result.first()
+        assert row  #  nosec
+        return PaymentsTransactionsDB.parse_obj(dict(row.items()))

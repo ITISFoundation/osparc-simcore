@@ -3,13 +3,16 @@ from decimal import Decimal
 
 import arrow
 from aiohttp import web
-from models_library.api_schemas_payments.payments import (
-    PaymentInitiated,
+from fastapi.encoders import jsonable_encoder
+from models_library.api_schemas_webserver.wallets import (
     PaymentTransaction,
+    WalletPaymentCreated,
 )
 from models_library.basic_types import IDStr
 from models_library.users import UserID
 from models_library.wallets import WalletID
+from simcore_service_webserver.application_settings import get_settings
+from yarl import URL
 
 from . import _db
 from ._client import get_payments_service_api
@@ -28,7 +31,7 @@ async def create_payment_to_wallet(
     wallet_id: WalletID,
     wallet_name: str,
     comment: str | None,
-) -> PaymentInitiated:
+) -> WalletPaymentCreated:
     # TODO: user's wallet is verified or should we verify it here?
     # TODO: implement users.api.get_user_name_and_email
     user_email, user_name = f"fake_email_for_user_{user_id}@email.com", "fake_user"
@@ -60,7 +63,7 @@ async def create_payment_to_wallet(
         initiated_at=initiated_at,
     )
 
-    return PaymentInitiated(
+    return WalletPaymentCreated(
         payment_id=transaction.payment_id,
         payment_form_url=f"{submission_link}",
     )
@@ -92,9 +95,8 @@ async def get_user_payments_page(
             osparc_credits=t.osparc_credits,
             comment=t.comment,
             wallet_id=t.wallet_id,
-            state=t.get_state(),
-            created=t.initiated_at,
-            completed=t.completed_at,
+            created_at=t.initiated_at,
+            completed_at=t.completed_at,
         )
         for t in transactions
     ], total_number_of_items
@@ -105,17 +107,48 @@ async def complete_payment(
     *,
     payment_id: IDStr,
     success: bool,
+    message: str | None = None,
 ):
     # NOTE: implements endpoint in payment service hit by the gateway
-    # check and complete
-    transaction: await _db.update_payment_transaction(app, payment_id=payment_id)
+    transaction = await _db.complete_payment_transaction(
+        app,
+        payment_id=payment_id,
+        success=success,
+        error_msg=None if success else message,
+    )
     assert transaction.payment_id == payment_id  # nosec
+    assert transaction.completed_at is not None  # nosec
+    assert transaction.initiated_at < transaction.completed_at  # nosec
 
-    # TODO: top up credits
+    _logger.info("Transaction completed: %s", transaction.json(indent=1))
+
+    # notifying front-end via web-sockets
     await notify_payment_completed(
         app,
         user_id=transaction.user_id,
-        payment_id=payment_id,
+        payment_id=transaction.payment_id,
         wallet_id=transaction.wallet_id,
-        error=None if success else "Payment rejected",
+        completed_at=transaction.completed_at,
+        completed_success=success,
+        completed_message=message,
     )
+
+    # notifying RUT
+    # TODO: connect with https://github.com/ITISFoundation/osparc-simcore/pull/4692
+    settings = get_settings(app)
+    assert settings.WEBSERVER_RESOURCE_USAGE_TRACKER  # nosec
+    if base_url := settings.WEBSERVER_RESOURCE_USAGE_TRACKER.base_url:
+        url = URL(f"{base_url}/v1/credit-transaction")
+        body = jsonable_encoder(
+            {
+                "product_name": transaction.product_name,
+                "wallet_id": transaction.wallet_id,
+                "wallet_name": transaction.wallet_name,
+                "user_id": transaction.user_id,
+                "user_email": transaction.user_email,
+                "credits": transaction.osparc_credits,
+                "payment_transaction_id": transaction.payment_id,
+                "created_at": transaction.initiated_at,
+            }
+        )
+        _logger.debug("-> @RUTH  POST %s: %s", url, body)

@@ -18,6 +18,7 @@ from models_library.api_schemas_webserver.wallets import (
 )
 from models_library.rest_pagination import Page
 from pydantic import parse_obj_as
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from simcore_service_webserver.db.models import UserRole
@@ -83,8 +84,12 @@ async def test_payments_worfklow(
     logged_user: UserInfoDict,
     create_new_wallet: Callable,
     wallets_clean_db: None,
+    mocker: MockerFixture,
 ):
     assert client.app
+    mocker.patch(
+        "simcore_service_webserver.payments._socketio.send_messages", autospec=True
+    )
 
     wallet = await create_new_wallet()
 

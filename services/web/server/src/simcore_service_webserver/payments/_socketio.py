@@ -1,6 +1,10 @@
+import datetime
+from datetime import datetime
+
 from aiohttp import web
 from models_library.basic_types import IDStr
 from models_library.users import UserID
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletID
 
 from ..socketio.messages import (
@@ -16,12 +20,22 @@ async def notify_payment_completed(
     user_id: UserID,
     payment_id: IDStr,
     wallet_id: WalletID,
-    error: str | None
+    completed_at: datetime,
+    completed_success: bool,
+    completed_message: str | None
 ):
     messages: list[SocketMessageDict] = [
         {
             "event_type": SOCKET_IO_PAYMENT_COMPLETED_EVENT,
-            "data": {"payment_id": payment_id, "wallet_id": wallet_id, "error": error},
+            "data": jsonable_encoder(
+                {
+                    "payment_id": payment_id,
+                    "wallet_id": wallet_id,
+                    "completed_at": completed_at,
+                    "success": completed_success,
+                    "message": completed_message,
+                }
+            ),
         }
     ]
     await send_messages(app, user_id, messages)

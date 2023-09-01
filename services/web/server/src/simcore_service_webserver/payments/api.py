@@ -6,7 +6,7 @@ assert get_payments_service_api  # nosec
 assert get_user_payments_page  # nosec
 
 __all__: tuple[str, ...] = (
-    "get_payments_service_api",
     "create_payment_to_wallet",
+    "get_payments_service_api",
     "get_user_payments_page",
 )
