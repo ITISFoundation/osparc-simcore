@@ -19,7 +19,7 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
   extend: osparc.ui.window.SingletonWindow,
 
   construct: function(walletsEnabled = false) {
-    this.base(arguments, "credits", this.tr("Account"));
+    this.base(arguments, "credits", this.tr("User Center"));
 
     this.__walletsEnabled = walletsEnabled;
 
@@ -222,7 +222,7 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
     },
 
     __getUsageOverviewPage: function() {
-      const title = this.tr("Usage Overview");
+      const title = this.tr("Usage");
       const iconSrc = "@FontAwesome5Solid/list/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       page.showLabelOnTab();

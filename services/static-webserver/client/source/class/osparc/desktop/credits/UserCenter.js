@@ -232,7 +232,7 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
     },
 
     __getUsageOverviewPage: function() {
-      const title = this.tr("Usage Overview");
+      const title = this.tr("Usage");
       const iconSrc = "@FontAwesome5Solid/list/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       page.showLabelOnTab();
