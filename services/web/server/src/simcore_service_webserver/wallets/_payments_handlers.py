@@ -50,7 +50,7 @@ def _raise_if_not_dev_mode(app):
 
 async def _fake_delay_for_processing_time():
     # Fakes processing time
-    processing_time = random.uniform(0.5, 2)  # noqa: S311
+    processing_time = random.uniform(0.5, 2)  # noqa: S311 # NOSONAR #nosec
     await asyncio.sleep(processing_time)
 
 

@@ -3,13 +3,13 @@ from decimal import Decimal
 
 import arrow
 from aiohttp import web
-from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_webserver.wallets import (
     PaymentTransaction,
     WalletPaymentCreated,
 )
 from models_library.basic_types import IDStr
 from models_library.users import UserID
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletID
 from simcore_service_webserver.application_settings import get_settings
 from yarl import URL

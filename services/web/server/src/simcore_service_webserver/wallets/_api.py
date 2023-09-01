@@ -13,7 +13,7 @@ from ..users import api as users_api
 from . import _db as db
 from .errors import WalletAccessForbiddenError
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 async def create_wallet(
