@@ -2,7 +2,7 @@ from collections.abc import AsyncIterator
 
 import aiopg.sa
 import pytest
-from simcore_postgres_database.models.user_preferences import user_preferences
+from simcore_postgres_database.models.user_preferences import user_preferences_frontend
 
 
 @pytest.fixture
@@ -11,4 +11,4 @@ async def drop_all_preferences(
 ) -> AsyncIterator[None]:
     yield
     async with aiopg_engine.acquire() as conn:
-        await conn.execute(user_preferences.delete())
+        await conn.execute(user_preferences_frontend.delete())

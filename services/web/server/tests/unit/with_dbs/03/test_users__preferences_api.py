@@ -144,8 +144,8 @@ async def test_set_frontend_user_preference(
         await set_frontend_user_preference(
             app,
             user_id=user_id,
-            frontend_preference_identifier=instance.preference_identifier,
             product_name=product_name,
+            frontend_preference_identifier=instance.preference_identifier,
             value=_get_non_default_value(preference_class),
         )
 
