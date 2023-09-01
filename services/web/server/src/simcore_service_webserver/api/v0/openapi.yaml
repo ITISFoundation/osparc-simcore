@@ -5689,19 +5689,6 @@ components:
             format: uri
         links:
           $ref: '#/components/schemas/FileUploadLinks'
-    FrontendUserPreference:
-      title: FrontendUserPreference
-      required:
-      - defaultValue
-      - value
-      type: object
-      properties:
-        defaultValue:
-          title: Defaultvalue
-          description: used by the frontend
-        value:
-          title: Value
-          description: preference value
     GroupAccessRights:
       title: GroupAccessRights
       required:
@@ -6639,6 +6626,19 @@ components:
           example:
           - '15'
       additionalProperties: false
+    Preference:
+      title: Preference
+      required:
+      - defaultValue
+      - value
+      type: object
+      properties:
+        defaultValue:
+          title: Defaultvalue
+          description: used by the frontend
+        value:
+          title: Value
+          description: preference value
     PresignedLink:
       title: PresignedLink
       required:
@@ -6699,7 +6699,7 @@ components:
           title: Preferences
           type: object
           additionalProperties:
-            $ref: '#/components/schemas/FrontendUserPreference'
+            $ref: '#/components/schemas/Preference'
     ProfileUpdate:
       title: ProfileUpdate
       type: object
