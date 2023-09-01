@@ -23,7 +23,7 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
 
     this.__walletsEnabled = walletsEnabled;
 
-    const viewWidth = walletsEnabled ? 1100 : 800;
+    const viewWidth = walletsEnabled ? 1050 : 800;
     const viewHeight = walletsEnabled ? 700 : 600;
 
     this.set({
@@ -119,11 +119,17 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
       });
       layout.add(img);
 
-      const name = new qx.ui.basic.Label(authData.getUserName()).set({
+      const name = new qx.ui.basic.Label().set({
         font: "text-14",
         alignX: "center"
       });
       layout.add(name);
+      authData.bind("firstName", name, "value", {
+        converter: firstName => firstName + " " + authData.getLastName()
+      });
+      authData.bind("lastName", name, "value", {
+        converter: lastName => authData.getFirstName() + " " + lastName
+      });
 
       const emailLabel = new qx.ui.basic.Label(email).set({
         font: "text-13",
