@@ -70,13 +70,6 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
       this.__stack.setSelection([this.__studyEditor]);
     },
 
-    replaceStudyEditor: function(studyEditor) {
-      if (this.__studyEditor) {
-        this.__stack.remove(this.__studyEditor);
-      }
-      this.addStudyEditor(studyEditor);
-    },
-
     setLoadingPageHeader: function(msg) {
       this.__loadingPage.setHeader(msg);
     },

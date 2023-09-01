@@ -287,11 +287,6 @@ qx.Class.define("osparc.desktop.MainPage", {
       mainPageHandler.showLoadingPage();
     },
 
-    __showStudyEditor: function(studyEditor) {
-      osparc.desktop.MainPageHandler.getInstance().replaceStudyEditor(studyEditor);
-      osparc.desktop.MainPageHandler.getInstance().showStudyEditor();
-    },
-
     __startSnapshot: async function(studyId, snapshotId) {
       this.__showLoadingPage(this.tr("Loading Snapshot"));
 
