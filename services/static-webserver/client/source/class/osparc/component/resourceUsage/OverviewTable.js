@@ -65,17 +65,17 @@ qx.Class.define("osparc.component.resourceUsage.OverviewTable", {
       wallet: {
         pos: 6,
         title: "Wallet"
+      },
+      cost: {
+        pos: 7,
+        title: "Cost"
       }
-    }
-  },
+    },
 
-  members: {
-    __model: null,
-
-    addData: function(datas) {
+    respDataToTableData: function(datas) {
       const newDatas = [];
       if (datas) {
-        const cols = this.self().COLUMNS;
+        const cols = this.COLUMNS;
         datas.forEach(data => {
           const newData = [];
           newData[cols["project"].pos] = data["project_name"] ? data["project_name"] : data["project_id"];
@@ -92,9 +92,19 @@ qx.Class.define("osparc.component.resourceUsage.OverviewTable", {
           newData[cols["duration"].pos] = durationTimeSec;
           newData[cols["status"].pos] = qx.lang.String.firstUp(data["service_run_status"].toLowerCase());
           newData[cols["wallet"].pos] = data["wallet_label"] ? data["wallet_label"] : "unknown";
+          newData[cols["cost"].pos] = "unknown";
           newDatas.push(newData);
         });
       }
+      return newDatas;
+    }
+  },
+
+  members: {
+    __model: null,
+
+    addData: function(datas) {
+      const newDatas = this.self().respDataToTableData(datas);
       this.setData(newDatas);
     }
   }

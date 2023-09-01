@@ -248,13 +248,8 @@ qx.Class.define("osparc.desktop.credits.Overview", {
       const grid = new qx.ui.layout.Grid(12, 8);
       const layout = new qx.ui.container.Composite(grid);
 
-      const headers = [
-        "Project",
-        "Wallet",
-        "Date",
-        "Duration",
-        "Status"
-      ];
+      const headers = [];
+      Object.values(osparc.component.resourceUsage.OverviewTable.COLUMNS).forEach(col => headers.push(col.title));
       headers.forEach((header, column) => {
         const text = new qx.ui.basic.Label(header).set({
           font: "text-14"
@@ -265,33 +260,28 @@ qx.Class.define("osparc.desktop.credits.Overview", {
         });
       });
 
-      const entries = [[
-        "Sim4life project",
-        "My Wallet",
-        osparc.utils.Utils.formatDateAndTime(new Date()),
-        "20:14",
-        "Finished"
-      ], [
-        "Sim4life project (2)",
-        "My Wallet",
-        osparc.utils.Utils.formatDateAndTime(new Date()),
-        "13:14",
-        "Running"
-      ]];
-      const maxUsage = 4;
-      entries.forEach((entry, row) => {
-        if (row < maxUsage) {
-          entry.forEach((data, column) => {
-            const text = new qx.ui.basic.Label(data.toString()).set({
-              font: "text-13"
-            });
-            layout.add(text, {
-              row: row+1,
-              column
+      const params = {
+        url: {
+          offset: 0,
+          limit: 4 // show only the last 4 usage
+        }
+      };
+      osparc.data.Resources.fetch("resourceUsage", "getPage", params)
+        .then(datas => {
+          console.log(datas);
+          const entries = osparc.component.resourceUsage.OverviewTable.respDataToTableData(datas);
+          entries.forEach((entry, row) => {
+            entry.forEach((data, column) => {
+              const text = new qx.ui.basic.Label(data.toString()).set({
+                font: "text-13"
+              });
+              layout.add(text, {
+                row: row+1,
+                column
+              });
             });
           });
-        }
-      });
+        });
       return layout;
     }
   }
