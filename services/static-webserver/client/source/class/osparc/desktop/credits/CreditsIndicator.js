@@ -92,7 +92,7 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
       if (wallet) {
         wallet.bind("creditsAvailable", this, "creditsAvailable");
         wallet.bind("creditsAvailable", this, "toolTipText", {
-          converter: val => wallet.getName() + ": " + val + " credits left"
+          converter: val => wallet.getName() + ": " + val + " credits"
         });
       }
     },
@@ -107,7 +107,7 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
           this.resetBackgroundColor();
         }
 
-        let tttext = creditsAvailable + " " + this.tr("credits left");
+        let tttext = creditsAvailable + " " + this.tr("credits");
         if (this.getWallet()) {
           tttext = this.getWallet().getName() + ": " + tttext;
         }

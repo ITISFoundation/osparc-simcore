@@ -67,7 +67,7 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicatorWText", {
             font: "text-14"
           });
           this.bind("creditsAvailable", control, "value", {
-            converter: val => val === null ? this.tr("Select Wallet") : val + " " + this.tr("credits left")
+            converter: val => val === null ? this.tr("Select Wallet") : val + " " + this.tr("credits")
           });
           this._add(control);
           break;
