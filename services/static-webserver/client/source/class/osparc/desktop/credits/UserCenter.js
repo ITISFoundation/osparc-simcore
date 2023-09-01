@@ -34,6 +34,19 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
       })
     });
 
+    const titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+    const title = new qx.ui.basic.Label().set({
+      value: this.tr("User Center"),
+      font: "text-16",
+      textAlign: "center",
+      allowGrowX: true,
+      marginBottom: 10
+    });
+    titleLayout.add(title, {
+      flex: 1
+    });
+    this._add(titleLayout);
+
     const tabViews = this.__tabsView = new qx.ui.tabview.TabView().set({
       barPosition: "left",
       contentPadding: 0
