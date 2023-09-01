@@ -11,10 +11,16 @@ from pathlib import Path
 from typing import Any, TypeAlias
 
 import httpx
+import jsonref
 import pytest
+import respx
 from pydantic import parse_file_as
 from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
-from simcore_service_api_server.utils.http_calls_capture_processing import Param
+from simcore_service_api_server.utils.http_calls_capture_processing import (
+    Param,
+    UrlPath,
+    _determine_path,
+)
 
 try:
     from openapi_core import Spec, create_spec, validate_request, validate_response
@@ -38,6 +44,7 @@ except ImportError:
 
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+_DUMMY_API_SERVER_OPENAPI = CURRENT_DIR / "dummy_api_server_openapi.json"
 
 
 def _check_regex_pattern(pattern: str, match: str, non_match: str):
@@ -62,7 +69,7 @@ def openapi_specs(
     }
 
 
-mock_folder_path = CURRENT_DIR.parent / "mocks"
+mock_folder_path = CURRENT_DIR.parent.parent / "mocks"
 mock_folder_path.exists()
 
 
@@ -114,7 +121,7 @@ def test_openapion_capture_mock(
         )
 
 
-_CAPTURE_REGEX_TEST_CASES: list[tuple[str, str, str, str]] = [
+_CAPTURE_REGEX_TEST_CASES: list[tuple[str, str, str | None, str | None]] = [
     (
         "solver_key",
         """{
@@ -175,6 +182,35 @@ _CAPTURE_REGEX_TEST_CASES: list[tuple[str, str, str, str]] = [
         "15",
         "2i0",
     ),
+    (
+        "test_float",
+        """{
+            "required": false,
+            "schema": {
+              "title": "My float",
+              "minimum": 0.3,
+              "type": "float"
+            },
+            "name": "my_float",
+            "in": "path"
+          }""",
+        "1.5",
+        "20z",
+    ),
+    (
+        "data_set_id",
+        """{
+            "required": true,
+            "schema": {
+              "title": "Dataset Id",
+              "type": "string"
+            },
+            "name": "dataset_id",
+            "in": "path"
+          }""",
+        "my_string123.;-",
+        None,
+    ),
 ]
 
 
@@ -183,7 +219,43 @@ def test_param_regex_pattern(params: tuple[str, str, str, str]):
     _, openapi_param, match, non_match = params
     param: Param = Param(**json.loads(openapi_param))
     pattern = param.param_schema.regex_pattern
-    assert re.match(pattern=pattern, string=match), f"{match=} did not match {pattern=}"
-    assert not re.match(
-        pattern=pattern, string=non_match
-    ), f"{non_match=} matched {pattern=}"
+    if match is not None:
+        assert re.match(
+            pattern=pattern, string=match
+        ), f"{match=} did not match {pattern=}"
+    if non_match is not None:
+        assert not re.match(
+            pattern=pattern, string=non_match
+        ), f"{non_match=} matched {pattern=}"
+
+
+_API_SERVER_PATHS: list[tuple[str, Path, str]] = [
+    (
+        "get_solver",
+        Path("/v0/solvers/{solver_key}/latest"),
+        f"/v0/solvers/simcore/services/comp/itis/sleeper/latest",
+    )
+]
+
+
+@pytest.mark.parametrize("params", _API_SERVER_PATHS, ids=lambda x: x[0])
+def test_capture_respx_api_server(params: tuple[str, Path, str]):
+    _, openapi_path, example = params
+    assert _DUMMY_API_SERVER_OPENAPI.is_file()
+    openapi_spec: dict[str, Any] = jsonref.loads(_DUMMY_API_SERVER_OPENAPI.read_text())
+    url_path: UrlPath = _determine_path(
+        openapi_spec=openapi_spec, response_path=openapi_path
+    )
+    assert (
+        len(url_path.path_parameters) > 0
+    ), f"{url_path.path_parameters=} and this test only makes sense if there are path parameters"
+    path_pattern: str = str(openapi_path)
+    for p in url_path.path_parameters:
+        path_pattern = path_pattern.replace(
+            "{" + p.name + "}", p.param_schema.regex_pattern
+        )
+    assert re.match(path_pattern, example)
+    my_route = respx.get(path__regex="https://example.org" + path_pattern)
+    response = httpx.get("https://example.org" + example)
+    assert my_route.called
+    assert response.status_code == 200

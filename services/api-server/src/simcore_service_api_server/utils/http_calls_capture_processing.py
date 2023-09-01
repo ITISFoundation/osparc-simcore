@@ -74,6 +74,8 @@ class ParamSchema(BaseModel):
             elif self.param_type == "str":
                 if self.param_format == "uuid":
                     return r"^[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12}$"
+                else:
+                    return ".*"  # should match any string
         raise OpenApiSpecIssue(
             f"Encountered invalid {self.param_type=} and {self.param_format=} combination"
         )
@@ -113,7 +115,9 @@ class UrlPath(BaseModel):
 
 def preprocess_response(response: httpx.Response) -> UrlPath:
     openapi_spec: dict[str, Any] = get_openapi_specs(response.url.host)
-    return _determine_path(openapi_spec, response)
+    return _determine_path(
+        openapi_spec, Path(response.request.url.raw_path.decode("utf8").split("?")[0])
+    )
 
 
 def get_openapi_specs(host: str) -> dict[str, Any]:
@@ -133,9 +137,8 @@ def get_openapi_specs(host: str) -> dict[str, Any]:
         return jsonref.loads(response.read().decode("utf8"))
 
 
-def _determine_path(openapi_spec: dict[str, Any], response: httpx.Response) -> UrlPath:
+def _determine_path(openapi_spec: dict[str, Any], response_path: Path) -> UrlPath:
 
-    response_path = Path(response.request.url.raw_path.decode("utf8").split("?")[0])
     for p in openapi_spec["paths"]:
         openapi_path = Path(p)
         if len(openapi_path.parts) != len(response_path.parts):
