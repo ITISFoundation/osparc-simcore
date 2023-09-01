@@ -103,6 +103,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     DY_SIDECAR_RUN_ID: RunID
     DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS: bool
 
+    DY_SIDECAR_USER_SERVICES_METRICS_ENABLED: bool = Field(
+        default=False,
+        description="enable this if the user services expose metrics that the sidecar needs to scrape and forward",
+    )
+
     REGISTRY_SETTINGS: RegistrySettings = Field(auto_default_from_env=True)
 
     RABBIT_SETTINGS: RabbitSettings | None = Field(auto_default_from_env=True)
