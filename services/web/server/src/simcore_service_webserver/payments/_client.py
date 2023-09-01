@@ -80,6 +80,7 @@ class PaymentsServiceApi:
         name: str,
         email: str,
     ):
+        assert self  # nosec
         assert osparc_credits > 0  # nosec
         assert name  # nosec
         assert email  # nosec
