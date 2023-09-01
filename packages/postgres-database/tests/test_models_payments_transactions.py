@@ -34,6 +34,7 @@ def random_payment_transaction(
         "wallet_id": 1,
         "wallet_name": "user wallet",
         "comment": "Free starting credits",
+        "initiated_at": utcnow(),
     }
     # state is not added on purpose
     assert set(data.keys()).issubset({c.name for c in payments_transactions.columns})
@@ -106,7 +107,10 @@ async def test_complete_transaction_with_success(
 
     errors = await connection.scalar(
         payments_transactions.update()
-        .values(completed_at=utcnow(), success=True)
+        .values(
+            completed_at=utcnow(),
+            success=True,
+        )
         .where(payments_transactions.c.payment_id == payment_id)
         .returning(payments_transactions.c.errors)
     )
@@ -122,7 +126,11 @@ async def test_complete_transaction_with_failure(
     data = await (
         await connection.execute(
             payments_transactions.update()
-            .values(completed_at=utcnow(), success=False, error="some error message")
+            .values(
+                completed_at=utcnow(),
+                success=False,
+                errors="some error message",
+            )
             .where(payments_transactions.c.payment_id == payment_id)
             .returning(sa.literal_column("*"))
         )
@@ -131,4 +139,4 @@ async def test_complete_transaction_with_failure(
     assert data is not None
     assert data["completed_at"]
     assert not data["success"]
-    assert data["error"] is not None
+    assert data["errors"] is not None
