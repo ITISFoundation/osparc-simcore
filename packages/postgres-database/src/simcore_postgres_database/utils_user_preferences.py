@@ -18,7 +18,7 @@ class BasePreferencesRepo:
     model: sa.Table
 
     @classmethod
-    async def save_frontend_preference_payload(
+    async def save(
         cls,
         conn: SAConnection,
         *,
@@ -47,7 +47,7 @@ class BasePreferencesRepo:
         await conn.execute(upsert_stmt)
 
     @classmethod
-    async def load_frontend_preference_payload(
+    async def load(
         cls,
         conn: SAConnection,
         *,

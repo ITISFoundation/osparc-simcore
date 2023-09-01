@@ -47,14 +47,14 @@ async def _assert_save_get_preference(
     product_name: str,
     payload: Any,
 ) -> None:
-    await preference_repo.save_frontend_preference_payload(
+    await preference_repo.save(
         connection,
         user_id=user_id,
         preference_name=preference_name,
         product_name=product_name,
         payload=payload,
     )
-    get_res_2: Any | None = await preference_repo.load_frontend_preference_payload(
+    get_res_2: Any | None = await preference_repo.load(
         connection,
         user_id=user_id,
         preference_name=preference_name,
@@ -72,7 +72,7 @@ async def _assert_preference_not_saved(
     preference_name: str,
     product_name: str,
 ) -> None:
-    not_found: Any | None = await preference_repo.load_frontend_preference_payload(
+    not_found: Any | None = await preference_repo.load(
         connection,
         user_id=user_id,
         preference_name=preference_name,

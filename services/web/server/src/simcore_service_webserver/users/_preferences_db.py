@@ -19,15 +19,13 @@ async def get_user_preference(
     preference_class: type[AnyUserPreference],
 ) -> AnyUserPreference | None:
     async with get_database_engine(app).acquire() as conn:
-        preference_payload: dict | None = (
-            await FrontendUserPreferencesRepo().load_frontend_preference_payload(
-                conn,
-                user_id=user_id,
-                preference_name=_get_user_preference_name(
-                    user_id, preference_class.get_preference_name()
-                ),
-                product_name=product_name,
-            )
+        preference_payload: dict | None = await FrontendUserPreferencesRepo.load(
+            conn,
+            user_id=user_id,
+            preference_name=_get_user_preference_name(
+                user_id, preference_class.get_preference_name()
+            ),
+            product_name=product_name,
         )
 
     return (
@@ -45,7 +43,7 @@ async def set_user_preference(
     preference: AnyUserPreference,
 ) -> None:
     async with get_database_engine(app).acquire() as conn:
-        await FrontendUserPreferencesRepo().save_frontend_preference_payload(
+        await FrontendUserPreferencesRepo.save(
             conn,
             user_id=user_id,
             preference_name=_get_user_preference_name(
