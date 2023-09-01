@@ -2,10 +2,10 @@ import logging
 
 from aiohttp import web
 from models_library.api_schemas_webserver.wallets import (
+    CreateWalletPayment,
+    PaymentTransaction,
     WalletGet,
-    WalletPaymentCreateBody,
-    WalletPaymentGet,
-    WalletPaymentItemList,
+    WalletPaymentCreated,
 )
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
@@ -49,7 +49,7 @@ def _raise_if_not_dev_mode(app):
 async def create_payment(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
-    body_params = await parse_request_body_as(WalletPaymentCreateBody, request)
+    body_params = await parse_request_body_as(CreateWalletPayment, request)
 
     _raise_if_not_dev_mode(request.app)
 
@@ -80,7 +80,9 @@ async def create_payment(request: web.Request):
             price_dollars=body_params.price_dollars,
             comment=body_params.comment,
         )
-    return envelope_json_response(WalletPaymentGet.parse_obj(payment), web.HTTPCreated)
+    return envelope_json_response(
+        WalletPaymentCreated.parse_obj(payment), web.HTTPCreated
+    )
 
 
 @routes.get(f"/{VTAG}/wallets/-/payments", name="list_all_payments")
@@ -108,7 +110,7 @@ async def list_all_payments(request: web.Request):
         offset=query_params.offset,
     )
 
-    page = Page[WalletPaymentItemList].parse_obj(
+    page = Page[PaymentTransaction].parse_obj(
         paginate_data(
             chunk=payments,
             request_url=request.url,

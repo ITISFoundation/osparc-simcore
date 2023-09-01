@@ -12,9 +12,9 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_webserver.wallets import (
+    PaymentTransaction,
     WalletGet,
-    WalletPaymentGet,
-    WalletPaymentItemList,
+    WalletPaymentCreated,
 )
 from models_library.rest_pagination import Page
 from pydantic import parse_obj_as
@@ -98,17 +98,17 @@ async def test_payments_worfklow(
     )
     data, error = await assert_status(response, web.HTTPCreated)
     assert error is None
-    payment = WalletPaymentGet.parse_obj(data)
+    payment = WalletPaymentCreated.parse_obj(data)
 
     assert payment.payment_id
-    assert payment.submission_link.query
-    assert payment.submission_link.query.endswith(payment.payment_id)
+    assert payment.payment_form_url.query
+    assert payment.payment_form_url.query.endswith(payment.payment_id)
 
     # list all payment transactions in all my wallets
     response = await client.get("/v0/wallets/-/payments")
     data, error = await assert_status(response, web.HTTPOk)
 
-    page = parse_obj_as(Page[WalletPaymentItemList], data)
+    page = parse_obj_as(Page[PaymentTransaction], data)
 
     assert page.data
     assert page.meta.total == 1

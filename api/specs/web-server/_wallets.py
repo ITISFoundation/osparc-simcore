@@ -10,11 +10,12 @@
 from fastapi import APIRouter, status
 from models_library.api_schemas_webserver.wallets import (
     CreateWalletBodyParams,
+    CreateWalletPayment,
+    PaymentTransaction,
     PutWalletBodyParams,
     WalletGet,
     WalletGetWithAvailableCredits,
-    WalletPaymentCreateBody,
-    WalletPaymentGet,
+    WalletPaymentCreated,
 )
 from models_library.generics import Envelope
 from models_library.rest_pagination import Page, PageQueryParameters
@@ -64,15 +65,15 @@ async def update_wallet(wallet_id: WalletID, body: PutWalletBodyParams):
 
 @router.post(
     "/wallets/{wallet_id}/payments",
-    response_model=Envelope[WalletPaymentGet],
+    response_model=Envelope[WalletPaymentCreated],
 )
-async def create_payment(wallet_id: WalletID, body: WalletPaymentCreateBody):
+async def create_payment(wallet_id: WalletID, body: CreateWalletPayment):
     """Creates payment to wallet `wallet_id`"""
 
 
 @router.get(
     "/wallets/-/payments",
-    response_model=Page[WalletPaymentGet],
+    response_model=Page[PaymentTransaction],
 )
 async def list_all_payments(params: PageQueryParameters):
     """Lists all user payments to his/her wallets (only the ones he/she created)"""

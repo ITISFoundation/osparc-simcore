@@ -3,13 +3,17 @@ from decimal import Decimal
 
 import arrow
 from aiohttp import web
-from models_library.api_schemas_payments.payments import PaymentGet, PaymentItemList
+from models_library.api_schemas_payments.payments import (
+    PaymentInitiated,
+    PaymentTransaction,
+)
 from models_library.basic_types import IDStr
 from models_library.users import UserID
 from models_library.wallets import WalletID
 
 from . import _db
 from ._client import get_payments_service_api
+from ._socketio import notify_payment_completed
 
 _logger = logging.getLogger(__name__)
 
@@ -24,7 +28,7 @@ async def create_payment_to_wallet(
     wallet_id: WalletID,
     wallet_name: str,
     comment: str | None,
-) -> PaymentGet:
+) -> PaymentInitiated:
     # TODO: user's wallet is verified or should we verify it here?
     # TODO: implement users.api.get_user_name_and_email
     user_email, user_name = f"fake_email_for_user_{user_id}@email.com", "fake_user"
@@ -56,9 +60,9 @@ async def create_payment_to_wallet(
         initiated_at=initiated_at,
     )
 
-    return PaymentGet(
-        idr=transaction.payment_id,
-        submission_link=f"{submission_link}",
+    return PaymentInitiated(
+        payment_id=transaction.payment_id,
+        payment_form_url=f"{submission_link}",
     )
 
 
@@ -69,7 +73,7 @@ async def get_user_payments_page(
     *,
     limit: int,
     offset: int,
-) -> tuple[list[PaymentItemList], int]:
+) -> tuple[list[PaymentTransaction], int]:
     assert limit > 1  # nosec
     assert offset >= 0  # nosec
     assert product_name  # nosec
@@ -82,10 +86,10 @@ async def get_user_payments_page(
     )
 
     return [
-        PaymentItemList(
-            idr=t.payment_id,
+        PaymentTransaction(
+            payment_id=t.payment_id,
             price_dollars=t.price_dollars,
-            credit=t.osparc_credits,
+            osparc_credits=t.osparc_credits,
             comment=t.comment,
             wallet_id=t.wallet_id,
             state=t.get_state(),
@@ -102,5 +106,16 @@ async def complete_payment(
     payment_id: IDStr,
     success: bool,
 ):
-    ...
     # NOTE: implements endpoint in payment service hit by the gateway
+    # check and complete
+    transaction: await _db.update_payment_transaction(app, payment_id=payment_id)
+    assert transaction.payment_id == payment_id  # nosec
+
+    # TODO: top up credits
+    await notify_payment_completed(
+        app,
+        user_id=transaction.user_id,
+        payment_id=payment_id,
+        wallet_id=transaction.wallet_id,
+        error=None if success else "Payment rejected",
+    )
