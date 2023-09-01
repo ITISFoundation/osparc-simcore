@@ -3781,7 +3781,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/WalletPaymentCreateBody'
+              $ref: '#/components/schemas/CreateWalletPayment'
         required: true
       responses:
         '200':
@@ -3789,7 +3789,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_WalletPaymentGet_'
+                $ref: '#/components/schemas/Envelope_WalletPaymentCreated_'
   /v0/wallets/-/payments:
     get:
       tags:
@@ -3810,7 +3810,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Page_WalletPaymentGet_'
+                $ref: '#/components/schemas/Page_PaymentTransaction_'
   /v0/wallets/{wallet_id}/groups/{group_id}:
     put:
       tags:
@@ -4636,6 +4636,23 @@ components:
         thumbnail:
           title: Thumbnail
           type: string
+    CreateWalletPayment:
+      title: CreateWalletPayment
+      required:
+      - priceDollars
+      - osparcCredits
+      type: object
+      properties:
+        priceDollars:
+          title: Pricedollars
+          type: number
+        osparcCredits:
+          title: Osparccredits
+          type: number
+        comment:
+          title: Comment
+          maxLength: 100
+          type: string
     DatCoreFileLink:
       title: DatCoreFileLink
       required:
@@ -5063,12 +5080,12 @@ components:
           $ref: '#/components/schemas/WalletGroupGet'
         error:
           title: Error
-    Envelope_WalletPaymentGet_:
-      title: Envelope[WalletPaymentGet]
+    Envelope_WalletPaymentCreated_:
+      title: Envelope[WalletPaymentCreated]
       type: object
       properties:
         data:
-          $ref: '#/components/schemas/WalletPaymentGet'
+          $ref: '#/components/schemas/WalletPaymentCreated'
         error:
           title: Error
     Envelope_WorkbenchViewApiModel_:
@@ -6508,6 +6525,25 @@ components:
             $ref: '#/components/schemas/CheckpointApiModel'
       additionalProperties: false
       description: Paginated response model of ItemTs
+    Page_PaymentTransaction_:
+      title: Page[PaymentTransaction]
+      required:
+      - _meta
+      - _links
+      - data
+      type: object
+      properties:
+        _meta:
+          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
+        _links:
+          $ref: '#/components/schemas/PageLinks'
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentTransaction'
+      additionalProperties: false
+      description: Paginated response model of ItemTs
     Page_ProjectIterationItem_:
       title: Page[ProjectIterationItem]
       required:
@@ -6584,25 +6620,6 @@ components:
             $ref: '#/components/schemas/RepoApiModel'
       additionalProperties: false
       description: Paginated response model of ItemTs
-    Page_WalletPaymentGet_:
-      title: Page[WalletPaymentGet]
-      required:
-      - _meta
-      - _links
-      - data
-      type: object
-      properties:
-        _meta:
-          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
-        _links:
-          $ref: '#/components/schemas/PageLinks'
-        data:
-          title: Data
-          type: array
-          items:
-            $ref: '#/components/schemas/WalletPaymentGet'
-      additionalProperties: false
-      description: Paginated response model of ItemTs
     ParentMetaProjectRef:
       title: ParentMetaProjectRef
       required:
@@ -6619,6 +6636,48 @@ components:
           exclusiveMinimum: true
           type: integer
           minimum: 0
+    PaymentTransaction:
+      title: PaymentTransaction
+      required:
+      - paymentId
+      - priceDollars
+      - walletId
+      - osparcCredits
+      - createdAt
+      type: object
+      properties:
+        paymentId:
+          title: Paymentid
+          minLength: 1
+          type: string
+        priceDollars:
+          title: Pricedollars
+          type: number
+        walletId:
+          title: Walletid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        osparcCredits:
+          title: Osparccredits
+          type: number
+        comment:
+          title: Comment
+          type: string
+        createdAt:
+          title: Createdat
+          type: string
+          format: date-time
+        completedAt:
+          title: Completedat
+          type: string
+          format: date-time
+        invoiceUrl:
+          title: Invoiceurl
+          maxLength: 2083
+          minLength: 1
+          type: string
+          format: uri
     PermissionGet:
       title: PermissionGet
       required:
@@ -8840,36 +8899,19 @@ components:
           title: Modified
           type: string
           format: date-time
-    WalletPaymentCreateBody:
-      title: WalletPaymentCreateBody
+    WalletPaymentCreated:
+      title: WalletPaymentCreated
       required:
-      - priceDollars
-      - osparcCredits
+      - paymentId
+      - paymentFormUrl
       type: object
       properties:
-        priceDollars:
-          title: Pricedollars
-          type: number
-        osparcCredits:
-          title: Osparccredits
-          type: number
-        comment:
-          title: Comment
-          maxLength: 100
-          type: string
-    WalletPaymentGet:
-      title: WalletPaymentGet
-      required:
-      - idr
-      - submissionLink
-      type: object
-      properties:
-        idr:
-          title: Idr
+        paymentId:
+          title: Paymentid
           minLength: 1
           type: string
-        submissionLink:
-          title: Submissionlink
+        paymentFormUrl:
+          title: Paymentformurl
           maxLength: 2083
           minLength: 1
           type: string
