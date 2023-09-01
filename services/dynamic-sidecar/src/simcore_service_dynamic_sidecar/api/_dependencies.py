@@ -11,6 +11,7 @@ from ..core.settings import ApplicationSettings
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore
 from ..modules.inputs import InputsState
+from ..modules.metrics import UserServicesMetrics
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.outputs import OutputsContext, OutputsManager
 
@@ -69,3 +70,9 @@ def get_inputs_state(
     app_state: Annotated[State, Depends(get_app_state)]
 ) -> InputsState:
     return app_state.inputs_state  # type: ignore
+
+
+def get_user_services_metrics(
+    app_state: Annotated[State, Depends(get_app_state)]
+) -> UserServicesMetrics:
+    return app_state.user_service_metrics  # type: ignore
