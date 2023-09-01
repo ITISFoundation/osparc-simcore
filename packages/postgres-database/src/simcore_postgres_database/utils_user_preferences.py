@@ -14,52 +14,12 @@ class CouldNotCreateOrUpdateUserPreferenceError(Exception):
     ...
 
 
-async def _save_preference(
-    conn: SAConnection,
-    table: sa.Table,
-    *,
-    user_id: int,
-    product_name: str,
-    preference_name: str,
-    payload: Any,
-):
-    data: dict[str, Any] = {
-        "user_id": user_id,
-        "product_name": product_name,
-        "preference_name": preference_name,
-        "payload": payload,
-    }
+class BasePreferencesRepo:
+    model: sa.Table
 
-    insert_stmt = pg_insert(table).values(**data)
-    upsert_stmt = insert_stmt.on_conflict_do_update(
-        index_elements=[table.c.user_id, table.c.product_name, table.c.preference_name],
-        set_=data,
-    ).returning(sa.literal_column("*"))
-
-    await conn.execute(upsert_stmt)
-
-
-async def _load_preference_payload(
-    conn: SAConnection,
-    table: sa.Table,
-    *,
-    user_id: int,
-    product_name: str,
-    preference_name: str,
-) -> Any | None:
-    payload: Any | None = await conn.scalar(
-        sa.select(table.c.payload).where(
-            table.c.user_id == user_id,
-            table.c.product_name == product_name,
-            table.c.preference_name == preference_name,
-        )
-    )
-    return payload
-
-
-class UserPreferencesRepo:
-    @staticmethod
+    @classmethod
     async def save_frontend_preference_payload(
+        cls,
         conn: SAConnection,
         *,
         user_id: int,
@@ -67,53 +27,47 @@ class UserPreferencesRepo:
         preference_name: str,
         payload: Any,
     ) -> None:
-        await _save_preference(
-            conn,
-            user_preferences_frontend,
-            user_id=user_id,
-            product_name=product_name,
-            preference_name=preference_name,
-            payload=payload,
-        )
+        data: dict[str, Any] = {
+            "user_id": user_id,
+            "product_name": product_name,
+            "preference_name": preference_name,
+            "payload": payload,
+        }
 
-    @staticmethod
+        insert_stmt = pg_insert(cls.model).values(**data)
+        upsert_stmt = insert_stmt.on_conflict_do_update(
+            index_elements=[
+                cls.model.c.user_id,
+                cls.model.c.product_name,
+                cls.model.c.preference_name,
+            ],
+            set_=data,
+        ).returning(sa.literal_column("*"))
+
+        await conn.execute(upsert_stmt)
+
+    @classmethod
     async def load_frontend_preference_payload(
-        conn: SAConnection, *, user_id: int, product_name: str, preference_name: Any
-    ) -> Any | None:
-        return await _load_preference_payload(
-            conn,
-            user_preferences_frontend,
-            user_id=user_id,
-            product_name=product_name,
-            preference_name=preference_name,
-        )
-
-    @staticmethod
-    async def save_user_service_preference_payload(
+        cls,
         conn: SAConnection,
         *,
         user_id: int,
         product_name: str,
-        preference_name: str,
-        payload: bytes,
-    ) -> None:
-        await _save_preference(
-            conn,
-            user_preferences_user_service,
-            user_id=user_id,
-            product_name=product_name,
-            preference_name=preference_name,
-            payload=payload,
+        preference_name: Any,
+    ) -> Any | None:
+        payload: Any | None = await conn.scalar(
+            sa.select(cls.model.c.payload).where(
+                cls.model.c.user_id == user_id,
+                cls.model.c.product_name == product_name,
+                cls.model.c.preference_name == preference_name,
+            )
         )
+        return payload
 
-    @staticmethod
-    async def load_user_service_preference_payload(
-        conn: SAConnection, *, user_id: int, product_name: str, preference_name: Any
-    ) -> bytes | None:
-        return await _load_preference_payload(
-            conn,
-            user_preferences_user_service,
-            user_id=user_id,
-            product_name=product_name,
-            preference_name=preference_name,
-        )
+
+class FrontendUserPreferencesRepo(BasePreferencesRepo):
+    model = user_preferences_frontend
+
+
+class UserServicesUserPreferencesRepo(BasePreferencesRepo):
+    model = user_preferences_user_service
