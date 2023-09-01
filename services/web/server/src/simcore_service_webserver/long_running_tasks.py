@@ -18,8 +18,8 @@ from .login.decorators import login_required
 
 
 class _RequestContext(RequestParams):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[pydantic-alias]
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[pydantic-alias]
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
+    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
 
 
 def _webserver_request_context_decorator(handler: Handler):
