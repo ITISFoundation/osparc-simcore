@@ -49,7 +49,7 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
     ITEMS_PER_PAGE: 15,
 
     popUpInWindow: function() {
-      const title = qx.locale.Manager.tr("Usage Overview");
+      const title = qx.locale.Manager.tr("Usage");
       const noteEditor = new osparc.component.resourceUsage.Overview();
       const viewWidth = 900;
       const viewHeight = 450;
