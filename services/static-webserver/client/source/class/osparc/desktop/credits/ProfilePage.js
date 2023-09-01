@@ -36,6 +36,7 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
     this.__getProfile();
 
     this.add(this.__createProfileUser());
+    this.add(this.__createPasswordSection());
   },
 
   members: {
@@ -110,6 +111,7 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
       expirationLayout.add(infoExtension);
       box.add(expirationLayout);
 
+      /*
       const img = new qx.ui.basic.Image().set({
         maxWidth: 100,
         maxHeight: 100,
@@ -120,6 +122,7 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
         alignX: "center"
       });
       box.add(img);
+      */
 
       // binding to a model
       let raw = {
@@ -157,11 +160,13 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
           return "";
         }
       });
+      /*
       controller.addTarget(img, "source", "email", false, {
         converter: function(data) {
           return osparc.utils.Avatar.getUrl(email.getValue(), 150);
         }
       });
+      */
 
       // validation
       const emailValidator = new qx.ui.form.validation.Manager();
@@ -261,6 +266,78 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
 
     __resetDataToModel: function() {
       this.__setDataToModel(this.__userProfileData);
+    },
+    __createPasswordSection: function() {
+      // layout
+      const box = this._createSectionBox(this.tr("Password"));
+      box.set({
+        alignX: "left",
+        maxWidth: 500
+      });
+
+      const currentPassword = new osparc.ui.form.PasswordField().set({
+        tabIndex: 1,
+        required: true,
+        placeholder: this.tr("Your current password")
+      });
+
+      const newPassword = new osparc.ui.form.PasswordField().set({
+        tabIndex: 2,
+        required: true,
+        placeholder: this.tr("Your new password")
+      });
+
+      const confirm = new osparc.ui.form.PasswordField().set({
+        tabIndex: 3,
+        required: true,
+        placeholder: this.tr("Retype your new password")
+      });
+
+      const form = new qx.ui.form.Form();
+      form.add(currentPassword, "Current Password", null, "curPassword");
+      form.add(newPassword, "New Password", null, "newPassword");
+      form.add(confirm, "Confirm New Password", null, "newPassword2");
+      box.add(new qx.ui.form.renderer.Single(form));
+
+      const manager = new qx.ui.form.validation.Manager();
+      manager.add(newPassword, osparc.auth.core.Utils.passwordLengthValidator);
+      manager.add(confirm, osparc.auth.core.Utils.passwordLengthValidator);
+      manager.setValidator(function(_itemForms) {
+        return osparc.auth.core.Utils.checkSamePasswords(newPassword, confirm);
+      });
+
+      const resetBtn = new qx.ui.form.Button("Reset Password").set({
+        allowGrowX: false
+      });
+      box.add(resetBtn);
+
+      resetBtn.addListener("execute", () => {
+        if (manager.validate()) {
+          const params = {
+            data: {
+              current: currentPassword.getValue(),
+              new: newPassword.getValue(),
+              confirm: confirm.getValue()
+            }
+          };
+          osparc.data.Resources.fetch("password", "post", params)
+            .then(data => {
+              osparc.component.message.FlashMessenger.getInstance().log(data);
+              [currentPassword, newPassword, confirm].forEach(item => {
+                item.resetValue();
+              });
+            })
+            .catch(err => {
+              console.error(err);
+              osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Failed to reset password"), "ERROR");
+              [currentPassword, newPassword, confirm].forEach(item => {
+                item.resetValue();
+              });
+            });
+        }
+      });
+
+      return box;
     }
   }
 });

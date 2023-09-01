@@ -51,9 +51,6 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
     const profilePage = this.__profilePage = this.__getProfilePage();
     tabViews.add(profilePage);
 
-    const securityPage = this.__securityPage = this.__getSecurityPage();
-    tabViews.add(securityPage);
-
     if (this.__walletsEnabled) {
       const walletsPage = this.__walletsPage = this.__getWalletsPage();
       tabViews.add(walletsPage);
@@ -91,7 +88,6 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
     __tabsView: null,
     __overviewPage: null,
     __profilePage: null,
-    __securityPage: null,
     __walletsPage: null,
     __buyCreditsPage: null,
     __transactionsPage: null,
@@ -163,14 +159,6 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
     __getProfilePage: function() {
       const page = new osparc.desktop.credits.ProfilePage();
       page.showLabelOnTab();
-      return page;
-    },
-
-    __getSecurityPage: function() {
-      const page = new osparc.desktop.credits.SecurityPage();
-      page.showLabelOnTab();
-      const secBtn = page.getChildControl("button");
-      osparc.utils.Utils.setIdToWidget(secBtn, "preferencesSecurityTabBtn");
       return page;
     },
 
