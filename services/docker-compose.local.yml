@@ -62,6 +62,10 @@ services:
     ports:
       - "8008:8000"
 
+  payments:
+    ports:
+      - "8011:8000"
+
   resource-usage-tracker:
     ports:
       - "8009:8000"

@@ -7,7 +7,7 @@ For twilio SMS services:
 
 
 import re
-from typing import Pattern
+from re import Pattern
 
 from pydantic import ConstrainedStr, Field, parse_obj_as
 

@@ -158,6 +158,7 @@ class TasksManager:
         task: asyncio.Task,
         task_progress: TaskProgress,
         task_context: TaskContext,
+        *,
         fire_and_forget: bool,
     ) -> TrackedTask:
         task_id = self._create_task_id(task_name)

@@ -171,6 +171,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
           ctrl.bindProperty("name", "title", null, item, id);
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
           ctrl.bindProperty("login", "subtitleMD", null, item, id);
+          ctrl.bindProperty("options", "options", null, item, id);
           ctrl.bindProperty("showOptions", "showOptions", null, item, id);
         },
         configureItem: item => {
@@ -208,6 +209,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
 
       const membersList = [];
       const potentialCollaborators = await osparc.store.Store.getInstance().getPotentialCollaborators();
+      const canIWrite = wallet.getMyAccessRights()["write"];
       wallet.getAccessRights().forEach(accessRights => {
         const gid = accessRights["gid"];
         if (Object.prototype.hasOwnProperty.call(potentialCollaborators, parseInt(gid))) {
@@ -219,7 +221,25 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
             collaborator["name"] = osparc.utils.Utils.firstsUp(collaborator["first_name"], collaborator["last_name"]);
           }
           collaborator["accessRights"] = accessRights;
-          collaborator["showOptions"] = this.__canIWrite();
+          let options = [];
+          if (canIWrite) {
+            // accountant...
+            if (collaborator["accessRights"]["write"]) {
+              // ...on accountant
+              options = [
+                "demoteToMember",
+                "removeMember"
+              ];
+            } else if (collaborator["accessRights"]["read"]) {
+              // ...on member
+              options = [
+                "promoteToAccountant",
+                "removeMember"
+              ];
+            }
+          }
+          collaborator["options"] = options;
+          collaborator["showOptions"] = Boolean(options.length);
           membersList.push(collaborator);
         }
       });

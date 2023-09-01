@@ -1,12 +1,11 @@
 from datetime import datetime
 
-from pydantic import BaseModel
-
 from ..users import GroupID
 from ..wallets import WalletID, WalletStatus
+from ._base import OutputSchema
 
 
-class WalletGet(BaseModel):
+class WalletGet(OutputSchema):
     wallet_id: WalletID
     name: str
     description: str | None
@@ -19,3 +18,22 @@ class WalletGet(BaseModel):
 
 class WalletGetWithAvailableCredits(WalletGet):
     available_credits: float
+
+
+class WalletGetPermissions(WalletGet):
+    read: bool
+    write: bool
+    delete: bool
+
+
+class CreateWalletBodyParams(OutputSchema):
+    name: str
+    description: str | None = None
+    thumbnail: str | None = None
+
+
+class PutWalletBodyParams(OutputSchema):
+    name: str
+    description: str | None
+    thumbnail: str | None
+    status: WalletStatus

@@ -23,11 +23,11 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
 )
 from servicelib.aiohttp.typing_extension import Handler
-from simcore_service_webserver.utils_aiohttp import envelope_json_response
 
 from .._meta import api_version_prefix
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
+from ..utils_aiohttp import envelope_json_response
 from . import _metadata_api
 from ._common_models import ProjectPathParams, RequestContext
 from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError

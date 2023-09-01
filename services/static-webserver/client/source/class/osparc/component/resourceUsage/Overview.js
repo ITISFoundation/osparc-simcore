@@ -23,12 +23,26 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
+    const walletSelector = this.getChildControl("wallet-selector");
+    walletSelector.exclude();
+    osparc.desktop.credits.Utils.areWalletsEnabled()
+      .then(walletsEnabled => {
+        if (walletsEnabled) {
+          walletSelector.show();
+        }
+      });
+
     const loadingImage = this.getChildControl("loading-image");
     loadingImage.show();
     const table = this.getChildControl("usage-table");
     table.exclude();
 
     this.__fetchData();
+    walletSelector.addListener("changeSelection", () => {
+      this.__prevRequestParams = null;
+      this.__nextRequestParams = null;
+      this.__fetchData();
+    });
   },
 
   statics: {
@@ -53,6 +67,21 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "wallet-selector": {
+          control = osparc.desktop.credits.Utils.createWalletSelector("read", false, true).set({
+            allowGrowX: false
+          });
+          // select "All wallets" by default
+          control.getSelectables()[0].setLabel("All wallets");
+          const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+          const selectLabel = new qx.ui.basic.Label(this.tr("Select Wallet")).set({
+            alignY: "middle"
+          });
+          layout.add(selectLabel);
+          layout.add(control);
+          this._add(layout);
+          break;
+        }
         case "loading-image":
           control = new qx.ui.basic.Image().set({
             source: "@FontAwesome5Solid/circle-notch/64",
@@ -144,10 +173,7 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
         params.url.offset = osparc.utils.Utils.getParamFromURL(this.__prevRequestParams, "offset");
         params.url.limit = osparc.utils.Utils.getParamFromURL(this.__prevRequestParams, "limit");
       }
-      const options = {
-        resolveWResponse: true
-      };
-      return osparc.data.Resources.fetch("resourceUsage", "getPage", params, undefined, options);
+      return this.__getCommonRequest(params);
     },
 
     __getNextRequest: function() {
@@ -161,9 +187,20 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
         params.url.offset = osparc.utils.Utils.getParamFromURL(this.__nextRequestParams, "offset");
         params.url.limit = osparc.utils.Utils.getParamFromURL(this.__nextRequestParams, "limit");
       }
+      return this.__getCommonRequest(params);
+    },
+
+    __getCommonRequest: function(params) {
       const options = {
         resolveWResponse: true
       };
+
+      const walletSelector = this.getChildControl("wallet-selector");
+      let walletId = walletSelector.getSelection()[0].walletId;
+      if (walletId) {
+        params.url["walletId"] = walletId.toString();
+        return osparc.data.Resources.fetch("resourceUsagePerWallet", "getPage", params, undefined, options);
+      }
       return osparc.data.Resources.fetch("resourceUsage", "getPage", params, undefined, options);
     },
 

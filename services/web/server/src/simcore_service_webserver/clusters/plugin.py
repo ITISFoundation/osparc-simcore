@@ -13,22 +13,22 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 
 from .._constants import APP_SETTINGS_KEY
 from ..director_v2 import plugin as director_v2
-from . import handlers
+from . import _handlers
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @app_module_setup(
     "simcore_service_webserver.clusters",
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_CLUSTERS",
-    logger=log,
+    logger=_logger,
 )
 def setup_clusters(app: web.Application):
     director_v2.setup_director_v2(app)
     assert app[APP_SETTINGS_KEY].WEBSERVER_CLUSTERS  # nosec
 
-    app.add_routes(handlers.routes)
+    app.add_routes(_handlers.routes)
 
 
-__all__ = ["setup_clusters"]
+__all__: tuple[str, ...] = ("setup_clusters",)

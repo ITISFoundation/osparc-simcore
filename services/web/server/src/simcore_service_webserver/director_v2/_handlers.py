@@ -16,9 +16,10 @@ from servicelib.common_headers import (
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
+from simcore_service_webserver.utils_aiohttp import envelope_json_response
 
 from .._constants import RQ_PRODUCT_KEY
-from .._meta import api_version_prefix as VTAG
+from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..version_control.models import CommitID
@@ -35,6 +36,21 @@ routes = web.RouteTableDef()
 class RequestContext(BaseModel):
     user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore
     product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore
+
+
+class _ComputationStart(BaseModel):
+    force_restart: bool = False
+    cluster_id: ClusterID = 0
+    subgraph: set[str] = set()
+
+
+class _ComputationStarted(BaseModel):
+    pipeline_id: ProjectID = Field(
+        ..., description="ID for created pipeline (=project identifier)"
+    )
+    ref_ids: list[CommitID] = Field(
+        None, description="Checkpoints IDs for created pipeline"
+    )
 
 
 @routes.post(f"/{VTAG}/computations/{{project_id}}:start", name="start_computation")
@@ -56,6 +72,8 @@ async def start_computation(request: web.Request) -> web.Response:
 
     if request.can_read_body:
         body = await request.json()
+        assert parse_obj_as(_ComputationStart, body) is not None  # nosec
+
         subgraph = body.get("subgraph", [])
         force_restart = bool(body.get("force_restart", force_restart))
         cluster_id = body.get("cluster_id")
@@ -114,11 +132,9 @@ async def start_computation(request: web.Request) -> web.Response:
         if project_vc_commits:
             data["ref_ids"] = project_vc_commits
 
-        return web.json_response(
-            {"data": data},
-            status=web.HTTPCreated.status_code,
-            dumps=json_dumps,
-        )
+        assert parse_obj_as(_ComputationStarted, data) is not None  # nosec
+
+        return envelope_json_response(data, status_cls=web.HTTPCreated)
 
     except DirectorServiceError as exc:
         return create_error_response(

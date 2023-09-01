@@ -5,9 +5,10 @@
 import asyncio
 import json
 import random
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from datetime import timezone
 from pathlib import Path
-from typing import Any, AsyncIterator, Awaitable, Callable, Final, Iterator, cast
+from typing import Any, Final, cast
 
 import aiodocker
 import httpx
@@ -54,7 +55,6 @@ pytest_plugins = [
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
-    "pytest_simcore.monkeypatch_extra",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.repository_paths",
     "pytest_simcore.tmp_path_extra",
@@ -116,7 +116,7 @@ def app_environment(
 
 
 @pytest.fixture
-def disable_dynamic_service_background_task(mocker: MockerFixture) -> Iterator[None]:
+def disable_dynamic_service_background_task(mocker: MockerFixture) -> None:
     mocker.patch(
         "simcore_service_autoscaling.dynamic_scaling.start_periodic_task",
         autospec=True,
@@ -126,8 +126,6 @@ def disable_dynamic_service_background_task(mocker: MockerFixture) -> Iterator[N
         "simcore_service_autoscaling.dynamic_scaling.stop_periodic_task",
         autospec=True,
     )
-
-    yield
 
 
 @pytest.fixture
@@ -210,24 +208,24 @@ async def host_node(
 @pytest.fixture
 def create_fake_node(faker: Faker) -> Callable[..., Node]:
     def _creator(**node_overrides) -> Node:
-        default_config = dict(
-            ID=faker.uuid4(),
-            Version=ObjectVersion(Index=faker.pyint()),
-            CreatedAt=faker.date_time(tzinfo=timezone.utc).isoformat(),
-            UpdatedAt=faker.date_time(tzinfo=timezone.utc).isoformat(),
-            Description=NodeDescription(
+        default_config = {
+            "ID": faker.uuid4(),
+            "Version": ObjectVersion(Index=faker.pyint()),
+            "CreatedAt": faker.date_time(tzinfo=timezone.utc).isoformat(),
+            "UpdatedAt": faker.date_time(tzinfo=timezone.utc).isoformat(),
+            "Description": NodeDescription(
                 Hostname=faker.pystr(),
                 Resources=ResourceObject(
                     NanoCPUs=int(9 * 1e9), MemoryBytes=256 * 1024 * 1024 * 1024
                 ),
             ),
-            Spec=NodeSpec(
+            "Spec": NodeSpec(
                 Name=None,
                 Labels=None,
                 Role=None,
                 Availability=Availability.drain,
             ),
-        )
+        }
         default_config.update(**node_overrides)
         return Node(**default_config)
 
@@ -336,6 +334,7 @@ async def create_service(
                 excluded_paths.add(
                     f"root['Resources']['Reservations']['{reservation}']"
                 )
+        assert service.Spec.TaskTemplate
         diff = DeepDiff(
             task_template,
             service.Spec.TaskTemplate.dict(exclude_unset=True),
@@ -460,7 +459,7 @@ def mocked_aws_server_envs(
         "EC2_ACCESS_KEY_ID": "xxx",
         "EC2_SECRET_ACCESS_KEY": "xxx",
     }
-    yield app_environment | setenvs_from_dict(monkeypatch, changed_envs)
+    return app_environment | setenvs_from_dict(monkeypatch, changed_envs)
 
 
 @pytest.fixture
@@ -479,7 +478,7 @@ def aws_allowed_ec2_instance_type_names(
             ]
         ),
     }
-    yield app_environment | setenvs_from_dict(monkeypatch, changed_envs)
+    return app_environment | setenvs_from_dict(monkeypatch, changed_envs)
 
 
 @pytest.fixture(scope="session")
@@ -598,7 +597,7 @@ async def autoscaling_ec2(
 async def ec2_client(
     autoscaling_ec2: AutoscalingEC2,
 ) -> AsyncIterator[EC2Client]:
-    yield autoscaling_ec2.client
+    return autoscaling_ec2.client
 
 
 @pytest.fixture
@@ -616,7 +615,11 @@ def osparc_docker_label_keys(
     faker: Faker,
 ) -> StandardSimcoreDockerLabels:
     return StandardSimcoreDockerLabels.parse_obj(
-        dict(user_id=faker.pyint(), project_id=faker.uuid4(), node_id=faker.uuid4())
+        {
+            "user_id": faker.pyint(),
+            "project_id": faker.uuid4(),
+            "node_id": faker.uuid4(),
+        }
     )
 
 

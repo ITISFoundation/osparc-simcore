@@ -28,5 +28,5 @@ class CleanRequiredError(VersionControlRuntimeError):
     msg_template = "Working copy w/o changes (clean) is required: {details}"
 
 
-class UserUndefined(VersionControlRuntimeError):
+class UserUndefinedError(VersionControlRuntimeError):
     msg_template = "User required but undefined"

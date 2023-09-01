@@ -134,7 +134,7 @@ def _connect_user_services(
     """
     Put all containers in the compose spec in the same network.
     The network name must only be unique inside the user defined spec.
-    `docker-compose` will add some prefix to it.
+    `docker compose` will add some prefix to it.
     """
     networks = parsed_compose_spec.get("networks", None)
     if networks is None:
@@ -186,7 +186,7 @@ async def validate_compose_spec(
     - properly target environment variables formwarded via
         settings on the service
 
-    Finally runs docker-compose config to properly validate the result
+    Finally runs docker compose config to properly validate the result
     """
     _logger.debug("validating compose spec:\n%s", f"{compose_file_content=}")
     parsed_compose_spec = parse_compose_spec(compose_file_content)
@@ -283,12 +283,12 @@ async def validate_compose_spec(
         spec_services_to_container_name=spec_services_to_container_name,
     )
 
-    # validate against docker-compose config
+    # validate against docker compose config
     result = await docker_compose_config(compose_spec)
 
     if not result.success:
         _logger.warning(
-            "'docker-compose config' failed for:\n%s\n%s",
+            "'docker compose config' failed for:\n%s\n%s",
             f"{compose_spec}",
             result.message,
         )

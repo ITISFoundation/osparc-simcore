@@ -19,8 +19,10 @@ class RunMetadataDict(TypedDict, total=False):
     product_name: str
     simcore_user_agent: str
     user_email: str
-    wallet_id: int
-    wallet_name: str
+    wallet_id: int | None
+    wallet_name: str | None
+    pricing_plan_id: int | None
+    pricing_detail_id: int | None
 
 
 class CompRunsAtDB(BaseModel):
@@ -60,6 +62,13 @@ class CompRunsAtDB(BaseModel):
     def ensure_utc(cls, v: datetime.datetime | None) -> datetime.datetime | None:
         if v is not None and v.tzinfo is None:
             v = v.replace(tzinfo=datetime.timezone.utc)
+        return v
+
+    @validator("metadata", pre=True)
+    @classmethod
+    def convert_null_to_empty_metadata(cls, v):
+        if v is None:
+            v = RunMetadataDict()
         return v
 
     class Config:

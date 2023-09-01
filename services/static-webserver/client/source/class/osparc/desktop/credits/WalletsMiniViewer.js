@@ -24,6 +24,7 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
     this._setLayout(new qx.ui.layout.VBox(3));
 
     this.set({
+      cursor: "pointer",
       padding: 5,
       paddingRight: 10
     });
@@ -31,6 +32,14 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
     this.__walletListeners = [];
 
     this.__buildLayout();
+
+    this.addListener("tap", () => {
+      osparc.desktop.credits.Utils.areWalletsEnabled()
+        .then(walletsEnabled => {
+          const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow(walletsEnabled);
+          creditsWindow.openOverview();
+        });
+    }, this);
   },
 
   properties: {
@@ -55,6 +64,9 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
       const activeWallet = this.getActiveWallet();
       if (activeWallet) {
         this.__showOneWallet(activeWallet);
+      } else if (osparc.store.Store.getInstance().getWallets().find(wallet => wallet.isDefaultWallet())) {
+        const found = osparc.store.Store.getInstance().getWallets().find(wallet => wallet.isDefaultWallet());
+        this.__showOneWallet(found);
       } else if (osparc.store.Store.getInstance().getWallets().length) {
         this.__showAllWallets();
       } else {
@@ -88,8 +100,11 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
         textColor: "danger-red"
       });
       walletsButton.addListener("tap", () => {
-        const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow();
-        creditsWindow.openWallets();
+        osparc.desktop.credits.Utils.areWalletsEnabled()
+          .then(walletsEnabled => {
+            const creditsWindow = osparc.desktop.credits.CreditsWindow.openWindow(walletsEnabled);
+            creditsWindow.openWallets();
+          });
       }, this);
       this._add(walletsButton, {
         flex: 1
@@ -108,11 +123,7 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
       });
 
       this.__addWallet(wallet);
-      const id = wallet.addListener("changeStatus", () => this.__reloadLayout());
-      this.__walletListeners.push({
-        walletId: wallet.getWalletId(),
-        listenerId: id
-      });
+      this.__addWalletListener(wallet);
 
       this._add(new qx.ui.core.Spacer(), {
         flex: 1
@@ -133,11 +144,7 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
         if (wallet.getStatus() === "ACTIVE") {
           this.__addWallet(wallet);
         }
-        const id = wallet.addListener("changeStatus", () => this.__reloadLayout());
-        this.__walletListeners.push({
-          walletId: wallet.getWalletId(),
-          listenerId: id
-        });
+        this.__addWalletListener(wallet);
       }
 
       this._add(new qx.ui.core.Spacer(), {
@@ -146,11 +153,25 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
     },
 
     __addWallet: function(wallet) {
-      const progressBar = new osparc.desktop.credits.CreditsIndicator(wallet, true).set({
+      const progressBar = new osparc.desktop.credits.CreditsIndicator(wallet).set({
         allowShrinkY: true
       });
       this._add(progressBar, {
         flex: 1
+      });
+    },
+
+    __addWalletListener: function(wallet) {
+      const changeStatusId = wallet.addListener("changeStatus", () => this.__reloadLayout());
+      this.__walletListeners.push({
+        walletId: wallet.getWalletId(),
+        listenerId: changeStatusId
+      });
+
+      const defaultWalletId = wallet.addListener("changeDefaultWallet", () => this.__reloadLayout());
+      this.__walletListeners.push({
+        walletId: wallet.getWalletId(),
+        listenerId: defaultWalletId
       });
     }
   }

@@ -28,15 +28,12 @@ qx.Class.define("osparc.component.resourceUsage.OverviewTable", {
       tableColumnModel: obj => new qx.ui.table.columnmodel.Resize(obj),
       statusBarVisible: false
     });
+    this.makeItLoose();
+
     const columnModel = this.getTableColumnModel();
     columnModel.getBehavior().setWidth(this.self().COLUMNS.duration.pos, 60);
-    columnModel.getBehavior().setWidth(this.self().COLUMNS.processors.pos, 80);
-    columnModel.getBehavior().setWidth(this.self().COLUMNS.coreHours.pos, 80);
     columnModel.getBehavior().setWidth(this.self().COLUMNS.status.pos, 70);
     columnModel.getBehavior().setWidth(this.self().COLUMNS.wallet.pos, 80);
-    columnModel.setDataCellRenderer(this.self().COLUMNS.duration.pos, new qx.ui.table.cellrenderer.Number());
-    columnModel.setDataCellRenderer(this.self().COLUMNS.processors.pos, new qx.ui.table.cellrenderer.Number());
-    columnModel.setDataCellRenderer(this.self().COLUMNS.coreHours.pos, new qx.ui.table.cellrenderer.Number());
   },
 
   statics: {
@@ -61,20 +58,12 @@ qx.Class.define("osparc.component.resourceUsage.OverviewTable", {
         pos: 4,
         title: "Duration"
       },
-      processors: {
-        pos: 5,
-        title: "Processors"
-      },
-      coreHours: {
-        pos: 6,
-        title: "Core Hours"
-      },
       status: {
-        pos: 7,
+        pos: 5,
         title: "Status"
       },
       wallet: {
-        pos: 8,
+        pos: 6,
         title: "Wallet"
       }
     }
@@ -89,19 +78,20 @@ qx.Class.define("osparc.component.resourceUsage.OverviewTable", {
         const cols = this.self().COLUMNS;
         datas.forEach(data => {
           const newData = [];
-          newData[cols["project"].pos] = data["project_name"] ? data["project_name"] : data["project_uuid"];
-          newData[cols["node"].pos] = data["node_label"] ? data["node_label"] : data["node_uuid"];
+          newData[cols["project"].pos] = data["project_name"] ? data["project_name"] : data["project_id"];
+          newData[cols["node"].pos] = data["node_name"] ? data["node_name"] : data["node_id"];
           if (data["service_key"]) {
             const parts = data["service_key"].split("/");
             const serviceName = parts.pop();
             newData[cols["service"].pos] = serviceName + ":" + data["service_version"];
           }
-          newData[cols["start"].pos] = osparc.utils.Utils.formatDateAndTime(new Date(data["start_time"]));
-          newData[cols["duration"].pos] = data["duration"];
-          newData[cols["processors"].pos] = data["processors"];
-          newData[cols["coreHours"].pos] = data["core_hours"];
-          newData[cols["status"].pos] = qx.lang.String.firstUp(data["status"]);
-          newData[cols["wallet"].pos] = data["wallet_label"] ? data["wallet_label"] : "Wallet ID?";
+          const startTime = new Date(data["started_at"]);
+          newData[cols["start"].pos] = osparc.utils.Utils.formatDateAndTime(startTime);
+          const stopTime = new Date(data["stopped_at"]);
+          const durationTimeSec = (stopTime - startTime)/1000;
+          newData[cols["duration"].pos] = durationTimeSec;
+          newData[cols["status"].pos] = qx.lang.String.firstUp(data["service_run_status"].toLowerCase());
+          newData[cols["wallet"].pos] = data["wallet_label"] ? data["wallet_label"] : "unknown";
           newDatas.push(newData);
         });
       }

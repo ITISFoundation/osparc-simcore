@@ -15,16 +15,11 @@ from models_library.api_schemas_webserver.projects import (
     ProjectGet,
     ProjectUpdate,
 )
-from models_library.projects import Project, ProjectID
+from models_library.projects import Project
 from models_library.projects_state import ProjectLocked
-from models_library.rest_pagination import (
-    DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
-    MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
-    Page,
-)
+from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import BaseModel, Extra, Field, NonNegativeInt, validator
 from servicelib.aiohttp.long_running_tasks.server import start_long_running_task
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -39,7 +34,7 @@ from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
-from .._meta import api_version_prefix as VTAG
+from .._meta import API_VTAG as VTAG
 from ..catalog.client import get_services_for_user_in_product
 from ..director_v2 import api
 from ..login.decorators import login_required
@@ -49,7 +44,11 @@ from ..security.decorators import permission_required
 from ..users.api import get_user_name
 from . import _crud_api_create, _crud_api_read, projects_api
 from ._common_models import ProjectPathParams, RequestContext
-from ._crud_api_read import OrderDirection, ProjectListFilters, ProjectOrderBy
+from ._crud_handlers_models import (
+    ProjectActiveParams,
+    ProjectCreateParams,
+    ProjectListParams,
+)
 from ._permalink_api import update_or_pop_permalink_in_project
 from .db import ProjectDBAPI
 from .exceptions import (
@@ -59,13 +58,12 @@ from .exceptions import (
     ProjectNotFoundError,
 )
 from .lock import get_project_locked_state
-from .models import ProjectDict, ProjectTypeAPI
+from .models import ProjectDict
 from .nodes_utils import update_frontend_outputs
 from .utils import (
     any_node_inputs_changed,
     get_project_unavailable_services,
     project_uses_available_services,
-    replace_multiple_spaces,
 )
 
 # When the user requests a project with a repo, the working copy might differ from
@@ -85,42 +83,21 @@ routes = web.RouteTableDef()
 #
 
 
-class _ProjectCreateParams(BaseModel):
-    from_study: ProjectID | None = Field(
-        None,
-        description="Option to create a project from existing template or study: from_study={study_uuid}",
-    )
-    as_template: bool = Field(
-        default=False,
-        description="Option to create a template from existing project: as_template=true",
-    )
-    copy_data: bool = Field(
-        default=True,
-        description="Option to copy data when creating from an existing template or as a template, defaults to True",
-    )
-    hidden: bool = Field(
-        default=False,
-        description="Enables/disables hidden flag. Hidden projects are by default unlisted",
-    )
-
-    class Config:
-        extra = Extra.forbid
-
-
 @routes.post(f"/{VTAG}/projects", name="create_project")
 @login_required
 @permission_required("project.create")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
 async def create_project(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
-    query_params = parse_request_query_parameters_as(_ProjectCreateParams, request)
+    query_params = parse_request_query_parameters_as(ProjectCreateParams, request)
     if query_params.as_template:  # create template from
         await check_permission(request, "project.template.create")
 
     # NOTE: Having so many different types of bodys is an indication that
     # this entrypoint are in reality multiple entrypoints in one, namely
     # :create, :copy (w/ and w/o override)
-    #
+    # NOTE: see clone_project
+
     if not request.can_read_body:
         # request w/o body
         assert query_params.from_study  # nosec
@@ -159,85 +136,8 @@ async def create_project(request: web.Request):
     )
 
 
-#
 # - List https://google.aip.dev/132
 #
-
-
-class _ProjectListParams(BaseModel):
-    limit: int = Field(
-        default=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
-        description="maximum number of items to return (pagination)",
-        ge=1,
-        lt=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
-    )
-    offset: NonNegativeInt = Field(
-        default=0, description="index to the first item to return (pagination)"
-    )
-    project_type: ProjectTypeAPI = Field(default=ProjectTypeAPI.all, alias="type")
-    show_hidden: bool = Field(
-        default=False, description="includes projects marked as hidden in the listing"
-    )
-
-    order_by: list[ProjectOrderBy] | None = Field(
-        default=None,
-        description="Comma separated list of fields for ordering. The default sorting order is ascending. To specify descending order for a field, users append a 'desc' suffix",
-        example="foo desc, bar",
-    )
-    filters: ProjectListFilters | None = Field(
-        default=None,
-        description="Filters to process on the projects list, encoded as JSON",
-        example='{"tags": [1, 5], "classifiers": ["foo", "bar"]}',
-    )
-    search: str | None = Field(
-        default=None,
-        description="Multi column full text search",
-        max_length=100,
-        example="My Project",
-    )
-
-    @validator("order_by", pre=True)
-    @classmethod
-    def sort_by_should_have_special_format(cls, v):
-        if not v:
-            return v
-
-        parse_fields_with_direction = []
-        fields = v.split(",")
-        for field in fields:
-            field_info = replace_multiple_spaces(field.strip()).split(" ")
-            field_name = field_info[0]
-            direction = OrderDirection.ASC
-
-            if len(field_info) == 2:
-                if field_info[1] == OrderDirection.DESC.value:
-                    direction = OrderDirection.DESC
-                else:
-                    msg = "Field direction in the order_by parameter must contain either 'desc' direction or empty value for 'asc' direction."
-                    raise ValueError(msg)
-
-            parse_fields_with_direction.append(
-                ProjectOrderBy(field=field_name, direction=direction)
-            )
-
-        return parse_fields_with_direction
-
-    @validator("filters", pre=True)
-    @classmethod
-    def filters_parse_to_object(cls, v):
-        if v:
-            v = json.loads(v)
-        return v
-
-    @validator("search", pre=True)
-    @classmethod
-    def search_check_empty_string(cls, v):
-        if not v:
-            return None
-        return v
-
-    class Config:
-        extra = Extra.forbid
 
 
 @routes.get(f"/{VTAG}/projects", name="list_projects")
@@ -251,7 +151,7 @@ async def list_projects(request: web.Request):
 
     """
     req_ctx = RequestContext.parse_obj(request)
-    query_params = parse_request_query_parameters_as(_ProjectListParams, request)
+    query_params = parse_request_query_parameters_as(ProjectListParams, request)
 
     projects, total_number_of_projects = await _crud_api_read.list_projects(
         request,
@@ -285,10 +185,6 @@ async def list_projects(request: web.Request):
 #
 
 
-class _ProjectActiveParams(BaseModel):
-    client_session_id: str
-
-
 @routes.get(f"/{VTAG}/projects/active", name="get_active_project")
 @login_required
 @permission_required("project.read")
@@ -300,7 +196,7 @@ async def get_active_project(request: web.Request) -> web.Response:
         web.HTTPNotFound: If active project is not found
     """
     req_ctx = RequestContext.parse_obj(request)
-    query_params = parse_request_query_parameters_as(_ProjectActiveParams, request)
+    query_params = parse_request_query_parameters_as(ProjectActiveParams, request)
 
     try:
         user_active_projects = []
@@ -551,7 +447,7 @@ async def update_project(request: web.Request):
     assert path_params  # nosec
     assert project_update  # nosec
 
-    raise NotImplementedError()
+    raise NotImplementedError
 
 
 #
@@ -637,3 +533,38 @@ async def delete_project(request: web.Request):
         raise web.HTTPConflict(reason=f"{err}") from err
 
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+
+
+#
+# - Clone (as custom method)
+#   - https://google.aip.dev/136
+#   - https://cloud.google.com/apis/design/custom_methods#http_mapping
+#
+
+
+@routes.post(f"/{VTAG}/projects/{{project_id}}:clone", name="clone_project")
+@login_required
+@permission_required("project.create")
+@permission_required("services.pipeline.*")  # due to update_pipeline_db
+async def clone_project(request: web.Request):
+    req_ctx = RequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(ProjectPathParams, request)
+
+    return await start_long_running_task(
+        request,
+        _crud_api_create.create_project,
+        fire_and_forget=True,
+        task_context=jsonable_encoder(req_ctx),
+        # arguments
+        request=request,
+        new_project_was_hidden_before_data_was_copied=False,
+        from_study=path_params.project_id,
+        as_template=False,
+        copy_data=True,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        simcore_user_agent=request.headers.get(
+            X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+        ),
+        predefined_project=None,
+    )

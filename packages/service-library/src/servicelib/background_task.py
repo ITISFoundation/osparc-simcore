@@ -2,7 +2,8 @@ import asyncio
 import contextlib
 import datetime
 import logging
-from typing import AsyncIterator, Awaitable, Callable, Final
+from collections.abc import AsyncIterator, Awaitable, Callable
+from typing import Final
 
 from pydantic.errors import PydanticErrorMixin
 from servicelib.logging_utils import log_catch, log_context
@@ -34,12 +35,12 @@ async def _periodic_scheduled_task(
         with attempt:
             with log_context(
                 logger,
-                logging.DEBUG,
+                logging.INFO,
                 msg=f"iteration {attempt.retry_state.attempt_number} of '{task_name}'",
             ), log_catch(logger):
                 await task(**task_kwargs)
 
-            raise TryAgain()
+            raise TryAgain
 
 
 def start_periodic_task(
@@ -50,7 +51,7 @@ def start_periodic_task(
     **kwargs,
 ) -> asyncio.Task:
     with log_context(
-        logger, logging.INFO, msg=f"create periodic background task '{task_name}'"
+        logger, logging.DEBUG, msg=f"create periodic background task '{task_name}'"
     ):
         return asyncio.create_task(
             _periodic_scheduled_task(
@@ -97,7 +98,7 @@ async def stop_periodic_task(
 ) -> None:
     with log_context(
         logger,
-        logging.INFO,
+        logging.DEBUG,
         msg=f"cancel periodic background task '{asyncio_task.get_name()}'",
     ):
         await cancel_task(asyncio_task, timeout=timeout)

@@ -46,7 +46,8 @@ Taken from https://docs.docker.com/engine/reference/builder/#healthcheck
 
 import asyncio
 import inspect
-from typing import Any, Awaitable, Callable, TypeAlias
+from collections.abc import Awaitable, Callable
+from typing import TypeAlias, TypedDict
 
 from aiohttp import web
 from aiosignal import Signal
@@ -58,11 +59,17 @@ _HealthCheckSlot = Callable[[web.Application], Awaitable[None]]
 _HealthCheckSignal: TypeAlias = Signal[_HealthCheckSlot]
 
 
-class HealthCheckFailed(RuntimeError):
+class HealthCheckError(RuntimeError):
     """Failed a health check
 
     NOTE: not the same as unhealthy. Check module's doc
     """
+
+
+class HealthInfoDict(TypedDict, total=True):
+    name: str
+    version: str
+    api_version: str
 
 
 class HealthCheck:
@@ -86,16 +93,16 @@ class HealthCheck:
         return self._on_healthcheck
 
     @staticmethod
-    def get_app_info(app: web.Application):
+    def get_app_info(app: web.Application) -> HealthInfoDict:
         """Minimal (header) health report is information about the app"""
         settings = app[APP_SETTINGS_KEY]
-        return {
-            "name": settings.APP_NAME,
-            "version": settings.API_VERSION,
-            "api_version": settings.API_VERSION,
-        }
+        return HealthInfoDict(
+            name=settings.APP_NAME,
+            version=settings.API_VERSION,
+            api_version=settings.API_VERSION,
+        )
 
-    async def run(self, app: web.Application) -> dict[str, Any]:
+    async def run(self, app: web.Application) -> HealthInfoDict:
         """Runs all registered checks to determine the service health.
 
         can raise HealthCheckFailed
@@ -108,13 +115,12 @@ class HealthCheck:
         ), "All Slot functions that append to on_healthcheck must be coroutines. SEE _HealthCheckSlot"
 
         try:
-            heath_report: dict[str, Any] = self.get_app_info(app)
-
             await asyncio.wait_for(
                 self._on_healthcheck.send(app), timeout=self._timeout
             )
-
+            heath_report: HealthInfoDict = self.get_app_info(app)
             return heath_report
 
         except asyncio.TimeoutError as err:
-            raise HealthCheckFailed("Service is slowing down") from err
+            msg = "Service is slowing down"
+            raise HealthCheckError(msg) from err

@@ -40,7 +40,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
 
     nCredits: {
       check: "Number",
-      init: 1,
+      init: 50,
       nullable: false,
       event: "changeNCredits",
       apply: "__applyNCredits"
@@ -147,7 +147,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     __buildLayout: function() {
       this.getChildControl("wallet-selector");
       this.getChildControl("credits-left-view");
-      this.getChildControl("credit-offers-view");
+      // this.getChildControl("credit-offers-view");
       this.getChildControl("credit-selector");
       this.getChildControl("summary-view");
       this.getChildControl("buy-button");
@@ -254,6 +254,14 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     },
 
     __getCreditSelector: function() {
+      const vLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+
+      const label = new qx.ui.basic.Label().set({
+        value: this.tr("Credits:"),
+        font: "text-14"
+      });
+      vLayout.add(label);
+
       const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(0));
 
       const minBtn = new qx.ui.form.Button().set({
@@ -281,7 +289,9 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       moreBtn.addListener("execute", () => this.setNCredits(this.getNCredits()+1));
       layout.add(moreBtn);
 
-      return layout;
+      vLayout.add(layout);
+
+      return vLayout;
     },
 
     __getSummaryView: function() {
@@ -414,51 +424,109 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         maxWidth: 150,
         center: true
       });
+
+      const buying = () => {
+        buyBtn.set({
+          fetching: true,
+          label: this.tr("Buying...")
+        });
+      };
+      const transactionFinished = () => {
+        buyBtn.set({
+          fetching: false,
+          label: this.tr("Buy Credits")
+        });
+      };
       buyBtn.addListener("execute", () => {
-        buyBtn.setFetching(true);
+        const nCredits = this.getNCredits();
+        const totalPrice = this.getTotalPrice();
+        const wallet = this.getWallet();
+        buying();
         setTimeout(() => {
-          buyBtn.setFetching(false);
-          const nCredits = this.getNCredits();
-          const totalPrice = this.getTotalPrice();
-          const wallet = this.getWallet();
-          const title = "AppMotion's middleware";
-          let url = "https://www.paymentservice.io";
-          url += "?user_id=2";
-          url += "&session_id=1234";
-          url += "&token=5678";
-          url += "&wallet_id=" + wallet.getWalletId();
-          url += "&wallet_name=" + encodeURIComponent(wallet.getName()); // without white spaces
-          url += "&total_price=" + totalPrice;
-          url += "&n_credits=" + nCredits;
-          const paymentGateway = new osparc.desktop.credits.PaymentGateway().set({
-            url,
-            nCredits,
-            totalPrice,
-            walletName: wallet.getName()
-          });
-          const win = osparc.ui.window.Window.popUpInWindow(paymentGateway, title, 320, 475);
-          win.center();
-          win.open();
-          paymentGateway.addListener("paymentSuccessful", () => {
-            let msg = "Payment Successful";
-            msg += "<br>";
-            msg += "You now have " + nCredits + " more credits";
-            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO", null, 10000);
-            wallet.setCreditsAvailable(wallet.getCreditsAvailable() + nCredits);
-            this.fireDataEvent("transactionSuccessful", {
+          if (nCredits < 100) {
+            let url = "https://www.payment.appmotion.de";
+            url += "/pay?id=2";
+
+            const paymentGateway = new osparc.desktop.credits.PaymentGateway().set({
+              url,
               nCredits,
               totalPrice,
               walletName: wallet.getName()
             });
-          });
-          paymentGateway.addListener("paymentFailed", () => {
-            let msg = "Payment Failed";
-            msg += "<br>";
-            msg += "Please try again";
-            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR", null, 10000);
-          });
-          paymentGateway.addListener("close", () => win.close());
-        }, 1000);
+            const title = "AppMotion's middleware";
+            const win = osparc.ui.window.Window.popUpInWindow(paymentGateway, title, 320, 475);
+            win.center();
+            win.open();
+            paymentGateway.addListener("paymentSuccessful", () => {
+              transactionFinished();
+              let msg = "Payment Successful";
+              msg += "<br>";
+              msg += "You now have " + nCredits + " more credits";
+              osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO", null, 10000);
+              wallet.setCreditsAvailable(wallet.getCreditsAvailable() + nCredits);
+              this.fireDataEvent("transactionSuccessful", {
+                nCredits,
+                totalPrice,
+                walletName: wallet.getName()
+              });
+            });
+            paymentGateway.addListener("paymentFailed", () => {
+              transactionFinished();
+              let msg = "Payment Failed";
+              msg += "<br>";
+              msg += "Please try again";
+              osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR", null, 10000);
+            });
+            paymentGateway.addListener("close", () => {
+              win.close();
+              transactionFinished();
+            });
+          } else {
+            transactionFinished();
+
+            const options = {
+              width: 400,
+              height: 400,
+              top: 200,
+              left: 100,
+              scrollbars: false
+            };
+            const modal = true;
+            const useNativeModalDialog = false; // this allow using the Blocker
+
+            const blocker = qx.bom.Window.getBlocker();
+            blocker.setBlockerColor("#FFF");
+            blocker.setBlockerOpacity(0.6);
+            this.__pgWindow = qx.bom.Window.open(
+              "https://www.sandbox.paypal.com/checkoutnow?sessionID=uid_528c54d94a_mti6mty6mzk&buttonSessionID=uid_fd2db9090d_mti6mty6mzk&stickinessID=uid_b4ee25a7cf_mdc6nta6ntq&smokeHash=&token=6XJ77332V85719833&fundingSource=paypal&buyerCountry=GB&locale.x=en_GB&commit=false&enableFunding.0=paylater&clientID=Ac9r0wZ444AH4c8nEvA7l5QbBaGtf8B0y2ZSTGvQDXFNb0HlkFb9cseCUWMZ0_mJUJPfd2NYjJx4HYLI&env=sandbox&sdkMeta=eyJ1cmwiOiJodHRwczovL3d3dy5wYXlwYWwuY29tL3Nkay9qcz9jbGllbnQtaWQ9QWM5cjB3WjQ0NEFINGM4bkV2QTdsNVFiQmFHdGY4QjB5MlpTVEd2UURYRk5iMEhsa0ZiOWNzZUNVV01aMF9tSlVKUGZkMk5Zakp4NEhZTEkmY29tbWl0PWZhbHNlJmN1cnJlbmN5PUdCUCZkaXNhYmxlLWZ1bmRpbmc9Y2FyZCZlbmFibGUtZnVuZGluZz1wYXlsYXRlciZidXllci1jb3VudHJ5PUdCJmxvY2FsZT1lbl9HQiZjb21wb25lbnRzPW1lc3NhZ2VzLGJ1dHRvbnMiLCJhdHRycyI6eyJkYXRhLXVpZCI6InVpZF9iZnZyaHB5ZXZ4ZXF1aXVpc2FodHJiamhpb3piangifX0&xcomponent=1&version=5.0.394",
+              "pgWindow",
+              options,
+              modal,
+              useNativeModalDialog
+            );
+
+            // enhance the blocker
+            const blockerDomEl = blocker.getBlockerElement();
+            blockerDomEl.style.cursor = "pointer";
+
+            // text on blocker
+            const label = document.createElement("h1");
+            label.innerHTML = "Don’t see the secure Payment Window?<br>Click here to complete your purchase";
+            label.style.position = "fixed";
+            const labelWidth = 550;
+            const labelHeight = 100;
+            label.style.width = labelWidth + "px";
+            label.style.height = labelHeight + "px";
+            const root = qx.core.Init.getApplication().getRoot();
+            if (root && root.getBounds()) {
+              label.style.left = Math.round(root.getBounds().width/2) - labelWidth/2 + "px";
+              label.style.top = Math.round(root.getBounds().height/2) - labelHeight/2 + "px";
+            }
+            blockerDomEl.appendChild(label);
+
+            blockerDomEl.addEventListener("click", () => this.__pgWindow.focus());
+          }
+        }, 3000);
       });
       return buyBtn;
     },

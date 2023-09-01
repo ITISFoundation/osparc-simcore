@@ -6,11 +6,6 @@
 --constraint ../../../requirements/constraints.txt
 --constraint _base.txt
 
-# There are incompatible versions in the resolved dependencies:
-#  websocket-client==1.1.0 (from -c requirements/_migration.txt (line 51))
-#  websocket-client<1,>=0.32.0 (from docker-compose==1.29.1->-c requirements/../../../requirements/constraints.txt (line 25))
-websocket-client<1,>=0.32.0
-
 # ----------------------
 
 alembic

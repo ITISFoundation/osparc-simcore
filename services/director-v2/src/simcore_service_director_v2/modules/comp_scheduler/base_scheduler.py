@@ -303,7 +303,9 @@ class BaseCompScheduler(ABC):
                 *(
                     publish_service_resource_tracking_heartbeat(
                         self.rabbitmq_client,
-                        get_resource_tracking_run_id(user_id, t.project_id, iteration),
+                        get_resource_tracking_run_id(
+                            user_id, t.project_id, t.node_id, iteration
+                        ),
                     )
                     for t in running_tasks
                 )
@@ -355,10 +357,12 @@ class BaseCompScheduler(ABC):
                 publish_service_resource_tracking_started(
                     self.rabbitmq_client,
                     service_run_id=get_resource_tracking_run_id(
-                        user_id, t.project_id, iteration
+                        user_id, t.project_id, t.node_id, iteration
                     ),
-                    wallet_id=run_metadata.get("wallet_id", -1),
-                    wallet_name=run_metadata.get("wallet_name", UNDEFINED_METADATA),
+                    wallet_id=run_metadata.get("wallet_id"),
+                    wallet_name=run_metadata.get("wallet_name"),
+                    pricing_plan_id=run_metadata.get("pricing_plan_id"),
+                    pricing_detail_id=run_metadata.get("pricing_detail_id"),
                     product_name=run_metadata.get("product_name", UNDEFINED_METADATA),
                     simcore_user_agent=run_metadata.get(
                         "simcore_user_agent", UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE

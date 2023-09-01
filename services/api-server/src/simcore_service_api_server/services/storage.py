@@ -47,6 +47,9 @@ class StorageApi(BaseServiceClientApi):
 
     async def list_files(self, user_id: int) -> list[StorageFileMetaData]:
         """Lists metadata of all s3 objects name as api/* from a given user"""
+
+        # search_files_starting_with
+
         response = await self.client.post(
             "/simcore-s3/files/metadata:search",
             params={
@@ -97,6 +100,7 @@ class StorageApi(BaseServiceClientApi):
     ) -> FileUploadSchema:
         object_path = urllib.parse.quote_plus(f"api/{file_id}/{file_name}")
 
+        # complete_upload_file
         response = await self.client.put(
             f"/locations/{self.SIMCORE_S3_ID}/files/{object_path}",
             params={"user_id": user_id, "file_size": 0},
@@ -106,7 +110,7 @@ class StorageApi(BaseServiceClientApi):
         assert enveloped_data.data  # nosec
         return enveloped_data.data
 
-    async def generate_complete_upload_link(
+    async def create_complete_upload_link(
         self, file: File, query: dict[str, str] | None = None
     ) -> URL:
         url = URL(
@@ -116,13 +120,13 @@ class StorageApi(BaseServiceClientApi):
             url = url.include_query_params(**query)
         return url
 
-    async def generate_abort_upload_link(
+    async def create_abort_upload_link(
         self, file: File, query: dict[str, str] | None = None
     ) -> URL:
         url = URL(
             f"{self.client.base_url}locations/{self.SIMCORE_S3_ID}/files/{file.quoted_storage_file_id}:abort"
         )
-        if query:
+        if query is not None:
             url = url.include_query_params(**query)
         return url
 

@@ -37,8 +37,6 @@ packaging==23.1
     # via docker
 requests==2.31.0
     # via docker
-six==1.16.0
-    # via websocket-client
 sqlalchemy==1.4.49
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -56,7 +54,5 @@ urllib3==2.0.4
     #   -r requirements/_migration.in
     #   docker
     #   requests
-websocket-client==0.59.0
-    # via
-    #   -r requirements/_migration.in
-    #   docker
+websocket-client==1.6.1
+    # via docker

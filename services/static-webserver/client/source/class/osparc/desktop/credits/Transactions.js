@@ -44,18 +44,18 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
       });
       table.setColumnWidth(0, 100);
       table.setColumnWidth(1, 100);
+      table.makeItLoose();
       this._add(table);
 
       this.__rawData = [];
-      const welcome = [
-        osparc.utils.Utils.formatDateAndTime(new Date()),
-        10,
+
+      // welcome
+      this.addRow(
+        20,
         0,
         "My Wallet",
         "Welcome to Sim4Life"
-      ];
-      this.__rawData.push(welcome);
-      table.setData(this.__rawData);
+      );
     },
 
     addRow: function(nCredits, price, walletName, comment) {

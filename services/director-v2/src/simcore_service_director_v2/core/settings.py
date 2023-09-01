@@ -208,7 +208,7 @@ class DynamicSidecarSettings(BaseCustomSettings):
     )
 
     DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION: str = Field(
-        "3.8", description="docker-compose version used in the compose-specs"
+        "3.8", description="docker-compose spec version used in the compose-specs"
     )
 
     DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS: bool = Field(
@@ -275,14 +275,14 @@ class DynamicSidecarSettings(BaseCustomSettings):
         1.0 * MINS,
         description=(
             "Restarts all started containers. During this operation, no data "
-            "stored in the container will be lost as docker-compose restart "
+            "stored in the container will be lost as docker compose restart "
             "will not alter the state of the files on the disk nor its environment."
         ),
     )
     DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START: PositiveFloat = Field(
         60.0 * MINS,
         description=(
-            "When starting container (`docker-compose up`), images might "
+            "When starting container (`docker compose up`), images might "
             "require pulling before containers are started."
         ),
     )

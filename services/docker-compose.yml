@@ -195,6 +195,20 @@ services:
       - INVITATIONS_PASSWORD=${INVITATIONS_PASSWORD}
       - LOG_FORMAT_LOCAL_DEV_ENABLED=${LOG_FORMAT_LOCAL_DEV_ENABLED}
 
+  payments:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/payments:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    networks:
+      - default
+    environment:
+      - PAYMENTS_LOGLEVEL=${LOG_LEVEL:-INFO}
+      - PAYMENTS_SECRET_KEY=${PAYMENTS_SECRET_KEY}
+      - PAYMENTS_GATEWAY_URL=${PAYMENTS_GATEWAY_URL}
+      - PAYMENTS_USERNAME=${PAYMENTS_USERNAME}
+      - PAYMENTS_PASSWORD=${PAYMENTS_PASSWORD}
+      - LOG_FORMAT_LOCAL_DEV_ENABLED=${LOG_FORMAT_LOCAL_DEV_ENABLED}
+
   resource-usage-tracker:
     image: ${DOCKER_REGISTRY:-itisfoundation}/resource-usage-tracker:${DOCKER_IMAGE_TAG:-latest}
     init: true
@@ -331,6 +345,9 @@ services:
       WEBSERVER_EMAIL: ${WEBSERVER_EMAIL}
       SMTP_HOST: ${SMTP_HOST}
       SMTP_PORT: ${SMTP_PORT}
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_PROTOCOL: ${SMTP_PROTOCOL}
 
       WEBSERVER_EXPORTER: ${WEBSERVER_EXPORTER}
 
@@ -707,6 +724,7 @@ services:
       - BF_API_KEY=${BF_API_KEY}
       - BF_API_SECRET=${BF_API_SECRET}
       - DATCORE_ADAPTER_HOST=${DATCORE_ADAPTER_HOST:-datcore-adapter}
+      - LOG_FORMAT_LOCAL_DEV_ENABLED=${LOG_FORMAT_LOCAL_DEV_ENABLED}
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
       - POSTGRES_HOST=${POSTGRES_HOST}
