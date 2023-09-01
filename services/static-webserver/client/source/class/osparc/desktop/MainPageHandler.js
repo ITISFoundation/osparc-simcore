@@ -25,17 +25,13 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
 
   members: {
     __stack: null,
-    __dashboard: null,
     __loadingPage: null,
+    __dashboard: null,
+    __userCenter: null,
     __studyEditor: null,
 
     setStack: function(stack) {
       this.__stack = stack;
-    },
-
-    addDashboard: function(dashboard) {
-      this.__dashboard = dashboard;
-      this.__stack.add(dashboard);
     },
 
     addLoadingPage: function(loadingPage) {
@@ -43,17 +39,31 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
       this.__stack.add(loadingPage);
     },
 
+    addDashboard: function(dashboard) {
+      this.__dashboard = dashboard;
+      this.__stack.add(dashboard);
+    },
+
+    addUserCenter: function(userCenter) {
+      this.__userCenter = userCenter;
+      this.__stack.add(userCenter);
+    },
+
     addStudyEditor: function(studyEditor) {
       this.__studyEditor = studyEditor;
       this.__stack.add(studyEditor);
+    },
+
+    showLoadingPage: function() {
+      this.__stack.setSelection([this.__loadingPage]);
     },
 
     showDashboard: function() {
       this.__stack.setSelection([this.__dashboard]);
     },
 
-    showLoadingPage: function() {
-      this.__stack.setSelection([this.__loadingPage]);
+    showUserCenter: function() {
+      this.__stack.setSelection([this.__userCenter]);
     },
 
     showStudyEditor: function() {
