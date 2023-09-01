@@ -54,6 +54,7 @@ qx.Class.define("osparc.component.study.TierButton", {
 
       const toFixedIfNecessary = (value, dp) => Number(parseFloat(value).toFixed(dp));
 
+      this._removeAll();
       if (this.isAdvanced()) {
         this._setLayout(new qx.ui.layout.VBox(5));
 

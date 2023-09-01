@@ -94,6 +94,7 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
       });
       box.getChildControl("frame").set({
         backgroundColor: "transparent",
+        marginTop: 15,
         padding: 2
       });
       box.setLayout(new qx.ui.layout.VBox(5));
@@ -215,7 +216,7 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
       this.__buildOptionsLayout();
     },
 
-    createServiceGroup: function(serviceLabel, servicesResources) {
+    createTierButtonsGroup: function(serviceLabel, servicesResources, advancedCB) {
       const imageKeys = Object.keys(servicesResources);
       if (imageKeys && imageKeys.length) {
         // hack to show "s4l-core"
@@ -257,6 +258,7 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
               mediumButton,
               largeButton
             ].forEach(btn => {
+              advancedCB.bind("value", btn, "advanced");
               buttons.push(btn);
               machinesLayout.add(btn);
             });
@@ -308,7 +310,12 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
               // eslint-disable-next-line no-underscore-dangle
               this.getChildControl("options-layout")._removeAll();
               this.getChildControl("options-layout").add(servicesBox);
-              const serviceGroup = this.createServiceGroup(node["label"], serviceResources);
+              const advancedCB = new qx.ui.form.CheckBox().set({
+                label: this.tr("Advanced"),
+                value: false
+              });
+              servicesBox.add(advancedCB);
+              const serviceGroup = this.createTierButtonsGroup(node["label"], serviceResources, advancedCB);
               if (serviceGroup) {
                 loadingImage.exclude();
                 servicesBox.add(serviceGroup);
