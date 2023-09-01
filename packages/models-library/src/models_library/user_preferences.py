@@ -1,4 +1,5 @@
 from collections.abc import Mapping
+from collections.abc import Set as AbstractSet
 from enum import auto
 from pathlib import Path
 from typing import Annotated, Any, ClassVar, TypeAlias
@@ -8,14 +9,6 @@ from pydantic.main import ModelMetaclass
 
 from .services import ServiceKey
 from .utils.enums import StrAutoEnum
-
-# NOTE: these match the definitions insidepydantic's internals,
-# which cannot be imported (defined under TYPE_CHECKING)
-IntStr: TypeAlias = int | str
-DictStrAny = dict[str, Any]
-AbstractSetIntStr: TypeAlias = set[IntStr]
-MappingIntStrAny: TypeAlias = Mapping[IntStr, Any]
-
 
 # NOTE: for pydantic-2 from pydantic._internal.import _model_construction
 # use _model_construction.ModelMetaclass instead!
@@ -95,14 +88,14 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
     def dict(  # noqa: A003
         self,
         *,
-        include: AbstractSetIntStr | MappingIntStrAny | None = None,
-        exclude: AbstractSetIntStr | MappingIntStrAny | None = None,
+        include: AbstractSet[int | str] | Mapping[int | str, Any] | None = None,
+        exclude: AbstractSet[int | str] | Mapping[int | str, Any] | None = None,
         by_alias: bool = False,
         skip_defaults: bool | None = None,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
-    ) -> DictStrAny:
+    ) -> dict[str, Any]:
         if exclude is None:
             config_class = getattr(self, "Config", None)
             exclude_from_serialization: set | None = getattr(
