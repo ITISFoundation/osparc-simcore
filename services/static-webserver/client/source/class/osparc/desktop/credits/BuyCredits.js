@@ -373,28 +373,6 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       });
       row++;
 
-      /*
-      const vatTitle = new qx.ui.basic.Label().set({
-        value: "VAT 7.7%",
-        font: "text-13"
-      });
-      layout.add(vatTitle, {
-        row,
-        column: 0
-      });
-      const vatLabel = new qx.ui.basic.Label().set({
-        font: "text-13"
-      });
-      this.bind("totalPrice", vatLabel, "value", {
-        converter: totalPrice => (totalPrice*0.077).toFixed(2) + " $"
-      });
-      layout.add(vatLabel, {
-        row,
-        column: 1
-      });
-      row++;
-      */
-
       const walletTitle = new qx.ui.basic.Label().set({
         value: "Wallet",
         font: "text-14"
