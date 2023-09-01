@@ -1,5 +1,6 @@
 import logging
 from asyncio import Lock
+from typing import Any, ClassVar
 
 from fastapi import FastAPI
 from models_library.basic_types import BootModeEnum
@@ -13,11 +14,12 @@ from servicelib.logging_utils import config_all_loggers
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 
 from .._meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY, __version__
-from ..api import main_router
+from ..api import get_main_router
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore, setup_shared_store
 from ..modules.attribute_monitor import setup_attribute_monitor
 from ..modules.inputs import setup_inputs
+from ..modules.metrics import setup_metrics
 from ..modules.mounted_fs import MountedVolumes, setup_mounted_fs
 from ..modules.outputs import setup_outputs
 from .docker_compose_utils import docker_compose_down
@@ -58,7 +60,7 @@ class AppState:
     of the different app.state fields during the app's lifespan
     """
 
-    _STATES = {
+    _STATES: ClassVar[dict[str, Any]] = {
         "settings": ApplicationSettings,
         "mounted_volumes": MountedVolumes,
         "shared_store": SharedStore,
@@ -72,9 +74,8 @@ class AppState:
             if not isinstance(getattr(initialized_app.state, name, None), type_)
         ]
         if errors:
-            raise ValueError(
-                f"These app states were not properly initialized: {errors}"
-            )
+            msg = f"These app states were not properly initialized: {errors}"
+            raise ValueError(msg)
 
         self._app = initialized_app
 
@@ -125,7 +126,7 @@ def create_base_app() -> FastAPI:
 
     long_running_tasks.server.setup(app)
 
-    app.include_router(main_router)
+    app.include_router(get_main_router(app))
 
     return app
 
@@ -143,11 +144,12 @@ def create_app():
 
     setup_shared_store(app)
     app.state.application_health = ApplicationHealth()
+    application_settings: ApplicationSettings = app.state.setting
 
-    if app.state.settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
+    if application_settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
         remote_debug_setup(app)
 
-    if app.state.settings.RABBIT_SETTINGS:
+    if application_settings.RABBIT_SETTINGS:
         setup_rabbitmq(app)
         setup_background_log_fetcher(app)
 
@@ -157,6 +159,9 @@ def create_app():
     setup_outputs(app)
 
     setup_attribute_monitor(app)
+
+    if application_settings.DY_SIDECAR_USER_SERVICES_METRICS_ENABLED:
+        setup_metrics(app)
 
     # ERROR HANDLERS  ------------
     app.add_exception_handler(NodeNotFound, node_not_found_error_handler)
@@ -171,7 +176,7 @@ def create_app():
         await login_registry(app_state.settings.REGISTRY_SETTINGS)
         await volumes_fix_permissions(app_state.mounted_volumes)
         # STARTED
-        print(APP_STARTED_BANNER_MSG, flush=True)
+        print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
 
     async def _on_shutdown() -> None:
         app_state = AppState(app)
@@ -189,7 +194,7 @@ def create_app():
         await cancel_sequential_workers()
 
         # FINISHED
-        print(APP_FINISHED_BANNER_MSG, flush=True)
+        print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
 
     app.add_event_handler("startup", _on_startup)
     app.add_event_handler("shutdown", _on_shutdown)
