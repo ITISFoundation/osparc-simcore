@@ -41,6 +41,11 @@ from requests.auth import HTTPBasicAuth
 from respx import MockRouter
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import ApplicationSettings
+from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
+from simcore_service_api_server.utils.http_calls_capture_processing import (
+    Param,
+    UrlPath,
+)
 
 ## APP + SYNC/ASYNC CLIENTS --------------------------------------------------
 
@@ -472,3 +477,45 @@ def patch_webserver_long_running_project_tasks(
         return webserver_mock_router
 
     return _mock
+
+
+capture_model = HttpApiCallCaptureModel | list[HttpApiCallCaptureModel]
+
+
+@pytest.fixture
+def mock_from_capture(request) -> Iterator[respx.MockRouter]:
+    capture_path = Path(request.param)
+    assert capture_path.is_file() and capture_path.suffix == ".json"
+    captures: capture_model = parse_obj_as(
+        capture_model, json.loads(capture_path.read_text())
+    )
+    if not isinstance(captures, list):
+        captures = [captures]
+
+    assert (
+        len(captures) == 1
+    ), "This is a simplification to make sure we can handle the basic case first."
+
+    def generate_side_effect(capture: HttpApiCallCaptureModel):
+
+        status_code: int = capture.status_code
+        path_params: set[Param] = capture.path.path_parameters
+        response_body: str = json.dumps(capture.response_body)
+
+        def side_effect(request: httpx.Request, **kwargs):
+            for param in path_params:
+                assert param.response_value is not None
+                response_body.replace(param.response_value, kwargs[param.name])
+            return httpx.Response(
+                status_code=status_code, json=json.loads(response_body)
+            )
+
+        return side_effect
+
+    with respx.mock:
+        capture = captures[0]
+        method = getattr(respx, capture.method.lower())
+        url_path: UrlPath = capture.path
+        path: str = str(url_path.path)
+        for param in url_path.path_parameters:
+            path = path.replace("{" + param.name + "}", param.regex_lookup)

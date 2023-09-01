@@ -96,6 +96,9 @@ class Param(BaseModel):
     name: str
     required: bool
     param_schema: ParamSchema = Field(..., alias="schema")
+    response_value: str | None = (
+        None  # attribute for storing the params value in a concrete response
+    )
 
     def __hash__(self):
         return hash(
@@ -181,6 +184,10 @@ def _determine_path(openapi_spec: dict[str, Any], response_path: Path) -> UrlPat
                 if ii not in path_param_indices
             ):
                 continue
+            path_param_indices_iter = iter(path_param_indices)
+            for key in path_params:
+                ii = next(path_param_indices_iter)
+                path_params[key].response_value = response_path.parts[ii]
             return UrlPath(
                 path=str(openapi_path),
                 path_parameters=set(path_params.values()),
