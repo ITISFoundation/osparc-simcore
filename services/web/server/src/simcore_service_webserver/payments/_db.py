@@ -117,7 +117,7 @@ async def complete_payment_transaction(
 ) -> PaymentsTransactionsDB:
     optional = {}
     if error_msg:
-        optional["error"] = error_msg
+        optional["errors"] = error_msg
 
     async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(

@@ -29,9 +29,9 @@ async def notify_payment_completed(
             "event_type": SOCKET_IO_PAYMENT_COMPLETED_EVENT,
             "data": jsonable_encoder(
                 {
-                    "payment_id": payment_id,
-                    "wallet_id": wallet_id,
-                    "completed_at": completed_at,
+                    "paymentId": payment_id,
+                    "walletId": wallet_id,
+                    "completedAt": completed_at,
                     "success": completed_success,
                     "message": completed_message,
                 }

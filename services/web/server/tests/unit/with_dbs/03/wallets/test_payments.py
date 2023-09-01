@@ -76,6 +76,7 @@ async def test_payment_on_invalid_wallet(
     assert error
 
 
+@pytest.mark.testit
 @pytest.mark.acceptance_test(
     "For https://github.com/ITISFoundation/osparc-simcore/issues/4657"
 )
@@ -87,7 +88,15 @@ async def test_payments_worfklow(
     mocker: MockerFixture,
 ):
     assert client.app
+
+    # Removes delay for fake
     mocker.patch(
+        "simcore_service_webserver.wallets._payments_handlers._fake_delay_for_processing_time",
+        autospec=True,
+        return_value=None,
+    )
+
+    send_message = mocker.patch(
         "simcore_service_webserver.payments._socketio.send_messages", autospec=True
     )
 
@@ -118,10 +127,12 @@ async def test_payments_worfklow(
     assert page.data
     assert page.meta.total == 1
     assert page.meta.offset == 0
-    assert page.data[0].payment_id == payment.payment_id
 
-    # TODO: test completed
-    # some time later - > completed
-    # payment gets acknoledged -> socketio
-    # list payments and get completion
-    #
+    transaction = page.data[0]
+    assert transaction.payment_id == payment.payment_id
+
+    if send_message.called:
+        # payment was completed
+        assert transaction.completed_at is not None
+        assert transaction.created_at < transaction.completed_at
+        send_message.assert_called_once()

@@ -48,10 +48,15 @@ def _raise_if_not_dev_mode(app):
         raise NotImplementedError(msg)
 
 
-async def _fake_payment_completion(app: web.Application, payment: WalletPaymentCreated):
+async def _fake_delay_for_processing_time():
     # Fakes processing time
     processing_time = random.uniform(0.5, 2)  # noqa: S311
     await asyncio.sleep(processing_time)
+
+
+async def _fake_payment_completion(app: web.Application, payment: WalletPaymentCreated):
+    # NOTE: tmp fakes payment completion for the front-end
+    await _fake_delay_for_processing_time()
 
     # Three different possible outcomes
     possible_outcomes = [
@@ -62,7 +67,7 @@ async def _fake_payment_completion(app: web.Application, payment: WalletPaymentC
             "app": app,
             "payment_id": payment.payment_id,
             "success": False,
-            "error_msg": "Payment rejected",
+            "message": "Payment rejected",
         },
         # TODO: 3. does not complete ever
     ]
