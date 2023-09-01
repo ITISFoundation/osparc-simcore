@@ -56,13 +56,6 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
         "My Wallet",
         "Welcome to Sim4Life"
       );
-
-      this.addRow(
-        50,
-        125,
-        "My Wallet",
-        "My first transaction"
-      );
     },
 
     addRow: function(nCredits, price, walletName, comment) {
