@@ -227,9 +227,14 @@ class ClustersKeeperEC2:
 
     async def terminate_instances(self, instance_datas: list[EC2InstanceData]) -> None:
         try:
-            await self.client.terminate_instances(
-                InstanceIds=[i.id for i in instance_datas]
-            )
+            with log_context(
+                logger,
+                logging.INFO,
+                msg=f"terminating instances {[i.id for i in instance_datas]}",
+            ):
+                await self.client.terminate_instances(
+                    InstanceIds=[i.id for i in instance_datas]
+                )
         except botocore.exceptions.ClientError as exc:
             if (
                 exc.response.get("Error", {}).get("Code", "")
