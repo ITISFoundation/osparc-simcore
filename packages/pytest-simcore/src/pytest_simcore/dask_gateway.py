@@ -6,8 +6,10 @@ from typing import AsyncIterator, NamedTuple
 
 import pytest
 import traitlets.config
-from dask_gateway_server.backends.local import UnsafeLocalBackend
+from dask_gateway import Gateway, GatewayCluster, auth
 from dask_gateway_server.app import DaskGateway
+from dask_gateway_server.backends.local import UnsafeLocalBackend
+from distributed import Client
 
 
 @pytest.fixture
@@ -66,3 +68,37 @@ async def local_dask_gateway_server(
     print("--> local dask gateway server switching off...")
     await dask_gateway_server.cleanup()
     print("...done")
+
+
+@pytest.fixture
+async def dask_gateway(
+    local_dask_gateway_server: DaskGatewayServer,
+) -> Gateway:
+    async with Gateway(
+        local_dask_gateway_server.address,
+        local_dask_gateway_server.proxy_address,
+        asynchronous=True,
+        auth=auth.BasicAuth("pytest_user", local_dask_gateway_server.password),
+    ) as gateway:
+        print(f"--> {gateway=} created")
+        cluster_options = await gateway.cluster_options()
+        gateway_versions = await gateway.get_versions()
+        clusters_list = await gateway.list_clusters()
+        print(f"--> {gateway_versions=}, {cluster_options=}, {clusters_list=}")
+        for option in cluster_options.items():
+            print(f"--> {option=}")
+        return gateway
+
+
+@pytest.fixture
+async def dask_gateway_cluster(dask_gateway: Gateway) -> AsyncIterator[GatewayCluster]:
+    async with dask_gateway.new_cluster() as cluster:
+        yield cluster
+
+
+@pytest.fixture
+async def dask_gateway_cluster_client(
+    dask_gateway_cluster: GatewayCluster,
+) -> AsyncIterator[Client]:
+    async with dask_gateway_cluster.get_client() as client:
+        yield client
