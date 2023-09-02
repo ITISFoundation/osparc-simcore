@@ -7,7 +7,7 @@ from simcore_service_storage.datcore_adapter.datcore_adapter_exceptions import (
     DatcoreAdapterTimeoutError,
 )
 
-from .db_access_layer import InvalidFileIdentifier
+from .db_access_layer import InvalidFileIdentifierError
 from .exceptions import (
     FileAccessRightError,
     FileMetaDataNotFoundError,
@@ -25,7 +25,7 @@ async def dsm_exception_handler(
 ) -> web.StreamResponse:
     try:
         return await handler(request)
-    except InvalidFileIdentifier as err:
+    except InvalidFileIdentifierError as err:
         raise web.HTTPUnprocessableEntity(
             reason=f"{err} is an invalid file identifier"
         ) from err
