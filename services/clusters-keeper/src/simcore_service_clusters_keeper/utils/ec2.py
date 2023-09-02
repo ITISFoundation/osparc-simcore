@@ -32,10 +32,6 @@ def all_created_ec2_instances_filter() -> EC2Tags:
     return _DEFAULT_CLUSTERS_KEEPER_TAGS
 
 
-def ec2_instances_for_user_filter(user_id: UserID) -> EC2Tags:
-    return _DEFAULT_CLUSTERS_KEEPER_TAGS | {"user_id": f"{user_id}"}
-
-
 def ec2_instances_for_user_wallet_filter(
     user_id: UserID, wallet_id: WalletID
 ) -> EC2Tags:

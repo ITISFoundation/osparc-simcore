@@ -12,7 +12,6 @@ from simcore_service_clusters_keeper.utils.ec2 import (
     all_created_ec2_instances_filter,
     compose_user_data,
     creation_ec2_tags,
-    ec2_instances_for_user_filter,
 )
 
 
@@ -51,18 +50,6 @@ def test_all_created_ec2_instances_filter():
     received_filter = all_created_ec2_instances_filter()
     assert len(received_filter) == 1
     assert _APPLICATION_TAG_KEY_NAME in received_filter
-
-
-def test_ec2_instances_for_user_filter(user_id: UserID):
-    received_filter = ec2_instances_for_user_filter(user_id)
-    assert received_filter
-    EXPECTED_TAG_KEY_NAMES = [_APPLICATION_TAG_KEY_NAME, "user_id"]
-    assert all(
-        tag_key_name in received_filter for tag_key_name in EXPECTED_TAG_KEY_NAMES
-    ), f"missing tag key names in {received_filter.keys()}, expected {EXPECTED_TAG_KEY_NAMES}"
-    assert all(
-        tag_key_name in EXPECTED_TAG_KEY_NAMES for tag_key_name in received_filter
-    ), f"non expected tag key names in {received_filter.keys()}, expected {EXPECTED_TAG_KEY_NAMES}"
 
 
 @pytest.fixture
