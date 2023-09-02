@@ -6,6 +6,7 @@ import time
 from dask_gateway import GatewayCluster, auth
 from distributed import Client
 from faker import Faker
+from models_library.clusters import SimpleAuthentication
 from pydantic import AnyUrl, SecretStr, parse_obj_as
 from pytest_simcore.dask_gateway import DaskGatewayServer
 from simcore_service_clusters_keeper.modules.dask import is_gateway_busy, ping_gateway
@@ -47,8 +48,10 @@ async def _assert_gateway_is_busy(
     assert (
         await is_gateway_busy(
             url=url,
-            user=user,
-            password=password,
+            gateway_auth=SimpleAuthentication(
+                username=user,
+                password=password,
+            ),
         )
         is busy
     )
@@ -61,14 +64,16 @@ async def test_is_gateway_busy_with_no_cluster(
     assert (
         await is_gateway_busy(
             url=parse_obj_as(AnyUrl, local_dask_gateway_server.address),
-            user=f"{faker.user_name()}",
-            password=SecretStr(local_dask_gateway_server.password),
+            gateway_auth=SimpleAuthentication(
+                username=faker.user_name(),
+                password=SecretStr(local_dask_gateway_server.password),
+            ),
         )
         is False
     )
 
 
-async def test_is_gateway_busy_with_tasks_running(
+async def test_is_gateway_busy(
     local_dask_gateway_server: DaskGatewayServer,
     dask_gateway_cluster: GatewayCluster,
     dask_gateway_cluster_client: Client,
@@ -79,8 +84,10 @@ async def test_is_gateway_busy_with_tasks_running(
     assert (
         await is_gateway_busy(
             url=parse_obj_as(AnyUrl, local_dask_gateway_server.address),
-            user=f"{dask_gateway_cluster.gateway.auth.username}",
-            password=SecretStr(local_dask_gateway_server.password),
+            gateway_auth=SimpleAuthentication(
+                username=dask_gateway_cluster.gateway.auth.username,
+                password=SecretStr(local_dask_gateway_server.password),
+            ),
         )
         is False
     )
@@ -88,8 +95,10 @@ async def test_is_gateway_busy_with_tasks_running(
     assert (
         await is_gateway_busy(
             url=parse_obj_as(AnyUrl, local_dask_gateway_server.address),
-            user=f"{dask_gateway_cluster.gateway.auth.username}",
-            password=SecretStr(local_dask_gateway_server.password),
+            gateway_auth=SimpleAuthentication(
+                username=dask_gateway_cluster.gateway.auth.username,
+                password=SecretStr(local_dask_gateway_server.password),
+            ),
         )
         is False
     )

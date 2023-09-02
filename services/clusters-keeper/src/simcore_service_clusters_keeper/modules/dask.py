@@ -4,6 +4,7 @@ from typing import Final
 
 import dask_gateway
 from aiohttp.client_exceptions import ClientError
+from models_library.clusters import SimpleAuthentication
 from pydantic import AnyUrl, SecretStr
 
 _logger = logging.getLogger(__name__)
@@ -34,9 +35,10 @@ async def ping_gateway(*, url: AnyUrl, password: SecretStr) -> bool:
     return False
 
 
-async def is_gateway_busy(*, url: AnyUrl, user: str, password: SecretStr) -> bool:
+async def is_gateway_busy(*, url: AnyUrl, gateway_auth: SimpleAuthentication) -> bool:
     basic_auth = dask_gateway.BasicAuth(
-        username=user, password=password.get_secret_value()
+        username=gateway_auth.username,
+        password=gateway_auth.password.get_secret_value(),
     )
     async with dask_gateway.Gateway(
         address=f"{url}",

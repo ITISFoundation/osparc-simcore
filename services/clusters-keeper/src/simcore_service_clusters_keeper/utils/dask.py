@@ -1,7 +1,8 @@
 from models_library.clusters import SimpleAuthentication
 from models_library.users import UserID
 from pydantic import AnyUrl, SecretStr, parse_obj_as
-from simcore_service_clusters_keeper.models import EC2InstanceData
+
+from ..models import EC2InstanceData
 
 
 def get_gateway_url(ec2_instance: EC2InstanceData) -> AnyUrl:
