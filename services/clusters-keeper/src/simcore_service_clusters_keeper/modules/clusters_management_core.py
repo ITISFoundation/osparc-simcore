@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from ..core.settings import get_application_settings
 from ..models import EC2InstanceData
 from ..modules.clusters import delete_clusters, get_all_clusters, set_instance_heartbeat
-from ..utils.dask import get_gateway_url
+from ..utils.dask import get_gateway_authentication, get_gateway_url
 from ..utils.ec2 import HEARTBEAT_TAG_KEY
 from .dask import is_gateway_busy, ping_gateway
 
@@ -60,7 +60,10 @@ async def check_clusters(app: FastAPI) -> None:
     for instance in connected_intances:
         is_busy = await is_gateway_busy(
             url=get_gateway_url(instance),
-            password=app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_GATEWAY_PASSWORD,
+            password=get_gateway_authentication(
+                user_id=23,
+                password=app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_GATEWAY_PASSWORD,
+            ),
         )
         _logger.info(
             "%s currently %s",
