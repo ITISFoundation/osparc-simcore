@@ -61,7 +61,11 @@ async def check_clusters(app: FastAPI) -> None:
             instance,
             app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_GATEWAY_PASSWORD,
         )
-        _logger.info("%s currently runs with %s", f"{instance=}", f"{is_busy}")
+        _logger.info(
+            "%s currently %s",
+            f"{instance.id=} for {instance.tags=}",
+            f"{'is running tasks' if is_busy else 'not doing anything!'}",
+        )
         if is_busy:
             await set_instance_heartbeat(app, instance=instance)
     if terminateable_instances := await _find_terminateable_instances(
