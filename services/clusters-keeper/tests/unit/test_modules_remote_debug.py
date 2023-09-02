@@ -20,7 +20,6 @@ def app_environment(
     )
 
 
-@pytest.mark.testit
 def test_application_with_debug_enabled(
     disabled_rabbitmq: None,
     disabled_ec2: None,
