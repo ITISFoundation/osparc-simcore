@@ -2,6 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import contextlib
 import json
 import os
 from io import StringIO
@@ -43,9 +44,7 @@ def test_cli_settings_env_file(project_env_devel_environment, cli_runner):
 
     settings: dict = dotenv_values(stream=env_file)
     for key, value in settings.items():
-        try:
+        with contextlib.suppress(json.decoder.JSONDecodeError):
             settings[key] = json.loads(str(value))
-        except json.decoder.JSONDecodeError:
-            pass
 
     assert Settings.parse_obj(settings)
