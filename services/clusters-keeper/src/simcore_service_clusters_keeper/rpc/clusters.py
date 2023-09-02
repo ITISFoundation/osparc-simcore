@@ -8,6 +8,7 @@ from ..core.settings import get_application_settings
 from ..models import ClusterGet, EC2InstanceData
 from ..modules import clusters
 from ..modules.dask import ping_gateway
+from ..utils.dask import get_gateway_url
 
 router = RPCRouter()
 
@@ -45,8 +46,8 @@ async def get_or_create_cluster(
 
     if ec2_instance.state == "running":
         cluster_get.gateway_ready = await ping_gateway(
-            ec2_instance,
-            app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_GATEWAY_PASSWORD,
+            url=get_gateway_url(ec2_instance),
+            password=app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_GATEWAY_PASSWORD,
         )
 
     return cluster_get

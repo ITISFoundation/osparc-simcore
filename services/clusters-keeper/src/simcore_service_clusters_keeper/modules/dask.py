@@ -1,27 +1,23 @@
 import asyncio
 import logging
+from typing import Final
 
 import dask_gateway
 from aiohttp.client_exceptions import ClientError
-from pydantic import SecretStr
-
-from ..models import EC2InstanceData
+from pydantic import AnyUrl, SecretStr
 
 _logger = logging.getLogger(__name__)
 
-# NOTE: this needs to be returned, or maybe we should just ditch the dask gateway completely
-_USERNAME = "osparc-cluster"
+_PING_USERNAME: Final[str] = "osparc-cluster"
 
 
-async def ping_gateway(
-    ec2_instance: EC2InstanceData, gateway_password: SecretStr
-) -> bool:
+async def ping_gateway(*, url: AnyUrl, password: SecretStr) -> bool:
     basic_auth = dask_gateway.BasicAuth(
-        username=_USERNAME, password=gateway_password.get_secret_value()
+        username=_PING_USERNAME, password=password.get_secret_value()
     )
     try:
         async with dask_gateway.Gateway(
-            address=f"http://{ec2_instance.aws_public_ip}:8000",
+            address=f"{url}",
             auth=basic_auth,
             asynchronous=True,
         ) as gateway:
@@ -38,14 +34,12 @@ async def ping_gateway(
     return False
 
 
-async def is_gateway_busy(
-    ec2_instance: EC2InstanceData, gateway_password: SecretStr
-) -> bool:
+async def is_gateway_busy(*, url: AnyUrl, user: str, password: SecretStr) -> bool:
     basic_auth = dask_gateway.BasicAuth(
-        username=_USERNAME, password=gateway_password.get_secret_value()
+        username=user, password=password.get_secret_value()
     )
     async with dask_gateway.Gateway(
-        address=f"http://{ec2_instance.aws_public_ip}:8000",
+        address=f"{url}",
         auth=basic_auth,
         asynchronous=True,
     ) as gateway:
@@ -63,4 +57,5 @@ async def is_gateway_busy(
                 len(datasets_on_scheduler),
                 "BUSY" if len(datasets_on_scheduler) > 0 else "NOT BUSY",
             )
-            return datasets_on_scheduler is not None
+            currently_processing = await client.processing()  # type: ignore
+            return bool(datasets_on_scheduler or currently_processing)
