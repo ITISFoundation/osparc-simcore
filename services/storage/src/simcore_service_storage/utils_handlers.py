@@ -3,10 +3,8 @@ from aiohttp.typedefs import Handler
 from aiohttp.web_request import Request
 from pydantic import ValidationError
 from servicelib.aiohttp.aiopg_utils import DBAPIError
-from simcore_service_storage.datcore_adapter.datcore_adapter_exceptions import (
-    DatcoreAdapterTimeoutError,
-)
 
+from .datcore_adapter.datcore_adapter_exceptions import DatcoreAdapterTimeoutError
 from .db_access_layer import InvalidFileIdentifierError
 from .exceptions import (
     FileAccessRightError,

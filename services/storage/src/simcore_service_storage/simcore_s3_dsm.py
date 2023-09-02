@@ -958,7 +958,6 @@ class SimcoreS3DataManager(BaseDataManager):
     ) -> FileMetaData:
         session = get_client_session(self.app)
         # 2 steps: Get download link for local copy, then upload to S3
-        # TODO: This should be a redirect stream!
         api_token, api_secret = await db_tokens.get_api_token_and_secret(
             self.app, user_id
         )
