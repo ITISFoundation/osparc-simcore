@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Final
+from typing import Any, Coroutine, Final
 
 import dask_gateway
 from aiohttp.client_exceptions import ClientError
@@ -35,6 +35,15 @@ async def ping_gateway(*, url: AnyUrl, password: SecretStr) -> bool:
     return False
 
 
+async def _wrap_client_async_routine(
+    client_coroutine: Coroutine[Any, Any, Any] | Any | None
+) -> Any:
+    """Dask async behavior does not go well with Pylance as it returns
+    a union of types. this wrapper makes both mypy and pylance happy"""
+    assert client_coroutine  # nosec
+    return await client_coroutine
+
+
 async def is_gateway_busy(*, url: AnyUrl, gateway_auth: SimpleAuthentication) -> bool:
     basic_auth = dask_gateway.BasicAuth(
         username=gateway_auth.username,
@@ -53,11 +62,13 @@ async def is_gateway_busy(*, url: AnyUrl, gateway_auth: SimpleAuthentication) ->
         async with gateway.connect(
             cluster_reports[0].name, shutdown_on_close=False
         ) as dask_cluster, dask_cluster.get_client() as client:
-            datasets_on_scheduler = await client.list_datasets()  # type: ignore
+            datasets_on_scheduler = await _wrap_client_async_routine(
+                client.list_datasets()
+            )
             _logger.info(
                 "cluster currently has %s datasets, it is %s",
                 len(datasets_on_scheduler),
                 "BUSY" if len(datasets_on_scheduler) > 0 else "NOT BUSY",
             )
-            currently_processing = await client.processing()  # type: ignore
+            currently_processing = await _wrap_client_async_routine(client.processing())
             return bool(datasets_on_scheduler or currently_processing)

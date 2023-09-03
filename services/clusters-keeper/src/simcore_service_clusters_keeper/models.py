@@ -44,11 +44,11 @@ def _convert_ec2_state_to_cluster_state(
 ) -> ClusterState:
     match ec2_state:
         case "pending":
-            return ClusterState.STARTED
+            return ClusterState.STARTED  # type: ignore
         case "running":
-            return ClusterState.RUNNING
+            return ClusterState.RUNNING  # type: ignore
         case _:
-            return ClusterState.STOPPED
+            return ClusterState.STOPPED  # type: ignore
 
 
 class ClusterGet(BaseModel):

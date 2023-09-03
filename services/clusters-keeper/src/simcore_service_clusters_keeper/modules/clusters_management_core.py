@@ -16,7 +16,8 @@ _logger = logging.getLogger(__name__)
 
 def _get_instance_last_heartbeat(instance: EC2InstanceData) -> datetime.datetime:
     if last_heartbeat := instance.tags.get(HEARTBEAT_TAG_KEY, None):
-        return arrow.get(last_heartbeat).datetime
+        last_heartbeat_time: datetime.datetime = arrow.get(last_heartbeat).datetime
+        return last_heartbeat_time
     return instance.launch_time
 
 

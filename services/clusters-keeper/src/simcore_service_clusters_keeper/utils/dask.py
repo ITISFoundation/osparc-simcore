@@ -6,7 +6,8 @@ from ..models import EC2InstanceData
 
 
 def get_gateway_url(ec2_instance: EC2InstanceData) -> AnyUrl:
-    return parse_obj_as(AnyUrl, f"http://{ec2_instance.aws_public_ip}:8000")
+    url: AnyUrl = parse_obj_as(AnyUrl, f"http://{ec2_instance.aws_public_ip}:8000")
+    return url
 
 
 def get_gateway_authentication(
