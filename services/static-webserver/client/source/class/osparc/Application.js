@@ -44,15 +44,7 @@ qx.Class.define("osparc.Application", {
       // Call super class
       this.base();
 
-      // Load user preferred theme if present
-      const themeName = osparc.utils.Utils.localCache.getTheme();
-      if (themeName && themeName !== qx.theme.manager.Meta.getInstance().getTheme().name) {
-        const preferredTheme = qx.Theme.getByName(themeName);
-        const themes = qx.Theme.getAll();
-        if (preferredTheme && Object.keys(themes).includes(preferredTheme.name)) {
-          qx.theme.manager.Meta.getInstance().setTheme(preferredTheme);
-        }
-      }
+
 
       this.__preventAutofillBrowserSyles();
 

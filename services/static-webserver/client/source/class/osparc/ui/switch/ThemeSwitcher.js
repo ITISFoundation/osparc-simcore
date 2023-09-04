@@ -35,7 +35,6 @@ qx.Class.define("osparc.ui.switch.ThemeSwitcher", {
       const idx = validThemes.findIndex(validTheme => validTheme.name === currentTheme.name);
       if (idx !== -1) {
         const theme = validThemes[1-idx];
-        qx.theme.manager.Meta.getInstance().setTheme(theme);
         osparc.Preferences.getInstance().setThemeName(theme.name);
         osparc.Preferences.getInstance().saveThemeName(theme.name);
       }

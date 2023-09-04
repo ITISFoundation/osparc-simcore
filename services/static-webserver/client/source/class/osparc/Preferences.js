@@ -94,11 +94,22 @@ qx.Class.define("osparc.Preferences", {
     themeName: {
       nullable: false,
       init: {},
-      check: "String"
+      check: "String",
+      apply: "__applyThemeName"
     }
   },
 
   members: {
+    __applyThemeName: function(themeName) {
+      if (themeName && themeName !== qx.theme.manager.Meta.getInstance().getTheme().name) {
+        const preferredTheme = qx.Theme.getByName(themeName);
+        const themes = qx.Theme.getAll();
+        if (preferredTheme && Object.keys(themes).includes(preferredTheme.name)) {
+          qx.theme.manager.Meta.getInstance().setTheme(preferredTheme);
+        }
+      }
+    },
+
     saveThemeName: function(value) {
       const params = {
         url: {
