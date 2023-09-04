@@ -30,7 +30,7 @@ async def list_service_runs_by_user_and_product(
     limit: NonNegativeInt,
 ) -> dict:
     settings: ResourceUsageTrackerSettings = get_plugin_settings(app)
-    url = (URL(settings.api_base_url) / "usage" / "services").with_query(
+    url = (URL(settings.api_base_url) / "services" / "-" / "usages").with_query(
         {
             "user_id": user_id,
             "product_name": product_name,
@@ -54,7 +54,7 @@ async def list_service_runs_by_user_and_product_and_wallet(
     limit: NonNegativeInt,
 ) -> dict:
     settings: ResourceUsageTrackerSettings = get_plugin_settings(app)
-    url = (URL(settings.api_base_url) / "usage" / "services").with_query(
+    url = (URL(settings.api_base_url) / "services" / "-" / "usages").with_query(
         {
             "user_id": user_id,
             "product_name": product_name,
