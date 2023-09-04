@@ -361,7 +361,7 @@ def mock_one_container_oom_killed(mocker: MockerFixture) -> Callable[[], None]:
             side_effect=_mocked_get_container_states,
         )
         mocker.patch(
-            "simcore_service_dynamic_sidecar.modules.resource_tracking.core.get_container_states",
+            "simcore_service_dynamic_sidecar.modules.resource_tracking._core.get_container_states",
             side_effect=_mocked_get_container_states,
         )
 

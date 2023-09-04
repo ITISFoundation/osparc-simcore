@@ -20,10 +20,9 @@ from ...core.docker_utils import (
     get_container_states,
 )
 from ...core.rabbitmq import post_resource_tracking_message
-from ...core.settings import ApplicationSettings
+from ...core.settings import ApplicationSettings, ResourceTrackingSettings
 from ...models.shared_store import SharedStore
 from ._models import ResourceTrackingState
-from .settings import ResourceTrackingSettings
 
 _STOP_WORKER_TIMEOUT_S: Final[NonNegativeFloat] = 1.0
 

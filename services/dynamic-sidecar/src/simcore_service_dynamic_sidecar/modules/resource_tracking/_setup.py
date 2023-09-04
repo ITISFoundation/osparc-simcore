@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
+from ._core import stop_heart_beat_task
 from ._models import ResourceTrackingState
-from .core import stop_heart_beat_task
 
 
 def setup_resource_tracking(app: FastAPI) -> None:

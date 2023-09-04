@@ -47,7 +47,7 @@ from ..models.shared_store import SharedStore
 from ..modules import nodeports
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.outputs import OutputsManager, event_propagation_disabled
-from ..modules.resource_tracking.core import send_service_started, send_service_stopped
+from .resource_tracking import send_service_started, send_service_stopped
 
 _logger = logging.getLogger(__name__)
 

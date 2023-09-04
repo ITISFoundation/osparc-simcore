@@ -1,4 +1,5 @@
 import warnings
+from datetime import timedelta
 from functools import lru_cache
 from pathlib import Path
 from typing import cast
@@ -13,9 +14,17 @@ from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.r_clone import RCloneSettings
 from settings_library.rabbit import RabbitSettings
+from settings_library.resource_usage_tracker import (
+    DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL,
+)
 from settings_library.utils_logging import MixinLoggingSettings
 
-from ..modules.resource_tracking.settings import ResourceTrackingSettings
+
+class ResourceTrackingSettings(BaseCustomSettings):
+    RESOURCE_TRACKING_HEARTBEAT_INTERVAL: timedelta = Field(
+        default=DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL,
+        description="each time the status of the service is propagated",
+    )
 
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
