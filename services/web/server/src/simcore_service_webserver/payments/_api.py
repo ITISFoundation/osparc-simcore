@@ -11,9 +11,12 @@ from models_library.basic_types import IDStr
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletID
-from simcore_service_webserver.application_settings import get_settings
 from yarl import URL
 
+from ..application_settings import get_settings
+from ..users.api import get_user_name_and_email
+from ..wallets.api import get_wallet_with_permissions_by_user
+from ..wallets.errors import WalletAccessForbiddenError
 from . import _db
 from ._client import get_payments_service_api
 from ._socketio import notify_payment_completed
@@ -29,12 +32,23 @@ async def create_payment_to_wallet(
     product_name: str,
     user_id: UserID,
     wallet_id: WalletID,
-    wallet_name: str,
     comment: str | None,
 ) -> WalletPaymentCreated:
-    # TODO: user's wallet is verified or should we verify it here?
-    # TODO: implement users.api.get_user_name_and_email
-    user_email, user_name = f"fake_email_for_user_{user_id}@email.com", "fake_user"
+    """
+
+    Raises:
+        UserNotFoundError
+        WalletAccessForbiddenError
+    """
+    user_email, user_name = await get_user_name_and_email(app, user_id=user_id)
+
+    permissions = await get_wallet_with_permissions_by_user(
+        app, user_id=user_id, wallet_id=wallet_id
+    )
+    if not permissions.read or not permissions.write:
+        raise WalletAccessForbiddenError(
+            reason=f"User {user_id} does not have necessary permissions to do a payment into wallet {wallet_id}"
+        )
 
     initiated_at = arrow.utcnow().datetime
 
@@ -58,7 +72,6 @@ async def create_payment_to_wallet(
         user_id=user_id,
         user_email=user_email,
         wallet_id=wallet_id,
-        wallet_name=wallet_name,
         comment=comment,
         initiated_at=initiated_at,
     )
@@ -143,7 +156,6 @@ async def complete_payment(
             {
                 "product_name": transaction.product_name,
                 "wallet_id": transaction.wallet_id,
-                "wallet_name": transaction.wallet_name,
                 "user_id": transaction.user_id,
                 "user_email": transaction.user_email,
                 "credits": transaction.osparc_credits,

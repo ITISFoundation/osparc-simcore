@@ -7,7 +7,6 @@ from aiohttp import web
 from models_library.api_schemas_webserver.wallets import (
     CreateWalletPayment,
     PaymentTransaction,
-    WalletGet,
     WalletPaymentCreated,
 )
 from models_library.rest_pagination import Page, PageQueryParameters
@@ -33,7 +32,6 @@ from ._handlers import (
     WalletsRequestContext,
     handle_wallets_exceptions,
 )
-from .api import get_wallet_by_user
 
 _logger = logging.getLogger(__name__)
 
@@ -86,14 +84,7 @@ async def create_payment(request: web.Request):
 
     _raise_if_not_dev_mode(request.app)
 
-    # ensure the wallet can be used by the user
-    wallet: WalletGet = await get_wallet_by_user(
-        request.app,
-        user_id=req_ctx.user_id,
-        wallet_id=path_params.wallet_id,
-        has_write_permission=True,  # Can only pay to wallets that user owns
-    )
-    wallet_id = wallet.wallet_id
+    wallet_id = path_params.wallet_id
 
     with log_context(
         _logger,
@@ -107,8 +98,7 @@ async def create_payment(request: web.Request):
             request.app,
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
-            wallet_id=wallet.wallet_id,
-            wallet_name=wallet.name,
+            wallet_id=wallet_id,
             osparc_credit=body_params.osparc_credits,
             price_dollars=body_params.price_dollars,
             comment=body_params.comment,
