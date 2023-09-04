@@ -2,7 +2,6 @@ from typing import Final
 
 from models_library.wallets import WalletID
 from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, validator
-from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 
 from ..clusters import ClusterID
 from ..projects import ProjectID
@@ -44,7 +43,7 @@ class ComputationCreate(BaseModel):
     wallet_id: WalletID | None = Field(
         default=None, description="the selected wallet ID"
     )
-    simcore_user_agent: str = UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+    simcore_user_agent: str = ""
     use_on_demand_clusters: bool = Field(
         default=False,
         description="if True, a cluster will be created as necessary (wallet_id cannot be None, and cluster_id must be None)",
