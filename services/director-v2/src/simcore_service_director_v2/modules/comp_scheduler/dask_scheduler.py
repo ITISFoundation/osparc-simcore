@@ -20,7 +20,7 @@ from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import SimcorePlatformStatus
 from models_library.rpc_schemas_clusters_keeper.clusters import (
     ClusterState,
-    ComputationalCluster,
+    OnDemandCluster,
 )
 from models_library.users import UserID
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
@@ -70,7 +70,7 @@ async def _cluster_dask_client(
         # clusters-keeper.get_or_create_cluster
         # check ready, if not raise --> waiting for resources until ready
         try:
-            returned_cluster: ComputationalCluster = (
+            returned_cluster: OnDemandCluster = (
                 await scheduler.rabbitmq_rpc_client.request(
                     RPCNamespace("clusters-keeper"),
                     RPCMethodName("get_or_create_cluster"),

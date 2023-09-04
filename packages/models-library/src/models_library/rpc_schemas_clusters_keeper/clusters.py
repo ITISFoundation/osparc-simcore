@@ -14,7 +14,7 @@ class ClusterState(StrAutoEnum):
     STOPPED = auto()
 
 
-class ComputationalCluster(BaseModel):
+class OnDemandCluster(BaseModel):
     endpoint: AnyUrl
     authentication: ClusterAuthentication
     state: ClusterState

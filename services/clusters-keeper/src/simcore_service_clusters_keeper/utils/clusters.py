@@ -1,7 +1,7 @@
 from models_library.clusters import SimpleAuthentication
 from models_library.rpc_schemas_clusters_keeper.clusters import (
     ClusterState,
-    ComputationalCluster,
+    OnDemandCluster,
 )
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -42,8 +42,8 @@ def create_cluster_from_ec2_instance(
     user_id: UserID,
     wallet_id: WalletID,
     gateway_password: SecretStr,
-) -> ComputationalCluster:
-    return ComputationalCluster(
+) -> OnDemandCluster:
+    return OnDemandCluster(
         endpoint=get_gateway_url(instance),
         authentication=SimpleAuthentication(
             username=f"{user_id}", password=gateway_password
