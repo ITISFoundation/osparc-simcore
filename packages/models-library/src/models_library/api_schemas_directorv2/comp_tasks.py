@@ -1,3 +1,5 @@
+from typing import Final
+
 from models_library.wallets import WalletID
 from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, validator
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
@@ -7,6 +9,8 @@ from ..projects import ProjectID
 from ..projects_nodes_io import NodeID
 from ..projects_pipeline import ComputationTask
 from ..users import UserID
+
+TEMPORARY_DEFAULT_WALLET_ID: Final[WalletID] = 43
 
 
 class ComputationGet(ComputationTask):
@@ -37,7 +41,9 @@ class ComputationCreate(BaseModel):
         default=None,
         description="the computation shall use the cluster described by its id, 0 is the default cluster",
     )
-    wallet_id: WalletID | None = Field(default=42, description="the selected wallet ID")
+    wallet_id: WalletID | None = Field(
+        default=TEMPORARY_DEFAULT_WALLET_ID, description="the selected wallet ID"
+    )
     simcore_user_agent: str = UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 
     @validator("product_name", always=True)
