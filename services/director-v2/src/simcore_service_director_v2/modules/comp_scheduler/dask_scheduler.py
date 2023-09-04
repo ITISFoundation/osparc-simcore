@@ -42,7 +42,7 @@ from ...utils.rabbitmq import (
     publish_service_stopped_metrics,
 )
 from ..db.repositories.comp_tasks import CompTasksRepository
-from .base_scheduler import BaseCompScheduler
+from .base_scheduler import BaseCompScheduler, ScheduledPipelineParams
 
 logger = logging.getLogger(__name__)
 
@@ -76,26 +76,27 @@ class DaskScheduler(BaseCompScheduler):
         *,
         user_id: UserID,
         project_id: ProjectID,
-        cluster_id: ClusterID,
-        run_metadata: RunMetadataDict,
         scheduled_tasks: dict[NodeID, Image],
+        pipeline_params: ScheduledPipelineParams,
     ):
         # now transfer the pipeline to the dask scheduler
-        async with _cluster_dask_client(user_id, cluster_id, self) as client:
+        async with _cluster_dask_client(
+            user_id, pipeline_params.cluster_id, self
+        ) as client:
             task_job_ids: list[
                 tuple[NodeID, str]
             ] = await client.send_computation_tasks(
                 user_id=user_id,
                 project_id=project_id,
-                cluster_id=cluster_id,
+                cluster_id=pipeline_params.cluster_id,
                 tasks=scheduled_tasks,
                 callback=self._wake_up_scheduler_now,
-                metadata=run_metadata,
+                metadata=pipeline_params.run_metadata,
             )
             logger.debug(
                 "started following tasks (node_id, job_id)[%s] on cluster %s",
                 f"{task_job_ids=}",
-                f"{cluster_id=}",
+                f"{pipeline_params.cluster_id=}",
             )
         # update the database so we do have the correct job_ids there
         comp_tasks_repo = CompTasksRepository.instance(self.db_engine)

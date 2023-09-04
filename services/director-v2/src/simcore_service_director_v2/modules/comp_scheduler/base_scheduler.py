@@ -490,9 +490,8 @@ class BaseCompScheduler(ABC):
         *,
         user_id: UserID,
         project_id: ProjectID,
-        cluster_id: ClusterID,
-        run_metadata: RunMetadataDict,
         scheduled_tasks: dict[NodeID, Image],
+        pipeline_params: ScheduledPipelineParams,
     ) -> None:
         ...
 
@@ -656,9 +655,8 @@ class BaseCompScheduler(ABC):
                 self._start_tasks(
                     user_id=user_id,
                     project_id=project_id,
-                    cluster_id=pipeline_params.cluster_id,
-                    run_metadata=pipeline_params.run_metadata,
                     scheduled_tasks={node_id: task.image},
+                    pipeline_params=pipeline_params,
                 )
                 for node_id, task in tasks_ready_to_start.items()
             ],
