@@ -1,7 +1,4 @@
-import asyncio
 import logging
-import random
-from typing import Any
 
 from aiohttp import web
 from models_library.api_schemas_webserver.wallets import (
@@ -17,13 +14,10 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_query_parameters_as,
 )
 from servicelib.logging_utils import get_log_record_extra, log_context
-from servicelib.utils import fire_and_forget_task
 
-from .._constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from .._meta import API_VTAG as VTAG
 from ..application_settings import get_settings
 from ..login.decorators import login_required
-from ..payments._api import complete_payment
 from ..payments.api import create_payment_to_wallet, get_user_payments_page
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
@@ -44,33 +38,6 @@ def _raise_if_not_dev_mode(app):
     if not app_settings.WEBSERVER_DEV_FEATURES_ENABLED:
         msg = "This feature is only available in development mode"
         raise NotImplementedError(msg)
-
-
-async def _fake_delay_for_processing_time():
-    # Fakes processing time
-    processing_time = random.uniform(0.5, 2)  # noqa: S311 # NOSONAR #nosec
-    await asyncio.sleep(processing_time)
-
-
-async def _fake_payment_completion(app: web.Application, payment: WalletPaymentCreated):
-    # NOTE: tmp fakes payment completion for the front-end
-    await _fake_delay_for_processing_time()
-
-    # Three different possible outcomes
-    possible_outcomes = [
-        # 1. Accepted
-        {"app": app, "payment_id": payment.payment_id, "success": True},
-        # 2. Rejected
-        {
-            "app": app,
-            "payment_id": payment.payment_id,
-            "success": False,
-            "message": "Payment rejected",
-        },
-        # TODO: 3. does not complete ever
-    ]
-    kwargs: dict[str, Any] = random.choice(possible_outcomes)  # noqa: S311
-    await complete_payment(**kwargs)
 
 
 @routes.post(f"/{VTAG}/wallets/{{wallet_id}}/payments", name="create_payment")
@@ -103,13 +70,6 @@ async def create_payment(request: web.Request):
             price_dollars=body_params.price_dollars,
             comment=body_params.comment,
         )
-
-    # NOTE: fake completion for the moment
-    await fire_and_forget_task(
-        _fake_payment_completion(request.app, payment),
-        task_suffix_name=f"fake_payment_completion_{payment.payment_id}",
-        fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
-    )
 
     return envelope_json_response(
         WalletPaymentCreated.parse_obj(payment), web.HTTPCreated

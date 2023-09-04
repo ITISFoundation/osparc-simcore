@@ -1,7 +1,8 @@
+import os
 from functools import cached_property
 
 from aiohttp import web
-from pydantic import Field, SecretStr, parse_obj_as
+from pydantic import Field, SecretStr, parse_obj_as, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt, VersionTag
 from settings_library.utils_service import (
@@ -29,6 +30,10 @@ class PaymentsSettings(BaseCustomSettings, MixinServiceSettings):
         min_length=10,
     )
 
+    PAYMENT_FAKE_COMPLETION: bool = Field(
+        default=False, description="ONLY for testing purposes"
+    )
+
     @cached_property
     def api_base_url(self) -> str:
         # http://payments:8000/v1
@@ -48,6 +53,14 @@ class PaymentsSettings(BaseCustomSettings, MixinServiceSettings):
             vtag=URLPart.EXCLUDE,
         )
         return base_url_without_vtag
+
+    @validator("PAYMENT_FAKE_COMPLETION")
+    @classmethod
+    def check_dev_feature_enabled(cls, v):
+        if v and not os.environ.get("WEBSERVER_DEV_FEATURES_ENABLED", False):
+            msg = "PAYMENT_FAKE_COMPLETION only allowed when WEBSERVER_DEV_FEATURES_ENABLED=1"
+            raise ValueError(msg)
+        return v
 
 
 def get_plugin_settings(app: web.Application) -> PaymentsSettings:

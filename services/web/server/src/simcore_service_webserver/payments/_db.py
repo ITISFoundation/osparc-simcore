@@ -109,6 +109,17 @@ async def list_user_payment_transactions(
         return total_number_of_items, page
 
 
+async def get_pending_payment_transactions_ids(app: web.Application) -> list[PaymentID]:
+    async with get_database_engine(app).acquire() as conn:
+        result = await conn.execute(
+            sa.select(payments_transactions.c.payment_id)
+            .where(payments_transactions.c.completed_at == None)  # noqa: E711
+            .order_by(payments_transactions.c.initiated_at.asc())  # oldest first
+        )
+        rows = await result.fetchall() or []
+        return [parse_obj_as(PaymentID, idr) for idr in rows]
+
+
 async def complete_payment_transaction(
     app: web.Application, *, payment_id: PaymentID, success: bool, error_msg: str | None
 ) -> PaymentsTransactionsDB:
