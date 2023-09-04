@@ -58,9 +58,8 @@ async def list_pricing_details_by_pricing_plan(
             user_id, product_name, wallet_id, page_params.offset, page_params.limit
         )
     else:
-        raise ValueError(
-            "wallet_id and access_all_wallet_usage parameters must be specified together"
-        )
+        msg = "wallet_id and access_all_wallet_usage parameters must be specified together"
+        raise ValueError(msg)
 
     service_runs_api_model: list[ServiceRunGet] = []
     for service in service_runs_db_model:

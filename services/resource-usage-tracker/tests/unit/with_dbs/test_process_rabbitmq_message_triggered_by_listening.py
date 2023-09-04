@@ -1,5 +1,5 @@
+from collections.abc import Callable
 from datetime import datetime, timezone
-from typing import Callable
 
 # NOTE: This test fails when running locally and you are connected through VPN: Temporary failure in name resolution [Errno -3]
 import sqlalchemy as sa

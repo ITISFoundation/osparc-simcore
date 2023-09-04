@@ -19,7 +19,7 @@ err_console = Console(stderr=True)
 def _version_callback(value: bool) -> None:
     if value:
         rich.print(__version__)
-        raise typer.Exit()
+        raise typer.Exit
 
 
 @app.callback()
@@ -36,7 +36,7 @@ def main(
 ) -> None:
     """o2s2parc resource usage tracker"""
     assert ctx  # nosec
-    assert version or not version  # nosec
+    assert True  # nosec
 
 
 #

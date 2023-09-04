@@ -1,5 +1,5 @@
+from collections.abc import Iterator
 from decimal import Decimal
-from typing import Iterator
 from unittest import mock
 
 import httpx

@@ -78,11 +78,7 @@ async def sum_credit_transactions_by_product_and_wallet(
         ResourceTrackerRepository, Depends(get_repository(ResourceTrackerRepository))
     ],
 ) -> WalletTotalCredits:
-    wallet_total_credits = (
-        await resource_tracker_repo.sum_credit_transactions_by_product_and_wallet(
-            product_name, wallet_id
-        )
+    return await resource_tracker_repo.sum_credit_transactions_by_product_and_wallet(
+        product_name, wallet_id
     )
     # NOTE: Publish wallet total credits to RabbitMQ
-
-    return wallet_total_credits

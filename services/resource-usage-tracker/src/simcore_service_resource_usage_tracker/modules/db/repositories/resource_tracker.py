@@ -198,8 +198,7 @@ class ResourceTrackerRepository(BaseRepository):
             )
             result = await conn.execute(query)
 
-        services_runs = [ServiceRunDB.from_orm(row) for row in result.fetchall()]
-        return services_runs
+        return [ServiceRunDB.from_orm(row) for row in result.fetchall()]
 
     async def total_service_runs_by_user_and_product(
         self, user_id: UserID, product_name: ProductName
@@ -239,8 +238,7 @@ class ResourceTrackerRepository(BaseRepository):
             )
             result = await conn.execute(query)
 
-        services_runs = [ServiceRunDB.from_orm(row) for row in result.fetchall()]
-        return services_runs
+        return [ServiceRunDB.from_orm(row) for row in result.fetchall()]
 
     async def total_service_runs_by_user_and_product_and_wallet(
         self, user_id: UserID, product_name: ProductName, wallet_id: WalletID
@@ -280,8 +278,7 @@ class ResourceTrackerRepository(BaseRepository):
             )
             result = await conn.execute(query)
 
-        services_runs = [ServiceRunDB.from_orm(row) for row in result.fetchall()]
-        return services_runs
+        return [ServiceRunDB.from_orm(row) for row in result.fetchall()]
 
     async def total_service_runs_by_product_and_wallet(
         self, product_name: ProductName, wallet_id: WalletID
@@ -418,9 +415,8 @@ class ResourceTrackerRepository(BaseRepository):
             result = await conn.execute(sum_stmt)
         row = result.first()
         if row is None or row[0] is None:
-            raise ValueError(
-                "product_name and wallet_id combination does not exists in DB"
-            )
+            msg = "product_name and wallet_id combination does not exists in DB"
+            raise ValueError(msg)
         return WalletTotalCredits(wallet_id=wallet_id, available_osparc_credits=row[0])
 
     #################################
@@ -448,8 +444,7 @@ class ResourceTrackerRepository(BaseRepository):
             )
             result = await conn.execute(query)
 
-        pricing_plans = [PricingPlanDB.from_orm(row) for row in result.fetchall()]
-        return pricing_plans
+        return [PricingPlanDB.from_orm(row) for row in result.fetchall()]
 
     async def get_pricing_plan(self, pricing_plan_id: PricingPlanId) -> PricingPlanDB:
         async with self.db_engine.begin() as conn:
@@ -560,5 +555,4 @@ class ResourceTrackerRepository(BaseRepository):
             )
             result = await conn.execute(query)
 
-        pricing_details = [PricingDetailDB.from_orm(row) for row in result.fetchall()]
-        return pricing_details
+        return [PricingDetailDB.from_orm(row) for row in result.fetchall()]

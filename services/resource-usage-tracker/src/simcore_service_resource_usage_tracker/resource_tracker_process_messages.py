@@ -1,7 +1,7 @@
 import logging
+from collections.abc import Awaitable, Callable
 from datetime import datetime
 from decimal import Decimal
-from typing import Awaitable, Callable
 
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
@@ -131,7 +131,7 @@ async def _process_heartbeat_event(
     )
     if running_service is None:
         _logger.info("Nothing to update: %s", msg)
-        return None
+        return
 
     if running_service.wallet_id and running_service.pricing_detail_cost_per_unit:
         # Compute currently used credits
@@ -178,7 +178,7 @@ async def _process_stop_event(
 
     if running_service is None:
         _logger.error("Nothing to update. This should not happen investigate.")
-        return None
+        return
 
     if running_service.wallet_id and running_service.pricing_detail_cost_per_unit:
         # Compute currently used credits
@@ -221,8 +221,6 @@ async def _compute_service_run_credit_costs(
 ) -> Decimal:
     if start <= stop:
         time_delta = stop - start
-        computed_credits = round(Decimal(time_delta.seconds / 3600) * cost_per_unit, 2)
-        return computed_credits
-    raise ValueError(
-        f"Stop {stop} is smaller then {start} this should not happen. Investigate."
-    )
+        return round(Decimal(time_delta.seconds / 3600) * cost_per_unit, 2)
+    msg = f"Stop {stop} is smaller then {start} this should not happen. Investigate."
+    raise ValueError(msg)

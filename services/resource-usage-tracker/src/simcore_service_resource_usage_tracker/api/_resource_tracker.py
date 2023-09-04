@@ -44,12 +44,11 @@ async def list_usage_services(
         Depends(resource_tracker_service_runs.list_service_runs),
     ],
 ):
-    page = create_page(
+    return create_page(
         usage_services_page.items,
         total=usage_services_page.total,
         params=page_params,
     )
-    return page
 
 
 ######################
