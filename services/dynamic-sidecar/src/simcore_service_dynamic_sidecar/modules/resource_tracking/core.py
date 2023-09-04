@@ -54,11 +54,6 @@ async def _start_heart_beat_task(app: FastAPI) -> None:
 
 
 async def stop_heart_beat_task(app: FastAPI) -> None:
-    # NOTE: this is only used by the teardown
-    await __stop_heart_beat_task(app)
-
-
-async def __stop_heart_beat_task(app: FastAPI) -> None:
     resource_tracking: ResourceTrackingState = app.state.resource_tracking
     if resource_tracking.heart_beat_task:
         await stop_periodic_task(
@@ -88,11 +83,7 @@ async def _heart_beat_task(app: FastAPI):
 async def send_service_stopped(
     app: FastAPI, simcore_platform_status: SimcorePlatformStatus
 ) -> None:
-    # NOTE: calling `stop_heart_beat_task` in place of `__stop_heart_beat_task` does not work.
-    # Somehow the function does not get called.
-    # After spending a lot of time on figuring this out, the current is the best I can offer.
-    # If you want to refactor this talk with ANE first before sinking more time in it.
-    await __stop_heart_beat_task(app)
+    await stop_heart_beat_task(app)
 
     settings: ApplicationSettings = _get_settings(app)
     message = RabbitResourceTrackingStoppedMessage(

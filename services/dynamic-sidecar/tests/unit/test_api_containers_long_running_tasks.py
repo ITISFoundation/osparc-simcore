@@ -358,6 +358,7 @@ async def test_create_containers_task(
     httpx_async_client: AsyncClient,
     client: Client,
     compose_spec: str,
+    mock_stop_heart_beat_task: AsyncMock,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
     shared_store: SharedStore,
 ) -> None:
@@ -385,6 +386,7 @@ async def test_create_containers_task(
 async def test_create_containers_task_invalid_yaml_spec(
     httpx_async_client: AsyncClient,
     client: Client,
+    mock_stop_heart_beat_task: AsyncMock,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
 ):
     with pytest.raises(TaskClientResultError) as exec_info:
@@ -419,6 +421,7 @@ async def test_same_task_id_is_returned_if_task_exists(
     client: Client,
     mocker: MockerFixture,
     get_task_id_callable: Callable[..., Awaitable],
+    mock_stop_heart_beat_task: AsyncMock,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
 ) -> None:
     def _get_awaitable() -> Awaitable:
@@ -447,6 +450,7 @@ async def test_containers_down_after_starting(
     httpx_async_client: AsyncClient,
     client: Client,
     compose_spec: str,
+    mock_stop_heart_beat_task: AsyncMock,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
     shared_store: SharedStore,
     mock_core_rabbitmq: dict[str, AsyncMock],
@@ -612,6 +616,7 @@ async def test_containers_restart(
     httpx_async_client: AsyncClient,
     client: Client,
     compose_spec: str,
+    mock_stop_heart_beat_task: AsyncMock,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
     shared_store: SharedStore,
 ):

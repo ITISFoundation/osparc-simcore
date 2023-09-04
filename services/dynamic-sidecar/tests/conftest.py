@@ -292,9 +292,7 @@ def mock_stop_heart_beat_task(mocker: MockerFixture) -> AsyncMock:
 
 
 @pytest.fixture
-def mock_metrics_params(
-    mock_stop_heart_beat_task: AsyncMock, faker: Faker
-) -> CreateServiceMetricsAdditionalParams:
+def mock_metrics_params(faker: Faker) -> CreateServiceMetricsAdditionalParams:
     return parse_obj_as(
         CreateServiceMetricsAdditionalParams,
         CreateServiceMetricsAdditionalParams.Config.schema_extra["example"],
