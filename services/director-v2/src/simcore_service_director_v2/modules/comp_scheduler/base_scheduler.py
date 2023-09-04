@@ -169,11 +169,13 @@ class BaseCompScheduler(ABC):
                 msg = f"There are no pipeline scheduled for {user_id}:{project_id}"
                 raise SchedulerError(msg)
             current_max_iteration = max(possible_iterations)
-            iteration = current_max_iteration
+            selected_iteration = current_max_iteration
+        else:
+            selected_iteration = iteration
 
         # mark the scheduled pipeline for stopping
         self.scheduled_pipelines[
-            (user_id, project_id, iteration)
+            (user_id, project_id, selected_iteration)
         ].mark_for_cancellation = True
         # ensure the scheduler starts right away
         self._wake_up_scheduler_now()
@@ -328,11 +330,11 @@ class BaseCompScheduler(ABC):
     async def _get_changed_tasks_from_backend(
         self,
         user_id: UserID,
-        cluster_id: ClusterID,
         processing_tasks: list[CompTaskAtDB],
+        pipeline_params: ScheduledPipelineParams,
     ) -> list[tuple[_Previous, _Current]]:
         tasks_backend_status = await self._get_tasks_status(
-            user_id, cluster_id, processing_tasks
+            user_id, processing_tasks, pipeline_params
         )
 
         return [
@@ -454,7 +456,7 @@ class BaseCompScheduler(ABC):
 
         # get the tasks which state actually changed since last check
         tasks_with_changed_states = await self._get_changed_tasks_from_backend(
-            user_id, pipeline_params.cluster_id, tasks_inprocess
+            user_id, tasks_inprocess, pipeline_params
         )
 
         (
@@ -474,11 +476,7 @@ class BaseCompScheduler(ABC):
 
         if tasks_stopped:
             await self._process_completed_tasks(
-                user_id,
-                pipeline_params.cluster_id,
-                tasks_stopped,
-                pipeline_params.run_metadata,
-                iteration,
+                user_id, tasks_stopped, iteration, pipeline_params=pipeline_params
             )
 
         if tasks_reverted:
@@ -497,13 +495,19 @@ class BaseCompScheduler(ABC):
 
     @abstractmethod
     async def _get_tasks_status(
-        self, user_id: UserID, cluster_id: ClusterID, tasks: list[CompTaskAtDB]
+        self,
+        user_id: UserID,
+        tasks: list[CompTaskAtDB],
+        pipeline_params: ScheduledPipelineParams,
     ) -> list[RunningState]:
         ...
 
     @abstractmethod
     async def _stop_tasks(
-        self, user_id: UserID, cluster_id: ClusterID, tasks: list[CompTaskAtDB]
+        self,
+        user_id: UserID,
+        tasks: list[CompTaskAtDB],
+        pipeline_params: ScheduledPipelineParams,
     ) -> None:
         ...
 
@@ -511,10 +515,9 @@ class BaseCompScheduler(ABC):
     async def _process_completed_tasks(
         self,
         user_id: UserID,
-        cluster_id: ClusterID,
         tasks: list[CompTaskAtDB],
-        run_metadata: RunMetadataDict,
         iteration: Iteration,
+        pipeline_params: ScheduledPipelineParams,
     ) -> None:
         ...
 
@@ -546,7 +549,7 @@ class BaseCompScheduler(ABC):
             # 3. do we want to stop the pipeline now?
             if pipeline_params.mark_for_cancellation:
                 await self._schedule_tasks_to_stop(
-                    user_id, project_id, pipeline_params.cluster_id, comp_tasks
+                    user_id, project_id, comp_tasks, pipeline_params
                 )
             else:
                 # let's get the tasks to schedule then
@@ -598,15 +601,15 @@ class BaseCompScheduler(ABC):
         self,
         user_id: UserID,
         project_id: ProjectID,
-        cluster_id: ClusterID,
         comp_tasks: dict[str, CompTaskAtDB],
+        pipeline_params: ScheduledPipelineParams,
     ) -> None:
         # get any running task and stop them
         comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
         await comp_tasks_repo.mark_project_published_tasks_as_aborted(project_id)
         # stop any remaining running task, these are already submitted
         tasks_to_stop = [t for t in comp_tasks.values() if t.state in PROCESSING_STATES]
-        await self._stop_tasks(user_id, cluster_id, tasks_to_stop)
+        await self._stop_tasks(user_id, tasks_to_stop, pipeline_params)
 
     async def _schedule_tasks_to_start(
         self,

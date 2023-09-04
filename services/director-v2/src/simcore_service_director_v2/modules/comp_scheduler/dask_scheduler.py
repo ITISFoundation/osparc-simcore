@@ -11,7 +11,7 @@ from dask_task_models_library.container_tasks.events import (
     TaskProgressEvent,
 )
 from dask_task_models_library.container_tasks.io import TaskOutputData
-from models_library.clusters import DEFAULT_CLUSTER_ID, Cluster, ClusterID
+from models_library.clusters import DEFAULT_CLUSTER_ID, Cluster
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -49,12 +49,14 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def _cluster_dask_client(
-    user_id: UserID, cluster_id: ClusterID, scheduler: "DaskScheduler"
+    user_id: UserID,
+    pipeline_params: ScheduledPipelineParams,
+    scheduler: "DaskScheduler",
 ) -> AsyncIterator[DaskClient]:
     cluster: Cluster = scheduler.settings.default_cluster
-    if cluster_id != DEFAULT_CLUSTER_ID:
+    if pipeline_params.cluster_id != DEFAULT_CLUSTER_ID:
         clusters_repo = ClustersRepository.instance(scheduler.db_engine)
-        cluster = await clusters_repo.get_cluster(user_id, cluster_id)
+        cluster = await clusters_repo.get_cluster(user_id, pipeline_params.cluster_id)
     async with scheduler.dask_clients_pool.acquire(cluster) as client:
         yield client
 
@@ -80,9 +82,7 @@ class DaskScheduler(BaseCompScheduler):
         pipeline_params: ScheduledPipelineParams,
     ) -> None:
         # now transfer the pipeline to the dask scheduler
-        async with _cluster_dask_client(
-            user_id, pipeline_params.cluster_id, self
-        ) as client:
+        async with _cluster_dask_client(user_id, pipeline_params, self) as client:
             task_job_ids: list[
                 tuple[NodeID, str]
             ] = await client.send_computation_tasks(
@@ -108,15 +108,21 @@ class DaskScheduler(BaseCompScheduler):
         )
 
     async def _get_tasks_status(
-        self, user_id: UserID, cluster_id: ClusterID, tasks: list[CompTaskAtDB]
+        self,
+        user_id: UserID,
+        tasks: list[CompTaskAtDB],
+        pipeline_params: ScheduledPipelineParams,
     ) -> list[RunningState]:
-        async with _cluster_dask_client(user_id, cluster_id, self) as client:
+        async with _cluster_dask_client(user_id, pipeline_params, self) as client:
             return await client.get_tasks_status([f"{t.job_id}" for t in tasks])
 
     async def _stop_tasks(
-        self, user_id: UserID, cluster_id: ClusterID, tasks: list[CompTaskAtDB]
+        self,
+        user_id: UserID,
+        tasks: list[CompTaskAtDB],
+        pipeline_params: ScheduledPipelineParams,
     ) -> None:
-        async with _cluster_dask_client(user_id, cluster_id, self) as client:
+        async with _cluster_dask_client(user_id, pipeline_params, self) as client:
             await asyncio.gather(
                 *[client.abort_computation_task(t.job_id) for t in tasks if t.job_id]
             )
@@ -135,25 +141,26 @@ class DaskScheduler(BaseCompScheduler):
     async def _process_completed_tasks(
         self,
         user_id: UserID,
-        cluster_id: ClusterID,
         tasks: list[CompTaskAtDB],
-        run_metadata: RunMetadataDict,
         iteration: Iteration,
+        pipeline_params: ScheduledPipelineParams,
     ) -> None:
         try:
-            async with _cluster_dask_client(user_id, cluster_id, self) as client:
+            async with _cluster_dask_client(user_id, pipeline_params, self) as client:
                 tasks_results = await asyncio.gather(
                     *[client.get_task_result(t.job_id or "undefined") for t in tasks],
                     return_exceptions=True,
                 )
             await asyncio.gather(
                 *[
-                    self._process_task_result(task, result, run_metadata, iteration)
+                    self._process_task_result(
+                        task, result, pipeline_params.run_metadata, iteration
+                    )
                     for task, result in zip(tasks, tasks_results, strict=True)
                 ]
             )
         finally:
-            async with _cluster_dask_client(user_id, cluster_id, self) as client:
+            async with _cluster_dask_client(user_id, pipeline_params, self) as client:
                 await asyncio.gather(
                     *[client.release_task_result(t.job_id) for t in tasks if t.job_id]
                 )
