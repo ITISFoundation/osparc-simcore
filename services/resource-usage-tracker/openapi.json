@@ -319,7 +319,7 @@
           "wallet_name",
           "user_id",
           "user_email",
-          "credits",
+          "osparc_credits",
           "payment_transaction_id",
           "created_at"
         ],
@@ -349,8 +349,8 @@
             "title": "User Email",
             "type": "string"
           },
-          "credits": {
-            "title": "Credits",
+          "osparc_credits": {
+            "title": "Osparc Credits",
             "type": "number"
           },
           "payment_transaction_id": {
@@ -447,35 +447,35 @@
       "PricingDetailMinimalGet": {
         "title": "PricingDetailMinimalGet",
         "required": [
-          "pricing_detail_id",
-          "unit_name",
-          "cost_per_unit",
-          "valid_from",
-          "simcore_default"
+          "pricingDetailId",
+          "unitName",
+          "costPerUnit",
+          "validFrom",
+          "simcoreDefault"
         ],
         "type": "object",
         "properties": {
-          "pricing_detail_id": {
-            "title": "Pricing Detail Id",
+          "pricingDetailId": {
+            "title": "Pricingdetailid",
             "exclusiveMinimum": true,
             "type": "integer",
             "minimum": 0
           },
-          "unit_name": {
-            "title": "Unit Name",
+          "unitName": {
+            "title": "Unitname",
             "type": "string"
           },
-          "cost_per_unit": {
-            "title": "Cost Per Unit",
+          "costPerUnit": {
+            "title": "Costperunit",
             "type": "number"
           },
-          "valid_from": {
-            "title": "Valid From",
+          "validFrom": {
+            "title": "Validfrom",
             "type": "string",
             "format": "date-time"
           },
-          "simcore_default": {
-            "title": "Simcore Default",
+          "simcoreDefault": {
+            "title": "Simcoredefault",
             "type": "boolean"
           }
         }
@@ -491,17 +491,17 @@
       "PricingPlanGet": {
         "title": "PricingPlanGet",
         "required": [
-          "pricing_plan_id",
+          "pricingPlanId",
           "name",
           "description",
           "classification",
-          "created",
+          "createdAt",
           "details"
         ],
         "type": "object",
         "properties": {
-          "pricing_plan_id": {
-            "title": "Pricing Plan Id",
+          "pricingPlanId": {
+            "title": "Pricingplanid",
             "exclusiveMinimum": true,
             "type": "integer",
             "minimum": 0
@@ -517,8 +517,8 @@
           "classification": {
             "$ref": "#/components/schemas/PricingPlanClassification"
           },
-          "created": {
-            "title": "Created",
+          "createdAt": {
+            "title": "Createdat",
             "type": "string",
             "format": "date-time"
           },
@@ -667,7 +667,7 @@
         "title": "WalletTotalCredits",
         "required": [
           "wallet_id",
-          "available_credits"
+          "available_osparc_credits"
         ],
         "type": "object",
         "properties": {
@@ -677,8 +677,8 @@
             "type": "integer",
             "minimum": 0
           },
-          "available_credits": {
-            "title": "Available Credits",
+          "available_osparc_credits": {
+            "title": "Available Osparc Credits",
             "type": "number"
           }
         }
