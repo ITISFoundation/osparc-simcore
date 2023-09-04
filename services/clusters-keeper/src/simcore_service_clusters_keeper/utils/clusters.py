@@ -30,11 +30,11 @@ def _convert_ec2_state_to_cluster_state(
 ) -> ClusterState:
     match ec2_state:
         case "pending":
-            return ClusterState.STARTED  # type: ignore
+            return ClusterState.STARTED
         case "running":
-            return ClusterState.RUNNING  # type: ignore
+            return ClusterState.RUNNING
         case _:
-            return ClusterState.STOPPED  # type: ignore
+            return ClusterState.STOPPED
 
 
 def create_cluster_from_ec2_instance(
