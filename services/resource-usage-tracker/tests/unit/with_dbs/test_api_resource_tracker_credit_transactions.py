@@ -1,7 +1,13 @@
+from decimal import Decimal
+from typing import Iterator
 from unittest import mock
 
 import httpx
+import pytest
 import sqlalchemy as sa
+from simcore_postgres_database.models.resource_tracker_credit_transactions import (
+    resource_tracker_credit_transactions,
+)
 from starlette import status
 from yarl import URL
 
@@ -13,11 +19,23 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
+@pytest.fixture()
+def resource_tracker_crdit_transactions_db(
+    postgres_db: sa.engine.Engine,
+) -> Iterator[None]:
+    with postgres_db.connect() as con:
+
+        yield
+
+        con.execute(resource_tracker_credit_transactions.delete())
+
+
 async def test_credit_transactions_workflow(
     mocked_redis_server: None,
     mocked_setup_rabbitmq: mock.Mock,
     postgres_db: sa.engine.Engine,
     async_client: httpx.AsyncClient,
+    resource_tracker_crdit_transactions_db: None,
 ):
     url = URL("/v1/credit-transactions")
 
@@ -29,7 +47,7 @@ async def test_credit_transactions_workflow(
             "wallet_name": "string",
             "user_id": 1,
             "user_email": "string",
-            "credits": 1234.54,
+            "osparc_credits": 1234.54,
             "payment_transaction_id": "string",
             "created_at": "2023-08-31T13:04:23.941Z",
         },
@@ -46,7 +64,7 @@ async def test_credit_transactions_workflow(
             "wallet_name": "string",
             "user_id": 1,
             "user_email": "string",
-            "credits": 105.5,
+            "osparc_credits": 105.5,
             "payment_transaction_id": "string",
             "created_at": "2023-08-31T13:04:23.941Z",
         },
@@ -63,7 +81,7 @@ async def test_credit_transactions_workflow(
             "wallet_name": "string",
             "user_id": 1,
             "user_email": "string",
-            "credits": 10.85,
+            "osparc_credits": 10.85,
             "payment_transaction_id": "string",
             "created_at": "2023-08-31T13:04:23.941Z",
         },
@@ -79,4 +97,4 @@ async def test_credit_transactions_workflow(
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["wallet_id"] == 1
-    assert data["available_credits"] == 1340.04
+    assert data["available_osparc_credits"] == Decimal(1340.04)

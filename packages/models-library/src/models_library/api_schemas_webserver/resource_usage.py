@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 
 from models_library.resource_tracker import (
     PricingDetailId,
@@ -15,11 +16,14 @@ from ..projects import ProjectID
 from ..projects_nodes_io import NodeID
 from ..resource_tracker import ServiceRunStatus
 from ..services import ServiceKey, ServiceVersion
+from ._base import OutputSchema
 
 # Frontend API
 
 
-class ServiceRunGet(BaseModel):
+class ServiceRunGet(
+    BaseModel
+):  # NOTE: this is already in use so I didnt modidy inheritance from OutputSchema
     service_run_id: ServiceRunId
     wallet_id: WalletID | None
     wallet_name: str | None
@@ -37,18 +41,18 @@ class ServiceRunGet(BaseModel):
     service_run_status: ServiceRunStatus
 
 
-class PricingDetailMinimalGet(BaseModel):
+class PricingDetailMinimalGet(OutputSchema):
     pricing_detail_id: PricingDetailId
     unit_name: str
-    cost_per_unit: float
+    cost_per_unit: Decimal
     valid_from: datetime
     simcore_default: bool
 
 
-class PricingPlanGet(BaseModel):
+class PricingPlanGet(OutputSchema):
     pricing_plan_id: PricingPlanId
     name: str
     description: str
     classification: PricingPlanClassification
-    created: datetime
+    created_at: datetime
     details: list[PricingDetailMinimalGet]

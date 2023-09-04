@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 
 from models_library.products import ProductName
 from models_library.resource_tracker import (
@@ -21,7 +22,7 @@ class CreditTransactionCreate(BaseModel):
     pricing_detail_id: PricingDetailId | None
     user_id: UserID
     user_email: str
-    credits: float
+    osparc_credits: Decimal
     transaction_status: TransactionBillingStatus
     transaction_classification: TransactionClassification
     service_run_id: ServiceRunId | None
@@ -32,11 +33,11 @@ class CreditTransactionCreate(BaseModel):
 
 class CreditTransactionCreditsUpdate(BaseModel):
     service_run_id: ServiceRunId
-    credits: float
+    osparc_credits: Decimal
     last_heartbeat_at: datetime
 
 
 class CreditTransactionCreditsAndStatusUpdate(BaseModel):
     service_run_id: ServiceRunId
-    credits: float
+    osparc_credits: Decimal
     transaction_status: TransactionBillingStatus

@@ -1,5 +1,6 @@
 import asyncio
 from datetime import datetime, timezone
+from decimal import Decimal
 from typing import Iterator
 
 import pytest
@@ -8,6 +9,9 @@ from models_library.rabbitmq_messages import (
     RabbitResourceTrackingHeartbeatMessage,
     RabbitResourceTrackingStoppedMessage,
     SimcorePlatformStatus,
+)
+from simcore_postgres_database.models.resource_tracker_credit_transactions import (
+    resource_tracker_credit_transactions,
 )
 from simcore_postgres_database.models.resource_tracker_pricing_details import (
     resource_tracker_pricing_details,
@@ -53,7 +57,7 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
             resource_tracker_pricing_details.insert().values(
                 pricing_plan_id=1,
                 unit_name="S",
-                cost_per_unit=500,
+                cost_per_unit=Decimal(1500),
                 valid_from=datetime.now(tz=timezone.utc),
             ),
             simcore_default=True,
@@ -63,7 +67,7 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
             resource_tracker_pricing_details.insert().values(
                 pricing_plan_id=1,
                 unit_name="M",
-                cost_per_unit=1000,
+                cost_per_unit=Decimal(1500),
                 valid_from=datetime.now(tz=timezone.utc),
             ),
             simcore_default=False,
@@ -73,7 +77,7 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
             resource_tracker_pricing_details.insert().values(
                 pricing_plan_id=1,
                 unit_name="L",
-                cost_per_unit=1500,
+                cost_per_unit=Decimal(1500),
                 valid_from=datetime.now(tz=timezone.utc),
             ),
             simcore_default=False,
@@ -93,9 +97,9 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
         con.execute(resource_tracker_pricing_plan_to_service.delete())
         con.execute(resource_tracker_pricing_details.delete())
         con.execute(resource_tracker_pricing_plans.delete())
+        con.execute(resource_tracker_credit_transactions.delete())
 
 
-@pytest.mark.testit
 async def test_process_event_functions(
     mocked_setup_rabbitmq,
     random_rabbit_message_start,
@@ -115,13 +119,13 @@ async def test_process_event_functions(
     )
     await _process_start_event(resource_tacker_repo, msg)
     output = await assert_credit_transactions_db_row(postgres_db, msg.service_run_id)
-    assert float(output[8]) == 0.0
+    assert output[8] == 0.0
     assert output[9] == "PENDING"
     assert output[10] == "DEDUCT_SERVICE_RUN"
     first_occurence_of_last_heartbeat_at = output[14]
     modified_at = output[15]
 
-    await asyncio.sleep(2)
+    await asyncio.sleep(0)
     heartbeat_msg = RabbitResourceTrackingHeartbeatMessage(
         service_run_id=msg.service_run_id, created_at=datetime.now(tz=timezone.utc)
     )
@@ -129,13 +133,15 @@ async def test_process_event_functions(
     output = await assert_credit_transactions_db_row(
         postgres_db, msg.service_run_id, modified_at
     )
-    first_credits_used = float(output[8])
+    first_credits_used = output[8]
     assert first_credits_used < 0.0
     assert output[9] == "PENDING"
     assert first_occurence_of_last_heartbeat_at < output[14]
     modified_at = output[15]
 
-    await asyncio.sleep(2)
+    await asyncio.sleep(
+        2
+    )  # NOTE: Computation of credits depends on time ((stop-start)*cost_per_unit)
     stopped_msg = RabbitResourceTrackingStoppedMessage(
         service_run_id=msg.service_run_id,
         created_at=datetime.now(tz=timezone.utc),
@@ -145,5 +151,5 @@ async def test_process_event_functions(
     output = await assert_credit_transactions_db_row(
         postgres_db, msg.service_run_id, modified_at
     )
-    assert float(output[8]) < first_credits_used
+    assert output[8] < first_credits_used
     assert output[9] == "BILLED"

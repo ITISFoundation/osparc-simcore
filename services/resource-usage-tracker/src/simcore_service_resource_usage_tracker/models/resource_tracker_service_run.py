@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 from typing import NamedTuple
 
 from models_library.api_schemas_webserver.resource_usage import ServiceRunGet
@@ -61,7 +62,7 @@ class ServiceRunDB(BaseModel):
     wallet_name: str | None
     pricing_plan_id: PricingPlanId | None
     pricing_detail_id: PricingDetailId | None
-    pricing_detail_cost_per_unit: float | None
+    pricing_detail_cost_per_unit: Decimal | None
     user_id: UserID
     user_email: str
     project_id: ProjectID

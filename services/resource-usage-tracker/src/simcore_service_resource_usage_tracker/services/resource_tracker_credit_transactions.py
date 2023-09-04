@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 from typing import Annotated
 
 from fastapi import Depends
@@ -26,7 +27,7 @@ class CreditTransactionCreateBody(BaseModel):
     wallet_name: str
     user_id: UserID
     user_email: str
-    credits: float
+    osparc_credits: Decimal
     payment_transaction_id: str
     created_at: datetime
 
@@ -45,7 +46,7 @@ async def create_credit_transaction(
         pricing_detail_id=None,
         user_id=credit_transaction_create_body.user_id,
         user_email=credit_transaction_create_body.user_email,
-        credits=credit_transaction_create_body.credits,
+        osparc_credits=credit_transaction_create_body.osparc_credits,
         transaction_status=TransactionBillingStatus.BILLED,
         transaction_classification=TransactionClassification.ADD_WALLET_TOP_UP,
         service_run_id=None,
@@ -57,7 +58,7 @@ async def create_credit_transaction(
         transaction_create
     )
 
-    # Shoot and forget
+    # NOTE: Implement fire and forget mechanism
     wallet_total_credits = (
         await resource_tracker_repo.sum_credit_transactions_by_product_and_wallet(
             credit_transaction_create_body.product_name,
@@ -65,7 +66,7 @@ async def create_credit_transaction(
         )
     )
     assert wallet_total_credits  # nosec
-    # TODO: Publish wallet total credits to RabbitMQ
+    # NOTE: Publish wallet total credits to RabbitMQ
 
     return transaction_id
 
@@ -82,6 +83,6 @@ async def sum_credit_transactions_by_product_and_wallet(
             product_name, wallet_id
         )
     )
-    # TODO: Publish wallet total credits to RabbitMQ
+    # NOTE: Publish wallet total credits to RabbitMQ
 
     return wallet_total_credits

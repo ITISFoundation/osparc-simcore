@@ -35,7 +35,7 @@ async def list_pricing_details_by_pricing_plan(
         ] = await resource_tacker_repo.list_service_runs_by_user_and_product(
             user_id, product_name, page_params.offset, page_params.limit
         )
-    # Ex. Accountant user can see all users usage of the wallet
+    # Situation when accountant user can see all users usage of the wallet
     elif wallet_id and access_all_wallet_usage is True:
         total_service_runs: PositiveInt = (  # type: ignore[no-redef]
             await resource_tacker_repo.total_service_runs_by_product_and_wallet(
@@ -47,7 +47,7 @@ async def list_pricing_details_by_pricing_plan(
         ] = await resource_tacker_repo.list_service_runs_by_product_and_wallet(
             product_name, wallet_id, page_params.offset, page_params.limit
         )
-    # Ex. Regular user can see only his usage of the wallet
+    # Situation when regular user can see only his usage of the wallet
     elif wallet_id and access_all_wallet_usage is False:
         total_service_runs: PositiveInt = await resource_tacker_repo.total_service_runs_by_user_and_product_and_wallet(  # type: ignore[no-redef]
             user_id, product_name, wallet_id
@@ -62,7 +62,6 @@ async def list_pricing_details_by_pricing_plan(
             "wallet_id and access_all_wallet_usage parameters must be specified together"
         )
 
-    # Prepare response
     service_runs_api_model: list[ServiceRunGet] = []
     for service in service_runs_db_model:
         service_runs_api_model.append(

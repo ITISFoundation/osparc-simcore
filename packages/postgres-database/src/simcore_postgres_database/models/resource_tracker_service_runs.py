@@ -5,7 +5,7 @@ import enum
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 
-from ._common import column_modified_datetime
+from ._common import NUMERIC_KWARGS, column_modified_datetime
 from .base import metadata
 
 
@@ -63,7 +63,7 @@ resource_tracker_service_runs = sa.Table(
     ),
     sa.Column(
         "pricing_detail_cost_per_unit",
-        sa.Numeric(precision=15, scale=2),
+        sa.Numeric(**NUMERIC_KWARGS),
         nullable=True,
         doc="Pricing detail cost per unit used for billing purposes",
     ),

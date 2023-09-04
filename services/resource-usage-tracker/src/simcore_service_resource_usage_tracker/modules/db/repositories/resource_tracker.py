@@ -318,7 +318,7 @@ class ResourceTrackerRepository(BaseRepository):
                     pricing_detail_id=data.pricing_detail_id,
                     user_id=data.user_id,
                     user_email=data.user_email,
-                    credits=data.credits,
+                    osparc_credits=data.osparc_credits,
                     transaction_status=data.transaction_status,
                     transaction_classification=data.transaction_classification,
                     service_run_id=data.service_run_id,
@@ -343,7 +343,7 @@ class ResourceTrackerRepository(BaseRepository):
                 resource_tracker_credit_transactions.update()
                 .values(
                     modified=sa.func.now(),
-                    credits=data.credits,
+                    osparc_credits=data.osparc_credits,
                     last_heartbeat_at=data.last_heartbeat_at,
                 )
                 .where(
@@ -376,7 +376,7 @@ class ResourceTrackerRepository(BaseRepository):
                 resource_tracker_credit_transactions.update()
                 .values(
                     modified=sa.func.now(),
-                    credits=data.credits,
+                    osparc_credits=data.osparc_credits,
                     transaction_status=data.transaction_status,
                 )
                 .where(
@@ -402,7 +402,7 @@ class ResourceTrackerRepository(BaseRepository):
     ) -> WalletTotalCredits:
         async with self.db_engine.begin() as conn:
             sum_stmt = sa.select(
-                sa.func.sum(resource_tracker_credit_transactions.c.credits)
+                sa.func.sum(resource_tracker_credit_transactions.c.osparc_credits)
             ).where(
                 (resource_tracker_credit_transactions.c.product_name == product_name)
                 & (resource_tracker_credit_transactions.c.wallet_id == wallet_id)
@@ -421,7 +421,7 @@ class ResourceTrackerRepository(BaseRepository):
             raise ValueError(
                 "product_name and wallet_id combination does not exists in DB"
             )
-        return WalletTotalCredits(wallet_id=wallet_id, available_credits=row[0])
+        return WalletTotalCredits(wallet_id=wallet_id, available_osparc_credits=row[0])
 
     #################################
     # Pricing plans

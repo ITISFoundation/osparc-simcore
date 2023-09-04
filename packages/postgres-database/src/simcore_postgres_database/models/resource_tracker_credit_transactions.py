@@ -5,7 +5,7 @@ import enum
 
 import sqlalchemy as sa
 
-from ._common import column_created_datetime, column_modified_datetime
+from ._common import NUMERIC_KWARGS, column_created_datetime, column_modified_datetime
 from .base import metadata
 
 
@@ -78,8 +78,8 @@ resource_tracker_credit_transactions = sa.Table(
         doc="User email",
     ),
     sa.Column(
-        "credits",
-        sa.Numeric(precision=15, scale=2),
+        "osparc_credits",
+        sa.Numeric(**NUMERIC_KWARGS),
         nullable=False,
         doc="Credits",
     ),

@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime
+from decimal import Decimal
 from typing import Awaitable, Callable
 
 from fastapi import FastAPI
@@ -31,6 +32,7 @@ from .models.resource_tracker_service_run import (
     ServiceRunStoppedAtUpdate,
 )
 from .modules.db.repositories.resource_tracker import ResourceTrackerRepository
+from .resource_tracker_utils import make_negative
 
 _logger = logging.getLogger(__name__)
 
@@ -105,7 +107,7 @@ async def _process_start_event(
             pricing_detail_id=msg.pricing_detail_id,
             user_id=msg.user_id,
             user_email=msg.user_email,
-            credits=0.0,
+            osparc_credits=Decimal(0.0),
             transaction_status=TransactionBillingStatus.PENDING,
             transaction_classification=TransactionClassification.DEDUCT_SERVICE_RUN,
             service_run_id=service_run_id,
@@ -141,7 +143,7 @@ async def _process_heartbeat_event(
         # Update credits in the transaction table
         update_credit_transaction = CreditTransactionCreditsUpdate(
             service_run_id=msg.service_run_id,
-            credits=-computed_credits,
+            osparc_credits=make_negative(computed_credits),
             last_heartbeat_at=msg.created_at,
         )
         await resource_tracker_repo.update_credit_transaction_credits(
@@ -188,7 +190,7 @@ async def _process_stop_event(
         # Update credits in the transaction table and close the transaction
         update_credit_transaction = CreditTransactionCreditsAndStatusUpdate(
             service_run_id=msg.service_run_id,
-            credits=-computed_credits,  # negative(computed_credits)
+            osparc_credits=-computed_credits,  # negative(computed_credits)
             transaction_status=TransactionBillingStatus.BILLED
             if msg.simcore_platform_status == SimcorePlatformStatus.OK
             else TransactionBillingStatus.NOT_BILLED,
@@ -215,12 +217,12 @@ RABBIT_MSG_TYPE_TO_PROCESS_HANDLER: dict[str, Callable[..., Awaitable[None]],] =
 
 
 async def _compute_service_run_credit_costs(
-    start: datetime, stop: datetime, cost_per_unit: float
-) -> float:
+    start: datetime, stop: datetime, cost_per_unit: Decimal
+) -> Decimal:
     if start <= stop:
         time_delta = stop - start
-        computed_credits = round(time_delta.seconds / 3600 * cost_per_unit, 2)
+        computed_credits = round(Decimal(time_delta.seconds / 3600) * cost_per_unit, 2)
         return computed_credits
     raise ValueError(
-        "Stop {stop} is smaller then {start} this should not happen. Investigate."
+        f"Stop {stop} is smaller then {start} this should not happen. Investigate."
     )

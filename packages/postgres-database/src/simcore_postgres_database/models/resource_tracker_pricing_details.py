@@ -7,7 +7,7 @@
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 
-from ._common import column_created_datetime, column_modified_datetime
+from ._common import NUMERIC_KWARGS, column_created_datetime, column_modified_datetime
 from .base import metadata
 
 resource_tracker_pricing_details = sa.Table(
@@ -41,7 +41,7 @@ resource_tracker_pricing_details = sa.Table(
     ),
     sa.Column(
         "cost_per_unit",
-        sa.Numeric(precision=15, scale=2),
+        sa.Numeric(**NUMERIC_KWARGS),
         nullable=False,
         doc="The cost per unit of the pricing plan in credits.",
     ),
