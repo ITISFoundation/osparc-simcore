@@ -55,7 +55,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
         }
       };
       osparc.data.Resources.fetch("preferences", "patch", params)
-        .then(() => preferencesSettings.set[preferenceId](newValue))
+        .then(() => preferencesSettings.set(preferenceId, newValue))
         .catch(err => {
           console.error(err);
           osparc.component.message.FlashMessenger.logAs(err.message, "ERROR");
