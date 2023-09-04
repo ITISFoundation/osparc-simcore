@@ -24,7 +24,7 @@ from ..core.errors import (
     Ec2TooManyInstancesError,
 )
 from ..core.settings import EC2InstancesSettings, EC2Settings, get_application_settings
-from ..models import EC2InstanceData, EC2InstanceType
+from ..models import EC2InstanceData, EC2InstanceType, EC2Tags
 from ..utils.ec2 import compose_user_data
 
 logger = logging.getLogger(__name__)
@@ -89,7 +89,7 @@ class ClustersKeeperEC2:
         self,
         instance_settings: EC2InstancesSettings,
         instance_type: InstanceTypeType,
-        tags: dict[str, str],
+        tags: EC2Tags,
         startup_script: str,
         number_of_instances: int,
     ) -> list[EC2InstanceData]:
@@ -99,7 +99,7 @@ class ClustersKeeperEC2:
             msg=f"launching {number_of_instances} AWS instance(s) {instance_type} with {tags=}",
         ):
             # first check the max amount is not already reached
-            current_instances = await self.get_instances(instance_settings, tags)
+            current_instances = await self.get_instances(instance_settings, tags=tags)
             if (
                 len(current_instances) + number_of_instances
                 > instance_settings.EC2_INSTANCES_MAX_INSTANCES
@@ -115,7 +115,6 @@ class ClustersKeeperEC2:
                 InstanceType=instance_type,
                 InstanceInitiatedShutdownBehavior="terminate",
                 KeyName=instance_settings.EC2_INSTANCES_KEY_NAME,
-                SubnetId=instance_settings.EC2_INSTANCES_SUBNET_ID,
                 TagSpecifications=[
                     {
                         "ResourceType": "instance",
@@ -126,7 +125,14 @@ class ClustersKeeperEC2:
                     }
                 ],
                 UserData=compose_user_data(startup_script),
-                SecurityGroupIds=instance_settings.EC2_INSTANCES_SECURITY_GROUP_IDS,
+                NetworkInterfaces=[
+                    {
+                        "AssociatePublicIpAddress": True,
+                        "DeviceIndex": 0,
+                        "SubnetId": instance_settings.EC2_INSTANCES_SUBNET_ID,
+                        "Groups": instance_settings.EC2_INSTANCES_SECURITY_GROUP_IDS,
+                    }
+                ],
             )
             instance_ids = [i["InstanceId"] for i in instances["Instances"]]
             logger.info(
@@ -147,8 +153,12 @@ class ClustersKeeperEC2:
                     launch_time=instance["LaunchTime"],
                     id=instance["InstanceId"],
                     aws_private_dns=instance["PrivateDnsName"],
+                    aws_public_ip=instance["PublicIpAddress"]
+                    if "PublicIpAddress" in instance
+                    else None,
                     type=instance["InstanceType"],
                     state=instance["State"]["Name"],
+                    tags={tag["Key"]: tag["Value"] for tag in instance["Tags"]},
                 )
                 for instance in instances["Reservations"][0]["Instances"]
             ]
@@ -161,8 +171,8 @@ class ClustersKeeperEC2:
     async def get_instances(
         self,
         instance_settings: EC2InstancesSettings,
-        tags: dict[str, str],
         *,
+        tags: EC2Tags,
         state_names: list[InstanceStateNameType] | None = None,
     ) -> list[EC2InstanceData]:
         # NOTE: be careful: Name=instance-state-name,Values=["pending", "running"] means pending OR running
@@ -192,30 +202,62 @@ class ClustersKeeperEC2:
                 assert "InstanceType" in instance  # nosec
                 assert "State" in instance  # nosec
                 assert "Name" in instance["State"]  # nosec
+                assert "Tags" in instance  # nosec
                 all_instances.append(
                     EC2InstanceData(
                         launch_time=instance["LaunchTime"],
                         id=instance["InstanceId"],
                         aws_private_dns=instance["PrivateDnsName"],
+                        aws_public_ip=instance["PublicIpAddress"]
+                        if "PublicIpAddress" in instance
+                        else None,
                         type=instance["InstanceType"],
                         state=instance["State"]["Name"],
+                        tags={
+                            tag["Key"]: tag["Value"]
+                            for tag in instance["Tags"]
+                            if all(k in tag for k in ["Key", "Value"])
+                        },
                     )
                 )
-        logger.debug("received: %s", f"{all_instances=}")
+        logger.debug(
+            "received: %s instances with %s", f"{len(all_instances)}", f"{state_names=}"
+        )
         return all_instances
 
     async def terminate_instances(self, instance_datas: list[EC2InstanceData]) -> None:
         try:
-            await self.client.terminate_instances(
-                InstanceIds=[i.id for i in instance_datas]
-            )
+            with log_context(
+                logger,
+                logging.INFO,
+                msg=f"terminating instances {[i.id for i in instance_datas]}",
+            ):
+                await self.client.terminate_instances(
+                    InstanceIds=[i.id for i in instance_datas]
+                )
         except botocore.exceptions.ClientError as exc:
             if (
                 exc.response.get("Error", {}).get("Code", "")
                 == "InvalidInstanceID.NotFound"
             ):
                 raise Ec2InstanceNotFoundError from exc
-            raise
+            raise  # pragma: no cover
+
+    async def set_instances_tags(
+        self, instances: list[EC2InstanceData], *, tags: EC2Tags
+    ) -> None:
+        with log_context(
+            logger,
+            logging.DEBUG,
+            msg=f"setting {tags=} on instances '[{[i.id for i in instances]}]'",
+        ):
+            await self.client.create_tags(
+                Resources=[i.id for i in instances],
+                Tags=[
+                    {"Key": tag_key, "Value": tag_value}
+                    for tag_key, tag_value in tags.items()
+                ],
+            )
 
 
 def setup(app: FastAPI) -> None:
@@ -241,7 +283,7 @@ def setup(app: FastAPI) -> None:
             with attempt:
                 connected = await client.ping()
                 if not connected:
-                    raise Ec2NotConnectedError
+                    raise Ec2NotConnectedError  # pragma: no cover
 
     async def on_shutdown() -> None:
         if app.state.ec2_client:

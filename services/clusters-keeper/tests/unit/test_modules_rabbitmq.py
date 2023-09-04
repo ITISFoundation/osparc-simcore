@@ -3,8 +3,8 @@
 # pylint:disable=redefined-outer-name
 
 import asyncio
-from collections.abc import Callable, Mapping
-from typing import Any
+import contextlib
+from collections.abc import AsyncIterator, Callable
 
 import aiodocker
 import pytest
@@ -17,9 +17,10 @@ from settings_library.rabbit import RabbitSettings
 from simcore_service_clusters_keeper.core.errors import ConfigurationError
 from simcore_service_clusters_keeper.modules.rabbitmq import (
     get_rabbitmq_client,
+    get_rabbitmq_rpc_client,
+    is_rabbitmq_enabled,
     post_message,
 )
-from tenacity import retry
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -68,8 +69,12 @@ def test_rabbitmq_does_not_initialize_if_deactivated(
 ):
     assert hasattr(initialized_app.state, "rabbitmq_client")
     assert initialized_app.state.rabbitmq_client is None
+    assert initialized_app.state.rabbitmq_rpc_server is None
     with pytest.raises(ConfigurationError):
         get_rabbitmq_client(initialized_app)
+    with pytest.raises(ConfigurationError):
+        get_rabbitmq_rpc_client(initialized_app)
+    assert is_rabbitmq_enabled(initialized_app) is False
 
 
 def test_rabbitmq_initializes(
@@ -80,7 +85,13 @@ def test_rabbitmq_initializes(
 ):
     assert hasattr(initialized_app.state, "rabbitmq_client")
     assert initialized_app.state.rabbitmq_client is not None
+    assert initialized_app.state.rabbitmq_rpc_server is not None
     assert get_rabbitmq_client(initialized_app) == initialized_app.state.rabbitmq_client
+    assert (
+        get_rabbitmq_rpc_client(initialized_app)
+        == initialized_app.state.rabbitmq_rpc_server
+    )
+    assert is_rabbitmq_enabled(initialized_app) is True
 
 
 async def test_post_message(
@@ -122,35 +133,29 @@ async def test_post_message_with_disabled_rabbit_does_not_raise(
     await post_message(initialized_app, message=rabbit_message)
 
 
-async def _switch_off_rabbit_mq_instance(async_docker_client: aiodocker.Docker) -> None:
-    # remove the rabbit MQ instance
-    rabbit_services = [
-        s
-        for s in await async_docker_client.services.list()
-        if "rabbit" in s["Spec"]["Name"]
-    ]
-    await asyncio.gather(
-        *(async_docker_client.services.delete(s["ID"]) for s in rabbit_services)
+@contextlib.asynccontextmanager
+async def paused_container(
+    async_docker_client: aiodocker.Docker, container_name: str
+) -> AsyncIterator[None]:
+    containers = await async_docker_client.containers.list(
+        filters={"name": [container_name]}
     )
+    await asyncio.gather(*(c.pause() for c in containers))
+    # refresh
+    container_attrs = await asyncio.gather(*(c.show() for c in containers))
+    for container_status in container_attrs:
+        assert container_status["State"]["Status"] == "paused"
 
-    @retry(**_TENACITY_RETRY_PARAMS)
-    async def _check_service_task_gone(service: Mapping[str, Any]) -> None:
-        print(
-            f"--> checking if service {service['ID']}:{service['Spec']['Name']} is really gone..."
-        )
-        list_of_tasks = await async_docker_client.containers.list(
-            all=True,
-            filters={
-                "label": [f"com.docker.swarm.service.id={service['ID']}"],
-            },
-        )
-        assert not list_of_tasks
-        print(f"<-- service {service['ID']}:{service['Spec']['Name']} is gone.")
+    yield
 
-    await asyncio.gather(*(_check_service_task_gone(s) for s in rabbit_services))
+    await asyncio.gather(*(c.unpause() for c in containers))
+    # refresh
+    container_attrs = await asyncio.gather(*(c.show() for c in containers))
+    for container_status in container_attrs:
+        assert container_status["State"]["Status"] == "running"
 
 
-async def test_post_message_when_rabbit_disconnected(
+async def test_post_message_when_rabbit_disconnected_does_not_raise(
     enabled_rabbitmq: RabbitSettings,
     disabled_ec2: None,
     mocked_redis_server: None,
@@ -158,7 +163,9 @@ async def test_post_message_when_rabbit_disconnected(
     rabbit_log_message: LoggerRabbitMessage,
     async_docker_client: aiodocker.Docker,
 ):
-    await _switch_off_rabbit_mq_instance(async_docker_client)
-
-    # now posting should not raise out
+    # NOTE: if the connection is not initialized before pausing the container, then
+    # this test hangs forever!!! This needs investigations!
     await post_message(initialized_app, message=rabbit_log_message)
+    async with paused_container(async_docker_client, "rabbit"):
+        # now posting should not raise out
+        await post_message(initialized_app, message=rabbit_log_message)
