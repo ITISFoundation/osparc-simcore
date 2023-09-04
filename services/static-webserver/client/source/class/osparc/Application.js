@@ -44,8 +44,6 @@ qx.Class.define("osparc.Application", {
       // Call super class
       this.base();
 
-
-
       this.__preventAutofillBrowserSyles();
 
       // Enable logging in debug variant
