@@ -225,7 +225,7 @@ qx.Class.define("osparc.desktop.credits.Overview", {
         50,
         125,
         "My Wallet",
-        "A payment"
+        ""
       ]];
       const maxTransactions = 4;
       entries.forEach((entry, row) => {
@@ -248,15 +248,10 @@ qx.Class.define("osparc.desktop.credits.Overview", {
       const grid = new qx.ui.layout.Grid(12, 8);
       const layout = new qx.ui.container.Composite(grid);
 
-      const headers = [
-        "Project",
-        "Wallet",
-        "Date",
-        "Duration",
-        "Status"
-      ];
-      headers.forEach((header, column) => {
-        const text = new qx.ui.basic.Label(header).set({
+      const cols = osparc.component.resourceUsage.OverviewTable.COLUMNS;
+      const colNames = Object.values(cols).map(col => col.title);
+      colNames.forEach((colName, column) => {
+        const text = new qx.ui.basic.Label(colName).set({
           font: "text-14"
         });
         layout.add(text, {
@@ -265,33 +260,27 @@ qx.Class.define("osparc.desktop.credits.Overview", {
         });
       });
 
-      const entries = [[
-        "Sim4life project",
-        "My Wallet",
-        osparc.utils.Utils.formatDateAndTime(new Date()),
-        "20:14",
-        "Finished"
-      ], [
-        "Sim4life project (2)",
-        "My Wallet",
-        osparc.utils.Utils.formatDateAndTime(new Date()),
-        "13:14",
-        "Running"
-      ]];
-      const maxUsage = 4;
-      entries.forEach((entry, row) => {
-        if (row < maxUsage) {
-          entry.forEach((data, column) => {
-            const text = new qx.ui.basic.Label(data.toString()).set({
-              font: "text-13"
-            });
-            layout.add(text, {
-              row: row+1,
-              column
+      const params = {
+        url: {
+          offset: 0,
+          limit: 4 // show only the last 4 usage
+        }
+      };
+      osparc.data.Resources.fetch("resourceUsage", "getPage", params)
+        .then(datas => {
+          const entries = osparc.component.resourceUsage.OverviewTable.respDataToTableData(datas);
+          entries.forEach((entry, row) => {
+            entry.forEach((data, column) => {
+              const text = new qx.ui.basic.Label(data.toString()).set({
+                font: "text-13"
+              });
+              layout.add(text, {
+                row: row+1,
+                column
+              });
             });
           });
-        }
-      });
+        });
       return layout;
     }
   }

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Callable
 
 from aiohttp import web
 from models_library.api_schemas_storage import LinkType, UploadedPart

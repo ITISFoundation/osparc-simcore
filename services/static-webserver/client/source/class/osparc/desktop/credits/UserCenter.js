@@ -15,27 +15,37 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.desktop.credits.CreditsWindow", {
-  extend: osparc.ui.window.SingletonWindow,
+qx.Class.define("osparc.desktop.credits.UserCenter", {
+  extend: qx.ui.core.Widget,
 
   construct: function(walletsEnabled = false) {
-    this.base(arguments, "credits", this.tr("User Center"));
+    this.base(arguments);
 
     this.__walletsEnabled = walletsEnabled;
 
-    const viewWidth = walletsEnabled ? 1050 : 800;
-    const viewHeight = walletsEnabled ? 700 : 600;
+    this._setLayout(new qx.ui.layout.VBox());
 
     this.set({
-      layout: new qx.ui.layout.Grow(),
-      modal: true,
-      width: viewWidth,
-      height: viewHeight,
-      showMaximize: false,
-      showMinimize: false,
-      resizable: true,
-      appearance: "service-window"
+      backgroundColor: "background-main-2",
+      margin: 10,
+      padding: 20,
+      decorator: new qx.ui.decoration.Decorator().set({
+        radius: 10
+      })
     });
+
+    const titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+    const title = new qx.ui.basic.Label().set({
+      value: this.tr("User Center"),
+      font: "text-16",
+      textAlign: "center",
+      allowGrowX: true,
+      marginBottom: 10
+    });
+    titleLayout.add(title, {
+      flex: 1
+    });
+    this._add(titleLayout);
 
     const tabViews = this.__tabsView = new qx.ui.tabview.TabView().set({
       barPosition: "left",
@@ -71,12 +81,12 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
       tabViews.add(usageOverviewPage);
     }
 
-    this.add(tabViews);
+    this._add(tabViews);
   },
 
   statics: {
     openWindow: function(walletsEnabled = false) {
-      const accountWindow = new osparc.desktop.credits.CreditsWindow(walletsEnabled);
+      const accountWindow = new osparc.desktop.credits.UserCenter(walletsEnabled);
       accountWindow.center();
       accountWindow.open();
       return accountWindow;
