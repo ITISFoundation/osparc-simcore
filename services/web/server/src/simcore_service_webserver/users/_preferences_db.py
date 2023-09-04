@@ -50,5 +50,5 @@ async def set_user_preference(
                 user_id, preference.get_preference_name()
             ),
             product_name=product_name,
-            payload=preference.dict(),
+            payload=preference.to_db(),
         )

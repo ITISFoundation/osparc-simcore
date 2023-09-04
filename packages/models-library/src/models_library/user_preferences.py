@@ -1,5 +1,3 @@
-from collections.abc import Mapping
-from collections.abc import Set as AbstractSet
 from enum import auto
 from pathlib import Path
 from typing import Annotated, Any, ClassVar, TypeAlias
@@ -85,34 +83,6 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
             else cls.__fields__["value"].default
         )
 
-    def dict(  # noqa: A003
-        self,
-        *,
-        include: AbstractSet[int | str] | Mapping[int | str, Any] | None = None,
-        exclude: AbstractSet[int | str] | Mapping[int | str, Any] | None = None,
-        by_alias: bool = False,
-        skip_defaults: bool | None = None,
-        exclude_unset: bool = False,
-        exclude_defaults: bool = False,
-        exclude_none: bool = False,
-    ) -> dict[str, Any]:
-        if exclude is None:
-            config_class = getattr(self, "Config", None)
-            exclude_from_serialization: set | None = getattr(
-                config_class, "exclude_from_serialization", None
-            )
-            if exclude_from_serialization:
-                exclude = exclude_from_serialization
-        return super().dict(
-            include=include,
-            exclude=exclude,
-            by_alias=by_alias,
-            skip_defaults=skip_defaults,
-            exclude_unset=exclude_unset,
-            exclude_defaults=exclude_defaults,
-            exclude_none=exclude_none,
-        )
-
 
 class FrontendUserPreference(_BaseUserPreferenceModel):
     preference_type: PreferenceType = Field(default=PreferenceType.FRONTEND, const=True)
@@ -121,11 +91,8 @@ class FrontendUserPreference(_BaseUserPreferenceModel):
         ..., description="used by the frontend"
     )
 
-    class Config:
-        exclude_from_serialization: ClassVar[set[str]] = {
-            "preference_identifier",
-            "preference_type",
-        }
+    def to_db(self) -> dict:
+        return self.dict(exclude={"preference_identifier", "preference_type"})
 
 
 class UserServiceUserPreference(_BaseUserPreferenceModel):
@@ -141,10 +108,8 @@ class UserServiceUserPreference(_BaseUserPreferenceModel):
         ..., description="path of the file where the preference is stored"
     )
 
-    class Config:
-        exclude_from_serialization: ClassVar[set[str]] = {
-            "preference_type",
-        }
+    def to_db(self) -> dict:
+        return self.dict(exclude={"preference_type"})
 
 
 AnyUserPreference: TypeAlias = Annotated[
