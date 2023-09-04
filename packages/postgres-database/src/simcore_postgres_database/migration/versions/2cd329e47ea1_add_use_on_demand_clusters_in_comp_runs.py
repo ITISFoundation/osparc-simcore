@@ -1,7 +1,7 @@
 """add use on demand clusters in comp_runs
 
 Revision ID: 2cd329e47ea1
-Revises: 2dda922a3261
+Revises: 763666c698fb
 Create Date: 2023-09-04 06:57:51.291084+00:00
 
 """
@@ -10,7 +10,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "2cd329e47ea1"
-down_revision = "2dda922a3261"
+down_revision = "763666c698fb"
 branch_labels = None
 depends_on = None
 
