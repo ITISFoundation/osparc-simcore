@@ -40,7 +40,7 @@ qx.Class.define("osparc.component.resourceUsage.OverviewTable", {
     COLUMNS: {
       project: {
         pos: 0,
-        title: qx.locale.Manager.tr("Project")
+        title: osparc.product.Utils.getStudyAlias({firstUpperCase: true})
       },
       node: {
         pos: 1,
