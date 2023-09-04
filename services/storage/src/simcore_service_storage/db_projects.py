@@ -1,5 +1,5 @@
+from collections.abc import AsyncIterator
 from contextlib import suppress
-from typing import AsyncIterator
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection

@@ -21,7 +21,7 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
   construct: function(studyId) {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.HBox(10));
+    this._setLayout(new qx.ui.layout.VBox(10));
 
     this.__studyId = studyId;
 
@@ -31,9 +31,14 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
         "studyId": studyId
       }
     };
-    osparc.data.Resources.getOne("studies", params)
-      .then(studyData => {
+    Promise.all([
+      osparc.data.Resources.getOne("studies", params),
+      osparc.data.Resources.fetch("studies", "getWallet", params)
+    ])
+      .then(values => {
+        const studyData = values[0];
         this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
+        this.__projectWalletId = values[1];
         this.__buildLayout();
       });
   },
@@ -89,67 +94,33 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
       });
       box.getChildControl("frame").set({
         backgroundColor: "transparent",
+        marginTop: 15,
         padding: 2
       });
       box.setLayout(new qx.ui.layout.VBox(5));
       return box;
-    },
-
-    createMachineToggleButton: function(machineInfo) {
-      const toFixedIfNecessary = (value, dp) => Number(parseFloat(value).toFixed(dp));
-      const rButton = new qx.ui.form.ToggleButton().set({
-        padding: 10,
-        minWidth: 120,
-        maxWidth: 120,
-        center: true
-      });
-      // eslint-disable-next-line no-underscore-dangle
-      rButton._setLayout(new qx.ui.layout.VBox(5));
-      rButton.info = machineInfo;
-      // eslint-disable-next-line no-underscore-dangle
-      rButton._add(new qx.ui.basic.Label().set({
-        value: machineInfo.title,
-        font: "text-16"
-      }));
-      Object.keys(machineInfo.resources).forEach(resourceKey => {
-        // eslint-disable-next-line no-underscore-dangle
-        rButton._add(new qx.ui.basic.Label().set({
-          value: resourceKey + ": " + toFixedIfNecessary(machineInfo.resources[resourceKey]),
-          font: "text-12"
-        }));
-      });
-      // eslint-disable-next-line no-underscore-dangle
-      rButton._add(new qx.ui.basic.Label().set({
-        value: qx.locale.Manager.tr("Credits/h") + ": " + machineInfo.price,
-        font: "text-14"
-      }));
-      rButton.getContentElement().setStyles({
-        "border-radius": "4px"
-      });
-      return rButton;
     }
   },
 
   members: {
     __studyId: null,
     __studyData: null,
+    __projectWalletId: null,
 
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "left-main-layout":
+        case "top-summary-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(30));
+          this._addAt(control, 0);
+          break;
+        case "options-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(15)).set({
             minWidth: 300
           });
-          this._addAt(control, 0, {
+          this._addAt(control, 1, {
             flex: 1
           });
-          break;
-        case "right-main-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(15)).set({
-            minWidth: 120
-          });
-          this._addAt(control, 1);
           break;
         case "loading-services-resources":
           control = new qx.ui.basic.Image().set({
@@ -159,15 +130,20 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
             marginTop: 20
           });
           control.getContentElement().addClass("rotate");
-          this.getChildControl("left-main-layout").add(control);
+          this.getChildControl("options-layout").add(control);
           break;
         case "services-resources-layout":
           control = this.self().createGroupBox(this.tr("Select Resources"));
-          this.getChildControl("left-main-layout").add(control);
+          this.getChildControl("options-layout").add(control);
           break;
         case "buttons-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-          this.getChildControl("right-main-layout").add(control);
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
+            minWidth: 100,
+            maxWidth: 150
+          });
+          this.getChildControl("top-summary-layout").add(control, {
+            flex: 1
+          });
           break;
         case "open-button":
           control = new qx.ui.form.Button(this.tr("Open")).set({
@@ -192,8 +168,12 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
           this.getChildControl("buttons-layout").add(control);
           break;
         case "wallet-selector-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-          this.getChildControl("right-main-layout").add(control);
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
+            maxWidth: 150
+          });
+          this.getChildControl("top-summary-layout").add(control, {
+            flex: 1
+          });
           break;
         case "wallet-selector":
           control = osparc.desktop.credits.Utils.createWalletSelector("read", true, true);
@@ -205,7 +185,9 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
           break;
         case "summary-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-          this.getChildControl("right-main-layout").add(control);
+          this.getChildControl("top-summary-layout").add(control, {
+            flex: 1
+          });
           break;
         case "summary-label":
           control = new qx.ui.basic.Label();
@@ -230,11 +212,11 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
     },
 
     __buildLayout: function() {
-      this.__buildRightColumn();
-      this.__buildLeftColumn();
+      this.__buildTopSummaryLayout();
+      this.__buildOptionsLayout();
     },
 
-    createServiceGroup: function(serviceLabel, servicesResources) {
+    createTierButtonsGroup: function(serviceLabel, servicesResources, advancedCB) {
       const imageKeys = Object.keys(servicesResources);
       if (imageKeys && imageKeys.length) {
         // hack to show "s4l-core"
@@ -268,14 +250,15 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
           }
           if (Object.keys(lgInfo["resources"]).length) {
             const buttons = [];
-            const smallButton = this.self().createMachineToggleButton(smInfo);
-            const mediumButton = this.self().createMachineToggleButton(mdInfo);
-            const largeButton = this.self().createMachineToggleButton(lgInfo);
+            const smallButton = new osparc.component.study.TierButton(smInfo);
+            const mediumButton = new osparc.component.study.TierButton(mdInfo);
+            const largeButton = new osparc.component.study.TierButton(lgInfo);
             [
               smallButton,
               mediumButton,
               largeButton
             ].forEach(btn => {
+              advancedCB.bind("value", btn, "advanced");
               buttons.push(btn);
               machinesLayout.add(btn);
             });
@@ -292,12 +275,12 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
             buttons.forEach(btn => btn.addListener("changeValue", e => {
               if (e.getData()) {
                 this.getChildControl("summary-label").set({
-                  value: serviceLabel + ": " + btn.info.price
+                  value: serviceLabel + ": " + btn.getTierInfo().price
                 });
               }
             }));
-            // small by default
-            smallButton.execute();
+            // medium by default
+            mediumButton.execute();
           }
           return machinesLayout;
         }
@@ -305,7 +288,7 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
       return null;
     },
 
-    __buildLeftColumn: function() {
+    __buildOptionsLayout: function() {
       this.__buildNodeResources();
     },
 
@@ -325,9 +308,14 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
           osparc.data.Resources.get("nodesInStudyResources", params)
             .then(serviceResources => {
               // eslint-disable-next-line no-underscore-dangle
-              this.getChildControl("left-main-layout")._removeAll();
-              this.getChildControl("left-main-layout").add(servicesBox);
-              const serviceGroup = this.createServiceGroup(node["label"], serviceResources);
+              this.getChildControl("options-layout")._removeAll();
+              this.getChildControl("options-layout").add(servicesBox);
+              const advancedCB = new qx.ui.form.CheckBox().set({
+                label: this.tr("Advanced"),
+                value: false
+              });
+              servicesBox.add(advancedCB);
+              const serviceGroup = this.createTierButtonsGroup(node["label"], serviceResources, advancedCB);
               if (serviceGroup) {
                 loadingImage.exclude();
                 servicesBox.add(serviceGroup);
@@ -338,9 +326,43 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
       }
     },
 
-    __buildRightColumn: function() {
+    __buildTopSummaryLayout: function() {
       const store = osparc.store.Store.getInstance();
 
+      // Wallet Selector
+      const walletSelector = this.getChildControl("wallet-selector");
+      this._createChildControlImpl("credits-left-view");
+
+      // Credits Summary
+      const summaryLayout = this.getChildControl("summary-layout");
+      summaryLayout.add(new qx.ui.basic.Label(this.tr("Total Credits/h:")).set({
+        font: "text-14"
+      }));
+      this.getChildControl("summary-label");
+
+      const wallets = store.getWallets();
+      const selectWallet = walletId => {
+        const found = wallets.find(wallet => wallet.getWalletId() === parseInt(walletId));
+        if (found) {
+          this.setWallet(found);
+        } else {
+          this.setWallet(null);
+        }
+      };
+      walletSelector.addListener("changeSelection", e => {
+        const selection = e.getData();
+        selectWallet(selection[0].walletId);
+      });
+      const favWallet = osparc.desktop.credits.Utils.getFavouriteWallet();
+      if (this.__projectWalletId) {
+        selectWallet(this.__projectWalletId);
+      } else if (favWallet) {
+        selectWallet(favWallet.getWalletId());
+      } else if (!osparc.desktop.credits.Utils.autoSelectActiveWallet(walletSelector)) {
+        walletSelector.setSelection([]);
+      }
+
+      // Open/Cancel buttons
       const openButton = this.getChildControl("open-button");
       openButton.addListener("execute", () => {
         const selection = this.getChildControl("wallet-selector").getSelection();
@@ -369,28 +391,6 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
 
       const cancelButton = this.getChildControl("cancel-button");
       cancelButton.addListener("execute", () => this.fireEvent("cancel"));
-
-      const walletSelector = this.getChildControl("wallet-selector");
-      this.getChildControl("credits-left-view");
-
-      const summaryLayout = this.getChildControl("summary-layout");
-      summaryLayout.add(new qx.ui.basic.Label(this.tr("Total Credits/h:")).set({
-        font: "text-14"
-      }));
-      this.getChildControl("summary-label");
-
-      walletSelector.addListener("changeSelection", e => {
-        const selection = e.getData();
-        const found = store.getWallets().find(wallet => wallet.getWalletId() === parseInt(selection[0].walletId));
-        if (found) {
-          this.setWallet(found);
-        } else {
-          this.setWallet(null);
-        }
-      });
-      if (!osparc.desktop.credits.Utils.autoSelectActiveWallet(walletSelector)) {
-        walletSelector.setSelection([]);
-      }
     },
 
     __getCreditsLeftView: function() {
