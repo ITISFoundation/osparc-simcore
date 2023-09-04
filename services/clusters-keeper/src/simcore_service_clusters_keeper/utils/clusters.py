@@ -5,11 +5,12 @@ from models_library.rpc_schemas_clusters_keeper.clusters import (
 )
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import AnyUrl, SecretStr, parse_obj_as
+from pydantic import SecretStr
 from types_aiobotocore_ec2.literals import InstanceStateNameType
 
 from ..core.settings import ApplicationSettings
 from ..models import EC2InstanceData
+from .dask import get_gateway_url
 
 
 def create_startup_script(app_settings: ApplicationSettings) -> str:
@@ -43,7 +44,7 @@ def create_cluster_from_ec2_instance(
     gateway_password: SecretStr,
 ) -> ComputationalCluster:
     return ComputationalCluster(
-        endpoint=parse_obj_as(AnyUrl, f"http://{instance.aws_public_ip}"),
+        endpoint=get_gateway_url(instance),
         authentication=SimpleAuthentication(
             username=f"{user_id}", password=gateway_password
         ),
