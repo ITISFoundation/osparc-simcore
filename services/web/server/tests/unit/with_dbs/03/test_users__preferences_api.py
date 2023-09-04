@@ -178,4 +178,4 @@ async def test_set_frontend_user_preference(
 
 def test_expected_fields_in_serialization():
     for preference_class in ALL_FRONTEND_PREFERENCES:
-        assert set(preference_class().dict().keys()) == {"value"}
+        assert set(preference_class().to_db().keys()) == {"value"}
