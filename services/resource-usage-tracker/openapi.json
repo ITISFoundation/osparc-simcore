@@ -45,7 +45,7 @@
         }
       }
     },
-    "/v1/usage/services": {
+    "/v1/services/-/usages": {
       "get": {
         "tags": [
           "resource-usage-tracker"
@@ -141,10 +141,229 @@
           }
         }
       }
+    },
+    "/v1/credit-transactions/credits:sum": {
+      "post": {
+        "tags": [
+          "resource-usage-tracker"
+        ],
+        "summary": "Sum total available credits in the wallet",
+        "operationId": "get_credit_transactions_sum_v1_credit_transactions_credits_sum_post",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Product Name",
+              "type": "string"
+            },
+            "name": "product_name",
+            "in": "query"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Wallet Id",
+              "exclusiveMinimum": true,
+              "type": "integer",
+              "minimum": 0
+            },
+            "name": "wallet_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletTotalCredits"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/credit-transactions": {
+      "post": {
+        "tags": [
+          "resource-usage-tracker"
+        ],
+        "summary": "Top up credits for specific wallet",
+        "operationId": "create_credit_transaction_v1_credit_transactions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreditTransactionCreateBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Create Credit Transaction V1 Credit Transactions Post",
+                  "type": "object",
+                  "additionalProperties": {
+                    "exclusiveMinimum": true,
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/pricing-plans": {
+      "get": {
+        "tags": [
+          "resource-usage-tracker"
+        ],
+        "summary": "Retrieve all pricing plans with pricing details for a specific product.",
+        "operationId": "get_pricing_plans_v1_pricing_plans_get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Product Name",
+              "type": "string"
+            },
+            "name": "product_name",
+            "in": "query"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "Service Key",
+              "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "type": "string"
+            },
+            "name": "service_key",
+            "in": "query"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "Service Version",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "type": "string"
+            },
+            "name": "service_version",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Pricing Plans V1 Pricing Plans Get",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PricingPlanGet"
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "CreditTransactionCreateBody": {
+        "title": "CreditTransactionCreateBody",
+        "required": [
+          "product_name",
+          "wallet_id",
+          "wallet_name",
+          "user_id",
+          "user_email",
+          "osparc_credits",
+          "payment_transaction_id",
+          "created_at"
+        ],
+        "type": "object",
+        "properties": {
+          "product_name": {
+            "title": "Product Name",
+            "type": "string"
+          },
+          "wallet_id": {
+            "title": "Wallet Id",
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "minimum": 0
+          },
+          "wallet_name": {
+            "title": "Wallet Name",
+            "type": "string"
+          },
+          "user_id": {
+            "title": "User Id",
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "minimum": 0
+          },
+          "user_email": {
+            "title": "User Email",
+            "type": "string"
+          },
+          "osparc_credits": {
+            "title": "Osparc Credits",
+            "type": "number"
+          },
+          "payment_transaction_id": {
+            "title": "Payment Transaction Id",
+            "type": "string"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "HTTPValidationError": {
         "title": "HTTPValidationError",
         "type": "object",
@@ -222,6 +441,93 @@
             "title": "Prev",
             "type": "string",
             "example": "/api/v1/users?limit=1&offset1"
+          }
+        }
+      },
+      "PricingDetailMinimalGet": {
+        "title": "PricingDetailMinimalGet",
+        "required": [
+          "pricingDetailId",
+          "unitName",
+          "costPerUnit",
+          "validFrom",
+          "simcoreDefault"
+        ],
+        "type": "object",
+        "properties": {
+          "pricingDetailId": {
+            "title": "Pricingdetailid",
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "minimum": 0
+          },
+          "unitName": {
+            "title": "Unitname",
+            "type": "string"
+          },
+          "costPerUnit": {
+            "title": "Costperunit",
+            "type": "number"
+          },
+          "validFrom": {
+            "title": "Validfrom",
+            "type": "string",
+            "format": "date-time"
+          },
+          "simcoreDefault": {
+            "title": "Simcoredefault",
+            "type": "boolean"
+          }
+        }
+      },
+      "PricingPlanClassification": {
+        "title": "PricingPlanClassification",
+        "enum": [
+          "TIER"
+        ],
+        "type": "string",
+        "description": "An enumeration."
+      },
+      "PricingPlanGet": {
+        "title": "PricingPlanGet",
+        "required": [
+          "pricingPlanId",
+          "name",
+          "description",
+          "classification",
+          "createdAt",
+          "details"
+        ],
+        "type": "object",
+        "properties": {
+          "pricingPlanId": {
+            "title": "Pricingplanid",
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "minimum": 0
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "classification": {
+            "$ref": "#/components/schemas/PricingPlanClassification"
+          },
+          "createdAt": {
+            "title": "Createdat",
+            "type": "string",
+            "format": "date-time"
+          },
+          "details": {
+            "title": "Details",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PricingDetailMinimalGet"
+            }
           }
         }
       },
@@ -354,6 +660,26 @@
           "type": {
             "title": "Error Type",
             "type": "string"
+          }
+        }
+      },
+      "WalletTotalCredits": {
+        "title": "WalletTotalCredits",
+        "required": [
+          "wallet_id",
+          "available_osparc_credits"
+        ],
+        "type": "object",
+        "properties": {
+          "wallet_id": {
+            "title": "Wallet Id",
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "minimum": 0
+          },
+          "available_osparc_credits": {
+            "title": "Available Osparc Credits",
+            "type": "number"
           }
         }
       },

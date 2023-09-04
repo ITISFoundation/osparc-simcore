@@ -1,4 +1,4 @@
-from typing import Iterator
+from collections.abc import Iterator
 from unittest import mock
 
 import httpx
@@ -51,7 +51,7 @@ async def test_list_service_run_without_wallet(
     resource_tracker_service_run_db: dict,
     async_client: httpx.AsyncClient,
 ):
-    url = URL("/v1/usage/services")
+    url = URL("/v1/services/-/usages")
 
     response = await async_client.get(
         f'{url.with_query({"user_id": _USER_ID, "product_name": "osparc"})}'
