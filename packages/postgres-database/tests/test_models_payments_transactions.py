@@ -32,7 +32,6 @@ def random_payment_transaction(
         "user_id": FAKE.pyint(),
         "user_email": FAKE.email().lower(),
         "wallet_id": 1,
-        "wallet_name": "user wallet",
         "comment": "Free starting credits",
         "initiated_at": utcnow(),
     }

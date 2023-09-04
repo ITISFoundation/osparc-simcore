@@ -58,7 +58,6 @@ def upgrade():
         sa.Column("user_id", sa.BigInteger(), nullable=False),
         sa.Column("user_email", sa.String(), nullable=False),
         sa.Column("wallet_id", sa.BigInteger(), nullable=False),
-        sa.Column("wallet_name", sa.String(), nullable=False),
         sa.Column("comment", sa.Text(), nullable=True),
         sa.Column("initiated_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("completed_at", sa.DateTime(timezone=True), nullable=True),

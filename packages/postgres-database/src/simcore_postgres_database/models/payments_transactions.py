@@ -61,12 +61,6 @@ payments_transactions = sa.Table(
         index=True,
     ),
     sa.Column(
-        "wallet_name",
-        sa.String,
-        nullable=False,
-        doc="Wallet name at the time of the transaction",
-    ),
-    sa.Column(
         "comment",
         sa.Text,
         nullable=True,
