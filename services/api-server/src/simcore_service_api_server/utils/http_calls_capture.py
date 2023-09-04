@@ -27,11 +27,19 @@ class HttpApiCallCaptureModel(BaseModel):
 
     @classmethod
     def create_from_response(
-        cls, response: httpx.Response, name: str, description: str = ""
+        cls,
+        response: httpx.Response,
+        name: str,
+        description: str = "",
+        enhance_from_openapi_specs: bool = True,  # backwards compatibility
     ) -> "HttpApiCallCaptureModel":
         request = response.request
 
-        url_path: PathDescription = preprocess_response(response)
+        url_path: PathDescription | str
+        if enhance_from_openapi_specs:
+            url_path = preprocess_response(response)
+        else:
+            url_path = response.request.url.path
 
         return cls(
             name=name,
