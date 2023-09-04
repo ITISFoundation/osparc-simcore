@@ -76,6 +76,7 @@ async def _cluster_dask_client(
                 await scheduler.rabbitmq_rpc_client.request(
                     RPCNamespace("clusters-keeper"),
                     RPCMethodName("get_or_create_cluster"),
+                    timeout_s=300,
                     user_id=user_id,
                     wallet_id=TEMPORARY_DEFAULT_WALLET_ID,
                 )
