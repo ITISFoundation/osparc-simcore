@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 from typing import NamedTuple
 
 from models_library.api_schemas_webserver.resource_usage import ServiceRunGet
@@ -55,12 +56,13 @@ class ServiceRunStoppedAtUpdate(BaseModel):
 
 
 class ServiceRunDB(BaseModel):
+    product_name: ProductName
     service_run_id: ServiceRunId
     wallet_id: WalletID | None
     wallet_name: str | None
     pricing_plan_id: PricingPlanId | None
     pricing_detail_id: PricingDetailId | None
-    pricing_detail_cost_per_unit: float | None
+    pricing_detail_cost_per_unit: Decimal | None
     user_id: UserID
     user_email: str
     project_id: ProjectID
@@ -77,6 +79,12 @@ class ServiceRunDB(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class ServiceRunOnUpdateDB(BaseModel):
+    pricing_plan_id: PricingPlanId
+    pricing_detail_id: PricingDetailId
+    started_at: datetime
 
 
 class ServiceRunPage(NamedTuple):

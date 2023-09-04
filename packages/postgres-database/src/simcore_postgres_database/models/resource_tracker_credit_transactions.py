@@ -5,7 +5,7 @@ import enum
 
 import sqlalchemy as sa
 
-from ._common import column_modified_datetime
+from ._common import NUMERIC_KWARGS, column_created_datetime, column_modified_datetime
 from .base import metadata
 
 
@@ -23,8 +23,8 @@ class TransactionClassification(str, enum.Enum):
     )
 
 
-resource_tracker_wallets_credit_transactions = sa.Table(
-    "resource_tracker_wallets_credit_transactions",
+resource_tracker_credit_transactions = sa.Table(
+    "resource_tracker_credit_transactions",
     metadata,
     sa.Column(
         "transaction_id",
@@ -52,7 +52,18 @@ resource_tracker_wallets_credit_transactions = sa.Table(
         sa.String,
         nullable=False,
         doc="Wallet name",
-        index=True,
+    ),
+    sa.Column(
+        "pricing_plan_id",
+        sa.BigInteger,
+        nullable=True,
+        doc="Pricing plan",
+    ),
+    sa.Column(
+        "pricing_detail_id",
+        sa.BigInteger,
+        nullable=True,
+        doc="Pricing detail",
     ),
     sa.Column(
         "user_id",
@@ -67,8 +78,8 @@ resource_tracker_wallets_credit_transactions = sa.Table(
         doc="User email",
     ),
     sa.Column(
-        "credits",
-        sa.Numeric(precision=3, scale=2),
+        "osparc_credits",
+        sa.Numeric(**NUMERIC_KWARGS),  # type: ignore
         nullable=False,
         doc="Credits",
     ),
@@ -88,10 +99,23 @@ resource_tracker_wallets_credit_transactions = sa.Table(
     ),
     sa.Column(
         "service_run_id",
-        sa.BigInteger,
+        sa.String,
         nullable=True,
         doc="Service run id connected with this transaction",
         index=True,
+    ),
+    sa.Column(
+        "payment_transaction_id",
+        sa.String,
+        nullable=True,
+        doc="Service run id connected with this transaction",
+    ),
+    column_created_datetime(timezone=True),
+    sa.Column(
+        "last_heartbeat_at",
+        sa.DateTime(timezone=True),
+        nullable=False,
+        doc="Timestamp when was the last heartbeat",
     ),
     column_modified_datetime(timezone=True),
     # ---------------------------

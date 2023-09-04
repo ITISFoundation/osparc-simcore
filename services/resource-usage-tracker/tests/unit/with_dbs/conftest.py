@@ -3,10 +3,10 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+from collections.abc import AsyncIterable, Callable
 from datetime import datetime, timezone
-from typing import Any, AsyncIterable, Callable
+from typing import Any
 
-import faker
 import httpx
 import pytest
 import sqlalchemy as sa
@@ -21,6 +21,9 @@ from models_library.rabbitmq_messages import (
 from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
+from simcore_postgres_database.models.resource_tracker_credit_transactions import (
+    resource_tracker_credit_transactions,
+)
 from simcore_postgres_database.models.resource_tracker_service_runs import (
     resource_tracker_service_runs,
 )
@@ -32,7 +35,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def mock_env(monkeypatch: MonkeyPatch) -> EnvVarsDict:
     """This is the base mock envs used to configure the app.
 
@@ -46,7 +49,7 @@ def mock_env(monkeypatch: MonkeyPatch) -> EnvVarsDict:
     return env_vars
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 async def initialized_app(
     mock_env: EnvVarsDict,
     postgres_db: sa.engine.Engine,
@@ -58,7 +61,7 @@ async def initialized_app(
         yield app
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 async def async_client(initialized_app: FastAPI) -> AsyncIterable[httpx.AsyncClient]:
     async with httpx.AsyncClient(
         app=initialized_app,
@@ -71,31 +74,31 @@ async def async_client(initialized_app: FastAPI) -> AsyncIterable[httpx.AsyncCli
 @pytest.fixture
 def random_resource_tracker_service_run(faker: Faker) -> Callable[..., dict[str, Any]]:
     def _creator(**overrides) -> dict[str, Any]:
-        data = dict(
-            product_name="osparc",
-            service_run_id=faker.uuid4(),
-            wallet_id=faker.pyint(),
-            wallet_name=faker.word(),
-            pricing_plan_id=faker.pyint(),
-            pricing_detail_id=faker.pyint(),
-            simcore_user_agent=faker.word(),
-            user_id=faker.pyint(),
-            user_email=faker.email(),
-            project_id=faker.uuid4(),
-            project_name=faker.word(),
-            node_id=faker.uuid4(),
-            node_name=faker.word(),
-            service_key="simcore/services/dynamic/jupyter-smash",
-            service_version="3.0.7",
-            service_type="DYNAMIC_SERVICE",
-            service_resources={},
-            service_additional_metadata={},
-            started_at=datetime.now(tz=timezone.utc),
-            stopped_at=None,
-            service_run_status="RUNNING",
-            modified=datetime.now(tz=timezone.utc),
-            last_heartbeat_at=datetime.now(tz=timezone.utc),
-        )
+        data = {
+            "product_name": "osparc",
+            "service_run_id": faker.uuid4(),
+            "wallet_id": faker.pyint(),
+            "wallet_name": faker.word(),
+            "pricing_plan_id": faker.pyint(),
+            "pricing_detail_id": faker.pyint(),
+            "simcore_user_agent": faker.word(),
+            "user_id": faker.pyint(),
+            "user_email": faker.email(),
+            "project_id": faker.uuid4(),
+            "project_name": faker.word(),
+            "node_id": faker.uuid4(),
+            "node_name": faker.word(),
+            "service_key": "simcore/services/dynamic/jupyter-smash",
+            "service_version": "3.0.7",
+            "service_type": "DYNAMIC_SERVICE",
+            "service_resources": {},
+            "service_additional_metadata": {},
+            "started_at": datetime.now(tz=timezone.utc),
+            "stopped_at": None,
+            "service_run_status": "RUNNING",
+            "modified": datetime.now(tz=timezone.utc),
+            "last_heartbeat_at": datetime.now(tz=timezone.utc),
+        }
         data.update(overrides)
         return data
 
@@ -120,20 +123,45 @@ async def assert_service_runs_db_row(
         retry=retry_if_exception_type(AssertionError),
         reraise=True,
     ):
-        with attempt:
-            with postgres_db.connect() as con:
-                # removes all projects before continuing
-                con.execute(resource_tracker_service_runs.select())
-                result = con.execute(
-                    sa.select(resource_tracker_service_runs).where(
-                        resource_tracker_service_runs.c.service_run_id == service_run_id
-                    )
+        with attempt, postgres_db.connect() as con:
+            # removes all projects before continuing
+            con.execute(resource_tracker_service_runs.select())
+            result = con.execute(
+                sa.select(resource_tracker_service_runs).where(
+                    resource_tracker_service_runs.c.service_run_id == service_run_id
                 )
-                row: dict | None = result.first()
-                assert row
-                if status:
-                    assert row[21] == status
-                return row
+            )
+            row: dict | None = result.first()
+            assert row
+            if status:
+                assert row[21] == status
+            return row
+    return None
+
+
+async def assert_credit_transactions_db_row(
+    postgres_db, service_run_id: str, modified_at: datetime | None = None
+) -> dict | None:
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.2),
+        stop=stop_after_delay(10),
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+    ):
+        with attempt, postgres_db.connect() as con:
+            con.execute(resource_tracker_credit_transactions.select())
+            result = con.execute(
+                sa.select(resource_tracker_credit_transactions).where(
+                    resource_tracker_credit_transactions.c.service_run_id
+                    == service_run_id
+                )
+            )
+            row: dict | None = result.first()
+            assert row
+            if modified_at:
+                assert row[15] > modified_at
+            return row
+    return None
 
 
 @pytest.fixture
