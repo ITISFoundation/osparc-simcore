@@ -22,7 +22,6 @@ from settings_library.s3 import S3Settings
 from simcore_service_storage.dsm import get_dsm_provider
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
-# Exclusive for simcore-s3 storage -----------------------
 from . import sts
 from ._meta import api_vtag
 from .models import (

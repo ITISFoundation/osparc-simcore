@@ -65,6 +65,7 @@ qx.Class.define("osparc.desktop.MainPage", {
                 creditsWindow.openOverview();
               }
             });
+          // setTimeout(() => osparc.desktop.MainPageHandler.getInstance().showUserCenter(), 1000);
         }
       });
 
@@ -89,6 +90,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     __navBar: null,
     __dashboard: null,
     __dashboardLayout: null,
+    __userCenter: null,
     __loadingPage: null,
     __studyEditor: null,
 
@@ -189,6 +191,9 @@ qx.Class.define("osparc.desktop.MainPage", {
       const dashboardLayout = this.__dashboardLayout = this.__createDashboardStack();
       mainPageHandler.addDashboard(dashboardLayout);
 
+      const userCenterLayout = this.__createUserCenter();
+      mainPageHandler.addUserCenter(userCenterLayout);
+
       const loadingPage = this.__loadingPage = new osparc.ui.message.Loading();
       mainPageHandler.addLoadingPage(loadingPage);
 
@@ -230,6 +235,20 @@ qx.Class.define("osparc.desktop.MainPage", {
         flex: 1
       });
       return dashboardLayout;
+    },
+
+    __createUserCenter: function() {
+      const userCenter = this.__userCenter = new osparc.desktop.credits.UserCenter(true);
+
+      const userCenterLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      userCenterLayout.add(new qx.ui.core.Widget(), {
+        flex: 1
+      });
+      userCenterLayout.add(userCenter);
+      userCenterLayout.add(new qx.ui.core.Widget(), {
+        flex: 1
+      });
+      return userCenterLayout;
     },
 
     __attachHandlers: function() {
@@ -285,11 +304,6 @@ qx.Class.define("osparc.desktop.MainPage", {
       const mainPageHandler = osparc.desktop.MainPageHandler.getInstance();
       mainPageHandler.setLoadingPageHeader(msg);
       mainPageHandler.showLoadingPage();
-    },
-
-    __showStudyEditor: function(studyEditor) {
-      osparc.desktop.MainPageHandler.getInstance().replaceStudyEditor(studyEditor);
-      osparc.desktop.MainPageHandler.getInstance().showStudyEditor();
     },
 
     __startSnapshot: async function(studyId, snapshotId) {

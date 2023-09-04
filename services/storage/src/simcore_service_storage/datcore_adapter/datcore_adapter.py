@@ -1,7 +1,8 @@
 import asyncio
 import logging
+from collections.abc import Callable
 from math import ceil
-from typing import Any, Callable, TypeVar, cast
+from typing import Any, TypeVar, cast
 
 import aiohttp
 from aiohttp import web
@@ -16,14 +17,14 @@ from ..constants import DATCORE_ID, DATCORE_STR, MAX_CONCURRENT_REST_CALLS
 from ..models import DatasetMetaData, FileMetaData
 from .datcore_adapter_exceptions import (
     DatcoreAdapterClientError,
-    DatcoreAdapterException,
+    DatcoreAdapterError,
     DatcoreAdapterTimeoutError,
 )
 
 log = logging.getLogger(__file__)
 
 
-class _DatcoreAdapterResponseError(DatcoreAdapterException):
+class _DatcoreAdapterResponseError(DatcoreAdapterError):
     """Basic exception for response errors"""
 
     def __init__(self, status: int, reason: str) -> None:
@@ -65,19 +66,19 @@ async def _request(
             **request_kwargs,
         ) as response:
             response_data = await response.json()
-            assert isinstance(response_data, (dict, list))  # nosec
+            assert isinstance(response_data, dict | list)  # nosec
             return response_data
 
     except aiohttp.ClientResponseError as exc:
         raise _DatcoreAdapterResponseError(status=exc.status, reason=f"{exc}") from exc
 
     except asyncio.TimeoutError as exc:
-        raise DatcoreAdapterTimeoutError(
-            f"datcore-adapter server timed-out: {exc}"
-        ) from exc
+        msg = f"datcore-adapter server timed-out: {exc}"
+        raise DatcoreAdapterTimeoutError(msg) from exc
 
     except aiohttp.ClientError as exc:
-        raise DatcoreAdapterClientError(f"unexpected client error: {exc}") from exc
+        msg = f"unexpected client error: {exc}"
+        raise DatcoreAdapterClientError(msg) from exc
 
 
 _T = TypeVar("_T")
@@ -135,7 +136,7 @@ async def check_user_can_connect(
     try:
         await _request(app, api_key, api_secret, "GET", "/user/profile")
         return True
-    except DatcoreAdapterException:
+    except DatcoreAdapterError:
         return False
 
 
