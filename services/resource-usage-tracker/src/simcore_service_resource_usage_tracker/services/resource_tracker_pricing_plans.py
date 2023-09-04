@@ -101,7 +101,6 @@ async def list_pricing_plans(
 ) -> list[PricingPlanGet]:
     if service_key is None and service_version is None:
         return await _list_pricing_plans_by_product(resource_tracker_repo, product_name)
-    else:
-        return await _list_pricing_plans_by_product_and_service(
-            resource_tracker_repo, product_name, service_key, service_version
-        )
+    return await _list_pricing_plans_by_product_and_service(
+        resource_tracker_repo, product_name, service_key, service_version
+    )
