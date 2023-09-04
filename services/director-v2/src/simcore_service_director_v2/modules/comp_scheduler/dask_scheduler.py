@@ -86,7 +86,7 @@ async def _cluster_dask_client(
                 raise ComputationalBackendOnDemandNotReadyError
 
             cluster = Cluster(
-                id=1024 * 1024 * user_id,
+                id=1024 * 1024 * user_id,  # TODO: this is such a hack...
                 name="on-demand",
                 type=ClusterTypeInModel.AWS,
                 owner=user_id,
