@@ -28,6 +28,7 @@ def app_environment(
         {
             **app_environment,
             **env_devel_dict,
+            "PAYMENT_FAKE_COMPLETION": "1",
             "WEBSERVER_DB_LISTENER": "0",
             "WEBSERVER_DEV_FEATURES_ENABLED": "1",
             "WEBSERVER_GARBAGE_COLLECTOR": "null",

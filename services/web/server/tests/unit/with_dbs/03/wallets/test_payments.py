@@ -22,6 +22,10 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.payments.settings import (
+    PaymentsSettings,
+    get_plugin_settings,
+)
 
 OpenApiDict: TypeAlias = dict[str, Any]
 
@@ -75,6 +79,7 @@ async def test_payment_on_invalid_wallet(
     assert error
 
 
+@pytest.mark.testit
 @pytest.mark.acceptance_test(
     "For https://github.com/ITISFoundation/osparc-simcore/issues/4657"
 )
@@ -86,14 +91,9 @@ async def test_payments_worfklow(
     mocker: MockerFixture,
 ):
     assert client.app
+    settings: PaymentsSettings = get_plugin_settings(client.app)
 
-    # Removes delay for fake
-    mocker.patch(
-        "simcore_service_webserver.wallets._payments_handlers._fake_delay_for_processing_time",
-        autospec=True,
-        return_value=None,
-    )
-
+    assert settings.PAYMENT_FAKE_COMPLETION is True
     send_message = mocker.patch(
         "simcore_service_webserver.payments._socketio.send_messages", autospec=True
     )
