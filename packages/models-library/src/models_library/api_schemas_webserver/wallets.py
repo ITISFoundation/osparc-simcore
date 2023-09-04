@@ -50,7 +50,7 @@ class PutWalletBodyParams(OutputSchema):
 # Payments to top-up credits in wallets
 #
 
-PaymentID: TypeAlias = IDStr  # identifier associated to a payment transaction
+PaymentID: TypeAlias = IDStr
 
 
 class CreateWalletPayment(InputSchema):
