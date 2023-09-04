@@ -155,8 +155,12 @@ class DaskScheduler(BaseCompScheduler):
         tasks: list[CompTaskAtDB],
         pipeline_params: ScheduledPipelineParams,
     ) -> list[RunningState]:
-        async with _cluster_dask_client(user_id, pipeline_params, self) as client:
-            return await client.get_tasks_status([f"{t.job_id}" for t in tasks])
+        try:
+            async with _cluster_dask_client(user_id, pipeline_params, self) as client:
+                return await client.get_tasks_status([f"{t.job_id}" for t in tasks])
+        except ComputationalBackendOnDemandNotReadyError:
+            _logger.info("The on demand computational backend is not ready yet...")
+            return [RunningState.WAITING_FOR_RESOURCES] * len(tasks)
 
     async def _stop_tasks(
         self,
