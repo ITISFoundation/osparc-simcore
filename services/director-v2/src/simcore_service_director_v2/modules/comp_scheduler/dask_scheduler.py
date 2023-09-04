@@ -78,7 +78,7 @@ class DaskScheduler(BaseCompScheduler):
         project_id: ProjectID,
         scheduled_tasks: dict[NodeID, Image],
         pipeline_params: ScheduledPipelineParams,
-    ):
+    ) -> None:
         # now transfer the pipeline to the dask scheduler
         async with _cluster_dask_client(
             user_id, pipeline_params.cluster_id, self
