@@ -232,11 +232,12 @@ async def create_computation(  # noqa: C901, PLR0912
                     project_name=project.name,
                     simcore_user_agent=computation.simcore_user_agent,
                     user_email=await users_repo.get_user_email(computation.user_id),
-                    wallet_id=None,
+                    wallet_id=computation.wallet_id,
                     wallet_name=None,
                     pricing_plan_id=None,
                     pricing_detail_id=None,
                 ),
+                use_on_demand_clusters=bool(computation.wallet_id is not None),
             )
 
         # filter the tasks by the effective pipeline

@@ -37,6 +37,7 @@ class CompRunsAtDB(BaseModel):
     started: datetime.datetime | None
     ended: datetime.datetime | None
     metadata: RunMetadataDict = RunMetadataDict()
+    use_on_demand_clusters: bool
 
     @validator("result", pre=True)
     @classmethod

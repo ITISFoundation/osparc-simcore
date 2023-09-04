@@ -102,6 +102,7 @@ class ScheduledPipelineParams:
     cluster_id: ClusterID
     run_metadata: RunMetadataDict
     mark_for_cancellation: bool = False
+    use_on_demand_clusters: bool
 
 
 @dataclass
@@ -121,6 +122,8 @@ class BaseCompScheduler(ABC):
         project_id: ProjectID,
         cluster_id: ClusterID,
         run_metadata: RunMetadataDict,
+        *,
+        use_on_demand_clusters: bool,
     ) -> None:
         """Sets a new pipeline to be scheduled on the computational resources.
         Passing cluster_id=0 will use the default cluster. Passing an existing ID will instruct
@@ -140,11 +143,14 @@ class BaseCompScheduler(ABC):
             project_id=project_id,
             cluster_id=cluster_id,
             metadata=run_metadata,
+            use_on_demand_clusters=use_on_demand_clusters,
         )
         self.scheduled_pipelines[
             (user_id, project_id, new_run.iteration)
         ] = ScheduledPipelineParams(
-            cluster_id=cluster_id, run_metadata=new_run.metadata
+            cluster_id=cluster_id,
+            run_metadata=new_run.metadata,
+            use_on_demand_clusters=use_on_demand_clusters,
         )
         # ensure the scheduler starts right away
         self._wake_up_scheduler_now()
@@ -152,7 +158,7 @@ class BaseCompScheduler(ABC):
     async def stop_pipeline(
         self, user_id: UserID, project_id: ProjectID, iteration: int | None = None
     ) -> None:
-        if not iteration:
+        if iteration is None:
             # if no iteration given find the latest one in the list
             possible_iterations = {
                 it
@@ -162,7 +168,8 @@ class BaseCompScheduler(ABC):
             if not possible_iterations:
                 msg = f"There are no pipeline scheduled for {user_id}:{project_id}"
                 raise SchedulerError(msg)
-            iteration = max(possible_iterations)
+            current_max_iteration = max(possible_iterations)
+            iteration = current_max_iteration
 
         # mark the scheduled pipeline for stopping
         self.scheduled_pipelines[
@@ -179,10 +186,8 @@ class BaseCompScheduler(ABC):
                 self._schedule_pipeline(
                     user_id=user_id,
                     project_id=project_id,
-                    cluster_id=pipeline_params.cluster_id,
                     iteration=iteration,
-                    marked_for_stopping=pipeline_params.mark_for_cancellation,
-                    run_metadata=pipeline_params.run_metadata,
+                    pipeline_params=pipeline_params,
                 )
                 for (
                     user_id,
@@ -437,11 +442,10 @@ class BaseCompScheduler(ABC):
     async def _update_states_from_comp_backend(
         self,
         user_id: UserID,
-        cluster_id: ClusterID,
         project_id: ProjectID,
         iteration: Iteration,
         pipeline_dag: nx.DiGraph,
-        run_metadata: RunMetadataDict,
+        pipeline_params: ScheduledPipelineParams,
     ) -> None:
         tasks = await self._get_pipeline_tasks(project_id, pipeline_dag)
         tasks_inprocess = [t for t in tasks.values() if t.state in PROCESSING_STATES]
@@ -450,7 +454,7 @@ class BaseCompScheduler(ABC):
 
         # get the tasks which state actually changed since last check
         tasks_with_changed_states = await self._get_changed_tasks_from_backend(
-            user_id, cluster_id, tasks_inprocess
+            user_id, pipeline_params.cluster_id, tasks_inprocess
         )
 
         (
@@ -465,12 +469,16 @@ class BaseCompScheduler(ABC):
                 tasks_started,
                 user_id=user_id,
                 iteration=iteration,
-                run_metadata=run_metadata,
+                run_metadata=pipeline_params.run_metadata,
             )
 
         if tasks_stopped:
             await self._process_completed_tasks(
-                user_id, cluster_id, tasks_stopped, run_metadata, iteration
+                user_id,
+                pipeline_params.cluster_id,
+                tasks_stopped,
+                pipeline_params.run_metadata,
+                iteration,
             )
 
         if tasks_reverted:
@@ -516,10 +524,8 @@ class BaseCompScheduler(ABC):
         *,
         user_id: UserID,
         project_id: ProjectID,
-        cluster_id: ClusterID,
         iteration: PositiveInt,
-        marked_for_stopping: bool,
-        run_metadata: RunMetadataDict,
+        pipeline_params: ScheduledPipelineParams,
     ) -> None:
         _logger.debug(
             "checking run of project [%s:%s] for user [%s]",
@@ -532,26 +538,25 @@ class BaseCompScheduler(ABC):
             dag: nx.DiGraph = await self._get_pipeline_dag(project_id)
             # 1. Update our list of tasks with data from backend (state, results)
             await self._update_states_from_comp_backend(
-                user_id, cluster_id, project_id, iteration, dag, run_metadata
+                user_id, project_id, iteration, dag, pipeline_params=pipeline_params
             )
             # 2. Any task following a FAILED task shall be ABORTED
             comp_tasks = await self._set_states_following_failed_to_aborted(
                 project_id, dag
             )
             # 3. do we want to stop the pipeline now?
-            if marked_for_stopping:
+            if pipeline_params.mark_for_cancellation:
                 await self._schedule_tasks_to_stop(
-                    user_id, project_id, cluster_id, comp_tasks
+                    user_id, project_id, pipeline_params.cluster_id, comp_tasks
                 )
             else:
                 # let's get the tasks to schedule then
                 await self._schedule_tasks_to_start(
                     user_id=user_id,
                     project_id=project_id,
-                    cluster_id=cluster_id,
                     comp_tasks=comp_tasks,
                     dag=dag,
-                    run_metadata=run_metadata,
+                    pipeline_params=pipeline_params,
                 )
             # 4. send a heartbeat
             await self._send_running_tasks_heartbeat(
@@ -608,10 +613,9 @@ class BaseCompScheduler(ABC):
         self,
         user_id: UserID,
         project_id: ProjectID,
-        cluster_id: ClusterID,
-        run_metadata: RunMetadataDict,
         comp_tasks: dict[str, CompTaskAtDB],
         dag: nx.DiGraph,
+        pipeline_params: ScheduledPipelineParams,
     ):
         # filter out the successfully completed tasks
         dag.remove_nodes_from(
@@ -652,8 +656,8 @@ class BaseCompScheduler(ABC):
                 self._start_tasks(
                     user_id=user_id,
                     project_id=project_id,
-                    cluster_id=cluster_id,
-                    run_metadata=run_metadata,
+                    cluster_id=pipeline_params.cluster_id,
+                    run_metadata=pipeline_params.run_metadata,
                     scheduled_tasks={node_id: task.image},
                 )
                 for node_id, task in tasks_ready_to_start.items()
@@ -704,7 +708,7 @@ class BaseCompScheduler(ABC):
                     "Unexpected error for %s with %s on %s happened when scheduling %s:\n%s\n%s",
                     f"{user_id=}",
                     f"{project_id=}",
-                    f"{cluster_id=}",
+                    f"{pipeline_params.cluster_id=}",
                     f"{tasks_ready_to_start.keys()=}",
                     f"{r}",
                     "".join(traceback.format_tb(r.__traceback__)),
