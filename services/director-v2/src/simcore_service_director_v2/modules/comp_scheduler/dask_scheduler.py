@@ -11,6 +11,7 @@ from dask_task_models_library.container_tasks.events import (
     TaskProgressEvent,
 )
 from dask_task_models_library.container_tasks.io import TaskOutputData
+from models_library.api_schemas_directorv2.comp_tasks import TEMPORARY_DEFAULT_WALLET_ID
 from models_library.clusters import DEFAULT_CLUSTER_ID, Cluster
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
@@ -21,10 +22,23 @@ from models_library.rabbitmq_messages import (
     ProgressRabbitMessageNode,
     SimcorePlatformStatus,
 )
+from models_library.rpc_schemas_clusters_keeper.clusters import (
+    ClusterState,
+    ComputationalCluster,
+)
 from models_library.users import UserID
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+from servicelib.rabbitmq import (
+    RemoteMethodNotRegisteredError,
+    RPCMethodName,
+    RPCNamespace,
+)
 
-from ...core.errors import TaskSchedulingError
+from ...core.errors import (
+    ComputationalBackendOnDemandClustersKeeperNotReadyError,
+    ComputationalBackendOnDemandNotReadyError,
+    TaskSchedulingError,
+)
 from ...models.comp_runs import RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB, Image
 from ...modules.dask_client import DaskClient
@@ -44,7 +58,7 @@ from ...utils.rabbitmq import (
 from ..db.repositories.comp_tasks import CompTasksRepository
 from .base_scheduler import BaseCompScheduler, ScheduledPipelineParams
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -54,6 +68,26 @@ async def _cluster_dask_client(
     scheduler: "DaskScheduler",
 ) -> AsyncIterator[DaskClient]:
     cluster: Cluster = scheduler.settings.default_cluster
+    if pipeline_params.use_on_demand_clusters:
+        # clusters-keeper.get_or_create_cluster
+        # check ready, if not raise --> waiting for resources until ready
+        try:
+            returned_cluster: ComputationalCluster = (
+                await scheduler.rabbitmq_rpc_client.request(
+                    RPCNamespace("clusters-keeper"),
+                    RPCMethodName("get_or_create_cluster"),
+                    user_id=user_id,
+                    wallet_id=TEMPORARY_DEFAULT_WALLET_ID,
+                )
+            )
+            _logger.info("received cluster: %s", returned_cluster)
+            if returned_cluster.state is not ClusterState.RUNNING:
+                raise ComputationalBackendOnDemandNotReadyError
+            if not returned_cluster.gateway_ready:
+                raise ComputationalBackendOnDemandNotReadyError
+        except RemoteMethodNotRegisteredError as exc:
+            # no clusters-keeper, that is not going to work!
+            raise ComputationalBackendOnDemandClustersKeeperNotReadyError from exc
     if pipeline_params.cluster_id != DEFAULT_CLUSTER_ID:
         clusters_repo = ClustersRepository.instance(scheduler.db_engine)
         cluster = await clusters_repo.get_cluster(user_id, pipeline_params.cluster_id)
@@ -93,7 +127,7 @@ class DaskScheduler(BaseCompScheduler):
                 callback=self._wake_up_scheduler_now,
                 metadata=pipeline_params.run_metadata,
             )
-            logger.debug(
+            _logger.debug(
                 "started following tasks (node_id, job_id)[%s] on cluster %s",
                 f"{task_job_ids=}",
                 f"{pipeline_params.cluster_id=}",
@@ -172,7 +206,7 @@ class DaskScheduler(BaseCompScheduler):
         run_metadata: RunMetadataDict,
         iteration: Iteration,
     ) -> None:
-        logger.debug("received %s result: %s", f"{task=}", f"{result=}")
+        _logger.debug("received %s result: %s", f"{task=}", f"{result=}")
         task_final_state = RunningState.FAILED
         simcore_platform_status = SimcorePlatformStatus.OK
         errors: list[ErrorDict] = []
@@ -222,7 +256,7 @@ class DaskScheduler(BaseCompScheduler):
                 task_final_state = RunningState.FAILED
                 simcore_platform_status = SimcorePlatformStatus.BAD
                 errors = err.get_errors()
-                logger.debug(
+                _logger.debug(
                     "Unexpected failure while processing results of %s: %s",
                     f"{task=}",
                     f"{errors=}",
@@ -256,7 +290,7 @@ class DaskScheduler(BaseCompScheduler):
 
     async def _task_progress_change_handler(self, event: str) -> None:
         task_progress_event = TaskProgressEvent.parse_raw(event)
-        logger.debug("received task progress update: %s", task_progress_event)
+        _logger.debug("received task progress update: %s", task_progress_event)
         *_, user_id, project_id, node_id = parse_dask_job_id(task_progress_event.job_id)
 
         await CompTasksRepository(self.db_engine).update_project_task_progress(
@@ -273,7 +307,7 @@ class DaskScheduler(BaseCompScheduler):
 
     async def _task_log_change_handler(self, event: str) -> None:
         task_log_event = TaskLogEvent.parse_raw(event)
-        logger.debug("received task log update: %s", task_log_event)
+        _logger.debug("received task log update: %s", task_log_event)
         *_, user_id, project_id, node_id = parse_dask_job_id(task_log_event.job_id)
         message = LoggerRabbitMessage.construct(
             user_id=user_id,

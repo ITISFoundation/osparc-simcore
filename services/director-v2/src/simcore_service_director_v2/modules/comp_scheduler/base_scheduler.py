@@ -34,6 +34,7 @@ from servicelib.utils import logged_gather
 from ...constants import UNDEFINED_STR_METADATA
 from ...core.errors import (
     ComputationalBackendNotConnectedError,
+    ComputationalBackendOnDemandNotReadyError,
     ComputationalSchedulerChangedError,
     InvalidPipelineError,
     PipelineNotFoundError,
@@ -705,6 +706,11 @@ class BaseCompScheduler(ABC):
                         optional_progress=0,
                     ),
                 )
+            elif isinstance(r, ComputationalBackendOnDemandNotReadyError):
+                _logger.warning(
+                    "The on demand computational backend is not ready yet: %s", r
+                )
+
             elif isinstance(r, Exception):
                 _logger.error(
                     "Unexpected error for %s with %s on %s happened when scheduling %s:\n%s\n%s",
