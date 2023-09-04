@@ -26,6 +26,7 @@ class ParamSchema(BaseModel):
         allow_population_by_field_name = True
 
     @validator("param_type", pre=True)
+    @classmethod
     def preprocess_param_type(cls, val):
         if val == "string":
             val = "str"
@@ -150,7 +151,7 @@ def preprocess_response(response: httpx.Response) -> UrlPath:
     )
 
 
-def get_openapi_specs(host: str) -> dict[str, Any]:
+def get_openapi_specs(host: Literal["storage", "catalog"]) -> dict[str, Any]:
     url: str
     if host == "storage":
         settings = StorageSettings()

@@ -19,7 +19,7 @@ class HttpApiCallCaptureModel(BaseModel):
     description: str
     method: Literal["GET", "PUT", "POST", "PATCH", "DELETE"]
     host: str
-    path: UrlPath
+    path: UrlPath | str
     query: str | None = None
     request_payload: dict[str, Any] | None = None
     response_body: dict[str, Any] | list | None = None

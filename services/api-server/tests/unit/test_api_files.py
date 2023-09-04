@@ -30,6 +30,7 @@ from simcore_service_api_server.models.schemas.files import (
     ClientFileUploadData,
     File,
 )
+from unit.conftest import side_effect_callback
 
 _FAKER = Faker()
 
@@ -165,20 +166,22 @@ async def test_get_file(
 @pytest.mark.testit
 async def test_delete_file(
     client: AsyncClient,
-    respx_mock_from_capture: Callable[[Path], list[respx.Route]],
+    mocked_storage_service_api_base: respx.MockRouter,
+    respx_mock_from_capture: Callable[
+        [respx.MockRouter, Path, list[side_effect_callback] | None], respx.MockRouter
+    ],
     auth: httpx.BasicAuth,
+    project_tests_dir: Path,
 ):
-
     respx_mock = respx_mock_from_capture(
-        Path(__file__).parent.parent / "mocks" / "delete_file.json"
+        mocked_storage_service_api_base,
+        project_tests_dir / "mocks" / "delete_file.json",
+        None,
     )
 
     response = await client.delete(
         f"{API_VTAG}/files/3fa85f64-5717-4562-b3fc-2c963f66afa6", auth=auth
     )
-
-    assert respx_mock[0].called
-    assert respx_mock[1].called
     assert response.status_code == status.HTTP_200_OK
 
 
