@@ -142,7 +142,7 @@ def get_openapi_specs(host: str) -> dict[str, Any]:
     if host == "storage":
         settings = StorageSettings()
         url = settings.base_url + "/dev/doc/swagger.json"
-    if host == "catalog":
+    elif host == "catalog":
         settings = CatalogSettings()
         url = settings.base_url + "/api/v0/openapi.json"
     else:
