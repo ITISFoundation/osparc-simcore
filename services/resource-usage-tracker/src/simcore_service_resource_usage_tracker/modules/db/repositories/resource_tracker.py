@@ -417,7 +417,7 @@ class ResourceTrackerRepository(BaseRepository):
             )
             result = await conn.execute(sum_stmt)
         row = result.first()
-        if row is None:
+        if row is None or row[0] is None:
             raise ValueError(
                 "product_name and wallet_id combination does not exists in DB"
             )
