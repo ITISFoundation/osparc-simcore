@@ -157,7 +157,7 @@ async def _process_heartbeat_event(
             )
         )
         assert wallet_total_credits  # nosec
-        # TODO: Publish wallet total credits to RabbitMQ
+        # NOTE: Publish wallet total credits to RabbitMQ
 
 
 async def _process_stop_event(
@@ -206,7 +206,7 @@ async def _process_stop_event(
             )
         )
         assert wallet_total_credits  # nosec
-        # TODO: Publish wallet total credits to RabbitMQ
+        # NOTE: Publish wallet total credits to RabbitMQ
 
 
 RABBIT_MSG_TYPE_TO_PROCESS_HANDLER: dict[str, Callable[..., Awaitable[None]],] = {
