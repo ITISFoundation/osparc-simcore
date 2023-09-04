@@ -1,8 +1,8 @@
 """new payments_transactions table
 
-Revision ID: 641d6aa1b7e6
-Revises: 2dda922a3261
-Create Date: 2023-08-31 15:23:30.186541+00:00
+Revision ID: fc6ea424f586
+Revises: 763666c698fb
+Create Date: 2023-09-04 14:13:28.201570+00:00
 
 """
 from typing import Final
@@ -11,11 +11,10 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "641d6aa1b7e6"
-down_revision = "2dda922a3261"
+revision = "fc6ea424f586"
+down_revision = "763666c698fb"
 branch_labels = None
 depends_on = None
-
 
 # auto-update modified
 # TRIGGERS ------------------------
@@ -97,6 +96,7 @@ def upgrade():
 
 
 def downgrade():
+
     # custom
     op.execute(f"DROP TRIGGER IF EXISTS {_TRIGGER_NAME} on {_TABLE_NAME};")
     op.execute(f"DROP FUNCTION {_PROCEDURE_NAME};")
