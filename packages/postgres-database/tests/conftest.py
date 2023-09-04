@@ -9,7 +9,6 @@ import aiopg.sa
 import aiopg.sa.exc
 import pytest
 import simcore_postgres_database.cli
-import sqlalchemy
 import sqlalchemy as sa
 import yaml
 from aiopg.sa.connection import SAConnection
@@ -23,7 +22,6 @@ from pytest_simcore.helpers.rawdata_fakers import (
 )
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import ClusterType, clusters
-from simcore_postgres_database.models.groups import GroupType, groups, user_to_groups
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.webserver_models import (
@@ -32,7 +30,6 @@ from simcore_postgres_database.webserver_models import (
     user_to_groups,
     users,
 )
-from sqlalchemy import literal_column
 
 pytest_plugins = [
     "pytest_simcore.repository_paths",
@@ -293,9 +290,9 @@ def create_fake_product(
 ) -> Callable[..., Awaitable[RowProxy]]:
     async def _creator(product_name: str) -> RowProxy:
         result = await connection.execute(
-            sqlalchemy.insert(products)
+            sa.insert(products)
             .values(name=product_name, host_regex=".*")
-            .returning(literal_column("*"))
+            .returning(sa.literal_column("*"))
         )
         assert result
         row = await result.first()
