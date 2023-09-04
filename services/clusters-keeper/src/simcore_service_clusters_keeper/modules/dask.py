@@ -22,8 +22,7 @@ async def ping_gateway(*, url: AnyUrl, password: SecretStr) -> bool:
             auth=basic_auth,
             asynchronous=True,
         ) as gateway:
-            cluster_reports = await asyncio.wait_for(gateway.list_clusters(), timeout=5)
-        _logger.info("found %s clusters", len(cluster_reports))
+            await asyncio.wait_for(gateway.list_clusters(), timeout=5)
         return True
     except asyncio.TimeoutError:
         _logger.debug("gateway ping timed-out, it is still starting...")
