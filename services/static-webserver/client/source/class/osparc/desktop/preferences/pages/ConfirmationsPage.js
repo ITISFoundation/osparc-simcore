@@ -40,7 +40,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
     patchPreference: function(preferenceId, preferenceField, newValue) {
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
 
-      const oldValue = preferencesSettings.get[preferenceId]();
+      const oldValue = preferencesSettings.get(preferenceId);
       if (newValue === oldValue) {
         return;
       }
@@ -84,12 +84,12 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
       cbConfirmBackToDashboard.addListener("changeValue", e => this.self().patchPreference("confirmBackToDashboard", cbConfirmBackToDashboard, e.getData()));
       box.add(cbConfirmBackToDashboard);
 
-      const studyAlias = osparc.product.Utils.getStudyAlias();
+      const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
       const cbConfirmDeleteStudy = new qx.ui.form.CheckBox(this.tr("Delete a ") + studyAlias);
       preferencesSettings.bind("confirmDeleteStudy", cbConfirmDeleteStudy, "value");
       cbConfirmDeleteStudy.addListener("changeValue", e => {
         if (e.getData()) {
-          this.self().patchPreference("confirmDeleteStudy", cbConfirmDeleteStudy, e.getData());
+          this.self().patchPreference("confirmDeleteStudy", cbConfirmDeleteStudy, true);
         } else {
           const msg = this.tr("Warning: deleting a ") + studyAlias + this.tr(" cannot be undone");
           const win = new osparc.ui.window.Confirmation(msg).set({
@@ -99,8 +99,10 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
           win.center();
           win.open();
           win.addListener("close", () => {
-            if (!win.getConfirmed()) {
-              this.self().patchPreference("confirmDeleteStudy", cbConfirmDeleteStudy, e.getData());
+            if (win.getConfirmed()) {
+              this.self().patchPreference("confirmDeleteStudy", cbConfirmDeleteStudy, false);
+            } else {
+              cbConfirmDeleteStudy.setValue(true);
             }
           }, this);
         }
@@ -112,7 +114,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
         preferencesSettings.bind("confirmDeleteNode", cbConfirmDeleteNode, "value");
         cbConfirmDeleteNode.addListener("changeValue", e => {
           if (e.getData()) {
-            this.self().patchPreference("confirmDeleteNode", cbConfirmDeleteNode, e.getData());
+            this.self().patchPreference("confirmDeleteNode", cbConfirmDeleteNode, true);
           } else {
             const msg = this.tr("Warning: deleting a node cannot be undone");
             const win = new osparc.ui.window.Confirmation(msg).set({
@@ -122,8 +124,10 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
             win.center();
             win.open();
             win.addListener("close", () => {
-              if (!win.getConfirmed()) {
-                this.self().patchPreference("confirmDeleteNode", cbConfirmDeleteNode, e.getData());
+              if (win.getConfirmed()) {
+                this.self().patchPreference("confirmDeleteNode", cbConfirmDeleteNode, false);
+              } else {
+                cbConfirmDeleteNode.setValue(true);
               }
             }, this);
           }
