@@ -10,9 +10,9 @@ from models_library.api_schemas_storage import HealthCheck, S3BucketName
 from models_library.app_diagnostics import AppStatusCheck
 from servicelib.json_serialization import json_dumps
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
-from simcore_service_storage.constants import APP_CONFIG_KEY
 
 from ._meta import api_version, api_version_prefix, app_name
+from .constants import APP_CONFIG_KEY
 from .db import get_engine_state
 from .db import is_service_responsive as is_pg_responsive
 from .exceptions import S3AccessError, S3BucketInvalidError

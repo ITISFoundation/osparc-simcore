@@ -25,6 +25,7 @@ from pydantic import AnyUrl, ByteSize, NonNegativeInt, parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.logging_utils import log_context
+from servicelib.sequences_utils import partition_gen
 from servicelib.utils import ensure_ends_with, logged_gather
 
 from . import db_file_meta_data, db_projects, db_tokens
@@ -571,17 +572,28 @@ class SimcoreS3DataManager(BaseDataManager):
             _logger,
             logging.INFO,
             (
-                f"{src_project_uuid} -> {dst_project_uuid}: total file size for "
-                "{[f.object_name for f in src_project_files]}"
+                f"{src_project_uuid} -> {dst_project_uuid}: getting total file size for "
+                f"{len(src_project_files)} files"
             ),
             log_duration=True,
         ):
-            project_file_sizes: list[ByteSize] = await logged_gather(
-                *[self._get_size(fmd) for fmd in src_project_files],
-                max_concurrency=_MAX_PARALLEL_S3_CALLS,
-            )
+            sizes_and_num_files: list[tuple[ByteSize, int]] = []
+            for src_project_files_slice in partition_gen(
+                src_project_files, slice_size=_MAX_PARALLEL_S3_CALLS
+            ):
+                sizes_and_num_files.extend(
+                    await logged_gather(
+                        *[
+                            self._get_size_and_num_files(fmd)
+                            for fmd in src_project_files_slice
+                        ]
+                    )
+                )
+
+            total_bytes_to_copy = sum(n for n, _ in sizes_and_num_files)
+            total_num_of_files = sum(n for _, n in sizes_and_num_files)
         src_project_total_data_size: ByteSize = parse_obj_as(
-            ByteSize, sum(project_file_sizes)
+            ByteSize, total_bytes_to_copy
         )
         _logger.info(
             "%s -> %s: Step 3.1: copy: files referenced from file_metadata",
@@ -592,7 +604,7 @@ class SimcoreS3DataManager(BaseDataManager):
         s3_transfered_data_cb = S3TransferDataCB(
             task_progress,
             src_project_total_data_size,
-            task_progress_message_prefix=f"Copying {len(src_project_files)} files to '{dst_project['name']}'",
+            task_progress_message_prefix=f"Copying {total_num_of_files} files to '{dst_project['name']}'",
         )
         for src_fmd in src_project_files:
             if not src_fmd.node_id or (src_fmd.location_id != self.location_id):
@@ -634,23 +646,35 @@ class SimcoreS3DataManager(BaseDataManager):
                     and (int(output.get("store", self.location_id)) == DATCORE_ID)
                 ]
             )
-        await logged_gather(*copy_tasks, max_concurrency=MAX_CONCURRENT_S3_TASKS)
+        for copy_tasks_slice in partition_gen(
+            copy_tasks, slice_size=MAX_CONCURRENT_S3_TASKS
+        ):
+            await logged_gather(*copy_tasks_slice)
         # ensure the full size is reported
         s3_transfered_data_cb.finalize_transfer()
+        _logger.info(
+            "%s -> %s: completed copy",
+            src_project_uuid,
+            dst_project_uuid,
+        )
 
-    async def _get_size(self, fmd: FileMetaDataAtDB) -> ByteSize:
+    async def _get_size_and_num_files(
+        self, fmd: FileMetaDataAtDB
+    ) -> tuple[ByteSize, int]:
         if not fmd.is_directory:
-            return fmd.file_size
+            return fmd.file_size, 1
 
         # in case of directory list files and return size
         total_size: int = 0
+        total_num_s3_objects = 0
         async for s3_objects in get_s3_client(self.app).list_all_objects_gen(
             self.simcore_bucket_name,
             prefix=f"{fmd.object_name}",
         ):
             total_size += sum(x.get("Size", 0) for x in s3_objects)
+            total_num_s3_objects += len(s3_objects)
 
-        return parse_obj_as(ByteSize, total_size)
+        return parse_obj_as(ByteSize, total_size), total_num_s3_objects
 
     async def search_files_starting_with(
         self, user_id: UserID, prefix: str
@@ -934,7 +958,6 @@ class SimcoreS3DataManager(BaseDataManager):
     ) -> FileMetaData:
         session = get_client_session(self.app)
         # 2 steps: Get download link for local copy, then upload to S3
-        # TODO: This should be a redirect stream!
         api_token, api_secret = await db_tokens.get_api_token_and_secret(
             self.app, user_id
         )
@@ -984,7 +1007,12 @@ class SimcoreS3DataManager(BaseDataManager):
         dst_file_id: SimcoreS3FileID,
         bytes_transfered_cb: Callable[[int], None],
     ) -> FileMetaData:
-        _logger.debug("copying %s to %s", f"{src_fmd=}", f"{dst_file_id=}")
+        _logger.debug(
+            "copying %s to %s, %s",
+            f"{src_fmd=}",
+            f"{dst_file_id=}",
+            f"{src_fmd.is_directory=}",
+        )
         # copying will happen using aioboto3, therefore multipart might happen
         # NOTE: connection must be released to ensure database update
         async with self.engine.acquire() as conn, conn.begin() as transaction:
@@ -1012,18 +1040,15 @@ class SimcoreS3DataManager(BaseDataManager):
                         for x in s3_objects
                     }
 
-                    await logged_gather(
-                        *[
-                            s3_client.copy_file(
-                                self.simcore_bucket_name,
-                                cast(SimcoreS3FileID, src),
-                                cast(SimcoreS3FileID, new),
-                                bytes_transfered_cb=bytes_transfered_cb,
-                            )
-                            for src, new in s3_objects_src_to_new.items()
-                        ],
-                        max_concurrency=_MAX_PARALLEL_S3_CALLS,
-                    )
+                    for src, new in s3_objects_src_to_new.items():
+                        # NOTE: copy_file cannot be called concurrently or it will hang.
+                        # test this with copying multiple 1GB files if you do not believe me
+                        await s3_client.copy_file(
+                            self.simcore_bucket_name,
+                            cast(SimcoreS3FileID, src),
+                            cast(SimcoreS3FileID, new),
+                            bytes_transfered_cb=bytes_transfered_cb,
+                        )
             else:
                 await s3_client.copy_file(
                     self.simcore_bucket_name,

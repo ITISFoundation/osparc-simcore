@@ -5,9 +5,10 @@
 
 import json
 import re
+from collections.abc import AsyncIterator, Callable, Iterator
 from pathlib import Path
 from random import choice
-from typing import Any, AsyncIterator, Callable, Iterator
+from typing import Any
 from unittest import mock
 
 import httpx
@@ -108,8 +109,7 @@ def enabled_rabbitmq(
 def app_settings(
     app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ) -> ApplicationSettings:
-    settings = ApplicationSettings.create_from_envs()
-    return settings
+    return ApplicationSettings.create_from_envs()
 
 
 @pytest.fixture
@@ -217,8 +217,7 @@ async def mocked_redis_server(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def mocked_setup_rabbitmq(mocker: MockerFixture):
-    mocked_rabbitmq = mocker.patch(
+    return mocker.patch(
         "simcore_service_resource_usage_tracker.core.application.setup_rabbitmq",
         autospec=True,
     )
-    return mocked_rabbitmq

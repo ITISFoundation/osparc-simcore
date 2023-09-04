@@ -35,12 +35,19 @@ resource_tracker_pricing_plan_to_service = sa.Table(
         nullable=False,
         doc="MAJOR.MINOR.PATCH semantic versioning (see https://semver.org)",
     ),
+    sa.Column(
+        "product",
+        sa.String,
+        nullable=False,
+        doc="Product",
+    ),
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
     # ---------------------------
     sa.UniqueConstraint(
         "service_key",
         "service_version",
-        name="resource_tracker_pricing_plan_to_service__service_unique_key",
+        "product",
+        name="rut_pricing_plan_to_service__service_product_unique_key",
     ),
 )

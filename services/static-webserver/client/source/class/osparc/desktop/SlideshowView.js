@@ -46,7 +46,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         this.__openFirstNode();
       }
     }, this);
-    slideshowToolbar.addListener("nodeSelected", e => {
+    slideshowToolbar.addListener("nodeSelectionRequested", e => {
       const nodeId = e.getData();
       this.__moveToNode(nodeId);
     }, this);

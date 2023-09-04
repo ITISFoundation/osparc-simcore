@@ -66,3 +66,6 @@ def register_modified_datetime_auto_update_trigger(table: sa.Table) -> None:
     # REGISTER THEM PROCEDURES/TRIGGERS
     sa.event.listen(table, "after_create", update_modified_timestamp_procedure)
     sa.event.listen(table, "after_create", modified_timestamp_trigger)
+
+
+NUMERIC_KWARGS = {"scale": 2}

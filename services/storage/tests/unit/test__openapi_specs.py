@@ -9,7 +9,7 @@ import pytest
 import simcore_service_storage.application
 from aiohttp import web
 from faker import Faker
-from openapi_core.schema.specs.models import Spec as OpenApiSpecs
+from openapi_core import Spec as OpenApiSpecs
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_storage.settings import Settings
@@ -52,13 +52,13 @@ def expected_openapi_entrypoints(openapi_specs: OpenApiSpecs) -> set[Entrypoint]
     entrypoints: set[Entrypoint] = set()
 
     # openapi-specifications, i.e. "contract"
-    for path, path_obj in openapi_specs.paths.items():
-        for operation, operation_obj in path_obj.operations.items():
+    for path, path_obj in openapi_specs["paths"].items():
+        for operation, operation_obj in path_obj.items():
             entrypoints.add(
                 Entrypoint(
                     method=operation.upper(),
                     path=path,
-                    name=operation_obj.operation_id,
+                    name=operation_obj["operationId"],
                 )
             )
     return entrypoints

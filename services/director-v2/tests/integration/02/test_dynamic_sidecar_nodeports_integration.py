@@ -9,15 +9,7 @@ import json
 import logging
 import os
 from collections import namedtuple
-from collections.abc import (
-    AsyncIterable,
-    AsyncIterator,
-    Awaitable,
-    Callable,
-    Coroutine,
-    Iterable,
-)
-from itertools import tee
+from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable, Coroutine
 from pathlib import Path
 from typing import Any, Optional, cast
 from uuid import uuid4
@@ -64,6 +56,7 @@ from servicelib.fastapi.long_running_tasks.client import (
     periodic_task_result,
 )
 from servicelib.progress_bar import ProgressBarData
+from servicelib.sequences_utils import pairwise
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.comp_pipeline import comp_pipeline
@@ -751,15 +744,8 @@ async def _wait_for_dy_services_to_fully_stop(
             assert False, "Timeout reached"
 
 
-def _pairwise(iterable) -> Iterable[tuple[Any, Any]]:
-    "s -> (s0,s1), (s1,s2), (s2, s3), ..."
-    a, b = tee(iterable)
-    next(b, None)
-    return zip(a, b)
-
-
 def _assert_same_set(*sets_to_compare: set[Any]) -> None:
-    for first, second in _pairwise(sets_to_compare):
+    for first, second in pairwise(sets_to_compare):
         assert first == second
 
 
