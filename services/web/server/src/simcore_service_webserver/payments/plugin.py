@@ -28,7 +28,7 @@ def setup_payments(app: web.Application):
 
     app.cleanup_ctx.append(payments_service_api_cleanup_ctx)
 
-    if settings.PAYMENT_FAKE_COMPLETION:
+    if settings.PAYMENTS_FAKE_COMPLETION:
         _logger.warning(
             "Added faker payment completion. ONLY FOR front-end TESTING PURPOSES"
         )

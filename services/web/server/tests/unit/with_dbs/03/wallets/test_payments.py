@@ -93,7 +93,7 @@ async def test_payments_worfklow(
     assert client.app
     settings: PaymentsSettings = get_plugin_settings(client.app)
 
-    assert settings.PAYMENT_FAKE_COMPLETION is True
+    assert settings.PAYMENTS_FAKE_COMPLETION is True
     send_message = mocker.patch(
         "simcore_service_webserver.payments._socketio.send_messages", autospec=True
     )

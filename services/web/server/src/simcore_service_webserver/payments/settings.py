@@ -30,7 +30,7 @@ class PaymentsSettings(BaseCustomSettings, MixinServiceSettings):
         min_length=10,
     )
 
-    PAYMENT_FAKE_COMPLETION: bool = Field(
+    PAYMENTS_FAKE_COMPLETION: bool = Field(
         default=False, description="ONLY for testing purposes"
     )
 
