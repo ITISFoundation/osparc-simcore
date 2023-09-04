@@ -70,10 +70,14 @@ class ParamSchema(BaseModel):
     @property
     def regex_pattern(self) -> str:
         # first deal with recursive types:
-        if self.anyOf or self.oneOf or self.allOf:
+        if self.oneOf:
             raise NotImplementedError(
-                "Current version cannot compute regex patterns in case of allOf, anyOf or oneOf. Please go ahead and implement it yourself."
+                "Current version cannot compute regex patterns in case of oneOf. Please go ahead and implement it yourself."
             )
+        if self.anyOf:
+            return "|".join([elm.regex_pattern for elm in self.anyOf])
+        if self.allOf:
+            return "&".join([elm.regex_pattern for elm in self.allOf])
 
         # now deal with non-recursive cases
         if self.pattern is not None:
