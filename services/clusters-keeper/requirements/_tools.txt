@@ -14,7 +14,7 @@ bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
 cfgv==3.4.0
     # via pre-commit
-click==8.1.6
+click==8.1.7
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
@@ -24,9 +24,9 @@ dill==0.3.7
     # via pylint
 distlib==0.3.7
     # via virtualenv
-filelock==3.12.2
+filelock==3.12.3
     # via virtualenv
-identify==2.5.26
+identify==2.5.27
     # via pre-commit
 isort==5.12.0
     # via
@@ -70,7 +70,7 @@ pyyaml==6.0.1
     #   -c requirements/_test.txt
     #   pre-commit
     #   watchdog
-ruff==0.0.284
+ruff==0.0.286
     # via -r requirements/../../../requirements/devenv.txt
 tomli==2.0.1
     # via
@@ -87,11 +87,12 @@ typing-extensions==4.7.1
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   astroid
+    #   filelock
 virtualenv==20.24.3
     # via pre-commit
 watchdog==3.0.0
     # via -r requirements/_tools.in
-wheel==0.41.1
+wheel==0.41.2
     # via pip-tools
 wrapt==1.15.0
     # via

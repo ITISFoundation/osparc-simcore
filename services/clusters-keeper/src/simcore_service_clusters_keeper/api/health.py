@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, FastAPI
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 
-from ..modules.rabbitmq import get_rabbitmq_client
+from ..modules.rabbitmq import get_rabbitmq_client, is_rabbitmq_enabled
 from ..modules.redis import get_redis_client
 from .dependencies.application import get_app
 
@@ -39,9 +39,9 @@ class _StatusGet(BaseModel):
 async def get_status(app: Annotated[FastAPI, Depends(get_app)]) -> _StatusGet:
     return _StatusGet(
         rabbitmq=_ComponentStatus(
-            is_enabled=bool(app.state.rabbitmq_client),
+            is_enabled=is_rabbitmq_enabled(app),
             is_responsive=await get_rabbitmq_client(app).ping()
-            if app.state.rabbitmq_client
+            if is_rabbitmq_enabled(app)
             else False,
         ),
         ec2=_ComponentStatus(

@@ -14,12 +14,15 @@
 aiodocker
 asgi-lifespan
 coverage
+dask-gateway-server[local]
+debugpy
 deepdiff
 docker
 faker
 fakeredis[lua]
 httpx
 moto[server]
+parse
 psutil
 pytest
 pytest-asyncio

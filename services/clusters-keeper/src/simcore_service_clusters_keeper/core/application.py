@@ -1,6 +1,7 @@
 import logging
 
 from fastapi import FastAPI
+from models_library.basic_types import BootModeEnum
 
 from .._meta import (
     API_VERSION,
@@ -10,9 +11,12 @@ from .._meta import (
     APP_STARTED_BANNER_MSG,
 )
 from ..api.routes import setup_api_routes
+from ..modules.clusters_management_task import setup as setup_clusters_management
 from ..modules.ec2 import setup as setup_ec2
 from ..modules.rabbitmq import setup as setup_rabbitmq
 from ..modules.redis import setup as setup_redis
+from ..modules.remote_debug import setup_remote_debugging
+from ..rpc.rpc_routes import setup_rpc_routes
 from .settings import ApplicationSettings
 
 logger = logging.getLogger(__name__)
@@ -35,10 +39,14 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
     # PLUGINS SETUP
+    if settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
+        setup_remote_debugging(app)
     setup_api_routes(app)
     setup_rabbitmq(app)
+    setup_rpc_routes(app)
     setup_ec2(app)
     setup_redis(app)
+    setup_clusters_management(app)
 
     # ERROR HANDLERS
 
