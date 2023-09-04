@@ -65,7 +65,7 @@ def test_frontend_preferences(value: Any):
     base_data.update({"preference_identifier": "pref-name"})
     # check serialization
     frontend_preference = parse_obj_as(FrontendUserPreference, base_data)
-    assert set(frontend_preference.dict().keys()) == {"value"}
+    assert set(frontend_preference.to_db().keys()) == {"value"}
 
 
 def test_user_service_preferences(value: Any, mock_file_path: Path):
@@ -81,7 +81,7 @@ def test_user_service_preferences(value: Any, mock_file_path: Path):
         }
     )
     instance = parse_obj_as(UserServiceUserPreference, base_data)
-    assert set(instance.dict().keys()) == {
+    assert set(instance.to_db().keys()) == {
         "file_path",
         "value",
         "service_key",
