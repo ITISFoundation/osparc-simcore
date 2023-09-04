@@ -32,7 +32,7 @@ router = APIRouter()
 
 
 @router.get(
-    "/usage/services",
+    "/services/-/usages",
     response_model=LimitOffsetPage[ServiceRunGet],
     operation_id="list_usage_services",
     description="Returns a list of tracked containers for a given user and product",

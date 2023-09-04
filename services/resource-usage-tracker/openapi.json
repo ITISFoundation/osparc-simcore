@@ -45,7 +45,7 @@
         }
       }
     },
-    "/v1/usage/services": {
+    "/v1/services/-/usages": {
       "get": {
         "tags": [
           "resource-usage-tracker"
