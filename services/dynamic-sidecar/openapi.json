@@ -822,6 +822,14 @@
             "type": "string",
             "title": "Wallet Name"
           },
+          "pricing_plan_id": {
+            "type": "integer",
+            "title": "Pricing Plan Id"
+          },
+          "pricing_detail_id": {
+            "type": "integer",
+            "title": "Pricing Detail Id"
+          },
           "product_name": {
             "type": "string",
             "title": "Product Name"
@@ -866,8 +874,6 @@
         },
         "type": "object",
         "required": [
-          "wallet_id",
-          "wallet_name",
           "product_name",
           "simcore_user_agent",
           "user_email",
@@ -878,7 +884,22 @@
           "service_resources",
           "service_additional_metadata"
         ],
-        "title": "CreateServiceMetricsAdditionalParams"
+        "title": "CreateServiceMetricsAdditionalParams",
+        "example": {
+          "wallet_id": 1,
+          "wallet_name": "a private wallet for me",
+          "pricing_plan_id": 1,
+          "pricing_detail_id": 1,
+          "product_name": "osparc",
+          "simcore_user_agent": "undefined",
+          "user_email": "test@test.com",
+          "project_name": "_!New Study",
+          "node_name": "the service of a lifetime _ *!",
+          "service_key": "simcore/services/dynamic/test",
+          "service_version": "0.0.1",
+          "service_resources": {},
+          "service_additional_metadata": {}
+        }
       },
       "DetachContainerFromNetworkItem": {
         "properties": {
