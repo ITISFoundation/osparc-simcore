@@ -509,6 +509,9 @@ def respx_mock_from_capture() -> Callable[
             capture = next(capture_iter)
             status_code: int = capture.status_code
             response_body: dict[str, Any] = capture.response_body
+            assert {param.name for param in capture.path.path_parameters} == set(
+                kwargs.keys()
+            )
             if side_effect_callback_iter:
                 callback = next(side_effect_callback_iter)
                 response_body = callback(request, kwargs, capture)
