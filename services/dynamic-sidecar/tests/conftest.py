@@ -286,7 +286,7 @@ def mock_core_rabbitmq(mocker: MockerFixture) -> dict[str, AsyncMock]:
 @pytest.fixture
 def mock_stop_heart_beat_task(mocker: MockerFixture) -> AsyncMock:
     return mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.resource_tracking.core.stop_heart_beat_task",
+        "simcore_service_dynamic_sidecar.modules.resource_tracking._core.stop_heart_beat_task",
         return_value=None,
     )
 
