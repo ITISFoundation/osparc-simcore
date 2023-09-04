@@ -470,6 +470,17 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * PREFERENCES
+       */
+      "preferences": {
+        endpoints: {
+          patch: {
+            method: "PATCH",
+            url: statics.API + "/me/preferences/{preferenceId}"
+          }
+        }
+      },
+      /*
        * PERMISSIONS
        */
       "permissions": {
