@@ -32,9 +32,8 @@ def is_service_healthy() -> bool:
     if "debug" in SC_BOOT_MODE.lower():
         return True
 
-    with suppress(Exception):
-        with urlopen(f"{sys.argv[1]}{SIMCORE_NODE_BASEPATH}") as f:
-            return f.getcode() == 200
+    with suppress(Exception), urlopen(f"{sys.argv[1]}{SIMCORE_NODE_BASEPATH}") as f:
+        return f.getcode() == 200
     return False
 
 

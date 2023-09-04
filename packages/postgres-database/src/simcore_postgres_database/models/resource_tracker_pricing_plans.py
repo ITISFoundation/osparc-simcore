@@ -42,7 +42,6 @@ resource_tracker_pricing_plans = sa.Table(
         sa.String,
         nullable=False,
         doc="Name of the pricing plan, ex. DYNAMIC_SERVICES_TIERS, CPU_HOURS, STORAGE",
-        index=True,
     ),
     sa.Column(
         "description",

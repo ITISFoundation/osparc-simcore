@@ -7,7 +7,7 @@
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 
-from ._common import column_created_datetime, column_modified_datetime
+from ._common import NUMERIC_KWARGS, column_created_datetime, column_modified_datetime
 from .base import metadata
 
 resource_tracker_pricing_details = sa.Table(
@@ -38,12 +38,11 @@ resource_tracker_pricing_details = sa.Table(
         sa.String,
         nullable=False,
         doc="The custom name of the pricing plan, ex. DYNAMIC_SERVICES_TIERS, COMPUTATIONAL_SERVICES_TIERS, CPU_HOURS, STORAGE",
-        index=True,
     ),
     sa.Column(
         "cost_per_unit",
-        sa.Numeric(precision=3, scale=2),
-        nullable=True,
+        sa.Numeric(**NUMERIC_KWARGS),  # type: ignore
+        nullable=False,
         doc="The cost per unit of the pricing plan in credits.",
     ),
     sa.Column(
@@ -57,6 +56,14 @@ resource_tracker_pricing_details = sa.Table(
         sa.DateTime(timezone=True),
         nullable=True,
         doc="To when the pricing unit was active, if null it is still active",
+        index=True,
+    ),
+    sa.Column(
+        "simcore_default",
+        sa.Boolean(),
+        nullable=False,
+        default=False,
+        doc="Option to mark default pricing plan by creator",
     ),
     sa.Column(
         "specific_info",
