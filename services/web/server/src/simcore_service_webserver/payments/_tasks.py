@@ -24,8 +24,7 @@ _APP_TASK_KEY = f"{_PERIODIC_TASK_NAME}.task"
 
 async def _fake_payment_completion(app: web.Application, payment_id: PaymentID):
     # Fakes processing time
-    processing_time = random.uniform(0.5, 2)  # noqa: S311 # NOSONAR #nosec
-    await asyncio.sleep(processing_time)
+    await asyncio.sleep(random.uniform(0.5, 2))  # nosec # noqa: S311 # NOSONAR
 
     # Three different possible outcomes
     possible_outcomes = [
