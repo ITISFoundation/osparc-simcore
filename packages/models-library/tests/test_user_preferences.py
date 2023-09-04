@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from models_library.services import ServiceKey
+from models_library.services import ServiceKey, ServiceVersion
 from models_library.user_preferences import (
     FrontendUserPreference,
     NoPreferenceFoundError,
@@ -17,10 +17,19 @@ from models_library.user_preferences import (
 )
 from pydantic import parse_obj_as
 
-_SERVICE_KEY_SAMPLES: list[ServiceKey] = [
-    parse_obj_as(ServiceKey, "simcore/services/comp/something-1231"),
-    parse_obj_as(ServiceKey, "simcore/services/dynamic/something-1231"),
-    parse_obj_as(ServiceKey, "simcore/services/frontend/something-1231"),
+_SERVICE_KEY_AND_VERSION_SAMPLES: list[tuple[ServiceKey, ServiceVersion]] = [
+    (
+        parse_obj_as(ServiceKey, "simcore/services/comp/something-1231"),
+        parse_obj_as(ServiceVersion, "0.0.1"),
+    ),
+    (
+        parse_obj_as(ServiceKey, "simcore/services/dynamic/something-1231"),
+        parse_obj_as(ServiceVersion, "0.0.1"),
+    ),
+    (
+        parse_obj_as(ServiceKey, "simcore/services/frontend/something-1231"),
+        parse_obj_as(ServiceVersion, "0.0.1"),
+    ),
 ]
 
 
@@ -63,11 +72,21 @@ def test_user_service_preferences(value: Any, mock_file_path: Path):
     base_data = _get_base_user_preferences_data(
         preference_type=PreferenceType.USER_SERVICE, value=value
     )
+    service_key, service_version = _SERVICE_KEY_AND_VERSION_SAMPLES[0]
     base_data.update(
-        {"service_key": _SERVICE_KEY_SAMPLES[0], "file_path": mock_file_path}
+        {
+            "service_key": service_key,
+            "service_version": service_version,
+            "file_path": mock_file_path,
+        }
     )
     instance = parse_obj_as(UserServiceUserPreference, base_data)
-    assert set(instance.dict().keys()) == {"file_path", "value"}
+    assert set(instance.dict().keys()) == {
+        "file_path",
+        "value",
+        "service_key",
+        "service_version",
+    }
 
 
 @pytest.fixture
@@ -86,15 +105,23 @@ def test__frontend__user_preference(value: Any, unregister_defined_classes: None
     assert isinstance(pref1, FrontendUserPreference)
 
 
-@pytest.mark.parametrize("service_key_value", _SERVICE_KEY_SAMPLES)
+@pytest.mark.parametrize(
+    "service_key, service_version", _SERVICE_KEY_AND_VERSION_SAMPLES
+)
 def test__user_service__user_preference(
     value: Any,
-    service_key_value: ServiceKey,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
     mock_file_path: Path,
     unregister_defined_classes: None,
 ):
     pref1 = UserServiceUserPreference.parse_obj(
-        {"value": value, "service_key": service_key_value, "file_path": mock_file_path}
+        {
+            "value": value,
+            "service_key": service_key,
+            "service_version": service_version,
+            "file_path": mock_file_path,
+        }
     )
     assert isinstance(pref1, UserServiceUserPreference)
 

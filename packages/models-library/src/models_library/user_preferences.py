@@ -7,7 +7,7 @@ from typing import Annotated, Any, ClassVar, TypeAlias
 from pydantic import BaseModel, Field
 from pydantic.main import ModelMetaclass
 
-from .services import ServiceKey
+from .services import ServiceKey, ServiceVersion
 from .utils.enums import StrAutoEnum
 
 # NOTE: for pydantic-2 from pydantic._internal.import _model_construction
@@ -131,16 +131,19 @@ class FrontendUserPreference(_BaseUserPreferenceModel):
 class UserServiceUserPreference(_BaseUserPreferenceModel):
     preference_type: PreferenceType = Field(PreferenceType.USER_SERVICE, const=True)
 
-    # NOTE: preferences are stored per service and the version is not considered
     service_key: ServiceKey = Field(
         ..., description="the service which manages the preferences"
     )
-    file_path: Path = Field(..., description="path of the file")
+    service_version: ServiceVersion = Field(
+        ..., description="version of the service which manages the preference"
+    )
+    file_path: Path = Field(
+        ..., description="path of the file where the preference is stored"
+    )
 
     class Config:
         exclude_from_serialization: ClassVar[set[str]] = {
             "preference_type",
-            "service_key",
         }
 
 
