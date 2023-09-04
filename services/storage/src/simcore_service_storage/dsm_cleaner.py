@@ -47,13 +47,11 @@ async def dsm_cleaner_task(app: web.Application) -> None:
         try:
             await simcore_s3_dsm.clean_expired_uploads()
 
-        except asyncio.CancelledError:
+        except asyncio.CancelledError:  # noqa: PERF203
             logger.info("cancelled dsm cleaner task")
             raise
         except Exception:  # pylint: disable=broad-except
-            logger.exception(
-                "Unhandled error in dsm cleaner task, restarting task...", exc_info=True
-            )
+            logger.exception("Unhandled error in dsm cleaner task, restarting task...")
 
 
 def setup_dsm_cleaner(app: web.Application):
