@@ -19,7 +19,6 @@ from pydantic import AnyUrl, ByteSize, NonNegativeInt, parse_obj_as
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
 from settings_library.s3 import S3Settings
-from simcore_service_storage.constants import MULTIPART_UPLOADS_MIN_TOTAL_SIZE
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.type_defs import (
     ListObjectsV2OutputTypeDef,
@@ -27,7 +26,7 @@ from types_aiobotocore_s3.type_defs import (
     PaginatorConfigTypeDef,
 )
 
-from .constants import EXPAND_DIR_MAX_ITEM_COUNT
+from .constants import EXPAND_DIR_MAX_ITEM_COUNT, MULTIPART_UPLOADS_MIN_TOTAL_SIZE
 from .models import ETag, MultiPartUploadLinks, S3BucketName, UploadID
 from .s3_utils import compute_num_file_chunks, s3_exception_handler
 

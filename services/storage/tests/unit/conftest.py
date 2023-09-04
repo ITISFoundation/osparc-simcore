@@ -8,11 +8,10 @@ from collections import deque
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, AsyncContextManager
+from typing import AsyncContextManager
 
 import openapi_core
 import pytest
-import yaml
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_storage import (
@@ -41,11 +40,9 @@ from yarl import URL
 
 
 @pytest.fixture(scope="module")
-def openapi_specs():
+def openapi_specs() -> openapi_core.Spec:
     spec_path: Path = storage_resources.get_path(f"api/{api_vtag}/openapi.yaml")
-    spec_dict: dict[str, Any] = yaml.safe_load(spec_path.read_text())
-    api_specs = openapi_core.create_spec(spec_dict, spec_path.as_uri())
-    return api_specs
+    return openapi_core.Spec.from_path(spec_path)
 
 
 @pytest.fixture

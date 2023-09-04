@@ -3,8 +3,6 @@
 # pylint: disable=unused-variable
 
 
-from contextlib import AsyncExitStack
-
 import pytest
 from aiobotocore.session import get_session
 from botocore import exceptions as boto_exceptions
@@ -17,21 +15,16 @@ async def test_s3_client_fails_if_no_s3():
     with pytest.raises(boto_exceptions.ClientError):
         async with session.create_client(
             "s3",
-            aws_secret_access_key="xxx",
+            aws_secret_access_key="xxx",  # noqa: S106
             aws_access_key_id="xxx",
         ) as client:
-            assert client
             await client.list_buckets()
     with pytest.raises(boto_exceptions.ClientError):
-        async with AsyncExitStack() as exit_stack:
-            client = await exit_stack.enter_async_context(
-                session.create_client(
-                    "s3",
-                    aws_secret_access_key="xxx",
-                    aws_access_key_id="xxx",
-                )
-            )
-            assert client
+        async with session.create_client(
+            "s3",
+            aws_secret_access_key="xxx",  # noqa: S106
+            aws_access_key_id="xxx",
+        ) as client:
             await client.list_buckets()
 
 
@@ -43,8 +36,8 @@ async def test_s3_client_reconnects_if_s3_server_restarts(
     # pylint: disable=protected-access
     async with session.create_client(
         "s3",
-        endpoint_url=f"http://{mocked_s3_server._ip_address}:{mocked_s3_server._port}",
-        aws_secret_access_key="xxx",
+        endpoint_url=f"http://{mocked_s3_server._ip_address}:{mocked_s3_server._port}",  # noqa: SLF001
+        aws_secret_access_key="xxx",  # noqa: S106
         aws_access_key_id="xxx",
     ) as client:
         assert client

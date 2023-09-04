@@ -34,7 +34,6 @@ def create(settings: Settings) -> web.Application:
         settings.json(indent=2, sort_keys=True),
     )
 
-    # TODO: tmp using {} until webserver is also pydantic-compatible
     app = create_safe_application(None)
     app[APP_CONFIG_KEY] = settings
 
@@ -78,7 +77,7 @@ def run(settings: Settings, app: web.Application | None = None):
         app = create(settings)
 
     async def welcome_banner(_app: web.Application):
-        print(WELCOME_MSG, flush=True)
+        print(WELCOME_MSG, flush=True)  # noqa: T201
 
     app.on_startup.append(welcome_banner)
 
