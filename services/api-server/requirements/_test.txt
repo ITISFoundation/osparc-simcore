@@ -43,19 +43,19 @@ aws-sam-translator==1.55.0
     #   cfn-lint
 aws-xray-sdk==2.12.0
     # via moto
-boto3==1.28.38
+boto3==1.28.40
     # via
     #   aws-sam-translator
     #   moto
-boto3-stubs==1.28.38
+boto3-stubs==1.28.40
     # via types-boto3
-botocore==1.31.38
+botocore==1.31.40
     # via
     #   aws-xray-sdk
     #   boto3
     #   moto
     #   s3transfer
-botocore-stubs==1.31.38
+botocore-stubs==1.31.40
     # via boto3-stubs
 certifi==2023.5.7
     # via
@@ -239,7 +239,7 @@ pyrsistent==0.19.3
     # via
     #   -c requirements/_base.txt
     #   jsonschema
-pytest==7.4.0
+pytest==7.4.1
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -250,7 +250,7 @@ pytest-asyncio==0.21.1
     # via -r requirements/_test.in
 pytest-cov==4.1.0
     # via -r requirements/_test.in
-pytest-docker==2.0.0
+pytest-docker==2.0.1
     # via -r requirements/_test.in
 pytest-mock==3.11.1
     # via -r requirements/_test.in

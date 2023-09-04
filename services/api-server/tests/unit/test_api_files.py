@@ -11,6 +11,7 @@ from uuid import UUID
 
 import httpx
 import pytest
+import respx
 from aioresponses import aioresponses as AioResponsesMock
 from faker import Faker
 from fastapi import status
@@ -164,10 +165,13 @@ async def test_get_file(
 @pytest.mark.testit
 async def test_delete_file(
     client: AsyncClient,
-    respx_mock_from_capture: Callable[[Path], Iterator[MockRouter]],
+    respx_mock_from_capture: Callable[[Path], Iterator[respx.Route]],
     auth: httpx.BasicAuth,
 ):
-    respx_mock_from_capture(Path(__file__).parent.parent / "mocks" / "delete_file.json")
+
+    respx_mock = respx_mock_from_capture(
+        Path(__file__).parent.parent / "mocks" / "delete_file.json"
+    )
 
     response = await client.delete(
         f"{API_VTAG}/files/3fa85f64-5717-4562-b3fc-2c963f66afa6", auth=auth

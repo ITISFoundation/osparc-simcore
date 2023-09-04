@@ -40,7 +40,11 @@ from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
 from requests.auth import HTTPBasicAuth
 from respx import MockRouter
 from simcore_service_api_server.core.application import init_app
-from simcore_service_api_server.core.settings import ApplicationSettings
+from simcore_service_api_server.core.settings import (
+    ApplicationSettings,
+    CatalogSettings,
+    StorageSettings,
+)
 from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
 from simcore_service_api_server.utils.http_calls_capture_processing import (
     Param,
@@ -48,10 +52,6 @@ from simcore_service_api_server.utils.http_calls_capture_processing import (
 )
 
 ## APP + SYNC/ASYNC CLIENTS --------------------------------------------------
-
-pytest_plugins = [
-    "pytest_simcore.services_api_mocks_for_aiohttp_clients",
-]
 
 
 @pytest.fixture
@@ -479,43 +479,50 @@ def patch_webserver_long_running_project_tasks(
     return _mock
 
 
-capture_model = HttpApiCallCaptureModel | list[HttpApiCallCaptureModel]
-
-
 @pytest.fixture
-def mock_from_capture(request) -> Iterator[respx.MockRouter]:
-    capture_path = Path(request.param)
-    assert capture_path.is_file() and capture_path.suffix == ".json"
-    captures: capture_model = parse_obj_as(
-        capture_model, json.loads(capture_path.read_text())
-    )
-    if not isinstance(captures, list):
-        captures = [captures]
+def respx_mock_from_capture() -> Callable[[Path], list[respx.Route]]:
+    def _generate_mock(capture_path: Path) -> list[respx.Route]:
+        assert capture_path.is_file() and capture_path.suffix == ".json"
+        captures: list[HttpApiCallCaptureModel] = parse_obj_as(
+            list[HttpApiCallCaptureModel], json.loads(capture_path.read_text())
+        )
 
-    assert (
-        len(captures) == 1
-    ), "This is a simplification to make sure we can handle the basic case first."
+        routes: list[respx.Route] = []
 
-    def generate_side_effect(capture: HttpApiCallCaptureModel):
+        for capture in captures:
+            status_code: int = capture.status_code
+            path_params: set[Param] = capture.path.path_parameters
+            response_body: str = json.dumps(capture.response_body)
 
-        status_code: int = capture.status_code
-        path_params: set[Param] = capture.path.path_parameters
-        response_body: str = json.dumps(capture.response_body)
+            def _side_effect(request: httpx.Request, **kwargs):
+                for param in path_params:
+                    assert param.response_value is not None
+                    response_body.replace(param.response_value, kwargs[param.name])
+                return httpx.Response(
+                    status_code=status_code, json=json.loads(response_body)
+                )
 
-        def side_effect(request: httpx.Request, **kwargs):
-            for param in path_params:
-                assert param.response_value is not None
-                response_body.replace(param.response_value, kwargs[param.name])
-            return httpx.Response(
-                status_code=status_code, json=json.loads(response_body)
+            url_path: UrlPath = capture.path
+            path: str = str(url_path.path)
+            for param in url_path.path_parameters:
+                path = path.replace("{" + param.name + "}", param.regex_lookup)
+
+            _base_url: str = ""
+            if capture.host == "storage":
+                _base_url = StorageSettings().base_url
+            elif capture.host == "catalog":
+                _base_url = CatalogSettings().base_url
+
+            assert (
+                _base_url != ""
+            ), f"{capture.host} hasn't been configured yet. Please add it"
+
+            routes.append(
+                respx.route(
+                    method=capture.method, base_url=_base_url, path__regex=path
+                ).mock(side_effect=_side_effect)
             )
 
-        return side_effect
+        return routes
 
-    with respx.mock:
-        capture = captures[0]
-        method = getattr(respx, capture.method.lower())
-        url_path: UrlPath = capture.path
-        path: str = str(url_path.path)
-        for param in url_path.path_parameters:
-            path = path.replace("{" + param.name + "}", param.regex_lookup)
+    return _generate_mock

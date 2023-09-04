@@ -1,4 +1,5 @@
 import logging
+import traceback
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
@@ -52,11 +53,12 @@ class _AsyncClientForDevelopmentOnly(httpx.AsyncClient):
         try:
             capture_json = get_captured_as_json(name=capture_name, response=response)
             _capture_logger.info("%s,", capture_json)
-        except Exception as err:
+        except Exception:
+            tb = traceback.format_exc()
             _capture_logger.exception(
                 "Failed capturing %s with the following exception:\n%s",
                 capture_name,
-                str(err),
+                tb,
             )
 
         return response

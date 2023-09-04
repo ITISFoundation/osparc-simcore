@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Any, Literal
+from urllib.parse import unquote
 
 import httpx
 import jsonref
@@ -19,6 +20,10 @@ class ParamSchema(BaseModel):
     anyOf: list["ParamSchema"] | None
     allOf: list["ParamSchema"] | None
     oneOf: list["ParamSchema"] | None
+
+    class Config:
+        validate_always = True
+        allow_population_by_field_name = True
 
     @validator("param_type", pre=True)
     def preprocess_param_type(cls, val):
@@ -100,6 +105,10 @@ class Param(BaseModel):
         None  # attribute for storing the params value in a concrete response
     )
 
+    class Config:
+        validate_always = True
+        allow_population_by_field_name = True
+
     def __hash__(self):
         return hash(
             self.name + self.variable_type
@@ -127,7 +136,7 @@ class Param(BaseModel):
 
 class UrlPath(BaseModel):
     path: str
-    path_parameters: set[Param]
+    path_parameters: list[Param]
 
 
 def preprocess_response(response: httpx.Response) -> UrlPath:
@@ -168,7 +177,7 @@ def _determine_path(openapi_spec: dict[str, Any], response_path: Path) -> UrlPat
         }
         if (len(path_params) == 0) and (openapi_path.parts == response_path.parts):
             return UrlPath(
-                path=str(response_path), path_parameters=set(path_params.values())
+                path=str(response_path), path_parameters=list(path_params.values())
             )
         else:
             path_param_indices: tuple[int] = tuple(
@@ -187,10 +196,10 @@ def _determine_path(openapi_spec: dict[str, Any], response_path: Path) -> UrlPat
             path_param_indices_iter = iter(path_param_indices)
             for key in path_params:
                 ii = next(path_param_indices_iter)
-                path_params[key].response_value = response_path.parts[ii]
+                path_params[key].response_value = unquote(response_path.parts[ii])
             return UrlPath(
                 path=str(openapi_path),
-                path_parameters=set(path_params.values()),
+                path_parameters=list(path_params.values()),
             )
     raise PathNotInOpenApiSpecification(
         f"Could not find a path matching {response_path} in "
