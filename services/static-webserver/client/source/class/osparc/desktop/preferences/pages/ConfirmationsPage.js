@@ -40,6 +40,11 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
     patchPreference: function(preferenceId, preferenceField, newValue) {
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
 
+      const oldValue = preferencesSettings.get[preferenceId]();
+      if (newValue === oldValue) {
+        return;
+      }
+
       preferenceField.setEnabled(false);
       const params = {
         url: {
@@ -54,6 +59,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
         .catch(err => {
           console.error(err);
           osparc.component.message.FlashMessenger.logAs(err.message, "ERROR");
+          preferenceField.setValue(oldValue);
         })
         .finally(() => preferenceField.setEnabled(true));
     }
@@ -75,7 +81,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
 
       const cbConfirmBackToDashboard = new qx.ui.form.CheckBox(this.tr("Go back to the Dashboard"));
       preferencesSettings.bind("confirmBackToDashboard", cbConfirmBackToDashboard, "value");
-      preferencesSettings.addListener("changeValue", e => this.self().patchPreference("confirmBackToDashboard", cbConfirmBackToDashboard, e.getData()));
+      cbConfirmBackToDashboard.addListener("changeValue", e => this.self().patchPreference("confirmBackToDashboard", cbConfirmBackToDashboard, e.getData()));
       box.add(cbConfirmBackToDashboard);
 
       const studyAlias = osparc.product.Utils.getStudyAlias();
