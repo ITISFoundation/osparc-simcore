@@ -12,7 +12,7 @@ from dask_task_models_library.container_tasks.events import (
 )
 from dask_task_models_library.container_tasks.io import TaskOutputData
 from models_library.api_schemas_directorv2.comp_tasks import TEMPORARY_DEFAULT_WALLET_ID
-from models_library.clusters import DEFAULT_CLUSTER_ID, Cluster
+from models_library.clusters import DEFAULT_CLUSTER_ID, Cluster, ClusterTypeInModel
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -86,6 +86,15 @@ async def _cluster_dask_client(
                 raise ComputationalBackendOnDemandNotReadyError
             if not returned_cluster.gateway_ready:
                 raise ComputationalBackendOnDemandNotReadyError
+
+            cluster = Cluster(
+                id=1024 * 1024 * user_id,
+                name="on-demand",
+                type=ClusterTypeInModel.AWS,
+                owner=user_id,
+                endpoint=returned_cluster.endpoint,
+                authentication=returned_cluster.authentication,
+            )
         except RemoteMethodNotRegisteredError as exc:
             # no clusters-keeper, that is not going to work!
             raise ComputationalBackendOnDemandClustersKeeperNotReadyError from exc
