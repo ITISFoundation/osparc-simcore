@@ -2,7 +2,7 @@
 
 import json
 import re
-from collections.abc import Generator
+from collections.abc import Generator, Sequence
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
@@ -15,6 +15,7 @@ from pydantic import (
     Extra,
     Field,
     Json,
+    NonNegativeFloat,
     PrivateAttr,
     ValidationError,
     parse_obj_as,
@@ -161,6 +162,60 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
 
 
 SimcoreServiceSettingsLabel = ListModel[SimcoreServiceSettingLabelEntry]
+
+
+class UserServiceCommand(BaseModel):
+    service: str = Field(
+        ..., description="name of the docker-compose service in the docker-compose spec"
+    )
+    command: str | Sequence[str] = Field(..., description="command to run in container")
+    timeout: NonNegativeFloat = Field(
+        ..., description="after this interval the command will be timed"
+    )
+
+    class Config(_BaseConfig):
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [
+                {"service": "s1", "command": "ls", "timeout": 1},
+                {"service": "s2", "command": "ls -lah", "timeout": 1},
+            ]
+        }
+
+
+class CallbacksMapping(BaseModel):
+    metrics: UserServiceCommand | None = Field(
+        None,
+        description="command to recover prometheus metrics from a specific user service",
+    )
+    before_shutdown: list[UserServiceCommand] = Field(
+        default_factory=list,
+        description=(
+            "commands to run before shutting down the user services"
+            "commands get executed first to last, multiple commands for the same"
+            "user services are allowed"
+        ),
+    )
+
+    class Config(_BaseConfig):
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [
+                {
+                    # empty validates
+                },
+                {
+                    "metrics": None,
+                    "before_shutdown": [],
+                },
+                {"metrics": UserServiceCommand.Config.schema_extra["examples"][0]},
+                {
+                    "metrics": UserServiceCommand.Config.schema_extra["examples"][0],
+                    "before_shutdown": [
+                        UserServiceCommand.Config.schema_extra["examples"][0],
+                        UserServiceCommand.Config.schema_extra["examples"][1],
+                    ],
+                },
+            ]
+        }
 
 
 class PathMappingsLabel(BaseModel):
@@ -318,6 +373,12 @@ class NATRule(BaseModel):
 class DynamicSidecarServiceLabels(BaseModel):
     """All "simcore.service.*" labels including keys"""
 
+    callbacks_mapping: Json[CallbacksMapping] | None = Field(
+        None,
+        alias="simcore.service.callbacks-mapping",
+        description="exposes callbacks from user services to the sidecar",
+    )
+
     paths_mapping: Json[PathMappingsLabel] | None = Field(
         None,
         alias="simcore.service.paths-mapping",
@@ -376,6 +437,8 @@ class DynamicSidecarServiceLabels(BaseModel):
     def needs_dynamic_sidecar(self) -> bool:
         """if paths mapping is present the service needs to be ran via dynamic-sidecar"""
         return self.paths_mapping is not None
+
+    # TODO: validator for sevice name in compose spec inside callbacks_mapping entries
 
     @validator("container_http_entry", always=True)
     @classmethod
@@ -555,4 +618,5 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                     "simcore.service.restart-policy": RestartPolicy.ON_INPUTS_DOWNLOADED.value,
                 },
             ]
+            # TODO: expand exaomples here!!!
         }
