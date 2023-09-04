@@ -13,31 +13,34 @@ aiohttp==3.8.5
     #   simcore-service-storage-sdk
 aioresponses==0.7.4
     # via -r requirements/_test.in
-aiosignal==1.2.0
+aiosignal==1.3.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-async-timeout==4.0.2
+async-timeout==4.0.3
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-attrs==21.4.0
+attrs==23.1.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   jschema-to-python
     #   jsonschema
+    #   referencing
     #   sarif-om
-aws-sam-translator==1.55.0
+aws-sam-translator==1.73.0
     # via cfn-lint
 aws-xray-sdk==2.12.0
     # via moto
-boto3==1.21.21
+blinker==1.6.2
+    # via flask
+boto3==1.28.17
     # via
     #   -c requirements/_base.txt
     #   aws-sam-translator
     #   moto
-botocore==1.24.21
+botocore==1.31.17
     # via
     #   -c requirements/_base.txt
     #   aws-xray-sdk
@@ -46,18 +49,19 @@ botocore==1.24.21
     #   s3transfer
 certifi==2023.7.22
     # via
+    #   -c requirements/_base.txt
     #   requests
     #   simcore-service-storage-sdk
 cffi==1.15.1
     # via cryptography
-cfn-lint==0.72.6
+cfn-lint==0.77.10
     # via moto
-charset-normalizer==2.0.12
+charset-normalizer==3.2.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   requests
-click==8.1.3
+click==8.1.7
     # via
     #   -c requirements/_base.txt
     #   flask
@@ -82,15 +86,15 @@ ecdsa==0.18.0
     #   sshpubkeys
 exceptiongroup==1.1.3
     # via pytest
-faker==19.3.0
+faker==19.3.1
     # via -r requirements/_test.in
-flask==2.2.5
+flask==2.3.3
     # via
     #   flask-cors
     #   moto
 flask-cors==4.0.0
     # via moto
-frozenlist==1.3.0
+frozenlist==1.4.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -101,9 +105,9 @@ greenlet==2.0.2
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
-icdiff==2.0.6
+icdiff==2.0.7
     # via pytest-icdiff
-idna==3.3
+idna==3.4
     # via
     #   -c requirements/_base.txt
     #   requests
@@ -118,7 +122,7 @@ jinja2==3.1.2
     #   -c requirements/_base.txt
     #   flask
     #   moto
-jmespath==1.0.0
+jmespath==1.0.1
     # via
     #   -c requirements/_base.txt
     #   boto3
@@ -133,40 +137,55 @@ jsonpickle==3.0.2
     # via jschema-to-python
 jsonpointer==2.4
     # via jsonpatch
-jsonschema==3.2.0
+jsonschema==4.19.0
     # via
     #   -c requirements/_base.txt
     #   aws-sam-translator
     #   cfn-lint
     #   openapi-schema-validator
     #   openapi-spec-validator
+jsonschema-spec==0.2.4
+    # via
+    #   -c requirements/_base.txt
+    #   openapi-spec-validator
+jsonschema-specifications==2023.7.1
+    # via
+    #   -c requirements/_base.txt
+    #   jsonschema
+    #   openapi-schema-validator
 junit-xml==1.9
     # via cfn-lint
-markupsafe==2.1.1
+lazy-object-proxy==1.9.0
+    # via
+    #   -c requirements/_base.txt
+    #   openapi-spec-validator
+markupsafe==2.1.3
     # via
     #   -c requirements/_base.txt
     #   jinja2
     #   werkzeug
-moto==4.1.14
+moto==4.2.0
     # via -r requirements/_test.in
-multidict==6.0.2
+mpmath==1.3.0
+    # via sympy
+multidict==6.0.4
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-mypy==1.5.0
+mypy==1.5.1
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
-networkx==2.8.8
+networkx==3.1
     # via cfn-lint
 numpy==1.25.2
     # via pandas
-openapi-schema-validator==0.2.3
+openapi-schema-validator==0.6.0
     # via
     #   -c requirements/_base.txt
     #   openapi-spec-validator
-openapi-spec-validator==0.4.0
+openapi-spec-validator==0.6.0
     # via
     #   -c requirements/_base.txt
     #   moto
@@ -175,13 +194,17 @@ packaging==23.1
     #   docker
     #   pytest
     #   pytest-sugar
-pandas==2.0.3
+pandas==2.1.0
     # via -r requirements/_test.in
+pathable==0.4.3
+    # via
+    #   -c requirements/_base.txt
+    #   jsonschema-spec
 pbr==5.11.1
     # via
     #   jschema-to-python
     #   sarif-om
-pluggy==1.2.0
+pluggy==1.3.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
@@ -193,12 +216,13 @@ pyasn1==0.5.0
     #   rsa
 pycparser==2.21
     # via cffi
+pydantic==1.10.12
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   aws-sam-translator
 pyparsing==3.1.1
     # via moto
-pyrsistent==0.18.1
-    # via
-    #   -c requirements/_base.txt
-    #   jsonschema
 pytest==7.4.0
     # via
     #   -r requirements/_test.in
@@ -244,21 +268,40 @@ pyyaml==6.0.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   cfn-lint
+    #   jsonschema-spec
     #   moto
-    #   openapi-spec-validator
     #   responses
+referencing==0.29.3
+    # via
+    #   -c requirements/_base.txt
+    #   jsonschema
+    #   jsonschema-spec
+    #   jsonschema-specifications
+regex==2023.8.8
+    # via cfn-lint
 requests==2.31.0
     # via
+    #   -c requirements/_base.txt
     #   docker
+    #   jsonschema-spec
     #   moto
     #   responses
 responses==0.23.3
     # via moto
+rfc3339-validator==0.1.4
+    # via
+    #   -c requirements/_base.txt
+    #   openapi-schema-validator
+rpds-py==0.10.0
+    # via
+    #   -c requirements/_base.txt
+    #   jsonschema
+    #   referencing
 rsa==4.9
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   python-jose
-s3transfer==0.5.2
+s3transfer==0.6.2
     # via
     #   -c requirements/_base.txt
     #   boto3
@@ -270,11 +313,11 @@ six==1.16.0
     # via
     #   -c requirements/_base.txt
     #   ecdsa
-    #   jsonschema
     #   junit-xml
     #   python-dateutil
+    #   rfc3339-validator
     #   simcore-service-storage-sdk
-sqlalchemy==1.4.47
+sqlalchemy==1.4.49
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -283,6 +326,8 @@ sqlalchemy2-stubs==0.0.2a35
     # via sqlalchemy
 sshpubkeys==3.3.1
     # via moto
+sympy==1.12
+    # via cfn-lint
 termcolor==2.3.0
     # via pytest-sugar
 tomli==2.0.1
@@ -292,14 +337,16 @@ tomli==2.0.1
     #   pytest
 types-pyyaml==6.0.12.11
     # via responses
-typing-extensions==4.3.0
+typing-extensions==4.7.1
     # via
     #   -c requirements/_base.txt
+    #   aws-sam-translator
     #   mypy
+    #   pydantic
     #   sqlalchemy2-stubs
 tzdata==2023.3
     # via pandas
-urllib3==1.26.9
+urllib3==1.26.16
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -308,14 +355,14 @@ urllib3==1.26.9
     #   requests
     #   responses
     #   simcore-service-storage-sdk
-websocket-client==1.6.1
+websocket-client==1.6.2
     # via docker
-werkzeug==2.2.2
+werkzeug==2.3.7
     # via
     #   -c requirements/_base.txt
     #   flask
     #   moto
-wrapt==1.14.1
+wrapt==1.15.0
     # via
     #   -c requirements/_base.txt
     #   aws-xray-sdk
