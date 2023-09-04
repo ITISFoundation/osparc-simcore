@@ -7,7 +7,7 @@ from simcore_service_director_v2.core.settings import AppSettings
 from ...core.errors import ConfigurationError
 from ...models.comp_runs import CompRunsAtDB
 from ...modules.dask_clients_pool import DaskClientsPool
-from ...modules.rabbitmq import get_rabbitmq_client
+from ...modules.rabbitmq import get_rabbitmq_client, get_rabbitmq_rpc_client
 from ...utils.comp_scheduler import SCHEDULED_STATES
 from ..db.repositories.comp_runs import CompRunsRepository
 from .base_scheduler import BaseCompScheduler, ScheduledPipelineParams
@@ -39,6 +39,7 @@ async def create_from_db(app: FastAPI) -> BaseCompScheduler:
         settings=app_settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND,
         dask_clients_pool=DaskClientsPool.instance(app),
         rabbitmq_client=get_rabbitmq_client(app),
+        rabbitmq_rpc_client=get_rabbitmq_rpc_client(app),
         db_engine=db_engine,
         scheduled_pipelines={
             (r.user_id, r.project_uuid, r.iteration): ScheduledPipelineParams(

@@ -28,7 +28,7 @@ from models_library.services import ServiceKey, ServiceType, ServiceVersion
 from models_library.users import UserID
 from pydantic import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-from servicelib.rabbitmq import RabbitMQClient
+from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 from servicelib.utils import logged_gather
 
 from ...constants import UNDEFINED_STR_METADATA
@@ -113,6 +113,7 @@ class BaseCompScheduler(ABC):
     db_engine: Engine
     wake_up_event: asyncio.Event = field(default_factory=asyncio.Event, init=False)
     rabbitmq_client: RabbitMQClient
+    rabbitmq_rpc_client: RabbitMQRPCClient
     settings: ComputationalBackendSettings
     service_runtime_heartbeat_interval: datetime.timedelta
 
