@@ -13,13 +13,13 @@ import arrow
 import pytest
 from faker import Faker
 from fastapi import FastAPI
+from models_library.rpc_schemas_clusters_keeper.clusters import OnDemandCluster
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from parse import Result, search
 from pydantic import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCMethodName, RPCNamespace
-from simcore_service_clusters_keeper.models import ClusterGet
 from simcore_service_clusters_keeper.utils.ec2 import HEARTBEAT_TAG_KEY
 from types_aiobotocore_ec2 import EC2Client
 
@@ -152,7 +152,7 @@ async def test_get_or_create_cluster(
         wallet_id=wallet_id,
     )
     assert rpc_response
-    assert isinstance(rpc_response, ClusterGet)
+    assert isinstance(rpc_response, OnDemandCluster)
     created_cluster = rpc_response
     # check we do have a new machine in AWS
     await _assert_cluster_instance_created(ec2_client, user_id, wallet_id)
@@ -168,7 +168,7 @@ async def test_get_or_create_cluster(
         wallet_id=wallet_id,
     )
     assert rpc_response
-    assert isinstance(rpc_response, ClusterGet)
+    assert isinstance(rpc_response, OnDemandCluster)
     returned_cluster = rpc_response
     # check we still have only 1 instance
     await _assert_cluster_heartbeat_on_instance(ec2_client)

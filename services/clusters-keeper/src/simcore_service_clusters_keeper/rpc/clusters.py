@@ -44,12 +44,13 @@ async def get_or_create_cluster(
         user_id,
         wallet_id,
         app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_GATEWAY_PASSWORD,
+        gateway_ready=bool(
+            ec2_instance.state == "running"
+            and await ping_gateway(
+                url=get_gateway_url(ec2_instance),
+                password=app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_GATEWAY_PASSWORD,
+            )
+        ),
     )
-
-    if ec2_instance.state == "running":
-        cluster.gateway_ready = await ping_gateway(
-            url=get_gateway_url(ec2_instance),
-            password=app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_GATEWAY_PASSWORD,
-        )
 
     return cluster

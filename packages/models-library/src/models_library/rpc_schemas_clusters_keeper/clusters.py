@@ -20,4 +20,4 @@ class OnDemandCluster(BaseModel):
     state: ClusterState
     user_id: UserID
     wallet_id: WalletID
-    gateway_ready: bool = False
+    gateway_ready: bool
