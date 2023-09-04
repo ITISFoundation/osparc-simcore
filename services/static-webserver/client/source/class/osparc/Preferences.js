@@ -71,13 +71,33 @@ qx.Class.define("osparc.Preferences", {
     },
 
     // ---------------------------
+    /*
+    dontShowAnnouncements: {
+      nullable: false,
+      init: {},
+      check: "Object"
+    },
+
+    serviceHits: {
+      nullable: false,
+      init: {},
+      check: "Object"
+    },
+
+    preferredWalletId: {
+      nullable: false,
+      init: {},
+      check: "Object",
+      event: "changePreferredWalletId"
+    },
+    */
 
     themeName: {
       nullable: false,
       init: {},
       check: "String",
       apply: "__saveThemeName"
-    },
+    }
   },
 
   members: {
