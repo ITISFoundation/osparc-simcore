@@ -50,9 +50,30 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
         paddingLeft: 10
       });
 
+      const patchPreference = (preferenceId, preferenceField, newValue) => {
+        preferenceField.setEnabled(false);
+        const params = {
+          url: {
+            preferenceId
+          },
+          data: {
+            "value": newValue
+          }
+        };
+        osparc.data.Resources.fetch("preferences", "patch", params)
+          .then(() => {
+            preferencesSettings.set(newValue);
+          })
+          .catch(err => {
+            console.error(err);
+            osparc.component.message.FlashMessenger.logAs(err.message, "ERROR");
+          })
+          .finally(() => preferenceField.setEnabled(true));
+      };
       const cbConfirmBackToDashboard = new qx.ui.form.CheckBox(this.tr("Go back to the Dashboard"));
       preferencesSettings.bind("confirmBackToDashboard", cbConfirmBackToDashboard, "value");
-      cbConfirmBackToDashboard.bind("value", preferencesSettings, "confirmBackToDashboard");
+      // cbConfirmBackToDashboard.bind("value", preferencesSettings, "confirmBackToDashboard");
+      preferencesSettings.addListener("changeValue", e => patchPreference("confirmBackToDashboard", preferencesSettings, e.getData()));
       box.add(cbConfirmBackToDashboard);
 
       const studyLabel = osparc.product.Utils.getStudyAlias();
