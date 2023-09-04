@@ -5,7 +5,7 @@ from typing import Any, Literal
 import httpx
 from pydantic import BaseModel, Field
 from simcore_service_api_server.utils.http_calls_capture_processing import (
-    UrlPath,
+    PathDescription,
     preprocess_response,
 )
 
@@ -19,7 +19,7 @@ class HttpApiCallCaptureModel(BaseModel):
     description: str
     method: Literal["GET", "PUT", "POST", "PATCH", "DELETE"]
     host: str
-    path: UrlPath | str
+    path: PathDescription | str
     query: str | None = None
     request_payload: dict[str, Any] | None = None
     response_body: dict[str, Any] | list | None = None
@@ -31,7 +31,7 @@ class HttpApiCallCaptureModel(BaseModel):
     ) -> "HttpApiCallCaptureModel":
         request = response.request
 
-        url_path: UrlPath = preprocess_response(response)
+        url_path: PathDescription = preprocess_response(response)
 
         return cls(
             name=name,

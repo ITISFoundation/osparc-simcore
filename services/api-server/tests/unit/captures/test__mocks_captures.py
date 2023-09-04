@@ -18,7 +18,7 @@ from pydantic import parse_file_as
 from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
 from simcore_service_api_server.utils.http_calls_capture_processing import (
     Param,
-    UrlPath,
+    PathDescription,
     _determine_path,
 )
 
@@ -256,7 +256,7 @@ def test_capture_respx_api_server(params: tuple[str, Path, str]):
     _, openapi_path, example = params
     assert _DUMMY_API_SERVER_OPENAPI.is_file()
     openapi_spec: dict[str, Any] = jsonref.loads(_DUMMY_API_SERVER_OPENAPI.read_text())
-    url_path: UrlPath = _determine_path(
+    url_path: PathDescription = _determine_path(
         openapi_spec=openapi_spec, response_path=openapi_path
     )
     path_pattern = str(openapi_path)

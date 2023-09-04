@@ -42,7 +42,9 @@ from respx import MockRouter
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
-from simcore_service_api_server.utils.http_calls_capture_processing import UrlPath
+from simcore_service_api_server.utils.http_calls_capture_processing import (
+    PathDescription,
+)
 
 # (capture.response_body, kwargs, capture.path.path_parameters) -> response_body
 side_effect_callback = Callable[
@@ -513,7 +515,7 @@ def respx_mock_from_capture() -> Callable[
             return httpx.Response(status_code=status_code, json=response_body)
 
         for capture in captures:
-            url_path: UrlPath = capture.path
+            url_path: PathDescription = capture.path
             path_regex: str = str(url_path.path)
             for param in url_path.path_parameters:
                 path_regex = path_regex.replace(

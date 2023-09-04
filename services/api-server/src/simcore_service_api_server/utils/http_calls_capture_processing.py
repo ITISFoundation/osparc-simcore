@@ -139,19 +139,19 @@ class Param(BaseModel):
         return rf"(?P<{self.name}>{self.param_schema.regex_pattern})"
 
 
-class UrlPath(BaseModel):
+class PathDescription(BaseModel):
     path: str
     path_parameters: list[Param]
 
 
-def preprocess_response(response: httpx.Response) -> UrlPath:
-    openapi_spec: dict[str, Any] = get_openapi_specs(response.url.host)
+def preprocess_response(response: httpx.Response) -> PathDescription:
+    openapi_spec: jsonref.JsonRef = get_openapi_specs(response.url.host)
     return _determine_path(
         openapi_spec, Path(response.request.url.raw_path.decode("utf8").split("?")[0])
     )
 
 
-def get_openapi_specs(host: Literal["storage", "catalog"]) -> dict[str, Any]:
+def get_openapi_specs(host: Literal["storage", "catalog"]) -> jsonref.JsonRef:
     url: str
     if host == "storage":
         settings = StorageSettings()
@@ -168,10 +168,14 @@ def get_openapi_specs(host: Literal["storage", "catalog"]) -> dict[str, Any]:
         # http://127.0.0.1:8006/api/v0/openapi.json
         response = session.get(url)
         response.raise_for_status()
-        return jsonref.loads(response.read().decode("utf8"))
+        openapi_spec = jsonref.loads(response.read().decode("utf8"))
+        assert isinstance(openapi_spec, jsonref.JsonRef)
+        return openapi_spec
 
 
-def _determine_path(openapi_spec: dict[str, Any], response_path: Path) -> UrlPath:
+def _determine_path(
+    openapi_spec: jsonref.JsonRef, response_path: Path
+) -> PathDescription:
 
     for p in openapi_spec["paths"]:
         openapi_path = Path(p)
@@ -181,7 +185,7 @@ def _determine_path(openapi_spec: dict[str, Any], response_path: Path) -> UrlPat
             param.name: param for param in _get_params(openapi_spec, p) if param.is_path
         }
         if (len(path_params) == 0) and (openapi_path.parts == response_path.parts):
-            return UrlPath(
+            return PathDescription(
                 path=str(response_path), path_parameters=list(path_params.values())
             )
         else:
@@ -202,7 +206,7 @@ def _determine_path(openapi_spec: dict[str, Any], response_path: Path) -> UrlPat
             for key in path_params:
                 ii = next(path_param_indices_iter)
                 path_params[key].response_value = unquote(response_path.parts[ii])
-            return UrlPath(
+            return PathDescription(
                 path=str(openapi_path),
                 path_parameters=list(path_params.values()),
             )
