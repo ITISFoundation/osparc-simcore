@@ -54,11 +54,11 @@ class PaymentsSettings(BaseCustomSettings, MixinServiceSettings):
         )
         return base_url_without_vtag
 
-    @validator("PAYMENT_FAKE_COMPLETION")
+    @validator("PAYMENTS_FAKE_COMPLETION")
     @classmethod
     def check_dev_feature_enabled(cls, v):
         if v and not os.environ.get("WEBSERVER_DEV_FEATURES_ENABLED", False):
-            msg = "PAYMENT_FAKE_COMPLETION only allowed when WEBSERVER_DEV_FEATURES_ENABLED=1"
+            msg = "PAYMENTS_FAKE_COMPLETION only allowed when WEBSERVER_DEV_FEATURES_ENABLED=1"
             raise ValueError(msg)
         return v
 
