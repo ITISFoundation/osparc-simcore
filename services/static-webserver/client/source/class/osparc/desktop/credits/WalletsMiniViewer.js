@@ -64,8 +64,8 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
       const activeWallet = this.getActiveWallet();
       if (activeWallet) {
         this.__showOneWallet(activeWallet);
-      } else if (osparc.store.Store.getInstance().getWallets().find(wallet => wallet.isDefaultWallet())) {
-        const found = osparc.store.Store.getInstance().getWallets().find(wallet => wallet.isDefaultWallet());
+      } else if (osparc.store.Store.getInstance().getWallets().find(wallet => wallet.isPreferredWallet())) {
+        const found = osparc.store.Store.getInstance().getWallets().find(wallet => wallet.isPreferredWallet());
         this.__showOneWallet(found);
       } else if (osparc.store.Store.getInstance().getWallets().length) {
         this.__showAllWallets();
@@ -168,10 +168,10 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
         listenerId: changeStatusId
       });
 
-      const defaultWalletId = wallet.addListener("changeDefaultWallet", () => this.__reloadLayout());
+      const preferredWalletId = wallet.addListener("changePreferredWallet", () => this.__reloadLayout());
       this.__walletListeners.push({
         walletId: wallet.getWalletId(),
-        listenerId: defaultWalletId
+        listenerId: preferredWalletId
       });
     }
   }

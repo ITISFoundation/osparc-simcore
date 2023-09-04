@@ -83,25 +83,23 @@ qx.Class.define("osparc.Preferences", {
       init: {},
       check: "Object"
     },
-
+    */
     preferredWalletId: {
       nullable: false,
-      init: {},
+      init: null,
       check: "Object",
       event: "changePreferredWalletId"
     },
-    */
 
     themeName: {
       nullable: false,
       init: {},
-      check: "String",
-      apply: "__saveThemeName"
+      check: "String"
     }
   },
 
   members: {
-    __saveThemeName: function(value) {
+    saveThemeName: function(value) {
       const params = {
         url: {
           preferenceId: "themeName"
@@ -111,6 +109,23 @@ qx.Class.define("osparc.Preferences", {
         }
       };
       osparc.data.Resources.fetch("preferences", "patch", params);
+    },
+
+    requestChangePreferredWalletId: function(walletId) {
+      const params = {
+        url: {
+          preferenceId: "preferredWalletId"
+        },
+        data: {
+          value: walletId
+        }
+      };
+      osparc.data.Resources.fetch("preferences", "patch", params)
+        .then(() => this.setPreferredWalletId(walletId))
+        .catch(err => {
+          console.error(err);
+          osparc.component.message.FlashMessenger.logAs(err.message, "ERROR");
+        });
     }
   }
 });

@@ -32,11 +32,11 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       apply: "__applyStatus"
     },
 
-    defaultWallet: {
+    preferredWallet: {
       check: "Boolean",
       init: null,
       nullable: false,
-      apply: "__applyDefaultWallet"
+      apply: "__applyPreferredWallet"
     }
   },
 
@@ -250,10 +250,10 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       }
     },
 
-    __applyDefaultWallet: function(isDefaultWallet) {
+    __applyPreferredWallet: function(isPreferredWallet) {
       const favouriteButton = this.getChildControl("favourite-button");
       const favouriteButtonIcon = favouriteButton.getChildControl("icon");
-      if (isDefaultWallet) {
+      if (isPreferredWallet) {
         this.setToolTipText(this.tr("Default Wallet"));
         favouriteButton.setIcon("@FontAwesome5Solid/star/24");
         favouriteButtonIcon.setTextColor("strong-main");
