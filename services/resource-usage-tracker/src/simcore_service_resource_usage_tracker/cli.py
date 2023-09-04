@@ -1,5 +1,4 @@
 import logging
-from typing import Annotated
 
 import rich
 import typer
@@ -23,17 +22,7 @@ def _version_callback(value: bool) -> None:
 
 
 @app.callback()
-def main(
-    ctx: typer.Context,
-    version: Annotated[
-        bool,
-        typer.Option(
-            "--version",
-            callback=_version_callback,
-            is_eager=True,
-        ),
-    ] = False,
-) -> None:
+def main(ctx: typer.Context) -> None:
     """o2s2parc resource usage tracker"""
     assert ctx  # nosec
     assert True  # nosec
