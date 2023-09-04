@@ -42,15 +42,30 @@ class ComputationCreate(BaseModel):
         description="the computation shall use the cluster described by its id, 0 is the default cluster",
     )
     wallet_id: WalletID | None = Field(
-        default=TEMPORARY_DEFAULT_WALLET_ID, description="the selected wallet ID"
+        default=None, description="the selected wallet ID"
     )
     simcore_user_agent: str = UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+    use_on_demand_clusters: bool = Field(
+        default=False,
+        description="if True, a cluster will be created as necessary (wallet_id cannot be None, and cluster_id must be None)",
+    )
 
     @validator("product_name", always=True)
     @classmethod
     def ensure_product_name_defined_if_computation_starts(cls, v, values):
         if "start_pipeline" in values and values["start_pipeline"] and v is None:
             msg = "product_name must be set if computation shall start!"
+            raise ValueError(msg)
+        return v
+
+    @validator("use_on_demand_clusters", always=True)
+    @classmethod
+    def ensure_expected_options(cls, v, values):
+        if v is True and ("cluster_id" in values and values["cluster_id"] is not None):
+            msg = "cluster_id cannot be set if use_on_demand_clusters is set"
+            raise ValueError(msg)
+        if v is True and ("wallet_id" not in values or values["wallet_id"] is None):
+            msg = "wallet_id must be set if use_on_demand_clusters is set"
             raise ValueError(msg)
         return v
 
