@@ -4,34 +4,41 @@
 
 from datetime import datetime, timedelta
 
+import arrow
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
-from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import NewUser
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.users import UserStatus
-from simcore_service_webserver.users.api import update_expired_users
+from simcore_service_webserver.users.api import (
+    get_user_name_and_email,
+    update_expired_users,
+)
 
-_NOW = datetime.utcnow()
+_NOW = arrow.utcnow().datetime
 YESTERDAY = _NOW - timedelta(days=1)
 TOMORROW = _NOW + timedelta(days=1)
 
 
 @pytest.fixture
 def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: MonkeyPatch
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ) -> EnvVarsDict:
-    # disables GC
+    # disables GC and DB-listener
     return app_environment | setenvs_from_dict(
-        monkeypatch, {"WEBSERVER_GARBAGE_COLLECTOR": "null"}
+        monkeypatch,
+        {
+            "WEBSERVER_GARBAGE_COLLECTOR": "null",
+            "WEBSERVER_DB_LISTENER": "0",
+        },
     )
 
 
-@pytest.mark.parametrize("expires_at", (YESTERDAY, TOMORROW, None))
+@pytest.mark.parametrize("expires_at", [YESTERDAY, TOMORROW, None])
 async def test_update_expired_users(
     expires_at: datetime | None, client: TestClient, faker: Faker
 ):
@@ -70,3 +77,18 @@ async def test_update_expired_users(
         # after update
         r2 = await _rq_login()
         await assert_status(r2, web.HTTPUnauthorized if has_expired else web.HTTPOk)
+
+
+async def test_get_username_and_email(client: TestClient, faker: Faker):
+    assert client.app
+
+    async with NewUser(
+        {
+            "email": faker.email(),
+        },
+        client.app,
+    ) as user:
+        assert await get_user_name_and_email(client.app, user_id=user["id"]) == (
+            user["name"],
+            user["email"],
+        )
