@@ -17,11 +17,7 @@ from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
-from models_library.rabbitmq_messages import (
-    LoggerRabbitMessage,
-    ProgressRabbitMessageNode,
-    SimcorePlatformStatus,
-)
+from models_library.rabbitmq_messages import SimcorePlatformStatus
 from models_library.rpc_schemas_clusters_keeper.clusters import (
     ClusterState,
     ComputationalCluster,
@@ -52,6 +48,8 @@ from ...utils.dask import (
 )
 from ...utils.dask_client_utils import TaskHandlers
 from ...utils.rabbitmq import (
+    publish_service_log,
+    publish_service_progress,
     publish_service_resource_tracking_stopped,
     publish_service_stopped_metrics,
 )
@@ -306,25 +304,23 @@ class DaskScheduler(BaseCompScheduler):
         await CompTasksRepository(self.db_engine).update_project_task_progress(
             project_id, node_id, task_progress_event.progress
         )
-
-        message = ProgressRabbitMessageNode.construct(
+        await publish_service_progress(
+            self.rabbitmq_client,
             user_id=user_id,
             project_id=project_id,
             node_id=node_id,
             progress=task_progress_event.progress,
         )
-        await self.rabbitmq_client.publish(message.channel_name, message)
 
     async def _task_log_change_handler(self, event: str) -> None:
         task_log_event = TaskLogEvent.parse_raw(event)
         _logger.debug("received task log update: %s", task_log_event)
         *_, user_id, project_id, node_id = parse_dask_job_id(task_log_event.job_id)
-        message = LoggerRabbitMessage.construct(
-            user_id=user_id,
-            project_id=project_id,
-            node_id=node_id,
-            messages=[task_log_event.log],
-            log_level=task_log_event.log_level,
+        await publish_service_log(
+            self.rabbitmq_client,
+            user_id,
+            project_id,
+            node_id,
+            task_log_event.log,
+            task_log_event.log_level,
         )
-
-        await self.rabbitmq_client.publish(message.channel_name, message)
