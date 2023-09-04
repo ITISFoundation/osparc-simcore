@@ -37,6 +37,7 @@ class ParamSchema(BaseModel):
         return val
 
     @root_validator(pre=False)
+    @classmethod
     def check_compatibility(cls, values):
         param_type = values.get("param_type")
         pattern = values.get("pattern")
