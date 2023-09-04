@@ -25,6 +25,15 @@ _ACCESS_LOG_FORMAT: Final[
     str
 ] = '%a %t "%r" %s %b [%Dus] "%{Referer}i" "%{User-Agent}i"'
 
+_LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
+_NOISY_LOGGERS = (
+    "aio_pika",
+    "aiormq",
+    "engineio",
+    "openapi_spec_validator",
+    "sqlalchemy",
+    "sqlalchemy.engine",
+)
 _logger = logging.getLogger(__name__)
 
 
@@ -67,6 +76,13 @@ def create(settings: Settings) -> web.Application:
 
     if settings.STORAGE_MONITORING_ENABLED:
         setup_monitoring(app, app_name, version=f"{version}")
+
+    # keep mostly quiet noisy loggers
+    quiet_level: int = max(
+        min(logging.root.level + _LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING
+    )
+    for name in _NOISY_LOGGERS:
+        logging.getLogger(name).setLevel(quiet_level)
 
     return app
 
