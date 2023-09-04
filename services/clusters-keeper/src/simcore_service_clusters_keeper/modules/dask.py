@@ -65,9 +65,20 @@ async def is_gateway_busy(*, url: AnyUrl, gateway_auth: SimpleAuthentication) ->
                 client.list_datasets()
             )
             _logger.info(
-                "cluster currently has %s datasets, it is %s",
-                len(datasets_on_scheduler),
-                "BUSY" if len(datasets_on_scheduler) > 0 else "NOT BUSY",
+                "cluster currently has %s datasets", len(datasets_on_scheduler)
             )
-            currently_processing = await _wrap_client_async_routine(client.processing())
-            return bool(datasets_on_scheduler or currently_processing)
+            num_processing_tasks = 0
+            if worker_to_processing_tasks := await _wrap_client_async_routine(
+                client.processing()
+            ):
+                _logger.info(
+                    "cluster worker processing: %s", worker_to_processing_tasks
+                )
+                num_processing_tasks = sum(
+                    len(tasks) for tasks in worker_to_processing_tasks.values()
+                )
+                _logger.info(
+                    "cluster currently processes %s tasks", num_processing_tasks
+                )
+
+            return bool(datasets_on_scheduler or num_processing_tasks)
