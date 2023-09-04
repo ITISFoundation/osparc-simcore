@@ -63,7 +63,7 @@ resource_tracker_service_runs = sa.Table(
     ),
     sa.Column(
         "pricing_detail_cost_per_unit",
-        sa.Numeric(**NUMERIC_KWARGS),
+        sa.Numeric(**NUMERIC_KWARGS),  # type: ignore
         nullable=True,
         doc="Pricing detail cost per unit used for billing purposes",
     ),

@@ -79,7 +79,7 @@ resource_tracker_credit_transactions = sa.Table(
     ),
     sa.Column(
         "osparc_credits",
-        sa.Numeric(**NUMERIC_KWARGS),
+        sa.Numeric(**NUMERIC_KWARGS),  # type: ignore
         nullable=False,
         doc="Credits",
     ),

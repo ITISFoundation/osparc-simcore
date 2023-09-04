@@ -41,7 +41,7 @@ resource_tracker_pricing_details = sa.Table(
     ),
     sa.Column(
         "cost_per_unit",
-        sa.Numeric(**NUMERIC_KWARGS),
+        sa.Numeric(**NUMERIC_KWARGS),  # type: ignore
         nullable=False,
         doc="The cost per unit of the pricing plan in credits.",
     ),
