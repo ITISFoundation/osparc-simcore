@@ -10,14 +10,6 @@ include ../../scripts/common-service.Makefile
 	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
 
 
-show-settings: .env ## shows local test settings (running bare metal against AWS)
-	# setting up dependencies
-	@docker compose up --detach
-	@set -o allexport \
-	&& source $(CURDIR)/.env \
-	&& set +o allexport \
-	&& simcore-service-clusters-keeper settings
-
 .PHONY: test-local
 up-devel: .env ## starts local test application (running bare metal against AWS)
 	# setting up dependencies
