@@ -427,7 +427,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         return;
       }
 
-      const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+      const preferencesSettings = osparc.Preferences.getInstance();
       if (preferencesSettings.getConfirmDeleteNode()) {
         const msg = this.tr("Are you sure you want to delete node?");
         const win = new osparc.ui.window.Confirmation(msg).set({

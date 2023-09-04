@@ -396,11 +396,22 @@ qx.Class.define("osparc.Application", {
 
           if ("preferences" in profile) {
             const bePreferences = profile["preferences"];
-            const fePreferences = qx.util.PropertyUtil.getProperties(osparc.desktop.preferences.Preferences);
-            const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+            const fePreferences = qx.util.PropertyUtil.getProperties(osparc.Preferences);
+            const preferencesSettings = osparc.Preferences.getInstance();
             Object.entries(bePreferences).forEach(([key, data]) => {
               if (fePreferences.includes(key)) {
                 preferencesSettings.set(key, data.value);
+              } else {
+                switch (key) {
+                  case "dontShowAnnouncements":
+                    break;
+                  case "services":
+                    break;
+                  case "themeName":
+                    break;
+                  case "preferredWalletId":
+                    break;
+                }
               }
             });
           }

@@ -104,7 +104,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ExperimentalPage", {
       ));
       box.add(label);
 
-      const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+      const preferencesSettings = osparc.Preferences.getInstance();
 
       const cbAutoPorts = new qx.ui.form.CheckBox(this.tr("Connect ports automatically"));
       preferencesSettings.bind("autoConnectPorts", cbAutoPorts, "value");

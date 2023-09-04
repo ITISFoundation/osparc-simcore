@@ -19,7 +19,7 @@
  *
  */
 
-qx.Class.define("osparc.desktop.preferences.Preferences", {
+qx.Class.define("osparc.Preferences", {
   extend: qx.core.Object,
   type: "singleton",
 

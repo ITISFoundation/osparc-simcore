@@ -107,7 +107,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       }
       if (this.__studyEditor) {
         const isReadOnly = this.__studyEditor.getStudy().isReadOnly();
-        const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+        const preferencesSettings = osparc.Preferences.getInstance();
         if (!isReadOnly && preferencesSettings.getConfirmBackToDashboard()) {
           const studyName = this.__studyEditor.getStudy().getName();
           const win = new osparc.ui.window.Confirmation();

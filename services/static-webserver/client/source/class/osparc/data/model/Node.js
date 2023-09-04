@@ -831,7 +831,7 @@ qx.Class.define("osparc.data.model.Node", {
 
     // Iterate over output ports and connect them to first compatible input port
     createAutoPortConnection: async function(node1, node2) {
-      const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+      const preferencesSettings = osparc.Preferences.getInstance();
       if (!preferencesSettings.getAutoConnectPorts()) {
         return;
       }
@@ -977,7 +977,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     requestStopNode: function() {
-      const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+      const preferencesSettings = osparc.Preferences.getInstance();
       if (preferencesSettings.getConfirmStopNode()) {
         const msg = this.tr("Do you really want Stop and Save the current state?");
         const win = new osparc.ui.window.Confirmation(msg).set({

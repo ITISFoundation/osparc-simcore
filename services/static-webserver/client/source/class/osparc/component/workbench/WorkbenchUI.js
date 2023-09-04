@@ -429,7 +429,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this.getSelectedNodeUIs().forEach(selectedNodeUI => delete selectedNodeUI["initPos"]);
       this.getSelectedAnnotations().forEach(selectedAnnotation => delete selectedAnnotation["initPos"]);
 
-      if (nodeUI && osparc.desktop.preferences.Preferences.getInstance().isSnapNodeToGrid()) {
+      if (nodeUI && osparc.Preferences.getInstance().isSnapNodeToGrid()) {
         nodeUI.snapToGrid();
         // make sure nodeUI is moved, then update edges
         setTimeout(() => this.__updateNodeUIPos(nodeUI), 10);

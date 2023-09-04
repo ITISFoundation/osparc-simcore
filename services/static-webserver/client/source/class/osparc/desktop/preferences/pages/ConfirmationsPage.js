@@ -38,7 +38,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
 
   statics: {
     patchPreference: function(preferenceId, preferenceField, newValue) {
-      const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+      const preferencesSettings = osparc.Preferences.getInstance();
 
       const oldValue = preferencesSettings.get(preferenceId);
       if (newValue === oldValue) {
@@ -73,7 +73,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
 
       this.add(new qx.ui.core.Spacer(null, 10));
 
-      const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+      const preferencesSettings = osparc.Preferences.getInstance();
 
       const box = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
         paddingLeft: 10
@@ -157,7 +157,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
       ));
       box.add(label);
 
-      const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+      const preferencesSettings = osparc.Preferences.getInstance();
 
       const cbAutoPorts = new qx.ui.form.CheckBox(this.tr("Connect ports automatically"));
       preferencesSettings.bind("autoConnectPorts", cbAutoPorts, "value");
