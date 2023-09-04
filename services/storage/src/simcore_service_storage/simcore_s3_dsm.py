@@ -25,6 +25,7 @@ from pydantic import AnyUrl, ByteSize, NonNegativeInt, parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.logging_utils import log_context
+from servicelib.sequences_utils import partition_gen
 from servicelib.utils import ensure_ends_with, logged_gather
 
 from . import db_file_meta_data, db_projects, db_tokens
@@ -576,10 +577,19 @@ class SimcoreS3DataManager(BaseDataManager):
             ),
             log_duration=True,
         ):
-            sizes_and_num_files: list[tuple[ByteSize, int]] = await logged_gather(
-                *[self._get_size_and_num_files(fmd) for fmd in src_project_files],
-                max_concurrency=_MAX_PARALLEL_S3_CALLS,
-            )
+            sizes_and_num_files: list[tuple[ByteSize, int]] = []
+            for src_project_files_slice in partition_gen(
+                src_project_files, slice_size=_MAX_PARALLEL_S3_CALLS
+            ):
+                sizes_and_num_files.extend(
+                    await logged_gather(
+                        *[
+                            self._get_size_and_num_files(fmd)
+                            for fmd in src_project_files_slice
+                        ]
+                    )
+                )
+
             total_bytes_to_copy = sum(n for n, _ in sizes_and_num_files)
             total_num_of_files = sum(n for _, n in sizes_and_num_files)
         src_project_total_data_size: ByteSize = parse_obj_as(
@@ -636,7 +646,10 @@ class SimcoreS3DataManager(BaseDataManager):
                     and (int(output.get("store", self.location_id)) == DATCORE_ID)
                 ]
             )
-        await logged_gather(*copy_tasks, max_concurrency=MAX_CONCURRENT_S3_TASKS)
+        for copy_tasks_slice in partition_gen(
+            copy_tasks, slice_size=MAX_CONCURRENT_S3_TASKS
+        ):
+            await logged_gather(*copy_tasks_slice)
         # ensure the full size is reported
         s3_transfered_data_cb.finalize_transfer()
         _logger.info(
