@@ -89,6 +89,7 @@ async def start_computation(request: web.Request) -> web.Response:
         "cluster_id": cluster_id,
         "simcore_user_agent": simcore_user_agent,
         "use_on_demand_clusters": True,  # TODO: this needs to be defined elsewhere
+        "wallet_id": 43,
     }
 
     try:
