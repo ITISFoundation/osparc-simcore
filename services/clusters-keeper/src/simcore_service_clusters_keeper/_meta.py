@@ -10,7 +10,7 @@ from packaging.version import Version
 from pydantic import parse_obj_as
 
 _current_distribution = pkg_resources.get_distribution(
-    "simcore-service-clusters_keeper"
+    "simcore-service-clusters-keeper"
 )
 
 __version__: str = _current_distribution.version
@@ -20,6 +20,7 @@ APP_NAME: Final[str] = _current_distribution.project_name
 API_VERSION: Final[str] = __version__
 VERSION: Final[Version] = Version(__version__)
 API_VTAG: Final[VersionTag] = parse_obj_as(VersionTag, f"v{VERSION.major}")
+RPC_VTAG: Final[VersionTag] = parse_obj_as(VersionTag, f"v{VERSION.major}")
 
 
 def get_summary() -> str:
@@ -30,7 +31,7 @@ def get_summary() -> str:
             metadata = _current_distribution.get_metadata_lines("PKG-INFO")
 
         return next(x.split(":") for x in metadata if x.startswith("Summary:"))[-1]
-    return ""
+    return ""  # pragma: no cover
 
 
 SUMMARY: Final[str] = get_summary()
