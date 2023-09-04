@@ -27,12 +27,11 @@ _ACCESS_LOG_FORMAT: Final[
 
 _LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
 _NOISY_LOGGERS = (
+    "aiobotocore",
     "aio_pika",
     "aiormq",
-    "engineio",
-    "openapi_spec_validator",
+    "botocore",
     "sqlalchemy",
-    "sqlalchemy.engine",
 )
 _logger = logging.getLogger(__name__)
 
