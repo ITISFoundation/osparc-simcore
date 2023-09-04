@@ -32,7 +32,6 @@ class PaymentsTransactionsDB(BaseModel):
     user_id: UserID
     user_email: LowerCaseEmailStr
     wallet_id: WalletID
-    wallet_name: str
     comment: str | None
     initiated_at: datetime.datetime
     completed_at: datetime.datetime | None
@@ -50,7 +49,6 @@ async def create_payment_transaction(  # noqa: PLR0913
     user_id: UserID,
     user_email: str,
     wallet_id: WalletID,
-    wallet_name: str,
     comment: str | None,
     initiated_at: datetime.datetime,
 ) -> PaymentsTransactionsDB:
@@ -65,7 +63,6 @@ async def create_payment_transaction(  # noqa: PLR0913
                 user_id=user_id,
                 user_email=user_email,
                 wallet_id=wallet_id,
-                wallet_name=wallet_name,
                 comment=comment,
                 initiated_at=initiated_at,
             )
