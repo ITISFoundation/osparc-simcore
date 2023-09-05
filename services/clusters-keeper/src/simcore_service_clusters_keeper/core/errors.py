@@ -2,7 +2,7 @@ from pydantic.errors import PydanticErrorMixin
 
 
 class ClustersKeeperRuntimeError(PydanticErrorMixin, RuntimeError):
-    msg_template: str = "clusters_keeper unexpected error"
+    msg_template: str = "clusters-keeper unexpected error"
 
 
 class ConfigurationError(ClustersKeeperRuntimeError):

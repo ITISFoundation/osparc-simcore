@@ -7,7 +7,7 @@ from .generated_models.docker_rest_api import (
     ServiceSpec,
     TaskSpec,
 )
-from .utils.converters import to_snake_case
+from .utils.change_case import camel_to_snake
 
 
 class AioDockerContainerSpec(ContainerSpec):
@@ -56,5 +56,5 @@ class AioDockerServiceSpec(ServiceSpec):
     TaskTemplate: AioDockerTaskSpec | None = None
 
     class Config(ServiceSpec.Config):  # type: ignore
-        alias_generator = to_snake_case
+        alias_generator = camel_to_snake
         allow_population_by_field_name = True
