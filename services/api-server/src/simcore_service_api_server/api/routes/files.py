@@ -221,12 +221,12 @@ async def get_upload_links(
     completion_url: URL = request.url_for(
         "complete_multipart_upload", file_id=file_meta.id
     )
-    abortion_url: URL = request.url_for("abort_multipart_upload", file_id=file_meta.id)
+    abort_url: URL = request.url_for("abort_multipart_upload", file_id=file_meta.id)
     upload_data: FileUploadData = FileUploadData(
         chunk_size=upload_links.chunk_size,
         urls=upload_links.urls,
         links=UploadLinks(
-            complete_upload=completion_url.path, abort_upload=abortion_url.path
+            complete_upload=completion_url.path, abort_upload=abort_url.path
         ),
     )
     return ClientFileUploadData(file_id=file_meta.id, upload_schema=upload_data)
