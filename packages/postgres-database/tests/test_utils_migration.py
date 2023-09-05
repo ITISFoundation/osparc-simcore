@@ -23,6 +23,7 @@ def test_migration_has_no_branches():
         )
 
 
+@pytest.mark.testit
 def test_migration_upgrade_downgrade(make_engine: Callable):
     sync_engine = make_engine(is_async=False)
     assert sync_engine
@@ -48,3 +49,6 @@ def test_migration_upgrade_downgrade(make_engine: Callable):
     assert inspector.get_table_names() == [
         "alembic_version"
     ], "Only the alembic table should remain, please check!!!"
+    # NOTE: We should remove comment
+    # assert inspector.get_enums() == []
+    # NOTE: Triggers are not implemented https://docs.sqlalchemy.org/en/20/core/reflection.html

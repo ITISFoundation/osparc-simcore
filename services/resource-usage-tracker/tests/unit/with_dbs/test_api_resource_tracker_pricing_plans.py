@@ -84,6 +84,7 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
         con.execute(resource_tracker_pricing_plans.delete())
 
 
+@pytest.mark.testit
 async def test_pricing_plans_get(
     mocked_redis_server: None,
     mocked_setup_rabbitmq: mock.Mock,
