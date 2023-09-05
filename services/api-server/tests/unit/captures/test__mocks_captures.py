@@ -17,7 +17,6 @@ import respx
 from pydantic import parse_file_as
 from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
 from simcore_service_api_server.utils.http_calls_capture_processing import (
-    Param,
     PathDescription,
     _determine_path,
 )
