@@ -525,7 +525,7 @@ def respx_mock_from_capture() -> Callable[
             path_regex: str = str(url_path.path)
             for param in url_path.path_parameters:
                 path_regex = path_regex.replace(
-                    "{" + param.name + "}", param.regex_lookup
+                    "{" + param.name + "}", param.respx_lookup
                 )
             respx_mock.request(
                 capture.method.upper(), url=None, path__regex=path_regex

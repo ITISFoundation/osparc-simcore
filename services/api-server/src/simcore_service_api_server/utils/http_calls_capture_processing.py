@@ -136,7 +136,7 @@ class Param(BaseModel):
         return self.variable_type == "query"
 
     @property
-    def regex_lookup(self) -> str:
+    def respx_lookup(self) -> str:
         return rf"(?P<{self.name}>{self.param_schema.regex_pattern})"
 
 

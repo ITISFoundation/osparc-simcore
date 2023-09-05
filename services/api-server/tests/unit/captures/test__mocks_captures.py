@@ -261,7 +261,7 @@ def test_capture_respx_api_server(params: tuple[str, Path, str]):
     )
     path_pattern = str(openapi_path)
     for p in url_path.path_parameters:
-        path_pattern = path_pattern.replace("{" + p.name + "}", p.regex_lookup)
+        path_pattern = path_pattern.replace("{" + p.name + "}", p.respx_lookup)
 
     def side_effect(request, **kwargs):
         return httpx.Response(status_code=200, json=kwargs)
