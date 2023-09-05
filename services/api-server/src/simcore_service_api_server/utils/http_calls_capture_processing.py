@@ -82,24 +82,26 @@ class ParamSchema(BaseModel):
             return "&".join([elm.regex_pattern for elm in self.allOf])
 
         # now deal with non-recursive cases
+        pattern: str | None = None
         if self.pattern is not None:
-            pattern: str = str(self.pattern)
+            pattern = str(self.pattern)
             pattern = pattern.removeprefix("^")
             pattern = pattern.removesuffix("$")
-            return pattern
         else:
             if self.param_type == "int":
-                return r"[-+]?\d+"
+                pattern = r"[-+]?\d+"
             elif self.param_type == "float":
-                return r"[+-]?\d+(?:\.\d+)?"
+                pattern = r"[+-]?\d+(?:\.\d+)?"
             elif self.param_type == "str":
                 if self.param_format == "uuid":
-                    return r"[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12}"
+                    pattern = r"[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12}"
                 else:
-                    return r".*"  # should match any string
-        raise OpenApiSpecIssue(
-            f"Encountered invalid {self.param_type=} and {self.param_format=} combination"
-        )
+                    pattern = r".*"  # should match any string
+        if pattern is None:
+            raise OpenApiSpecIssue(
+                f"Encountered invalid {self.param_type=} and {self.param_format=} combination"
+            )
+        return pattern
 
 
 class Param(BaseModel):
