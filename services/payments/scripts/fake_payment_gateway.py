@@ -9,7 +9,7 @@ import uvicorn
 from fastapi import APIRouter, Depends, FastAPI, Header, status
 from fastapi.responses import HTMLResponse
 from fastapi.routing import APIRoute
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 def set_operation_id_as_handler_function_name(router: APIRouter):
@@ -133,43 +133,12 @@ def create_payment_method_router():
 
     @router.post("/{id}:pay", response_model=PaymentInitiated)
     def pay_with_payment_method(
+        id: PaymentMethodID,
         payment: InitPayment,
         auth: Annotated[int, Depends(auth_session)],
     ):
         assert payment  # nosec
         assert auth  # nosec
-
-    return router
-
-
-class AckPayment(BaseModel):
-    idr: PaymentID
-    success: bool
-    message: str = Field(default=None)
-
-
-class AckPaymentMethod(BaseModel):
-    idr: PaymentMethodID
-    success: bool
-    message: str = Field(default=None)
-
-
-def create_payment_service_ack_routes():
-    router = APIRouter(
-        tags=[
-            "Ack (our payment service)",
-        ],
-    )
-
-    @router.post("/payments:ack", status_code=status.HTTP_200_OK)
-    def ack_payment(ack: AckPayment):
-        """ACK payment created by `/pay`"""
-        assert ack  # nosec
-
-    @router.post("/payments-method:ack", status_code=status.HTTP_200_OK)
-    def ack_payment_method(ack: AckPaymentMethod):
-        """ACK payment method added by `/paymeth-methods:init`"""
-        assert ack  # nosec
 
     return router
 
@@ -181,7 +150,6 @@ def create_app():
     for factory in (
         create_payment_router,
         create_payment_method_router,
-        create_payment_service_ack_routes,
     ):
         router = factory()
         set_operation_id_as_handler_function_name(router)
