@@ -31,7 +31,7 @@ from ..utils.rabbitmq import log_tasks_message, progress_tasks_message
 from .docker import get_docker_client
 from .ec2 import get_ec2_client
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 async def _deactivate_empty_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
@@ -65,7 +65,7 @@ async def _deactivate_empty_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
         )
     )
     if active_empty_nodes:
-        logger.info(
+        _logger.info(
             "The following nodes set to drain: '%s'",
             f"{[node.node.Description.Hostname for node in active_empty_nodes if node.node.Description]}",
         )
@@ -104,7 +104,7 @@ async def _find_terminateable_instances(
             terminateable_nodes.append(instance)
 
     if terminateable_nodes:
-        logger.info(
+        _logger.info(
             "the following nodes were found to be terminateable: '%s'",
             f"{[instance.node.Description.Hostname for instance in terminateable_nodes if instance.node.Description]}",
         )
@@ -119,7 +119,7 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
         await get_ec2_client(app).terminate_instances(
             [i.ec2_instance for i in terminateable_instances]
         )
-        logger.info(
+        _logger.info(
             "EC2 terminated: '%s'",
             f"{[i.node.Description.Hostname for i in terminateable_instances if i.node.Description]}",
         )
@@ -250,7 +250,7 @@ async def _find_needed_instances(
             )
             needed_new_instance_to_tasks.append((best_ec2_instance, [task]))
         except Ec2InstanceNotFoundError:
-            logger.error(
+            _logger.error(
                 "Task %s needs more resources than any EC2 instance "
                 "can provide with the current configuration. Please check.",
                 f"{task.Name or 'unknown task name'}:{task.ServiceID or 'unknown service ID'}",
@@ -319,7 +319,7 @@ async def _start_instances(
                 level=logging.ERROR,
             )
         elif isinstance(r, Exception):
-            logger.error("Unexpected error happened when starting EC2 instance: %s", r)
+            _logger.error("Unexpected error happened when starting EC2 instance: %s", r)
             last_issue = f"{r}"
         elif isinstance(r, list):
             new_pending_instances.extend(r)

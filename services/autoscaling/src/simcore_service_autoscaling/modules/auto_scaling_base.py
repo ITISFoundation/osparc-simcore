@@ -21,7 +21,7 @@ from ..utils.rabbitmq import post_autoscaling_status_message
 from .docker import get_docker_client
 from .ec2 import get_ec2_client
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 async def _analyze_current_cluster(app: FastAPI) -> Cluster:
@@ -85,7 +85,7 @@ async def _analyze_current_cluster(app: FastAPI) -> Cluster:
         terminated_instances=terminated_ec2_instances,
         disconnected_nodes=[n for n in docker_nodes if _node_not_ready(n)],
     )
-    logger.info("current state: %s", f"{cluster=}")
+    _logger.info("current state: %s", f"{cluster=}")
     return cluster
 
 
@@ -117,7 +117,7 @@ async def _try_attach_pending_ec2s(app: FastAPI, cluster: Cluster) -> Cluster:
             else:
                 still_pending_ec2s.append(instance_data)
         except Ec2InvalidDnsNameError:
-            logger.exception("Unexpected EC2 private dns")
+            _logger.exception("Unexpected EC2 private dns")
     # NOTE: first provision the reserve drained nodes if possible
     all_drained_nodes = (
         cluster.drained_nodes + cluster.reserve_drained_nodes + new_found_instances
