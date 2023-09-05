@@ -52,7 +52,7 @@ class HttpApiCallCaptureModel(BaseModel):
             if request.content
             else None,
             response_body=response.json() if response.content else None,
-            status_code=response.status_code,
+            status_code=HTTPStatus(response.status_code),
         )
 
     def __str__(self) -> str:

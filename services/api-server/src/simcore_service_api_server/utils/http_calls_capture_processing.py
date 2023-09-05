@@ -1,11 +1,13 @@
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, get_args
 from urllib.parse import unquote
 
 import httpx
 import jsonref
 from pydantic import BaseModel, Field, parse_obj_as, root_validator, validator
 from simcore_service_api_server.core.settings import CatalogSettings, StorageSettings
+
+service_hosts = Literal["storage", "catalog"]
 
 
 class ParamSchema(BaseModel):
@@ -146,13 +148,14 @@ class PathDescription(BaseModel):
 
 
 def preprocess_response(response: httpx.Response) -> PathDescription:
-    openapi_spec: jsonref.JsonRef = get_openapi_specs(response.url.host)
+    assert response.url.host in get_args(service_hosts)
+    openapi_spec: dict[str, Any] = get_openapi_specs(response.url.host)  # type: ignore
     return _determine_path(
         openapi_spec, Path(response.request.url.raw_path.decode("utf8").split("?")[0])
     )
 
 
-def get_openapi_specs(host: Literal["storage", "catalog"]) -> jsonref.JsonRef:
+def get_openapi_specs(host: service_hosts) -> dict[str, Any]:
     url: str
     if host == "storage":
         settings = StorageSettings()
@@ -170,12 +173,12 @@ def get_openapi_specs(host: Literal["storage", "catalog"]) -> jsonref.JsonRef:
         response = session.get(url)
         response.raise_for_status()
         openapi_spec = jsonref.loads(response.read().decode("utf8"))
-        assert isinstance(openapi_spec, jsonref.JsonRef)
+        assert isinstance(openapi_spec, dict)
         return openapi_spec
 
 
 def _determine_path(
-    openapi_spec: jsonref.JsonRef, response_path: Path
+    openapi_spec: dict[str, Any], response_path: Path
 ) -> PathDescription:
 
     for p in openapi_spec["paths"]:
