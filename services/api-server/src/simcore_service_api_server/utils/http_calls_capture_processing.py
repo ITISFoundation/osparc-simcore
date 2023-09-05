@@ -149,7 +149,7 @@ class PathDescription(BaseModel):
 
 def preprocess_response(response: httpx.Response) -> PathDescription:
     assert response.url.host in get_args(service_hosts)
-    openapi_spec: dict[str, Any] = get_openapi_specs(response.url.host)  # type: ignore
+    openapi_spec: dict[str, Any] = get_openapi_specs(response.url.host)
     return _determine_path(
         openapi_spec, Path(response.request.url.raw_path.decode("utf8").split("?")[0])
     )
@@ -193,7 +193,7 @@ def _determine_path(
                 path=str(response_path), path_parameters=list(path_params.values())
             )
         else:
-            path_param_indices: tuple[int] = tuple(
+            path_param_indices: tuple[int, ...] = tuple(
                 openapi_path.parts.index("{" + name + "}") for name in path_params
             )
             if tuple(
