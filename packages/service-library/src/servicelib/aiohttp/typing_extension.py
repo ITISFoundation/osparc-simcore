@@ -1,9 +1,12 @@
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any, TypeAlias
 
-from aiohttp.web import Request, StreamResponse
+from aiohttp import web
 
 # Taken from aiohttp.web_middlewares import _Handler, _Middleware
-Handler: TypeAlias = Callable[[Request], Awaitable[StreamResponse]]
-HandlerAnyReturn: TypeAlias = Callable[[Request], Awaitable[Any]]
-Middleware: TypeAlias = Callable[[Request, Handler], Awaitable[StreamResponse]]
+Handler: TypeAlias = Callable[[web.Request], Awaitable[web.StreamResponse]]
+HandlerAnyReturn: TypeAlias = Callable[[web.Request], Awaitable[Any]]
+Middleware: TypeAlias = Callable[[web.Request, Handler], Awaitable[web.StreamResponse]]
+
+
+CleanupContextFunc: TypeAlias = Callable[[web.Application], AsyncIterator[None]]
