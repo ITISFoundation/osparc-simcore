@@ -8,11 +8,11 @@ from models_library.api_schemas_resource_usage_tracker.credit_transactions impor
 from models_library.products import ProductName
 from models_library.resource_tracker import (
     CreditTransactionId,
+    CreditTransactionStatus,
     PricingDetailId,
     PricingPlanId,
     ServiceRunId,
     ServiceRunStatus,
-    TransactionBillingStatus,
 )
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
@@ -350,7 +350,7 @@ class ResourceTrackerRepository(BaseRepository):
                     )
                     & (
                         resource_tracker_credit_transactions.c.transaction_status
-                        == TransactionBillingStatus.PENDING
+                        == CreditTransactionStatus.PENDING
                     )
                     & (
                         resource_tracker_credit_transactions.c.last_heartbeat_at
@@ -383,7 +383,7 @@ class ResourceTrackerRepository(BaseRepository):
                     )
                     & (
                         resource_tracker_credit_transactions.c.transaction_status
-                        == TransactionBillingStatus.PENDING
+                        == CreditTransactionStatus.PENDING
                     )
                 )
                 .returning(resource_tracker_credit_transactions.c.service_run_id)
@@ -406,8 +406,8 @@ class ResourceTrackerRepository(BaseRepository):
                 & (
                     resource_tracker_credit_transactions.c.transaction_status.in_(
                         [
-                            TransactionBillingStatus.BILLED,
-                            TransactionBillingStatus.PENDING,
+                            CreditTransactionStatus.BILLED,
+                            CreditTransactionStatus.PENDING,
                         ]
                     )
                 )
