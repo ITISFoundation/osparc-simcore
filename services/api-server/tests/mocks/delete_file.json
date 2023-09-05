@@ -39,10 +39,10 @@
       "path": "/v0/locations/{location_id}/files/{file_id}",
       "path_parameters": [
         {
-          "variable_type": "path",
+          "in_": "path",
           "name": "file_id",
           "required": true,
-          "param_schema": {
+          "schema_": {
             "title": "File Id",
             "type_": null,
             "pattern": null,
@@ -79,10 +79,10 @@
           "response_value": "api/cc3dd190-8c87-3686-b581-d9f7809d312e/tmp.py"
         },
         {
-          "variable_type": "path",
+          "in_": "path",
           "name": "location_id",
           "required": true,
-          "param_schema": {
+          "schema_": {
             "title": "Location Id",
             "type_": "int",
             "pattern": null,

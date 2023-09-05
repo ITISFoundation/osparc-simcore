@@ -103,10 +103,10 @@ class CapturedParameterSchema(BaseModel):
 
 
 class CapturedParameter(BaseModel):
-    variable_type: Literal["path", "header", "query"] = Field(..., alias="in")
+    in_: Literal["path", "header", "query"] = Field(..., alias="in")
     name: str
     required: bool
-    param_schema: CapturedParameterSchema = Field(..., alias="schema")
+    schema_: CapturedParameterSchema = Field(..., alias="schema")
     response_value: str | None = (
         None  # attribute for storing the params value in a concrete response
     )
@@ -117,27 +117,27 @@ class CapturedParameter(BaseModel):
 
     def __hash__(self):
         return hash(
-            self.name + self.variable_type
+            self.name + self.in_
         )  # it is assumed name is unique within a given path
 
     def __eq__(self, other):
-        return self.name == other.name and self.variable_type == other.variable_type
+        return self.name == other.name and self.in_ == other.in_
 
     @property
     def is_path(self) -> bool:
-        return self.variable_type == "path"
+        return self.in_ == "path"
 
     @property
     def is_header(self) -> bool:
-        return self.variable_type == "header"
+        return self.in_ == "header"
 
     @property
     def is_query(self) -> bool:
-        return self.variable_type == "query"
+        return self.in_ == "query"
 
     @property
     def respx_lookup(self) -> str:
-        return rf"(?P<{self.name}>{self.param_schema.regex_pattern})"
+        return rf"(?P<{self.name}>{self.schema_.regex_pattern})"
 
 
 class PathDescription(BaseModel):

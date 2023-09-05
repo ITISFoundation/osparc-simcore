@@ -218,7 +218,7 @@ _CAPTURE_REGEX_TEST_CASES: list[tuple[str, str, str | None, str | None]] = [
 def test_param_regex_pattern(params: tuple[str, str, str, str]):
     _, openapi_param, match, non_match = params
     param: Param = Param(**json.loads(openapi_param))
-    pattern = param.param_schema.regex_pattern
+    pattern = param.schema_.regex_pattern
     pattern = "^" + pattern + "$"
     if match is not None:
         assert re.match(
