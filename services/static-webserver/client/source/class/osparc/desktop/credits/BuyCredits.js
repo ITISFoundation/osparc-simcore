@@ -422,48 +422,19 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         const totalPrice = this.getTotalPrice();
         const wallet = this.getWallet();
         buying();
-        setTimeout(() => {
-          if (nCredits < 100) {
-            let url = "https://www.payment.appmotion.de";
-            url += "/pay?id=2";
 
-            const paymentGateway = new osparc.desktop.credits.PaymentGateway().set({
-              url,
-              nCredits,
-              totalPrice,
-              walletName: wallet.getName()
-            });
-            const title = "AppMotion's middleware";
-            const win = osparc.ui.window.Window.popUpInWindow(paymentGateway, title, 320, 475);
-            win.center();
-            win.open();
-            paymentGateway.addListener("paymentSuccessful", () => {
-              transactionFinished();
-              let msg = "Payment Successful";
-              msg += "<br>";
-              msg += "You now have " + nCredits + " more credits";
-              osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO", null, 10000);
-              wallet.setCreditsAvailable(wallet.getCreditsAvailable() + nCredits);
-              this.fireDataEvent("transactionSuccessful", {
-                nCredits,
-                totalPrice,
-                walletName: wallet.getName()
-              });
-            });
-            paymentGateway.addListener("paymentFailed", () => {
-              transactionFinished();
-              let msg = "Payment Failed";
-              msg += "<br>";
-              msg += "Please try again";
-              osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR", null, 10000);
-            });
-            paymentGateway.addListener("close", () => {
-              win.close();
-              transactionFinished();
-            });
-          } else {
-            transactionFinished();
-
+        const params = {
+          url: {
+            walletId: wallet.getWalletId()
+          },
+          data: {
+            priceDollars: totalPrice,
+            osparcCredits: nCredits
+          }
+        };
+        osparc.data.Resources.fetch("payments", "post", params)
+          .then(data => {
+            const url = data["paymentFormUrl"];
             const options = {
               width: 400,
               height: 400,
@@ -478,7 +449,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             blocker.setBlockerColor("#FFF");
             blocker.setBlockerOpacity(0.6);
             this.__pgWindow = qx.bom.Window.open(
-              "https://www.sandbox.paypal.com/checkoutnow?sessionID=uid_528c54d94a_mti6mty6mzk&buttonSessionID=uid_fd2db9090d_mti6mty6mzk&stickinessID=uid_b4ee25a7cf_mdc6nta6ntq&smokeHash=&token=6XJ77332V85719833&fundingSource=paypal&buyerCountry=GB&locale.x=en_GB&commit=false&enableFunding.0=paylater&clientID=Ac9r0wZ444AH4c8nEvA7l5QbBaGtf8B0y2ZSTGvQDXFNb0HlkFb9cseCUWMZ0_mJUJPfd2NYjJx4HYLI&env=sandbox&sdkMeta=eyJ1cmwiOiJodHRwczovL3d3dy5wYXlwYWwuY29tL3Nkay9qcz9jbGllbnQtaWQ9QWM5cjB3WjQ0NEFINGM4bkV2QTdsNVFiQmFHdGY4QjB5MlpTVEd2UURYRk5iMEhsa0ZiOWNzZUNVV01aMF9tSlVKUGZkMk5Zakp4NEhZTEkmY29tbWl0PWZhbHNlJmN1cnJlbmN5PUdCUCZkaXNhYmxlLWZ1bmRpbmc9Y2FyZCZlbmFibGUtZnVuZGluZz1wYXlsYXRlciZidXllci1jb3VudHJ5PUdCJmxvY2FsZT1lbl9HQiZjb21wb25lbnRzPW1lc3NhZ2VzLGJ1dHRvbnMiLCJhdHRycyI6eyJkYXRhLXVpZCI6InVpZF9iZnZyaHB5ZXZ4ZXF1aXVpc2FodHJiamhpb3piangifX0&xcomponent=1&version=5.0.394",
+              url,
               "pgWindow",
               options,
               modal,
@@ -505,8 +476,12 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             blockerDomEl.appendChild(label);
 
             blockerDomEl.addEventListener("click", () => this.__pgWindow.focus());
-          }
-        }, 3000);
+          })
+          .catch(err => {
+            console.error(err);
+            osparc.component.message.FlashMessenger.logAs(err.message, "ERROR");
+            transactionFinished();
+          });
       });
       return buyBtn;
     },
