@@ -482,27 +482,28 @@ def patch_webserver_long_running_project_tasks(
 @pytest.fixture
 @respx.mock(assert_all_mocked=False)
 def respx_mock_from_capture() -> Callable[
-    [respx.MockRouter, Path, list[SideEffectCallback] | None], respx.MockRouter
+    [respx.MockRouter, Path, list[SideEffectCallback]], respx.MockRouter
 ]:
     def _generate_mock(
         respx_mock: respx.MockRouter,
         capture_path: Path,
-        side_effects_callbacks: list[SideEffectCallback] | None,
+        side_effects_callbacks: list[SideEffectCallback] | None = None,
     ) -> respx.MockRouter:
         assert capture_path.is_file() and capture_path.suffix == ".json"
         assert (
             respx_mock._bases
         ), "the base_url must be set before the fixture is extended"
 
+        side_effects_callbacks = (
+            [] if side_effects_callbacks is None else side_effects_callbacks
+        )
         captures: list[HttpApiCallCaptureModel] = parse_obj_as(
             list[HttpApiCallCaptureModel], json.loads(capture_path.read_text())
         )
 
         capture_iter = iter(captures)
-        side_effect_callback_iter = (
-            iter(side_effects_callbacks) if side_effects_callbacks else None
-        )
-        if side_effects_callbacks:
+        side_effect_callback_iter = iter(side_effects_callbacks)
+        if len(side_effects_callbacks) > 0:
             assert len(side_effects_callbacks) == len(captures)
 
         def _side_effect(request: httpx.Request, **kwargs):
@@ -513,7 +514,7 @@ def respx_mock_from_capture() -> Callable[
             assert {param.name for param in capture.path.path_parameters} == set(
                 kwargs.keys()
             )
-            if side_effect_callback_iter:
+            if len(side_effects_callbacks) > 0:
                 callback = next(side_effect_callback_iter)
                 response_body = callback(request, kwargs, capture)
             return httpx.Response(status_code=status_code, json=response_body)
