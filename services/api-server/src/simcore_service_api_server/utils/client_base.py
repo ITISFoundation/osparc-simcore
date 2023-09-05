@@ -56,7 +56,8 @@ class _AsyncClientForDevelopmentOnly(httpx.AsyncClient):
             _capture_logger.info("%s,", capture_json)
         except (CaptureProcessingException, ValidationError, httpx.RequestError):
             _capture_logger.exception(
-                f"Unexpected failure with {capture_name=}",
+                "Unexpected failure with %s",
+                capture_name,
                 exc_info=True,
                 stack_info=True,
             )
