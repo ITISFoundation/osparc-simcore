@@ -84,9 +84,7 @@ class ParamSchema(BaseModel):
         # now deal with non-recursive cases
         pattern: str | None = None
         if self.pattern is not None:
-            pattern = str(self.pattern)
-            pattern = pattern.removeprefix("^")
-            pattern = pattern.removesuffix("$")
+            pattern = str(self.pattern).removeprefix("^").removesuffix("$")
         else:
             if self.param_type == "int":
                 pattern = r"[-+]?\d+"
