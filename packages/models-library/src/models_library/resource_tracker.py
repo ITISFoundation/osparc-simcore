@@ -22,14 +22,14 @@ class ServiceRunStatus(StrAutoEnum):
     ERROR = auto()
 
 
-class TransactionBillingStatus(StrAutoEnum):
+class CreditTransactionStatus(StrAutoEnum):
     PENDING = auto()
     BILLED = auto()
     NOT_BILLED = auto()
     REQUIRES_MANUAL_REVIEW = auto()
 
 
-class TransactionClassification(StrAutoEnum):
+class CreditClassification(StrAutoEnum):
     ADD_WALLET_TOP_UP = auto()  # user top up credits
     DEDUCT_SERVICE_RUN = auto()  # computational/dynamic service run costs)
 

@@ -9,14 +9,14 @@ from ._common import NUMERIC_KWARGS, column_created_datetime, column_modified_da
 from .base import metadata
 
 
-class TransactionBillingStatus(str, enum.Enum):
+class CreditTransactionStatus(str, enum.Enum):
     PENDING = "PENDING"
     BILLED = "BILLED"
     NOT_BILLED = "NOT_BILLED"
     REQUIRES_MANUAL_REVIEW = "REQUIRES_MANUAL_REVIEW"
 
 
-class TransactionClassification(str, enum.Enum):
+class CreditTransactionClassification(str, enum.Enum):
     ADD_WALLET_TOP_UP = "ADD_WALLET_TOP_UP"  # user top up credits
     DEDUCT_SERVICE_RUN = (
         "DEDUCT_SERVICE_RUN"  # computational/dynamic service run costs)
@@ -85,14 +85,14 @@ resource_tracker_credit_transactions = sa.Table(
     ),
     sa.Column(
         "transaction_status",
-        sa.Enum(TransactionBillingStatus),
+        sa.Enum(CreditTransactionStatus),
         nullable=True,
         doc="Transaction status, ex. PENDING, BILLED, NOT_BILLED, REQUIRES_MANUAL_REVIEW",
         index=True,
     ),
     sa.Column(
         "transaction_classification",
-        sa.Enum(TransactionClassification),
+        sa.Enum(CreditTransactionClassification),
         nullable=True,
         doc="Transaction classification, ex. ADD_WALLET_TOP_UP, DEDUCT_SERVICE_RUN",
         index=True,
