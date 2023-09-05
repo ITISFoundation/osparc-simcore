@@ -48,6 +48,3 @@ def test_migration_upgrade_downgrade(make_engine: Callable):
     assert inspector.get_table_names() == [
         "alembic_version"
     ], "Only the alembic table should remain, please check!!!"
-    # NOTE: We should remove comment
-    # assert inspector.get_enums() == []
-    # NOTE: Triggers are not implemented https://docs.sqlalchemy.org/en/20/core/reflection.html
