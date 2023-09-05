@@ -40,8 +40,10 @@ async def create_payment_to_wallet(
         UserNotFoundError
         WalletAccessForbiddenError
     """
-    user_email, user_name = await get_user_name_and_email(app, user_id=user_id)
+    # get user info
+    user = await get_user_name_and_email(app, user_id=user_id)
 
+    # check permissions
     permissions = await get_wallet_with_permissions_by_user(
         app, user_id=user_id, wallet_id=wallet_id
     )
@@ -50,6 +52,7 @@ async def create_payment_to_wallet(
             reason=f"User {user_id} does not have necessary permissions to do a payment into wallet {wallet_id}"
         )
 
+    # hold timestamp
     initiated_at = arrow.utcnow().datetime
 
     # payment service
@@ -58,8 +61,8 @@ async def create_payment_to_wallet(
         price_dollars=price_dollars,
         product_name=product_name,
         user_id=user_id,
-        name=user_name,
-        email=user_email,
+        name=user.name,
+        email=user.email,
         osparc_credits=osparc_credit,
     )
     # gateway responded, we store the transaction
@@ -70,7 +73,7 @@ async def create_payment_to_wallet(
         osparc_credits=osparc_credit,
         product_name=product_name,
         user_id=user_id,
-        user_email=user_email,
+        user_email=user.email,
         wallet_id=wallet_id,
         comment=comment,
         initiated_at=initiated_at,

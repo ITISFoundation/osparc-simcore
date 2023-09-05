@@ -26,9 +26,9 @@ def app_environment(
     new_envs = setenvs_from_dict(
         monkeypatch,
         {
-            **app_environment,
             **env_devel_dict,
-            "PAYMENT_FAKE_COMPLETION": "1",
+            **app_environment,  # WARNING: AFTER env_devel_dict because HOST are set to 127.0.0.1 in here
+            "PAYMENTS_FAKE_COMPLETION": "1",
             "WEBSERVER_DB_LISTENER": "0",
             "WEBSERVER_DEV_FEATURES_ENABLED": "1",
             "WEBSERVER_GARBAGE_COLLECTOR": "null",
