@@ -23,7 +23,6 @@ def test_migration_has_no_branches():
         )
 
 
-@pytest.mark.testit
 def test_migration_upgrade_downgrade(make_engine: Callable):
     sync_engine = make_engine(is_async=False)
     assert sync_engine
