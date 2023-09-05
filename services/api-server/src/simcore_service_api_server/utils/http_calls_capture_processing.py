@@ -192,44 +192,43 @@ def _determine_path(
             return PathDescription(
                 path=str(response_path), path_parameters=list(path_params.values())
             )
-        else:
-            path_param_indices: tuple[int, ...] = tuple(
-                openapi_path.parts.index("{" + name + "}") for name in path_params
-            )
-            if tuple(
-                elm
-                for ii, elm in enumerate(openapi_path.parts)
-                if ii not in path_param_indices
-            ) != tuple(
-                elm
-                for ii, elm in enumerate(response_path.parts)
-                if ii not in path_param_indices
-            ):
-                continue
-            path_param_indices_iter = iter(path_param_indices)
-            for key in path_params:
-                ii = next(path_param_indices_iter)
-                path_params[key].response_value = unquote(response_path.parts[ii])
-            return PathDescription(
-                path=str(openapi_path),
-                path_parameters=list(path_params.values()),
-            )
+        path_param_indices: tuple[int, ...] = tuple(
+            openapi_path.parts.index("{" + name + "}") for name in path_params
+        )
+        if tuple(
+            elm
+            for ii, elm in enumerate(openapi_path.parts)
+            if ii not in path_param_indices
+        ) != tuple(
+            elm
+            for ii, elm in enumerate(response_path.parts)
+            if ii not in path_param_indices
+        ):
+            continue
+        path_param_indices_iter = iter(path_param_indices)
+        for key in path_params:
+            ii = next(path_param_indices_iter)
+            path_params[key].response_value = unquote(response_path.parts[ii])
+        return PathDescription(
+            path=str(openapi_path),
+            path_parameters=list(path_params.values()),
+        )
     raise PathNotInOpenApiSpecification(
         f"Could not find a path matching {response_path} in "
     )
 
 
 def _get_params(
-    openapi_spec: dict[str, Any], path: str, verb: str | None = None
+    openapi_spec: dict[str, Any], path: str, method: str | None = None
 ) -> set[Param]:
-    """Returns all parameters for the verbs associated with a given resource (and optionally also a given verb)"""
+    """Returns all parameters for the method associated with a given resource (and optionally also a given method)"""
     endpoints: dict[str, Any] | None
     if (endpoints := openapi_spec["paths"].get(path)) is None:
         raise PathNotInOpenApiSpecification(
             f"{path} was not in the openapi specification"
         )
     all_params: list[Param] = []
-    for verb in [verb] if verb is not None else list(endpoints):
+    for verb in [method] if method is not None else list(endpoints):
         if (verb_spec := endpoints.get(verb)) is None:
             raise VerbNotInPath(
                 f"the verb '{verb}' was not available in '{path}' in {openapi_spec}"
