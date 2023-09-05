@@ -40,6 +40,9 @@ def upgrade():
     )
     op.drop_table("resource_tracker_wallets_credit_transactions")
 
+    sa.Enum(name="transactionbillingstatus").drop(op.get_bind(), checkfirst=False)
+    sa.Enum(name="transactionclassification").drop(op.get_bind(), checkfirst=False)
+
     op.create_table(
         "resource_tracker_credit_transactions",
         sa.Column("transaction_id", sa.BigInteger(), nullable=False),
@@ -56,7 +59,7 @@ def upgrade():
                 "BILLED",
                 "NOT_BILLED",
                 "REQUIRES_MANUAL_REVIEW",
-                name="transactionbillingstatus",
+                name="credittransactionstatus",
             ),
             nullable=True,
         ),
@@ -65,7 +68,7 @@ def upgrade():
             sa.Enum(
                 "ADD_WALLET_TOP_UP",
                 "DEDUCT_SERVICE_RUN",
-                name="transactionclassification",
+                name="credittransactionclassification",
             ),
             nullable=True,
         ),
@@ -195,8 +198,10 @@ def downgrade():
     )
     op.drop_table("resource_tracker_credit_transactions")
 
-    sa.Enum(name="transactionbillingstatus").drop(op.get_bind(), checkfirst=False)
-    sa.Enum(name="transactionclassification").drop(op.get_bind(), checkfirst=False)
+    sa.Enum(name="credittransactionstatus").drop(op.get_bind(), checkfirst=False)
+    sa.Enum(name="credittransactionclassification").drop(
+        op.get_bind(), checkfirst=False
+    )
 
     op.create_index(
         "ix_resource_tracker_pricing_plans_name",
