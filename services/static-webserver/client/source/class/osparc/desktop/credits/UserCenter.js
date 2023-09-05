@@ -205,15 +205,7 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
       buyCredits.set({
         margin: 10
       });
-      buyCredits.addListener("transactionSuccessful", e => {
-        const {
-          nCredits,
-          totalPrice,
-          walletName
-        } = e.getData();
-        this.__transactionsTable.addRow(nCredits, totalPrice, walletName);
-        this.__openTransactions();
-      }, this);
+      buyCredits.addListener("transactionCompleted", () => this.__openTransactions(true), this);
       page.add(buyCredits);
       return page;
     },
@@ -272,8 +264,12 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
       this.__openPage(this.__buyCreditsPage);
     },
 
-    __openTransactions: function() {
-      this.__openPage(this.__transactionsPage);
+    __openTransactions: function(fetchTransactions = false) {
+      if (fetchTransactions) {
+        this.__openPage(this.__transactionsPage);
+      } else {
+        this.__openPage(this.__transactionsPage);
+      }
     },
 
     __openUsageOverview: function() {

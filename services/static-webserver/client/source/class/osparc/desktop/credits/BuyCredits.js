@@ -63,7 +63,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
   },
 
   events: {
-    "transactionSuccessful": "qx.event.type.Data"
+    "transactionCompleted": "qx.event.type.Event"
   },
 
   statics: {
@@ -455,6 +455,19 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
               modal,
               useNativeModalDialog
             );
+            // Listen to socket event
+            const socket = osparc.wrapper.WebSocket.getInstance();
+            const slotName = "paymentCompleted";
+            if (!socket.slotExists(slotName)) {
+              socket.on(slotName, jsonString => {
+                const paymentData = JSON.parse(jsonString);
+                console.log(paymentData);
+                this.fireEvent("transactionCompleted");
+                // close??
+                this.__pgWindow.close();
+                // remove listener?
+              });
+            }
 
             // enhance the blocker
             const blockerDomEl = blocker.getBlockerElement();
