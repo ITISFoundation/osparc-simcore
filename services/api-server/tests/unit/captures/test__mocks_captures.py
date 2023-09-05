@@ -17,6 +17,7 @@ import respx
 from pydantic import parse_file_as
 from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
 from simcore_service_api_server.utils.http_calls_capture_processing import (
+    CapturedParameter,
     PathDescription,
     _determine_path,
 )
@@ -216,7 +217,7 @@ _CAPTURE_REGEX_TEST_CASES: list[tuple[str, str, str | None, str | None]] = [
 @pytest.mark.parametrize("params", _CAPTURE_REGEX_TEST_CASES, ids=lambda x: x[0])
 def test_param_regex_pattern(params: tuple[str, str, str, str]):
     _, openapi_param, match, non_match = params
-    param: Param = Param(**json.loads(openapi_param))
+    param: CapturedParameter = CapturedParameter(**json.loads(openapi_param))
     pattern = param.schema_.regex_pattern
     pattern = "^" + pattern + "$"
     if match is not None:
