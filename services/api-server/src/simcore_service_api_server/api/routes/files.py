@@ -298,7 +298,7 @@ async def abort_multipart_upload(
     assert user_id  # nosec
     file: File = File(id=file_id, filename=client_file.filename, checksum=None)
     abort_link: URL = await storage_client.create_abort_upload_link(
-        file, query={"user_id": user_id}
+        file, query={"user_id": str(user_id)}
     )
     await abort_upload(abort_upload_link=parse_obj_as(AnyUrl, str(abort_link)))
 
@@ -322,7 +322,7 @@ async def complete_multipart_upload(
 
     file: File = File(id=file_id, filename=client_file.filename, checksum=None)
     complete_link: URL = await storage_client.create_complete_upload_link(
-        file, {"user_id": user_id}
+        file, {"user_id": str(user_id)}
     )
 
     e_tag: ETag = await complete_file_upload(
