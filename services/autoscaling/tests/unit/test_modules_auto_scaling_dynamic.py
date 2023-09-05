@@ -92,53 +92,53 @@ def mock_find_node_with_name(
     mocker: MockerFixture, fake_node: Node
 ) -> Iterator[mock.Mock]:
     return mocker.patch(
-        "simcore_service_autoscaling.modules.auto_scaling_base.utils_docker.find_node_with_name",
+        "simcore_service_autoscaling.modules.auto_scaling_dynamic.utils_docker.find_node_with_name",
         autospec=True,
         return_value=fake_node,
     )
 
 
 @pytest.fixture
-def mock_tag_node(mocker: MockerFixture) -> Iterator[mock.Mock]:
+def mock_tag_node(mocker: MockerFixture) -> mock.Mock:
     async def fake_tag_node(*args, **kwargs) -> Node:
         return args[1]
 
     return mocker.patch(
-        "simcore_service_autoscaling.utils.utils_docker.tag_node",
+        "simcore_service_autoscaling.modules.auto_scaling_dynamic.utils_docker.tag_node",
         autospec=True,
         side_effect=fake_tag_node,
     )
 
 
 @pytest.fixture
-def mock_set_node_availability(mocker: MockerFixture) -> Iterator[mock.Mock]:
+def mock_set_node_availability(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
-        "simcore_service_autoscaling.utils.utils_docker.set_node_availability",
+        "simcore_service_autoscaling.modules.auto_scaling_dynamic.utils_docker.set_node_availability",
         autospec=True,
     )
 
 
 @pytest.fixture
-def mock_remove_nodes(mocker: MockerFixture) -> Iterator[mock.Mock]:
+def mock_remove_nodes(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
-        "simcore_service_autoscaling.utils.utils_docker.remove_nodes",
+        "simcore_service_autoscaling.modules.auto_scaling_dynamic.utils_docker.remove_nodes",
         autospec=True,
     )
 
 
 @pytest.fixture
-def mock_cluster_used_resources(mocker: MockerFixture) -> Iterator[mock.Mock]:
+def mock_cluster_used_resources(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
-        "simcore_service_autoscaling.utils.utils_docker.compute_cluster_used_resources",
+        "simcore_service_autoscaling.modules.auto_scaling_dynamic.utils_docker.compute_cluster_used_resources",
         autospec=True,
         return_value=Resources.create_as_empty(),
     )
 
 
 @pytest.fixture
-def mock_compute_node_used_resources(mocker: MockerFixture) -> Iterator[mock.Mock]:
+def mock_compute_node_used_resources(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
-        "simcore_service_autoscaling.utils.utils_docker.compute_node_used_resources",
+        "simcore_service_autoscaling.modules.auto_scaling_dynamic.utils_docker.compute_node_used_resources",
         autospec=True,
         return_value=Resources.create_as_empty(),
     )
@@ -1029,7 +1029,6 @@ async def test__activate_drained_nodes_with_drained_node(
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
     host_cpu_count: int,
-    fake_ec2_instance_data: Callable[..., EC2InstanceData],
     cluster: Callable[..., Cluster],
     create_associated_instance: Callable[[Node, bool], AssociatedInstance],
 ):
@@ -1062,5 +1061,5 @@ async def test__activate_drained_nodes_with_drained_node(
     assert not still_pending_tasks
     assert updated_cluster.active_nodes == cluster_with_drained_nodes.drained_nodes
     mock_tag_node.assert_called_once_with(
-        mock.ANY, drained_host_node, tags={}, available=True
+        mock.ANY, drained_host_node, tags=drained_host_node.Spec.Labels, available=True
     )
