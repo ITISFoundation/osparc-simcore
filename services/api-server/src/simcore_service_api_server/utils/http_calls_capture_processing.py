@@ -10,26 +10,26 @@ from simcore_service_api_server.core.settings import CatalogSettings, StorageSet
 service_hosts = Literal["storage", "catalog"]
 
 
-class ParamSchema(BaseModel):
+class CapturedParameterSchema(BaseModel):
     title: str | None
-    param_type: Literal["str", "int", "float", "bool"] | None = Field(
+    type_: Literal["str", "int", "float", "bool"] | None = Field(
         None, alias="type", optional=True
     )
     pattern: str | None
-    param_format: Literal["uuid"] | None = Field(None, alias="format", optional=True)
+    format_: Literal["uuid"] | None = Field(None, alias="format", optional=True)
     exclusiveMinimum: bool | None
     minimum: int | None
-    anyOf: list["ParamSchema"] | None
-    allOf: list["ParamSchema"] | None
-    oneOf: list["ParamSchema"] | None
+    anyOf: list["CapturedParameterSchema"] | None
+    allOf: list["CapturedParameterSchema"] | None
+    oneOf: list["CapturedParameterSchema"] | None
 
     class Config:
         validate_always = True
         allow_population_by_field_name = True
 
-    @validator("param_type", pre=True)
+    @validator("type_", pre=True)
     @classmethod
-    def preprocess_param_type(cls, val):
+    def preprocess_type_(cls, val):
         if val == "string":
             val = "str"
         if val == "integer":
@@ -41,23 +41,21 @@ class ParamSchema(BaseModel):
     @root_validator(pre=False)
     @classmethod
     def check_compatibility(cls, values):
-        param_type = values.get("param_type")
+        type_ = values.get("type_")
         pattern = values.get("pattern")
-        param_format = values.get("param_format")
+        format_ = values.get("format_")
         anyOf = values.get("anyOf")
         allOf = values.get("allOf")
         oneOf = values.get("oneOf")
-        if param_type != "str":
-            if pattern is not None or param_format is not None:
+        if type_ != "str":
+            if pattern is not None or format_ is not None:
                 raise ValueError(
-                    f"For {param_type=} both {pattern=} and {param_format=} must be None"
+                    f"For {type_=} both {pattern=} and {format_=} must be None"
                 )
-        if param_type is None and oneOf is None and anyOf is None and allOf is None:
-            raise ValueError(
-                "all of 'param_type', 'oneOf', 'anyOf' and 'allOf' were None"
-            )
+        if type_ is None and oneOf is None and anyOf is None and allOf is None:
+            raise ValueError("all of 'type_', 'oneOf', 'anyOf' and 'allOf' were None")
 
-        def check_no_recursion(v: list["ParamSchema"]):
+        def _check_no_recursion(v: list["CapturedParameterSchema"]):
             if v is not None and not all(
                 elm.anyOf is None and elm.oneOf is None and elm.allOf is None
                 for elm in v
@@ -66,9 +64,9 @@ class ParamSchema(BaseModel):
                     "For simplicity we only allow top level schema have oneOf, anyOf or allOf"
                 )
 
-        check_no_recursion(anyOf)
-        check_no_recursion(allOf)
-        check_no_recursion(oneOf)
+        _check_no_recursion(anyOf)
+        _check_no_recursion(allOf)
+        _check_no_recursion(oneOf)
         return values  # this validator ONLY validates - no modification
 
     @property
@@ -88,27 +86,27 @@ class ParamSchema(BaseModel):
         if self.pattern is not None:
             pattern = str(self.pattern).removeprefix("^").removesuffix("$")
         else:
-            if self.param_type == "int":
+            if self.type_ == "int":
                 pattern = r"[-+]?\d+"
-            elif self.param_type == "float":
+            elif self.type_ == "float":
                 pattern = r"[+-]?\d+(?:\.\d+)?"
-            elif self.param_type == "str":
-                if self.param_format == "uuid":
+            elif self.type_ == "str":
+                if self.format_ == "uuid":
                     pattern = r"[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12}"
                 else:
                     pattern = r".*"  # should match any string
         if pattern is None:
             raise OpenApiSpecIssue(
-                f"Encountered invalid {self.param_type=} and {self.param_format=} combination"
+                f"Encountered invalid {self.type_=} and {self.format_=} combination"
             )
         return pattern
 
 
-class Param(BaseModel):
+class CapturedParameter(BaseModel):
     variable_type: Literal["path", "header", "query"] = Field(..., alias="in")
     name: str
     required: bool
-    param_schema: ParamSchema = Field(..., alias="schema")
+    param_schema: CapturedParameterSchema = Field(..., alias="schema")
     response_value: str | None = (
         None  # attribute for storing the params value in a concrete response
     )
@@ -144,7 +142,7 @@ class Param(BaseModel):
 
 class PathDescription(BaseModel):
     path: str
-    path_parameters: list[Param]
+    path_parameters: list[CapturedParameter]
 
 
 def enhance_from_openapi_spec(response: httpx.Response) -> PathDescription:
@@ -220,14 +218,14 @@ def _determine_path(
 
 def _get_params(
     openapi_spec: dict[str, Any], path: str, method: str | None = None
-) -> set[Param]:
+) -> set[CapturedParameter]:
     """Returns all parameters for the method associated with a given resource (and optionally also a given method)"""
     endpoints: dict[str, Any] | None
     if (endpoints := openapi_spec["paths"].get(path)) is None:
         raise PathNotInOpenApiSpecification(
             f"{path} was not in the openapi specification"
         )
-    all_params: list[Param] = []
+    all_params: list[CapturedParameter] = []
     for verb in [method] if method is not None else list(endpoints):
         if (verb_spec := endpoints.get(verb)) is None:
             raise VerbNotInPath(
@@ -235,7 +233,7 @@ def _get_params(
             )
         if (params := verb_spec.get("parameters")) is None:
             continue
-        all_params += parse_obj_as(list[Param], params)
+        all_params += parse_obj_as(list[CapturedParameter], params)
     return set(all_params)
 
 
