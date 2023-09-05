@@ -35,7 +35,8 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
       appearance: "service-window"
     });
 
-    this.add(new osparc.desktop.credits.UserCenter(walletsEnabled));
+    const userCenter = this.__userCenter = new osparc.desktop.credits.UserCenter(walletsEnabled);
+    this.add(userCenter);
   },
 
   statics: {
@@ -44,6 +45,18 @@ qx.Class.define("osparc.desktop.credits.CreditsWindow", {
       accountWindow.center();
       accountWindow.open();
       return accountWindow;
+    }
+  },
+
+  members: {
+    __userCenter: null,
+
+    openOverview: function() {
+      this.__userCenter.openOverview();
+    },
+
+    openWallets: function() {
+      this.__userCenter.openWallets();
     }
   }
 });
