@@ -216,16 +216,16 @@ qx.Class.define("osparc.desktop.credits.Overview", {
 
       const entries = [[
         osparc.utils.Utils.formatDateAndTime(new Date()),
-        10,
-        0,
-        "My Wallet",
-        "Welcome to Sim4Life"
-      ], [
-        osparc.utils.Utils.formatDateAndTime(new Date()),
         50,
         125,
         "My Wallet",
         ""
+      ], [
+        osparc.utils.Utils.formatDateAndTime(new Date()),
+        10,
+        0,
+        "My Wallet",
+        "Welcome to Sim4Life"
       ]];
       const maxTransactions = 4;
       entries.forEach((entry, row) => {

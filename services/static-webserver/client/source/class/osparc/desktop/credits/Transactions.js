@@ -75,15 +75,6 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
 
       this.__rawData = [];
 
-      // welcome
-      this.addRow(
-        20,
-        0,
-        "My Wallet",
-        "Welcome to Sim4Life",
-        null
-      );
-
       // one payment
       this.addRow(
         50,
@@ -91,6 +82,15 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
         "My Wallet",
         "",
         "https://assets.website-files.com/63206faf68ab2dc3ee3e623b/634ea60a9381021f775e7a28_Placeholder%20PDF.pdf"
+      );
+
+      // welcome
+      this.addRow(
+        20,
+        0,
+        "My Wallet",
+        "Welcome to Sim4Life",
+        null
       );
     },
 
