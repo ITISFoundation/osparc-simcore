@@ -91,7 +91,7 @@ def mock_find_node_with_name(
     mocker: MockerFixture, fake_node: Node
 ) -> Iterator[mock.Mock]:
     return mocker.patch(
-        "simcore_service_autoscaling.dynamic_scaling_core.utils_docker.find_node_with_name",
+        "simcore_service_autoscaling.auto_scaling_base.utils_docker.find_node_with_name",
         autospec=True,
         return_value=fake_node,
     )

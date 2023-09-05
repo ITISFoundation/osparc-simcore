@@ -118,12 +118,12 @@ def app_environment(
 @pytest.fixture
 def disable_dynamic_service_background_task(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_autoscaling.dynamic_scaling.start_periodic_task",
+        "simcore_service_autoscaling.auto_scaling_task.start_periodic_task",
         autospec=True,
     )
 
     mocker.patch(
-        "simcore_service_autoscaling.dynamic_scaling.stop_periodic_task",
+        "simcore_service_autoscaling.auto_scaling_task.stop_periodic_task",
         autospec=True,
     )
 
