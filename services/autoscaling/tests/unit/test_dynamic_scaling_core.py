@@ -25,12 +25,13 @@ from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.models import AssociatedInstance, Cluster, Resources
+from simcore_service_autoscaling.modules.auto_scaling_base import auto_scale_cluster
 from simcore_service_autoscaling.modules.auto_scaling_dynamic import (
     _activate_drained_nodes,
     _deactivate_empty_nodes,
     _find_terminateable_instances,
     _try_scale_down_cluster,
-    cluster_scaling_from_labelled_services,
+    scale_cluster_with_labelled_services,
 )
 from simcore_service_autoscaling.modules.docker import (
     AutoscalingDocker,
@@ -91,7 +92,7 @@ def mock_find_node_with_name(
     mocker: MockerFixture, fake_node: Node
 ) -> Iterator[mock.Mock]:
     return mocker.patch(
-        "simcore_service_autoscaling.auto_scaling_base.utils_docker.find_node_with_name",
+        "simcore_service_autoscaling.modules.auto_scaling_base.utils_docker.find_node_with_name",
         autospec=True,
         return_value=fake_node,
     )
@@ -144,7 +145,7 @@ def mock_compute_node_used_resources(mocker: MockerFixture) -> Iterator[mock.Moc
 
 
 @pytest.fixture
-def mock_machines_buffer(monkeypatch: pytest.MonkeyPatch) -> Iterator[int]:
+def mock_machines_buffer(monkeypatch: pytest.MonkeyPatch) -> int:
     num_machines_in_buffer = 5
     monkeypatch.setenv("EC2_INSTANCES_MACHINES_BUFFER", f"{num_machines_in_buffer}")
     return num_machines_in_buffer
@@ -215,8 +216,8 @@ def minimal_configuration(
     aws_ami_id: str,
     aws_allowed_ec2_instance_type_names: list[str],
     mocked_redis_server: None,
-) -> Iterator[None]:
-    return
+) -> None:
+    ...
 
 
 def _assert_rabbit_autoscaling_message_sent(
@@ -251,7 +252,9 @@ async def test_cluster_scaling_from_labelled_services_with_no_services_does_noth
     mock_terminate_instances: mock.Mock,
     mock_rabbitmq_post_message: mock.Mock,
 ):
-    await cluster_scaling_from_labelled_services(initialized_app)
+    await auto_scale_cluster(
+        app=initialized_app, scale_cluster_cb=scale_cluster_with_labelled_services
+    )
     mock_start_aws_instance.assert_not_called()
     mock_terminate_instances.assert_not_called()
     _assert_rabbit_autoscaling_message_sent(
@@ -277,7 +280,9 @@ async def test_cluster_scaling_from_labelled_services_with_no_services_and_machi
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
         == mock_machines_buffer
     )
-    await cluster_scaling_from_labelled_services(initialized_app)
+    await auto_scale_cluster(
+        app=initialized_app, scale_cluster_cb=scale_cluster_with_labelled_services
+    )
     await _assert_ec2_instances(
         ec2_client,
         num_reservations=1,
@@ -295,7 +300,9 @@ async def test_cluster_scaling_from_labelled_services_with_no_services_and_machi
     )
     mock_rabbitmq_post_message.reset_mock()
     # calling again should attach the new nodes to the reserve, but nothing should start
-    await cluster_scaling_from_labelled_services(initialized_app)
+    await auto_scale_cluster(
+        app=initialized_app, scale_cluster_cb=scale_cluster_with_labelled_services
+    )
     await _assert_ec2_instances(
         ec2_client,
         num_reservations=1,
@@ -326,7 +333,9 @@ async def test_cluster_scaling_from_labelled_services_with_no_services_and_machi
 
     # calling it again should not create anything new
     for _ in range(10):
-        await cluster_scaling_from_labelled_services(initialized_app)
+        await auto_scale_cluster(
+            app=initialized_app, scale_cluster_cb=scale_cluster_with_labelled_services
+        )
     await _assert_ec2_instances(
         ec2_client,
         num_reservations=1,
@@ -361,7 +370,9 @@ async def test_cluster_scaling_from_labelled_services_with_service_with_too_much
         "pending",
     )
 
-    await cluster_scaling_from_labelled_services(initialized_app)
+    await auto_scale_cluster(
+        app=initialized_app, scale_cluster_cb=scale_cluster_with_labelled_services
+    )
     mock_start_aws_instance.assert_not_called()
     mock_terminate_instances.assert_not_called()
     _assert_rabbit_autoscaling_message_sent(
@@ -448,7 +459,9 @@ async def test_cluster_scaling_up(
     )
 
     # this should trigger a scaling up as we have no nodes
-    await cluster_scaling_from_labelled_services(initialized_app)
+    await auto_scale_cluster(
+        app=initialized_app, scale_cluster_cb=scale_cluster_with_labelled_services
+    )
 
     # check the instance was started and we have exactly 1
     await _assert_ec2_instances(
@@ -475,7 +488,9 @@ async def test_cluster_scaling_up(
     mock_rabbitmq_post_message.reset_mock()
 
     # 2. running this again should not scale again, but tag the node and make it available
-    await cluster_scaling_from_labelled_services(initialized_app)
+    await auto_scale_cluster(
+        app=initialized_app, scale_cluster_cb=scale_cluster_with_labelled_services
+    )
     mock_compute_node_used_resources.assert_called_once_with(
         get_docker_client(initialized_app),
         fake_node,
@@ -594,7 +609,9 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     )
 
     # run the code
-    await cluster_scaling_from_labelled_services(initialized_app)
+    await auto_scale_cluster(
+        app=initialized_app, scale_cluster_cb=scale_cluster_with_labelled_services
+    )
 
     # check the instances were started
     await _assert_ec2_instances(
