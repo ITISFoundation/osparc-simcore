@@ -1,8 +1,7 @@
 from typing import Any, ClassVar
 
+from models_library.basic_types import VersionStr
 from pydantic import BaseModel, HttpUrl
-
-from ..basic_types import VersionStr
 
 
 class Meta(BaseModel):

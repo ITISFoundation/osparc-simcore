@@ -6,8 +6,8 @@
 
 from fastapi import status
 from fastapi.testclient import TestClient
-from models_library.api_schemas_payments.meta import Meta
 from simcore_service_payments._meta import API_VTAG
+from simcore_service_payments.models.schemas.meta import Meta
 
 
 def test_healthcheck(client: TestClient):
