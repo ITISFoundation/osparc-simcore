@@ -7,7 +7,8 @@ from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.redis_utils import exclusive
 
 from ..core.settings import ApplicationSettings
-from .dynamic_scaling_core import cluster_scaling_from_labelled_services
+from .auto_scaling_base import auto_scale_cluster
+from .dynamic_scaling_core import scale_cluster_with_labelled_services
 from .redis import get_redis_client
 
 _TASK_NAME = "Autoscaling EC2 instances based on docker services"
@@ -27,11 +28,12 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
         )
         app.state.autoscaler_task = start_periodic_task(
             exclusive(get_redis_client(app), lock_key=lock_key, lock_value=lock_value)(
-                cluster_scaling_from_labelled_services
+                auto_scale_cluster
             ),
             interval=app_settings.AUTOSCALING_POLL_INTERVAL,
             task_name=_TASK_NAME,
             app=app,
+            scale_cluster_cb=scale_cluster_with_labelled_services,
         )
 
     return _startup
