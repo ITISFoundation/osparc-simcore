@@ -10,8 +10,8 @@ from .._meta import (
     APP_STARTED_BANNER_MSG,
 )
 from ..api.routes import setup_api_routes
-from ..dynamic_scaling import setup as setup_background_task
 from ..modules.docker import setup as setup_docker
+from ..modules.dynamic_scaling import setup as setup_background_task
 from ..modules.ec2 import setup as setup_ec2
 from ..modules.rabbitmq import setup as setup_rabbitmq
 from ..modules.redis import setup as setup_redis
@@ -21,7 +21,6 @@ logger = logging.getLogger(__name__)
 
 
 def create_app(settings: ApplicationSettings) -> FastAPI:
-
     logger.info("app settings: %s", settings.json(indent=1))
 
     app = FastAPI(

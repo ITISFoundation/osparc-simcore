@@ -6,9 +6,9 @@ from fastapi import FastAPI
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.redis_utils import exclusive
 
-from .core.settings import ApplicationSettings
+from ..core.settings import ApplicationSettings
 from .dynamic_scaling_core import cluster_scaling_from_labelled_services
-from .modules.redis import get_redis_client
+from .redis import get_redis_client
 
 _TASK_NAME = "Autoscaling EC2 instances based on docker services"
 

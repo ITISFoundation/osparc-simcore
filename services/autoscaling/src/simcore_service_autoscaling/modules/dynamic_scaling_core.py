@@ -16,23 +16,21 @@ from models_library.generated_models.docker_rest_api import (
 from pydantic import parse_obj_as
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
-from .core.errors import (
+from ..core.errors import (
     Ec2InstanceNotFoundError,
     Ec2InvalidDnsNameError,
     Ec2TooManyInstancesError,
 )
-from .core.settings import ApplicationSettings, get_application_settings
-from .models import (
+from ..core.settings import ApplicationSettings, get_application_settings
+from ..models import (
     AssociatedInstance,
     Cluster,
     EC2InstanceData,
     EC2InstanceType,
     Resources,
 )
-from .modules.docker import get_docker_client
-from .modules.ec2 import get_ec2_client
-from .utils import ec2, utils_docker
-from .utils.dynamic_scaling import (
+from ..utils import ec2, utils_docker
+from ..utils.dynamic_scaling import (
     associate_ec2_instances_with_nodes,
     ec2_startup_script,
     node_host_name_from_ec2_private_dns,
@@ -40,11 +38,13 @@ from .utils.dynamic_scaling import (
     try_assigning_task_to_node,
     try_assigning_task_to_pending_instances,
 )
-from .utils.rabbitmq import (
+from ..utils.rabbitmq import (
     log_tasks_message,
     post_autoscaling_status_message,
     progress_tasks_message,
 )
+from .docker import get_docker_client
+from .ec2 import get_ec2_client
 
 logger = logging.getLogger(__name__)
 
