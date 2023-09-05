@@ -163,7 +163,6 @@ async def test_get_file(
     }
 
 
-@pytest.mark.testit
 async def test_delete_file(
     client: AsyncClient,
     mocked_storage_service_api_base: respx.MockRouter,
