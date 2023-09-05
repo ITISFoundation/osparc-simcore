@@ -30,7 +30,7 @@ from simcore_service_api_server.models.schemas.files import (
     ClientFileUploadData,
     File,
 )
-from unit.conftest import side_effect_callback
+from unit.conftest import SideEffectCallback
 
 _FAKER = Faker()
 
@@ -168,7 +168,7 @@ async def test_delete_file(
     client: AsyncClient,
     mocked_storage_service_api_base: respx.MockRouter,
     respx_mock_from_capture: Callable[
-        [respx.MockRouter, Path, list[side_effect_callback] | None], respx.MockRouter
+        [respx.MockRouter, Path, list[SideEffectCallback] | None], respx.MockRouter
     ],
     auth: httpx.BasicAuth,
     project_tests_dir: Path,

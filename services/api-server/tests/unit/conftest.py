@@ -7,7 +7,7 @@ import json
 from collections.abc import AsyncIterator, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeAlias
 
 import aiohttp.test_utils
 import httpx
@@ -47,7 +47,7 @@ from simcore_service_api_server.utils.http_calls_capture_processing import (
 )
 
 # (capture.response_body, kwargs, capture.path.path_parameters) -> response_body
-side_effect_callback = Callable[
+SideEffectCallback: TypeAlias = Callable[
     [httpx.Request, dict[str, Any], HttpApiCallCaptureModel], dict[str, Any]
 ]
 
@@ -482,12 +482,12 @@ def patch_webserver_long_running_project_tasks(
 @pytest.fixture
 @respx.mock(assert_all_mocked=False)
 def respx_mock_from_capture() -> Callable[
-    [respx.MockRouter, Path, list[side_effect_callback] | None], respx.MockRouter
+    [respx.MockRouter, Path, list[SideEffectCallback] | None], respx.MockRouter
 ]:
     def _generate_mock(
         respx_mock: respx.MockRouter,
         capture_path: Path,
-        side_effects_callbacks: list[side_effect_callback] | None,
+        side_effects_callbacks: list[SideEffectCallback] | None,
     ) -> respx.MockRouter:
         assert capture_path.is_file() and capture_path.suffix == ".json"
         assert (
