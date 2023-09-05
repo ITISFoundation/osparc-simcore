@@ -507,10 +507,9 @@ def respx_mock_from_capture() -> Callable[
 
         def _side_effect(request: httpx.Request, **kwargs):
             capture = next(capture_iter)
-            assert isinstance(capture.response_body, dict)
             assert isinstance(capture.path, PathDescription)
             status_code: int = capture.status_code
-            response_body: dict[str, Any] = capture.response_body
+            response_body: dict[str, Any] | list | None = capture.response_body
             assert {param.name for param in capture.path.path_parameters} == set(
                 kwargs.keys()
             )
