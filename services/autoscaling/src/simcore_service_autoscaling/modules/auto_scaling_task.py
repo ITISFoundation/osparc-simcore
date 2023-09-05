@@ -8,7 +8,7 @@ from servicelib.redis_utils import exclusive
 
 from ..core.settings import ApplicationSettings
 from .auto_scaling_base import auto_scale_cluster
-from .dynamic_scaling_core import scale_cluster_with_labelled_services
+from .auto_scaling_dynamic import scale_cluster_with_labelled_services
 from .redis import get_redis_client
 
 _TASK_NAME = "Autoscaling EC2 instances based on docker services"

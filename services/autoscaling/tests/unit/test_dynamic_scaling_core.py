@@ -25,16 +25,16 @@ from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.models import AssociatedInstance, Cluster, Resources
-from simcore_service_autoscaling.modules.docker import (
-    AutoscalingDocker,
-    get_docker_client,
-)
-from simcore_service_autoscaling.modules.dynamic_scaling_core import (
+from simcore_service_autoscaling.modules.auto_scaling_dynamic import (
     _activate_drained_nodes,
     _deactivate_empty_nodes,
     _find_terminateable_instances,
     _try_scale_down_cluster,
     cluster_scaling_from_labelled_services,
+)
+from simcore_service_autoscaling.modules.docker import (
+    AutoscalingDocker,
+    get_docker_client,
 )
 from simcore_service_autoscaling.modules.ec2 import EC2InstanceData
 from types_aiobotocore_ec2.client import EC2Client
