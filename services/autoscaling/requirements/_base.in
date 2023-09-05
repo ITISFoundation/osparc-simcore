@@ -4,7 +4,6 @@
 # NOTE: ALL version constraints MUST be commented
 --constraint ../../../requirements/constraints.txt
 --constraint ./constraints.txt
---constraint ../../../services/dask-sidecar/requirements/_dask-distributed.txt
 
 # intra-repo required dependencies
 --requirement ../../../packages/models-library/requirements/_base.in
@@ -16,8 +15,6 @@
 
 aiodocker
 aioboto3
-dask[distributed]
-dask-gateway
 fastapi
 packaging
 types-aiobotocore[ec2]
