@@ -6,7 +6,7 @@ import httpx
 from pydantic import BaseModel, Field
 from simcore_service_api_server.utils.http_calls_capture_processing import (
     PathDescription,
-    preprocess_response,
+    enhance_from_openapi_spec,
 )
 
 
@@ -31,22 +31,22 @@ class HttpApiCallCaptureModel(BaseModel):
         response: httpx.Response,
         name: str,
         description: str = "",
-        enhance_from_openapi_specs: bool = True,  # backwards compatibility
+        enhance_from_openapi_specs: bool = True,
     ) -> "HttpApiCallCaptureModel":
         request = response.request
 
-        url_path: PathDescription | str
+        path: PathDescription | str
         if enhance_from_openapi_specs:
-            url_path = preprocess_response(response)
+            path = enhance_from_openapi_spec(response)
         else:
-            url_path = response.request.url.path
+            path = response.request.url.path
 
         return cls(
             name=name,
             description=description or f"{request}",
             method=request.method,
             host=request.url.host,
-            path=url_path,
+            path=path,
             query=request.url.query.decode() or None,
             request_payload=json.loads(request.content.decode())
             if request.content

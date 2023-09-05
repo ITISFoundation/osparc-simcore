@@ -147,15 +147,15 @@ class PathDescription(BaseModel):
     path_parameters: list[Param]
 
 
-def preprocess_response(response: httpx.Response) -> PathDescription:
+def enhance_from_openapi_spec(response: httpx.Response) -> PathDescription:
     assert response.url.host in get_args(service_hosts)
-    openapi_spec: dict[str, Any] = get_openapi_specs(response.url.host)
+    openapi_spec: dict[str, Any] = _get_openapi_specs(response.url.host)
     return _determine_path(
         openapi_spec, Path(response.request.url.raw_path.decode("utf8").split("?")[0])
     )
 
 
-def get_openapi_specs(host: service_hosts) -> dict[str, Any]:
+def _get_openapi_specs(host: service_hosts) -> dict[str, Any]:
     url: str
     if host == "storage":
         settings = StorageSettings()
