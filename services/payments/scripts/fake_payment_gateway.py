@@ -1,15 +1,19 @@
-import datetime
 import types
-from datetime import datetime
-from decimal import Decimal
-from typing import Annotated, Literal, TypeAlias
-from uuid import UUID
+from typing import Annotated
 
 import uvicorn
 from fastapi import APIRouter, Depends, FastAPI, Header, status
 from fastapi.responses import HTMLResponse
 from fastapi.routing import APIRoute
-from pydantic import BaseModel
+from simcore_service_payments.models.payments_gateway import (
+    GetPaymentMethod,
+    InitPayment,
+    InitPaymentMethod,
+    PaymentID,
+    PaymentInitiated,
+    PaymentMethodID,
+    PaymentMethodInitiated,
+)
 
 
 def set_operation_id_as_handler_function_name(router: APIRouter):
@@ -17,22 +21,6 @@ def set_operation_id_as_handler_function_name(router: APIRouter):
         if isinstance(route, APIRoute):
             assert isinstance(route.endpoint, types.FunctionType)  # nosec
             route.operation_id = route.endpoint.__name__
-
-
-class InitPayment(BaseModel):
-    amount_dollars: Decimal
-    # metadata to store for billing or reference
-    credits: Decimal
-    user_name: str
-    user_email: str
-    wallet_name: str
-
-
-PaymentID: TypeAlias = UUID
-
-
-class PaymentInitiated(BaseModel):
-    payment_id: PaymentID
 
 
 def create_payment_router():
@@ -56,31 +44,6 @@ def create_payment_router():
         assert id  # nosec
 
     return router
-
-
-PaymentMethodID: TypeAlias = UUID
-
-
-class InitPaymentMethod(BaseModel):
-    method: Literal["CC"] = "CC"
-    # metadata to store for billing or reference
-    user_name: str
-    user_email: str
-    wallet_name: str
-
-
-class PaymentMethodInitiated(BaseModel):
-    payment_method_id: PaymentMethodID
-
-
-class GetPaymentMethod(BaseModel):
-    idr: PaymentMethodID
-    card_holder_name: str
-    card_number_masked: str
-    card_type: str
-    date_created: datetime
-    expiration_month: int
-    expiration_year: int
 
 
 def auth_session(x_init_api_secret: Annotated[str | None, Header()] = None):

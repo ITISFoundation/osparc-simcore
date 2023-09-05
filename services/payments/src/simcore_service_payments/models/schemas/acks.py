@@ -18,6 +18,8 @@ class AckPaymentMethod(BaseModel):
 
 assert PaymentID  # nosec
 assert PaymentMethodID  # nosec
+
+
 __all__: tuple[str, ...] = (
     "PaymentID",
     "PaymentMethodID",
