@@ -4,7 +4,6 @@
 
 from datetime import datetime, timedelta
 
-import arrow
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
@@ -19,7 +18,7 @@ from simcore_service_webserver.users.api import (
     update_expired_users,
 )
 
-_NOW = arrow.utcnow().datetime
+_NOW = datetime.utcnow()
 YESTERDAY = _NOW - timedelta(days=1)
 TOMORROW = _NOW + timedelta(days=1)
 
@@ -38,6 +37,7 @@ def app_environment(
     )
 
 
+@pytest.mark.testit
 @pytest.mark.parametrize("expires_at", [YESTERDAY, TOMORROW, None])
 async def test_update_expired_users(
     expires_at: datetime | None, client: TestClient, faker: Faker
