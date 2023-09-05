@@ -1,7 +1,7 @@
 from fastapi import APIRouter, FastAPI
 
 from .._meta import API_VTAG
-from . import _health, _meta, acks
+from . import _acks, _health, _meta
 
 
 def setup_api_routes(app: FastAPI):
@@ -12,5 +12,5 @@ def setup_api_routes(app: FastAPI):
 
     api_router = APIRouter(prefix=f"/{API_VTAG}")
     api_router.include_router(_meta.router, tags=["meta"])
-    api_router.include_router(acks.router, tags=["acks"])
+    api_router.include_router(_acks.router, tags=["acks"])
     app.include_router(api_router)
