@@ -8,7 +8,7 @@ astroid==2.15.6
     # via pylint
 black==23.7.0
     # via -r requirements/../../../requirements/devenv.txt
-build==1.0.0
+build==0.10.0
     # via pip-tools
 bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
@@ -28,7 +28,7 @@ distlib==0.3.7
     # via virtualenv
 filelock==3.12.2
     # via virtualenv
-identify==2.5.27
+identify==2.5.26
     # via pre-commit
 isort==5.12.0
     # via
@@ -70,7 +70,7 @@ platformdirs==3.10.0
     #   black
     #   pylint
     #   virtualenv
-pre-commit==3.4.0
+pre-commit==3.3.3
     # via -r requirements/../../../requirements/devenv.txt
 pylint==2.17.5
     # via -r requirements/../../../requirements/devenv.txt
@@ -83,7 +83,7 @@ pyyaml==6.0.1
     #   -c requirements/_test.txt
     #   pre-commit
     #   watchdog
-ruff==0.0.287
+ruff==0.0.284
     # via -r requirements/../../../requirements/devenv.txt
 tomli==2.0.1
     # via
@@ -100,11 +100,11 @@ typing-extensions==4.6.3
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   astroid
-virtualenv==20.24.4
+virtualenv==20.24.3
     # via pre-commit
 watchdog==3.0.0
     # via -r requirements/_tools.in
-wheel==0.41.2
+wheel==0.41.1
     # via pip-tools
 wrapt==1.15.0
     # via
