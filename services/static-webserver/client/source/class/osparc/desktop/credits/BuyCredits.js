@@ -69,9 +69,9 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
   statics: {
     CREDIT_PRICES: [
       [1, 1],
-      [10, 0.75],
-      [100, 0.625],
-      [1000, 0.5]
+      [10, 1],
+      [100, 1],
+      [1000, 1]
     ]
   },
 
@@ -231,7 +231,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       this.bind("totalPrice", paymentAmountField, "value", {
         converter: val => val.toString()
       });
-      paymentAmountField.addListener("changeValue", e => this.setTotalPrice(parseInt(e.getData())));
+      paymentAmountField.addListener("changeValue", e => this.setTotalPrice(Number(e.getData())));
       layout.add(paymentAmountField);
 
       const moreBtn = new qx.ui.form.Button().set({
@@ -264,7 +264,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         font: "text-16"
       });
       this.bind("totalPrice", totalPriceLabel, "value", {
-        converter: totalPrice => totalPrice + " $"
+        converter: totalPrice => (totalPrice ? totalPrice.toFixed(2) : 0).toString() + " $"
       });
       layout.add(totalPriceLabel, {
         row,
@@ -284,7 +284,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         font: "text-16"
       });
       this.bind("nCredits", nCreditsLabel, "value", {
-        converter: nCredits => Number(nCredits ? nCredits.toFixed(2).toString() : (0).toString())
+        converter: nCredits => (nCredits ? nCredits.toFixed(2) : 0).toString()
       });
       layout.add(nCreditsLabel, {
         row,
@@ -427,6 +427,11 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
               modal,
               useNativeModalDialog
             );
+            this.__pgWindow.onbeforeunload = () => {
+              transactionFinished();
+              // inform backend
+            };
+
             // Listen to socket event
             const socket = osparc.wrapper.WebSocket.getInstance();
             const slotName = "paymentCompleted";
@@ -435,9 +440,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
                 const paymentData = JSON.parse(jsonString);
                 console.log(paymentData);
                 this.fireEvent("transactionCompleted");
-                // close??
                 this.__pgWindow.close();
-                // remove listener?
               });
             }
 
