@@ -6658,6 +6658,12 @@ components:
           exclusiveMinimum: true
           type: integer
           minimum: 0
+    PatchRequestBody:
+      title: PatchRequestBody
+      type: object
+      properties:
+        value:
+          title: Value
     PaymentTransaction:
       title: PaymentTransaction
       required:
@@ -6700,12 +6706,6 @@ components:
           minLength: 1
           type: string
           format: uri
-    PatchRequestBody:
-      title: PatchRequestBody
-      type: object
-      properties:
-        value:
-          title: Value
     PermissionGet:
       title: PermissionGet
       required:
