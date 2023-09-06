@@ -4,10 +4,12 @@
 """
 import hashlib
 
+from models_library.basic_types import SHA256Str
+
 CHUNK_4KB = 4 * 1024  # 4K blocks
 
 
-async def create_md5_checksum(async_stream, *, chunk_size=CHUNK_4KB) -> str:
+async def create_sha256_checksum(async_stream, *, chunk_size=CHUNK_4KB) -> SHA256Str:
     """
     Usage:
     import aiofiles
@@ -18,8 +20,9 @@ async def create_md5_checksum(async_stream, *, chunk_size=CHUNK_4KB) -> str:
     SEE https://ant.apache.org/manual/Tasks/checksum.html
     WARNING: bandit reports the use of insecure MD2, MD4, MD5, or SHA1 hash function.
     """
-    md5_hash = hashlib.md5()  # nosec
-    return await _eval_hash_async(async_stream, md5_hash, chunk_size)
+    sha256_hash = hashlib.sha256()  # nosec
+    sha256check = await _eval_hash_async(async_stream, sha256_hash, chunk_size)
+    return SHA256Str(sha256check)
 
 
 async def _eval_hash_async(async_stream, hasher, chunk_size) -> str:
