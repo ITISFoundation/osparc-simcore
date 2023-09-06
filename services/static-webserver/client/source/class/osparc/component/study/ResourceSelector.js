@@ -38,7 +38,9 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
       .then(values => {
         const studyData = values[0];
         this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
-        this.__projectWalletId = values[1];
+        if (values[1] && "walletId" in values[1]) {
+          this.__projectWalletId = values[1]["walletId"];
+        }
         this.__buildLayout();
       });
   },
