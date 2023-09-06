@@ -1,7 +1,7 @@
 """added user prefereces tables
 
 Revision ID: bad9fac8bdfd
-Revises: 763666c698fb
+Revises: fc6ea424f586
 Create Date: 2023-09-04 14:35:03.552868+00:00
 
 """
@@ -10,7 +10,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "bad9fac8bdfd"
-down_revision = "763666c698fb"
+down_revision = "fc6ea424f586"
 branch_labels = None
 depends_on = None
 
