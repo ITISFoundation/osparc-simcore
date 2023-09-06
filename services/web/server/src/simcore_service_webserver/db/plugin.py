@@ -3,7 +3,8 @@
 """
 
 import logging
-from typing import Any, AsyncIterator
+from collections.abc import AsyncIterator
+from typing import Any
 
 from aiohttp import web
 from aiopg.sa import Engine, create_engine
@@ -78,8 +79,7 @@ async def is_service_responsive(app: web.Application):
     """Returns true if the app can connect to db service"""
     if not is_service_enabled(app):
         return False
-    is_responsive = await is_pg_responsive(engine=app[APP_DB_ENGINE_KEY])
-    return is_responsive
+    return await is_pg_responsive(engine=app[APP_DB_ENGINE_KEY])
 
 
 def get_engine_state(app: web.Application) -> dict[str, Any]:

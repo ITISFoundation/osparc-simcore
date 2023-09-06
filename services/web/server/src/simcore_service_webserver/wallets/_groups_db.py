@@ -38,6 +38,7 @@ async def create_wallet_group(
     app: web.Application,
     wallet_id: WalletID,
     group_id: GroupID,
+    *,
     read: bool,
     write: bool,
     delete: bool,
@@ -79,10 +80,8 @@ async def list_wallet_groups(
 
     async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(stmt)
-        output = []
-        for row in await result.fetchall():
-            output.append(parse_obj_as(WalletGroupGetDB, row))
-        return output
+        rows = await result.fetchall() or []
+        return parse_obj_as(list[WalletGroupGetDB], rows)
 
 
 async def get_wallet_group(
@@ -120,6 +119,7 @@ async def update_wallet_group(
     app: web.Application,
     wallet_id: WalletID,
     group_id: GroupID,
+    *,
     read: bool,
     write: bool,
     delete: bool,

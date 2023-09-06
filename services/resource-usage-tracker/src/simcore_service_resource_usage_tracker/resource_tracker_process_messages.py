@@ -14,10 +14,10 @@ from models_library.rabbitmq_messages import (
     SimcorePlatformStatus,
 )
 from models_library.resource_tracker import (
+    CreditClassification,
+    CreditTransactionStatus,
     ResourceTrackerServiceType,
     ServiceRunStatus,
-    TransactionBillingStatus,
-    TransactionClassification,
 )
 from pydantic import parse_raw_as
 
@@ -108,8 +108,8 @@ async def _process_start_event(
             user_id=msg.user_id,
             user_email=msg.user_email,
             osparc_credits=Decimal(0.0),
-            transaction_status=TransactionBillingStatus.PENDING,
-            transaction_classification=TransactionClassification.DEDUCT_SERVICE_RUN,
+            transaction_status=CreditTransactionStatus.PENDING,
+            transaction_classification=CreditClassification.DEDUCT_SERVICE_RUN,
             service_run_id=service_run_id,
             payment_transaction_id=None,
             created_at=msg.created_at,
@@ -191,9 +191,9 @@ async def _process_stop_event(
         update_credit_transaction = CreditTransactionCreditsAndStatusUpdate(
             service_run_id=msg.service_run_id,
             osparc_credits=-computed_credits,  # negative(computed_credits)
-            transaction_status=TransactionBillingStatus.BILLED
+            transaction_status=CreditTransactionStatus.BILLED
             if msg.simcore_platform_status == SimcorePlatformStatus.OK
-            else TransactionBillingStatus.NOT_BILLED,
+            else CreditTransactionStatus.NOT_BILLED,
         )
         await resource_tracker_repo.update_credit_transaction_credits_and_status(
             update_credit_transaction
