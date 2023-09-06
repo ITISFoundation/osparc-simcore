@@ -66,7 +66,7 @@ def create_node_inputs_from_job_inputs(inputs: JobInputs) -> dict[InputID, Input
                 store=0,
                 path=f"api/{value.id}/{value.filename}",
                 label=value.filename,
-                eTag=value.checksum,
+                eTag=value.e_tag,
             )
         else:
             node_inputs[name] = value
@@ -93,7 +93,7 @@ def create_job_inputs_from_node_inputs(inputs: dict[InputID, InputTypes]) -> Job
             input_values[name] = File(
                 id=file_id,
                 filename=filename,
-                checksum=value.e_tag,
+                e_tag=value.e_tag,
             )
         else:
             input_values[name] = value

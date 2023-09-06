@@ -71,7 +71,7 @@ def test_job_to_node_inputs_conversion():
             "input_file": File(
                 filename="input.txt",
                 id="0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
-                checksum="859fda0cb82fc4acb4686510a172d9a9-1",
+                e_tag="859fda0cb82fc4acb4686510a172d9a9-1",
             ),
         }
     )

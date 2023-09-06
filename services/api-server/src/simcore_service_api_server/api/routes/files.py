@@ -169,7 +169,7 @@ async def upload_file(
     )
     assert isinstance(upload_result, UploadedFile)  # nosec
 
-    file_meta.checksum = upload_result.etag
+    file_meta.e_tag = upload_result.etag
     return file_meta
 
 
@@ -292,7 +292,9 @@ async def abort_multipart_upload(
 ):
     assert request  # nosec
     assert user_id  # nosec
-    file: File = File(id=file_id, filename=client_file.filename, checksum=None)
+    file: File = File(
+        id=file_id, filename=client_file.filename, sha256_checksum=None, e_tag=None
+    )
     abort_link: URL = await storage_client.create_abort_upload_link(
         file, query=dict(request.query_params)
     )
@@ -316,7 +318,9 @@ async def complete_multipart_upload(
     assert request  # nosec
     assert user_id  # nosec
 
-    file: File = File(id=file_id, filename=client_file.filename, checksum=None)
+    file: File = File(
+        id=file_id, filename=client_file.filename, sha256_checksum=None, e_tag=None
+    )
     complete_link: URL = await storage_client.create_complete_upload_link(
         file, dict(request.query_params)
     )
@@ -326,7 +330,7 @@ async def complete_multipart_upload(
         upload_completion_link=parse_obj_as(AnyUrl, f"{complete_link}"),
     )
 
-    file.checksum = e_tag
+    file.e_tag = e_tag
     return file
 
 

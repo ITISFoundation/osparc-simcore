@@ -7,7 +7,7 @@ from uuid import UUID, uuid3
 
 import aiofiles
 from fastapi import UploadFile
-from models_library.api_schemas_storage import FileUploadSchema
+from models_library.api_schemas_storage import ETag, FileUploadSchema
 from models_library.projects_nodes_io import StorageFileID
 from pydantic import BaseModel, ByteSize, ConstrainedStr, Field, parse_obj_as, validator
 
@@ -39,9 +39,10 @@ class File(BaseModel):
     content_type: str | None = Field(
         default=None, description="Guess of type content [EXPERIMENTAL]"
     )
-    checksum: str | None = Field(
-        None, description="MD5 hash of the file's content [EXPERIMENTAL]"
+    sha256_checksum: str | None = Field(
+        default=None, description="SHA256 hash of the file's content"
     )
+    e_tag: ETag | None = Field(default=None, description="S3 entity tag")
 
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {

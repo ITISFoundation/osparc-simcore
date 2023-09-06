@@ -49,7 +49,8 @@ class DummyFileData:
                 datetime.datetime.now(datetime.timezone.utc).isoformat(),
             ),
             filename=cls._file_name,
-            checksum="",
+            e_tag="",
+            sha256_checksum=None,
         )
 
     @classmethod

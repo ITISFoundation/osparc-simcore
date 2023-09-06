@@ -35,7 +35,7 @@ def to_file_api_model(stored_file_meta: StorageFileMetaData) -> File:
         id=file_id,  # type: ignore
         filename=filename,
         content_type=guess_type(filename)[0] or "application/octet-stream",
-        checksum=stored_file_meta.entity_tag,
+        e_tag=stored_file_meta.entity_tag,
     )
 
 

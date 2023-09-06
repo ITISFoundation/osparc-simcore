@@ -43,7 +43,7 @@ async def test_create_filemetadata_from_path(
     mock_filepath: Path, expected_md5sum: MD5Str
 ):
     file_meta = await File.create_from_path(mock_filepath)
-    assert file_meta.checksum == expected_md5sum
+    assert file_meta.e_tag == expected_md5sum
 
 
 async def test_create_filemetadata_from_starlette_uploadfile(
@@ -59,7 +59,7 @@ async def test_create_filemetadata_from_starlette_uploadfile(
         file_meta = await File.create_from_uploaded(upload)
         assert upload.file.tell() > 0, "modifies current position is at the end"
 
-        assert file_meta.checksum == expected_md5sum
+        assert file_meta.e_tag == expected_md5sum
 
     # in memory
     with tempfile.SpooledTemporaryFile() as spooled_tmpfile:
@@ -89,7 +89,7 @@ def test_convert_between_file_models():
     assert apiserver_file_meta.id
     assert apiserver_file_meta.filename == "extensionless"
     assert apiserver_file_meta.content_type == "application/octet-stream"  # default
-    assert apiserver_file_meta.checksum == storage_file_meta.entity_tag
+    assert apiserver_file_meta.e_tag == storage_file_meta.entity_tag
 
     with pytest.raises(ValueError):
         storage_file_meta.file_id = parse_obj_as(
