@@ -109,17 +109,21 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
           control = this.__getCreditsLeftView();
           this.getChildControl("wallet-info").add(control);
           break;
+        case "one-time-payment-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
+          this.getChildControl("left-side").add(control);
+          break;
         case "credit-selector":
           control = this.__getCreditSelector();
-          this.getChildControl("left-side").add(control);
+          this.getChildControl("one-time-payment-layout").add(control);
           break;
         case "summary-view":
           control = this.__getSummaryView();
-          this.getChildControl("left-side").add(control);
+          this.getChildControl("one-time-payment-layout").add(control);
           break;
         case "buy-button":
           control = this.__getBuyButton();
-          this.getChildControl("left-side").add(control);
+          this.getChildControl("one-time-payment-layout").add(control);
           break;
         case "credits-explanation":
           control = this.__getCreditsExplanation();
@@ -143,11 +147,15 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     __buildLayout: function() {
       this.getChildControl("wallet-selector");
       this.getChildControl("credits-left-view");
+      this.__builyOneTimePayment();
+
+      this.getChildControl("credits-explanation");
+    },
+
+    __builyOneTimePayment: function() {
       this.getChildControl("credit-selector");
       this.getChildControl("summary-view");
       this.getChildControl("buy-button");
-
-      this.getChildControl("credits-explanation");
     },
 
     __applyNCredits: function(nCredits) {
@@ -447,7 +455,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20));
 
       const label1 = new qx.ui.basic.Label().set({
-        value: "Explain here what a crrdit is and what one can run/do with them.",
+        value: "Explain here what a Credit is and what one can run/do with them.",
         font: "text-16",
         rich: true,
         wrap: true
