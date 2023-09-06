@@ -22,6 +22,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.payments._api import complete_payment
 from simcore_service_webserver.payments.settings import (
     PaymentsSettings,
     get_plugin_settings,
@@ -114,6 +115,9 @@ async def test_payments_worfklow(
     assert payment.payment_id
     assert payment.payment_form_url.query
     assert payment.payment_form_url.query.endswith(payment.payment_id)
+
+    # Complete
+    await complete_payment(client.app, payment_id=payment.payment_id, success=True)
 
     # list all payment transactions in all my wallets
     response = await client.get("/v0/wallets/-/payments")
