@@ -155,6 +155,7 @@ qx.Class.define("osparc.desktop.credits.Overview", {
       // name
       const walletName = new qx.ui.basic.Label().set({
         font: "text-14",
+        alignY: "middle",
         maxWidth: 200
       });
       wallet.bind("name", walletName, "value");
@@ -176,12 +177,14 @@ qx.Class.define("osparc.desktop.credits.Overview", {
         label: this.tr("Buy Credits"),
         icon: "@FontAwesome5Solid/dollar-sign/16",
         maxHeight: 30,
-        alignY: "middle"
+        alignY: "middle",
+        allowGrowX: false,
+        height: 25
       });
       const myAccessRights = wallet.getMyAccessRights();
       buyButton.setVisibility(myAccessRights && myAccessRights["write"] ? "visible" : "excluded");
       buyButton.addListener("execute", () => this.fireDataEvent("buyCredits", {
-        walletId: this.getKey()
+        walletId: wallet.getWalletId()
       }), this);
       layout.add(buyButton);
 
