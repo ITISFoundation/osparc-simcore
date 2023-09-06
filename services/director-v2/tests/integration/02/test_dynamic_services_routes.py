@@ -4,9 +4,10 @@
 import asyncio
 import json
 import logging
+from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterable, AsyncIterator, Awaitable, Callable
-from unittest.mock import Mock
+from typing import Any
+from unittest.mock import MagicMock
 
 import aiodocker
 import pytest
@@ -111,17 +112,19 @@ def start_request_data(
     ensure_swarm_and_networks: None,
     osparc_product_name: str,
 ) -> dict[str, Any]:
-    return dict(
-        user_id=user_id,
-        project_id=project_id,
-        product_name=osparc_product_name,
-        service_uuid=node_uuid,
-        service_key=dy_static_file_server_dynamic_sidecar_service["image"]["name"],
-        service_version=dy_static_file_server_dynamic_sidecar_service["image"]["tag"],
-        request_scheme="http",
-        request_dns="localhost:50000",
-        can_save=True,
-        settings=[
+    return {
+        "user_id": user_id,
+        "project_id": project_id,
+        "product_name": osparc_product_name,
+        "service_uuid": node_uuid,
+        "service_key": dy_static_file_server_dynamic_sidecar_service["image"]["name"],
+        "service_version": dy_static_file_server_dynamic_sidecar_service["image"][
+            "tag"
+        ],
+        "request_scheme": "http",
+        "request_dns": "localhost:50000",
+        "can_save": True,
+        "settings": [
             {
                 "name": "resources",
                 "type": "Resources",
@@ -134,11 +137,11 @@ def start_request_data(
                 "value": ["node.platform.os == linux"],
             },
         ],
-        paths_mapping={"outputs_path": "/tmp/outputs", "inputs_path": "/tmp/inputs"},
-        service_resources=ServiceResourcesDictHelpers.create_jsonable(
+        "paths_mapping": {"outputs_path": "/tmp/outputs", "inputs_path": "/tmp/inputs"},
+        "service_resources": ServiceResourcesDictHelpers.create_jsonable(
             service_resources
         ),
-    )
+    }
 
 
 @pytest.fixture
@@ -209,9 +212,18 @@ async def ensure_services_stopped(
 
 @pytest.fixture
 def mock_project_repository(mocker: MockerFixture) -> None:
+    class ExtendedMagicMock(MagicMock):
+        @property
+        def name(self) -> str:
+            return "test_name"
+
+        @property
+        def label(self) -> str:
+            return "test_label"
+
     mocker.patch(
         f"{DIRECTOR_V2_MODULES}.db.repositories.projects.ProjectsRepository.get_project",
-        side_effect=lambda *args, **kwargs: Mock(),
+        side_effect=lambda *args, **kwargs: ExtendedMagicMock(),
     )
 
 
