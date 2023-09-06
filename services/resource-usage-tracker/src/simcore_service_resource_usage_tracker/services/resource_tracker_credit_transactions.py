@@ -8,9 +8,9 @@ from models_library.api_schemas_resource_usage_tracker.credit_transactions impor
 )
 from models_library.products import ProductName
 from models_library.resource_tracker import (
+    CreditClassification,
     CreditTransactionId,
-    TransactionBillingStatus,
-    TransactionClassification,
+    CreditTransactionStatus,
 )
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -47,8 +47,8 @@ async def create_credit_transaction(
         user_id=credit_transaction_create_body.user_id,
         user_email=credit_transaction_create_body.user_email,
         osparc_credits=credit_transaction_create_body.osparc_credits,
-        transaction_status=TransactionBillingStatus.BILLED,
-        transaction_classification=TransactionClassification.ADD_WALLET_TOP_UP,
+        transaction_status=CreditTransactionStatus.BILLED,
+        transaction_classification=CreditClassification.ADD_WALLET_TOP_UP,
         service_run_id=None,
         payment_transaction_id=credit_transaction_create_body.payment_transaction_id,
         created_at=credit_transaction_create_body.created_at,

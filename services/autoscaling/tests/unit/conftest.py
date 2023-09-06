@@ -118,12 +118,12 @@ def app_environment(
 @pytest.fixture
 def disable_dynamic_service_background_task(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_autoscaling.dynamic_scaling.start_periodic_task",
+        "simcore_service_autoscaling.modules.auto_scaling_task.start_periodic_task",
         autospec=True,
     )
 
     mocker.patch(
-        "simcore_service_autoscaling.dynamic_scaling.stop_periodic_task",
+        "simcore_service_autoscaling.modules.auto_scaling_task.stop_periodic_task",
         autospec=True,
     )
 
@@ -453,8 +453,8 @@ def mocked_aws_server_envs(
     mocked_aws_server: ThreadedMotoServer,
     reset_aws_server_state: None,
     monkeypatch: pytest.MonkeyPatch,
-) -> Iterator[EnvVarsDict]:
-    changed_envs = {
+) -> EnvVarsDict:
+    changed_envs: EnvVarsDict = {
         "EC2_ENDPOINT": f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access
         "EC2_ACCESS_KEY_ID": "xxx",
         "EC2_SECRET_ACCESS_KEY": "xxx",
@@ -466,7 +466,7 @@ def mocked_aws_server_envs(
 def aws_allowed_ec2_instance_type_names(
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
-) -> Iterator[EnvVarsDict]:
+) -> EnvVarsDict:
     changed_envs = {
         "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
             [
@@ -596,7 +596,7 @@ async def autoscaling_ec2(
 @pytest.fixture
 async def ec2_client(
     autoscaling_ec2: AutoscalingEC2,
-) -> AsyncIterator[EC2Client]:
+) -> EC2Client:
     return autoscaling_ec2.client
 
 

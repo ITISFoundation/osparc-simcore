@@ -3,11 +3,11 @@ from decimal import Decimal
 
 from models_library.products import ProductName
 from models_library.resource_tracker import (
+    CreditClassification,
+    CreditTransactionStatus,
     PricingDetailId,
     PricingPlanId,
     ServiceRunId,
-    TransactionBillingStatus,
-    TransactionClassification,
 )
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -23,8 +23,8 @@ class CreditTransactionCreate(BaseModel):
     user_id: UserID
     user_email: str
     osparc_credits: Decimal
-    transaction_status: TransactionBillingStatus
-    transaction_classification: TransactionClassification
+    transaction_status: CreditTransactionStatus
+    transaction_classification: CreditClassification
     service_run_id: ServiceRunId | None
     payment_transaction_id: str | None
     created_at: datetime
@@ -40,4 +40,4 @@ class CreditTransactionCreditsUpdate(BaseModel):
 class CreditTransactionCreditsAndStatusUpdate(BaseModel):
     service_run_id: ServiceRunId
     osparc_credits: Decimal
-    transaction_status: TransactionBillingStatus
+    transaction_status: CreditTransactionStatus
