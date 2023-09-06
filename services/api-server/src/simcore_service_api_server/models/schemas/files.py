@@ -34,6 +34,7 @@ class ClientFile(BaseModel):
 
     filename: FileName = Field(..., description="File name")
     filesize: ByteSize = Field(..., description="File size in bytes")
+    sha256_checksum: SHA256Str = Field(..., description="SHA256 checksum")
 
 
 class File(BaseModel):
@@ -49,11 +50,14 @@ class File(BaseModel):
         default=None, description="Guess of type content [EXPERIMENTAL]"
     )
     sha256_checksum: SHA256Str | None = Field(
-        default=None, description="SHA256 hash of the file's content", alias="checksum"
+        default=None,
+        description="SHA256 hash of the file's content",
+        alias="checksum",  # alias for backwards compatibility
     )
     e_tag: ETag | None = Field(default=None, description="S3 entity tag")
 
     class Config:
+        allow_population_by_field_name = True
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 # complete
@@ -89,7 +93,7 @@ class File(BaseModel):
         return cls(
             id=cls.create_id(sha256check, path.name),
             filename=path.name,
-            sha256_checksum=sha256check,
+            checksum=sha256check,
         )
 
     @classmethod
@@ -118,7 +122,7 @@ class File(BaseModel):
             id=cls.create_id(sha256check or file_size, file.filename, created_at),
             filename=file.filename or "Undefined",
             content_type=file.content_type,
-            sha256_checksum=SHA256Str(sha256check),
+            checksum=SHA256Str(sha256check),
         )
 
     @classmethod
@@ -126,12 +130,11 @@ class File(BaseModel):
         cls,
         client_file: ClientFile,
         created_at: str,
-        sha256_checksum: str | None = None,
     ) -> "File":
         return cls(
             id=cls.create_id(client_file.filesize, client_file.filename, created_at),
             filename=client_file.filename,
-            sha256_checksum=sha256_checksum,
+            checksum=client_file.sha256_checksum,
         )
 
     @classmethod
