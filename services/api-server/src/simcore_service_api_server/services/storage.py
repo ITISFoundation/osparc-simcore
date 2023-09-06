@@ -96,6 +96,13 @@ class StorageApi(BaseServiceClientApi):
         link: AnyUrl = presigned_link.link
         return link
 
+    async def delete_file(self, user_id: int, quoted_storage_file_id: str) -> None:
+        response = await self.client.delete(
+            f"/locations/{self.SIMCORE_S3_ID}/files/{quoted_storage_file_id}",
+            params={"user_id": user_id},
+        )
+        response.raise_for_status()
+
     async def get_upload_links(
         self, user_id: int, file_id: UUID, file_name: str
     ) -> FileUploadSchema:
@@ -106,6 +113,7 @@ class StorageApi(BaseServiceClientApi):
             f"/locations/{self.SIMCORE_S3_ID}/files/{object_path}",
             params={"user_id": user_id, "file_size": 0},
         )
+        response.raise_for_status()
 
         enveloped_data = Envelope[FileUploadSchema].parse_obj(response.json())
         assert enveloped_data.data  # nosec

@@ -51,7 +51,9 @@ async def _fake_payment_completion(app: web.Application, payment_id: PaymentID):
 )
 async def _run_resilient_task(app: web.Application):
     """NOTE: Resilient task: if fails, it tries foreever"""
-    if pending := await get_pending_payment_transactions_ids(app):
+    pending = await get_pending_payment_transactions_ids(app)
+    _logger.debug("Pending transactions: %s", pending)
+    if pending:
         asyncio.gather(
             *[_fake_payment_completion(app, payment_id) for payment_id in pending]
         )
