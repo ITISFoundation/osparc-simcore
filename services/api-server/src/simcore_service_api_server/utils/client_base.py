@@ -10,7 +10,6 @@ from httpx._types import URLTypes
 from jsonschema import ValidationError
 
 from .app_data import AppDataMixin
-from .http_calls_capture import get_captured_as_json
 from .http_calls_capture_processing import CaptureProcessingException
 
 if os.environ["API_SERVER_DEV_HTTP_CALLS_LOGS_PATH"]:
