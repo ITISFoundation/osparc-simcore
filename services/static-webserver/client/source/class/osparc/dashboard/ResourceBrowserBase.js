@@ -313,22 +313,32 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
             const win = osparc.component.study.ResourceSelector.popUpInWindow(resourceSelector);
             resourceSelector.addListener("startStudy", () => {
               win.close();
-              openCB();
+              if (openCB) {
+                openCB();
+              }
               osparc.desktop.MainPageHandler.getInstance().startStudy(studyId);
             });
             resourceSelector.addListener("cancel", () => {
               win.close();
-              cancelCB();
+              if (cancelCB) {
+                cancelCB();
+              }
             });
             win.getChildControl("close-button").addListener("execute", () => {
               cancelCB();
             });
           } else {
-            openCB();
+            if (openCB) {
+              openCB();
+            }
             osparc.desktop.MainPageHandler.getInstance().startStudy(studyId);
           }
         })
-        .catch(() => cancelCB());
+        .catch(() => {
+          if (cancelCB) {
+            cancelCB();
+          }
+        });
     },
 
     _createStudyFromTemplate: function() {
