@@ -21,7 +21,7 @@ from typing import Any, Iterator
 
 import pytest
 import yaml
-from dotenv import dotenv_values, set_key
+from dotenv import dotenv_values
 from pytest import ExitCode
 
 from .helpers import (
@@ -191,11 +191,6 @@ def inject_filestash_config_path_env(
     filestash_config_json_path = Path(process.stdout.decode("utf-8").strip())
     assert filestash_config_json_path.exists()
 
-    set_key(
-        env_file_for_testing,
-        "TMP_PATH_TO_FILESTASH_CONFIG",
-        f"{filestash_config_json_path}",
-    )
     return {"TMP_PATH_TO_FILESTASH_CONFIG": f"{filestash_config_json_path}"}
 
 
