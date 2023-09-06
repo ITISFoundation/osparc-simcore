@@ -21,6 +21,7 @@ cryptography
 fastapi-pagination
 fastapi[all]
 httpx
+jsonref
 orjson
 packaging
 pydantic[dotenv]
