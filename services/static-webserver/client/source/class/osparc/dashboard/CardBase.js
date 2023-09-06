@@ -113,7 +113,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
           } else if (sharedWith === "shared-with-me") {
             return totalAccess;
           } else if (sharedWith === "shared-with-everyone") {
-            return Object.keys(checks).includes("1");
+            return !Object.keys(checks).includes("1");
           }
           return false;
         }
