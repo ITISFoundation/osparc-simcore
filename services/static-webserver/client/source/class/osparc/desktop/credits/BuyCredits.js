@@ -25,7 +25,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
 
     this.__buildLayout();
 
-    this.initNCredits();
+    this.initTotalPrice();
     this.initCreditPrice();
   },
 
@@ -38,27 +38,27 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       apply: "__applyWallet"
     },
 
-    nCredits: {
+    totalPrice: {
       check: "Number",
       init: 50,
       nullable: false,
-      event: "changeNCredits",
-      apply: "__applyNCredits"
+      event: "changeTotalPrice",
+      apply: "__applyTotalPrice"
     },
 
     creditPrice: {
       check: "Number",
-      init: 5,
+      init: 1,
       nullable: false,
       event: "changeCreditPrice",
       apply: "__applyCreditPrice"
     },
 
-    totalPrice: {
+    nCredits: {
       check: "Number",
       init: null,
       nullable: false,
-      event: "changeTotalPrice"
+      event: "changeNCredits"
     }
   },
 
@@ -68,10 +68,10 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
 
   statics: {
     CREDIT_PRICES: [
-      [1, 3],
-      [10, 2.5],
-      [100, 2],
-      [1000, 1.5]
+      [1, 1],
+      [10, 0.75],
+      [100, 0.625],
+      [1000, 0.5]
     ]
   },
 
@@ -158,24 +158,24 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       this.getChildControl("buy-button");
     },
 
-    __applyNCredits: function(nCredits) {
+    __applyTotalPrice: function(totalPrice) {
       let creditPrice = this.self().CREDIT_PRICES[0][1];
 
-      if (nCredits >= this.self().CREDIT_PRICES[1][0]) {
+      if (totalPrice >= this.self().CREDIT_PRICES[1][0]) {
         creditPrice = this.self().CREDIT_PRICES[1][1];
       }
-      if (nCredits >= this.self().CREDIT_PRICES[2][0]) {
+      if (totalPrice >= this.self().CREDIT_PRICES[2][0]) {
         creditPrice = this.self().CREDIT_PRICES[2][1];
       }
-      if (nCredits >= this.self().CREDIT_PRICES[3][0]) {
+      if (totalPrice >= this.self().CREDIT_PRICES[3][0]) {
         creditPrice = this.self().CREDIT_PRICES[3][1];
       }
       this.setCreditPrice(creditPrice);
-      this.setTotalPrice(creditPrice * nCredits);
+      this.setNCredits(totalPrice / creditPrice);
     },
 
     __applyCreditPrice: function(creditPrice) {
-      this.setTotalPrice(creditPrice * this.getNCredits());
+      this.setNCredits(creditPrice * this.getTotalPrice());
     },
 
     __getWalletSelector: function() {
@@ -209,36 +209,36 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       const vLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
       const label = new qx.ui.basic.Label().set({
-        value: this.tr("Credits:"),
+        value: this.tr("Payment amount:"),
         font: "text-14"
       });
       vLayout.add(label);
 
       const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(0));
 
-      const minBtn = new qx.ui.form.Button().set({
+      const lessBtn = new qx.ui.form.Button().set({
         label: this.tr("-"),
         width: 25
       });
-      minBtn.addListener("execute", () => this.setNCredits(this.getNCredits()-1));
-      layout.add(minBtn);
+      lessBtn.addListener("execute", () => this.setTotalPrice(this.getTotalPrice()-1));
+      layout.add(lessBtn);
 
-      const nCreditsField = new qx.ui.form.TextField().set({
+      const paymentAmountField = new qx.ui.form.TextField().set({
         width: 100,
         textAlign: "center",
         font: "text-14"
       });
-      this.bind("nCredits", nCreditsField, "value", {
+      this.bind("totalPrice", paymentAmountField, "value", {
         converter: val => val.toString()
       });
-      nCreditsField.addListener("changeValue", e => this.setNCredits(parseInt(e.getData())));
-      layout.add(nCreditsField);
+      paymentAmountField.addListener("changeValue", e => this.setTotalPrice(parseInt(e.getData())));
+      layout.add(paymentAmountField);
 
       const moreBtn = new qx.ui.form.Button().set({
         label: this.tr("+"),
         width: 25
       });
-      moreBtn.addListener("execute", () => this.setNCredits(this.getNCredits()+1));
+      moreBtn.addListener("execute", () => this.setTotalPrice(this.getTotalPrice()+1));
       layout.add(moreBtn);
 
       vLayout.add(layout);
@@ -267,6 +267,26 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         converter: totalPrice => totalPrice + " $"
       });
       layout.add(totalPriceLabel, {
+        row,
+        column: 1
+      });
+      row++;
+
+      const nCreditsTitle = new qx.ui.basic.Label().set({
+        value: "Total credits",
+        font: "text-16"
+      });
+      layout.add(nCreditsTitle, {
+        row,
+        column: 0
+      });
+      const nCreditsLabel = new qx.ui.basic.Label().set({
+        font: "text-16"
+      });
+      this.bind("nCredits", nCreditsLabel, "value", {
+        converter: nCredits => nCredits.toFixed(2)
+      });
+      layout.add(nCreditsLabel, {
         row,
         column: 1
       });
