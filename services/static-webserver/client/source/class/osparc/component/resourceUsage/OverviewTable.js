@@ -64,7 +64,7 @@ qx.Class.define("osparc.component.resourceUsage.OverviewTable", {
       },
       wallet: {
         pos: 6,
-        title: qx.locale.Manager.tr("Wallet")
+        title: qx.locale.Manager.tr("Credit Account")
       },
       cost: {
         pos: 7,

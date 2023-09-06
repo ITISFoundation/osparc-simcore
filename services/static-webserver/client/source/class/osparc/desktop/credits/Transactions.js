@@ -42,7 +42,7 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
       },
       wallet: {
         pos: 3,
-        title: qx.locale.Manager.tr("Wallet")
+        title: qx.locale.Manager.tr("Credit Account")
       },
       comment: {
         pos: 4,

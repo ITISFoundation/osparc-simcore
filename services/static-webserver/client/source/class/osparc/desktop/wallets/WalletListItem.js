@@ -244,7 +244,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
         statusButton.set({
           icon: status === "ACTIVE" ? "@FontAwesome5Solid/toggle-on/16" : "@FontAwesome5Solid/toggle-off/16",
           label: status === "ACTIVE" ? this.tr("ON") : this.tr("OFF"),
-          toolTipText: status === "ACTIVE" ? this.tr("Wallet enabled") : this.tr("Wallet blocked"),
+          toolTipText: status === "ACTIVE" ? this.tr("Credit Account enabled") : this.tr("Credit Account blocked"),
           enabled: this.__canIWrite()
         });
       }

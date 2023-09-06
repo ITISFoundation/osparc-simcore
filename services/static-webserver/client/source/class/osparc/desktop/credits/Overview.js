@@ -43,7 +43,7 @@ qx.Class.define("osparc.desktop.credits.Overview", {
         case "wallets-card": {
           const content = this.__createWalletsView();
           const wallets = osparc.store.Store.getInstance().getWallets();
-          control = this.__createOverviewCard(`Wallets (${wallets.length})`, content, "toWallets");
+          control = this.__createOverviewCard(`Credit Accounts (${wallets.length})`, content, "toWallets");
           control.getChildren()[0].setValue(this.tr("Credits"));
           this._add(control, {
             column: 0,
@@ -104,7 +104,6 @@ qx.Class.define("osparc.desktop.credits.Overview", {
 
       const goToButton = new qx.ui.form.Button().set({
         label: this.tr("Go to ") + cardName,
-        width: 130,
         allowGrowX: false,
         alignX: "right"
       });
@@ -265,7 +264,7 @@ qx.Class.define("osparc.desktop.credits.Overview", {
         "Date",
         "Credits",
         "Price",
-        "Wallet",
+        "Credit Account",
         "Comment"
       ];
       headers.forEach((header, column) => {

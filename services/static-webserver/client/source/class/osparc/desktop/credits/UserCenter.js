@@ -26,12 +26,8 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
     this._setLayout(new qx.ui.layout.VBox());
 
     this.set({
-      backgroundColor: "background-main-2",
-      margin: 10,
       padding: 20,
-      decorator: new qx.ui.decoration.Decorator().set({
-        radius: 10
-      })
+      paddingLeft: 10
     });
 
     const tabViews = this.__tabsView = new qx.ui.tabview.TabView().set({
@@ -171,7 +167,7 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
     },
 
     __getWalletsPage: function() {
-      const title = this.tr("Wallets");
+      const title = this.tr("Credit Accounts");
       const iconSrc = "@MaterialIcons/account_balance_wallet/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       page.showLabelOnTab();

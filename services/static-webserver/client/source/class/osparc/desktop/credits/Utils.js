@@ -47,7 +47,7 @@ qx.Class.define("osparc.desktop.credits.Utils", {
 
         const wallets = store.getWallets();
         if (emptySelection) {
-          const sbItem = new qx.ui.form.ListItem(qx.locale.Manager.tr("Select Wallet"));
+          const sbItem = new qx.ui.form.ListItem(qx.locale.Manager.tr("Select Credit Account"));
           sbItem.walletId = null;
           selectBox.add(sbItem);
         }
