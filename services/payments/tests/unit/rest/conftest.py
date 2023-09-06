@@ -3,24 +3,9 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-import json
-from typing import Iterator
 
 import httpx
 import pytest
-from fastapi.testclient import TestClient
-from pytest_simcore.helpers.typing_env import EnvVarsDict
-from simcore_service_payments.core.application import create_app
-
-
-@pytest.fixture
-def client(app_environment: EnvVarsDict) -> Iterator[TestClient]:
-    print(f"app_environment={json.dumps(app_environment)}")
-
-    app = create_app()
-    print("settings:\n", app.state.settings.json(indent=1))
-    with TestClient(app, base_url="http://testserver.test") as client:
-        yield client
 
 
 @pytest.fixture(params=["username", "password", "both", None])
