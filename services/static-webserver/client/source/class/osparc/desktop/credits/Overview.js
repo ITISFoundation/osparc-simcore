@@ -44,6 +44,7 @@ qx.Class.define("osparc.desktop.credits.Overview", {
           const content = this.__createWalletsView();
           const wallets = osparc.store.Store.getInstance().getWallets();
           control = this.__createOverviewCard(`Wallets (${wallets.length})`, content, "toWallets");
+          control.getChildren()[0].setValue(this.tr("Credits"));
           this._add(control, {
             column: 0,
             row: 0
