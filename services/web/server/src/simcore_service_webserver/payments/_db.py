@@ -117,7 +117,7 @@ async def get_pending_payment_transactions_ids(app: web.Application) -> list[Pay
             .order_by(payments_transactions.c.initiated_at.asc())  # oldest first
         )
         rows = await result.fetchall() or []
-        return [parse_obj_as(PaymentID, idr) for idr in rows]
+        return [parse_obj_as(PaymentID, row.payment_id) for row in rows]
 
 
 async def complete_payment_transaction(
