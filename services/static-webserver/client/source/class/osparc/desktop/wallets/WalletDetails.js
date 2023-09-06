@@ -66,7 +66,7 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
       const titleLayout = this.__titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
 
       const prevBtn = new qx.ui.form.Button().set({
-        toolTipText: this.tr("Back to Wallets list"),
+        toolTipText: this.tr("Back to Credit Accounts list"),
         icon: "@FontAwesome5Solid/arrow-left/20",
         backgroundColor: "transparent"
       });
