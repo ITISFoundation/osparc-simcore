@@ -264,6 +264,7 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
 
     __openTransactions: function(fetchTransactions = false) {
       if (fetchTransactions) {
+        this.__transactionsTable.refetch();
         this.__openPage(this.__transactionsPage);
       } else {
         this.__openPage(this.__transactionsPage);
