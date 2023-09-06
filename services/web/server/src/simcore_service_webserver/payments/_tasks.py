@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 import random
 from collections.abc import AsyncIterator
@@ -41,7 +40,7 @@ async def _fake_payment_completion(app: web.Application, payment_id: PaymentID):
     ]
     kwargs: dict[str, Any] = random.choice(possible_outcomes)  # noqa: S311
 
-    _logger.info("Faking payment completion as %s", json.dumps(kwargs, indent=1))
+    _logger.info("Faking payment completion as %s", kwargs)
     await complete_payment(**kwargs)
 
 
