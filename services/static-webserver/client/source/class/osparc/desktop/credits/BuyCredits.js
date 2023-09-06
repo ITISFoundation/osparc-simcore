@@ -284,7 +284,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         font: "text-16"
       });
       this.bind("nCredits", nCreditsLabel, "value", {
-        converter: nCredits => nCredits.toFixed(2)
+        converter: nCredits => Number(nCredits ? nCredits.toFixed(2).toString() : (0).toString())
       });
       layout.add(nCreditsLabel, {
         row,
