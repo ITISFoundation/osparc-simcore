@@ -26,7 +26,7 @@ def get_summary() -> str:
             metadata = _current_distribution.get_metadata_lines("PKG-INFO")
 
         return next(x.split(":") for x in metadata if x.startswith("Summary:"))[-1]
-    return ""
+    return ""  # pragma: no cover
 
 
 SUMMARY: Final[str] = get_summary()
