@@ -40,7 +40,17 @@ def create_payment_router():
         assert auth  # nosec
 
     @router.get("/pay", response_class=HTMLResponse)
-    def get_form_payment(id: PaymentID):
+    def get_form_payment(
+        id: PaymentID,
+        auth: Annotated[int, Depends(auth_session)],
+    ):
+        assert id  # nosec
+
+    @router.get("/cancel")
+    def cancel_payment(
+        id: PaymentID,
+        auth: Annotated[int, Depends(auth_session)],
+    ):
         assert id  # nosec
 
     return router

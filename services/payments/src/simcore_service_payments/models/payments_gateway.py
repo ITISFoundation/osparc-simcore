@@ -43,6 +43,6 @@ class GetPaymentMethod(BaseModel):
     card_holder_name: str
     card_number_masked: str
     card_type: str
-    date_created: datetime
     expiration_month: int
     expiration_year: int
+    created: datetime
