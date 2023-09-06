@@ -109,10 +109,6 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
           control = this.__getCreditsLeftView();
           this.getChildControl("wallet-info").add(control);
           break;
-        case "credit-offers-view":
-          control = this.__getCreditOffersView();
-          this.getChildControl("left-side").add(control);
-          break;
         case "credit-selector":
           control = this.__getCreditSelector();
           this.getChildControl("left-side").add(control);
@@ -147,7 +143,6 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
     __buildLayout: function() {
       this.getChildControl("wallet-selector");
       this.getChildControl("credits-left-view");
-      // this.getChildControl("credit-offers-view");
       this.getChildControl("credit-selector");
       this.getChildControl("summary-view");
       this.getChildControl("buy-button");
@@ -200,57 +195,6 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       const creditsLeftView = new osparc.desktop.credits.CreditsIndicatorWText();
       this.bind("wallet", creditsLeftView, "wallet");
       return creditsLeftView;
-    },
-
-    __getCreditOffersView: function() {
-      const grid = new qx.ui.layout.Grid(15, 10);
-      grid.setColumnAlign(0, "right", "middle");
-      const layout = new qx.ui.container.Composite(grid).set({
-        padding: 5,
-        backgroundColor: "background-main-3"
-      });
-
-      let row = 0;
-      const creditsTitle = new qx.ui.basic.Label(this.tr("Credits")).set({
-        font: "text-16"
-      });
-      layout.add(creditsTitle, {
-        row,
-        column: 0
-      });
-
-      const pricePerCreditTitle = new qx.ui.basic.Label(this.tr("Price/Credit")).set({
-        font: "text-16"
-      });
-      layout.add(pricePerCreditTitle, {
-        row,
-        column: 1
-      });
-      row++;
-
-      this.self().CREDIT_PRICES.forEach(pair => {
-        const creditsLabel = new qx.ui.basic.Label().set({
-          value: "> " + pair[0],
-          font: "text-14"
-        });
-        layout.add(creditsLabel, {
-          row,
-          column: 0
-        });
-
-        const pricePerCreditLabel = new qx.ui.basic.Label().set({
-          value: pair[1] + " $",
-          alignX: "center",
-          font: "text-14"
-        });
-        layout.add(pricePerCreditLabel, {
-          row,
-          column: 1
-        });
-
-        row++;
-      });
-      return layout;
     },
 
     __getCreditSelector: function() {
@@ -503,7 +447,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(20));
 
       const label1 = new qx.ui.basic.Label().set({
-        value: "Here we explain what you can run/do with credits.",
+        value: "Explain here what a crrdit is and what one can run/do with them.",
         font: "text-16",
         rich: true,
         wrap: true
@@ -511,20 +455,12 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       layout.add(label1);
 
       const label2 = new qx.ui.basic.Label().set({
-        value: "They can be used for:<br>- using the GUI<br>- modeling<br>- running solvers<br>- transfer data<br>- import VIP models?<br>- collaboration?",
-        font: "text-16",
-        rich: true,
-        wrap: true
-      });
-      layout.add(label2);
-
-      const label3 = new qx.ui.basic.Label().set({
         value: "<i>If something goes wrong you won't be charged</i>",
         font: "text-16",
         rich: true,
         wrap: true
       });
-      layout.add(label3);
+      layout.add(label2);
 
       return layout;
     }
