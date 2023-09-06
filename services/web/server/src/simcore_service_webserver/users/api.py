@@ -13,6 +13,7 @@ from aiohttp import web
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
 from models_library.users import GroupID, UserID
+from pydantic import ValidationError, parse_obj_as
 from simcore_postgres_database.models.users import UserNameConverter, UserRole
 
 from ..db.models import GroupType, groups, user_to_groups, users
@@ -21,6 +22,7 @@ from ..groups.models import convert_groups_db_to_schema
 from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..security.api import clean_auth_policy_cache
 from . import _db
+from ._db import UserNameAndEmailTuple
 from ._db import list_user_permissions as db_list_of_permissions
 from .exceptions import UserNotFoundError
 from .schemas import Permission, ProfileGet, ProfileUpdate, convert_user_db_to_schema
@@ -29,16 +31,10 @@ _logger = logging.getLogger(__name__)
 
 
 def _parse_as_user(user_id: Any) -> UserID:
-    # analogous to pydantic.parse_obj_as(PositiveInt, user_id) but lighter and
-    # raise UserNotFoundError instead of ValidationError
     try:
-        user_id = int(user_id)
-    except ValueError as err:
+        return parse_obj_as(UserID, user_id)
+    except ValidationError as err:
         raise UserNotFoundError(uid=user_id) from err
-
-    if user_id <= 0:
-        raise UserNotFoundError(uid=user_id)
-    return user_id
 
 
 async def get_user_profile(app: web.Application, user_id: UserID) -> ProfileGet:
@@ -155,6 +151,23 @@ async def get_user_role(app: web.Application, user_id: UserID) -> UserRole:
         if user_role is None:
             raise UserNotFoundError(uid=user_id)
         return UserRole(user_role)
+
+
+async def get_user_name_and_email(
+    app: web.Application, *, user_id: UserID
+) -> UserNameAndEmailTuple:
+    """
+    Raises:
+        UserNotFoundError: _description_
+
+    Returns:
+        (user, email)
+    """
+    async with get_database_engine(app).acquire() as conn:
+        return await _db.get_username_and_email(
+            conn,
+            user_id=_parse_as_user(user_id),
+        )
 
 
 async def get_guest_user_ids_and_names(app: web.Application) -> list[tuple[int, str]]:

@@ -319,4 +319,7 @@ def downgrade():
         table_name="resource_tracker_pricing_plans",
     )
     op.drop_table("resource_tracker_pricing_plans")
+
+    sa.Enum(name="transactionbillingstatus").drop(op.get_bind(), checkfirst=False)
+    sa.Enum(name="transactionclassification").drop(op.get_bind(), checkfirst=False)
     # ### end Alembic commands ###
