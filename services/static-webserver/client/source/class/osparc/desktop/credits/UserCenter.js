@@ -146,6 +146,17 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
       overview.set({
         margin: 10
       });
+      overview.addListener("buyCredits", e => {
+        this.__openBuyCredits();
+        const {
+          walletId
+        } = e.getData();
+        const store = osparc.store.Store.getInstance();
+        const found = store.getWallets().find(wallet => wallet.getWalletId() === parseInt(walletId));
+        if (found) {
+          this.__buyCredits.setWallet(found);
+        }
+      });
       overview.addListener("toWallets", () => this.openWallets());
       overview.addListener("toTransactions", () => this.__openTransactions());
       overview.addListener("toUsageOverview", () => this.__openUsageOverview());

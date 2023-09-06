@@ -30,6 +30,7 @@ qx.Class.define("osparc.desktop.credits.Overview", {
   },
 
   events: {
+    "buyCredits": "qx.event.type.Data",
     "toWallets": "qx.event.type.Event",
     "toTransactions": "qx.event.type.Event",
     "toUsageOverview": "qx.event.type.Event"
@@ -41,7 +42,8 @@ qx.Class.define("osparc.desktop.credits.Overview", {
       switch (id) {
         case "wallets-card": {
           const content = this.__createWalletsView();
-          control = this.__createOverviewCard("Wallets", content, "toWallets");
+          const wallets = osparc.store.Store.getInstance().getWallets();
+          control = this.__createOverviewCard(`Wallets (${wallets.length})`, content, "toWallets");
           this._add(control, {
             column: 0,
             row: 0
@@ -112,11 +114,85 @@ qx.Class.define("osparc.desktop.credits.Overview", {
     },
 
     __createWalletsView: function() {
+      const activeWallet = osparc.store.Store.getInstance().getActiveWallet();
+      const preferredWallet = osparc.desktop.credits.Utils.getFavouriteWallet();
+      const oneWallet = activeWallet ? activeWallet : preferredWallet;
+      if (oneWallet) {
+        // show one wallet
+        return this.__showOneWallet(oneWallet);
+      }
+      // show some wallets
+      return this.__showSomeWallets();
+    },
+
+    __showOneWallet: function(wallet) {
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+
+      const titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
+        alignY: "middle"
+      });
+      const maxSize = 24;
+      // thumbnail or shared or not shared
+      const thumbnail = new qx.ui.basic.Image().set({
+        backgroundColor: "transparent",
+        alignX: "center",
+        alignY: "middle",
+        scale: true,
+        allowShrinkX: true,
+        allowShrinkY: true,
+        maxHeight: maxSize,
+        maxWidth: maxSize
+      });
+      const value = wallet.getThumbnail();
+      if (value) {
+        thumbnail.setSource(value);
+      } else if (wallet.getAccessRights() && wallet.getAccessRights().length > 1) {
+        thumbnail.setSource(osparc.utils.Icons.organization(maxSize-4));
+      } else {
+        thumbnail.setSource(osparc.utils.Icons.user(maxSize-4));
+      }
+      titleLayout.add(thumbnail);
+      // name
+      const walletName = new qx.ui.basic.Label().set({
+        font: "text-14",
+        maxWidth: 200
+      });
+      wallet.bind("name", walletName, "value");
+      titleLayout.add(walletName);
+      layout.add(titleLayout);
+
+      const progressBar = new osparc.desktop.credits.CreditsIndicatorWText(wallet, "vertical").set({
+        allowShrinkY: true
+      });
+      progressBar.getChildControl("credits-indicator").set({
+        minWidth: 100
+      });
+      progressBar.getChildControl("credits-text").set({
+        font: "text-16"
+      });
+      layout.add(progressBar);
+
+      const buyButton = new qx.ui.form.Button().set({
+        label: this.tr("Buy Credits"),
+        icon: "@FontAwesome5Solid/dollar-sign/16",
+        maxHeight: 30,
+        alignY: "middle"
+      });
+      const myAccessRights = wallet.getMyAccessRights();
+      buyButton.setVisibility(myAccessRights && myAccessRights["write"] ? "visible" : "excluded");
+      buyButton.addListener("execute", () => this.fireDataEvent("buyCredits", {
+        walletId: this.getKey()
+      }), this);
+      layout.add(buyButton);
+
+      return layout;
+    },
+
+    __showSomeWallets: function() {
       const grid = new qx.ui.layout.Grid(12, 8);
       const layout = new qx.ui.container.Composite(grid);
-
-      const wallets = osparc.store.Store.getInstance().getWallets();
       const maxWallets = 5;
+      const wallets = osparc.store.Store.getInstance().getWallets();
       for (let i=0; i<wallets.length && i<maxWallets; i++) {
         let column = 0;
 
@@ -168,22 +244,6 @@ qx.Class.define("osparc.desktop.credits.Overview", {
           minWidth: 100
         });
         layout.add(progressBar, {
-          column,
-          row: i
-        });
-        column++;
-
-        // favourite
-        const starImage = new qx.ui.basic.Image().set({
-          alignY: "middle"
-        });
-        wallet.bind("defaultWallet", starImage, "source", {
-          converter: isDefault => isDefault ? "@FontAwesome5Solid/star/18" : "@FontAwesome5Regular/star/18"
-        });
-        wallet.bind("defaultWallet", starImage, "textColor", {
-          converter: isDefault => isDefault ? "strong-main" : "text"
-        });
-        layout.add(starImage, {
           column,
           row: i
         });
