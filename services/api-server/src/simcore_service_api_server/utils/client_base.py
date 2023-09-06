@@ -1,4 +1,5 @@
 import logging
+import os
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
@@ -11,6 +12,9 @@ from jsonschema import ValidationError
 from .app_data import AppDataMixin
 from .http_calls_capture import get_captured_as_json
 from .http_calls_capture_processing import CaptureProcessingException
+
+if os.environ["API_SERVER_DEV_HTTP_CALLS_LOGS_PATH"]:
+    from .http_calls_capture import get_captured_as_json
 
 _logger = logging.getLogger(__name__)
 
