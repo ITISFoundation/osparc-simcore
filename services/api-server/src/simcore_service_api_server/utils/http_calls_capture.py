@@ -4,6 +4,10 @@ from typing import Any, Literal
 
 import httpx
 from pydantic import BaseModel, Field
+from simcore_service_api_server.utils.http_calls_capture_processing import (
+    PathDescription,
+    enhance_from_openapi_spec,
+)
 
 
 class HttpApiCallCaptureModel(BaseModel):
@@ -15,7 +19,7 @@ class HttpApiCallCaptureModel(BaseModel):
     description: str
     method: Literal["GET", "PUT", "POST", "PATCH", "DELETE"]
     host: str
-    path: str
+    path: PathDescription | str
     query: str | None = None
     request_payload: dict[str, Any] | None = None
     response_body: dict[str, Any] | list | None = None
@@ -23,22 +27,32 @@ class HttpApiCallCaptureModel(BaseModel):
 
     @classmethod
     def create_from_response(
-        cls, response: httpx.Response, name: str, description: str = ""
+        cls,
+        response: httpx.Response,
+        name: str,
+        description: str = "",
+        enhance_from_openapi_specs: bool = True,
     ) -> "HttpApiCallCaptureModel":
         request = response.request
+
+        path: PathDescription | str
+        if enhance_from_openapi_specs:
+            path = enhance_from_openapi_spec(response)
+        else:
+            path = response.request.url.path
 
         return cls(
             name=name,
             description=description or f"{request}",
             method=request.method,
             host=request.url.host,
-            path=request.url.path,
+            path=path,
             query=request.url.query.decode() or None,
             request_payload=json.loads(request.content.decode())
             if request.content
             else None,
             response_body=response.json() if response.content else None,
-            status_code=response.status_code,
+            status_code=HTTPStatus(response.status_code),
         )
 
     def __str__(self) -> str:
