@@ -11,6 +11,7 @@ from models_library.api_schemas_storage import (
     LinkType,
     S3BucketName,
 )
+from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import (
@@ -65,6 +66,7 @@ class FileMetaDataAtDB(BaseModel):
     upload_id: UploadID | None = None
     upload_expires_at: datetime.datetime | None = None
     is_directory: bool
+    sha256_checksum: SHA256Str | None = None
 
     class Config:
         orm_mode = True
@@ -81,6 +83,7 @@ class FileMetaData(FileMetaDataGet):
     project_id: ProjectID | None
     node_id: NodeID | None
     user_id: UserID | None
+    sha256_checksum: SHA256Str | None
 
     @classmethod
     @validate_arguments
