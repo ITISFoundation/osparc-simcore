@@ -121,7 +121,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           // set by the url or active study
           const loadStudyId = osparc.store.Store.getInstance().getCurrentStudyId();
           if (loadStudyId) {
-            this._startStudyById(loadStudyId);
+            const cancelCB = () => this.reloadResources();
+            this._startStudyById(loadStudyId, null, cancelCB);
           } else {
             this.reloadResources();
           }
@@ -737,8 +738,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._showLoadingPage(this.tr("Creating ") + (templateCopyData.name || osparc.product.Utils.getStudyAlias()));
       osparc.utils.Study.createStudyFromTemplate(templateCopyData, this._loadingPage)
         .then(studyId => {
-          this._hideLoadingPage();
-          this._startStudyById(studyId);
+          const openCB = () => this._hideLoadingPage();
+          const cancelCB = () => {
+            this._hideLoadingPage();
+            const params = {
+              url: {
+                "studyId": studyId
+              }
+            };
+            osparc.data.Resources.fetch("studies", "delete", params, studyId);
+          };
+          this._startStudyById(studyId, openCB, cancelCB);
         })
         .catch(err => {
           this._hideLoadingPage();
@@ -779,8 +789,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       };
       osparc.utils.Study.createStudyAndPoll(params)
         .then(studyData => {
-          this._hideLoadingPage();
-          this._startStudyById(studyData["uuid"]);
+          const openCB = () => this._hideLoadingPage();
+          const cancelCB = () => {
+            this._hideLoadingPage();
+            const params2 = {
+              url: {
+                "studyId": studyData["uuid"]
+              }
+            };
+            osparc.data.Resources.fetch("studies", "delete", params2, studyData["uuid"]);
+          };
+          this._startStudyById(studyData["uuid"], openCB, cancelCB);
         })
         .catch(err => {
           this._hideLoadingPage();
