@@ -57,7 +57,10 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         })
       }, {
         id: "shared-with-me",
-        label: qx.locale.Manager.tr("Shared with me")
+        label: qx.locale.Manager.tr("Shared with Me")
+      }, {
+        id: "shared-with-everyone",
+        label: qx.locale.Manager.tr("Shared with Everyone")
       }];
     }
   },
