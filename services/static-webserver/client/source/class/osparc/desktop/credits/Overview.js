@@ -104,7 +104,6 @@ qx.Class.define("osparc.desktop.credits.Overview", {
 
       const goToButton = new qx.ui.form.Button().set({
         label: this.tr("Go to ") + cardName,
-        width: 130,
         allowGrowX: false,
         alignX: "right"
       });
