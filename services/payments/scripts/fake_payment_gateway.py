@@ -6,13 +6,14 @@ from fastapi import APIRouter, Depends, FastAPI, Header, status
 from fastapi.responses import HTMLResponse
 from fastapi.routing import APIRoute
 from simcore_service_payments.models.payments_gateway import (
-    GetPaymentMethod,
+    BatchGetPaymentMethods,
     InitPayment,
     InitPaymentMethod,
     PaymentID,
     PaymentInitiated,
     PaymentMethodID,
     PaymentMethodInitiated,
+    PaymentMethodsBatch,
 )
 
 
@@ -82,11 +83,13 @@ def create_payment_method_router():
         assert id  # nosec
 
     # CRUD payment-methods
-    @router.get("", response_model=list[GetPaymentMethod])
-    def list_payment_methods(
+    @router.post(":batchGet", response_model=PaymentMethodsBatch)
+    def batch_get_payment_methods(
+        batch: BatchGetPaymentMethods,
         auth: Annotated[int, Depends(auth_session)],
     ):
         assert auth  # nosec
+        assert batch  # nosec
 
     @router.get("/{id}", response_class=HTMLResponse)
     def get_payment_method(

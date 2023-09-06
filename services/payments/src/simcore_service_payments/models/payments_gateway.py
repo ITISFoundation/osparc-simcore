@@ -46,3 +46,11 @@ class GetPaymentMethod(BaseModel):
     expiration_month: int
     expiration_year: int
     created: datetime
+
+
+class BatchGetPaymentMethods(BaseModel):
+    payment_methods_ids: list[PaymentMethodID]
+
+
+class PaymentMethodsBatch(BaseModel):
+    items: list[GetPaymentMethod]
