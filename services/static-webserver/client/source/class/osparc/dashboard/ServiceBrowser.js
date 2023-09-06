@@ -129,12 +129,10 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         .then(studyId => {
           const openCB = () => {
             this._hideLoadingPage();
-            // and open study
             this._startStudyById(studyId);
           };
           const cancelCB = () => {
             this._hideLoadingPage();
-            // and delete study
             const params = {
               url: {
                 "studyId": studyId
