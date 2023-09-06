@@ -38,7 +38,9 @@ async def _fake_payment_completion(app: web.Application, payment_id: PaymentID):
         },
         # 3. does not complete ever ???
     ]
-    kwargs: dict[str, Any] = random.choice(possible_outcomes)  # nosec # noqa: S311
+    kwargs: dict[str, Any] = random.choice(  # nosec # noqa: S311 # NOSONAR
+        possible_outcomes
+    )
 
     _logger.info("Faking payment completion as %s", kwargs)
     await complete_payment(**kwargs)
