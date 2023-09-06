@@ -4,10 +4,7 @@ from .._meta import API_VTAG
 from . import _acks, _health, _meta
 
 
-def setup_api_routes(app: FastAPI):
-    """
-    Composes resources/sub-resources routers
-    """
+def setup_rest_api_routes(app: FastAPI):
     app.include_router(_health.router)
 
     api_router = APIRouter(prefix=f"/{API_VTAG}")

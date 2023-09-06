@@ -9,12 +9,11 @@ from .._meta import (
     PROJECT_NAME,
     SUMMARY,
 )
-from ..api.routes import setup_api_routes
+from ..rest.routes import setup_rest_api_routes
 from .settings import ApplicationSettings
 
 
 def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
-
     app = FastAPI(
         title=f"{PROJECT_NAME} web API",
         description=SUMMARY,
@@ -30,7 +29,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
     # PLUGINS SETUP
-    setup_api_routes(app)
+    setup_rest_api_routes(app)
 
     # ERROR HANDLERS
     # ... add here ...
