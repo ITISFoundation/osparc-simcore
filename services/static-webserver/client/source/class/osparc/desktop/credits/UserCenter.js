@@ -173,7 +173,7 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
     },
 
     __getWalletsPage: function() {
-      const title = this.tr("Wallets");
+      const title = this.tr("Credit Accounts");
       const iconSrc = "@MaterialIcons/account_balance_wallet/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       page.showLabelOnTab();

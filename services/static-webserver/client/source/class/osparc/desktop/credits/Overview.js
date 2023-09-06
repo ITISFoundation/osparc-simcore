@@ -201,7 +201,7 @@ qx.Class.define("osparc.desktop.credits.Overview", {
         "Date",
         "Credits",
         "Price",
-        "Wallet",
+        "Credit Account",
         "Comment"
       ];
       headers.forEach((header, column) => {

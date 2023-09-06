@@ -94,7 +94,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         case "wallet-info": {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
           const label = new qx.ui.basic.Label().set({
-            value: this.tr("Wallets:"),
+            value: this.tr("Credit Accounts:"),
             font: "text-14"
           });
           control.add(label);
@@ -374,7 +374,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       row++;
 
       const walletTitle = new qx.ui.basic.Label().set({
-        value: "Wallet",
+        value: "Credit Account",
         font: "text-14"
       });
       layout.add(walletTitle, {
