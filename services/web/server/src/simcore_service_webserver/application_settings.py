@@ -12,7 +12,7 @@ from models_library.basic_types import (
     VersionTag,
 )
 from models_library.utils.change_case import snake_to_camel
-from pydantic import AnyHttpUrl, root_validator, validator
+from pydantic import AnyHttpUrl, parse_obj_as, root_validator, validator
 from pydantic.fields import Field, ModelField
 from pydantic.types import PositiveInt
 from settings_library.base import BaseCustomSettings
@@ -34,6 +34,7 @@ from .exporter.settings import ExporterSettings
 from .garbage_collector.settings import GarbageCollectorSettings
 from .invitations.settings import InvitationsSettings
 from .login.settings import LoginSettings
+from .payments.settings import PaymentsSettings
 from .projects.settings import ProjectsSettings
 from .resource_manager.settings import ResourceManagerSettings
 from .resource_usage.settings import ResourceUsageTrackerSettings
@@ -51,7 +52,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     # CODE STATICS ---------------------------------------------------------
     API_VERSION: str = API_VERSION
     APP_NAME: str = APP_NAME
-    API_VTAG: VersionTag = API_VTAG
+    API_VTAG: VersionTag = parse_obj_as(VersionTag, API_VTAG)
 
     # IMAGE BUILDTIME ------------------------------------------------------
     # @Makefile
@@ -98,27 +99,27 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     WEBSERVER_DEV_FEATURES_ENABLED: bool = Field(
-        False,
+        default=False,
         description="Enables development features. WARNING: make sure it is disabled in production .env file!",
     )
     WEBSERVER_LOGLEVEL: LogLevel = Field(
-        LogLevel.WARNING.value,
+        default=LogLevel.WARNING.value,
         env=["WEBSERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
         # NOTE: suffix '_LOGLEVEL' is used overall
     )
     WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
-        False,
+        default=False,
         env=["WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"],
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
     # TODO: find a better name!?
     WEBSERVER_SERVER_HOST: str = Field(
-        "0.0.0.0",  # nosec
+        default="0.0.0.0",  # nosec
         description="host name to serve within the container."
         "NOTE that this different from WEBSERVER_HOST env which is the host seen outside the container",
     )
     WEBSERVER_HOST: str | None = Field(None, env=["WEBSERVER_HOST", "HOST", "HOSTNAME"])
-    WEBSERVER_PORT: PortInt = DEFAULT_AIOHTTP_PORT
+    WEBSERVER_PORT: PortInt = parse_obj_as(PortInt, DEFAULT_AIOHTTP_PORT)
 
     WEBSERVER_FRONTEND: FrontEndAppSettings | None = Field(
         auto_default_from_env=True, description="front-end static settings"
@@ -161,6 +162,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_LOGIN: LoginSettings | None = Field(
         auto_default_from_env=True, description="login plugin"
     )
+
+    WEBSERVER_PAYMENTS: PaymentsSettings | None = Field(
+        auto_default_from_env=True, description="payments plugin settings"
+    )
+
     WEBSERVER_REDIS: RedisSettings | None = Field(auto_default_from_env=True)
 
     WEBSERVER_REST: RestSettings | None = Field(
@@ -220,7 +226,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     #
     WEBSERVER_SECURITY: bool = Field(
-        True,
+        default=True,
         description="This is a place-holder for future settings."
         "Currently this is a system plugin and cannot be disabled",
     )
@@ -325,7 +331,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
             "SIMCORE_VCS_RELEASE_URL": "vcs_release_url",
             "SWARM_STACK_NAME": "stack_name",
         }
-        config_alias_generator = lambda s: s.lower()
+
+        def config_alias_generator(s):
+            return s.lower()
 
         data: dict[str, Any] = self.dict(**kwargs)
         current_keys = list(data.keys())

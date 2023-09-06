@@ -14,8 +14,9 @@
 import json
 import logging
 import sys
+from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Any, Callable, Iterable
+from typing import Any
 
 import pytest
 import yaml
@@ -76,11 +77,10 @@ def activity_data(fake_data_dir: Path) -> Iterable[dict[str, Any]]:
 
 @pytest.fixture
 def mock_orphaned_services(mocker):
-    remove_orphaned_services = mocker.patch(
+    return mocker.patch(
         "simcore_service_webserver.garbage_collector._core.remove_orphaned_services",
         return_value="",
     )
-    return remove_orphaned_services
 
 
 @pytest.fixture

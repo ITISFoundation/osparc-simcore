@@ -1,8 +1,15 @@
 from datetime import datetime
+from decimal import Decimal
+from typing import TypeAlias
 
+from models_library.utils.pydantic_tools_extension import FieldNotRequired
+from pydantic import Field, HttpUrl
+
+from ..basic_types import IDStr
 from ..users import GroupID
+from ..utils.pydantic_tools_extension import FieldNotRequired
 from ..wallets import WalletID, WalletStatus
-from ._base import OutputSchema
+from ._base import InputSchema, OutputSchema
 
 
 class WalletGet(OutputSchema):
@@ -37,3 +44,34 @@ class PutWalletBodyParams(OutputSchema):
     description: str | None
     thumbnail: str | None
     status: WalletStatus
+
+
+#
+# Payments to top-up credits in wallets
+#
+
+PaymentID: TypeAlias = IDStr
+
+
+class CreateWalletPayment(InputSchema):
+    price_dollars: Decimal
+    osparc_credits: Decimal
+    comment: str = FieldNotRequired(max_length=100)
+
+
+class WalletPaymentCreated(OutputSchema):
+    payment_id: PaymentID
+    payment_form_url: HttpUrl = Field(
+        ..., description="Link to external site that holds the payment submission form"
+    )
+
+
+class PaymentTransaction(OutputSchema):
+    payment_id: PaymentID
+    price_dollars: Decimal
+    wallet_id: WalletID
+    osparc_credits: Decimal
+    comment: str = FieldNotRequired()
+    created_at: datetime
+    completed_at: datetime | None
+    invoice_url: HttpUrl = FieldNotRequired()
