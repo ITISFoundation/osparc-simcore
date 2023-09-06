@@ -23,7 +23,7 @@ _logger = logging.getLogger(__name__)
 def setup_wallets(app: web.Application):
     assert app[APP_SETTINGS_KEY].WEBSERVER_WALLETS  # nosec
     app.router.add_routes(_handlers.routes)
-    app.router.add_routes(_payments_handlers.routes)
     app.router.add_routes(_groups_handlers.routes)
 
     setup_payments(app)
+    app.router.add_routes(_payments_handlers.routes)
