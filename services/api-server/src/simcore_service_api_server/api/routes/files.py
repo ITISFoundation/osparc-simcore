@@ -30,7 +30,13 @@ from starlette.responses import RedirectResponse
 from ..._meta import API_VTAG
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
-from ...models.schemas.files import ClientFile, ClientFileUploadSchema, File
+from ...models.schemas.files import (
+    ClientFile,
+    ClientFileUploadData,
+    File,
+    FileUploadData,
+    UploadLinks,
+)
 from ...services.storage import StorageApi, StorageFileMetaData, to_file_api_model
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
@@ -187,7 +193,7 @@ async def upload_files(files: list[UploadFile] = FileParam(...)):
 
 @router.post(
     "/content",
-    response_model=ClientFileUploadSchema,
+    response_model=ClientFileUploadData,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 @cancel_on_disconnect
@@ -212,20 +218,18 @@ async def get_upload_links(
         file_size=ByteSize(client_file.filesize),
         is_directory=False,
     )
-
-    query = f"{upload_links.links.complete_upload.query}".removesuffix(":complete")
-    url = request.url_for(
+    completion_url: URL = request.url_for(
         "complete_multipart_upload", file_id=file_meta.id
-    ).include_query_params(**dict(item.split("=") for item in query.split("&")))
-    upload_links.links.complete_upload = parse_obj_as(AnyUrl, f"{url}")
-
-    query = f"{upload_links.links.abort_upload.query}".removesuffix(":abort")
-    url = request.url_for(
-        "abort_multipart_upload", file_id=file_meta.id
-    ).include_query_params(**dict(item.split("=") for item in query.split("&")))
-    upload_links.links.abort_upload = parse_obj_as(AnyUrl, f"{url}")
-
-    return ClientFileUploadSchema(file_id=file_meta.id, upload_schema=upload_links)
+    )
+    abort_url: URL = request.url_for("abort_multipart_upload", file_id=file_meta.id)
+    upload_data: FileUploadData = FileUploadData(
+        chunk_size=upload_links.chunk_size,
+        urls=upload_links.urls,
+        links=UploadLinks(
+            complete_upload=completion_url.path, abort_upload=abort_url.path
+        ),
+    )
+    return ClientFileUploadData(file_id=file_meta.id, upload_schema=upload_data)
 
 
 @router.get(
@@ -264,19 +268,19 @@ async def get_file(
 
 @router.delete(
     "/{file_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    responses={**_COMMON_ERROR_RESPONSES},
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def delete_file(
     file_id: UUID,
-    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
     user_id: Annotated[int, Depends(get_current_user_id)],
+    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
 ):
-    assert storage_client  # nsoec
-
-    msg = f"delete file {file_id=} of {user_id=}. SEE https://github.com/ITISFoundation/osparc-issues/issues/952"
-    raise NotImplementedError(msg)
+    file: File = await get_file(
+        file_id=file_id, storage_client=storage_client, user_id=user_id
+    )
+    await storage_client.delete_file(
+        user_id=user_id, quoted_storage_file_id=file.quoted_storage_file_id
+    )
 
 
 @router.post(
@@ -294,7 +298,7 @@ async def abort_multipart_upload(
     assert user_id  # nosec
     file: File = File(id=file_id, filename=client_file.filename, checksum=None)
     abort_link: URL = await storage_client.create_abort_upload_link(
-        file, query=dict(request.query_params)
+        file, query={"user_id": str(user_id)}
     )
     await abort_upload(abort_upload_link=parse_obj_as(AnyUrl, str(abort_link)))
 
@@ -318,7 +322,7 @@ async def complete_multipart_upload(
 
     file: File = File(id=file_id, filename=client_file.filename, checksum=None)
     complete_link: URL = await storage_client.create_complete_upload_link(
-        file, dict(request.query_params)
+        file, {"user_id": str(user_id)}
     )
 
     e_tag: ETag = await complete_file_upload(

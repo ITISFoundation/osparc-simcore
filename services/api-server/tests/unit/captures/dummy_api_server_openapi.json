@@ -1,0 +1,1712 @@
+{
+  "openapi": "3.0.2",
+  "info": {
+    "title": "osparc.io web API",
+    "description": "osparc-simcore public API specifications",
+    "version": "0.4.5"
+  },
+  "paths": {
+    "/v0/meta": {
+      "get": {
+        "tags": [
+          "meta"
+        ],
+        "summary": "Get Service Metadata",
+        "operationId": "get_service_metadata",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Meta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/me": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Get My Profile",
+        "operationId": "get_my_profile",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Update My Profile",
+        "operationId": "update_my_profile",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/files": {
+      "get": {
+        "tags": [
+          "files"
+        ],
+        "summary": "List Files",
+        "description": "Lists all files stored in the system\n\nSEE get_files_page for a paginated version of this function",
+        "operationId": "list_files",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response List Files V0 Files Get",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/File"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/files/content": {
+      "put": {
+        "tags": [
+          "files"
+        ],
+        "summary": "Upload File",
+        "description": "Uploads a single file to the system",
+        "operationId": "upload_file",
+        "parameters": [
+          {
+            "required": false,
+            "schema": {
+              "title": "Content-Length",
+              "type": "string"
+            },
+            "name": "content-length",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_file_v0_files_content_put"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/File"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/files/{file_id}": {
+      "get": {
+        "tags": [
+          "files"
+        ],
+        "summary": "Get File",
+        "description": "Gets metadata for a given file resource",
+        "operationId": "get_file",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "File Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "file_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/File"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/files/{file_id}/content": {
+      "get": {
+        "tags": [
+          "files"
+        ],
+        "summary": "Download File",
+        "operationId": "download_file",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "File Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "file_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "307": {
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "File not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Returns a arbitrary binary data",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/solvers": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "List Solvers",
+        "description": "Lists all available solvers (latest version)\n\nSEE get_solvers_page for paginated version of this function",
+        "operationId": "list_solvers",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response List Solvers V0 Solvers Get",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Solver"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/solvers/releases": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Lists All Releases",
+        "description": "Lists all released solvers i.e. all released versions\n\nSEE get_solvers_releases_page for a paginated version of this function",
+        "operationId": "list_solvers_releases",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response List Solvers Releases V0 Solvers Releases Get",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Solver"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/solvers/{solver_key}/latest": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Get Latest Release of a Solver",
+        "description": "Gets latest release of a solver",
+        "operationId": "get_solver",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Solver Key",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "type": "string"
+            },
+            "name": "solver_key",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Solver"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/solvers/{solver_key}/releases": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "List Solver Releases",
+        "description": "Lists all releases of a given (one) solver\n\nSEE get_solver_releases_page for a paginated version of this function",
+        "operationId": "list_solver_releases",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Solver Key",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "type": "string"
+            },
+            "name": "solver_key",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response List Solver Releases V0 Solvers  Solver Key  Releases Get",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Solver"
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/solvers/{solver_key}/releases/{version}": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Get Solver Release",
+        "description": "Gets a specific release of a solver",
+        "operationId": "get_solver_release",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Solver Key",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "type": "string"
+            },
+            "name": "solver_key",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Version",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "type": "string"
+            },
+            "name": "version",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Solver"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/solvers/{solver_key}/releases/{version}/jobs": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "List Jobs",
+        "description": "List of jobs in a specific released solver (limited to 20 jobs)\n\nSEE get_jobs_page for paginated version of this function",
+        "operationId": "list_jobs",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Solver Key",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "type": "string"
+            },
+            "name": "solver_key",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Version",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "type": "string"
+            },
+            "name": "version",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response List Jobs V0 Solvers  Solver Key  Releases  Version  Jobs Get",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Job"
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Create Job",
+        "description": "Creates a job in a specific release with given inputs.\n\nNOTE: This operation does **not** start the job",
+        "operationId": "create_job",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Solver Key",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "type": "string"
+            },
+            "name": "solver_key",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Version",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "type": "string"
+            },
+            "name": "version",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JobInputs"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Get Job",
+        "description": "Gets job of a given solver",
+        "operationId": "get_job",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Solver Key",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "type": "string"
+            },
+            "name": "solver_key",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Version",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "type": "string"
+            },
+            "name": "version",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "job_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}:start": {
+      "post": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Start Job",
+        "description": "Starts job job_id created with the solver solver_key:version\n\nNew in *version 0.4.3*: cluster_id",
+        "operationId": "start_job",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Solver Key",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "type": "string"
+            },
+            "name": "solver_key",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Version",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "type": "string"
+            },
+            "name": "version",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "job_id",
+            "in": "path"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "Cluster Id",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "name": "cluster_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatus"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}:stop": {
+      "post": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Stop Job",
+        "operationId": "stop_job",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Solver Key",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "type": "string"
+            },
+            "name": "solver_key",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Version",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "type": "string"
+            },
+            "name": "version",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "job_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}:inspect": {
+      "post": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Inspect Job",
+        "operationId": "inspect_job",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Solver Key",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "type": "string"
+            },
+            "name": "solver_key",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Version",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "type": "string"
+            },
+            "name": "version",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "job_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatus"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}/outputs": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Get Job Outputs",
+        "operationId": "get_job_outputs",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Solver Key",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "type": "string"
+            },
+            "name": "solver_key",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Version",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "type": "string"
+            },
+            "name": "version",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "job_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOutputs"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}/outputs/logfile": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Get Job Output Logfile",
+        "description": "Special extra output with persistent logs file for the solver run.\n\nNOTE: this is not a log stream but a predefined output that is only\navailable after the job is done.\n\nNew in *version 0.4.0*",
+        "operationId": "get_job_output_logfile",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Solver Key",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "type": "string"
+            },
+            "name": "solver_key",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Version",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "type": "string"
+            },
+            "name": "version",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "job_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "307": {
+            "description": "Successful Response"
+          },
+          "200": {
+            "description": "Returns a log file",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/zip": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Log not found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Body_upload_file_v0_files_content_put": {
+        "title": "Body_upload_file_v0_files_content_put",
+        "required": [
+          "file"
+        ],
+        "type": "object",
+        "properties": {
+          "file": {
+            "title": "File",
+            "type": "string",
+            "format": "binary"
+          }
+        }
+      },
+      "ErrorGet": {
+        "title": "ErrorGet",
+        "required": [
+          "errors"
+        ],
+        "type": "object",
+        "properties": {
+          "errors": {
+            "title": "Errors",
+            "type": "array",
+            "items": {}
+          }
+        }
+      },
+      "File": {
+        "title": "File",
+        "required": [
+          "id",
+          "filename"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string",
+            "description": "Resource identifier",
+            "format": "uuid"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string",
+            "description": "Name of the file with extension"
+          },
+          "content_type": {
+            "title": "Content Type",
+            "type": "string",
+            "description": "Guess of type content [EXPERIMENTAL]"
+          },
+          "checksum": {
+            "title": "Checksum",
+            "type": "string",
+            "description": "MD5 hash of the file's content [EXPERIMENTAL]"
+          }
+        },
+        "description": "Represents a file stored on the server side i.e. a unique reference to a file in the cloud."
+      },
+      "Groups": {
+        "title": "Groups",
+        "required": [
+          "me",
+          "all"
+        ],
+        "type": "object",
+        "properties": {
+          "me": {
+            "$ref": "#/components/schemas/UsersGroup"
+          },
+          "organizations": {
+            "title": "Organizations",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UsersGroup"
+            },
+            "default": []
+          },
+          "all": {
+            "$ref": "#/components/schemas/UsersGroup"
+          }
+        }
+      },
+      "HTTPValidationError": {
+        "title": "HTTPValidationError",
+        "type": "object",
+        "properties": {
+          "errors": {
+            "title": "Validation errors",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            }
+          }
+        }
+      },
+      "Job": {
+        "title": "Job",
+        "required": [
+          "id",
+          "name",
+          "inputs_checksum",
+          "created_at",
+          "runner_name",
+          "url",
+          "runner_url",
+          "outputs_url"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "title": "Name",
+            "pattern": "^([^\\s/]+/?){1,10}$",
+            "type": "string"
+          },
+          "inputs_checksum": {
+            "title": "Inputs Checksum",
+            "type": "string",
+            "description": "Input's checksum"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string",
+            "description": "Job creation timestamp",
+            "format": "date-time"
+          },
+          "runner_name": {
+            "title": "Runner Name",
+            "pattern": "^([^\\s/]+/?){1,10}$",
+            "type": "string",
+            "description": "Runner that executes job"
+          },
+          "url": {
+            "title": "Url",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string",
+            "description": "Link to get this resource (self)",
+            "format": "uri"
+          },
+          "runner_url": {
+            "title": "Runner Url",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string",
+            "description": "Link to the solver's job (parent collection)",
+            "format": "uri"
+          },
+          "outputs_url": {
+            "title": "Outputs Url",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string",
+            "description": "Link to the job outputs (sub-collection)",
+            "format": "uri"
+          }
+        },
+        "example": {
+          "id": "f622946d-fd29-35b9-a193-abdd1095167c",
+          "name": "solvers/isolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c",
+          "runner_name": "solvers/isolve/releases/1.3.4",
+          "inputs_checksum": "12345",
+          "created_at": "2021-01-22T23:59:52.322176",
+          "url": "https://api.osparc.io/v0/solvers/isolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c",
+          "runner_url": "https://api.osparc.io/v0/solvers/isolve/releases/1.3.4",
+          "outputs_url": "https://api.osparc.io/v0/solvers/isolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c/outputs"
+        }
+      },
+      "JobInputs": {
+        "title": "JobInputs",
+        "required": [
+          "values"
+        ],
+        "type": "object",
+        "properties": {
+          "values": {
+            "title": "Values",
+            "type": "object",
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/File"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {}
+                }
+              ]
+            }
+          }
+        },
+        "example": {
+          "values": {
+            "x": 4.33,
+            "n": 55,
+            "title": "Temperature",
+            "enabled": true,
+            "input_file": {
+              "filename": "input.txt",
+              "id": "0a3b2c56-dbcd-4871-b93b-d454b7883f9f"
+            }
+          }
+        }
+      },
+      "JobOutputs": {
+        "title": "JobOutputs",
+        "required": [
+          "job_id",
+          "results"
+        ],
+        "type": "object",
+        "properties": {
+          "job_id": {
+            "title": "Job Id",
+            "type": "string",
+            "description": "Job that produced this output",
+            "format": "uuid"
+          },
+          "results": {
+            "title": "Results",
+            "type": "object",
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/File"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {}
+                }
+              ]
+            }
+          }
+        },
+        "example": {
+          "job_id": "99d9ac65-9f10-4e2f-a433-b5e412bb037b",
+          "results": {
+            "maxSAR": 4.33,
+            "n": 55,
+            "title": "Specific Absorption Rate",
+            "enabled": false,
+            "output_file": {
+              "filename": "sar_matrix.txt",
+              "id": "0a3b2c56-dbcd-4871-b93b-d454b7883f9f"
+            }
+          }
+        }
+      },
+      "JobStatus": {
+        "title": "JobStatus",
+        "required": [
+          "job_id",
+          "state",
+          "submitted_at"
+        ],
+        "type": "object",
+        "properties": {
+          "job_id": {
+            "title": "Job Id",
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "$ref": "#/components/schemas/RunningState"
+          },
+          "progress": {
+            "title": "Progress",
+            "maximum": 100,
+            "minimum": 0,
+            "type": "integer",
+            "default": 0
+          },
+          "submitted_at": {
+            "title": "Submitted At",
+            "type": "string",
+            "description": "Last modification timestamp of the solver job",
+            "format": "date-time"
+          },
+          "started_at": {
+            "title": "Started At",
+            "type": "string",
+            "description": "Timestamp that indicate the moment the solver starts execution or None if the event did not occur",
+            "format": "date-time"
+          },
+          "stopped_at": {
+            "title": "Stopped At",
+            "type": "string",
+            "description": "Timestamp at which the solver finished or killed execution or None if the event did not occur",
+            "format": "date-time"
+          }
+        },
+        "example": {
+          "job_id": "145beae4-a3a8-4fde-adbb-4e8257c2c083",
+          "state": "STARTED",
+          "progress": 3,
+          "submitted_at": "2021-04-01 07:15:54.631007",
+          "started_at": "2021-04-01 07:16:43.670610"
+        }
+      },
+      "Meta": {
+        "title": "Meta",
+        "required": [
+          "name",
+          "version",
+          "docs_url",
+          "docs_dev_url"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "type": "string"
+          },
+          "released": {
+            "title": "Released",
+            "type": "object",
+            "additionalProperties": {
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "type": "string"
+            },
+            "description": "Maps every route's path tag with a released version"
+          },
+          "docs_url": {
+            "title": "Docs Url",
+            "maxLength": 65536,
+            "minLength": 1,
+            "type": "string",
+            "format": "uri"
+          },
+          "docs_dev_url": {
+            "title": "Docs Dev Url",
+            "maxLength": 65536,
+            "minLength": 1,
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "example": {
+          "name": "simcore_service_foo",
+          "version": "2.4.45",
+          "released": {
+            "v1": "1.3.4",
+            "v2": "2.4.45"
+          },
+          "docs_url": "https://api.osparc.io/dev/doc",
+          "docs_dev_url": "https://api.osparc.io/dev/doc"
+        }
+      },
+      "Profile": {
+        "title": "Profile",
+        "required": [
+          "login",
+          "role"
+        ],
+        "type": "object",
+        "properties": {
+          "first_name": {
+            "title": "First Name",
+            "type": "string",
+            "example": "James"
+          },
+          "last_name": {
+            "title": "Last Name",
+            "type": "string",
+            "example": "Maxwell"
+          },
+          "login": {
+            "title": "Login",
+            "type": "string",
+            "format": "email"
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserRoleEnum"
+          },
+          "groups": {
+            "$ref": "#/components/schemas/Groups"
+          },
+          "gravatar_id": {
+            "title": "Gravatar Id",
+            "maxLength": 40,
+            "type": "string",
+            "description": "md5 hash value of email to retrieve an avatar image from https://www.gravatar.com"
+          }
+        },
+        "example": {
+          "first_name": "James",
+          "last_name": "Maxwell",
+          "login": "james-maxwell@itis.swiss",
+          "role": "USER",
+          "groups": {
+            "me": {
+              "gid": "123",
+              "label": "maxy",
+              "description": "primary group"
+            },
+            "organizations": [],
+            "all": {
+              "gid": "1",
+              "label": "Everyone",
+              "description": "all users"
+            }
+          },
+          "gravatar_id": "9a8930a5b20d7048e37740bac5c1ca4f"
+        }
+      },
+      "ProfileUpdate": {
+        "title": "ProfileUpdate",
+        "type": "object",
+        "properties": {
+          "first_name": {
+            "title": "First Name",
+            "type": "string",
+            "example": "James"
+          },
+          "last_name": {
+            "title": "Last Name",
+            "type": "string",
+            "example": "Maxwell"
+          }
+        }
+      },
+      "RunningState": {
+        "title": "RunningState",
+        "enum": [
+          "UNKNOWN",
+          "PUBLISHED",
+          "NOT_STARTED",
+          "PENDING",
+          "WAITING_FOR_RESOURCES",
+          "STARTED",
+          "SUCCESS",
+          "FAILED",
+          "ABORTED"
+        ],
+        "type": "string",
+        "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state"
+      },
+      "Solver": {
+        "title": "Solver",
+        "required": [
+          "id",
+          "version",
+          "title",
+          "maintainer",
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+            "type": "string",
+            "description": "Solver identifier"
+          },
+          "version": {
+            "title": "Version",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "type": "string",
+            "description": "semantic version number of the node"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string",
+            "description": "Human readable name"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "maintainer": {
+            "title": "Maintainer",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string",
+            "description": "Link to get this resource",
+            "format": "uri"
+          }
+        },
+        "description": "A released solver with a specific version",
+        "example": {
+          "id": "simcore/services/comp/isolve",
+          "version": "2.1.1",
+          "title": "iSolve",
+          "description": "EM solver",
+          "maintainer": "info@itis.swiss",
+          "url": "https://api.osparc.io/v0/solvers/simcore%2Fservices%2Fcomp%2Fisolve/releases/2.1.1"
+        }
+      },
+      "UserRoleEnum": {
+        "title": "UserRoleEnum",
+        "enum": [
+          "ANONYMOUS",
+          "GUEST",
+          "USER",
+          "TESTER",
+          "ADMIN"
+        ],
+        "type": "string",
+        "description": "An enumeration."
+      },
+      "UsersGroup": {
+        "title": "UsersGroup",
+        "required": [
+          "gid",
+          "label"
+        ],
+        "type": "object",
+        "properties": {
+          "gid": {
+            "title": "Gid",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          }
+        }
+      },
+      "ValidationError": {
+        "title": "ValidationError",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "loc": {
+            "title": "Location",
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "HTTPBasic": {
+        "type": "http",
+        "scheme": "basic"
+      }
+    }
+  }
+}

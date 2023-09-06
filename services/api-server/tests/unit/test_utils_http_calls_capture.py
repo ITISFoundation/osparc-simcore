@@ -29,7 +29,7 @@ async def test_capture_http_call(
         assert response.request
 
         captured = HttpApiCallCaptureModel.create_from_response(
-            response, name="get_json"
+            response, name="get_json", enhance_from_openapi_specs=False
         )
 
         print(captured.json(indent=1))
@@ -77,7 +77,7 @@ async def test_capture_http_dynamic_call(
         assert response.request
 
         captured = HttpApiCallCaptureModel.create_from_response(
-            response, name="get_anything"
+            response, name="get_anything", enhance_from_openapi_specs=False
         )
 
         assert captured.query == "n=42"

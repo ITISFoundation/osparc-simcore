@@ -6,10 +6,12 @@ import datetime
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 from pathlib import Path
+from typing import Callable
 from uuid import UUID
 
 import httpx
 import pytest
+import respx
 from aioresponses import aioresponses as AioResponsesMock
 from faker import Faker
 from fastapi import status
@@ -25,9 +27,10 @@ from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.files import (
     ClientFile,
-    ClientFileUploadSchema,
+    ClientFileUploadData,
     File,
 )
+from unit.conftest import SideEffectCallback
 
 _FAKER = Faker()
 
@@ -160,15 +163,25 @@ async def test_get_file(
     }
 
 
-@pytest.mark.xfail(reason="Under dev")
 async def test_delete_file(
-    client: AsyncClient, mocked_storage_service_api_base: MockRouter, tmp_path: Path
+    client: AsyncClient,
+    mocked_storage_service_api_base: respx.MockRouter,
+    respx_mock_from_capture: Callable[
+        [respx.MockRouter, Path, list[SideEffectCallback] | None], respx.MockRouter
+    ],
+    auth: httpx.BasicAuth,
+    project_tests_dir: Path,
 ):
-    response = await client.delete(
-        f"{API_VTAG}/files/3fa85f64-5717-4562-b3fc-2c963f66afa6"
+    respx_mock = respx_mock_from_capture(
+        mocked_storage_service_api_base,
+        project_tests_dir / "mocks" / "delete_file.json",
+        None,
     )
 
-    assert response.status_code == status.HTTP_204_NO_CONTENT
+    response = await client.delete(
+        f"{API_VTAG}/files/3fa85f64-5717-4562-b3fc-2c963f66afa6", auth=auth
+    )
+    assert response.status_code == status.HTTP_200_OK
 
 
 @pytest.mark.xfail(reason="Under dev")
@@ -204,9 +217,7 @@ async def test_get_upload_links(
     payload: dict[str, str] = response.json()
 
     assert response.status_code == status.HTTP_200_OK
-    client_upload_schema: ClientFileUploadSchema = ClientFileUploadSchema.parse_obj(
-        payload
-    )
+    client_upload_schema: ClientFileUploadData = ClientFileUploadData.parse_obj(payload)
 
     if follow_up_request == "complete":
         body = {
