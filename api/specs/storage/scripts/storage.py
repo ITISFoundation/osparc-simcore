@@ -343,9 +343,9 @@ async def delete_folders_of_project(
     response_model=Envelope[FileMetaDataGet],
     tags=TAGS_SIMCORE_S3,
     summary="search for files starting with",
-    operation_id="search_files_starting_with",
+    operation_id="search_files",
 )
-async def search_files_starting_with(user_id: UserID, startswith: str = ""):
+async def search_files(user_id: UserID, startswith: str = ""):
     """search for files starting with `startswith` in the file_meta_data table"""
 
 

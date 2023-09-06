@@ -13,6 +13,7 @@ from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from models_library.api_schemas_storage import LinkType, S3BucketName, UploadedPart
+from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import (
     LocationID,
@@ -676,8 +677,8 @@ class SimcoreS3DataManager(BaseDataManager):
 
         return parse_obj_as(ByteSize, total_size), total_num_s3_objects
 
-    async def search_files_starting_with(
-        self, user_id: UserID, prefix: str
+    async def search_files(
+        self, user_id: UserID, file_id_prefix: str, sha256_checksum: SHA256Str | None
     ) -> list[FileMetaData]:
         # NOTE: this entrypoint is solely used by api-server. It is the exact
         # same as list_files but does not rename the found files with project
@@ -691,9 +692,10 @@ class SimcoreS3DataManager(BaseDataManager):
                 conn,
                 user_id=user_id,
                 project_ids=can_read_projects_ids,
-                file_id_prefix=prefix,
+                file_id_prefix=file_id_prefix,
                 partial_file_id=None,
                 only_files=True,
+                sha256_checksum=sha256_checksum,
             )
             resolved_fmds = []
             for fmd in file_metadatas:

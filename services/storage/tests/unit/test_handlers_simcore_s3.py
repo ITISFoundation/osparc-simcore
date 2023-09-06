@@ -500,7 +500,7 @@ async def test_create_and_delete_folders_from_project_burst(
     )
 
 
-async def test_search_files_starting_with(
+async def test_search_files(
     client: TestClient,
     user_id: UserID,
     upload_file: Callable[
@@ -510,7 +510,7 @@ async def test_search_files_starting_with(
 ):
     assert client.app
     url = (
-        client.app.router["search_files_starting_with"]
+        client.app.router["search_files"]
         .url_for()
         .with_query(user_id=user_id, startswith="")
     )

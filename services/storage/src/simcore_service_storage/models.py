@@ -198,6 +198,7 @@ class DeleteFolderQueryParams(StorageQueryParamsBase):
 
 class SearchFilesQueryParams(StorageQueryParamsBase):
     startswith: str = ""
+    sha256_checksum: SHA256Str | None
 
 
 class LocationPathParams(BaseModel):
