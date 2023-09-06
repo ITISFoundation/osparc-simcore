@@ -7,7 +7,7 @@ import json
 from collections.abc import AsyncIterator, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeAlias
 
 import aiohttp.test_utils
 import httpx
@@ -41,12 +41,17 @@ from requests.auth import HTTPBasicAuth
 from respx import MockRouter
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import ApplicationSettings
+from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
+from simcore_service_api_server.utils.http_calls_capture_processing import (
+    PathDescription,
+)
+
+# (capture.response_body, kwargs, capture.path.path_parameters) -> response_body
+SideEffectCallback: TypeAlias = Callable[
+    [httpx.Request, dict[str, Any], HttpApiCallCaptureModel], dict[str, Any]
+]
 
 ## APP + SYNC/ASYNC CLIENTS --------------------------------------------------
-
-pytest_plugins = [
-    "pytest_simcore.services_api_mocks_for_aiohttp_clients",
-]
 
 
 @pytest.fixture
@@ -472,3 +477,60 @@ def patch_webserver_long_running_project_tasks(
         return webserver_mock_router
 
     return _mock
+
+
+@pytest.fixture
+@respx.mock(assert_all_mocked=False)
+def respx_mock_from_capture() -> Callable[
+    [respx.MockRouter, Path, list[SideEffectCallback]], respx.MockRouter
+]:
+    def _generate_mock(
+        respx_mock: respx.MockRouter,
+        capture_path: Path,
+        side_effects_callbacks: list[SideEffectCallback] | None = None,
+    ) -> respx.MockRouter:
+        assert capture_path.is_file() and capture_path.suffix == ".json"
+        assert (
+            respx_mock._bases
+        ), "the base_url must be set before the fixture is extended"
+
+        side_effects_callbacks = (
+            [] if side_effects_callbacks is None else side_effects_callbacks
+        )
+        captures: list[HttpApiCallCaptureModel] = parse_obj_as(
+            list[HttpApiCallCaptureModel], json.loads(capture_path.read_text())
+        )
+
+        capture_iter = iter(captures)
+        side_effect_callback_iter = iter(side_effects_callbacks)
+        if len(side_effects_callbacks) > 0:
+            assert len(side_effects_callbacks) == len(captures)
+
+        def _side_effect(request: httpx.Request, **kwargs):
+            capture = next(capture_iter)
+            assert isinstance(capture.path, PathDescription)
+            status_code: int = capture.status_code
+            response_body: dict[str, Any] | list | None = capture.response_body
+            assert {param.name for param in capture.path.path_parameters} == set(
+                kwargs.keys()
+            )
+            if len(side_effects_callbacks) > 0:
+                callback = next(side_effect_callback_iter)
+                response_body = callback(request, kwargs, capture)
+            return httpx.Response(status_code=status_code, json=response_body)
+
+        for capture in captures:
+            url_path: PathDescription | str = capture.path
+            assert isinstance(url_path, PathDescription)
+            path_regex: str = str(url_path.path)
+            for param in url_path.path_parameters:
+                path_regex = path_regex.replace(
+                    "{" + param.name + "}", param.respx_lookup
+                )
+            respx_mock.request(
+                capture.method.upper(), url=None, path__regex=path_regex
+            ).mock(side_effect=_side_effect)
+
+        return respx_mock
+
+    return _generate_mock

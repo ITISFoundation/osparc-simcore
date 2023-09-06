@@ -272,8 +272,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         }
         case "wallets-viewer":
           control = new osparc.desktop.credits.WalletsMiniViewer().set({
-            maxWidth: 50,
-            minWidth: 50,
+            maxWidth: 60,
+            minWidth: 60,
             maxHeight: this.self().HEIGHT
           });
           this.getChildControl("right-items").add(control);

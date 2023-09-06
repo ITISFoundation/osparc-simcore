@@ -38,7 +38,9 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
       .then(values => {
         const studyData = values[0];
         this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
-        this.__projectWalletId = values[1];
+        if (values[1] && "walletId" in values[1]) {
+          this.__projectWalletId = values[1]["walletId"];
+        }
         this.__buildLayout();
       });
   },
@@ -59,6 +61,18 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
   },
 
   statics: {
+    popUpInWindow: function(resourceSelector) {
+      const title = osparc.product.Utils.getStudyAlias({
+        firstUpperCase: true
+      }) + qx.locale.Manager.tr(" Options");
+      const width = 550;
+      const height = 400;
+      const win = osparc.ui.window.Window.popUpInWindow(resourceSelector, title, width, height);
+      win.center();
+      win.open();
+      return win;
+    },
+
     getMachineInfo: function(machineId) {
       switch (machineId) {
         case "sm":

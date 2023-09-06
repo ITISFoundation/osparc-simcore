@@ -32,17 +32,17 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
         pos: 0,
         title: qx.locale.Manager.tr("Date")
       },
-      credits: {
-        pos: 1,
-        title: qx.locale.Manager.tr("Credits")
-      },
       price: {
-        pos: 2,
+        pos: 1,
         title: qx.locale.Manager.tr("Price")
+      },
+      credits: {
+        pos: 2,
+        title: qx.locale.Manager.tr("Credits")
       },
       wallet: {
         pos: 3,
-        title: qx.locale.Manager.tr("Wallet")
+        title: qx.locale.Manager.tr("Credit Account")
       },
       comment: {
         pos: 4,
@@ -73,36 +73,49 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
       table.makeItLoose();
       this._add(table);
 
+      this.refetchData();
+    },
+
+    refetchData: function() {
       this.__rawData = [];
 
-      // welcome
-      this.addRow(
-        20,
-        0,
-        "My Wallet",
-        "Welcome to Sim4Life",
-        null
-      );
-
-      // one payment
-      this.addRow(
-        50,
-        125,
-        "My Wallet",
-        "",
-        "https://assets.website-files.com/63206faf68ab2dc3ee3e623b/634ea60a9381021f775e7a28_Placeholder%20PDF.pdf"
-      );
+      osparc.data.Resources.fetch("payments", "get")
+        .then(transactions => {
+          if ("data" in transactions) {
+            transactions["data"].forEach(transaction => {
+              let walletName = null;
+              if (transaction["walletId"]) {
+                const found = osparc.desktop.credits.Utils.getWallet(transaction["walletId"]);
+                if (found) {
+                  walletName = found.getName();
+                }
+              }
+              this.__addRow(
+                transaction["createdAt"],
+                transaction["priceDollars"],
+                transaction["osparcCredits"],
+                walletName,
+                transaction["comment"],
+                "https://assets.website-files.com/63206faf68ab2dc3ee3e623b/634ea60a9381021f775e7a28_Placeholder%20PDF.pdf"
+              );
+            });
+          }
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          console.error(err);
+        });
     },
 
     __createPdfIconWithLink: function(link) {
       return `<a href='${link}' target='_blank'><img src='https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/PDF_file_icon.svg/833px-PDF_file_icon.svg.png' alt='Invoice' width='16' height='20'></a>`;
     },
 
-    addRow: function(nCredits, price, walletName, comment, invoiceUrl) {
+    __addRow: function(createdAt, price, nCredits, walletName, comment, invoiceUrl) {
       const newData = [
-        osparc.utils.Utils.formatDateAndTime(new Date()),
-        nCredits ? nCredits : 0,
+        osparc.utils.Utils.formatDateAndTime(new Date(createdAt)),
         price ? price : 0,
+        nCredits ? nCredits : 0,
         walletName ? walletName : "Unknown Wallet",
         comment ? comment : "",
         invoiceUrl ? this.__createPdfIconWithLink(invoiceUrl) : null
