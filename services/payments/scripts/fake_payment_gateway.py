@@ -46,12 +46,12 @@ def create_payment_router():
     ):
         assert id  # nosec
 
-    @router.get("/cancel")
+    @router.post("/cancel")
     def cancel_payment(
-        id: PaymentID,
+        payment: PaymentInitiated,
         auth: Annotated[int, Depends(auth_session)],
     ):
-        assert id  # nosec
+        assert payment  # nosec
 
     return router
 
