@@ -747,21 +747,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __newStudyFromServiceBtnClicked: async function(button, key, version, newStudyLabel) {
-      const isDevel = osparc.utils.Utils.isDevelopmentPlatform();
-      const isDevelAndS4L = isDevel && osparc.product.Utils.isProduct("s4l");
+    __newStudyFromServiceBtnClicked: function(button, key, version, newStudyLabel) {
       button.setValue(false);
       this._showLoadingPage(this.tr("Creating ") + osparc.product.Utils.getStudyAlias());
       osparc.utils.Study.createStudyFromService(key, version, this._resourcesList, newStudyLabel)
         .then(studyId => {
-          const openCB = () => {
-            this._hideLoadingPage();
-            // and open study
-            this._startStudyById(studyId);
-          };
+          const openCB = () => this._hideLoadingPage();
           const cancelCB = () => {
             this._hideLoadingPage();
-            // and delete study
             const params = {
               url: {
                 "studyId": studyId
@@ -769,23 +762,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             };
             osparc.data.Resources.fetch("studies", "delete", params, studyId);
           };
-          if (isDevelAndS4L) {
-            const resourceSelector = new osparc.component.study.ResourceSelector(studyId);
-            const win = osparc.component.study.ResourceSelector.popUpInWindow(resourceSelector);
-            resourceSelector.addListener("startStudy", () => {
-              win.close();
-              openCB();
-            });
-            resourceSelector.addListener("cancel", () => {
-              win.close();
-              cancelCB();
-            });
-            win.getChildControl("close-button").addListener("execute", () => {
-              cancelCB();
-            });
-          } else {
-            openCB();
-          }
+          this._startStudyById(studyId, openCB, cancelCB);
         })
         .catch(err => {
           this._hideLoadingPage();

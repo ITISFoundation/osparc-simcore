@@ -301,12 +301,34 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
-    _startStudyById: function(studyId) {
+    _startStudyById: function(studyId, openCB, cancelCB) {
       if (!this._checkLoggedIn()) {
         return;
       }
 
-      osparc.desktop.MainPageHandler.getInstance().startStudy(studyId);
+      osparc.desktop.credits.Utils.areWalletsEnabled()
+        .then(walletsEnabled => {
+          if (walletsEnabled) {
+            const resourceSelector = new osparc.component.study.ResourceSelector(studyId);
+            const win = osparc.component.study.ResourceSelector.popUpInWindow(resourceSelector);
+            resourceSelector.addListener("startStudy", () => {
+              win.close();
+              openCB();
+              osparc.desktop.MainPageHandler.getInstance().startStudy(studyId);
+            });
+            resourceSelector.addListener("cancel", () => {
+              win.close();
+              cancelCB();
+            });
+            win.getChildControl("close-button").addListener("execute", () => {
+              cancelCB();
+            });
+          } else {
+            openCB();
+            osparc.desktop.MainPageHandler.getInstance().startStudy(studyId);
+          }
+        })
+        .catch(() => cancelCB());
     },
 
     _createStudyFromTemplate: function() {
