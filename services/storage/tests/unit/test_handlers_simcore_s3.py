@@ -20,6 +20,7 @@ from aiohttp.test_utils import TestClient
 from aiopg.sa.engine import Engine
 from faker import Faker
 from models_library.api_schemas_storage import FileMetaDataGet, FoldersBody
+from models_library.basic_types import SHA256Str
 from models_library.projects import Project, ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr, SimcoreS3FileID
 from models_library.users import UserID
@@ -500,6 +501,15 @@ async def test_create_and_delete_folders_from_project_burst(
     )
 
 
+def _generate_query_params(
+    user_id: UserID, startswith: str | None, sha256_checksum: SHA256Str | None
+) -> dict[str, Any]:
+    return {k: v for k, v in locals().items() if v is not None}
+
+
+@pytest.mark.parametrize(
+    "query_params", [{"startswith": ""}, {"sha256_checksum": "something"}]
+)
 async def test_search_files(
     client: TestClient,
     user_id: UserID,
@@ -507,6 +517,7 @@ async def test_search_files(
         [ByteSize, str, str | None], Awaitable[tuple[Path, SimcoreS3FileID]]
     ],
     faker: Faker,
+    query_params: dict[str, Any],
 ):
     assert client.app
     url = (
