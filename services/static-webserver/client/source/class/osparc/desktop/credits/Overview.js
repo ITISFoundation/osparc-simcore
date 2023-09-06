@@ -277,33 +277,45 @@ qx.Class.define("osparc.desktop.credits.Overview", {
         });
       });
 
-      const entries = [[
-        osparc.utils.Utils.formatDateAndTime(new Date()),
-        50,
-        125,
-        "My Wallet",
-        ""
-      ], [
-        osparc.utils.Utils.formatDateAndTime(new Date()),
-        10,
-        0,
-        "My Wallet",
-        "Welcome to Sim4Life"
-      ]];
-      const maxTransactions = 4;
-      entries.forEach((entry, row) => {
-        if (row < maxTransactions) {
-          entry.forEach((data, column) => {
-            const text = new qx.ui.basic.Label(data.toString()).set({
-              font: "text-13"
+      osparc.data.Resources.fetch("payments", "get")
+        .then(transactions => {
+          if ("data" in transactions) {
+            const maxTransactions = 4;
+            transactions["data"].forEach((transaction, row) => {
+              if (row < maxTransactions) {
+                let walletName = null;
+                if (transaction["walletId"]) {
+                  const found = osparc.desktop.credits.Utils.getWallet(transaction["walletId"]);
+                  if (found) {
+                    walletName = found.getName();
+                  }
+                }
+                const entry = [
+                  osparc.utils.Utils.formatDateAndTime(new Date(transaction["createdAt"])),
+                  transaction["priceDollars"].toString(),
+                  transaction["osparcCredits"].toString(),
+                  walletName,
+                  transaction["comment"]
+                ];
+                entry.forEach((data, column) => {
+                  const text = new qx.ui.basic.Label(data).set({
+                    font: "text-13"
+                  });
+                  layout.add(text, {
+                    row: row+1,
+                    column
+                  });
+                });
+                row++;
+              }
             });
-            layout.add(text, {
-              row: row+1,
-              column
-            });
-          });
-        }
-      });
+          }
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          console.error(err);
+        });
+
       return layout;
     },
 
