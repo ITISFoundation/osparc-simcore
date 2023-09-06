@@ -34,6 +34,11 @@ class MD5Str(ConstrainedStr):
     regex = re.compile(r"^[a-fA-F0-9]{32}$")
 
 
+# sha256sum path/to/file
+class SHA256Str(ConstrainedStr):
+    regex = re.compile(r"^[a-fA-F0-9]{64}$")
+
+
 # env var
 class EnvVarKey(ConstrainedStr):
     regex = re.compile(r"[a-zA-Z]\w*")
