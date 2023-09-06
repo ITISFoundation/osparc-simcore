@@ -357,7 +357,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         font: "text-14"
       });
       this.bind("wallet", walletLabel, "value", {
-        converter: wallet => wallet ? wallet.getName() : this.tr("Select Wallet")
+        converter: wallet => wallet ? wallet.getName() : this.tr("Select Credit Account")
       });
       layout.add(walletLabel, {
         row,
