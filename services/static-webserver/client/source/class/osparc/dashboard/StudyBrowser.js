@@ -754,41 +754,37 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._showLoadingPage(this.tr("Creating ") + osparc.product.Utils.getStudyAlias());
       osparc.utils.Study.createStudyFromService(key, version, this._resourcesList, newStudyLabel)
         .then(studyId => {
+          const openCB = () => {
+            this._hideLoadingPage();
+            // and open study
+            this._startStudyById(studyId);
+          };
+          const cancelCB = () => {
+            this._hideLoadingPage();
+            // and delete study
+            const params = {
+              url: {
+                "studyId": studyId
+              }
+            };
+            osparc.data.Resources.fetch("studies", "delete", params, studyId);
+          };
           if (isDevelAndS4L) {
             const resourceSelector = new osparc.component.study.ResourceSelector(studyId);
-            const title = osparc.product.Utils.getStudyAlias({
-              firstUpperCase: true
-            }) + this.tr(" Options");
-            const width = 550;
-            const height = 400;
-            const win = osparc.ui.window.Window.popUpInWindow(resourceSelector, title, width, height);
+            const win = osparc.component.study.ResourceSelector.popUpInWindow(resourceSelector);
             resourceSelector.addListener("startStudy", () => {
               win.close();
-              this._hideLoadingPage();
-              this._startStudyById(studyId);
+              openCB();
             });
-            const deleteStudy = () => {
-              const params = {
-                url: {
-                  "studyId": studyId
-                }
-              };
-              osparc.data.Resources.fetch("studies", "delete", params, studyId);
-            };
             resourceSelector.addListener("cancel", () => {
               win.close();
-              this._hideLoadingPage();
-              deleteStudy();
+              cancelCB();
             });
             win.getChildControl("close-button").addListener("execute", () => {
-              this._hideLoadingPage();
-              deleteStudy();
+              cancelCB();
             });
-            win.center();
-            win.open();
           } else {
-            this._hideLoadingPage();
-            this._startStudyById(studyId);
+            openCB();
           }
         })
         .catch(err => {

@@ -59,6 +59,18 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
   },
 
   statics: {
+    popUpInWindow: function(resourceSelector) {
+      const title = osparc.product.Utils.getStudyAlias({
+        firstUpperCase: true
+      }) + qx.locale.Manager.tr(" Options");
+      const width = 550;
+      const height = 400;
+      const win = osparc.ui.window.Window.popUpInWindow(resourceSelector, title, width, height);
+      win.center();
+      win.open();
+      return win;
+    },
+
     getMachineInfo: function(machineId) {
       switch (machineId) {
         case "sm":

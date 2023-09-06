@@ -127,6 +127,21 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       this._showLoadingPage(this.tr("Creating Study"));
       osparc.utils.Study.createStudyFromService(key, version)
         .then(studyId => {
+          const openCB = () => {
+            this._hideLoadingPage();
+            // and open study
+            this._startStudyById(studyId);
+          };
+          const cancelCB = () => {
+            this._hideLoadingPage();
+            // and delete study
+            const params = {
+              url: {
+                "studyId": studyId
+              }
+            };
+            osparc.data.Resources.fetch("studies", "delete", params, studyId);
+          };
           if (isDevelAndS4L) {
             const resourceSelector = new osparc.component.study.ResourceSelector(studyId);
             const title = osparc.product.Utils.getStudyAlias({
@@ -137,31 +152,17 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
             const win = osparc.ui.window.Window.popUpInWindow(resourceSelector, title, width, height);
             resourceSelector.addListener("startStudy", () => {
               win.close();
-              this._hideLoadingPage();
-              this._startStudyById(studyId);
+              openCB();
             });
-            const deleteStudy = () => {
-              const params = {
-                url: {
-                  "studyId": studyId
-                }
-              };
-              osparc.data.Resources.fetch("studies", "delete", params, studyId);
-            };
             resourceSelector.addListener("cancel", () => {
               win.close();
-              this._hideLoadingPage();
-              deleteStudy();
+              cancelCB();
             });
             win.getChildControl("close-button").addListener("execute", () => {
-              this._hideLoadingPage();
-              deleteStudy();
+              cancelCB();
             });
-            win.center();
-            win.open();
           } else {
-            this._hideLoadingPage();
-            this._startStudyById(studyId);
+            openCB();
           }
         })
         .catch(err => {
