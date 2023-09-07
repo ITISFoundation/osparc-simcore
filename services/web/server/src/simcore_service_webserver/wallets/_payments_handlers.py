@@ -64,7 +64,7 @@ async def create_payment(request: web.Request):
         log_duration=True,
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
-        # TODO: only admin can do a different rate (e.g. offers of 2000 credits for 1000$)
+        # WARNING: conversion here is 1 dollar = 1 credit. Follow up logic discussed in https://github.com/ITISFoundation/osparc-simcore/issues/4657
         osparc_credits = body_params.price_dollars
 
         payment: WalletPaymentCreated = await create_payment_to_wallet(

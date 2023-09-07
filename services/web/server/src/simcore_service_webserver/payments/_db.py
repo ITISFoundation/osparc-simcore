@@ -152,7 +152,6 @@ async def complete_payment_transaction(
 
     async with get_database_engine(app).acquire() as conn:
         async with conn.begin():
-            # TODO: test concurrency here
             row = await (
                 await conn.execute(
                     sa.select(
