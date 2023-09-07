@@ -149,7 +149,6 @@ async def test_payments_worfklow(
         send_message.assert_called_once()
 
 
-@pytest.mark.testit
 async def test_multiple_payments(
     client: TestClient,
     logged_user_wallet: WalletGet,
@@ -176,7 +175,6 @@ async def test_multiple_payments(
         response = await client.post(
             f"/v0/wallets/{wallet.wallet_id}/payments",
             json={
-                "osparcCredits": 10 + n,
                 "priceDollars": 10 + n,
             },
         )
@@ -201,7 +199,7 @@ async def test_multiple_payments(
     )
     data, error = await assert_status(response, web.HTTPOk)
     cancelled_transaction = PaymentTransaction.parse_obj(data)
-    assert cancelled_transaction.completed_status == "CANCELED"
+    assert cancelled_transaction.state == "CANCELED"
     payments_cancelled.append(cancelled_transaction.payment_id)
 
     assert (
@@ -219,11 +217,11 @@ async def test_multiple_payments(
     all_transactions = {t.payment_id: t for t in page.data}
 
     for pid in payments_cancelled:
-        all_transactions[pid].completed_status = "CANCELED"
+        assert all_transactions[pid].state == PaymentTransactionState.CANCELED
     for pid in payments_successful:
-        all_transactions[pid].completed_status = "SUCCESS"
+        assert all_transactions[pid].state == PaymentTransactionState.SUCCESS
     for pid in payments_pending:
-        all_transactions[pid].completed_status = "PENDING"
+        assert all_transactions[pid].state == PaymentTransactionState.PENDING
 
 
 async def test_payment_not_found(
@@ -253,4 +251,7 @@ def test_payment_on_wallet_without_access():
 def test_models_state_in_sync():
 
     state_type = PaymentTransaction.__fields__["state"].type_
-    parse_obj_as(list[state_type], [str(s) for s in PaymentTransactionState])
+    assert (
+        parse_obj_as(list[state_type], [f"{s}" for s in PaymentTransactionState])
+        is not None
+    )

@@ -10,11 +10,12 @@ from ._common import (
 from .base import metadata
 
 
+@enum.unique
 class PaymentTransactionState(str, enum.Enum):
-    PENDING = "PENDING"
-    SUCCESS = "SUCCESS"
-    FAILED = "FAILED"  # generic failure
-    CANCELED = "CANCELED"  # forced-cancel
+    PENDING = "PENDING"  # payment initiated
+    SUCCESS = "SUCCESS"  # payment completed with success
+    FAILED = "FAILED"  # payment failed
+    CANCELED = "CANCELED"  # payment explicitly aborted by user
 
 
 payments_transactions = sa.Table(
