@@ -94,7 +94,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         case "wallet-info": {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
           const label = new qx.ui.basic.Label().set({
-            value: this.tr("Credit Accounts:"),
+            value: this.tr("Credit Account:"),
             font: "text-14"
           });
           control.add(label);
@@ -428,6 +428,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
               modal,
               useNativeModalDialog
             );
+            // Listen to close window event
             this.__pgWindow.onbeforeunload = () => {
               transactionFinished();
               // inform backend
@@ -447,7 +448,9 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
               socket.on(slotName, jsonString => {
                 const paymentData = JSON.parse(jsonString);
                 console.log("paymentData", paymentData);
+                transactionFinished();
                 this.fireEvent("transactionCompleted");
+                this.__pgWindow.onbeforeunload = null;
                 this.__pgWindow.close();
               });
             }
