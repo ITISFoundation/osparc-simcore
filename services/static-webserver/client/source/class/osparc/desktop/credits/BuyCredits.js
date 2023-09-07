@@ -455,9 +455,24 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             const slotName = "paymentCompleted";
             socket.on(slotName, jsonString => {
               const paymentData = JSON.parse(jsonString);
-              if (paymentData["success"]) {
-                // demo purposes
-                wallet.setCreditsAvailable(wallet.getCreditsAvailable() + nCredits);
+              const transactionStatus = osparc.desktop.credits.Transactions.COMPLETED_STATUS;
+              let msg = this.tr("Payment ");
+              msg += transactionStatus[paymentData["completedStatus"]].label;
+              switch (transactionStatus[paymentData["completedStatus"]].isSuccessful) {
+                case 0:
+                  osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO");
+                  // demo purposes
+                  wallet.setCreditsAvailable(wallet.getCreditsAvailable() + nCredits);
+                  break;
+                case 1:
+                  osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING");
+                  break;
+                case 2:
+                  osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+                  break;
+                default:
+                  console.error("completedStatus unknown");
+                  break;
               }
               socket.removeSlot(slotName);
               buyCreditsBtn();
@@ -478,7 +493,11 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
               osparc.data.Resources.fetch("payments", "cancelPayment", params2);
             };
             // Listen to close window event
-            pgWindow.onbeforeunload = () => cancelPayment();
+            pgWindow.onbeforeunload = () => {
+              const msg = this.tr("The window was close. Try again and follow the instructions inside the opened window.");
+              osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING");
+              cancelPayment();
+            };
           })
           .catch(err => {
             console.error(err);

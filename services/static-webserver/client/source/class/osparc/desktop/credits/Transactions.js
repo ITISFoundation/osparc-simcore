@@ -58,6 +58,25 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
       }
     },
 
+    COMPLETED_STATUS: {
+      SUCCESS: {
+        isSuccessful: 0,
+        label: qx.locale.Manager.tr("Successful")
+      },
+      PENDING: {
+        isSuccessful: 1,
+        label: qx.locale.Manager.tr("Pending")
+      },
+      FAILED: {
+        isSuccessful: 2,
+        label: qx.locale.Manager.tr("Failed")
+      },
+      CANCELED: {
+        isSuccessful: 2,
+        label: qx.locale.Manager.tr("Cancelled")
+      }
+    },
+
     createPdfIconWithLink: function(link) {
       return `<a href='${link}' target='_blank'><img src='https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/PDF_file_icon.svg/833px-PDF_file_icon.svg.png' alt='Invoice' width='16' height='20'></a>`;
     },
