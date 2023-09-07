@@ -3,7 +3,7 @@ info:
   title: simcore-service-webserver
   description: ' Main service with an interface (http-API & websockets) to the web
     front-end'
-  version: 0.27.0
+  version: 0.27.1
 servers:
 - url: ''
   description: webserver
@@ -3798,12 +3798,25 @@ paths:
       description: Lists all user payments to his/her wallets (only the ones he/she
         created)
       operationId: list_all_payments
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PageQueryParameters'
-        required: true
+      parameters:
+      - required: false
+        schema:
+          title: Limit
+          exclusiveMaximum: true
+          minimum: 1
+          type: integer
+          default: 20
+          maximum: 50
+        name: limit
+        in: query
+      - required: false
+        schema:
+          title: Offset
+          minimum: 0
+          type: integer
+          default: 0
+        name: offset
+        in: query
       responses:
         '200':
           description: Successful Response
@@ -6487,25 +6500,6 @@ components:
           minimum: 0
           type: integer
       additionalProperties: false
-    PageQueryParameters:
-      title: PageQueryParameters
-      type: object
-      properties:
-        limit:
-          title: Limit
-          exclusiveMaximum: true
-          minimum: 1
-          type: integer
-          description: maximum number of items to return (pagination)
-          default: 20
-          maximum: 50
-        offset:
-          title: Offset
-          minimum: 0
-          type: integer
-          description: index to the first item to return (pagination)
-          default: 0
-      description: Use as pagination options in query parameters
     Page_CheckpointApiModel_:
       title: Page[CheckpointApiModel]
       required:
