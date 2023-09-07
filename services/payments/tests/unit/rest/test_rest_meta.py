@@ -5,6 +5,7 @@
 
 
 import httpx
+import simcore_service_payments.rest._health as health_module
 from fastapi import status
 from simcore_service_payments._meta import API_VTAG
 from simcore_service_payments.models.schemas.meta import Meta
@@ -13,7 +14,9 @@ from simcore_service_payments.models.schemas.meta import Meta
 async def test_healthcheck(client: httpx.AsyncClient):
     response = await client.get("/")
     assert response.status_code == status.HTTP_200_OK
-    assert response.text.startswith("simcore_service_payments.api._health@")
+    assert response.text.startswith(
+        f"{health_module.__name__}@"
+    ), f"got {response.text!r}"
 
 
 async def test_meta(client: httpx.AsyncClient):
