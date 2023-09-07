@@ -122,7 +122,8 @@ class PaymentsPathParams(WalletsPathParams):
 
 
 @routes.post(
-    f"/{VTAG}/wallets/{{wallet_id}}/payments/{{payment_id}}", name="cancel_payment"
+    f"/{VTAG}/wallets/{{wallet_id}}/payments/{{payment_id}}:cancel",
+    name="cancel_payment",
 )
 @login_required
 @permission_required("wallets.*")

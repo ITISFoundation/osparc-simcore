@@ -230,7 +230,7 @@ async def test_payment_not_found(
     faker: Faker,
 ):
     wallet = logged_user_wallet
-    payment_id = faker.uud4()
+    payment_id = faker.uuid4()
 
     # cancel inexistent payment
     response = await client.post(
@@ -239,7 +239,9 @@ async def test_payment_not_found(
 
     data, error = await assert_status(response, web.HTTPNotFound)
     assert data is None
-    assert payment_id in error["errors"][0]
+    error_msg = error["errors"][0]["message"]
+    assert payment_id in error_msg
+    assert ":cancel" not in error_msg
 
 
 @pytest.mark.xfail(reason="UNDER DEV")
