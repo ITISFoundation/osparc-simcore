@@ -33,13 +33,13 @@ def app_environment(
 @pytest.fixture
 def mock_background_task(mocker: MockerFixture) -> mock.Mock:
     mocked_task = mocker.patch(
-        "simcore_service_autoscaling.dynamic_scaling.cluster_scaling_from_labelled_services",
+        "simcore_service_autoscaling.modules.auto_scaling_task.auto_scale_cluster",
         autospec=True,
     )
     return mocked_task
 
 
-async def test_dynamic_scaling_task_created_and_deleted(
+async def test_auto_scaling_task_created_and_deleted(
     app_environment: EnvVarsDict,
     mock_background_task: mock.Mock,
     initialized_app: FastAPI,

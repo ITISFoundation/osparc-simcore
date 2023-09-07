@@ -122,47 +122,20 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         return;
       }
 
-      const isDevel = osparc.utils.Utils.isDevelopmentPlatform();
-      const isDevelAndS4L = isDevel && osparc.product.Utils.isProduct("s4l");
       this._showLoadingPage(this.tr("Creating Study"));
       osparc.utils.Study.createStudyFromService(key, version)
         .then(studyId => {
-          if (isDevelAndS4L) {
-            const resourceSelector = new osparc.component.study.ResourceSelector(studyId);
-            const title = osparc.product.Utils.getStudyAlias({
-              firstUpperCase: true
-            }) + this.tr(" Options");
-            const width = 550;
-            const height = 400;
-            const win = osparc.ui.window.Window.popUpInWindow(resourceSelector, title, width, height);
-            resourceSelector.addListener("startStudy", () => {
-              win.close();
-              this._hideLoadingPage();
-              this._startStudyById(studyId);
-            });
-            const deleteStudy = () => {
-              const params = {
-                url: {
-                  "studyId": studyId
-                }
-              };
-              osparc.data.Resources.fetch("studies", "delete", params, studyId);
-            };
-            resourceSelector.addListener("cancel", () => {
-              win.close();
-              this._hideLoadingPage();
-              deleteStudy();
-            });
-            win.getChildControl("close-button").addListener("execute", () => {
-              this._hideLoadingPage();
-              deleteStudy();
-            });
-            win.center();
-            win.open();
-          } else {
+          const openCB = () => this._hideLoadingPage();
+          const cancelCB = () => {
             this._hideLoadingPage();
-            this._startStudyById(studyId);
-          }
+            const params = {
+              url: {
+                "studyId": studyId
+              }
+            };
+            osparc.data.Resources.fetch("studies", "delete", params, studyId);
+          };
+          this._startStudyById(studyId, openCB, cancelCB);
         })
         .catch(err => {
           this._hideLoadingPage();

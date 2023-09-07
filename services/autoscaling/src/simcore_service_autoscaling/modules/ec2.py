@@ -1,7 +1,7 @@
 import contextlib
 import logging
 from dataclasses import dataclass
-from typing import Optional, cast
+from typing import cast
 
 import aioboto3
 import botocore.exceptions
@@ -163,7 +163,7 @@ class AutoscalingEC2:
         instance_settings: EC2InstancesSettings,
         tags: dict[str, str],
         *,
-        state_names: Optional[list[InstanceStateNameType]] = None,
+        state_names: list[InstanceStateNameType] | None = None,
     ) -> list[EC2InstanceData]:
         # NOTE: be careful: Name=instance-state-name,Values=["pending", "running"] means pending OR running
         # NOTE2: AND is done by repeating Name=instance-state-name,Values=pending Name=instance-state-name,Values=running
@@ -215,13 +215,13 @@ class AutoscalingEC2:
                 == "InvalidInstanceID.NotFound"
             ):
                 raise Ec2InstanceNotFoundError from exc
-            raise
+            raise  # pragma: no cover
 
 
 def setup(app: FastAPI) -> None:
     async def on_startup() -> None:
         app.state.ec2_client = None
-        settings: Optional[EC2Settings] = app.state.settings.AUTOSCALING_EC2_ACCESS
+        settings: EC2Settings | None = app.state.settings.AUTOSCALING_EC2_ACCESS
 
         if not settings:
             logger.warning("EC2 client is de-activated in the settings")

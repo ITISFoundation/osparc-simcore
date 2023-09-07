@@ -71,10 +71,10 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
           control = osparc.desktop.credits.Utils.createWalletSelector("read", false, true).set({
             allowGrowX: false
           });
-          // select "All wallets" by default
-          control.getSelectables()[0].setLabel("All wallets");
+          // select "All Credit Account" by default
+          control.getSelectables()[0].setLabel("All Credit Account");
           const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-          const selectLabel = new qx.ui.basic.Label(this.tr("Select Wallet")).set({
+          const selectLabel = new qx.ui.basic.Label(this.tr("Select Credit Account")).set({
             alignY: "middle"
           });
           layout.add(selectLabel);
@@ -196,7 +196,8 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
       };
 
       const walletSelector = this.getChildControl("wallet-selector");
-      let walletId = walletSelector.getSelection()[0].walletId;
+      const walletSelection = walletSelector.getSelection();
+      const walletId = walletSelection && walletSelection.length ? walletSelection[0].walletId : null;
       if (walletId) {
         params.url["walletId"] = walletId.toString();
         return osparc.data.Resources.fetch("resourceUsagePerWallet", "getPage", params, undefined, options);

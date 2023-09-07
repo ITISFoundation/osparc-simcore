@@ -7,14 +7,20 @@
 # pylint: disable=too-many-arguments
 
 
-from fastapi import APIRouter, status
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.wallets import (
     CreateWalletBodyParams,
+    CreateWalletPayment,
+    PaymentTransaction,
     PutWalletBodyParams,
     WalletGet,
     WalletGetWithAvailableCredits,
+    WalletPaymentCreated,
 )
 from models_library.generics import Envelope
+from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.users import GroupID
 from models_library.wallets import WalletID
 from simcore_service_webserver._meta import API_VTAG
@@ -54,6 +60,25 @@ async def list_wallets():
 )
 async def update_wallet(wallet_id: WalletID, body: PutWalletBodyParams):
     ...
+
+
+### Wallets payments
+
+
+@router.post(
+    "/wallets/{wallet_id}/payments",
+    response_model=Envelope[WalletPaymentCreated],
+)
+async def create_payment(wallet_id: WalletID, body: CreateWalletPayment):
+    """Creates payment to wallet `wallet_id`"""
+
+
+@router.get(
+    "/wallets/-/payments",
+    response_model=Page[PaymentTransaction],
+)
+async def list_all_payments(params: Annotated[PageQueryParameters, Depends()]):
+    """Lists all user payments to his/her wallets (only the ones he/she created)"""
 
 
 ### Wallets groups

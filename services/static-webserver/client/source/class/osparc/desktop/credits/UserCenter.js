@@ -26,26 +26,9 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
     this._setLayout(new qx.ui.layout.VBox());
 
     this.set({
-      backgroundColor: "background-main-2",
-      margin: 10,
       padding: 20,
-      decorator: new qx.ui.decoration.Decorator().set({
-        radius: 10
-      })
+      paddingLeft: 10
     });
-
-    const titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-    const title = new qx.ui.basic.Label().set({
-      value: this.tr("User Center"),
-      font: "text-16",
-      textAlign: "center",
-      allowGrowX: true,
-      marginBottom: 10
-    });
-    titleLayout.add(title, {
-      flex: 1
-    });
-    this._add(titleLayout);
 
     const tabViews = this.__tabsView = new qx.ui.tabview.TabView().set({
       barPosition: "left",
@@ -159,6 +142,17 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
       overview.set({
         margin: 10
       });
+      overview.addListener("buyCredits", e => {
+        this.__openBuyCredits();
+        const {
+          walletId
+        } = e.getData();
+        const store = osparc.store.Store.getInstance();
+        const found = store.getWallets().find(wallet => wallet.getWalletId() === parseInt(walletId));
+        if (found) {
+          this.__buyCredits.setWallet(found);
+        }
+      });
       overview.addListener("toWallets", () => this.openWallets());
       overview.addListener("toTransactions", () => this.__openTransactions());
       overview.addListener("toUsageOverview", () => this.__openUsageOverview());
@@ -173,7 +167,7 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
     },
 
     __getWalletsPage: function() {
-      const title = this.tr("Wallets");
+      const title = this.tr("Credit Accounts");
       const iconSrc = "@MaterialIcons/account_balance_wallet/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       page.showLabelOnTab();
@@ -205,15 +199,7 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
       buyCredits.set({
         margin: 10
       });
-      buyCredits.addListener("transactionSuccessful", e => {
-        const {
-          nCredits,
-          totalPrice,
-          walletName
-        } = e.getData();
-        this.__transactionsTable.addRow(nCredits, totalPrice, walletName);
-        this.__openTransactions();
-      }, this);
+      buyCredits.addListener("transactionCompleted", () => this.__openTransactions(true), this);
       page.add(buyCredits);
       return page;
     },
@@ -272,8 +258,13 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
       this.__openPage(this.__buyCreditsPage);
     },
 
-    __openTransactions: function() {
-      this.__openPage(this.__transactionsPage);
+    __openTransactions: function(fetchTransactions = false) {
+      if (fetchTransactions) {
+        this.__transactionsTable.refetchData();
+        this.__openPage(this.__transactionsPage);
+      } else {
+        this.__openPage(this.__transactionsPage);
+      }
     },
 
     __openUsageOverview: function() {
