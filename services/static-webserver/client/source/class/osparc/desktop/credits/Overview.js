@@ -262,8 +262,8 @@ qx.Class.define("osparc.desktop.credits.Overview", {
 
       const headers = [
         "Date",
-        "Credits",
         "Price",
+        "Credits",
         "Credit Account",
         "Comment"
       ];
