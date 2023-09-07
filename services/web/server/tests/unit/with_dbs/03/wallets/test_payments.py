@@ -20,12 +20,13 @@ from models_library.rest_pagination import Page
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import UserInfoDict
+from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.payments._api import complete_payment
+from simcore_service_webserver.payments.errors import PaymentCompletedError
 from simcore_service_webserver.payments.settings import (
     PaymentsSettings,
     get_plugin_settings,
@@ -113,7 +114,6 @@ async def test_payments_worfklow(
     response = await client.post(
         f"/v0/wallets/{wallet.wallet_id}/payments",
         json={
-            "osparcCredits": 50,
             "priceDollars": 25,
         },
     )
@@ -179,7 +179,10 @@ async def test_multiple_payments(
     for n in range(num_payments):
         response = await client.post(
             f"/v0/wallets/{wallet.wallet_id}/payments",
-            json={"priceDollars": 10 + n, "comment": f"payment {n=}"},
+            json={
+                "priceDollars": 10 + n,
+                "comment": f"payment {n=}",
+            },
         )
         data, error = await assert_status(response, web.HTTPCreated)
         assert data
@@ -227,6 +230,54 @@ async def test_multiple_payments(
         assert all_transactions[pid].state == PaymentTransactionState.PENDING
 
 
+@pytest.mark.testit
+async def test_complete_payment_errors(
+    client: TestClient,
+    logged_user_wallet: WalletGet,
+    mocker: MockerFixture,
+):
+    assert client.app
+    send_message = mocker.patch(
+        "simcore_service_webserver.payments._socketio.send_messages", autospec=True
+    )
+
+    wallet = logged_user_wallet
+
+    # Pay
+    response = await client.post(
+        f"/v0/wallets/{wallet.wallet_id}/payments",
+        json={"priceDollars": 25},
+    )
+    data, _ = await assert_status(response, web.HTTPCreated)
+    payment = WalletPaymentCreated.parse_obj(data)
+
+    # Cannot complete as PENDING
+    with pytest.raises(ValueError):
+        await complete_payment(
+            client.app,
+            payment_id=payment.payment_id,
+            completion_state=PaymentTransactionState.PENDING,
+        )
+    send_message.assert_not_called()
+
+    # Complete w/ failures
+    await complete_payment(
+        client.app,
+        payment_id=payment.payment_id,
+        completion_state=PaymentTransactionState.FAILED,
+    )
+    send_message.assert_called_once()
+
+    # Cannot complete twice
+    with pytest.raises(PaymentCompletedError):
+        await complete_payment(
+            client.app,
+            payment_id=payment.payment_id,
+            completion_state=PaymentTransactionState.SUCCESS,
+        )
+    send_message.assert_called_once()
+
+
 async def test_payment_not_found(
     client: TestClient,
     logged_user_wallet: WalletGet,
@@ -247,15 +298,30 @@ async def test_payment_not_found(
     assert ":cancel" not in error_msg
 
 
-@pytest.mark.xfail(reason="UNDER DEV")
-def test_payment_on_wallet_without_access():
-    # TODO: create another user+wallet
-    raise NotImplementedError
-
-
 def test_models_state_in_sync():
     state_type = PaymentTransaction.__fields__["state"].type_
     assert (
         parse_obj_as(list[state_type], [f"{s}" for s in PaymentTransactionState])
         is not None
     )
+
+
+async def test_payment_on_wallet_without_access(
+    logged_user_wallet: WalletGet,
+    client: TestClient,
+):
+    other_wallet = logged_user_wallet
+
+    async with LoggedUser(client) as new_logged_user:
+        response = await client.post(
+            f"/v0/wallets/{other_wallet.wallet_id}/payments",
+            json={
+                "priceDollars": 25,
+            },
+        )
+        data, error = await assert_status(response, web.HTTPForbidden)
+        assert data is None
+        assert error
+
+        error_msg = error["errors"][0]["message"]
+        assert f"{other_wallet.wallet_id}" in error_msg
