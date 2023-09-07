@@ -421,7 +421,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             const blocker = qx.bom.Window.getBlocker();
             blocker.setBlockerColor("#FFF");
             blocker.setBlockerOpacity(0.6);
-            this.__pgWindow = qx.bom.Window.open(
+            let pgWindow = qx.bom.Window.open(
               url,
               "pgWindow",
               options,
@@ -429,7 +429,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
               useNativeModalDialog
             );
             // Listen to close window event
-            this.__pgWindow.onbeforeunload = () => {
+            pgWindow.onbeforeunload = () => {
               transactionFinished();
               // inform backend
               const params2 = {
@@ -450,8 +450,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
                 console.log("paymentData", paymentData);
                 transactionFinished();
                 this.fireEvent("transactionCompleted");
-                this.__pgWindow.onbeforeunload = null;
-                this.__pgWindow.close();
+                pgWindow.close();
               });
             }
 
@@ -474,7 +473,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             }
             blockerDomEl.appendChild(label);
 
-            blockerDomEl.addEventListener("click", () => this.__pgWindow.focus());
+            blockerDomEl.addEventListener("click", () => pgWindow.focus());
           })
           .catch(err => {
             console.error(err);

@@ -121,7 +121,7 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
         nCredits ? nCredits : 0,
         walletName,
         comment ? comment : "",
-        status ? "Completed" : "Failed",
+        status,
         invoiceUrl ? this.__createPdfIconWithLink(invoiceUrl) : null
       ];
       this.__rawData.push(newData);
