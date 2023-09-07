@@ -457,7 +457,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
               const paymentData = JSON.parse(jsonString);
               if (paymentData["success"]) {
                 // demo purposes
-                wallet.setCredits(wallet.getCredits() + nCredits);
+                wallet.setCreditsAvailable(wallet.getCreditsAvailable() + nCredits);
               }
               socket.removeSlot(slotName);
               buyCreditsBtn();
