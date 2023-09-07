@@ -55,18 +55,26 @@ def create_new_wallet(client: TestClient, faker: Faker) -> Callable:
     return _create
 
 
-async def test_payment_on_invalid_wallet(
+@pytest.fixture
+async def logged_user_wallet(
     client: TestClient,
-    faker: Faker,
     logged_user: UserInfoDict,
     wallets_clean_db: None,
     create_new_wallet: Callable,
+) -> WalletGet:
+    assert client.app
+    return await create_new_wallet()
+
+
+async def test_payment_on_invalid_wallet(
+    client: TestClient,
+    faker: Faker,
+    logged_user_wallet: WalletGet,
 ):
     assert client.app
-    wallet = await create_new_wallet()
 
     invalid_wallet = 1234
-    assert wallet.wallet_id != invalid_wallet
+    assert logged_user_wallet.wallet_id != invalid_wallet
 
     response = await client.post(
         f"/v0/wallets/{invalid_wallet}/payments",
@@ -85,20 +93,19 @@ async def test_payment_on_invalid_wallet(
 )
 async def test_payments_worfklow(
     client: TestClient,
-    logged_user: UserInfoDict,
-    create_new_wallet: Callable,
-    wallets_clean_db: None,
+    logged_user_wallet: WalletGet,
     mocker: MockerFixture,
 ):
     assert client.app
     settings: PaymentsSettings = get_plugin_settings(client.app)
 
-    assert settings.PAYMENTS_FAKE_COMPLETION is True
+    assert settings.PAYMENTS_FAKE_COMPLETION is False
+
     send_message = mocker.patch(
         "simcore_service_webserver.payments._socketio.send_messages", autospec=True
     )
 
-    wallet = await create_new_wallet()
+    wallet = logged_user_wallet
 
     # TEST add payment to wallet
     response = await client.post(
@@ -137,3 +144,104 @@ async def test_payments_worfklow(
         assert transaction.completed_at is not None
         assert transaction.created_at < transaction.completed_at
         send_message.assert_called_once()
+
+
+@pytest.mark.testit
+async def test_multiple_payments(
+    client: TestClient,
+    logged_user_wallet: WalletGet,
+    mocker: MockerFixture,
+):
+    assert client.app
+    settings: PaymentsSettings = get_plugin_settings(client.app)
+
+    assert settings.PAYMENTS_FAKE_COMPLETION is False
+
+    send_message = mocker.patch(
+        "simcore_service_webserver.payments._socketio.send_messages", autospec=True
+    )
+
+    wallet = logged_user_wallet
+
+    # Create multiple payments and complete some
+    num_payments = 10
+    payments_successful = []
+    payments_pending = []
+    payments_cancelled = []
+
+    for n in range(num_payments):
+        response = await client.post(
+            f"/v0/wallets/{wallet.wallet_id}/payments",
+            json={
+                "osparcCredits": 10 + n,
+                "priceDollars": 10 + n,
+            },
+        )
+        data, error = await assert_status(response, web.HTTPCreated)
+        assert data
+        assert not error
+        payment = WalletPaymentCreated.parse_obj(data)
+
+        if n % 2:
+            transaction = await complete_payment(
+                client.app, payment_id=payment.payment_id, success=True
+            )
+            assert transaction == payment.payment_id
+            payments_successful.append(transaction.payment_id)
+        else:
+            payments_pending.append(payment.payment_id)
+
+    # cancel pending
+    pending_id = payments_pending.pop()
+    response = await client.post(
+        f"/v0/wallets/{wallet.wallet_id}/payments/{pending_id}:cancel",
+    )
+    data, error = await assert_status(response, web.HTTPOk)
+    cancelled_transaction = PaymentTransaction.parse_obj(data)
+    assert cancelled_transaction.completed_status == "CANCELED"
+    payments_cancelled.append(cancelled_transaction.payment_id)
+
+    assert (
+        len(payments_cancelled) + len(payments_successful) + len(payments_pending)
+        == num_payments
+    )
+
+    # list
+    response = await client.get("/v0/wallets/-/payments")
+    data, error = await assert_status(response, web.HTTPOk)
+
+    page = parse_obj_as(Page[PaymentTransaction], data)
+
+    assert page.meta.total == num_payments
+    all_transactions = {t.payment_id: t for t in page.data}
+
+    for pid in payments_cancelled:
+        all_transactions[pid].completed_status = "CANCELED"
+    for pid in payments_successful:
+        all_transactions[pid].completed_status = "SUCCESS"
+    for pid in payments_pending:
+        all_transactions[pid].completed_status = "PENDING"
+
+
+async def test_payment_not_found(
+    client: TestClient,
+    logged_user_wallet: WalletGet,
+    faker: Faker,
+):
+    wallet = logged_user_wallet
+    payment_id = faker.uud4()
+
+    # cancel inexistent payment
+    response = await client.post(
+        f"/v0/wallets/{wallet.wallet_id}/payments/{payment_id}:cancel",
+    )
+
+    data, error = await assert_status(response, web.HTTPNotFound)
+    assert data is None
+    assert payment_id in error["errors"][0]
+
+
+@pytest.mark.xfail(reason="UNDER DEV")
+def test_payment_on_wallet_without_access():
+    # TODO: create another user+wallet
+    raise NotImplementedError
