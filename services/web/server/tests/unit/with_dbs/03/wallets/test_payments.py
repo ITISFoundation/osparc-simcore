@@ -82,7 +82,6 @@ async def test_payment_on_invalid_wallet(
     response = await client.post(
         f"/v0/wallets/{invalid_wallet}/payments",
         json={
-            "osparcCredits": 50,
             "priceDollars": 25,
         },
     )
