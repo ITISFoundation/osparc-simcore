@@ -47,6 +47,9 @@ class PaymentsTransactionsDB(BaseModel):
     state: PaymentTransactionState
     state_message: str | None
 
+    class Config:
+        orm_mode = True
+
 
 async def create_payment_transaction(  # noqa: PLR0913
     app: web.Application,
@@ -155,7 +158,9 @@ async def complete_payment_transaction(
                     sa.select(
                         payments_transactions.c.initiated_at,
                         payments_transactions.c.completed_at,
-                    ).where(payments_transactions.c.payment_id == payment_id)
+                    )
+                    .where(payments_transactions.c.payment_id == payment_id)
+                    .with_for_update()
                 )
             ).fetchone()
 
@@ -174,4 +179,4 @@ async def complete_payment_transaction(
             row = await result.first()
             assert row, "execute above should have caught this"  # nosec
 
-            return PaymentsTransactionsDB.parse_obj(dict(row.items()))
+            return PaymentsTransactionsDB.from_orm(row)
