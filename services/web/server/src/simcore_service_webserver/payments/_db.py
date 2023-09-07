@@ -2,6 +2,7 @@ import datetime
 import logging
 from decimal import Decimal
 
+import simcore_postgres_database.errors as db_errors
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.result import ResultProxy
@@ -12,12 +13,19 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import BaseModel, PositiveInt, parse_obj_as
-from simcore_postgres_database.models.payments_transactions import payments_transactions
+from simcore_postgres_database.models.payments_transactions import (
+    PaymentTransactionState,
+    payments_transactions,
+)
 from sqlalchemy import literal_column
 from sqlalchemy.sql import func
 
 from ..db.plugin import get_database_engine
-from .errors import PaymentNotFoundError
+from .errors import (
+    PaymentCompletedError,
+    PaymentNotFoundError,
+    PaymentUniqueViolationError,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -36,8 +44,8 @@ class PaymentsTransactionsDB(BaseModel):
     comment: str | None
     initiated_at: datetime.datetime
     completed_at: datetime.datetime | None
-    success: bool | None
-    errors: str | None
+    state: PaymentTransactionState
+    state_message: str | None
 
 
 async def create_payment_transaction(  # noqa: PLR0913
@@ -52,26 +60,24 @@ async def create_payment_transaction(  # noqa: PLR0913
     wallet_id: WalletID,
     comment: str | None,
     initiated_at: datetime.datetime,
-) -> PaymentsTransactionsDB:
+) -> None:
     async with get_database_engine(app).acquire() as conn:
-        result = await conn.execute(
-            payments_transactions.insert()
-            .values(
-                payment_id=payment_id,
-                price_dollars=price_dollars,
-                osparc_credits=osparc_credits,
-                product_name=product_name,
-                user_id=user_id,
-                user_email=user_email,
-                wallet_id=wallet_id,
-                comment=comment,
-                initiated_at=initiated_at,
+        try:
+            await conn.execute(
+                payments_transactions.insert().values(
+                    payment_id=payment_id,
+                    price_dollars=price_dollars,
+                    osparc_credits=osparc_credits,
+                    product_name=product_name,
+                    user_id=user_id,
+                    user_email=user_email,
+                    wallet_id=wallet_id,
+                    comment=comment,
+                    initiated_at=initiated_at,
+                )
             )
-            .returning(literal_column("*"))
-        )
-        row = await result.first()
-        assert row  #  nosec
-        return PaymentsTransactionsDB.parse_obj(dict(row.items()))
+        except db_errors.UniqueViolation as err:
+            raise PaymentUniqueViolationError(payment_id=payment_id) from err
 
 
 async def list_user_payment_transactions(
@@ -124,23 +130,40 @@ async def get_pending_payment_transactions_ids(app: web.Application) -> list[Pay
 async def complete_payment_transaction(
     app: web.Application, *, payment_id: PaymentID, success: bool, error_msg: str | None
 ) -> PaymentsTransactionsDB:
+    """
+
+    Raises:
+        PaymentNotFoundError
+
+    """
     optional = {}
     if error_msg:
         optional["errors"] = error_msg
 
     async with get_database_engine(app).acquire() as conn:
+        async with conn.begin():
+            # TODO: test concurrency here
+            row = await (
+                await conn.execute(
+                    sa.select(
+                        payments_transactions.c.initiated_at,
+                        payments_transactions.c.completed_at,
+                    ).where(payments_transactions.c.payment_id == payment_id)
+                )
+            ).fetchone()
 
-        # FIXME: Lock
-        # FIXME: raise if completed already. Specify if same or different completion outcome
+            if row is None:
+                raise PaymentNotFoundError(payment_id=payment_id)
+            if row.completed_at is not None:
+                raise PaymentCompletedError(payment_id=payment_id)
 
-        result = await conn.execute(
-            payments_transactions.update()
-            .values(completed_at=func.now(), success=success, **optional)
-            .where(payments_transactions.c.payment_id == payment_id)
-            .returning(literal_column("*"))
-        )
-        row = await result.first()
-        if not row:
-            raise PaymentNotFoundError(payment_id=payment_id)
+            result = await conn.execute(
+                payments_transactions.update()
+                .values(completed_at=func.now(), success=success, **optional)
+                .where(payments_transactions.c.payment_id == payment_id)
+                .returning(literal_column("*"))
+            )
+            row = await result.first()
+            assert row, "execute above should have caught this"  # nosec
 
-        return PaymentsTransactionsDB.parse_obj(dict(row.items()))
+            return PaymentsTransactionsDB.parse_obj(dict(row.items()))

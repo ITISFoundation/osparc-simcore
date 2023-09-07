@@ -63,7 +63,7 @@ async def create_payment(request: web.Request):
         log_duration=True,
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
-        payment = await create_payment_to_wallet(
+        payment: WalletPaymentCreated = await create_payment_to_wallet(
             request.app,
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
@@ -73,9 +73,7 @@ async def create_payment(request: web.Request):
             comment=body_params.comment,
         )
 
-    return envelope_json_response(
-        WalletPaymentCreated.parse_obj(payment), web.HTTPCreated
-    )
+    return envelope_json_response(payment, web.HTTPCreated)
 
 
 @routes.get(f"/{VTAG}/wallets/-/payments", name="list_all_payments")
@@ -132,11 +130,11 @@ async def cancel_payment(request: web.Request):
 
     _raise_if_not_dev_mode(request.app)
 
-    payment = await api.cancel_payment(
+    await api.cancel_payment_to_wallet(
         request.app,
         user_id=req_ctx.user_id,
         wallet_id=path_params.wallet_id,
         payment_id=path_params.payment_id,
     )
 
-    return envelope_json_response(payment)
+    return web.HTTPNoContent()

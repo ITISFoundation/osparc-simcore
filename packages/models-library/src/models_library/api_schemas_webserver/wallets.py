@@ -1,6 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import TypeAlias
+from typing import Literal, TypeAlias
 
 from models_library.utils.pydantic_tools_extension import FieldNotRequired
 from pydantic import Field, HttpUrl
@@ -74,5 +74,9 @@ class PaymentTransaction(OutputSchema):
     comment: str = FieldNotRequired()
     created_at: datetime
     completed_at: datetime | None
-    completed_status: str
+    # SEE PaymentTransactionState enum
+    state: Literal["PENDING", "SUCCESS", "FAILED", "CANCELED"] = Field(
+        ..., alias="completedStatus"
+    )
+    state_message: str = FieldNotRequired()
     invoice_url: HttpUrl = FieldNotRequired()

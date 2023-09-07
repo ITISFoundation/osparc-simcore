@@ -1,5 +1,6 @@
 import logging
 from decimal import Decimal
+from typing import Any
 
 import arrow
 from aiohttp import web
@@ -72,7 +73,7 @@ async def create_payment_to_wallet(
         osparc_credits=osparc_credit,
     )
     # gateway responded, we store the transaction
-    transaction = await _db.create_payment_transaction(
+    await _db.create_payment_transaction(
         app,
         payment_id=payment_id,
         price_dollars=price_dollars,
@@ -86,22 +87,29 @@ async def create_payment_to_wallet(
     )
 
     return WalletPaymentCreated(
-        payment_id=transaction.payment_id,
+        payment_id=payment_id,
         payment_form_url=f"{submission_link}",
     )
 
 
 def _to_api_model(transaction: _db.PaymentsTransactionsDB) -> PaymentTransaction:
-    return PaymentTransaction(
+    data: dict[str, Any] = dict(
         payment_id=transaction.payment_id,
         price_dollars=transaction.price_dollars,
         osparc_credits=transaction.osparc_credits,
-        comment=transaction.comment or None,  # FIXME: do not set comment if None
         wallet_id=transaction.wallet_id,
         created_at=transaction.initiated_at,
-        completed_status="SUCCESS" if transaction.success else "FAILED",
+        status=transaction.state,
         completed_at=transaction.completed_at,
     )
+
+    if transaction.comment:
+        data["comment"] = transaction.comment
+
+    if transaction.state_message:
+        data["state_message"] = transaction.state_message
+
+    return PaymentTransaction.parse_obj(data)
 
 
 async def get_user_payments_page(
@@ -133,7 +141,6 @@ async def complete_payment(
     success: bool,
     message: str | None = None,
 ) -> PaymentTransaction:
-
     # NOTE: implements endpoint in payment service hit by the gateway
     transaction = await _db.complete_payment_transaction(
         app,
@@ -147,18 +154,10 @@ async def complete_payment(
 
     _logger.info("Transaction completed: %s", transaction.json(indent=1))
 
-    # FIXME: decouple this??
+    payment = _to_api_model(transaction)
 
     # notifying front-end via web-sockets
-    await notify_payment_completed(
-        app,
-        user_id=transaction.user_id,
-        payment_id=transaction.payment_id,
-        wallet_id=transaction.wallet_id,
-        completed_at=transaction.completed_at,
-        completed_success=success,
-        completed_message=message,
-    )
+    await notify_payment_completed(app, user_id=transaction.user_id, payment=payment)
 
     if success:
         # notifying RUT
@@ -167,30 +166,19 @@ async def complete_payment(
         assert settings.WEBSERVER_RESOURCE_USAGE_TRACKER  # nosec
         if base_url := settings.WEBSERVER_RESOURCE_USAGE_TRACKER.base_url:
             url = URL(f"{base_url}/v1/credit-transaction")
-            body = jsonable_encoder(
-                {
-                    "product_name": transaction.product_name,
-                    "wallet_id": transaction.wallet_id,
-                    "user_id": transaction.user_id,
-                    "user_email": transaction.user_email,
-                    "credits": transaction.osparc_credits,
-                    "payment_transaction_id": transaction.payment_id,
-                    "created_at": transaction.initiated_at,
-                }
-            )
+            body = (jsonable_encoder(payment, by_alias=False),)
             _logger.debug("-> @RUTH  POST %s: %s", url, body)
 
-    return _to_api_model(transaction)
+    return payment
 
 
-async def cancel_payment(
+async def cancel_payment_to_wallet(
     app: web.Application,
     *,
     payment_id: IDStr,
     user_id: UserID,
     wallet_id: WalletID,
 ) -> PaymentTransaction:
-
     await _check_wallet_permissions(app, user_id=user_id, wallet_id=wallet_id)
 
     return await complete_payment(

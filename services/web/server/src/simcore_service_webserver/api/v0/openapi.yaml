@@ -3824,6 +3824,35 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Page_PaymentTransaction_'
+  /v0/wallets/{wallet_id}/payments/{payment_id}:cancel:
+    post:
+      tags:
+      - wallets
+      summary: Cancel Payment
+      operationId: cancel_payment
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      - required: true
+        schema:
+          title: Payment Id
+          minLength: 1
+          type: string
+        name: payment_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_PaymentTransaction_'
   /v0/wallets/{wallet_id}/groups/{group_id}:
     put:
       tags:
@@ -4909,6 +4938,14 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/NodeRetrieved'
+        error:
+          title: Error
+    Envelope_PaymentTransaction_:
+      title: Envelope[PaymentTransaction]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/PaymentTransaction'
         error:
           title: Error
     Envelope_PresignedLink_:
@@ -6638,6 +6675,7 @@ components:
       - walletId
       - osparcCredits
       - createdAt
+      - completedStatus
       type: object
       properties:
         paymentId:
@@ -6666,6 +6704,9 @@ components:
           title: Completedat
           type: string
           format: date-time
+        completedStatus:
+          title: Completedstatus
+          type: string
         invoiceUrl:
           title: Invoiceurl
           maxLength: 2083

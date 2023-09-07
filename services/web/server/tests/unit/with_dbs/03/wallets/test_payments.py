@@ -21,6 +21,9 @@ from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
+from simcore_postgres_database.models.payments_transactions import (
+    PaymentTransactionState,
+)
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.payments._api import complete_payment
 from simcore_service_webserver.payments.settings import (
@@ -245,3 +248,9 @@ async def test_payment_not_found(
 def test_payment_on_wallet_without_access():
     # TODO: create another user+wallet
     raise NotImplementedError
+
+
+def test_models_state_in_sync():
+
+    state_type = PaymentTransaction.__fields__["state"].type_
+    parse_obj_as(list[state_type], [str(s) for s in PaymentTransactionState])
