@@ -217,6 +217,7 @@ async def get_upload_links(
         link_type=LinkType.PRESIGNED,
         file_size=ByteSize(client_file.filesize),
         is_directory=False,
+        sha256_checksum=file_meta.sha256_checksum,
     )
     completion_url: URL = request.url_for(
         "complete_multipart_upload", file_id=file_meta.id

@@ -15,7 +15,7 @@ async def create_sha256_checksum(async_stream, *, chunk_size=CHUNK_4KB) -> SHA25
     import aiofiles
 
     async with aiofiles.open(path, mode="rb") as file:
-        md5check = await create_md5_checksum(file)
+        sha256check = await create_sha256_checksum(file)
 
     SEE https://ant.apache.org/manual/Tasks/checksum.html
     WARNING: bandit reports the use of insecure MD2, MD4, MD5, or SHA1 hash function.
