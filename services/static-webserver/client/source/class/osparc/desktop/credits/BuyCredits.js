@@ -453,7 +453,12 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             // Listen to socket event
             const socket = osparc.wrapper.WebSocket.getInstance();
             const slotName = "paymentCompleted";
-            socket.on(slotName, () => {
+            socket.on(slotName, jsonString => {
+              const paymentData = JSON.parse(jsonString);
+              if (paymentData["success"]) {
+                // demo purposes
+                wallet.setCredits(wallet.getCredits() + nCredits);
+              }
               socket.removeSlot(slotName);
               buyCreditsBtn();
               pgWindow.close();
