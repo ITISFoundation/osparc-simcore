@@ -155,7 +155,6 @@ async def test_payments_worfklow(
     assert transaction.created_at < transaction.completed_at
 
 
-@pytest.mark.testit
 async def test_multiple_payments(
     client: TestClient,
     logged_user_wallet: WalletGet,
