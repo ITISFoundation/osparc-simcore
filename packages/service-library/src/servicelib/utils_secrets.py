@@ -29,3 +29,8 @@ def generate_passcode(number_of_digits: int = MIN_PASSCODE_LENGTH) -> str:
     number_of_digits = max(number_of_digits, MIN_PASSCODE_LENGTH)
     passcode = secrets.randbelow(10**number_of_digits)
     return f"{passcode}".zfill(number_of_digits)
+
+
+def compare_secrets(got: str, expected: str) -> bool:
+    """Constant-time evaluation of 'got == expected'"""
+    return secrets.compare_digest(got.encode("utf8"), expected.encode("utf8"))

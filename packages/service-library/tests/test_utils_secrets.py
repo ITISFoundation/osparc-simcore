@@ -6,6 +6,7 @@
 from servicelib.utils_secrets import (
     MIN_PASSCODE_LENGTH,
     MIN_PASSWORD_LENGTH,
+    compare_secrets,
     generate_passcode,
     generate_password,
 )
@@ -50,3 +51,9 @@ def test_generate_passcode():
 
     # passcode is a number
     assert int(generate_passcode()) >= 0
+
+
+def test_compare_secrets():
+    passcode = generate_passcode(100)
+    assert not compare_secrets(got="foo", expected=passcode)
+    assert compare_secrets(got=passcode, expected=passcode)
