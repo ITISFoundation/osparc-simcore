@@ -13,6 +13,7 @@ from tenacity.wait import wait_exponential
 
 from ._api import complete_payment
 from ._db import get_pending_payment_transactions_ids
+from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
 
@@ -23,7 +24,9 @@ _APP_TASK_KEY = f"{_PERIODIC_TASK_NAME}.task"
 
 async def _fake_payment_completion(app: web.Application, payment_id: PaymentID):
     # Fakes processing time
-    await asyncio.sleep(random.uniform(0.5, 2))  # nosec # noqa: S311 # NOSONAR
+    settings = get_plugin_settings(app)
+    assert settings.PAYMENTS_FAKE_COMPLETION  # nosec
+    await asyncio.sleep(settings.PAYMENTS_FAKE_COMPLETION_DELAY_SEC)
 
     # Three different possible outcomes
     possible_outcomes = [
