@@ -44,12 +44,16 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
         pos: 3,
         title: qx.locale.Manager.tr("Credit Account")
       },
-      comment: {
+      status: {
         pos: 4,
+        title: qx.locale.Manager.tr("Status")
+      },
+      comment: {
+        pos: 5,
         title: qx.locale.Manager.tr("Comment")
       },
       invoice: {
-        pos: 5,
+        pos: 6,
         title: qx.locale.Manager.tr("Invoice")
       }
     }
@@ -83,18 +87,12 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
         .then(transactions => {
           if ("data" in transactions) {
             transactions["data"].forEach(transaction => {
-              let walletName = null;
-              if (transaction["walletId"]) {
-                const found = osparc.desktop.credits.Utils.getWallet(transaction["walletId"]);
-                if (found) {
-                  walletName = found.getName();
-                }
-              }
               this.__addRow(
                 transaction["createdAt"],
                 transaction["priceDollars"],
                 transaction["osparcCredits"],
-                walletName,
+                transaction["walletId"],
+                transaction["success"],
                 transaction["comment"],
                 "https://assets.website-files.com/63206faf68ab2dc3ee3e623b/634ea60a9381021f775e7a28_Placeholder%20PDF.pdf"
               );
@@ -111,13 +109,19 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
       return `<a href='${link}' target='_blank'><img src='https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/PDF_file_icon.svg/833px-PDF_file_icon.svg.png' alt='Invoice' width='16' height='20'></a>`;
     },
 
-    __addRow: function(createdAt, price, nCredits, walletName, comment, invoiceUrl) {
+    __addRow: function(createdAt, price, nCredits, walletId, status, comment, invoiceUrl) {
+      let walletName = "Unknown";
+      const found = osparc.desktop.credits.Utils.getWallet(walletId);
+      if (found) {
+        walletName = found.getName();
+      }
       const newData = [
         osparc.utils.Utils.formatDateAndTime(new Date(createdAt)),
         price ? price : 0,
         nCredits ? nCredits : 0,
-        walletName ? walletName : "Unknown Wallet",
+        walletName,
         comment ? comment : "",
+        status ? "Completed" : "Failed",
         invoiceUrl ? this.__createPdfIconWithLink(invoiceUrl) : null
       ];
       this.__rawData.push(newData);
