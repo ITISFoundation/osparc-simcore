@@ -196,7 +196,8 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
       };
 
       const walletSelector = this.getChildControl("wallet-selector");
-      let walletId = walletSelector.getSelection()[0].walletId;
+      const walletSelection = walletSelector.getSelection();
+      const walletId = walletSelection && walletSelection.length ? walletSelection[0].walletId : null;
       if (walletId) {
         params.url["walletId"] = walletId.toString();
         return osparc.data.Resources.fetch("resourceUsagePerWallet", "getPage", params, undefined, options);
