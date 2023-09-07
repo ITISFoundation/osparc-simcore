@@ -11,9 +11,6 @@ from ._dependencies import get_reverse_url_mapper
 _logger = logging.getLogger(__name__)
 
 
-#
-# ROUTE HANDLERS
-#
 router = APIRouter()
 
 

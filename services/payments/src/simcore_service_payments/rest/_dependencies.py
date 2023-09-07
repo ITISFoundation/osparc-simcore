@@ -1,9 +1,10 @@
 import logging
-import secrets
+from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request, status
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from fastapi.security import HTTPBasic, OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from servicelib.fastapi.dependencies import get_app, get_reverse_url_mapper
+from servicelib.utils_secrets import compare_secrets
 
 from ..core.settings import ApplicationSettings
 
@@ -24,30 +25,38 @@ def get_settings(request: Request) -> ApplicationSettings:
 _get_basic_credentials = HTTPBasic()
 
 
-def get_validated_credentials(
-    credentials: HTTPBasicCredentials | None = Depends(_get_basic_credentials),
-    settings: ApplicationSettings = Depends(get_settings),
-) -> HTTPBasicCredentials:
-    def _is_valid(current: str, expected: str) -> bool:
-        return secrets.compare_digest(current.encode("utf8"), expected.encode("utf8"))
+def get_validated_form_data(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    settings: Annotated[ApplicationSettings, Depends(get_settings)],
+) -> OAuth2PasswordRequestForm:
 
-    if not credentials or not (
-        _is_valid(
-            credentials.username,
-            expected=settings.PAYMENTS_USERNAME,
-        )
-        and _is_valid(
-            credentials.password,
-            expected=settings.PAYMENTS_PASSWORD.get_secret_value(),
+    if not form_data or not (
+        compare_secrets(
+            form_data.username + form_data.password,
+            expected=settings.PAYMENTS_USERNAME
+            + settings.PAYMENTS_PASSWORD.get_secret_value(),
         )
     ):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Basic"},
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Incorrect username or password",
         )
 
-    return credentials
+    return form_data
+
+
+# Implements `password` flow defined in OAuth2
+_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+
+async def raise_if_invalid_token(token: Annotated[str, Depends(_oauth2_scheme)]):
+    # TODO: decode token
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 
 assert get_reverse_url_mapper  # nosec
@@ -55,6 +64,7 @@ assert get_app  # nosec
 
 
 __all__: tuple[str, ...] = (
-    "get_reverse_url_mapper",
     "get_app",
+    "get_reverse_url_mapper",
+    "get_validated_form_data",
 )
