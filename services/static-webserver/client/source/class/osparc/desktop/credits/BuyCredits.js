@@ -404,8 +404,9 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             osparcCredits: nCredits
           }
         };
-        osparc.data.Resources.fetch("payments", "post", params)
+        osparc.data.Resources.fetch("startPayment", "post", params)
           .then(data => {
+            const paymentId = data["paymentId"];
             const url = data["paymentFormUrl"];
             const options = {
               width: 400,
@@ -430,6 +431,13 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             this.__pgWindow.onbeforeunload = () => {
               transactionFinished();
               // inform backend
+              const params2 = {
+                url: {
+                  walletId: wallet.getWalletId(),
+                  paymentId
+                }
+              };
+              osparc.data.Resources.fetch("cancelPayment", "post", params2);
             };
 
             // Listen to socket event
@@ -438,7 +446,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             if (!socket.slotExists(slotName)) {
               socket.on(slotName, jsonString => {
                 const paymentData = JSON.parse(jsonString);
-                console.log(paymentData);
+                console.log("paymentData", paymentData);
                 this.fireEvent("transactionCompleted");
                 this.__pgWindow.close();
               });
