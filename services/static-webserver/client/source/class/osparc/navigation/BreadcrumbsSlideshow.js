@@ -145,12 +145,11 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
 
       const updateCurrentNodeId = currentNodeId => {
         if (nodeId === currentNodeId) {
-          btn.setFont("text-14");
           btn.setAppearance("strong-button");
         } else {
-          btn.resetFont();
           btn.resetAppearance();
         }
+        btn.setFont("text-14");
       };
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       updateCurrentNodeId(study.getUi().getCurrentNodeId());
