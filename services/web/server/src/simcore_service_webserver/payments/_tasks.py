@@ -7,6 +7,9 @@ from typing import Any
 from aiohttp import web
 from models_library.api_schemas_webserver.wallets import PaymentID
 from servicelib.aiohttp.typing_extension import CleanupContextFunc
+from simcore_postgres_database.models.payments_transactions import (
+    PaymentTransactionState,
+)
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.wait import wait_exponential
@@ -31,12 +34,16 @@ async def _fake_payment_completion(app: web.Application, payment_id: PaymentID):
     # Three different possible outcomes
     possible_outcomes = [
         # 1. Accepted
-        {"app": app, "payment_id": payment_id, "success": True},
+        {
+            "app": app,
+            "payment_id": payment_id,
+            "completion_state": PaymentTransactionState.SUCCESS,
+        },
         # 2. Rejected
         {
             "app": app,
             "payment_id": payment_id,
-            "success": False,
+            "completion_state": PaymentTransactionState.FAILED,
             "message": "Payment rejected",
         },
         # 3. does not complete ever ???

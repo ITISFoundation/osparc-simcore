@@ -5,6 +5,7 @@ from typing import Any
 import arrow
 from aiohttp import web
 from models_library.api_schemas_webserver.wallets import (
+    PaymentID,
     PaymentTransaction,
     WalletPaymentCreated,
 )
@@ -12,6 +13,9 @@ from models_library.basic_types import IDStr
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletID
+from simcore_postgres_database.models.payments_transactions import (
+    PaymentTransactionState,
+)
 from yarl import URL
 
 from ..application_settings import get_settings
@@ -99,7 +103,7 @@ def _to_api_model(transaction: _db.PaymentsTransactionsDB) -> PaymentTransaction
         osparc_credits=transaction.osparc_credits,
         wallet_id=transaction.wallet_id,
         created_at=transaction.initiated_at,
-        status=transaction.state,
+        state=transaction.state,
         completed_at=transaction.completed_at,
     )
 
@@ -137,16 +141,16 @@ async def get_user_payments_page(
 async def complete_payment(
     app: web.Application,
     *,
-    payment_id: IDStr,
-    success: bool,
+    payment_id: PaymentID,
+    completion_state: PaymentTransactionState,
     message: str | None = None,
 ) -> PaymentTransaction:
     # NOTE: implements endpoint in payment service hit by the gateway
     transaction = await _db.complete_payment_transaction(
         app,
         payment_id=payment_id,
-        success=success,
-        error_msg=None if success else message,
+        completion_state=completion_state,
+        state_message=message,
     )
     assert transaction.payment_id == payment_id  # nosec
     assert transaction.completed_at is not None  # nosec
@@ -159,7 +163,7 @@ async def complete_payment(
     # notifying front-end via web-sockets
     await notify_payment_completed(app, user_id=transaction.user_id, payment=payment)
 
-    if success:
+    if completion_state == PaymentTransactionState.SUCCESS:
         # notifying RUT
         # TODO: connect with https://github.com/ITISFoundation/osparc-simcore/pull/4692
         settings = get_settings(app)
@@ -182,5 +186,8 @@ async def cancel_payment_to_wallet(
     await _check_wallet_permissions(app, user_id=user_id, wallet_id=wallet_id)
 
     return await complete_payment(
-        app, payment_id=payment_id, success=False, message="Cancelled"
+        app,
+        payment_id=payment_id,
+        completion_state=PaymentTransactionState.CANCELED,
+        message="Payment aborted by user",
     )

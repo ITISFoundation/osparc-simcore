@@ -127,7 +127,15 @@ async def test_payments_worfklow(
     assert payment.payment_form_url.query.endswith(payment.payment_id)
 
     # Complete
-    await complete_payment(client.app, payment_id=payment.payment_id, success=True)
+    await complete_payment(
+        client.app,
+        payment_id=payment.payment_id,
+        completion_state=PaymentTransactionState.SUCCESS,
+    )
+
+    # check notification
+    assert send_message.called
+    send_message.assert_called_once()
 
     # list all payment transactions in all my wallets
     response = await client.get("/v0/wallets/-/payments")
@@ -142,13 +150,12 @@ async def test_payments_worfklow(
     transaction = page.data[0]
     assert transaction.payment_id == payment.payment_id
 
-    if send_message.called:
-        # payment was completed
-        assert transaction.completed_at is not None
-        assert transaction.created_at < transaction.completed_at
-        send_message.assert_called_once()
+    # payment was completed successfully
+    assert transaction.completed_at is not None
+    assert transaction.created_at < transaction.completed_at
 
 
+@pytest.mark.testit
 async def test_multiple_payments(
     client: TestClient,
     logged_user_wallet: WalletGet,
@@ -174,9 +181,7 @@ async def test_multiple_payments(
     for n in range(num_payments):
         response = await client.post(
             f"/v0/wallets/{wallet.wallet_id}/payments",
-            json={
-                "priceDollars": 10 + n,
-            },
+            json={"priceDollars": 10 + n, "comment": f"payment {n=}"},
         )
         data, error = await assert_status(response, web.HTTPCreated)
         assert data
@@ -185,9 +190,11 @@ async def test_multiple_payments(
 
         if n % 2:
             transaction = await complete_payment(
-                client.app, payment_id=payment.payment_id, success=True
+                client.app,
+                payment_id=payment.payment_id,
+                completion_state=PaymentTransactionState.SUCCESS,
             )
-            assert transaction == payment.payment_id
+            assert transaction.payment_id == payment.payment_id
             payments_successful.append(transaction.payment_id)
         else:
             payments_pending.append(payment.payment_id)
@@ -197,10 +204,8 @@ async def test_multiple_payments(
     response = await client.post(
         f"/v0/wallets/{wallet.wallet_id}/payments/{pending_id}:cancel",
     )
-    data, error = await assert_status(response, web.HTTPOk)
-    cancelled_transaction = PaymentTransaction.parse_obj(data)
-    assert cancelled_transaction.state == "CANCELED"
-    payments_cancelled.append(cancelled_transaction.payment_id)
+    await assert_status(response, web.HTTPNoContent)
+    payments_cancelled.append(pending_id)
 
     assert (
         len(payments_cancelled) + len(payments_successful) + len(payments_pending)
@@ -251,7 +256,6 @@ def test_payment_on_wallet_without_access():
 
 
 def test_models_state_in_sync():
-
     state_type = PaymentTransaction.__fields__["state"].type_
     assert (
         parse_obj_as(list[state_type], [f"{s}" for s in PaymentTransactionState])

@@ -15,6 +15,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_query_parameters_as,
 )
 from servicelib.logging_utils import get_log_record_extra, log_context
+from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from .._meta import API_VTAG as VTAG
 from ..application_settings import get_settings
@@ -141,4 +142,4 @@ async def cancel_payment(request: web.Request):
         payment_id=path_params.payment_id,
     )
 
-    return web.HTTPNoContent()
+    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)

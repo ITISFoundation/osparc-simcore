@@ -128,7 +128,11 @@ async def get_pending_payment_transactions_ids(app: web.Application) -> list[Pay
 
 
 async def complete_payment_transaction(
-    app: web.Application, *, payment_id: PaymentID, success: bool, error_msg: str | None
+    app: web.Application,
+    *,
+    payment_id: PaymentID,
+    completion_state: PaymentTransactionState,
+    state_message: str | None,
 ) -> PaymentsTransactionsDB:
     """
 
@@ -136,9 +140,12 @@ async def complete_payment_transaction(
         PaymentNotFoundError
 
     """
+    if completion_state == PaymentTransactionState.PENDING:
+        raise ValueError(f"{completion_state} is not a completion state")
+
     optional = {}
-    if error_msg:
-        optional["errors"] = error_msg
+    if state_message:
+        optional["state_message"] = state_message
 
     async with get_database_engine(app).acquire() as conn:
         async with conn.begin():
@@ -154,12 +161,13 @@ async def complete_payment_transaction(
 
             if row is None:
                 raise PaymentNotFoundError(payment_id=payment_id)
+
             if row.completed_at is not None:
                 raise PaymentCompletedError(payment_id=payment_id)
 
             result = await conn.execute(
                 payments_transactions.update()
-                .values(completed_at=func.now(), success=success, **optional)
+                .values(completed_at=func.now(), state=completion_state, **optional)
                 .where(payments_transactions.c.payment_id == payment_id)
                 .returning(literal_column("*"))
             )
