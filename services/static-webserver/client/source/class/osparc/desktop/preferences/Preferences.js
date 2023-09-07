@@ -68,6 +68,12 @@ qx.Class.define("osparc.desktop.preferences.Preferences", {
       init: true,
       check: "Boolean",
       event: "changeSnapNodeToGrid"
+    },
+
+    preferredWalletId: {
+      nullable: false,
+      init: 4, // required until we have the Preferences
+      check: "Number"
     }
   }
 });

@@ -77,7 +77,7 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
             walletName = found.getName();
           }
           newData[cols["wallet"].pos] = walletName;
-          if (osparc.utils.Utils.onlyFirstsUp(data["completedStatus"])) {
+          if (data["completedStatus"]) {
             newData[cols["status"].pos] = osparc.utils.Utils.onlyFirstsUp(data["completedStatus"]);
           }
           newData[cols["comment"].pos] = data["comment"];
