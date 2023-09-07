@@ -91,6 +91,7 @@ qx.Class.define("osparc.desktop.credits.UserCenter", {
     __getMiniProfileView: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(8)).set({
         alignX: "center",
+        minWidth: 120,
         maxWidth: 150
       });
 
