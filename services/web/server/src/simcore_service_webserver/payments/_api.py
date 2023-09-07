@@ -41,7 +41,7 @@ async def create_payment_to_wallet(
     app: web.Application,
     *,
     price_dollars: Decimal,
-    osparc_credit: Decimal,
+    osparc_credits: Decimal,
     product_name: str,
     user_id: UserID,
     wallet_id: WalletID,
@@ -70,14 +70,14 @@ async def create_payment_to_wallet(
         user_id=user_id,
         name=user.name,
         email=user.email,
-        osparc_credits=osparc_credit,
+        osparc_credits=osparc_credits,
     )
     # gateway responded, we store the transaction
     await _db.create_payment_transaction(
         app,
         payment_id=payment_id,
         price_dollars=price_dollars,
-        osparc_credits=osparc_credit,
+        osparc_credits=osparc_credits,
         product_name=product_name,
         user_id=user_id,
         user_email=user.email,

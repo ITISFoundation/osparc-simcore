@@ -3847,12 +3847,8 @@ paths:
         name: payment_id
         in: path
       responses:
-        '200':
+        '204':
           description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_PaymentTransaction_'
   /v0/wallets/{wallet_id}/groups/{group_id}:
     put:
       tags:
@@ -4682,14 +4678,10 @@ components:
       title: CreateWalletPayment
       required:
       - priceDollars
-      - osparcCredits
       type: object
       properties:
         priceDollars:
           title: Pricedollars
-          type: number
-        osparcCredits:
-          title: Osparccredits
           type: number
         comment:
           title: Comment
@@ -4938,14 +4930,6 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/NodeRetrieved'
-        error:
-          title: Error
-    Envelope_PaymentTransaction_:
-      title: Envelope[PaymentTransaction]
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/PaymentTransaction'
         error:
           title: Error
     Envelope_PresignedLink_:
@@ -6706,6 +6690,14 @@ components:
           format: date-time
         completedStatus:
           title: Completedstatus
+          enum:
+          - PENDING
+          - SUCCESS
+          - FAILED
+          - CANCELED
+          type: string
+        stateMessage:
+          title: Statemessage
           type: string
         invoiceUrl:
           title: Invoiceurl

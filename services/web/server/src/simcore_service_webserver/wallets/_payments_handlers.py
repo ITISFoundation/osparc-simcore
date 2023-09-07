@@ -63,14 +63,17 @@ async def create_payment(request: web.Request):
         log_duration=True,
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
+        # TODO: only admin can do a different rate (e.g. offers of 2000 credits for 1000$)
+        osparc_credits = body_params.price_dollars
+
         payment: WalletPaymentCreated = await create_payment_to_wallet(
             request.app,
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
             wallet_id=wallet_id,
-            osparc_credit=body_params.osparc_credits,
-            price_dollars=body_params.price_dollars,
+            osparc_credits=osparc_credits,
             comment=body_params.comment,
+            price_dollars=body_params.price_dollars,
         )
 
     return envelope_json_response(payment, web.HTTPCreated)

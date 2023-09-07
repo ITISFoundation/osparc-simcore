@@ -55,7 +55,6 @@ PaymentID: TypeAlias = IDStr
 
 class CreateWalletPayment(InputSchema):
     price_dollars: Decimal
-    osparc_credits: Decimal
     comment: str = FieldNotRequired(max_length=100)
 
 

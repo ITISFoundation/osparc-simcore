@@ -84,7 +84,7 @@ async def list_all_payments(params: Annotated[PageQueryParameters, Depends()]):
 
 @router.post(
     "/wallets/{wallet_id}/payments/{payment_id}:cancel",
-    response_model=Envelope[PaymentTransaction],
+    status_code=status.HTTP_204_NO_CONTENT,
 )
 async def cancel_payment(wallet_id: WalletID, payment_id: PaymentID):
     ...
