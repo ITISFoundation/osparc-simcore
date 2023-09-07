@@ -183,7 +183,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
 
     # now create a new link to the VERY SAME FILE UUID
     await simcore_s3_dsm.create_file_upload_links(
-        user_id, file_id, link_type, file_size, is_directory=False
+        user_id, file_id, link_type, file_size, sha256_checksum=None, is_directory=False
     )
     # ensure the database is correctly set up
     async with aiopg_engine.acquire() as conn:
