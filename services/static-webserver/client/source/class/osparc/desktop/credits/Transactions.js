@@ -77,7 +77,9 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
             walletName = found.getName();
           }
           newData[cols["wallet"].pos] = walletName;
-          newData[cols["status"].pos] = osparc.utils.Utils.onlyFirstsUp(data["completedStatus"]);
+          if (osparc.utils.Utils.onlyFirstsUp(data["completedStatus"])) {
+            newData[cols["status"].pos] = osparc.utils.Utils.onlyFirstsUp(data["completedStatus"]);
+          }
           newData[cols["comment"].pos] = data["comment"];
           newData[cols["invoice"].pos] = this.createPdfIconWithLink(data["invoiceUrl"] ? data["invoiceUrl"] : "https://assets.website-files.com/63206faf68ab2dc3ee3e623b/634ea60a9381021f775e7a28_Placeholder%20PDF.pdf");
           newDatas.push(newData);

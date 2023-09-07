@@ -455,23 +455,25 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             const slotName = "paymentCompleted";
             socket.on(slotName, jsonString => {
               const paymentData = JSON.parse(jsonString);
-              const msg = this.tr("Payment ") + osparc.utils.Utils.onlyFirstsUp(paymentData["completedStatus"]);
-              switch (paymentData["completedStatus"]) {
-                case "SUCCESS":
-                  osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO");
-                  // demo purposes
-                  wallet.setCreditsAvailable(wallet.getCreditsAvailable() + nCredits);
-                  break;
-                case "PENDING":
-                  osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING");
-                  break;
-                case "CANCELED":
-                case "FAILED":
-                  osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-                  break;
-                default:
-                  console.error("completedStatus unknown");
-                  break;
+              if (paymentData["completedStatus"]) {
+                const msg = this.tr("Payment ") + osparc.utils.Utils.onlyFirstsUp(paymentData["completedStatus"]);
+                switch (paymentData["completedStatus"]) {
+                  case "SUCCESS":
+                    osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO");
+                    // demo purposes
+                    wallet.setCreditsAvailable(wallet.getCreditsAvailable() + nCredits);
+                    break;
+                  case "PENDING":
+                    osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING");
+                    break;
+                  case "CANCELED":
+                  case "FAILED":
+                    osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+                    break;
+                  default:
+                    console.error("completedStatus unknown");
+                    break;
+                }
               }
               socket.removeSlot(slotName);
               buyCreditsBtn();
