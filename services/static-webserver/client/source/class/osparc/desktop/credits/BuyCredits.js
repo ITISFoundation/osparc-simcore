@@ -404,7 +404,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             osparcCredits: nCredits
           }
         };
-        osparc.data.Resources.fetch("startPayment", "post", params)
+        osparc.data.Resources.fetch("payments", "startPayment", params)
           .then(data => {
             const paymentId = data["paymentId"];
             const url = data["paymentFormUrl"];
@@ -437,7 +437,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
                   paymentId
                 }
               };
-              osparc.data.Resources.fetch("cancelPayment", "post", params2);
+              osparc.data.Resources.fetch("payments", "cancelPayment", params2);
             };
 
             // Listen to socket event
