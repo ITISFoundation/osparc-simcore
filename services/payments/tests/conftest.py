@@ -18,6 +18,7 @@ from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 pytest_plugins = [
     "pytest_simcore.cli_runner",
     "pytest_simcore.environment_configs",
+    "pytest_simcore.httpbin_service",
     "pytest_simcore.repository_paths",
 ]
 
