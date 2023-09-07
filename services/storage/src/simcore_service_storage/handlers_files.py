@@ -188,6 +188,7 @@ async def upload_file(request: web.Request) -> web.Response:
         link_type=query_params.link_type,
         file_size_bytes=query_params.file_size or ByteSize(0),
         is_directory=query_params.is_directory,
+        sha256_checksum=query_params.sha256_checksum,
     )
     if query_params.file_size is None and not query_params.is_directory:
         # return v1 response

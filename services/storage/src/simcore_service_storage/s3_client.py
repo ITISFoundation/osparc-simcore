@@ -6,13 +6,14 @@ from collections.abc import AsyncGenerator, Callable
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Final, TypeAlias, cast
+from typing import Any, Final, TypeAlias, cast
 
 import aioboto3
 from aiobotocore.session import ClientCreatorContext
 from boto3.s3.transfer import TransferConfig
 from botocore.client import Config
 from models_library.api_schemas_storage import UploadedPart
+from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from pydantic import AnyUrl, ByteSize, NonNegativeInt, parse_obj_as
@@ -237,17 +238,24 @@ class StorageS3Client:
         file_id: SimcoreS3FileID,
         upload_id: UploadID,
         uploaded_parts: list[UploadedPart],
+        sha256_checksum: SHA256Str | None,
     ) -> ETag:
-        response = await self.client.complete_multipart_upload(
-            Bucket=bucket,
-            Key=file_id,
-            UploadId=upload_id,
-            MultipartUpload={
+        inputs: dict[str, Any] = {
+            "Bucket": bucket,
+            "Key": file_id,
+            "UploadId": upload_id,
+            "MultipartUpload": {
                 "Parts": [
                     {"ETag": part.e_tag, "PartNumber": part.number}
                     for part in uploaded_parts
                 ]
             },
+            "ChecksumSHA256": sha256_checksum
+            if sha256_checksum is None
+            else str(sha256_checksum),
+        }
+        response = await self.client.complete_multipart_upload(
+            **{k: v for k, v in inputs.items() if v is not None}
         )
         return response["ETag"]
 

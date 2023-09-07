@@ -94,6 +94,7 @@ class FileMetaData(FileMetaDataGet):
         bucket: S3BucketName,
         location_id: LocationID,
         location_name: LocationName,
+        sha256_checksum: SHA256Str | None,
         **file_meta_data_kwargs,
     ):
         parts = file_id.split("/")
@@ -118,6 +119,7 @@ class FileMetaData(FileMetaDataGet):
             "is_soft_link": False,
             "upload_id": None,
             "upload_expires_at": None,
+            "sha256_checksum": sha256_checksum,
             "is_directory": False,
         }
         fmd_kwargs.update(**file_meta_data_kwargs)
@@ -173,6 +175,7 @@ class FileUploadQueryParams(StorageQueryParamsBase):
     link_type: LinkType = LinkType.PRESIGNED
     file_size: ByteSize | None
     is_directory: bool = False
+    sha256_checksum: SHA256Str | None = None
 
     @validator("link_type", pre=True)
     @classmethod

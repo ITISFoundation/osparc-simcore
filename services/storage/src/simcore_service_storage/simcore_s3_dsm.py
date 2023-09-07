@@ -243,6 +243,7 @@ class SimcoreS3DataManager(BaseDataManager):
         link_type: LinkType,
         file_size_bytes: ByteSize,
         *,
+        sha256_checksum: SHA256Str | None,
         is_directory: bool,
     ) -> UploadLinks:
         async with self.engine.acquire() as conn, conn.begin() as transaction:
@@ -271,6 +272,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 )
                 else None,
                 is_directory=is_directory,
+                sha256_checksum=sha256_checksum,
             )
             # NOTE: ensure the database is updated so cleaner does not pickup newly created uploads
             await transaction.commit()
@@ -380,6 +382,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 file_id=fmd.file_id,
                 upload_id=fmd.upload_id,
                 uploaded_parts=uploaded_parts,
+                sha256_checksum=fmd.sha256_checksum,
             )
         async with self.engine.acquire() as conn:
             fmd = await self._update_database_from_storage(conn, fmd)
@@ -984,6 +987,7 @@ class SimcoreS3DataManager(BaseDataManager):
                     dst_file_id,
                     upload_id=S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID,
                     is_directory=False,
+                    sha256_checksum=None,
                 )
                 # NOTE: ensure the database is updated so cleaner does not pickup newly created uploads
                 await transaction.commit()
@@ -1024,6 +1028,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 dst_file_id,
                 upload_id=S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID,
                 is_directory=src_fmd.is_directory,
+                sha256_checksum=src_fmd.sha256_checksum,
             )
             # NOTE: ensure the database is updated so cleaner does not pickup newly created uploads
             await transaction.commit()
@@ -1071,6 +1076,7 @@ class SimcoreS3DataManager(BaseDataManager):
         upload_id: UploadID | None,
         *,
         is_directory: bool,
+        sha256_checksum: SHA256Str | None,
     ) -> FileMetaDataAtDB:
         now = datetime.datetime.utcnow()
         upload_expiration_date = now + datetime.timedelta(
@@ -1085,6 +1091,7 @@ class SimcoreS3DataManager(BaseDataManager):
             upload_expires_at=upload_expiration_date,
             upload_id=upload_id,
             is_directory=is_directory,
+            sha256_checksum=sha256_checksum,
         )
         return await db_file_meta_data.upsert(conn, fmd)
 
