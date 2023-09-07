@@ -3,6 +3,7 @@ import logging
 from aiohttp import web
 from models_library.api_schemas_webserver.wallets import (
     CreateWalletPayment,
+    PaymentID,
     PaymentTransaction,
     WalletPaymentCreated,
 )
@@ -18,6 +19,7 @@ from servicelib.logging_utils import get_log_record_extra, log_context
 from .._meta import API_VTAG as VTAG
 from ..application_settings import get_settings
 from ..login.decorators import login_required
+from ..payments import api
 from ..payments.api import create_payment_to_wallet, get_user_payments_page
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
@@ -112,3 +114,29 @@ async def list_all_payments(request: web.Request):
     )
 
     return envelope_json_response(page, web.HTTPOk)
+
+
+class PaymentsPathParams(WalletsPathParams):
+    payment_id: PaymentID
+
+
+@routes.post(
+    f"/{VTAG}/wallets/{{wallet_id}}/payments/{{payment_id}}", name="cancel_payment"
+)
+@login_required
+@permission_required("wallets.*")
+@handle_wallets_exceptions
+async def cancel_payment(request: web.Request):
+    req_ctx = WalletsRequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(PaymentsPathParams, request)
+
+    _raise_if_not_dev_mode(request.app)
+
+    payment = await api.cancel_payment(
+        request.app,
+        user_id=req_ctx.user_id,
+        wallet_id=path_params.wallet_id,
+        payment_id=path_params.payment_id,
+    )
+
+    return envelope_json_response(payment)

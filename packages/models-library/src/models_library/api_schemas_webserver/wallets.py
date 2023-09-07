@@ -74,4 +74,5 @@ class PaymentTransaction(OutputSchema):
     comment: str = FieldNotRequired()
     created_at: datetime
     completed_at: datetime | None
+    completed_status: str
     invoice_url: HttpUrl = FieldNotRequired()

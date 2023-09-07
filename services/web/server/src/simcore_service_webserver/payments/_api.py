@@ -24,6 +24,18 @@ from ._socketio import notify_payment_completed
 _logger = logging.getLogger(__name__)
 
 
+async def _check_wallet_permissions(
+    app: web.Application, user_id: UserID, wallet_id: WalletID
+):
+    permissions = await get_wallet_with_permissions_by_user(
+        app, user_id=user_id, wallet_id=wallet_id
+    )
+    if not permissions.read or not permissions.write:
+        raise WalletAccessForbiddenError(
+            reason=f"User {user_id} does not have necessary permissions to do a payment into wallet {wallet_id}"
+        )
+
+
 async def create_payment_to_wallet(
     app: web.Application,
     *,
@@ -44,13 +56,7 @@ async def create_payment_to_wallet(
     user = await get_user_name_and_email(app, user_id=user_id)
 
     # check permissions
-    permissions = await get_wallet_with_permissions_by_user(
-        app, user_id=user_id, wallet_id=wallet_id
-    )
-    if not permissions.read or not permissions.write:
-        raise WalletAccessForbiddenError(
-            reason=f"User {user_id} does not have necessary permissions to do a payment into wallet {wallet_id}"
-        )
+    await _check_wallet_permissions(app, user_id=user_id, wallet_id=wallet_id)
 
     # hold timestamp
     initiated_at = arrow.utcnow().datetime
@@ -85,6 +91,19 @@ async def create_payment_to_wallet(
     )
 
 
+def _to_api_model(transaction: _db.PaymentsTransactionsDB) -> PaymentTransaction:
+    return PaymentTransaction(
+        payment_id=transaction.payment_id,
+        price_dollars=transaction.price_dollars,
+        osparc_credits=transaction.osparc_credits,
+        comment=transaction.comment or None,  # FIXME: do not set comment if None
+        wallet_id=transaction.wallet_id,
+        created_at=transaction.initiated_at,
+        completed_status="SUCCESS" if transaction.success else "FAILED",
+        completed_at=transaction.completed_at,
+    )
+
+
 async def get_user_payments_page(
     app: web.Application,
     product_name: str,
@@ -104,18 +123,7 @@ async def get_user_payments_page(
         app, user_id=user_id, offset=offset, limit=limit
     )
 
-    return [
-        PaymentTransaction(
-            payment_id=t.payment_id,
-            price_dollars=t.price_dollars,
-            osparc_credits=t.osparc_credits,
-            comment=t.comment,
-            wallet_id=t.wallet_id,
-            created_at=t.initiated_at,
-            completed_at=t.completed_at,
-        )
-        for t in transactions
-    ], total_number_of_items
+    return [_to_api_model(t) for t in transactions], total_number_of_items
 
 
 async def complete_payment(
@@ -124,7 +132,8 @@ async def complete_payment(
     payment_id: IDStr,
     success: bool,
     message: str | None = None,
-):
+) -> PaymentTransaction:
+
     # NOTE: implements endpoint in payment service hit by the gateway
     transaction = await _db.complete_payment_transaction(
         app,
@@ -138,6 +147,8 @@ async def complete_payment(
 
     _logger.info("Transaction completed: %s", transaction.json(indent=1))
 
+    # FIXME: decouple this??
+
     # notifying front-end via web-sockets
     await notify_payment_completed(
         app,
@@ -149,21 +160,39 @@ async def complete_payment(
         completed_message=message,
     )
 
-    # notifying RUT
-    # TODO: connect with https://github.com/ITISFoundation/osparc-simcore/pull/4692
-    settings = get_settings(app)
-    assert settings.WEBSERVER_RESOURCE_USAGE_TRACKER  # nosec
-    if base_url := settings.WEBSERVER_RESOURCE_USAGE_TRACKER.base_url:
-        url = URL(f"{base_url}/v1/credit-transaction")
-        body = jsonable_encoder(
-            {
-                "product_name": transaction.product_name,
-                "wallet_id": transaction.wallet_id,
-                "user_id": transaction.user_id,
-                "user_email": transaction.user_email,
-                "credits": transaction.osparc_credits,
-                "payment_transaction_id": transaction.payment_id,
-                "created_at": transaction.initiated_at,
-            }
-        )
-        _logger.debug("-> @RUTH  POST %s: %s", url, body)
+    if success:
+        # notifying RUT
+        # TODO: connect with https://github.com/ITISFoundation/osparc-simcore/pull/4692
+        settings = get_settings(app)
+        assert settings.WEBSERVER_RESOURCE_USAGE_TRACKER  # nosec
+        if base_url := settings.WEBSERVER_RESOURCE_USAGE_TRACKER.base_url:
+            url = URL(f"{base_url}/v1/credit-transaction")
+            body = jsonable_encoder(
+                {
+                    "product_name": transaction.product_name,
+                    "wallet_id": transaction.wallet_id,
+                    "user_id": transaction.user_id,
+                    "user_email": transaction.user_email,
+                    "credits": transaction.osparc_credits,
+                    "payment_transaction_id": transaction.payment_id,
+                    "created_at": transaction.initiated_at,
+                }
+            )
+            _logger.debug("-> @RUTH  POST %s: %s", url, body)
+
+    return _to_api_model(transaction)
+
+
+async def cancel_payment(
+    app: web.Application,
+    *,
+    payment_id: IDStr,
+    user_id: UserID,
+    wallet_id: WalletID,
+) -> PaymentTransaction:
+
+    await _check_wallet_permissions(app, user_id=user_id, wallet_id=wallet_id)
+
+    return await complete_payment(
+        app, payment_id=payment_id, success=False, message="Cancelled"
+    )

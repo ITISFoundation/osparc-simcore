@@ -17,6 +17,7 @@ from sqlalchemy import literal_column
 from sqlalchemy.sql import func
 
 from ..db.plugin import get_database_engine
+from .errors import PaymentNotFoundError
 
 _logger = logging.getLogger(__name__)
 
@@ -128,6 +129,10 @@ async def complete_payment_transaction(
         optional["errors"] = error_msg
 
     async with get_database_engine(app).acquire() as conn:
+
+        # FIXME: Lock
+        # FIXME: raise if completed already. Specify if same or different completion outcome
+
         result = await conn.execute(
             payments_transactions.update()
             .values(completed_at=func.now(), success=success, **optional)
@@ -135,5 +140,7 @@ async def complete_payment_transaction(
             .returning(literal_column("*"))
         )
         row = await result.first()
-        assert row  #  nosec
+        if not row:
+            raise PaymentNotFoundError(payment_id=payment_id)
+
         return PaymentsTransactionsDB.parse_obj(dict(row.items()))
