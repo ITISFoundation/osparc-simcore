@@ -455,19 +455,18 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             const slotName = "paymentCompleted";
             socket.on(slotName, jsonString => {
               const paymentData = JSON.parse(jsonString);
-              const transactionStatus = osparc.desktop.credits.Transactions.COMPLETED_STATUS;
-              let msg = this.tr("Payment ");
-              msg += transactionStatus[paymentData["completedStatus"]].label;
-              switch (transactionStatus[paymentData["completedStatus"]].isSuccessful) {
-                case 0:
+              const msg = this.tr("Payment ") + osparc.utils.Utils.onlyFirstsUp(paymentData["completedStatus"]);
+              switch (paymentData["completedStatus"]) {
+                case "SUCCESS":
                   osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO");
                   // demo purposes
                   wallet.setCreditsAvailable(wallet.getCreditsAvailable() + nCredits);
                   break;
-                case 1:
+                case "PENDING":
                   osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING");
                   break;
-                case 2:
+                case "CANCELED":
+                case "FAILED":
                   osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
                   break;
                 default:

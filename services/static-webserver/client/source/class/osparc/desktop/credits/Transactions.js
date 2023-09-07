@@ -58,25 +58,6 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
       }
     },
 
-    COMPLETED_STATUS: {
-      SUCCESS: {
-        isSuccessful: 0,
-        label: qx.locale.Manager.tr("Successful")
-      },
-      PENDING: {
-        isSuccessful: 1,
-        label: qx.locale.Manager.tr("Pending")
-      },
-      FAILED: {
-        isSuccessful: 2,
-        label: qx.locale.Manager.tr("Failed")
-      },
-      CANCELED: {
-        isSuccessful: 2,
-        label: qx.locale.Manager.tr("Cancelled")
-      }
-    },
-
     createPdfIconWithLink: function(link) {
       return `<a href='${link}' target='_blank'><img src='https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/PDF_file_icon.svg/833px-PDF_file_icon.svg.png' alt='Invoice' width='16' height='20'></a>`;
     },
@@ -96,9 +77,9 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
             walletName = found.getName();
           }
           newData[cols["wallet"].pos] = walletName;
-          newData[cols["status"].pos] = data["success"];
+          newData[cols["status"].pos] = data["completedStatus"];
           newData[cols["comment"].pos] = data["comment"];
-          newData[cols["invoice"].pos] = this.createPdfIconWithLink("https://assets.website-files.com/63206faf68ab2dc3ee3e623b/634ea60a9381021f775e7a28_Placeholder%20PDF.pdf");
+          newData[cols["invoice"].pos] = this.createPdfIconWithLink(data["invoiceUrl"] ? data["invoiceUrl"] : "https://assets.website-files.com/63206faf68ab2dc3ee3e623b/634ea60a9381021f775e7a28_Placeholder%20PDF.pdf");
           newDatas.push(newData);
         });
       }

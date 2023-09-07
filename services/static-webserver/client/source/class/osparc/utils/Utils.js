@@ -813,6 +813,11 @@ qx.Class.define("osparc.utils.Utils", {
       return labels.join(" ");
     },
 
+    onlyFirstsUp: function(word) {
+      word = word.toLowerCase();
+      return this.firstsUp(word);
+    },
+
     isObject: function(v) {
       return typeof v === "object" && v !== null;
     },
