@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.wallets import (
     CreateWalletBodyParams,
     CreateWalletPayment,
+    PaymentID,
     PaymentTransaction,
     PutWalletBodyParams,
     WalletGet,
@@ -79,6 +80,14 @@ async def create_payment(wallet_id: WalletID, body: CreateWalletPayment):
 )
 async def list_all_payments(params: Annotated[PageQueryParameters, Depends()]):
     """Lists all user payments to his/her wallets (only the ones he/she created)"""
+
+
+@router.post(
+    "/wallets/{wallet_id}/payments/{payment_id}:cancel",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def cancel_payment(wallet_id: WalletID, payment_id: PaymentID):
+    ...
 
 
 ### Wallets groups

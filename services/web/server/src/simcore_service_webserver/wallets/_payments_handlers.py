@@ -3,6 +3,7 @@ import logging
 from aiohttp import web
 from models_library.api_schemas_webserver.wallets import (
     CreateWalletPayment,
+    PaymentID,
     PaymentTransaction,
     WalletPaymentCreated,
 )
@@ -14,10 +15,12 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_query_parameters_as,
 )
 from servicelib.logging_utils import get_log_record_extra, log_context
+from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from .._meta import API_VTAG as VTAG
 from ..application_settings import get_settings
 from ..login.decorators import login_required
+from ..payments import api
 from ..payments.api import create_payment_to_wallet, get_user_payments_page
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
@@ -61,19 +64,20 @@ async def create_payment(request: web.Request):
         log_duration=True,
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
-        payment = await create_payment_to_wallet(
+        # WARNING: conversion here is 1 dollar = 1 credit. Follow up logic discussed in https://github.com/ITISFoundation/osparc-simcore/issues/4657
+        osparc_credits = body_params.price_dollars
+
+        payment: WalletPaymentCreated = await create_payment_to_wallet(
             request.app,
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
             wallet_id=wallet_id,
-            osparc_credit=body_params.osparc_credits,
-            price_dollars=body_params.price_dollars,
+            osparc_credits=osparc_credits,
             comment=body_params.comment,
+            price_dollars=body_params.price_dollars,
         )
 
-    return envelope_json_response(
-        WalletPaymentCreated.parse_obj(payment), web.HTTPCreated
-    )
+    return envelope_json_response(payment, web.HTTPCreated)
 
 
 @routes.get(f"/{VTAG}/wallets/-/payments", name="list_all_payments")
@@ -112,3 +116,30 @@ async def list_all_payments(request: web.Request):
     )
 
     return envelope_json_response(page, web.HTTPOk)
+
+
+class PaymentsPathParams(WalletsPathParams):
+    payment_id: PaymentID
+
+
+@routes.post(
+    f"/{VTAG}/wallets/{{wallet_id}}/payments/{{payment_id}}:cancel",
+    name="cancel_payment",
+)
+@login_required
+@permission_required("wallets.*")
+@handle_wallets_exceptions
+async def cancel_payment(request: web.Request):
+    req_ctx = WalletsRequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(PaymentsPathParams, request)
+
+    _raise_if_not_dev_mode(request.app)
+
+    await api.cancel_payment_to_wallet(
+        request.app,
+        user_id=req_ctx.user_id,
+        wallet_id=path_params.wallet_id,
+        payment_id=path_params.payment_id,
+    )
+
+    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
