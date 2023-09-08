@@ -1,6 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import TypeAlias
+from typing import Literal, TypeAlias
 
 from models_library.utils.pydantic_tools_extension import FieldNotRequired
 from pydantic import Field, HttpUrl
@@ -55,7 +55,6 @@ PaymentID: TypeAlias = IDStr
 
 class CreateWalletPayment(InputSchema):
     price_dollars: Decimal
-    osparc_credits: Decimal
     comment: str = FieldNotRequired(max_length=100)
 
 
@@ -74,4 +73,9 @@ class PaymentTransaction(OutputSchema):
     comment: str = FieldNotRequired()
     created_at: datetime
     completed_at: datetime | None
+    # SEE PaymentTransactionState enum
+    state: Literal["PENDING", "SUCCESS", "FAILED", "CANCELED"] = Field(
+        ..., alias="completedStatus"
+    )
+    state_message: str = FieldNotRequired()
     invoice_url: HttpUrl = FieldNotRequired()

@@ -28,7 +28,7 @@ def app_environment(
         {
             **env_devel_dict,
             **app_environment,  # WARNING: AFTER env_devel_dict because HOST are set to 127.0.0.1 in here
-            "PAYMENTS_FAKE_COMPLETION": "1",
+            "PAYMENTS_FAKE_COMPLETION": "0",  # Completion is done manually
             "WEBSERVER_DB_LISTENER": "0",
             "WEBSERVER_DEV_FEATURES_ENABLED": "1",
             "WEBSERVER_GARBAGE_COLLECTOR": "null",
