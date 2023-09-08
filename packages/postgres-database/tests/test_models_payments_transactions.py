@@ -13,7 +13,10 @@ import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from pytest_simcore.helpers.rawdata_fakers import FAKE
-from simcore_postgres_database.models.payments_transactions import payments_transactions
+from simcore_postgres_database.models.payments_transactions import (
+    PaymentTransactionState,
+    payments_transactions,
+)
 
 
 def utcnow() -> datetime.datetime:
@@ -62,29 +65,29 @@ async def test_numerics_precission_and_scale(connection: SAConnection):
 def init_transaction(connection: SAConnection):
     async def _init(payment_id: str):
         # get payment_id from payment-gateway
-        data = random_payment_transaction(payment_id=payment_id)
+        values = random_payment_transaction(payment_id=payment_id)
 
         # init successful: set timestamp
-        data["initiated_at"] = utcnow()
+        values["initiated_at"] = utcnow()
 
         # insert
-        await connection.execute(payments_transactions.insert().values(data))
-        return data
+        await connection.execute(payments_transactions.insert().values(values))
+        return values
 
     return _init
 
 
 async def test_create_transaction(connection: SAConnection, init_transaction: Callable):
     payment_id = "5495BF38-4A98-430C-A028-19E4585ADFC7"
-    data = await init_transaction(payment_id)
-    assert data["payment_id"] == payment_id
+    values = await init_transaction(payment_id)
+    assert values["payment_id"] == payment_id
 
     # insert
     result = await connection.execute(
         sa.select(
             payments_transactions.c.completed_at,
-            payments_transactions.c.success,
-            payments_transactions.c.errors,
+            payments_transactions.c.state,
+            payments_transactions.c.state_message,
         ).where(payments_transactions.c.payment_id == payment_id)
     )
     row: RowProxy | None = await result.fetchone()
@@ -93,8 +96,8 @@ async def test_create_transaction(connection: SAConnection, init_transaction: Ca
     # tests that defaults are right?
     assert dict(row.items()) == {
         "completed_at": None,
-        "success": None,
-        "errors": None,
+        "state": PaymentTransactionState.PENDING,
+        "state_message": None,
     }
 
 
@@ -104,16 +107,16 @@ async def test_complete_transaction_with_success(
     payment_id = "5495BF38-4A98-430C-A028-19E4585ADFC7"
     await init_transaction(payment_id)
 
-    errors = await connection.scalar(
+    state_message = await connection.scalar(
         payments_transactions.update()
         .values(
             completed_at=utcnow(),
-            success=True,
+            state=PaymentTransactionState.SUCCESS,
         )
         .where(payments_transactions.c.payment_id == payment_id)
-        .returning(payments_transactions.c.errors)
+        .returning(payments_transactions.c.state_message)
     )
-    assert errors is None
+    assert state_message is None
 
 
 async def test_complete_transaction_with_failure(
@@ -127,8 +130,8 @@ async def test_complete_transaction_with_failure(
             payments_transactions.update()
             .values(
                 completed_at=utcnow(),
-                success=False,
-                errors="some error message",
+                state=PaymentTransactionState.FAILED,
+                state_message="some error message",
             )
             .where(payments_transactions.c.payment_id == payment_id)
             .returning(sa.literal_column("*"))
@@ -137,5 +140,5 @@ async def test_complete_transaction_with_failure(
 
     assert data is not None
     assert data["completed_at"]
-    assert not data["success"]
-    assert data["errors"] is not None
+    assert data["state"] == PaymentTransactionState.FAILED
+    assert data["state_message"] is not None
