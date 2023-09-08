@@ -3,7 +3,7 @@ from typing import Final
 import sqlalchemy as sa
 
 
-def column_created_datetime(timezone: bool = True) -> sa.Column:
+def column_created_datetime(*, timezone: bool = True) -> sa.Column:
     return sa.Column(
         "created",
         sa.DateTime(timezone=timezone),
@@ -13,7 +13,7 @@ def column_created_datetime(timezone: bool = True) -> sa.Column:
     )
 
 
-def column_modified_datetime(timezone: bool = True) -> sa.Column:
+def column_modified_datetime(*, timezone: bool = True) -> sa.Column:
     return sa.Column(
         "modified",
         sa.DateTime(timezone=timezone),
@@ -22,6 +22,9 @@ def column_modified_datetime(timezone: bool = True) -> sa.Column:
         onupdate=sa.sql.func.now(),
         doc="Timestamp with last row update",
     )
+
+
+_TRIGGER_NAME: Final[str] = "auto_update_modified_timestamp"
 
 
 def register_modified_datetime_auto_update_trigger(table: sa.Table) -> None:
@@ -36,24 +39,22 @@ def register_modified_datetime_auto_update_trigger(table: sa.Table) -> None:
         table -- the table to add the auto-trigger to
     """
 
-    TRIGGER_NAME: Final[str] = "auto_update_modified_timestamp"  # NOTE: scoped on table
-    PROCEDURE_NAME: Final[
-        str
-    ] = f"{table.name}_auto_update_modified_timestamp()"  # NOTE: scoped on database
+    # NOTE: scoped on database
+    procedure_name: Final[str] = f"{table.name}_auto_update_modified_timestamp()"
 
     # TRIGGER
     modified_timestamp_trigger = sa.DDL(
         f"""
-    DROP TRIGGER IF EXISTS {TRIGGER_NAME} on {table.name};
-    CREATE TRIGGER {TRIGGER_NAME}
+    DROP TRIGGER IF EXISTS {_TRIGGER_NAME} on {table.name};
+    CREATE TRIGGER {_TRIGGER_NAME}
     BEFORE INSERT OR UPDATE ON {table.name}
-    FOR EACH ROW EXECUTE PROCEDURE {PROCEDURE_NAME};
+    FOR EACH ROW EXECUTE PROCEDURE {procedure_name};
         """
     )
     # PROCEDURE
     update_modified_timestamp_procedure = sa.DDL(
         f"""
-    CREATE OR REPLACE FUNCTION {PROCEDURE_NAME}
+    CREATE OR REPLACE FUNCTION {procedure_name}
     RETURNS TRIGGER AS $$
     BEGIN
     NEW.modified := current_timestamp;

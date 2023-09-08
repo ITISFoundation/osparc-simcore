@@ -15,6 +15,7 @@
     - aiopg reuses DBAPI exceptions
         SEE https://aiopg.readthedocs.io/en/stable/core.html?highlight=Exception#exceptions
         SEE http://initd.org/psycopg/docs/module.html#dbapi-exceptions
+        SEE https://www.postgresql.org/docs/current/errcodes-appendix.html
 """
 # NOTE: psycopg2.errors are created dynamically
 # pylint: disable=no-name-in-module

@@ -301,12 +301,44 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
-    _startStudyById: function(studyId) {
+    _startStudyById: function(studyId, openCB, cancelCB) {
       if (!this._checkLoggedIn()) {
         return;
       }
 
-      osparc.desktop.MainPageHandler.getInstance().startStudy(studyId);
+      osparc.desktop.credits.Utils.areWalletsEnabled()
+        .then(walletsEnabled => {
+          if (walletsEnabled) {
+            const resourceSelector = new osparc.component.study.ResourceSelector(studyId);
+            const win = osparc.component.study.ResourceSelector.popUpInWindow(resourceSelector);
+            resourceSelector.addListener("startStudy", () => {
+              win.close();
+              if (openCB) {
+                openCB();
+              }
+              osparc.desktop.MainPageHandler.getInstance().startStudy(studyId);
+            });
+            resourceSelector.addListener("cancel", () => {
+              win.close();
+              if (cancelCB) {
+                cancelCB();
+              }
+            });
+            win.getChildControl("close-button").addListener("execute", () => {
+              cancelCB();
+            });
+          } else {
+            if (openCB) {
+              openCB();
+            }
+            osparc.desktop.MainPageHandler.getInstance().startStudy(studyId);
+          }
+        })
+        .catch(() => {
+          if (cancelCB) {
+            cancelCB();
+          }
+        });
     },
 
     _createStudyFromTemplate: function() {
@@ -350,7 +382,11 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         win.close();
         this.fireDataEvent("publishTemplate", e.getData());
       });
-      moreOpts.addListener("openingStudy", () => win.close());
+      moreOpts.addListener("openStudy", e => {
+        const openCB = () => win.close();
+        const studyId = e.getData();
+        this._startStudyById(studyId, openCB, null);
+      });
       moreOpts.addListener("openTemplate", e => {
         win.close();
         const templateData = e.getData();

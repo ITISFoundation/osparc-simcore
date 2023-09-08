@@ -23,6 +23,11 @@ from servicelib.request_keys import RQT_USERID_KEY
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
+from ..payments.errors import (
+    PaymentCompletedError,
+    PaymentNotFoundError,
+    PaymentUniqueViolationError,
+)
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _api
@@ -31,14 +36,23 @@ from .errors import WalletAccessForbiddenError, WalletNotFoundError
 _logger = logging.getLogger(__name__)
 
 
-def _handle_wallets_exceptions(handler: Handler):
+def handle_wallets_exceptions(handler: Handler):
     @functools.wraps(handler)
     async def wrapper(request: web.Request) -> web.StreamResponse:
         try:
             return await handler(request)
 
-        except WalletNotFoundError as exc:
+        except (
+            WalletNotFoundError,
+            PaymentNotFoundError,
+        ) as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
+
+        except (
+            PaymentUniqueViolationError,
+            PaymentCompletedError,
+        ) as exc:
+            raise web.HTTPConflict(reason=f"{exc}") from exc
 
         except WalletAccessForbiddenError as exc:
             raise web.HTTPForbidden(reason=f"{exc}") from exc
@@ -65,7 +79,7 @@ class WalletsPathParams(StrictRequestParams):
 @routes.post(f"/{VTAG}/wallets", name="create_wallet")
 @login_required
 @permission_required("wallets.*")
-@_handle_wallets_exceptions
+@handle_wallets_exceptions
 async def create_wallet(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     body_params = await parse_request_body_as(CreateWalletBodyParams, request)
@@ -84,7 +98,7 @@ async def create_wallet(request: web.Request):
 @routes.get(f"/{VTAG}/wallets", name="list_wallets")
 @login_required
 @permission_required("wallets.*")
-@_handle_wallets_exceptions
+@handle_wallets_exceptions
 async def list_wallets(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
 
@@ -103,7 +117,7 @@ async def list_wallets(request: web.Request):
 )
 @login_required
 @permission_required("wallets.*")
-@_handle_wallets_exceptions
+@handle_wallets_exceptions
 async def update_wallet(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)

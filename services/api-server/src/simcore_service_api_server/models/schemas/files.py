@@ -7,9 +7,16 @@ from uuid import UUID, uuid3
 
 import aiofiles
 from fastapi import UploadFile
-from models_library.api_schemas_storage import FileUploadSchema
 from models_library.projects_nodes_io import StorageFileID
-from pydantic import BaseModel, ByteSize, ConstrainedStr, Field, parse_obj_as, validator
+from pydantic import (
+    AnyUrl,
+    BaseModel,
+    ByteSize,
+    ConstrainedStr,
+    Field,
+    parse_obj_as,
+    validator,
+)
 
 from ...utils.hash import create_md5_checksum
 
@@ -144,8 +151,17 @@ class File(BaseModel):
         return _quote(self.storage_file_id, safe="")
 
 
-class ClientFileUploadSchema(BaseModel):
+class UploadLinks(BaseModel):
+    abort_upload: str
+    complete_upload: str
+
+
+class FileUploadData(BaseModel):
+    chunk_size: ByteSize
+    urls: list[AnyUrl]
+    links: UploadLinks
+
+
+class ClientFileUploadData(BaseModel):
     file_id: UUID = Field(..., description="The file resource id")
-    upload_schema: FileUploadSchema = Field(
-        ..., description="Schema for uploading file"
-    )
+    upload_schema: FileUploadData = Field(..., description="Schema for uploading file")

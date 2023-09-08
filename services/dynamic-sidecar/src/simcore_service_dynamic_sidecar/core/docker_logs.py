@@ -11,6 +11,7 @@ from asyncio import CancelledError, Task, create_task
 from contextlib import suppress
 from typing import Any, AsyncGenerator, Callable, Coroutine, cast
 
+from aiodocker import DockerError
 from fastapi import FastAPI
 from servicelib.logging_utils import guess_message_log_level
 
@@ -35,11 +36,19 @@ async def _logs_fetcher_worker(
         image_name = container_inspect["Config"]["Image"].split("/")[-1]
 
         logger.debug("Streaming logs from %s, image %s", container_name, image_name)
-        async for line in cast(
-            AsyncGenerator[str, None],
-            container.log(stdout=True, stderr=True, follow=True),
-        ):
-            await dispatch_log(image_name=image_name, message=line)
+        try:
+            async for line in cast(
+                AsyncGenerator[str, None],
+                container.log(stdout=True, stderr=True, follow=True),
+            ):
+                await dispatch_log(image_name=image_name, message=line)
+        except DockerError as e:
+            logger.warning(
+                "Cannot stream logs from %s, image %s, because: %s",
+                container_name,
+                image_name,
+                e,
+            )
 
 
 class BackgroundLogFetcher:
