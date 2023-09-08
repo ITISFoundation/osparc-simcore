@@ -23,12 +23,13 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
+    this.getChildControl("wallet-selector-title");
     const walletSelector = this.getChildControl("wallet-selector");
-    walletSelector.exclude();
+    this.getChildControl("wallet-selector-layout").exclude();
     osparc.desktop.credits.Utils.areWalletsEnabled()
       .then(walletsEnabled => {
         if (walletsEnabled) {
-          walletSelector.show();
+          this.getChildControl("wallet-selector-layout").show();
         }
       });
 
@@ -67,19 +68,26 @@ qx.Class.define("osparc.component.resourceUsage.Overview", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "wallet-selector-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+          this._add(control);
+          break;
+        case "wallet-selector-title": {
+          control = new qx.ui.basic.Label(this.tr("Select Credit Account")).set({
+            alignY: "middle"
+          });
+          const layout = this.getChildControl("wallet-selector-layout");
+          layout.add(control);
+          break;
+        }
         case "wallet-selector": {
           control = osparc.desktop.credits.Utils.createWalletSelector("read", false, true).set({
             allowGrowX: false
           });
-          // select "All Credit Account" by default
-          control.getSelectables()[0].setLabel("All Credit Account");
-          const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-          const selectLabel = new qx.ui.basic.Label(this.tr("Select Credit Account")).set({
-            alignY: "middle"
-          });
-          layout.add(selectLabel);
+          // select "All Credit Accounts" by default
+          control.getSelectables()[0].setLabel("All Credit Accounts");
+          const layout = this.getChildControl("wallet-selector-layout");
           layout.add(control);
-          this._add(layout);
           break;
         }
         case "loading-image":
