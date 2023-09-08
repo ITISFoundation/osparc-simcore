@@ -1,9 +1,18 @@
 import logging
+from datetime import timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel
 
-from ._dependencies import OAuth2PasswordRequestForm, get_validated_form_data
+from ..core.settings import ApplicationSettings
+from ..services.auth import (
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    authenticate_user,
+    encode_access_token,
+)
+from ._dependencies import get_settings
 
 _logger = logging.getLogger(__name__)
 
@@ -11,12 +20,27 @@ _logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.get("/token")
-async def get_token(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends(get_validated_form_data)]
-):
-    # Validate: form_data.username, form_data.password
-    # TODO: create token
-    token = f"token-for-{form_data.username}"
+class Token(BaseModel):
+    access_token: str
+    token_type: str
 
-    return {"access_token": token, "token_type": "bearer"}
+
+@router.post("/token", response_model=Token)
+async def login_to_create_access_token(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    settings: Annotated[ApplicationSettings, Depends(get_settings)],
+):
+    if not authenticate_user(form_data.username, form_data.password, settings):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    return {
+        "access_token": encode_access_token(
+            username=form_data.username,
+            expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
+        ),
+        "token_type": "bearer",
+    }

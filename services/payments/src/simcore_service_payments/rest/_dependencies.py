@@ -1,12 +1,12 @@
 import logging
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, Request, status
-from fastapi.security import HTTPBasic, OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi import Depends, Request
+from fastapi.security import OAuth2PasswordBearer
 from servicelib.fastapi.dependencies import get_app, get_reverse_url_mapper
-from servicelib.utils_secrets import compare_secrets
 
 from ..core.settings import ApplicationSettings
+from ..services.auth import SessionData, get_session_data
 
 _logger = logging.getLogger(__name__)
 
@@ -22,49 +22,23 @@ def get_settings(request: Request) -> ApplicationSettings:
     return app_settings
 
 
-_get_basic_credentials = HTTPBasic()
-
-
-def get_validated_form_data(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    settings: Annotated[ApplicationSettings, Depends(get_settings)],
-) -> OAuth2PasswordRequestForm:
-
-    if not form_data or not (
-        compare_secrets(
-            form_data.username + form_data.password,
-            expected=settings.PAYMENTS_USERNAME
-            + settings.PAYMENTS_PASSWORD.get_secret_value(),
-        )
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Incorrect username or password",
-        )
-
-    return form_data
+assert get_reverse_url_mapper  # nosec
+assert get_app  # nosec
 
 
 # Implements `password` flow defined in OAuth2
 _oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
-async def raise_if_invalid_token(token: Annotated[str, Depends(_oauth2_scheme)]):
-    # TODO: decode token
-    if not token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+async def get_current_session(
+    token: Annotated[str, Depends(_oauth2_scheme)]
+) -> SessionData:
+    session = get_session_data(token)
 
-
-assert get_reverse_url_mapper  # nosec
-assert get_app  # nosec
+    return session
 
 
 __all__: tuple[str, ...] = (
     "get_app",
     "get_reverse_url_mapper",
-    "get_validated_form_data",
 )

@@ -14,7 +14,7 @@ async def test_bearer_token(httpbin_base_url: HttpUrl, faker: Faker):
         assert response.json() == {"authenticated": True, "token": bearer_token}
 
 
-async def test_(client: httpx.AsyncClient):
+async def test_it(client: httpx.AsyncClient):
 
     response = await client.get("/")
     assert response.status_code == status.HTTP_200_OK
