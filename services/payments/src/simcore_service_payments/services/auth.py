@@ -22,9 +22,7 @@ def authenticate_user(username: str, password: str, settings: ApplicationSetting
 #
 
 # to get a string like this run: openssl rand -hex 32
-SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 
 _credencial_exception_kwargs = {
@@ -34,23 +32,34 @@ _credencial_exception_kwargs = {
 }
 
 
-def encode_access_token(username: str, expires_delta: timedelta) -> str:
+def encode_access_token(username: str, settings: ApplicationSettings) -> str:
+    expire = arrow.utcnow().datetime + timedelta(
+        minutes=settings.PAYMENTS_ACCESS_TOKEN_EXPIRE_MINUTES
+    )
+
     # SEE https://jwt.io/introduction/
-    expire = arrow.utcnow().datetime + expires_delta
     claims = {
         # Registered claims
         "sub": username,  # https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.2
         "exp": expire,  # https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.4
     }
-    return jwt.encode(claims, key=SECRET_KEY, algorithm=ALGORITHM)
+    return jwt.encode(
+        claims,
+        key=settings.PAYMENTS_ACCESS_TOKEN_SECRET_KEY.get_secret_value(),
+        algorithm=ALGORITHM,
+    )
 
 
-def decode_access_token(token: str) -> str | None:
+def decode_access_token(token: str, settings: ApplicationSettings) -> str | None:
     """
     Raises:
         JWTError
     """
-    claims = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    claims = jwt.decode(
+        token,
+        settings.PAYMENTS_ACCESS_TOKEN_SECRET_KEY.get_secret_value(),
+        algorithms=[ALGORITHM],
+    )
     username: str | None = claims.get("sub", None)
     return username
 
@@ -59,18 +68,14 @@ class SessionData(BaseModel):
     username: str | None = None
 
 
-def get_session_data(token: str) -> SessionData:
-
+def get_session_data(token: str, settings: ApplicationSettings) -> SessionData:
     """
     Raises:
         HTTPException: 401
-
-    Returns:
-        _description_
     """
 
     try:
-        username = decode_access_token(token)
+        username = decode_access_token(token, settings)
     except JWTError as err:
         raise HTTPException(**_credencial_exception_kwargs) from err
 

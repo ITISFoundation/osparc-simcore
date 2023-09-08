@@ -1,7 +1,15 @@
 from functools import cached_property
 from typing import cast
 
-from pydantic import Field, HttpUrl, PositiveInt, SecretStr, parse_obj_as, validator
+from pydantic import (
+    Field,
+    HttpUrl,
+    PositiveFloat,
+    PositiveInt,
+    SecretStr,
+    parse_obj_as,
+    validator,
+)
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import BuildTargetEnum, LogLevel, VersionTag
 from settings_library.utils_logging import MixinLoggingSettings
@@ -86,4 +94,9 @@ class ApplicationSettings(_BaseApplicationSettings):
         ...,
         description="Password for HTTP Basic Auth. Required if started as a web app.",
         min_length=10,
+    )
+
+    PAYMENTS_ACCESS_TOKEN_SECRET_KEY: SecretStr
+    PAYMENTS_ACCESS_TOKEN_EXPIRE_MINUTES: PositiveFloat = (
+        30.0  # TODO: how timedelta would work here??
     )

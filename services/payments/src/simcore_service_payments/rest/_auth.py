@@ -1,5 +1,4 @@
 import logging
-from datetime import timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -7,11 +6,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 
 from ..core.settings import ApplicationSettings
-from ..services.auth import (
-    ACCESS_TOKEN_EXPIRE_MINUTES,
-    authenticate_user,
-    encode_access_token,
-)
+from ..services.auth import authenticate_user, encode_access_token
 from ._dependencies import get_settings
 
 _logger = logging.getLogger(__name__)
@@ -39,8 +34,7 @@ async def login_to_create_access_token(
 
     return {
         "access_token": encode_access_token(
-            username=form_data.username,
-            expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
+            username=form_data.username, settings=settings
         ),
         "token_type": "bearer",
     }
