@@ -2,9 +2,8 @@ import getpass
 import logging
 
 import typer
-from cryptography.fernet import Fernet
 from pydantic import SecretStr
-from servicelib.utils_secrets import generate_password
+from servicelib.utils_secrets import generate_password, generate_token_secret_key
 from settings_library.utils_cli import create_settings_command, create_version_callback
 
 from ._meta import PROJECT_NAME, __version__
@@ -43,7 +42,7 @@ def generate_dotenv(ctx: typer.Context, *, auto_password: bool = False):
 
     settings = ApplicationSettings.create_from_envs(
         PAYMENTS_GATEWAY_URL="http://127.0.0.1:8000",  # NOSONAR
-        PAYMENTS_SECRET_KEY=Fernet.generate_key().decode(),
+        PAYMENTS_ACCESS_TOKEN_SECRET_KEY=generate_token_secret_key(32),
         PAYMENTS_USERNAME=username,
         PAYMENTS_PASSWORD=password,
     )

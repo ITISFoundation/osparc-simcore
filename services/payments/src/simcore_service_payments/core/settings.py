@@ -74,13 +74,6 @@ class ApplicationSettings(_BaseApplicationSettings):
     These settings includes extra configuration for the http-API
     """
 
-    PAYMENTS_SECRET_KEY: SecretStr = Field(
-        ...,
-        description="Secret key for encryption"
-        'TIP: python3 -c "from cryptography.fernet import *; print(Fernet.generate_key())"',
-        min_length=44,
-    )
-
     PAYMENTS_GATEWAY_URL: HttpUrl = Field(
         ..., description="Base url to the payment gateway"
     )
@@ -96,7 +89,9 @@ class ApplicationSettings(_BaseApplicationSettings):
         min_length=10,
     )
 
-    PAYMENTS_ACCESS_TOKEN_SECRET_KEY: SecretStr
-    PAYMENTS_ACCESS_TOKEN_EXPIRE_MINUTES: PositiveFloat = (
-        30.0  # TODO: how timedelta would work here??
+    PAYMENTS_ACCESS_TOKEN_SECRET_KEY: SecretStr = Field(
+        ...,
+        description="To generate a random password with openssl in hex format with 32 bytes, run `openssl rand -hex 32`",
+        min_length=64,
     )
+    PAYMENTS_ACCESS_TOKEN_EXPIRE_MINUTES: PositiveFloat = Field(default=30)

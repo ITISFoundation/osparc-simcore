@@ -10,10 +10,10 @@ from pathlib import Path
 import pytest
 import simcore_service_payments
 import yaml
-from cryptography.fernet import Fernet
 from faker import Faker
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
+from servicelib.utils_secrets import generate_token_secret_key
 
 pytest_plugins = [
     "pytest_simcore.cli_runner",
@@ -41,15 +41,7 @@ def installed_package_dir() -> Path:
 
 @pytest.fixture
 def secret_key() -> str:
-    key = Fernet.generate_key()
-    return key.decode()
-
-
-@pytest.fixture
-def another_secret_key(secret_key: str) -> str:
-    other = Fernet.generate_key()
-    assert other.decode() != secret_key
-    return other.decode()
+    return generate_token_secret_key(32)
 
 
 @pytest.fixture
@@ -99,7 +91,7 @@ def app_environment(
         monkeypatch,
         {
             **docker_compose_service_payments_envs,
-            "PAYMENTS_SECRET_KEY": secret_key,
+            "PAYMENTS_ACCESS_TOKEN_SECRET_KEY": secret_key,
             "PAYMENTS_USERNAME": fake_user_name,
             "PAYMENTS_PASSWORD": fake_password,
         },

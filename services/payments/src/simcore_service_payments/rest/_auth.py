@@ -25,6 +25,10 @@ async def login_to_create_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     settings: Annotated[ApplicationSettings, Depends(get_settings)],
 ):
+    #
+    # OAuth2PasswordRequestForm: OAuth2 specifies that when using the "password flow"
+    # the client must send a username and password fields as form data
+    #
     if not authenticate_user(form_data.username, form_data.password, settings):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

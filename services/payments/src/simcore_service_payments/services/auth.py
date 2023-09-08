@@ -1,12 +1,17 @@
+"""
+Implements OAuth2 with Password and Bearer (w/ JWT tokens)
+
+"""
+
 from datetime import timedelta
 
 import arrow
 from fastapi import HTTPException, status
 from jose import JWTError, jwt
-from pydantic import BaseModel
 from servicelib.utils_secrets import compare_secrets
 
 from ..core.settings import ApplicationSettings
+from ..models.auth import SessionData
 
 
 def authenticate_user(username: str, password: str, settings: ApplicationSettings):
@@ -21,15 +26,8 @@ def authenticate_user(username: str, password: str, settings: ApplicationSetting
 # JW Tokens
 #
 
-# to get a string like this run: openssl rand -hex 32
+
 ALGORITHM = "HS256"
-
-
-_credencial_exception_kwargs = {
-    "status_code": status.HTTP_401_UNAUTHORIZED,
-    "detail": "Invalid authentication credentials",
-    "headers": {"WWW-Authenticate": "Bearer"},
-}
 
 
 def encode_access_token(username: str, settings: ApplicationSettings) -> str:
@@ -64,8 +62,11 @@ def decode_access_token(token: str, settings: ApplicationSettings) -> str | None
     return username
 
 
-class SessionData(BaseModel):
-    username: str | None = None
+_credencial_401_unauthorized_exception_kwargs = {
+    "status_code": status.HTTP_401_UNAUTHORIZED,
+    "detail": "Invalid authentication credentials",
+    "headers": {"WWW-Authenticate": "Bearer"},
+}
 
 
 def get_session_data(token: str, settings: ApplicationSettings) -> SessionData:
@@ -77,9 +78,9 @@ def get_session_data(token: str, settings: ApplicationSettings) -> SessionData:
     try:
         username = decode_access_token(token, settings)
     except JWTError as err:
-        raise HTTPException(**_credencial_exception_kwargs) from err
+        raise HTTPException(**_credencial_401_unauthorized_exception_kwargs) from err
 
     if username is None:
-        raise HTTPException(**_credencial_exception_kwargs)
+        raise HTTPException(**_credencial_401_unauthorized_exception_kwargs)
 
     return SessionData(username=username)
