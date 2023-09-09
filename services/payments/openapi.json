@@ -110,7 +110,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Body_acknoledge_payment_v1_payments__payment_id__ack_post"
+                "$ref": "#/components/schemas/AckPayment"
               }
             }
           },
@@ -135,7 +135,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       }
     },
     "/v1/payments-methods/{payment_method_id}:ack": {
@@ -162,7 +167,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Body_acknoledge_payment_method_v1_payments_methods__payment_method_id__ack_post"
+                "$ref": "#/components/schemas/AckPaymentMethod"
               }
             }
           },
@@ -187,7 +192,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       }
     }
   },
@@ -214,38 +224,6 @@
         "properties": {},
         "type": "object",
         "title": "AckPaymentMethod"
-      },
-      "Body_acknoledge_payment_method_v1_payments_methods__payment_method_id__ack_post": {
-        "properties": {
-          "ack": {
-            "$ref": "#/components/schemas/AckPayment"
-          },
-          "session": {
-            "$ref": "#/components/schemas/SessionData"
-          }
-        },
-        "type": "object",
-        "required": [
-          "ack",
-          "session"
-        ],
-        "title": "Body_acknoledge_payment_method_v1_payments_methods__payment_method_id__ack_post"
-      },
-      "Body_acknoledge_payment_v1_payments__payment_id__ack_post": {
-        "properties": {
-          "ack": {
-            "$ref": "#/components/schemas/AckPaymentMethod"
-          },
-          "session": {
-            "$ref": "#/components/schemas/SessionData"
-          }
-        },
-        "type": "object",
-        "required": [
-          "ack",
-          "session"
-        ],
-        "title": "Body_acknoledge_payment_v1_payments__payment_id__ack_post"
       },
       "Body_login_to_create_access_token_v1_token_post": {
         "properties": {
@@ -328,16 +306,6 @@
           "docs_url": "https://foo.io/doc"
         }
       },
-      "SessionData": {
-        "properties": {
-          "username": {
-            "type": "string",
-            "title": "Username"
-          }
-        },
-        "type": "object",
-        "title": "SessionData"
-      },
       "Token": {
         "properties": {
           "access_token": {
@@ -346,6 +314,9 @@
           },
           "token_type": {
             "type": "string",
+            "enum": [
+              "bearer"
+            ],
             "title": "Token Type"
           }
         },
@@ -388,6 +359,17 @@
           "type"
         ],
         "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "OAuth2PasswordBearer": {
+        "type": "oauth2",
+        "flows": {
+          "password": {
+            "scopes": {},
+            "tokenUrl": "token"
+          }
+        }
       }
     }
   }
