@@ -1,5 +1,4 @@
 import httpx
-import pytest
 from faker import Faker
 from fastapi import status
 from pydantic import HttpUrl
@@ -14,7 +13,6 @@ async def test_bearer_token(httpbin_base_url: HttpUrl, faker: Faker):
         assert response.json() == {"authenticated": True, "token": bearer_token}
 
 
-@pytest.mark.xfail(reason="UNDER DEV")
 async def test_login_complete_payment(client: httpx.AsyncClient):
     response = await client.get("/")
     assert response.status_code == status.HTTP_200_OK

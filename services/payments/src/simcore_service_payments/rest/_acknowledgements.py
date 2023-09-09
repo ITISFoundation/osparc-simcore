@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from simcore_service_payments.services.auth import SessionData
 
-from ..models.schemas._acknoledgements import (
+from ..models.schemas.acknowledgements import (
     AckPayment,
     AckPaymentMethod,
     PaymentID,
@@ -26,8 +26,9 @@ async def acknoledge_payment(
 ):
     """completes (ie. ack) request initated by `/init`"""
     _logger.debug(
-        "Validate and complete transaction %s %s -> DB", f"{payment_id=}", f"{ack=}"
+        "User %s is acknoledging payment with %s as %s", session, f"{payment_id=}", ack
     )
+    _logger.debug("Validate and complete transaction -> DB")
     _logger.debug("When annotated in db, respond. Now we start a background task")
     _logger.debug("Notify front-end -> sio")
     _logger.debug("Authorize inc/dec credits -> RUT")
