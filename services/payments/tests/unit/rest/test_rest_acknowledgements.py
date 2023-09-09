@@ -31,7 +31,7 @@ async def test_login_complete_payment(
     response = await client.post(
         "/v1/token",
         data=form_data,
-        headers={"Content-Type": "applicaiton/x-www-form-urlencoded"},
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
     )
     token = Token(**response.json())
     assert response.status_code == status.HTTP_200_OK
