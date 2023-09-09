@@ -27,7 +27,7 @@ def authenticate_user(username: str, password: str, settings: ApplicationSetting
 #
 
 
-ALGORITHM = "HS256"
+_ALGORITHM = "HS256"
 
 
 def encode_access_token(username: str, settings: ApplicationSettings) -> str:
@@ -44,7 +44,7 @@ def encode_access_token(username: str, settings: ApplicationSettings) -> str:
     return jwt.encode(
         claims,
         key=settings.PAYMENTS_ACCESS_TOKEN_SECRET_KEY.get_secret_value(),
-        algorithm=ALGORITHM,
+        algorithm=_ALGORITHM,
     )
 
 
@@ -56,7 +56,7 @@ def decode_access_token(token: str, settings: ApplicationSettings) -> str | None
     claims = jwt.decode(
         token,
         settings.PAYMENTS_ACCESS_TOKEN_SECRET_KEY.get_secret_value(),
-        algorithms=[ALGORITHM],
+        algorithms=[_ALGORITHM],
     )
     username: str | None = claims.get("sub", None)
     return username
