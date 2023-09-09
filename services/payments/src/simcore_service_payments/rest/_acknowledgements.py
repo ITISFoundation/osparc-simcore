@@ -2,8 +2,8 @@ import logging
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
-from simcore_service_payments.services.auth import SessionData
 
+from ..models.auth import SessionData
 from ..models.schemas.acknowledgements import (
     AckPayment,
     AckPaymentMethod,

@@ -34,18 +34,18 @@ def encode_access_token(username: str, settings: ApplicationSettings) -> str:
     expire = arrow.utcnow().datetime + timedelta(
         minutes=settings.PAYMENTS_ACCESS_TOKEN_EXPIRE_MINUTES
     )
-
     # SEE https://jwt.io/introduction/
-    claims = {
+    payload_claims = {
         # Registered claims
-        "sub": username,  # https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.2
-        "exp": expire,  # https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.4
+        "sub": username,  # subject: https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.2
+        "exp": expire,  # expiration date: https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.4
     }
-    return jwt.encode(
-        claims,
+    json_web_token: str = jwt.encode(
+        payload_claims,
         key=settings.PAYMENTS_ACCESS_TOKEN_SECRET_KEY.get_secret_value(),
         algorithm=_ALGORITHM,
     )
+    return json_web_token
 
 
 def decode_access_token(token: str, settings: ApplicationSettings) -> str | None:

@@ -6,7 +6,8 @@ from fastapi.security import OAuth2PasswordBearer
 from servicelib.fastapi.dependencies import get_app, get_reverse_url_mapper
 
 from ..core.settings import ApplicationSettings
-from ..services.auth import SessionData, get_session_data
+from ..models.auth import SessionData
+from ..services.auth import get_session_data
 
 _logger = logging.getLogger(__name__)
 
