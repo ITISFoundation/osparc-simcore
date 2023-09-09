@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from simcore_service_payments.services.auth import SessionData
 
-from ..models.schemas.acks import (
+from ..models.schemas._acknoledgements import (
     AckPayment,
     AckPaymentMethod,
     PaymentID,
