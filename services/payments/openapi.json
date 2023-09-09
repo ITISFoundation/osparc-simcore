@@ -25,17 +25,17 @@
       }
     },
     "/v1/token": {
-      "get": {
+      "post": {
         "tags": [
           "auth"
         ],
-        "summary": "Get Token",
-        "operationId": "get_token_v1_token_get",
+        "summary": "Login To Create Access Token",
+        "operationId": "login_to_create_access_token_v1_token_post",
         "requestBody": {
           "content": {
             "application/x-www-form-urlencoded": {
               "schema": {
-                "$ref": "#/components/schemas/Body_get_token_v1_token_get"
+                "$ref": "#/components/schemas/Body_login_to_create_access_token_v1_token_post"
               }
             }
           },
@@ -46,7 +46,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
               }
             }
           },
@@ -108,7 +110,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AckPaymentMethod"
+                "$ref": "#/components/schemas/Body_acknoledge_payment_v1_payments__payment_id__ack_post"
               }
             }
           },
@@ -160,7 +162,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AckPayment"
+                "$ref": "#/components/schemas/Body_acknoledge_payment_method_v1_payments_methods__payment_method_id__ack_post"
               }
             }
           },
@@ -213,7 +215,39 @@
         "type": "object",
         "title": "AckPaymentMethod"
       },
-      "Body_get_token_v1_token_get": {
+      "Body_acknoledge_payment_method_v1_payments_methods__payment_method_id__ack_post": {
+        "properties": {
+          "ack": {
+            "$ref": "#/components/schemas/AckPayment"
+          },
+          "session": {
+            "$ref": "#/components/schemas/SessionData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ack",
+          "session"
+        ],
+        "title": "Body_acknoledge_payment_method_v1_payments_methods__payment_method_id__ack_post"
+      },
+      "Body_acknoledge_payment_v1_payments__payment_id__ack_post": {
+        "properties": {
+          "ack": {
+            "$ref": "#/components/schemas/AckPaymentMethod"
+          },
+          "session": {
+            "$ref": "#/components/schemas/SessionData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ack",
+          "session"
+        ],
+        "title": "Body_acknoledge_payment_v1_payments__payment_id__ack_post"
+      },
+      "Body_login_to_create_access_token_v1_token_post": {
         "properties": {
           "grant_type": {
             "type": "string",
@@ -247,7 +281,7 @@
           "username",
           "password"
         ],
-        "title": "Body_get_token_v1_token_get"
+        "title": "Body_login_to_create_access_token_v1_token_post"
       },
       "HTTPValidationError": {
         "properties": {
@@ -293,6 +327,34 @@
           "version": "2.4.45",
           "docs_url": "https://foo.io/doc"
         }
+      },
+      "SessionData": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "title": "Username"
+          }
+        },
+        "type": "object",
+        "title": "SessionData"
+      },
+      "Token": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token",
+          "token_type"
+        ],
+        "title": "Token"
       },
       "ValidationError": {
         "properties": {
