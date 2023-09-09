@@ -13,6 +13,7 @@
 
 asgi_lifespan
 coverage
+docker # tmp
 faker
 pytest
 pytest-asyncio
