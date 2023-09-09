@@ -1,5 +1,6 @@
 import getpass
 import logging
+import os
 
 import typer
 from pydantic import SecretStr
@@ -45,6 +46,12 @@ def generate_dotenv(ctx: typer.Context, *, auto_password: bool = False):
         PAYMENTS_ACCESS_TOKEN_SECRET_KEY=generate_token_secret_key(32),
         PAYMENTS_USERNAME=username,
         PAYMENTS_PASSWORD=password,
+        PAYMENT_GATEWAY_API_KEY=os.environ.get(
+            "PAYMENT_GATEWAY_API_KEY", "replace-with-api-key"
+        ),
+        PAYMENT_GATEWAY_API_SECRET=os.environ.get(
+            "PAYMENT_GATEWAY_API_SECRET", "replace-with-api-secret"
+        ),
     )
 
     for name, value in settings.dict().items():
