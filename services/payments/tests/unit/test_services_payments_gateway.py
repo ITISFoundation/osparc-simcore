@@ -9,10 +9,7 @@ from faker import Faker
 from fastapi import FastAPI
 from simcore_service_payments.core.settings import ApplicationSettings
 from simcore_service_payments.models.payments_gateway import InitPayment
-from simcore_service_payments.services.payments_gateway import (
-    get_form_payment_url,
-    init_payment,
-)
+from simcore_service_payments.services.payments_gateway import PaymentGatewayApi
 
 
 def mock_payments_gateway_service_api():
@@ -20,9 +17,20 @@ def mock_payments_gateway_service_api():
     ...
 
 
-@pytest.mark.xfail(reason="UNDER DEV")
-async def test_one_time_payment_workflow(app: FastAPI, faker: Faker):
-    app_settings: ApplicationSettings = app.state.settings
+async def test_setup_payment_gateway_api():
+    new_app = FastAPI()
+    with pytest.raises(AttributeError):
+        PaymentGatewayApi.get_from_state(new_app)
+
+    PaymentGatewayApi.setup(new_app)
+    payment_gateway_api = PaymentGatewayApi.get_from_state(new_app)
+
+    assert payment_gateway_api is not None
+
+
+async def test_one_time_init_payment(app: FastAPI, faker: Faker):
+    PaymentGatewayApi.setup(app)
+    payment_gateway_api = PaymentGatewayApi.get_from_state(app)
 
     payment = InitPayment(
         amount_dollars=100,
@@ -32,7 +40,11 @@ async def test_one_time_payment_workflow(app: FastAPI, faker: Faker):
         wallet_name=faker.word(),
     )
 
-    payment_initiated = await init_payment(payment, auth=None)
+    payment_initiated = await payment_gateway_api.init_payment(payment)
 
-    submission_link = get_form_payment_url(payment_initiated.payment_id)
+    submission_link = payment_gateway_api.get_form_payment_url(
+        payment_initiated.payment_id
+    )
+
+    app_settings: ApplicationSettings = app.state.settings
     assert submission_link.host == app_settings.PAYMENTS_GATEWAY_URL.host

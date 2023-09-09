@@ -13,6 +13,7 @@
 
 
 import asyncio
+import contextlib
 import logging
 from dataclasses import dataclass
 from uuid import uuid4
@@ -38,6 +39,26 @@ _logger = logging.getLogger(__name__)
 @dataclass
 class PaymentGatewayApi:
     client: httpx.AsyncClient
+    exit_stack: contextlib.AsyncExitStack
+
+    @classmethod
+    def create(cls, settings: ApplicationSettings) -> "PaymentGatewayApi":
+        client = httpx.AsyncClient(
+            auth=(
+                settings.PAYMENT_GATEWAY_API_KEY.get_secret_value(),
+                settings.PAYMENT_GATEWAY_API_SECRET.get_secret_value(),
+            ),
+            base_url=settings.PAYMENTS_GATEWAY_URL,
+        )
+        exit_stack = contextlib.AsyncExitStack()
+
+        return cls(client=client, exit_stack=exit_stack)
+
+    async def start(self):
+        await self.exit_stack.enter_async_context(self.client)
+
+    async def close(self):
+        await self.exit_stack.aclose()
 
     #
     # service diagnostics
@@ -51,8 +72,12 @@ class PaymentGatewayApi:
         except httpx.RequestError:
             return False
 
-    async def is_healhy(self):
-        ...
+    async def is_healhy(self) -> bool:
+        try:
+            await self.client.get("/health")
+            return True
+        except httpx.HTTPError:
+            return False
 
     #
     # payment
@@ -95,31 +120,37 @@ class PaymentGatewayApi:
         raise NotImplementedError
 
     #
-    # setup in app
+    # app
     #
-
-    @classmethod
-    def create_and_save_in_state(cls, app: FastAPI):
-        assert app.state  # nosec
-        assert not hasattr(app.state, "payment_gateway_api")  # nosec
-
-        app_settings: ApplicationSettings = app.state.settings
-
-        app.state.payment_gateway_api = cls(
-            client=httpx.AsyncClient(
-                auth=(
-                    app_settings.PAYMENT_GATEWAY_API_KEY.get_secret_value(),
-                    app_settings.PAYMENT_GATEWAY_API_SECRET.get_secret_value(),
-                ),
-                base_url=app_settings.PAYMENTS_GATEWAY_URL,
-            )
-        )
 
     @classmethod
     def get_from_state(cls, app: FastAPI) -> "PaymentGatewayApi":
         return app.state.payment_gateway_api
 
+    @classmethod
+    def setup(cls, app: FastAPI):
+        assert app.state  # nosec
+        if exists := getattr(app.state, "payment_gateway_api", None):
+            _logger.warning(
+                "Skipping setup. Cannot setup more than once %s: %s", cls, exists
+            )
+            return
+
+        assert not hasattr(app.state, "payment_gateway_api")  # nosec
+        app_settings: ApplicationSettings = app.state.settings
+
+        app.state.payment_gateway_api = api = cls.create(app_settings)
+
+        async def on_startup():
+            await api.start()
+
+        async def on_shutdown():
+            await api.close()
+
+        app.add_event_handler("startup", on_startup)
+        app.add_event_handler("shutdown", on_shutdown)
+
 
 def setup_payments_gateway(app: FastAPI):
     assert app.state  # nosec
-    PaymentGatewayApi.create_and_save_in_state(app)
+    PaymentGatewayApi.setup(app)
