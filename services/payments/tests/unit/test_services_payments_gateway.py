@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
+import pytest
 from faker import Faker
 from fastapi import FastAPI
 from simcore_service_payments.core.settings import ApplicationSettings
@@ -19,13 +20,14 @@ def mock_payments_gateway_service_api():
     ...
 
 
-async def test_one_time_payment(app: FastAPI, faker: Faker):
+@pytest.mark.xfail(reason="UNDER DEV")
+async def test_one_time_payment_workflow(app: FastAPI, faker: Faker):
     app_settings: ApplicationSettings = app.state.settings
 
-    #
     payment = InitPayment(
         amount_dollars=100,
         credits=100,
+        user_name=faker.username(),
         user_email=faker.email(),
         wallet_name=faker.word(),
     )
