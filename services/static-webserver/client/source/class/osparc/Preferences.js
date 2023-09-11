@@ -61,47 +61,69 @@ qx.Class.define("osparc.Preferences", {
       nullable: false,
       init: true,
       check: "Boolean",
-      event: "changeAutoConnectPorts"
+      event: "changeAutoConnectPorts",
+      apply: "__savePreferences"
     },
 
     confirmBackToDashboard: {
       nullable: false,
       init: true,
       check: "Boolean",
-      event: "changeConfirmBackToDashboard"
+      event: "changeConfirmBackToDashboard",
+      apply: "__savePreferences"
     },
 
     confirmDeleteStudy: {
       nullable: false,
       init: true,
       check: "Boolean",
-      event: "changeConfirmDeleteStudy"
+      event: "changeConfirmDeleteStudy",
+      apply: "__savePreferences"
     },
 
     confirmDeleteNode: {
       nullable: false,
       init: true,
       check: "Boolean",
-      event: "changeConfirmDeleteNode"
+      event: "changeConfirmDeleteNode",
+      apply: "__savePreferences"
     },
 
     confirmStopNode: {
       nullable: false,
       init: true,
       check: "Boolean",
-      event: "changeConfirmStopNode"
+      event: "changeConfirmStopNode",
+      apply: "__savePreferences"
     },
 
     snapNodeToGrid: {
       nullable: false,
       init: true,
       check: "Boolean",
-      event: "changeSnapNodeToGrid"
+      event: "changeSnapNodeToGrid",
+      apply: "__savePreferences"
+    }
+  },
+
+  statics: {
+    patchPreference: function(preferenceId, value) {
+      const params = {
+        url: {
+          preferenceId
+        },
+        data: {
+          value
+        }
+      };
+      osparc.data.Resources.fetch("preferences", "patch", params);
     }
   },
 
   members: {
-    __applyThemeName: function(themeName) {
+    __applyThemeName: function(...args) {
+      console.log(args);
+      const themeName = args[0];
       if (themeName && themeName !== qx.theme.manager.Meta.getInstance().getTheme().name) {
         const preferredTheme = qx.Theme.getByName(themeName);
         const themes = qx.Theme.getAll();
@@ -113,15 +135,7 @@ qx.Class.define("osparc.Preferences", {
 
     saveThemeName: function(value) {
       if (osparc.auth.Manager.getInstance().isLoggedIn()) {
-        const params = {
-          url: {
-            preferenceId: "themeName"
-          },
-          data: {
-            value
-          }
-        };
-        osparc.data.Resources.fetch("preferences", "patch", params);
+        this.self().patchPreference("themeName", value);
       }
     },
 
@@ -140,6 +154,10 @@ qx.Class.define("osparc.Preferences", {
           console.error(err);
           osparc.component.message.FlashMessenger.logAs(err.message, "ERROR");
         });
+    },
+
+    __savePreferences: function(value, _, propName) {
+      this.self().patchPreference(propName, value);
     }
   }
 });
