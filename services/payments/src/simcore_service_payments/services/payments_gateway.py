@@ -9,6 +9,7 @@
 import contextlib
 import logging
 from dataclasses import dataclass
+from typing import cast
 
 import httpx
 from fastapi import FastAPI
@@ -119,7 +120,7 @@ class PaymentGatewayApi:
 
     @classmethod
     def get_from_state(cls, app: FastAPI) -> "PaymentGatewayApi":
-        return app.state.payment_gateway_api  # type: ignore=[no-any-return]
+        return cast("PaymentGatewayApi", app.state.payment_gateway_api)
 
     @classmethod
     def setup(cls, app: FastAPI):

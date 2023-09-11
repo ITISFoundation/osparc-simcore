@@ -5,8 +5,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 
 from ..._meta import API_VERSION, PROJECT_NAME
+from ...models.auth import SessionData
 from ...models.schemas.meta import Meta
-from ._dependencies import SessionData, get_current_session, get_reverse_url_mapper
+from ._dependencies import get_current_session, get_reverse_url_mapper
 
 _logger = logging.getLogger(__name__)
 
