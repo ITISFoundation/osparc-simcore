@@ -260,36 +260,32 @@ async def test_computation_create_validators(
             use_on_demand_clusters=True,
             cluster_id=faker.pyint(),
         )
-    # wallet id and use_on_demand raises
-    with pytest.raises(ValidationError, match=r"wallet_id must be set.+"):
-        ComputationCreate(
-            user_id=user["id"],
-            project_id=proj.uuid,
-            product_name=faker.pystr(),
-            use_on_demand_clusters=True,
-            cluster_id=None,
-        )
-    with pytest.raises(ValidationError, match=r"wallet_id must be set.+"):
-        ComputationCreate(
-            user_id=user["id"],
-            project_id=proj.uuid,
-            product_name=faker.pystr(),
-            use_on_demand_clusters=True,
-        )
-    with pytest.raises(ValidationError, match=r"wallet_id must be set.+"):
-        ComputationCreate(
-            user_id=user["id"],
-            project_id=proj.uuid,
-            product_name=faker.pystr(),
-            use_on_demand_clusters=True,
-            wallet_id=None,
-        )
+    # this should not raise
     ComputationCreate(
         user_id=user["id"],
         project_id=proj.uuid,
         product_name=faker.pystr(),
         use_on_demand_clusters=True,
-        wallet_id=faker.pyint(),
+        cluster_id=None,
+    )
+    ComputationCreate(
+        user_id=user["id"],
+        project_id=proj.uuid,
+        product_name=faker.pystr(),
+        use_on_demand_clusters=False,
+        cluster_id=faker.pyint(),
+    )
+    ComputationCreate(
+        user_id=user["id"],
+        project_id=proj.uuid,
+        product_name=faker.pystr(),
+        use_on_demand_clusters=True,
+    )
+    ComputationCreate(
+        user_id=user["id"],
+        project_id=proj.uuid,
+        product_name=faker.pystr(),
+        use_on_demand_clusters=False,
     )
 
 
