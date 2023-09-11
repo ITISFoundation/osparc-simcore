@@ -3,7 +3,6 @@
 
 from collections.abc import Awaitable, Callable
 
-import orjson
 import pytest
 from faker import Faker
 from servicelib.rabbitmq import (
@@ -59,21 +58,21 @@ async def test_exposed_methods(
         router, router_namespace, a_arg, a_global_kwarg=a_kwargs
     )
 
-    json_result = await rpc_client.request(
+    rpc_result = await rpc_client.request(
         router_namespace,
         RPCMethodName(a_str_method.__name__),
         a_specific_kwarg=a_specific_kwarg,
     )
-    assert isinstance(json_result, bytes)
-    result = orjson.loads(json_result)
+    assert isinstance(rpc_result, str)
+    result = rpc_result
     assert result == f"{a_arg}, that was a winner! {a_kwargs} {a_specific_kwarg}"
 
-    json_result = await rpc_client.request(
+    rpc_result = await rpc_client.request(
         router_namespace,
         RPCMethodName(an_int_method.__name__),
     )
-    assert isinstance(json_result, bytes)
-    result = orjson.loads(json_result)
+    assert isinstance(rpc_result, int)
+    result = rpc_result
     assert result == 34
 
     with pytest.raises(RuntimeError):
