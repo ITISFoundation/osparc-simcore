@@ -53,4 +53,4 @@ async def test_login_to_create_access_token(
     else:
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
         error = response.json()
-        assert "password" in error["details"]
+        assert "password" in error["detail"]
