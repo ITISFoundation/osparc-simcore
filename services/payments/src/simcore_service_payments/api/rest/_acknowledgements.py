@@ -31,7 +31,7 @@ async def on_payment_completed(
 
 
 @router.post("/payments/{payment_id}:ack")
-async def acknoledge_payment(
+async def acknowledge_payment(
     payment_id: PaymentID,
     ack: AckPayment,
     session: Annotated[SessionData, Depends(get_current_session)],
@@ -50,7 +50,7 @@ async def acknoledge_payment(
 
 
 @router.post("/payments-methods/{payment_method_id}:ack")
-async def acknoledge_payment_method(
+async def acknowledge_payment_method(
     payment_method_id: PaymentMethodID,
     ack: AckPaymentMethod,
     session: Annotated[SessionData, Depends(get_current_session)],

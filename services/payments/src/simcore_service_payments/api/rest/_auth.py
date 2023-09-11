@@ -15,7 +15,9 @@ _logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/token", response_model=Token)
+@router.post(
+    "/token", response_model=Token, operation_id="login_to_create_access_token"
+)
 async def login_to_create_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     settings: Annotated[ApplicationSettings, Depends(get_settings)],

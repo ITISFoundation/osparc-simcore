@@ -22,7 +22,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
         description=SUMMARY,
         version=API_VERSION,
         openapi_url=f"/api/{API_VTAG}/openapi.json",
-        docs_url="/dev/doc",
+        docs_url="/doc",  # NOTE: token auth would not work otherwise
         redoc_url=None,  # default disabled, see below
     )
     override_fastapi_openapi_method(app)
