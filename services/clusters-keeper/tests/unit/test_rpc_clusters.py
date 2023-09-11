@@ -168,7 +168,7 @@ async def test_get_or_create_cluster(
         wallet_id=wallet_id,
     )
     assert rpc_response
-    assert isinstance(rpc_response, OnDemandCluster)
+    assert isinstance(rpc_response, ClusterGet)
     returned_cluster = rpc_response
     # check we still have only 1 instance
     await _assert_cluster_heartbeat_on_instance(ec2_client)
