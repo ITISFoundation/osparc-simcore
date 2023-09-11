@@ -19,8 +19,8 @@ async def test_healthcheck(client: httpx.AsyncClient):
     ), f"got {response.text!r}"
 
 
-async def test_meta(client: httpx.AsyncClient):
-    response = await client.get(f"/{API_VTAG}/meta")
+async def test_meta(client: httpx.AsyncClient, auth_headers: dict[str, str]):
+    response = await client.get(f"/{API_VTAG}/meta", headers=auth_headers)
     assert response.status_code == status.HTTP_200_OK
     meta = Meta.parse_obj(response.json())
 
