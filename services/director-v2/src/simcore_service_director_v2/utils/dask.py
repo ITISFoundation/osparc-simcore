@@ -507,7 +507,8 @@ _LARGE_NUMBER_OF_WORKERS: Final[int] = 10000
 
 
 async def check_maximize_workers(cluster: dask_gateway.GatewayCluster | None) -> None:
-    await cluster.scale(_LARGE_NUMBER_OF_WORKERS)
+    if cluster:
+        await cluster.scale(_LARGE_NUMBER_OF_WORKERS)
 
 
 def _can_task_run_on_worker(
