@@ -386,29 +386,29 @@ qx.Class.define("osparc.Application", {
 
           if ("preferences" in profile) {
             const bePreferences = profile["preferences"];
-            const fePreferences = qx.util.PropertyUtil.getProperties(osparc.Preferences);
+            const fePreferences = Object.keys(qx.util.PropertyUtil.getProperties(osparc.Preferences));
             const preferencesSettings = osparc.Preferences.getInstance();
             Object.entries(bePreferences).forEach(([key, data]) => {
               const value = data.value;
-              if (fePreferences.includes(key)) {
-                preferencesSettings.set(key, value);
-              } else {
-                switch (key) {
-                  case "dontShowAnnouncements":
-                    break;
-                  case "services":
-                    break;
-                  case "themeName":
-                    if (value) {
-                      preferencesSettings.setThemeName(value);
-                    }
-                    break;
-                  case "preferredWalletId":
-                    if (value) {
-                      preferencesSettings.setPreferredWalletId(value);
-                    }
-                    break;
-                }
+              switch (key) {
+                case "dontShowAnnouncements":
+                  break;
+                case "services":
+                  break;
+                case "themeName":
+                  if (value) {
+                    preferencesSettings.setThemeName(value);
+                  }
+                  break;
+                case "preferredWalletId":
+                  if (value) {
+                    preferencesSettings.setPreferredWalletId(value);
+                  }
+                  break;
+                default:
+                  if (fePreferences.includes(key)) {
+                    preferencesSettings.set(key, value);
+                  }
               }
             });
           }

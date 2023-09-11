@@ -28,6 +28,35 @@ qx.Class.define("osparc.Preferences", {
   },
 
   properties: {
+    preferredWalletId: {
+      nullable: false,
+      init: null,
+      check: "Object",
+      event: "changePreferredWalletId"
+    },
+
+    themeName: {
+      nullable: false,
+      init: {},
+      check: "String",
+      apply: "__applyThemeName"
+    },
+    /*
+    dontShowAnnouncements: {
+      nullable: false,
+      init: {},
+      check: "Object"
+    },
+
+    serviceHits: {
+      nullable: false,
+      init: {},
+      check: "Object"
+    },
+    */
+
+    // ---------------------------
+
     autoConnectPorts: {
       nullable: false,
       init: true,
@@ -68,34 +97,6 @@ qx.Class.define("osparc.Preferences", {
       init: true,
       check: "Boolean",
       event: "changeSnapNodeToGrid"
-    },
-
-    // ---------------------------
-    /*
-    dontShowAnnouncements: {
-      nullable: false,
-      init: {},
-      check: "Object"
-    },
-
-    serviceHits: {
-      nullable: false,
-      init: {},
-      check: "Object"
-    },
-    */
-    preferredWalletId: {
-      nullable: false,
-      init: null,
-      check: "Object",
-      event: "changePreferredWalletId"
-    },
-
-    themeName: {
-      nullable: false,
-      init: {},
-      check: "String",
-      apply: "__applyThemeName"
     }
   },
 
