@@ -25,11 +25,16 @@ async def ping_gateway(*, url: AnyUrl, password: SecretStr) -> bool:
             await asyncio.wait_for(gateway.list_clusters(), timeout=5)
         return True
     except asyncio.TimeoutError:
-        _logger.debug("gateway ping timed-out, it is still starting...")
+        _logger.info(
+            "osparc-gateway %s ping timed-out, the machine is likely still starting...",
+            url,
+        )
     except ClientError:
         # this could happen if the gateway is not properly started, but it should not last
         # unless the wrong password is used.
-        _logger.info("dask-gateway is not reachable", exc_info=True)
+        _logger.info(
+            "Machine is up but osparc-gateway %s is not reachable...yet?!", url
+        )
 
     return False
 
@@ -72,7 +77,7 @@ async def is_gateway_busy(*, url: AnyUrl, gateway_auth: SimpleAuthentication) ->
                 client.processing()
             ):
                 _logger.info(
-                    "cluster worker processing: %s", worker_to_processing_tasks
+                    "cluster current workers: %s", worker_to_processing_tasks.keys()
                 )
                 num_processing_tasks = sum(
                     len(tasks) for tasks in worker_to_processing_tasks.values()
