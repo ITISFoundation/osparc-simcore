@@ -46,15 +46,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
       }
 
       preferenceField.setEnabled(false);
-      const params = {
-        url: {
-          preferenceId
-        },
-        data: {
-          "value": newValue
-        }
-      };
-      osparc.data.Resources.fetch("preferences", "patch", params)
+      osparc.Preferences.patchPreference(preferenceId, newValue)
         .then(() => preferencesSettings.set(preferenceId, newValue))
         .catch(err => {
           console.error(err);
