@@ -7,6 +7,7 @@
 import pytest
 from faker import Faker
 from fastapi import FastAPI
+from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_service_payments.core.settings import ApplicationSettings
 from simcore_service_payments.models.payments_gateway import InitPayment
 from simcore_service_payments.services.payments_gateway import PaymentGatewayApi
@@ -17,8 +18,9 @@ def mock_payments_gateway_service_api():
     ...
 
 
-async def test_setup_payment_gateway_api():
+async def test_setup_payment_gateway_api(app_environment: EnvVarsDict):
     new_app = FastAPI()
+    new_app.state.settings = ApplicationSettings.create_from_envs()
     with pytest.raises(AttributeError):
         PaymentGatewayApi.get_from_state(new_app)
 
