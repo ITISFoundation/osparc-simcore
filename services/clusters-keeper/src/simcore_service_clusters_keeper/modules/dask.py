@@ -1,6 +1,7 @@
 import asyncio
 import logging
-from typing import Any, Coroutine, Final
+from collections.abc import Coroutine
+from typing import Any, Final
 
 import dask_gateway
 from aiohttp.client_exceptions import ClientError
