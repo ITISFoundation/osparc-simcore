@@ -286,7 +286,10 @@ async def upload_path(
         raise exceptions.NodeportsException(msg)
     checksum: SHA256Str | None = None
     if not is_directory:
-        checksum = await create_sha256_checksum(path_to_upload)
+        if isinstance(path_to_upload, Path):
+            checksum = await create_sha256_checksum(path_to_upload)
+        elif isinstance(path_to_upload, UploadableFileObject):
+            checksum = path_to_upload.sha256_checksum
     if io_log_redirect_cb:
         await io_log_redirect_cb(f"uploading {path_to_upload}, please wait...")
 

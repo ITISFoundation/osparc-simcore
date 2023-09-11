@@ -170,6 +170,7 @@ async def upload_file(
             file_object=file.file,
             file_name=file.filename,
             file_size=file_size,
+            sha256_checksum=file_meta.sha256_checksum,
         ),
         io_log_redirect_cb=None,
     )

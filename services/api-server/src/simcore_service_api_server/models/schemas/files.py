@@ -112,9 +112,7 @@ class File(BaseModel):
         """
         If use_md5=True, then checksum  if fi
         """
-        sha256check = None
-        if not file_size:
-            sha256check = await create_sha256_checksum(file)
+        sha256check = await create_sha256_checksum(file)
         # WARNING: UploadFile wraps a stream and wil checkt its cursor position: file.file.tell() != 0
         # WARNING: await file.seek(0) might introduce race condition if not done carefuly
 
@@ -122,7 +120,7 @@ class File(BaseModel):
             id=cls.create_id(sha256check or file_size, file.filename, created_at),
             filename=file.filename or "Undefined",
             content_type=file.content_type,
-            checksum=SHA256Str(sha256check),
+            checksum=sha256check,
         )
 
     @classmethod
