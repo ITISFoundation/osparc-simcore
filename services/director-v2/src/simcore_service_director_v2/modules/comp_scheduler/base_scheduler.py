@@ -49,6 +49,7 @@ from ...utils.comp_scheduler import (
     COMPLETED_STATES,
     PROCESSING_STATES,
     RUNNING_STATES,
+    TASK_TO_START_STATES,
     WAITING_FOR_START_STATES,
     Iteration,
     create_service_resources_from_task,
@@ -638,7 +639,7 @@ class BaseCompScheduler(ABC):
         tasks_ready_to_start: dict[NodeID, CompTaskAtDB] = {
             node_id: comp_tasks[f"{node_id}"]
             for node_id in next_task_node_ids
-            if comp_tasks[f"{node_id}"].state == RunningState.PUBLISHED
+            if comp_tasks[f"{node_id}"].state in TASK_TO_START_STATES
         }
 
         if not tasks_ready_to_start:
@@ -693,17 +694,17 @@ class BaseCompScheduler(ABC):
             ):
                 _logger.error(
                     "Issue with computational backend: %s. Tasks are set back "
-                    "to PUBLISHED state until scheduler comes back!",
+                    "to WAITING_FOR_CLUSTER state until scheduler comes back!",
                     r,
                 )
                 # we should try re-connecting.
                 # in the meantime we cannot schedule tasks on the scheduler,
-                # let's put these tasks back to PUBLISHED, so they might be re-submitted later
+                # let's put these tasks back to WAITING_FOR_CLUSTER, so they might be re-submitted later
                 await asyncio.gather(
                     comp_tasks_repo.update_project_tasks_state(
                         project_id,
                         list(tasks_ready_to_start.keys()),
-                        RunningState.PUBLISHED,
+                        RunningState.WAITING_FOR_CLUSTER,
                         optional_progress=0,
                     ),
                 )
@@ -728,7 +729,7 @@ class BaseCompScheduler(ABC):
                     comp_tasks_repo.update_project_tasks_state(
                         project_id,
                         list(tasks_ready_to_start.keys()),
-                        RunningState.PUBLISHED,
+                        RunningState.WAITING_FOR_CLUSTER,
                         optional_progress=0,
                     ),
                 )
