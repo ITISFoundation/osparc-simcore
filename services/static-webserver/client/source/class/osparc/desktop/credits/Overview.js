@@ -327,10 +327,7 @@ qx.Class.define("osparc.desktop.credits.Overview", {
             });
           }
         })
-        .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
-          console.error(err);
-        });
+        .catch(err => console.error(err));
 
       return layout;
     },

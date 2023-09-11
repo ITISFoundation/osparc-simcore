@@ -391,10 +391,6 @@ qx.Class.define("osparc.Application", {
             Object.entries(bePreferences).forEach(([key, data]) => {
               const value = data.value;
               switch (key) {
-                case "dontShowAnnouncements":
-                  break;
-                case "services":
-                  break;
                 case "themeName":
                   if (value) {
                     preferencesSettings.setThemeName(value);
