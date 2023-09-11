@@ -4,12 +4,9 @@ from datetime import datetime
 from fastapi import APIRouter
 from fastapi.responses import PlainTextResponse
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
-#
-# ROUTE HANDLERS
-#
 router = APIRouter()
 
 

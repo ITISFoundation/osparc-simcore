@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-from typing import Optional
 
 import httpx
 from fastapi import status
@@ -14,7 +13,7 @@ from simcore_service_invitations.invitations import InvitationInputs
 
 def test_invalid_http_basic_auth(
     client: TestClient,
-    invalid_basic_auth: Optional[httpx.BasicAuth],
+    invalid_basic_auth: httpx.BasicAuth | None,
     invitation_data: InvitationInputs,
 ):
     response = client.post(

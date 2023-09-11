@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import Any, Optional
+from typing import Annotated, Any, ClassVar
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBasicCredentials
@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field, HttpUrl
 
 from ..core.settings import ApplicationSettings
 from ..invitations import (
-    InvalidInvitationCode,
+    InvalidInvitationCodeError,
     InvitationContent,
     InvitationInputs,
     create_invitation_link,
@@ -17,7 +17,7 @@ from ..invitations import (
 )
 from ._dependencies import get_settings, get_validated_credentials
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 INVALID_INVITATION_URL_MSG = "Invalid invitation link"
 
@@ -35,12 +35,12 @@ _INPUTS_EXAMPLE: dict[str, Any] = {
 
 class _ApiInvitationInputs(InvitationInputs):
     class Config:
-        schema_extra = {"example": _INPUTS_EXAMPLE}
+        schema_extra: ClassVar[dict[str, Any]] = {"example": _INPUTS_EXAMPLE}
 
 
 class _ApiInvitationContent(InvitationContent):
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 **_INPUTS_EXAMPLE,
                 "created": "2023-01-11 13:11:47.293595",
@@ -52,7 +52,7 @@ class _InvitationContentAndLink(_ApiInvitationContent):
     invitation_url: HttpUrl = Field(..., description="Invitation link")
 
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 **_INPUTS_EXAMPLE,
                 "created": "2023-01-11 12:11:47.293595",
@@ -78,8 +78,10 @@ router = APIRouter()
 )
 async def create_invitation(
     invitation_inputs: _ApiInvitationInputs,
-    settings: ApplicationSettings = Depends(get_settings),
-    _credentials: Optional[HTTPBasicCredentials] = Depends(get_validated_credentials),
+    settings: Annotated[ApplicationSettings, Depends(get_settings)],
+    _credentials: Annotated[
+        HTTPBasicCredentials | None, Depends(get_validated_credentials)
+    ],
 ):
     """Generates a new invitation code and returns its content and an invitation link"""
 
@@ -94,7 +96,7 @@ async def create_invitation(
         **invitation_inputs.dict(),
     )
 
-    logger.info("New invitation: %s", f"{invitation.json(indent=1)}")
+    _logger.info("New invitation: %s", f"{invitation.json(indent=1)}")
 
     return invitation
 
@@ -107,7 +109,7 @@ async def create_invitation(
 async def extracts_invitation_from_code(
     encrypted: _EncryptedInvitation,
     settings: ApplicationSettings = Depends(get_settings),
-    _credentials: Optional[HTTPBasicCredentials] = Depends(get_validated_credentials),
+    _credentials: HTTPBasicCredentials | None = Depends(get_validated_credentials),
 ):
     """Decrypts the invitation code and returns its content"""
 
@@ -116,7 +118,7 @@ async def extracts_invitation_from_code(
             invitation_code=extract_invitation_code_from(encrypted.invitation_url),
             secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),
         )
-    except InvalidInvitationCode as err:
+    except InvalidInvitationCodeError as err:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=INVALID_INVITATION_URL_MSG,

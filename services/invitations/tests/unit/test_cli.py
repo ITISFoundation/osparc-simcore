@@ -34,10 +34,10 @@ def test_invite_user_and_check_invitation(
     assert result.exit_code == os.EX_OK, result.output
 
     # export INVITATIONS_SECRET_KEY=$(invitations-maker generate-key)
-    environs = dict(
-        INVITATIONS_SECRET_KEY=result.stdout.strip(),
-        INVITATIONS_OSPARC_URL=faker.url(),
-    )
+    environs = {
+        "INVITATIONS_SECRET_KEY": result.stdout.strip(),
+        "INVITATIONS_OSPARC_URL": faker.url(),
+    }
 
     # invitations-maker invite guest@email.com --issuer=me --trial-account-days=3
     trial_account = ""

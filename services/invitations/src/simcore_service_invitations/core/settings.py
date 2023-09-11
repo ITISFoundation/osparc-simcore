@@ -41,7 +41,7 @@ class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         default=LogLevel.INFO, env=["INVITATIONS_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
     )
     INVITATIONS_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
-        False,
+        default=False,
         env=[
             "INVITATIONS_LOG_FORMAT_LOCAL_DEV_ENABLED",
             "LOG_FORMAT_LOCAL_DEV_ENABLED",

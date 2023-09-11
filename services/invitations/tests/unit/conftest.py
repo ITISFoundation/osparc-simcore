@@ -67,7 +67,7 @@ def app_environment(
     fake_password: str,
 ) -> EnvVarsDict:
 
-    envs = setenvs_from_dict(
+    return setenvs_from_dict(
         monkeypatch,
         {
             "INVITATIONS_SECRET_KEY": secret_key,
@@ -76,8 +76,6 @@ def app_environment(
             "INVITATIONS_PASSWORD": fake_password,
         },
     )
-
-    return envs
 
 
 @pytest.fixture(params=[True, False])

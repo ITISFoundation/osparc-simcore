@@ -1,5 +1,6 @@
 import logging
-from typing import Callable
+from collections.abc import Callable
+from typing import Annotated
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, HttpUrl
@@ -7,7 +8,7 @@ from pydantic import BaseModel, HttpUrl
 from .._meta import API_VERSION, PROJECT_NAME
 from ._dependencies import get_reverse_url_mapper
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 #
@@ -23,15 +24,12 @@ class _Meta(BaseModel):
     docs_url: HttpUrl
 
 
-#
-# ROUTE HANDLERS
-#
 router = APIRouter()
 
 
 @router.get("/meta", response_model=_Meta)
 async def get_service_metadata(
-    url_for: Callable = Depends(get_reverse_url_mapper),
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
     return _Meta(
         name=PROJECT_NAME,

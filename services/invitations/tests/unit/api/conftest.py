@@ -4,7 +4,7 @@
 # pylint: disable=too-many-arguments
 
 import json
-from typing import Iterator, Optional
+from collections.abc import Iterator
 
 import httpx
 import pytest
@@ -27,7 +27,7 @@ def client(app_environment: EnvVarsDict) -> Iterator[TestClient]:
 @pytest.fixture(params=["username", "password", "both", None])
 def invalid_basic_auth(
     request: FixtureRequest, fake_user_name: str, fake_password: str
-) -> Optional[httpx.BasicAuth]:
+) -> httpx.BasicAuth | None:
     invalid_case = request.param
 
     if invalid_case is None:

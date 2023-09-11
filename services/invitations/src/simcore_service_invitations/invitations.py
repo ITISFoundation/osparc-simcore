@@ -2,7 +2,7 @@ import base64
 import binascii
 import logging
 from datetime import datetime
-from typing import Optional, cast
+from typing import Any, ClassVar, cast
 from urllib import parse
 
 from cryptography.fernet import Fernet, InvalidToken
@@ -17,14 +17,14 @@ from pydantic import (
 )
 from starlette.datastructures import URL
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 #
 # Errors
 #
 
 
-class InvalidInvitationCode(Exception):
+class InvalidInvitationCodeError(Exception):
     ...
 
 
@@ -46,7 +46,7 @@ class InvitationInputs(BaseModel):
         ...,
         description="Invitee's email. Note that the registration can ONLY be used with this email",
     )
-    trial_account_days: Optional[PositiveInt] = Field(
+    trial_account_days: PositiveInt | None = Field(
         None,
         description="If set, this invitation will activate a trial account."
         "Sets the number of days from creation until the account expires",
@@ -85,7 +85,7 @@ class _ContentWithShortNames(InvitationContent):
         allow_mutation = False
         anystr_strip_whitespace = True
         # NOTE: Can export with alias: short aliases to minimize the size of serialization artifact
-        fields = {
+        fields: ClassVar[dict[str, Any]] = {
             "issuer": {
                 "alias": "i",
             },
@@ -120,13 +120,15 @@ def _build_link(
 
 def extract_invitation_code_from(invitation_url: HttpUrl) -> str:
     """Parses url and extracts invitation"""
+    if not invitation_url.fragment:
+        raise InvalidInvitationCodeError
+
     try:
         query_params = dict(parse.parse_qsl(URL(invitation_url.fragment).query))
         invitation_code: str = query_params["invitation"]
         return invitation_code
     except KeyError as err:
-        logger.debug("Invalid invitation: %s", err)
-        raise InvalidInvitationCode from err
+        raise InvalidInvitationCodeError from err
 
 
 def _fernet_encrypt_as_urlsafe_code(
@@ -172,11 +174,10 @@ def create_invitation_link(
         invitation_data=invitation_data, secret_key=secret_key
     )
     # Adds message as the invitation in query
-    url = _build_link(
+    return _build_link(
         base_url=base_url,
         code_url_safe=invitation_code.decode(),
     )
-    return url
 
 
 def decrypt_invitation(invitation_code: str, secret_key: bytes) -> InvitationContent:
@@ -195,8 +196,7 @@ def decrypt_invitation(invitation_code: str, secret_key: bytes) -> InvitationCon
     decryted: bytes = fernet.decrypt(token=code)
 
     # parses serialized invitation
-    content = _ContentWithShortNames.deserialize(raw_data=decryted.decode())
-    return content
+    return _ContentWithShortNames.deserialize(raw_data=decryted.decode())
 
 
 def extract_invitation_content(
@@ -208,5 +208,5 @@ def extract_invitation_content(
             invitation_code=invitation_code, secret_key=secret_key
         )
     except (InvalidToken, ValidationError, binascii.Error) as err:
-        logger.debug("Invalid code: %s", err)
-        raise InvalidInvitationCode from err
+        _logger.debug("Invalid code: %s", err)
+        raise InvalidInvitationCodeError from err

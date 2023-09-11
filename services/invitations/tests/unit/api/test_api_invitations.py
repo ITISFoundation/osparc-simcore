@@ -126,7 +126,7 @@ def test_check_invalid_invitation_with_different_secret(
         response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     ), f"{response.json()=}"
 
-    assert INVALID_INVITATION_URL_MSG == response.json()["detail"]
+    assert response.json()["detail"] == INVALID_INVITATION_URL_MSG
 
 
 def test_check_invalid_invitation_with_wrong_fragment(
@@ -145,7 +145,7 @@ def test_check_invalid_invitation_with_wrong_fragment(
         response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     ), f"{response.json()=}"
 
-    assert INVALID_INVITATION_URL_MSG == response.json()["detail"]
+    assert response.json()["detail"] == INVALID_INVITATION_URL_MSG
 
 
 def test_check_invalid_invitation_with_wrong_code(
@@ -172,4 +172,4 @@ def test_check_invalid_invitation_with_wrong_code(
         response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     ), f"{response.json()=}"
 
-    assert INVALID_INVITATION_URL_MSG == response.json()["detail"]
+    assert response.json()["detail"] == INVALID_INVITATION_URL_MSG

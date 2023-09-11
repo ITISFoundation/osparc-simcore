@@ -1,5 +1,6 @@
 import logging
 import secrets
+from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
@@ -7,7 +8,7 @@ from servicelib.fastapi.dependencies import get_app, get_reverse_url_mapper
 
 from ..core.settings import ApplicationSettings
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 #
@@ -25,8 +26,10 @@ _get_basic_credentials = HTTPBasic()
 
 
 def get_validated_credentials(
-    credentials: HTTPBasicCredentials | None = Depends(_get_basic_credentials),
-    settings: ApplicationSettings = Depends(get_settings),
+    credentials: Annotated[
+        HTTPBasicCredentials | None, Depends(_get_basic_credentials)
+    ],
+    settings: Annotated[ApplicationSettings, Depends(get_settings)],
 ) -> HTTPBasicCredentials:
     def _is_valid(current: str, expected: str) -> bool:
         return secrets.compare_digest(current.encode("utf8"), expected.encode("utf8"))

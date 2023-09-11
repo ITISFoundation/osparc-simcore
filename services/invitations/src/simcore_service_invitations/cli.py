@@ -1,6 +1,6 @@
 import getpass
 import logging
-from typing import Optional
+from typing import Annotated
 
 import rich
 import typer
@@ -9,13 +9,13 @@ from models_library.emails import LowerCaseEmailStr
 from pydantic import HttpUrl, SecretStr, ValidationError, parse_obj_as
 from rich.console import Console
 from servicelib.utils_secrets import generate_password
-from settings_library.utils_cli import create_settings_command
+from settings_library.utils_cli import create_settings_command, create_version_callback
 
 from . import web_server
 from ._meta import PROJECT_NAME, __version__
 from .core.settings import ApplicationSettings, MinimalApplicationSettings
 from .invitations import (
-    InvalidInvitationCode,
+    InvalidInvitationCodeError,
     InvitationContent,
     InvitationInputs,
     create_invitation_link,
@@ -24,38 +24,21 @@ from .invitations import (
 )
 
 # SEE setup entrypoint 'simcore_service_invitations.cli:app'
+_logger = logging.getLogger(__name__)
 app = typer.Typer(name=PROJECT_NAME)
-log = logging.getLogger(__name__)
+
 
 err_console = Console(stderr=True)
-
-
-def _version_callback(value: bool):
-    if value:
-        rich.print(__version__)
-        raise typer.Exit()
-
-
-@app.callback()
-def main(
-    ctx: typer.Context,
-    version: Optional[bool] = (
-        typer.Option(
-            None,
-            "--version",
-            callback=_version_callback,
-            is_eager=True,
-        )
-    ),
-):
-    """o2s2parc invitation maker"""
-    assert ctx  # nosec
-    assert version or not version  # nosec
 
 
 #
 # COMMANDS
 #
+
+
+app.command()(create_settings_command(settings_cls=ApplicationSettings, logger=_logger))
+
+app.callback()(create_version_callback(__version__))
 
 
 @app.command()
@@ -93,7 +76,7 @@ def generate_dotenv(ctx: typer.Context, auto_password: bool = False):
     ) or generate_password(length=32)
 
     settings = ApplicationSettings.create_from_envs(
-        INVITATIONS_OSPARC_URL="http://127.0.0.1:8000", # NOSONAR
+        INVITATIONS_OSPARC_URL="http://127.0.0.1:8000",  # NOSONAR
         INVITATIONS_SECRET_KEY=Fernet.generate_key().decode(),
         INVITATIONS_USERNAME=username,
         INVITATIONS_PASSWORD=password,
@@ -110,18 +93,29 @@ def generate_dotenv(ctx: typer.Context, auto_password: bool = False):
 @app.command()
 def invite(
     ctx: typer.Context,
-    email: str = typer.Argument(
-        ...,
-        callback=lambda v: parse_obj_as(LowerCaseEmailStr, v),
-        help="Custom invitation for a given guest",
-    ),
-    issuer: str = typer.Option(
-        ..., help=InvitationInputs.__fields__["issuer"].field_info.description
-    ),
-    trial_account_days: Optional[int] = typer.Option(
-        None,
-        help=InvitationInputs.__fields__["trial_account_days"].field_info.description,
-    ),
+    email: Annotated[
+        str,
+        typer.Argument(
+            ...,
+            callback=lambda v: parse_obj_as(LowerCaseEmailStr, v),
+            help="Custom invitation for a given guest",
+        ),
+    ],
+    issuer: Annotated[
+        str,
+        typer.Option(
+            ..., help=InvitationInputs.__fields__["issuer"].field_info.description
+        ),
+    ],
+    trial_account_days: Annotated[
+        int,
+        typer.Option(
+            default=None,
+            help=InvitationInputs.__fields__[
+                "trial_account_days"
+            ].field_info.description,
+        ),
+    ],
 ):
     """Creates an invitation link for user with 'email' and issued by 'issuer'"""
     assert ctx  # nosec
@@ -157,11 +151,8 @@ def extract(ctx: typer.Context, invitation_url: str):
         )
 
         rich.print(invitation.json(indent=1))
-    except (InvalidInvitationCode, ValidationError):
+    except (InvalidInvitationCodeError, ValidationError):
         err_console.print("[bold red]Invalid code[/bold red]")
-
-
-app.command()(create_settings_command(settings_cls=ApplicationSettings, logger=log))
 
 
 @app.command()
