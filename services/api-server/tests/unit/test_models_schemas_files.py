@@ -12,7 +12,7 @@ from uuid import uuid4
 import pytest
 from fastapi import UploadFile
 from models_library.api_schemas_storage import FileMetaDataGet as StorageFileMetaData
-from models_library.basic_types import MD5Str
+from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import StorageFileID
 from pydantic import ValidationError, parse_obj_as
 from simcore_service_api_server.models.schemas.files import File
@@ -29,25 +29,27 @@ def mock_filepath(tmp_path: Path) -> Path:
 
 
 @pytest.fixture
-def expected_md5sum() -> MD5Str:
+def expected_sha256sum() -> SHA256Str:
     #
     # $ echo -n "This is a test" | md5sum -
     # ce114e4501d2f4e2dcea3e17b546f339  -
     #
-    _md5sum: MD5Str = parse_obj_as(MD5Str, "ce114e4501d2f4e2dcea3e17b546f339")
-    assert hashlib.md5(FILE_CONTENT.encode()).hexdigest() == _md5sum
-    return _md5sum
+    _sha256sum: SHA256Str = parse_obj_as(
+        SHA256Str, "c7be1ed902fb8dd4d48997c6452f5d7e509fbcdbe2808b16bcf4edce4c07d14e"
+    )
+    assert hashlib.sha256(FILE_CONTENT.encode()).hexdigest() == _sha256sum
+    return _sha256sum
 
 
 async def test_create_filemetadata_from_path(
-    mock_filepath: Path, expected_md5sum: MD5Str
+    mock_filepath: Path, expected_sha256sum: SHA256Str
 ):
     file_meta = await File.create_from_path(mock_filepath)
-    assert file_meta.e_tag == expected_md5sum
+    assert file_meta.sha256_checksum == expected_sha256sum
 
 
 async def test_create_filemetadata_from_starlette_uploadfile(
-    mock_filepath: Path, expected_md5sum: MD5Str
+    mock_filepath: Path, expected_sha256sum: SHA256Str
 ):
     # WARNING: upload is a wrapper around a file handler that can actually be in memory as well
 
@@ -59,7 +61,7 @@ async def test_create_filemetadata_from_starlette_uploadfile(
         file_meta = await File.create_from_uploaded(upload)
         assert upload.file.tell() > 0, "modifies current position is at the end"
 
-        assert file_meta.e_tag == expected_md5sum
+        assert file_meta.sha256_checksum == expected_sha256sum
 
     # in memory
     with tempfile.SpooledTemporaryFile() as spooled_tmpfile:

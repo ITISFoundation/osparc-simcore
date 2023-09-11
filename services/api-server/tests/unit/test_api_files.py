@@ -22,6 +22,7 @@ from models_library.api_schemas_storage import (
     FileUploadCompletionBody,
     UploadedPart,
 )
+from models_library.basic_types import SHA256Str
 from pydantic import parse_obj_as
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
@@ -42,6 +43,9 @@ class DummyFileData:
     _file_name: str = "myfile.txt"
     _final_e_tag: ETag = "07d1c1a4-b073-4be7-b022-f405d90e99aa"
     _file_size: int = 100000
+    _file_sha256_checksum: SHA256Str = SHA256Str(
+        "E7a5B06A880dDee55A16fbc27Dc29705AE1aceadcaf0aDFd15fAF839ff5E2C2e"
+    )
 
     @classmethod
     def file(cls) -> File:
@@ -53,13 +57,18 @@ class DummyFileData:
             ),
             filename=cls._file_name,
             e_tag="",
-            sha256_checksum=None,
+            sha256_checksum=cls._file_sha256_checksum,
         )
 
     @classmethod
     def client_file(cls) -> ClientFile:
         return parse_obj_as(
-            ClientFile, {"filename": cls._file_name, "filesize": cls._file_size}
+            ClientFile,
+            {
+                "filename": cls._file_name,
+                "filesize": cls._file_size,
+                "sha256_checksum": cls._file_sha256_checksum,
+            },
         )
 
     @classmethod
@@ -75,6 +84,10 @@ class DummyFileData:
     @classmethod
     def final_e_tag(cls) -> ETag:
         return cls._final_e_tag
+
+    @classmethod
+    def checksum(cls) -> ETag:
+        return cls._file_sha256_checksum
 
 
 @pytest.mark.xfail(reason="Under dev")
@@ -211,6 +224,7 @@ async def test_get_upload_links(
     msg = {
         "filename": DummyFileData.file().filename,
         "filesize": DummyFileData.file_size(),
+        "sha256_checksum": DummyFileData.checksum(),
     }
 
     response = await client.post(f"{API_VTAG}/files/content", json=msg, auth=auth)
@@ -234,7 +248,8 @@ async def test_get_upload_links(
         payload: dict[str, str] = response.json()
 
         assert response.status_code == status.HTTP_200_OK
-        _ = parse_obj_as(File, payload)
+        file: File = parse_obj_as(File, payload)
+        assert file.sha256_checksum == DummyFileData.checksum()
     elif follow_up_request == "abort":
         body = {
             "client_file": jsonable_encoder(DummyFileData.client_file()),
