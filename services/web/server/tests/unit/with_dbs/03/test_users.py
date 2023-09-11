@@ -58,6 +58,9 @@ from simcore_service_webserver.users._notifications import (
     UserNotificationCreate,
     get_notification_key,
 )
+from simcore_service_webserver.users._preferences_api import (
+    get_frontend_user_preferences_aggregation,
+)
 from simcore_service_webserver.users.plugin import setup_users
 from simcore_service_webserver.users.schemas import PermissionGet, ProfileGet
 
@@ -176,6 +179,9 @@ async def test_get_profile(
             "organizations": standard_groups,
             "all": all_group,
         }
+        assert profile.preferences == await get_frontend_user_preferences_aggregation(
+            client.app, user_id=logged_user["id"], product_name="osparc"
+        )
 
 
 @pytest.mark.parametrize(
@@ -190,7 +196,7 @@ async def test_get_profile(
 async def test_update_profile(
     logged_user: UserInfoDict,
     client: TestClient,
-    user_role,
+    user_role: UserRole,
     expected: type[web.HTTPException],
 ):
     assert client.app

@@ -3352,6 +3352,28 @@ paths:
       responses:
         '204':
           description: Successful Response
+  /v0/me/preferences/{preference_id}:
+    patch:
+      tags:
+      - user
+      summary: Set Frontend Preference
+      operationId: set_frontend_preference
+      parameters:
+      - required: true
+        schema:
+          title: Preference Id
+          type: string
+        name: preference_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchRequestBody'
+        required: true
+      responses:
+        '204':
+          description: Successful Response
   /v0/me/tokens:
     get:
       tags:
@@ -6651,6 +6673,12 @@ components:
           exclusiveMinimum: true
           type: integer
           minimum: 0
+    PatchRequestBody:
+      title: PatchRequestBody
+      type: object
+      properties:
+        value:
+          title: Value
     PaymentTransaction:
       title: PaymentTransaction
       required:
@@ -6780,6 +6808,19 @@ components:
           example:
           - '15'
       additionalProperties: false
+    Preference:
+      title: Preference
+      required:
+      - defaultValue
+      - value
+      type: object
+      properties:
+        defaultValue:
+          title: Defaultvalue
+          description: used by the frontend
+        value:
+          title: Value
+          description: preference value
     PresignedLink:
       title: PresignedLink
       required:
@@ -6798,6 +6839,7 @@ components:
       - id
       - login
       - role
+      - preferences
       type: object
       properties:
         first_name:
@@ -6835,6 +6877,11 @@ components:
           description: If user has a trial account, it sets the expiration date, otherwise
             None
           format: date
+        preferences:
+          title: Preferences
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Preference'
     ProfileUpdate:
       title: ProfileUpdate
       type: object
