@@ -11,27 +11,16 @@ from dask_task_models_library.container_tasks.events import (
     TaskProgressEvent,
 )
 from dask_task_models_library.container_tasks.io import TaskOutputData
-from models_library.api_schemas_directorv2.comp_tasks import TEMPORARY_DEFAULT_WALLET_ID
-from models_library.clusters import DEFAULT_CLUSTER_ID, BaseCluster, ClusterTypeInModel
+from models_library.clusters import DEFAULT_CLUSTER_ID, BaseCluster
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import SimcorePlatformStatus
-from models_library.rpc_schemas_clusters_keeper.clusters import (
-    ClusterState,
-    OnDemandCluster,
-)
 from models_library.users import UserID
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-from servicelib.rabbitmq import (
-    RemoteMethodNotRegisteredError,
-    RPCMethodName,
-    RPCNamespace,
-)
 
 from ...core.errors import (
-    ComputationalBackendOnDemandClustersKeeperNotReadyError,
     ComputationalBackendOnDemandNotReadyError,
     TaskSchedulingError,
 )
@@ -53,39 +42,11 @@ from ...utils.rabbitmq import (
     publish_service_resource_tracking_stopped,
     publish_service_stopped_metrics,
 )
+from ..clusters_keeper import get_or_create_on_demand_cluster
 from ..db.repositories.comp_tasks import CompTasksRepository
 from .base_scheduler import BaseCompScheduler, ScheduledPipelineParams
 
 _logger = logging.getLogger(__name__)
-
-
-async def _get_or_create_on_demand_cluster(
-    user_id: UserID, scheduler: "DaskScheduler"
-) -> BaseCluster:
-    try:
-        returned_cluster: OnDemandCluster = await scheduler.rabbitmq_rpc_client.request(
-            RPCNamespace("clusters-keeper"),
-            RPCMethodName("get_or_create_cluster"),
-            timeout_s=300,
-            user_id=user_id,
-            wallet_id=TEMPORARY_DEFAULT_WALLET_ID,
-        )
-        _logger.info("received cluster: %s", returned_cluster)
-        if returned_cluster.state is not ClusterState.RUNNING:
-            raise ComputationalBackendOnDemandNotReadyError
-        if not returned_cluster.gateway_ready:
-            raise ComputationalBackendOnDemandNotReadyError
-
-        return BaseCluster(
-            name=f"{user_id=}on-demand-cluster",
-            type=ClusterTypeInModel.AWS,
-            owner=user_id,
-            endpoint=returned_cluster.endpoint,
-            authentication=returned_cluster.authentication,
-        )
-    except RemoteMethodNotRegisteredError as exc:
-        # no clusters-keeper, that is not going to work!
-        raise ComputationalBackendOnDemandClustersKeeperNotReadyError from exc
 
 
 @asynccontextmanager
@@ -96,7 +57,9 @@ async def _cluster_dask_client(
 ) -> AsyncIterator[DaskClient]:
     cluster: BaseCluster = scheduler.settings.default_cluster
     if pipeline_params.use_on_demand_clusters:
-        cluster = await _get_or_create_on_demand_cluster(user_id, scheduler)
+        cluster = await get_or_create_on_demand_cluster(
+            user_id, scheduler.rabbitmq_rpc_client
+        )
     if pipeline_params.cluster_id != DEFAULT_CLUSTER_ID:
         clusters_repo = ClustersRepository.instance(scheduler.db_engine)
         cluster = await clusters_repo.get_cluster(user_id, pipeline_params.cluster_id)
@@ -108,7 +71,7 @@ async def _cluster_dask_client(
 class DaskScheduler(BaseCompScheduler):
     dask_clients_pool: DaskClientsPool
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.dask_clients_pool.register_handlers(
             TaskHandlers(
                 self._task_progress_change_handler,
