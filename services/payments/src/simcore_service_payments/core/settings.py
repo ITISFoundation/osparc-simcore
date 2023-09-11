@@ -12,6 +12,7 @@ from pydantic import (
 )
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import BuildTargetEnum, LogLevel, VersionTag
+from settings_library.rabbit import RabbitSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 from .._meta import API_VERSION, API_VTAG, PROJECT_NAME
@@ -98,3 +99,7 @@ class ApplicationSettings(_BaseApplicationSettings):
         min_length=64,
     )
     PAYMENTS_ACCESS_TOKEN_EXPIRE_MINUTES: PositiveFloat = Field(default=30)
+
+    PAYMENTS_RABBITMQ: RabbitSettings = Field(
+        auto_default_from_env=True, description="settings for service/rabbitmq"
+    )

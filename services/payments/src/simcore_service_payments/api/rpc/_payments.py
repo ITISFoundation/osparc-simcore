@@ -4,6 +4,7 @@ from decimal import Decimal
 from fastapi import FastAPI
 from models_library.api_schemas_webserver.wallets import WalletPaymentCreated
 from models_library.users import UserID
+from servicelib.rabbitmq import RPCRouter
 
 from ...db.payments_transactions_repo import PaymentsTransactionsRepo
 from ...models.payments_gateway import InitPayment
@@ -12,8 +13,13 @@ from ...services.payments_gateway import PaymentGatewayApi
 _logger = logging.getLogger(__name__)
 
 
+router = RPCRouter()
+
+
+@router.expose()
 async def create_payment(
     app: FastAPI,
+    *,
     amount_dollars: Decimal,
     target_credits: Decimal,
     product_name: str,
@@ -40,7 +46,20 @@ async def create_payment(
 
     # Database
     repo = PaymentsTransactionsRepo()
-    _logger.debug("Annotate transaction %s", repo)
+    _logger.debug(
+        "Annotate transaction %s: %s",
+        repo,
+        {
+            "amount_dollars": amount_dollars,
+            "target_credits": target_credits,
+            "product_name": product_name,
+            "wallet_id": wallet_id,
+            "wallet_name": wallet_name,
+            "user_id": user_id,
+            "user_name": user_name,
+            "user_email": user_email,
+        },
+    )
 
     return WalletPaymentCreated(
         payment_id=f"{init.payment_id}",

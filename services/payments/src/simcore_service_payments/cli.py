@@ -3,9 +3,13 @@ import logging
 import os
 
 import typer
-from pydantic import SecretStr
 from servicelib.utils_secrets import generate_password, generate_token_secret_key
-from settings_library.utils_cli import create_settings_command, create_version_callback
+from settings_library.rabbit import RabbitSettings
+from settings_library.utils_cli import (
+    create_settings_command,
+    create_version_callback,
+    print_as_envfile,
+)
 
 from ._meta import PROJECT_NAME, __version__
 from .core.settings import ApplicationSettings
@@ -52,11 +56,17 @@ def generate_dotenv(ctx: typer.Context, *, auto_password: bool = False):
         PAYMENTS_GATEWAY_API_SECRET=os.environ.get(
             "PAYMENTS_GATEWAY_API_SECRET", "replace-with-api-secret"
         ),
+        PAYMENTS_RABBITMQ=os.environ.get(
+            "PAYMENTS_RABBITMQ",
+            RabbitSettings.create_from_envs(
+                RABBIT_HOST=os.environ.get("RABBIT_HOST", "replace-with-rabbit-host"),
+                RABBIT_SECURE=os.environ.get("RABBIT_SECURE", "0"),
+                RABBIT_USER=os.environ.get("RABBIT_USER", "replace-with-rabbit-user"),
+                RABBIT_PASSWORD=os.environ.get(
+                    "RABBIT_PASSWORD", "replace-with-rabbit-user"
+                ),
+            ),
+        ),
     )
 
-    for name, value in settings.dict().items():
-        if name.startswith("PAYMENTS_"):
-            new_value = (
-                f"{value.get_secret_value()}" if isinstance(value, SecretStr) else value
-            )
-            print(f"{name}={'null' if new_value is None else new_value}")  # noqa: T201
+    print_as_envfile(settings, compact=False, verbose=True, show_secrets=True)
