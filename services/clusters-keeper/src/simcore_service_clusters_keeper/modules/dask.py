@@ -29,7 +29,7 @@ async def ping_gateway(*, url: AnyUrl, password: SecretStr) -> bool:
             "osparc-gateway %s ping timed-out, the machine is likely still starting...",
             url,
         )
-    except ClientError:
+    except (ClientError, ValueError):
         # this could happen if the gateway is not properly started, but it should not last
         # unless the wrong password is used.
         _logger.info(
