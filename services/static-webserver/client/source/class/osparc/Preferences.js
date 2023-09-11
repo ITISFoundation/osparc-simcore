@@ -112,15 +112,17 @@ qx.Class.define("osparc.Preferences", {
     },
 
     saveThemeName: function(value) {
-      const params = {
-        url: {
-          preferenceId: "themeName"
-        },
-        data: {
-          value
-        }
-      };
-      osparc.data.Resources.fetch("preferences", "patch", params);
+      if (osparc.auth.Manager.getInstance().isLoggedIn()) {
+        const params = {
+          url: {
+            preferenceId: "themeName"
+          },
+          data: {
+            value
+          }
+        };
+        osparc.data.Resources.fetch("preferences", "patch", params);
+      }
     },
 
     requestChangePreferredWalletId: function(walletId) {
