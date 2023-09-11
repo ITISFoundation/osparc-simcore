@@ -1,8 +1,8 @@
 import asyncio
 import collections
 import logging
-from collections.abc import Awaitable, Callable, Coroutine
-from typing import Any, Final, Generator, NoReturn, Optional, cast, get_args
+from collections.abc import Awaitable, Callable, Coroutine, Generator
+from typing import Any, Final, NoReturn, Optional, cast, get_args
 from uuid import uuid4
 
 import dask_gateway
@@ -40,6 +40,14 @@ from simcore_sdk.node_ports_v2 import FileLinkType, Port, links, port_utils
 from simcore_sdk.node_ports_v2.links import ItemValue as _NPItemValue
 from simcore_sdk.node_ports_v2.ports_mapping import PortKey
 from simcore_service_director_v2.constants import UNDEFINED_DOCKER_LABEL
+from tenacity import (
+    TryAgain,
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_delay,
+    wait_fixed,
+)
 
 from ..core.errors import (
     ComputationalBackendNotConnectedError,
@@ -506,9 +514,23 @@ def check_scheduler_status(client: distributed.Client):
 _LARGE_NUMBER_OF_WORKERS: Final[int] = 10000
 
 
-async def check_maximize_workers(cluster: dask_gateway.GatewayCluster | None) -> None:
-    if cluster:
-        await cluster.scale(_LARGE_NUMBER_OF_WORKERS)
+@retry(
+    wait=wait_fixed(1),
+    retry=retry_if_exception_type(TryAgain),
+    reraise=True,
+    stop=stop_after_delay(60),
+    before_sleep=before_sleep_log(_logger, logging.WARNING),
+)
+async def wait_for_at_least_one_worker(cluster: dask_gateway.GatewayCluster) -> None:
+    scheduler_info = cluster.scheduler_info
+    if "workers" not in scheduler_info:
+        raise TryAgain
+    if not scheduler_info["workers"]:
+        raise TryAgain
+
+
+async def check_maximize_workers(cluster: dask_gateway.GatewayCluster) -> None:
+    await cluster.scale(_LARGE_NUMBER_OF_WORKERS)
 
 
 def _can_task_run_on_worker(
