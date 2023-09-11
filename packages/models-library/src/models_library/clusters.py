@@ -23,6 +23,7 @@ class ClusterTypeInModel(StrAutoEnum):
     # SEE models-library/tests/test__pydantic_models_and_enums.py
     AWS = auto()
     ON_PREMISE = auto()
+    ON_DEMAND = auto()
 
 
 class ClusterAccessRights(BaseModel):

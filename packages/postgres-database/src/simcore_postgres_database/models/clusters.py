@@ -10,6 +10,7 @@ from .base import metadata
 class ClusterType(Enum):
     AWS = "AWS"
     ON_PREMISE = "ON_PREMISE"
+    ON_DEMAND = "ON_DEMAND"
 
 
 clusters = sa.Table(
