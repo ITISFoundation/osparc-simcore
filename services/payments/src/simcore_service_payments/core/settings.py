@@ -78,8 +78,8 @@ class ApplicationSettings(_BaseApplicationSettings):
         ..., description="Base url to the payment gateway"
     )
 
-    PAYMENT_GATEWAY_API_KEY: SecretStr
-    PAYMENT_GATEWAY_API_SECRET: SecretStr
+    PAYMENTS_GATEWAY_API_KEY: SecretStr
+    PAYMENTS_GATEWAY_API_SECRET: SecretStr
 
     PAYMENTS_USERNAME: str = Field(
         ...,

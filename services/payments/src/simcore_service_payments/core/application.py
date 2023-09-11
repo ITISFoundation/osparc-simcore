@@ -9,7 +9,7 @@ from .._meta import (
     PROJECT_NAME,
     SUMMARY,
 )
-from ..rest.routes import setup_rest_api_routes
+from ..api.rest.routes import setup_rest_api_routes
 from .settings import ApplicationSettings
 
 

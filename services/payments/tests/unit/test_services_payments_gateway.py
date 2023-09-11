@@ -35,7 +35,7 @@ async def test_one_time_init_payment(app: FastAPI, faker: Faker):
     payment = InitPayment(
         amount_dollars=100,
         credits=100,
-        user_name=faker.username(),
+        user_name=faker.user_name(),
         user_email=faker.email(),
         wallet_name=faker.word(),
     )

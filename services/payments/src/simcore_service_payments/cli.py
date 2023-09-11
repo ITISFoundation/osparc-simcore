@@ -42,15 +42,15 @@ def generate_dotenv(ctx: typer.Context, *, auto_password: bool = False):
     ) or generate_password(length=32)
 
     settings = ApplicationSettings.create_from_envs(
-        PAYMENTS_GATEWAY_URL="http://127.0.0.1:8000",  # NOSONAR
         PAYMENTS_ACCESS_TOKEN_SECRET_KEY=generate_token_secret_key(32),
         PAYMENTS_USERNAME=username,
         PAYMENTS_PASSWORD=password,
-        PAYMENT_GATEWAY_API_KEY=os.environ.get(
-            "PAYMENT_GATEWAY_API_KEY", "replace-with-api-key"
+        PAYMENTS_GATEWAY_URL="http://127.0.0.1:8000",  # NOSONAR
+        PAYMENTS_GATEWAY_API_KEY=os.environ.get(
+            "PAYMENTS_GATEWAY_API_KEY", "replace-with-api-key"
         ),
-        PAYMENT_GATEWAY_API_SECRET=os.environ.get(
-            "PAYMENT_GATEWAY_API_SECRET", "replace-with-api-secret"
+        PAYMENTS_GATEWAY_API_SECRET=os.environ.get(
+            "PAYMENTS_GATEWAY_API_SECRET", "replace-with-api-secret"
         ),
     )
 

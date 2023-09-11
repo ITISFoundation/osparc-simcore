@@ -45,8 +45,8 @@ class PaymentGatewayApi:
     def create(cls, settings: ApplicationSettings) -> "PaymentGatewayApi":
         client = httpx.AsyncClient(
             auth=(
-                settings.PAYMENT_GATEWAY_API_KEY.get_secret_value(),
-                settings.PAYMENT_GATEWAY_API_SECRET.get_secret_value(),
+                settings.PAYMENTS_GATEWAY_API_KEY.get_secret_value(),
+                settings.PAYMENTS_GATEWAY_API_SECRET.get_secret_value(),
             ),
             base_url=settings.PAYMENTS_GATEWAY_URL,
         )
@@ -125,7 +125,7 @@ class PaymentGatewayApi:
 
     @classmethod
     def get_from_state(cls, app: FastAPI) -> "PaymentGatewayApi":
-        return app.state.payment_gateway_api
+        return app.state.payment_gateway_api  # type: ignore=[no-any-return]
 
     @classmethod
     def setup(cls, app: FastAPI):

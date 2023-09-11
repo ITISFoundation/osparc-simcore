@@ -31,11 +31,12 @@ def test_generate_dotenv(cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch)
 
     environs = load_dotenv(result.stdout)
 
-    envs = setenvs_from_dict(monkeypatch, environs)
-    settings_from_obj = ApplicationSettings.parse_obj(envs)
-    settings_from_envs = ApplicationSettings.create_from_envs()
+    with monkeypatch.context() as patch:
+        envs = setenvs_from_dict(patch, environs)
+        settings_from_obj = ApplicationSettings.parse_obj(envs)
+        settings_from_envs = ApplicationSettings.create_from_envs()
 
-    assert settings_from_envs == settings_from_obj
+        assert settings_from_envs == settings_from_obj
 
 
 def test_list_settings(cli_runner: CliRunner, app_environment: EnvVarsDict):
