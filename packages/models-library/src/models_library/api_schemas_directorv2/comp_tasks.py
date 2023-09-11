@@ -40,9 +40,6 @@ class ComputationCreate(BaseModel):
         default=None,
         description="the computation shall use the cluster described by its id, 0 is the default cluster",
     )
-    wallet_id: WalletID | None = Field(
-        default=None, description="the selected wallet ID"
-    )
     simcore_user_agent: str = ""
     use_on_demand_clusters: bool = Field(
         default=False,
@@ -62,9 +59,6 @@ class ComputationCreate(BaseModel):
     def ensure_expected_options(cls, v, values):
         if v is True and ("cluster_id" in values and values["cluster_id"] is not None):
             msg = "cluster_id cannot be set if use_on_demand_clusters is set"
-            raise ValueError(msg)
-        if v is True and ("wallet_id" not in values or values["wallet_id"] is None):
-            msg = "wallet_id must be set if use_on_demand_clusters is set"
             raise ValueError(msg)
         return v
 
