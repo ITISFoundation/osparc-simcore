@@ -4,7 +4,7 @@ import socket
 from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from dataclasses import dataclass, field
-from typing import Final
+from typing import Final, Union
 
 import dask_gateway
 import distributed
@@ -32,9 +32,9 @@ from ..core.errors import (
 )
 from .dask import check_maximize_workers, wrap_client_async_routine
 
-DaskGatewayAuths = (
-    dask_gateway.BasicAuth | dask_gateway.KerberosAuth | dask_gateway.JupyterHubAuth
-)
+DaskGatewayAuths = Union[
+    dask_gateway.BasicAuth, dask_gateway.KerberosAuth, dask_gateway.JupyterHubAuth
+]
 
 
 @dataclass
