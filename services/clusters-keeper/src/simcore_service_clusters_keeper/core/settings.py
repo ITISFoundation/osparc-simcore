@@ -9,7 +9,14 @@ from models_library.basic_types import (
     LogLevel,
     VersionTag,
 )
-from pydantic import Field, NonNegativeInt, PositiveInt, parse_obj_as, validator
+from pydantic import (
+    Field,
+    NonNegativeInt,
+    PositiveInt,
+    SecretStr,
+    parse_obj_as,
+    validator,
+)
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.rabbit import RabbitSettings
@@ -67,17 +74,6 @@ class EC2InstancesSettings(BaseCustomSettings):
         "this is required to start a new EC2 instance",
     )
 
-    EC2_INSTANCES_TIME_BEFORE_TERMINATION: datetime.timedelta = Field(
-        default=datetime.timedelta(minutes=1),
-        description="Time after which an EC2 instance may be terminated (repeat every hour, min 0, max 59 minutes)",
-    )
-
-    EC2_INSTANCES_MACHINES_BUFFER: NonNegativeInt = Field(
-        default=0,
-        description="Constant reserve of drained ready machines for fast(er) usage,"
-        "disabled when set to 0. Uses 1st machine defined in EC2_INSTANCES_ALLOWED_TYPES",
-    )
-
     EC2_INSTANCES_MAX_START_TIME: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=3),
         description="Usual time taken an EC2 instance with the given AMI takes to be in 'running' mode",
@@ -87,15 +83,6 @@ class EC2InstancesSettings(BaseCustomSettings):
         default_factory=list,
         description="script(s) to run on EC2 instance startup (be careful!), each entry is run one after the other using '&&' operator",
     )
-
-    @validator("EC2_INSTANCES_TIME_BEFORE_TERMINATION")
-    @classmethod
-    def ensure_time_is_in_range(cls, value):
-        if value < datetime.timedelta(minutes=0):
-            value = datetime.timedelta(minutes=0)
-        elif value > datetime.timedelta(minutes=59):
-            value = datetime.timedelta(minutes=59)
-        return value
 
     @validator("EC2_INSTANCES_ALLOWED_TYPES")
     @classmethod
@@ -133,16 +120,15 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # RUNTIME  -----------------------------------------------------------
     CLUSTERS_KEEPER_DEBUG: bool = Field(
-        default=False, description="Debug mode", env=["clusters_keeper_DEBUG", "DEBUG"]
+        default=False, description="Debug mode", env=["CLUSTERS_KEEPER_DEBUG", "DEBUG"]
     )
-
     CLUSTERS_KEEPER_LOGLEVEL: LogLevel = Field(
-        LogLevel.INFO, env=["clusters_keeper_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
+        LogLevel.INFO, env=["CLUSTERS_KEEPER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
     )
     CLUSTERS_KEEPER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
         env=[
-            "clusters_keeper_LOG_FORMAT_LOCAL_DEV_ENABLED",
+            "CLUSTERS_KEEPER_LOG_FORMAT_LOCAL_DEV_ENABLED",
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
         ],
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
@@ -160,6 +146,31 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     CLUSTERS_KEEPER_REGISTRY: RegistrySettings | None = Field(
         auto_default_from_env=True
+    )
+
+    CLUSTERS_KEEPER_TASK_INTERVAL: datetime.timedelta = Field(
+        default=datetime.timedelta(seconds=60),
+        description="interval between each clusters clean check (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+    )
+
+    SERVICE_TRACKING_HEARTBEAT: datetime.timedelta = Field(
+        default=datetime.timedelta(seconds=60),
+        description="Service heartbeat interval (everytime a heartbeat is sent into RabbitMQ)",
+    )
+
+    CLUSTERS_KEEPER_MAX_MISSED_HEARTBEATS_BEFORE_CLUSTER_TERMINATION: NonNegativeInt = Field(
+        default=5,
+        description="Max number of missed heartbeats before a cluster is terminated",
+    )
+
+    CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG: str = Field(
+        default="master-github-latest",
+        description="defines the image tag to use for the computational backend",
+    )
+
+    CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_GATEWAY_PASSWORD: SecretStr = Field(
+        default=SecretStr("my_secure_P1ssword"),
+        description="very secure password, should change soon",
     )
 
     @cached_property

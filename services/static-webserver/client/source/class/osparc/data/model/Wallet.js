@@ -21,8 +21,9 @@ qx.Class.define("osparc.data.model.Wallet", {
   construct: function(walletData) {
     this.base(arguments);
 
+    const walletId = walletData["walletId"];
     this.set({
-      walletId: walletData["walletId"],
+      walletId,
       name: walletData["name"],
       description: walletData["description"] ? walletData["description"] : null,
       thumbnail: walletData["thumbnail"] ? walletData["thumbnail"] : null,

@@ -76,7 +76,7 @@ from .exceptions import (
 )
 from .models import ProjectDict
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 APP_PROJECT_DBAPI = __name__ + ".ProjectDBAPI"
 ANY_USER = ANY_USER_ID_SENTINEL
@@ -449,7 +449,7 @@ class ProjectDBAPI(BaseProjectDB):
         async with AsyncExitStack() as stack:
             stack.enter_context(
                 log_context(
-                    log,
+                    _logger,
                     logging.DEBUG,
                     msg=f"Replace {project_uuid=} for {user_id=}",
                     extra=get_log_record_extra(user_id=user_id),
@@ -543,7 +543,7 @@ class ProjectDBAPI(BaseProjectDB):
                 raise ProjectNotFoundError(project_uuid=project_uuid)
 
     async def delete_project(self, user_id: int, project_uuid: str):
-        log.info(
+        _logger.info(
             "Deleting project with %s for user with %s",
             f"{project_uuid=}",
             f"{user_id}",
@@ -575,7 +575,7 @@ class ProjectDBAPI(BaseProjectDB):
         new_node_data: dict[str, Any],
     ) -> tuple[ProjectDict, dict[NodeIDStr, Any]]:
         with log_context(
-            log,
+            _logger,
             logging.DEBUG,
             msg=f"update {project_uuid=}:{node_id=} for {user_id=}",
             extra=get_log_record_extra(user_id=user_id),
@@ -604,7 +604,7 @@ class ProjectDBAPI(BaseProjectDB):
             ProjectInvalidUsageError if client tries to remove nodes using this method (use remove_project_node)
         """
         with log_context(
-            log,
+            _logger,
             logging.DEBUG,
             msg=f"update multiple nodes on {project_uuid=} for {user_id=}",
             extra=get_log_record_extra(user_id=user_id),
@@ -639,7 +639,7 @@ class ProjectDBAPI(BaseProjectDB):
         async with AsyncExitStack() as stack:
             stack.enter_context(
                 log_context(
-                    log,
+                    _logger,
                     logging.DEBUG,
                     msg=f"Patching workbench of {project_uuid=} for {user_id=}",
                     extra=get_log_record_extra(user_id=user_id),

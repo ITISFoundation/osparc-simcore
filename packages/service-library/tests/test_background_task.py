@@ -79,7 +79,7 @@ async def test_background_task_created_and_deleted(
     assert mock_background_task.call_count > 1
 
 
-async def test_dynamic_scaling_task_raises_restarts(
+async def test_background_task_raises_restarts(
     mock_background_task: mock.AsyncMock,
     task_interval: datetime.timedelta,
     create_background_task: Callable[
@@ -96,7 +96,7 @@ async def test_dynamic_scaling_task_raises_restarts(
     assert mock_background_task.call_count > 1
 
 
-async def test_dynamic_scaling_task_correctly_cancels(
+async def test_background_task_correctly_cancels(
     mock_background_task: mock.AsyncMock,
     task_interval: datetime.timedelta,
     create_background_task: Callable[

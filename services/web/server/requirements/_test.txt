@@ -81,6 +81,8 @@ idna==3.3
     #   yarl
 iniconfig==2.0.0
     # via pytest
+jsonref==1.1.0
+    # via -r requirements/_test.in
 jsonschema==3.2.0
     # via
     #   -c requirements/_base.txt

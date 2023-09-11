@@ -81,5 +81,6 @@ exclude_patterns:
   - "**/pytest_plugin/"
   - "**/sandbox/"
   - packages/models-library/src/models_library/utils/_original_fastapi_encoders.py
+  - services/resource-usage-tracker/src/simcore_service_resource_usage_tracker/modules/db/repositories/resource_tracker.py
   - services/web/server/src/simcore_service_webserver/exporter/formatters/sds/xlsx/templates/code_description.py
   - services/web/server/src/simcore_service_webserver/projects/db.py  # NOTE: refactor will be done in upcomming PRs

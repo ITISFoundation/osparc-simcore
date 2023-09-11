@@ -14,8 +14,8 @@ from ..modules.inputs import disable_inputs_state_pulling, enable_inputs_state_p
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.outputs import (
     OutputsContext,
-    disable_outputs_watcher,
-    enable_outputs_watcher,
+    disable_event_propagation,
+    enable_event_propagation,
 )
 from ._dependencies import get_application, get_mounted_volumes, get_outputs_context
 
@@ -63,10 +63,10 @@ async def toggle_ports_io(
     - inputs ports from pulling data
     """
     if patch_ports_io_item.is_enabled:
-        await enable_outputs_watcher(app)
+        await enable_event_propagation(app)
         enable_inputs_state_pulling(app)
     else:
-        await disable_outputs_watcher(app)
+        await disable_event_propagation(app)
         disable_inputs_state_pulling(app)
 
 

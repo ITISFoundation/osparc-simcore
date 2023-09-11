@@ -47,7 +47,7 @@ qx.Class.define("osparc.desktop.credits.Utils", {
 
         const wallets = store.getWallets();
         if (emptySelection) {
-          const sbItem = new qx.ui.form.ListItem(qx.locale.Manager.tr("Select Wallet"));
+          const sbItem = new qx.ui.form.ListItem(qx.locale.Manager.tr("Select Credit Account"));
           sbItem.walletId = null;
           selectBox.add(sbItem);
         }
@@ -83,6 +83,16 @@ qx.Class.define("osparc.desktop.credits.Utils", {
         }
       }
       return false;
+    },
+
+    getWallet: function(walletId) {
+      const store = osparc.store.Store.getInstance();
+      const wallets = store.getWallets();
+      const favouriteWallet = wallets.find(wallet => wallet.getWalletId() === walletId);
+      if (favouriteWallet) {
+        return favouriteWallet;
+      }
+      return null;
     },
 
     getFavouriteWallet: function() {

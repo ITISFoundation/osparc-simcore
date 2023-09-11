@@ -79,7 +79,7 @@ def setup_outputs_watcher(app: FastAPI) -> None:
             outputs_context=outputs_context,
         )
         await app.state.outputs_watcher.start()
-        await disable_outputs_watcher(app)
+        await disable_event_propagation(app)
 
     async def on_shutdown() -> None:
         outputs_watcher: OutputsWatcher | None = app.state.outputs_watcher
@@ -90,22 +90,22 @@ def setup_outputs_watcher(app: FastAPI) -> None:
     app.add_event_handler("shutdown", on_shutdown)
 
 
-async def disable_outputs_watcher(app: FastAPI) -> None:
+async def disable_event_propagation(app: FastAPI) -> None:
     outputs_watcher: OutputsWatcher | None = app.state.outputs_watcher
     if outputs_watcher is not None:
         await outputs_watcher.disable_event_propagation()
 
 
-async def enable_outputs_watcher(app: FastAPI) -> None:
+async def enable_event_propagation(app: FastAPI) -> None:
     outputs_watcher: OutputsWatcher | None = app.state.outputs_watcher
     if outputs_watcher is not None:
         await outputs_watcher.enable_event_propagation()
 
 
 @asynccontextmanager
-async def outputs_watcher_disabled(app: FastAPI) -> AsyncGenerator[None, None]:
+async def event_propagation_disabled(app: FastAPI) -> AsyncGenerator[None, None]:
     try:
-        await disable_outputs_watcher(app)
+        await disable_event_propagation(app)
         yield None
     finally:
-        await enable_outputs_watcher(app)
+        await enable_event_propagation(app)

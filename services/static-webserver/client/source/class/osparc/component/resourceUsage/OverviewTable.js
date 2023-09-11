@@ -64,7 +64,7 @@ qx.Class.define("osparc.component.resourceUsage.OverviewTable", {
       },
       wallet: {
         pos: 6,
-        title: qx.locale.Manager.tr("Wallet")
+        title: qx.locale.Manager.tr("Credit Account")
       },
       cost: {
         pos: 7,
@@ -85,11 +85,15 @@ qx.Class.define("osparc.component.resourceUsage.OverviewTable", {
             const serviceName = parts.pop();
             newData[cols["service"].pos] = serviceName + ":" + data["service_version"];
           }
-          const startTime = new Date(data["started_at"]);
-          newData[cols["start"].pos] = osparc.utils.Utils.formatDateAndTime(startTime);
-          const stopTime = new Date(data["stopped_at"]);
-          const durationTimeSec = (stopTime - startTime)/1000;
-          newData[cols["duration"].pos] = durationTimeSec;
+          if (data["started_at"]) {
+            const startTime = new Date(data["started_at"]);
+            newData[cols["start"].pos] = osparc.utils.Utils.formatDateAndTime(startTime);
+            if (data["stopped_at"]) {
+              const stopTime = new Date(data["stopped_at"]);
+              const durationTimeSec = (stopTime - startTime)/1000;
+              newData[cols["duration"].pos] = durationTimeSec;
+            }
+          }
           newData[cols["status"].pos] = qx.lang.String.firstUp(data["service_run_status"].toLowerCase());
           newData[cols["wallet"].pos] = data["wallet_label"] ? data["wallet_label"] : "unknown";
           newData[cols["cost"].pos] = "unknown";

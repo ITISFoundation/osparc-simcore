@@ -10,7 +10,6 @@ from pathlib import Path
 
 import aiodocker
 import httpx
-import psutil
 import pytest
 import requests
 import simcore_service_clusters_keeper
@@ -20,7 +19,6 @@ from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
 from moto.server import ThreadedMotoServer
-from pydantic import ByteSize
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
@@ -38,6 +36,7 @@ from types_aiobotocore_ec2.client import EC2Client
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 pytest_plugins = [
+    "pytest_simcore.dask_gateway",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
@@ -92,6 +91,26 @@ def app_environment(
         },
     )
     return mock_env_devel_environment | envs
+
+
+@pytest.fixture
+def disable_clusters_management_background_task(
+    mocker: MockerFixture,
+) -> Iterator[None]:
+    start_background_task = mocker.patch(
+        "simcore_service_clusters_keeper.modules.clusters_management_task.start_periodic_task",
+        autospec=True,
+    )
+
+    stop_background_task = mocker.patch(
+        "simcore_service_clusters_keeper.modules.clusters_management_task.stop_periodic_task",
+        autospec=True,
+    )
+
+    yield
+
+    start_background_task.assert_called_once()
+    stop_background_task.assert_called_once()
 
 
 @pytest.fixture
@@ -324,21 +343,6 @@ async def ec2_client(
 
 
 @pytest.fixture
-def host_cpu_count() -> int:
-    return psutil.cpu_count()
-
-
-@pytest.fixture
-def host_memory_total() -> ByteSize:
-    return ByteSize(psutil.virtual_memory().total)
-
-
-@pytest.fixture
-def aws_instance_private_dns() -> str:
-    return "ip-10-23-40-12.ec2.internal"
-
-
-@pytest.fixture
 def fake_ec2_instance_data(faker: Faker) -> Callable[..., EC2InstanceData]:
     def _creator(**overrides) -> EC2InstanceData:
         return EC2InstanceData(
@@ -347,8 +351,10 @@ def fake_ec2_instance_data(faker: Faker) -> Callable[..., EC2InstanceData]:
                     "launch_time": faker.date_time(tzinfo=timezone.utc),
                     "id": faker.uuid4(),
                     "aws_private_dns": faker.name(),
+                    "aws_public_ip": faker.ipv4_public(),
                     "type": faker.pystr(),
                     "state": faker.pystr(),
+                    "tags": faker.pydict(allowed_types=(str,)),
                 }
                 | overrides
             )

@@ -1,17 +1,15 @@
 import json
-import logging
 from typing import Any
 
 from fastapi import FastAPI, status
 from httpx import Response, Timeout
+from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 
 from ....core.settings import DynamicSidecarSettings
 from ._base import BaseThinClient, expect_status, retry_on_errors
-
-logger = logging.getLogger(__name__)
 
 
 class ThinSidecarsClient(BaseThinClient):
@@ -159,11 +157,21 @@ class ThinSidecarsClient(BaseThinClient):
     @retry_on_errors
     @expect_status(status.HTTP_202_ACCEPTED)
     async def post_containers_tasks(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl, *, compose_spec: str
+        self,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
+        *,
+        compose_spec: str,
+        metrics_params: CreateServiceMetricsAdditionalParams,
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "/containers")
         # change introduce in OAS version==1.1.0
-        return await self.client.post(url, json={"docker_compose_yaml": compose_spec})
+        return await self.client.post(
+            url,
+            json={
+                "docker_compose_yaml": compose_spec,
+                "metrics_params": metrics_params.dict(),
+            },
+        )
 
     @retry_on_errors
     @expect_status(status.HTTP_202_ACCEPTED)
