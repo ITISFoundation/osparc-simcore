@@ -26,23 +26,43 @@ INVALID_INVITATION_URL_MSG = "Invalid invitation link"
 #
 
 
-_INPUTS_EXAMPLE: dict[str, Any] = {
+_MINIMAL_EXAMPLE: dict[str, Any] = {
     "issuer": "issuerid",
     "guest": "invitedguest@company.com",
-    "trial_account_days": 2,
 }
+
+
+_EXAMPLES: list[dict[str, Any]] = [
+    _MINIMAL_EXAMPLE,
+    {
+        **_MINIMAL_EXAMPLE,
+        "trial_account_days": 2,
+    },
+    {
+        **_MINIMAL_EXAMPLE,
+        "product": "s4llite",
+    },
+    {
+        **_MINIMAL_EXAMPLE,
+        "trial_account_days": 2,
+        "product": "s4llite",
+    },
+]
 
 
 class _ApiInvitationInputs(InvitationInputs):
     class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {"example": _INPUTS_EXAMPLE}
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "example": _MINIMAL_EXAMPLE,
+            "examples": _EXAMPLES,
+        }
 
 
 class _ApiInvitationContent(InvitationContent):
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
-                **_INPUTS_EXAMPLE,
+                **_MINIMAL_EXAMPLE,
                 "created": "2023-01-11 13:11:47.293595",
             }
         }
@@ -54,7 +74,7 @@ class _InvitationContentAndLink(_ApiInvitationContent):
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
-                **_INPUTS_EXAMPLE,
+                **_MINIMAL_EXAMPLE,
                 "created": "2023-01-11 12:11:47.293595",
                 "invitation_url": "https://foo.com/#/registration?invitation=1234",
             }
@@ -108,8 +128,10 @@ async def create_invitation(
 )
 async def extracts_invitation_from_code(
     encrypted: _EncryptedInvitation,
-    settings: ApplicationSettings = Depends(get_settings),
-    _credentials: HTTPBasicCredentials | None = Depends(get_validated_credentials),
+    settings: Annotated[ApplicationSettings, Depends(get_settings)],
+    _credentials: Annotated[
+        HTTPBasicCredentials | None, Depends(get_validated_credentials)
+    ],
 ):
     """Decrypts the invitation code and returns its content"""
 
