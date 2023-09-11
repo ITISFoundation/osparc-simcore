@@ -55,10 +55,12 @@ def fake_password(faker: Faker) -> str:
 
 
 @pytest.fixture
-def docker_compose_service_payments_envs(
+def docker_compose_service_payments_env_vars(
     services_docker_compose_file: Path,
     env_devel_dict: EnvVarsDict,
 ) -> EnvVarsDict:
+    """env vars injected at the docker-compose"""
+
     payments = yaml.safe_load(services_docker_compose_file.read_text())["services"][
         "payments"
     ]
@@ -66,8 +68,16 @@ def docker_compose_service_payments_envs(
     def _substitute(item):
         key, value = item.split("=")
         if m := re.match(r"\${([^{}:-]\w+)", value):
-            if value := env_devel_dict.get(m.group(1)):
-                return key, value
+            expected_env_var = m.group(1)
+            try:
+                # NOTE: if this raises, then the RHS env-vars in the docker-compose are
+                # not defined in the env-devel
+                if value := env_devel_dict[expected_env_var]:
+                    return key, value
+            except KeyError as err:
+                pytest.fail(
+                    f"{expected_env_var} is not defined in .env-devel but used in docker-compose services[{payments}].environment[{key}]"
+                )
         return None
 
     envs: EnvVarsDict = {}
@@ -82,7 +92,7 @@ def docker_compose_service_payments_envs(
 @pytest.fixture
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
-    docker_compose_service_payments_envs: EnvVarsDict,
+    docker_compose_service_payments_env_vars: EnvVarsDict,
     secret_key: str,
     fake_user_name: str,
     fake_password: str,
@@ -90,7 +100,7 @@ def app_environment(
     return setenvs_from_dict(
         monkeypatch,
         {
-            **docker_compose_service_payments_envs,
+            **docker_compose_service_payments_env_vars,
             "PAYMENTS_ACCESS_TOKEN_SECRET_KEY": secret_key,
             "PAYMENTS_USERNAME": fake_user_name,
             "PAYMENTS_PASSWORD": fake_password,
