@@ -152,7 +152,8 @@ async def test_get_or_create_cluster(
         wallet_id=wallet_id,
     )
     assert rpc_response
-    created_cluster = ClusterGet.parse_raw(rpc_response)
+    assert isinstance(rpc_response, ClusterGet)
+    created_cluster = rpc_response
     # check we do have a new machine in AWS
     await _assert_cluster_instance_created(ec2_client, user_id, wallet_id)
     # it is called once as moto server creates instances instantly
@@ -167,7 +168,8 @@ async def test_get_or_create_cluster(
         wallet_id=wallet_id,
     )
     assert rpc_response
-    returned_cluster = ClusterGet.parse_raw(rpc_response)
+    assert isinstance(rpc_response, ClusterGet)
+    returned_cluster = rpc_response
     # check we still have only 1 instance
     await _assert_cluster_heartbeat_on_instance(ec2_client)
     mocked_dask_ping_gateway.ping_gateway.assert_called_once()

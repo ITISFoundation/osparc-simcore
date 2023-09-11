@@ -31,7 +31,7 @@ def setup_statics(app: web.Application) -> None:
     setup_products(app)
 
     # serves information composed by making 4 http requests (once for each product)
-    # to the index.html in each of the 4 product directories /osparc, /s4l, /s4llite and /tis
+    # to the index.html in each of the 4 product directories /osparc, /s4l, /s4llite, /s4lacad and /tis
     app.router.add_get("/", get_cached_frontend_index, name=INDEX_RESOURCE_NAME)
 
     # statics.json is computed here and contains information used

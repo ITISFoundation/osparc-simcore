@@ -87,7 +87,7 @@ qx.Class.define("osparc.component.share.NewCollaboratorsManager", {
       } else {
         includeEveryone = osparc.data.Permissions.getInstance().canDo("study.everyone.share");
       }
-      osparc.store.Store.getInstance().getPotentialCollaborators(includeEveryone)
+      osparc.store.Store.getInstance().getPotentialCollaborators(false, includeEveryone)
         .then(potentialCollaborators => {
           this.__visibleCollaborators = potentialCollaborators;
           this.__addCollaborators();
