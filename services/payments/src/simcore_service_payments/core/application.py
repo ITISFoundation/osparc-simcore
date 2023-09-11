@@ -10,6 +10,8 @@ from .._meta import (
     SUMMARY,
 )
 from ..api.rest.routes import setup_rest_api_routes
+from ..api.rpc.routes import setup_rpc_routes
+from ..services.rabbitmq import setup_rabbitmq
 from .settings import ApplicationSettings
 
 
@@ -30,6 +32,9 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     # PLUGINS SETUP
     setup_rest_api_routes(app)
+
+    setup_rabbitmq(app)
+    setup_rpc_routes(app)
 
     # ERROR HANDLERS
     # ... add here ...
