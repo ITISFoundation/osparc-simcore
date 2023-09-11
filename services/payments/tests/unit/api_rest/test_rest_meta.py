@@ -5,7 +5,7 @@
 
 
 import httpx
-import simcore_service_payments.rest._health as health_module
+import simcore_service_payments.api.rest._health as health_module
 from fastapi import status
 from simcore_service_payments._meta import API_VTAG
 from simcore_service_payments.models.schemas.meta import Meta
