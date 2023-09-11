@@ -67,6 +67,14 @@ qx.Class.define("osparc.desktop.MainPage", {
             });
           // setTimeout(() => osparc.desktop.MainPageHandler.getInstance().showUserCenter(), 1000);
         }
+        const preferenceSettings = osparc.Preferences.getInstance();
+        const preferenceWalletId = preferenceSettings.getPreferredWalletId();
+        const wallets = store.getWallets();
+        if (preferenceWalletId === null && wallets && wallets.length) {
+          // Select one by default: according to the use case, the one larger number of accessRights
+          wallets.sort((a, b) => a.getAccessRights().length - b.getAccessRights().length);
+          preferenceSettings.requestChangePreferredWalletId(wallets[0].getWalletId());
+        }
       });
 
     Promise.all([

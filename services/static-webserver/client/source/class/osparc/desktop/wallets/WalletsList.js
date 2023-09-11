@@ -170,15 +170,9 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
             const {
               walletId
             } = e.getData();
-            const store = osparc.store.Store.getInstance();
-            store.getWallets().forEach(wallet => {
-              if (wallet.getWalletId() === parseInt(walletId)) {
-                wallet.setPreferredWallet(!wallet.isPreferredWallet());
-              } else {
-                wallet.setPreferredWallet(false);
-              }
-            });
-            this.loadWallets();
+            const preferencesSettings = osparc.Preferences.getInstance();
+            preferencesSettings.addListener("changePreferredWalletId", () => this.loadWallets());
+            preferencesSettings.requestChangePreferredWalletId(parseInt(walletId));
           });
         }
       });

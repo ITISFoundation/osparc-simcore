@@ -398,7 +398,7 @@ qx.Class.define("osparc.Application", {
                   break;
                 case "preferredWalletId":
                   if (value) {
-                    preferencesSettings.setPreferredWalletId(value);
+                    preferencesSettings.setPreferredWalletId(parseInt(value));
                   }
                   break;
                 default:

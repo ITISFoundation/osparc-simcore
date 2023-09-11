@@ -31,7 +31,7 @@ qx.Class.define("osparc.Preferences", {
     preferredWalletId: {
       nullable: false,
       init: null,
-      check: "Object",
+      check: "Number",
       event: "changePreferredWalletId"
     },
 
@@ -41,19 +41,6 @@ qx.Class.define("osparc.Preferences", {
       check: "String",
       apply: "__applyThemeName"
     },
-    /*
-    dontShowAnnouncements: {
-      nullable: false,
-      init: {},
-      check: "Object"
-    },
-
-    serviceHits: {
-      nullable: false,
-      init: {},
-      check: "Object"
-    },
-    */
 
     // ---------------------------
 
@@ -116,7 +103,7 @@ qx.Class.define("osparc.Preferences", {
           value
         }
       };
-      osparc.data.Resources.fetch("preferences", "patch", params);
+      return osparc.data.Resources.fetch("preferences", "patch", params);
     }
   },
 
@@ -140,15 +127,7 @@ qx.Class.define("osparc.Preferences", {
     },
 
     requestChangePreferredWalletId: function(walletId) {
-      const params = {
-        url: {
-          preferenceId: "preferredWalletId"
-        },
-        data: {
-          value: walletId
-        }
-      };
-      osparc.data.Resources.fetch("preferences", "patch", params)
+      this.self().patchPreference("preferredWalletId", walletId)
         .then(() => this.setPreferredWalletId(walletId))
         .catch(err => {
           console.error(err);
