@@ -43,7 +43,6 @@ def test_generate_key(cli_runner: CliRunner):
     assert len(INVITATIONS_SECRET_KEY) >= 44
 
 
-@pytest.mark.testit
 def test_invite_user_and_check_invitation(
     cli_runner: CliRunner, faker: Faker, invitation_data: InvitationInputs
 ):
