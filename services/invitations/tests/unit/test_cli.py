@@ -5,8 +5,8 @@
 
 import os
 
+import pytest
 from faker import Faker
-from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import load_dotenv, setenvs_from_dict
 from simcore_service_invitations._meta import API_VERSION
@@ -17,7 +17,7 @@ from typer.testing import CliRunner
 
 
 def test_cli_help_and_version(cli_runner: CliRunner):
-    # invitations-maker --help
+    # simcore-service-invitations --help
     result = cli_runner.invoke(app, "--help")
     assert result.exit_code == os.EX_OK, result.output
 
@@ -26,20 +26,30 @@ def test_cli_help_and_version(cli_runner: CliRunner):
     assert result.stdout.strip() == API_VERSION
 
 
-def test_invite_user_and_check_invitation(
-    cli_runner: CliRunner, faker: Faker, invitation_data: InvitationInputs
-):
-    # invitations-maker generate-key
+def _run_generate_and_get_dotenv(cli_runner: CliRunner) -> EnvVarsDict:
+    # simcore-service-invitations --generate-dotenv
+    result = cli_runner.invoke(app, "generate-dotenv --auto-password")
+    assert result.exit_code == os.EX_OK, result.output
+    return load_dotenv(result.stdout)
+
+
+def test_generate_key(cli_runner: CliRunner):
+    # simcore-service-invitations generate-key
     result = cli_runner.invoke(app, "generate-key")
     assert result.exit_code == os.EX_OK, result.output
 
-    # export INVITATIONS_SECRET_KEY=$(invitations-maker generate-key)
-    environs = {
-        "INVITATIONS_SECRET_KEY": result.stdout.strip(),
-        "INVITATIONS_OSPARC_URL": faker.url(),
-    }
+    # export INVITATIONS_SECRET_KEY=$(simcore-service-invitations generate-key)
+    INVITATIONS_SECRET_KEY = result.stdout.strip()
+    assert len(INVITATIONS_SECRET_KEY) >= 44
 
-    # invitations-maker invite guest@email.com --issuer=me --trial-account-days=3
+
+@pytest.mark.testit
+def test_invite_user_and_check_invitation(
+    cli_runner: CliRunner, faker: Faker, invitation_data: InvitationInputs
+):
+    environs = _run_generate_and_get_dotenv(cli_runner)
+
+    # simcore-service-invitations invite guest@email.com --issuer=me --trial-account-days=3
     trial_account = ""
     if invitation_data.trial_account_days:
         trial_account = f"--trial-account-days={invitation_data.trial_account_days}"
@@ -54,7 +64,7 @@ def test_invite_user_and_check_invitation(
     invitation_url = result.stdout
     print(invitation_url)
 
-    # invitations-maker extrac https://foo#invitation=123
+    # simcore-service-invitations extrac https://foo#invitation=123
     result = cli_runner.invoke(
         app,
         f"extract {invitation_url}",
@@ -64,12 +74,9 @@ def test_invite_user_and_check_invitation(
     assert invitation_data == InvitationInputs.parse_raw(result.stdout)
 
 
-def test_generate_dotenv(cli_runner: CliRunner, monkeypatch: MonkeyPatch):
-    # invitations-maker --generate-dotenv
-    result = cli_runner.invoke(app, "generate-dotenv --auto-password")
-    assert result.exit_code == os.EX_OK, result.output
-
-    environs = load_dotenv(result.stdout)
+def test_generate_dotenv(cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch):
+    # simcore-service-invitations --generate-dotenv
+    environs = _run_generate_and_get_dotenv(cli_runner)
 
     envs = setenvs_from_dict(monkeypatch, environs)
     settings_from_obj = ApplicationSettings.parse_obj(envs)

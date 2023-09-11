@@ -111,12 +111,11 @@ def invite(
     trial_account_days: Annotated[
         int,
         typer.Option(
-            default=None,
             help=InvitationInputs.__fields__[
                 "trial_account_days"
             ].field_info.description,
         ),
-    ],
+    ] = None,  # type: ignore
 ):
     """Creates an invitation link for user with 'email' and issued by 'issuer'"""
     assert ctx  # nosec

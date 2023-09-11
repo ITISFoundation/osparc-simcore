@@ -7,6 +7,7 @@ from urllib import parse
 
 from cryptography.fernet import Fernet, InvalidToken
 from models_library.emails import LowerCaseEmailStr
+from models_library.utils.pydantic_tools_extension import FieldNotRequired
 from pydantic import (
     BaseModel,
     Field,
@@ -51,6 +52,7 @@ class InvitationInputs(BaseModel):
         description="If set, this invitation will activate a trial account."
         "Sets the number of days from creation until the account expires",
     )
+    product: str = FieldNotRequired(description="If not set, a default=")
 
 
 class InvitationContent(InvitationInputs):

@@ -140,6 +140,11 @@ multidict==6.0.4
     # via
     #   aiohttp
     #   yarl
+orjson==3.9.7
+    # via
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/./../../../packages/models-library/requirements/_base.in
 packaging==23.0
     # via -r requirements/_base.in
 pamqp==3.2.1
@@ -238,11 +243,15 @@ tenacity==8.1.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
+toolz==0.12.0
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
 tqdm==4.64.1
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-typer==0.7.0
+typer==0.9.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/./../../../packages/settings-library/requirements/_base.in
@@ -253,6 +262,7 @@ typing-extensions==4.4.0
     #   aiodebug
     #   aiodocker
     #   pydantic
+    #   typer
 uvicorn==0.20.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
