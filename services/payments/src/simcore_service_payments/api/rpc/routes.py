@@ -21,5 +21,5 @@ def _create_on_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
     return _start
 
 
-def setup_rpc_routes(app: FastAPI) -> None:
+def setup_rpc_api_routes(app: FastAPI) -> None:
     app.add_event_handler("startup", _create_on_startup(app))

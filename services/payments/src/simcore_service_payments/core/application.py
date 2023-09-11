@@ -10,7 +10,8 @@ from .._meta import (
     SUMMARY,
 )
 from ..api.rest.routes import setup_rest_api_routes
-from ..api.rpc.routes import setup_rpc_routes
+from ..api.rpc.routes import setup_rpc_api_routes
+from ..services.payments_gateway import setup_payments_gateway
 from ..services.rabbitmq import setup_rabbitmq
 from .settings import ApplicationSettings
 
@@ -31,10 +32,14 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
     # PLUGINS SETUP
-    setup_rest_api_routes(app)
 
+    # APIs w/ webserver
     setup_rabbitmq(app)
-    setup_rpc_routes(app)
+    setup_rpc_api_routes(app)
+
+    # APIs w/ payments-gateway
+    setup_payments_gateway(app)
+    setup_rest_api_routes(app)
 
     # ERROR HANDLERS
     # ... add here ...
