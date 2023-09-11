@@ -1,6 +1,6 @@
 from fastapi import APIRouter, FastAPI
 
-from .._meta import API_VTAG
+from ..._meta import API_VTAG
 from . import _acknowledgements, _auth, _health, _meta
 
 

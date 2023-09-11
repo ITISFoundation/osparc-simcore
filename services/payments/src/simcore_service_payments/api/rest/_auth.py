@@ -4,9 +4,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from ..core.settings import ApplicationSettings
-from ..models.schemas.auth import Token
-from ..services.auth import authenticate_user, encode_access_token
+from ...core.settings import ApplicationSettings
+from ...models.schemas.auth import Token
+from ...services.auth import authenticate_user, encode_access_token
 from ._dependencies import get_settings
 
 _logger = logging.getLogger(__name__)

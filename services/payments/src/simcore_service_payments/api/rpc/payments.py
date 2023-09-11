@@ -5,9 +5,9 @@ from fastapi import FastAPI
 from models_library.api_schemas_webserver.wallets import WalletPaymentCreated
 from models_library.users import UserID
 
-from ..db.payments_transactions import PaymentsTransactionsRepo
-from ..models.payments_gateway import InitPayment
-from ..services.payments_gateway import PaymentGatewayApi
+from ...db.payments_transactions import PaymentsTransactionsRepo
+from ...models.payments_gateway import InitPayment
+from ...services.payments_gateway import PaymentGatewayApi
 
 _logger = logging.getLogger(__name__)
 

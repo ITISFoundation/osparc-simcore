@@ -4,8 +4,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
-from .._meta import API_VERSION, PROJECT_NAME
-from ..models.schemas.meta import Meta
+from ..._meta import API_VERSION, PROJECT_NAME
+from ...models.schemas.meta import Meta
 from ._dependencies import get_reverse_url_mapper
 
 _logger = logging.getLogger(__name__)

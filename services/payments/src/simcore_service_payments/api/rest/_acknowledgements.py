@@ -3,8 +3,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 
-from ..models.auth import SessionData
-from ..models.schemas.acknowledgements import (
+from ...models.auth import SessionData
+from ...models.schemas.acknowledgements import (
     AckPayment,
     AckPaymentMethod,
     PaymentID,
