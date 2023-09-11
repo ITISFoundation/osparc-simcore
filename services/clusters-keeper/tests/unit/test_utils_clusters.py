@@ -38,7 +38,7 @@ def test_create_cluster_from_ec2_instance(
         faker.pyint(),
         faker.pyint(),
         SecretStr(faker.password()),
-        faker.pybool(),
+        gateway_ready=faker.pybool(),
     )
     assert cluster_instance
     assert cluster_instance.state is expected_cluster_state
