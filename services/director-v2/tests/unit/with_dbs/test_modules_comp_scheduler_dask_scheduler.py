@@ -91,9 +91,7 @@ def _assert_dask_client_correctly_initialized(
     )
     mocked_dask_client.register_handlers.assert_called_once_with(
         TaskHandlers(
-            cast(
-                DaskScheduler, scheduler
-            )._task_progress_change_handler,  # noqa: SLF001
+            cast(DaskScheduler, scheduler)._task_progress_change_handler,
             cast(DaskScheduler, scheduler)._task_log_change_handler,  # noqa: SLF001
         )
     )
@@ -282,6 +280,7 @@ async def test_empty_pipeline_is_not_scheduled(
             project_id=empty_project.uuid,
             cluster_id=DEFAULT_CLUSTER_ID,
             run_metadata=run_metadata,
+            use_on_demand_clusters=False,
         )
     # create the empty pipeline now
     pipeline(project_id=f"{empty_project.uuid}")
@@ -292,6 +291,7 @@ async def test_empty_pipeline_is_not_scheduled(
         project_id=empty_project.uuid,
         cluster_id=DEFAULT_CLUSTER_ID,
         run_metadata=run_metadata,
+        use_on_demand_clusters=False,
     )
     assert len(scheduler.scheduled_pipelines) == 0
     assert (
@@ -333,6 +333,7 @@ async def test_misconfigured_pipeline_is_not_scheduled(
         project_id=sleepers_project.uuid,
         cluster_id=DEFAULT_CLUSTER_ID,
         run_metadata=run_metadata,
+        use_on_demand_clusters=False,
     )
     assert len(scheduler.scheduled_pipelines) == 1
     assert (
@@ -388,6 +389,7 @@ async def _assert_start_pipeline(
         project_id=published_project.project.uuid,
         cluster_id=DEFAULT_CLUSTER_ID,
         run_metadata=run_metadata,
+        use_on_demand_clusters=False,
     )
     assert len(scheduler.scheduled_pipelines) == 1, "the pipeline is not scheduled!"
     assert (
@@ -880,9 +882,7 @@ async def test_task_progress_triggers(
         progress_event = TaskProgressEvent(
             job_id=started_task.job_id, progress=progress
         )
-        await cast(
-            DaskScheduler, scheduler
-        )._task_progress_change_handler(  # noqa: SLF001
+        await cast(DaskScheduler, scheduler)._task_progress_change_handler(
             progress_event.json()
         )
         # NOTE: not sure whether it should switch to STARTED.. it would make sense
@@ -929,6 +929,7 @@ async def test_handling_of_disconnected_dask_scheduler(
         project_id=published_project.project.uuid,
         cluster_id=DEFAULT_CLUSTER_ID,
         run_metadata=run_metadata,
+        use_on_demand_clusters=False,
     )
 
     # since there is no cluster, there is no dask-scheduler,
