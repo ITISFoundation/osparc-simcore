@@ -39,7 +39,7 @@ async def get_or_create_cluster(
         ec2_instance = new_ec2_instances[0]
     assert ec2_instance is not None  # nosec
     app_settings = get_application_settings(app)
-    cluster = create_cluster_from_ec2_instance(
+    return create_cluster_from_ec2_instance(
         ec2_instance,
         user_id,
         wallet_id,
@@ -52,5 +52,3 @@ async def get_or_create_cluster(
             )
         ),
     )
-
-    return cluster
