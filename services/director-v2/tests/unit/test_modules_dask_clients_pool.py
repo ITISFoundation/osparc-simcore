@@ -169,6 +169,7 @@ async def test_dask_clients_pool_acquisition_creates_client_on_demand(
     client: TestClient,
     fake_clusters: Callable[[int], list[Cluster]],
 ):
+    assert client.app
     mocked_dask_client = mocker.patch(
         "simcore_service_director_v2.modules.dask_clients_pool.DaskClient",
         autospec=True,
