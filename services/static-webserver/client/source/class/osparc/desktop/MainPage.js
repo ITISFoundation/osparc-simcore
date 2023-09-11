@@ -72,7 +72,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         const wallets = store.getWallets();
         if (preferenceWalletId === null && wallets && wallets.length) {
           // Select one by default: according to the use case, the one larger number of accessRights
-          wallets.sort((a, b) => a.getAccessRights().length - b.getAccessRights().length);
+          wallets.sort((a, b) => b.getAccessRights().length - a.getAccessRights().length);
           preferenceSettings.requestChangePreferredWalletId(wallets[0].getWalletId());
         }
       });
