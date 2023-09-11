@@ -728,7 +728,7 @@ class BaseCompScheduler(ABC):
                     comp_tasks_repo.update_project_tasks_state(
                         project_id,
                         list(tasks_ready_to_start.keys()),
-                        RunningState.WAITING_FOR_RESOURCES,
+                        RunningState.PUBLISHED,
                         optional_progress=0,
                     ),
                 )
