@@ -109,9 +109,6 @@ class File(BaseModel):
     async def create_from_uploaded(
         cls, file: UploadFile, *, file_size=None, created_at=None
     ) -> "File":
-        """
-        If use_md5=True, then checksum  if fi
-        """
         sha256check = await create_sha256_checksum(file)
         # WARNING: UploadFile wraps a stream and wil checkt its cursor position: file.file.tell() != 0
         # WARNING: await file.seek(0) might introduce race condition if not done carefuly
