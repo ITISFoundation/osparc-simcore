@@ -1,25 +1,18 @@
-# - httpx client with base_url to PAYMENTS_GATEWAY_URL
+""" Interface to communicate with the payment's gateway
 
-# client needs to expose:
-#
-# one-time-payment
-#   - init()
-#   - execute()
-# payment-method
-#    - init()
-#    - execute()
-#    - get(), list()
-#    - delete()
+- httpx client with base_url to PAYMENTS_GATEWAY_URL
+- Fake gateway service in services/payments/scripts/fake_payment_gateway.py
+
+"""
 
 
-import asyncio
 import contextlib
 import logging
 from dataclasses import dataclass
-from uuid import uuid4
 
 import httpx
 from fastapi import FastAPI
+from fastapi.encoders import jsonable_encoder
 from httpx import URL
 
 from ..core.settings import ApplicationSettings
@@ -80,19 +73,19 @@ class PaymentGatewayApi:
             return False
 
     #
-    # payment
+    # on-time-payment workflow
     #
 
     async def init_payment(self, payment: InitPayment) -> PaymentInitiated:
-        _logger.debug("FAKE: init %s", f"{payment}")
-        await asyncio.sleep(2)
-        return PaymentInitiated(payment_id=uuid4())
+        response = await self.client.post("/init", json=jsonable_encoder(payment))
+        response.raise_for_status()
+        return PaymentInitiated.parse_obj(response.json())
 
     def get_form_payment_url(self, id_: PaymentID) -> URL:
         return self.client.base_url.copy_with(path="/pay", params={"id": f"{id_}"})
 
     #
-    # payment method
+    # payment method workflows
     #
 
     async def init_payment_method(

@@ -1,8 +1,11 @@
+import argparse
+import json
 import types
 from typing import Annotated
 
 import uvicorn
 from fastapi import APIRouter, Depends, FastAPI, Header, status
+from fastapi.encoders import jsonable_encoder
 from fastapi.responses import HTMLResponse
 from fastapi.routing import APIRoute
 from simcore_service_payments.models.payments_gateway import (
@@ -134,11 +137,23 @@ def create_app():
     return app
 
 
-def main():
+def run_command():
     app = create_app()
     uvicorn.run(app)
 
 
+def openapi_command():
+    app = create_app()
+    print(json.dumps(jsonable_encoder(app.openapi()), indent=1))
+
+
 if __name__ == "__main__":
     # CLI: run or create schema
-    main()
+    parser = argparse.ArgumentParser(description="fake payment-gateway")
+    subparsers = parser.add_subparsers()
+
+    run_parser = subparsers.add_parser("run", help="Run the app")
+    run_parser.set_defaults(func=run_command)
+
+    openapi_parser = subparsers.add_parser("openapi", help="Prints openapi specs")
+    run_parser.set_defaults(func=openapi_command)
