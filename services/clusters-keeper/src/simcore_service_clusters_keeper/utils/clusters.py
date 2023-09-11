@@ -20,6 +20,8 @@ def create_startup_script(app_settings: ApplicationSettings) -> str:
             "cd osparc-simcore/services/osparc-gateway-server",
             "make config",
             f"echo 'c.Authenticator.password = \"{app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_GATEWAY_PASSWORD.get_secret_value()}\"' >> .osparc-dask-gateway-config.py",
+            "make .env",
+            "echo 'COMPUTATION_SIDECAR_NUM_NON_USABLE_CPUS=0' >> .env",
             f"DOCKER_IMAGE_TAG={app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG} make up",
         ]
     )
