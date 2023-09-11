@@ -153,6 +153,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 file_id_prefix=None,
                 partial_file_id=uuid_filter,
                 only_files=False,
+                sha256_checksum=None,
             )
 
             # add all the entries from file_meta_data without
