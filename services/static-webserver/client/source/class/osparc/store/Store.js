@@ -523,7 +523,7 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
-    getPotentialCollaborators: function(includeGlobalEveryone = false) {
+    getPotentialCollaborators: function(includeMe = false, includeGlobalEveryone = false) {
       return new Promise((resolve, reject) => {
         const promises = [];
         promises.push(this.getGroupsOrganizations());
@@ -544,6 +544,16 @@ qx.Class.define("osparc.store.Store", {
             for (const gid of Object.keys(members)) {
               members[gid]["collabType"] = 2;
               potentialCollaborators[gid] = members[gid];
+            }
+            if (includeMe) {
+              const myData = osparc.auth.Data.getInstance();
+              const myGid = myData.getGroupId();
+              potentialCollaborators[myGid] = {
+                "login": myData.getEmail(),
+                "first_name": myData.getFirstName(),
+                "last_name": myData.getLastName(),
+                "collabType": 2
+              };
             }
             const productEveryone = values[2]; // entry
             if (productEveryone && productEveryone["accessRights"]["read"]) {
