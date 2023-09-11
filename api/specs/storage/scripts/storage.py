@@ -22,6 +22,7 @@ from models_library.api_schemas_storage import (
     TableSynchronisation,
 )
 from models_library.app_diagnostics import AppStatusCheck
+from models_library.basic_types import SHA256Str
 from models_library.generics import Envelope
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import LocationID, StorageFileID
@@ -345,7 +346,9 @@ async def delete_folders_of_project(
     summary="search for files starting with",
     operation_id="search_files",
 )
-async def search_files(user_id: UserID, startswith: str = ""):
+async def search_files(
+    user_id: UserID, startswith: str = "", sha256_checksum: SHA256Str | None = None
+):
     """search for files starting with `startswith` in the file_meta_data table"""
 
 
