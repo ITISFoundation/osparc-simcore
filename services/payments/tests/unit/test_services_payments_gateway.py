@@ -50,12 +50,11 @@ def mock_payments_gateway_service_api_base(
 
 
 async def test_payment_gateway_responsiveness(
-    app: FastAPI,
+    initialized_app: FastAPI,
     mock_payments_gateway_service_api_base: MockRouter,
 ):
     # NOTE: should be standard practice
-    PaymentGatewayApi.setup(app)
-    payment_gateway_api = PaymentGatewayApi.get_from_state(app)
+    payment_gateway_api = PaymentGatewayApi.get_from_state(initialized_app)
     assert payment_gateway_api
 
     mock_payments_gateway_service_api_base.get(
@@ -76,7 +75,7 @@ async def test_payment_gateway_responsiveness(
 
 
 async def test_one_time_payment_workflow(
-    app: FastAPI,
+    initialized_app: FastAPI,
     faker: Faker,
     mock_payments_gateway_service_api_base: MockRouter,
 ):
@@ -96,8 +95,7 @@ async def test_one_time_payment_workflow(
 
     # -------------------------------------
 
-    PaymentGatewayApi.setup(app)
-    payment_gateway_api = PaymentGatewayApi.get_from_state(app)
+    payment_gateway_api = PaymentGatewayApi.get_from_state(initialized_app)
     assert payment_gateway_api
 
     # init
@@ -116,7 +114,7 @@ async def test_one_time_payment_workflow(
         payment_initiated.payment_id
     )
 
-    app_settings: ApplicationSettings = app.state.settings
+    app_settings: ApplicationSettings = initialized_app.state.settings
     assert submission_link.host == app_settings.PAYMENTS_GATEWAY_URL.host
 
     # check mock
