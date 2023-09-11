@@ -49,11 +49,14 @@ def test_user_models_examples(
 
 
 def test_profile_get_expiration_date(faker: Faker):
-
     fake_expiration = datetime.utcnow()
 
     profile = ProfileGet(
-        id=1, login=faker.email(), role=UserRole.ADMIN, expiration_date=fake_expiration
+        id=1,
+        login=faker.email(),
+        role=UserRole.ADMIN,
+        expiration_date=fake_expiration,
+        preferences={},
     )
 
     assert fake_expiration.date() == profile.expiration_date
@@ -76,7 +79,6 @@ def test_profile_get_role(user_role: str):
 
 
 def test_parsing_output_of_get_user_profile():
-
     result_from_db_query_and_composition = {
         "id": 1,
         "login": "PtN5Ab0uv@guest-at-osparc.io",
@@ -104,6 +106,19 @@ def test_parsing_output_of_get_user_profile():
             },
         },
         "password": "secret",  # should be stripped out
+        "preferences": {
+            "confirmBackToDashboard": {"defaultValue": True, "value": True},
+            "confirmDeleteStudy": {"defaultValue": True, "value": True},
+            "confirmDeleteNode": {"defaultValue": True, "value": True},
+            "confirmStopNode": {"defaultValue": True, "value": True},
+            "snapNodeToGrid": {"defaultValue": True, "value": True},
+            "autoConnectPorts": {"defaultValue": True, "value": True},
+            "dontShowAnnouncements": {"defaultValue": [], "value": []},
+            "services": {"defaultValue": {}, "value": {}},
+            "themeName": {"defaultValue": None, "value": None},
+            "lastVcsRefUI": {"defaultValue": None, "value": None},
+            "preferredWalletId": {"defaultValue": None, "value": None},
+        },
     }
 
     profile = ProfileGet.parse_obj(result_from_db_query_and_composition)

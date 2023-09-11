@@ -7,7 +7,9 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
+from models_library.api_schemas_webserver.users_preferences import PatchRequestBody
 from models_library.generics import Envelope
+from models_library.user_preferences import PreferenceIdentifier
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.users._handlers import (
     _NotificationPathParams,
@@ -42,6 +44,17 @@ async def get_my_profile():
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def update_my_profile(_profile: ProfileUpdate):
+    ...
+
+
+@router.patch(
+    "/me/preferences/{preference_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def set_frontend_preference(
+    preference_id: PreferenceIdentifier,  # noqa: ARG001
+    body_item: PatchRequestBody,  # noqa: ARG001
+):
     ...
 
 
