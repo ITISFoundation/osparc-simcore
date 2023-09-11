@@ -5,7 +5,7 @@
    https://osparc.io
 
    Copyright:
-     2020 IT'IS Foundation, https://itis.swiss
+     2023 IT'IS Foundation, https://itis.swiss
 
    License:
      MIT: https://opensource.org/licenses/MIT
@@ -15,17 +15,9 @@
 
 ************************************************************************ */
 
-/**
- *
- */
-
 qx.Class.define("osparc.Preferences", {
   extend: qx.core.Object,
   type: "singleton",
-
-  construct: function() {
-    this.base(arguments);
-  },
 
   properties: {
     preferredWalletId: {
@@ -49,7 +41,7 @@ qx.Class.define("osparc.Preferences", {
       init: true,
       check: "Boolean",
       event: "changeAutoConnectPorts",
-      apply: "__savePreferences"
+      apply: "__patchPreference"
     },
 
     confirmBackToDashboard: {
@@ -57,7 +49,7 @@ qx.Class.define("osparc.Preferences", {
       init: true,
       check: "Boolean",
       event: "changeConfirmBackToDashboard",
-      apply: "__savePreferences"
+      apply: "__patchPreference"
     },
 
     confirmDeleteStudy: {
@@ -65,7 +57,7 @@ qx.Class.define("osparc.Preferences", {
       init: true,
       check: "Boolean",
       event: "changeConfirmDeleteStudy",
-      apply: "__savePreferences"
+      apply: "__patchPreference"
     },
 
     confirmDeleteNode: {
@@ -73,7 +65,7 @@ qx.Class.define("osparc.Preferences", {
       init: true,
       check: "Boolean",
       event: "changeConfirmDeleteNode",
-      apply: "__savePreferences"
+      apply: "__patchPreference"
     },
 
     confirmStopNode: {
@@ -81,7 +73,7 @@ qx.Class.define("osparc.Preferences", {
       init: true,
       check: "Boolean",
       event: "changeConfirmStopNode",
-      apply: "__savePreferences"
+      apply: "__patchPreference"
     },
 
     snapNodeToGrid: {
@@ -89,7 +81,7 @@ qx.Class.define("osparc.Preferences", {
       init: true,
       check: "Boolean",
       event: "changeSnapNodeToGrid",
-      apply: "__savePreferences"
+      apply: "__patchPreference"
     }
   },
 
@@ -139,7 +131,7 @@ qx.Class.define("osparc.Preferences", {
         });
     },
 
-    __savePreferences: function(value, _, propName) {
+    __patchPreference: function(value, _, propName) {
       this.self().patchPreference(propName, value);
     }
   }

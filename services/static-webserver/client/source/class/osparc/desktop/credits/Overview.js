@@ -251,22 +251,6 @@ qx.Class.define("osparc.desktop.credits.Overview", {
           row: i
         });
         column++;
-
-        // favourite
-        const starImage = new qx.ui.basic.Image().set({
-          alignY: "middle"
-        });
-        wallet.bind("preferredWallet", starImage, "source", {
-          converter: isDefault => isDefault ? "@FontAwesome5Solid/star/18" : "@FontAwesome5Regular/star/18"
-        });
-        wallet.bind("preferredWallet", starImage, "textColor", {
-          converter: isDefault => isDefault ? "strong-main" : "text"
-        });
-        layout.add(starImage, {
-          column,
-          row: i
-        });
-        column++;
       }
 
       return layout;
