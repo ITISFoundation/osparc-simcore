@@ -1,6 +1,14 @@
-from collections.abc import Awaitable, Callable
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
+from collections.abc import AsyncIterator, Awaitable, Callable
 
 import orjson
+import pytest
+from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from models_library.api_schemas_webserver.wallets import WalletPaymentCreated
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCMethodName
@@ -12,8 +20,16 @@ pytest_simcore_core_services_selection = [
 ]
 
 
+@pytest.fixture
+async def initalized_app(app: FastAPI) -> AsyncIterator[FastAPI]:
+    """Inits app on a light environment"""
+    async with LifespanManager(app):
+        yield app
+
+
 async def test_webserver_one_time_payment_workflow(
-    app: FastAPI, rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]]
+    initalized_app: FastAPI,
+    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
 ):
     rpc_client = await rabbitmq_rpc_client("web-server-client")
 

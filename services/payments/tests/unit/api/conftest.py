@@ -5,11 +5,57 @@
 # pylint: disable=unused-variable
 
 
+from collections.abc import AsyncIterator
+from typing import Callable
+
 import httpx
 import pytest
+from asgi_lifespan import LifespanManager
 from fastapi import FastAPI, status
+from httpx._transports.asgi import ASGITransport
+from pytest_mock import MockerFixture
 from simcore_service_payments.core.settings import ApplicationSettings
 from simcore_service_payments.models.schemas.auth import Token
+
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
+
+@pytest.fixture
+def disable_rabbitmq_service(mocker: MockerFixture) -> Callable:
+    def _doit():
+        # The following moduls are affected if rabbitmq is not in place
+        mocker.patch("simcore_service_payments.core.application.setup_rabbitmq")
+        mocker.patch("simcore_service_payments.core.application.setup_rpc_routes")
+
+    return _doit
+
+
+@pytest.fixture
+async def client(
+    app: FastAPI, disable_rabbitmq_service: Callable
+) -> AsyncIterator[httpx.AsyncClient]:
+    #
+    # Prefer this client instead of fastapi.testclient.TestClient
+    #
+
+    disable_rabbitmq_service()
+
+    async with LifespanManager(app):
+        # needed for app to trigger start/stop event handlers
+        async with httpx.AsyncClient(
+            app=app,
+            base_url="http://payments.testserver.io",
+            headers={"Content-Type": "application/json"},
+        ) as client:
+            assert isinstance(client._transport, ASGITransport)
+            # rewires location test's app to client.app
+            client.app = client._transport.app
+
+            yield client
 
 
 @pytest.fixture
