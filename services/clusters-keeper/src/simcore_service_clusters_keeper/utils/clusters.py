@@ -44,6 +44,7 @@ def create_cluster_from_ec2_instance(
     user_id: UserID,
     wallet_id: WalletID,
     gateway_password: SecretStr,
+    *,
     gateway_ready: bool,
 ) -> OnDemandCluster:
     return OnDemandCluster(
