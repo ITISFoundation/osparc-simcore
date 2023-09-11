@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from models_library.api_schemas_webserver.wallets import WalletPaymentCreated
 from models_library.users import UserID
 
-from ...db.payments_transactions import PaymentsTransactionsRepo
+from ...db.payments_transactions_repo import PaymentsTransactionsRepo
 from ...models.payments_gateway import InitPayment
 from ...services.payments_gateway import PaymentGatewayApi
 
@@ -42,7 +42,7 @@ async def create_payment(
     repo = PaymentsTransactionsRepo()
     _logger.debug("Annotate transaction %s", repo)
 
-    return WalletPaymentCreated.construct(
-        payment_id=init.payment_id,
+    return WalletPaymentCreated(
+        payment_id=f"{init.payment_id}",
         payment_form_url=f"{submission_link}",
     )
