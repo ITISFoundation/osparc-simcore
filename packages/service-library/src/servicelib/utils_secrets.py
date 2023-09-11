@@ -14,12 +14,11 @@ def generate_password(length: int = MIN_PASSWORD_LENGTH) -> str:
 
 
 _MIN_SECRET_NUM_BYTES = 32
-assert secrets.DEFAULT_ENTROPY <= _MIN_SECRET_NUM_BYTES  # nosec
 
 
 def generate_token_secret_key(nbytes: int = _MIN_SECRET_NUM_BYTES) -> str:
     """Equivalent to generating a random password with openssl in hex format
-    openssl rand -hex 30
+    openssl rand -hex 32
     """
     return secrets.token_hex(nbytes)
 

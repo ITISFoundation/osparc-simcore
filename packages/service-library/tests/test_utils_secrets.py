@@ -64,4 +64,4 @@ def test_compare_secrets():
 
 def test_generate_token_secrets():
     secret_key = generate_token_secret_key()
-    assert len(secret_key) == _MIN_SECRET_NUM_BYTES
+    assert len(secret_key) == 2 * _MIN_SECRET_NUM_BYTES
