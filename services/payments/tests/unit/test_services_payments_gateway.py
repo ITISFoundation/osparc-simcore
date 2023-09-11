@@ -4,7 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
-from typing import Iterator
+from typing import Callable, Iterator
 
 import httpx
 import pytest
@@ -14,6 +14,7 @@ from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from respx import MockRouter
+from simcore_service_payments.core.application import create_app
 from simcore_service_payments.core.settings import ApplicationSettings
 from simcore_service_payments.models.payments_gateway import (
     InitPayment,
@@ -35,9 +36,14 @@ async def test_setup_payment_gateway_api(app_environment: EnvVarsDict):
 
 
 @pytest.fixture
+def app(disable_rabbitmq_service: Callable, app_environment: EnvVarsDict):
+    disable_rabbitmq_service()
+    return create_app()
+
+
+@pytest.fixture
 def mock_payments_gateway_service_api_base(
     app: FastAPI,
-    faker: Faker,
 ) -> Iterator[MockRouter]:
     settings: ApplicationSettings = app.state.settings
     with respx.mock(

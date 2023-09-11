@@ -13,25 +13,8 @@ import pytest
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI, status
 from httpx._transports.asgi import ASGITransport
-from pytest_mock import MockerFixture
 from simcore_service_payments.core.settings import ApplicationSettings
 from simcore_service_payments.models.schemas.auth import Token
-
-# pylint: disable=protected-access
-# pylint: disable=redefined-outer-name
-# pylint: disable=too-many-arguments
-# pylint: disable=unused-argument
-# pylint: disable=unused-variable
-
-
-@pytest.fixture
-def disable_rabbitmq_service(mocker: MockerFixture) -> Callable:
-    def _doit():
-        # The following moduls are affected if rabbitmq is not in place
-        mocker.patch("simcore_service_payments.core.application.setup_rabbitmq")
-        mocker.patch("simcore_service_payments.core.application.setup_rpc_routes")
-
-    return _doit
 
 
 @pytest.fixture
