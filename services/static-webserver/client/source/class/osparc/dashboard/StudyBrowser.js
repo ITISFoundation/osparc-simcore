@@ -447,6 +447,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.__addTIPPlusButtons();
           break;
         case "s4l":
+        case "s4lacad":
           this.__addS4LPlusButtons();
           break;
         case "s4llite":

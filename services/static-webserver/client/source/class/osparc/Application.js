@@ -342,6 +342,7 @@ qx.Class.define("osparc.Application", {
       switch (qx.core.Environment.get("product.name")) {
         case "s4l":
         case "s4llite":
+        case "s4lacad":
           if (landingPage) {
             view = new osparc.product.landingPage.s4llite.Page();
             view.addListener("loginPressed", () => {
