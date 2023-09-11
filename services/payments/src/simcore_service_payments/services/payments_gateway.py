@@ -56,7 +56,6 @@ class PaymentGatewayApi:
     #
     # service diagnostics
     #
-
     async def ping(self) -> bool:
         """Check whether server is reachable"""
         try:
@@ -66,8 +65,10 @@ class PaymentGatewayApi:
             return False
 
     async def is_healhy(self) -> bool:
+        """Service is reachable and ready"""
         try:
-            await self.client.get("/health")
+            response = await self.client.get("/")
+            response.raise_for_status()
             return True
         except httpx.HTTPError:
             return False

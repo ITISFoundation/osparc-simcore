@@ -35,7 +35,7 @@ async def test_setup_payment_gateway_api(app_environment: EnvVarsDict):
 
 
 @pytest.fixture
-def mock_payments_gateway_service_api(
+def mock_payments_gateway_service_api_base(
     app: FastAPI,
     faker: Faker,
 ) -> Iterator[MockRouter]:
@@ -45,48 +45,73 @@ def mock_payments_gateway_service_api(
         assert_all_called=False,
         assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as respx_mock:
-        # /  ---------------
-        respx_mock.get(
-            path="/",
-            name="healthcheck",
-        ).respond(status.HTTP_200_OK, text="ok")
-
-        # /init ---------------
-        def init_payment(request: httpx.Request):
-            init = InitPayment.parse_raw(request.content)
-            return httpx.Response(
-                status.HTTP_200_OK,
-                json=jsonable_encoder(PaymentInitiated(payment_id=faker.uuid4())),
-            )
-
-        respx_mock.post(
-            path="/init",
-            name="init_payment",
-        ).mock(side_effect=init_payment)
 
         yield respx_mock
 
 
-@pytest.mark.testit
-async def test_one_time_init_payment(
+async def test_payment_gateway_responsiveness(
     app: FastAPI,
-    faker: Faker,
-    mock_payments_gateway_service_api: MockRouter,
+    mock_payments_gateway_service_api_base: MockRouter,
 ):
+    # NOTE: should be standard practice
     PaymentGatewayApi.setup(app)
     payment_gateway_api = PaymentGatewayApi.get_from_state(app)
     assert payment_gateway_api
 
-    payment = InitPayment(
-        amount_dollars=100,
-        credits=100,
-        user_name=faker.user_name(),
-        user_email=faker.email(),
-        wallet_name=faker.word(),
+    mock_payments_gateway_service_api_base.get(
+        path="/",
+        name="healthcheck",
+    ).respond(status.HTTP_503_SERVICE_UNAVAILABLE)
+
+    assert await payment_gateway_api.ping()
+    assert not await payment_gateway_api.is_healhy()
+
+    mock_payments_gateway_service_api_base.get(
+        path="/",
+        name="healthcheck",
+    ).respond(status.HTTP_200_OK)
+
+    assert await payment_gateway_api.ping()
+    assert await payment_gateway_api.is_healhy()
+
+
+async def test_one_time_payment_workflow(
+    app: FastAPI,
+    faker: Faker,
+    mock_payments_gateway_service_api_base: MockRouter,
+):
+
+    # /init ---------------
+    def _init_payment(request: httpx.Request):
+        init = InitPayment.parse_raw(request.content)
+        return httpx.Response(
+            status.HTTP_200_OK,
+            json=jsonable_encoder(PaymentInitiated(payment_id=faker.uuid4())),
+        )
+
+    mock_payments_gateway_service_api_base.post(
+        path="/init",
+        name="init_payment",
+    ).mock(side_effect=_init_payment)
+
+    # -------------------------------------
+
+    PaymentGatewayApi.setup(app)
+    payment_gateway_api = PaymentGatewayApi.get_from_state(app)
+    assert payment_gateway_api
+
+    # init
+    payment_initiated = await payment_gateway_api.init_payment(
+        payment=InitPayment(
+            amount_dollars=100,
+            credits=100,
+            user_name=faker.user_name(),
+            user_email=faker.email(),
+            wallet_name=faker.word(),
+        )
     )
 
-    payment_initiated = await payment_gateway_api.init_payment(payment)
-
+    # form url
     submission_link = payment_gateway_api.get_form_payment_url(
         payment_initiated.payment_id
     )
@@ -94,5 +119,5 @@ async def test_one_time_init_payment(
     app_settings: ApplicationSettings = app.state.settings
     assert submission_link.host == app_settings.PAYMENTS_GATEWAY_URL.host
 
-    #
-    assert mock_payments_gateway_service_api.routes["init_payment"].called
+    # check mock
+    assert mock_payments_gateway_service_api_base.routes["init_payment"].called
