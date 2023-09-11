@@ -4,7 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
-from typing import Callable, Iterator
+from collections.abc import Callable, Iterator
 
 import httpx
 import pytest
@@ -56,11 +56,11 @@ def mock_payments_gateway_service_api_base(
 
 
 async def test_payment_gateway_responsiveness(
-    initialized_app: FastAPI,
+    app: FastAPI,
     mock_payments_gateway_service_api_base: MockRouter,
 ):
     # NOTE: should be standard practice
-    payment_gateway_api = PaymentGatewayApi.get_from_state(initialized_app)
+    payment_gateway_api = PaymentGatewayApi.get_from_state(app)
     assert payment_gateway_api
 
     mock_payments_gateway_service_api_base.get(
@@ -81,14 +81,14 @@ async def test_payment_gateway_responsiveness(
 
 
 async def test_one_time_payment_workflow(
-    initialized_app: FastAPI,
+    app: FastAPI,
     faker: Faker,
     mock_payments_gateway_service_api_base: MockRouter,
 ):
 
     # /init ---------------
     def _init_payment(request: httpx.Request):
-        init = InitPayment.parse_raw(request.content)
+        assert InitPayment.parse_raw(request.content) is not None
         return httpx.Response(
             status.HTTP_200_OK,
             json=jsonable_encoder(PaymentInitiated(payment_id=faker.uuid4())),
@@ -101,7 +101,7 @@ async def test_one_time_payment_workflow(
 
     # -------------------------------------
 
-    payment_gateway_api = PaymentGatewayApi.get_from_state(initialized_app)
+    payment_gateway_api = PaymentGatewayApi.get_from_state(app)
     assert payment_gateway_api
 
     # init
@@ -120,7 +120,7 @@ async def test_one_time_payment_workflow(
         payment_initiated.payment_id
     )
 
-    app_settings: ApplicationSettings = initialized_app.state.settings
+    app_settings: ApplicationSettings = app.state.settings
     assert submission_link.host == app_settings.PAYMENTS_GATEWAY_URL.host
 
     # check mock

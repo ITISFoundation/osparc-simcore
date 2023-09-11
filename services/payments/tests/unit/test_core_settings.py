@@ -14,4 +14,4 @@ def test_valid_web_application_settings(app_environment: EnvVarsDict):
 
     assert settings == ApplicationSettings.create_from_envs()
 
-    assert settings.LOG_LEVEL == app_environment["PAYMENTS_LOGLEVEL"]
+    assert app_environment["PAYMENTS_LOGLEVEL"] == settings.LOG_LEVEL

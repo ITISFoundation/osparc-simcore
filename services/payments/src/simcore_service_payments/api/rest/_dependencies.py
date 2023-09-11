@@ -35,9 +35,7 @@ async def get_current_session(
     settings: Annotated[ApplicationSettings, Depends(get_settings)],
     token: Annotated[str, Depends(_oauth2_scheme)],
 ) -> SessionData:
-    session = get_session_data(token, settings)
-
-    return session
+    return get_session_data(token, settings)
 
 
 __all__: tuple[str, ...] = (

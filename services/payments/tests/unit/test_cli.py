@@ -33,7 +33,7 @@ def test_generate_dotenv(cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch)
 
     with monkeypatch.context() as patch:
         setenvs_from_dict(patch, environs)
-        settings_from_envs = ApplicationSettings.create_from_envs()
+        ApplicationSettings.create_from_envs()
 
 
 def test_list_settings(cli_runner: CliRunner, app_environment: EnvVarsDict):

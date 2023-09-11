@@ -5,8 +5,7 @@
 # pylint: disable=unused-variable
 
 
-from collections.abc import AsyncIterator
-from typing import Callable
+from collections.abc import AsyncIterator, Callable
 
 import pytest
 from asgi_lifespan import LifespanManager
@@ -27,17 +26,11 @@ def disable_rabbitmq_service(mocker: MockerFixture) -> Callable:
 
 
 @pytest.fixture
-def app(app_environment: EnvVarsDict) -> FastAPI:
-    """Inits app on a light environment"""
-    return create_app()
-
-
-@pytest.fixture
-async def initialized_app(app: FastAPI) -> AsyncIterator[FastAPI]:
-    """Inits app on a light environment"""
+async def app(app_environment: EnvVarsDict) -> AsyncIterator[FastAPI]:
+    test_app = create_app()
     async with LifespanManager(
-        app,
+        test_app,
         startup_timeout=10,
         shutdown_timeout=10,
     ):
-        yield app
+        yield test_app

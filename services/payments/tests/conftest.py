@@ -78,7 +78,7 @@ def docker_compose_service_payments_env_vars(
                 # not defined in the env-devel
                 if value := env_devel_dict[expected_env_var]:
                     return key, value
-            except KeyError as err:
+            except KeyError:
                 pytest.fail(
                     f"{expected_env_var} is not defined in .env-devel but used in docker-compose services[{payments}].environment[{key}]"
                 )

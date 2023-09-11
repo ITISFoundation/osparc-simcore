@@ -38,7 +38,7 @@ def app_environment(
 
 
 async def test_webserver_one_time_payment_workflow(
-    initialized_app: FastAPI,
+    app: FastAPI,
     rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
 ):
     rpc_client = await rabbitmq_rpc_client("web-server-client")
