@@ -19,8 +19,7 @@ from pydantic import (
     parse_obj_as,
     validator,
 )
-
-from ...utils.hash import create_sha256_checksum
+from servicelib.file_utils import create_sha256_checksum
 
 _NAMESPACE_FILEID_KEY = UUID("aa154444-d22d-4290-bb15-df37dba87865")
 
@@ -93,7 +92,7 @@ class File(BaseModel):
         return cls(
             id=cls.create_id(sha256check, path.name),
             filename=path.name,
-            checksum=sha256check,
+            checksum=SHA256Str(sha256check),
         )
 
     @classmethod
@@ -117,7 +116,7 @@ class File(BaseModel):
             id=cls.create_id(sha256check or file_size, file.filename, created_at),
             filename=file.filename or "Undefined",
             content_type=file.content_type,
-            checksum=sha256check,
+            checksum=SHA256Str(sha256check),
         )
 
     @classmethod

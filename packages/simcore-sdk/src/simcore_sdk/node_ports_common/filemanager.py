@@ -17,9 +17,9 @@ from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import StorageFileID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, parse_obj_as
+from servicelib.file_utils import create_sha256_checksum
 from servicelib.progress_bar import ProgressBarData
 from settings_library.r_clone import RCloneSettings
-from simcore_service_api_server.utils.hash import create_sha256_checksum
 from yarl import URL
 
 from ..node_ports_common.client_session_manager import ClientSessionContextManager
@@ -287,7 +287,7 @@ async def upload_path(
     checksum: SHA256Str | None = None
     if not is_directory:
         if isinstance(path_to_upload, Path):
-            checksum = await create_sha256_checksum(path_to_upload)
+            checksum = SHA256Str(await create_sha256_checksum(path_to_upload))
         elif isinstance(path_to_upload, UploadableFileObject):
             checksum = path_to_upload.sha256_checksum
     if io_log_redirect_cb:
