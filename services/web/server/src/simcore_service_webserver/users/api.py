@@ -90,9 +90,10 @@ async def get_user_profile(
                         accessRights=row["user_to_groups_access_rights"],
                     )
                 )
-        user_profile["preferences"] = await get_frontend_user_preferences_aggregation(
-            app, user_id=user_id, product_name=product_name
-        )
+
+    user_profile["preferences"] = await get_frontend_user_preferences_aggregation(
+        app, user_id=user_id, product_name=product_name
+    )
     if not user_profile:
         raise UserNotFoundError(uid=user_id)
 
