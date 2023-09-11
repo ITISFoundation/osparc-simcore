@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from typing import TypeAlias
 
 from fastapi import FastAPI
-from models_library.clusters import Cluster
+from models_library.clusters import BaseCluster
 from pydantic import AnyUrl
 
 from ..core.errors import (
@@ -61,14 +61,16 @@ class DaskClientsPool:
         )
 
     @asynccontextmanager
-    async def acquire(self, cluster: Cluster) -> AsyncIterator[DaskClient]:
+    async def acquire(self, cluster: BaseCluster) -> AsyncIterator[DaskClient]:
         async def _concurently_safe_acquire_client() -> DaskClient:
             async with self._client_acquisition_lock:
                 dask_client = self._cluster_to_client_map.get(cluster.endpoint)
 
                 # we create a new client if that cluster was never used before
                 logger.debug(
-                    "acquiring connection to cluster %s:%s", cluster.id, cluster.name
+                    "acquiring connection to cluster %s:%s",
+                    cluster.endpoint,
+                    cluster.name,
                 )
                 if not dask_client:
                     tasks_file_link_type = (
