@@ -30,7 +30,11 @@ from ..core.errors import (
     DaskGatewayServerError,
     SchedulerError,
 )
-from .dask import check_maximize_workers, wrap_client_async_routine
+from .dask import (
+    check_maximize_workers,
+    wait_for_at_least_one_worker,
+    wrap_client_async_routine,
+)
 
 DaskGatewayAuths = (
     dask_gateway.BasicAuth | dask_gateway.KerberosAuth | dask_gateway.JupyterHubAuth
@@ -125,6 +129,7 @@ async def _connect_with_gateway_and_create_cluster(
             assert cluster  # nosec
             logger.info("Cluster dashboard available: %s", cluster.dashboard_link)
             await check_maximize_workers(cluster)
+            await wait_for_at_least_one_worker(cluster)
             logger.info("Cluster workers maximized")
             client = await cluster.get_client()
             assert client  # nosec
