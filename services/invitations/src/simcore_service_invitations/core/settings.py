@@ -75,6 +75,10 @@ class MinimalApplicationSettings(_BaseApplicationSettings):
     )
 
     INVITATIONS_OSPARC_URL: HttpUrl = Field(..., description="Target platform")
+    INVITATIONS_DEFAULT_PRODUCT: str = Field(
+        ...,
+        description="Default product for the invitation. Backwards compatibility with 1.0",
+    )
 
 
 class ApplicationSettings(MinimalApplicationSettings):

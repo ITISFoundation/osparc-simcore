@@ -6,10 +6,14 @@ import rich
 import typer
 from cryptography.fernet import Fernet
 from models_library.emails import LowerCaseEmailStr
-from pydantic import HttpUrl, SecretStr, ValidationError, parse_obj_as
+from pydantic import HttpUrl, ValidationError, parse_obj_as
 from rich.console import Console
 from servicelib.utils_secrets import generate_password
-from settings_library.utils_cli import create_settings_command, create_version_callback
+from settings_library.utils_cli import (
+    create_settings_command,
+    create_version_callback,
+    print_as_envfile,
+)
 
 from . import web_server
 from ._meta import PROJECT_NAME, __version__
@@ -80,14 +84,11 @@ def generate_dotenv(ctx: typer.Context, auto_password: bool = False):
         INVITATIONS_SECRET_KEY=Fernet.generate_key().decode(),
         INVITATIONS_USERNAME=username,
         INVITATIONS_PASSWORD=password,
+        INVITATIONS_DEFAULT_PRODUCT="some-osparc-product",
     )
-
-    for name, value in settings.dict().items():
-        if name.startswith("INVITATIONS_"):
-            value = (
-                f"{value.get_secret_value()}" if isinstance(value, SecretStr) else value
-            )
-            print(f"{name}={'null' if value is None else value}")
+    print_as_envfile(
+        settings, compact=False, verbose=True, show_secrets=True, exclude_unset=True
+    )
 
 
 @app.command()
