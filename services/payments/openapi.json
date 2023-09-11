@@ -30,12 +30,12 @@
           "auth"
         ],
         "summary": "Login To Create Access Token",
-        "operationId": "login_to_create_access_token_v1_token_post",
+        "operationId": "login_to_create_access_token",
         "requestBody": {
           "content": {
             "application/x-www-form-urlencoded": {
               "schema": {
-                "$ref": "#/components/schemas/Body_login_to_create_access_token_v1_token_post"
+                "$ref": "#/components/schemas/Body_login_to_create_access_token"
               }
             }
           },
@@ -96,9 +96,9 @@
         "tags": [
           "acks"
         ],
-        "summary": "Acknoledge Payment",
+        "summary": "Acknowledge Payment",
         "description": "completes (ie. ack) request initated by `/init`",
-        "operationId": "acknoledge_payment_v1_payments__payment_id__ack_post",
+        "operationId": "acknowledge_payment_v1_payments__payment_id__ack_post",
         "parameters": [
           {
             "required": true,
@@ -153,9 +153,9 @@
         "tags": [
           "acks"
         ],
-        "summary": "Acknoledge Payment Method",
+        "summary": "Acknowledge Payment Method",
         "description": "completes (ie. ack) request initated by `/payments-methods:init`",
-        "operationId": "acknoledge_payment_method_v1_payments_methods__payment_method_id__ack_post",
+        "operationId": "acknowledge_payment_method_v1_payments_methods__payment_method_id__ack_post",
         "parameters": [
           {
             "required": true,
@@ -230,7 +230,7 @@
         "type": "object",
         "title": "AckPaymentMethod"
       },
-      "Body_login_to_create_access_token_v1_token_post": {
+      "Body_login_to_create_access_token": {
         "properties": {
           "grant_type": {
             "type": "string",
@@ -264,7 +264,7 @@
           "username",
           "password"
         ],
-        "title": "Body_login_to_create_access_token_v1_token_post"
+        "title": "Body_login_to_create_access_token"
       },
       "HTTPValidationError": {
         "properties": {
@@ -372,7 +372,7 @@
         "flows": {
           "password": {
             "scopes": {},
-            "tokenUrl": "token"
+            "tokenUrl": "/v1/token"
           }
         }
       }
