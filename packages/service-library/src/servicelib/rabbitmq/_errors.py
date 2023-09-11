@@ -20,3 +20,9 @@ class RemoteMethodNotRegisteredError(BaseRPCError):
         "Could not find a remote method named: '{method_name}'. "
         "Message from remote server was returned: {incoming_message}. "
     )
+
+
+class RPCServerError(BaseRPCError):
+    msg_template = (
+        "Unhandled error while running method '{exc_type}:{method_name}': '{msg}'"
+    )
