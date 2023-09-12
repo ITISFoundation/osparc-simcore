@@ -33,6 +33,7 @@ from ..core.docker_utils import (
     get_container_states,
     get_containers_count_from_names,
 )
+from ..core.errors import ContainerExecContainerNotFoundError
 from ..core.rabbitmq import (
     post_event_reload_iframe,
     post_progress_message,
@@ -45,6 +46,7 @@ from ..models.schemas.application_health import ApplicationHealth
 from ..models.schemas.containers import ContainersCreate
 from ..models.shared_store import SharedStore
 from ..modules import nodeports
+from ..modules.container_utils import run_command_in_container
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.outputs import OutputsManager, event_propagation_disabled
 from .resource_tracking import send_service_started, send_service_stopped
@@ -261,6 +263,24 @@ async def task_runs_docker_compose_down(
 
     try:
         progress.update(message="running docker-compose-down", percent=0.1)
+
+        # Here before closing we try to send the commands
+        for (
+            user_service_command
+        ) in settings.DY_SIDECAR_CALLBACKS_MAPPING.before_shutdown:
+            container_name = user_service_command.service
+            try:
+                await run_command_in_container(
+                    container_name,
+                    command=user_service_command.command,
+                    timeout=user_service_command.timeout,
+                )
+            except ContainerExecContainerNotFoundError:  # noqa: PERF203
+                _logger.warning(
+                    "Could not run before_shutdown commands because container %s was not found",
+                    container_name,
+                )
+
         result = await _retry_docker_compose_down(shared_store.compose_spec, settings)
         _raise_for_errors(result, "down")
 
