@@ -32,11 +32,11 @@
  * Here is a little example of how to use the class.
  *
  * <pre class='javascript'>
- *   osparc.io.WatchDog.getInstance().startCheck();
+ *   osparc.WatchDog.getInstance().startCheck();
  * </pre>
  */
 
-qx.Class.define("osparc.io.WatchDog", {
+qx.Class.define("osparc.WatchDog", {
   extend: qx.core.Object,
   type: "singleton",
 
