@@ -120,7 +120,7 @@ class PaymentsGatewayApi:
 
     @classmethod
     def get_from_state(cls, app: FastAPI) -> "PaymentsGatewayApi":
-        return cast("PaymentGatewayApi", app.state.payment_gateway_api)
+        return cast("PaymentsGatewayApi", app.state.payment_gateway_api)
 
     @classmethod
     def setup(cls, app: FastAPI):
