@@ -86,6 +86,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
             case "PUBLISHED":
             case "PENDING":
             case "WAITING_FOR_RESOURCES":
+            case "WAITING_FOR_CLUSTER":
             case "STARTED":
             case "RETRY":
               osparc.utils.Utils.addClass(this.getChildControl("icon").getContentElement(), "rotate");

@@ -109,7 +109,7 @@ class BaseCluster(BaseModel):
     type: ClusterTypeInModel
     owner: GroupID
     thumbnail: HttpUrl | None = Field(
-        None,
+        default=None,
         description="url to the image describing this cluster",
         examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
     )

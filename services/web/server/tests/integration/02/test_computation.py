@@ -483,6 +483,7 @@ async def test_run_pipeline_and_check_state(
         RunningState.UNKNOWN: 0,
         RunningState.NOT_STARTED: 1,
         RunningState.PUBLISHED: 2,
+        RunningState.WAITING_FOR_CLUSTER: 2,
         RunningState.PENDING: 3,
         RunningState.WAITING_FOR_RESOURCES: 3,
         RunningState.STARTED: 4,

@@ -90,6 +90,7 @@ _LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
 _NOISY_LOGGERS = (
     "aio_pika",
     "aiormq",
+    "httpcore",
 )
 
 
