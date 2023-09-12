@@ -25,12 +25,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let logo = osparc.widget.LogoOnOff.getInstance();
+ *   let logo = osparc.navigation.LogoOnOff.getInstance();
      logo.online(true/false);
  * </pre>
  */
 
-qx.Class.define("osparc.widget.LogoOnOff", {
+qx.Class.define("osparc.navigation.LogoOnOff", {
   extend: qx.ui.container.Stack,
 
   type: "singleton",
