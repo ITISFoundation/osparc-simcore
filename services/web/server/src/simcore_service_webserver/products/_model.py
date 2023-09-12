@@ -1,6 +1,7 @@
 import logging
 import string
-from typing import Any, Pattern
+from re import Pattern
+from typing import Any, ClassVar
 
 from models_library.basic_regex import (
     PUBLIC_VARIABLE_NAME_RE,
@@ -104,9 +105,8 @@ class Product(BaseModel):
     @classmethod
     def validate_name(cls, v):
         if v not in FRONTEND_APPS_AVAILABLE:
-            raise ValueError(
-                f"{v} is not in available front-end apps {FRONTEND_APPS_AVAILABLE}"
-            )
+            msg = f"{v} is not in available front-end apps {FRONTEND_APPS_AVAILABLE}"
+            raise ValueError(msg)
         return v
 
     @property
@@ -119,7 +119,7 @@ class Product(BaseModel):
         frozen = True  # read-only
         orm_mode = True
         extra = Extra.ignore
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     # fake mandatory

@@ -87,7 +87,8 @@ async def get_product_template_path(request: web.Request, filename: str) -> Path
         repo = ProductRepository(request)
         content = await repo.get_template_content(template_name)
         if not content:
-            raise ValueError(f"Missing template {template_name} for product")
+            msg = f"Missing template {template_name} for product"
+            raise ValueError(msg)
         return content
 
     def _safe_get_current_product(request: web.Request) -> Product | None:
@@ -125,7 +126,8 @@ async def get_product_template_path(request: web.Request, filename: str) -> Path
     # If no product or template for product defined, we fall back to common templates
     common_template = _themed("templates/common", filename)
     if not common_template.exists():
-        raise ValueError(f"{filename} is not part of the templates/common")
+        msg = f"{filename} is not part of the templates/common"
+        raise ValueError(msg)
 
     return common_template
 

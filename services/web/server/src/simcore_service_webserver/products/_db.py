@@ -1,5 +1,5 @@
 import logging
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -26,8 +26,8 @@ async def iter_products(conn: SAConnection) -> AsyncIterator[ResultProxy]:
     async for row in conn.execute(
         sa.select(*_COLUMNS_IN_MODEL).order_by(products.c.priority)
     ):
-        assert row  # nosec
-        yield row
+        if row is not None:
+            yield row
 
 
 class ProductRepository(BaseRepository):
