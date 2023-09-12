@@ -1,4 +1,3 @@
-import os.path
 from pathlib import Path
 
 import aiofiles
@@ -29,34 +28,41 @@ def list_products(app: web.Application) -> list[Product]:
     return products
 
 
+#
+# helpers for get_product_template_path
+#
+
+
+def _themed(dirname: str, template: str) -> Path:
+    path: Path = webserver_resources.get_path(f"{Path(dirname) / template}")
+    return path
+
+
+async def _get_content(request: web.Request, template_name: str):
+    repo = ProductRepository(request)
+    content = await repo.get_template_content(template_name)
+    if not content:
+        msg = f"Missing template {template_name} for product"
+        raise ValueError(msg)
+    return content
+
+
+def _safe_get_current_product(request: web.Request) -> Product | None:
+    try:
+        product: Product = get_current_product(request)
+        return product
+    except KeyError:
+        return None
+
+
 async def get_product_template_path(request: web.Request, filename: str) -> Path:
-    def _themed(dirname, template) -> Path:
-        path: Path = webserver_resources.get_path(os.path.join(dirname, template))
-        return path
-
-    async def _get_content(template_name: str):
-        repo = ProductRepository(request)
-        content = await repo.get_template_content(template_name)
-        if not content:
-            msg = f"Missing template {template_name} for product"
-            raise ValueError(msg)
-        return content
-
-    def _safe_get_current_product(request: web.Request) -> Product | None:
-        try:
-            product: Product = get_current_product(request)
-            return product
-        except KeyError:
-            return None
-
-    # ---
     if product := _safe_get_current_product(request):
         if template_name := product.get_template_name_for(filename):
             template_dir: Path = request.app[APP_PRODUCTS_TEMPLATES_DIR_KEY]
             template_path = template_dir / template_name
             if not template_path.exists():
                 # cache
-                content = await _get_content(template_name)
+                content = await _get_content(request, template_name)
                 try:
                     async with aiofiles.open(template_path, "wt") as fh:
                         await fh.write(content)

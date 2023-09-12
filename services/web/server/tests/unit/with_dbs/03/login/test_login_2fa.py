@@ -30,7 +30,7 @@ from simcore_service_webserver.login._2fa import (
 )
 from simcore_service_webserver.login._constants import MSG_2FA_UNAVAILABLE_OEC
 from simcore_service_webserver.login.storage import AsyncpgStorage
-from simcore_service_webserver.products.plugin import get_current_product
+from simcore_service_webserver.products.api import get_current_product
 from twilio.base.exceptions import TwilioRestException
 
 
