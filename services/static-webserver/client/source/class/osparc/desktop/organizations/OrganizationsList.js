@@ -64,7 +64,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
 
   statics: {
     sortOrganizations: function(a, b) {
-      const sorted = osparc.component.share.Collaborators.sortByAccessRights(a["accessRights"], b["accessRights"]);
+      const sorted = osparc.share.Collaborators.sortByAccessRights(a["accessRights"], b["accessRights"]);
       if (sorted !== 0) {
         return sorted;
       }
@@ -99,7 +99,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
       });
       createOrgBtn.addListener("execute", function() {
         const newOrg = true;
-        const orgEditor = new osparc.component.editor.OrganizationEditor(newOrg);
+        const orgEditor = new osparc.editor.OrganizationEditor(newOrg);
         const title = this.tr("Organization Details Editor");
         const win = osparc.ui.window.Window.popUpInWindow(orgEditor, title, 400, 250);
         orgEditor.addListener("createOrg", () => {
@@ -111,7 +111,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
     },
 
     __getOrganizationsFilter: function() {
-      const filter = new osparc.component.filter.TextFilter("text", "organizationsList").set({
+      const filter = new osparc.filter.TextFilter("text", "organizationsList").set({
         allowStretchX: true,
         margin: [0, 10, 5, 10]
       });
@@ -206,7 +206,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
       }
 
       const newOrg = false;
-      const orgEditor = new osparc.component.editor.OrganizationEditor(newOrg);
+      const orgEditor = new osparc.editor.OrganizationEditor(newOrg);
       org.bind("gid", orgEditor, "gid");
       org.bind("label", orgEditor, "label");
       org.bind("description", orgEditor, "description");

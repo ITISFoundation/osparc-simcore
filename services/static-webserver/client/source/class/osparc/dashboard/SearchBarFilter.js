@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.dashboard.SearchBarFilter", {
-  extend: osparc.component.filter.UIFilter,
+  extend: osparc.filter.UIFilter,
 
   construct: function(resourceType) {
     this.__resourceType = resourceType;

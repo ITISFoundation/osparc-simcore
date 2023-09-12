@@ -313,8 +313,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       osparc.desktop.credits.Utils.areWalletsEnabled()
         .then(walletsEnabled => {
           if (walletsEnabled) {
-            const resourceSelector = new osparc.component.study.ResourceSelector(studyId);
-            const win = osparc.component.study.ResourceSelector.popUpInWindow(resourceSelector);
+            const resourceSelector = new osparc.study.ResourceSelector(studyId);
+            const win = osparc.study.ResourceSelector.popUpInWindow(resourceSelector);
             resourceSelector.addListener("startStudy", () => {
               win.close();
               if (openCB) {

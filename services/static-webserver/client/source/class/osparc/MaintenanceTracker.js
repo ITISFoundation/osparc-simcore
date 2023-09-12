@@ -137,8 +137,8 @@ qx.Class.define("osparc.MaintenanceTracker", {
       const messageToRibbon = closable => {
         this.__removeRibbonMessage();
         const text = this.__getText();
-        const notification = new osparc.component.notification.RibbonNotification(text, "maintenance", closable);
-        osparc.component.notification.RibbonNotifications.getInstance().addNotification(notification);
+        const notification = new osparc.notification.RibbonNotification(text, "maintenance", closable);
+        osparc.notification.RibbonNotifications.getInstance().addNotification(notification);
         this.__lastRibbonMessage = notification;
       };
       if (diffClosable < 0) {
@@ -155,7 +155,7 @@ qx.Class.define("osparc.MaintenanceTracker", {
 
     __removeRibbonMessage: function() {
       if (this.__lastRibbonMessage) {
-        osparc.component.notification.RibbonNotifications.getInstance().removeNotification(this.__lastRibbonMessage);
+        osparc.notification.RibbonNotifications.getInstance().removeNotification(this.__lastRibbonMessage);
         this.__lastRibbonMessage = null;
       }
     },

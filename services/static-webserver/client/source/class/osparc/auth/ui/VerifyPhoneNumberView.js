@@ -90,7 +90,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
         "overflow": "visible" // needed for countries dropdown menu
       });
 
-      const itiInput = this.__itiInput = new osparc.component.widget.IntlTelInput();
+      const itiInput = this.__itiInput = new osparc.widget.IntlTelInput();
       phoneNumberVerifyLayout.add(itiInput, {
         flex: 1
       });

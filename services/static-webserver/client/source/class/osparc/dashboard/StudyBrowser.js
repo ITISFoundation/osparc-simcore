@@ -292,7 +292,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       loadMoreBtn.addListener("appear", () => this._moreResourcesRequired());
       this._resourcesContainer.addNonResourceCard(loadMoreBtn);
 
-      osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
+      osparc.filter.UIFilterController.dispatch("searchBarFilter");
     },
 
     _reloadNewCards: function() {
@@ -300,7 +300,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const cards = this._resourcesContainer.reloadNewCards();
       this.__configureCards(cards);
 
-      osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
+      osparc.filter.UIFilterController.dispatch("searchBarFilter");
     },
 
     __configureCards: function(cards) {
@@ -632,7 +632,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __createImportButton: function() {
       const importButton = new qx.ui.form.Button(this.tr("Import"));
       importButton.addListener("execute", () => {
-        const importStudy = new osparc.component.study.Import();
+        const importStudy = new osparc.study.Import();
         const win = osparc.ui.window.Window.popUpInWindow(importStudy, this.tr("Import Study"), 400, 125);
         win.set({
           clickAwayClose: false
@@ -879,7 +879,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __getRenameStudyMenuButton: function(studyData) {
       const renameButton = new qx.ui.menu.Button(this.tr("Rename"));
       renameButton.addListener("execute", () => {
-        const renamer = new osparc.component.widget.Renamer(studyData["name"]);
+        const renamer = new osparc.widget.Renamer(studyData["name"]);
         renamer.addListener("labelChanged", e => {
           const newLabel = e.getData()["newLabel"];
           const studyDataCopy = osparc.data.model.Study.deepCloneStudyObject(studyData);
@@ -971,7 +971,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const duplicatingStudyCard = isGrid ? new osparc.dashboard.GridButtonPlaceholder() : new osparc.dashboard.ListButtonPlaceholder();
       duplicatingStudyCard.buildLayout(
         this.tr("Duplicating ") + studyName,
-        osparc.component.task.Duplicate.ICON + (isGrid ? "60" : "24"),
+        osparc.task.Duplicate.ICON + (isGrid ? "60" : "24"),
         null,
         true
       );
@@ -999,7 +999,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __exportStudy: function(studyData) {
-      const exportTask = new osparc.component.task.Export(studyData);
+      const exportTask = new osparc.task.Export(studyData);
       exportTask.start();
       exportTask.setSubtitle(this.tr("Preparing files"));
       const text = this.tr("Exporting process started and added to the background tasks");
@@ -1022,7 +1022,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __importStudy: function(file) {
       const uploadingLabel = this.tr("Uploading file");
-      const importTask = new osparc.component.task.Import();
+      const importTask = new osparc.task.Import();
       importTask.start();
       importTask.setSubtitle(uploadingLabel);
 
@@ -1116,7 +1116,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       let operationPromise = null;
       if (collabGids.length > 1 && amICollaborator) {
         // remove collaborator
-        osparc.component.share.CollaboratorsStudy.removeCollaborator(studyData, myGid);
+        osparc.share.CollaboratorsStudy.removeCollaborator(studyData, myGid);
         const params = {
           url: {
             "studyId": studyData.uuid
@@ -1175,7 +1175,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     taskDuplicateReceived: function(task, studyName) {
-      const duplicateTaskUI = new osparc.component.task.Duplicate(studyName);
+      const duplicateTaskUI = new osparc.task.Duplicate(studyName);
       duplicateTaskUI.setTask(task);
       duplicateTaskUI.start();
       const duplicatingStudyCard = this.__createDuplicateCard(studyName);

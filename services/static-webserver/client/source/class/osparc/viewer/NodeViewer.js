@@ -50,7 +50,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
     },
 
     iFrame: {
-      check: "osparc.component.widget.PersistentIframe",
+      check: "osparc.widget.PersistentIframe",
       init: null,
       nullable: true
     },
@@ -100,7 +100,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
     __initIFrame: function() {
       this.__initLoadingPage();
 
-      const iframe = new osparc.component.widget.PersistentIframe();
+      const iframe = new osparc.widget.PersistentIframe();
       this.setIFrame(iframe);
     },
 

@@ -298,7 +298,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
 
       const study = this.getStudy();
-      const nodesSlidesTree = this.__nodesSlidesTree = new osparc.component.widget.NodesSlidesTree(study);
+      const nodesSlidesTree = this.__nodesSlidesTree = new osparc.widget.NodesSlidesTree(study);
       const title = this.tr("Edit App Mode");
       const nNodes = Object.keys(study.getWorkbench().getNodes()).length;
       const win = osparc.ui.window.Window.popUpInWindow(nodesSlidesTree, title, 370, Math.min(350, 200+(30*nNodes))).set({
@@ -479,7 +479,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __takeSnapshot: function() {
-      const editSnapshotView = new osparc.component.snapshots.EditSnapshotView();
+      const editSnapshotView = new osparc.snapshots.EditSnapshotView();
       const tagCtrl = editSnapshotView.getChildControl("tags");
       const study = this.getStudy();
       study.getSnapshots()
@@ -514,7 +514,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __showSnapshots: function() {
       const study = this.getStudy();
-      const snapshots = new osparc.component.snapshots.SnapshotsView(study);
+      const snapshots = new osparc.snapshots.SnapshotsView(study);
       const title = this.tr("Checkpoints");
       const win = osparc.ui.window.Window.popUpInWindow(snapshots, title, 1000, 500);
       snapshots.addListener("openSnapshot", e => {
@@ -530,7 +530,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __showIterations: function() {
       const study = this.getStudy();
-      const iterations = new osparc.component.snapshots.IterationsView(study);
+      const iterations = new osparc.snapshots.IterationsView(study);
       const title = this.tr("Iterations");
       const win = osparc.ui.window.Window.popUpInWindow(iterations, title, 1000, 500);
       iterations.addListener("openIteration", e => {

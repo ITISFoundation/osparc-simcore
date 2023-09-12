@@ -78,7 +78,7 @@ qx.Class.define("osparc.io.WatchDog", {
     __clientHeartbeatWWPinger: null,
 
     _applyOnline: function(value) {
-      let logo = osparc.component.widget.LogoOnOff.getInstance();
+      let logo = osparc.widget.LogoOnOff.getInstance();
       if (logo) {
         logo.setOnline(value);
       }

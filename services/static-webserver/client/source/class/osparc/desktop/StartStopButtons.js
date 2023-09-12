@@ -154,7 +154,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       const store = osparc.store.Store.getInstance();
       store.addListener("changeClusters", () => this.__populateClustersSelectBox(), this);
 
-      const clusterMiniView = this.__clusterMiniView = new osparc.component.cluster.ClusterMiniView();
+      const clusterMiniView = this.__clusterMiniView = new osparc.cluster.ClusterMiniView();
       selectBox.addListener("changeSelection", e => {
         const selection = e.getData();
         if (selection.length) {

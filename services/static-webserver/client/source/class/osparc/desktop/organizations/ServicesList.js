@@ -54,7 +54,7 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
     },
 
     __getServicesFilter: function() {
-      const filter = new osparc.component.filter.TextFilter("text", "organizationServicesList").set({
+      const filter = new osparc.filter.TextFilter("text", "organizationServicesList").set({
         allowStretchX: true,
         margin: [0, 10, 5, 10]
       });

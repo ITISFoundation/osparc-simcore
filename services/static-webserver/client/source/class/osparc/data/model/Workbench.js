@@ -351,8 +351,8 @@ qx.Class.define("osparc.data.model.Workbench", {
     getFreePosition: function(node, toTheLeft = true) {
       // do not overlap the new node2 with other nodes
       const pos = node.getPosition();
-      const nodeWidth = osparc.component.workbench.NodeUI.NODE_WIDTH;
-      const nodeHeight = osparc.component.workbench.NodeUI.NODE_HEIGHT;
+      const nodeWidth = osparc.workbench.NodeUI.NODE_WIDTH;
+      const nodeHeight = osparc.workbench.NodeUI.NODE_HEIGHT;
       const xPos = toTheLeft ? Math.max(0, pos.x-nodeWidth-30) : pos.x+nodeWidth+30;
       let yPos = pos.y;
       const allNodes = this.getNodes();
@@ -383,8 +383,8 @@ qx.Class.define("osparc.data.model.Workbench", {
         x = Math.max(x, node.getPosition().x);
         y = Math.max(y, node.getPosition().y);
       });
-      x += osparc.component.workbench.NodeUI.NODE_WIDTH;
-      y += osparc.component.workbench.NodeUI.NODE_HEIGHT;
+      x += osparc.workbench.NodeUI.NODE_WIDTH;
+      y += osparc.workbench.NodeUI.NODE_HEIGHT;
       return {
         x,
         y

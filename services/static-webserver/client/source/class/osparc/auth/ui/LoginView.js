@@ -55,7 +55,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
     __loginBtn: null,
 
     _buildPage: function() {
-      const announcementUIFactory = osparc.component.announcement.AnnouncementUIFactory.getInstance();
+      const announcementUIFactory = osparc.announcement.AnnouncementUIFactory.getInstance();
       if (announcementUIFactory.hasLoginAnnouncement()) {
         this.add(announcementUIFactory.createLoginAnnouncement());
       }

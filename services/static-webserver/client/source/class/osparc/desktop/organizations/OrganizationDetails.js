@@ -96,7 +96,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
       const org = this.__orgModel;
 
       const newOrg = false;
-      const orgEditor = new osparc.component.editor.OrganizationEditor(newOrg);
+      const orgEditor = new osparc.editor.OrganizationEditor(newOrg);
       org.bind("gid", orgEditor, "gid");
       org.bind("label", orgEditor, "label");
       org.bind("description", orgEditor, "description");

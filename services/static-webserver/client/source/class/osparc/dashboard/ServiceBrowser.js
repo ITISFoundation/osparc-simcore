@@ -29,7 +29,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     this._resourceType = "service";
     this.base(arguments);
 
-    this.__sortBy = osparc.component.service.SortServicesButtons.DefaultSorting;
+    this.__sortBy = osparc.service.SortServicesButtons.DefaultSorting;
   },
 
   members: {
@@ -108,7 +108,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         card.addListener("execute", () => this.__itemClicked(card), this);
         this._populateCardMenu(card);
       });
-      osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
+      osparc.filter.UIFilterController.dispatch("searchBarFilter");
     },
 
     __itemClicked: function(card) {
@@ -184,7 +184,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     },
 
     __addSortingButtons: function() {
-      const containterSortBtns = new osparc.component.service.SortServicesButtons();
+      const containterSortBtns = new osparc.service.SortServicesButtons();
       containterSortBtns.addListener("sortBy", e => {
         this.__sortBy = e.getData();
         this.__setResourcesToList(this._resourcesList);
@@ -217,7 +217,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       });
       const scroll = new qx.ui.container.Scroll();
       addServiceWindow.add(scroll);
-      const form = new osparc.component.form.json.JsonSchemaForm("/resource/form/service.json", formData);
+      const form = new osparc.form.json.JsonSchemaForm("/resource/form/service.json", formData);
       form.addListener("ready", () => {
         addServiceWindow.open();
       });

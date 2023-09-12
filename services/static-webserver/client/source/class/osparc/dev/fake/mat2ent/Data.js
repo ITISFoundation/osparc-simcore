@@ -282,8 +282,8 @@ qx.Class.define("osparc.dev.fake.mat2ent.Data", {
         let matDataItem = qx.data.marshal.Json.createModel(matData, true);
         const itemProps = materialsProps[matId];
         if (itemProps) {
-          let form = new osparc.component.form.Auto(itemProps);
-          let propsForm = new osparc.component.form.renderer.PropForm(form);
+          let form = new osparc.form.Auto(itemProps);
+          let propsForm = new osparc.form.renderer.PropForm(form);
           matDataItem["propsForm"] = propsForm;
         }
 

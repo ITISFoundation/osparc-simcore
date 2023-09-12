@@ -226,7 +226,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
       if (
         osparc.product.Utils.showQuality() &&
         this.getService()["quality"] &&
-        osparc.component.metadata.Quality.isEnabled(this.getService()["quality"])
+        osparc.metadata.Quality.isEnabled(this.getService()["quality"])
       ) {
         extraInfo.push({
           label: this.tr("QUAILITY"),
@@ -340,7 +340,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
 
     __openTitleEditor: function() {
       const title = this.tr("Edit Title");
-      const titleEditor = new osparc.component.widget.Renamer(this.getService()["name"], null, title);
+      const titleEditor = new osparc.widget.Renamer(this.getService()["name"], null, title);
       titleEditor.addListener("labelChanged", e => {
         titleEditor.close();
         const newLabel = e.getData()["newLabel"];
@@ -373,7 +373,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
       const title = this.tr("Classifiers");
       let classifiers = null;
       if (osparc.utils.Services.canIWrite(this.getService()["accessRights"])) {
-        classifiers = new osparc.component.metadata.ClassifiersEditor(this.getService());
+        classifiers = new osparc.metadata.ClassifiersEditor(this.getService());
         const win = osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
         classifiers.addListener("updateClassifiers", e => {
           win.close();
@@ -382,7 +382,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
           this.fireDataEvent("updateService", updatedServiceData);
         }, this);
       } else {
-        classifiers = new osparc.component.metadata.ClassifiersViewer(this.getService());
+        classifiers = new osparc.metadata.ClassifiersViewer(this.getService());
         osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
       }
     },
@@ -398,7 +398,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
 
     __openThumbnailEditor: function() {
       const title = this.tr("Edit Thumbnail");
-      const thumbnailEditor = new osparc.component.editor.ThumbnailEditor(this.getService()["thumbnail"]);
+      const thumbnailEditor = new osparc.editor.ThumbnailEditor(this.getService()["thumbnail"]);
       const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, 300, 115);
       thumbnailEditor.addListener("updateThumbnail", e => {
         win.close();
@@ -412,7 +412,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
 
     __openDescriptionEditor: function() {
       const title = this.tr("Edit Description");
-      const textEditor = new osparc.component.editor.TextEditor(this.getService()["description"]);
+      const textEditor = new osparc.editor.TextEditor(this.getService()["description"]);
       const win = osparc.ui.window.Window.popUpInWindow(textEditor, title, 400, 300);
       textEditor.addListener("textChanged", e => {
         win.close();

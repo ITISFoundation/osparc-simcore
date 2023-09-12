@@ -194,7 +194,7 @@ qx.Class.define("osparc.utils.Services", {
     canIWrite: function(serviceAccessRights) {
       const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
       orgIDs.push(osparc.auth.Data.getInstance().getGroupId());
-      return osparc.component.share.CollaboratorsService.canGroupsWrite(serviceAccessRights, orgIDs);
+      return osparc.share.CollaboratorsService.canGroupsWrite(serviceAccessRights, orgIDs);
     },
 
     /**
@@ -348,7 +348,7 @@ qx.Class.define("osparc.utils.Services", {
       Object.values(services).forEach(serviceWVersion => {
         Object.values(serviceWVersion).forEach(service => {
           if (osparc.data.model.Node.isComputational(service)) {
-            osparc.component.metadata.Quality.attachQualityToObject(service);
+            osparc.metadata.Quality.attachQualityToObject(service);
           }
         });
       });

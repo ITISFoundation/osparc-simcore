@@ -66,7 +66,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
     },
 
     sortOrgMembers: function(a, b) {
-      const sorted = osparc.component.share.Collaborators.sortByAccessRights(a["accessRights"], b["accessRights"]);
+      const sorted = osparc.share.Collaborators.sortByAccessRights(a["accessRights"], b["accessRights"]);
       if (sorted !== 0) {
         return sorted;
       }
@@ -134,7 +134,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
     },
 
     __getMembersFilter: function() {
-      const filter = new osparc.component.filter.TextFilter("text", "organizationMembersList").set({
+      const filter = new osparc.filter.TextFilter("text", "organizationMembersList").set({
         allowStretchX: true,
         margin: [0, 10, 5, 10]
       });
@@ -336,7 +336,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
               .then(respOrgMembers => {
                 const newMember = respOrgMembers.find(m => m["login"] === orgMemberEmail);
                 if (newMember) {
-                  osparc.component.notification.Notifications.postNewOrganization(newMember["id"], orgId);
+                  osparc.notification.Notifications.postNewOrganization(newMember["id"], orgId);
                 }
               });
           }

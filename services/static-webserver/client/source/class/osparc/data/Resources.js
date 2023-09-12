@@ -963,10 +963,10 @@ qx.Class.define("osparc.data.Resources", {
           if (data && endpoint.includes("get") && ["studies", "templates"].includes(resource)) {
             if (Array.isArray(data)) {
               data.forEach(std => {
-                osparc.component.metadata.Quality.attachQualityToObject(std);
+                osparc.metadata.Quality.attachQualityToObject(std);
               });
             } else {
-              osparc.component.metadata.Quality.attachQualityToObject(data);
+              osparc.metadata.Quality.attachQualityToObject(data);
             }
           }
           if (useCache) {

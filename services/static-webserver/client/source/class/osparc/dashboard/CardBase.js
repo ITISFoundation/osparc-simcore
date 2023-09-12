@@ -17,8 +17,8 @@
 
 qx.Class.define("osparc.dashboard.CardBase", {
   extend: qx.ui.form.ToggleButton,
-  implement: [qx.ui.form.IModel, osparc.component.filter.IFilterable],
-  include: [qx.ui.form.MModelProperty, osparc.component.filter.MFilterable],
+  implement: [qx.ui.form.IModel, osparc.filter.IFilterable],
+  include: [qx.ui.form.MModelProperty, osparc.filter.MFilterable],
   type: "abstract",
 
   construct: function() {
@@ -379,7 +379,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyQuality: function(quality) {
-      if (osparc.product.Utils.showQuality() && osparc.component.metadata.Quality.isEnabled(quality)) {
+      if (osparc.product.Utils.showQuality() && osparc.metadata.Quality.isEnabled(quality)) {
         const tsrRatingLayout = this.getChildControl("tsr-rating");
         const tsrRating = tsrRatingLayout.getChildren()[1];
         tsrRating.set({
@@ -521,7 +521,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
           toolTip += this.tr(" is cloning it...");
           break;
         case "EXPORTING":
-          image = osparc.component.task.Export.ICON+"/";
+          image = osparc.task.Export.ICON+"/";
           toolTip += this.tr(" is exporting it...");
           break;
         case "OPENING":

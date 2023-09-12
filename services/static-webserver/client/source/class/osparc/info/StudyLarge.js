@@ -210,7 +210,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       if (
         osparc.product.Utils.showQuality() &&
         this.getStudy().getQuality() &&
-        osparc.component.metadata.Quality.isEnabled(this.getStudy().getQuality())
+        osparc.metadata.Quality.isEnabled(this.getStudy().getQuality())
       ) {
         extraInfo["QUALITY"] = {
           label: this.tr("QUALITY"),
@@ -256,7 +256,7 @@ qx.Class.define("osparc.info.StudyLarge", {
 
     __openTitleEditor: function() {
       const title = this.tr("Edit Title");
-      const titleEditor = new osparc.component.widget.Renamer(this.getStudy().getName(), null, title);
+      const titleEditor = new osparc.widget.Renamer(this.getStudy().getName(), null, title);
       titleEditor.addListener("labelChanged", e => {
         titleEditor.close();
         const newLabel = e.getData()["newLabel"];
@@ -281,7 +281,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       const title = this.tr("Classifiers");
       let classifiers = null;
       if (this.__canIWrite()) {
-        classifiers = new osparc.component.metadata.ClassifiersEditor(this.getStudy().serialize());
+        classifiers = new osparc.metadata.ClassifiersEditor(this.getStudy().serialize());
         const win = osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
         classifiers.addListener("updateClassifiers", e => {
           win.close();
@@ -290,7 +290,7 @@ qx.Class.define("osparc.info.StudyLarge", {
           this.fireDataEvent("updateStudy", updatedData);
         }, this);
       } else {
-        classifiers = new osparc.component.metadata.ClassifiersViewer(this.getStudy().serialize());
+        classifiers = new osparc.metadata.ClassifiersViewer(this.getStudy().serialize());
         osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
       }
     },
@@ -305,8 +305,8 @@ qx.Class.define("osparc.info.StudyLarge", {
     },
 
     __openTagsEditor: function() {
-      const tagManager = new osparc.component.form.tag.TagManager(this.getStudy().serialize());
-      const win = osparc.component.form.tag.TagManager.popUpInWindow(tagManager);
+      const tagManager = new osparc.form.tag.TagManager(this.getStudy().serialize());
+      const win = osparc.form.tag.TagManager.popUpInWindow(tagManager);
       tagManager.addListener("updateTags", e => {
         win.close();
         const updatedData = e.getData();
@@ -318,8 +318,8 @@ qx.Class.define("osparc.info.StudyLarge", {
     __openThumbnailEditor: function() {
       const title = this.tr("Edit Thumbnail");
       const oldThumbnail = this.getStudy().getThumbnail();
-      const suggestions = osparc.component.editor.ThumbnailSuggestions.extractThumbanilSuggestions(this.getStudy());
-      const thumbnailEditor = new osparc.component.editor.ThumbnailEditor(oldThumbnail, suggestions);
+      const suggestions = osparc.editor.ThumbnailSuggestions.extractThumbanilSuggestions(this.getStudy());
+      const thumbnailEditor = new osparc.editor.ThumbnailEditor(oldThumbnail, suggestions);
       const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, suggestions.length > 2 ? 500 : 350, suggestions.length ? 280 : 115);
       thumbnailEditor.addListener("updateThumbnail", e => {
         win.close();
@@ -333,7 +333,7 @@ qx.Class.define("osparc.info.StudyLarge", {
 
     __openDescriptionEditor: function() {
       const title = this.tr("Edit Description");
-      const textEditor = new osparc.component.editor.TextEditor(this.getStudy().getDescription());
+      const textEditor = new osparc.editor.TextEditor(this.getStudy().getDescription());
       const win = osparc.ui.window.Window.popUpInWindow(textEditor, title, 400, 300);
       textEditor.addListener("textChanged", e => {
         win.close();

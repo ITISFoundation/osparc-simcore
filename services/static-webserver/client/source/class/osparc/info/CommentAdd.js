@@ -82,7 +82,7 @@ qx.Class.define("osparc.info.CommentAdd", {
           break;
         }
         case "comment-field": {
-          control = new osparc.component.editor.TextEditor();
+          control = new osparc.editor.TextEditor();
           control.getChildControl("buttons").exclude();
           const layout = this.getChildControl("add-comment-layout");
           layout.add(control, {

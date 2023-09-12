@@ -20,7 +20,7 @@
  * Display widget with a title bar and collapsible content.
  */
 qx.Class.define("osparc.desktop.PanelView", {
-  extend: osparc.component.widget.CollapsibleView,
+  extend: osparc.widget.CollapsibleView,
 
   construct: function(title, content) {
     this.base(arguments, title, content);
