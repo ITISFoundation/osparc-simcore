@@ -4,6 +4,7 @@ import os
 
 import typer
 from servicelib.utils_secrets import generate_password, generate_token_secret_key
+from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.utils_cli import (
     create_settings_command,
@@ -71,6 +72,21 @@ def generate_dotenv(ctx: typer.Context, *, auto_password: bool = False):
                 RABBIT_USER=os.environ.get("RABBIT_USER", "replace-with-rabbit-user"),
                 RABBIT_PASSWORD=os.environ.get(
                     "RABBIT_PASSWORD", "replace-with-rabbit-user"
+                ),
+            ),
+        ),
+        PAYMENTS_POSTGRES=os.environ.get(
+            "PAYMENTS_POSTGRES",
+            PostgresSettings.create_from_envs(
+                POSTGRES_HOST=os.environ.get(
+                    "POSTGRES_HOST", "replace-with-postgres-host"
+                ),
+                POSTGRES_USER=os.environ.get(
+                    "POSTGRES_USER", "replace-with-postgres-user"
+                ),
+                POSTGRES_DB=os.environ.get("POSTGRES_DB", "replace-with-postgres-db"),
+                POSTGRES_PASSWORD=os.environ.get(
+                    "POSTGRES_PASSWORD", "replace-with-postgres-password"
                 ),
             ),
         ),
