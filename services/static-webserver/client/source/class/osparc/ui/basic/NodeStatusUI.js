@@ -59,7 +59,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
         converter: state => {
           if (state) {
             this.show();
-            const labelValue = osparc.utils.StatusUI.getLabelValue(state);
+            const labelValue = osparc.service.StatusUI.getLabelValue(state);
             return qx.lang.String.firstUp(labelValue.toLowerCase());
           }
           this.exclude();
@@ -67,12 +67,12 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
         },
         onUpdate: (source, target) => {
           const state = source.getRunning();
-          target.setTextColor(osparc.utils.StatusUI.getColor(state));
+          target.setTextColor(osparc.service.StatusUI.getColor(state));
         }
       });
 
       this.getNode().getStatus().bind("running", this.getChildControl("icon"), "source", {
-        converter: state => osparc.utils.StatusUI.getIconSource(state),
+        converter: state => osparc.service.StatusUI.getIconSource(state),
         onUpdate: (source, target) => {
           target.show();
           const state = source.getRunning();
@@ -81,7 +81,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
             case "FAILED":
             case "ABORTED":
               osparc.utils.Utils.removeClass(this.getChildControl("icon").getContentElement(), "rotate");
-              target.setTextColor(osparc.utils.StatusUI.getColor(state));
+              target.setTextColor(osparc.service.StatusUI.getColor(state));
               return;
             case "PUBLISHED":
             case "PENDING":
@@ -89,7 +89,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
             case "STARTED":
             case "RETRY":
               osparc.utils.Utils.addClass(this.getChildControl("icon").getContentElement(), "rotate");
-              target.setTextColor(osparc.utils.StatusUI.getColor(state));
+              target.setTextColor(osparc.service.StatusUI.getColor(state));
               return;
             case "UNKNOWN":
             case "NOT_STARTED":
@@ -103,21 +103,21 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
 
     __setupInteractive: function() {
       this.getNode().getStatus().bind("interactive", this.getChildControl("label"), "value", {
-        converter: state => osparc.utils.StatusUI.getLabelValue(state),
+        converter: state => osparc.service.StatusUI.getLabelValue(state),
         onUpdate: (source, target) => {
           const state = source.getInteractive();
-          target.setTextColor(osparc.utils.StatusUI.getColor(state));
+          target.setTextColor(osparc.service.StatusUI.getColor(state));
         }
       });
 
       this.getNode().getStatus().bind("interactive", this.getChildControl("icon"), "source", {
-        converter: state => osparc.utils.StatusUI.getIconSource(state),
+        converter: state => osparc.service.StatusUI.getIconSource(state),
         onUpdate: (source, target) => {
-          osparc.utils.StatusUI.updateCircleAnimation(this.getChildControl("icon"));
+          osparc.service.StatusUI.updateCircleAnimation(this.getChildControl("icon"));
           const props = qx.util.PropertyUtil.getProperties(osparc.data.model.NodeStatus);
           const state = source.getInteractive();
           if (props["interactive"]["check"].includes(state)) {
-            target.setTextColor(osparc.utils.StatusUI.getColor(state));
+            target.setTextColor(osparc.service.StatusUI.getColor(state));
           } else {
             target.resetTextColor();
           }
@@ -126,7 +126,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
     },
 
     __setupFilePicker: function() {
-      osparc.utils.StatusUI.setupFilePickerIcon(this.getNode(), this.getChildControl("icon"));
+      osparc.service.StatusUI.setupFilePickerIcon(this.getNode(), this.getChildControl("icon"));
 
       this.getNode().bind("outputs", this.getChildControl("label"), "value", {
         converter: outputs => {

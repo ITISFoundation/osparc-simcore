@@ -281,7 +281,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
         if (node.isDeprecated()) {
           deprecatedIcon.show();
           deprecatedIcon.set({
-            textColor: osparc.utils.StatusUI.getColor("deprecated")
+            textColor: osparc.service.StatusUI.getColor("deprecated")
           });
           let ttMsg = osparc.service.Utils.DEPRECATED_SERVICE_TEXT;
           const deprecatedDateMsg = osparc.service.Utils.getDeprecationDateText(node.getMetaData());
@@ -294,7 +294,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
           }
           const toolTip = new qx.ui.tooltip.ToolTip().set({
             label: ttMsg,
-            icon: osparc.utils.StatusUI.getIconSource("deprecated"),
+            icon: osparc.service.StatusUI.getIconSource("deprecated"),
             rich: true,
             maxWidth: 250
           });
@@ -302,7 +302,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
         } else if (node.isRetired()) {
           deprecatedIcon.show();
           deprecatedIcon.set({
-            textColor: osparc.utils.StatusUI.getColor("retired")
+            textColor: osparc.service.StatusUI.getColor("retired")
           });
 
           let ttMsg = osparc.service.Utils.RETIRED_SERVICE_TEXT;
@@ -312,7 +312,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
           }
           const toolTip = new qx.ui.tooltip.ToolTip().set({
             label: ttMsg,
-            icon: osparc.utils.StatusUI.getIconSource("retired"),
+            icon: osparc.service.StatusUI.getIconSource("retired"),
             rich: true,
             maxWidth: 250
           });
@@ -520,9 +520,9 @@ qx.Class.define("osparc.workbench.NodeUI", {
         this.getNode().getStatus().bind("dependencies", port, "textColor", {
           converter: dependencies => {
             if (dependencies !== null) {
-              return osparc.utils.StatusUI.getColor(dependencies.length ? "modified" : "ready");
+              return osparc.service.StatusUI.getColor(dependencies.length ? "modified" : "ready");
             }
-            return osparc.utils.StatusUI.getColor();
+            return osparc.service.StatusUI.getColor();
           }
         });
         this.getNode().bind("inputConnected", port, "source", {
@@ -530,7 +530,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
         });
       } else {
         this.getNode().getStatus().bind("output", port, "textColor", {
-          converter: output => osparc.utils.StatusUI.getColor(output)
+          converter: output => osparc.service.StatusUI.getColor(output)
         });
         this.getNode().bind("outputConnected", port, "source", {
           converter: isConnected => isConnected ? osparc.workbench.BaseNodeUI.PORT_CONNECTED : osparc.workbench.BaseNodeUI.PORT_DISCONNECTED

@@ -187,7 +187,7 @@ qx.Class.define("osparc.ui.message.Loading", {
         wrap: true
       });
       const icon = waitingHeader.getChildControl("icon");
-      osparc.utils.StatusUI.updateCircleAnimation(icon);
+      osparc.service.StatusUI.updateCircleAnimation(icon);
       mainLayout.addAt(waitingHeader, {
         column: 0,
         row: this.self().GRID_POS.WAITING
@@ -235,10 +235,10 @@ qx.Class.define("osparc.ui.message.Loading", {
       const words = value.split(" ");
       if (words.length) {
         const state = words[0];
-        const iconSource = osparc.utils.StatusUI.getIconSource(state.toLowerCase(), this.self().STATUS_ICON_SIZE);
+        const iconSource = osparc.service.StatusUI.getIconSource(state.toLowerCase(), this.self().STATUS_ICON_SIZE);
         if (iconSource) {
           this.__header.setIcon(iconSource);
-          osparc.utils.StatusUI.updateCircleAnimation(this.__header.getChildControl("icon"));
+          osparc.service.StatusUI.updateCircleAnimation(this.__header.getChildControl("icon"));
         }
       }
     },

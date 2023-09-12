@@ -74,7 +74,7 @@ qx.Class.define("osparc.workbench.EdgeUI", {
       if (modified === null) {
         newColor = qx.theme.manager.Color.getInstance().resolve("workbench-edge-comp-active");
       } else {
-        newColor = osparc.utils.StatusUI.getColor(modified ? "failed" : "ready");
+        newColor = osparc.service.StatusUI.getColor(modified ? "failed" : "ready");
       }
       const colorHex = qx.theme.manager.Color.getInstance().resolve(newColor);
       return colorHex;

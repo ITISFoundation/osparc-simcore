@@ -478,11 +478,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
       switch (updatable) {
         case "retired":
           toolTipText = this.tr("Service(s) retired, please update");
-          textColor = osparc.utils.StatusUI.getColor("retired");
+          textColor = osparc.service.StatusUI.getColor("retired");
           break;
         case "deprecated":
           toolTipText = this.tr("Service(s) deprecated, please update");
-          textColor = osparc.utils.StatusUI.getColor("deprecated");
+          textColor = osparc.service.StatusUI.getColor("deprecated");
           break;
         case "updatable":
           toolTipText = this.tr("Update available");

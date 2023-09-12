@@ -54,9 +54,9 @@ qx.Class.define("osparc.node.LifeCycleView", {
 
       let chip = null;
       if (node.isRetired()) {
-        chip = osparc.utils.StatusUI.createServiceRetiredChip();
+        chip = osparc.service.StatusUI.createServiceRetiredChip();
       } else if (node.isDeprecated()) {
-        chip = osparc.utils.StatusUI.createServiceDeprecatedChip();
+        chip = osparc.service.StatusUI.createServiceDeprecatedChip();
       }
       if (chip) {
         this._add(chip);

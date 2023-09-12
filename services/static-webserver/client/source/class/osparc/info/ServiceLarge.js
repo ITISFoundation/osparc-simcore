@@ -156,9 +156,9 @@ qx.Class.define("osparc.info.ServiceLarge", {
       const isDeprecated = osparc.service.Utils.isDeprecated(this.getService());
       const isRetired = osparc.service.Utils.isRetired(this.getService());
       if (isDeprecated) {
-        return osparc.utils.StatusUI.createServiceDeprecatedChip();
+        return osparc.service.StatusUI.createServiceDeprecatedChip();
       } else if (isRetired) {
-        return osparc.utils.StatusUI.createServiceRetiredChip();
+        return osparc.service.StatusUI.createServiceRetiredChip();
       }
       return null;
     },

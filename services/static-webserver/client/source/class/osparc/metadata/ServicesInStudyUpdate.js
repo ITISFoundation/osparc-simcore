@@ -85,13 +85,13 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       if (isDeprecated) {
         versionLabel.set({
           textColor: "contrasted-text-dark",
-          backgroundColor: osparc.utils.StatusUI.getColor("deprecated"),
+          backgroundColor: osparc.service.StatusUI.getColor("deprecated"),
           toolTipText: qx.locale.Manager.tr("Service deprecated, please update")
         });
       } else if (isRetired) {
         versionLabel.set({
           textColor: "contrasted-text-dark",
-          backgroundColor: osparc.utils.StatusUI.getColor("retired"),
+          backgroundColor: osparc.service.StatusUI.getColor("retired"),
           toolTipText: qx.locale.Manager.tr("Service retired, please update")
         });
       }

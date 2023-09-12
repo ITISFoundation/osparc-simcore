@@ -134,11 +134,11 @@ qx.Class.define("osparc.widget.NodesTree", {
       node.bind("label", nodeModel, "label");
       if (node.isDynamic()) {
         node.getStatus().bind("interactive", nodeModel, "iconColor", {
-          converter: status => osparc.utils.StatusUI.getColor(status)
+          converter: status => osparc.service.StatusUI.getColor(status)
         });
       } else if (node.isComputational()) {
         node.getStatus().bind("running", nodeModel, "iconColor", {
-          converter: status => osparc.utils.StatusUI.getColor(status)
+          converter: status => osparc.service.StatusUI.getColor(status)
         });
       }
       return nodeModel;
