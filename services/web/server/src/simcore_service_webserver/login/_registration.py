@@ -23,6 +23,7 @@ from ..invitations.api import (
     validate_invitation_url,
 )
 from ..invitations.errors import InvalidInvitation, InvitationsServiceUnavailable
+from ..products.api import Product
 from ._confirmation import is_confirmation_expired, validate_confirmation_code
 from ._constants import MSG_EMAIL_EXISTS, MSG_INVITATIONS_CONTACT_SUFFIX
 from .settings import LoginOptions
@@ -190,6 +191,7 @@ async def extract_email_from_invitation(
 async def check_and_consume_invitation(
     invitation_code: str,
     guest_email: str,
+    product: Product,
     db: AsyncpgStorage,
     cfg: LoginOptions,
     app: web.Application,
@@ -207,6 +209,7 @@ async def check_and_consume_invitation(
         with _invitations_request_context(invitation_code=invitation_code) as url:
             content = await validate_invitation_url(
                 app,
+                current_product=product,
                 guest_email=guest_email,
                 invitation_url=f"{url}",
             )

@@ -182,6 +182,7 @@ async def register(request: web.Request):
 
         invitation = await check_and_consume_invitation(
             invitation_code,
+            product=product,
             guest_email=registration.email,
             db=db,
             cfg=cfg,
