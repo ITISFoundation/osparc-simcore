@@ -40,12 +40,12 @@ SIMCORE_SERVICE_EXAMPLES = {
     ),
     "dynamic-service": _Parametrization(
         example=SimcoreServiceLabels.Config.schema_extra["examples"][1],
-        items=3,
+        items=4,
         uses_dynamic_sidecar=True,
     ),
     "dynamic-service-with-compose-spec": _Parametrization(
         example=SimcoreServiceLabels.Config.schema_extra["examples"][2],
-        items=5,
+        items=6,
         uses_dynamic_sidecar=True,
     ),
 }

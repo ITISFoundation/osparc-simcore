@@ -176,8 +176,8 @@ class UserServiceCommand(BaseModel):
     class Config(_BaseConfig):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
-                {"service": "s1", "command": "ls", "timeout": 1},
-                {"service": "s2", "command": "ls -lah", "timeout": 1},
+                {"service": "rt-web", "command": "ls", "timeout": 1},
+                {"service": "s4l-core", "command": ["ls", "-lah"], "timeout": 1},
             ]
         }
 
@@ -373,12 +373,6 @@ class NATRule(BaseModel):
 class DynamicSidecarServiceLabels(BaseModel):
     """All "simcore.service.*" labels including keys"""
 
-    callbacks_mapping: Json[CallbacksMapping] | None = Field(
-        None,
-        alias="simcore.service.callbacks-mapping",
-        description="exposes callbacks from user services to the sidecar",
-    )
-
     paths_mapping: Json[PathMappingsLabel] | None = Field(
         None,
         alias="simcore.service.paths-mapping",
@@ -433,12 +427,16 @@ class DynamicSidecarServiceLabels(BaseModel):
         description="allow complete internet access to containers in here",
     )
 
+    callbacks_mapping: Json[CallbacksMapping] | None = Field(
+        None,
+        alias="simcore.service.callbacks-mapping",
+        description="exposes callbacks from user services to the sidecar",
+    )
+
     @cached_property
     def needs_dynamic_sidecar(self) -> bool:
         """if paths mapping is present the service needs to be ran via dynamic-sidecar"""
         return self.paths_mapping is not None
-
-    # TODO: validator for sevice name in compose spec inside callbacks_mapping entries
 
     @validator("container_http_entry", always=True)
     @classmethod
@@ -494,6 +492,30 @@ class DynamicSidecarServiceLabels(BaseModel):
                     raise ValueError(err_msg)
         return v
 
+    @validator("callbacks_mapping")
+    @classmethod
+    def _callbacks_mapping_in_compose_spec(cls, v: CallbacksMapping, values):
+        if v is None:
+            return v
+
+        defined_services: set[str] = {
+            v.metrics.service,
+            *{x.service for x in v.before_shutdown},
+        }
+
+        compose_spec: dict | None = values.get("compose_spec")
+        if compose_spec is None:
+            if {DEFAULT_SINGLE_SERVICE_NAME} != defined_services:
+                err_msg = f"Expected only 1 entry '{DEFAULT_SINGLE_SERVICE_NAME}' not '{defined_services}'"
+                raise ValueError(err_msg)
+        else:
+            containers_in_compose_spec = set(compose_spec["services"].keys())
+            for service_name in defined_services:
+                if service_name not in containers_in_compose_spec:
+                    err_msg = f"{service_name=} not found in {compose_spec=}"
+                    raise ValueError(err_msg)
+        return v
+
     @root_validator
     @classmethod
     def not_allowed_in_both_specs(cls, values):
@@ -533,7 +555,7 @@ class DynamicSidecarServiceLabels(BaseModel):
         return values
 
     class Config(_BaseConfig):
-        pass
+        ...
 
 
 class SimcoreServiceLabels(DynamicSidecarServiceLabels):
@@ -582,6 +604,15 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                         PathMappingsLabel.Config.schema_extra["examples"][0]
                     ),
                     "simcore.service.restart-policy": RestartPolicy.NO_RESTART.value,
+                    "simcore.service.callbacks-mapping": json.dumps(
+                        {
+                            "metrics": {
+                                "service": DEFAULT_SINGLE_SERVICE_NAME,
+                                "command": "ls",
+                                "timeout": 1,
+                            }
+                        }
+                    ),
                 },
                 # dynamic-service with compose spec
                 {
@@ -616,7 +647,9 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                     ),
                     "simcore.service.container-http-entrypoint": "rt-web",
                     "simcore.service.restart-policy": RestartPolicy.ON_INPUTS_DOWNLOADED.value,
+                    "simcore.service.callbacks-mapping": json.dumps(
+                        CallbacksMapping.Config.schema_extra["examples"][3]
+                    ),
                 },
             ]
-            # TODO: expand exaomples here!!!
         }
