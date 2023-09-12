@@ -15,10 +15,10 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.panddy.Sequences", {
+qx.Class.define("osparc.panddy.Tours", {
   extend: osparc.ui.basic.FloatingHelper,
 
-  construct: function(element, sequences) {
+  construct: function(element, tours) {
     this.base(arguments, element);
 
     this.setLayout(new qx.ui.layout.VBox(8));
@@ -30,23 +30,23 @@ qx.Class.define("osparc.panddy.Sequences", {
     });
 
     this.getChildControl("title");
-    this.getChildControl("sequences-layout");
+    this.getChildControl("tours-layout");
 
-    if (sequences) {
-      this.setSequences(sequences);
+    if (tours) {
+      this.setTours(tours);
     }
   },
 
   events: {
-    "sequenceSelected": "qx.event.type.Data"
+    "tourSelected": "qx.event.type.Data"
   },
 
   properties: {
-    sequences: {
+    tours: {
       check: "Array",
       init: [],
       nullable: true,
-      apply: "__applySequences"
+      apply: "__applyTours"
     }
   },
 
@@ -61,7 +61,7 @@ qx.Class.define("osparc.panddy.Sequences", {
           });
           this.add(control);
           break;
-        case "sequences-layout":
+        case "tours-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
           this.add(control);
           break;
@@ -80,14 +80,14 @@ qx.Class.define("osparc.panddy.Sequences", {
       return false;
     },
 
-    __evaluateRequiredTarget: function(sequence, seqButton) {
-      if (this.__isSelectorVisible(document, sequence.requiredTarget)) {
+    __evaluateRequiredTarget: function(tour, seqButton) {
+      if (this.__isSelectorVisible(document, tour.contextTarget)) {
         seqButton.setEnabled(true);
         return;
       }
       const iframes = document.querySelectorAll("iframe");
       for (let i=0; i<iframes.length; i++) {
-        if (this.__isSelectorVisible(iframes[i].contentWindow.document, sequence.requiredTarget)) {
+        if (this.__isSelectorVisible(iframes[i].contentWindow.document, tour.contextTarget)) {
           seqButton.setEnabled(true);
           return;
         }
@@ -95,25 +95,25 @@ qx.Class.define("osparc.panddy.Sequences", {
       seqButton.setEnabled(false);
     },
 
-    __getSequenceButton: function(sequence) {
+    __getTourButton: function(tour) {
       const seqButton = new qx.ui.form.Button().set({
-        label: sequence.name,
+        label: tour.name,
         icon: "@FontAwesome5Solid/arrow-right/14",
         iconPosition: "right",
         alignX: "left",
         rich: true,
-        toolTipText: sequence.description
+        toolTipText: tour.description
       });
-      if (sequence.requiredTarget) {
-        this.__evaluateRequiredTarget(sequence, seqButton);
+      if (tour.contextTarget) {
+        this.__evaluateRequiredTarget(tour, seqButton);
       }
-      seqButton.addListener("execute", () => this.fireDataEvent("sequenceSelected", sequence), this);
+      seqButton.addListener("execute", () => this.fireDataEvent("tourSelected", tour), this);
       return seqButton;
     },
 
-    __applySequences: function(seqs) {
-      const sequencesLayout = this.getChildControl("sequences-layout");
-      seqs.forEach(seq => sequencesLayout.add(this.__getSequenceButton(seq)));
+    __applyTours: function(tours) {
+      const toursLayout = this.getChildControl("tours-layout");
+      tours.forEach(tour => toursLayout.add(this.__getTourButton(tour)));
     }
   }
 });

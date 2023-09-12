@@ -28,7 +28,7 @@ qx.Class.define("osparc.panddy.Panddy", {
       zIndex: 100000
     });
 
-    this.setSequences(this.self().INTRO_SEQUENCE);
+    this.setTours(this.self().INTRO_SEQUENCE);
   },
 
   statics: {
@@ -52,7 +52,7 @@ qx.Class.define("osparc.panddy.Panddy", {
   },
 
   properties: {
-    sequences: {
+    tours: {
       check: "Array",
       init: [],
       nullable: true
@@ -116,38 +116,38 @@ qx.Class.define("osparc.panddy.Panddy", {
     },
 
     __toSequences: function() {
-      const sequences = this.getSequences();
+      const tours = this.getTours();
       const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem("panddyDontShow");
-      if (sequences.length === 0 || (sequences === this.self().INTRO_SEQUENCE && dontShow === "true")) {
+      if (tours.length === 0 || (tours === this.self().INTRO_SEQUENCE && dontShow === "true")) {
         this.stop();
         return;
       }
 
-      if (sequences.length === 1) {
-        this.__selectSequence(sequences[0]);
+      if (tours.length === 1) {
+        this.__selectTour(tours[0]);
       } else {
-        this.__showSequences();
+        this.__showTours();
       }
     },
 
-    __showSequences: function() {
+    __showTours: function() {
       const panddy = this.getChildControl("panddy");
       panddy.show();
       setTimeout(() => {
-        const sequences = this.getSequences();
-        const seqsWidget = new osparc.panddy.Sequences(panddy, sequences);
-        seqsWidget.setOrientation(osparc.ui.basic.FloatingHelper.ORIENTATION.LEFT);
-        seqsWidget.addListener("sequenceSelected", e => {
-          seqsWidget.exclude();
-          this.__selectSequence(e.getData());
+        const tours = this.getTours();
+        const toursWidget = new osparc.panddy.Tours(panddy, tours);
+        toursWidget.setOrientation(osparc.ui.basic.FloatingHelper.ORIENTATION.LEFT);
+        toursWidget.addListener("tourSelected", e => {
+          toursWidget.exclude();
+          this.__selectTour(e.getData());
         });
-        seqsWidget.show();
+        toursWidget.show();
       }, 200);
     },
 
-    __selectSequence: function(sequence) {
-      if ("steps" in sequence) {
-        this.setSteps(sequence.steps);
+    __selectTour: function(tour) {
+      if ("steps" in tour) {
+        this.setSteps(tour.steps);
         this.__toStepCheck(0);
       }
     },
@@ -222,7 +222,7 @@ qx.Class.define("osparc.panddy.Panddy", {
         });
       }
 
-      if (this.getSequences() === this.self().INTRO_SEQUENCE) {
+      if (this.getTours() === this.self().INTRO_SEQUENCE) {
         const dontShowCB = osparc.product.tutorial.Utils.createDontShowAgain("panddyDontShow");
         stepWidget.add(dontShowCB);
       }

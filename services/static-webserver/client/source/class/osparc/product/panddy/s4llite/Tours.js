@@ -15,23 +15,23 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.product.panddy.s4llite.Sequences", {
+qx.Class.define("osparc.product.panddy.s4llite.Tours", {
   type: "static",
 
   statics: {
-    getSequences: function() {
+    getTours: function() {
       return [{
-        requiredTarget: "osparc-test-id=dashboard",
+        contextTarget: "osparc-test-id=dashboard",
         name: "Dashboard",
         description: "Introduction to Dashboard tabs",
         steps: this.__getDashboardSteps()
       }, {
-        requiredTarget: "osparc-test-id=dashboard",
+        contextTarget: "osparc-test-id=dashboard",
         name: "Projects",
         description: "Introduction to Studies",
         steps: this.__getStudiesSteps()
       }, {
-        requiredTarget: "osparc-test-id=mode-button-modeling",
+        contextTarget: "osparc-test-id=mode-button-modeling",
         name: "<i>S4L<sup>lite</sup></i>",
         description: "Introduction to Studies",
         steps: this.__getS4LLiteSteps()
