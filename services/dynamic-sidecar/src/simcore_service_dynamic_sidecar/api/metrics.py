@@ -14,6 +14,4 @@ async def metrics_endpoint(
         UserServicesMetrics, Depends(get_user_services_metrics)
     ],
 ):
-    user_services_metrics.metrics_endpoint_called()
-    # TODO: fetch these metrics from somewhere?
-    return
+    return user_services_metrics.get_metrics()
