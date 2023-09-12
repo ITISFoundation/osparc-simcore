@@ -532,6 +532,7 @@ def upload_file(
             expected_file_size=file_size,
             expected_upload_id=False,
             expected_upload_expiration_date=False,
+            expected_sha256_checksum=sha256_checksum,
         )
         # check the file is in S3 for real
         s3_metadata = await storage_s3_client.get_file_metadata(

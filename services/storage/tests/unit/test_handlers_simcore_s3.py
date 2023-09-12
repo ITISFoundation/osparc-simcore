@@ -318,6 +318,7 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
                 expected_file_size=src_file.stat().st_size,
                 expected_upload_id=None,
                 expected_upload_expiration_date=None,
+                expected_sha256_checksum=None,
             )
 
 
@@ -366,6 +367,7 @@ async def test_copy_folders_from_valid_project(
                 expected_file_size=src_file.stat().st_size,
                 expected_upload_id=None,
                 expected_upload_expiration_date=None,
+                expected_sha256_checksum=None,
             )
 
 

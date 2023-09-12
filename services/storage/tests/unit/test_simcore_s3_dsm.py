@@ -93,12 +93,9 @@ async def test__copy_path_s3_s3(
 
 async def test_upload_n_search(
     simcore_s3_dsm: SimcoreS3DataManager,
-    directory_with_files: Callable[..., AsyncContextManager[FileUploadSchema]],
-    upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
+    upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
     file_size: ByteSize,
     user_id: UserID,
-    mock_copy_transfer_cb: Callable[[int], None],
-    aiopg_engine: Engine,
     faker: Faker,
 ):
     checksum: SHA256Str = parse_obj_as(SHA256Str, faker.sha256())
@@ -110,4 +107,5 @@ async def test_upload_n_search(
         user_id=user_id, file_id_prefix="", sha256_checksum=checksum
     )
     assert len(files) == 1
-    assert files[0].sha256_checksum == checksum
+    file: FileMetaData = files[0]
+    assert file.sha256_checksum == checksum

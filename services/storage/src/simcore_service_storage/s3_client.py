@@ -45,6 +45,7 @@ class S3MetaData:
     file_id: SimcoreS3FileID
     last_modified: datetime.datetime
     e_tag: ETag
+    sha256_checksum: SHA256Str | None
     size: int
 
     @staticmethod
@@ -57,6 +58,9 @@ class S3MetaData:
             file_id=SimcoreS3FileID(obj["Key"]),
             last_modified=obj["LastModified"],
             e_tag=json.loads(obj["ETag"]),
+            sha256_checksum=SHA256Str(obj.get("ChecksumSHA256"))
+            if obj.get("ChecksumSHA256")
+            else None,
             size=obj["Size"],
         )
 
@@ -250,9 +254,7 @@ class StorageS3Client:
                     for part in uploaded_parts
                 ]
             },
-            "ChecksumSHA256": sha256_checksum
-            if sha256_checksum is None
-            else str(sha256_checksum),
+            "ChecksumSHA256": None if sha256_checksum is None else str(sha256_checksum),
         }
         response = await self.client.complete_multipart_upload(
             **{k: v for k, v in inputs.items() if v is not None}
@@ -306,11 +308,16 @@ class StorageS3Client:
     async def get_file_metadata(
         self, bucket: S3BucketName, file_id: SimcoreS3FileID
     ) -> S3MetaData:
-        response = await self.client.head_object(Bucket=bucket, Key=file_id)
+        response = await self.client.head_object(
+            Bucket=bucket, Key=file_id, ChecksumMode="ENABLED"
+        )
         return S3MetaData(
             file_id=file_id,
             last_modified=response["LastModified"],
             e_tag=json.loads(response["ETag"]),
+            sha256_checksum=SHA256Str(response.get("ChecksumSHA256"))
+            if response.get("ChecksumSHA256")
+            else None,
             size=response["ContentLength"],
         )
 
