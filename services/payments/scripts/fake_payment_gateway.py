@@ -137,12 +137,12 @@ def create_app():
     return app
 
 
-def run_command():
+def run_command(args):
     app = create_app()
     uvicorn.run(app)
 
 
-def openapi_command():
+def openapi_command(args):
     app = create_app()
     print(json.dumps(jsonable_encoder(app.openapi()), indent=1))
 
@@ -156,4 +156,8 @@ if __name__ == "__main__":
     run_parser.set_defaults(func=run_command)
 
     openapi_parser = subparsers.add_parser("openapi", help="Prints openapi specs")
-    run_parser.set_defaults(func=openapi_command)
+    openapi_parser.set_defaults(func=openapi_command)
+
+    args = parser.parse_args()
+    if hasattr(args, "func"):
+        args.func(args)
