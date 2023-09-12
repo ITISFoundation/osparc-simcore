@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from models_library.api_schemas_storage import FileMetaDataArray
 from models_library.api_schemas_storage import FileMetaDataGet as StorageFileMetaData
 from models_library.api_schemas_storage import FileUploadSchema, PresignedLink
+from models_library.basic_types import SHA256Str
 from models_library.generics import Envelope
 from pydantic import AnyUrl
 from starlette.datastructures import URL
@@ -65,17 +66,22 @@ class StorageApi(BaseServiceClientApi):
         return files
 
     async def search_files(
-        self, user_id: int, file_id: UUID
+        self, *, user_id: int, file_id: UUID | None, sha256_checksum: SHA256Str | None
     ) -> list[StorageFileMetaData]:
         # NOTE: can NOT use /locations/0/files/metadata with uuid_filter=api/ because
         # logic in storage 'wrongly' assumes that all data is associated to a project and
         # here there is no project, so it would always returns an empty
+        params: dict = {
+            "user_id": str(user_id),
+            "startswith": None if file_id is None else f"api/{file_id}",
+            "sha256_checksum": None
+            if sha256_checksum is None
+            else str(sha256_checksum),
+        }
+
         response = await self.client.post(
             "/simcore-s3/files/metadata:search",
-            params={
-                "user_id": str(user_id),
-                "startswith": f"api/{file_id}",
-            },
+            params={k: v for k, v in params.items() if v is not None},
         )
 
         files_metadata = FileMetaDataArray(__root__=response.json()["data"] or [])

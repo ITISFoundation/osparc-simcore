@@ -11,7 +11,9 @@ from fastapi import File as FileParam
 from fastapi import Header, Request, UploadFile, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse
+from fastapi_pagination.api import create_page
 from models_library.api_schemas_storage import ETag, FileUploadCompletionBody, LinkType
+from models_library.basic_types import SHA256Str
 from pydantic import AnyUrl, ByteSize, PositiveInt, ValidationError, parse_obj_as
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
@@ -248,7 +250,7 @@ async def get_file(
 
     try:
         stored_files: list[StorageFileMetaData] = await storage_client.search_files(
-            user_id, file_id
+            user_id=user_id, file_id=file_id, sha256_checksum=None
         )
         if not stored_files:
             msg = "Not found in storage"
@@ -265,6 +267,48 @@ async def get_file(
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
             detail=f"File with identifier {file_id} not found",
+        ) from err
+
+
+@router.get(
+    ":search",
+    response_model=Page[File],
+    responses={**_COMMON_ERROR_RESPONSES},
+)
+async def search_files_page(
+    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
+    user_id: Annotated[int, Depends(get_current_user_id)],
+    page_params: Annotated[PaginationParams, Depends()],
+    sha256_checksum: SHA256Str | None = None,
+    file_id: UUID | None = None,
+):
+    """Search files"""
+    # TODO currently this method builds the page itself. That should be implemented in storage
+    try:
+        stored_files: list[StorageFileMetaData] = await storage_client.search_files(
+            user_id=user_id, file_id=file_id, sha256_checksum=sha256_checksum
+        )
+        error_message: str = "Not found in storage"
+        if not stored_files:
+            raise ValueError(error_message)  # noqa: TRY301
+        if page_params.offset >= len(stored_files):
+            raise ValueError(error_message)
+        stored_files = stored_files[page_params.offset :]
+        if len(stored_files) > page_params.limit:
+            stored_files = stored_files[: page_params.limit]
+        return create_page(
+            [to_file_api_model(fmd) for fmd in stored_files],
+            total=len(stored_files),
+            params=page_params,
+        )
+
+    except (ValueError, ValidationError) as err:
+        _logger.debug(
+            "File with sha256_checksum=%d not found: %s", sha256_checksum, err
+        )
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail=f"File with {sha256_checksum=} not found",
         ) from err
 
 

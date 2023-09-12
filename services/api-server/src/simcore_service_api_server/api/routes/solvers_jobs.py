@@ -366,7 +366,9 @@ async def get_job_outputs(
             file_id: UUID = File.create_id(*value.path.split("/"))
 
             # TODO: acquire_soft_link will halve calls
-            found = await storage_client.search_files(user_id, file_id)
+            found = await storage_client.search_files(
+                user_id=user_id, file_id=file_id, sha256_checksum=None
+            )
             if found:
                 assert len(found) == 1  # nosec
                 results[name] = to_file_api_model(found[0])
