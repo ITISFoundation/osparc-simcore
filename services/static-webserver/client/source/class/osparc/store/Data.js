@@ -23,8 +23,7 @@
 
 qx.Class.define("osparc.store.Data", {
   extend: qx.core.Object,
-
-  type : "singleton",
+  type: "singleton",
 
   construct: function() {
     this.resetCache();

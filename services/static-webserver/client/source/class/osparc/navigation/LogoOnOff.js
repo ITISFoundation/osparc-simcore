@@ -32,7 +32,6 @@
 
 qx.Class.define("osparc.navigation.LogoOnOff", {
   extend: qx.ui.container.Stack,
-
   type: "singleton",
 
   construct: function() {

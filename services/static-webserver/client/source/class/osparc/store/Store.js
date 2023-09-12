@@ -44,7 +44,7 @@
  */
 qx.Class.define("osparc.store.Store", {
   extend: qx.core.Object,
-  type : "singleton",
+  type: "singleton",
 
   properties: {
     currentStudy: {
