@@ -31,12 +31,12 @@ _logger = logging.getLogger(__name__)
 
 
 @dataclass
-class PaymentGatewayApi:
+class PaymentsGatewayApi:
     client: httpx.AsyncClient
     exit_stack: contextlib.AsyncExitStack
 
     @classmethod
-    def create(cls, settings: ApplicationSettings) -> "PaymentGatewayApi":
+    def create(cls, settings: ApplicationSettings) -> "PaymentsGatewayApi":
         client = httpx.AsyncClient(
             auth=(
                 settings.PAYMENTS_GATEWAY_API_KEY.get_secret_value(),
@@ -75,7 +75,7 @@ class PaymentGatewayApi:
             return False
 
     #
-    # on-time-payment workflow
+    # one-time-payment workflow
     #
 
     async def init_payment(self, payment: InitPayment) -> PaymentInitiated:
@@ -119,7 +119,7 @@ class PaymentGatewayApi:
     #
 
     @classmethod
-    def get_from_state(cls, app: FastAPI) -> "PaymentGatewayApi":
+    def get_from_state(cls, app: FastAPI) -> "PaymentsGatewayApi":
         return cast("PaymentGatewayApi", app.state.payment_gateway_api)
 
     @classmethod
@@ -148,4 +148,4 @@ class PaymentGatewayApi:
 
 def setup_payments_gateway(app: FastAPI):
     assert app.state  # nosec
-    PaymentGatewayApi.setup(app)
+    PaymentsGatewayApi.setup(app)

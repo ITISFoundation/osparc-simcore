@@ -8,7 +8,7 @@ from servicelib.rabbitmq import RPCRouter
 
 from ...db.payments_transactions_repo import PaymentsTransactionsRepo
 from ...models.payments_gateway import InitPayment
-from ...services.payments_gateway import PaymentGatewayApi
+from ...services.payments_gateway import PaymentsGatewayApi
 
 _logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ async def create_payment(
     user_email: str,
 ) -> WalletPaymentCreated:
     # Payment-Gateway
-    payments_gateway_api = PaymentGatewayApi.get_from_state(app)
+    payments_gateway_api = PaymentsGatewayApi.get_from_state(app)
 
     init = await payments_gateway_api.init_payment(
         payment=InitPayment(

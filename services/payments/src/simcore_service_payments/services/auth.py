@@ -51,7 +51,9 @@ def encode_access_token(username: str, settings: ApplicationSettings) -> str:
 def decode_access_token(token: str, settings: ApplicationSettings) -> str | None:
     """
     Raises:
-        JWTError
+        JWTError: If the signature is invalid in any way.
+          - ExpiredSignatureError(JWTError): If the signature has expired.
+          - JWTClaimsError(JWTError): If any claim is invalid in any way.
     """
     claims = jwt.decode(
         token,
