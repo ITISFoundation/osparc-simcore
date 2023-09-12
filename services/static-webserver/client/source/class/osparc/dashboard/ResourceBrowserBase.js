@@ -208,7 +208,11 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         tagByGroup.addListener("execute", () => this._groupByChanged("tags"));
         groupByMenu.add(tagByGroup);
         groupOptions.add(tagByGroup);
-        if (osparc.product.Utils.isProduct("s4l") || osparc.product.Utils.isProduct("s4llite")) {
+        if (
+          osparc.product.Utils.isProduct("s4l") ||
+          osparc.product.Utils.isProduct("s4llite") ||
+          osparc.product.Utils.isProduct("s4lacad")
+        ) {
           tagByGroup.execute();
         }
       }

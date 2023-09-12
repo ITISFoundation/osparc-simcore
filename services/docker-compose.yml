@@ -254,7 +254,7 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_static_webserver.loadbalancer.healthcheck.interval=2000ms
         - traefik.http.services.${SWARM_STACK_NAME}_static_webserver.loadbalancer.healthcheck.timeout=1000ms
         - traefik.http.middlewares.${SWARM_STACK_NAME}_static_webserver_retry.retry.attempts=2
-        - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.rule=hostregexp(`{host:.+}`) && (Path(`/osparc`,`/s4l`,`/s4llite`,`/tis`,`/transpiled`,`/resource`) || PathPrefix(`/osparc/`,`/s4l/`,`/s4llite/`,`/tis/`,`/transpiled/`,`/resource/`))
+        - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.rule=hostregexp(`{host:.+}`) && (Path(`/osparc`,`/s4l`,`/s4llite`,`/s4lacad`,`/tis`,`/transpiled`,`/resource`) || PathPrefix(`/osparc/`,`/s4l/`,`/s4llite/`,`/s4lacad/`,`/tis/`,`/transpiled/`,`/resource/`))
         - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.service=${SWARM_STACK_NAME}_static_webserver
         - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.entrypoints=http
         - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.priority=2
