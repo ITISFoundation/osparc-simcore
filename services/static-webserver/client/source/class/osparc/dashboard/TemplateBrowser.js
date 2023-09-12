@@ -136,7 +136,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       }
 
       this._showLoadingPage(this.tr("Creating ") + (templateData.name || osparc.product.Utils.getStudyAlias({firstUpperCase: true})));
-      osparc.utils.Study.createStudyFromTemplate(templateData, this._loadingPage)
+      osparc.study.Utils.createStudyFromTemplate(templateData, this._loadingPage)
         .then(studyId => {
           const openCB = () => this._hideLoadingPage();
           const cancelCB = () => {

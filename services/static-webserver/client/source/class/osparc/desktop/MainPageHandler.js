@@ -114,7 +114,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
       store.getInaccessibleServices(studyData)
         .then(inaccessibleServices => {
           if (inaccessibleServices.length) {
-            const msg = osparc.utils.Study.getInaccessibleServicesMsg(inaccessibleServices);
+            const msg = osparc.study.Utils.getInaccessibleServicesMsg(inaccessibleServices);
             throw new Error(msg);
           }
           this.showStudyEditor();

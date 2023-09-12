@@ -134,7 +134,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         enabled: false
       });
       if ("workbench" in resourceData) {
-        osparc.utils.Study.getInaccessibleServices(resourceData["workbench"])
+        osparc.study.Utils.getInaccessibleServices(resourceData["workbench"])
           .then(unaccessibleServices => openButton.setEnabled(unaccessibleServices.length === 0));
       } else {
         openButton.setEnabled(true);

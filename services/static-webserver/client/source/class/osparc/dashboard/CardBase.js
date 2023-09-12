@@ -432,12 +432,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
 
       // Updatable study
-      if (osparc.utils.Study.isWorkbenchRetired(workbench)) {
+      if (osparc.study.Utils.isWorkbenchRetired(workbench)) {
         this.setUpdatable("retired");
-      } else if (osparc.utils.Study.isWorkbenchDeprecated(workbench)) {
+      } else if (osparc.study.Utils.isWorkbenchDeprecated(workbench)) {
         this.setUpdatable("deprecated");
       } else {
-        osparc.utils.Study.isWorkbenchUpdatable(workbench)
+        osparc.study.Utils.isWorkbenchUpdatable(workbench)
           .then(updatable => {
             if (updatable) {
               this.setUpdatable("updatable");
@@ -446,7 +446,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
 
       // Block card
-      osparc.utils.Study.getInaccessibleServices(workbench)
+      osparc.study.Utils.getInaccessibleServices(workbench)
         .then(unaccessibleServices => {
           if (unaccessibleServices.length) {
             this.__enableCard(false);

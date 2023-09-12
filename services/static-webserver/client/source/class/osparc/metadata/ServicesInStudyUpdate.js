@@ -31,14 +31,14 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
 
     anyServiceDeprecated: function(studyData) {
       if ("workbench" in studyData) {
-        return osparc.utils.Study.isWorkbenchDeprecated(studyData["workbench"]);
+        return osparc.study.Utils.isWorkbenchDeprecated(studyData["workbench"]);
       }
       return false;
     },
 
     anyServiceRetired: function(studyData) {
       if ("workbench" in studyData) {
-        return osparc.utils.Study.isWorkbenchRetired(studyData["workbench"]);
+        return osparc.study.Utils.isWorkbenchRetired(studyData["workbench"]);
       }
       return false;
     },

@@ -19,7 +19,7 @@
  * Collection of methods for studies
  */
 
-qx.Class.define("osparc.utils.Study", {
+qx.Class.define("osparc.study.Utils", {
   type: "static",
 
   statics: {
@@ -170,7 +170,7 @@ qx.Class.define("osparc.utils.Study", {
                   const params = {
                     data: minStudyData
                   };
-                  osparc.utils.Study.createStudyAndPoll(params)
+                  osparc.study.Utils.createStudyAndPoll(params)
                     .then(studyData => resolve(studyData["uuid"]))
                     .catch(err => reject(err));
                 });

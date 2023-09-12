@@ -737,7 +737,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const title = osparc.utils.Utils.getUniqueStudyName(templateCopyData.name, this._resourcesList);
       templateCopyData.name = title;
       this._showLoadingPage(this.tr("Creating ") + (templateCopyData.name || osparc.product.Utils.getStudyAlias()));
-      osparc.utils.Study.createStudyFromTemplate(templateCopyData, this._loadingPage)
+      osparc.study.Utils.createStudyFromTemplate(templateCopyData, this._loadingPage)
         .then(studyId => {
           const openCB = () => this._hideLoadingPage();
           const cancelCB = () => {
@@ -761,7 +761,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __newStudyFromServiceBtnClicked: function(button, key, version, newStudyLabel) {
       button.setValue(false);
       this._showLoadingPage(this.tr("Creating ") + osparc.product.Utils.getStudyAlias());
-      osparc.utils.Study.createStudyFromService(key, version, this._resourcesList, newStudyLabel)
+      osparc.study.Utils.createStudyFromService(key, version, this._resourcesList, newStudyLabel)
         .then(studyId => {
           const openCB = () => this._hideLoadingPage();
           const cancelCB = () => {
@@ -788,7 +788,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const params = {
         data: minStudyData
       };
-      osparc.utils.Study.createStudyAndPoll(params)
+      osparc.study.Utils.createStudyAndPoll(params)
         .then(studyData => {
           const openCB = () => this._hideLoadingPage();
           const cancelCB = () => {
