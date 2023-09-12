@@ -88,7 +88,7 @@ async def test_clean_expired_uploads_aborts_dangling_multipart_uploads(
 @pytest.mark.parametrize(
     "link_type, is_directory",
     [
-        # NOTE: directories are only handled only as LinkType.S3
+        # NOTE: directories are handled only as LinkType.S3
         (LinkType.S3, True),
         (LinkType.S3, False),
         (LinkType.PRESIGNED, False),
