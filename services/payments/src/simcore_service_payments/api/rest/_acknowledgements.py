@@ -37,7 +37,7 @@ async def acknowledge_payment(
     session: Annotated[SessionData, Depends(get_current_session)],
     background_tasks: BackgroundTasks,
 ):
-    """completes (ie. ack) request initated by `/init`"""
+    """completes (ie. ack) request initated by `/init` on the payments-gateway API"""
     _logger.debug(
         "User %s is acknoledging payment with %s as %s", session, f"{payment_id=}", ack
     )
@@ -55,5 +55,5 @@ async def acknowledge_payment_method(
     ack: AckPaymentMethod,
     session: Annotated[SessionData, Depends(get_current_session)],
 ):
-    """completes (ie. ack) request initated by `/payments-methods:init`"""
+    """completes (ie. ack) request initated by `/payments-methods:init` on the payments-gateway API"""
     raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED)
