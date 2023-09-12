@@ -248,6 +248,15 @@ def fake_task(fake_task_file: Path) -> CompTaskAtDB:
             RunningState.UNKNOWN,
             id="empty tasks (empty project or full of dynamic services) = unknown",
         ),
+        pytest.param(
+            [
+                (RunningState.WAITING_FOR_CLUSTER),
+                (RunningState.PUBLISHED),
+                (RunningState.PUBLISHED),
+            ],
+            RunningState.WAITING_FOR_CLUSTER,
+            id="published and waiting for cluster = waiting for cluster",
+        ),
     ],
 )
 def test_get_pipeline_state_from_task_states(

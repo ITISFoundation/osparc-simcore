@@ -30,17 +30,22 @@ async def _find_terminateable_instances(
     # get the corresponding ec2 instance data
     terminateable_instances: list[EC2InstanceData] = []
 
+    time_to_wait_before_termination = (
+        app_settings.CLUSTERS_KEEPER_MAX_MISSED_HEARTBEATS_BEFORE_CLUSTER_TERMINATION
+        * app_settings.SERVICE_TRACKING_HEARTBEAT
+    )
     for instance in instances:
         last_heartbeat = _get_instance_last_heartbeat(instance)
 
         elapsed_time_since_heartbeat = (
             datetime.datetime.now(datetime.timezone.utc) - last_heartbeat
         )
-
-        if elapsed_time_since_heartbeat >= (
-            app_settings.CLUSTERS_KEEPER_MAX_MISSED_HEARTBEATS_BEFORE_CLUSTER_TERMINATION
-            * app_settings.SERVICE_TRACKING_HEARTBEAT
-        ):
+        _logger.info(
+            "%s has still %ss before being terminateable",
+            f"{instance.id=}",
+            f"{(time_to_wait_before_termination - elapsed_time_since_heartbeat).total_seconds()}",
+        )
+        if elapsed_time_since_heartbeat >= time_to_wait_before_termination:
             # let's terminate that one
             terminateable_instances.append(instance)
 

@@ -18,6 +18,7 @@ DB_TO_RUNNING_STATE = {
     StateType.RUNNING: RunningState.STARTED,
     StateType.ABORTED: RunningState.ABORTED,
     StateType.WAITING_FOR_RESOURCES: RunningState.WAITING_FOR_RESOURCES,
+    StateType.WAITING_FOR_CLUSTER: RunningState.WAITING_FOR_CLUSTER,
 }
 
 RUNNING_STATE_TO_DB = {v: k for k, v in DB_TO_RUNNING_STATE.items()} | {
