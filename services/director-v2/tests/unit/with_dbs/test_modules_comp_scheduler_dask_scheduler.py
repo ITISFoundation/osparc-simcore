@@ -47,6 +47,8 @@ from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import (
     ComputationalBackendNotConnectedError,
+    ComputationalBackendOnDemandClustersKeeperNotReadyError,
+    ComputationalBackendOnDemandNotReadyError,
     ComputationalBackendTaskNotFoundError,
     ComputationalBackendTaskResultsNotReadyError,
     ComputationalSchedulerChangedError,
@@ -1203,3 +1205,105 @@ async def test_running_pipeline_triggers_heartbeat(
         RabbitResourceTrackingHeartbeatMessage.parse_raw,
     )
     assert isinstance(messages[0], RabbitResourceTrackingHeartbeatMessage)
+
+
+@pytest.fixture
+async def mocked_get_or_create_cluster(mocker: MockerFixture) -> mock.Mock:
+    return mocker.patch(
+        "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.get_or_create_on_demand_cluster",
+        autospec=True,
+    )
+
+
+async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
+    with_disabled_scheduler_task: None,
+    scheduler: BaseCompScheduler,
+    aiopg_engine: aiopg.sa.engine.Engine,
+    published_project: PublishedProject,
+    run_metadata: RunMetadataDict,
+    mocked_get_or_create_cluster: mock.Mock,
+):
+    mocked_get_or_create_cluster.side_effect = ComputationalBackendOnDemandNotReadyError
+    # running the pipeline will trigger a call to the clusters-keeper
+    assert published_project.project.prj_owner
+    await scheduler.run_new_pipeline(
+        user_id=published_project.project.prj_owner,
+        project_id=published_project.project.uuid,
+        cluster_id=DEFAULT_CLUSTER_ID,
+        run_metadata=run_metadata,
+        use_on_demand_clusters=True,
+    )
+
+    # we ask to use an on-demand cluster, therefore the tasks are published first
+    await _assert_comp_run_db(
+        aiopg_engine, published_project, RunningState.WAITING_FOR_CLUSTER
+    )
+    await _assert_comp_tasks_db(
+        aiopg_engine,
+        published_project.project.uuid,
+        [t.node_id for t in published_project.tasks],
+        expected_state=RunningState.WAITING_FOR_CLUSTER,
+        expected_progress=None,
+    )
+
+
+async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
+    with_disabled_scheduler_task: None,
+    scheduler: BaseCompScheduler,
+    aiopg_engine: aiopg.sa.engine.Engine,
+    published_project: PublishedProject,
+    run_metadata: RunMetadataDict,
+    mocked_get_or_create_cluster: mock.Mock,
+):
+    mocked_get_or_create_cluster.side_effect = (
+        ComputationalBackendOnDemandClustersKeeperNotReadyError
+    )
+    # running the pipeline will trigger a call to the clusters-keeper
+    assert published_project.project.prj_owner
+    await scheduler.run_new_pipeline(
+        user_id=published_project.project.prj_owner,
+        project_id=published_project.project.uuid,
+        cluster_id=DEFAULT_CLUSTER_ID,
+        run_metadata=run_metadata,
+        use_on_demand_clusters=True,
+    )
+
+    # we ask to use an on-demand cluster, therefore the tasks are published first
+    await _assert_comp_run_db(aiopg_engine, published_project, RunningState.FAILED)
+    await _assert_comp_tasks_db(
+        aiopg_engine,
+        published_project.project.uuid,
+        [t.node_id for t in published_project.tasks],
+        expected_state=RunningState.FAILED,
+        expected_progress=None,
+    )
+
+
+async def test_pipeline_with_on_demand_cluster_that_raises_anythin_fails_pipeline(
+    with_disabled_scheduler_task: None,
+    scheduler: BaseCompScheduler,
+    aiopg_engine: aiopg.sa.engine.Engine,
+    published_project: PublishedProject,
+    run_metadata: RunMetadataDict,
+    mocked_get_or_create_cluster: mock.Mock,
+):
+    mocked_get_or_create_cluster.side_effect = RuntimeError("faked error")
+    # running the pipeline will trigger a call to the clusters-keeper
+    assert published_project.project.prj_owner
+    await scheduler.run_new_pipeline(
+        user_id=published_project.project.prj_owner,
+        project_id=published_project.project.uuid,
+        cluster_id=DEFAULT_CLUSTER_ID,
+        run_metadata=run_metadata,
+        use_on_demand_clusters=True,
+    )
+
+    # we ask to use an on-demand cluster, therefore the tasks are published first
+    await _assert_comp_run_db(aiopg_engine, published_project, RunningState.FAILED)
+    await _assert_comp_tasks_db(
+        aiopg_engine,
+        published_project.project.uuid,
+        [t.node_id for t in published_project.tasks],
+        expected_state=RunningState.FAILED,
+        expected_progress=None,
+    )
