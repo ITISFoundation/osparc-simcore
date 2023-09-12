@@ -1,6 +1,3 @@
-from typing import Final
-
-from models_library.wallets import WalletID
 from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, validator
 
 from ..clusters import ClusterID
@@ -8,8 +5,6 @@ from ..projects import ProjectID
 from ..projects_nodes_io import NodeID
 from ..projects_pipeline import ComputationTask
 from ..users import UserID
-
-TEMPORARY_DEFAULT_WALLET_ID: Final[WalletID] = 43
 
 
 class ComputationGet(ComputationTask):

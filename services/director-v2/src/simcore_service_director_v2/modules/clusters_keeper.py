@@ -1,12 +1,13 @@
 import logging
+from typing import Final
 
-from models_library.api_schemas_directorv2.comp_tasks import TEMPORARY_DEFAULT_WALLET_ID
 from models_library.clusters import BaseCluster, ClusterTypeInModel
 from models_library.rpc_schemas_clusters_keeper.clusters import (
     ClusterState,
     OnDemandCluster,
 )
 from models_library.users import UserID
+from models_library.wallets import WalletID
 from servicelib.rabbitmq import (
     RabbitMQRPCClient,
     RemoteMethodNotRegisteredError,
@@ -21,6 +22,8 @@ from ..core.errors import (
 
 _logger = logging.getLogger(__name__)
 
+_TEMPORARY_DEFAULT_WALLET_ID: Final[WalletID] = 43
+
 
 async def get_or_create_on_demand_cluster(
     user_id: UserID, rabbitmq_rpc_client: RabbitMQRPCClient
@@ -31,7 +34,7 @@ async def get_or_create_on_demand_cluster(
             RPCMethodName("get_or_create_cluster"),
             timeout_s=300,
             user_id=user_id,
-            wallet_id=TEMPORARY_DEFAULT_WALLET_ID,
+            wallet_id=_TEMPORARY_DEFAULT_WALLET_ID,
         )
         _logger.info("received cluster: %s", returned_cluster)
         if returned_cluster.state is not ClusterState.RUNNING:
