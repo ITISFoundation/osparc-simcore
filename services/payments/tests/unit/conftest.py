@@ -16,7 +16,6 @@ from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from respx import MockRouter
 from simcore_service_payments.core.application import create_app
 from simcore_service_payments.core.settings import ApplicationSettings
