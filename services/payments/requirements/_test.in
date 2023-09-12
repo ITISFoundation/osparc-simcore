@@ -11,12 +11,16 @@
 --constraint _base.txt
 
 
+asgi_lifespan
 coverage
+docker
 faker
 pytest
 pytest-asyncio
 pytest-cov
 pytest-icdiff
+pytest-mock
 pytest-runner
 pytest-sugar
 python-dotenv
+respx

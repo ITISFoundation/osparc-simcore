@@ -37,7 +37,6 @@ def app_environment(
     )
 
 
-@pytest.mark.testit
 @pytest.mark.parametrize("expires_at", [YESTERDAY, TOMORROW, None])
 async def test_update_expired_users(
     expires_at: datetime | None, client: TestClient, faker: Faker

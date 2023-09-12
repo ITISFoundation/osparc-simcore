@@ -23,6 +23,4 @@ class RemoteMethodNotRegisteredError(BaseRPCError):
 
 
 class RPCServerError(BaseRPCError):
-    msg_template = (
-        "Unhandled error while running method '{exc_type}:{method_name}': '{msg}'"
-    )
+    msg_template = "Raised '{exc_type}' while running '{method_name}' method: {msg}"
