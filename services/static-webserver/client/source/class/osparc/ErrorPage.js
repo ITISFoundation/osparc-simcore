@@ -27,7 +27,7 @@
  * -----------------------
  *
  */
-qx.Class.define("osparc.Error", {
+qx.Class.define("osparc.ErrorPage", {
   extend: qx.ui.core.Widget,
 
   construct: function() {

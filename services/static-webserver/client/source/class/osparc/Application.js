@@ -197,7 +197,7 @@ qx.Class.define("osparc.Application", {
             msg = msg.replace(/\+/g, "%20");
             msg = decodeURIComponent(msg);
             osparc.utils.Utils.cookie.deleteCookie("user");
-            const errorPage = new osparc.Error().set({
+            const errorPage = new osparc.ErrorPage().set({
               code: urlFragment.params.status_code,
               messages: [
                 msg
