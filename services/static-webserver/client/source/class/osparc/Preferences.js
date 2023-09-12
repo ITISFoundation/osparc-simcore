@@ -100,21 +100,17 @@ qx.Class.define("osparc.Preferences", {
   },
 
   members: {
-    __applyThemeName: function(...args) {
-      console.log(args);
-      const themeName = args[0];
+    __applyThemeName: function(themeName) {
       if (themeName && themeName !== qx.theme.manager.Meta.getInstance().getTheme().name) {
         const preferredTheme = qx.Theme.getByName(themeName);
         const themes = qx.Theme.getAll();
         if (preferredTheme && Object.keys(themes).includes(preferredTheme.name)) {
           qx.theme.manager.Meta.getInstance().setTheme(preferredTheme);
-        }
-      }
-    },
 
-    saveThemeName: function(value) {
-      if (osparc.auth.Manager.getInstance().isLoggedIn()) {
-        this.self().patchPreference("themeName", value);
+          if (osparc.auth.Manager.getInstance().isLoggedIn()) {
+            this.self().patchPreference("themeName", preferredTheme.name);
+          }
+        }
       }
     },
 
