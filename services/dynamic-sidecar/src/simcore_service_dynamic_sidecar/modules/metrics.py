@@ -13,6 +13,7 @@ from servicelib.background_task import cancel_task
 from servicelib.logging_utils import log_context
 from servicelib.sequences_utils import pairwise
 
+from ..models.shared_store import SharedStore
 from .container_utils import run_command_in_container
 
 _logger = logging.getLogger(__name__)
@@ -40,8 +41,12 @@ def _get_user_services_scrape_interval(
 
 
 class UserServicesMetrics:
-    def __init__(self, metrics_command: UserServiceCommand) -> None:
+    def __init__(
+        self, shared_store: SharedStore, metrics_command: UserServiceCommand
+    ) -> None:
+        self.shared_store: SharedStore = shared_store
         self.metrics_command: UserServiceCommand = metrics_command
+
         self._last_prometheus_query_times: deque[datetime] = deque(
             maxlen=_MAX_PROMETHEUS_SAMPLES
         )
@@ -53,8 +58,9 @@ class UserServicesMetrics:
         return self._metrics
 
     async def _update_metrics(self):
+        container_name = self.metrics_command.service
         self._metrics = await run_command_in_container(
-            # TODO: PORT service name to container name
+            self.shared_store.original_to_current_container_names[container_name],
             self.metrics_command.service,
             command=self.metrics_command.command,
             timeout=self.metrics_command.timeout,
@@ -96,9 +102,10 @@ def setup_metrics(app: FastAPI) -> None:
             with log_context(
                 _logger, logging.INFO, "enabling user services metrics scraping"
             ):
+                shared_store: SharedStore = app.state.shared_store
                 app.state.settings.user_service_metrics = (
                     user_service_metrics
-                ) = UserServicesMetrics(callbacks_mapping.metrics)
+                ) = UserServicesMetrics(shared_store, callbacks_mapping.metrics)
 
                 await user_service_metrics.setup()
 

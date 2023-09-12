@@ -277,7 +277,7 @@ async def task_runs_docker_compose_down(
             container_name = user_service_command.service
             try:
                 await run_command_in_container(
-                    container_name,
+                    shared_store.original_to_current_container_names[container_name],
                     command=user_service_command.command,
                     timeout=user_service_command.timeout,
                 )
