@@ -6,6 +6,7 @@ from typing import cast
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
+from models_library.service_settings_labels import CallbacksMapping
 from models_library.services import RunID
 from models_library.users import UserID
 from pydantic import Field, PositiveInt, validator
@@ -80,6 +81,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         default=3000, description="ptsvd remote debugger starting port"
     )
 
+    DY_SIDECAR_CALLBACKS_MAPPING: CallbacksMapping = Field(
+        ..., description="callbacks to use for this service"
+    )
     DY_SIDECAR_PATH_INPUTS: Path = Field(
         ..., description="path where to expect the inputs folder"
     )
