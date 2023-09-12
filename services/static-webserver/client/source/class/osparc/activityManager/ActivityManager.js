@@ -9,7 +9,7 @@
  * This is a sort of Task Manager or Activity Monitor for oSPARC. It provides the user with the status of the different services running
  * (queueing, hardware usage, running status, etc) and allows to run several actions on them.
  */
-qx.Class.define("osparc.service.manager.ActivityManager", {
+qx.Class.define("osparc.activityManager.ActivityManager", {
   extend: qx.ui.core.Widget,
 
   /**
@@ -63,10 +63,10 @@ qx.Class.define("osparc.service.manager.ActivityManager", {
     },
 
     /**
-     * Creates the main view, holding an instance of {osparc.service.manager.ActivityTree}.
+     * Creates the main view, holding an instance of {osparc.activityManager.ActivityTree}.
      */
     __createActivityTree: function() {
-      this.__tree = new osparc.service.manager.ActivityTree();
+      this.__tree = new osparc.activityManager.ActivityTree();
       this._add(this.__tree, {
         flex: 1
       });

@@ -9,7 +9,7 @@
  * This is a table display the status of running services in real time. Simulates, in some cases, the behavior of a tree.
  * Has sorting and resizing capabilities, and its UI changes depending on its display mode, that changes depending on the activated type of sorting.
  */
-qx.Class.define("osparc.service.manager.ActivityTree", {
+qx.Class.define("osparc.activityManager.ActivityTree", {
   extend: osparc.ui.table.Table,
 
   /**
@@ -90,7 +90,7 @@ qx.Class.define("osparc.service.manager.ActivityTree", {
         case this.self().modes.HIERARCHICAL:
           columnModel.setDataCellRenderer(1,
             new qx.ui.table.cellrenderer.Dynamic(cellInfo => {
-              if (cellInfo.rowData[0] === osparc.service.manager.ActivityManager.itemTypes.SERVICE) {
+              if (cellInfo.rowData[0] === osparc.activityManager.ActivityManager.itemTypes.SERVICE) {
                 return new osparc.ui.table.cellrenderer.Indented(1);
               }
               return new osparc.ui.table.cellrenderer.Indented(0);
@@ -110,7 +110,7 @@ qx.Class.define("osparc.service.manager.ActivityTree", {
       // Filtering function
       // By text
       const nameFilterFn = row => {
-        if (row[0] === osparc.service.manager.ActivityManager.itemTypes.STUDY) {
+        if (row[0] === osparc.activityManager.ActivityManager.itemTypes.STUDY) {
           return true;
         }
         if (filterText && filterText.length > 1) {
@@ -123,14 +123,14 @@ qx.Class.define("osparc.service.manager.ActivityTree", {
         return true;
       };
       const studyFilterFn = (row, index, array) => {
-        if (row[0] === osparc.service.manager.ActivityManager.itemTypes.SERVICE) {
+        if (row[0] === osparc.activityManager.ActivityManager.itemTypes.SERVICE) {
           return true;
         }
         if (filterStudy && filterStudy.length && !filterStudy.includes(row[1])) {
           // Remove also its services
           let i = index + 1;
           let next = array[i];
-          while (next && next[0] === osparc.service.manager.ActivityManager.itemTypes.SERVICE && i < array.length) {
+          while (next && next[0] === osparc.activityManager.ActivityManager.itemTypes.SERVICE && i < array.length) {
             array.splice(i, 1);
             next = array[i];
           }
@@ -152,7 +152,7 @@ qx.Class.define("osparc.service.manager.ActivityTree", {
 
     __removeEmptyStudies: function(data) {
       return data.filter((item, index, array) => {
-        if (item[0] === osparc.service.manager.ActivityManager.itemTypes.STUDY) {
+        if (item[0] === osparc.activityManager.ActivityManager.itemTypes.STUDY) {
           if (index === array.length-1) {
             return false;
           }
@@ -165,7 +165,7 @@ qx.Class.define("osparc.service.manager.ActivityTree", {
     },
 
     __removeStudies: function(data) {
-      return data.filter(item => item[0] !== osparc.service.manager.ActivityManager.itemTypes.STUDY);
+      return data.filter(item => item[0] !== osparc.activityManager.ActivityManager.itemTypes.STUDY);
     },
 
     /**
@@ -189,7 +189,7 @@ qx.Class.define("osparc.service.manager.ActivityTree", {
               const node = study.workbench[key];
               if (this.getMode() !== this.self().modes.FLAT && !parentAdded) {
                 rows.push([
-                  osparc.service.manager.ActivityManager.itemTypes.STUDY,
+                  osparc.activityManager.ActivityManager.itemTypes.STUDY,
                   study.name,
                   "",
                   "",
@@ -200,7 +200,7 @@ qx.Class.define("osparc.service.manager.ActivityTree", {
               }
               const row = [];
               // type
-              row[0] = osparc.service.manager.ActivityManager.itemTypes.SERVICE;
+              row[0] = osparc.activityManager.ActivityManager.itemTypes.SERVICE;
               // given name
               row[1] = node.label;
               // original name

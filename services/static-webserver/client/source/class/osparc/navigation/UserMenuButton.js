@@ -63,7 +63,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
         showMinimize: false,
         contentPadding: 0
       });
-      activityWindow.add(new osparc.service.manager.ActivityManager());
+      activityWindow.add(new osparc.activityManager.ActivityManager());
       activityWindow.center();
       activityWindow.open();
     },
