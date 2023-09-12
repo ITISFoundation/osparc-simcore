@@ -10,7 +10,6 @@ import aio_pika
 import pytest
 import tenacity
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
-from settings_library.basic_types import PortInt
 from settings_library.rabbit import RabbitSettings
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_attempt
@@ -47,7 +46,7 @@ def rabbit_env_vars_dict(
         "RABBIT_USER": testing_environ_vars["RABBIT_USER"],
         "RABBIT_PASSWORD": testing_environ_vars["RABBIT_PASSWORD"],
         "RABBIT_HOST": get_localhost_ip(),
-        "RABBIT_PORT": f"{PortInt(port)}",
+        "RABBIT_PORT": f"{port}",
         "RABBIT_SECURE": testing_environ_vars["RABBIT_SECURE"],
     }
 
