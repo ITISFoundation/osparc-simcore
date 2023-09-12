@@ -226,6 +226,11 @@ class DynamicSidecarSettings(BaseCustomSettings):
         description="Names the traefik zone for services that must be accessible from platform http entrypoint",
     )
 
+    DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS: dict[str, str] = Field(
+        ...,
+        description="provided by ops, are injected as service labels when starting the dy-sidecar",
+    )
+
     DYNAMIC_SIDECAR_PROXY_SETTINGS: DynamicSidecarProxySettings = Field(
         auto_default_from_env=True
     )

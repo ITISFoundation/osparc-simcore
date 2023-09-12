@@ -15,13 +15,22 @@ from models_library.basic_types import PortInt
 from models_library.generated_models.docker_rest_api import ContainerState, Status2
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import (
+    CallbacksMapping,
     DynamicSidecarServiceLabels,
     PathMappingsLabel,
     SimcoreServiceLabels,
 )
 from models_library.services import RunID
 from models_library.services_resources import ServiceResourcesDict
-from pydantic import AnyHttpUrl, BaseModel, ConstrainedStr, Extra, Field, parse_obj_as
+from pydantic import (
+    AnyHttpUrl,
+    BaseModel,
+    ConstrainedStr,
+    Extra,
+    Field,
+    parse_obj_as,
+    root_validator,
+)
 from servicelib.error_codes import ErrorCodeStr
 from servicelib.exception_utils import DelayedExceptionHandler
 
@@ -370,6 +379,8 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
 
     paths_mapping: PathMappingsLabel  # overwrites in DynamicSidecarServiceLabels
 
+    callbacks_mapping: CallbacksMapping
+
     dynamic_sidecar_network_name: str = Field(
         ...,
         description="overlay network biding the proxy to the container spaned by the dynamic-sidecar",
@@ -426,6 +437,13 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         "If set to None, the current product is undefined. Mostly for backwards compatibility",
     )
 
+    @root_validator(pre=True)
+    @classmethod
+    def _callbacks_mapping_legacy_migration(cls, values):
+        if "callbacks_mapping" not in values:
+            values["callbacks_mapping"] = {}
+        return values
+
     @classmethod
     def from_http_request(
         # pylint: disable=too-many-arguments
@@ -454,6 +472,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             "service_resources": service.service_resources,
             "product_name": service.product_name,
             "paths_mapping": simcore_service_labels.paths_mapping,
+            "callbacks_mapping": simcore_service_labels.callbacks_mapping,
             "compose_spec": json.dumps(simcore_service_labels.compose_spec),
             "container_http_entry": simcore_service_labels.container_http_entry,
             "restart_policy": simcore_service_labels.restart_policy,
