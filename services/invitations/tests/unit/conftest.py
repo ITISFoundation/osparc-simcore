@@ -85,6 +85,11 @@ def is_trial_account(request: FixtureRequest) -> bool:
     return request.param
 
 
+@pytest.fixture(params=[None, "osparc", "s4llite", "s4laca"])
+def product(request: FixtureRequest) -> str | None:
+    return request.param
+
+
 @pytest.fixture
 def default_product() -> ProductName:
     return "s4llite"
