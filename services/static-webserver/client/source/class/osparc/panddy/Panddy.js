@@ -28,11 +28,11 @@ qx.Class.define("osparc.panddy.Panddy", {
       zIndex: 100000
     });
 
-    this.setTours(this.self().INTRO_SEQUENCE);
+    this.setTours(this.self().INTRO_TOUR);
   },
 
   statics: {
-    INTRO_SEQUENCE: [{
+    INTRO_TOUR: [{
       name: "Panddy intro",
       description: "Introduction to Panddy",
       steps: [{
@@ -118,7 +118,7 @@ qx.Class.define("osparc.panddy.Panddy", {
     __toSequences: function() {
       const tours = this.getTours();
       const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem("panddyDontShow");
-      if (tours.length === 0 || (tours === this.self().INTRO_SEQUENCE && dontShow === "true")) {
+      if (tours.length === 0 || (tours === this.self().INTRO_TOUR && dontShow === "true")) {
         this.stop();
         return;
       }
@@ -222,7 +222,7 @@ qx.Class.define("osparc.panddy.Panddy", {
         });
       }
 
-      if (this.getTours() === this.self().INTRO_SEQUENCE) {
+      if (this.getTours() === this.self().INTRO_TOUR) {
         const dontShowCB = osparc.product.tutorial.Utils.createDontShowAgain("panddyDontShow");
         stepWidget.add(dontShowCB);
       }
