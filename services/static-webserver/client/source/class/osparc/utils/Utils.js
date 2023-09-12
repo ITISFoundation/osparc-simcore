@@ -89,16 +89,21 @@ qx.Class.define("osparc.utils.Utils", {
       }
     },
 
-    resourceTypeToAlias: function(resourceType, options) {
-      switch (resourceType) {
-        case "study":
-          return osparc.product.Utils.getStudyAlias(options);
-        case "template":
-          return osparc.product.Utils.getTemplateAlias(options);
-        case "service":
-          return osparc.product.Utils.getServiceAlias(options);
+    getDefaultFont: function() {
+      const defaultFont = {
+        family: null,
+        size: null
+      };
+      const defFont = qx.theme.manager.Font.getInstance().resolve("default");
+      if (defFont) {
+        const family = defFont.getFamily();
+        if (family) {
+          defaultFont["family"] = family[0];
+        }
+        defaultFont["color"] = defFont.getColor();
+        defaultFont["size"] = defFont.getSize();
       }
-      return resourceType;
+      return defaultFont;
     },
 
     hardRefresh: function() {
