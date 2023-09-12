@@ -145,7 +145,7 @@ def create_app():
 
     setup_shared_store(app)
     app.state.application_health = ApplicationHealth()
-    application_settings: ApplicationSettings = app.state.setting
+    application_settings: ApplicationSettings = app.state.settings
 
     if application_settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
         remote_debug_setup(app)
