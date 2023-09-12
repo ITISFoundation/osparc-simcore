@@ -280,7 +280,7 @@ qx.Class.define("osparc.file.FileDrop", {
             });
           }
         } else {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
         }
       }
     },

@@ -139,7 +139,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         })
         .catch(err => {
           this._hideLoadingPage();
-          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
           console.error(err);
         });
     },
@@ -233,7 +233,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
           const size = data.files[0].size;
           const maxSize = 10 * 1024 * 1024; // 10 MB
           if (size > maxSize) {
-            osparc.component.message.FlashMessenger.logAs(`The file is too big. Maximum size is ${maxSize}MB. Please provide with a smaller file or a repository URL.`, "ERROR");
+            osparc.FlashMessenger.logAs(`The file is too big. Maximum size is ${maxSize}MB. Please provide with a smaller file or a repository URL.`, "ERROR");
             return;
           }
           body.append("attachment", data.files[0], data.files[0].name);
@@ -246,10 +246,10 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         })
           .then(resp => {
             if (resp.ok) {
-              osparc.component.message.FlashMessenger.logAs("Your data was sent to our curation team. We will get back to you shortly.", "INFO");
+              osparc.FlashMessenger.logAs("Your data was sent to our curation team. We will get back to you shortly.", "INFO");
               addServiceWindow.close();
             } else {
-              osparc.component.message.FlashMessenger.logAs(`A problem occured while processing your data: ${resp.statusText}`, "ERROR");
+              osparc.FlashMessenger.logAs(`A problem occured while processing your data: ${resp.statusText}`, "ERROR");
             }
           })
           .finally(() => form.setFetching(false));

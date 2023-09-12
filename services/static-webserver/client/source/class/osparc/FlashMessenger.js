@@ -28,11 +28,11 @@
  * Here is a little example of how to use the class.
  *
  * <pre class='javascript'>
- *   osparc.component.message.FlashMessenger.getInstance().log(log);
+ *   osparc.FlashMessenger.getInstance().log(log);
  * </pre>
  */
 
-qx.Class.define("osparc.component.message.FlashMessenger", {
+qx.Class.define("osparc.FlashMessenger", {
   extend: qx.core.Object,
   type: "singleton",
 

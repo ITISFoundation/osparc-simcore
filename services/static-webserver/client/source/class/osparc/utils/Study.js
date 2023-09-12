@@ -177,7 +177,7 @@ qx.Class.define("osparc.utils.Study", {
             }
           })
           .catch(err => {
-            osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+            osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
             console.error(err);
           });
       });

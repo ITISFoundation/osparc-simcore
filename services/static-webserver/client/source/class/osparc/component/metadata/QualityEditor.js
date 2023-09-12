@@ -75,7 +75,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
 
     __initResourceData: function(resourceData) {
       if (!("quality" in resourceData)) {
-        osparc.component.message.FlashMessenger.logAs(this.tr("Quality Assessment data not found"), "ERROR");
+        osparc.FlashMessenger.logAs(this.tr("Quality Assessment data not found"), "ERROR");
         return;
       }
 
@@ -139,7 +139,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         console.error(errors);
         if (showMessage) {
           let message = `${errors[0].dataPath} ${errors[0].message}`;
-          osparc.component.message.FlashMessenger.logAs(message, "ERROR");
+          osparc.FlashMessenger.logAs(message, "ERROR");
         }
         return false;
       }
@@ -166,7 +166,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
 
         this.__populateForms();
       } else {
-        osparc.component.message.FlashMessenger.logAs(this.tr("There was an error validating the metadata."), "ERROR");
+        osparc.FlashMessenger.logAs(this.tr("There was an error validating the metadata."), "ERROR");
       }
     },
 
@@ -654,7 +654,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
             })
             .catch(err => {
               console.error(err);
-              osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the Quality Assessment."), "ERROR");
+              osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the Quality Assessment."), "ERROR");
             })
             .finally(() => {
               btn.setFetching(false);
@@ -674,7 +674,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
             })
             .catch(err => {
               console.error(err);
-              osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the Quality Assessment."), "ERROR");
+              osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the Quality Assessment."), "ERROR");
             })
             .finally(() => {
               btn.setFetching(false);

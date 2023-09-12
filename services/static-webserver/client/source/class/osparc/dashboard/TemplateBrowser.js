@@ -152,7 +152,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         })
         .catch(err => {
           this._hideLoadingPage();
-          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
           console.error(err);
         });
     },
@@ -248,9 +248,9 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
           })
           .catch(err => {
             if ("message" in err) {
-              osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+              osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
             } else {
-              osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong"), "ERROR");
+              osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong"), "ERROR");
             }
           });
       }
@@ -365,7 +365,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         .then(() => this.__removeFromTemplateList(studyData.uuid))
         .catch(err => {
           console.error(err);
-          osparc.component.message.FlashMessenger.getInstance().logAs(err, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
         });
     },
 
@@ -382,7 +382,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     __attachToTemplateEventHandler: function(task, taskUI, toTemplateCard) {
       const finished = (msg, msgLevel) => {
         if (msg) {
-          osparc.component.message.FlashMessenger.logAs(msg, msgLevel);
+          osparc.FlashMessenger.logAs(msg, msgLevel);
         }
         taskUI.stop();
         this._resourcesContainer.removeNonResourceCard(toTemplateCard);

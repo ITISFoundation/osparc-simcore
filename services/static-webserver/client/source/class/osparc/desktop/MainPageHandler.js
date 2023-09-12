@@ -93,7 +93,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
           this.loadStudy(studyData, pageContext);
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
           this.showDashboard();
           return;
         });
@@ -122,7 +122,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
             .then(() => this.fireDataEvent("syncStudyEditor", pageContext));
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
           this.showDashboard();
           return;
         });

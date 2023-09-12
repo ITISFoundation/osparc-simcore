@@ -194,7 +194,7 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
                 orgsWindow.openOrganizationDetails(parseInt(orgId));
               } else {
                 const msg = this.tr("You don't have access anymore");
-                osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING");
+                osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
               }
             });
           break;
@@ -222,7 +222,7 @@ qx.Class.define("osparc.component.notification.NotificationUI", {
             .catch(err => {
               console.error(err);
               const msg = this.tr("You don't have access anymore");
-              osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING");
+              osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
             });
           break;
         }

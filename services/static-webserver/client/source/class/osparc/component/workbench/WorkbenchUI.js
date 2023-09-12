@@ -1833,7 +1833,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       };
       if (type === "rect") {
         if ([null, undefined].includes(annotation)) {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Draw a rectanlge first"), "WARNING");
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Draw a rectanlge first"), "WARNING");
           return false;
         }
         serializeData.attributes = osparc.wrapper.Svg.getRectAttributes(annotation);
@@ -1908,7 +1908,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
             filePicker.addListener("fileUploaded", () => this.fireDataEvent("nodeSelected", nodeUI.getNodeId()), this);
           }
         } else {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
         }
       }
     },

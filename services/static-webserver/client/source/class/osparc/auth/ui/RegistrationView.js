@@ -125,11 +125,11 @@ qx.Class.define("osparc.auth.ui.RegistrationView", {
       osparc.auth.Manager.getInstance().register(userData)
         .then(log => {
           this.fireDataEvent("done", log.message);
-          osparc.component.message.FlashMessenger.getInstance().log(log);
+          osparc.FlashMessenger.getInstance().log(log);
         })
         .catch(err => {
           const msg = err.message || this.tr("Cannot register user");
-          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
         });
     },
 

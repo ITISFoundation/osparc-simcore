@@ -65,7 +65,7 @@ qx.Class.define("osparc.component.editor.ThumbnailEditor", {
     sanitizeUrl: function(dirty) {
       const clean = osparc.wrapper.DOMPurify.getInstance().sanitize(dirty);
       if ((dirty && dirty !== clean) || (clean !== "" && !osparc.utils.Utils.isValidHttpUrl(clean))) {
-        osparc.component.message.FlashMessenger.getInstance().logAs(qx.locale.Manager.tr("Error checking link"), "WARNING");
+        osparc.FlashMessenger.getInstance().logAs(qx.locale.Manager.tr("Error checking link"), "WARNING");
         return null;
       }
       return clean;

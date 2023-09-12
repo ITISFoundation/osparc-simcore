@@ -100,9 +100,9 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         })
         .catch(err => {
           if ("message" in err) {
-            osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+            osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
           } else {
-            osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong updating the Service"), "ERROR");
+            osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong updating the Service"), "ERROR");
           }
         })
         .finally(() => {
@@ -161,7 +161,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         infoButton.addListener("execute", () => {
           const metadata = osparc.utils.Services.getMetaData(node["key"], node["version"]);
           if (metadata === null) {
-            osparc.component.message.FlashMessenger.logAs(this.tr("Service information could not be retrieved"), "WARNING");
+            osparc.FlashMessenger.logAs(this.tr("Service information could not be retrieved"), "WARNING");
             return;
           }
           const serviceDetails = new osparc.info.ServiceLarge(metadata, {
@@ -190,7 +190,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
 
         const nodeMetaData = osparc.utils.Services.getFromObject(this._services, node["key"], node["version"]);
         if (nodeMetaData === null) {
-          osparc.component.message.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
+          osparc.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
           break;
         }
         const nameLabel = new qx.ui.basic.Label(nodeMetaData["name"]).set({

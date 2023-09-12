@@ -413,7 +413,7 @@ qx.Class.define("osparc.data.model.Workbench", {
             } else {
               this.removeNode(filePickerId);
               const msg = qx.locale.Manager.tr("File couldn't be assigned");
-              osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+              osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
               reject();
             }
           });
@@ -458,7 +458,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         if (requesterNode.getPropsForm().addPortLink(portId, pmId, "out_1") !== true) {
           this.removeNode(pmId);
           const msg = qx.locale.Manager.tr("Parameter couldn't be assigned");
-          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
         }
         this.fireEvent("reloadModel");
       }
@@ -486,7 +486,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         if (probeNode.getPropsForm().addPortLink("in_1", nodeId, portId) !== true) {
           this.removeNode(probeId);
           const msg = qx.locale.Manager.tr("Probe couldn't be assigned");
-          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
         }
         this.fireEvent("reloadModel");
       }

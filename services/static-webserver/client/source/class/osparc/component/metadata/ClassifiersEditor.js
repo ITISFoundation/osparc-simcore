@@ -130,11 +130,11 @@ qx.Class.define("osparc.component.metadata.ClassifiersEditor", {
       btn.setFetching(true);
       osparc.data.Resources.fetch("classifiers", "postRRID", params)
         .then(() => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("RRID classifier successfuly added"), "INFO");
+          osparc.FlashMessenger.getInstance().logAs(this.tr("RRID classifier successfuly added"), "INFO");
           osparc.store.Store.getInstance().getAllClassifiers(true);
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(err, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
         })
         .finally(() => {
           btn.setFetching(false);
@@ -154,12 +154,12 @@ qx.Class.define("osparc.component.metadata.ClassifiersEditor", {
         };
         osparc.data.Resources.fetch("studies", "put", params)
           .then(updatedStudy => {
-            osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Classifiers successfully edited"));
+            osparc.FlashMessenger.getInstance().logAs(this.tr("Classifiers successfully edited"));
             saveBtn.setFetching(false);
             this.fireDataEvent("updateClassifiers", updatedStudy);
           })
           .catch(err => {
-            osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing Classifiers"), "ERROR");
+            osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing Classifiers"), "ERROR");
             console.error(err);
           });
       } else {
@@ -174,12 +174,12 @@ qx.Class.define("osparc.component.metadata.ClassifiersEditor", {
         };
         osparc.data.Resources.fetch("services", "patch", params)
           .then(updatedService => {
-            osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Classifiers successfully edited"));
+            osparc.FlashMessenger.getInstance().logAs(this.tr("Classifiers successfully edited"));
             saveBtn.setFetching(false);
             this.fireDataEvent("updateClassifiers", updatedService);
           })
           .catch(err => {
-            osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing Classifiers"), "ERROR");
+            osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing Classifiers"), "ERROR");
             console.error(err);
           });
       }

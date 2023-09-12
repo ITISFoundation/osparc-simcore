@@ -108,11 +108,11 @@ qx.Class.define("osparc.component.share.CollaboratorsService", {
           let text = this.tr("Collaborator(s) successfully added.");
           text += "<br>";
           text += this.tr("The user will not get notified.");
-          osparc.component.message.FlashMessenger.getInstance().logAs(text);
+          osparc.FlashMessenger.getInstance().logAs(text);
           this._reloadCollaboratorsList();
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went adding collaborator(s)"), "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went adding collaborator(s)"), "ERROR");
           console.error(err);
         })
         .finally(() => cb());
@@ -124,7 +124,7 @@ qx.Class.define("osparc.component.share.CollaboratorsService", {
       }
       const success = this.self().removeCollaborator(this._serializedData, collaborator["gid"]);
       if (!success) {
-        osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
+        osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
         if (item) {
           item.setEnabled(true);
         }
@@ -140,11 +140,11 @@ qx.Class.define("osparc.component.share.CollaboratorsService", {
       osparc.data.Resources.fetch("services", "patch", params)
         .then(serviceData => {
           this.fireDataEvent("updateService", serviceData);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Member successfully removed"));
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Member successfully removed"));
           this._reloadCollaboratorsList();
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
           console.error(err);
         })
         .finally(() => {
@@ -167,11 +167,11 @@ qx.Class.define("osparc.component.share.CollaboratorsService", {
       osparc.data.Resources.fetch("services", "patch", params)
         .then(serviceData => {
           this.fireDataEvent("updateService", serviceData);
-          osparc.component.message.FlashMessenger.getInstance().logAs(successMsg);
+          osparc.FlashMessenger.getInstance().logAs(successMsg);
           this._reloadCollaboratorsList();
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(failureMsg, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(failureMsg, "ERROR");
           console.error(err);
         })
         .finally(() => item.setEnabled(true));
@@ -188,7 +188,7 @@ qx.Class.define("osparc.component.share.CollaboratorsService", {
     },
 
     _promoteToOwner: function(collaborator, item) {
-      osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Operation not available"), "WARNING");
+      osparc.FlashMessenger.getInstance().logAs(this.tr("Operation not available"), "WARNING");
     },
 
     _demoteToViewer: function(collaborator, item) {
@@ -202,7 +202,7 @@ qx.Class.define("osparc.component.share.CollaboratorsService", {
     },
 
     _demoteToCollaborator: function(collaborator, item) {
-      osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Operation not available"), "WARNING");
+      osparc.FlashMessenger.getInstance().logAs(this.tr("Operation not available"), "WARNING");
     }
   }
 });

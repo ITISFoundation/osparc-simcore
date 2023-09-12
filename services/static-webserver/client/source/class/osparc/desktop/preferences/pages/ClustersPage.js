@@ -369,7 +369,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
               this.__reloadClusters();
             })
             .catch(err => {
-              osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong deleting ") + name, "ERROR");
+              osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong deleting ") + name, "ERROR");
               console.error(err);
             })
             .finally(() => {
@@ -404,13 +404,13 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       };
       osparc.data.Resources.fetch("clusters", "post", params)
         .then(() => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(name + this.tr(" successfully created"));
+          osparc.FlashMessenger.getInstance().logAs(name + this.tr(" successfully created"));
           button.setFetching(false);
           osparc.store.Store.getInstance().reset("clusters");
           this.__reloadClusters();
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong creating ") + name, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong creating ") + name, "ERROR");
           button.setFetching(false);
           console.error(err);
         })
@@ -445,14 +445,14 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       };
       osparc.data.Resources.fetch("clusters", "patch", params)
         .then(() => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(name + this.tr(" successfully edited"));
+          osparc.FlashMessenger.getInstance().logAs(name + this.tr(" successfully edited"));
           button.setFetching(false);
           win.close();
           osparc.store.Store.getInstance().reset("clusters");
           this.__reloadClusters();
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing ") + name, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing ") + name, "ERROR");
           button.setFetching(false);
           console.error(err);
         });
@@ -486,12 +486,12 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       };
       osparc.data.Resources.fetch("clusters", "patch", params)
         .then(() => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Member(s) added"));
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Member(s) added"));
           osparc.store.Store.getInstance().reset("clusters");
           this.__reloadClusters(true);
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong with the invitation"), "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong with the invitation"), "ERROR");
           console.error(err);
         });
     },
@@ -521,12 +521,12 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       };
       osparc.data.Resources.fetch("clusters", "patch", params)
         .then(() => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(clusterMember["name"] + this.tr(" successfully promoted"));
+          osparc.FlashMessenger.getInstance().logAs(clusterMember["name"] + this.tr(" successfully promoted"));
           osparc.store.Store.getInstance().reset("clusters");
           this.__reloadClusters(true);
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong promoting ") + clusterMember["name"], "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong promoting ") + clusterMember["name"], "ERROR");
           console.error(err);
         });
     },
@@ -556,12 +556,12 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       };
       osparc.data.Resources.fetch("clusters", "patch", params)
         .then(() => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(clusterMember["name"] + this.tr(" successfully removed"));
+          osparc.FlashMessenger.getInstance().logAs(clusterMember["name"] + this.tr(" successfully removed"));
           osparc.store.Store.getInstance().reset("clusters");
           this.__reloadClusters(true);
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing ") + clusterMember["name"], "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing ") + clusterMember["name"], "ERROR");
           console.error(err);
         });
     }

@@ -200,7 +200,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
         const nodeMetadata = osparc.utils.Services.getMetaData(node["key"], node["version"]);
         const latestCompatibleMetadata = osparc.utils.Services.getLatestCompatible(this._services, node["key"], node["version"]);
         if (latestCompatibleMetadata === null) {
-          osparc.component.message.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
+          osparc.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
         }
         const isUpdatable = osparc.utils.Services.isUpdatable(node);
         if (isUpdatable) {

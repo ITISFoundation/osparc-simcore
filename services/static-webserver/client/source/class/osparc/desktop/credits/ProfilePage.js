@@ -224,14 +224,14 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
             osparc.auth.Manager.getInstance().updateProfile(this.__userProfileData);
             const res = e.getTarget().getResponse();
             const msg = (res && res.data) ? res.data : this.tr("Profile updated");
-            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO");
+            osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
           }, this);
 
           req.addListenerOnce("fail", e => {
             this.__resetDataToModel();
             const error = e.getTarget().getResponse().error;
             const msg = error ? error["errors"][0].message : this.tr("Failed to update profile");
-            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+            osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
           }, this);
 
           req.send();
@@ -322,14 +322,14 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
           };
           osparc.data.Resources.fetch("password", "post", params)
             .then(data => {
-              osparc.component.message.FlashMessenger.getInstance().log(data);
+              osparc.FlashMessenger.getInstance().log(data);
               [currentPassword, newPassword, confirm].forEach(item => {
                 item.resetValue();
               });
             })
             .catch(err => {
               console.error(err);
-              osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Failed to reset password"), "ERROR");
+              osparc.FlashMessenger.getInstance().logAs(this.tr("Failed to reset password"), "ERROR");
               [currentPassword, newPassword, confirm].forEach(item => {
                 item.resetValue();
               });

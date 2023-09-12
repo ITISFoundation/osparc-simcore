@@ -119,15 +119,15 @@ qx.Class.define("osparc.component.service.manager.ActivityManager", {
       /*
       const runButton = new qx.ui.toolbar.Button(this.tr("Run"), "@FontAwesome5Solid/play/14");
       actionsPart.add(runButton);
-      runButton.addListener("execute", () => osparc.component.message.FlashMessenger.getInstance().logAs("Not implemented"));
+      runButton.addListener("execute", () => osparc.FlashMessenger.getInstance().logAs("Not implemented"));
 
       const stopButton = new qx.ui.toolbar.Button(this.tr("Stop"), "@FontAwesome5Solid/stop-circle/14");
       actionsPart.add(stopButton);
-      stopButton.addListener("execute", () => osparc.component.message.FlashMessenger.getInstance().logAs("Not implemented"));
+      stopButton.addListener("execute", () => osparc.FlashMessenger.getInstance().logAs("Not implemented"));
 
       const infoButton = new qx.ui.toolbar.Button(this.tr("Info"), "@FontAwesome5Solid/info/14");
       actionsPart.add(infoButton);
-      infoButton.addListener("execute", () => osparc.component.message.FlashMessenger.getInstance().logAs("Not implemented"));
+      infoButton.addListener("execute", () => osparc.FlashMessenger.getInstance().logAs("Not implemented"));
 
       [runButton, stopButton, infoButton].map(button => this.__tree.bind("selected", button, "enabled", {
         converter: data => data.length > 0

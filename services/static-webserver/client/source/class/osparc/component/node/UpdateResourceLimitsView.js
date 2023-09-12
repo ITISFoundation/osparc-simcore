@@ -167,13 +167,13 @@ qx.Class.define("osparc.component.node.UpdateResourceLimitsView", {
       };
       osparc.data.Resources.fetch("nodesInStudyResources", "put", params)
         .then(() => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Limits successfully updated"));
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Limits successfully updated"));
           this.fireEvent("limitsChanged");
         })
         .catch(err => {
           console.error(err);
           const msg = err.message || this.tr("Something went wrong updating the limits");
-          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
         })
         .finally(() => {
           this.__saveBtn.setFetching(false);

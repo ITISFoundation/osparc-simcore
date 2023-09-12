@@ -277,7 +277,7 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
             .then(() => {
               this.__rebuildSnapshots();
             })
-            .catch(err => osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR"));
+            .catch(err => osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR"));
           win.close();
         }, this);
         editSnapshotView.addListener("cancel", () => {

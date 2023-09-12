@@ -245,7 +245,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
         .catch(err => {
           console.error(err);
           const msg = err.message || this.tr("Something went wrong creating the Wallet");
-          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
         })
         .finally(() => {
           button.setFetching(false);
@@ -283,7 +283,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
           .catch(err => {
             console.error(err);
             const msg = err.message || this.tr("Something went wrong updating the Wallet");
-            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+            osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
           })
           .finally(() => {
             button.setFetching(false);

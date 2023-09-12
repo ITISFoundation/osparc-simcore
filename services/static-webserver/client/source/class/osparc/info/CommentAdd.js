@@ -126,7 +126,7 @@ qx.Class.define("osparc.info.CommentAdd", {
             })
             .catch(err => {
               console.error(err);
-              osparc.component.message.FlashMessenger.logAs(err.message, "ERROR");
+              osparc.FlashMessenger.logAs(err.message, "ERROR");
             });
         }
       });

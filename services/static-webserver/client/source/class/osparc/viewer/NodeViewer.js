@@ -113,7 +113,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
       };
       osparc.data.Resources.fetch("studies", "getNode", params)
         .then(data => this.__onNodeState(data))
-        .catch(() => osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error starting the viewer."), "ERROR"));
+        .catch(() => osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error starting the viewer."), "ERROR"));
     },
 
     __onNodeState: function(data) {
@@ -161,7 +161,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
         case "retired":
         case "failed": {
           const msg = this.tr("Service failed: ") + data["service_message"];
-          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
           return;
         }
         default:

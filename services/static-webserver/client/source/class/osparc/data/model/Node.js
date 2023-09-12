@@ -574,7 +574,7 @@ qx.Class.define("osparc.data.model.Node", {
             level: "ERROR"
           };
           this.fireDataEvent("showInLogger", errorMsgData);
-          osparc.component.message.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
         });
     },
 
@@ -849,7 +849,7 @@ qx.Class.define("osparc.data.model.Node", {
         }
       }
       if (autoConnections) {
-        const flashMessenger = osparc.component.message.FlashMessenger.getInstance();
+        const flashMessenger = osparc.FlashMessenger.getInstance();
         flashMessenger.logAs(autoConnections + this.tr(" ports auto connected"), "INFO");
       }
     },
@@ -968,7 +968,7 @@ qx.Class.define("osparc.data.model.Node", {
         .then(() => this.startDynamicService())
         .catch(err => {
           if ("status" in err && err.status === 409) {
-            osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "WARNING");
+            osparc.FlashMessenger.getInstance().logAs(err.message, "WARNING");
           } else {
             console.error(err);
           }
@@ -1359,7 +1359,7 @@ qx.Class.define("osparc.data.model.Node", {
           if ("status" in err && err.status === 406) {
             errorMsg = this.getKey() + ":" + this.getVersion() + "is retired";
             this.getStatus().setInteractive("retired");
-            osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while starting the node."), "ERROR");
+            osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error while starting the node."), "ERROR");
           }
           const errorMsgData = {
             nodeId: this.getNodeId(),
@@ -1383,7 +1383,7 @@ qx.Class.define("osparc.data.model.Node", {
             setTimeout(() => this.__nodeState(), interval);
           } else {
             this.getStatus().setInteractive("failed");
-            osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while starting the node."), "ERROR");
+            osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error while starting the node."), "ERROR");
           }
         });
     },

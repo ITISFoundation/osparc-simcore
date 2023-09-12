@@ -244,7 +244,7 @@ qx.Class.define("osparc.component.editor.ClusterEditor", {
             .catch(err => {
               testResult.setTextColor("failed-red");
               const msg = err.message || this.tr("Test failed");
-              osparc.component.message.FlashMessenger.getInstance().logAs(msg, "Error");
+              osparc.FlashMessenger.getInstance().logAs(msg, "Error");
             })
             .finally(() => testButton.setFetching(false));
         }

@@ -395,7 +395,7 @@ qx.Class.define("osparc.component.study.ResourceSelector", {
             .catch(err => {
               console.error(err);
               const msg = err.message || this.tr("Error selecting Wallet");
-              osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+              osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
             });
         } else {
           store.setActiveWallet(this.getWallet());

@@ -257,7 +257,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
                 });
             })
             .catch(err => {
-              osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong deleting ") + name, "ERROR");
+              osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong deleting ") + name, "ERROR");
               console.error(err);
             })
             .finally(() => {
@@ -284,7 +284,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
       };
       osparc.data.Resources.fetch("organizations", "post", params)
         .then(() => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(name + this.tr(" successfully created"));
+          osparc.FlashMessenger.getInstance().logAs(name + this.tr(" successfully created"));
           button.setFetching(false);
           osparc.store.Store.getInstance().reset("organizations");
           // reload "profile", "organizations" are part of the information in this endpoint
@@ -294,7 +294,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
             });
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong creating ") + name, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong creating ") + name, "ERROR");
           button.setFetching(false);
           console.error(err);
         })
@@ -320,14 +320,14 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
       };
       osparc.data.Resources.fetch("organizations", "patch", params)
         .then(() => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(name + this.tr(" successfully edited"));
+          osparc.FlashMessenger.getInstance().logAs(name + this.tr(" successfully edited"));
           button.setFetching(false);
           win.close();
           osparc.store.Store.getInstance().reset("organizations");
           this.reloadOrganizations();
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing ") + name, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing ") + name, "ERROR");
           button.setFetching(false);
           console.error(err);
         });

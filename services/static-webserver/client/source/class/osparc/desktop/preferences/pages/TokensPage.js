@@ -92,7 +92,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
             showAPIKeyWindow.open();
           })
           .catch(err => {
-            osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+            osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
           })
           .finally(() => this.__requestAPIKeyBtn.setFetching(false));
       }, this);

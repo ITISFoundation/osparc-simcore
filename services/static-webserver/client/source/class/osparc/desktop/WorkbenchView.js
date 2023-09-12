@@ -708,7 +708,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             const node = workbench.getNode(nodeId);
             const label = node.getLabel();
             const text = `New inputs for service ${label}. Please reload to refresh service.`;
-            osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
+            osparc.FlashMessenger.getInstance().logAs(text, "INFO");
           }
         }, this);
       }

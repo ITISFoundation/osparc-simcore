@@ -195,7 +195,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
                   let msg = this.tr("The Study contains more than ") + maxNumber + this.tr(" Interactive services.");
                   msg += "<br>";
                   msg += this.tr("Please start them manually.");
-                  osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING");
+                  osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
                 }
               }
             });
@@ -206,7 +206,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
                 this.__startAutoSaveTimer();
               } else {
                 const msg = this.self().READ_ONLY_TEXT;
-                osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING");
+                osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
               }
             });
 
@@ -256,7 +256,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               msg += "<br>" + err["message"];
             }
           }
-          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
           this.fireEvent("forceBackToDashboard");
         })
         .finally(() => this._hideLoadingPage());
@@ -505,7 +505,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             const store = osparc.store.Store.getInstance();
             store.getSnapshots().push(data);
           })
-          .catch(err => osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR"));
+          .catch(err => osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR"));
 
         win.close();
       }, this);
@@ -633,10 +633,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         })
         .catch(error => {
           if ("status" in error && error.status === 409) {
-            osparc.component.message.FlashMessenger.getInstance().logAs(error.message, "ERROR");
+            osparc.FlashMessenger.getInstance().logAs(error.message, "ERROR");
           } else {
             console.error(error);
-            osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Error saving the study"), "ERROR");
+            osparc.FlashMessenger.getInstance().logAs(this.tr("Error saving the study"), "ERROR");
           }
           this.getStudyLogger().error(null, "Error updating pipeline");
           // Need to throw the error to be able to handle it later

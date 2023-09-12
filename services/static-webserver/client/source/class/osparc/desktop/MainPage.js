@@ -270,7 +270,7 @@ qx.Class.define("osparc.desktop.MainPage", {
 
     __publishTemplate: function(data) {
       const text = this.tr("Started template creation and added to the background tasks");
-      osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
+      osparc.FlashMessenger.getInstance().logAs(text, "INFO");
 
       const params = {
         url: {
@@ -291,7 +291,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         })
         .catch(errMsg => {
           const msg = this.tr("Something went wrong Duplicating the study<br>") + errMsg;
-          osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
+          osparc.FlashMessenger.logAs(msg, "ERROR");
         });
     },
 
@@ -363,7 +363,7 @@ qx.Class.define("osparc.desktop.MainPage", {
             });
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
           this.__showDashboard();
           return;
         });
@@ -402,7 +402,7 @@ qx.Class.define("osparc.desktop.MainPage", {
           osparc.desktop.MainPageHandler.getInstance().loadStudy(studyData);
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
           this.__showDashboard();
           return;
         });

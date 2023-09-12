@@ -264,7 +264,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       let isLogged = osparc.auth.Manager.getInstance().isLoggedIn();
       if (!isLogged) {
         const msg = this.tr("You need to be logged in to create a study");
-        osparc.component.message.FlashMessenger.getInstance().logAs(msg);
+        osparc.FlashMessenger.getInstance().logAs(msg);
       }
       return isLogged;
     },
