@@ -5,9 +5,9 @@
 
 
 import json
+from collections.abc import Callable
 from pathlib import Path
 from pprint import pprint
-from typing import Callable
 
 import sqlalchemy as sa
 from aiopg.sa.engine import Engine
