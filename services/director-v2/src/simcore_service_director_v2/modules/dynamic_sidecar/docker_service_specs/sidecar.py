@@ -341,7 +341,6 @@ def get_dynamic_sidecar_spec(
         },
     }
 
-    # TODO: inside here all the labels for the services are returned
     update_service_params_from_settings(
         labels_service_settings=settings,
         create_service_params=create_service_params,
