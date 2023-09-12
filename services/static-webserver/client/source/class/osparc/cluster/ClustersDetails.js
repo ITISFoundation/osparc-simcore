@@ -48,7 +48,7 @@ qx.Class.define("osparc.cluster.ClustersDetails", {
       const selectBox = this.__clustersSelectBox = new qx.ui.form.SelectBox().set({
         allowGrowX: false
       });
-      osparc.utils.Clusters.populateClustersSelectBox(selectBox);
+      osparc.cluster.Utils.populateClustersSelectBox(selectBox);
       selectBox.addListener("changeSelection", e => {
         const clusterId = e.getData()[0].id;
         this.__selectedClusterChanged(clusterId);
@@ -82,13 +82,13 @@ qx.Class.define("osparc.cluster.ClustersDetails", {
     },
 
     __selectedClusterChanged: function(clusterId) {
-      osparc.utils.Clusters.getInstance().stopFetchingDetails(this.__clusterId);
+      osparc.cluster.Utils.getInstance().stopFetchingDetails(this.__clusterId);
       this.__clusterId = clusterId;
       this.__startFetchingDetails();
     },
 
     __startFetchingDetails: function() {
-      const clusters = osparc.utils.Clusters.getInstance();
+      const clusters = osparc.cluster.Utils.getInstance();
       clusters.addListener("clusterDetailsReceived", e => {
         const data = e.getData();
         if (this.__clusterId === data.clusterId) {
@@ -101,6 +101,6 @@ qx.Class.define("osparc.cluster.ClustersDetails", {
   },
 
   destruct: function() {
-    osparc.utils.Clusters.getInstance().stopFetchingDetails(this.__clusterId);
+    osparc.cluster.Utils.getInstance().stopFetchingDetails(this.__clusterId);
   }
 });

@@ -96,8 +96,8 @@ qx.Class.define("osparc.cluster.ClusterWorkers", {
           const gaugeDatas = osparc.wrapper.Plotly.getDefaultGaugeData();
           const gaugeData = gaugeDatas[0];
           gaugeData.title.text = plotInfo.label.toLocaleString();
-          let used = osparc.utils.Clusters.getUsedResourcesAttribute(worker, plotInfo.usedResource);
-          let available = osparc.utils.Clusters.getAvailableResourcesAttribute(worker, plotInfo.resource);
+          let used = osparc.cluster.Utils.getUsedResourcesAttribute(worker, plotInfo.usedResource);
+          let available = osparc.cluster.Utils.getAvailableResourcesAttribute(worker, plotInfo.resource);
           if (plotKey === "ram") {
             used = osparc.utils.Utils.bytesToGB(used);
             available = osparc.utils.Utils.bytesToGB(available);

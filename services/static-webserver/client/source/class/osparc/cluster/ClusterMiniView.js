@@ -30,7 +30,7 @@ qx.Class.define("osparc.cluster.ClusterMiniView", {
       allowGrowY: false,
       cursor: "pointer"
     });
-    this.addListener("tap", () => osparc.utils.Clusters.popUpClustersDetails(this.__clusterId), this);
+    this.addListener("tap", () => osparc.cluster.Utils.popUpClustersDetails(this.__clusterId), this);
 
     const hint = this.__hint = new osparc.ui.hint.Hint(this).set({
       active: false
@@ -57,7 +57,7 @@ qx.Class.define("osparc.cluster.ClusterMiniView", {
     __hint: null,
 
     setClusterId: function(clusterId) {
-      const clusters = osparc.utils.Clusters.getInstance();
+      const clusters = osparc.cluster.Utils.getInstance();
       if (this.__clusterId !== null) {
         clusters.stopFetchingDetails(this.__clusterId);
       }
@@ -68,7 +68,7 @@ qx.Class.define("osparc.cluster.ClusterMiniView", {
     },
 
     __listenToClusterDetails: function() {
-      const clusters = osparc.utils.Clusters.getInstance();
+      const clusters = osparc.cluster.Utils.getInstance();
       clusters.addListener("clusterDetailsReceived", e => {
         const data = e.getData();
         if (this.__clusterId === data.clusterId) {
@@ -141,7 +141,7 @@ qx.Class.define("osparc.cluster.ClusterMiniView", {
       };
       Object.keys(resources).forEach(resourceKey => {
         const resource = resources[resourceKey];
-        osparc.utils.Clusters.accumulateWorkersResources(workers, resource);
+        osparc.cluster.Utils.accumulateWorkersResources(workers, resource);
       });
       this.__updateMiniView(resources);
       this.__updateHint(resources);
@@ -197,6 +197,6 @@ qx.Class.define("osparc.cluster.ClusterMiniView", {
   },
 
   destruct: function() {
-    osparc.utils.Clusters.getInstance().stopFetchingDetails(this.__clusterId);
+    osparc.cluster.Utils.getInstance().stopFetchingDetails(this.__clusterId);
   }
 });

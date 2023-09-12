@@ -201,7 +201,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     },
 
     __populateClustersSelectBox: function() {
-      const clusters = osparc.utils.Clusters.populateClustersSelectBox(this.__clustersSelectBox);
+      const clusters = osparc.cluster.Utils.populateClustersSelectBox(this.__clustersSelectBox);
       this.__clustersLayout.setVisibility(Object.keys(clusters).length ? "visible" : "excluded");
     },
 

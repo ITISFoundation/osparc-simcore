@@ -21,7 +21,7 @@
  * *Example*
  */
 
-qx.Class.define("osparc.utils.Clusters", {
+qx.Class.define("osparc.cluster.Utils", {
   extend: qx.core.Object,
   type: "singleton",
 

@@ -122,7 +122,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
                 }
               });
           }
-          control.addListener("execute", () => osparc.utils.Clusters.popUpClustersDetails(), this);
+          control.addListener("execute", () => osparc.cluster.Utils.popUpClustersDetails(), this);
           this.getMenu().add(control);
           break;
         case "license":
