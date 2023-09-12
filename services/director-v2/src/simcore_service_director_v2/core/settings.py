@@ -472,7 +472,7 @@ class ComputationalBackendSettings(BaseCustomSettings):
         description=f"Default file link type to use with computational backend '{list(FileLinkType)}'",
     )
     COMPUTATIONAL_BACKEND_ON_DEMAND_CLUSTERS_FILE_LINK_TYPE: FileLinkType = Field(
-        FileLinkType.S3,
+        FileLinkType.PRESIGNED,
         description=f"Default file link type to use with computational backend on-demand clusters '{list(FileLinkType)}'",
     )
 
