@@ -217,10 +217,6 @@ async def validate_compose_spec(
         )
         service_content["container_name"] = container_name
         spec_services_to_container_name[service] = container_name
-        # TODO: here is the moment to save this information somewhere like in the shared_store
-        # TODO: just return an extra argument an object containing the compose_spec and the names of the container before and after
-        # TODO: at this point validate them with the other ones
-        # TODO: return "resolved_container_names" and also "original_container_names"
 
         # inject forwarded environment variables
         environment_entries = service_content.get("environment", [])
