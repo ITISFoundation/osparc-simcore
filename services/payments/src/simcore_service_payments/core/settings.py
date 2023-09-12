@@ -96,7 +96,7 @@ class ApplicationSettings(_BaseApplicationSettings):
     PAYMENTS_ACCESS_TOKEN_SECRET_KEY: SecretStr = Field(
         ...,
         description="To generate a random password with openssl in hex format with 32 bytes, run `openssl rand -hex 32`",
-        min_length=63,
+        min_length=30,
     )
     PAYMENTS_ACCESS_TOKEN_EXPIRE_MINUTES: PositiveFloat = Field(default=30)
 
