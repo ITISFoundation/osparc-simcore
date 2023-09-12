@@ -86,7 +86,7 @@ class DummyFileData:
         return cls._final_e_tag
 
     @classmethod
-    def checksum(cls) -> ETag:
+    def checksum(cls) -> SHA256Str:
         return cls._file_sha256_checksum
 
 
