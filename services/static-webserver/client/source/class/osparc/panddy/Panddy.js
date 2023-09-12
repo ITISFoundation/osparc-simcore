@@ -36,17 +36,17 @@ qx.Class.define("osparc.panddy.Panddy", {
       name: "Panddy intro",
       description: "Introduction to Panddy",
       steps: [{
-        target: null,
+        anchorEl: null,
         title: qx.locale.Manager.tr("Grüezi!"),
-        message: qx.locale.Manager.tr("This is Panddy. I'm here to give you hints on how to use the application.")
+        text: qx.locale.Manager.tr("This is Panddy. I'm here to give you hints on how to use the application.")
       }, {
         preStep: {
-          target: "osparc-test-id=userMenuBtn",
+          anchorEl: "osparc-test-id=userMenuBtn",
           action: "open"
         },
-        target: "osparc-test-id=userMenuMenu",
+        anchorEl: "osparc-test-id=userMenuMenu",
         orientation: "left",
-        message: qx.locale.Manager.tr("You can always find me in the User Menu.")
+        text: qx.locale.Manager.tr("You can always find me in the User Menu.")
       }]
     }]
   },
@@ -163,8 +163,8 @@ qx.Class.define("osparc.panddy.Panddy", {
       const step = steps[idx];
       if (step.preStep) {
         const preStep = step.preStep;
-        if (preStep.target) {
-          const el = document.querySelector(`[${preStep.target}]`);
+        if (preStep.anchorEl) {
+          const el = document.querySelector(`[${preStep.anchorEl}]`);
           const widget = qx.ui.core.Widget.getWidgetByElement(el);
           if (widget && preStep.action) {
             widget[preStep.action]();
@@ -192,8 +192,8 @@ qx.Class.define("osparc.panddy.Panddy", {
       const step = steps[idx];
       const stepWidget = this.__currentBuble = this.__createStep();
       let targetWidget = null;
-      if (step.target) {
-        const el = document.querySelector(`[${step.target}]`);
+      if (step.anchorEl) {
+        const el = document.querySelector(`[${step.anchorEl}]`);
         targetWidget = qx.ui.core.Widget.getWidgetByElement(el);
       }
       if (targetWidget) {
@@ -212,8 +212,8 @@ qx.Class.define("osparc.panddy.Panddy", {
       if (step.title) {
         stepWidget.setTitle(step.title);
       }
-      if (step.message) {
-        stepWidget.setText(step.message);
+      if (step.text) {
+        stepWidget.setText(step.text);
       }
       if (steps.length > 1) {
         stepWidget.set({
