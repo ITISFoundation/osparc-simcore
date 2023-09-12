@@ -5,14 +5,14 @@ include ../../scripts/common.Makefile
 include ../../scripts/common-service.Makefile
 
 
-.env:
+.env-ignore:
 	$(APP_CLI_NAME) generate-dotenv --auto-password > $@
 
 .PHONY: openapi.json
 openapi-specs: openapi.json
-openapi.json: ## produces openapi.json
+openapi.json:  ## produces openapi.json
 	# generating openapi specs file (need to have the environment set for this)
 	@set -o allexport; \
-	source .env; \
+	source $<; \
 	set +o allexport; \
 	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@

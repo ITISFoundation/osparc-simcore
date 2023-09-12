@@ -228,6 +228,7 @@ services:
       - RABBIT_PORT=${RABBIT_PORT}
       - RABBIT_SECURE=${RABBIT_SECURE}
       - RABBIT_USER=${RABBIT_USER}
+      - RESOURCE_USAGE_TRACKER_HOST=${RESOURCE_USAGE_TRACKER_HOST}
 
   resource-usage-tracker:
     image: ${DOCKER_REGISTRY:-itisfoundation}/resource-usage-tracker:${DOCKER_IMAGE_TAG:-latest}
