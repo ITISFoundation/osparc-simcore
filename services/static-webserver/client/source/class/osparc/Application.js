@@ -58,7 +58,7 @@ qx.Class.define("osparc.Application", {
       const threejs = osparc.wrapper.Three.getInstance();
       threejs.init();
 
-      const announcementsTracker = osparc.AnnouncementsTracker.getInstance();
+      const announcementsTracker = osparc.announcement.Tracker.getInstance();
       announcementsTracker.startTracker();
 
       const webSocket = osparc.wrapper.WebSocket.getInstance();
@@ -473,7 +473,7 @@ qx.Class.define("osparc.Application", {
 
       osparc.data.PollTasks.getInstance().removeTasks();
       osparc.MaintenanceTracker.getInstance().stopTracker();
-      osparc.AnnouncementsTracker.getInstance().stopTracker();
+      osparc.announcement.Tracker.getInstance().stopTracker();
       osparc.auth.Manager.getInstance().logout();
       if (this.__mainPage) {
         this.__mainPage.closeEditor();

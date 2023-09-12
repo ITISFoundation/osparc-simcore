@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.AnnouncementsTracker", {
+qx.Class.define("osparc.announcement.Tracker", {
   extend: qx.core.Object,
   type: "singleton",
 
