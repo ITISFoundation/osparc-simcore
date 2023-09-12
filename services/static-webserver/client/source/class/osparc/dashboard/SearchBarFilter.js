@@ -47,12 +47,12 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     getSharedWithOptions: function(resourceType) {
       return [{
         id: "show-all",
-        label: qx.locale.Manager.tr("All ") + osparc.utils.Utils.resourceTypeToAlias(resourceType, {
+        label: qx.locale.Manager.tr("All ") + osparc.product.Utils.resourceTypeToAlias(resourceType, {
           plural: true
         })
       }, {
         id: "my-studies",
-        label: qx.locale.Manager.tr("My ") + osparc.utils.Utils.resourceTypeToAlias(resourceType, {
+        label: qx.locale.Manager.tr("My ") + osparc.product.Utils.resourceTypeToAlias(resourceType, {
           plural: true
         })
       }, {
