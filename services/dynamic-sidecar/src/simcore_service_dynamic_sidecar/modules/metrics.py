@@ -13,7 +13,6 @@ from servicelib.background_task import cancel_task
 from servicelib.logging_utils import log_context
 from servicelib.sequences_utils import pairwise
 
-from ..core.settings import ApplicationSettings
 from .container_utils import run_command_in_container
 
 _logger = logging.getLogger(__name__)
@@ -89,8 +88,9 @@ class UserServicesMetrics:
 
 def setup_metrics(app: FastAPI) -> None:
     async def on_startup() -> None:
-        settings: ApplicationSettings = app.state.settings
-        callbacks_mapping: CallbacksMapping = settings.DY_SIDECAR_CALLBACKS_MAPPING
+        callbacks_mapping: CallbacksMapping = (
+            app.state.settings.DY_SIDECAR_CALLBACKS_MAPPING
+        )
 
         if callbacks_mapping.metrics:
             with log_context(
