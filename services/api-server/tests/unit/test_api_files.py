@@ -260,3 +260,26 @@ async def test_get_upload_links(
         assert response.status_code == status.HTTP_200_OK
     else:
         assert False
+
+
+async def test_search_file(
+    client: AsyncClient,
+    mocked_storage_service_api_base: respx.MockRouter,
+    respx_mock_from_capture: Callable[
+        [respx.MockRouter, Path, list[SideEffectCallback] | None], respx.MockRouter
+    ],
+    auth: httpx.BasicAuth,
+    project_tests_dir: Path,
+):
+    respx_mock = respx_mock_from_capture(
+        mocked_storage_service_api_base,
+        project_tests_dir / "mocks" / "get_file_checksum.json",
+        None,
+    )
+
+    response = await client.post(
+        f"{API_VTAG}/files/{DummyFileData.checksum()}", auth=auth
+    )
+    assert response.status_code == status.HTTP_200_OK
+    file: File = parse_obj_as(File, response.json())
+    assert file.sha256_checksum == DummyFileData.checksum()
