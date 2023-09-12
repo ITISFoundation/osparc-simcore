@@ -6,7 +6,7 @@ import datetime
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable
 from uuid import UUID
 
 import httpx
@@ -26,11 +26,13 @@ from models_library.basic_types import SHA256Str
 from pydantic import parse_obj_as
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
+from simcore_service_api_server.models.pagination import Page
 from simcore_service_api_server.models.schemas.files import (
     ClientFile,
     ClientFileUploadData,
     File,
 )
+from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
 from unit.conftest import SideEffectCallback
 
 _FAKER = Faker()
@@ -262,7 +264,20 @@ async def test_get_upload_links(
         assert False
 
 
+@pytest.mark.parametrize(
+    "query",
+    [
+        {"sha256_checksum": str(DummyFileData.checksum())},
+        {"file_id": str(DummyFileData.file().id)},
+        {
+            "file_id": str(DummyFileData.file().id),
+            "sha256_checksum": str(DummyFileData.checksum()),
+        },
+    ],
+    ids=lambda x: "&".join([f"{k}={v}" for k, v in x.items()]),
+)
 async def test_search_file(
+    query: dict[str, str],
     client: AsyncClient,
     mocked_storage_service_api_base: respx.MockRouter,
     respx_mock_from_capture: Callable[
@@ -271,15 +286,43 @@ async def test_search_file(
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
 ):
+    def side_effect_callback(
+        request: httpx.Request,
+        path_params: dict[str, Any],
+        capture: HttpApiCallCaptureModel,
+    ) -> dict[str, Any]:
+        request_query: dict[str, str] = {
+            k: v
+            for k, v in [
+                elm.split("=") for elm in request.url.query.decode("utf8").split("&")
+            ]
+        }
+        assert isinstance(capture.response_body, dict)
+        response: dict[str, Any] = capture.response_body
+        for key in query:
+            if key == "sha256_checksum":
+                response["data"][0][key] = request_query[key]
+            elif key == "file_id":
+                file_uuid_parts: list[str] = response["data"][0]["file_uuid"].split("/")
+                file_uuid_parts[1] = request_query["startswith"].split("/")[1]
+                response["data"][0]["file_uuid"] = "/".join(file_uuid_parts)
+                response["data"][0]["file_id"] = "/".join(file_uuid_parts)
+            else:
+                raise ValueError(f"Encountered unexpected {key=}")
+        return response
+
     respx_mock = respx_mock_from_capture(
         mocked_storage_service_api_base,
-        project_tests_dir / "mocks" / "get_file_checksum.json",
-        None,
+        project_tests_dir / "mocks" / "search_file_checksum.json",
+        [side_effect_callback],
     )
 
-    response = await client.post(
-        f"{API_VTAG}/files/{DummyFileData.checksum()}", auth=auth
-    )
+    response = await client.get(f"{API_VTAG}/files:search", auth=auth, params=query)
     assert response.status_code == status.HTTP_200_OK
-    file: File = parse_obj_as(File, response.json())
-    assert file.sha256_checksum == DummyFileData.checksum()
+    page: Page[File] = parse_obj_as(Page[File], response.json())
+    assert len(page.items) == page.total
+    file = page.items[0]
+    if "sha256_checksum" in query:
+        assert file.sha256_checksum == SHA256Str(query["sha256_checksum"])
+    if "file_id" in query:
+        assert file.id == UUID(query["file_id"])
