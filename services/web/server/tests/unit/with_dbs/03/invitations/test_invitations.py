@@ -20,6 +20,8 @@ from simcore_service_webserver.invitations.errors import (
     InvalidInvitation,
     InvitationsServiceUnavailable,
 )
+from simcore_service_webserver.invitations.plugin import validate_invitation_url
+from simcore_service_webserver.products.api import Product
 from yarl import URL
 
 
@@ -71,6 +73,7 @@ def app_environment(
 async def test_invitation_service_unavailable(
     client: TestClient,
     expected_invitation: ApiInvitationContent,
+    current_product: Product,
 ):
     assert client.app
     invitations_api: InvitationsServiceApi = get_invitations_service_api(app=client.app)
@@ -82,6 +85,7 @@ async def test_invitation_service_unavailable(
             app=client.app,
             guest_email=expected_invitation.guest,
             invitation_url="https://server.com#/registration?invitation=1234",
+            current_product=current_product,
         )
 
 
@@ -104,12 +108,14 @@ async def test_valid_invitation(
     client: TestClient,
     mock_invitations_service_http_api: AioResponsesMock,
     expected_invitation: ApiInvitationContent,
+    current_product: Product,
 ):
     assert client.app
     invitation = await validate_invitation_url(
         app=client.app,
         guest_email=expected_invitation.guest,
         invitation_url="https://server.com#register?invitation=1234",
+        current_product=current_product,
     )
     assert invitation
     assert invitation == expected_invitation
@@ -119,6 +125,7 @@ async def test_invalid_invitation_if_guest_is_already_registered(
     client: TestClient,
     mock_invitations_service_http_api: AioResponsesMock,
     expected_invitation: ApiInvitationContent,
+    current_product: Product,
 ):
     assert client.app
     async with NewUser(
@@ -133,6 +140,7 @@ async def test_invalid_invitation_if_guest_is_already_registered(
                 app=client.app,
                 guest_email=expected_invitation.guest,
                 invitation_url="https://server.com#register?invitation=1234",
+                current_product=current_product,
             )
 
 
@@ -140,6 +148,7 @@ async def test_invalid_invitation_if_not_guest(
     client: TestClient,
     mock_invitations_service_http_api: AioResponsesMock,
     expected_invitation: ApiInvitationContent,
+    current_product: Product,
 ):
     assert client.app
     assert expected_invitation.guest != "unexpected_guest@email.me"
@@ -148,4 +157,5 @@ async def test_invalid_invitation_if_not_guest(
             app=client.app,
             guest_email="unexpected_guest@email.me",
             invitation_url="https://server.com#register?invitation=1234",
+            current_product=current_product,
         )

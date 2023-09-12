@@ -32,6 +32,13 @@ from .errors import (
 _logger = logging.getLogger(__name__)
 
 
+async def _is_user_registered_in_platform(app: web.Application, email: str) -> bool:
+    pg_engine = get_database_engine(app=app)
+    async with pg_engine.acquire() as conn:
+        user_id = await conn.scalar(sa.select(users.c.id).where(users.c.email == email))
+        return user_id is not None
+
+
 async def _is_user_registered_in_product(
     app: web.Application, email: str, product_group_id: GroupID
 ) -> bool:
@@ -133,13 +140,13 @@ async def validate_invitation_url(
             and invitation.product != current_product.name
         ) or current_product.group_id is None:
             raise InvalidInvitation(
-                reason="This invitation was issued for a different product"
+                reason=f"This invitation was issued for a different product, i.e. {invitation.product}"
             )
 
         # existing users cannot be re-invited
-        if await _is_user_registered_in_product(
-            app=app, email=invitation.guest, product_group_id=current_product.group_id
-        ):
+        if await _is_user_registered_in_platform(app=app, email=invitation.guest):
+            # FIXME: a user might be already registered but the invitation is for another product
+            # here we should simply add the user to the current product group and let him login
             raise InvalidInvitation(reason=MSG_INVITATION_ALREADY_USED)
 
     return invitation

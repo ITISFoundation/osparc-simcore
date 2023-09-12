@@ -24,6 +24,7 @@ from simcore_service_webserver.invitations.settings import (
     InvitationsSettings,
     get_plugin_settings,
 )
+from simcore_service_webserver.products.plugin import Product, list_products
 from yarl import URL
 
 
@@ -44,13 +45,24 @@ def invitations_service_openapi_specs(
 
 
 @pytest.fixture
+def current_product(client: TestClient) -> Product:
+    assert client.app
+    products = list_products(client.app)
+    assert products
+    assert products[0].name == "osparc"
+    return products[0]
+
+
+@pytest.fixture
 def expected_invitation(
     invitations_service_openapi_specs: dict[str, Any]
 ) -> ApiInvitationContent:
     oas = deepcopy(invitations_service_openapi_specs)
-    return ApiInvitationContent.parse_obj(
-        oas["components"]["schemas"]["ApiInvitationContent"]["example"]
+    content = ApiInvitationContent.parse_obj(
+        oas["components"]["schemas"]["_ApiInvitationContent"]["example"]
     )
+    content.product = "osparc"
+    return content
 
 
 @pytest.fixture()
