@@ -67,6 +67,14 @@ qx.Class.define("osparc.desktop.MainPage", {
             });
           // setTimeout(() => osparc.desktop.MainPageHandler.getInstance().showUserCenter(), 1000);
         }
+        const preferenceSettings = osparc.Preferences.getInstance();
+        const preferenceWalletId = preferenceSettings.getPreferredWalletId();
+        const wallets = store.getWallets();
+        if (preferenceWalletId === null && wallets && wallets.length) {
+          // Select one by default: according to the use case, the one larger number of accessRights
+          wallets.sort((a, b) => b.getAccessRights().length - a.getAccessRights().length);
+          preferenceSettings.requestChangePreferredWalletId(wallets[0].getWalletId());
+        }
       });
 
     Promise.all([
@@ -107,7 +115,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       }
       if (this.__studyEditor) {
         const isReadOnly = this.__studyEditor.getStudy().isReadOnly();
-        const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+        const preferencesSettings = osparc.Preferences.getInstance();
         if (!isReadOnly && preferencesSettings.getConfirmBackToDashboard()) {
           const studyName = this.__studyEditor.getStudy().getName();
           const win = new osparc.ui.window.Confirmation();

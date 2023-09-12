@@ -60,11 +60,11 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
 
   statics: {
     sortWallets: function(a, b) {
-      const aDefaultWallet = a.isDefaultWallet();
-      const bDefaultWallet = b.isDefaultWallet();
-      if (aDefaultWallet) {
+      const aPreferredWallet = a.isPreferredWallet();
+      const bPreferredWallet = b.isPreferredWallet();
+      if (aPreferredWallet) {
         return -1;
-      } else if (bDefaultWallet) {
+      } else if (bPreferredWallet) {
         return 1;
       }
       const aAccessRights = a.getAccessRights();
@@ -155,7 +155,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
           ctrl.bindProperty("description", "subtitle", null, item, id);
           ctrl.bindProperty("creditsAvailable", "creditsAvailable", null, item, id);
           ctrl.bindProperty("status", "status", null, item, id);
-          ctrl.bindProperty("defaultWallet", "defaultWallet", null, item, id);
+          ctrl.bindProperty("preferredWallet", "preferredWallet", null, item, id);
         },
         configureItem: item => {
           item.subscribeToFilterGroup("walletsList");
@@ -170,15 +170,9 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
             const {
               walletId
             } = e.getData();
-            const store = osparc.store.Store.getInstance();
-            store.getWallets().forEach(wallet => {
-              if (wallet.getWalletId() === parseInt(walletId)) {
-                wallet.setDefaultWallet(!wallet.isDefaultWallet());
-              } else {
-                wallet.setDefaultWallet(false);
-              }
-            });
-            this.loadWallets();
+            const preferencesSettings = osparc.Preferences.getInstance();
+            preferencesSettings.addListener("changePreferredWalletId", () => this.loadWallets());
+            preferencesSettings.requestChangePreferredWalletId(parseInt(walletId));
           });
         }
       });

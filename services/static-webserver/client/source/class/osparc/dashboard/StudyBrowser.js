@@ -662,7 +662,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.utils.Utils.setIdToWidget(deleteButton, "deleteStudiesBtn");
       deleteButton.addListener("execute", () => {
         const selection = this._resourcesContainer.getSelection();
-        const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+        const preferencesSettings = osparc.Preferences.getInstance();
         if (preferencesSettings.getConfirmDeleteStudy()) {
           const win = this.__createConfirmWindow(selection.map(button => button.getTitle()));
           win.center();
@@ -940,7 +940,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __deleteStudyRequested: function(studyData) {
-      const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+      const preferencesSettings = osparc.Preferences.getInstance();
       if (preferencesSettings.getConfirmDeleteStudy()) {
         const win = this.__createConfirmWindow([studyData.name]);
         win.center();

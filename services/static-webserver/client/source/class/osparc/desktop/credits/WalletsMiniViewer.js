@@ -167,10 +167,10 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
         listenerId: changeStatusId
       });
 
-      const defaultWalletId = wallet.addListener("changeDefaultWallet", () => this.__reloadLayout());
+      const preferredWalletId = wallet.addListener("changePreferredWallet", () => this.__reloadLayout());
       this.__walletListeners.push({
         walletId: wallet.getWalletId(),
-        listenerId: defaultWalletId
+        listenerId: preferredWalletId
       });
     }
   }

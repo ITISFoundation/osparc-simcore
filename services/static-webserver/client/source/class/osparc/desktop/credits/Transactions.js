@@ -147,10 +147,7 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
             this.__table.setData(newDatas);
           }
         })
-        .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
-          console.error(err);
-        });
+        .catch(err => console.error(err));
     }
   }
 });

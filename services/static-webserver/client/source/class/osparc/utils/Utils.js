@@ -38,13 +38,6 @@ qx.Class.define("osparc.utils.Utils", {
         return window.localStorage.getItem(name);
       },
 
-      setTheme: function(themeName) {
-        this.setLocalStorageItem("themeName", themeName);
-      },
-      getTheme: function() {
-        return this.getLocalStorageItem("themeName");
-      },
-
       getLastCommitVcsRefUI: function() {
         return this.getLocalStorageItem("lastVcsRefUI");
       },

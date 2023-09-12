@@ -31,7 +31,7 @@ qx.Class.define("osparc.data.model.Wallet", {
       status: walletData["status"] ? walletData["status"] : "INACTIVE",
       creditsAvailable: walletData["availableCredits"] ? walletData["availableCredits"] : 20,
       accessRights: walletData["accessRights"] ? walletData["accessRights"] : [],
-      defaultWallet: walletId === osparc.desktop.preferences.Preferences.getInstance().getPreferredWalletId()
+      preferredWallet: osparc.Preferences.getInstance().getPreferredWalletId() === walletData["walletId"]
     });
   },
 
@@ -92,11 +92,11 @@ qx.Class.define("osparc.data.model.Wallet", {
       event: "changeAccessRights"
     },
 
-    defaultWallet: {
+    preferredWallet: {
       check: "Boolean",
       init: false,
       nullable: false,
-      event: "changeDefaultWallet"
+      event: "changePreferredWallet"
     }
   },
 
