@@ -206,7 +206,7 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
       let store = osparc.store.Store.getInstance();
       store.getAllServices(reload, false)
         .then(services => {
-          this.__allServicesList = osparc.utils.Services.convertObjectToArray(services);
+          this.__allServicesList = osparc.service.Utils.convertObjectToArray(services);
           this.__updateList();
         });
     },
@@ -229,16 +229,16 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
         }
       });
 
-      osparc.utils.Services.addHits(filteredServices);
-      osparc.utils.Services.sortObjectsBasedOn(filteredServices, this.__sortBy);
-      const filteredServicesObj = this.__filteredServicesObj = osparc.utils.Services.convertArrayToObject(filteredServices);
+      osparc.service.Utils.addHits(filteredServices);
+      osparc.service.Utils.sortObjectsBasedOn(filteredServices, this.__sortBy);
+      const filteredServicesObj = this.__filteredServicesObj = osparc.service.Utils.convertArrayToObject(filteredServices);
 
       const groupedServicesList = [];
       for (const key in filteredServicesObj) {
-        let service = osparc.utils.Services.getLatest(filteredServicesObj, key);
-        osparc.utils.Services.addHits([service]);
+        let service = osparc.service.Utils.getLatest(filteredServicesObj, key);
+        osparc.service.Utils.addHits([service]);
         service = osparc.utils.Utils.deepCloneObject(service);
-        osparc.utils.Services.removeFileToKeyMap(service);
+        osparc.service.Utils.removeFileToKeyMap(service);
         groupedServicesList.push(qx.data.marshal.Json.createModel(service));
       }
 
@@ -250,7 +250,7 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
         let selectBox = this.__versionsBox;
         selectBox.removeAll();
         if (key in this.__filteredServicesObj) {
-          let versions = osparc.utils.Services.getVersions(this.__filteredServicesObj, key);
+          let versions = osparc.service.Utils.getVersions(this.__filteredServicesObj, key);
           const latest = new qx.ui.form.ListItem(this.self(arguments).LATEST);
           selectBox.add(latest);
           for (let i = versions.length; i--;) {
@@ -279,7 +279,7 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
       if (!serviceModel) {
         let service = this.__getSelectedService();
         service = osparc.utils.Utils.deepCloneObject(service);
-        osparc.utils.Services.removeFileToKeyMap(service);
+        osparc.service.Utils.removeFileToKeyMap(service);
         serviceModel = qx.data.marshal.Json.createModel(service);
       }
       if (serviceModel) {
@@ -300,7 +300,7 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
       if (version == this.self(arguments).LATEST.toString()) {
         version = this.__versionsBox.getChildrenContainer().getSelectables()[1].getLabel();
       }
-      return osparc.utils.Services.getFromArray(this.__allServicesList, key, version);
+      return osparc.service.Utils.getFromArray(this.__allServicesList, key, version);
     },
 
     __showServiceDetails: function() {

@@ -67,7 +67,7 @@ qx.Class.define("osparc.node.LifeCycleView", {
       const node = this.getNode();
 
       if (node.isDeprecated()) {
-        const deprecateDateLabel = new qx.ui.basic.Label(osparc.utils.Services.getDeprecationDateText(node.getMetaData())).set({
+        const deprecateDateLabel = new qx.ui.basic.Label(osparc.service.Utils.getDeprecationDateText(node.getMetaData())).set({
           rich: true
         });
         this._add(deprecateDateLabel);
@@ -84,9 +84,9 @@ qx.Class.define("osparc.node.LifeCycleView", {
 
       let instructionsMsg = null;
       if (node.isRetired()) {
-        instructionsMsg = osparc.utils.Services.RETIRED_AUTOUPDATABLE_INSTRUCTIONS;
+        instructionsMsg = osparc.service.Utils.RETIRED_AUTOUPDATABLE_INSTRUCTIONS;
       } else if (node.isUpdatable() || node.isDeprecated()) {
-        instructionsMsg = osparc.utils.Services.DEPRECATED_AUTOUPDATABLE_INSTRUCTIONS;
+        instructionsMsg = osparc.service.Utils.DEPRECATED_AUTOUPDATABLE_INSTRUCTIONS;
       }
       if (instructionsMsg) {
         const instructionsLabel = new qx.ui.basic.Label(instructionsMsg).set({
@@ -112,7 +112,7 @@ qx.Class.define("osparc.node.LifeCycleView", {
       });
       updateButton.addListener("execute", () => {
         updateButton.setFetching(true);
-        const latestCompatibleMetadata = osparc.utils.Services.getLatestCompatible(null, node.getKey(), node.getVersion());
+        const latestCompatibleMetadata = osparc.service.Utils.getLatestCompatible(null, node.getKey(), node.getVersion());
         node.setVersion(latestCompatibleMetadata["version"]);
         setTimeout(() => node.getStatus().setInteractive("idle"), osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL);
         setTimeout(() => {
@@ -132,9 +132,9 @@ qx.Class.define("osparc.node.LifeCycleView", {
 
       let instructionsMsg = null;
       if (node.isRetired()) {
-        instructionsMsg = osparc.utils.Services.RETIRED_DYNAMIC_INSTRUCTIONS;
+        instructionsMsg = osparc.service.Utils.RETIRED_DYNAMIC_INSTRUCTIONS;
       } else if (node.isUpdatable() || node.isDeprecated()) {
-        instructionsMsg = osparc.utils.Services.DEPRECATED_DYNAMIC_INSTRUCTIONS;
+        instructionsMsg = osparc.service.Utils.DEPRECATED_DYNAMIC_INSTRUCTIONS;
       }
       if (instructionsMsg) {
         const instructionsLabel = new qx.ui.basic.Label(instructionsMsg).set({

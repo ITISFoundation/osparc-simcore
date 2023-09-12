@@ -497,7 +497,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __addNewStudyFromServiceButtons: function(services, serviceKey, newButtonInfo) {
       const mode = this._resourcesContainer.getMode();
       // Make sure we have access to that service
-      const versions = osparc.utils.Services.getVersions(services, serviceKey);
+      const versions = osparc.service.Utils.getVersions(services, serviceKey);
       if (versions.length && newButtonInfo) {
         const title = newButtonInfo.title;
         const desc = newButtonInfo.description;

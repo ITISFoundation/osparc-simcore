@@ -121,7 +121,7 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
         .then(services => {
           const orgServices = [];
           for (const key in services) {
-            const latestService = osparc.utils.Services.getLatest(services, key);
+            const latestService = osparc.service.Utils.getLatest(services, key);
             if (gid in latestService["accessRights"]) {
               orgServices.push(latestService);
             }

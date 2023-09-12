@@ -35,10 +35,10 @@ qx.Class.define("osparc.filter.NodeTypeFilter", {
 
   members: {
     /**
-     * Function that uses the information in {osparc.utils.Services} statics to build the menu for the filter.
+     * Function that uses the information in {osparc.service.Utils} statics to build the menu for the filter.
      */
     __buildMenu: function() {
-      osparc.utils.Services.getTypes().forEach(serviceType => this._addOption(osparc.utils.Utils.capitalize(serviceType)));
+      osparc.service.Utils.getTypes().forEach(serviceType => this._addOption(osparc.utils.Utils.capitalize(serviceType)));
     }
   }
 });

@@ -56,7 +56,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       if (nodeId in studyData["workbench"]) {
         if (newVersion === undefined) {
           const node = studyData["workbench"][nodeId];
-          newVersion = osparc.utils.Services.getLatestCompatible(null, node["key"], node["version"]);
+          newVersion = osparc.service.Utils.getLatestCompatible(null, node["key"], node["version"]);
         }
         for (const id in studyData["workbench"]) {
           if (id === nodeId) {
@@ -72,16 +72,16 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
           continue;
         }
         const node = studyData["workbench"][nodeId];
-        if (osparc.utils.Services.isUpdatable(node)) {
-          const latestCompatibleMetadata = osparc.utils.Services.getLatestCompatible(null, node["key"], node["version"]);
+        if (osparc.service.Utils.isUpdatable(node)) {
+          const latestCompatibleMetadata = osparc.service.Utils.getLatestCompatible(null, node["key"], node["version"]);
           this.self().updateService(studyData, nodeId, latestCompatibleMetadata["version"]);
         }
       }
     },
 
     colorVersionLabel: function(versionLabel, metadata) {
-      const isDeprecated = osparc.utils.Services.isDeprecated(metadata);
-      const isRetired = osparc.utils.Services.isRetired(metadata);
+      const isDeprecated = osparc.service.Utils.isDeprecated(metadata);
+      const isRetired = osparc.service.Utils.isRetired(metadata);
       if (isDeprecated) {
         versionLabel.set({
           textColor: "contrasted-text-dark",
@@ -197,12 +197,12 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       for (const nodeId in workbench) {
         i++;
         const node = workbench[nodeId];
-        const nodeMetadata = osparc.utils.Services.getMetaData(node["key"], node["version"]);
-        const latestCompatibleMetadata = osparc.utils.Services.getLatestCompatible(this._services, node["key"], node["version"]);
+        const nodeMetadata = osparc.service.Utils.getMetaData(node["key"], node["version"]);
+        const latestCompatibleMetadata = osparc.service.Utils.getLatestCompatible(this._services, node["key"], node["version"]);
         if (latestCompatibleMetadata === null) {
           osparc.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
         }
-        const isUpdatable = osparc.utils.Services.isUpdatable(node);
+        const isUpdatable = osparc.service.Utils.isUpdatable(node);
         if (isUpdatable) {
           updatableServices.push(nodeId);
         }
@@ -234,7 +234,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
           });
         }
 
-        const latestMetadata = osparc.utils.Services.getLatest(this._services, node["key"]);
+        const latestMetadata = osparc.service.Utils.getLatest(this._services, node["key"]);
         const latestVersionLabel = new qx.ui.basic.Label(latestMetadata["version"]).set({
           font: "text-14"
         });

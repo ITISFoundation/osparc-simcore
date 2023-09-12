@@ -135,7 +135,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
           } else if (this.getNode().isProbe()) {
             nodeType = "probe";
           }
-          const type = osparc.utils.Services.getType(nodeType);
+          const type = osparc.service.Utils.getType(nodeType);
           if (type) {
             const chip = new osparc.ui.basic.Chip().set({
               icon: type.icon + "14",
@@ -283,12 +283,12 @@ qx.Class.define("osparc.workbench.NodeUI", {
           deprecatedIcon.set({
             textColor: osparc.utils.StatusUI.getColor("deprecated")
           });
-          let ttMsg = osparc.utils.Services.DEPRECATED_SERVICE_TEXT;
-          const deprecatedDateMsg = osparc.utils.Services.getDeprecationDateText(node.getMetaData());
+          let ttMsg = osparc.service.Utils.DEPRECATED_SERVICE_TEXT;
+          const deprecatedDateMsg = osparc.service.Utils.getDeprecationDateText(node.getMetaData());
           if (deprecatedDateMsg) {
             ttMsg = ttMsg + "<br>" + deprecatedDateMsg;
           }
-          const deprecatedTTMsg = node.isDynamic() ? osparc.utils.Services.DEPRECATED_DYNAMIC_INSTRUCTIONS : osparc.utils.Services.DEPRECATED_COMPUTATIONAL_INSTRUCTIONS;
+          const deprecatedTTMsg = node.isDynamic() ? osparc.service.Utils.DEPRECATED_DYNAMIC_INSTRUCTIONS : osparc.service.Utils.DEPRECATED_COMPUTATIONAL_INSTRUCTIONS;
           if (deprecatedTTMsg) {
             ttMsg = ttMsg + "<br>" + deprecatedTTMsg;
           }
@@ -305,8 +305,8 @@ qx.Class.define("osparc.workbench.NodeUI", {
             textColor: osparc.utils.StatusUI.getColor("retired")
           });
 
-          let ttMsg = osparc.utils.Services.RETIRED_SERVICE_TEXT;
-          const deprecatedTTMsg = node.isDynamic() ? osparc.utils.Services.RETIRED_DYNAMIC_INSTRUCTIONS : osparc.utils.Services.RETIRED_COMPUTATIONAL_INSTRUCTIONS;
+          let ttMsg = osparc.service.Utils.RETIRED_SERVICE_TEXT;
+          const deprecatedTTMsg = node.isDynamic() ? osparc.service.Utils.RETIRED_DYNAMIC_INSTRUCTIONS : osparc.service.Utils.RETIRED_COMPUTATIONAL_INSTRUCTIONS;
           if (deprecatedTTMsg) {
             ttMsg = ttMsg + "<br>" + deprecatedTTMsg;
           }

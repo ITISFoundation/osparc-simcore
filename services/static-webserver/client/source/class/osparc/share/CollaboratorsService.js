@@ -85,7 +85,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
 
   members: {
     _canIWrite: function() {
-      return osparc.utils.Services.canIWrite(this._serializedData["accessRights"]);
+      return osparc.service.Utils.canIWrite(this._serializedData["accessRights"]);
     },
 
     _addCollaborators: function(gids, cb) {

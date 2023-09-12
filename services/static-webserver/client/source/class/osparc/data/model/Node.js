@@ -49,7 +49,7 @@ qx.Class.define("osparc.data.model.Node", {
   construct: function(study, key, version, uuid) {
     this.base(arguments);
 
-    this.__metaData = osparc.utils.Services.getMetaData(key, version);
+    this.__metaData = osparc.service.Utils.getMetaData(key, version);
     this.__innerNodes = {};
     this.setOutputs({});
 
@@ -265,15 +265,15 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     isUpdatable: function(metaData) {
-      return osparc.utils.Services.isUpdatable(metaData);
+      return osparc.service.Utils.isUpdatable(metaData);
     },
 
     isDeprecated: function(metaData) {
-      return osparc.utils.Services.isDeprecated(metaData);
+      return osparc.service.Utils.isDeprecated(metaData);
     },
 
     isRetired: function(metaData) {
-      return osparc.utils.Services.isRetired(metaData);
+      return osparc.service.Utils.isRetired(metaData);
     },
 
     hasBootModes: function(metaData) {
@@ -398,7 +398,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     __applyNewMetaData: function() {
-      this.__metaData = osparc.utils.Services.getMetaData(this.getKey(), this.getVersion());
+      this.__metaData = osparc.service.Utils.getMetaData(this.getKey(), this.getVersion());
     },
 
     getMetaData: function() {
@@ -1549,7 +1549,7 @@ qx.Class.define("osparc.data.model.Node", {
       if (!["int"].includes(type)) {
         return;
       }
-      const newMetadata = osparc.utils.Services.getParameterMetadata("integer");
+      const newMetadata = osparc.service.Utils.getParameterMetadata("integer");
       if (newMetadata) {
         const value = this.__getInputData()["linspace_start"];
         const label = this.getLabel();
@@ -1567,7 +1567,7 @@ qx.Class.define("osparc.data.model.Node", {
         return;
       }
       const newKey = "simcore/services/frontend/data-iterator/int-range";
-      if (newKey in osparc.utils.Services.servicesCached) {
+      if (newKey in osparc.service.Utils.servicesCached) {
         const value = this.__getOutputData("out_1");
         const label = this.getLabel();
         this.setKey(newKey);

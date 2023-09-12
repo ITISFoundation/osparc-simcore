@@ -1901,7 +1901,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
           };
           const fileList = e.dataTransfer.files;
           if (fileList.length) {
-            const service = qx.data.marshal.Json.createModel(osparc.utils.Services.getFilePicker());
+            const service = qx.data.marshal.Json.createModel(osparc.service.Utils.getFilePicker());
             const nodeUI = this.__addNode(service, pos);
             const filePicker = new osparc.file.FilePicker(nodeUI.getNode(), "workbench");
             filePicker.uploadPendingFiles(fileList);
@@ -1919,7 +1919,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       if (this.__isDraggingLink && "dragData" in this.__isDraggingLink) {
         const data = this.__isDraggingLink["dragData"];
         const pos = this.__pointerEventToWorkbenchPos(e, false);
-        const service = qx.data.marshal.Json.createModel(osparc.utils.Services.getFilePicker());
+        const service = qx.data.marshal.Json.createModel(osparc.service.Utils.getFilePicker());
         const nodeUI = this.__addNode(service, pos);
         const node = nodeUI.getNode();
         // const filePicker = new osparc.file.FilePicker(node, "workbench");

@@ -24,11 +24,11 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let latestSrv = osparc.utils.Services.getLatest(services, key);
+ *   let latestSrv = osparc.service.Utils.getLatest(services, key);
  * </pre>
  */
 
-qx.Class.define("osparc.utils.Services", {
+qx.Class.define("osparc.service.Utils", {
   type: "static",
 
   statics: {
@@ -239,7 +239,7 @@ qx.Class.define("osparc.utils.Services", {
 
     getLatestCompatible: function(services, srcKey, srcVersion) {
       if (services === null) {
-        services = osparc.utils.Services.servicesCached;
+        services = osparc.service.Utils.servicesCached;
       }
       let versions = this.getVersions(services, srcKey, false);
       // only allow patch versions
@@ -268,7 +268,7 @@ qx.Class.define("osparc.utils.Services", {
     getMetaData: function(key, version) {
       let metaData = null;
       if (key && version) {
-        const services = osparc.utils.Services.servicesCached;
+        const services = osparc.service.Utils.servicesCached;
         metaData = this.getFromObject(services, key, version);
         if (metaData) {
           metaData = osparc.utils.Utils.deepCloneObject(metaData);

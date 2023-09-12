@@ -68,7 +68,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
           const favServices = osparc.utils.Utils.localCache.getFavServices();
           const servicesList = [];
           for (const key in services) {
-            const latestService = osparc.utils.Services.getLatest(services, key);
+            const latestService = osparc.service.Utils.getLatest(services, key);
             const found = Object.keys(favServices).find(favSrv => favSrv === key);
             latestService.hits = found ? favServices[found]["hits"] : 0;
             // do not list frontend services
@@ -96,7 +96,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
 
     __setResourcesToList: function(servicesList) {
       servicesList.forEach(service => service["resourceType"] = "service");
-      osparc.utils.Services.sortObjectsBasedOn(servicesList, this.__sortBy);
+      osparc.service.Utils.sortObjectsBasedOn(servicesList, this.__sortBy);
       this._resourcesList = servicesList;
       this._reloadCards();
     },

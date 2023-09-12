@@ -68,7 +68,7 @@ qx.Class.define("osparc.study.Utils", {
                 filtered.push(srv);
               }
             });
-            const isUpdatable = filtered.some(srv => osparc.utils.Services.isUpdatable(srv));
+            const isUpdatable = filtered.some(srv => osparc.service.Utils.isUpdatable(srv));
             resolve(isUpdatable);
           });
       });
@@ -84,9 +84,9 @@ qx.Class.define("osparc.study.Utils", {
         }
       });
       const retired = filtered.some(srv => {
-        const srvMetadata = osparc.utils.Services.getMetaData(srv["key"], srv["version"]);
+        const srvMetadata = osparc.service.Utils.getMetaData(srv["key"], srv["version"]);
         if (srvMetadata) {
-          return osparc.utils.Services.isRetired(srvMetadata);
+          return osparc.service.Utils.isRetired(srvMetadata);
         }
         return false;
       });
@@ -103,9 +103,9 @@ qx.Class.define("osparc.study.Utils", {
         }
       });
       const deprecated = filtered.some(srv => {
-        const srvMetadata = osparc.utils.Services.getMetaData(srv["key"], srv["version"]);
+        const srvMetadata = osparc.service.Utils.getMetaData(srv["key"], srv["version"]);
         if (srvMetadata) {
-          return osparc.utils.Services.isDeprecated(srvMetadata);
+          return osparc.service.Utils.isDeprecated(srvMetadata);
         }
         return false;
       });
@@ -126,7 +126,7 @@ qx.Class.define("osparc.study.Utils", {
         store.getAllServices()
           .then(services => {
             if (key in services) {
-              const service = version ? osparc.utils.Services.getFromObject(services, key, version) : osparc.utils.Services.getLatest(services, key);
+              const service = version ? osparc.service.Utils.getFromObject(services, key, version) : osparc.service.Utils.getLatest(services, key);
               const newUuid = osparc.utils.Utils.uuidv4();
               const minStudyData = osparc.data.model.Study.createMyNewStudyObject();
               if (newStudyLabel === undefined) {

@@ -289,7 +289,7 @@ qx.Class.define("osparc.data.model.Study", {
       let nCompNodes = 0;
       let overallProgress = 0;
       Object.values(nodes).forEach(node => {
-        const metaData = osparc.utils.Services.getMetaData(node["key"], node["version"]);
+        const metaData = osparc.service.Utils.getMetaData(node["key"], node["version"]);
         if (osparc.data.model.Node.isComputational(metaData)) {
           const progress = "progress" in node ? node["progress"] : 0;
           overallProgress += progress;

@@ -174,7 +174,7 @@ qx.Class.define("osparc.widget.NodeOutputs", {
         });
 
         const probeBtn = new qx.ui.form.Button().set({
-          icon: osparc.utils.Services.TYPES["probe"].icon + "12",
+          icon: osparc.service.Utils.TYPES["probe"].icon + "12",
           height: 23,
           focusable: false,
           toolTipText: this.tr("Connects a Probe to this output")

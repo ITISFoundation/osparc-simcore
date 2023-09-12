@@ -224,7 +224,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const store = osparc.store.Store.getInstance();
       store.getAllServices()
         .then(services => {
-          const versions = osparc.utils.Services.getVersions(services, this.__resourceData["key"]);
+          const versions = osparc.service.Utils.getVersions(services, this.__resourceData["key"]);
           let selectedItem = null;
           versions.reverse().forEach(version => {
             selectedItem = new qx.ui.form.ListItem(version);
@@ -242,7 +242,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
           if (serviceVersion !== this.__resourceData["version"]) {
             store.getAllServices()
               .then(services => {
-                const serviceData = osparc.utils.Services.getFromObject(services, this.__resourceData["key"], serviceVersion);
+                const serviceData = osparc.service.Utils.getFromObject(services, this.__resourceData["key"], serviceVersion);
                 serviceData["resourceType"] = "service";
                 this.__resourceData = serviceData;
                 this.__addPages();
@@ -436,7 +436,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       let classifiers = null;
       if (
         (osparc.utils.Resources.isStudy(resourceData) || osparc.utils.Resources.isTemplate(resourceData)) && osparc.data.model.Study.canIWrite(resourceData["accessRights"]) ||
-        osparc.utils.Resources.isService(resourceData) && osparc.utils.Services.canIWrite(resourceData["accessRights"])
+        osparc.utils.Resources.isService(resourceData) && osparc.service.Utils.canIWrite(resourceData["accessRights"])
       ) {
         classifiers = new osparc.metadata.ClassifiersEditor(resourceData);
         classifiers.addListener("updateClassifiers", e => {

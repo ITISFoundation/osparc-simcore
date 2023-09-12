@@ -397,7 +397,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         const freePos = this.getFreePosition(requesterNode);
 
         // create a new FP
-        const filePickerMetadata = osparc.utils.Services.getFilePicker();
+        const filePickerMetadata = osparc.service.Utils.getFilePicker();
         const filePicker = this.createNode(filePickerMetadata["key"], filePickerMetadata["version"]);
         filePicker.setPosition(freePos);
 
@@ -443,7 +443,7 @@ qx.Class.define("osparc.data.model.Workbench", {
 
       // create a new ParameterNode
       const type = osparc.utils.Ports.getPortType(requesterNode.getMetaData()["inputs"], portId);
-      const pmMD = osparc.utils.Services.getParameterMetadata(type);
+      const pmMD = osparc.service.Utils.getParameterMetadata(type);
       if (pmMD) {
         const pm = this.createNode(pmMD["key"], pmMD["version"]);
 
@@ -470,7 +470,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       // create a new ProbeNode
       const requesterPortMD = requesterNode.getMetaData()["outputs"][portId];
       const type = osparc.utils.Ports.getPortType(requesterNode.getMetaData()["outputs"], portId);
-      const probeMD = osparc.utils.Services.getProbeMetadata(type);
+      const probeMD = osparc.service.Utils.getProbeMetadata(type);
       if (probeMD) {
         const probeNode = this.createNode(probeMD["key"], probeMD["version"]);
         probeNode.setLabel(requesterPortMD.label);

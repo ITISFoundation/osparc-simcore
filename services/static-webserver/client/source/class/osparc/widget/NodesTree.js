@@ -75,29 +75,29 @@ qx.Class.define("osparc.widget.NodesTree", {
   statics: {
     __getSortingValue: function(node) {
       if (node.isFilePicker()) {
-        return osparc.utils.Services.getSorting("file");
+        return osparc.service.Utils.getSorting("file");
       } else if (node.isParameter()) {
-        return osparc.utils.Services.getSorting("parameter");
+        return osparc.service.Utils.getSorting("parameter");
       } else if (node.isIterator()) {
-        return osparc.utils.Services.getSorting("iterator");
+        return osparc.service.Utils.getSorting("iterator");
       } else if (node.isProbe()) {
-        return osparc.utils.Services.getSorting("probe");
+        return osparc.service.Utils.getSorting("probe");
       }
-      return osparc.utils.Services.getSorting(node.getMetaData().type);
+      return osparc.service.Utils.getSorting(node.getMetaData().type);
     },
 
     __getIcon: function(node) {
       let icon = null;
       if (node.isFilePicker()) {
-        icon = osparc.utils.Services.getIcon("file");
+        icon = osparc.service.Utils.getIcon("file");
       } else if (node.isParameter()) {
-        icon = osparc.utils.Services.getIcon("parameter");
+        icon = osparc.service.Utils.getIcon("parameter");
       } else if (node.isIterator()) {
-        icon = osparc.utils.Services.getIcon("iterator");
+        icon = osparc.service.Utils.getIcon("iterator");
       } else if (node.isProbe()) {
-        icon = osparc.utils.Services.getIcon("probe");
+        icon = osparc.service.Utils.getIcon("probe");
       } else {
-        icon = osparc.utils.Services.getIcon(node.getMetaData().type);
+        icon = osparc.service.Utils.getIcon(node.getMetaData().type);
       }
       if (icon) {
         icon += "14";

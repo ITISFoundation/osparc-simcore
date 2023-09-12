@@ -54,7 +54,7 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
       const wb = study.getWorkbench();
       const nodes = wb.getWorkbenchInitData() ? wb.getWorkbenchInitData() : wb.getNodes();
       Object.values(nodes).forEach(node => {
-        const srvMetadata = osparc.utils.Services.getMetaData(node["key"], node["version"]);
+        const srvMetadata = osparc.service.Utils.getMetaData(node["key"], node["version"]);
         if (srvMetadata && srvMetadata["thumbnail"] && !osparc.data.model.Node.isFrontend(node)) {
           suggestions.add(srvMetadata["thumbnail"]);
         }
@@ -70,7 +70,7 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
       const wb = study.getWorkbench();
       const nodes = wb.getWorkbenchInitData() ? wb.getWorkbenchInitData() : wb.getNodes();
       Object.values(nodes).forEach(node => {
-        const srvMetadata = osparc.utils.Services.getMetaData(node.getKey(), node.getVersion());
+        const srvMetadata = osparc.service.Utils.getMetaData(node.getKey(), node.getVersion());
         if (srvMetadata && srvMetadata["thumbnail"] && !osparc.data.model.Node.isFrontend(node)) {
           const nodeId = node.getNodeId();
           this.__addThumbnail(nodeId, {

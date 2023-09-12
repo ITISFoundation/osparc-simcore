@@ -46,7 +46,7 @@ qx.Class.define("osparc.share.ShareePermissions", {
                 const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
                   alignY: "middle"
                 });
-                const metaData = osparc.utils.Services.getMetaData(inaccessibleService.key, inaccessibleService.version);
+                const metaData = osparc.service.Utils.getMetaData(inaccessibleService.key, inaccessibleService.version);
                 const infoButton = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/14");
                 infoButton.setAppearance("strong-button");
                 infoButton.addListener("execute", () => {

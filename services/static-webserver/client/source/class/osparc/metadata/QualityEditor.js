@@ -538,9 +538,9 @@ qx.Class.define("osparc.metadata.QualityEditor", {
 
       let serviceLimitations = "";
       if ("workbench" in this.__resourceData) {
-        const services = osparc.utils.Services.getUniqueServicesFromWorkbench(this.__resourceData["workbench"]);
+        const services = osparc.service.Utils.getUniqueServicesFromWorkbench(this.__resourceData["workbench"]);
         services.forEach(service => {
-          const metaData = osparc.utils.Services.getMetaData(service.key, service.version);
+          const metaData = osparc.service.Utils.getMetaData(service.key, service.version);
           const knownLimitations = osparc.metadata.Quality.getKnownLimitations(metaData);
           if (knownLimitations !== "") {
             serviceLimitations += "<br>"+metaData.name+":<br>"+knownLimitations;
@@ -687,7 +687,7 @@ qx.Class.define("osparc.metadata.QualityEditor", {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       if (myGid) {
         if (osparc.utils.Resources.isService(this.__resourceData)) {
-          return osparc.utils.Services.canIWrite(this.__resourceData["accessRights"]);
+          return osparc.service.Utils.canIWrite(this.__resourceData["accessRights"]);
         }
         return osparc.data.model.Study.canIWrite(this.__resourceData["accessRights"]);
       }
