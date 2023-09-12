@@ -135,11 +135,20 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         return;
       }
 
-      this._showLoadingPage(this.tr("Creating ") + (templateData.name || this.tr("Study")));
+      this._showLoadingPage(this.tr("Creating ") + (templateData.name || osparc.product.Utils.getStudyAlias({firstUpperCase: true})));
       osparc.utils.Study.createStudyFromTemplate(templateData, this._loadingPage)
         .then(studyId => {
-          this._hideLoadingPage();
-          this._startStudyById(studyId);
+          const openCB = () => this._hideLoadingPage();
+          const cancelCB = () => {
+            this._hideLoadingPage();
+            const params = {
+              url: {
+                "studyId": studyId
+              }
+            };
+            osparc.data.Resources.fetch("studies", "delete", params, studyId);
+          };
+          this._startStudyById(studyId, openCB, cancelCB);
         })
         .catch(err => {
           this._hideLoadingPage();

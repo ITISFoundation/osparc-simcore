@@ -91,7 +91,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
 
       this.__memberInvitation.setVisibility(this.__canIWrite() ? "visible" : "excluded");
 
-      this.__reloadMembers();
+      this.__reloadWalletMembers();
     },
 
     __canIWrite: function() {
@@ -198,7 +198,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
       return memebersUIList;
     },
 
-    __reloadMembers: async function() {
+    __reloadWalletMembers: async function() {
       const membersModel = this.__membersModel;
       membersModel.removeAll();
 
@@ -208,7 +208,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
       }
 
       const membersList = [];
-      const potentialCollaborators = await osparc.store.Store.getInstance().getPotentialCollaborators();
+      const potentialCollaborators = await osparc.store.Store.getInstance().getPotentialCollaborators(true);
       const canIWrite = wallet.getMyAccessRights()["write"];
       wallet.getAccessRights().forEach(accessRights => {
         const gid = accessRights["gid"];
@@ -271,7 +271,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
         .then(() => {
           osparc.store.Store.getInstance().reloadWalletAccessRights(wallet)
             .then(() => {
-              this.__reloadMembers();
+              this.__reloadWalletMembers();
               if (cb) {
                 cb();
               }
@@ -295,7 +295,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
       osparc.data.Resources.fetch("wallets", "putAccessRights", params)
         .then(() => {
           osparc.store.Store.getInstance().reloadWalletAccessRights(wallet)
-            .then(() => this.__reloadMembers());
+            .then(() => this.__reloadWalletMembers());
         });
     },
 
@@ -315,7 +315,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
       osparc.data.Resources.fetch("wallets", "putAccessRights", params)
         .then(() => {
           osparc.store.Store.getInstance().reloadWalletAccessRights(wallet)
-            .then(() => this.__reloadMembers());
+            .then(() => this.__reloadWalletMembers());
         });
     },
 
@@ -334,7 +334,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
       osparc.data.Resources.fetch("wallets", "deleteAccessRights", params)
         .then(() => {
           osparc.store.Store.getInstance().reloadWalletAccessRights(wallet)
-            .then(() => this.__reloadMembers());
+            .then(() => this.__reloadWalletMembers());
         });
     }
   }

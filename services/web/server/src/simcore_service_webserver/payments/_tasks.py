@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 import random
 from collections.abc import AsyncIterator
@@ -8,12 +7,16 @@ from typing import Any
 from aiohttp import web
 from models_library.api_schemas_webserver.wallets import PaymentID
 from servicelib.aiohttp.typing_extension import CleanupContextFunc
+from simcore_postgres_database.models.payments_transactions import (
+    PaymentTransactionState,
+)
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.wait import wait_exponential
 
 from ._api import complete_payment
 from ._db import get_pending_payment_transactions_ids
+from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
 
@@ -24,24 +27,32 @@ _APP_TASK_KEY = f"{_PERIODIC_TASK_NAME}.task"
 
 async def _fake_payment_completion(app: web.Application, payment_id: PaymentID):
     # Fakes processing time
-    await asyncio.sleep(random.uniform(0.5, 2))  # nosec # noqa: S311 # NOSONAR
+    settings = get_plugin_settings(app)
+    assert settings.PAYMENTS_FAKE_COMPLETION  # nosec
+    await asyncio.sleep(settings.PAYMENTS_FAKE_COMPLETION_DELAY_SEC)
 
     # Three different possible outcomes
     possible_outcomes = [
         # 1. Accepted
-        {"app": app, "payment_id": payment_id, "success": True},
+        {
+            "app": app,
+            "payment_id": payment_id,
+            "completion_state": PaymentTransactionState.SUCCESS,
+        },
         # 2. Rejected
         {
             "app": app,
             "payment_id": payment_id,
-            "success": False,
+            "completion_state": PaymentTransactionState.FAILED,
             "message": "Payment rejected",
         },
         # 3. does not complete ever ???
     ]
-    kwargs: dict[str, Any] = random.choice(possible_outcomes)  # noqa: S311
+    kwargs: dict[str, Any] = random.choice(  # nosec # noqa: S311 # NOSONAR
+        possible_outcomes
+    )
 
-    _logger.info("Faking payment completion as %s", json.dumps(kwargs, indent=1))
+    _logger.info("Faking payment completion as %s", kwargs)
     await complete_payment(**kwargs)
 
 

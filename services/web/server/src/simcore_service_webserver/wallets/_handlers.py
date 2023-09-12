@@ -23,6 +23,11 @@ from servicelib.request_keys import RQT_USERID_KEY
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
+from ..payments.errors import (
+    PaymentCompletedError,
+    PaymentNotFoundError,
+    PaymentUniqueViolationError,
+)
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _api
@@ -37,8 +42,17 @@ def handle_wallets_exceptions(handler: Handler):
         try:
             return await handler(request)
 
-        except WalletNotFoundError as exc:
+        except (
+            WalletNotFoundError,
+            PaymentNotFoundError,
+        ) as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
+
+        except (
+            PaymentUniqueViolationError,
+            PaymentCompletedError,
+        ) as exc:
+            raise web.HTTPConflict(reason=f"{exc}") from exc
 
         except WalletAccessForbiddenError as exc:
             raise web.HTTPForbidden(reason=f"{exc}") from exc

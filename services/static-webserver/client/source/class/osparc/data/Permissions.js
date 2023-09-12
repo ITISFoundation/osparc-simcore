@@ -140,6 +140,8 @@ qx.Class.define("osparc.data.Permissions", {
       };
       let fromUserToTester = [];
       if (osparc.product.Utils.isProduct("tis")) {
+        // "templates" and "services" tabs only for testers
+        // start/stop/edit app mode only for testers
         fromUserToTester = [
           "dashboard.templates.read",
           "dashboard.services.read",
@@ -147,6 +149,7 @@ qx.Class.define("osparc.data.Permissions", {
           "study.slides.stop"
         ];
       } else if (osparc.product.Utils.isProduct("s4llite")) {
+        // "services" and "data" tabs only for testers
         fromUserToTester = [
           "dashboard.services.read",
           "dashboard.data.read"

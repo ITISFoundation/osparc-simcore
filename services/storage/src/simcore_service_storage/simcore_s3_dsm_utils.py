@@ -1,4 +1,5 @@
 from contextlib import suppress
+from pathlib import Path
 
 from aiohttp import web
 from aiopg.sa.connection import SAConnection
@@ -66,7 +67,7 @@ def get_simcore_directory(file_id: SimcoreS3FileID) -> str:
         directory_id = SimcoreS3DirectoryID.from_simcore_s3_object(file_id)
     except ValueError:
         return ""
-    return f"{directory_id}"
+    return f"{Path(directory_id)}"
 
 
 async def get_directory_file_id(
@@ -96,7 +97,7 @@ async def get_directory_file_id(
         # could not extract a directory name from the provided path
         return None
 
-    directory_file_id = parse_obj_as(SimcoreS3FileID, directory_file_id_str.rstrip("/"))
+    directory_file_id = parse_obj_as(SimcoreS3FileID, directory_file_id_str)
     directory_file_id_fmd = await _get_fmd(conn, directory_file_id)
 
     return directory_file_id if directory_file_id_fmd else None

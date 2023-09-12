@@ -43,7 +43,9 @@ def disabled_dsm_cleaner_task(monkeypatch: pytest.MonkeyPatch):
 
 @pytest.fixture
 def simcore_directory_id(simcore_file_id: SimcoreS3FileID) -> SimcoreS3FileID:
-    return SimcoreS3FileID(SimcoreS3DirectoryID.from_simcore_s3_object(simcore_file_id))
+    return SimcoreS3FileID(
+        Path(SimcoreS3DirectoryID.from_simcore_s3_object(simcore_file_id))
+    )
 
 
 async def test_clean_expired_uploads_aborts_dangling_multipart_uploads(
@@ -83,8 +85,15 @@ async def test_clean_expired_uploads_aborts_dangling_multipart_uploads(
     [ByteSize(0), parse_obj_as(ByteSize, "10Mib"), parse_obj_as(ByteSize, "100Mib")],
     ids=byte_size_ids,
 )
-@pytest.mark.parametrize("link_type", [LinkType.S3, LinkType.PRESIGNED])
-@pytest.mark.parametrize("is_directory", [True, False])
+@pytest.mark.parametrize(
+    "link_type, is_directory",
+    [
+        # NOTE: directories are handled only as LinkType.S3
+        (LinkType.S3, True),
+        (LinkType.S3, False),
+        (LinkType.PRESIGNED, False),
+    ],
+)
 async def test_clean_expired_uploads_deletes_expired_pending_uploads(
     disabled_dsm_cleaner_task,
     aiopg_engine: Engine,
@@ -281,7 +290,10 @@ async def test_clean_expired_uploads_does_not_clean_multipart_upload_on_creation
     FILES_IN_DIR: Final[int] = 5
 
     file_ids_to_upload: set[SimcoreS3FileID] = (
-        {SimcoreS3FileID(f"{file_or_directory_id}file{x}") for x in range(FILES_IN_DIR)}
+        {
+            SimcoreS3FileID(f"{file_or_directory_id}/file{x}")
+            for x in range(FILES_IN_DIR)
+        }
         if is_directory
         else {simcore_file_id}
     )

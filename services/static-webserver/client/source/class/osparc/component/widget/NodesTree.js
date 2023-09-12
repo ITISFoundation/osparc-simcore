@@ -108,7 +108,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     createStudyModel: function(study) {
       const studyData = {
         id: study.getUuid(),
-        label: "Study",
+        label: osparc.product.Utils.getStudyAlias({firstUpperCase: true}),
         children: [],
         icon: "@FontAwesome5Solid/home/14",
         iconColor: "text",

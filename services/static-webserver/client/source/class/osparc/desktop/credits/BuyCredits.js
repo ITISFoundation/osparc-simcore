@@ -94,7 +94,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         case "wallet-info": {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
           const label = new qx.ui.basic.Label().set({
-            value: this.tr("Wallets:"),
+            value: this.tr("Credit Account:"),
             font: "text-14"
           });
           control.add(label);
@@ -346,7 +346,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
       row++;
 
       const walletTitle = new qx.ui.basic.Label().set({
-        value: "Wallet",
+        value: "Credit Account",
         font: "text-14"
       });
       layout.add(walletTitle, {
@@ -357,7 +357,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         font: "text-14"
       });
       this.bind("wallet", walletLabel, "value", {
-        converter: wallet => wallet ? wallet.getName() : this.tr("Select Wallet")
+        converter: wallet => wallet ? wallet.getName() : this.tr("Select Credit Account")
       });
       layout.add(walletLabel, {
         row,
@@ -377,13 +377,13 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         center: true
       });
 
-      const buying = () => {
+      const buyingBtn = () => {
         buyBtn.set({
           fetching: true,
           label: this.tr("Buying...")
         });
       };
-      const transactionFinished = () => {
+      const buyCreditsBtn = () => {
         buyBtn.set({
           fetching: false,
           label: this.tr("Buy Credits")
@@ -393,7 +393,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
         const nCredits = this.getNCredits();
         const totalPrice = this.getTotalPrice();
         const wallet = this.getWallet();
-        buying();
+        buyingBtn();
 
         const params = {
           url: {
@@ -404,8 +404,9 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             osparcCredits: nCredits
           }
         };
-        osparc.data.Resources.fetch("payments", "post", params)
+        osparc.data.Resources.fetch("payments", "startPayment", params)
           .then(data => {
+            const paymentId = data["paymentId"];
             const url = data["paymentFormUrl"];
             const options = {
               width: 400,
@@ -420,29 +421,13 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             const blocker = qx.bom.Window.getBlocker();
             blocker.setBlockerColor("#FFF");
             blocker.setBlockerOpacity(0.6);
-            this.__pgWindow = qx.bom.Window.open(
+            let pgWindow = qx.bom.Window.open(
               url,
               "pgWindow",
               options,
               modal,
               useNativeModalDialog
             );
-            this.__pgWindow.onbeforeunload = () => {
-              transactionFinished();
-              // inform backend
-            };
-
-            // Listen to socket event
-            const socket = osparc.wrapper.WebSocket.getInstance();
-            const slotName = "paymentCompleted";
-            if (!socket.slotExists(slotName)) {
-              socket.on(slotName, jsonString => {
-                const paymentData = JSON.parse(jsonString);
-                console.log(paymentData);
-                this.fireEvent("transactionCompleted");
-                this.__pgWindow.close();
-              });
-            }
 
             // enhance the blocker
             const blockerDomEl = blocker.getBlockerElement();
@@ -463,12 +448,62 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             }
             blockerDomEl.appendChild(label);
 
-            blockerDomEl.addEventListener("click", () => this.__pgWindow.focus());
+            blockerDomEl.addEventListener("click", () => pgWindow.focus());
+
+            // Listen to socket event
+            const socket = osparc.wrapper.WebSocket.getInstance();
+            const slotName = "paymentCompleted";
+            socket.on(slotName, jsonString => {
+              const paymentData = JSON.parse(jsonString);
+              if (paymentData["completedStatus"]) {
+                const msg = this.tr("Payment ") + osparc.utils.Utils.onlyFirstsUp(paymentData["completedStatus"]);
+                switch (paymentData["completedStatus"]) {
+                  case "SUCCESS":
+                    osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO");
+                    // demo purposes
+                    wallet.setCreditsAvailable(wallet.getCreditsAvailable() + nCredits);
+                    break;
+                  case "PENDING":
+                    osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING");
+                    break;
+                  case "CANCELED":
+                  case "FAILED":
+                    osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+                    break;
+                  default:
+                    console.error("completedStatus unknown");
+                    break;
+                }
+              }
+              socket.removeSlot(slotName);
+              buyCreditsBtn();
+              pgWindow.close();
+              this.fireEvent("transactionCompleted");
+            });
+
+            const cancelPayment = () => {
+              socket.removeSlot(slotName);
+              buyCreditsBtn();
+              // inform backend
+              const params2 = {
+                url: {
+                  walletId: wallet.getWalletId(),
+                  paymentId
+                }
+              };
+              osparc.data.Resources.fetch("payments", "cancelPayment", params2);
+            };
+            // Listen to close window event
+            pgWindow.onbeforeunload = () => {
+              const msg = this.tr("The window was close. Try again and follow the instructions inside the opened window.");
+              osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING");
+              cancelPayment();
+            };
           })
           .catch(err => {
             console.error(err);
             osparc.component.message.FlashMessenger.logAs(err.message, "ERROR");
-            transactionFinished();
+            buyCreditsBtn();
           });
       });
       return buyBtn;

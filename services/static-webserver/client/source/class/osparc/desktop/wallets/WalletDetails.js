@@ -55,7 +55,7 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
       walletModel.bind("description", walletListItem, "subtitle");
       walletModel.bind("creditsAvailable", walletListItem, "creditsAvailable");
       walletModel.bind("status", walletListItem, "status");
-      walletModel.bind("defaultWallet", walletListItem, "defaultWallet");
+      walletModel.bind("preferredWallet", walletListItem, "preferredWallet");
 
       walletListItem.addListener("buyCredits", e => this.fireDataEvent("buyCredits", e.getData()));
 
@@ -66,7 +66,7 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
       const titleLayout = this.__titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
 
       const prevBtn = new qx.ui.form.Button().set({
-        toolTipText: this.tr("Back to Wallets list"),
+        toolTipText: this.tr("Back to Credit Accounts list"),
         icon: "@FontAwesome5Solid/arrow-left/20",
         backgroundColor: "transparent"
       });
@@ -102,7 +102,7 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
       wallet.bind("thumbnail", walletEditor, "thumbnail", {
         converter: val => val ? val : ""
       });
-      const title = this.tr("Wallet Details Editor");
+      const title = this.tr("Credit Account Details Editor");
       const win = osparc.ui.window.Window.popUpInWindow(walletEditor, title, 400, 250);
       walletEditor.addListener("updateWallet", () => this.__updateWallet(win, walletEditor.getChildControl("save"), walletEditor));
       walletEditor.addListener("cancel", () => win.close());

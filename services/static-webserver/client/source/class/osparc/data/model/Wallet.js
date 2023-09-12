@@ -21,8 +21,9 @@ qx.Class.define("osparc.data.model.Wallet", {
   construct: function(walletData) {
     this.base(arguments);
 
+    const walletId = walletData["walletId"];
     this.set({
-      walletId: walletData["walletId"],
+      walletId,
       name: walletData["name"],
       description: walletData["description"] ? walletData["description"] : null,
       thumbnail: walletData["thumbnail"] ? walletData["thumbnail"] : null,
@@ -30,7 +31,7 @@ qx.Class.define("osparc.data.model.Wallet", {
       status: walletData["status"] ? walletData["status"] : "INACTIVE",
       creditsAvailable: walletData["availableCredits"] ? walletData["availableCredits"] : 20,
       accessRights: walletData["accessRights"] ? walletData["accessRights"] : [],
-      defaultWallet: walletData["name"].includes("Shared")
+      preferredWallet: osparc.Preferences.getInstance().getPreferredWalletId() === walletData["walletId"]
     });
   },
 
@@ -91,11 +92,11 @@ qx.Class.define("osparc.data.model.Wallet", {
       event: "changeAccessRights"
     },
 
-    defaultWallet: {
+    preferredWallet: {
       check: "Boolean",
       init: false,
       nullable: false,
-      event: "changeDefaultWallet"
+      event: "changePreferredWallet"
     }
   },
 
