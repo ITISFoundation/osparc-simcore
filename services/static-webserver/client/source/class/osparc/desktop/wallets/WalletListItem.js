@@ -32,11 +32,11 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       apply: "__applyStatus"
     },
 
-    defaultWallet: {
+    preferredWallet: {
       check: "Boolean",
       init: null,
       nullable: false,
-      apply: "__applyDefaultWallet"
+      apply: "__applyPreferredWallet"
     }
   },
 
@@ -244,16 +244,16 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
         statusButton.set({
           icon: status === "ACTIVE" ? "@FontAwesome5Solid/toggle-on/16" : "@FontAwesome5Solid/toggle-off/16",
           label: status === "ACTIVE" ? this.tr("ON") : this.tr("OFF"),
-          toolTipText: status === "ACTIVE" ? this.tr("Wallet enabled") : this.tr("Wallet blocked"),
+          toolTipText: status === "ACTIVE" ? this.tr("Credit Account enabled") : this.tr("Credit Account blocked"),
           enabled: this.__canIWrite()
         });
       }
     },
 
-    __applyDefaultWallet: function(isDefaultWallet) {
+    __applyPreferredWallet: function(isPreferredWallet) {
       const favouriteButton = this.getChildControl("favourite-button");
       const favouriteButtonIcon = favouriteButton.getChildControl("icon");
-      if (isDefaultWallet) {
+      if (isPreferredWallet) {
         this.setToolTipText(this.tr("Default Wallet"));
         favouriteButton.setIcon("@FontAwesome5Solid/star/24");
         favouriteButtonIcon.setTextColor("strong-main");

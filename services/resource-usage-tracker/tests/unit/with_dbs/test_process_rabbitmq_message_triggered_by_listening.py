@@ -1,8 +1,7 @@
+from collections.abc import Callable
 from datetime import datetime, timezone
-from typing import Callable
 
 # NOTE: This test fails when running locally and you are connected through VPN: Temporary failure in name resolution [Errno -3]
-import pytest
 import sqlalchemy as sa
 from models_library.rabbitmq_messages import (
     RabbitResourceTrackingBaseMessage,
@@ -23,7 +22,6 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
-@pytest.mark.testit
 async def test_process_events_via_rabbit(
     rabbitmq_client: Callable[[str], RabbitMQClient],
     random_rabbit_message_start,
@@ -33,7 +31,9 @@ async def test_process_events_via_rabbit(
     resource_tracker_service_run_db,
 ):
     publisher = rabbitmq_client("publisher")
-    msg = random_rabbit_message_start()
+    msg = random_rabbit_message_start(
+        wallet_id=None, wallet_name=None, pricing_plan_id=None, pricing_detail_id=None
+    )
     await publisher.publish(RabbitResourceTrackingBaseMessage.get_channel_name(), msg)
     await assert_service_runs_db_row(postgres_db, msg.service_run_id, "RUNNING")
 

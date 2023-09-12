@@ -27,7 +27,7 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
 
   construct: function() {
     const iconSrc = "@FontAwesome5Solid/user/24";
-    const title = this.tr("Profile Settings");
+    const title = this.tr("Profile");
     this.base(arguments, title, iconSrc);
 
     this.__userProfileData = null;

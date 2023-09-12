@@ -19,8 +19,8 @@ qx.Class.define("osparc.component.resourceUsage.OverviewTable", {
   extend: osparc.ui.table.Table,
 
   construct: function() {
-    const cols = this.self().COLUMNS;
     const model = this.__model = new qx.ui.table.model.Simple();
+    const cols = this.self().COLUMNS;
     const colNames = Object.values(cols).map(col => col.title);
     model.setColumns(colNames);
 
@@ -40,42 +40,42 @@ qx.Class.define("osparc.component.resourceUsage.OverviewTable", {
     COLUMNS: {
       project: {
         pos: 0,
-        title: "Project"
+        title: osparc.product.Utils.getStudyAlias({firstUpperCase: true})
       },
       node: {
         pos: 1,
-        title: "Node"
+        title: qx.locale.Manager.tr("Node")
       },
       service: {
         pos: 2,
-        title: "Service"
+        title: qx.locale.Manager.tr("Service")
       },
       start: {
         pos: 3,
-        title: "Start"
+        title: qx.locale.Manager.tr("Start")
       },
       duration: {
         pos: 4,
-        title: "Duration"
+        title: qx.locale.Manager.tr("Duration")
       },
       status: {
         pos: 5,
-        title: "Status"
+        title: qx.locale.Manager.tr("Status")
       },
       wallet: {
         pos: 6,
-        title: "Wallet"
+        title: qx.locale.Manager.tr("Credit Account")
+      },
+      cost: {
+        pos: 7,
+        title: qx.locale.Manager.tr("Cost")
       }
-    }
-  },
+    },
 
-  members: {
-    __model: null,
-
-    addData: function(datas) {
+    respDataToTableData: function(datas) {
       const newDatas = [];
       if (datas) {
-        const cols = this.self().COLUMNS;
+        const cols = this.COLUMNS;
         datas.forEach(data => {
           const newData = [];
           newData[cols["project"].pos] = data["project_name"] ? data["project_name"] : data["project_id"];
@@ -85,16 +85,30 @@ qx.Class.define("osparc.component.resourceUsage.OverviewTable", {
             const serviceName = parts.pop();
             newData[cols["service"].pos] = serviceName + ":" + data["service_version"];
           }
-          const startTime = new Date(data["started_at"]);
-          newData[cols["start"].pos] = osparc.utils.Utils.formatDateAndTime(startTime);
-          const stopTime = new Date(data["stopped_at"]);
-          const durationTimeSec = (stopTime - startTime)/1000;
-          newData[cols["duration"].pos] = durationTimeSec;
+          if (data["started_at"]) {
+            const startTime = new Date(data["started_at"]);
+            newData[cols["start"].pos] = osparc.utils.Utils.formatDateAndTime(startTime);
+            if (data["stopped_at"]) {
+              const stopTime = new Date(data["stopped_at"]);
+              const durationTimeSec = (stopTime - startTime)/1000;
+              newData[cols["duration"].pos] = durationTimeSec;
+            }
+          }
           newData[cols["status"].pos] = qx.lang.String.firstUp(data["service_run_status"].toLowerCase());
           newData[cols["wallet"].pos] = data["wallet_label"] ? data["wallet_label"] : "unknown";
+          newData[cols["cost"].pos] = "unknown";
           newDatas.push(newData);
         });
       }
+      return newDatas;
+    }
+  },
+
+  members: {
+    __model: null,
+
+    addData: function(datas) {
+      const newDatas = this.self().respDataToTableData(datas);
       this.setData(newDatas);
     }
   }

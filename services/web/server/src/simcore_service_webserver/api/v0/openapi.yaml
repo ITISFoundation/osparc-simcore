@@ -3,7 +3,7 @@ info:
   title: simcore-service-webserver
   description: ' Main service with an interface (http-API & websockets) to the web
     front-end'
-  version: 0.26.0
+  version: 0.28.0
 servers:
 - url: ''
   description: webserver
@@ -3352,6 +3352,28 @@ paths:
       responses:
         '204':
           description: Successful Response
+  /v0/me/preferences/{preference_id}:
+    patch:
+      tags:
+      - user
+      summary: Set Frontend Preference
+      operationId: set_frontend_preference
+      parameters:
+      - required: true
+        schema:
+          title: Preference Id
+          type: string
+        name: preference_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchRequestBody'
+        required: true
+      responses:
+        '204':
+          description: Successful Response
   /v0/me/tokens:
     get:
       tags:
@@ -3761,6 +3783,94 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_WalletGet_'
+  /v0/wallets/{wallet_id}/payments:
+    post:
+      tags:
+      - wallets
+      summary: Create Payment
+      description: Creates payment to wallet `wallet_id`
+      operationId: create_payment
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWalletPayment'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WalletPaymentCreated_'
+  /v0/wallets/-/payments:
+    get:
+      tags:
+      - wallets
+      summary: List All Payments
+      description: Lists all user payments to his/her wallets (only the ones he/she
+        created)
+      operationId: list_all_payments
+      parameters:
+      - required: false
+        schema:
+          title: Limit
+          exclusiveMaximum: true
+          minimum: 1
+          type: integer
+          default: 20
+          maximum: 50
+        name: limit
+        in: query
+      - required: false
+        schema:
+          title: Offset
+          minimum: 0
+          type: integer
+          default: 0
+        name: offset
+        in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_PaymentTransaction_'
+  /v0/wallets/{wallet_id}/payments/{payment_id}:cancel:
+    post:
+      tags:
+      - wallets
+      summary: Cancel Payment
+      operationId: cancel_payment
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      - required: true
+        schema:
+          title: Payment Id
+          minLength: 1
+          type: string
+        name: payment_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
   /v0/wallets/{wallet_id}/groups/{group_id}:
     put:
       tags:
@@ -4586,6 +4696,19 @@ components:
         thumbnail:
           title: Thumbnail
           type: string
+    CreateWalletPayment:
+      title: CreateWalletPayment
+      required:
+      - priceDollars
+      type: object
+      properties:
+        priceDollars:
+          title: Pricedollars
+          type: number
+        comment:
+          title: Comment
+          maxLength: 100
+          type: string
     DatCoreFileLink:
       title: DatCoreFileLink
       required:
@@ -5011,6 +5134,14 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/WalletGroupGet'
+        error:
+          title: Error
+    Envelope_WalletPaymentCreated_:
+      title: Envelope[WalletPaymentCreated]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/WalletPaymentCreated'
         error:
           title: Error
     Envelope_WorkbenchViewApiModel_:
@@ -6431,6 +6562,25 @@ components:
             $ref: '#/components/schemas/CheckpointApiModel'
       additionalProperties: false
       description: Paginated response model of ItemTs
+    Page_PaymentTransaction_:
+      title: Page[PaymentTransaction]
+      required:
+      - _meta
+      - _links
+      - data
+      type: object
+      properties:
+        _meta:
+          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
+        _links:
+          $ref: '#/components/schemas/PageLinks'
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentTransaction'
+      additionalProperties: false
+      description: Paginated response model of ItemTs
     Page_ProjectIterationItem_:
       title: Page[ProjectIterationItem]
       required:
@@ -6523,6 +6673,66 @@ components:
           exclusiveMinimum: true
           type: integer
           minimum: 0
+    PatchRequestBody:
+      title: PatchRequestBody
+      type: object
+      properties:
+        value:
+          title: Value
+    PaymentTransaction:
+      title: PaymentTransaction
+      required:
+      - paymentId
+      - priceDollars
+      - walletId
+      - osparcCredits
+      - createdAt
+      - completedStatus
+      type: object
+      properties:
+        paymentId:
+          title: Paymentid
+          minLength: 1
+          type: string
+        priceDollars:
+          title: Pricedollars
+          type: number
+        walletId:
+          title: Walletid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        osparcCredits:
+          title: Osparccredits
+          type: number
+        comment:
+          title: Comment
+          type: string
+        createdAt:
+          title: Createdat
+          type: string
+          format: date-time
+        completedAt:
+          title: Completedat
+          type: string
+          format: date-time
+        completedStatus:
+          title: Completedstatus
+          enum:
+          - PENDING
+          - SUCCESS
+          - FAILED
+          - CANCELED
+          type: string
+        stateMessage:
+          title: Statemessage
+          type: string
+        invoiceUrl:
+          title: Invoiceurl
+          maxLength: 2083
+          minLength: 1
+          type: string
+          format: uri
     PermissionGet:
       title: PermissionGet
       required:
@@ -6598,6 +6808,19 @@ components:
           example:
           - '15'
       additionalProperties: false
+    Preference:
+      title: Preference
+      required:
+      - defaultValue
+      - value
+      type: object
+      properties:
+        defaultValue:
+          title: Defaultvalue
+          description: used by the frontend
+        value:
+          title: Value
+          description: preference value
     PresignedLink:
       title: PresignedLink
       required:
@@ -6616,6 +6839,7 @@ components:
       - id
       - login
       - role
+      - preferences
       type: object
       properties:
         first_name:
@@ -6653,6 +6877,11 @@ components:
           description: If user has a trial account, it sets the expiration date, otherwise
             None
           format: date
+        preferences:
+          title: Preferences
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Preference'
     ProfileUpdate:
       title: ProfileUpdate
       type: object
@@ -8744,6 +8973,24 @@ components:
           title: Modified
           type: string
           format: date-time
+    WalletPaymentCreated:
+      title: WalletPaymentCreated
+      required:
+      - paymentId
+      - paymentFormUrl
+      type: object
+      properties:
+        paymentId:
+          title: Paymentid
+          minLength: 1
+          type: string
+        paymentFormUrl:
+          title: Paymentformurl
+          maxLength: 2083
+          minLength: 1
+          type: string
+          description: Link to external site that holds the payment submission form
+          format: uri
     WalletStatus:
       title: WalletStatus
       enum:

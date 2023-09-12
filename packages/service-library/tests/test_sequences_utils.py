@@ -1,4 +1,5 @@
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 import pytest
 from servicelib.sequences_utils import T, pairwise, partition_gen

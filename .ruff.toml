@@ -51,7 +51,7 @@ target-version = "py310"
 
 
 [per-file-ignores]
-"**/tests/**" = [
+"**/{tests,pytest_simcore}/**" = [
   "T201",    # print found
   "ARG001",  # unused function argument
   "PT019",   # user pytest.mark.usefixture

@@ -30,7 +30,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
   },
 
   events: {
-    "openingStudy": "qx.event.type.Data",
+    "openStudy": "qx.event.type.Data",
     "openTemplate": "qx.event.type.Data",
     "openService": "qx.event.type.Data",
     "updateStudy": "qx.event.type.Data",
@@ -151,8 +151,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       openButton.addListener("execute", () => {
         switch (this.__resourceData["resourceType"]) {
           case "study":
-            osparc.desktop.MainPageHandler.getInstance().startStudy(this.__resourceData["uuid"]);
-            this.fireDataEvent("openingStudy", this.__resourceData);
+            this.fireDataEvent("openStudy", this.__resourceData["uuid"]);
             break;
           case "template":
             this.fireDataEvent("openTemplate", this.__resourceData);

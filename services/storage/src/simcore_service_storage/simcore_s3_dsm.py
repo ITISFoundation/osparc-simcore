@@ -25,6 +25,7 @@ from pydantic import AnyUrl, ByteSize, NonNegativeInt, parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.logging_utils import log_context
+from servicelib.sequences_utils import partition_gen
 from servicelib.utils import ensure_ends_with, logged_gather
 
 from . import db_file_meta_data, db_projects, db_tokens
@@ -576,10 +577,19 @@ class SimcoreS3DataManager(BaseDataManager):
             ),
             log_duration=True,
         ):
-            sizes_and_num_files: list[tuple[ByteSize, int]] = await logged_gather(
-                *[self._get_size_and_num_files(fmd) for fmd in src_project_files],
-                max_concurrency=_MAX_PARALLEL_S3_CALLS,
-            )
+            sizes_and_num_files: list[tuple[ByteSize, int]] = []
+            for src_project_files_slice in partition_gen(
+                src_project_files, slice_size=_MAX_PARALLEL_S3_CALLS
+            ):
+                sizes_and_num_files.extend(
+                    await logged_gather(
+                        *[
+                            self._get_size_and_num_files(fmd)
+                            for fmd in src_project_files_slice
+                        ]
+                    )
+                )
+
             total_bytes_to_copy = sum(n for n, _ in sizes_and_num_files)
             total_num_of_files = sum(n for _, n in sizes_and_num_files)
         src_project_total_data_size: ByteSize = parse_obj_as(
@@ -636,7 +646,10 @@ class SimcoreS3DataManager(BaseDataManager):
                     and (int(output.get("store", self.location_id)) == DATCORE_ID)
                 ]
             )
-        await logged_gather(*copy_tasks, max_concurrency=MAX_CONCURRENT_S3_TASKS)
+        for copy_tasks_slice in partition_gen(
+            copy_tasks, slice_size=MAX_CONCURRENT_S3_TASKS
+        ):
+            await logged_gather(*copy_tasks_slice)
         # ensure the full size is reported
         s3_transfered_data_cb.finalize_transfer()
         _logger.info(
@@ -826,6 +839,7 @@ class SimcoreS3DataManager(BaseDataManager):
         )
         if not current_multipart_uploads:
             return
+        _logger.debug("found %s", f"{current_multipart_uploads=}")
 
         # there are some multipart uploads, checking if
         # there is a counterpart in file_meta_data
@@ -848,6 +862,8 @@ class SimcoreS3DataManager(BaseDataManager):
             ] = await db_file_meta_data.list_fmds(
                 conn, file_ids=list(set(directory_and_file_ids))
             )
+            _logger.debug("metadata entries %s", f"{list_of_known_metadata_entries=}")
+
         # known uploads do have an expiry date (regardless of upload ID that we do not always know)
         list_of_known_uploads = [
             fmd for fmd in list_of_known_metadata_entries if fmd.upload_expires_at
@@ -872,6 +888,7 @@ class SimcoreS3DataManager(BaseDataManager):
             ):
                 list_of_valid_upload_ids.append(upload_id)
 
+        _logger.debug("found the following %s", f"{list_of_valid_upload_ids=}")
         list_of_invalid_uploads = [
             (
                 upload_id,
@@ -945,7 +962,6 @@ class SimcoreS3DataManager(BaseDataManager):
     ) -> FileMetaData:
         session = get_client_session(self.app)
         # 2 steps: Get download link for local copy, then upload to S3
-        # TODO: This should be a redirect stream!
         api_token, api_secret = await db_tokens.get_api_token_and_secret(
             self.app, user_id
         )

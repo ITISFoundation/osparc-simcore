@@ -72,6 +72,12 @@ hel%:
 	@echo ""
 
 
+.env: .env-devel ## creates .env file from defaults in .env-devel
+	$(if $(wildcard $@), \
+	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
+	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
+
+
 .PHONY: devenv
 devenv: ## build development environment
 	@$(MAKE_C) $(REPO_BASE_DIR) $@

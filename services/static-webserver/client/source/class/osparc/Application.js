@@ -44,16 +44,6 @@ qx.Class.define("osparc.Application", {
       // Call super class
       this.base();
 
-      // Load user preferred theme if present
-      const themeName = osparc.utils.Utils.localCache.getTheme();
-      if (themeName && themeName !== qx.theme.manager.Meta.getInstance().getTheme().name) {
-        const preferredTheme = qx.Theme.getByName(themeName);
-        const themes = qx.Theme.getAll();
-        if (preferredTheme && Object.keys(themes).includes(preferredTheme.name)) {
-          qx.theme.manager.Meta.getInstance().setTheme(preferredTheme);
-        }
-      }
-
       this.__preventAutofillBrowserSyles();
 
       // Enable logging in debug variant
@@ -342,6 +332,7 @@ qx.Class.define("osparc.Application", {
       switch (qx.core.Environment.get("product.name")) {
         case "s4l":
         case "s4llite":
+        case "s4lacad":
           if (landingPage) {
             view = new osparc.product.landingPage.s4llite.Page();
             view.addListener("loginPressed", () => {
@@ -392,6 +383,31 @@ qx.Class.define("osparc.Application", {
               osparc.utils.Utils.expirationMessage(daysToExpiration)
                 .then(msg => osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING"));
             }
+          }
+
+          if ("preferences" in profile) {
+            const bePreferences = profile["preferences"];
+            const fePreferences = Object.keys(qx.util.PropertyUtil.getProperties(osparc.Preferences));
+            const preferencesSettings = osparc.Preferences.getInstance();
+            Object.entries(bePreferences).forEach(([key, data]) => {
+              const value = data.value;
+              switch (key) {
+                case "themeName":
+                  if (value) {
+                    preferencesSettings.setThemeName(value);
+                  }
+                  break;
+                case "preferredWalletId":
+                  if (value) {
+                    preferencesSettings.setPreferredWalletId(parseInt(value));
+                  }
+                  break;
+                default:
+                  if (fePreferences.includes(key)) {
+                    preferencesSettings.set(key, value);
+                  }
+              }
+            });
           }
 
           if (studyId) {

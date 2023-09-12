@@ -470,6 +470,17 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * PREFERENCES
+       */
+      "preferences": {
+        endpoints: {
+          patch: {
+            method: "PATCH",
+            url: statics.API + "/me/preferences/{preferenceId}"
+          }
+        }
+      },
+      /*
        * PERMISSIONS
        */
       "permissions": {
@@ -638,6 +649,25 @@ qx.Class.define("osparc.data.Resources", {
           deleteAccessRights: {
             method: "DELETE",
             url: statics.API + "/wallets/{walletId}/groups/{groupId}"
+          }
+        }
+      },
+      /*
+       * PAYMENTS
+       */
+      "payments": {
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/wallets/-/payments"
+          },
+          startPayment: {
+            method: "POST",
+            url: statics.API + "/wallets/{walletId}/payments"
+          },
+          cancelPayment: {
+            method: "POST",
+            url: statics.API + "/wallets/{walletId}/payments/{paymentId}:cancel"
           }
         }
       },

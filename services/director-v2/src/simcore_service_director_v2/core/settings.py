@@ -44,6 +44,9 @@ from settings_library.postgres import PostgresSettings
 from settings_library.r_clone import RCloneSettings as SettingsLibraryRCloneSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
+from settings_library.resource_usage_tracker import (
+    DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL,
+)
 from settings_library.utils_logging import MixinLoggingSettings
 from settings_library.utils_service import DEFAULT_FASTAPI_PORT
 from simcore_postgres_database.models.clusters import ClusterType
@@ -539,7 +542,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     PUBLISHED_HOSTS_NAME: str = Field("", env="PUBLISHED_HOSTS_NAME")
     SWARM_STACK_NAME: str = Field("undefined-please-check", env="SWARM_STACK_NAME")
     SERVICE_TRACKING_HEARTBEAT: datetime.timedelta = Field(
-        default=datetime.timedelta(seconds=60),
+        default=DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL,
         description="Service scheduler heartbeat (everytime a heartbeat is sent into RabbitMQ)",
     )
 

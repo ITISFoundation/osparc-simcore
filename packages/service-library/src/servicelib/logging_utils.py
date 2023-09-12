@@ -232,6 +232,22 @@ def log_catch(logger: logging.Logger, reraise: bool = True):
             raise exc from exc
 
 
+class LogExtra(TypedDict, total=False):
+    log_uid: str
+
+
+LogLevelInt: TypeAlias = int
+LogMessageStr: TypeAlias = str
+
+
+def get_log_record_extra(*, user_id: int | str | None = None) -> LogExtra | None:
+    extra: LogExtra = {}
+    if user_id:
+        assert int(user_id) > 0  # nosec
+        extra["log_uid"] = f"{user_id}"
+    return extra or None
+
+
 def _un_capitalize(s):
     return s[:1].lower() + s[1:] if s else ""
 
@@ -239,11 +255,11 @@ def _un_capitalize(s):
 @contextmanager
 def log_context(
     logger: logging.Logger,
-    level: int,
-    msg: str,
+    level: LogLevelInt,
+    msg: LogMessageStr,
     *args,
     log_duration: bool = False,
-    extra: dict[str, Any] | None = None,
+    extra: LogExtra | None = None,
 ):
     # NOTE: preserves original signature https://docs.python.org/3/library/logging.html#logging.Logger.log
     start = datetime.now()  # noqa: DTZ005
@@ -261,22 +277,6 @@ def log_context(
         else ""
     )
     logger.log(level, "Finished " + msg + duration, *args, **kwargs)
-
-
-class LogExtra(TypedDict, total=False):
-    log_uid: str
-
-
-def get_log_record_extra(*, user_id: int | str | None = None) -> LogExtra | None:
-    extra: LogExtra = {}
-    if user_id:
-        assert int(user_id) > 0  # nosec
-        extra["log_uid"] = f"{user_id}"
-    return extra or None
-
-
-LogLevelInt: TypeAlias = int
-LogMessageStr: TypeAlias = str
 
 
 def guess_message_log_level(message: str) -> LogLevelInt:

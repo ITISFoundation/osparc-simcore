@@ -6,8 +6,8 @@
 
 import logging
 import sys
+from collections.abc import Iterable, Iterator
 from pathlib import Path
-from typing import Iterable, Iterator
 from unittest.mock import AsyncMock
 
 import pytest
@@ -16,8 +16,9 @@ from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.services import RunID
+from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.users import UserID
-from pytest import LogCaptureFixture, MonkeyPatch
+from pydantic import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_envs import (
     EnvVarsDict,
@@ -176,7 +177,7 @@ def base_mock_envs(
 
 @pytest.fixture
 def mock_environment(
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     base_mock_envs: EnvVarsDict,
     user_id: UserID,
     project_id: ProjectID,
@@ -234,7 +235,7 @@ def mock_environment(
 
 @pytest.fixture
 def mock_environment_with_envdevel(
-    monkeypatch: MonkeyPatch, project_slug_dir: Path
+    monkeypatch: pytest.MonkeyPatch, project_slug_dir: Path
 ) -> EnvVarsDict:
     """Alternative environment loaded fron .env-devel.
 
@@ -245,7 +246,9 @@ def mock_environment_with_envdevel(
 
 
 @pytest.fixture()
-def caplog_info_debug(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
+def caplog_info_debug(
+    caplog: pytest.LogCaptureFixture,
+) -> Iterable[pytest.LogCaptureFixture]:
     with caplog.at_level(logging.DEBUG):
         yield caplog
 
@@ -267,7 +270,7 @@ def mock_core_rabbitmq(mocker: MockerFixture) -> dict[str, AsyncMock]:
             return_value=None,
             autospec=True,
         ),
-        "post_log_message": mocker.patch(
+        "post_rabbit_message": mocker.patch(
             "simcore_service_dynamic_sidecar.core.rabbitmq._post_rabbit_message",
             return_value=None,
             autospec=True,
@@ -278,3 +281,19 @@ def mock_core_rabbitmq(mocker: MockerFixture) -> dict[str, AsyncMock]:
             autospec=True,
         ),
     }
+
+
+@pytest.fixture
+def mock_stop_heart_beat_task(mocker: MockerFixture) -> AsyncMock:
+    return mocker.patch(
+        "simcore_service_dynamic_sidecar.modules.resource_tracking._core.stop_heart_beat_task",
+        return_value=None,
+    )
+
+
+@pytest.fixture
+def mock_metrics_params(faker: Faker) -> CreateServiceMetricsAdditionalParams:
+    return parse_obj_as(
+        CreateServiceMetricsAdditionalParams,
+        CreateServiceMetricsAdditionalParams.Config.schema_extra["example"],
+    )

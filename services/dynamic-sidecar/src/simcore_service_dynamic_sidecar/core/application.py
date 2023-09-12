@@ -22,6 +22,7 @@ from ..modules.inputs import setup_inputs
 from ..modules.metrics import setup_metrics
 from ..modules.mounted_fs import MountedVolumes, setup_mounted_fs
 from ..modules.outputs import setup_outputs
+from ..modules.resource_tracking import setup_resource_tracking
 from .docker_compose_utils import docker_compose_down
 from .docker_logs import setup_background_log_fetcher
 from .error_handlers import http_error_handler, node_not_found_error_handler
@@ -152,6 +153,7 @@ def create_app():
     if application_settings.RABBIT_SETTINGS:
         setup_rabbitmq(app)
         setup_background_log_fetcher(app)
+        setup_resource_tracking(app)
 
     # also sets up mounted_volumes
     setup_mounted_fs(app)

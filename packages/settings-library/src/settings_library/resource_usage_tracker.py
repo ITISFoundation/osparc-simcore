@@ -1,3 +1,4 @@
+from datetime import timedelta
 from functools import cached_property
 
 from pydantic import parse_obj_as
@@ -8,6 +9,8 @@ from settings_library.utils_service import (
     MixinServiceSettings,
     URLPart,
 )
+
+DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL: timedelta = timedelta(seconds=60)
 
 
 class ResourceUsageTrackerSettings(BaseCustomSettings, MixinServiceSettings):

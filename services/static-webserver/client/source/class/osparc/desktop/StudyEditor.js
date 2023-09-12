@@ -139,7 +139,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         }
         this.__settingStudy = true;
 
-        this._showLoadingPage(this.tr("Starting ") + (studyData.name || this.tr("Study")));
+        this._showLoadingPage(this.tr("Starting ") + (studyData.name || osparc.product.Utils.getStudyAlias({firstUpperCase: true})));
 
         // Before starting a study, make sure the latest version is fetched
         const params = {
@@ -164,7 +164,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     _applyStudy: function(study) {
       this.__settingStudy = false;
 
-      this._showLoadingPage(this.tr("Opening ") + (study.getName() || this.tr("Study")));
+      this._showLoadingPage(this.tr("Opening ") + (study.getName() || osparc.product.Utils.getStudyAlias({firstUpperCase: true})));
 
       const store = osparc.store.Store.getInstance();
       store.setCurrentStudy(study);
