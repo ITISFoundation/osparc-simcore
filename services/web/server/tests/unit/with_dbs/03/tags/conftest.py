@@ -2,9 +2,9 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+from collections.abc import AsyncIterator, Callable
 from copy import deepcopy
 from pathlib import Path
-from typing import AsyncIterator, Callable
 
 import pytest
 from aioresponses import aioresponses
@@ -14,7 +14,7 @@ from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db.plugin import setup_db
 from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.login.plugin import setup_login
-from simcore_service_webserver.products.api import setup_products
+from simcore_service_webserver.products.plugin import setup_products
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.rest.plugin import setup_rest
@@ -77,7 +77,7 @@ def client(
     setup_wallets(app)
 
     # server and client
-    yield event_loop.run_until_complete(
+    return event_loop.run_until_complete(
         aiohttp_client(app, server_kwargs={"port": port, "host": "localhost"})
     )
 
@@ -144,10 +144,9 @@ async def template_project(
 @pytest.fixture
 def fake_services():
     def create_fakes(number_services: int) -> list[dict]:
-        fake_services = [{"service_uuid": f"{i}_uuid"} for i in range(number_services)]
-        return fake_services
+        return [{"service_uuid": f"{i}_uuid"} for i in range(number_services)]
 
-    yield create_fakes
+    return create_fakes
 
 
 @pytest.fixture
@@ -160,4 +159,4 @@ async def project_db_cleaner(client):
 async def director_v2_automock(
     director_v2_service_mock: aioresponses,
 ) -> AsyncIterator[aioresponses]:
-    yield director_v2_service_mock
+    return director_v2_service_mock

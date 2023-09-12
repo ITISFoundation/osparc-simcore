@@ -1,7 +1,6 @@
 import logging
 import string
-from re import Pattern
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Pattern  # noqa: UP035
 
 from models_library.basic_regex import (
     PUBLIC_VARIABLE_NAME_RE,
@@ -27,11 +26,6 @@ from ..statics._constants import FRONTEND_APPS_AVAILABLE
 _logger = logging.getLogger(__name__)
 
 
-#
-# MODEL
-#
-
-
 class Product(BaseModel):
     """Model used to parse a row of pg product's table
 
@@ -52,6 +46,7 @@ class Product(BaseModel):
     )
 
     host_regex: Pattern = Field(..., description="Host regex")
+    # NOTE: typing.Pattern is supported but not re.Pattern (SEE https://github.com/pydantic/pydantic/pull/4366)
 
     support_email: LowerCaseEmailStr = Field(
         ...,
