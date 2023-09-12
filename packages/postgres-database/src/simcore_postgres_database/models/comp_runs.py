@@ -100,5 +100,11 @@ comp_runs = sa.Table(
         doc="When the run was finished",
     ),
     sa.Column("metadata", JSONB, nullable=True, doc="the run optional metadata"),
+    sa.Column(
+        "use_on_demand_clusters",
+        sa.Boolean(),
+        nullable=False,
+        doc="the run uses on demand clusters",
+    ),
     sa.UniqueConstraint("project_uuid", "user_id", "iteration"),
 )
