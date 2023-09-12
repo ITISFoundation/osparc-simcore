@@ -41,6 +41,6 @@ def generate_passcode(number_of_digits: int = MIN_PASSCODE_LENGTH) -> str:
     return f"{passcode}".zfill(number_of_digits)
 
 
-def compare_secrets(got: str, expected: str) -> bool:
+def are_secrets_equal(got: str, expected: str) -> bool:
     """Constant-time evaluation of 'got == expected'"""
     return secrets.compare_digest(got.encode("utf8"), expected.encode("utf8"))

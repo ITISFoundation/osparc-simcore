@@ -8,7 +8,7 @@ from servicelib.utils_secrets import (
     _MIN_SECRET_NUM_BYTES,
     MIN_PASSCODE_LENGTH,
     MIN_PASSWORD_LENGTH,
-    compare_secrets,
+    are_secrets_equal,
     generate_passcode,
     generate_password,
     generate_token_secret_key,
@@ -58,8 +58,8 @@ def test_generate_passcode():
 
 def test_compare_secrets():
     passcode = generate_passcode(100)
-    assert not compare_secrets(got="foo", expected=passcode)
-    assert compare_secrets(got=passcode, expected=passcode)
+    assert not are_secrets_equal(got="foo", expected=passcode)
+    assert are_secrets_equal(got=passcode, expected=passcode)
 
 
 def test_generate_token_secrets():

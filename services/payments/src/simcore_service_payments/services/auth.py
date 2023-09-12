@@ -8,14 +8,14 @@ from datetime import timedelta
 import arrow
 from fastapi import HTTPException, status
 from jose import JWTError, jwt
-from servicelib.utils_secrets import compare_secrets
+from servicelib.utils_secrets import are_secrets_equal
 
 from ..core.settings import ApplicationSettings
 from ..models.auth import SessionData
 
 
 def authenticate_user(username: str, password: str, settings: ApplicationSettings):
-    return compare_secrets(
+    return are_secrets_equal(
         username + password,
         expected=settings.PAYMENTS_USERNAME
         + settings.PAYMENTS_PASSWORD.get_secret_value(),
@@ -23,7 +23,7 @@ def authenticate_user(username: str, password: str, settings: ApplicationSetting
 
 
 #
-# JW Tokens
+# JSON Web Tokens (https://jwt.io/introduction/)
 #
 
 
