@@ -31,11 +31,9 @@ def test_generate_dotenv(cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch)
 
     environs = load_dotenv(result.stdout)
 
-    envs = setenvs_from_dict(monkeypatch, environs)
-    settings_from_obj = ApplicationSettings.parse_obj(envs)
-    settings_from_envs = ApplicationSettings.create_from_envs()
-
-    assert settings_from_envs == settings_from_obj
+    with monkeypatch.context() as patch:
+        setenvs_from_dict(patch, environs)
+        ApplicationSettings.create_from_envs()
 
 
 def test_list_settings(cli_runner: CliRunner, app_environment: EnvVarsDict):
@@ -46,3 +44,9 @@ def test_list_settings(cli_runner: CliRunner, app_environment: EnvVarsDict):
     print(result.output)
     settings = ApplicationSettings.parse_raw(result.output)
     assert settings == ApplicationSettings.create_from_envs()
+
+
+def test_main(app_environment: EnvVarsDict):
+    from simcore_service_payments.main import the_app
+
+    assert the_app

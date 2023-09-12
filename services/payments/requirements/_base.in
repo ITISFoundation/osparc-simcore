@@ -14,9 +14,11 @@
 --requirement ../../../packages/service-library/requirements/_fastapi.in
 
 
-cryptography~=39.0.0 # security
+cryptography
 fastapi
 httpx
 packaging
+python-jose
+python-multipart
 typer[all]
 uvicorn[standard]
