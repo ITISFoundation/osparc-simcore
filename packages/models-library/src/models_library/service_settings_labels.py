@@ -498,10 +498,12 @@ class DynamicSidecarServiceLabels(BaseModel):
         if v is None:
             return v
 
-        defined_services: set[str] = {
-            v.metrics.service,
-            *{x.service for x in v.before_shutdown},
-        }
+        defined_services: set[str] = {x.service for x in v.before_shutdown}
+        if v.metrics:
+            defined_services.add(v.metrics.service)
+
+        if len(defined_services) == 0:
+            return v
 
         compose_spec: dict | None = values.get("compose_spec")
         if compose_spec is None:
