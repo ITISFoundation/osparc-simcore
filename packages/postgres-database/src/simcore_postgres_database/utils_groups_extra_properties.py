@@ -28,6 +28,7 @@ class GroupExtraProperties(FromRowMixin):
     product_name: str
     internet_access: bool
     override_services_specifications: bool
+    use_on_demand_clusters: bool
     created: datetime.datetime
     modified: datetime.datetime
 
