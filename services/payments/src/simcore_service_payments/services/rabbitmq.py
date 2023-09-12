@@ -1,28 +1,24 @@
 import logging
-from typing import Final, cast
+from typing import cast
 
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import RabbitMessageBase
-from pydantic import parse_obj_as
 from servicelib.rabbitmq import (
     RabbitMQClient,
     RabbitMQRPCClient,
-    RPCNamespace,
     wait_till_rabbitmq_responsive,
 )
 from settings_library.rabbit import RabbitSettings
 
 _logger = logging.getLogger(__name__)
 
-PAYMENTS_RPC_NAMESPACE: Final[RPCNamespace] = parse_obj_as(RPCNamespace, "payments")
-
 
 def setup_rabbitmq(app: FastAPI) -> None:
+    settings: RabbitSettings = app.state.settings.PAYMENTS_RABBITMQ
     app.state.rabbitmq_client = None
     app.state.rabbitmq_rpc_server = None
 
     async def _on_startup() -> None:
-        settings: RabbitSettings = app.state.settings.PAYMENTS_RABBITMQ
         await wait_till_rabbitmq_responsive(settings.dsn)
 
         app.state.rabbitmq_client = RabbitMQClient(

@@ -1,7 +1,11 @@
 from ._client import RabbitMQClient
 from ._client_rpc import RabbitMQRPCClient
 from ._constants import BIND_TO_ALL_TOPICS
-from ._errors import RemoteMethodNotRegisteredError, RPCNotInitializedError
+from ._errors import (
+    RemoteMethodNotRegisteredError,
+    RPCNotInitializedError,
+    RPCServerError,
+)
 from ._models import RPCMethodName, RPCNamespace
 from ._rpc_router import RPCRouter
 from ._utils import wait_till_rabbitmq_responsive
@@ -15,5 +19,8 @@ __all__: tuple[str, ...] = (
     "RPCNamespace",
     "RPCNotInitializedError",
     "RPCRouter",
+    "RPCServerError",
     "wait_till_rabbitmq_responsive",
 )
+
+# nopycln: file

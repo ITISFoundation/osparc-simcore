@@ -4,22 +4,16 @@
 # pylint: disable=too-many-arguments
 
 
-from collections.abc import Callable, Iterator
+from collections.abc import Callable
 
-import httpx
 import pytest
-import respx
 from faker import Faker
 from fastapi import FastAPI, status
-from fastapi.encoders import jsonable_encoder
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from respx import MockRouter
 from simcore_service_payments.core.application import create_app
 from simcore_service_payments.core.settings import ApplicationSettings
-from simcore_service_payments.models.payments_gateway import (
-    InitPayment,
-    PaymentInitiated,
-)
+from simcore_service_payments.models.payments_gateway import InitPayment
 from simcore_service_payments.services.payments_gateway import PaymentsGatewayApi
 
 
@@ -39,20 +33,6 @@ async def test_setup_payment_gateway_api(app_environment: EnvVarsDict):
 def app(disable_rabbitmq_service: Callable, app_environment: EnvVarsDict):
     disable_rabbitmq_service()
     return create_app()
-
-
-@pytest.fixture
-def mock_payments_gateway_service_api_base(
-    app: FastAPI,
-) -> Iterator[MockRouter]:
-    settings: ApplicationSettings = app.state.settings
-    with respx.mock(
-        base_url=settings.PAYMENTS_GATEWAY_URL,
-        assert_all_called=False,
-        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
-    ) as respx_mock:
-
-        yield respx_mock
 
 
 async def test_payment_gateway_responsiveness(
@@ -84,22 +64,9 @@ async def test_one_time_payment_workflow(
     app: FastAPI,
     faker: Faker,
     mock_payments_gateway_service_api_base: MockRouter,
+    mock_init_payment_route: Callable,
 ):
-
-    # /init ---------------
-    def _init_payment(request: httpx.Request):
-        assert InitPayment.parse_raw(request.content) is not None
-        return httpx.Response(
-            status.HTTP_200_OK,
-            json=jsonable_encoder(PaymentInitiated(payment_id=faker.uuid4())),
-        )
-
-    mock_payments_gateway_service_api_base.post(
-        path="/init",
-        name="init_payment",
-    ).mock(side_effect=_init_payment)
-
-    # -------------------------------------
+    mock_init_payment_route(mock_payments_gateway_service_api_base)
 
     payment_gateway_api = PaymentsGatewayApi.get_from_state(app)
     assert payment_gateway_api
