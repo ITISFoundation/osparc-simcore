@@ -1235,18 +1235,55 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
     )
 
     # we ask to use an on-demand cluster, therefore the tasks are published first
+    await _assert_comp_run_db(aiopg_engine, published_project, RunningState.PUBLISHED)
+    await _assert_comp_tasks_db(
+        aiopg_engine,
+        published_project.project.uuid,
+        [t.node_id for t in published_project.tasks],
+        expected_state=RunningState.PUBLISHED,
+        expected_progress=None,
+    )
+    mocked_get_or_create_cluster.assert_not_called()
+    # now it should switch to waiting
+    expected_waiting_tasks = [
+        published_project.tasks[1],
+        published_project.tasks[3],
+    ]
+    await run_comp_scheduler(scheduler)
+    mocked_get_or_create_cluster.assert_called()
+    assert mocked_get_or_create_cluster.call_count == 2
+    mocked_get_or_create_cluster.reset_mock()
     await _assert_comp_run_db(
         aiopg_engine, published_project, RunningState.WAITING_FOR_CLUSTER
     )
     await _assert_comp_tasks_db(
         aiopg_engine,
         published_project.project.uuid,
-        [t.node_id for t in published_project.tasks],
+        [t.node_id for t in expected_waiting_tasks],
         expected_state=RunningState.WAITING_FOR_CLUSTER,
-        expected_progress=None,
+        expected_progress=0.0,
+    )
+    # again will trigger the same response
+    await run_comp_scheduler(scheduler)
+    mocked_get_or_create_cluster.assert_called()
+    assert mocked_get_or_create_cluster.call_count == 2
+    mocked_get_or_create_cluster.reset_mock()
+    await _assert_comp_run_db(
+        aiopg_engine, published_project, RunningState.WAITING_FOR_CLUSTER
+    )
+    await _assert_comp_tasks_db(
+        aiopg_engine,
+        published_project.project.uuid,
+        [t.node_id for t in expected_waiting_tasks],
+        expected_state=RunningState.WAITING_FOR_CLUSTER,
+        expected_progress=0.0,
     )
 
 
+@pytest.mark.parametrize(
+    "get_or_create_exception",
+    [ComputationalBackendOnDemandClustersKeeperNotReadyError, RuntimeError],
+)
 async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
     with_disabled_scheduler_task: None,
     scheduler: BaseCompScheduler,
@@ -1254,10 +1291,9 @@ async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
     published_project: PublishedProject,
     run_metadata: RunMetadataDict,
     mocked_get_or_create_cluster: mock.Mock,
+    get_or_create_exception: Exception,
 ):
-    mocked_get_or_create_cluster.side_effect = (
-        ComputationalBackendOnDemandClustersKeeperNotReadyError
-    )
+    mocked_get_or_create_cluster.side_effect = get_or_create_exception
     # running the pipeline will trigger a call to the clusters-keeper
     assert published_project.project.prj_owner
     await scheduler.run_new_pipeline(
@@ -1269,41 +1305,39 @@ async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
     )
 
     # we ask to use an on-demand cluster, therefore the tasks are published first
-    await _assert_comp_run_db(aiopg_engine, published_project, RunningState.FAILED)
+    await _assert_comp_run_db(aiopg_engine, published_project, RunningState.PUBLISHED)
     await _assert_comp_tasks_db(
         aiopg_engine,
         published_project.project.uuid,
         [t.node_id for t in published_project.tasks],
-        expected_state=RunningState.FAILED,
+        expected_state=RunningState.PUBLISHED,
         expected_progress=None,
     )
-
-
-async def test_pipeline_with_on_demand_cluster_that_raises_anythin_fails_pipeline(
-    with_disabled_scheduler_task: None,
-    scheduler: BaseCompScheduler,
-    aiopg_engine: aiopg.sa.engine.Engine,
-    published_project: PublishedProject,
-    run_metadata: RunMetadataDict,
-    mocked_get_or_create_cluster: mock.Mock,
-):
-    mocked_get_or_create_cluster.side_effect = RuntimeError("faked error")
-    # running the pipeline will trigger a call to the clusters-keeper
-    assert published_project.project.prj_owner
-    await scheduler.run_new_pipeline(
-        user_id=published_project.project.prj_owner,
-        project_id=published_project.project.uuid,
-        cluster_id=DEFAULT_CLUSTER_ID,
-        run_metadata=run_metadata,
-        use_on_demand_clusters=True,
+    # now it should switch to failed, the run still runs until the next iteration
+    expected_failed_tasks = [
+        published_project.tasks[1],
+        published_project.tasks[3],
+    ]
+    await run_comp_scheduler(scheduler)
+    mocked_get_or_create_cluster.assert_called()
+    assert mocked_get_or_create_cluster.call_count == 2
+    mocked_get_or_create_cluster.reset_mock()
+    await _assert_comp_run_db(aiopg_engine, published_project, RunningState.STARTED)
+    await _assert_comp_tasks_db(
+        aiopg_engine,
+        published_project.project.uuid,
+        [t.node_id for t in expected_failed_tasks],
+        expected_state=RunningState.FAILED,
+        expected_progress=1.0,
     )
-
-    # we ask to use an on-demand cluster, therefore the tasks are published first
+    # again will not re-trigger the call to clusters-keeper
+    await run_comp_scheduler(scheduler)
+    mocked_get_or_create_cluster.assert_not_called()
     await _assert_comp_run_db(aiopg_engine, published_project, RunningState.FAILED)
     await _assert_comp_tasks_db(
         aiopg_engine,
         published_project.project.uuid,
-        [t.node_id for t in published_project.tasks],
+        [t.node_id for t in expected_failed_tasks],
         expected_state=RunningState.FAILED,
-        expected_progress=None,
+        expected_progress=1.0,
     )

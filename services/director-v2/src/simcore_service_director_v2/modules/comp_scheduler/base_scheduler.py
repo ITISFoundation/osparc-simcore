@@ -557,7 +557,7 @@ class BaseCompScheduler(ABC):
                 )
             else:
                 # let's get the tasks to schedule then
-                await self._schedule_tasks_to_start(
+                comp_tasks = await self._schedule_tasks_to_start(
                     user_id=user_id,
                     project_id=project_id,
                     comp_tasks=comp_tasks,
@@ -622,7 +622,7 @@ class BaseCompScheduler(ABC):
         comp_tasks: dict[str, CompTaskAtDB],
         dag: nx.DiGraph,
         pipeline_params: ScheduledPipelineParams,
-    ):
+    ) -> dict[str, CompTaskAtDB]:
         # filter out the successfully completed tasks
         dag.remove_nodes_from(
             {
@@ -644,7 +644,7 @@ class BaseCompScheduler(ABC):
 
         if not tasks_ready_to_start:
             # nothing to do
-            return
+            return comp_tasks
 
         # Change the tasks state to PENDING
         comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
@@ -687,6 +687,7 @@ class BaseCompScheduler(ABC):
                     optional_progress=1.0,
                     optional_stopped=arrow.utcnow().datetime,
                 )
+                comp_tasks[f"{t}"].state = RunningState.FAILED
             elif isinstance(
                 r,
                 ComputationalBackendNotConnectedError
@@ -700,14 +701,13 @@ class BaseCompScheduler(ABC):
                 # we should try re-connecting.
                 # in the meantime we cannot schedule tasks on the scheduler,
                 # let's put these tasks back to WAITING_FOR_CLUSTER, so they might be re-submitted later
-                await asyncio.gather(
-                    comp_tasks_repo.update_project_tasks_state(
-                        project_id,
-                        list(tasks_ready_to_start.keys()),
-                        RunningState.WAITING_FOR_CLUSTER,
-                        optional_progress=0,
-                    ),
+                await comp_tasks_repo.update_project_tasks_state(
+                    project_id,
+                    list(tasks_ready_to_start.keys()),
+                    RunningState.WAITING_FOR_CLUSTER,
+                    optional_progress=0,
                 )
+                comp_tasks[f"{t}"].state = RunningState.WAITING_FOR_CLUSTER
             elif isinstance(r, ComputationalBackendOnDemandNotReadyError):
                 _logger.warning(
                     "The on demand computational backend is not ready yet: %s", r
@@ -725,15 +725,13 @@ class BaseCompScheduler(ABC):
                         for node_id in tasks_ready_to_start
                     )
                 )
-                await asyncio.gather(
-                    comp_tasks_repo.update_project_tasks_state(
-                        project_id,
-                        list(tasks_ready_to_start.keys()),
-                        RunningState.WAITING_FOR_CLUSTER,
-                        optional_progress=0,
-                    ),
+                await comp_tasks_repo.update_project_tasks_state(
+                    project_id,
+                    list(tasks_ready_to_start.keys()),
+                    RunningState.WAITING_FOR_CLUSTER,
+                    optional_progress=0,
                 )
-
+                comp_tasks[f"{t}"].state = RunningState.WAITING_FOR_CLUSTER
             elif isinstance(r, Exception):
                 _logger.error(
                     "Unexpected error for %s with %s on %s happened when scheduling %s:\n%s\n%s",
@@ -751,6 +749,8 @@ class BaseCompScheduler(ABC):
                     optional_progress=1.0,
                     optional_stopped=arrow.utcnow().datetime,
                 )
+                comp_tasks[f"{t}"].state = RunningState.FAILED
+        return comp_tasks
 
     def _wake_up_scheduler_now(self) -> None:
         self.wake_up_event.set()
