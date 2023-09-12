@@ -17,7 +17,7 @@ from simcore_postgres_database.models.groups_extra_properties import (
 )
 from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraProperties,
-    GroupExtraPropertiesNotFound,
+    GroupExtraPropertiesNotFoundError,
     GroupExtraPropertiesRepo,
 )
 from sqlalchemy import literal_column
@@ -26,7 +26,7 @@ from sqlalchemy import literal_column
 async def test_get_raises_if_not_found(
     faker: Faker, connection: aiopg.sa.connection.SAConnection
 ):
-    with pytest.raises(GroupExtraPropertiesNotFound):
+    with pytest.raises(GroupExtraPropertiesNotFoundError):
         await GroupExtraPropertiesRepo.get(
             connection, gid=faker.pyint(min_value=1), product_name=faker.pystr()
         )
@@ -86,7 +86,7 @@ async def test_get(
     create_fake_product: Callable[..., Awaitable[RowProxy]],
     create_fake_group_extra_properties: Callable[..., Awaitable[GroupExtraProperties]],
 ):
-    with pytest.raises(GroupExtraPropertiesNotFound):
+    with pytest.raises(GroupExtraPropertiesNotFoundError):
         await GroupExtraPropertiesRepo.get(
             connection, gid=registered_user.primary_gid, product_name=product_name
         )
@@ -115,7 +115,7 @@ async def test_get_aggregated_properties_for_user_with_no_entries_raises(
     product_name: str,
     registered_user: RowProxy,
 ):
-    with pytest.raises(GroupExtraPropertiesNotFound):
+    with pytest.raises(GroupExtraPropertiesNotFoundError):
         await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
             connection, user_id=registered_user.id, product_name=product_name
         )
