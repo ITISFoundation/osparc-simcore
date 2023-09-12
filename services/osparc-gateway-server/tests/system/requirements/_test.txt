@@ -18,7 +18,9 @@ async-timeout==4.0.3
 attrs==23.1.0
     # via aiohttp
 certifi==2023.7.22
-    # via requests
+    # via
+    #   -c requirements/../../../../../requirements/constraints.txt
+    #   requests
 charset-normalizer==3.2.0
     # via
     #   aiohttp

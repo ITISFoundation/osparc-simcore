@@ -20,14 +20,16 @@ async-timeout==4.0.2
 attrs==23.1.0
     # via aiohttp
 certifi==2023.7.22
-    # via httpcore
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   httpcore
 cffi==1.15.1
     # via cryptography
 charset-normalizer==3.2.0
     # via aiohttp
 colorlog==6.7.0
     # via dask-gateway-server
-cryptography==41.0.2
+cryptography==41.0.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   dask-gateway-server
