@@ -66,7 +66,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
     },
 
     sortWalletMembers: function(a, b) {
-      const sorted = osparc.component.share.Collaborators.sortByAccessRights(a["accessRights"], b["accessRights"]);
+      const sorted = osparc.share.Collaborators.sortByAccessRights(a["accessRights"], b["accessRights"]);
       if (sorted !== 0) {
         return sorted;
       }
@@ -128,7 +128,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
         allowGrowX: false
       });
       addMemberBtn.addListener("execute", () => {
-        const collaboratorsManager = new osparc.component.share.NewCollaboratorsManager(this._serializedData);
+        const collaboratorsManager = new osparc.share.NewCollaboratorsManager(this._serializedData);
         collaboratorsManager.addListener("addCollaborators", e => {
           const cb = () => collaboratorsManager.close();
           this.__addMembers(e.getData(), cb);
@@ -144,7 +144,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
     },
 
     __getMembersFilter: function() {
-      const filter = new osparc.component.filter.TextFilter("text", "walletMembersList").set({
+      const filter = new osparc.filter.TextFilter("text", "walletMembersList").set({
         allowStretchX: true,
         margin: [0, 10, 5, 10]
       });

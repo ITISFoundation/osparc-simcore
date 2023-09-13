@@ -143,11 +143,12 @@ qx.Class.define("osparc.wrapper.Svg", {
     },
 
     drawAnnotationText: function(draw, x, y, label, color, fontSize) {
+      const defaultFont = osparc.utils.Utils.getDefaultFont();
       const text = draw.text(label)
         .font({
           fill: color,
-          size: (fontSize ? fontSize : 13) + "px",
-          family: "Roboto"
+          size: (fontSize ? fontSize : defaultFont["size"]) + "px",
+          family: defaultFont["family"]
         })
         .style({
           cursor: "pointer"
@@ -222,11 +223,12 @@ qx.Class.define("osparc.wrapper.Svg", {
       separator.back();
       gNote.add(separator);
 
+      const defaultFont = osparc.utils.Utils.getDefaultFont();
       const title = gNote.text(destinataryName)
         .font({
           fill: "#000000",
-          size: "14px",
-          family: "Roboto"
+          size: (defaultFont["size"]+1) + "px",
+          family: defaultFont["family"]
         })
         .move(padding, padding);
       title.back();
@@ -247,8 +249,8 @@ qx.Class.define("osparc.wrapper.Svg", {
       const textChild = fobj.getChild(0);
       textChild.style.overflow = "auto";
       textChild.style.overflowWrap = "anywhere";
-      textChild.style.fontFamily = "Roboto";
-      textChild.style.fontSize = "13px";
+      textChild.style.fontFamily = defaultFont["family"];
+      textChild.style.fontSize = defaultFont["size"] + "px";
       gNote.textChild = textChild;
       gNote.add(fobj);
 

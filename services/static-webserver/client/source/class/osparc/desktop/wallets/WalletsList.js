@@ -78,7 +78,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
       ) {
         const aAr = aAccessRights.find(ar => ar["gid"] === myGid);
         const bAr = bAccessRights.find(ar => ar["gid"] === myGid);
-        const sorted = osparc.component.share.Collaborators.sortByAccessRights(aAr, bAr);
+        const sorted = osparc.share.Collaborators.sortByAccessRights(aAr, bAr);
         if (sorted !== 0) {
           return sorted;
         }
@@ -125,7 +125,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
     },
 
     __getWalletsFilter: function() {
-      const filter = new osparc.component.filter.TextFilter("text", "walletsList").set({
+      const filter = new osparc.filter.TextFilter("text", "walletsList").set({
         allowStretchX: true,
         margin: [0, 10, 5, 10]
       });
@@ -245,7 +245,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
         .catch(err => {
           console.error(err);
           const msg = err.message || this.tr("Something went wrong creating the Wallet");
-          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
         })
         .finally(() => {
           button.setFetching(false);
@@ -283,7 +283,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
           .catch(err => {
             console.error(err);
             const msg = err.message || this.tr("Something went wrong updating the Wallet");
-            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+            osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
           })
           .finally(() => {
             button.setFetching(false);

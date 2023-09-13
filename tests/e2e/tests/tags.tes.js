@@ -78,12 +78,12 @@ describe('tags testing', () => {
     await waitAndClick(page, '[osparc-test-id="userMenuPreferencesBtn"]');
     await waitAndClick(page, '[osparc-test-id="preferencesTagsTabBtn"]');
     await waitAndClick(page, '[osparc-test-id="addTagBtn"]');
-    await utils.typeInInputElement(page, '[qxclass="osparc.component.form.tag.TagItem"]:last-of-type input[type="text"]', TAG_NAME);
-    await waitAndClick(page, '[qxclass="osparc.component.form.tag.TagItem"]:last-of-type [qxclass="osparc.ui.form.FetchButton"]');
+    await utils.typeInInputElement(page, '[qxclass="osparc.form.tag.TagItem"]:last-of-type input[type="text"]', TAG_NAME);
+    await waitAndClick(page, '[qxclass="osparc.form.tag.TagItem"]:last-of-type [qxclass="osparc.ui.form.FetchButton"]');
     // Check tag was added
     await page.waitForFunction(tagName => {
       const el = document.querySelector(
-        '[qxclass="osparc.component.form.tag.TagItem"]:last-of-type [qxclass="osparc.ui.basic.Tag"]'
+        '[qxclass="osparc.form.tag.TagItem"]:last-of-type [qxclass="osparc.ui.basic.Tag"]'
       );
       return el && el.innerText === tagName;
     }, {}, TAG_NAME);
@@ -111,7 +111,7 @@ describe('tags testing', () => {
     await waitAndClick(page, '[qxclass="osparc.dashboard.GridButtonItem"] [osparc-test-id="studyItemMenuButton"]');
     await waitAndClick(page, '[osparc-test-id="moreInfoBtn"]');
     await waitAndClick(page, '[osparc-test-id="editStudyEditTagsBtn"]');
-    await waitAndClick(page, '[qxclass="osparc.component.form.tag.TagToggleButton"]');
+    await waitAndClick(page, '[qxclass="osparc.form.tag.TagToggleButton"]');
     await waitAndClick(page, '[osparc-test-id="saveTagsBtn"]');
     // UI displays the change
     let displayedTag = await page.waitForSelector('[qxclass="osparc.dashboard.GridButtonItem"] [qxclass="osparc.ui.basic.Tag"]')
@@ -125,13 +125,13 @@ describe('tags testing', () => {
     await waitAndClick(page, '[osparc-test-id="userMenuBtn"]');
     await waitAndClick(page, '[osparc-test-id="userMenuPreferencesBtn"]');
     await waitAndClick(page, '[osparc-test-id="preferencesTagsTabBtn"]');
-    await waitAndClick(page, '[qxclass="osparc.component.form.tag.TagItem"] [qxclass="qx.ui.form.Button"]');
-    await utils.clearInput(page, '[qxclass="osparc.component.form.tag.TagItem"] input[type="text"]');
-    await utils.typeInInputElement(page, '[qxclass="osparc.component.form.tag.TagItem"] input[type="text"]', TAG_NAME_2);
-    await waitAndClick(page, '[qxclass="osparc.component.form.tag.TagItem"] [qxclass="osparc.ui.form.FetchButton"]');
+    await waitAndClick(page, '[qxclass="osparc.form.tag.TagItem"] [qxclass="qx.ui.form.Button"]');
+    await utils.clearInput(page, '[qxclass="osparc.form.tag.TagItem"] input[type="text"]');
+    await utils.typeInInputElement(page, '[qxclass="osparc.form.tag.TagItem"] input[type="text"]', TAG_NAME_2);
+    await waitAndClick(page, '[qxclass="osparc.form.tag.TagItem"] [qxclass="osparc.ui.form.FetchButton"]');
     await page.waitForFunction(tagName => {
       const el = document.querySelector(
-        '[qxclass="osparc.component.form.tag.TagItem"] [qxclass="osparc.ui.basic.Tag"]'
+        '[qxclass="osparc.form.tag.TagItem"] [qxclass="osparc.ui.basic.Tag"]'
       );
       return el && el.innerText === tagName;
     }, {}, TAG_NAME_2);

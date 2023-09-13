@@ -110,7 +110,7 @@ qx.Class.define("osparc.auth.LoginPage", {
           pages.setSelection([reset]);
         }
       } else if (urlFragment.params && urlFragment.params.registered) {
-        osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Your account has been created.<br>You can now use your credentials to login."));
+        osparc.FlashMessenger.getInstance().logAs(this.tr("Your account has been created.<br>You can now use your credentials to login."));
       }
 
       // Transitions between pages
