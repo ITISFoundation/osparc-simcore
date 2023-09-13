@@ -19,7 +19,7 @@ qx.Class.define("osparc.product.quickStart.Utils", {
   type: "static",
 
   statics: {
-    TUTORIALS: {
+    QUICK_START: {
       "tis": {
         localStorageStr: "tiDontShowQuickStart",
         tutorial: () => new osparc.product.quickStart.ti.Slides()
@@ -35,10 +35,10 @@ qx.Class.define("osparc.product.quickStart.Utils", {
     },
 
     getQuickStart: function() {
-      const tutorials = this.TUTORIALS;
+      const quickStarts = this.QUICK_START;
       const pName = osparc.product.Utils.getProductName();
-      if (Object.keys(tutorials).includes(pName)) {
-        return tutorials[pName];
+      if (Object.keys(quickStarts).includes(pName)) {
+        return quickStarts[pName];
       }
       return null;
     },
