@@ -28,14 +28,14 @@ qx.Class.define("osparc.store.Support", {
     },
 
     addQuickStartToMenu: function(menu) {
-      const tutorial = osparc.product.quickStart.Utils.getTutorial();
-      if (tutorial) {
+      const quickStart = osparc.product.quickStart.Utils.getQuickStart();
+      if (quickStart) {
         const qsButton = new qx.ui.menu.Button(qx.locale.Manager.tr("Quick Start"));
         qsButton.getChildControl("label").set({
           rich: true
         });
         qsButton.addListener("execute", () => {
-          const tutorialWindow = tutorial.tutorial();
+          const tutorialWindow = quickStart.tutorial();
           tutorialWindow.center();
           tutorialWindow.open();
         });

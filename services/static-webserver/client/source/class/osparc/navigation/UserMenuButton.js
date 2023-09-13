@@ -171,7 +171,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
         this.getChildControl("organizations");
         this.getChildControl("clusters");
       }
-      if (osparc.product.quickStart.Utils.getTutorial()) {
+      if (osparc.product.quickStart.Utils.getQuickStart()) {
         this.getMenu().addSeparator();
         osparc.store.Support.addQuickStartToMenu(this.getMenu());
       }

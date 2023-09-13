@@ -27,10 +27,14 @@ qx.Class.define("osparc.product.quickStart.Utils", {
       "s4llite": {
         localStorageStr: "s4lliteDontShowQuickStart",
         tutorial: () => new osparc.product.quickStart.s4llite.Slides()
+      },
+      "s4l": {
+        localStorageStr: "s4lDontShowQuickStart",
+        tutorial: () => new osparc.product.quickStart.s4l.Slides()
       }
     },
 
-    getTutorial: function() {
+    getQuickStart: function() {
       const tutorials = this.TUTORIALS;
       const pName = osparc.product.Utils.getProductName();
       if (Object.keys(tutorials).includes(pName)) {
