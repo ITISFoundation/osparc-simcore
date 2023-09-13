@@ -16,12 +16,16 @@ from servicelib.common_headers import (
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
-from simcore_service_webserver.utils_aiohttp import envelope_json_response
+from simcore_postgres_database.utils_groups_extra_properties import (
+    GroupExtraPropertiesRepo,
+)
+from simcore_service_webserver.db.plugin import get_database_engine
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
+from ..utils_aiohttp import envelope_json_response
 from ..version_control.models import CommitID
 from ._abc import get_project_run_policy
 from ._core_computations import ComputationsApi
@@ -81,13 +85,20 @@ async def start_computation(request: web.Request) -> web.Response:
     simcore_user_agent = request.headers.get(
         X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
     )
+    async with get_database_engine(request.app).acquire() as conn:
+        group_properties = (
+            await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+                conn, user_id=req_ctx.user_id, product_name=req_ctx.product_name
+            )
+        )
 
     options = {
         "start_pipeline": True,
         "subgraph": list(subgraph),  # sets are not natively json serializable
         "force_restart": force_restart,
-        "cluster_id": cluster_id,
+        "cluster_id": None if group_properties.use_on_demand_clusters else cluster_id,
         "simcore_user_agent": simcore_user_agent,
+        "use_on_demand_clusters": group_properties.use_on_demand_clusters,
     }
 
     try:
