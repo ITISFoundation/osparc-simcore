@@ -3,10 +3,10 @@ import logging
 
 from aiohttp import web
 from models_library.api_schemas_webserver.wallets import (
+    CreatePaymentMethodInitiated,
     CreateWalletPayment,
-    GetPaymentMethod,
-    InitCreatePaymentMethod,
     PaymentID,
+    PaymentMethodGet,
     PaymentTransaction,
     WalletPaymentCreated,
 )
@@ -165,13 +165,16 @@ class PaymentMethodsPathParams(WalletsPathParams):
 @handle_wallets_exceptions
 @requires_dev_feature_enabled
 async def init_create_payment_method(request: web.Request):
+    """Triggers the creation of a new payment method. Creating
+    a payment-method follows the init-prompt-ack workflow
+    """
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
 
     created = parse_obj_as(
-        InitCreatePaymentMethod,
+        CreatePaymentMethodInitiated,
         {
-            **InitCreatePaymentMethod.Config.schema_extra["examples"][0],
+            **CreatePaymentMethodInitiated.Config.schema_extra["examples"][0],
             "wallet_id": path_params.wallet_id,
         },
     )
@@ -189,10 +192,10 @@ async def list_payments_methods(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
     payment_methods = parse_obj_as(
-        list[GetPaymentMethod],
+        list[PaymentMethodGet],
         [
             {**p, "wallet_id": path_params.wallet_id}
-            for p in GetPaymentMethod.Config.schema_extra["examples"]
+            for p in PaymentMethodGet.Config.schema_extra["examples"]
         ],
     )
     return envelope_json_response(payment_methods)
@@ -211,9 +214,9 @@ async def get_payment_method(request: web.Request):
     path_params = parse_request_path_parameters_as(PaymentMethodsPathParams, request)
 
     got = parse_obj_as(
-        GetPaymentMethod,
+        PaymentMethodGet,
         {
-            **GetPaymentMethod.Config.schema_extra["examples"][0],
+            **PaymentMethodGet.Config.schema_extra["examples"][0],
             "idr": path_params.payment_method_id,
             "wallet_id": path_params.wallet_id,
         },

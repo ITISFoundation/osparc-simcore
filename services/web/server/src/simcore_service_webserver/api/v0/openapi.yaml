@@ -3871,6 +3871,29 @@ paths:
       responses:
         '204':
           description: Successful Response
+  /v0/wallets/{wallet_id}/payments-methods:init:
+    post:
+      tags:
+      - wallets
+      summary: Init Create Payment Method
+      description: Inits creation of new payment method for `wallet_id` (pending completion)
+      operationId: init_create_payment_method
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_CreatePaymentMethodInitiated_'
   /v0/wallets/{wallet_id}/payments-methods:
     get:
       tags:
@@ -3894,28 +3917,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.wallets.PaymentMethodGet__'
-    post:
-      tags:
-      - wallets
-      summary: Create Payment Method
-      description: Adds new payment method to `wallet_id`
-      operationId: create_payment_method
-      parameters:
-      - required: true
-        schema:
-          title: Wallet Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: wallet_id
-        in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_PaymentMethodCreated_'
   /v0/wallets/{wallet_id}/payments-methods/{payment_method_id}:
     get:
       tags:
@@ -4783,6 +4784,30 @@ components:
           title: Cluster Id
           minimum: 0
           type: integer
+    CreatePaymentMethodInitiated:
+      title: CreatePaymentMethodInitiated
+      required:
+      - walletId
+      - paymentMethodId
+      - paymentMethodFormUrl
+      type: object
+      properties:
+        walletId:
+          title: Walletid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        paymentMethodId:
+          title: Paymentmethodid
+          minLength: 1
+          type: string
+        paymentMethodFormUrl:
+          title: Paymentmethodformurl
+          maxLength: 2083
+          minLength: 1
+          type: string
+          description: Link to external site that holds the payment submission form
+          format: uri
     CreateWalletBodyParams:
       title: CreateWalletBodyParams
       required:
@@ -4952,6 +4977,14 @@ components:
           $ref: '#/components/schemas/ComputationTaskGet'
         error:
           title: Error
+    Envelope_CreatePaymentMethodInitiated_:
+      title: Envelope[CreatePaymentMethodInitiated]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/CreatePaymentMethodInitiated'
+        error:
+          title: Error
     Envelope_Error_:
       title: Envelope[Error]
       type: object
@@ -5054,14 +5087,6 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/NodeRetrieved'
-        error:
-          title: Error
-    Envelope_PaymentMethodCreated_:
-      title: Envelope[PaymentMethodCreated]
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/PaymentMethodCreated'
         error:
           title: Error
     Envelope_PaymentMethodGet_:
@@ -6808,30 +6833,6 @@ components:
       properties:
         value:
           title: Value
-    PaymentMethodCreated:
-      title: PaymentMethodCreated
-      required:
-      - walletId
-      - paymentMethodId
-      - paymentMethodFormUrl
-      type: object
-      properties:
-        walletId:
-          title: Walletid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        paymentMethodId:
-          title: Paymentmethodid
-          minLength: 1
-          type: string
-        paymentMethodFormUrl:
-          title: Paymentmethodformurl
-          maxLength: 2083
-          minLength: 1
-          type: string
-          description: Link to external site that holds the payment submission form
-          format: uri
     PaymentMethodGet:
       title: PaymentMethodGet
       required:
