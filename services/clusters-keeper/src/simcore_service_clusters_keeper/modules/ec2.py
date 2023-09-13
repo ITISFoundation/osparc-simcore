@@ -41,10 +41,10 @@ class ClustersKeeperEC2:
         session = aioboto3.Session()
         session_client = session.client(
             "ec2",
-            endpoint_url=settings.EC2_ENDPOINT,
-            aws_access_key_id=settings.EC2_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.EC2_SECRET_ACCESS_KEY,
-            region_name=settings.EC2_REGION_NAME,
+            endpoint_url=settings.CLUSTERS_KEEPER_EC2_ENDPOINT,
+            aws_access_key_id=settings.CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY,
+            region_name=settings.CLUSTERS_KEEPER_EC2_REGION_NAME,
         )
         assert isinstance(session_client, ClientCreatorContext)  # nosec
         exit_stack = contextlib.AsyncExitStack()
@@ -102,19 +102,19 @@ class ClustersKeeperEC2:
             current_instances = await self.get_instances(instance_settings, tags=tags)
             if (
                 len(current_instances) + number_of_instances
-                > instance_settings.EC2_INSTANCES_MAX_INSTANCES
+                > instance_settings.CLUSTERS_KEEPER_EC2_INSTANCES_MAX_INSTANCES
             ):
                 raise Ec2TooManyInstancesError(
-                    num_instances=instance_settings.EC2_INSTANCES_MAX_INSTANCES
+                    num_instances=instance_settings.CLUSTERS_KEEPER_EC2_INSTANCES_MAX_INSTANCES
                 )
 
             instances = await self.client.run_instances(
-                ImageId=instance_settings.EC2_INSTANCES_AMI_ID,
+                ImageId=instance_settings.CLUSTERS_KEEPER_EC2_INSTANCES_AMI_ID,
                 MinCount=number_of_instances,
                 MaxCount=number_of_instances,
                 InstanceType=instance_type,
                 InstanceInitiatedShutdownBehavior="terminate",
-                KeyName=instance_settings.EC2_INSTANCES_KEY_NAME,
+                KeyName=instance_settings.CLUSTERS_KEEPER_EC2_INSTANCES_KEY_NAME,
                 TagSpecifications=[
                     {
                         "ResourceType": "instance",
@@ -129,8 +129,8 @@ class ClustersKeeperEC2:
                     {
                         "AssociatePublicIpAddress": True,
                         "DeviceIndex": 0,
-                        "SubnetId": instance_settings.EC2_INSTANCES_SUBNET_ID,
-                        "Groups": instance_settings.EC2_INSTANCES_SECURITY_GROUP_IDS,
+                        "SubnetId": instance_settings.CLUSTERS_KEEPER_EC2_INSTANCES_SUBNET_ID,
+                        "Groups": instance_settings.CLUSTERS_KEEPER_EC2_INSTANCES_SECURITY_GROUP_IDS,
                     }
                 ],
             )
@@ -183,7 +183,7 @@ class ClustersKeeperEC2:
         filters: list[FilterTypeDef] = [
             {
                 "Name": "key-name",
-                "Values": [instance_settings.EC2_INSTANCES_KEY_NAME],
+                "Values": [instance_settings.CLUSTERS_KEEPER_EC2_INSTANCES_KEY_NAME],
             },
             {"Name": "instance-state-name", "Values": state_names},
         ]
