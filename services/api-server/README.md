@@ -37,7 +37,7 @@ will start the api-server in development-mode together with a postgres db initia
 - http://127.0.0.1:8000/dev/docs: swagger type of documentation
 
 ### Profiling requests to the api server
-When in development mode (the environment variable `API_SERVER_DEV_FEATURES_ENABLED` is =1 in the running container) one can profile calls to the API server directly from the client side. On the server, the profiling is done using [Pyinstrument](https://github.com/joerick/pyinstrument). If we have our request in the form of a curl command, one simply adds the custom header `x-profile-api-server:true` to the command to the request, in which case the profile is received under the `profile` key of the response body. This is easily to visualise directly in bash:
+When in development mode (the environment variable `API_SERVER_DEV_FEATURES_ENABLED` is =1 in the running container) one can profile calls to the API server directly from the client side. On the server, the profiling is done using [Pyinstrument](https://github.com/joerick/pyinstrument). If we have our request in the form of a curl command, one simply adds the custom header `x-profile-api-server:true` to the command to the request, in which case the profile is received under the `profile` key of the response body. This makes it easy to visualise the profiling report directly in bash:
 ```bash
 <curl_command> -H 'x-profile-api-server: true' | jq -r .profile
 ```
