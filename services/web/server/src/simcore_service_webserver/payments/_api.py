@@ -6,6 +6,7 @@ import arrow
 from aiohttp import web
 from models_library.api_schemas_webserver.wallets import (
     PaymentID,
+    PaymentMethodID,
     PaymentTransaction,
     WalletPaymentCreated,
 )
@@ -39,6 +40,31 @@ async def _check_wallet_permissions(
         raise WalletAccessForbiddenError(
             reason=f"User {user_id} does not have necessary permissions to do a payment into wallet {wallet_id}"
         )
+
+
+def _to_api_model(transaction: _db.PaymentsTransactionsDB) -> PaymentTransaction:
+    data: dict[str, Any] = {
+        "payment_id": transaction.payment_id,
+        "price_dollars": transaction.price_dollars,
+        "osparc_credits": transaction.osparc_credits,
+        "wallet_id": transaction.wallet_id,
+        "created_at": transaction.initiated_at,
+        "state": transaction.state,
+        "completed_at": transaction.completed_at,
+    }
+
+    if transaction.comment:
+        data["comment"] = transaction.comment
+
+    if transaction.state_message:
+        data["state_message"] = transaction.state_message
+
+    return PaymentTransaction.parse_obj(data)
+
+
+#
+# One-time Payments
+#
 
 
 async def create_payment_to_wallet(
@@ -94,26 +120,6 @@ async def create_payment_to_wallet(
         payment_id=payment_id,
         payment_form_url=f"{submission_link}",
     )
-
-
-def _to_api_model(transaction: _db.PaymentsTransactionsDB) -> PaymentTransaction:
-    data: dict[str, Any] = dict(
-        payment_id=transaction.payment_id,
-        price_dollars=transaction.price_dollars,
-        osparc_credits=transaction.osparc_credits,
-        wallet_id=transaction.wallet_id,
-        created_at=transaction.initiated_at,
-        state=transaction.state,
-        completed_at=transaction.completed_at,
-    )
-
-    if transaction.comment:
-        data["comment"] = transaction.comment
-
-    if transaction.state_message:
-        data["state_message"] = transaction.state_message
-
-    return PaymentTransaction.parse_obj(data)
 
 
 async def get_user_payments_page(
@@ -191,3 +197,18 @@ async def cancel_payment_to_wallet(
         completion_state=PaymentTransactionState.CANCELED,
         message="Payment aborted by user",
     )
+
+
+#
+# Payment-methods
+#
+
+
+async def complete_payment_method(
+    app: web.Application,
+    *,
+    payment_method_id: PaymentMethodID,
+    completion_state: PaymentTransactionState,
+    message: str | None = None,
+):
+    raise NotImplementedError

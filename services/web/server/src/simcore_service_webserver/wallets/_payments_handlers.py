@@ -5,8 +5,8 @@ from aiohttp import web
 from models_library.api_schemas_webserver.wallets import (
     CreateWalletPayment,
     PaymentID,
-    PaymentMethodCreated,
     PaymentMethodGet,
+    PaymentMethodInitiated,
     PaymentTransaction,
     WalletPaymentCreated,
 )
@@ -42,7 +42,7 @@ _logger = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
 
-def raise_if_not_dev_feature_enabled(handler: Handler):
+def requires_dev_feature_enabled(handler: Handler):
     @functools.wraps(handler)
     async def _handler_under_dev(request: web.Request):
         app_settings = get_settings(request.app)
@@ -57,7 +57,7 @@ def raise_if_not_dev_feature_enabled(handler: Handler):
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
-@raise_if_not_dev_feature_enabled
+@requires_dev_feature_enabled
 async def create_payment(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
@@ -93,7 +93,7 @@ async def create_payment(request: web.Request):
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
-@raise_if_not_dev_feature_enabled
+@requires_dev_feature_enabled
 async def list_all_payments(request: web.Request):
     """Lists all user's payments to any of his wallets
 
@@ -137,7 +137,7 @@ class PaymentsPathParams(WalletsPathParams):
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
-@raise_if_not_dev_feature_enabled
+@requires_dev_feature_enabled
 async def cancel_payment(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(PaymentsPathParams, request)
@@ -162,19 +162,19 @@ class PaymentMethodsPathParams(WalletsPathParams):
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
-@raise_if_not_dev_feature_enabled
+@requires_dev_feature_enabled
 async def create_payment_method(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
 
     created = parse_obj_as(
-        PaymentMethodCreated,
+        PaymentMethodInitiated,
         {
-            **PaymentMethodCreated.Config.schema_extra["examples"][0],
+            **PaymentMethodInitiated.Config.schema_extra["examples"][0],
             "wallet_id": path_params.wallet_id,
         },
     )
-    return envelope_json_response(created)
+    return envelope_json_response(created, web.HTTPCreated)
 
 
 @routes.get(
@@ -183,7 +183,7 @@ async def create_payment_method(request: web.Request):
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
-@raise_if_not_dev_feature_enabled
+@requires_dev_feature_enabled
 async def list_payments_methods(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
@@ -204,7 +204,7 @@ async def list_payments_methods(request: web.Request):
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
-@raise_if_not_dev_feature_enabled
+@requires_dev_feature_enabled
 async def get_payment_method(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(PaymentMethodsPathParams, request)
@@ -227,7 +227,7 @@ async def get_payment_method(request: web.Request):
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
-@raise_if_not_dev_feature_enabled
+@requires_dev_feature_enabled
 async def delete_payment_method(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(PaymentMethodsPathParams, request)

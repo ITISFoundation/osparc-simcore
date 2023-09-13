@@ -14,9 +14,9 @@ from models_library.api_schemas_webserver.wallets import (
     CreateWalletBodyParams,
     CreateWalletPayment,
     PaymentID,
-    PaymentMethodCreated,
     PaymentMethodGet,
     PaymentMethodID,
+    PaymentMethodInitiated,
     PaymentTransaction,
     PutWalletBodyParams,
     WalletGet,
@@ -98,7 +98,7 @@ async def cancel_payment(wallet_id: WalletID, payment_id: PaymentID):
 
 @router.post(
     "/wallets/{wallet_id}/payments-methods",
-    response_model=Envelope[PaymentMethodCreated],
+    response_model=Envelope[PaymentMethodInitiated],
 )
 async def create_payment_method(wallet_id: WalletID):
     """Adds new payment method to `wallet_id`"""

@@ -84,7 +84,7 @@ class PaymentTransaction(OutputSchema):
 PaymentMethodID: TypeAlias = IDStr
 
 
-class PaymentMethodCreated(OutputSchema):
+class PaymentMethodInitiated(OutputSchema):
     wallet_id: WalletID
     payment_method_id: PaymentMethodID
     payment_method_form_url: HttpUrl = Field(
