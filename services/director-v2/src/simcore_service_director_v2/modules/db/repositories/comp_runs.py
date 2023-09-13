@@ -81,6 +81,7 @@ class CompRunsRepository(BaseRepository):
         cluster_id: ClusterID,
         iteration: PositiveInt | None = None,
         metadata: RunMetadataDict | None,
+        use_on_demand_clusters: bool,
     ) -> CompRunsAtDB:
         try:
             async with self.db_engine.acquire() as conn:
@@ -108,6 +109,7 @@ class CompRunsRepository(BaseRepository):
                         result=RUNNING_STATE_TO_DB[RunningState.PUBLISHED],
                         started=datetime.datetime.now(tz=datetime.timezone.utc),
                         metadata=jsonable_encoder(metadata) if metadata else None,
+                        use_on_demand_clusters=use_on_demand_clusters,
                     )
                     .returning(literal_column("*"))
                 )

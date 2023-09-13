@@ -99,7 +99,7 @@ async def _compute_user_access_rights(
         .join(groups)
     )
     user_groups = await result.fetchall()
-
+    assert user_groups  # nosec
     # get the primary group first, as it has precedence
     if (
         primary_group_row := next(

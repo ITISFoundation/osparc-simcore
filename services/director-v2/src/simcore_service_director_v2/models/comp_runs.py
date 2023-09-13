@@ -37,6 +37,7 @@ class CompRunsAtDB(BaseModel):
     started: datetime.datetime | None
     ended: datetime.datetime | None
     metadata: RunMetadataDict = RunMetadataDict()
+    use_on_demand_clusters: bool
 
     @validator("result", pre=True)
     @classmethod
@@ -85,6 +86,7 @@ class CompRunsAtDB(BaseModel):
                     "result": "NOT_STARTED",
                     "created": "2021-03-01 13:07:34.19161",
                     "modified": "2021-03-01 13:07:34.19161",
+                    "use_on_demand_clusters": False,
                 },
                 {
                     "run_id": 43243,
@@ -104,6 +106,7 @@ class CompRunsAtDB(BaseModel):
                         "simcore_user_agent": "undefined",
                         "some-other-metadata-which-is-an-array": [1, 3, 4],
                     },
+                    "use_on_demand_clusters": False,
                 },
             ]
         }

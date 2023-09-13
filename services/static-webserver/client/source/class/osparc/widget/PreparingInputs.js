@@ -158,6 +158,7 @@ qx.Class.define("osparc.widget.PreparingInputs", {
               "PUBLISHED",
               "PENDING",
               "WAITING_FOR_RESOURCES",
+              "WAITING_FOR_CLUSTER",
               "STARTED"
             ].includes(nodeRunningStatus);
             rerunBtn.setFetching(fetching);

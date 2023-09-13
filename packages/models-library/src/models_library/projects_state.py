@@ -26,6 +26,7 @@ class RunningState(str, Enum):
     SUCCESS = "SUCCESS"
     FAILED = "FAILED"
     ABORTED = "ABORTED"
+    WAITING_FOR_CLUSTER = "WAITING_FOR_CLUSTER"
 
     def is_running(self) -> bool:
         return self in (
@@ -33,6 +34,7 @@ class RunningState(str, Enum):
             RunningState.PENDING,
             RunningState.WAITING_FOR_RESOURCES,
             RunningState.STARTED,
+            RunningState.WAITING_FOR_CLUSTER,
         )
 
 

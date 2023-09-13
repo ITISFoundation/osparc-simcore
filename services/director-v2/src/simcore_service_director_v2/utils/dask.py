@@ -1,8 +1,8 @@
 import asyncio
 import collections
 import logging
-from collections.abc import Awaitable, Callable, Coroutine
-from typing import Any, Final, Generator, NoReturn, Optional, cast, get_args
+from collections.abc import Awaitable, Callable, Coroutine, Generator
+from typing import Any, Final, NoReturn, Optional, cast, get_args
 from uuid import uuid4
 
 import dask_gateway
@@ -222,7 +222,7 @@ async def compute_input_data(
             else:
                 input_data[port.key] = value
 
-        except ValidationError as err:
+        except ValidationError as err:  # noqa: PERF203
             ports_errors.extend(_get_port_validation_errors(port.key, err))
 
     if ports_errors:
