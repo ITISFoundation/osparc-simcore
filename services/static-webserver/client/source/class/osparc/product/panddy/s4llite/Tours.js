@@ -30,11 +30,6 @@ qx.Class.define("osparc.product.panddy.s4llite.Tours", {
         name: "Projects",
         description: "Introduction to Studies",
         steps: this.__getStudiesSteps()
-      }, {
-        contextTarget: "osparc-test-id=mode-button-modeling",
-        name: "<i>S4L<sup>lite</sup></i>",
-        description: "Introduction to Studies",
-        steps: this.__getS4LLiteSteps()
       }];
     },
 
@@ -65,28 +60,6 @@ qx.Class.define("osparc.product.panddy.s4llite.Tours", {
         anchorEl: "osparc-test-id=searchBarFilter-textField-study",
         title: "Project Filter and Search",
         text: "Type here the text of the Project you want to search.<br>Pro tip: click on the field to open filtering options"
-      }];
-    },
-
-    __getS4LLiteSteps: function() {
-      return [{
-        title: "Welcome to The Rocket",
-        text: "This is a Proof of Concept"
-      }, {
-        anchorEl: "osparc-test-id=mode-button-modeling",
-        action: "execute",
-        title: "Modeling",
-        text: "This is the first step in the pipeline. Use our Virtual Population, upload CAD models or build your own model."
-      }, {
-        anchorEl: "osparc-test-id=mode-button-simulation",
-        action: "execute",
-        title: "Simulation",
-        text: "Simulators, gridders, voxelers and solvers. As you can see, the context chanded so did the avaialble tools."
-      }, {
-        anchorEl: "osparc-test-id=mode-button-postro",
-        action: "execute",
-        title: "Post Processing",
-        text: "Analyze simulation results and imaging data through advanced visualization and analysis capabilities."
       }];
     }
   }
