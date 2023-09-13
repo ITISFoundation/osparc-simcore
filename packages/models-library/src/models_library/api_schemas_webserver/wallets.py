@@ -1,6 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Literal, TypeAlias
+from typing import Any, ClassVar, Literal, TypeAlias
 
 from models_library.utils.pydantic_tools_extension import FieldNotRequired
 from pydantic import Field, HttpUrl
@@ -79,3 +79,58 @@ class PaymentTransaction(OutputSchema):
     )
     state_message: str = FieldNotRequired()
     invoice_url: HttpUrl = FieldNotRequired()
+
+
+PaymentMethodID: TypeAlias = IDStr
+
+
+class PaymentMethodCreated(OutputSchema):
+    wallet_id: WalletID
+    payment_method_id: PaymentMethodID
+    payment_method_form_url: HttpUrl = Field(
+        ..., description="Link to external site that holds the payment submission form"
+    )
+
+    class Config(OutputSchema.Config):
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [
+                {
+                    "wallet_id": 1,
+                    "payment_method_id": "pm_0987654321",
+                    "payment_method_form_url": "https://example.com/payment-method/form",
+                }
+            ]
+        }
+
+
+class PaymentMethodGet(OutputSchema):
+    idr: PaymentMethodID
+    wallet_id: WalletID
+    card_holder_name: str
+    card_number_masked: str
+    card_type: str
+    expiration_month: int
+    expiration_year: int
+    street_address: str
+    zipcode: str
+    country: str
+    created: datetime
+
+    class Config(OutputSchema.Config):
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [
+                {
+                    "idr": "pm_1234567890",
+                    "wallet_id": 1,
+                    "card_holder_name": "John Doe",
+                    "card_number_masked": "**** **** **** 1234",
+                    "card_type": "Visa",
+                    "expiration_month": 10,
+                    "expiration_year": 2025,
+                    "street_address": "123 Main St",
+                    "zipcode": "12345",
+                    "country": "United States",
+                    "created": "2023-09-13T15:30:00Z",
+                },
+            ],
+        }
