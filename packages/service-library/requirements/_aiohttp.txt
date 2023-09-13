@@ -34,7 +34,11 @@ attrs==23.1.0
     #   jsonschema
     #   referencing
 certifi==2023.7.22
-    # via requests
+    # via
+    #   -c requirements/./../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/./../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/./../../../requirements/constraints.txt
+    #   requests
 charset-normalizer==3.2.0
     # via
     #   aiohttp
@@ -95,6 +99,8 @@ openapi-schema-validator==0.6.0
     #   openapi-spec-validator
 openapi-spec-validator==0.6.0
     # via openapi-core
+orjson==3.9.7
+    # via -r requirements/./../../../packages/models-library/requirements/_base.in
 parse==1.19.1
     # via openapi-core
 pathable==0.4.3
