@@ -174,6 +174,9 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       if (osparc.product.tutorial.Utils.getTutorial()) {
         this.getMenu().addSeparator();
         osparc.store.Support.addQuickStartToMenu(this.getMenu());
+      }
+      if (osparc.product.tours.Utils.hasTours()) {
+        this.getMenu().addSeparator();
         osparc.store.Support.addPanddyToMenu(this.getMenu());
       }
       this.getMenu().addSeparator();
