@@ -61,7 +61,7 @@ qx.Class.define("osparc.product.quickStart.s4l.Slides", {
         });
       footerItems.push(licenseLink);
 
-      const dontShowCB = osparc.product.quickStart.Utils.createDontShowAgain("s4lliteDontShowQuickStart");
+      const dontShowCB = osparc.product.quickStart.Utils.createDontShowAgain("s4lDontShowQuickStart");
       footerItems.push(dontShowCB);
 
       return footerItems;

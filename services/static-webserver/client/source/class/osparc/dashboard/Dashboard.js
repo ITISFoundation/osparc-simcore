@@ -40,20 +40,6 @@ qx.Class.define("osparc.dashboard.Dashboard", {
 
     osparc.utils.Utils.setIdToWidget(this, "dashboard");
 
-    if (osparc.product.tours.Utils.hasTours()) {
-      const tourManager = osparc.tours.Manager.getInstance();
-      const root = qx.core.Init.getApplication().getRoot();
-      const rootBounds = root.getBounds();
-      const width = 200;
-      const height = 200;
-      // center
-      root.add(tourManager, {
-        left: Math.round((rootBounds.width - width) / 2),
-        top: Math.round((rootBounds.height - height) / 2)
-      });
-      setTimeout(() => tourManager.start(), 1000);
-    }
-
     this.set({
       contentPaddingTop: 15,
       contentPaddingLeft: 0,
