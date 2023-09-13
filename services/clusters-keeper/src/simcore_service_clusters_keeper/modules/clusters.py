@@ -35,7 +35,7 @@ async def create_cluster(
             InstanceTypeType,
             next(
                 iter(
-                    app_settings.CLUSTERS_KEEPER_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES
+                    app_settings.CLUSTERS_KEEPER_EC2_INSTANCES.CLUSTERS_KEEPER_EC2_INSTANCES_ALLOWED_TYPES
                 )
             ),
         ),
@@ -80,7 +80,7 @@ async def cluster_heartbeat(
 
 async def set_instance_heartbeat(app: FastAPI, *, instance: EC2InstanceData) -> None:
     with log_context(
-        _logger, logging.INFO, msg=f"set instance heartbeat for {instance.id}"
+        _logger, logging.DEBUG, msg=f"set instance heartbeat for {instance.id}"
     ):
         ec2_client = get_ec2_client(app)
         await ec2_client.set_instances_tags(

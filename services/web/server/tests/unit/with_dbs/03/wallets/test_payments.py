@@ -230,7 +230,6 @@ async def test_multiple_payments(
         assert all_transactions[pid].state == PaymentTransactionState.PENDING
 
 
-@pytest.mark.testit
 async def test_complete_payment_errors(
     client: TestClient,
     logged_user_wallet: WalletGet,

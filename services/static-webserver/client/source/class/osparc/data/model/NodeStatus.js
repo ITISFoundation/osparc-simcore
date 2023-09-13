@@ -56,7 +56,7 @@ qx.Class.define("osparc.data.model.NodeStatus", {
     },
 
     running: {
-      check: ["UNKNOWN", "NOT_STARTED", "PUBLISHED", "PENDING", "WAITING_FOR_RESOURCES", "STARTED", "RETRY", "SUCCESS", "FAILED", "ABORTED"],
+      check: ["UNKNOWN", "NOT_STARTED", "PUBLISHED", "PENDING", "WAITING_FOR_RESOURCES", "WAITING_FOR_CLUSTER", "STARTED", "RETRY", "SUCCESS", "FAILED", "ABORTED"],
       nullable: true,
       init: null,
       event: "changeRunning",
@@ -117,7 +117,7 @@ qx.Class.define("osparc.data.model.NodeStatus", {
 
     isComputationalRunning(node) {
       if (node && node.isComputational()) {
-        return ["PUBLISHED", "PENDING", "WAITING_FOR_RESOURCES", "STARTED"].includes(node.getStatus().getRunning());
+        return ["PUBLISHED", "WAITING_FOR_CLUSTER", "PENDING", "WAITING_FOR_RESOURCES", "STARTED"].includes(node.getStatus().getRunning());
       }
       return false;
     },
@@ -177,7 +177,7 @@ qx.Class.define("osparc.data.model.NodeStatus", {
       const hasOutputs = this.getHasOutputs();
       const modified = this.getModified();
       const hasDependencies = this.hasDependencies();
-      if (["PUBLISHED", "PENDING", "WAITING_FOR_RESOURCES", "STARTED"].includes(compRunning)) {
+      if (["PUBLISHED", "PENDING", "WAITING_FOR_RESOURCES", "WAITING_FOR_CLUSTER", "STARTED"].includes(compRunning)) {
         this.setOutput("busy");
       } else if ([null, false].includes(hasOutputs)) {
         this.setOutput("not-available");

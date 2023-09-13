@@ -91,7 +91,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
         gap: 15
       });
       const icon = atom.getChildControl("icon");
-      osparc.utils.StatusUI.updateCircleAnimation(icon);
+      osparc.service.StatusUI.updateCircleAnimation(icon);
       return atom;
     },
 
@@ -119,7 +119,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
           atom.setIcon("@FontAwesome5Solid/circle-notch/16");
         }
         const icon = atom.getChildControl("icon");
-        osparc.utils.StatusUI.updateCircleAnimation(icon);
+        osparc.service.StatusUI.updateCircleAnimation(icon);
       }
 
       if (pBar) {

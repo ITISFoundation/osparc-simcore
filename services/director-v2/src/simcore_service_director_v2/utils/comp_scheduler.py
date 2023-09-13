@@ -18,6 +18,12 @@ SCHEDULED_STATES: set[RunningState] = {
     RunningState.PENDING,
     RunningState.WAITING_FOR_RESOURCES,
     RunningState.STARTED,
+    RunningState.WAITING_FOR_CLUSTER,
+}
+
+TASK_TO_START_STATES: set[RunningState] = {
+    RunningState.PUBLISHED,
+    RunningState.WAITING_FOR_CLUSTER,
 }
 
 WAITING_FOR_START_STATES: set[RunningState] = {

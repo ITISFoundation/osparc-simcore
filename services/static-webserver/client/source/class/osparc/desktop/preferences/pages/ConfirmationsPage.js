@@ -50,7 +50,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
         .then(() => preferencesSettings.set(preferenceId, newValue))
         .catch(err => {
           console.error(err);
-          osparc.component.message.FlashMessenger.logAs(err.message, "ERROR");
+          osparc.FlashMessenger.logAs(err.message, "ERROR");
           preferenceField.setValue(oldValue);
         })
         .finally(() => preferenceField.setEnabled(true));

@@ -459,16 +459,16 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
                 const msg = this.tr("Payment ") + osparc.utils.Utils.onlyFirstsUp(paymentData["completedStatus"]);
                 switch (paymentData["completedStatus"]) {
                   case "SUCCESS":
-                    osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO");
+                    osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
                     // demo purposes
                     wallet.setCreditsAvailable(wallet.getCreditsAvailable() + nCredits);
                     break;
                   case "PENDING":
-                    osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING");
+                    osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
                     break;
                   case "CANCELED":
                   case "FAILED":
-                    osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+                    osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
                     break;
                   default:
                     console.error("completedStatus unknown");
@@ -496,13 +496,13 @@ qx.Class.define("osparc.desktop.credits.BuyCredits", {
             // Listen to close window event
             pgWindow.onbeforeunload = () => {
               const msg = this.tr("The window was close. Try again and follow the instructions inside the opened window.");
-              osparc.component.message.FlashMessenger.getInstance().logAs(msg, "WARNING");
+              osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
               cancelPayment();
             };
           })
           .catch(err => {
             console.error(err);
-            osparc.component.message.FlashMessenger.logAs(err.message, "ERROR");
+            osparc.FlashMessenger.logAs(err.message, "ERROR");
             buyCreditsBtn();
           });
       });

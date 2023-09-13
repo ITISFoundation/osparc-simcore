@@ -1,9 +1,18 @@
 from functools import cached_property
 from typing import cast
 
-from pydantic import Field, HttpUrl, PositiveInt, SecretStr, parse_obj_as, validator
+from pydantic import (
+    Field,
+    HttpUrl,
+    PositiveFloat,
+    PositiveInt,
+    SecretStr,
+    parse_obj_as,
+    validator,
+)
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import BuildTargetEnum, LogLevel, VersionTag
+from settings_library.rabbit import RabbitSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 from .._meta import API_VERSION, API_VTAG, PROJECT_NAME
@@ -66,16 +75,12 @@ class ApplicationSettings(_BaseApplicationSettings):
     These settings includes extra configuration for the http-API
     """
 
-    PAYMENTS_SECRET_KEY: SecretStr = Field(
-        ...,
-        description="Secret key for encryption"
-        'TIP: python3 -c "from cryptography.fernet import *; print(Fernet.generate_key())"',
-        min_length=44,
-    )
-
     PAYMENTS_GATEWAY_URL: HttpUrl = Field(
         ..., description="Base url to the payment gateway"
     )
+
+    PAYMENTS_GATEWAY_API_KEY: SecretStr
+    PAYMENTS_GATEWAY_API_SECRET: SecretStr
 
     PAYMENTS_USERNAME: str = Field(
         ...,
@@ -86,4 +91,15 @@ class ApplicationSettings(_BaseApplicationSettings):
         ...,
         description="Password for HTTP Basic Auth. Required if started as a web app.",
         min_length=10,
+    )
+
+    PAYMENTS_ACCESS_TOKEN_SECRET_KEY: SecretStr = Field(
+        ...,
+        description="To generate a random password with openssl in hex format with 32 bytes, run `openssl rand -hex 32`",
+        min_length=30,
+    )
+    PAYMENTS_ACCESS_TOKEN_EXPIRE_MINUTES: PositiveFloat = Field(default=30)
+
+    PAYMENTS_RABBITMQ: RabbitSettings = Field(
+        auto_default_from_env=True, description="settings for service/rabbitmq"
     )

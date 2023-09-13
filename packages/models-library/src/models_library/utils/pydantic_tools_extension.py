@@ -1,5 +1,5 @@
 import functools
-from typing import TypeVar
+from typing import Final, TypeVar
 
 from pydantic import Field, ValidationError
 from pydantic.tools import parse_obj_as
@@ -17,4 +17,12 @@ def parse_obj_or_none(type_: type[T], obj) -> T | None:
 #
 # NOTE: Helper to define non-nullable optional fields
 # SEE details in test/test_utils_pydantic_tools_extension.py
-FieldNotRequired = functools.partial(Field, default=None)
+#
+# Two usage styles:
+#
+# class Model(BaseModel):
+#     value: FieldNotRequired(description="some optional field")
+#     other: Field(NOT_REQUIRED, description="alternative")
+#
+NOT_REQUIRED: Final = None
+FieldNotRequired = functools.partial(Field, default=NOT_REQUIRED)

@@ -54,7 +54,7 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
     },
 
     __getServicesFilter: function() {
-      const filter = new osparc.component.filter.TextFilter("text", "organizationServicesList").set({
+      const filter = new osparc.filter.TextFilter("text", "organizationServicesList").set({
         allowStretchX: true,
         margin: [0, 10, 5, 10]
       });
@@ -121,7 +121,7 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
         .then(services => {
           const orgServices = [];
           for (const key in services) {
-            const latestService = osparc.utils.Services.getLatest(services, key);
+            const latestService = osparc.service.Utils.getLatest(services, key);
             if (gid in latestService["accessRights"]) {
               orgServices.push(latestService);
             }
