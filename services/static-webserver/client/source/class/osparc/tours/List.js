@@ -56,7 +56,7 @@ qx.Class.define("osparc.tours.List", {
       switch (id) {
         case "title":
           control = new qx.ui.basic.Label().set({
-            value: this.tr("Tutorials:"),
+            value: this.tr("Guided tours:"),
             font: "text-14"
           });
           this.add(control);
