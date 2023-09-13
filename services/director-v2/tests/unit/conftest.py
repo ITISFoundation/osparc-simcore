@@ -25,7 +25,10 @@ from models_library.clusters import ClusterID
 from models_library.generated_models.docker_rest_api import (
     ServiceSpec as DockerServiceSpec,
 )
-from models_library.service_settings_labels import SimcoreServiceLabels
+from models_library.service_settings_labels import (
+    CallbacksMapping,
+    SimcoreServiceLabels,
+)
 from models_library.services import RunID, ServiceKey, ServiceKeyVersion, ServiceVersion
 from models_library.services_enums import ServiceState
 from pydantic import parse_obj_as
@@ -58,9 +61,11 @@ def simcore_services_network_name() -> str:
 
 @pytest.fixture
 def simcore_service_labels() -> SimcoreServiceLabels:
-    return SimcoreServiceLabels.parse_obj(
+    simcore_service_labels = SimcoreServiceLabels.parse_obj(
         SimcoreServiceLabels.Config.schema_extra["examples"][1]
     )
+    simcore_service_labels.callbacks_mapping = parse_obj_as(CallbacksMapping, {})
+    return simcore_service_labels
 
 
 @pytest.fixture

@@ -12,6 +12,7 @@ from fastapi import FastAPI
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.service_settings_labels import (
+    CallbacksMapping,
     SimcoreServiceLabels,
     SimcoreServiceSettingsLabel,
 )
@@ -140,6 +141,9 @@ def expected_dynamic_sidecar_spec(
                         "state_exclude": ["/tmp/strip_me/*", "*.py"],  # noqa: S108
                         "state_paths": ["/tmp/save_1", "/tmp_save_2"],  # noqa: S108
                     },
+                    "callbacks_mapping": CallbacksMapping.Config.schema_extra[
+                        "examples"
+                    ][3],
                     "product_name": osparc_product_name,
                     "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                     "proxy_service_name": "dy-proxy_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
@@ -195,6 +199,11 @@ def expected_dynamic_sidecar_spec(
                     "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": "False",
                     "FORWARD_ENV_DISPLAY": ":0",
                     "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
+                    "DY_SIDECAR_CALLBACKS_MAPPING": (
+                        '{"metrics": {"service": "rt-web", "command": "ls", "timeout": 1.0}, "before_shutdown"'
+                        ': [{"service": "rt-web", "command": "ls", "timeout": 1.0}, {"service": "s4l-core", '
+                        '"command": ["ls", "-lah"], "timeout": 1.0}]}'
+                    ),
                     "DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED": "True",
                     "POSTGRES_DB": "test",
                     "POSTGRES_HOST": "localhost",
