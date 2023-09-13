@@ -159,7 +159,7 @@ async def task_create_service_containers(
             mounted_volumes=mounted_volumes,
         )
         shared_store.compose_spec = compose_spec_validation.compose_spec
-        shared_store.container_names = compose_spec_validation.original_container_names
+        shared_store.container_names = compose_spec_validation.current_container_names
         shared_store.original_to_current_container_names = (
             compose_spec_validation.original_to_current_container_names
         )

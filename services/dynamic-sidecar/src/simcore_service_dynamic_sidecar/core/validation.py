@@ -175,7 +175,7 @@ def parse_compose_spec(compose_file_content: str) -> Any:
 
 class ComposeSpecValidation(NamedTuple):
     compose_spec: str
-    original_container_names: list[str]
+    current_container_names: list[str]
     original_to_current_container_names: dict[str, str]
 
 
@@ -212,7 +212,7 @@ async def validate_compose_spec(
 
     spec_services_to_container_name: dict[str, str] = {}
 
-    original_container_names: list[str] = []
+    current_container_names: list[str] = []
     original_to_current_container_names: dict[str, str] = {}
 
     spec_services = parsed_compose_spec["services"]
@@ -227,8 +227,8 @@ async def validate_compose_spec(
         service_content["container_name"] = container_name
         spec_services_to_container_name[service] = container_name
 
-        original_container_names.append(user_given_container_name)
-        original_to_current_container_names[user_given_container_name] = container_name
+        current_container_names.append(container_name)
+        original_to_current_container_names[service] = container_name
 
         # inject forwarded environment variables
         environment_entries = service_content.get("environment", [])
@@ -305,6 +305,6 @@ async def validate_compose_spec(
 
     return ComposeSpecValidation(
         compose_spec=compose_spec,
-        original_container_names=original_container_names,
+        current_container_names=current_container_names,
         original_to_current_container_names=original_to_current_container_names,
     )
