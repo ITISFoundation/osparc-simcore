@@ -99,7 +99,7 @@ qx.Class.define("osparc.panddy.Panddy", {
 
     start: function() {
       this.getChildControl("panddy").show();
-      setTimeout(() => this.__toSequences(), 200);
+      setTimeout(() => this.__toTours(), 200);
     },
 
     stop: function() {
@@ -115,7 +115,7 @@ qx.Class.define("osparc.panddy.Panddy", {
       }
     },
 
-    __toSequences: function() {
+    __toTours: function() {
       const tours = this.getTours();
       const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem("panddyDontShow");
       if (tours.length === 0 || (tours === this.self().INTRO_TOUR && dontShow === "true")) {
