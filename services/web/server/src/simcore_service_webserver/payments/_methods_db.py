@@ -18,7 +18,7 @@ from sqlalchemy.sql import func
 
 from ..db.plugin import get_database_engine
 from .errors import (
-    PaymentMethodCompletedError,
+    PaymentMethodAlreadyAckedError,
     PaymentMethodNotFoundError,
     PaymentMethodUniqueViolationError,
 )
@@ -115,6 +115,26 @@ async def list_payments_methods(
         return total_number_of_items, page
 
 
+async def get_successful_payment_methods(
+    app,
+    *,
+    user_id: UserID,
+    wallet_id: WalletID,
+) -> list[PaymentsMethodsDB]:
+    async with get_database_engine(app).acquire() as conn:
+        result: ResultProxy = await conn.execute(
+            payments_methods.select()
+            .where(
+                (payments_methods.c.user_id == user_id)
+                & (payments_methods.c.wallet_id == wallet_id)
+                & (payments_methods.c.status == InitPromptAckFlowState.SUCCESS)
+            )
+            .order_by(payments_methods.c.created.desc())
+        )  # newest first
+        rows = await result.fetchall() or []
+        return parse_obj_as(list[PaymentsMethodsDB], rows)
+
+
 async def get_pending_payment_methods_ids(
     app: web.Application,
 ) -> list[PaymentMethodID]:
@@ -138,42 +158,42 @@ async def udpate_payment_method(
     """
 
     Raises:
-        PaymentNotFoundError
-
+        PaymentMethodNotFoundError
+        PaymentMethodCompletedError
     """
     if state == InitPromptAckFlowState.PENDING:
-        raise ValueError(f"{state} is not a completion state")
+        msg = f"{state} is not a completion state"
+        raise ValueError(msg)
 
     optional = {}
     if state_message:
         optional["state_message"] = state_message
 
-    async with get_database_engine(app).acquire() as conn:
-        async with conn.begin():
-            row = await (
-                await conn.execute(
-                    sa.select(
-                        payments_methods.c.initiated_at,
-                        payments_methods.c.completed_at,
-                    )
-                    .where(payments_methods.c.payment_method_id == payment_method_id)
-                    .with_for_update()
+    async with get_database_engine(app).acquire() as conn, conn.begin():
+        row = await (
+            await conn.execute(
+                sa.select(
+                    payments_methods.c.initiated_at,
+                    payments_methods.c.completed_at,
                 )
-            ).fetchone()
-
-            if row is None:
-                raise PaymentMethodNotFoundError(payment_method_id=payment_method_id)
-
-            if row.completed_at is not None:
-                raise PaymentMethodCompletedError(payment_method_id=payment_method_id)
-
-            result = await conn.execute(
-                payments_methods.update()
-                .values(completed_at=func.now(), state=state, **optional)
                 .where(payments_methods.c.payment_method_id == payment_method_id)
-                .returning(literal_column("*"))
+                .with_for_update()
             )
-            row = await result.first()
-            assert row, "execute above should have caught this"  # nosec
+        ).fetchone()
 
-            return PaymentsMethodsDB.from_orm(row)
+        if row is None:
+            raise PaymentMethodNotFoundError(payment_method_id=payment_method_id)
+
+        if row.completed_at is not None:
+            raise PaymentMethodAlreadyAckedError(payment_method_id=payment_method_id)
+
+        result = await conn.execute(
+            payments_methods.update()
+            .values(completed_at=func.now(), state=state, **optional)
+            .where(payments_methods.c.payment_method_id == payment_method_id)
+            .returning(literal_column("*"))
+        )
+        row = await result.first()
+        assert row, "execute above should have caught this"  # nosec
+
+        return PaymentsMethodsDB.from_orm(row)

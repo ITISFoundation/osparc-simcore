@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 from typing import Any
 from uuid import uuid4
@@ -17,7 +18,12 @@ from simcore_postgres_database.models.payments_methods import InitPromptAckFlowS
 from yarl import URL
 
 from ._api import check_wallet_permissions
-from ._methods_db import PaymentsMethodsDB, insert_init_payment_method
+from ._methods_db import (
+    PaymentsMethodsDB,
+    get_successful_payment_methods,
+    insert_init_payment_method,
+    udpate_payment_method,
+)
 from .settings import PaymentsSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -28,11 +34,13 @@ def _to_api_model(
 ) -> PaymentMethodGet:
     assert entry.completed_at  # nosec
 
-    return PaymentMethodGet(
-        idr=entry.payment_method_id,
-        wallet_id=entry.wallet_id,
-        created=entry.completed_at,
-        **payment_method_details_from_gateway,
+    return PaymentMethodGet.parse_obj(
+        {
+            **payment_method_details_from_gateway,
+            "idr": entry.payment_method_id,
+            "wallet_id": entry.wallet_id,
+            "created": entry.completed_at,
+        }
     )
 
 
@@ -91,8 +99,18 @@ async def complete_create_of_wallet_payment_method(
     payment_method_id: PaymentMethodID,
     completion_state: InitPromptAckFlowState,
     message: str | None = None,
-):
-    raise NotImplementedError
+) -> PaymentsMethodsDB:
+    assert completion_state != InitPromptAckFlowState.PENDING  # nosec
+
+    # annotate
+    updated: PaymentsMethodsDB = await udpate_payment_method(
+        app,
+        payment_method_id=payment_method_id,
+        state=completion_state,
+        state_message=message,
+    )
+
+    return updated
 
 
 async def cancel_creation_of_wallet_payment_method(
@@ -104,7 +122,7 @@ async def cancel_creation_of_wallet_payment_method(
 ):
     await check_wallet_permissions(app, user_id=user_id, wallet_id=wallet_id)
 
-    acked = await complete_create_of_wallet_payment_method(
+    return await complete_create_of_wallet_payment_method(
         app,
         payment_method_id=payment_method_id,
         completion_state=InitPromptAckFlowState.CANCELED,
@@ -113,8 +131,6 @@ async def cancel_creation_of_wallet_payment_method(
 
     # FIXME: delete???
 
-    return acked
-
 
 async def list_wallet_payment_methods(
     app: web.Application, *, user_id: UserID, wallet_id: WalletID
@@ -122,14 +138,36 @@ async def list_wallet_payment_methods(
     # check permissions
     await check_wallet_permissions(app, user_id=user_id, wallet_id=wallet_id)
 
-    # FIXME: fake!!
-    return parse_obj_as(
-        list[PaymentMethodGet],
-        [
-            {**p, "wallet_id": wallet_id}
-            for p in PaymentMethodGet.Config.schema_extra["examples"]
-        ],
+    # get acked
+    entries = await get_successful_payment_methods(
+        app,
+        user_id=user_id,
+        wallet_id=wallet_id,
     )
+
+    # FAKE -----
+    _logger.debug(
+        "init -> FAKE Payments Gateway: POST /payment-methods:batchGet: %s",
+        json.dumps(
+            {"payment_methods_ids": [p.payment_method_id for p in entries]}, indent=1
+        ),
+    )
+    await asyncio.sleep(1)
+    # merge both updated and response
+
+    # FIXME: fake!!
+    payments_methods: list[PaymentMethodGet] = [
+        _to_api_model(
+            e,
+            payment_method_details_from_gateway=PaymentMethodGet.Config.schema_extra[
+                "examples"
+            ][0],
+        )
+        for e in entries
+    ]
+    # -----
+
+    return payments_methods
 
 
 async def get_wallet_payment_method(
