@@ -57,6 +57,7 @@ from ...utils.comp_scheduler import (
 )
 from ...utils.computations import get_pipeline_state_from_task_states
 from ...utils.rabbitmq import (
+    publish_project_log,
     publish_service_log,
     publish_service_resource_tracking_heartbeat,
     publish_service_resource_tracking_started,
@@ -155,6 +156,13 @@ class BaseCompScheduler(ABC):
             cluster_id=cluster_id,
             run_metadata=new_run.metadata,
             use_on_demand_clusters=use_on_demand_clusters,
+        )
+        await publish_project_log(
+            self.rabbitmq_client,
+            user_id,
+            project_id,
+            log=f"Project pipeline scheduled using {'on-demand clusters' if use_on_demand_clusters else 'pre-defined clusters'}, starting soon...",
+            log_level=logging.INFO,
         )
         # ensure the scheduler starts right away
         self._wake_up_scheduler_now()
