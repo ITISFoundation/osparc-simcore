@@ -11,8 +11,8 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_webserver.wallets import (
-    PaymentMethodGet,
-    PaymentMethodInitiated,
+    GetPaymentMethod,
+    InitCreatePaymentMethod,
     WalletGet,
 )
 from pydantic import parse_obj_as
@@ -87,7 +87,7 @@ async def test_add_payment_method_worfklow(
     )
     data, error = await assert_status(response, web.HTTPCreated)
     assert error is None
-    init = PaymentMethodInitiated.parse_obj(data)
+    init = InitCreatePaymentMethod.parse_obj(data)
 
     assert init.payment_method_id
     assert init.payment_method_form_url.query
@@ -117,14 +117,14 @@ async def test_add_payment_method_worfklow(
         f"/v0/wallets/{wallet.wallet_id}/payments-method/{init.payment_method_id}"
     )
     data, _ = await assert_status(response, web.HTTPOk)
-    payment_method = PaymentMethodGet(**data)
+    payment_method = GetPaymentMethod(**data)
     assert payment_method.idr == init.payment_method_id
 
     # list all payment-methods for this wallet
     response = await client.get(f"/v0/wallets/{wallet.wallet_id}/payments-method")
     data, _ = await assert_status(response, web.HTTPOk)
 
-    wallet_payments_methods = parse_obj_as(list[PaymentMethodGet], data)
+    wallet_payments_methods = parse_obj_as(list[GetPaymentMethod], data)
     assert wallet_payments_methods == [payment_method]
 
     # delete

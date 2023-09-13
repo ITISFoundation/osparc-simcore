@@ -13,10 +13,10 @@ from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.wallets import (
     CreateWalletBodyParams,
     CreateWalletPayment,
+    GetPaymentMethod,
+    InitCreatePaymentMethod,
     PaymentID,
-    PaymentMethodGet,
     PaymentMethodID,
-    PaymentMethodInitiated,
     PaymentTransaction,
     PutWalletBodyParams,
     WalletGet,
@@ -97,16 +97,16 @@ async def cancel_payment(wallet_id: WalletID, payment_id: PaymentID):
 
 
 @router.post(
-    "/wallets/{wallet_id}/payments-methods",
-    response_model=Envelope[PaymentMethodInitiated],
+    "/wallets/{wallet_id}/payments-methods:init",
+    response_model=Envelope[InitCreatePaymentMethod],
 )
-async def create_payment_method(wallet_id: WalletID):
-    """Adds new payment method to `wallet_id`"""
+async def init_create_payment_method(wallet_id: WalletID):
+    """Inits creation of new payment method for `wallet_id` (pending completion)"""
 
 
 @router.get(
     "/wallets/{wallet_id}/payments-methods",
-    response_model=Envelope[list[PaymentMethodGet]],
+    response_model=Envelope[list[GetPaymentMethod]],
 )
 async def list_payments_methods(wallet_id: WalletID):
     """Lists all payments method associated to to `wallet_id`"""
@@ -114,7 +114,7 @@ async def list_payments_methods(wallet_id: WalletID):
 
 @router.get(
     "/wallets/{wallet_id}/payments-methods/{payment_method_id}",
-    response_model=Envelope[PaymentMethodGet],
+    response_model=Envelope[GetPaymentMethod],
 )
 async def get_payment_method(wallet_id: WalletID, payment_method_id: PaymentMethodID):
     ...
@@ -122,7 +122,7 @@ async def get_payment_method(wallet_id: WalletID, payment_method_id: PaymentMeth
 
 @router.delete(
     "/wallets/{wallet_id}/payments-methods/{payment_method_id}",
-    response_model=Envelope[PaymentMethodGet],
+    response_model=Envelope[GetPaymentMethod],
 )
 async def delete_payment_method(
     wallet_id: WalletID, payment_method_id: PaymentMethodID

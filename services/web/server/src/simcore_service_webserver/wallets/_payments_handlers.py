@@ -4,9 +4,9 @@ import logging
 from aiohttp import web
 from models_library.api_schemas_webserver.wallets import (
     CreateWalletPayment,
+    GetPaymentMethod,
+    InitCreatePaymentMethod,
     PaymentID,
-    PaymentMethodGet,
-    PaymentMethodInitiated,
     PaymentTransaction,
     WalletPaymentCreated,
 )
@@ -157,20 +157,21 @@ class PaymentMethodsPathParams(WalletsPathParams):
 
 
 @routes.post(
-    f"/{VTAG}/wallets/{{wallet_id}}/payments-methods", name="create_payment_method"
+    f"/{VTAG}/wallets/{{wallet_id}}/payments-methods:init",
+    name="init_create_payment_method",
 )
 @login_required
 @permission_required("wallets.*")
 @handle_wallets_exceptions
 @requires_dev_feature_enabled
-async def create_payment_method(request: web.Request):
+async def init_create_payment_method(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
 
     created = parse_obj_as(
-        PaymentMethodInitiated,
+        InitCreatePaymentMethod,
         {
-            **PaymentMethodInitiated.Config.schema_extra["examples"][0],
+            **InitCreatePaymentMethod.Config.schema_extra["examples"][0],
             "wallet_id": path_params.wallet_id,
         },
     )
@@ -188,10 +189,10 @@ async def list_payments_methods(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
     payment_methods = parse_obj_as(
-        list[PaymentMethodGet],
+        list[GetPaymentMethod],
         [
             {**p, "wallet_id": path_params.wallet_id}
-            for p in PaymentMethodGet.Config.schema_extra["examples"]
+            for p in GetPaymentMethod.Config.schema_extra["examples"]
         ],
     )
     return envelope_json_response(payment_methods)
@@ -210,9 +211,9 @@ async def get_payment_method(request: web.Request):
     path_params = parse_request_path_parameters_as(PaymentMethodsPathParams, request)
 
     got = parse_obj_as(
-        PaymentMethodGet,
+        GetPaymentMethod,
         {
-            **PaymentMethodGet.Config.schema_extra["examples"][0],
+            **GetPaymentMethod.Config.schema_extra["examples"][0],
             "idr": path_params.payment_method_id,
             "wallet_id": path_params.wallet_id,
         },
