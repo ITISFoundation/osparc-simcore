@@ -17,8 +17,8 @@
 
 qx.Class.define("osparc.dashboard.CardBase", {
   extend: qx.ui.form.ToggleButton,
-  implement: [qx.ui.form.IModel, osparc.component.filter.IFilterable],
-  include: [qx.ui.form.MModelProperty, osparc.component.filter.MFilterable],
+  implement: [qx.ui.form.IModel, osparc.filter.IFilterable],
+  include: [qx.ui.form.MModelProperty, osparc.filter.MFilterable],
   type: "abstract",
 
   construct: function() {
@@ -379,7 +379,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyQuality: function(quality) {
-      if (osparc.product.Utils.showQuality() && osparc.component.metadata.Quality.isEnabled(quality)) {
+      if (osparc.product.Utils.showQuality() && osparc.metadata.Quality.isEnabled(quality)) {
         const tsrRatingLayout = this.getChildControl("tsr-rating");
         const tsrRating = tsrRatingLayout.getChildren()[1];
         tsrRating.set({
@@ -432,12 +432,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
 
       // Updatable study
-      if (osparc.utils.Study.isWorkbenchRetired(workbench)) {
+      if (osparc.study.Utils.isWorkbenchRetired(workbench)) {
         this.setUpdatable("retired");
-      } else if (osparc.utils.Study.isWorkbenchDeprecated(workbench)) {
+      } else if (osparc.study.Utils.isWorkbenchDeprecated(workbench)) {
         this.setUpdatable("deprecated");
       } else {
-        osparc.utils.Study.isWorkbenchUpdatable(workbench)
+        osparc.study.Utils.isWorkbenchUpdatable(workbench)
           .then(updatable => {
             if (updatable) {
               this.setUpdatable("updatable");
@@ -446,7 +446,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
 
       // Block card
-      osparc.utils.Study.getInaccessibleServices(workbench)
+      osparc.study.Utils.getInaccessibleServices(workbench)
         .then(unaccessibleServices => {
           if (unaccessibleServices.length) {
             this.__enableCard(false);
@@ -478,11 +478,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
       switch (updatable) {
         case "retired":
           toolTipText = this.tr("Service(s) retired, please update");
-          textColor = osparc.utils.StatusUI.getColor("retired");
+          textColor = osparc.service.StatusUI.getColor("retired");
           break;
         case "deprecated":
           toolTipText = this.tr("Service(s) deprecated, please update");
-          textColor = osparc.utils.StatusUI.getColor("deprecated");
+          textColor = osparc.service.StatusUI.getColor("deprecated");
           break;
         case "updatable":
           toolTipText = this.tr("Update available");
@@ -521,7 +521,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
           toolTip += this.tr(" is cloning it...");
           break;
         case "EXPORTING":
-          image = osparc.component.task.Export.ICON+"/";
+          image = osparc.task.Export.ICON+"/";
           toolTip += this.tr(" is exporting it...");
           break;
         case "OPENING":

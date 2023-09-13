@@ -132,7 +132,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       const addStars = data => {
         tsrLayout.removeAll();
         const quality = data["quality"];
-        if (osparc.component.metadata.Quality.isEnabled(quality)) {
+        if (osparc.metadata.Quality.isEnabled(quality)) {
           const tsrRating = new osparc.ui.basic.StarsRating();
           tsrRating.set({
             nStars: 4,
@@ -320,7 +320,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       * @param serviceData {Object} Serialized Service Object
       */
     openAccessRights: function(serviceData) {
-      const permissionsView = new osparc.component.share.CollaboratorsService(serviceData);
+      const permissionsView = new osparc.share.CollaboratorsService(serviceData);
       const title = qx.locale.Manager.tr("Share with Collaborators and Organizations");
       osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
       return permissionsView;
@@ -330,7 +330,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       * @param serviceData {Object} Serialized Service Object
       */
     openQuality: function(serviceData) {
-      const qualityEditor = new osparc.component.metadata.QualityEditor(serviceData);
+      const qualityEditor = new osparc.metadata.QualityEditor(serviceData);
       const title = serviceData["name"] + " - " + qx.locale.Manager.tr("Quality Assessment");
       osparc.ui.window.Window.popUpInWindow(qualityEditor, title, 650, 700);
       return qualityEditor;

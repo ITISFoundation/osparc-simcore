@@ -41,7 +41,7 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
 
     __updateFlashMessage: function(timeoutSec) {
       if (this.__idleFlashMessage === null) {
-        this.__idleFlashMessage = osparc.component.message.FlashMessenger.getInstance().logAs(qx.locale.Manager.tr("Are you still there?"), "WARNING", null, timeoutSec*1000);
+        this.__idleFlashMessage = osparc.FlashMessenger.getInstance().logAs(qx.locale.Manager.tr("Are you still there?"), "WARNING", null, timeoutSec*1000);
       }
 
       let msg = qx.locale.Manager.tr("Are you still there?") + "<br>";
@@ -52,7 +52,7 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
 
     __removeIdleFlashMessage: function() {
       if (this.__idleFlashMessage) {
-        osparc.component.message.FlashMessenger.getInstance().removeMessage(this.__idleFlashMessage);
+        osparc.FlashMessenger.getInstance().removeMessage(this.__idleFlashMessage);
         this.__idleFlashMessage = null;
       }
     },

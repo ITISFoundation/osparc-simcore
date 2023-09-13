@@ -41,19 +41,19 @@ qx.Class.define("osparc.dashboard.SideSearch", {
       });
       this._add(title);
 
-      const textFilter = this.__textFilter = new osparc.component.filter.TextFilter("text", filterGroupId).set({
+      const textFilter = this.__textFilter = new osparc.filter.TextFilter("text", filterGroupId).set({
         allowStretchX: true
       });
       textFilter.getChildControl("textfield").setFont("text-14");
       osparc.utils.Utils.setIdToWidget(textFilter, "sideSearchFiltersTextFld");
       this._add(textFilter);
 
-      const tagsFilter = this.__tagsFilter = new osparc.component.filter.UserTagsFilter("tags", filterGroupId).set({
+      const tagsFilter = this.__tagsFilter = new osparc.filter.UserTagsFilter("tags", filterGroupId).set({
         visibility: osparc.data.Permissions.getInstance().canDo("study.tag") ? "visible" : "excluded"
       });
       this._add(tagsFilter);
 
-      const classifier = this.__classifierFilter = new osparc.component.filter.ClassifiersFilter("classifiers", filterGroupId).set({
+      const classifier = this.__classifierFilter = new osparc.filter.ClassifiersFilter("classifiers", filterGroupId).set({
         marginLeft: -12,
         marginTop: -5
       });

@@ -38,8 +38,9 @@ botocore==1.27.59
     #   boto3
     #   moto
     #   s3transfer
-certifi==2022.12.7
+certifi==2023.7.22
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   httpcore
     #   httpx

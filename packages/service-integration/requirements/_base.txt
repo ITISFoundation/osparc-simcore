@@ -11,7 +11,10 @@ attrs==23.1.0
     #   jsonschema
     #   referencing
 certifi==2023.7.22
-    # via requests
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   requests
 charset-normalizer==3.2.0
     # via requests
 click==8.1.6
@@ -44,6 +47,8 @@ markdown-it-py==3.0.0
     # via rich
 mdurl==0.1.2
     # via markdown-it-py
+orjson==3.9.7
+    # via -r requirements/../../../packages/models-library/requirements/_base.in
 packaging==23.1
     # via
     #   docker

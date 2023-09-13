@@ -90,7 +90,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
         "overflow": "visible" // needed for countries dropdown menu
       });
 
-      const itiInput = this.__itiInput = new osparc.component.widget.IntlTelInput();
+      const itiInput = this.__itiInput = new osparc.widget.IntlTelInput();
       phoneNumberVerifyLayout.add(itiInput, {
         flex: 1
       });
@@ -149,13 +149,13 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
         this.__verifyPhoneNumberBtn.setFetching(true);
         osparc.auth.Manager.getInstance().verifyPhoneNumber(this.getUserEmail(), this.__itiInput.getNumber())
           .then(data => {
-            osparc.component.message.FlashMessenger.logAs(data.message, "INFO");
+            osparc.FlashMessenger.logAs(data.message, "INFO");
             this.__verifyPhoneNumberBtn.setFetching(false);
             osparc.auth.core.Utils.restartResendTimer(this.__verifyPhoneNumberBtn, this.tr("Send SMS"));
             this.__validateCodeTF.setEnabled(true);
           })
           .catch(err => {
-            osparc.component.message.FlashMessenger.logAs(err.message, "ERROR");
+            osparc.FlashMessenger.logAs(err.message, "ERROR");
             this.__verifyPhoneNumberBtn.setFetching(false);
             this.__itiInput.setEnabled(true);
           });
@@ -166,7 +166,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       this.__validateCodeBtn.setFetching(true);
 
       const loginFun = log => {
-        osparc.component.message.FlashMessenger.logAs(log.message, "INFO");
+        osparc.FlashMessenger.logAs(log.message, "INFO");
         this.__validateCodeBtn.setFetching(false);
         this.__validateCodeTF.setEnabled(false);
         this.__validateCodeBtn.setEnabled(false);
@@ -175,7 +175,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       };
 
       const failFun = msg => {
-        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+        osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
         this.__validateCodeBtn.setFetching(false);
         // TODO: can get field info from response here
         msg = String(msg) || this.tr("Invalid code");
@@ -193,11 +193,11 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       this.__sendViaEmail.setFetching(true);
       osparc.auth.Manager.getInstance().resendCodeViaEmail(this.getUserEmail())
         .then(data => {
-          osparc.component.message.FlashMessenger.logAs(data.reason, "INFO");
+          osparc.FlashMessenger.logAs(data.reason, "INFO");
           this.fireDataEvent("skipPhoneRegistration", this.getUserEmail());
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.logAs(err.message, "ERROR");
+          osparc.FlashMessenger.logAs(err.message, "ERROR");
         })
         .finally(() => this.__sendViaEmail.setFetching(false));
     }

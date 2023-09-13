@@ -59,7 +59,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     ])
       .then(values => {
         const notifications = values[1];
-        osparc.component.notification.Notifications.getInstance().addNotifications(notifications);
+        osparc.notification.Notifications.getInstance().addNotifications(notifications);
         this.buildLayout();
         this.setPageContext("dashboard");
         osparc.WindowSizeTracker.getInstance().addListener("changeCompactVersion", () => this.__navBarResized(), this);
@@ -177,7 +177,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this._addAt(control, 2);
           break;
         case "logo":
-          control = osparc.component.widget.LogoOnOff.getInstance().set({
+          control = osparc.navigation.LogoOnOff.getInstance().set({
             alignY: "middle"
           });
           this.getChildControl("left-items").add(control);
@@ -279,11 +279,11 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("right-items").add(control);
           break;
         case "tasks-button":
-          control = new osparc.component.task.TasksButton();
+          control = new osparc.task.TasksButton();
           this.getChildControl("right-items").add(control);
           break;
         case "notifications-button":
-          control = new osparc.component.notification.NotificationsButton();
+          control = new osparc.notification.NotificationsButton();
           this.getChildControl("right-items").add(control);
           break;
         case "expiration-icon": {
